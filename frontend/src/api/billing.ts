@@ -1,0 +1,24 @@
+import { apiClient } from "./client";
+import type { Subscription, SubscriptionPlan } from "../types";
+
+type PaginatedResponse<T> = {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+};
+
+function unwrapList<T>(data: T[] | PaginatedResponse<T>) {
+  return Array.isArray(data) ? data : data.results;
+}
+
+export const billingApi = {
+  plans: async () => {
+    const { data } = await apiClient.get<SubscriptionPlan[] | PaginatedResponse<SubscriptionPlan>>("/api/billing/plans/");
+    return unwrapList(data);
+  },
+  currentSubscription: async () => {
+    const { data } = await apiClient.get<Subscription | null>("/api/billing/current-subscription/");
+    return data;
+  },
+};

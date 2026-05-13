@@ -1,0 +1,36 @@
+import { motion } from "framer-motion";
+import { useState } from "react";
+import { Outlet } from "react-router-dom";
+
+import { Header } from "./Header";
+import { MobileNav } from "./MobileNav";
+import { Sidebar } from "./Sidebar";
+
+export function AppLayout() {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+
+  return (
+    <div className="min-h-screen bg-soft-mesh">
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute left-1/2 top-0 h-72 w-72 -translate-x-1/2 rounded-full bg-brand-500/10 blur-3xl" />
+      </div>
+      <div className="relative flex min-h-screen">
+        <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((value) => !value)} />
+        <MobileNav open={menuOpen} onClose={() => setMenuOpen(false)} />
+        <div className="flex min-w-0 flex-1 flex-col pb-24 lg:pb-0">
+          <Header onMenuClick={() => setMenuOpen(true)} />
+          <motion.main
+            key={location.pathname}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.22 }}
+            className="mx-auto w-full max-w-[1500px] flex-1 px-4 py-6 sm:px-6 lg:px-8"
+          >
+            <Outlet />
+          </motion.main>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,6 +1,6 @@
 # Backend Apps Map
 
-Текущие Django apps соответствуют public product core NeuroBoost.
+Текущие Django apps соответствуют public product core Zani.
 
 ## Implemented
 

@@ -4,6 +4,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet, ViewSet
 
 from apps.billing.models import Subscription, SubscriptionPlan
 from apps.billing.serializers import SubscriptionPlanSerializer, SubscriptionSerializer
+from apps.billing.usage import usage_summary
 from apps.core.permissions import accessible_businesses
 
 
@@ -32,3 +33,13 @@ class CurrentSubscriptionViewSet(ViewSet):
             return Response(None)
 
         return Response(SubscriptionSerializer(subscription).data)
+
+
+class UsageSummaryViewSet(ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request):
+        business = accessible_businesses(request.user).first()
+        if not business:
+            return Response([])
+        return Response(usage_summary(business))

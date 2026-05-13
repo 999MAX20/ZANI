@@ -1,6 +1,7 @@
 import uuid
 
 from django.db import models
+from django.conf import settings
 
 from apps.businesses.models import Business, TimeStampedModel
 from apps.clients.models import Client
@@ -68,14 +69,31 @@ class BotConversation(TimeStampedModel):
         CLOSED = "closed", "Closed"
         ARCHIVED = "archived", "Archived"
 
+    class Priorities(models.TextChoices):
+        LOW = "low", "Low"
+        NORMAL = "normal", "Normal"
+        HIGH = "high", "High"
+        URGENT = "urgent", "Urgent"
+
     business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name="bot_conversations")
     bot = models.ForeignKey(Bot, on_delete=models.CASCADE, related_name="conversations")
     public_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     channel = models.CharField(max_length=32, choices=Channels.choices)
     external_user_id = models.CharField(max_length=255, blank=True)
+    external_thread_id = models.CharField(max_length=255, blank=True)
     client = models.ForeignKey(Client, on_delete=models.SET_NULL, null=True, blank=True, related_name="bot_conversations")
     lead = models.ForeignKey(Lead, on_delete=models.SET_NULL, null=True, blank=True, related_name="bot_conversations")
+    assigned_to = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="assigned_bot_conversations")
     status = models.CharField(max_length=32, choices=Statuses.choices, default=Statuses.OPEN)
+    priority = models.CharField(max_length=32, choices=Priorities.choices, default=Priorities.NORMAL)
+    bot_enabled = models.BooleanField(default=True)
+    handoff_required = models.BooleanField(default=False)
+    handoff_reason = models.TextField(blank=True)
+    last_message_at = models.DateTimeField(null=True, blank=True)
+    last_inbound_at = models.DateTimeField(null=True, blank=True)
+    last_outbound_at = models.DateTimeField(null=True, blank=True)
+    unread_count = models.PositiveIntegerField(default=0)
+    metadata_json = models.JSONField(default=dict, blank=True)
 
     class Meta:
         ordering = ["-updated_at"]
@@ -95,11 +113,24 @@ class BotMessage(models.Model):
         SENT = "sent", "Sent"
         FAILED = "failed", "Failed"
 
+    class SenderTypes(models.TextChoices):
+        CLIENT = "client", "Client"
+        BOT = "bot", "Bot"
+        MANAGER = "manager", "Manager"
+        SYSTEM = "system", "System"
+        AI = "ai", "AI"
+
     conversation = models.ForeignKey(BotConversation, on_delete=models.CASCADE, related_name="messages")
     direction = models.CharField(max_length=32, choices=Directions.choices)
+    sender_type = models.CharField(max_length=32, choices=SenderTypes.choices, default=SenderTypes.CLIENT)
     text = models.TextField(blank=True)
+    external_message_id = models.CharField(max_length=255, blank=True)
     payload_json = models.JSONField(default=dict, blank=True)
+    error_text = models.TextField(blank=True)
     status = models.CharField(max_length=32, choices=Statuses.choices, default=Statuses.RECEIVED)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    delivered_at = models.DateTimeField(null=True, blank=True)
+    read_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

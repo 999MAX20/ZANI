@@ -23,12 +23,15 @@ const TimelinePage = lazy(() => import("../features/timeline/TimelinePage").then
 const BotsPage = lazy(() => import("../features/bots/BotsPage").then((module) => ({ default: module.BotsPage })));
 const BotDetailPage = lazy(() => import("../features/bots/BotDetailPage").then((module) => ({ default: module.BotDetailPage })));
 const AIAssistantPage = lazy(() => import("../features/assistant/AIAssistantPage").then((module) => ({ default: module.AIAssistantPage })));
+const AIAgentsPage = lazy(() => import("../features/assistant/AIAgentsPage").then((module) => ({ default: module.AIAgentsPage })));
 const AutomationsPage = lazy(() => import("../features/automations/AutomationsPage").then((module) => ({ default: module.AutomationsPage })));
 const ResourcesPage = lazy(() => import("../features/resources/ResourcesPage").then((module) => ({ default: module.ResourcesPage })));
 const ServicesPage = lazy(() => import("../features/services/ServicesPage").then((module) => ({ default: module.ServicesPage })));
 const AnalyticsPage = lazy(() => import("../features/analytics/AnalyticsPage").then((module) => ({ default: module.AnalyticsPage })));
 const SettingsPage = lazy(() => import("../features/settings/SettingsPage").then((module) => ({ default: module.SettingsPage })));
 const WorkingHoursPage = lazy(() => import("../features/settings/WorkingHoursPage").then((module) => ({ default: module.WorkingHoursPage })));
+const PlatformOverviewPage = lazy(() => import("../features/platform/PlatformOverviewPage").then((module) => ({ default: module.PlatformOverviewPage })));
+const PlatformMerchantsPage = lazy(() => import("../features/platform/PlatformMerchantsPage").then((module) => ({ default: module.PlatformMerchantsPage })));
 
 function MerchantRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, isMerchantUser, isPlatformUser } = useAuth();
@@ -70,6 +73,7 @@ const merchantChildren = [
   { path: "bots", element: <PageLoader><BotsPage /></PageLoader> },
   { path: "bots/:id", element: <PageLoader><BotDetailPage /></PageLoader> },
   { path: "ai-assistant", element: <PageLoader><AIAssistantPage /></PageLoader> },
+  { path: "ai-agents", element: <PageLoader><AIAgentsPage /></PageLoader> },
   { path: "automations", element: <PageLoader><AutomationsPage /></PageLoader> },
   { path: "services", element: <PageLoader><ServicesPage /></PageLoader> },
   { path: "resources", element: <PageLoader><ResourcesPage /></PageLoader> },
@@ -89,6 +93,7 @@ const legacyMerchantRoutes = [
   { path: "/timeline", element: <PageLoader><TimelinePage /></PageLoader> },
   { path: "/crm-bots", element: <PageLoader><BotsPage /></PageLoader> },
   { path: "/ai-assistant", element: <PageLoader><AIAssistantPage /></PageLoader> },
+  { path: "/ai-agents", element: <PageLoader><AIAgentsPage /></PageLoader> },
   { path: "/automations", element: <PageLoader><AutomationsPage /></PageLoader> },
   { path: "/services", element: <PageLoader><ServicesPage /></PageLoader> },
   { path: "/resources", element: <PageLoader><ResourcesPage /></PageLoader> },
@@ -125,8 +130,8 @@ const router = createBrowserRouter([
       </PlatformRoute>
     ),
     children: [
-      { index: true, element: <PlatformPlaceholderPage {...platformPages.overview} /> },
-      { path: "merchants", element: <PlatformPlaceholderPage {...platformPages.merchants} /> },
+      { index: true, element: <PageLoader><PlatformOverviewPage /></PageLoader> },
+      { path: "merchants", element: <PageLoader><PlatformMerchantsPage /></PageLoader> },
       { path: "prospects", element: <PlatformPlaceholderPage {...platformPages.prospects} /> },
       { path: "billing", element: <PlatformPlaceholderPage {...platformPages.billing} /> },
       { path: "analytics", element: <PlatformPlaceholderPage {...platformPages.analytics} /> },

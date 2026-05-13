@@ -7,6 +7,7 @@ import { useMemo, useState } from "react";
 
 import { getApiErrorMessage } from "../../api/client";
 import { leadsApi } from "../../api/leads";
+import { CrmEntityDrawer, type CrmDrawerEntity } from "../../components/crm/CrmEntityDrawer";
 import { AppointmentForm } from "../../components/forms/AppointmentForm";
 import { LeadForm } from "../../components/forms/LeadForm";
 import { Button } from "../../components/ui/Button";
@@ -136,6 +137,7 @@ export function LeadsPage() {
   const [open, setOpen] = useState(false);
   const [appointmentOpen, setAppointmentOpen] = useState(false);
   const [selected, setSelected] = useState<Lead | undefined>();
+  const [drawerEntity, setDrawerEntity] = useState<CrmDrawerEntity | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [source, setSource] = useState("");
   const [search, setSearch] = useState("");
@@ -198,7 +200,7 @@ export function LeadsPage() {
       <PageHeader
         title={t("leads.title")}
         description={t("leads.description")}
-        actions={<Button variant="ai" onClick={() => setOpen(true)}><Plus size={18} />{t("leads.new")}</Button>}
+        actions={<Button variant="ai" onClick={() => { setSelected(undefined); setOpen(true); }}><Plus size={18} />{t("leads.new")}</Button>}
       />
       {leadMutation.error || appointmentMutation.error || statusMutation.error ? (
         <div className="mb-4"><ErrorState message={getApiErrorMessage(leadMutation.error || appointmentMutation.error || statusMutation.error)} /></div>
@@ -234,7 +236,7 @@ export function LeadsPage() {
                           clientName={client?.full_name || `Lead #${lead.id}`}
                           phone={client?.phone}
                           serviceName={service?.name}
-                          onOpen={() => { setSelected(lead); setOpen(true); }}
+                          onOpen={() => setDrawerEntity({ type: "lead", id: lead.id })}
                           onBook={() => { setSelected(lead); setAppointmentOpen(true); }}
                           onAiReply={() => setNotice("AI подготовил короткий ответ для заявки. Реальная отправка будет подключена через Conversations API.")}
                           t={t}
@@ -287,6 +289,7 @@ export function LeadsPage() {
           onSubmit={(payload) => appointmentMutation.mutateAsync({ ...payload, lead: selected?.id || payload.lead, client: selected?.client || payload.client, service: selected?.service || payload.service })}
         />
       </Modal>
+      <CrmEntityDrawer entity={drawerEntity} onClose={() => setDrawerEntity(null)} />
     </>
   );
 }

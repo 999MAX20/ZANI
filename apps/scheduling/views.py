@@ -6,6 +6,8 @@ from rest_framework.response import Response
 
 from apps.automations.engine import run_automations_for_event
 from apps.automations.models import AutomationRule
+from apps.activities.services import create_activity_event
+from apps.core.crm_cards import appointment_crm_card
 from apps.core.permissions import user_can_access_business
 from apps.core.viewsets import TenantModelViewSet
 from apps.businesses.models import Business
@@ -44,6 +46,28 @@ class AppointmentViewSet(TenantModelViewSet):
             payload={"trigger_type": AutomationRule.TriggerTypes.APPOINTMENT_CREATED, "appointment_id": appointment.id},
         )
 
+    def perform_update(self, serializer):
+        previous_status = serializer.instance.status
+        super().perform_update(serializer)
+        appointment = serializer.instance
+        if previous_status != Appointment.Statuses.CANCELLED and appointment.status == Appointment.Statuses.CANCELLED:
+            create_activity_event(
+                business=appointment.business,
+                client=appointment.client,
+                actor=self.request.user,
+                event_type="appointment_cancelled",
+                instance=appointment,
+                category="appointment",
+                text=f"Запись отменена: {appointment.start_at:%d.%m.%Y %H:%M}",
+                metadata={"from": previous_status, "to": appointment.status},
+            )
+            run_automations_for_event(
+                business=appointment.business,
+                trigger_type=AutomationRule.TriggerTypes.APPOINTMENT_CANCELLED,
+                entity=appointment,
+                payload={"trigger_type": AutomationRule.TriggerTypes.APPOINTMENT_CANCELLED, "appointment_id": appointment.id},
+            )
+
     @action(detail=False, methods=["get"], url_path="available-slots")
     def available_slots(self, request):
         business_id = request.query_params.get("business_id")
@@ -79,3 +103,8 @@ class AppointmentViewSet(TenantModelViewSet):
             for slot in slots
         ]
         return Response(AvailableSlotSerializer(payload, many=True).data)
+
+    @action(detail=True, methods=["get"], url_path="crm-card")
+    def crm_card(self, request, pk=None):
+        appointment = self.get_object()
+        return Response(appointment_crm_card(appointment))

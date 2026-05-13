@@ -1,24 +1,21 @@
-import json
-from urllib import request as urllib_request
-
-from django.conf import settings
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from apps.automations.engine import run_automations_for_event
 from apps.automations.models import AutomationRule
+from apps.billing.models import UsageCounter
+from apps.billing.usage import increment_usage
+from apps.bots.inbox_service import register_bot_message
 from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
+from apps.integrations.models import IntegrationEventLog
+from apps.integrations.providers import get_provider, parse_webhook, send_message, verify_webhook
 
 
 TELEGRAM_SECRET_HEADER = "HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN"
 
 
 def verify_telegram_secret(request):
-    expected_secret = settings.TELEGRAM_WEBHOOK_SECRET
-    provided_secret = request.META.get(TELEGRAM_SECRET_HEADER, "")
-    if expected_secret and provided_secret != expected_secret:
-        raise PermissionDenied("Invalid Telegram webhook secret.")
-    return provided_secret
+    return verify_webhook(BotChannel.Channels.TELEGRAM, request)
 
 
 def resolve_telegram_channel(provided_secret):
@@ -39,24 +36,12 @@ def resolve_telegram_channel(provided_secret):
 
 
 def parse_inbound_update(update):
-    message = update.get("message") or update.get("edited_message")
-    if not message:
+    parsed = parse_webhook(BotChannel.Channels.TELEGRAM, update)
+    if parsed.get("unsupported"):
         raise ValidationError("Unsupported Telegram update payload.")
-
-    chat = message.get("chat") or {}
-    sender = message.get("from") or {}
-    chat_id = chat.get("id")
-    text = message.get("text") or message.get("caption") or ""
-    if not chat_id:
+    if not parsed.get("chat_id"):
         raise ValidationError("Telegram chat id is missing.")
-
-    return {
-        "chat_id": str(chat_id),
-        "sender_id": str(sender.get("id") or ""),
-        "username": sender.get("username") or "",
-        "text": text,
-        "message": message,
-    }
+    return parsed
 
 
 def save_telegram_inbound_message(update, provided_secret):
@@ -64,19 +49,22 @@ def save_telegram_inbound_message(update, provided_secret):
     parsed = parse_inbound_update(update)
     business = channel.bot.business
 
-    conversation, _ = BotConversation.objects.get_or_create(
+    conversation, created = BotConversation.objects.get_or_create(
         business=business,
         bot=channel.bot,
         channel=BotConversation.Channels.TELEGRAM,
         external_user_id=parsed["chat_id"],
         defaults={"status": BotConversation.Statuses.OPEN},
     )
+    if created:
+        increment_usage(business, UsageCounter.Metrics.CONVERSATIONS)
     conversation.updated_at = timezone.now()
     conversation.save(update_fields=["updated_at"])
 
     message = BotMessage.objects.create(
         conversation=conversation,
         direction=BotMessage.Directions.INBOUND,
+        sender_type=BotMessage.SenderTypes.CLIENT,
         text=parsed["text"],
         payload_json={
             "telegram_update": update,
@@ -85,6 +73,15 @@ def save_telegram_inbound_message(update, provided_secret):
             "telegram_username": parsed["username"],
         },
         status=BotMessage.Statuses.RECEIVED,
+    )
+    register_bot_message(message)
+    IntegrationEventLog.objects.create(
+        business=conversation.business,
+        provider=BotChannel.Channels.TELEGRAM,
+        channel=BotChannel.Channels.TELEGRAM,
+        direction=IntegrationEventLog.Directions.INBOUND,
+        payload_json={"update": update, "conversation_id": conversation.id, "message_id": message.id},
+        status=IntegrationEventLog.Statuses.PROCESSED,
     )
     run_automations_for_event(
         business=conversation.business,
@@ -101,12 +98,8 @@ def save_telegram_inbound_message(update, provided_secret):
 
 
 def send_telegram_message(channel, chat_id, text):
-    token = channel.config_json.get("bot_token", "")
-    if not settings.TELEGRAM_ENABLED or not token:
-        return {"ok": True, "mock": True, "reason": "Telegram disabled or bot token missing."}
+    return send_message(channel, chat_id, text)
 
-    url = f"{settings.TELEGRAM_BASE_API_URL}/bot{token}/sendMessage"
-    payload = json.dumps({"chat_id": chat_id, "text": text}).encode("utf-8")
-    request = urllib_request.Request(url, data=payload, headers={"Content-Type": "application/json"}, method="POST")
-    with urllib_request.urlopen(request, timeout=10) as response:
-        return json.loads(response.read().decode("utf-8"))
+
+def set_telegram_webhook(channel, webhook_url):
+    return get_provider(BotChannel.Channels.TELEGRAM).set_webhook(channel, webhook_url)

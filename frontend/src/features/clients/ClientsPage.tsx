@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 
 import { clientsApi } from "../../api/clients";
 import { getApiErrorMessage } from "../../api/client";
+import { CrmEntityDrawer, type CrmDrawerEntity } from "../../components/crm/CrmEntityDrawer";
 import { ClientForm } from "../../components/forms/ClientForm";
 import { DataTable } from "../../components/tables/DataTable";
 import { Button } from "../../components/ui/Button";
@@ -22,6 +23,7 @@ export function ClientsPage() {
   const { clients, leads, appointments } = useEntityData();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Client | undefined>();
+  const [drawerEntity, setDrawerEntity] = useState<CrmDrawerEntity | null>(null);
   const [search, setSearch] = useState("");
 
   const mutation = useMutation({
@@ -68,12 +70,21 @@ export function ClientsPage() {
           { header: "Заявки", cell: (client) => (leads.data || []).filter((lead) => lead.client === client.id).length },
           { header: "Записи", cell: (client) => (appointments.data || []).filter((appointment) => appointment.client === client.id).length },
           { header: "Создан", cell: (client) => formatDate(client.created_at) },
-          { header: "Действия", cell: (client) => <Button variant="ghost" onClick={() => { setEditing(client); setOpen(true); }}><Search size={16} />Открыть</Button> },
+          {
+            header: "Действия",
+            cell: (client) => (
+              <div className="flex flex-wrap gap-2">
+                <Button variant="ghost" onClick={() => setDrawerEntity({ type: "client", id: client.id })}><Search size={16} />Карточка</Button>
+                <Button variant="ghost" onClick={() => { setEditing(client); setOpen(true); }}>Изменить</Button>
+              </div>
+            ),
+          },
         ]}
       />
       <Modal title={editing ? "Редактировать клиента" : "Создать клиента"} open={open} onClose={() => { setOpen(false); setEditing(undefined); }}>
         <ClientForm businessId={business.id} initial={editing} onSubmit={(payload) => mutation.mutateAsync(payload)} />
       </Modal>
+      <CrmEntityDrawer entity={drawerEntity} onClose={() => setDrawerEntity(null)} />
     </>
   );
 }

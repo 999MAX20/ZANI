@@ -3,9 +3,18 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.ai_core.assistant import assert_business_access, build_crm_context
-from apps.ai_core.models import AIRequestLog, BusinessKnowledgeItem
-from apps.ai_core.serializers import AIRequestLogSerializer, BusinessKnowledgeItemSerializer, AIAssistantChatSerializer
+from apps.ai_core.models import AIToolCallLog, AIRequestLog, AgentProfile, BusinessKnowledgeItem
+from apps.ai_core.serializers import (
+    AIAssistantChatSerializer,
+    AIToolCallLogSerializer,
+    AIToolSuggestSerializer,
+    AIRequestLogSerializer,
+    AgentProfileSerializer,
+    BusinessKnowledgeItemSerializer,
+)
 from apps.ai_core.services import run_ai_request
+from apps.ai_core.tool_registry import execute_tool_call, registered_tools, suggest_tool_calls
+from apps.core.permissions import user_can_access_business
 from apps.core.viewsets import TenantModelViewSet
 
 
@@ -20,6 +29,11 @@ class AIRequestLogViewSet(TenantModelViewSet):
 class BusinessKnowledgeItemViewSet(TenantModelViewSet):
     queryset = BusinessKnowledgeItem.objects.select_related("business")
     serializer_class = BusinessKnowledgeItemSerializer
+
+
+class AgentProfileViewSet(TenantModelViewSet):
+    queryset = AgentProfile.objects.select_related("business", "bot")
+    serializer_class = AgentProfileSerializer
 
 
 class AIAssistantChatView(APIView):
@@ -52,3 +66,51 @@ class AIAssistantChatView(APIView):
                 "context": crm_context["summary"],
             }
         )
+
+
+class AIToolSuggestView(APIView):
+    def post(self, request):
+        serializer = AIToolSuggestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        business = serializer.validated_data["business"]
+        if not user_can_access_business(request.user, business):
+            raise PermissionDenied("You do not have access to this business.")
+
+        logs = suggest_tool_calls(
+            business=business,
+            user=request.user,
+            conversation=serializer.validated_data.get("conversation"),
+            message=serializer.validated_data.get("message", ""),
+        )
+        return Response(
+            {
+                "tools": [
+                    {
+                        "name": tool.name,
+                        "description": tool.description,
+                        "requires_confirmation": tool.requires_confirmation,
+                    }
+                    for tool in registered_tools()
+                ],
+                "suggested_actions": AIToolCallLogSerializer(logs, many=True).data,
+            },
+            status=201,
+        )
+
+
+class AIToolExecuteView(APIView):
+    def post(self, request, log_id):
+        log = AIToolCallLog.objects.select_related("business", "conversation").filter(id=log_id).first()
+        if log is None:
+            raise PermissionDenied("Tool call was not found.")
+        if not user_can_access_business(request.user, log.business):
+            raise PermissionDenied("You do not have access to this business.")
+        if log.status != AIToolCallLog.Statuses.SUGGESTED:
+            log.status = AIToolCallLog.Statuses.REJECTED
+            log.error = "Only suggested tool calls can be executed."
+            log.save(update_fields=["status", "error"])
+            return Response(AIToolCallLogSerializer(log).data, status=400)
+
+        log = execute_tool_call(log, request.user)
+        status_code = 200 if log.status == AIToolCallLog.Statuses.EXECUTED else 400
+        return Response(AIToolCallLogSerializer(log).data, status=status_code)

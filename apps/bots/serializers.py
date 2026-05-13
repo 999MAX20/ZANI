@@ -1,6 +1,9 @@
 from rest_framework import serializers
 
 from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
+from apps.bots.inbox_service import register_bot_message
+from apps.billing.models import UsageCounter
+from apps.billing.usage import increment_usage
 from apps.clients.models import Client
 from apps.leads.models import Lead
 
@@ -19,6 +22,15 @@ class BotChannelSerializer(serializers.ModelSerializer):
         read_only_fields = ["public_token", "created_at", "updated_at"]
 
 
+class TelegramChannelConfigSerializer(serializers.Serializer):
+    bot_token = serializers.CharField(required=False, allow_blank=True, trim_whitespace=True)
+    webhook_secret = serializers.CharField(required=False, allow_blank=True, trim_whitespace=True)
+
+
+class TelegramSetWebhookSerializer(serializers.Serializer):
+    webhook_url = serializers.URLField(required=True)
+
+
 class BotConversationSerializer(serializers.ModelSerializer):
     class Meta:
         model = BotConversation
@@ -30,6 +42,7 @@ class BotConversationSerializer(serializers.ModelSerializer):
         bot = attrs.get("bot") or getattr(self.instance, "bot", None)
         client = attrs.get("client") or getattr(self.instance, "client", None)
         lead = attrs.get("lead") or getattr(self.instance, "lead", None)
+        assigned_to = attrs.get("assigned_to") or getattr(self.instance, "assigned_to", None)
 
         if business and bot and bot.business_id != business.id:
             raise serializers.ValidationError("Bot must belong to the selected business.")
@@ -37,7 +50,14 @@ class BotConversationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Client must belong to the selected business.")
         if business and lead and lead.business_id != business.id:
             raise serializers.ValidationError("Lead must belong to the selected business.")
+        if business and assigned_to and not business.members.filter(user=assigned_to, is_active=True).exists():
+            raise serializers.ValidationError("Assigned user must be an active member of the selected business.")
         return attrs
+
+    def create(self, validated_data):
+        conversation = super().create(validated_data)
+        increment_usage(conversation.business, UsageCounter.Metrics.CONVERSATIONS)
+        return conversation
 
 
 class BotMessageSerializer(serializers.ModelSerializer):
@@ -45,6 +65,11 @@ class BotMessageSerializer(serializers.ModelSerializer):
         model = BotMessage
         fields = "__all__"
         read_only_fields = ["created_at"]
+
+    def create(self, validated_data):
+        message = super().create(validated_data)
+        register_bot_message(message)
+        return message
 
 
 class PublicWebsiteChatChannelSerializer(serializers.Serializer):
@@ -88,9 +113,11 @@ class PublicWebsiteChatConversationCreateSerializer(serializers.Serializer):
             client=client,
             lead=lead,
         )
+        increment_usage(business, UsageCounter.Metrics.CONVERSATIONS)
         bot_message = BotMessage.objects.create(
             conversation=conversation,
             direction=BotMessage.Directions.INBOUND,
+            sender_type=BotMessage.SenderTypes.CLIENT,
             text=message,
             payload_json={
                 "full_name": full_name,
@@ -99,6 +126,7 @@ class PublicWebsiteChatConversationCreateSerializer(serializers.Serializer):
                 "source": "website_chat",
             },
         )
+        register_bot_message(bot_message)
         return {"conversation": conversation, "message": bot_message, "client": client, "lead": lead}
 
     def _get_or_create_client(self, business, full_name, phone, email):
@@ -140,9 +168,12 @@ class PublicWebsiteChatMessageCreateSerializer(serializers.Serializer):
         if validated_data.get("external_user_id") and not conversation.external_user_id:
             conversation.external_user_id = validated_data["external_user_id"]
             conversation.save(update_fields=["external_user_id", "updated_at"])
-        return BotMessage.objects.create(
+        bot_message = BotMessage.objects.create(
             conversation=conversation,
             direction=BotMessage.Directions.INBOUND,
+            sender_type=BotMessage.SenderTypes.CLIENT,
             text=validated_data["message"],
             payload_json={"source": "website_chat"},
         )
+        register_bot_message(bot_message)
+        return bot_message

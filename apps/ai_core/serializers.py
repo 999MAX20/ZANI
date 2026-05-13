@@ -1,7 +1,8 @@
 from rest_framework import serializers
 
-from apps.ai_core.models import AIRequestLog, BusinessKnowledgeItem
+from apps.ai_core.models import AIToolCallLog, AIRequestLog, AgentProfile, BusinessKnowledgeItem
 from apps.businesses.models import Business
+from apps.bots.models import BotConversation
 
 
 class AIRequestLogSerializer(serializers.ModelSerializer):
@@ -18,7 +19,43 @@ class BusinessKnowledgeItemSerializer(serializers.ModelSerializer):
         read_only_fields = ["created_at", "updated_at"]
 
 
+class AgentProfileSerializer(serializers.ModelSerializer):
+    bot_name = serializers.CharField(source="bot.name", read_only=True)
+
+    class Meta:
+        model = AgentProfile
+        fields = "__all__"
+        read_only_fields = ["created_at", "updated_at"]
+
+    def validate(self, attrs):
+        business = attrs.get("business") or getattr(self.instance, "business", None)
+        bot = attrs.get("bot") if "bot" in attrs else getattr(self.instance, "bot", None)
+        if business and bot and bot.business_id != business.id:
+            raise serializers.ValidationError("Bot must belong to the selected business.")
+        return attrs
+
+
 class AIAssistantChatSerializer(serializers.Serializer):
     business = serializers.PrimaryKeyRelatedField(queryset=Business.objects.all())
     message = serializers.CharField(required=True, allow_blank=False)
     prompt_type = serializers.CharField(required=False, default="crm_assistant")
+
+
+class AIToolCallLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AIToolCallLog
+        fields = "__all__"
+        read_only_fields = ["created_at"]
+
+
+class AIToolSuggestSerializer(serializers.Serializer):
+    business = serializers.PrimaryKeyRelatedField(queryset=Business.objects.all())
+    conversation = serializers.PrimaryKeyRelatedField(queryset=BotConversation.objects.all(), required=False, allow_null=True)
+    message = serializers.CharField(required=False, allow_blank=True)
+
+    def validate(self, attrs):
+        business = attrs["business"]
+        conversation = attrs.get("conversation")
+        if conversation and conversation.business_id != business.id:
+            raise serializers.ValidationError("Conversation must belong to the selected business.")
+        return attrs

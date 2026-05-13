@@ -1,11 +1,11 @@
 {
-  "name": "ai-smb-platform-frontend",
+  "name": "zani-frontend",
   "private": true,
   "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && vite build --config widget/vite.config.ts",
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {

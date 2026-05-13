@@ -3,6 +3,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from apps.activities.services import write_activity_event
+from apps.core.crm_cards import deal_crm_card
 from apps.core.viewsets import TenantModelViewSet
 from apps.crm.models import Deal, Pipeline, PipelineStage, StageTransition
 from apps.crm.serializers import DealSerializer, PipelineSerializer, PipelineStageSerializer, StageTransitionSerializer
@@ -41,8 +42,13 @@ class DealViewSet(TenantModelViewSet):
         else:
             deal.status = Deal.Statuses.OPEN
         deal.save(update_fields=["stage", "probability", "status", "updated_at"])
-        write_activity_event(request, "deal.stage_changed", deal, text=f"Moved to {stage.name}")
+        write_activity_event(request, "deal_stage_changed", deal, text=f"Сделка перешла на стадию: {stage.name}")
         return Response(DealSerializer(deal).data)
+
+    @action(detail=True, methods=["get"], url_path="crm-card")
+    def crm_card(self, request, pk=None):
+        deal = self.get_object()
+        return Response(deal_crm_card(deal))
 
 
 class StageTransitionViewSet(TenantModelViewSet):

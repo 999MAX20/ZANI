@@ -54,6 +54,44 @@ export type Subscription = {
   updated_at: string;
 };
 
+export type UsageSummaryItem = {
+  metric: "ai_requests" | "bot_messages" | "users" | "conversations";
+  value: number;
+  limit: number | null;
+  is_limited: boolean;
+  is_over_limit: boolean;
+  period_start: string;
+  period_end: string;
+};
+
+export type PlatformOverview = {
+  total_businesses: number;
+  active_businesses: number;
+  trial_businesses: number;
+  active_subscriptions: number;
+  mrr_estimate: string;
+  total_users: number;
+  bot_count: number;
+  active_bot_channels: number;
+  ai_requests_30d: number;
+  conversations_30d: number;
+  errors: {
+    count: number;
+    items: unknown[];
+  };
+};
+
+export type PlatformMerchant = {
+  id: Id;
+  name: string;
+  status: Business["status"];
+  created_at: string;
+  owner: Pick<User, "id" | "email" | "full_name">;
+  plan: Pick<SubscriptionPlan, "id" | "name" | "code" | "monthly_price"> | null;
+  subscription_status: Subscription["status"] | null;
+  usage_summary: UsageSummaryItem[];
+};
+
 export type Bot = {
   id: Id;
   business: Id;
@@ -80,13 +118,37 @@ export type BotChannel = {
 export type BotConversation = {
   id: Id;
   business: Id;
+  business_name?: string;
   bot: Id;
+  bot_name?: string;
   public_id: string;
   channel: "website" | "telegram" | "whatsapp" | "instagram";
   external_user_id: string;
+  external_thread_id?: string;
   client: Id | null;
+  client_name?: string;
+  client_phone?: string;
   lead: Id | null;
+  assigned_to?: Id | null;
+  assigned_to_email?: string;
   status: "open" | "closed" | "archived";
+  priority?: "low" | "normal" | "high" | "urgent";
+  bot_enabled?: boolean;
+  handoff_required?: boolean;
+  handoff_reason?: string;
+  last_message_at?: string | null;
+  last_inbound_at?: string | null;
+  last_outbound_at?: string | null;
+  unread_count?: number;
+  metadata_json?: Record<string, unknown>;
+  last_message?: {
+    id: Id;
+    direction: "inbound" | "outbound";
+    sender_type: "client" | "bot" | "manager" | "system" | "ai";
+    text: string;
+    status: "received" | "queued" | "sent" | "failed";
+    created_at: string;
+  } | null;
   created_at: string;
   updated_at: string;
 };
@@ -95,9 +157,15 @@ export type BotMessage = {
   id: Id;
   conversation: Id;
   direction: "inbound" | "outbound";
+  sender_type: "client" | "bot" | "manager" | "system" | "ai";
   text: string;
+  external_message_id?: string;
   payload_json: Record<string, unknown>;
+  error_text?: string;
   status: "received" | "queued" | "sent" | "failed";
+  sent_at?: string | null;
+  delivered_at?: string | null;
+  read_at?: string | null;
   created_at: string;
 };
 
@@ -275,6 +343,24 @@ export type AnalyticsEvent = {
   created_at: string;
 };
 
+export type AgentProfile = {
+  id: Id;
+  business: Id;
+  bot: Id | null;
+  bot_name?: string | null;
+  name: string;
+  role_description: string;
+  tone: "friendly" | "expert" | "formal" | "sales" | "support";
+  language: string;
+  is_active: boolean;
+  system_prompt: string;
+  rules_json: Record<string, unknown>;
+  allowed_tools_json: Record<string, unknown>;
+  escalation_rules_json: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+};
+
 export type ActivityEvent = {
   id: Id;
   business: Id;
@@ -309,6 +395,34 @@ export type Task = {
   completed_at: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type Note = {
+  id: Id;
+  business: Id;
+  client: Id | null;
+  author: Id | null;
+  entity_type: string;
+  entity_id: string;
+  text: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CrmEntityType = "client" | "lead" | "deal" | "appointment";
+
+export type CrmCardPayload = {
+  client: Client | null;
+  lead: Lead | null;
+  deal: Deal | null;
+  appointment: Appointment | null;
+  leads: Lead[];
+  deals: Deal[];
+  appointments: Appointment[];
+  tasks: Task[];
+  conversations: BotConversation[];
+  timeline: ActivityEvent[];
+  notes: Note[];
 };
 
 export type AutomationRule = {

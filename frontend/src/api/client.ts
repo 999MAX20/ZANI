@@ -1,6 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 
-import { refreshToken } from "./auth";
+import { refreshToken } from "./token";
 import { tokenStorage } from "../lib/storage";
 
 const baseURL = import.meta.env.VITE_API_URL || "";

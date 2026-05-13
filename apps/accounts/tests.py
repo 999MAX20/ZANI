@@ -1,5 +1,7 @@
 from django.core.cache import cache
+from django.core.management import call_command
 from django.test import TestCase
+from io import StringIO
 from rest_framework.test import APIClient
 
 from apps.accounts.auth_views import ThrottledTokenObtainPairView, ThrottledTokenRefreshView
@@ -71,3 +73,34 @@ class AuthSecurityBaselineTests(TestCase):
         )
 
         self.assertEqual(throttled_response.status_code, 429)
+
+
+class CreatePlatformAdminCommandTests(TestCase):
+    def test_command_creates_and_updates_platform_admin(self):
+        output = StringIO()
+
+        call_command(
+            "create_platform_admin",
+            email="admin@zani.local",
+            password="admin12345",
+            stdout=output,
+        )
+
+        user = User.objects.get(email="admin@zani.local")
+        self.assertEqual(user.role, User.Roles.PLATFORM_ADMIN)
+        self.assertTrue(user.is_staff)
+        self.assertTrue(user.is_superuser)
+        self.assertTrue(user.check_password("admin12345"))
+
+        call_command(
+            "create_platform_admin",
+            email="admin@zani.local",
+            password="newpass123",
+            full_name="Platform Owner",
+            stdout=output,
+        )
+
+        user.refresh_from_db()
+        self.assertEqual(User.objects.filter(email="admin@zani.local").count(), 1)
+        self.assertEqual(user.full_name, "Platform Owner")
+        self.assertTrue(user.check_password("newpass123"))

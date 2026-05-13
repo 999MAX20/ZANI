@@ -1,14 +1,23 @@
 from datetime import datetime, time
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from zoneinfo import ZoneInfo
 
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings
 from django.test import TestCase
 from django.urls import reverse
+from rest_framework.exceptions import ValidationError
 from rest_framework.test import APIClient
 
 from apps.accounts.models import User
+from apps.ai_core.models import AIRequestLog
+from apps.billing.models import Subscription, SubscriptionPlan, UsageCounter
 from apps.businesses.models import Business, BusinessMember
+from apps.bots.models import Bot, BotChannel, BotConversation
 from apps.clients.models import Client
 from apps.core.models import AuditLog
+from apps.core.file_validation import normalize_extension, validate_file_upload
 from apps.leads.models import Lead
 from apps.scheduling.models import Resource, WorkingHours
 from apps.services.models import Service
@@ -198,3 +207,135 @@ class PlatformAccessFoundationTests(TestCase):
         self.assertTrue(response.data["is_platform_user"])
         self.assertFalse(response.data["is_merchant_user"])
         self.assertEqual(response.data["businesses"], [])
+
+
+class PlatformDashboardTests(TestCase):
+    def setUp(self):
+        self.api = APIClient()
+        self.platform_admin = User.objects.create_user(
+            username="platform-admin-dashboard",
+            email="platform-admin-dashboard@example.com",
+            password="pass",
+            role=User.Roles.PLATFORM_ADMIN,
+        )
+        self.platform_manager = User.objects.create_user(
+            username="platform-manager-dashboard",
+            email="platform-manager-dashboard@example.com",
+            password="pass",
+            role=User.Roles.PLATFORM_MANAGER,
+        )
+        self.owner = User.objects.create_user(
+            username="merchant-dashboard",
+            email="merchant-dashboard@example.com",
+            password="pass",
+            role=User.Roles.BUSINESS_OWNER,
+        )
+        self.business = Business.objects.create(
+            owner=self.owner,
+            name="Dashboard Clinic",
+            slug="dashboard-clinic",
+            status=Business.Statuses.ACTIVE,
+        )
+        BusinessMember.objects.create(business=self.business, user=self.owner, role=BusinessMember.Roles.OWNER)
+        self.trial_business = Business.objects.create(
+            owner=self.owner,
+            name="Trial Clinic",
+            slug="trial-clinic",
+            status=Business.Statuses.TRIAL,
+        )
+        self.plan = SubscriptionPlan.objects.create(name="Growth", code="growth-test", monthly_price=9900)
+        Subscription.objects.create(business=self.business, plan=self.plan, status=Subscription.Statuses.ACTIVE)
+        UsageCounter.objects.create(
+            business=self.business,
+            period_start="2026-05-01",
+            period_end="2026-06-01",
+            metric=UsageCounter.Metrics.AI_REQUESTS,
+            value=7,
+        )
+        self.bot = Bot.objects.create(business=self.business, name="Clinic Bot", status=Bot.Statuses.ACTIVE)
+        BotChannel.objects.create(bot=self.bot, channel=BotChannel.Channels.TELEGRAM, status=BotChannel.Statuses.ACTIVE)
+        BotConversation.objects.create(business=self.business, bot=self.bot, channel=BotConversation.Channels.TELEGRAM)
+        AIRequestLog.objects.create(
+            business=self.business,
+            user=self.owner,
+            source=AIRequestLog.Sources.CRM,
+            prompt_type="summary",
+        )
+
+    def test_platform_users_can_open_overview_and_merchants(self):
+        for user in [self.platform_admin, self.platform_manager]:
+            self.api.force_authenticate(user)
+
+            overview = self.api.get("/api/platform/overview/")
+            merchants = self.api.get("/api/platform/merchants/")
+
+            self.assertEqual(overview.status_code, 200)
+            self.assertEqual(merchants.status_code, 200)
+            self.assertGreaterEqual(overview.data["total_businesses"], 2)
+            self.assertEqual(overview.data["active_subscriptions"], 1)
+            self.assertEqual(overview.data["mrr_estimate"], "9900")
+            self.assertEqual(overview.data["bot_count"], 1)
+            self.assertEqual(overview.data["active_bot_channels"], 1)
+            self.assertEqual(overview.data["ai_requests_30d"], 1)
+            self.assertEqual(overview.data["conversations_30d"], 1)
+            merchant = next(item for item in merchants.data if item["id"] == self.business.id)
+            self.assertEqual(merchant["owner"]["email"], self.owner.email)
+            self.assertEqual(merchant["plan"]["name"], self.plan.name)
+            self.assertEqual(merchant["subscription_status"], Subscription.Statuses.ACTIVE)
+            self.assertTrue(merchant["usage_summary"])
+
+    def test_merchant_user_cannot_open_platform_dashboard_api(self):
+        self.api.force_authenticate(self.owner)
+
+        overview = self.api.get("/api/platform/overview/")
+        merchants = self.api.get("/api/platform/merchants/")
+
+        self.assertEqual(overview.status_code, 403)
+        self.assertEqual(merchants.status_code, 403)
+
+
+class FileSafetyFoundationTests(TestCase):
+    def setUp(self):
+        self.api = APIClient()
+        self.user = User.objects.create_user(username="file-user", email="file-user@example.com", password="pass")
+
+    def test_file_validation_accepts_allowed_file(self):
+        uploaded = SimpleUploadedFile("document.pdf", b"content", content_type="application/pdf")
+
+        self.assertEqual(normalize_extension(uploaded.name), "pdf")
+        self.assertIs(validate_file_upload(uploaded, max_size_mb=1), uploaded)
+
+    def test_file_validation_rejects_extension_content_type_and_size(self):
+        bad_extension = SimpleUploadedFile("payload.exe", b"content", content_type="application/octet-stream")
+        bad_type = SimpleUploadedFile("document.pdf", b"content", content_type="application/octet-stream")
+        too_large = SimpleUploadedFile("document.pdf", b"x" * 11, content_type="application/pdf")
+
+        with self.assertRaises(ValidationError):
+            validate_file_upload(bad_extension)
+        with self.assertRaises(ValidationError):
+            validate_file_upload(bad_type)
+        with self.assertRaises(ValidationError):
+            validate_file_upload(too_large, max_size_mb=0.000001)
+
+    def test_private_media_endpoint_requires_auth_and_serves_private_file(self):
+        with TemporaryDirectory() as temp_dir, override_settings(PRIVATE_MEDIA_ROOT=temp_dir, USE_S3=False):
+            private_file = Path(temp_dir) / "business-1" / "note.txt"
+            private_file.parent.mkdir(parents=True)
+            private_file.write_text("secret note")
+
+            anonymous_response = self.api.get("/api/files/private/business-1/note.txt/")
+            self.assertEqual(anonymous_response.status_code, 401)
+
+            self.api.force_authenticate(self.user)
+            response = self.api.get("/api/files/private/business-1/note.txt/")
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(b"".join(response.streaming_content), b"secret note")
+
+    def test_private_media_endpoint_blocks_missing_files(self):
+        with TemporaryDirectory() as temp_dir, override_settings(PRIVATE_MEDIA_ROOT=temp_dir, USE_S3=False):
+            self.api.force_authenticate(self.user)
+
+            response = self.api.get("/api/files/private/missing.txt/")
+
+            self.assertEqual(response.status_code, 404)

@@ -8,6 +8,8 @@ from apps.bots.serializers import (
     PublicWebsiteChatChannelSerializer,
     PublicWebsiteChatConversationCreateSerializer,
     PublicWebsiteChatMessageCreateSerializer,
+    TelegramChannelConfigSerializer,
+    TelegramSetWebhookSerializer,
 )
 from apps.automations.engine import run_automations_for_event
 from apps.automations.models import AutomationRule
@@ -18,6 +20,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
+from apps.integrations.models import IntegrationEventLog
+from apps.integrations.telegram import set_telegram_webhook
 
 
 class BotViewSet(TenantModelViewSet):
@@ -29,6 +33,60 @@ class BotChannelViewSet(TenantModelViewSet):
     queryset = BotChannel.objects.select_related("bot", "bot__business")
     serializer_class = BotChannelSerializer
     business_lookup = "bot__business"
+
+    def _get_telegram_channel(self):
+        channel = self.get_object()
+        if channel.channel != BotChannel.Channels.TELEGRAM:
+            raise PermissionDenied("This action is only available for Telegram channels.")
+        return channel
+
+    @action(detail=True, methods=["post"], url_path="telegram-config")
+    def telegram_config(self, request, pk=None):
+        channel = self._get_telegram_channel()
+        serializer = TelegramChannelConfigSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        config = dict(channel.config_json or {})
+        if "bot_token" in serializer.validated_data:
+            config["bot_token"] = serializer.validated_data["bot_token"]
+        if "webhook_secret" in serializer.validated_data:
+            config["webhook_secret"] = serializer.validated_data["webhook_secret"]
+        channel.config_json = config
+        channel.status = BotChannel.Statuses.ACTIVE if config.get("bot_token") else channel.status
+        channel.save(update_fields=["config_json", "status", "updated_at"])
+        return Response(
+            {
+                "ok": True,
+                "token_configured": bool(config.get("bot_token")),
+                "webhook_secret_configured": bool(config.get("webhook_secret")),
+                "status": channel.status,
+            }
+        )
+
+    @action(detail=True, methods=["post"], url_path="set-telegram-webhook")
+    def set_telegram_webhook(self, request, pk=None):
+        channel = self._get_telegram_channel()
+        serializer = TelegramSetWebhookSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        result = set_telegram_webhook(channel, serializer.validated_data["webhook_url"])
+        return Response(result)
+
+    @action(detail=True, methods=["get"], url_path="telegram-status")
+    def telegram_status(self, request, pk=None):
+        channel = self._get_telegram_channel()
+        failed_event = IntegrationEventLog.objects.filter(
+            business=channel.bot.business,
+            provider=BotChannel.Channels.TELEGRAM,
+            channel=BotChannel.Channels.TELEGRAM,
+            status=IntegrationEventLog.Statuses.FAILED,
+        ).first()
+        return Response(
+            {
+                "status": channel.status,
+                "token_configured": bool((channel.config_json or {}).get("bot_token")),
+                "webhook_secret_configured": bool((channel.config_json or {}).get("webhook_secret")),
+                "last_error": failed_event.error if failed_event else "",
+            }
+        )
 
 
 class BotConversationViewSet(TenantModelViewSet):

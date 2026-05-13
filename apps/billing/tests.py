@@ -2,7 +2,8 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 
 from apps.accounts.models import User
-from apps.billing.models import Subscription, SubscriptionPlan
+from apps.billing.models import Subscription, SubscriptionPlan, UsageCounter
+from apps.billing.usage import check_limit, increment_usage
 from apps.businesses.models import Business, BusinessMember
 
 
@@ -50,3 +51,26 @@ class BillingFoundationTests(TestCase):
         response = self.api.get("/api/billing/current-subscription/")
 
         self.assertEqual(response.status_code, 401)
+
+    def test_usage_counter_increments_and_reads_plan_limit(self):
+        plan = SubscriptionPlan.objects.get(code="start")
+        plan.limits_json = {"ai_requests": 10}
+        plan.save(update_fields=["limits_json"])
+        Subscription.objects.create(business=self.business, plan=plan)
+
+        increment_usage(self.business, UsageCounter.Metrics.AI_REQUESTS, amount=3)
+        result = check_limit(self.business, UsageCounter.Metrics.AI_REQUESTS)
+
+        self.assertEqual(result["value"], 3)
+        self.assertEqual(result["limit"], 10)
+        self.assertFalse(result["is_over_limit"])
+
+    def test_usage_summary_endpoint_returns_current_business_usage(self):
+        increment_usage(self.business, UsageCounter.Metrics.BOT_MESSAGES, amount=2)
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.get("/api/billing/usage-summary/")
+
+        self.assertEqual(response.status_code, 200)
+        metrics = {item["metric"]: item for item in response.data}
+        self.assertEqual(metrics["bot_messages"]["value"], 2)

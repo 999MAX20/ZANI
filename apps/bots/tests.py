@@ -3,9 +3,11 @@ from django.test import override_settings
 from rest_framework.test import APIClient
 
 from apps.accounts.models import User
-from apps.ai_core.models import AIRequestLog, BusinessKnowledgeItem
+from apps.ai_core.models import AIRequestLog, AgentProfile, BusinessKnowledgeItem
 from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
 from apps.businesses.models import Business, BusinessMember
+from apps.leads.models import Lead
+from apps.tasks.models import Task
 
 
 class BotsFoundationTests(TestCase):
@@ -203,6 +205,34 @@ class BotsFoundationTests(TestCase):
         self.assertEqual(log.input_json["context"][0]["title"], "Booking policy")
 
     @override_settings(OPENAI_API_KEY="")
+    def test_suggest_reply_uses_bot_agent_profile_when_present(self):
+        bot = Bot.objects.create(business=self.business, name="Website bot", status=Bot.Statuses.ACTIVE)
+        AgentProfile.objects.create(
+            business=self.business,
+            bot=bot,
+            name="Clinic sales agent",
+            role_description="Qualify leads and offer appointment slots.",
+            tone=AgentProfile.Tones.SALES,
+            language="ru",
+            system_prompt="Always be concise.",
+        )
+        conversation = BotConversation.objects.create(
+            business=self.business,
+            bot=bot,
+            channel=BotConversation.Channels.WEBSITE,
+            external_user_id="visitor-agent",
+        )
+        BotMessage.objects.create(conversation=conversation, direction=BotMessage.Directions.INBOUND, text="Хочу записаться")
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(f"/api/bot-conversations/{conversation.id}/suggest-reply/")
+
+        self.assertEqual(response.status_code, 200)
+        log = AIRequestLog.objects.get(prompt_type="bot_suggest_reply")
+        self.assertEqual(log.input_json["agent_profile"]["name"], "Clinic sales agent")
+        self.assertIn("Clinic sales agent", log.input_json["user_input"])
+
+    @override_settings(OPENAI_API_KEY="")
     def test_suggest_reply_rejects_foreign_conversation(self):
         bot = Bot.objects.create(business=self.other_business, name="Other bot", status=Bot.Statuses.ACTIVE)
         conversation = BotConversation.objects.create(
@@ -216,3 +246,211 @@ class BotsFoundationTests(TestCase):
         response = self.api.post(f"/api/bot-conversations/{conversation.id}/suggest-reply/")
 
         self.assertEqual(response.status_code, 404)
+
+
+class InboxBackendTests(TestCase):
+    def setUp(self):
+        self.api = APIClient()
+        self.owner = User.objects.create_user(
+            username="inbox-owner",
+            email="inbox-owner@example.com",
+            password="pass",
+            role=User.Roles.BUSINESS_OWNER,
+        )
+        self.manager = User.objects.create_user(
+            username="inbox-manager",
+            email="inbox-manager@example.com",
+            password="pass",
+            role=User.Roles.BUSINESS_MANAGER,
+        )
+        self.other_owner = User.objects.create_user(
+            username="other-inbox-owner",
+            email="other-inbox-owner@example.com",
+            password="pass",
+            role=User.Roles.BUSINESS_OWNER,
+        )
+        self.platform_user = User.objects.create_user(
+            username="inbox-platform",
+            email="inbox-platform@example.com",
+            password="pass",
+            role=User.Roles.PLATFORM_ADMIN,
+        )
+        self.business = Business.objects.create(owner=self.owner, name="Inbox Clinic", slug="inbox-clinic")
+        self.other_business = Business.objects.create(owner=self.other_owner, name="Other Inbox", slug="other-inbox")
+        BusinessMember.objects.create(business=self.business, user=self.owner, role=BusinessMember.Roles.OWNER)
+        BusinessMember.objects.create(business=self.business, user=self.manager, role=BusinessMember.Roles.MANAGER)
+        BusinessMember.objects.create(business=self.other_business, user=self.other_owner, role=BusinessMember.Roles.OWNER)
+        self.bot = Bot.objects.create(business=self.business, name="Inbox bot", status=Bot.Statuses.ACTIVE)
+        self.other_bot = Bot.objects.create(business=self.other_business, name="Other inbox bot", status=Bot.Statuses.ACTIVE)
+        self.client = self.business.clients.create(full_name="Алия Иванова", phone="+77015550101", email="aliya@example.com")
+        self.conversation = BotConversation.objects.create(
+            business=self.business,
+            bot=self.bot,
+            channel=BotConversation.Channels.WEBSITE,
+            external_user_id="visitor-1",
+            client=self.client,
+            priority=BotConversation.Priorities.HIGH,
+        )
+        self.other_conversation = BotConversation.objects.create(
+            business=self.other_business,
+            bot=self.other_bot,
+            channel=BotConversation.Channels.TELEGRAM,
+            external_user_id="visitor-2",
+        )
+
+    def test_inbox_conversations_are_tenant_filtered(self):
+        BotMessage.objects.create(
+            conversation=self.conversation,
+            direction=BotMessage.Directions.INBOUND,
+            text="Need consultation",
+        )
+        BotMessage.objects.create(
+            conversation=self.other_conversation,
+            direction=BotMessage.Directions.INBOUND,
+            text="Hidden message",
+        )
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.get("/api/inbox/conversations/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["results"][0]["id"], self.conversation.id)
+
+    def test_platform_and_anonymous_users_cannot_open_merchant_inbox(self):
+        self.api.force_authenticate(self.platform_user)
+        platform_response = self.api.get("/api/inbox/conversations/")
+        self.api.force_authenticate(None)
+        anonymous_response = self.api.get("/api/inbox/conversations/")
+
+        self.assertEqual(platform_response.status_code, 403)
+        self.assertIn(anonymous_response.status_code, [401, 403])
+
+    def test_bot_message_api_updates_inbox_timestamps_and_unread_counter(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            "/api/bot-messages/",
+            {
+                "conversation": self.conversation.id,
+                "direction": BotMessage.Directions.INBOUND,
+                "sender_type": BotMessage.SenderTypes.CLIENT,
+                "text": "Можно записаться?",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.conversation.refresh_from_db()
+        self.assertEqual(self.conversation.unread_count, 1)
+        self.assertIsNotNone(self.conversation.last_message_at)
+        self.assertIsNotNone(self.conversation.last_inbound_at)
+
+        inbox_response = self.api.get("/api/inbox/conversations/?unread=true&search=записаться")
+        self.assertEqual(inbox_response.status_code, 200)
+        self.assertEqual(inbox_response.data["count"], 1)
+
+    def test_inbox_messages_assign_handoff_and_mark_read_actions_work(self):
+        self.api.force_authenticate(self.owner)
+        message_response = self.api.post(
+            "/api/bot-messages/",
+            {
+                "conversation": self.conversation.id,
+                "direction": BotMessage.Directions.INBOUND,
+                "sender_type": BotMessage.SenderTypes.CLIENT,
+                "text": "Hello inbox",
+            },
+            format="json",
+        )
+        self.assertEqual(message_response.status_code, 201)
+
+        messages_response = self.api.get(f"/api/inbox/conversations/{self.conversation.id}/messages/")
+        self.assertEqual(messages_response.status_code, 200)
+        self.assertEqual(len(messages_response.data), 1)
+        self.assertEqual(messages_response.data[0]["text"], "Hello inbox")
+
+        assign_response = self.api.post(
+            f"/api/inbox/conversations/{self.conversation.id}/assign/",
+            {"user_id": self.manager.id},
+            format="json",
+        )
+        self.assertEqual(assign_response.status_code, 200)
+        self.assertEqual(assign_response.data["assigned_to"], self.manager.id)
+
+        handoff_response = self.api.post(
+            f"/api/inbox/conversations/{self.conversation.id}/handoff/",
+            {"reason": "Manager review"},
+            format="json",
+        )
+        self.assertEqual(handoff_response.status_code, 200)
+        self.assertTrue(handoff_response.data["handoff_required"])
+        self.assertFalse(handoff_response.data["bot_enabled"])
+
+        mark_read_response = self.api.post(f"/api/inbox/conversations/{self.conversation.id}/mark-read/")
+        self.assertEqual(mark_read_response.status_code, 200)
+        self.assertEqual(mark_read_response.data["unread_count"], 0)
+
+    def test_manager_can_send_outbound_message_from_inbox(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            f"/api/inbox/conversations/{self.conversation.id}/messages/",
+            {"text": "Здравствуйте, можем записать вас на завтра", "sender_type": "manager"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["direction"], BotMessage.Directions.OUTBOUND)
+        self.assertEqual(response.data["sender_type"], BotMessage.SenderTypes.MANAGER)
+        self.assertEqual(response.data["status"], BotMessage.Statuses.QUEUED)
+        self.conversation.refresh_from_db()
+        self.assertIsNotNone(self.conversation.last_outbound_at)
+
+    def test_inbox_can_create_task_and_lead_from_conversation(self):
+        BotMessage.objects.create(
+            conversation=self.conversation,
+            direction=BotMessage.Directions.INBOUND,
+            text="Нужна консультация",
+        )
+        self.api.force_authenticate(self.owner)
+
+        lead_response = self.api.post(
+            f"/api/inbox/conversations/{self.conversation.id}/create-lead/",
+            {"message": "Lead from inbox"},
+            format="json",
+        )
+        self.assertEqual(lead_response.status_code, 201)
+        self.conversation.refresh_from_db()
+        self.assertEqual(self.conversation.lead_id, lead_response.data["id"])
+
+        task_response = self.api.post(
+            f"/api/inbox/conversations/{self.conversation.id}/create-task/",
+            {"title": "Перезвонить из inbox", "priority": "high"},
+            format="json",
+        )
+        self.assertEqual(task_response.status_code, 201)
+        self.assertEqual(task_response.data["lead"], self.conversation.lead_id)
+        self.assertEqual(task_response.data["client"], self.client.id)
+        self.assertEqual(Task.objects.get(id=task_response.data["id"]).business, self.business)
+
+    def test_inbox_can_link_existing_lead_and_reject_foreign_lead(self):
+        lead = Lead.objects.create(business=self.business, client=self.client, source=Lead.Sources.WEBSITE)
+        foreign_client = self.other_business.clients.create(full_name="Foreign client")
+        foreign_lead = Lead.objects.create(business=self.other_business, client=foreign_client)
+        self.api.force_authenticate(self.owner)
+
+        foreign_response = self.api.post(
+            f"/api/inbox/conversations/{self.conversation.id}/link-lead/",
+            {"lead_id": foreign_lead.id},
+            format="json",
+        )
+        self.assertEqual(foreign_response.status_code, 400)
+
+        response = self.api.post(
+            f"/api/inbox/conversations/{self.conversation.id}/link-lead/",
+            {"lead_id": lead.id},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["lead"], lead.id)

@@ -66,7 +66,7 @@ export function PublicHomePage() {
     <>
       <Hero
         eyebrow="AI-first CRM for SMB"
-        title="NeuroBoost держит заявки, клиентов и записи под контролем."
+        title="Zani держит заявки, клиентов и записи под контролем."
         description="Официальный публичный сайт продукта. Merchant CRM уже работает, а AI-боты, billing и публичные каналы будут добавляться по дорожной карте."
       />
       <section className="px-4 pb-16">
@@ -132,7 +132,7 @@ export function PublicPricingPage() {
       <div className="mx-auto max-w-7xl">
         <div className="max-w-3xl">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Pricing</p>
-          <h1 className="mt-3 text-5xl font-semibold tracking-tight text-midnight">Тарифы NeuroBoost без подключения оплаты на этом этапе.</h1>
+          <h1 className="mt-3 text-5xl font-semibold tracking-tight text-midnight">Тарифы Zani без подключения оплаты на этом этапе.</h1>
           <p className="mt-5 text-lg leading-8 text-slate-600">Планы берутся из billing API. Реальные платежи и webhooks будут добавлены отдельным этапом.</p>
         </div>
         {plans.isLoading ? <div className="mt-8"><LoadingState label="Загружаем тарифы..." /></div> : null}

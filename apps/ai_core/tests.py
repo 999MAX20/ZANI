@@ -3,11 +3,13 @@ from rest_framework.test import APIClient
 
 from apps.accounts.models import User
 from apps.ai_core.ai_client import AIClientError, generate_text
-from apps.ai_core.models import AIRequestLog, BusinessKnowledgeItem
+from apps.ai_core.models import AIToolCallLog, AIRequestLog, AgentProfile, BusinessKnowledgeItem
+from apps.bots.models import Bot, BotConversation, BotMessage
 from apps.ai_core.services import run_ai_request
 from apps.businesses.models import Business, BusinessMember
 from apps.clients.models import Client
 from apps.leads.models import Lead
+from apps.tasks.models import Task
 
 
 class AICoreFoundationTests(TestCase):
@@ -87,6 +89,31 @@ class AICoreFoundationTests(TestCase):
         self.assertEqual(response.data["count"], 1)
         self.assertEqual(response.data["results"][0]["prompt_type"], "own")
 
+    def test_agent_profiles_are_tenant_filtered_and_validate_bot_business(self):
+        own_bot = Bot.objects.create(business=self.business, name="Own bot")
+        other_bot = Bot.objects.create(business=self.other_business, name="Other bot")
+        AgentProfile.objects.create(business=self.business, bot=own_bot, name="Own agent", tone=AgentProfile.Tones.SUPPORT)
+        AgentProfile.objects.create(business=self.other_business, bot=other_bot, name="Hidden agent")
+        self.api.force_authenticate(self.owner)
+
+        list_response = self.api.get("/api/ai/agent-profiles/")
+        self.assertEqual(list_response.status_code, 200)
+        self.assertEqual(list_response.data["count"], 1)
+        self.assertEqual(list_response.data["results"][0]["name"], "Own agent")
+
+        invalid_response = self.api.post(
+            "/api/ai/agent-profiles/",
+            {
+                "business": self.business.id,
+                "bot": other_bot.id,
+                "name": "Invalid agent",
+                "tone": AgentProfile.Tones.FRIENDLY,
+                "language": "ru",
+            },
+            format="json",
+        )
+        self.assertEqual(invalid_response.status_code, 400)
+
     @override_settings(OPENAI_API_KEY="")
     def test_ai_assistant_chat_returns_mock_and_logs_context(self):
         client = Client.objects.create(business=self.business, full_name="AI Client", phone="+77010000000")
@@ -118,3 +145,64 @@ class AICoreFoundationTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 403)
+
+    def test_ai_tool_suggest_logs_actions_without_execution(self):
+        bot = Bot.objects.create(business=self.business, name="Tool bot")
+        conversation = BotConversation.objects.create(
+            business=self.business,
+            bot=bot,
+            channel=BotConversation.Channels.WEBSITE,
+            external_user_id="tool-visitor",
+        )
+        BotMessage.objects.create(conversation=conversation, direction=BotMessage.Directions.INBOUND, text="Need follow up")
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            "/api/ai/tools/suggest/",
+            {"business": self.business.id, "conversation": conversation.id, "message": "Suggest next action"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertGreaterEqual(len(response.data["suggested_actions"]), 3)
+        self.assertEqual(Task.objects.count(), 0)
+        self.assertTrue(AIToolCallLog.objects.filter(business=self.business, status="suggested").exists())
+
+    def test_ai_tool_execute_creates_task_after_confirmation(self):
+        bot = Bot.objects.create(business=self.business, name="Task tool bot")
+        conversation = BotConversation.objects.create(
+            business=self.business,
+            bot=bot,
+            channel=BotConversation.Channels.WEBSITE,
+            external_user_id="task-visitor",
+        )
+        log = AIToolCallLog.objects.create(
+            business=self.business,
+            user=self.owner,
+            conversation=conversation,
+            tool_name="create_task",
+            input_json={"title": "AI follow-up", "priority": "high"},
+        )
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(f"/api/ai/tools/{log.id}/execute/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["status"], "executed")
+        task = Task.objects.get()
+        self.assertEqual(task.title, "AI follow-up")
+        self.assertEqual(task.business, self.business)
+
+    def test_ai_tool_execute_rejects_foreign_business_access(self):
+        log = AIToolCallLog.objects.create(
+            business=self.other_business,
+            user=self.other_owner,
+            tool_name="create_task",
+            input_json={"title": "Hidden task"},
+        )
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(f"/api/ai/tools/{log.id}/execute/")
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(Task.objects.count(), 0)

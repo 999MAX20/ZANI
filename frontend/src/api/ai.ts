@@ -1,5 +1,6 @@
 import { apiClient } from "./client";
-import type { Id } from "../types";
+import { createCrudApi } from "./crud";
+import type { AgentProfile, Id } from "../types";
 
 export type AIAssistantChatResponse = {
   answer: string;
@@ -24,3 +25,11 @@ export const aiApi = {
     return data;
   },
 };
+
+export type AgentProfilePayload = Omit<Partial<AgentProfile>, "rules_json" | "allowed_tools_json" | "escalation_rules_json"> & {
+  rules_json?: Record<string, unknown>;
+  allowed_tools_json?: Record<string, unknown>;
+  escalation_rules_json?: Record<string, unknown>;
+};
+
+export const agentProfilesApi = createCrudApi<AgentProfile, AgentProfilePayload, AgentProfilePayload>("/api/ai/agent-profiles/");

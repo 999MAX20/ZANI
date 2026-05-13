@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 
 import { appointmentsApi } from "../../api/appointments";
 import { getApiErrorMessage } from "../../api/client";
+import { CrmEntityDrawer, type CrmDrawerEntity } from "../../components/crm/CrmEntityDrawer";
 import { AppointmentForm } from "../../components/forms/AppointmentForm";
 import { DataTable } from "../../components/tables/DataTable";
 import { Button } from "../../components/ui/Button";
@@ -24,6 +25,7 @@ export function AppointmentsPage() {
   const { appointments, clients, services, resources, leads } = useEntityData();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Appointment | undefined>();
+  const [drawerEntity, setDrawerEntity] = useState<CrmDrawerEntity | null>(null);
   const [date, setDate] = useState("");
   const [status, setStatus] = useState("");
 
@@ -61,12 +63,21 @@ export function AppointmentsPage() {
           { header: "Ресурс", cell: (appointment) => resources.data?.find((resource) => resource.id === appointment.resource)?.name || "-" },
           { header: "Статус", cell: (appointment) => <StatusBadge status={appointment.status} /> },
           { header: "Источник", cell: (appointment) => appointment.source },
-          { header: "Действия", cell: (appointment) => <Button variant="ghost" onClick={() => { setEditing(appointment); setOpen(true); }}>Изменить</Button> },
+          {
+            header: "Действия",
+            cell: (appointment) => (
+              <div className="flex flex-wrap gap-2">
+                <Button variant="ghost" onClick={() => setDrawerEntity({ type: "appointment", id: appointment.id })}>Карточка</Button>
+                <Button variant="ghost" onClick={() => { setEditing(appointment); setOpen(true); }}>Изменить</Button>
+              </div>
+            ),
+          },
         ]}
       />
       <Modal title={editing ? "Редактировать запись" : "Создать запись"} open={open} onClose={() => { setOpen(false); setEditing(undefined); }}>
         <AppointmentForm businessId={business.id} clients={clients.data || []} services={services.data || []} resources={resources.data || []} leads={leads.data || []} initial={editing} onSubmit={(payload) => mutation.mutateAsync(payload)} />
       </Modal>
+      <CrmEntityDrawer entity={drawerEntity} onClose={() => setDrawerEntity(null)} />
     </>
   );
 }

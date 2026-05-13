@@ -51,6 +51,7 @@ const groups = [
     items: [
       { to: "/dashboard/bots", label: "nav.bots", icon: Bot },
       { to: "/dashboard/ai-assistant", label: "nav.aiAssistant", icon: Bot },
+      { to: "/dashboard/ai-agents", label: "nav.aiAgents", icon: Sparkles },
       { to: "/dashboard/analytics", label: "nav.analytics", icon: BarChart3 },
       { to: "/dashboard/automations", label: "nav.automations", icon: Workflow },
     ],

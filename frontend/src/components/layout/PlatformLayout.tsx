@@ -16,8 +16,8 @@ import { cn } from "../../lib/cn";
 import { Button } from "../ui/Button";
 
 const platformNav = [
-  { to: "/platform", label: "Overview", description: "Access and system status", icon: LayoutDashboard, end: true },
-  { to: "/platform/merchants", label: "Merchants", description: "Future merchant operations", icon: Store },
+  { to: "/platform", label: "Overview", description: "Product metrics and status", icon: LayoutDashboard, end: true },
+  { to: "/platform/merchants", label: "Merchants", description: "Businesses, plans and usage", icon: Store },
   { to: "/platform/prospects", label: "Prospects", description: "Future internal tools boundary", icon: Target },
   { to: "/platform/billing", label: "Billing", description: "Future plans and subscriptions", icon: CreditCard },
   { to: "/platform/analytics", label: "Analytics", description: "Future platform insights", icon: BarChart3 },
@@ -37,7 +37,7 @@ export function PlatformLayout() {
               <ShieldCheck size={23} />
             </div>
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/45">NeuroBoost</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/45">Zani</p>
               <h1 className="text-lg font-semibold tracking-tight">Platform</h1>
             </div>
           </div>

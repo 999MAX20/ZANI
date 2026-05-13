@@ -59,6 +59,10 @@ INSTALLED_APPS = [
     "apps.integrations",
 ]
 
+USE_S3 = env.bool("USE_S3", default=False)
+if USE_S3:
+    INSTALLED_APPS.append("storages")
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -113,7 +117,62 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
+STATIC_ROOT = env("STATIC_ROOT", default=str(BASE_DIR / "staticfiles"))
+MEDIA_URL = env("MEDIA_URL", default="media/")
+MEDIA_ROOT = env("MEDIA_ROOT", default=str(BASE_DIR / "media"))
+PRIVATE_MEDIA_ROOT = env("PRIVATE_MEDIA_ROOT", default=str(BASE_DIR / "media" / "private"))
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+MAX_UPLOAD_SIZE_MB = env.int("MAX_UPLOAD_SIZE_MB", default=10)
+ALLOWED_UPLOAD_EXTENSIONS = env.list(
+    "ALLOWED_UPLOAD_EXTENSIONS",
+    default=["jpg", "jpeg", "png", "webp", "pdf", "txt", "doc", "docx", "xls", "xlsx", "mp3", "ogg", "wav"],
+)
+ALLOWED_UPLOAD_CONTENT_TYPES = env.list(
+    "ALLOWED_UPLOAD_CONTENT_TYPES",
+    default=[
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "application/pdf",
+        "text/plain",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "audio/mpeg",
+        "audio/ogg",
+        "audio/wav",
+    ],
+)
+
+if USE_S3:
+    AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID", default="")
+    AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY", default="")
+    AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME", default="")
+    AWS_S3_ENDPOINT_URL = env("AWS_S3_ENDPOINT_URL", default="")
+    AWS_S3_REGION_NAME = env("AWS_S3_REGION_NAME", default="")
+    AWS_QUERYSTRING_AUTH = env.bool("AWS_QUERYSTRING_AUTH", default=True)
+    AWS_DEFAULT_ACL = None
+    AWS_S3_FILE_OVERWRITE = False
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3.S3Storage",
+            "OPTIONS": {
+                "bucket_name": AWS_STORAGE_BUCKET_NAME,
+                "endpoint_url": AWS_S3_ENDPOINT_URL or None,
+                "region_name": AWS_S3_REGION_NAME or None,
+                "access_key": AWS_ACCESS_KEY_ID or None,
+                "secret_key": AWS_SECRET_ACCESS_KEY or None,
+                "querystring_auth": AWS_QUERYSTRING_AUTH,
+                "default_acl": AWS_DEFAULT_ACL,
+                "file_overwrite": AWS_S3_FILE_OVERWRITE,
+            },
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -170,6 +229,22 @@ TELEGRAM_WEBHOOK_SECRET = env("TELEGRAM_WEBHOOK_SECRET", default="")
 OPENAI_API_KEY = env("OPENAI_API_KEY", default="")
 OPENAI_MODEL = env("OPENAI_MODEL", default="gpt-4.1-mini")
 OPENAI_TEMPERATURE = env.float("OPENAI_TEMPERATURE", default=0.4)
+WHATSAPP_ENABLED = env.bool("WHATSAPP_ENABLED", default=False)
+INSTAGRAM_ENABLED = env.bool("INSTAGRAM_ENABLED", default=False)
+EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend")
+EMAIL_HOST = env("EMAIL_HOST", default="")
+EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="Zani <no-reply@zani.local>")
+
+if "test" in __import__("sys").argv:
+    OPENAI_API_KEY = ""
+    TELEGRAM_ENABLED = False
+    WHATSAPP_ENABLED = False
+    INSTAGRAM_ENABLED = False
+    EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 
 if SENTRY_DSN:
     import sentry_sdk

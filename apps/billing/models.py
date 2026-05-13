@@ -39,3 +39,28 @@ class Subscription(TimeStampedModel):
 
     def __str__(self):
         return f"{self.business} - {self.plan} ({self.status})"
+
+
+class UsageCounter(models.Model):
+    class Metrics(models.TextChoices):
+        AI_REQUESTS = "ai_requests", "AI requests"
+        BOT_MESSAGES = "bot_messages", "Bot messages"
+        USERS = "users", "Users"
+        CONVERSATIONS = "conversations", "Conversations"
+
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name="usage_counters")
+    period_start = models.DateField()
+    period_end = models.DateField()
+    metric = models.CharField(max_length=32, choices=Metrics.choices)
+    value = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["business", "period_start", "period_end", "metric"], name="unique_usage_counter_period_metric"),
+        ]
+        indexes = [
+            models.Index(fields=["business", "metric", "period_start"]),
+        ]
+
+    def __str__(self):
+        return f"{self.business}:{self.metric}:{self.value}"

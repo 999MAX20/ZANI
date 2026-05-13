@@ -2,6 +2,7 @@ from django.utils import timezone
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from apps.activities.services import write_activity_event
 from apps.core.viewsets import TenantModelViewSet
 from apps.tasks.models import Task
 from apps.tasks.serializers import TaskSerializer
@@ -31,6 +32,7 @@ class TaskViewSet(TenantModelViewSet):
         task.status = Task.Statuses.DONE
         task.completed_at = timezone.now()
         task.save(update_fields=["status", "completed_at", "updated_at"])
+        write_activity_event(request, "task_completed", task, text=f"Задача закрыта: {task.title}")
         return Response(TaskSerializer(task).data)
 
     @action(detail=True, methods=["post"], url_path="start")

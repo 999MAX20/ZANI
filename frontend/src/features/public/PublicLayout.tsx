@@ -24,7 +24,7 @@ export function PublicLayout() {
               <Sparkles size={22} />
             </div>
             <div>
-              <p className="text-base font-bold tracking-tight">NeuroBoost</p>
+              <p className="text-base font-bold tracking-tight">Zani</p>
               <p className="text-xs font-medium text-slate-500">AI Growth OS</p>
             </div>
           </Link>

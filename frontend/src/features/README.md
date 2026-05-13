@@ -28,7 +28,7 @@
 
 ## Implemented Public Website
 
-- `public` — public NeuroBoost website shell for `/`, `/pricing`, `/bots`, `/crm`, `/contacts`.
+- `public` — public Zani website shell for `/`, `/pricing`, `/bots`, `/crm`, `/contacts`.
 
 ## Implemented Billing Foundation
 

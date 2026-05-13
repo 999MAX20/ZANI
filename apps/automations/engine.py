@@ -1,5 +1,7 @@
 from django.utils import timezone
 
+from apps.activities.models import ActivityEvent
+from apps.activities.services import create_activity_event
 from apps.automations.models import AutomationAction, AutomationRule, AutomationRun
 from apps.notifications.models import Notification
 from apps.tasks.models import Task
@@ -36,6 +38,15 @@ def run_automations_for_event(*, business, trigger_type, entity=None, payload=No
             run.error = str(exc)
         run.finished_at = timezone.now()
         run.save(update_fields=["status", "error", "finished_at"])
+        create_activity_event(
+            business=business,
+            event_type="automation_run",
+            instance=run,
+            category=ActivityEvent.Categories.AUTOMATION,
+            source="automation",
+            text=f"Автоматизация «{rule.name}»: {run.status}",
+            metadata={"trigger_type": trigger_type, "entity_type": run.entity_type, "entity_id": run.entity_id},
+        )
         runs.append(run)
     return runs
 

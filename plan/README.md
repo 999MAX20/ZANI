@@ -1,9 +1,9 @@
-# NeuroBoost Roadmap
+# Zani Roadmap
 
 Основной рабочий план лежит в:
 
 ```text
-plan/neuroboost_codex_step_prompts.docx
+plan/zani_codex_implementation_prompts.md
 ```
 
 ## Правила выполнения

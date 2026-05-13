@@ -1,34 +1,75 @@
 from apps.activities.models import ActivityEvent
 
 
+def create_activity_event(*, business, event_type, instance=None, client=None, actor=None, category=None, source="api", text="", metadata=None):
+    if business is None:
+        return None
+
+    if instance is not None and client is None:
+        client = _client_for(instance)
+
+    return ActivityEvent.objects.create(
+        business=business,
+        client=client,
+        actor=actor,
+        category=category or _category_for(instance),
+        event_type=event_type,
+        source=source,
+        entity_type=instance.__class__.__name__ if instance is not None else "",
+        entity_id=str(getattr(instance, "pk", "") or ""),
+        text=text or _human_text(event_type, instance),
+        metadata=metadata or {},
+    )
+
+
 def write_activity_event(request, event_type, instance, text=""):
     if isinstance(instance, ActivityEvent):
         return
 
     business = getattr(instance, "business", None)
-    client = getattr(instance, "client", None)
+    client = _client_for(instance)
     if business is None and hasattr(instance, "conversation"):
         business = instance.conversation.business
         client = instance.conversation.client
     if business is None:
         return
 
-    ActivityEvent.objects.create(
+    return create_activity_event(
         business=business,
         client=client,
         actor=request.user if getattr(request, "user", None) and request.user.is_authenticated else None,
         category=_category_for(instance),
-        event_type=event_type,
+        event_type=_canonical_event_type(event_type, instance),
         source="api",
-        entity_type=instance.__class__.__name__,
-        entity_id=str(instance.pk or ""),
-        text=text or str(instance),
+        instance=instance,
+        text=text,
     )
 
 
+def activity_for_client(client):
+    return ActivityEvent.objects.filter(business=client.business, client=client).select_related("business", "client", "actor")
+
+
+def activity_for_entity(entity_type, entity_id):
+    return ActivityEvent.objects.filter(entity_type=entity_type, entity_id=str(entity_id)).select_related("business", "client", "actor")
+
+
+def _client_for(instance):
+    if instance is None:
+        return None
+    client = getattr(instance, "client", None)
+    if client is None and hasattr(instance, "conversation"):
+        client = instance.conversation.client
+    if client is None and hasattr(instance, "lead") and getattr(instance, "lead", None):
+        client = instance.lead.client
+    return client
+
+
 def _category_for(instance):
+    if instance is None:
+        return ActivityEvent.Categories.SYSTEM
     model_name = instance.__class__.__name__.lower()
-    if model_name in {"conversation", "message"}:
+    if model_name in {"conversation", "message", "botconversation", "botmessage"}:
         return ActivityEvent.Categories.MESSAGE
     if model_name in {"appointment", "workinghours", "resource"}:
         return ActivityEvent.Categories.APPOINTMENT
@@ -38,3 +79,46 @@ def _category_for(instance):
         return ActivityEvent.Categories.AUTOMATION
     return ActivityEvent.Categories.CRM
 
+
+def _canonical_event_type(event_type, instance):
+    if "." not in event_type:
+        return event_type
+
+    model_name, action = event_type.split(".", 1)
+    aliases = {
+        "client": "client",
+        "lead": "lead",
+        "deal": "deal",
+        "task": "task",
+        "appointment": "appointment",
+        "note": "note",
+        "automationrun": "automation",
+        "botmessage": "message",
+    }
+    base = aliases.get(model_name, model_name)
+    if base == "message" and action == "created" and instance is not None:
+        direction = getattr(instance, "direction", "")
+        return "message_sent" if direction == "outbound" else "message_received"
+    return f"{base}_{action}"
+
+
+def _human_text(event_type, instance):
+    labels = {
+        "client_created": "Создан клиент",
+        "lead_created": "Создана заявка",
+        "lead_status_changed": "Изменён статус заявки",
+        "deal_created": "Создана сделка",
+        "deal_stage_changed": "Сделка перешла на другую стадию",
+        "task_created": "Создана задача",
+        "task_completed": "Задача закрыта",
+        "appointment_created": "Создана запись",
+        "appointment_cancelled": "Запись отменена",
+        "message_received": "Получено сообщение",
+        "message_sent": "Отправлено сообщение",
+        "note_created": "Добавлена заметка",
+        "automation_run": "Сработала автоматизация",
+    }
+    label = labels.get(event_type)
+    if label:
+        return label
+    return str(instance) if instance is not None else event_type

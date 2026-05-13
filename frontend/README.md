@@ -1,4 +1,4 @@
-# AI SMB Platform Frontend
+# Zani Frontend
 
 React + TypeScript кабинет для Django backend.
 

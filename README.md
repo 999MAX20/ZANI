@@ -1,11 +1,11 @@
-# NeuroBoost
+# Zani
 
-NeuroBoost — AI-first CRM / Business OS для малого и среднего бизнеса. Сейчас проект содержит Django + DRF backend, React + TypeScript frontend, multi-tenant Merchant CRM и foundation для будущего Platform Admin.
+Zani — AI-first CRM / Business OS для малого и среднего бизнеса. Сейчас проект содержит Django + DRF backend, React + TypeScript frontend, multi-tenant Merchant CRM и foundation для будущего Platform Admin.
 
 Работа ведется по этапам из документа:
 
 ```text
-plan/neuroboost_codex_step_prompts.docx
+plan/zani_codex_implementation_prompts.md
 ```
 
 Правило проекта: один этап = один изолированный набор изменений. После каждого этапа запускаются backend checks/tests и frontend build.
@@ -618,6 +618,846 @@ python manage.py test
 cd frontend && npm run build
 ```
 
+### Prompt 00 — Repo Cleanup and Zani Baseline
+
+Статус: **готово**.
+
+Добавлено:
+
+- Публичные упоминания старых названий заменены на `Zani` в README/frontend/package metadata.
+- `.gitignore` расширен для безопасного GitHub-коммита:
+  - `.env`;
+  - `.venv/`;
+  - `db.sqlite3`;
+  - `node_modules/`;
+  - `dist/`;
+  - cache/build artifacts.
+- Скрипт чистого архива:
+  - `scripts/make_clean_archive.sh`
+- Management command:
+  - `python manage.py create_platform_admin --email ... --password ...`
+- Frontend auth refresh flow стабилизирован через единый token client.
+
+Проверено:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py makemigrations --check --dry-run
+cd frontend && npm ci && npm run build
+scripts/make_clean_archive.sh
+```
+
+### Prompt 01 — Test Stabilization and No External Network in Tests
+
+Статус: **готово**.
+
+Добавлено:
+
+- Test-safe defaults для внешних интеграций:
+  - `OPENAI_API_KEY=""`;
+  - `TELEGRAM_ENABLED=False`;
+  - `WHATSAPP_ENABLED=False`;
+  - `INSTAGRAM_ENABLED=False`;
+  - local-memory email backend в test mode.
+- `.env.example` дополнен минимальными flags для integrations/email backend.
+- Документация:
+  - `docs/testing.md`
+- Полный `manage.py test -v 2` проходит без зависания и без внешних сетевых вызовов.
+
+Проверено:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test -v 2
+cd frontend && npm run build
+```
+
+### Prompt 02 — Unified Inbox Backend Core
+
+Статус: **готово**.
+
+Добавлено:
+
+- `BotConversation` расширен для unified inbox:
+  - `assigned_to`;
+  - `priority`;
+  - `bot_enabled`;
+  - `handoff_required`;
+  - `handoff_reason`;
+  - `last_message_at`;
+  - `last_inbound_at`;
+  - `last_outbound_at`;
+  - `unread_count`;
+  - `external_thread_id`;
+  - `metadata_json`.
+- `BotMessage` расширен:
+  - `sender_type`;
+  - `external_message_id`;
+  - `error_text`;
+  - `sent_at`;
+  - `delivered_at`;
+  - `read_at`.
+- Service-layer:
+  - `apps/bots/inbox_service.py`
+- Merchant-only inbox API:
+  - `GET /api/inbox/conversations/`
+  - `GET /api/inbox/conversations/{id}/`
+  - `GET /api/inbox/conversations/{id}/messages/`
+  - `POST /api/inbox/conversations/{id}/assign/`
+  - `POST /api/inbox/conversations/{id}/handoff/`
+  - `POST /api/inbox/conversations/{id}/mark-read/`
+- Фильтры inbox:
+  - `channel`;
+  - `status`;
+  - `assigned_to`;
+  - `priority`;
+  - `bot_enabled`;
+  - `unread`;
+  - `search`.
+- Tenant isolation:
+  - merchant users видят только свой business inbox;
+  - platform users не получают merchant inbox через `/api/inbox/...`;
+  - anonymous users запрещены.
+- Inbound `BotMessage` обновляет unread counter и timestamps через service-layer.
+- Telegram/public website chat также обновляют inbox counters.
+
+Не добавлялось:
+
+- websocket/realtime;
+- WhatsApp/Instagram;
+- AI auto-replies;
+- переписывание старых `Conversation`, `Message`, `BotConversation`, `BotMessage`.
+
+Проверено:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py makemigrations --check --dry-run
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test
+cd frontend && npm run build
+```
+
+### Prompt 03 — Unified Inbox Frontend
+
+Статус: **готово**.
+
+Добавлено:
+
+- Frontend API layer:
+  - `frontend/src/api/inbox.ts`
+- `ConversationsPage` больше не использует demo data.
+- Conversations UI работает с реальными endpoints:
+  - `GET /api/inbox/conversations/`
+  - `GET /api/inbox/conversations/{id}/messages/`
+- UI содержит:
+  - список диалогов;
+  - поиск;
+  - фильтры по channel/unread/assigned/priority;
+  - ленту сообщений;
+  - context panel;
+  - channel badges;
+  - unread count;
+  - priority badges.
+- Actions:
+  - assign to me;
+  - handoff to manager;
+  - mark read;
+  - pause/enable bot через существующий bot-conversation endpoint;
+  - suggest AI reply через существующий endpoint.
+- Outbound reply, create task и create lead оставлены как controlled placeholders до следующего backend этапа.
+
+Проверено:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test
+cd frontend && npm run build
+```
+
+### Prompt 04 — Manager Outbound Reply + Conversation Actions
+
+Статус: **готово**.
+
+Добавлено:
+
+- Backend endpoint:
+  - `POST /api/inbox/conversations/{id}/messages/`
+- Service-layer:
+  - `send_outbound_message(conversation, text, user)`
+- Ручной ответ менеджера сохраняется как:
+  - `direction=outbound`;
+  - `sender_type=manager`;
+  - `status=queued`.
+- CRM actions из inbox:
+  - `POST /api/inbox/conversations/{id}/create-task/`
+  - `POST /api/inbox/conversations/{id}/link-lead/`
+  - `POST /api/inbox/conversations/{id}/create-lead/`
+- Frontend inbox:
+  - активный input ответа;
+  - send button;
+  - create task;
+  - create lead;
+  - link lead by ID.
+- Tenant isolation и проверки business ownership покрыты backend tests.
+
+Не добавлялось:
+
+- реальная отправка в WhatsApp/Instagram/Telegram provider;
+- websocket/realtime;
+- AI auto-send;
+- billing/payment logic.
+
+Проверено:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test
+cd frontend && npm run build
+```
+
+### Prompt 05 — AI Agent Profile Foundation
+
+Статус: **готово**.
+
+Добавлено:
+
+- Модель `AgentProfile` в `apps.ai_core`:
+  - `business`;
+  - `bot`;
+  - `name`;
+  - `role_description`;
+  - `tone`;
+  - `language`;
+  - `is_active`;
+  - `system_prompt`;
+  - `rules_json`;
+  - `allowed_tools_json`;
+  - `escalation_rules_json`.
+- Django Admin для Agent Profiles.
+- Tenant-safe API:
+  - `GET/POST /api/ai/agent-profiles/`
+- `suggest_bot_reply` использует active AgentProfile:
+  - сначала profile конкретного бота;
+  - затем fallback profile бизнеса без bot.
+- Frontend:
+  - `/dashboard/ai-agents`;
+  - создание/редактирование agent profile;
+  - выбор bot;
+  - tone/language/system prompt/rules/escalation rules;
+  - safe tools placeholder.
+
+Не добавлялось:
+
+- auto-send;
+- function calling;
+- embeddings/vector DB;
+- WhatsApp/Instagram integrations.
+
+Проверено:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py makemigrations --check --dry-run
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test
+cd frontend && npm run build
+```
+
+### Prompt 06 — AI Tool Registry Skeleton
+
+Статус: **готово**.
+
+Добавлено:
+
+- Service-layer:
+  - `apps/ai_core/tool_registry.py`
+- Зарегистрированные tools:
+  - `create_lead`;
+  - `create_client`;
+  - `create_task`;
+  - `create_deal`;
+  - `summarize_conversation`;
+  - `qualify_lead`.
+- Модель `AIToolCallLog`:
+  - business/user/conversation;
+  - tool name;
+  - input/output JSON;
+  - status;
+  - error;
+  - created_at.
+- Django Admin для tool call logs.
+- Endpoints:
+  - `POST /api/ai/tools/suggest/`
+  - `POST /api/ai/tools/{log_id}/execute/`
+- Suggest endpoint только создаёт suggested logs и возвращает действия.
+- Execute endpoint выполняет только после явного запроса пользователя и проверки доступа к business.
+- Tests покрывают:
+  - создание suggested actions без выполнения;
+  - подтверждённое выполнение `create_task`;
+  - запрет выполнения tool call чужого business.
+
+Не добавлялось:
+
+- autonomous AI execution;
+- auto-send;
+- внешние API providers.
+
+Проверено:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py makemigrations --check --dry-run
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test
+cd frontend && npm run build
+```
+
+### Prompt 07 — Deal/Pipeline UX Upgrade
+
+Статус: **готово**.
+
+Добавлено:
+
+- `/dashboard/deals` переработан в рабочий sales kanban.
+- Drag & drop stage changes через существующий endpoint:
+  - `POST /api/deals/{id}/move-stage/`
+- Deal cards показывают:
+  - client;
+  - amount/currency;
+  - source/channel badge;
+  - probability;
+  - status;
+  - next task;
+  - last activity.
+- Stage columns показывают:
+  - цвет стадии;
+  - probability;
+  - SLA;
+  - количество сделок;
+  - сумму по стадии.
+- Deal detail modal:
+  - main info;
+  - client;
+  - linked lead;
+  - tasks;
+  - conversations;
+  - timeline;
+  - AI next action placeholder.
+- Backend не менялся: существующая API-архитектура уже покрывала stage change и tenant filtering.
+
+Не добавлялось:
+
+- телефония;
+- платежи;
+- full portal UX;
+- AI auto decisions.
+
+Проверено:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test
+cd frontend && npm run build
+```
+
+### Prompt 08 — Channel Provider Abstraction
+
+Статус: **готово**.
+
+Добавлено:
+
+- Provider service layer:
+  - `apps/integrations/providers/`
+- Общий интерфейс:
+  - `send_message(channel, recipient_id, text, payload)`
+  - `parse_webhook(provider, payload, headers)`
+  - `verify_webhook(provider, request)`
+- Providers:
+  - `website` mock;
+  - `telegram`;
+  - `whatsapp` mock;
+  - `instagram` mock;
+  - `email` mock.
+- Модель `IntegrationEventLog`:
+  - business nullable;
+  - provider/channel;
+  - direction;
+  - payload JSON;
+  - status;
+  - error;
+  - created_at.
+- Django Admin для integration event logs.
+- Telegram webhook продолжает работать, но теперь использует provider parsing/verification.
+- Telegram outbound helper использует общий `send_message(...)`.
+- Tests проверяют:
+  - Telegram inbound webhook;
+  - event logging;
+  - Telegram mock outbound;
+  - регистрацию mock providers.
+
+Не добавлялось:
+
+- реальные WhatsApp/Instagram API;
+- merchant tokens в `.env`;
+- массовые рассылки.
+
+Проверено:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py makemigrations --check --dry-run
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test
+cd frontend && npm run build
+```
+
+### Prompt 09 — Website Widget SDK MVP
+
+Статус: **готово**.
+
+Добавлено:
+
+- Widget source:
+  - `frontend/widget/src/index.ts`
+- Widget build config:
+  - `frontend/widget/vite.config.ts`
+- `npm run build` теперь собирает:
+  - основное frontend приложение;
+  - widget bundle `frontend/dist/widget/zani-widget.js`.
+- Widget умеет:
+  - читать `data-zani-token`;
+  - показывать chat bubble;
+  - открывать chat window;
+  - создавать conversation через public website chat API;
+  - отправлять последующие сообщения;
+  - показывать basic status.
+- Документация:
+  - `docs/widget-sdk.md`
+
+Embed target:
+
+```html
+<script
+  src="https://cdn.zani.kz/widget.js"
+  data-zani-token="PUBLIC_WEBSITE_CHANNEL_TOKEN"
+  data-zani-api="https://api.zani.kz"
+></script>
+```
+
+Не добавлялось:
+
+- realtime;
+- AI auto replies;
+- CDN deployment;
+- advanced themes.
+
+Проверено:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test
+cd frontend && npm run build
+```
+
+### Prompt 10 — Telegram Production Pass
+
+Статус: **готово**.
+
+Добавлено:
+
+- Merchant UI в bot detail:
+  - Telegram channel creation;
+  - bot token input;
+  - webhook secret input;
+  - webhook URL input;
+  - save config;
+  - set webhook;
+  - status check;
+  - last error через status endpoint.
+- Backend channel actions:
+  - `POST /api/bot-channels/{id}/telegram-config/`
+  - `POST /api/bot-channels/{id}/set-telegram-webhook/`
+  - `GET /api/bot-channels/{id}/telegram-status/`
+- Merchant bot token хранится в `BotChannel.config_json`.
+- `IntegrationEventLog` не пишет полный token, только `token_configured`.
+- Telegram provider получил `set_webhook`.
+- Inbox outbound reply теперь проходит через provider layer, если у conversation есть channel и external user id.
+- Tests покрывают:
+  - Telegram config;
+  - mock set webhook;
+  - отсутствие token в logs;
+  - outbound Telegram reply через provider layer.
+
+Не добавлялось:
+
+- broadcast;
+- WhatsApp;
+- AI auto-send.
+
+Проверено:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test
+cd frontend && npm run build
+```
+
+### Prompt 11 — Billing Usage Limits Foundation
+
+Статус: **готово**.
+
+Добавлено:
+
+- Модель `UsageCounter`:
+  - business;
+  - period_start / period_end;
+  - metric;
+  - value.
+- Metrics:
+  - `ai_requests`;
+  - `bot_messages`;
+  - `users`;
+  - `conversations`.
+- Service-layer:
+  - `increment_usage(business, metric, amount=1)`
+  - `check_limit(business, metric)`
+  - `usage_summary(business)`
+- Usage hooks:
+  - `AIRequestLog` через `run_ai_request`;
+  - `BotMessage` через inbox registration;
+  - new `BotConversation` через bot/public/Telegram create flows.
+- API:
+  - `GET /api/billing/usage-summary/`
+- Settings page показывает:
+  - текущий план;
+  - usage counters;
+  - лимит из `SubscriptionPlan.limits_json`;
+  - soft over-limit indicator.
+
+Не добавлялось:
+
+- реальные платежи;
+- жёсткая блокировка операций;
+- MRR dashboard.
+
+Проверено:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py makemigrations --check --dry-run
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test
+cd frontend && npm run build
+```
+
+### Prompt 12 — Platform Admin Real Dashboard
+
+Статус: **готово**.
+
+Добавлено:
+
+- Backend API:
+  - `GET /api/platform/overview/`
+  - `GET /api/platform/merchants/`
+- Platform overview возвращает реальные агрегированные метрики:
+  - businesses;
+  - active/trial merchants;
+  - active subscriptions;
+  - MRR estimate;
+  - users;
+  - bots/channels;
+  - AI requests за 30 дней;
+  - conversations за 30 дней;
+  - errors placeholder.
+- Platform merchants API возвращает:
+  - business;
+  - owner;
+  - status;
+  - plan;
+  - subscription status;
+  - usage summary.
+- Доступ ограничен `platform_admin` и `platform_manager`.
+- Merchant users получают `403` на platform API.
+- Frontend:
+  - настоящий `/platform` dashboard;
+  - настоящая `/platform/merchants` таблица;
+  - остальные platform routes оставлены placeholders.
+
+Не добавлялось:
+
+- prospects;
+- parser;
+- landing generator;
+- payment provider.
+
+Проверено:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py makemigrations --check --dry-run
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test
+cd frontend && npm run build
+```
+
+### Prompt 13 — Production Infrastructure Baseline
+
+Статус: **готово**.
+
+Добавлено:
+
+- `docker-compose.yml` обновлен под production baseline:
+  - `web`;
+  - `db`;
+  - `redis`;
+  - `celery`;
+  - optional `celery-beat` через profile `beat`.
+- `Dockerfile` теперь по умолчанию запускает Django через `gunicorn`.
+- `requirements.txt` дополнен `gunicorn`.
+- `config/settings.py` дополнен:
+  - `STATIC_ROOT`;
+  - `MEDIA_ROOT`;
+  - `MEDIA_URL`;
+  - SMTP email settings;
+  - optional Sentry init уже работает через `SENTRY_DSN`.
+- `.env.example` расширен переменными для:
+  - Django;
+  - PostgreSQL;
+  - Redis/Celery;
+  - JWT/throttling;
+  - CORS/CSRF/security;
+  - Telegram/OpenAI/email/Sentry;
+  - storage placeholders;
+  - frontend API URL.
+- Добавлен `docs/deployment.md`.
+- Health endpoints сохранены:
+  - `/health/`;
+  - `/health/db/`.
+
+Не добавлялось:
+
+- Kubernetes;
+- CI/CD;
+- обязательные paid providers.
+
+Проверено:
+
+```bash
+docker compose config
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py collectstatic --noinput --dry-run
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py makemigrations --check --dry-run
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test
+cd frontend && npm run build
+```
+
+### Prompt 14 — Object Storage and File Safety Foundation
+
+Статус: **готово**.
+
+Добавлено:
+
+- Optional S3-compatible settings:
+  - `USE_S3`;
+  - `AWS_ACCESS_KEY_ID`;
+  - `AWS_SECRET_ACCESS_KEY`;
+  - `AWS_STORAGE_BUCKET_NAME`;
+  - `AWS_S3_ENDPOINT_URL`;
+  - `AWS_S3_REGION_NAME`;
+  - `AWS_QUERYSTRING_AUTH`.
+- Local media остаётся дефолтом для development.
+- Private media root:
+  - `PRIVATE_MEDIA_ROOT`.
+- File validation helpers:
+  - `validate_file_upload`;
+  - extension validation;
+  - content type validation;
+  - max size validation.
+- Private file serving pattern:
+  - `GET /api/files/private/<path:file_path>/`
+  - endpoint требует auth;
+  - путь защищён от directory traversal.
+- Документация:
+  - `docs/file-storage.md`.
+
+Не добавлялось:
+
+- миграция existing files;
+- paid storage provider;
+- CDN;
+- attachment models.
+
+Проверено:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py makemigrations --check --dry-run
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test
+```
+
+### Prompt 15 — Internal Dev Tools Boundary Document
+
+Статус: **готово**.
+
+Добавлено:
+
+- Документ `docs/internal-dev-tools-boundary.md`.
+- Зафиксировано, что не является public product core:
+  - parser;
+  - landing generator;
+  - developer outreach;
+  - prospect scraping.
+- Описаны безопасные будущие варианты интеграции:
+  - отдельный repo;
+  - отдельная БД;
+  - API-based integration;
+  - controlled import endpoints.
+
+Product core не изменялся.
+
+### Prompt 16 — Final Regression Pass
+
+Статус: **готово**.
+
+Добавлено:
+
+- Финальный отчёт `docs/regression-report.md`.
+
+Проверено:
+
+- backend migrations/check/tests;
+- frontend `npm ci`;
+- frontend build;
+- browser smoke основных public/platform/merchant routes;
+- API smoke для website chat, Telegram webhook, AI assistant mock, automation task/notification;
+- clean archive без `.env`, `.venv`, `node_modules`, `frontend/dist`, `db.sqlite3`;
+- отсутствие реальных токенов в docs/env examples.
+
+Итог:
+
+- Backend: `76 tests OK`;
+- Frontend build: OK;
+- Critical smoke: OK.
+
+### Prompt A1 — Unified CRM Entity Drawer
+
+Статус: **готово**.
+
+Добавлено:
+
+- Backend CRM-card endpoints:
+  - `GET /api/clients/{id}/crm-card/`
+  - `GET /api/leads/{id}/crm-card/`
+  - `GET /api/deals/{id}/crm-card/`
+  - `GET /api/appointments/{id}/crm-card/`
+- Единый backend-сборщик CRM-контекста:
+  - client;
+  - lead;
+  - deal;
+  - appointment;
+  - связанные leads/deals/appointments;
+  - tasks;
+  - conversations;
+  - timeline;
+  - notes.
+- Tenant filtering сохранён через существующий `TenantModelViewSet` и `get_object()`.
+- Frontend API layer:
+  - `frontend/src/api/crmCards.ts`
+- Frontend unified drawer:
+  - `CrmEntityDrawer`;
+  - `CrmEntityHeader`;
+  - `CrmEntityTabs`;
+  - `ClientCardContent`;
+  - `LeadCardContent`;
+  - `DealCardContent`;
+  - `AppointmentCardContent`;
+  - `EntityTimeline`;
+  - `EntityTasksPanel`;
+  - `EntityConversationsPanel`;
+  - `EntityQuickActions`;
+  - `EntityNotesPanel`.
+- Unified drawer подключён к:
+  - clients;
+  - leads;
+  - deals;
+  - appointments;
+  - calendar appointment cards.
+- Старые формы создания/редактирования сохранены, карточка открывается без full page reload.
+
+Не добавлялось:
+
+- новые модели;
+- autonomous AI actions;
+- сложный portal UX;
+- изменение tenant isolation.
+
+Проверено:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py makemigrations --check --dry-run
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test
+cd frontend && npm run build
+```
+
+### Prompt A2 — Activity Timeline Unification
+
+Статус: **готово**.
+
+Добавлено:
+
+- Усилен существующий `ActivityEvent` слой без создания новых моделей.
+- Service-layer:
+  - `create_activity_event(...)`;
+  - `activity_for_client(client)`;
+  - `activity_for_entity(entity_type, entity_id)`.
+- `write_activity_event(...)` сохранён как совместимая обёртка для existing callers.
+- Timeline hooks для:
+  - `client_created`;
+  - `lead_created`;
+  - `lead_status_changed`;
+  - `deal_created`;
+  - `deal_stage_changed`;
+  - `task_created`;
+  - `task_completed`;
+  - `appointment_created`;
+  - `appointment_cancelled`;
+  - `message_received`;
+  - `message_sent`;
+  - `note_created`;
+  - `automation_run`.
+- `GET /api/activity-events/` получил фильтры:
+  - `business`;
+  - `client` и legacy `client_id`;
+  - `entity_type`;
+  - `entity_id`;
+  - `category`;
+  - `event_type`;
+  - `date_from` / `date_to`;
+  - `created_after` / `created_before`;
+  - `q`.
+- `TimelinePage` обновлён:
+  - группировка по датам;
+  - иконки по категориям;
+  - улучшенный empty state;
+  - более человекочитаемое отображение событий.
+- Timeline внутри `CrmEntityDrawer` обновлён:
+  - compact items;
+  - grouping by date;
+  - icons per category.
+
+Не добавлялось:
+
+- новые timeline models;
+- realtime/websocket;
+- внешние analytics providers;
+- сложный event bus.
+
+Проверено:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py makemigrations --check --dry-run
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test
+cd frontend && npm run build
+```
+
 ## Структура проекта
 
 ```text
@@ -643,7 +1483,7 @@ apps/
 
 config/            # Django settings, urls, celery config
 frontend/          # React + TypeScript app
-  src/features/public/ # Public NeuroBoost website shell
+  src/features/public/ # Public Zani website shell
 plan/              # Product/implementation roadmap prompts
 ```
 
@@ -686,17 +1526,20 @@ Internal developer tools не должны смешиваться с public prod
 ### Backend
 
 ```bash
-cd /Users/maksim/Desktop/neuroboost
+cd /Users/maksim/Desktop/Zani
 cp .env.example .env
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
 .venv/bin/python manage.py migrate
+.venv/bin/python manage.py create_platform_admin --email admin@zani.local --password admin12345
 .venv/bin/python manage.py runserver 0.0.0.0:8000
 ```
 
-Если `.venv` отсутствует:
+Если `.venv` уже создан:
 
 ```bash
-python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
+.venv/bin/python manage.py migrate
 ```
 
 ### Frontend
@@ -704,8 +1547,8 @@ python3 -m venv .venv
 Во втором терминале:
 
 ```bash
-cd /Users/maksim/Desktop/neuroboost/frontend
-npm install
+cd /Users/maksim/Desktop/Zani/frontend
+npm ci
 npm run dev
 ```
 
@@ -721,7 +1564,8 @@ Frontend routes:
 - `/crm` — public CRM shell.
 - `/contacts` — public contacts shell.
 - `/dashboard` — Merchant CRM dashboard.
-- `/platform` — Platform Admin placeholder.
+- `/platform` — Platform Admin overview.
+- `/platform/merchants` — Platform Admin merchants table.
 
 Auth:
 
@@ -737,6 +1581,8 @@ Billing:
 Platform:
 
 - `GET /api/platform/ping/`
+- `GET /api/platform/overview/`
+- `GET /api/platform/merchants/`
 
 Merchant CRM:
 
@@ -761,6 +1607,18 @@ Merchant CRM:
 - `/api/tags/`
 - `/api/automation-rules/`
 
+Unified Inbox:
+
+- `/api/inbox/conversations/`
+- `/api/inbox/conversations/{id}/messages/`
+- `/api/inbox/conversations/{id}/assign/`
+- `/api/inbox/conversations/{id}/handoff/`
+- `/api/inbox/conversations/{id}/mark-read/`
+
+Files:
+
+- `GET /api/files/private/<path:file_path>/`
+
 Scheduling helpers:
 
 - `GET /api/appointments/available-slots/?business_id=&service_id=&date=&resource_id=`
@@ -774,9 +1632,20 @@ Healthchecks:
 ## Проверка после каждого этапа
 
 ```bash
-python manage.py check
-python manage.py test
-cd frontend && npm run build
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test
+cd frontend
+npm ci
+npm run build
+```
+
+## Clean archive
+
+Для передачи проекта без локальных секретов, окружений и build artifacts:
+
+```bash
+cd /Users/maksim/Desktop/Zani
+scripts/make_clean_archive.sh
 ```
 
 Manual smoke:
@@ -789,5 +1658,6 @@ Manual smoke:
 
 ## Ближайшие этапы из roadmap
 
-1. Telegram Integration Skeleton.
-2. AI Core Foundation.
+1. Production infrastructure baseline.
+2. Object storage and file safety foundation.
+3. Final regression pass.

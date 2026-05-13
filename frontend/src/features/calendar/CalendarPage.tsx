@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { appointmentsApi } from "../../api/appointments";
 import { getApiErrorMessage } from "../../api/client";
+import { CrmEntityDrawer, type CrmDrawerEntity } from "../../components/crm/CrmEntityDrawer";
 import { AppointmentForm } from "../../components/forms/AppointmentForm";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
@@ -122,6 +123,7 @@ export function CalendarPage() {
   const queryClient = useQueryClient();
   const [date, setDate] = useState(todayISO());
   const [bookingOpen, setBookingOpen] = useState(false);
+  const [drawerEntity, setDrawerEntity] = useState<CrmDrawerEntity | null>(null);
 
   const mutation = useMutation({
     mutationFn: (payload: Partial<Appointment>) => appointmentsApi.create(payload),
@@ -176,7 +178,12 @@ export function CalendarPage() {
                       const service = services.data?.find((item) => item.id === appointment.service);
                       const resource = resources.data?.find((item) => item.id === appointment.resource);
                       return (
-                        <div key={appointment.id} className="rounded-3xl border border-brand-100 bg-gradient-to-r from-brand-50 to-ai-50 p-4 shadow-sm">
+                        <button
+                          key={appointment.id}
+                          type="button"
+                          className="w-full rounded-3xl border border-brand-100 bg-gradient-to-r from-brand-50 to-ai-50 p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-premium"
+                          onClick={() => setDrawerEntity({ type: "appointment", id: appointment.id })}
+                        >
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <div>
                               <p className="font-semibold text-midnight">{client?.full_name || "Client"} · {service?.name || "Service"}</p>
@@ -184,7 +191,7 @@ export function CalendarPage() {
                             </div>
                             <StatusBadge status={appointment.status} />
                           </div>
-                        </div>
+                        </button>
                       );
                     })}
                     {!items.length ? <div className="h-full rounded-3xl border border-dashed border-slate-200 bg-white/50 p-4 text-sm text-slate-400">Available slot</div> : null}
@@ -207,6 +214,7 @@ export function CalendarPage() {
           onSubmit={(payload) => mutation.mutateAsync(payload)}
         />
       </Modal>
+      <CrmEntityDrawer entity={drawerEntity} onClose={() => setDrawerEntity(null)} />
     </>
   );
 }

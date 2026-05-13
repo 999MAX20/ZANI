@@ -1,9 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Bot as BotIcon, MessageSquareText, Plus, Radio, Send, Sparkles } from "lucide-react";
+import { ArrowLeft, Bot as BotIcon, KeyRound, MessageSquareText, Plus, Radio, Send, ShieldCheck, Sparkles, Webhook } from "lucide-react";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
-import { botAiApi, botChannelsApi, botsApi, websiteChatApi, type BotSuggestedReplyResponse } from "../../api/bots";
+import { botAiApi, botChannelsApi, botsApi, telegramChannelApi, websiteChatApi, type BotSuggestedReplyResponse } from "../../api/bots";
 import { getApiErrorMessage } from "../../api/client";
 import { Button } from "../../components/ui/Button";
 import { Card, CardBody } from "../../components/ui/Card";
@@ -35,6 +35,12 @@ export function BotDetailPage() {
   });
   const [previewResult, setPreviewResult] = useState<string | null>(null);
   const [suggestedReply, setSuggestedReply] = useState<BotSuggestedReplyResponse | null>(null);
+  const [telegramForm, setTelegramForm] = useState({
+    botToken: "",
+    webhookSecret: "",
+    webhookUrl: `${import.meta.env.VITE_API_URL || window.location.origin}/api/integrations/telegram/webhook/`,
+  });
+  const [telegramNotice, setTelegramNotice] = useState<string | null>(null);
   const bot = useQuery({
     queryKey: ["bots", botId],
     queryFn: () => botsApi.get(botId),
@@ -44,6 +50,33 @@ export function BotDetailPage() {
   const addWebsiteChannel = useMutation({
     mutationFn: () => botChannelsApi.create({ bot: botId, channel: "website", status: "draft", external_id: "", config_json: {} }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["bot-channels"] }),
+  });
+  const addTelegramChannel = useMutation({
+    mutationFn: () => botChannelsApi.create({ bot: botId, channel: "telegram", status: "draft", external_id: "", config_json: {} }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["bot-channels"] }),
+  });
+  const telegramConfigMutation = useMutation({
+    mutationFn: (channelId: number) =>
+      telegramChannelApi.configure({
+        channelId,
+        botToken: telegramForm.botToken,
+        webhookSecret: telegramForm.webhookSecret,
+      }),
+    onSuccess: (data) => {
+      setTelegramNotice(`Telegram config saved. Token: ${data.token_configured ? "configured" : "missing"}.`);
+      queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
+    },
+  });
+  const telegramWebhookMutation = useMutation({
+    mutationFn: (channelId: number) => telegramChannelApi.setWebhook({ channelId, webhookUrl: telegramForm.webhookUrl }),
+    onSuccess: (data) => setTelegramNotice(data.mock ? `Webhook mock set: ${data.reason}` : "Webhook set."),
+  });
+  const telegramStatusMutation = useMutation({
+    mutationFn: (channelId: number) => telegramChannelApi.status(channelId),
+    onSuccess: (data) =>
+      setTelegramNotice(
+        `Status: ${data.status}. Token: ${data.token_configured ? "configured" : "missing"}. Last error: ${data.last_error || "none"}.`,
+      ),
   });
   const previewMutation = useMutation({
     mutationFn: (publicToken: string) => websiteChatApi.createConversation({ publicToken, payload: preview }),
@@ -66,6 +99,7 @@ export function BotDetailPage() {
 
   const channels = (botChannels.data || []).filter((channel) => channel.bot === bot.data.id);
   const websiteChannel = channels.find((channel) => channel.channel === "website");
+  const telegramChannel = channels.find((channel) => channel.channel === "telegram");
   const conversations = (botConversations.data || []).filter((conversation) => conversation.bot === bot.data.id);
   const conversationIds = new Set(conversations.map((conversation) => conversation.id));
   const messages = (botMessages.data || []).filter((message) => conversationIds.has(message.conversation));
@@ -90,10 +124,21 @@ export function BotDetailPage() {
             >
               <Plus size={16} />Website channel
             </Button>
+            <Button
+              variant="secondary"
+              onClick={() => addTelegramChannel.mutate()}
+              isLoading={addTelegramChannel.isPending}
+              disabled={Boolean(telegramChannel)}
+            >
+              <Plus size={16} />Telegram channel
+            </Button>
           </>
         }
       />
       {addWebsiteChannel.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(addWebsiteChannel.error)} /></div> : null}
+      {addTelegramChannel.error || telegramConfigMutation.error || telegramWebhookMutation.error || telegramStatusMutation.error ? (
+        <div className="mb-4"><ErrorState message={getApiErrorMessage(addTelegramChannel.error || telegramConfigMutation.error || telegramWebhookMutation.error || telegramStatusMutation.error)} /></div>
+      ) : null}
       {previewMutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(previewMutation.error)} /></div> : null}
       {suggestReplyMutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(suggestReplyMutation.error)} /></div> : null}
 
@@ -163,6 +208,59 @@ export function BotDetailPage() {
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_1fr]">
+        <Card>
+          <CardBody>
+            <div className="mb-5 flex items-center gap-3">
+              <div className="grid h-11 w-11 place-items-center rounded-2xl bg-blue-50 text-blue-700">
+                <Webhook size={20} />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-midnight">Telegram beta setup</h2>
+                <p className="text-sm text-slate-500">Token хранится в channel config, в логах показываем только факт настройки.</p>
+              </div>
+            </div>
+            {telegramNotice ? <div className="mb-4 rounded-2xl bg-blue-50 p-3 text-sm font-semibold text-blue-800">{telegramNotice}</div> : null}
+            {telegramChannel ? (
+              <div className="space-y-4">
+                <Input
+                  label="Bot token"
+                  type="password"
+                  value={telegramForm.botToken}
+                  onChange={(event) => setTelegramForm({ ...telegramForm, botToken: event.target.value })}
+                  placeholder="123456:ABC..."
+                />
+                <Input
+                  label="Webhook secret"
+                  value={telegramForm.webhookSecret}
+                  onChange={(event) => setTelegramForm({ ...telegramForm, webhookSecret: event.target.value })}
+                  placeholder="merchant-secret"
+                />
+                <Input
+                  label="Webhook URL"
+                  value={telegramForm.webhookUrl}
+                  onChange={(event) => setTelegramForm({ ...telegramForm, webhookUrl: event.target.value })}
+                />
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="secondary" onClick={() => telegramConfigMutation.mutate(telegramChannel.id)} isLoading={telegramConfigMutation.isPending}>
+                    <KeyRound size={16} />Save config
+                  </Button>
+                  <Button variant="ai" onClick={() => telegramWebhookMutation.mutate(telegramChannel.id)} isLoading={telegramWebhookMutation.isPending}>
+                    <ShieldCheck size={16} />Set webhook
+                  </Button>
+                  <Button variant="ghost" onClick={() => telegramStatusMutation.mutate(telegramChannel.id)} isLoading={telegramStatusMutation.isPending}>
+                    <Radio size={16} />Check status
+                  </Button>
+                </div>
+                <p className="text-xs leading-5 text-slate-500">Status check не раскрывает полный token и показывает только last error из provider logs.</p>
+              </div>
+            ) : (
+              <div className="rounded-3xl border border-dashed border-slate-200 bg-white/70 p-6 text-sm text-slate-500">
+                Добавьте Telegram channel, чтобы настроить token и webhook.
+              </div>
+            )}
+          </CardBody>
+        </Card>
+
         <Card>
           <CardBody>
             <div className="mb-5 flex items-center gap-3">

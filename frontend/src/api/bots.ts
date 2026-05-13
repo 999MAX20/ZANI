@@ -23,6 +23,37 @@ export const botAiApi = {
   },
 };
 
+export const telegramChannelApi = {
+  configure: async ({ channelId, botToken, webhookSecret }: { channelId: number; botToken: string; webhookSecret: string }) => {
+    const { data } = await apiClient.post<{
+      ok: boolean;
+      token_configured: boolean;
+      webhook_secret_configured: boolean;
+      status: string;
+    }>(`/api/bot-channels/${channelId}/telegram-config/`, {
+      bot_token: botToken,
+      webhook_secret: webhookSecret,
+    });
+    return data;
+  },
+  setWebhook: async ({ channelId, webhookUrl }: { channelId: number; webhookUrl: string }) => {
+    const { data } = await apiClient.post<{ ok: boolean; mock?: boolean; reason?: string }>(
+      `/api/bot-channels/${channelId}/set-telegram-webhook/`,
+      { webhook_url: webhookUrl },
+    );
+    return data;
+  },
+  status: async (channelId: number) => {
+    const { data } = await apiClient.get<{
+      status: string;
+      token_configured: boolean;
+      webhook_secret_configured: boolean;
+      last_error: string;
+    }>(`/api/bot-channels/${channelId}/telegram-status/`);
+    return data;
+  },
+};
+
 export type WebsiteChatConversationPayload = {
   full_name?: string;
   phone?: string;

@@ -1,5 +1,6 @@
 import { apiClient } from "./client";
-import type { BotConversation, BotMessage, Id, Lead, Task } from "../types";
+import type { BotSuggestedReplyResponse } from "./bots";
+import type { BotConversation, BotMessage, Client, Deal, DuplicateClient, Id, Lead, Task } from "../types";
 
 type PaginatedResponse<T> = {
   count: number;
@@ -18,7 +19,9 @@ export type InboxFilters = {
   priority?: string;
   bot_enabled?: string;
   unread?: string;
+  handoff_required?: string;
   search?: string;
+  q?: string;
 };
 
 function cleanParams(filters: InboxFilters) {
@@ -59,6 +62,12 @@ export const inboxApi = {
     });
     return data;
   },
+  suggestReply: async (conversationId: Id) => {
+    const { data } = await apiClient.post<BotSuggestedReplyResponse & { client_id: Id | null; lead_id: Id | null }>(
+      `/api/inbox/conversations/${conversationId}/suggest-reply/`,
+    );
+    return data;
+  },
   createTask: async ({ conversationId, title }: { conversationId: Id; title?: string }) => {
     const { data } = await apiClient.post<Task>(`/api/inbox/conversations/${conversationId}/create-task/`, {
       title,
@@ -66,8 +75,36 @@ export const inboxApi = {
     });
     return data;
   },
+  createClient: async ({ conversationId, full_name, force_create }: { conversationId: Id; full_name?: string; force_create?: boolean }) => {
+    const { data } = await apiClient.post<{
+      client: Client | null;
+      duplicates: DuplicateClient[];
+      created: boolean;
+      requires_confirmation?: boolean;
+    }>(`/api/inbox/conversations/${conversationId}/create-client/`, {
+      full_name,
+      force_create,
+    });
+    return data;
+  },
+  linkClient: async ({ conversationId, clientId }: { conversationId: Id; clientId: Id }) => {
+    const { data } = await apiClient.post<InboxConversation>(`/api/inbox/conversations/${conversationId}/link-client/`, {
+      client_id: clientId,
+    });
+    return data;
+  },
   createLead: async ({ conversationId, message }: { conversationId: Id; message?: string }) => {
     const { data } = await apiClient.post<Lead>(`/api/inbox/conversations/${conversationId}/create-lead/`, { message });
+    return data;
+  },
+  createDeal: async ({ conversationId, title }: { conversationId: Id; title?: string }) => {
+    const { data } = await apiClient.post<Deal>(`/api/inbox/conversations/${conversationId}/create-deal/`, { title });
+    return data;
+  },
+  linkDeal: async ({ conversationId, dealId }: { conversationId: Id; dealId: Id }) => {
+    const { data } = await apiClient.post<InboxConversation>(`/api/inbox/conversations/${conversationId}/link-deal/`, {
+      deal_id: dealId,
+    });
     return data;
   },
   linkLead: async ({ conversationId, leadId }: { conversationId: Id; leadId: Id }) => {

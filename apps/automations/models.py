@@ -88,18 +88,30 @@ class AutomationRun(models.Model):
     trigger_type = models.CharField(max_length=64)
     entity_type = models.CharField(max_length=96, blank=True)
     entity_id = models.CharField(max_length=64, blank=True)
+    idempotency_key = models.CharField(max_length=160, blank=True, null=True, db_index=True)
     status = models.CharField(max_length=32, choices=Statuses.choices, default=Statuses.PENDING)
     payload = models.JSONField(default=dict, blank=True)
+    action_results = models.JSONField(default=list, blank=True)
     error = models.TextField(blank=True)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    max_attempts = models.PositiveSmallIntegerField(default=3)
+    run_after = models.DateTimeField(null=True, blank=True)
+    next_retry_at = models.DateTimeField(null=True, blank=True)
+    locked_at = models.DateTimeField(null=True, blank=True)
     started_at = models.DateTimeField(null=True, blank=True)
     finished_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["business", "idempotency_key"], name="unique_automation_run_idempotency_key"),
+        ]
         indexes = [
             models.Index(fields=["business", "trigger_type", "created_at"]),
             models.Index(fields=["status", "created_at"]),
+            models.Index(fields=["business", "status", "run_after"]),
+            models.Index(fields=["business", "next_retry_at"]),
         ]
 
     def __str__(self):

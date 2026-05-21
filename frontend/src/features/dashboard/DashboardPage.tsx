@@ -1,15 +1,19 @@
-import { CalendarCheck, CalendarPlus, CheckCircle2, Flame, ListChecks, Plus, UserPlus, Users } from "lucide-react";
+import { CalendarCheck, CalendarPlus, CheckCircle2, Flame, ListChecks, MessageSquareText, Plus, Rocket, UserPlus, Users } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
+import { analyticsApi } from "../../api/analytics";
+import { onboardingApi } from "../../api/onboarding";
 import { Card, CardBody } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { EmptyState, ErrorState, PageSkeleton } from "../../components/ui/StateViews";
-import { formatDateTime, todayISO, tomorrowISO } from "../../lib/format";
+import { formatDateTime } from "../../lib/format";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useEntityData } from "../../hooks/useEntityData";
 import { useI18n } from "../../lib/i18n";
+import { useAuth } from "../auth/AuthProvider";
 
 function Metric({
   label,
@@ -53,44 +57,89 @@ export function DashboardPage() {
   const { business, isLoading: businessLoading } = useActiveBusiness();
   const { clients, leads, appointments, services, tasks } = useEntityData();
   const { t } = useI18n();
+  const { user } = useAuth();
+  const metrics = useQuery({
+    queryKey: ["owner-dashboard", business?.id],
+    queryFn: () => analyticsApi.ownerDashboard(business?.id),
+    enabled: Boolean(business),
+  });
+  const onboarding = useQuery({
+    queryKey: ["onboarding-status", business?.id],
+    queryFn: () => onboardingApi.status(business!.id),
+    enabled: Boolean(business),
+    retry: false,
+  });
 
-  if (businessLoading || clients.isLoading || leads.isLoading || appointments.isLoading || tasks.isLoading) return <PageSkeleton />;
+  if (businessLoading || clients.isLoading || leads.isLoading || appointments.isLoading || tasks.isLoading || metrics.isLoading) return <PageSkeleton />;
   if (!business) {
     return <ErrorState message="Бизнес ещё не создан. Откройте настройки и добавьте первый бизнес, чтобы начать работу." />;
   }
+  if (metrics.error) return <ErrorState message="Не удалось загрузить аналитику владельца." />;
 
   const leadList = leads.data || [];
   const appointmentList = appointments.data || [];
-  const today = todayISO();
-  const tomorrow = tomorrowISO();
-  const newLeads = leadList.filter((lead) => lead.status === "new");
-  const todayAppointments = appointmentList.filter((item) => item.start_at.slice(0, 10) === today);
-  const tomorrowAppointments = appointmentList.filter((item) => item.start_at.slice(0, 10) === tomorrow);
-  const createdFromLeads = leadList.filter((lead) => lead.status === "appointment_created").length;
-  const conversion = leadList.length ? Math.round((createdFromLeads / leadList.length) * 100) : 0;
-  const revenue = appointmentList.filter((item) => item.status === "completed").length * 10000;
-  const openTasks = (tasks.data || []).filter((task) => task.status !== "done").length;
+  const taskList = tasks.data || [];
+  const dashboard = metrics.data;
+  const activeMembership = user?.memberships?.find((membership) => Number(membership.business) === Number(business.id));
+  const businessRole = activeMembership?.role || user?.role || "staff";
+  const isOwnerView = ["owner", "admin", "business_owner", "business_manager", "manager"].includes(businessRole);
+  const assignedTasks = taskList.filter((task) => task.status !== "done" && task.status !== "cancelled");
+  const myPendingLeads = leadList.filter((lead) => ["new", "contacted", "in_progress"].includes(lead.status));
+  const newLeadsCount = dashboard?.new_leads || 0;
+  const todayAppointmentsCount = dashboard?.appointments_today || 0;
+  const conversion = dashboard?.conversion_lead_to_appointment || 0;
+  const openTasks = dashboard?.open_tasks || 0;
+  const overdueTasks = dashboard?.overdue_tasks || 0;
+  const revenue = Number(dashboard?.revenue_estimate || 0);
 
   return (
     <>
       <PageHeader
-        title={t("dashboard.title")}
-        description="Короткий рабочий обзор: новые заявки, ближайшие записи и действия на сегодня."
+        title={isOwnerView ? t("dashboard.title") : "Мой рабочий день"}
+        description={isOwnerView ? "Короткий рабочий обзор: новые заявки, ближайшие записи и действия на сегодня." : "Только то, что нужно оператору: заявки, чаты, записи и задачи без финансовых и системных блоков."}
         actions={
           <div className="flex flex-wrap gap-2">
             <Link to="/dashboard/leads"><Button variant="ai"><Plus size={18} />Заявка</Button></Link>
-            <Link to="/dashboard/clients"><Button variant="secondary"><UserPlus size={18} />Клиент</Button></Link>
+            {isOwnerView ? <Link to="/dashboard/clients"><Button variant="secondary"><UserPlus size={18} />Клиент</Button></Link> : null}
             <Link to="/dashboard/appointments"><Button variant="secondary"><CalendarPlus size={18} />Запись</Button></Link>
           </div>
         }
       />
 
+      {!isOwnerView ? (
+        <Card className="mb-5 overflow-hidden border-brand-100">
+          <CardBody className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Operator workspace</p>
+              <h2 className="mt-2 text-2xl font-black text-midnight">Фокус на обработке клиентов</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
+                В этой роли скрыты управленческие и финансовые блоки. Основные действия: ответить в чате, обработать заявку, создать запись и закрыть follow-up.
+              </p>
+            </div>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <Link to="/dashboard/leads" className="rounded-2xl bg-slate-50 px-4 py-3 transition hover:bg-white hover:shadow-soft">
+                <p className="text-2xl font-black text-midnight">{myPendingLeads.length}</p>
+                <p className="text-xs font-bold text-slate-500">заявок</p>
+              </Link>
+              <Link to="/dashboard/conversations" className="rounded-2xl bg-slate-50 px-4 py-3 transition hover:bg-white hover:shadow-soft">
+                <MessageSquareText className="mx-auto text-brand-600" size={22} />
+                <p className="mt-1 text-xs font-bold text-slate-500">чаты</p>
+              </Link>
+              <Link to="/dashboard/tasks" className="rounded-2xl bg-slate-50 px-4 py-3 transition hover:bg-white hover:shadow-soft">
+                <p className="text-2xl font-black text-midnight">{assignedTasks.length}</p>
+                <p className="text-xs font-bold text-slate-500">задач</p>
+              </Link>
+            </div>
+          </CardBody>
+        </Card>
+      ) : null}
+
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <Metric label={t("dashboard.newLeads")} value={newLeads.length} hint="Нужно обработать" icon={Flame} tone="amber" />
-        <Metric label={t("dashboard.appointments")} value={todayAppointments.length} hint="Сегодня" icon={CalendarCheck} tone="brand" />
+        <Metric label={t("dashboard.newLeads")} value={newLeadsCount} hint="Нужно обработать" icon={Flame} tone="amber" />
+        <Metric label={t("dashboard.appointments")} value={todayAppointmentsCount} hint="Сегодня" icon={CalendarCheck} tone="brand" />
         <Metric label="Клиенты" value={clients.data?.length || 0} hint="В базе CRM" icon={Users} tone="green" />
-        <Metric label={t("dashboard.conversion")} value={`${conversion}%`} hint="Лид → запись" icon={CheckCircle2} tone="ai" />
-        <Metric label="Задачи" value={openTasks} hint="Открытые follow-up" icon={ListChecks} />
+        {isOwnerView ? <Metric label={t("dashboard.conversion")} value={`${conversion}%`} hint="Лид → запись" icon={CheckCircle2} tone="ai" /> : null}
+        <Metric label="Задачи" value={openTasks} hint={overdueTasks ? `Просрочено: ${overdueTasks}` : "Открытые follow-up"} icon={ListChecks} />
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
@@ -105,16 +154,35 @@ export function DashboardPage() {
             <div className="space-y-3">
               <Link to="/dashboard/leads" className="block rounded-2xl border border-slate-100 bg-white/70 p-4 transition hover:bg-slate-50">
                 <p className="font-semibold text-midnight">Ответить новым заявкам</p>
-                <p className="mt-1 text-sm text-slate-500">{newLeads.length} новых лидов ждут обработки.</p>
+                <p className="mt-1 text-sm text-slate-500">{newLeadsCount} новых лидов ждут обработки.</p>
               </Link>
               <Link to="/dashboard/appointments" className="block rounded-2xl border border-slate-100 bg-white/70 p-4 transition hover:bg-slate-50">
                 <p className="font-semibold text-midnight">Проверить записи на сегодня</p>
-                <p className="mt-1 text-sm text-slate-500">{todayAppointments.length} записей в календаре.</p>
+                <p className="mt-1 text-sm text-slate-500">{todayAppointmentsCount} записей в календаре.</p>
               </Link>
               <Link to="/dashboard/tasks" className="block rounded-2xl border border-slate-100 bg-white/70 p-4 transition hover:bg-slate-50">
                 <p className="font-semibold text-midnight">Открыть задачи команды</p>
                 <p className="mt-1 text-sm text-slate-500">{openTasks} открытых задач по клиентам и follow-up.</p>
               </Link>
+              {isOwnerView ? (
+                <Link to="/dashboard/analytics" className="block rounded-2xl border border-slate-100 bg-white/70 p-4 transition hover:bg-slate-50">
+                  <p className="font-semibold text-midnight">Проверить источники заявок</p>
+                  <p className="mt-1 text-sm text-slate-500">{dashboard?.leads_by_source?.[0]?.source || "Источники"} показывают, откуда приходит спрос.</p>
+                </Link>
+              ) : null}
+              {onboarding.data && onboarding.data.progress < 100 ? (
+                <Link to="/dashboard/onboarding" className="block rounded-2xl border border-brand-100 bg-brand-50 p-4 transition hover:bg-brand-100/70">
+                  <div className="flex items-center gap-3">
+                    <div className="grid h-10 w-10 place-items-center rounded-2xl bg-white text-brand-700">
+                      <Rocket size={17} />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-midnight">Завершить быстрый старт</p>
+                      <p className="mt-1 text-sm text-slate-600">Готовность CRM: {onboarding.data.progress}%.</p>
+                    </div>
+                  </div>
+                </Link>
+              ) : null}
             </div>
           </CardBody>
         </Card>
@@ -181,7 +249,7 @@ export function DashboardPage() {
           </CardBody>
         </Card>
 
-        <Card>
+        {isOwnerView ? <Card>
           <CardBody>
             <div className="flex items-center gap-3">
               <div className="grid h-10 w-10 place-items-center rounded-2xl bg-slate-100 text-midnight">
@@ -200,10 +268,11 @@ export function DashboardPage() {
               <div className="rounded-2xl border border-slate-100 bg-white/70 p-4">
                 <p className="text-sm font-semibold text-midnight">Выручка</p>
                 <p className="mt-1 text-2xl font-bold text-midnight">{`${revenue.toLocaleString("ru-RU")} ₸`}</p>
+                <p className="mt-1 text-xs text-slate-400">Оценка по завершённым записям и цене услуг.</p>
               </div>
             </div>
           </CardBody>
-        </Card>
+        </Card> : null}
       </div>
     </>
   );

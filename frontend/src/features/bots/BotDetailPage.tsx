@@ -14,6 +14,7 @@ import { Textarea } from "../../components/ui/Textarea";
 import { ErrorState, LoadingState } from "../../components/ui/StateViews";
 import { useEntityData } from "../../hooks/useEntityData";
 import type { BotChannel } from "../../types";
+import { WhatsAppSetupCard } from "./WhatsAppSetupCard";
 
 const channelLabels: Record<BotChannel["channel"], string> = {
   website: "Website chat",
@@ -53,6 +54,10 @@ export function BotDetailPage() {
   });
   const addTelegramChannel = useMutation({
     mutationFn: () => botChannelsApi.create({ bot: botId, channel: "telegram", status: "draft", external_id: "", config_json: {} }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["bot-channels"] }),
+  });
+  const addWhatsAppChannel = useMutation({
+    mutationFn: () => botChannelsApi.create({ bot: botId, channel: "whatsapp", status: "draft", external_id: "", config_json: { provider_mode: "mock" } }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["bot-channels"] }),
   });
   const telegramConfigMutation = useMutation({
@@ -100,6 +105,7 @@ export function BotDetailPage() {
   const channels = (botChannels.data || []).filter((channel) => channel.bot === bot.data.id);
   const websiteChannel = channels.find((channel) => channel.channel === "website");
   const telegramChannel = channels.find((channel) => channel.channel === "telegram");
+  const whatsappChannel = channels.find((channel) => channel.channel === "whatsapp");
   const conversations = (botConversations.data || []).filter((conversation) => conversation.bot === bot.data.id);
   const conversationIds = new Set(conversations.map((conversation) => conversation.id));
   const messages = (botMessages.data || []).filter((message) => conversationIds.has(message.conversation));
@@ -132,6 +138,14 @@ export function BotDetailPage() {
             >
               <Plus size={16} />Telegram channel
             </Button>
+            <Button
+              variant="secondary"
+              onClick={() => addWhatsAppChannel.mutate()}
+              isLoading={addWhatsAppChannel.isPending}
+              disabled={Boolean(whatsappChannel)}
+            >
+              <Plus size={16} />WhatsApp channel
+            </Button>
           </>
         }
       />
@@ -139,6 +153,7 @@ export function BotDetailPage() {
       {addTelegramChannel.error || telegramConfigMutation.error || telegramWebhookMutation.error || telegramStatusMutation.error ? (
         <div className="mb-4"><ErrorState message={getApiErrorMessage(addTelegramChannel.error || telegramConfigMutation.error || telegramWebhookMutation.error || telegramStatusMutation.error)} /></div>
       ) : null}
+      {addWhatsAppChannel.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(addWhatsAppChannel.error)} /></div> : null}
       {previewMutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(previewMutation.error)} /></div> : null}
       {suggestReplyMutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(suggestReplyMutation.error)} /></div> : null}
 
@@ -260,6 +275,8 @@ export function BotDetailPage() {
             )}
           </CardBody>
         </Card>
+
+        <WhatsAppSetupCard channel={whatsappChannel} />
 
         <Card>
           <CardBody>

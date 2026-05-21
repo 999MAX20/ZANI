@@ -1,5 +1,6 @@
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from apps.ai_core.assistant import assert_business_access, build_crm_context
@@ -37,6 +38,9 @@ class AgentProfileViewSet(TenantModelViewSet):
 
 
 class AIAssistantChatView(APIView):
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "ai_assistant"
+
     def post(self, request):
         serializer = AIAssistantChatSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

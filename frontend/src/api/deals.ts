@@ -7,9 +7,8 @@ export const pipelineStagesApi = createCrudApi<PipelineStage>("/api/pipeline-sta
 
 export const dealsApi = {
   ...createCrudApi<Deal>("/api/deals/"),
-  moveStage: async ({ id, stage }: { id: Id; stage: Id }) => {
-    const { data } = await apiClient.post<Deal>(`/api/deals/${id}/move-stage/`, { stage });
+  moveStage: async ({ id, stage, lost_reason }: { id: Id; stage: Id; lost_reason?: string }) => {
+    const { data } = await apiClient.post<Deal>(`/api/deals/${id}/move-stage/`, { stage, lost_reason });
     return data;
   },
 };
-

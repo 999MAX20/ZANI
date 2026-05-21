@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from apps.activities.models import ActivityEvent, Note, Tag, TaggedObject
+from apps.activities.models import ActivityEvent, Note, Segment, SegmentFilter, Tag, TaggedObject
 
 
 @admin.register(ActivityEvent)
@@ -29,3 +29,23 @@ class TaggedObjectAdmin(admin.ModelAdmin):
     list_display = ("tag", "business", "entity_type", "entity_id", "created_at")
     list_filter = ("entity_type",)
     search_fields = ("tag__name", "entity_type", "entity_id")
+
+
+class SegmentFilterInline(admin.TabularInline):
+    model = SegmentFilter
+    extra = 0
+
+
+@admin.register(Segment)
+class SegmentAdmin(admin.ModelAdmin):
+    list_display = ("name", "business", "entity_type", "cached_count", "is_active", "last_evaluated_at")
+    list_filter = ("entity_type", "is_active")
+    search_fields = ("name", "description", "business__name")
+    inlines = [SegmentFilterInline]
+
+
+@admin.register(SegmentFilter)
+class SegmentFilterAdmin(admin.ModelAdmin):
+    list_display = ("segment", "business", "field", "operator", "sort_order")
+    list_filter = ("field", "operator")
+    search_fields = ("segment__name", "business__name")

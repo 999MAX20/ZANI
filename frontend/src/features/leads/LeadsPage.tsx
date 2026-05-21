@@ -39,6 +39,7 @@ function LeadCard({
   serviceName,
   onOpen,
   onBook,
+  onArchive,
   onAiReply,
   t,
 }: {
@@ -48,6 +49,7 @@ function LeadCard({
   serviceName?: string;
   onOpen: () => void;
   onBook: () => void;
+  onArchive: () => void;
   onAiReply: () => void;
   t: (key: string) => string;
 }) {
@@ -88,6 +90,7 @@ function LeadCard({
       <div className="mt-4 flex flex-wrap gap-2">
         <Button variant="secondary" className="h-9 rounded-xl px-3 text-xs" onClick={onOpen}>{t("leads.open")}</Button>
         <Button variant="ghost" className="h-9 rounded-xl px-3 text-xs" onClick={onBook}><CalendarPlus size={14} />{t("leads.book")}</Button>
+        <Button variant="ghost" className="h-9 rounded-xl px-3 text-xs" onClick={onArchive}>Архив</Button>
         {phone ? (
           <Button variant="ghost" className="h-9 w-9 rounded-xl px-0" onClick={() => window.open(`https://wa.me/${phone.replace(/\D/g, "")}`, "_blank", "noopener,noreferrer")}>
             <MessageCircle size={15} />
@@ -116,7 +119,7 @@ function KanbanColumn({
   return (
     <section
       ref={setNodeRef}
-      className={`min-h-[420px] min-w-[310px] rounded-3xl border border-white/70 bg-white/45 p-3 shadow-soft backdrop-blur-xl transition ${isOver ? "ring-2 ring-brand-300" : ""}`}
+      className={`min-h-[420px] min-w-[84vw] snap-start rounded-3xl border border-white/70 bg-white/45 p-3 shadow-soft backdrop-blur-xl transition sm:min-w-[340px] lg:min-w-0 ${isOver ? "ring-2 ring-brand-300" : ""}`}
     >
       <div className="mb-3 flex items-center justify-between px-1">
         <div>
@@ -153,7 +156,11 @@ export function LeadsPage() {
   });
 
   const statusMutation = useMutation({
-    mutationFn: ({ id, status }: { id: number; status: Lead["status"] }) => leadsApi.update({ id, payload: { status } }),
+    mutationFn: ({ id, status, lost_reason }: { id: number; status: Lead["status"]; lost_reason?: string }) => leadsApi.update({ id, payload: { status, lost_reason } }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["leads"] }),
+  });
+  const archiveMutation = useMutation({
+    mutationFn: leadsApi.archive,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["leads"] }),
   });
 
@@ -189,6 +196,12 @@ export function LeadsPage() {
     const targetStatus = columns.find((column) => column.id === overId)?.id || hoveredLead?.status;
     const currentLead = rows.find((lead) => lead.id === activeId);
     if (!targetStatus || !activeId || currentLead?.status === targetStatus) return;
+    if (targetStatus === "lost") {
+      const lostReason = window.prompt("Почему заявка потеряна?");
+      if (!lostReason) return;
+      statusMutation.mutate({ id: activeId, status: targetStatus, lost_reason: lostReason });
+      return;
+    }
     statusMutation.mutate({ id: activeId, status: targetStatus });
   }
 
@@ -202,8 +215,8 @@ export function LeadsPage() {
         description={t("leads.description")}
         actions={<Button variant="ai" onClick={() => { setSelected(undefined); setOpen(true); }}><Plus size={18} />{t("leads.new")}</Button>}
       />
-      {leadMutation.error || appointmentMutation.error || statusMutation.error ? (
-        <div className="mb-4"><ErrorState message={getApiErrorMessage(leadMutation.error || appointmentMutation.error || statusMutation.error)} /></div>
+      {leadMutation.error || appointmentMutation.error || statusMutation.error || archiveMutation.error ? (
+        <div className="mb-4"><ErrorState message={getApiErrorMessage(leadMutation.error || appointmentMutation.error || statusMutation.error || archiveMutation.error)} /></div>
       ) : null}
       {notice ? (
         <div className="mb-4 rounded-3xl border border-ai-100 bg-ai-50 px-4 py-3 text-sm font-medium text-ai-800">
@@ -216,7 +229,7 @@ export function LeadsPage() {
       </div>
 
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-        <div className="no-scrollbar grid gap-4 overflow-x-auto pb-4 lg:grid-cols-3 2xl:grid-cols-6">
+        <div className="no-scrollbar flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 lg:grid lg:grid-cols-3 2xl:grid-cols-6">
           {columns.map((column) => {
             const columnLeads = rows.filter((lead) => lead.status === column.id);
             return (
@@ -238,6 +251,10 @@ export function LeadsPage() {
                           serviceName={service?.name}
                           onOpen={() => setDrawerEntity({ type: "lead", id: lead.id })}
                           onBook={() => { setSelected(lead); setAppointmentOpen(true); }}
+                          onArchive={() => {
+                            const reason = window.prompt("Причина архивации заявки");
+                            if (reason !== null) archiveMutation.mutate({ id: lead.id, reason });
+                          }}
                           onAiReply={() => setNotice("AI подготовил короткий ответ для заявки. Реальная отправка будет подключена через Conversations API.")}
                           t={t}
                         />
@@ -276,7 +293,18 @@ export function LeadsPage() {
             </div>
           </div>
         ) : null}
-        <LeadForm businessId={business.id} clients={clients.data || []} services={services.data || []} initial={selected} onSubmit={(payload) => leadMutation.mutateAsync(payload)} />
+        <LeadForm
+          businessId={business.id}
+          clients={clients.data || []}
+          services={services.data || []}
+          initial={selected}
+          onSubmit={(payload) => leadMutation.mutateAsync(payload)}
+          onOpenClient={(id) => {
+            setOpen(false);
+            setSelected(undefined);
+            setDrawerEntity({ type: "client", id });
+          }}
+        />
       </Modal>
 
       <Modal title={t("leads.bookFromLead")} open={appointmentOpen} onClose={() => setAppointmentOpen(false)}>

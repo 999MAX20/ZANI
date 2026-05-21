@@ -1,7 +1,11 @@
 import { cn } from "../../lib/cn";
 
-export function Card({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <section className={cn("premium-card rounded-3xl", className)}>{children}</section>;
+type CardProps = React.HTMLAttributes<HTMLElement> & {
+  children: React.ReactNode;
+};
+
+export function Card({ className, children, ...props }: CardProps) {
+  return <section className={cn("premium-card rounded-3xl", className)} {...props}>{children}</section>;
 }
 
 export function CardHeader({ className, children }: { className?: string; children: React.ReactNode }) {

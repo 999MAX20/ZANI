@@ -1,4 +1,4 @@
-import { AlertCircle, Inbox, Loader2 } from "lucide-react";
+import { AlertCircle, Inbox, Loader2, ShieldAlert } from "lucide-react";
 
 import { cn } from "../../lib/cn";
 
@@ -23,6 +23,31 @@ export function ErrorState({ message }: { message: string }) {
     <div className="flex items-start gap-3 rounded-3xl border border-red-100 bg-red-50/85 p-4 text-sm text-red-700 shadow-sm">
       <AlertCircle className="mt-0.5 shrink-0" size={18} />
       <span>{message}</span>
+    </div>
+  );
+}
+
+export function ForbiddenState({
+  title = "Раздел скрыт настройками доступа",
+  message,
+}: {
+  title?: string;
+  message: string;
+}) {
+  return (
+    <div className="rounded-3xl border border-amber-100 bg-amber-50/80 p-6 shadow-soft backdrop-blur-xl">
+      <div className="flex items-start gap-4">
+        <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white text-amber-600 shadow-sm">
+          <ShieldAlert size={24} />
+        </div>
+        <div>
+          <p className="text-lg font-black text-midnight">{title}</p>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-amber-900/80">{message}</p>
+          <p className="mt-4 rounded-2xl bg-white/75 px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-amber-700">
+            Доступ не удаляет данные, он только скрывает разделы и действия от роли сотрудника.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

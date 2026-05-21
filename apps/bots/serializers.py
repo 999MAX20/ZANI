@@ -3,6 +3,7 @@ from rest_framework import serializers
 from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
 from apps.bots.inbox_service import register_bot_message
 from apps.billing.models import UsageCounter
+from apps.billing.entitlements import EntitlementMetrics, assert_entitlement_allows
 from apps.billing.usage import increment_usage
 from apps.clients.models import Client
 from apps.leads.models import Lead
@@ -31,11 +32,17 @@ class TelegramSetWebhookSerializer(serializers.Serializer):
     webhook_url = serializers.URLField(required=True)
 
 
+class WhatsAppChannelConfigSerializer(serializers.Serializer):
+    provider_mode = serializers.ChoiceField(choices=["mock", "disabled"], required=False)
+    webhook_secret = serializers.CharField(required=False, allow_blank=True, trim_whitespace=True)
+    phone_number_id = serializers.CharField(required=False, allow_blank=True, trim_whitespace=True)
+
+
 class BotConversationSerializer(serializers.ModelSerializer):
     class Meta:
         model = BotConversation
         fields = "__all__"
-        read_only_fields = ["public_id", "created_at", "updated_at"]
+        read_only_fields = ["public_id", "created_at", "updated_at", "archived_at", "archived_by"]
 
     def validate(self, attrs):
         business = attrs.get("business") or getattr(self.instance, "business", None)
@@ -55,6 +62,8 @@ class BotConversationSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
+        business = validated_data["business"]
+        assert_entitlement_allows(business, EntitlementMetrics.CONVERSATIONS)
         conversation = super().create(validated_data)
         increment_usage(conversation.business, UsageCounter.Metrics.CONVERSATIONS)
         return conversation
@@ -89,6 +98,7 @@ class PublicWebsiteChatConversationCreateSerializer(serializers.Serializer):
     def create(self, validated_data):
         channel = self.context["channel"]
         business = channel.bot.business
+        assert_entitlement_allows(business, EntitlementMetrics.CONVERSATIONS)
         full_name = validated_data.get("full_name") or "Website visitor"
         phone = validated_data.get("phone", "")
         email = validated_data.get("email", "")
@@ -165,6 +175,7 @@ class PublicWebsiteChatMessageCreateSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         conversation = self.context["conversation"]
+        assert_entitlement_allows(conversation.business, EntitlementMetrics.BOT_MESSAGES)
         if validated_data.get("external_user_id") and not conversation.external_user_id:
             conversation.external_user_id = validated_data["external_user_id"]
             conversation.save(update_fields=["external_user_id", "updated_at"])

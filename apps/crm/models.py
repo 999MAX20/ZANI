@@ -35,6 +35,8 @@ class PipelineStage(TimeStampedModel):
     color = models.CharField(max_length=24, default="#2563eb")
     probability = models.PositiveSmallIntegerField(default=0)
     sla_minutes = models.PositiveIntegerField(null=True, blank=True)
+    required_fields_json = models.JSONField(default=dict, blank=True)
+    allowed_roles_json = models.JSONField(default=dict, blank=True)
     is_won = models.BooleanField(default=False)
     is_lost = models.BooleanField(default=False)
 
@@ -76,13 +78,44 @@ class Deal(TimeStampedModel):
     )
     status = models.CharField(max_length=32, choices=Statuses.choices, default=Statuses.OPEN)
     source = models.CharField(max_length=64, blank=True)
+    lost_reason = models.TextField(blank=True)
+    lost_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="lost_deals",
+    )
+    won_at = models.DateTimeField(null=True, blank=True)
+    lost_at = models.DateTimeField(null=True, blank=True)
+    previous_status = models.CharField(max_length=32, blank=True)
+    previous_stage = models.ForeignKey(
+        PipelineStage,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="previous_deals",
+    )
+    stage_entered_at = models.DateTimeField(null=True, blank=True)
+    next_action_at = models.DateTimeField(null=True, blank=True)
     notes = models.TextField(blank=True)
+    is_archived = models.BooleanField(default=False)
+    archived_at = models.DateTimeField(null=True, blank=True)
+    archived_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="archived_deals",
+    )
+    archive_reason = models.TextField(blank=True)
 
     class Meta:
         ordering = ["-updated_at"]
         indexes = [
             models.Index(fields=["business", "pipeline", "stage"]),
             models.Index(fields=["business", "status", "updated_at"]),
+            models.Index(fields=["business", "is_archived", "updated_at"]),
             models.Index(fields=["owner", "updated_at"]),
         ]
 

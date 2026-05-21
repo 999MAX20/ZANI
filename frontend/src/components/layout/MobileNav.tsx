@@ -32,7 +32,7 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
         </div>
       ) : null}
 
-      <nav className="fixed inset-x-3 bottom-3 z-30 grid grid-cols-5 rounded-3xl border border-white/70 bg-white/85 p-2 shadow-premium backdrop-blur-2xl lg:hidden">
+      <nav className="fixed inset-x-3 bottom-3 z-30 grid grid-cols-5 rounded-3xl border border-white/70 bg-white/90 p-2 shadow-premium backdrop-blur-2xl lg:hidden">
         {bottomItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -42,13 +42,13 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
               end={item.to === "/"}
               className={({ isActive }) =>
                 cn(
-                  "flex flex-col items-center gap-1 rounded-2xl px-2 py-2 text-[11px] font-semibold text-slate-500 transition",
+                  "flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-center text-[11px] font-semibold leading-tight text-slate-500 transition",
                   isActive && "bg-ai-gradient text-white shadow-glow",
                 )
               }
             >
-              <Icon size={18} />
-              {t(item.label)}
+              <Icon size={20} />
+              <span className="line-clamp-1 max-w-full">{t(item.label)}</span>
             </NavLink>
           );
         })}

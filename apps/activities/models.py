@@ -88,6 +88,7 @@ class TaggedObject(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        ordering = ["-created_at"]
         constraints = [
             models.UniqueConstraint(fields=["tag", "entity_type", "entity_id"], name="unique_tagged_object"),
         ]
@@ -97,3 +98,64 @@ class TaggedObject(models.Model):
 
     def __str__(self):
         return f"{self.tag} -> {self.entity_type}#{self.entity_id}"
+
+
+class Segment(TimeStampedModel):
+    class EntityTypes(models.TextChoices):
+        CLIENT = "client", "Client"
+
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name="segments")
+    name = models.CharField(max_length=96)
+    description = models.TextField(blank=True)
+    entity_type = models.CharField(max_length=32, choices=EntityTypes.choices, default=EntityTypes.CLIENT)
+    is_active = models.BooleanField(default=True)
+    cached_count = models.PositiveIntegerField(default=0)
+    last_evaluated_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(fields=["business", "name", "entity_type"], name="unique_segment_name_per_business_entity"),
+        ]
+        indexes = [
+            models.Index(fields=["business", "entity_type", "is_active"]),
+        ]
+
+    def __str__(self):
+        return self.name
+
+
+class SegmentFilter(TimeStampedModel):
+    class Fields(models.TextChoices):
+        NAME = "full_name", "Client name"
+        PHONE = "phone", "Phone"
+        EMAIL = "email", "Email"
+        SOURCE = "source", "Source"
+        NOTES = "notes", "Notes"
+        TAG = "tag", "Tag"
+        CREATED_AT = "created_at", "Created at"
+
+    class Operators(models.TextChoices):
+        EQUALS = "equals", "Equals"
+        CONTAINS = "contains", "Contains"
+        IN = "in", "In"
+        GTE = "gte", "Greater or equal"
+        LTE = "lte", "Less or equal"
+        IS_EMPTY = "is_empty", "Is empty"
+        NOT_EMPTY = "not_empty", "Not empty"
+
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name="segment_filters")
+    segment = models.ForeignKey(Segment, on_delete=models.CASCADE, related_name="filters")
+    field = models.CharField(max_length=64, choices=Fields.choices)
+    operator = models.CharField(max_length=32, choices=Operators.choices, default=Operators.EQUALS)
+    value_json = models.JSONField(default=dict, blank=True)
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["segment", "sort_order", "id"]
+        indexes = [
+            models.Index(fields=["business", "segment", "field"]),
+        ]
+
+    def __str__(self):
+        return f"{self.segment}: {self.field} {self.operator}"

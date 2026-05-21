@@ -83,17 +83,23 @@ class BotConversation(TimeStampedModel):
     external_thread_id = models.CharField(max_length=255, blank=True)
     client = models.ForeignKey(Client, on_delete=models.SET_NULL, null=True, blank=True, related_name="bot_conversations")
     lead = models.ForeignKey(Lead, on_delete=models.SET_NULL, null=True, blank=True, related_name="bot_conversations")
+    deal = models.ForeignKey("crm.Deal", on_delete=models.SET_NULL, null=True, blank=True, related_name="bot_conversations")
     assigned_to = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="assigned_bot_conversations")
     status = models.CharField(max_length=32, choices=Statuses.choices, default=Statuses.OPEN)
     priority = models.CharField(max_length=32, choices=Priorities.choices, default=Priorities.NORMAL)
     bot_enabled = models.BooleanField(default=True)
     handoff_required = models.BooleanField(default=False)
     handoff_reason = models.TextField(blank=True)
+    close_reason = models.TextField(blank=True)
     last_message_at = models.DateTimeField(null=True, blank=True)
     last_inbound_at = models.DateTimeField(null=True, blank=True)
     last_outbound_at = models.DateTimeField(null=True, blank=True)
     unread_count = models.PositiveIntegerField(default=0)
     metadata_json = models.JSONField(default=dict, blank=True)
+    is_archived = models.BooleanField(default=False)
+    archived_at = models.DateTimeField(null=True, blank=True)
+    archived_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="archived_bot_conversations")
+    archive_reason = models.TextField(blank=True)
 
     class Meta:
         ordering = ["-updated_at"]

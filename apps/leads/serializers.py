@@ -1,6 +1,9 @@
 from rest_framework import serializers
 
-from apps.leads.models import Lead
+from apps.clients.models import Client
+from apps.clients.services import duplicate_payload, find_duplicate_clients
+from apps.core.permissions import accessible_businesses
+from apps.leads.models import Lead, LeadForm, LeadFormField, LeadFormSubmission
 from apps.scheduling.models import Resource
 from apps.services.models import Service
 
@@ -9,7 +12,7 @@ class LeadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lead
         fields = "__all__"
-        read_only_fields = ["created_at", "updated_at"]
+        read_only_fields = ["created_at", "updated_at", "lost_at", "lost_by", "previous_status", "archived_at", "archived_by"]
 
     def validate(self, attrs):
         business = attrs.get("business") or getattr(self.instance, "business", None)
@@ -36,3 +39,74 @@ class CreateAppointmentFromLeadSerializer(serializers.Serializer):
         if resource and resource.business_id != lead.business_id:
             raise serializers.ValidationError("Resource must belong to lead business.")
         return attrs
+
+
+class LeadDuplicateCheckSerializer(serializers.Serializer):
+    business = serializers.IntegerField()
+    client = serializers.IntegerField(required=False, allow_null=True)
+    phone = serializers.CharField(required=False, allow_blank=True)
+    email = serializers.EmailField(required=False, allow_blank=True)
+
+    def validate_business(self, value):
+        request = self.context["request"]
+        business = accessible_businesses(request.user).filter(id=value).first()
+        if business is None and getattr(request.user, "is_platform_user", False):
+            from apps.businesses.models import Business
+
+            business = Business.objects.filter(id=value).first()
+        if business is None:
+            raise serializers.ValidationError("Business is not available.")
+        return business
+
+    def duplicates(self):
+        business = self.validated_data["business"]
+        client = None
+        if self.validated_data.get("client"):
+            client = Client.objects.filter(id=self.validated_data["client"], business=business).first()
+        phone = self.validated_data.get("phone") or getattr(client, "phone", "")
+        email = self.validated_data.get("email") or getattr(client, "email", "")
+        duplicates = find_duplicate_clients(business, phone=phone, email=email, exclude_client_id=getattr(client, "id", None))
+        client_rows = duplicate_payload(duplicates, phone=phone, email=email)
+        lead_rows = []
+        if client:
+            related_leads = Lead.objects.filter(business=business, client=client).order_by("-created_at")[:5]
+            lead_rows = [
+                {"id": lead.id, "client": lead.client_id, "status": lead.status, "source": lead.source, "message": lead.message}
+                for lead in related_leads
+            ]
+        return {"duplicates": client_rows, "related_leads": lead_rows}
+
+
+class LeadFormFieldSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LeadFormField
+        fields = "__all__"
+        read_only_fields = ["created_at", "updated_at"]
+
+
+class LeadFormSerializer(serializers.ModelSerializer):
+    fields = LeadFormFieldSerializer(many=True, read_only=True)
+    submissions_count = serializers.IntegerField(source="submissions.count", read_only=True)
+
+    class Meta:
+        model = LeadForm
+        fields = "__all__"
+        read_only_fields = ["public_id", "created_at", "updated_at", "submissions_count"]
+
+
+class LeadFormSubmissionSerializer(serializers.ModelSerializer):
+    form_name = serializers.CharField(source="form.name", read_only=True)
+
+    class Meta:
+        model = LeadFormSubmission
+        fields = "__all__"
+        read_only_fields = ["created_at"]
+
+
+class PublicLeadFormSerializer(serializers.ModelSerializer):
+    fields = LeadFormFieldSerializer(many=True, read_only=True)
+    business_name = serializers.CharField(source="business.name", read_only=True)
+
+    class Meta:
+        model = LeadForm
+        fields = ["public_id", "business_name", "title", "description", "success_message", "fields"]

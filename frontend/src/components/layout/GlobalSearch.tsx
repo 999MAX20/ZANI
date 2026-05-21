@@ -166,7 +166,7 @@ export function GlobalSearch() {
       </div>
 
       {open ? (
-        <div className="absolute left-0 top-full z-40 mt-2 w-[min(92vw,560px)] rounded-3xl border border-white/70 bg-white p-3 shadow-premium">
+        <div className="fixed inset-x-3 top-20 z-40 rounded-3xl border border-white/70 bg-white p-3 shadow-premium lg:absolute lg:inset-x-auto lg:left-0 lg:top-full lg:mt-2 lg:w-[min(92vw,560px)]">
           <div className="max-h-[420px] space-y-1 overflow-auto">
             {results.map((item) => {
               const Icon = item.icon;

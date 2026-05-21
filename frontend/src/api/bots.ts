@@ -1,11 +1,18 @@
 import { createCrudApi } from "./crud";
 import { apiClient } from "./client";
-import type { Bot, BotChannel, BotConversation, BotMessage } from "../types";
+import type { Bot, BotChannel, BotConversation, BotMessage, IntegrationEventLog } from "../types";
 
 export const botsApi = createCrudApi<Bot>("/api/bots/");
 export const botChannelsApi = createCrudApi<BotChannel>("/api/bot-channels/");
 export const botConversationsApi = createCrudApi<BotConversation>("/api/bot-conversations/");
 export const botMessagesApi = createCrudApi<BotMessage>("/api/bot-messages/");
+
+export const integrationEventLogsApi = {
+  list: async (params?: { provider?: string; channel?: string; status?: string; direction?: string }) => {
+    const { data } = await apiClient.get<IntegrationEventLog[] | { results: IntegrationEventLog[] }>("/api/integration-event-logs/", { params });
+    return Array.isArray(data) ? data : data.results;
+  },
+};
 
 export type BotSuggestedReplyResponse = {
   suggested_reply: string;
@@ -50,6 +57,48 @@ export const telegramChannelApi = {
       webhook_secret_configured: boolean;
       last_error: string;
     }>(`/api/bot-channels/${channelId}/telegram-status/`);
+    return data;
+  },
+};
+
+export type WhatsAppChannelStatus = {
+  status: string;
+  provider_mode: "mock" | "disabled";
+  webhook_url: string;
+  phone_number_id_configured: boolean;
+  webhook_secret_configured: boolean;
+  last_error: string;
+  last_event_status: string;
+  last_event_at: string | null;
+};
+
+export const whatsappChannelApi = {
+  configure: async ({
+    channelId,
+    providerMode,
+    webhookSecret,
+    phoneNumberId,
+  }: {
+    channelId: number;
+    providerMode: "mock" | "disabled";
+    webhookSecret: string;
+    phoneNumberId: string;
+  }) => {
+    const { data } = await apiClient.post<{
+      ok: boolean;
+      provider_mode: "mock" | "disabled";
+      status: string;
+      phone_number_id_configured: boolean;
+      webhook_secret_configured: boolean;
+    }>(`/api/bot-channels/${channelId}/whatsapp-config/`, {
+      provider_mode: providerMode,
+      webhook_secret: webhookSecret,
+      phone_number_id: phoneNumberId,
+    });
+    return data;
+  },
+  status: async (channelId: number) => {
+    const { data } = await apiClient.get<WhatsAppChannelStatus>(`/api/bot-channels/${channelId}/whatsapp-status/`);
     return data;
   },
 };

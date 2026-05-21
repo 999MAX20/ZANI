@@ -10,7 +10,7 @@ from apps.clients.models import Client
 from apps.notifications.models import Notification
 from apps.scheduling.models import Appointment
 from apps.services.models import Service
-from apps.tasks.models import Task
+from apps.tasks.models import Task, TaskComment
 
 
 class TasksAndNotificationsPolishTests(TestCase):
@@ -86,13 +86,36 @@ class TasksAndNotificationsPolishTests(TestCase):
 
         start_response = self.api.post(f"/api/tasks/{task.id}/start/")
         complete_response = self.api.post(f"/api/tasks/{task.id}/complete/")
+        reopen_response = self.api.post(f"/api/tasks/{task.id}/reopen/")
 
         self.assertEqual(start_response.status_code, 200)
         self.assertEqual(start_response.data["status"], Task.Statuses.IN_PROGRESS)
         self.assertEqual(complete_response.status_code, 200)
         self.assertEqual(complete_response.data["status"], Task.Statuses.DONE)
+        self.assertEqual(reopen_response.status_code, 200)
+        self.assertEqual(reopen_response.data["status"], Task.Statuses.OPEN)
         task.refresh_from_db()
-        self.assertIsNotNone(task.completed_at)
+        self.assertIsNone(task.completed_at)
+
+    def test_task_comments_watchers_assign_and_snooze(self):
+        task = Task.objects.create(business=self.business, title="Team follow up", client=self.client)
+        self.api.force_authenticate(self.owner)
+        snoozed_until = "2026-05-14T10:00:00+06:00"
+
+        comment_response = self.api.post(f"/api/tasks/{task.id}/add-comment/", {"text": "Call after lunch"}, format="json")
+        watcher_response = self.api.post(f"/api/tasks/{task.id}/add-watcher/", format="json")
+        assign_response = self.api.post(f"/api/tasks/{task.id}/assign/", format="json")
+        snooze_response = self.api.post(f"/api/tasks/{task.id}/snooze/", {"snoozed_until": snoozed_until}, format="json")
+
+        self.assertEqual(comment_response.status_code, 201)
+        self.assertEqual(watcher_response.status_code, 200)
+        self.assertEqual(assign_response.status_code, 200)
+        self.assertEqual(snooze_response.status_code, 200)
+        task.refresh_from_db()
+        self.assertEqual(TaskComment.objects.filter(task=task).count(), 1)
+        self.assertTrue(task.watchers.filter(id=self.owner.id).exists())
+        self.assertEqual(task.assignee, self.owner)
+        self.assertIsNotNone(task.snoozed_until)
 
     def test_notification_summary_and_actions_are_tenant_scoped(self):
         own_notification = Notification.objects.create(

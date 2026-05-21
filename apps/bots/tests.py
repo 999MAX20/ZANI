@@ -6,6 +6,7 @@ from apps.accounts.models import User
 from apps.ai_core.models import AIRequestLog, AgentProfile, BusinessKnowledgeItem
 from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
 from apps.businesses.models import Business, BusinessMember
+from apps.crm.models import Deal, Pipeline, PipelineStage
 from apps.leads.models import Lead
 from apps.tasks.models import Task
 
@@ -386,6 +387,10 @@ class InboxBackendTests(TestCase):
         self.assertTrue(handoff_response.data["handoff_required"])
         self.assertFalse(handoff_response.data["bot_enabled"])
 
+        handoff_filter_response = self.api.get("/api/inbox/conversations/?handoff_required=true&q=Hello")
+        self.assertEqual(handoff_filter_response.status_code, 200)
+        self.assertEqual(handoff_filter_response.data["count"], 1)
+
         mark_read_response = self.api.post(f"/api/inbox/conversations/{self.conversation.id}/mark-read/")
         self.assertEqual(mark_read_response.status_code, 200)
         self.assertEqual(mark_read_response.data["unread_count"], 0)
@@ -405,6 +410,40 @@ class InboxBackendTests(TestCase):
         self.assertEqual(response.data["status"], BotMessage.Statuses.QUEUED)
         self.conversation.refresh_from_db()
         self.assertIsNotNone(self.conversation.last_outbound_at)
+
+    def test_inbox_suggest_reply_uses_conversation_context(self):
+        BotMessage.objects.create(
+            conversation=self.conversation,
+            direction=BotMessage.Directions.INBOUND,
+            sender_type=BotMessage.SenderTypes.CLIENT,
+            text="Хочу записаться на консультацию завтра",
+        )
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(f"/api/inbox/conversations/{self.conversation.id}/suggest-reply/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data["suggested_reply"])
+        self.assertEqual(response.data["messages_used"], 1)
+        self.assertEqual(response.data["client_id"], self.client.id)
+        self.assertIsNone(response.data["lead_id"])
+        log = AIRequestLog.objects.filter(prompt_type="bot_suggest_reply").latest("id")
+        self.assertEqual(log.input_json["crm_context"]["client"]["id"], self.client.id)
+
+    def test_legacy_bot_suggest_reply_endpoint_still_works(self):
+        BotMessage.objects.create(
+            conversation=self.conversation,
+            direction=BotMessage.Directions.INBOUND,
+            sender_type=BotMessage.SenderTypes.CLIENT,
+            text="Нужна цена",
+        )
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(f"/api/bot-conversations/{self.conversation.id}/suggest-reply/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data["suggested_reply"])
+        self.assertEqual(response.data["messages_used"], 1)
 
     def test_inbox_can_create_task_and_lead_from_conversation(self):
         BotMessage.objects.create(
@@ -454,3 +493,72 @@ class InboxBackendTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["lead"], lead.id)
+
+    def test_inbox_can_create_and_link_client_from_conversation(self):
+        conversation = BotConversation.objects.create(
+            business=self.business,
+            bot=self.bot,
+            channel=BotConversation.Channels.WEBSITE,
+            external_user_id="new-visitor",
+        )
+        duplicate = self.business.clients.create(full_name="Existing visitor", phone="+77010000000")
+        self.api.force_authenticate(self.owner)
+
+        duplicate_response = self.api.post(
+            f"/api/inbox/conversations/{conversation.id}/create-client/",
+            {"full_name": "New visitor", "phone": "+7 701 000 00 00"},
+            format="json",
+        )
+        self.assertEqual(duplicate_response.status_code, 200)
+        self.assertTrue(duplicate_response.data["requires_confirmation"])
+        self.assertEqual(duplicate_response.data["duplicates"][0]["id"], duplicate.id)
+
+        link_response = self.api.post(
+            f"/api/inbox/conversations/{conversation.id}/link-client/",
+            {"client_id": duplicate.id},
+            format="json",
+        )
+        self.assertEqual(link_response.status_code, 200)
+        self.assertEqual(link_response.data["client"], duplicate.id)
+
+        conversation.refresh_from_db()
+        conversation.client = None
+        conversation.save(update_fields=["client"])
+        create_response = self.api.post(
+            f"/api/inbox/conversations/{conversation.id}/create-client/",
+            {"full_name": "Forced visitor", "phone": "+7 701 000 00 00", "force_create": True},
+            format="json",
+        )
+        self.assertEqual(create_response.status_code, 201)
+        self.assertTrue(create_response.data["created"])
+        self.assertEqual(create_response.data["client"]["full_name"], "Forced visitor")
+
+    def test_inbox_can_create_and_link_deal_from_conversation(self):
+        self.api.force_authenticate(self.owner)
+
+        create_response = self.api.post(
+            f"/api/inbox/conversations/{self.conversation.id}/create-deal/",
+            {"title": "Inbox deal", "amount": "15000.00"},
+            format="json",
+        )
+        self.assertEqual(create_response.status_code, 201)
+        self.assertEqual(create_response.data["title"], "Inbox deal")
+        self.conversation.refresh_from_db()
+        self.assertEqual(self.conversation.deal_id, create_response.data["id"])
+
+        pipeline = Pipeline.objects.get(business=self.business)
+        stage = PipelineStage.objects.get(pipeline=pipeline)
+        other_deal = Deal.objects.create(
+            business=self.business,
+            client=self.client,
+            pipeline=pipeline,
+            stage=stage,
+            title="Existing linked deal",
+        )
+        link_response = self.api.post(
+            f"/api/inbox/conversations/{self.conversation.id}/link-deal/",
+            {"deal_id": other_deal.id},
+            format="json",
+        )
+        self.assertEqual(link_response.status_code, 200)
+        self.assertEqual(link_response.data["deal"], other_deal.id)

@@ -3,13 +3,15 @@ import { Navigate, RouterProvider, createBrowserRouter } from "react-router-dom"
 
 import { AppLayout } from "../components/layout/AppLayout";
 import { PlatformLayout } from "../components/layout/PlatformLayout";
-import { LoadingState } from "../components/ui/StateViews";
+import { ForbiddenState, LoadingState } from "../components/ui/StateViews";
 import { useAuth } from "../features/auth/AuthProvider";
 import { LoginPage } from "../features/auth/LoginPage";
 import { PlatformPlaceholderPage, platformPages } from "../features/platform/PlatformPlaceholderPage";
 import { PublicLayout } from "../features/public/PublicLayout";
 import { PublicBotsPage, PublicContactsPage, PublicCrmPage, PublicHomePage, PublicPricingPage } from "../features/public/PublicPages";
+import { useActiveBusiness } from "../hooks/useBusiness";
 import { useI18n } from "../lib/i18n";
+import { forbiddenMessage, hasPermission } from "../lib/permissions";
 
 const DashboardPage = lazy(() => import("../features/dashboard/DashboardPage").then((module) => ({ default: module.DashboardPage })));
 const LeadsPage = lazy(() => import("../features/leads/LeadsPage").then((module) => ({ default: module.LeadsPage })));
@@ -22,6 +24,7 @@ const ConversationsPage = lazy(() => import("../features/conversations/Conversat
 const TimelinePage = lazy(() => import("../features/timeline/TimelinePage").then((module) => ({ default: module.TimelinePage })));
 const BotsPage = lazy(() => import("../features/bots/BotsPage").then((module) => ({ default: module.BotsPage })));
 const BotDetailPage = lazy(() => import("../features/bots/BotDetailPage").then((module) => ({ default: module.BotDetailPage })));
+const IntegrationsPage = lazy(() => import("../features/integrations/IntegrationsPage").then((module) => ({ default: module.IntegrationsPage })));
 const AIAssistantPage = lazy(() => import("../features/assistant/AIAssistantPage").then((module) => ({ default: module.AIAssistantPage })));
 const AIAgentsPage = lazy(() => import("../features/assistant/AIAgentsPage").then((module) => ({ default: module.AIAgentsPage })));
 const AutomationsPage = lazy(() => import("../features/automations/AutomationsPage").then((module) => ({ default: module.AutomationsPage })));
@@ -30,6 +33,7 @@ const ServicesPage = lazy(() => import("../features/services/ServicesPage").then
 const AnalyticsPage = lazy(() => import("../features/analytics/AnalyticsPage").then((module) => ({ default: module.AnalyticsPage })));
 const SettingsPage = lazy(() => import("../features/settings/SettingsPage").then((module) => ({ default: module.SettingsPage })));
 const WorkingHoursPage = lazy(() => import("../features/settings/WorkingHoursPage").then((module) => ({ default: module.WorkingHoursPage })));
+const OnboardingPage = lazy(() => import("../features/onboarding/OnboardingPage").then((module) => ({ default: module.OnboardingPage })));
 const PlatformOverviewPage = lazy(() => import("../features/platform/PlatformOverviewPage").then((module) => ({ default: module.PlatformOverviewPage })));
 const PlatformMerchantsPage = lazy(() => import("../features/platform/PlatformMerchantsPage").then((module) => ({ default: module.PlatformMerchantsPage })));
 
@@ -60,46 +64,67 @@ function PageLoader({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<LoadingState label={t("common.loadingWorkspace")} />}>{children}</Suspense>;
 }
 
+function PermissionRoute({
+  resource,
+  action = "view",
+  children,
+}: {
+  resource?: string;
+  action?: string;
+  children: React.ReactNode;
+}) {
+  const { user } = useAuth();
+  const { business, isLoading } = useActiveBusiness();
+  if (!resource) return children;
+  if (isLoading) return <LoadingState label="Проверяем доступ..." />;
+  if (hasPermission(user, business?.id, resource, action)) return children;
+  return <ForbiddenState message={forbiddenMessage(resource, action)} />;
+}
+
 const merchantChildren = [
   { index: true, element: <PageLoader><DashboardPage /></PageLoader> },
-  { path: "leads", element: <PageLoader><LeadsPage /></PageLoader> },
-  { path: "deals", element: <PageLoader><DealsPage /></PageLoader> },
-  { path: "clients", element: <PageLoader><ClientsPage /></PageLoader> },
-  { path: "tasks", element: <PageLoader><TasksPage /></PageLoader> },
-  { path: "appointments", element: <PageLoader><AppointmentsPage /></PageLoader> },
-  { path: "calendar", element: <PageLoader><CalendarPage /></PageLoader> },
-  { path: "conversations", element: <PageLoader><ConversationsPage /></PageLoader> },
-  { path: "timeline", element: <PageLoader><TimelinePage /></PageLoader> },
-  { path: "bots", element: <PageLoader><BotsPage /></PageLoader> },
-  { path: "bots/:id", element: <PageLoader><BotDetailPage /></PageLoader> },
-  { path: "ai-assistant", element: <PageLoader><AIAssistantPage /></PageLoader> },
-  { path: "ai-agents", element: <PageLoader><AIAgentsPage /></PageLoader> },
-  { path: "automations", element: <PageLoader><AutomationsPage /></PageLoader> },
-  { path: "services", element: <PageLoader><ServicesPage /></PageLoader> },
-  { path: "resources", element: <PageLoader><ResourcesPage /></PageLoader> },
-  { path: "working-hours", element: <PageLoader><WorkingHoursPage /></PageLoader> },
-  { path: "analytics", element: <PageLoader><AnalyticsPage /></PageLoader> },
-  { path: "settings", element: <PageLoader><SettingsPage /></PageLoader> },
+  { path: "leads", resource: "leads", element: <PageLoader><LeadsPage /></PageLoader> },
+  { path: "deals", resource: "deals", element: <PageLoader><DealsPage /></PageLoader> },
+  { path: "clients", resource: "clients", element: <PageLoader><ClientsPage /></PageLoader> },
+  { path: "tasks", resource: "tasks", element: <PageLoader><TasksPage /></PageLoader> },
+  { path: "appointments", resource: "appointments", element: <PageLoader><AppointmentsPage /></PageLoader> },
+  { path: "calendar", resource: "appointments", element: <PageLoader><CalendarPage /></PageLoader> },
+  { path: "conversations", resource: "conversations", element: <PageLoader><ConversationsPage /></PageLoader> },
+  { path: "timeline", resource: "analytics", element: <PageLoader><TimelinePage /></PageLoader> },
+  { path: "bots", resource: "integrations", element: <PageLoader><BotsPage /></PageLoader> },
+  { path: "bots/:id", resource: "integrations", element: <PageLoader><BotDetailPage /></PageLoader> },
+  { path: "integrations", resource: "integrations", element: <PageLoader><IntegrationsPage /></PageLoader> },
+  { path: "ai-assistant", resource: "conversations", element: <PageLoader><AIAssistantPage /></PageLoader> },
+  { path: "ai-agents", resource: "settings", element: <PageLoader><AIAgentsPage /></PageLoader> },
+  { path: "automations", resource: "automations", element: <PageLoader><AutomationsPage /></PageLoader> },
+  { path: "services", resource: "settings", element: <PageLoader><ServicesPage /></PageLoader> },
+  { path: "resources", resource: "settings", element: <PageLoader><ResourcesPage /></PageLoader> },
+  { path: "working-hours", resource: "settings", element: <PageLoader><WorkingHoursPage /></PageLoader> },
+  { path: "analytics", resource: "analytics", element: <PageLoader><AnalyticsPage /></PageLoader> },
+  { path: "onboarding", resource: "settings", element: <PageLoader><OnboardingPage /></PageLoader> },
+  { path: "settings", resource: "settings", element: <PageLoader><SettingsPage /></PageLoader> },
 ];
 
 const legacyMerchantRoutes = [
-  { path: "/leads", element: <PageLoader><LeadsPage /></PageLoader> },
-  { path: "/deals", element: <PageLoader><DealsPage /></PageLoader> },
-  { path: "/clients", element: <PageLoader><ClientsPage /></PageLoader> },
-  { path: "/tasks", element: <PageLoader><TasksPage /></PageLoader> },
-  { path: "/appointments", element: <PageLoader><AppointmentsPage /></PageLoader> },
-  { path: "/calendar", element: <PageLoader><CalendarPage /></PageLoader> },
-  { path: "/conversations", element: <PageLoader><ConversationsPage /></PageLoader> },
-  { path: "/timeline", element: <PageLoader><TimelinePage /></PageLoader> },
-  { path: "/crm-bots", element: <PageLoader><BotsPage /></PageLoader> },
-  { path: "/ai-assistant", element: <PageLoader><AIAssistantPage /></PageLoader> },
-  { path: "/ai-agents", element: <PageLoader><AIAgentsPage /></PageLoader> },
-  { path: "/automations", element: <PageLoader><AutomationsPage /></PageLoader> },
-  { path: "/services", element: <PageLoader><ServicesPage /></PageLoader> },
-  { path: "/resources", element: <PageLoader><ResourcesPage /></PageLoader> },
-  { path: "/working-hours", element: <PageLoader><WorkingHoursPage /></PageLoader> },
-  { path: "/analytics", element: <PageLoader><AnalyticsPage /></PageLoader> },
-  { path: "/settings", element: <PageLoader><SettingsPage /></PageLoader> },
+  { path: "/leads", resource: "leads", element: <PageLoader><LeadsPage /></PageLoader> },
+  { path: "/deals", resource: "deals", element: <PageLoader><DealsPage /></PageLoader> },
+  { path: "/clients", resource: "clients", element: <PageLoader><ClientsPage /></PageLoader> },
+  { path: "/tasks", resource: "tasks", element: <PageLoader><TasksPage /></PageLoader> },
+  { path: "/appointments", resource: "appointments", element: <PageLoader><AppointmentsPage /></PageLoader> },
+  { path: "/calendar", resource: "appointments", element: <PageLoader><CalendarPage /></PageLoader> },
+  { path: "/conversations", resource: "conversations", element: <PageLoader><ConversationsPage /></PageLoader> },
+  { path: "/timeline", resource: "analytics", element: <PageLoader><TimelinePage /></PageLoader> },
+  { path: "/crm-bots", resource: "integrations", element: <PageLoader><BotsPage /></PageLoader> },
+  { path: "/integrations", resource: "integrations", element: <PageLoader><IntegrationsPage /></PageLoader> },
+  { path: "/ai-assistant", resource: "conversations", element: <PageLoader><AIAssistantPage /></PageLoader> },
+  { path: "/ai-agents", resource: "settings", element: <PageLoader><AIAgentsPage /></PageLoader> },
+  { path: "/automations", resource: "automations", element: <PageLoader><AutomationsPage /></PageLoader> },
+  { path: "/services", resource: "settings", element: <PageLoader><ServicesPage /></PageLoader> },
+  { path: "/resources", resource: "settings", element: <PageLoader><ResourcesPage /></PageLoader> },
+  { path: "/working-hours", resource: "settings", element: <PageLoader><WorkingHoursPage /></PageLoader> },
+  { path: "/analytics", resource: "analytics", element: <PageLoader><AnalyticsPage /></PageLoader> },
+  { path: "/onboarding", resource: "settings", element: <PageLoader><OnboardingPage /></PageLoader> },
+  { path: "/settings", resource: "settings", element: <PageLoader><SettingsPage /></PageLoader> },
 ];
 
 const router = createBrowserRouter([
@@ -145,7 +170,14 @@ const router = createBrowserRouter([
         <AppLayout />
       </MerchantRoute>
     ),
-    children: merchantChildren,
+    children: merchantChildren.map((route) => ({
+      ...route,
+      element: (
+        <PermissionRoute resource={"resource" in route ? route.resource : undefined}>
+          {route.element}
+        </PermissionRoute>
+      ),
+    })),
   },
   ...legacyMerchantRoutes.map((route) => ({
     path: route.path,
@@ -154,7 +186,16 @@ const router = createBrowserRouter([
         <AppLayout />
       </MerchantRoute>
     ),
-    children: [{ index: true, element: route.element }],
+    children: [
+      {
+        index: true,
+        element: (
+          <PermissionRoute resource={route.resource}>
+            {route.element}
+          </PermissionRoute>
+        ),
+      },
+    ],
   })),
 ]);
 

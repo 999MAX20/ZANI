@@ -4,7 +4,7 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 
 from apps.accounts.models import User
-from apps.automations.engine import run_automations_for_event
+from apps.automations.engine import process_automation_run, run_automations_for_event
 from apps.automations.models import AutomationAction, AutomationRule, AutomationRun
 from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
 from apps.businesses.models import Business, BusinessMember
@@ -231,3 +231,168 @@ class AutomationFoundationTests(TestCase):
         self.assertEqual(runs[0].status, AutomationRun.Statuses.FAILED)
         self.assertIn("requires entity.client", runs[0].error)
         self.assertFalse(Notification.objects.filter(text="Needs client").exists())
+
+    def test_templates_can_be_listed_and_applied(self):
+        self.api.force_authenticate(self.owner)
+
+        templates_response = self.api.get("/api/automation-rules/templates/")
+        apply_response = self.api.post(
+            "/api/automation-rules/apply-template/",
+            {
+                "business": self.business.id,
+                "template_key": "new_lead_create_task",
+                "is_active": True,
+            },
+            format="json",
+        )
+
+        self.assertEqual(templates_response.status_code, 200)
+        self.assertGreaterEqual(len(templates_response.data), 1)
+        self.assertEqual(apply_response.status_code, 201)
+        rule = AutomationRule.objects.get(id=apply_response.data["id"])
+        self.assertTrue(rule.is_active)
+        self.assertEqual(rule.trigger_type, AutomationRule.TriggerTypes.LEAD_CREATED)
+        self.assertEqual(rule.actions.count(), 1)
+
+    def test_manual_rule_preview_and_create(self):
+        self.api.force_authenticate(self.owner)
+        payload = {
+            "business": self.business.id,
+            "name": "Manual lead follow-up",
+            "trigger_type": AutomationRule.TriggerTypes.LEAD_CREATED,
+            "description": "Created from advanced builder",
+            "is_active": False,
+            "conditions": [{"field": "source", "operator": "eq", "value": {"value": Lead.Sources.WEBSITE}}],
+            "actions": [
+                {"action_type": AutomationAction.ActionTypes.WAIT, "delay_seconds": 60, "config": {}},
+                {"action_type": AutomationAction.ActionTypes.CREATE_TASK, "config": {"title": "Manual follow up"}},
+            ],
+        }
+
+        preview_response = self.api.post("/api/automation-rules/preview/", payload, format="json")
+        create_response = self.api.post("/api/automation-rules/create-manual/", payload, format="json")
+
+        self.assertEqual(preview_response.status_code, 200)
+        self.assertTrue(preview_response.data["valid"])
+        self.assertEqual(preview_response.data["actions_count"], 2)
+        self.assertEqual(create_response.status_code, 201)
+        rule = AutomationRule.objects.get(id=create_response.data["id"])
+        self.assertEqual(rule.conditions.count(), 1)
+        self.assertEqual(rule.actions.count(), 2)
+
+    def test_manual_rule_rejects_invalid_actions(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            "/api/automation-rules/preview/",
+            {
+                "business": self.business.id,
+                "name": "Invalid manual rule",
+                "trigger_type": AutomationRule.TriggerTypes.LEAD_CREATED,
+                "actions": [],
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_duplicate_event_does_not_duplicate_automation_actions(self):
+        rule = self._rule(
+            AutomationRule.TriggerTypes.LEAD_CREATED,
+            [
+                {
+                    "action_type": AutomationAction.ActionTypes.CREATE_TASK,
+                    "config": {"title": "Idempotent follow up"},
+                }
+            ],
+        )
+        lead = Lead.objects.create(business=self.business, client=self.client, service=self.service)
+        payload = {"trigger_type": AutomationRule.TriggerTypes.LEAD_CREATED, "source_event_id": "lead-1"}
+
+        first_runs = run_automations_for_event(
+            business=self.business,
+            trigger_type=AutomationRule.TriggerTypes.LEAD_CREATED,
+            entity=lead,
+            payload=payload,
+        )
+        second_runs = run_automations_for_event(
+            business=self.business,
+            trigger_type=AutomationRule.TriggerTypes.LEAD_CREATED,
+            entity=lead,
+            payload=payload,
+        )
+
+        self.assertEqual(first_runs[0].id, second_runs[0].id)
+        self.assertEqual(AutomationRun.objects.filter(rule=rule).count(), 1)
+        self.assertEqual(Task.objects.filter(business=self.business, title="Idempotent follow up").count(), 1)
+
+    def test_delayed_automation_run_is_not_executed_inline(self):
+        rule = self._rule(
+            AutomationRule.TriggerTypes.LEAD_CREATED,
+            [
+                {
+                    "action_type": AutomationAction.ActionTypes.WAIT,
+                    "delay_seconds": 300,
+                    "config": {},
+                },
+                {
+                    "action_type": AutomationAction.ActionTypes.CREATE_TASK,
+                    "config": {"title": "Delayed follow up"},
+                },
+            ],
+        )
+        lead = Lead.objects.create(business=self.business, client=self.client, service=self.service)
+
+        runs = run_automations_for_event(
+            business=self.business,
+            trigger_type=AutomationRule.TriggerTypes.LEAD_CREATED,
+            entity=lead,
+            payload={"trigger_type": AutomationRule.TriggerTypes.LEAD_CREATED},
+        )
+
+        run = runs[0]
+        run.refresh_from_db()
+        self.assertEqual(run.rule, rule)
+        self.assertEqual(run.status, AutomationRun.Statuses.PENDING)
+        self.assertIsNotNone(run.run_after)
+        self.assertFalse(Task.objects.filter(business=self.business, title="Delayed follow up").exists())
+
+    def test_failed_automation_can_be_retried_from_api(self):
+        self._rule(
+            AutomationRule.TriggerTypes.BOT_MESSAGE_RECEIVED,
+            [
+                {
+                    "action_type": AutomationAction.ActionTypes.CREATE_NOTIFICATION,
+                    "config": {"text": "Retry needs client"},
+                }
+            ],
+        )
+        bot = Bot.objects.create(business=self.business, name="Retry bot")
+        conversation = BotConversation.objects.create(
+            business=self.business,
+            bot=bot,
+            channel=BotConversation.Channels.TELEGRAM,
+            external_user_id="retry-chat",
+        )
+        runs = run_automations_for_event(
+            business=self.business,
+            trigger_type=AutomationRule.TriggerTypes.BOT_MESSAGE_RECEIVED,
+            entity=conversation,
+            payload={"trigger_type": AutomationRule.TriggerTypes.BOT_MESSAGE_RECEIVED},
+        )
+        run = runs[0]
+        run.refresh_from_db()
+        self.assertEqual(run.status, AutomationRun.Statuses.FAILED)
+        self.assertEqual(run.attempts, 1)
+        self.assertIsNotNone(run.next_retry_at)
+
+        conversation.client = self.client
+        conversation.save(update_fields=["client", "updated_at"])
+        self.api.force_authenticate(self.owner)
+        response = self.api.post(f"/api/automation-runs/{run.id}/retry/")
+
+        self.assertEqual(response.status_code, 200)
+        run.refresh_from_db()
+        self.assertEqual(run.status, AutomationRun.Statuses.SUCCESS)
+        self.assertEqual(run.attempts, 2)
+        self.assertTrue(Notification.objects.filter(business=self.business, text="Retry needs client").exists())

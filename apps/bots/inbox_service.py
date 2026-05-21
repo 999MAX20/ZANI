@@ -4,6 +4,7 @@ from django.utils import timezone
 from apps.activities.models import ActivityEvent
 from apps.activities.services import create_activity_event
 from apps.billing.models import UsageCounter
+from apps.billing.entitlements import EntitlementMetrics, assert_entitlement_allows
 from apps.billing.usage import increment_usage
 from apps.bots.models import BotChannel, BotMessage
 from apps.integrations.providers import send_message
@@ -11,6 +12,7 @@ from apps.integrations.providers import send_message
 
 def register_bot_message(message):
     conversation = message.conversation
+    assert_entitlement_allows(conversation.business, EntitlementMetrics.BOT_MESSAGES)
     timestamp = message.created_at or timezone.now()
     update_fields = ["last_message_at", "updated_at"]
 
@@ -63,6 +65,7 @@ def handoff_conversation(conversation, reason=""):
 
 
 def send_outbound_message(conversation, text, user, sender_type=BotMessage.SenderTypes.MANAGER):
+    assert_entitlement_allows(conversation.business, EntitlementMetrics.BOT_MESSAGES)
     status = BotMessage.Statuses.QUEUED
     delivery_payload = {"delivery_mode": "provider_not_connected"}
     channel = BotChannel.objects.filter(bot=conversation.bot, channel=conversation.channel).first()

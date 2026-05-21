@@ -4,9 +4,11 @@ import {
   Bot,
   CheckCheck,
   ClipboardList,
+  Download,
   ExternalLink,
   Inbox,
   MessageSquare,
+  Paperclip,
   PauseCircle,
   PlayCircle,
   Search,
@@ -14,16 +16,19 @@ import {
   Sparkles,
   UserCheck,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
-import { botAiApi } from "../../api/bots";
 import { getApiErrorMessage } from "../../api/client";
+import { fileAttachmentsApi } from "../../api/fileAttachments";
 import { inboxApi, type InboxConversation, type InboxFilters, type InboxMessage } from "../../api/inbox";
+import { quickRepliesApi } from "../../api/quickReplies";
 import { Button } from "../../components/ui/Button";
 import { Card, CardBody } from "../../components/ui/Card";
 import { EmptyState, ErrorState, LoadingState } from "../../components/ui/StateViews";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { cn } from "../../lib/cn";
+import { realtimeIntervals, realtimeQueryOptions } from "../../lib/realtime";
 
 const channels: Record<string, { label: string; className: string }> = {
   website: { label: "Website", className: "bg-sky-50 text-sky-700 ring-sky-200" },
@@ -120,38 +125,118 @@ function MessageBubble({ message }: { message: InboxMessage }) {
           {formatDateTime(message.created_at)}
         </div>
         <p>{message.text || "Пустое сообщение"}</p>
+        {message.attachments?.length ? <AttachmentList attachments={message.attachments} compact /> : null}
+        {message.status !== "received" ? (
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <StatusBadge status={message.status} />
+            {message.error_text ? <span className="text-xs opacity-80">{message.error_text}</span> : null}
+          </div>
+        ) : null}
       </div>
     </div>
   );
 }
 
+function AttachmentList({
+  attachments,
+  compact = false,
+}: {
+  attachments: NonNullable<InboxConversation["attachments"]>;
+  compact?: boolean;
+}) {
+  return (
+    <div className={cn("space-y-2", compact ? "mt-3" : "")}>
+      {attachments.map((attachment) => (
+        <a
+          key={attachment.id}
+          href={attachment.download_url}
+          target="_blank"
+          rel="noreferrer"
+          className={cn(
+            "flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-white/80 px-3 py-2 text-sm font-semibold text-midnight transition hover:-translate-y-0.5 hover:shadow-soft",
+            compact && "bg-white/15 text-inherit",
+          )}
+        >
+          <span className="flex min-w-0 items-center gap-2">
+            <Paperclip size={15} className="shrink-0" />
+            <span className="truncate">{attachment.original_name}</span>
+          </span>
+          <span className="flex shrink-0 items-center gap-2 text-xs opacity-70">
+            {Math.max(1, Math.round(attachment.size / 1024))} KB <Download size={14} />
+          </span>
+        </a>
+      ))}
+    </div>
+  );
+}
+
+function groupMessagesByDate(messages: InboxMessage[]) {
+  return messages.reduce<Array<{ date: string; items: InboxMessage[] }>>((groups, message) => {
+    const date = new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "long", year: "numeric" }).format(new Date(message.created_at));
+    const last = groups[groups.length - 1];
+    if (last?.date === date) {
+      last.items.push(message);
+    } else {
+      groups.push({ date, items: [message] });
+    }
+    return groups;
+  }, []);
+}
+
 export function ConversationsPage() {
   const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [filters, setFilters] = useState<InboxFilters>({ status: "open" });
   const [notice, setNotice] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const [quickReplySearch, setQuickReplySearch] = useState("");
   const [leadIdInput, setLeadIdInput] = useState("");
+  const [clientIdInput, setClientIdInput] = useState("");
+  const [dealIdInput, setDealIdInput] = useState("");
 
   const conversations = useQuery({
     queryKey: ["inbox-conversations", filters],
     queryFn: () => inboxApi.listConversations(filters),
+    refetchInterval: realtimeIntervals.inboxConversationsMs,
+    ...realtimeQueryOptions,
   });
 
   const items = conversations.data?.results || [];
   const selected = useMemo(() => items.find((item) => item.id === selectedId) || items[0] || null, [items, selectedId]);
 
   useEffect(() => {
-    if (!selectedId && items[0]) {
-      setSelectedId(items[0].id);
+    const conversationFromUrl = Number(searchParams.get("conversation") || "");
+    if (conversationFromUrl && conversationFromUrl !== selectedId) {
+      setSelectedId(conversationFromUrl);
+      return;
     }
-  }, [items, selectedId]);
+    if (!selectedId && items[0]) {
+      selectConversation(items[0].id);
+    }
+  }, [items, searchParams, selectedId]);
 
   const messages = useQuery({
     queryKey: ["inbox-messages", selected?.id],
     queryFn: () => inboxApi.listMessages(selected!.id),
     enabled: Boolean(selected?.id),
+    refetchInterval: selected?.id ? realtimeIntervals.inboxMessagesMs : false,
+    ...realtimeQueryOptions,
   });
+  const groupedMessages = useMemo(() => groupMessagesByDate(messages.data || []), [messages.data]);
+  const quickReplies = useQuery({
+    queryKey: ["quick-replies"],
+    queryFn: quickRepliesApi.list,
+  });
+  const visibleQuickReplies = useMemo(() => {
+    const query = quickReplySearch.toLowerCase();
+    return (quickReplies.data || [])
+      .filter((template) => template.is_active)
+      .filter((template) => !selected || template.channel === "all" || template.channel === selected.channel)
+      .filter((template) => !query || [template.title, template.text, template.category].join(" ").toLowerCase().includes(query))
+      .slice(0, 5);
+  }, [quickReplies.data, quickReplySearch, selected]);
 
   const invalidateInbox = async () => {
     await Promise.all([
@@ -193,8 +278,11 @@ export function ConversationsPage() {
   });
 
   const suggestMutation = useMutation({
-    mutationFn: botAiApi.suggestReply,
-    onSuccess: (data) => setNotice(`AI draft: ${data.suggested_reply}`),
+    mutationFn: inboxApi.suggestReply,
+    onSuccess: (data) => {
+      setDraft(data.suggested_reply);
+      setNotice(data.is_mock ? "AI подготовил mock-черновик и вставил его в поле ответа." : "AI подготовил черновик и вставил его в поле ответа.");
+    },
     onError: (error) => setNotice(getApiErrorMessage(error)),
   });
 
@@ -203,6 +291,22 @@ export function ConversationsPage() {
     onSuccess: async () => {
       setDraft("");
       setNotice("Ответ менеджера сохранен в диалоге. Реальная отправка в канал будет подключена отдельно.");
+      await invalidateInbox();
+    },
+    onError: (error) => setNotice(getApiErrorMessage(error)),
+  });
+  const uploadAttachmentMutation = useMutation({
+    mutationFn: (file: File) => {
+      if (!selected) throw new Error("Диалог не выбран.");
+      return fileAttachmentsApi.upload({
+        business: selected.business,
+        entityType: "bot_conversation",
+        entityId: selected.id,
+        file,
+      });
+    },
+    onSuccess: async (attachment) => {
+      setNotice(`Файл загружен: ${attachment.original_name}`);
       await invalidateInbox();
     },
     onError: (error) => setNotice(getApiErrorMessage(error)),
@@ -217,11 +321,54 @@ export function ConversationsPage() {
     onError: (error) => setNotice(getApiErrorMessage(error)),
   });
 
+  const createClientMutation = useMutation({
+    mutationFn: inboxApi.createClient,
+    onSuccess: async (result) => {
+      if (result.requires_confirmation && result.duplicates.length) {
+        setNotice(`Найден похожий клиент: ${result.duplicates.map((item) => `#${item.id} ${item.full_name}`).join(", ")}. Привяжите существующего или подтвердите создание вручную позже.`);
+        return;
+      }
+      setNotice(result.created ? `Клиент создан: ${result.client?.full_name}` : "Диалог уже связан с клиентом.");
+      await invalidateInbox();
+      await queryClient.invalidateQueries({ queryKey: ["clients"] });
+    },
+    onError: (error) => setNotice(getApiErrorMessage(error)),
+  });
+
+  const linkClientMutation = useMutation({
+    mutationFn: inboxApi.linkClient,
+    onSuccess: async () => {
+      setClientIdInput("");
+      setNotice("Существующий клиент связан с диалогом.");
+      await invalidateInbox();
+    },
+    onError: (error) => setNotice(getApiErrorMessage(error)),
+  });
+
   const createLeadMutation = useMutation({
     mutationFn: inboxApi.createLead,
     onSuccess: async (lead) => {
       setNotice(`Заявка #${lead.id} связана с диалогом.`);
       await Promise.all([invalidateInbox(), queryClient.invalidateQueries({ queryKey: ["leads"] })]);
+    },
+    onError: (error) => setNotice(getApiErrorMessage(error)),
+  });
+
+  const createDealMutation = useMutation({
+    mutationFn: inboxApi.createDeal,
+    onSuccess: async (deal) => {
+      setNotice(`Сделка создана: ${deal.title}`);
+      await Promise.all([invalidateInbox(), queryClient.invalidateQueries({ queryKey: ["deals"] })]);
+    },
+    onError: (error) => setNotice(getApiErrorMessage(error)),
+  });
+
+  const linkDealMutation = useMutation({
+    mutationFn: inboxApi.linkDeal,
+    onSuccess: async () => {
+      setDealIdInput("");
+      setNotice("Существующая сделка связана с диалогом.");
+      await invalidateInbox();
     },
     onError: (error) => setNotice(getApiErrorMessage(error)),
   });
@@ -248,6 +395,13 @@ export function ConversationsPage() {
     const text = draft.trim();
     if (!selected || !text) return;
     sendMutation.mutate({ conversationId: selected.id, text });
+  }
+
+  function selectConversation(id: number) {
+    setSelectedId(id);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("conversation", String(id));
+    setSearchParams(nextParams, { replace: true });
   }
 
   return (
@@ -283,7 +437,7 @@ export function ConversationsPage() {
       ) : null}
       {actionError ? <ErrorState message={getApiErrorMessage(actionError)} /> : null}
 
-      <div className="grid gap-5 xl:grid-cols-[380px_minmax(0,1fr)_330px]">
+      <div className="grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[380px_minmax(0,1fr)_330px]">
         <Card className="overflow-hidden">
           <CardBody className="p-0">
             <div className="space-y-3 border-b border-slate-100 p-4">
@@ -345,6 +499,15 @@ export function ConversationsPage() {
                   <option value="high">Высокий</option>
                   <option value="urgent">Срочный</option>
                 </select>
+                <select
+                  className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none"
+                  value={filters.handoff_required || ""}
+                  onChange={(event) => setFilters((current) => ({ ...current, handoff_required: event.target.value }))}
+                >
+                  <option value="">Все handoff</option>
+                  <option value="true">Требуют менеджера</option>
+                  <option value="false">Без handoff</option>
+                </select>
               </div>
             </div>
 
@@ -354,13 +517,13 @@ export function ConversationsPage() {
                 <EmptyState title="Диалогов пока нет" description="Новые обращения с сайта и Telegram появятся здесь автоматически." />
               </div>
             ) : null}
-            <div className="max-h-[690px] overflow-y-auto">
+            <div className="max-h-[360px] overflow-y-auto xl:max-h-[690px]">
               {items.map((conversation) => (
                 <ConversationListItem
                   key={conversation.id}
                   conversation={conversation}
                   active={conversation.id === selected?.id}
-                  onClick={() => setSelectedId(conversation.id)}
+                  onClick={() => selectConversation(conversation.id)}
                 />
               ))}
             </div>
@@ -375,6 +538,8 @@ export function ConversationsPage() {
                 {selected ? <ChannelBadge channel={selected.channel} /> : null}
                 {selected ? <StatusBadge status={selected.status} /> : null}
                 {selected ? <StatusBadge status={selected.priority || "normal"} /> : null}
+                {selected?.handoff_required ? <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700 ring-1 ring-amber-200">Handoff</span> : null}
+                {(selected?.unread_count || 0) > 0 ? <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700 ring-1 ring-red-200">{selected?.unread_count} unread</span> : null}
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -404,21 +569,78 @@ export function ConversationsPage() {
             {selected && !messages.isLoading && (messages.data || []).length === 0 ? (
               <EmptyState title="Сообщений пока нет" description="Когда клиент напишет в подключенный канал, история будет здесь." />
             ) : null}
-            {(messages.data || []).map((message) => (
-              <MessageBubble key={message.id} message={message} />
+            {groupedMessages.map((group) => (
+              <div key={group.date} className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-px flex-1 bg-slate-200" />
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-400 shadow-sm">{group.date}</span>
+                  <div className="h-px flex-1 bg-slate-200" />
+                </div>
+                {group.items.map((message) => (
+                  <MessageBubble key={message.id} message={message} />
+                ))}
+              </div>
             ))}
           </CardBody>
 
-          <div className="border-t border-slate-100 p-4">
-            <div className="flex items-center gap-2 rounded-3xl border border-slate-200 bg-white px-3 py-2">
+          <div className="sticky bottom-[88px] z-10 border-t border-slate-100 bg-white/90 p-3 backdrop-blur-xl lg:static lg:bg-transparent lg:p-4">
+            <div className="mb-3 rounded-3xl border border-slate-100 bg-slate-50 p-3">
+              <div className="mb-2 flex items-center gap-2">
+                <Search size={15} className="text-slate-400" />
+                <input
+                  className="min-w-0 flex-1 bg-transparent text-xs font-semibold outline-none placeholder:text-slate-400"
+                  placeholder="Быстрые ответы..."
+                  value={quickReplySearch}
+                  onChange={(event) => setQuickReplySearch(event.target.value)}
+                />
+              </div>
+              <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
+                {visibleQuickReplies.map((template) => (
+                  <Button
+                    key={template.id}
+                    variant="secondary"
+                    className="h-8 shrink-0 rounded-xl px-3 text-xs"
+                    onClick={() => setDraft((current) => (current ? `${current}\n${template.text}` : template.text))}
+                  >
+                    {template.title}
+                  </Button>
+                ))}
+                {!quickReplies.isLoading && !visibleQuickReplies.length ? (
+                  <span className="text-xs font-medium text-slate-400">Нет шаблонов для этого канала.</span>
+                ) : null}
+              </div>
+            </div>
+            <div className="flex items-end gap-2 rounded-3xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
               <input
-                className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400"
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) uploadAttachmentMutation.mutate(file);
+                  event.target.value = "";
+                }}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                className="h-10 w-10 rounded-2xl px-0"
+                disabled={!selected || uploadAttachmentMutation.isPending}
+                isLoading={uploadAttachmentMutation.isPending}
+                onClick={() => fileInputRef.current?.click()}
+                title="Прикрепить файл"
+              >
+                <Paperclip size={17} />
+              </Button>
+              <textarea
+                rows={1}
+                className="max-h-28 min-h-10 min-w-0 flex-1 resize-none bg-transparent py-2 text-sm outline-none placeholder:text-slate-400"
                 disabled={!selected || sendMutation.isPending}
                 placeholder="Напишите ответ клиенту..."
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
                 onKeyDown={(event) => {
-                  if (event.key === "Enter") sendReply();
+                  if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) sendReply();
                 }}
               />
               <Button
@@ -435,7 +657,7 @@ export function ConversationsPage() {
           </div>
         </Card>
 
-        <Card>
+        <Card className="xl:col-span-2 2xl:col-span-1">
           <CardBody>
             <div className="mb-5 flex items-center gap-3">
               <div className="grid h-11 w-11 place-items-center rounded-2xl bg-ai-gradient text-white shadow-glow">
@@ -453,6 +675,27 @@ export function ConversationsPage() {
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Клиент</p>
                   <p className="mt-2 font-bold text-midnight">{getConversationTitle(selected)}</p>
                   <p className="mt-1 text-sm text-slate-500">{selected.client_phone || selected.external_user_id || "Контакт не указан"}</p>
+                  <p className="mt-2 text-xs font-semibold text-slate-400">{selected.client ? `Client #${selected.client}` : "Клиент ещё не создан"}</p>
+                </div>
+
+                <div className="rounded-3xl bg-slate-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">CRM связь</p>
+                  <p className="mt-2 font-bold text-midnight">{selected.lead ? `Заявка #${selected.lead}` : "Заявка не связана"}</p>
+                  <p className="mt-1 font-bold text-midnight">{selected.deal ? `Сделка #${selected.deal}` : "Сделка не связана"}</p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    {selected.lead || selected.deal ? "Диалог уже привязан к CRM-контексту." : "Создайте или привяжите клиента, заявку и сделку без ухода из inbox."}
+                  </p>
+                </div>
+
+                <div className="rounded-3xl bg-slate-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Вложения</p>
+                  <div className="mt-3">
+                    {selected.attachments?.length ? (
+                      <AttachmentList attachments={selected.attachments} />
+                    ) : (
+                      <p className="text-sm text-slate-500">Файлов пока нет. Прикрепите договор, чек, фото или документ из composer.</p>
+                    )}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -478,10 +721,27 @@ export function ConversationsPage() {
                   <Button
                     variant="secondary"
                     className="w-full justify-start"
+                    disabled={Boolean(selected.client)}
+                    onClick={() => selected && createClientMutation.mutate({ conversationId: selected.id, full_name: getConversationTitle(selected) })}
+                    isLoading={createClientMutation.isPending}
+                  >
+                    <ExternalLink size={17} /> {selected.client ? "Client linked" : "Create client"}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    className="w-full justify-start"
                     onClick={() => selected && createLeadMutation.mutate({ conversationId: selected.id })}
                     isLoading={createLeadMutation.isPending}
                   >
                     <ExternalLink size={17} /> {selected.lead ? "Open linked lead" : "Create lead"}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    className="w-full justify-start"
+                    onClick={() => selected && createDealMutation.mutate({ conversationId: selected.id, title: `Deal: ${getConversationTitle(selected)}` })}
+                    isLoading={createDealMutation.isPending}
+                  >
+                    <ExternalLink size={17} /> {selected.deal ? "Open linked deal" : "Create deal"}
                   </Button>
                   <Button
                     variant="secondary"
@@ -497,6 +757,32 @@ export function ConversationsPage() {
                   >
                     <ClipboardList size={17} /> Create task
                   </Button>
+                </div>
+
+                <div className="rounded-3xl border border-slate-200 bg-white p-3">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Link client by ID</p>
+                  <div className="flex gap-2">
+                    <input
+                      className="min-w-0 flex-1 rounded-2xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none"
+                      placeholder="Client ID"
+                      value={clientIdInput}
+                      onChange={(event) => setClientIdInput(event.target.value)}
+                    />
+                    <Button
+                      variant="secondary"
+                      disabled={!clientIdInput.trim()}
+                      isLoading={linkClientMutation.isPending}
+                      onClick={() =>
+                        selected &&
+                        linkClientMutation.mutate({
+                          conversationId: selected.id,
+                          clientId: Number(clientIdInput),
+                        })
+                      }
+                    >
+                      Link
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="rounded-3xl border border-slate-200 bg-white p-3">
@@ -525,11 +811,37 @@ export function ConversationsPage() {
                   </div>
                 </div>
 
+                <div className="rounded-3xl border border-slate-200 bg-white p-3">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Link deal by ID</p>
+                  <div className="flex gap-2">
+                    <input
+                      className="min-w-0 flex-1 rounded-2xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none"
+                      placeholder="Deal ID"
+                      value={dealIdInput}
+                      onChange={(event) => setDealIdInput(event.target.value)}
+                    />
+                    <Button
+                      variant="secondary"
+                      disabled={!dealIdInput.trim()}
+                      isLoading={linkDealMutation.isPending}
+                      onClick={() =>
+                        selected &&
+                        linkDealMutation.mutate({
+                          conversationId: selected.id,
+                          dealId: Number(dealIdInput),
+                        })
+                      }
+                    >
+                      Link
+                    </Button>
+                  </div>
+                </div>
+
                 <div className="rounded-3xl border border-ai-100 bg-ai-50 p-4 text-sm leading-6 text-ai-800">
                   <div className="mb-2 flex items-center gap-2 font-bold">
                     <Sparkles size={16} /> AI draft
                   </div>
-                  Нажмите “Suggest reply”, чтобы получить черновик ответа. Автоотправки здесь нет.
+                  Нажмите “Suggest reply”, чтобы получить черновик ответа прямо в composer. Автоотправки здесь нет.
                 </div>
               </div>
             ) : (

@@ -4,6 +4,9 @@ from apps.notifications.models import Notification
 
 
 class NotificationSerializer(serializers.ModelSerializer):
+    client_name = serializers.CharField(source="client.full_name", read_only=True)
+    is_read = serializers.BooleanField(read_only=True)
+
     class Meta:
         model = Notification
         fields = "__all__"

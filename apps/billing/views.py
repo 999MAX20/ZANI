@@ -4,7 +4,9 @@ from rest_framework.viewsets import ReadOnlyModelViewSet, ViewSet
 
 from apps.billing.models import Subscription, SubscriptionPlan
 from apps.billing.serializers import SubscriptionPlanSerializer, SubscriptionSerializer
+from apps.billing.entitlements import entitlement_summary
 from apps.billing.usage import usage_summary
+from apps.businesses.access import Actions, Resources, assert_can
 from apps.core.permissions import accessible_businesses
 
 
@@ -23,6 +25,7 @@ class CurrentSubscriptionViewSet(ViewSet):
         business = accessible_businesses(request.user).first()
         if not business:
             return Response(None)
+        assert_can(request.user, business, Resources.BILLING, Actions.VIEW)
 
         subscription = (
             Subscription.objects.select_related("business", "plan")
@@ -42,4 +45,16 @@ class UsageSummaryViewSet(ViewSet):
         business = accessible_businesses(request.user).first()
         if not business:
             return Response([])
+        assert_can(request.user, business, Resources.BILLING, Actions.VIEW)
         return Response(usage_summary(business))
+
+
+class EntitlementSummaryViewSet(ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request):
+        business = accessible_businesses(request.user).first()
+        if not business:
+            return Response([])
+        assert_can(request.user, business, Resources.BILLING, Actions.VIEW)
+        return Response(entitlement_summary(business))

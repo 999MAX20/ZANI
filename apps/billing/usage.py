@@ -2,7 +2,9 @@ from datetime import date
 
 from django.db.models import F
 
-from apps.billing.models import Subscription, UsageCounter
+from apps.billing.entitlements import check_entitlement
+from apps.billing.models import UsageCounter
+from apps.billing.storage import storage_usage_summary
 
 
 def current_period(today=None):
@@ -38,10 +40,8 @@ def check_limit(business, metric):
         metric=metric,
     ).first()
     value = counter.value if counter else 0
-    subscription = Subscription.objects.select_related("plan").filter(business=business).first()
-    limit = None
-    if subscription:
-        limit = (subscription.plan.limits_json or {}).get(metric)
+    entitlement = check_entitlement(business, metric, requested=0)
+    limit = entitlement.limit
     return {
         "metric": metric,
         "value": value,
@@ -54,7 +54,7 @@ def check_limit(business, metric):
 
 
 def usage_summary(business):
-    return [
+    summary = [
         check_limit(business, metric)
         for metric in [
             UsageCounter.Metrics.AI_REQUESTS,
@@ -63,3 +63,5 @@ def usage_summary(business):
             UsageCounter.Metrics.CONVERSATIONS,
         ]
     ]
+    summary.append(storage_usage_summary(business))
+    return summary

@@ -10,9 +10,11 @@ from apps.bots.serializers import (
     PublicWebsiteChatMessageCreateSerializer,
     TelegramChannelConfigSerializer,
     TelegramSetWebhookSerializer,
+    WhatsAppChannelConfigSerializer,
 )
 from apps.automations.engine import run_automations_for_event
 from apps.automations.models import AutomationRule
+from apps.billing.entitlements import EntitlementMetrics, assert_entitlement_allows
 from apps.core.viewsets import TenantModelViewSet
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
@@ -20,6 +22,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
+from rest_framework.throttling import ScopedRateThrottle
 from apps.integrations.models import IntegrationEventLog
 from apps.integrations.telegram import set_telegram_webhook
 
@@ -27,6 +30,11 @@ from apps.integrations.telegram import set_telegram_webhook
 class BotViewSet(TenantModelViewSet):
     queryset = Bot.objects.select_related("business")
     serializer_class = BotSerializer
+
+    def perform_create(self, serializer):
+        business = serializer.validated_data["business"]
+        assert_entitlement_allows(business, EntitlementMetrics.BOTS)
+        super().perform_create(serializer)
 
 
 class BotChannelViewSet(TenantModelViewSet):
@@ -38,6 +46,12 @@ class BotChannelViewSet(TenantModelViewSet):
         channel = self.get_object()
         if channel.channel != BotChannel.Channels.TELEGRAM:
             raise PermissionDenied("This action is only available for Telegram channels.")
+        return channel
+
+    def _get_whatsapp_channel(self):
+        channel = self.get_object()
+        if channel.channel != BotChannel.Channels.WHATSAPP:
+            raise PermissionDenied("This action is only available for WhatsApp channels.")
         return channel
 
     @action(detail=True, methods=["post"], url_path="telegram-config")
@@ -85,6 +99,59 @@ class BotChannelViewSet(TenantModelViewSet):
                 "token_configured": bool((channel.config_json or {}).get("bot_token")),
                 "webhook_secret_configured": bool((channel.config_json or {}).get("webhook_secret")),
                 "last_error": failed_event.error if failed_event else "",
+            }
+        )
+
+    @action(detail=True, methods=["post"], url_path="whatsapp-config")
+    def whatsapp_config(self, request, pk=None):
+        channel = self._get_whatsapp_channel()
+        serializer = WhatsAppChannelConfigSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        config = dict(channel.config_json or {})
+        for key, value in serializer.validated_data.items():
+            config[key] = value
+        if not config.get("provider_mode"):
+            config["provider_mode"] = "mock"
+        channel.config_json = config
+        channel.external_id = config.get("phone_number_id", channel.external_id)
+        channel.status = BotChannel.Statuses.PAUSED if config.get("provider_mode") == "disabled" else BotChannel.Statuses.ACTIVE
+        channel.save(update_fields=["config_json", "external_id", "status", "updated_at"])
+        return Response(
+            {
+                "ok": True,
+                "provider_mode": config["provider_mode"],
+                "status": channel.status,
+                "phone_number_id_configured": bool(config.get("phone_number_id") or channel.external_id),
+                "webhook_secret_configured": bool(config.get("webhook_secret")),
+            }
+        )
+
+    @action(detail=True, methods=["get"], url_path="whatsapp-status")
+    def whatsapp_status(self, request, pk=None):
+        channel = self._get_whatsapp_channel()
+        failed_event = IntegrationEventLog.objects.filter(
+            business=channel.bot.business,
+            provider=BotChannel.Channels.WHATSAPP,
+            channel=BotChannel.Channels.WHATSAPP,
+            status=IntegrationEventLog.Statuses.FAILED,
+        ).first()
+        last_event = IntegrationEventLog.objects.filter(
+            business=channel.bot.business,
+            provider=BotChannel.Channels.WHATSAPP,
+            channel=BotChannel.Channels.WHATSAPP,
+        ).first()
+        webhook_url = request.build_absolute_uri("/api/integrations/whatsapp/webhook/")
+        config = channel.config_json or {}
+        return Response(
+            {
+                "status": channel.status,
+                "provider_mode": config.get("provider_mode") or "mock",
+                "webhook_url": webhook_url,
+                "phone_number_id_configured": bool(config.get("phone_number_id") or channel.external_id),
+                "webhook_secret_configured": bool(config.get("webhook_secret")),
+                "last_error": failed_event.error if failed_event else "",
+                "last_event_status": last_event.status if last_event else "",
+                "last_event_at": last_event.created_at if last_event else None,
             }
         )
 
@@ -145,6 +212,8 @@ def get_public_website_channel(public_token):
 class PublicWebsiteChatChannelView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "public_widget"
 
     def get(self, request, public_token):
         channel = get_public_website_channel(public_token)
@@ -154,6 +223,8 @@ class PublicWebsiteChatChannelView(APIView):
 class PublicWebsiteChatConversationCreateView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "public_widget"
 
     def post(self, request, public_token):
         channel = get_public_website_channel(public_token)
@@ -190,6 +261,8 @@ class PublicWebsiteChatConversationCreateView(APIView):
 class PublicWebsiteChatMessageCreateView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "public_widget"
 
     def post(self, request, public_token, conversation_id):
         channel = get_public_website_channel(public_token)

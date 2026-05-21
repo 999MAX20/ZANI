@@ -7,6 +7,7 @@ from apps.accounts.models import User
 from apps.integrations.models import IntegrationEventLog
 from apps.integrations.providers import get_provider, send_message
 from apps.integrations.telegram import send_telegram_message
+from apps.integrations.whatsapp import send_whatsapp_message
 
 
 class TelegramIntegrationSkeletonTests(TestCase):
@@ -151,3 +152,113 @@ class TelegramIntegrationSkeletonTests(TestCase):
                 status=IntegrationEventLog.Statuses.MOCKED,
             ).exists()
         )
+
+
+class WhatsAppIntegrationFoundationTests(TestCase):
+    def setUp(self):
+        self.api = APIClient()
+        self.owner = User.objects.create_user(
+            username="whatsapp-owner",
+            email="whatsapp-owner@example.com",
+            password="pass",
+            role=User.Roles.BUSINESS_OWNER,
+        )
+        self.other_owner = User.objects.create_user(
+            username="whatsapp-other",
+            email="whatsapp-other@example.com",
+            password="pass",
+            role=User.Roles.BUSINESS_OWNER,
+        )
+        self.business = Business.objects.create(owner=self.owner, name="WhatsApp Clinic", slug="whatsapp-clinic")
+        self.other_business = Business.objects.create(owner=self.other_owner, name="Other WhatsApp Clinic", slug="other-whatsapp-clinic")
+        BusinessMember.objects.create(business=self.business, user=self.owner, role=BusinessMember.Roles.OWNER)
+        BusinessMember.objects.create(business=self.other_business, user=self.other_owner, role=BusinessMember.Roles.OWNER)
+        self.bot = Bot.objects.create(business=self.business, name="WhatsApp bot", status=Bot.Statuses.ACTIVE)
+        self.channel = BotChannel.objects.create(
+            bot=self.bot,
+            channel=BotChannel.Channels.WHATSAPP,
+            status=BotChannel.Statuses.ACTIVE,
+            config_json={"webhook_secret": "whatsapp-secret", "provider_mode": "mock", "phone_number_id": "dev-phone"},
+        )
+
+    def test_whatsapp_webhook_saves_inbound_message(self):
+        response = self.api.post(
+            "/api/integrations/whatsapp/webhook/",
+            {
+                "message_id": "wamid.1",
+                "from": {"phone": "+77015550101", "name": "Client"},
+                "text": "Хочу записаться через WhatsApp",
+            },
+            format="json",
+            HTTP_X_ZANI_WHATSAPP_SECRET="whatsapp-secret",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        conversation = BotConversation.objects.get(channel=BotConversation.Channels.WHATSAPP)
+        message = BotMessage.objects.get(conversation=conversation)
+        self.assertEqual(conversation.external_user_id, "+77015550101")
+        self.assertEqual(message.text, "Хочу записаться через WhatsApp")
+        self.assertEqual(message.external_message_id, "wamid.1")
+        self.assertTrue(
+            IntegrationEventLog.objects.filter(
+                business=self.business,
+                provider="whatsapp",
+                direction=IntegrationEventLog.Directions.INBOUND,
+                status=IntegrationEventLog.Statuses.PROCESSED,
+            ).exists()
+        )
+
+    def test_whatsapp_outbound_uses_provider_layer(self):
+        result = send_whatsapp_message(self.channel, recipient_id="+77015550101", text="Здравствуйте")
+
+        self.assertTrue(result["ok"])
+        self.assertTrue(result["mock"])
+        self.assertTrue(
+            IntegrationEventLog.objects.filter(
+                business=self.business,
+                provider="whatsapp",
+                direction=IntegrationEventLog.Directions.OUTBOUND,
+                status=IntegrationEventLog.Statuses.MOCKED,
+            ).exists()
+        )
+
+    def test_merchant_can_configure_whatsapp_and_check_status(self):
+        self.api.force_authenticate(self.owner)
+
+        config_response = self.api.post(
+            f"/api/bot-channels/{self.channel.id}/whatsapp-config/",
+            {"provider_mode": "mock", "webhook_secret": "new-secret", "phone_number_id": "phone-2"},
+            format="json",
+        )
+        status_response = self.api.get(f"/api/bot-channels/{self.channel.id}/whatsapp-status/")
+
+        self.assertEqual(config_response.status_code, 200)
+        self.assertEqual(config_response.data["provider_mode"], "mock")
+        self.assertTrue(config_response.data["webhook_secret_configured"])
+        self.assertEqual(status_response.status_code, 200)
+        self.assertIn("/api/integrations/whatsapp/webhook/", status_response.data["webhook_url"])
+
+    def test_integration_logs_are_tenant_scoped(self):
+        IntegrationEventLog.objects.create(
+            business=self.business,
+            provider="whatsapp",
+            channel="whatsapp",
+            direction=IntegrationEventLog.Directions.OUTBOUND,
+            status=IntegrationEventLog.Statuses.MOCKED,
+            payload_json={"visible": True},
+        )
+        IntegrationEventLog.objects.create(
+            business=self.other_business,
+            provider="whatsapp",
+            channel="whatsapp",
+            direction=IntegrationEventLog.Directions.OUTBOUND,
+            status=IntegrationEventLog.Statuses.MOCKED,
+            payload_json={"visible": False},
+        )
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.get("/api/integration-event-logs/?provider=whatsapp")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data["results"]), 1)
+        self.assertEqual(response.data["results"][0]["business"], self.business.id)

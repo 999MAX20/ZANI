@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from apps.conversations.models import Conversation, Message
+from apps.conversations.models import Conversation, Message, QuickReplyTemplate
 
 
 @admin.register(Conversation)
@@ -15,3 +15,10 @@ class MessageAdmin(admin.ModelAdmin):
     list_display = ("conversation", "sender_type", "created_at")
     list_filter = ("sender_type", "conversation__channel")
     search_fields = ("text", "conversation__client__full_name")
+
+
+@admin.register(QuickReplyTemplate)
+class QuickReplyTemplateAdmin(admin.ModelAdmin):
+    list_display = ("business", "title", "category", "channel", "is_active", "sort_order", "updated_at")
+    list_filter = ("channel", "is_active", "business")
+    search_fields = ("title", "text", "category", "business__name")

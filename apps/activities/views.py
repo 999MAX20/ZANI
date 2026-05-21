@@ -1,7 +1,19 @@
 from django.db.models import Q
 
-from apps.activities.models import ActivityEvent, Note, Tag, TaggedObject
-from apps.activities.serializers import ActivityEventSerializer, NoteSerializer, TagSerializer, TaggedObjectSerializer
+from rest_framework.decorators import action
+from rest_framework.response import Response
+
+from apps.activities.models import ActivityEvent, Note, Segment, SegmentFilter, Tag, TaggedObject
+from apps.activities.segments import evaluate_segment_queryset, refresh_segment_count
+from apps.activities.serializers import (
+    ActivityEventSerializer,
+    NoteSerializer,
+    SegmentFilterSerializer,
+    SegmentSerializer,
+    TagSerializer,
+    TaggedObjectSerializer,
+)
+from apps.clients.serializers import ClientSerializer
 from apps.core.viewsets import TenantModelViewSet
 
 
@@ -54,3 +66,49 @@ class TagViewSet(TenantModelViewSet):
 class TaggedObjectViewSet(TenantModelViewSet):
     queryset = TaggedObject.objects.select_related("business", "tag")
     serializer_class = TaggedObjectSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        entity_type = self.request.query_params.get("entity_type")
+        entity_id = self.request.query_params.get("entity_id")
+        tag_id = self.request.query_params.get("tag")
+        if entity_type:
+            queryset = queryset.filter(entity_type=entity_type)
+        if entity_id:
+            queryset = queryset.filter(entity_id=str(entity_id))
+        if tag_id:
+            queryset = queryset.filter(tag_id=tag_id)
+        return queryset
+
+
+class SegmentViewSet(TenantModelViewSet):
+    queryset = Segment.objects.select_related("business").prefetch_related("filters")
+    serializer_class = SegmentSerializer
+
+    @action(detail=True, methods=["get"])
+    def evaluate(self, request, pk=None):
+        segment = self.get_object()
+        clients = evaluate_segment_queryset(segment)
+        return Response(
+            {
+                "count": clients.count(),
+                "clients": ClientSerializer(clients[:100], many=True).data,
+            }
+        )
+
+    @action(detail=True, methods=["post"], url_path="refresh-count")
+    def refresh_count(self, request, pk=None):
+        segment = self.get_object()
+        count = refresh_segment_count(segment)
+        return Response({"count": count, "segment": self.get_serializer(segment).data})
+
+
+class SegmentFilterViewSet(TenantModelViewSet):
+    queryset = SegmentFilter.objects.select_related("business", "segment")
+    serializer_class = SegmentFilterSerializer
+
+    def _business_from_serializer(self, serializer):
+        business = super()._business_from_serializer(serializer)
+        if business is None and "segment" in serializer.validated_data:
+            business = serializer.validated_data["segment"].business
+        return business

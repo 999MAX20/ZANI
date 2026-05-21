@@ -18,6 +18,9 @@ env = environ.Env(
     DB_CONN_MAX_AGE=(int, 60),
     SUPPORT_REQUIRES_GRANT=(bool, False),
     AUDIT_LOG_RETENTION_DAYS=(int, 365),
+    LOG_LEVEL=(str, "INFO"),
+    CELERY_TASK_DEFAULT_QUEUE=(str, "default"),
+    AUTOMATIONS_RUN_INLINE=(bool, True),
 )
 environ.Env.read_env(BASE_DIR / ".env")
 
@@ -57,6 +60,7 @@ INSTALLED_APPS = [
     "apps.analytics",
     "apps.core",
     "apps.integrations",
+    "apps.onboarding",
 ]
 
 USE_S3 = env.bool("USE_S3", default=False)
@@ -189,6 +193,11 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "auth_login": env("AUTH_LOGIN_RATE", default="10/min"),
         "auth_refresh": env("AUTH_REFRESH_RATE", default="30/min"),
+        "public_api": env("PUBLIC_API_RATE", default="120/min"),
+        "public_form": env("PUBLIC_FORM_RATE", default="60/min"),
+        "public_widget": env("PUBLIC_WIDGET_RATE", default="120/min"),
+        "integration_webhook": env("INTEGRATION_WEBHOOK_RATE", default="300/min"),
+        "ai_assistant": env("AI_ASSISTANT_RATE", default="30/min"),
     },
 }
 
@@ -202,6 +211,17 @@ SIMPLE_JWT = {
 
 CELERY_BROKER_URL = env("REDIS_URL", default="redis://redis:6379/0")
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+CELERY_TASK_DEFAULT_QUEUE = env("CELERY_TASK_DEFAULT_QUEUE")
+CELERY_TASK_ROUTES = {
+    "apps.integrations.*": {"queue": "integrations"},
+    "apps.automations.*": {"queue": "automations"},
+    "apps.notifications.*": {"queue": "notifications"},
+    "apps.ai_core.*": {"queue": "ai"},
+    "apps.core.import_export*": {"queue": "reports_exports"},
+}
+CELERY_TASK_ACKS_LATE = env.bool("CELERY_TASK_ACKS_LATE", default=True)
+CELERY_WORKER_PREFETCH_MULTIPLIER = env.int("CELERY_WORKER_PREFETCH_MULTIPLIER", default=1)
+AUTOMATIONS_RUN_INLINE = env.bool("AUTOMATIONS_RUN_INLINE", default=True)
 
 SECURE_SSL_REDIRECT = env("SECURE_SSL_REDIRECT")
 SESSION_COOKIE_SECURE = env("SESSION_COOKIE_SECURE")
@@ -256,3 +276,30 @@ if SENTRY_DSN:
         traces_sample_rate=env.float("SENTRY_TRACES_SAMPLE_RATE", default=0.05),
         send_default_pii=False,
     )
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "console": {
+            "format": "%(asctime)s %(levelname)s %(name)s %(message)s",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "console",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": env("LOG_LEVEL"),
+    },
+    "loggers": {
+        "django.server": {
+            "handlers": ["console"],
+            "level": env("LOG_LEVEL"),
+            "propagate": False,
+        },
+    },
+}

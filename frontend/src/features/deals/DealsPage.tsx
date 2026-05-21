@@ -2,7 +2,7 @@ import { DndContext, DragEndEvent, PointerSensor, useDroppable, useSensor, useSe
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, CalendarClock, GripVertical, KanbanSquare, ListChecks, MessageSquareText, Plus, Sparkles, UserRound } from "lucide-react";
+import { AlertTriangle, ArrowRight, CalendarClock, GripVertical, KanbanSquare, ListChecks, MessageSquareText, Plus, Sparkles, UserRound } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { dealsApi } from "../../api/deals";
@@ -76,6 +76,11 @@ function DealCard({
         </div>
         <StatusBadge status={deal.status} />
       </div>
+      {deal.sla_overdue ? (
+        <div className="mt-3 flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700">
+          <AlertTriangle size={14} /> SLA overdue
+        </div>
+      ) : null}
 
       <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
         <div className="rounded-2xl bg-slate-50 p-3">
@@ -132,7 +137,10 @@ function StageColumn({
               <span className="h-3 w-3 rounded-full" style={{ backgroundColor: stage.color }} />
               <h2 className="font-black text-midnight">{stage.name}</h2>
             </div>
-            <p className="mt-1 text-xs text-slate-500">{stage.probability}% probability · SLA {stage.sla_minutes || "-"} min</p>
+        <p className="mt-1 text-xs text-slate-500">{stage.probability}% probability · SLA {stage.sla_minutes || "-"} min</p>
+        {stage.required_fields_json?.fields?.length ? (
+          <p className="mt-1 text-[11px] font-semibold text-amber-600">Required: {stage.required_fields_json.fields.join(", ")}</p>
+        ) : null}
           </div>
           <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500">{deals.length}</span>
         </div>
@@ -179,7 +187,7 @@ export function DealsPage() {
   });
 
   const moveMutation = useMutation({
-    mutationFn: ({ id, stage }: { id: Id; stage: Id }) => dealsApi.moveStage({ id, stage }),
+    mutationFn: ({ id, stage, lost_reason }: { id: Id; stage: Id; lost_reason?: string }) => dealsApi.moveStage({ id, stage, lost_reason }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["deals"] }),
   });
 
@@ -193,7 +201,9 @@ export function DealsPage() {
     const targetStageId = overId.startsWith("stage-") ? Number(overId.replace("stage-", "")) : hoveredDeal?.stage;
     const currentDeal = rows.find((deal) => deal.id === dealId);
     if (!targetStageId || !currentDeal || currentDeal.stage === targetStageId) return;
-    moveMutation.mutate({ id: dealId, stage: targetStageId });
+    const targetStage = activeStages.find((stage) => stage.id === targetStageId);
+    const lostReason = targetStage?.is_lost ? window.prompt("Почему сделка потеряна?") || "" : undefined;
+    moveMutation.mutate({ id: dealId, stage: targetStageId, lost_reason: lostReason });
   }
 
   if (!business) return <ErrorState message="Создайте бизнес в настройках, чтобы работать со сделками." />;

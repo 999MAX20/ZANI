@@ -15,10 +15,15 @@ import {
   Stethoscope,
   Users,
   Workflow,
+  Rocket,
+  PlugZap,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 import { cn } from "../../lib/cn";
+import { hasPermission } from "../../lib/permissions";
+import { useActiveBusiness } from "../../hooks/useBusiness";
+import { useAuth } from "../../features/auth/AuthProvider";
 import { Button } from "../ui/Button";
 import { useI18n } from "../../lib/i18n";
 import { LanguageSelector } from "./LanguageSelector";
@@ -28,37 +33,41 @@ const groups = [
     title: "nav.workspace",
     items: [
       { to: "/dashboard", label: "nav.dashboard", icon: Home },
-      { to: "/dashboard/leads", label: "nav.leads", icon: Inbox },
-      { to: "/dashboard/deals", label: "nav.deals", icon: KanbanSquare },
-      { to: "/dashboard/clients", label: "nav.clients", icon: Users },
-      { to: "/dashboard/tasks", label: "nav.tasks", icon: ListChecks },
-      { to: "/dashboard/calendar", label: "nav.calendar", icon: CalendarDays },
-      { to: "/dashboard/conversations", label: "nav.conversations", icon: MessageSquareText },
-      { to: "/dashboard/timeline", label: "nav.timeline", icon: Clock },
+      { to: "/dashboard/leads", label: "nav.leads", icon: Inbox, resource: "leads" },
+      { to: "/dashboard/deals", label: "nav.deals", icon: KanbanSquare, resource: "deals" },
+      { to: "/dashboard/clients", label: "nav.clients", icon: Users, resource: "clients" },
+      { to: "/dashboard/tasks", label: "nav.tasks", icon: ListChecks, resource: "tasks" },
+      { to: "/dashboard/calendar", label: "nav.calendar", icon: CalendarDays, resource: "appointments" },
+      { to: "/dashboard/conversations", label: "nav.conversations", icon: MessageSquareText, resource: "conversations" },
+      { to: "/dashboard/timeline", label: "nav.timeline", icon: Clock, resource: "analytics" },
     ],
   },
   {
     title: "nav.operations",
     items: [
-      { to: "/dashboard/appointments", label: "nav.appointments", icon: CalendarDays },
-      { to: "/dashboard/services", label: "nav.services", icon: Stethoscope },
-      { to: "/dashboard/resources", label: "nav.resources", icon: BriefcaseBusiness },
-      { to: "/dashboard/working-hours", label: "nav.workingHours", icon: Clock },
+      { to: "/dashboard/appointments", label: "nav.appointments", icon: CalendarDays, resource: "appointments" },
+      { to: "/dashboard/services", label: "nav.services", icon: Stethoscope, resource: "settings" },
+      { to: "/dashboard/resources", label: "nav.resources", icon: BriefcaseBusiness, resource: "settings" },
+      { to: "/dashboard/working-hours", label: "nav.workingHours", icon: Clock, resource: "settings" },
     ],
   },
   {
     title: "nav.intelligence",
     items: [
-      { to: "/dashboard/bots", label: "nav.bots", icon: Bot },
-      { to: "/dashboard/ai-assistant", label: "nav.aiAssistant", icon: Bot },
-      { to: "/dashboard/ai-agents", label: "nav.aiAgents", icon: Sparkles },
-      { to: "/dashboard/analytics", label: "nav.analytics", icon: BarChart3 },
-      { to: "/dashboard/automations", label: "nav.automations", icon: Workflow },
+      { to: "/dashboard/bots", label: "nav.bots", icon: Bot, resource: "integrations" },
+      { to: "/dashboard/integrations", label: "nav.integrations", icon: PlugZap, resource: "integrations" },
+      { to: "/dashboard/ai-assistant", label: "nav.aiAssistant", icon: Bot, resource: "conversations" },
+      { to: "/dashboard/ai-agents", label: "nav.aiAgents", icon: Sparkles, resource: "settings" },
+      { to: "/dashboard/analytics", label: "nav.analytics", icon: BarChart3, resource: "analytics" },
+      { to: "/dashboard/automations", label: "nav.automations", icon: Workflow, resource: "automations" },
     ],
   },
   {
     title: "nav.system",
-    items: [{ to: "/dashboard/settings", label: "nav.settings", icon: Settings }],
+    items: [
+      { to: "/dashboard/onboarding", label: "nav.onboarding", icon: Rocket, resource: "settings" },
+      { to: "/dashboard/settings", label: "nav.settings", icon: Settings, resource: "settings" },
+    ],
   },
 ];
 
@@ -74,6 +83,8 @@ export function Sidebar({
   onNavigate?: () => void;
 }) {
   const { t } = useI18n();
+  const { user } = useAuth();
+  const { business } = useActiveBusiness();
 
   return (
     <aside
@@ -106,7 +117,7 @@ export function Sidebar({
                 </p>
               ) : null}
               <nav className="space-y-1">
-                {group.items.map((item) => {
+                {group.items.filter((item) => !item.resource || hasPermission(user, business?.id, item.resource)).map((item) => {
                   const Icon = item.icon;
                   return (
                     <NavLink

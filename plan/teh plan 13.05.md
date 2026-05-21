@@ -1,16 +1,65 @@
-# Zani Technical Implementation Prompts — Phases A/B/C/D
+# Zani Unified Technical Implementation Plan — Phases A/B/C/D
 
 Основано на документе:
 
 - `/Users/maksim/Desktop/Zani/plan/zani_competitive_crm_product_tasks.md`
+- `/Users/maksim/Desktop/Zani/plan/zani_amocrm_bitrix24_workflow_analysis.md`
 
 Актуализировано после сравнения с текущей кодовой базой `/Users/maksim/Desktop/Zani`.
 
 Цель: поэтапно довести Zani до уровня сильной CRM/Business OS, которая не уступает amoCRM/Bitrix24 по критичной бизнес-логике, но остаётся простой, быстрой и понятной для МСБ.
 
+Этот файл является каноническим execution-plan. Отдельные competitive/analysis документы можно использовать как архив рассуждений, но реализация должна идти по этому unified plan.
+
 Главный принцип реализации:
 
 Не добавлять “сложность ради сложности”. Каждая новая enterprise-функция должна иметь простой default mode для малого бизнеса и advanced mode для растущих команд.
+
+## Product North Star
+
+Zani не должен становиться “ещё одной CRM”.
+
+Мы строим AI-first SMB Growth OS:
+
+- CRM — ядро ежедневной работы;
+- Inbox — центр обработки клиентов;
+- AI — помощник менеджера, а не декоративный слой;
+- Automations — ускоритель рутины, а не тяжёлый BPM;
+- Roles/Audit — защита бизнеса от хаоса и скрытия ошибок;
+- Dashboard — список действий, а не витрина графиков;
+- Mobile UX — основной рабочий режим для многих SMB, а не дополнение.
+
+Если задача не помогает быстрее обработать клиента, безопаснее управлять командой или понятнее видеть бизнес, её нужно упростить или отложить.
+
+## Competitive Product Principles
+
+Zani берёт сильные стороны amoCRM и Bitrix24, но не копирует их буквально.
+
+От amoCRM берём:
+
+- sales-first логику;
+- карточку клиента/сделки как рабочий центр;
+- простую воронку;
+- связь коммуникаций с CRM;
+- задачи и следующий шаг;
+- автоматизации вокруг этапов и событий.
+
+От Bitrix24 берём:
+
+- структурность для команд;
+- роли, отделы и access scopes;
+- прозрачность действий сотрудников;
+- задачи и дисциплину выполнения;
+- security/audit слой;
+- enterprise-ready расширяемость.
+
+Что Zani должен делать лучше:
+
+- быть проще в освоении;
+- быстрее открывать нужные действия;
+- не перегружать интерфейс таблицами и настройками;
+- давать owner-control без Bitrix-style матрицы на сотни чекбоксов;
+- делать AI полезным внутри рабочего сценария, а не отдельным разделом ради “AI”.
 
 ## Общие правила для каждого prompt
 
@@ -24,6 +73,8 @@
 6. Не делать тяжёлый UI в стиле Bitrix24.
 7. После реализации обновить README или relevant docs.
 8. После реализации выполнить проверки.
+9. Зафиксировать, какой пользовательский сценарий считается закрытым.
+10. Проверить, что фича встроена в связанные CRM-слои: drawer, timeline, audit, permissions, dashboard, inbox или mobile там, где это применимо.
 
 Обязательные проверки:
 
@@ -48,6 +99,237 @@ UI/UX smoke после frontend-изменений:
 - проверить пустые состояния;
 - проверить loading/error states;
 - проверить, что основное действие доступно за 1-3 клика.
+
+## Definition of Done для каждого prompt
+
+Каждый prompt считается завершённым только если закрыты все уровни готовности.
+
+### 1. Data
+
+- модели и миграции корректны;
+- tenant isolation сохранён;
+- нет дублей уже существующих моделей/слоёв;
+- критичные действия имеют поля для истории, статуса, причины или audit, если это требуется бизнес-логикой.
+
+### 2. API
+
+- endpoints реализованы или существующие endpoints расширены без поломки обратной совместимости;
+- serializers возвращают данные, нужные frontend без лишних N+1-запросов;
+- permissions проверяются на backend, а не только скрытием кнопок;
+- forbidden actions возвращают понятный `403`;
+- добавлены или обновлены тесты для ключевого сценария.
+
+### 3. UX
+
+- есть рабочий frontend-flow, а не только backend/API;
+- предусмотрены loading, empty, error и forbidden states;
+- основной action виден и доступен за 1-3 клика;
+- mobile viewport не ломается;
+- UI не превращается в админку или Bitrix-style перегруз.
+
+### 4. Workflow
+
+- пользователь может выполнить реальный бизнес-сценарий от начала до конца;
+- изменения отражаются в связанных местах: карточка, timeline, audit, dashboard, inbox, analytics или notifications;
+- если этап называется `Foundation` или `MVP`, в README/docs явно указано, что уже работает и что намеренно оставлено на следующий этап;
+- не остаётся “невидимых” backend-фич, которые нельзя использовать из интерфейса.
+
+Если хотя бы один уровень не закрыт, prompt нельзя считать продуктово завершённым.
+
+## Anti-Rework Rules
+
+Чтобы не возвращаться к одним и тем же задачам по кругу:
+
+- не принимать `Foundation` как готовую фичу без минимального UI и user-flow;
+- не делать CRM-фичи изолированно: они должны связываться с карточкой, timeline, permissions и audit там, где это уместно;
+- не откладывать mobile до финала: mobile smoke обязателен в каждом frontend prompt;
+- не добавлять AI-блоки без действия для пользователя;
+- не добавлять аналитику без ответа на вопрос “что делать сейчас?”;
+- не добавлять автоматизации без logs, preview/test или понятного safe mode;
+- не добавлять export/import без permissions и audit;
+- не добавлять delete для critical CRM entities без archive/restore и audit;
+- не добавлять настройки ролей без простого preset mode.
+
+## High-Risk Prompt Rules
+
+Следующие prompts особенно легко выполнить формально и получить только часть желаемого результата. При их реализации обязательно использовать усиленные требования ниже.
+
+### A4 — Custom Fields Foundation
+
+Не достаточно создать модели и API.
+
+Готовый результат должен включать:
+
+- field builder в Settings;
+- отображение и редактирование custom fields в CRM drawer;
+- участие custom fields в required fields validation для pipeline stages;
+- tenant-safe values;
+- базовое использование в фильтрах хотя бы для clients/leads/deals.
+
+### A6 — Owner Analytics Dashboard MVP
+
+Не достаточно вывести KPI cards.
+
+Готовый результат должен включать:
+
+- блок “Что требует внимания”;
+- drill-down или переход к списку сущностей по ключевым метрикам;
+- empty state с понятными next steps;
+- mobile-friendly layout;
+- dashboard отвечает “что происходит и что сделать сейчас?”.
+
+### B2 — Quick Replies and Templates
+
+Не достаточно CRUD-страницы шаблонов.
+
+Готовый результат должен включать:
+
+- быстрый поиск шаблона в inbox composer;
+- вставку текста в черновик;
+- категории;
+- связь с AI suggestion UX;
+- возможность использовать шаблоны в niche onboarding позже.
+
+### B3 — WhatsApp Integration Foundation
+
+Не достаточно webhook placeholder.
+
+Готовый результат должен включать:
+
+- provider interface contract;
+- mock/disabled/provider states;
+- inbound/outbound logs;
+- channel health status;
+- retry/error state;
+- понятный setup UX без обязательного paid provider.
+
+### B6 — Attachments MVP
+
+Не достаточно upload endpoint.
+
+Готовый результат должен включать:
+
+- отображение attachments в inbox;
+- отображение attachments в CRM drawer/timeline;
+- private download с object-level permissions;
+- file validation;
+- подготовку audit для чувствительных файлов.
+
+### C2 — Task Management Upgrade
+
+Не достаточно расширить модель Task.
+
+Готовый результат должен включать:
+
+- task drawer;
+- быстрые действия из lead/deal/client/inbox;
+- отображение задач в CRM drawer;
+- overdue в dashboard/team analytics;
+- comments/watchers/reopen/snooze в UX.
+
+### C3/C4 — Automation Builder
+
+Не достаточно сохранить trigger-condition-action JSON.
+
+Готовый результат должен включать:
+
+- simple templates-first UX;
+- manual builder только после simple mode;
+- validation перед сохранением;
+- test run/preview;
+- run logs;
+- permissions на управление автоматизациями.
+
+### C6 — Import and Export Foundation
+
+Не достаточно импортировать CSV.
+
+Готовый результат должен включать:
+
+- mapping preview;
+- duplicate preview;
+- import history;
+- rollback/archive strategy или явно описанное ограничение;
+- export permissions;
+- audit log на export.
+
+### D1 — Forms and Lead Capture
+
+Не достаточно создать публичный form submit.
+
+Готовый результат должен включать:
+
+- UTM/source capture;
+- duplicate detection;
+- auto-assignment или понятный default owner;
+- automation trigger;
+- activity event;
+- простой embed/setup UX.
+
+### D2 — Tags and Smart Segments
+
+Не достаточно CRUD tags.
+
+Готовый результат должен включать:
+
+- saved filters;
+- segment counts;
+- smart views;
+- использование сегментов в clients page;
+- подготовку к automation/outreach.
+
+### D3 — Public API Tokens and Webhooks
+
+Не достаточно выдать token.
+
+Готовый результат должен включать:
+
+- scopes;
+- rate limiting;
+- revoke/rotate;
+- delivery logs;
+- retries;
+- idempotency;
+- audit.
+
+### D4 — Notification Center Upgrade
+
+Не достаточно списка уведомлений.
+
+Готовый результат должен включать:
+
+- read/unread;
+- priority/category;
+- action buttons;
+- deep links;
+- unread count;
+- mobile dropdown;
+- mark all read.
+
+### D6 — Onboarding Templates by Niche
+
+Не достаточно создать несколько demo-сущностей.
+
+Готовый результат должен включать:
+
+- setup checklist;
+- niche-specific pipeline/services/quick replies/automation templates;
+- first lead/first appointment flow;
+- useful demo data;
+- понятный прогресс запуска бизнеса.
+
+### D7 — Mobile-First Polish Pass
+
+D7 не должен быть первой mobile-адаптацией.
+
+Готовый результат должен включать:
+
+- final QA mobile UX;
+- исправление накопленных проблем;
+- проверку всех core flows на телефоне;
+- отсутствие горизонтального скролла;
+- крупные touch targets;
+- корректные drawer/modal sizes.
 
 ## Текущее состояние проекта на момент актуализации
 
@@ -100,12 +382,55 @@ UI/UX smoke после frontend-изменений:
 - WhatsApp webhook/provider production foundation;
 - attachments model/API;
 - role presets/team access UI;
+- granular RBAC/ABAC permissions;
+- departments/teams access scopes;
+- soft-delete/archive protection for critical CRM entities;
+- manager accountability layer for missed chats/leads;
 - import/export;
 - forms/lead capture;
 - public API tokens/webhooks;
 - onboarding templates.
 
 Важно: дальнейшие prompts должны быть delta-oriented: дорабатывать существующие слои, а не переписывать их заново.
+
+---
+
+## Access Control Product Principle
+
+Zani должен поддерживать команды от 1 человека до 100+ сотрудников, но не превращаться в перегруженный Bitrix24.
+
+Подход:
+
+- простые preset roles по умолчанию;
+- advanced permissions только при необходимости;
+- backend-first enforcement: UI скрывает кнопки, но API всегда проверяет права;
+- запрет опасных действий по умолчанию;
+- soft-delete/archive вместо физического удаления critical CRM data;
+- audit trail для всех действий, которые могут скрыть ошибку сотрудника;
+- scopes по владельцу, команде, отделу и всему бизнесу.
+
+Конкурентный ориентир:
+
+- amoCRM сильна простотой: права на сделки/контакты/задачи и области “свои / группа / все”;
+- Bitrix24 сильнее по enterprise-гибкости: роли, отделы, структура компании, доступ к отдельным инструментам и CRM-разделам;
+- Zani должен взять простоту amoCRM и структурность Bitrix24, но не показывать владельцу МСБ матрицу из сотен чекбоксов без необходимости.
+
+Ключевая бизнес-механика:
+
+Если сотрудник упустил заявку или не подключился к чату по handoff/SLA, он не должен иметь возможности удалить лид, чат или историю так, будто события не было.
+
+Такие действия должны быть невозможны или оставлять след:
+
+- удаление клиента/лида/сделки/чата;
+- смена статуса на lost;
+- закрытие чата;
+- отключение бота;
+- экспорт данных;
+- merge клиентов;
+- изменение ответственного;
+- изменение permissions;
+- выдача support access;
+- изменение интеграций.
 
 ---
 
@@ -923,70 +1248,480 @@ API:
 
 # PHASE C — Team Operations and Control
 
-Цель: сделать Zani удобным для команд 10-100+ человек без потери простоты.
+Цель: сделать Zani удобным и безопасным для команд 10-100+ человек без потери простоты.
+
+Эта фаза закрывает критичный gap с amoCRM/Bitrix24: гибкое распределение ролей, видимость по отделам, запрет скрытия ошибок менеджеров и понятный owner-control.
+
+Главный принцип:
+
+- сотрудник видит только то, что нужно для его работы;
+- руководитель видит контроль, аналитику и риски;
+- опасные действия запрещены или логируются;
+- роли не должны превращать интерфейс в Bitrix-style настройку на 300 чекбоксов.
 
 ---
 
-## PROMPT C1 — Role Presets and Team Access
+## PROMPT C1 — RBAC/ABAC Foundation and Team Access
 
-Ты — senior security/backend engineer.
+Ты — principal security/backend engineer и CRM product architect.
 
 ### Цель
 
-Создать понятную RBAC foundation.
+Создать понятную, расширяемую и tenant-safe RBAC/ABAC foundation для сотрудников бизнеса.
+
+Нужно не просто хранить `role`, а разделить:
+
+- identity/user;
+- membership in business;
+- role;
+- department/team;
+- permissions;
+- access scope;
+- object-level ownership.
+
+Модель должна защищать бизнес от сценариев:
+
+- менеджер удалил упущенный лид;
+- оператор закрыл чат без ответа;
+- сотрудник экспортировал клиентскую базу;
+- подчинённый увидел revenue/аналитику владельца;
+- менеджер видит чужие сделки без разрешения;
+- сотрудник меняет integrations/billing/roles.
 
 ### Backend
 
-Модели:
+В текущем проекте уже есть:
+
+- `BusinessMember`;
+- roles на `User`;
+- tenant isolation;
+- `AuditLog`;
+- `SupportAccessGrant`.
+
+Не ломать их. Расширить текущий слой.
+
+Добавить или расширить модели:
 
 - RolePreset;
-- Permission;
-- Team;
+- BusinessRole;
+- RolePermission;
+- Team/Department;
 - TeamMember.
 
-Permissions:
+RolePreset нужен для системных шаблонов:
 
-- view_all;
-- view_team;
-- view_own;
+- owner;
+- admin;
+- sales_manager;
+- sales_lead;
+- operator;
+- staff;
+- marketer;
+- accountant;
+- viewer.
+
+BusinessRole — кастомная роль внутри конкретного бизнеса.
+
+Permissions должны храниться как resource/action/scope:
+
+Resources:
+
+- clients;
+- leads;
+- deals;
+- tasks;
+- appointments;
+- calendar;
+- conversations;
+- analytics;
+- automations;
+- services;
+- resources;
+- working_hours;
+- settings;
+- billing;
+- ai_assistant;
+- bots;
+- integrations;
+- exports;
+- audit_logs;
+- team;
+- support_access.
+
+Actions:
+
+- view;
 - create;
-- edit;
+- update;
 - delete;
+- archive;
+- restore;
+- assign;
 - export;
-- manage_users;
-- manage_integrations;
-- manage_automations;
-- manage_billing;
-- view_financials.
+- import;
+- change_status;
+- move_stage;
+- merge;
+- manage_settings;
+- view_sensitive;
+- manage_permissions.
 
-На первом этапе можно хранить permissions в JSON на BusinessMember, но с clear service-layer.
+Scopes:
+
+- none;
+- own;
+- assigned;
+- team;
+- department;
+- business.
+
+Добавить service-layer:
+
+- `can(user, business, resource, action, obj=None)`;
+- `scope_queryset(user, business, resource, queryset)`;
+- `user_scope_for(user, business, resource, action)`;
+- `assert_can(...)`;
+- `audit_permission_change(...)`.
+
+Object ownership mapping:
+
+- `Lead.responsible_user`;
+- `Deal.owner`;
+- `Task.assignee`;
+- `Appointment.resource` / future staff assignment;
+- `BotConversation.assigned_to`;
+- `Client` через owner/created_by или через связанные active objects на первом этапе.
+
+На первом этапе можно хранить часть permissions в JSON, но должен быть clear service-layer, чтобы потом перейти на нормализованные таблицы без переписывания API.
+
+Обязательные запреты по умолчанию:
+
+- `delete` для clients/leads/deals/conversations запрещён всем кроме owner/admin;
+- `export` запрещён всем кроме owner/admin/explicit role;
+- `billing` только owner/admin/accountant;
+- `analytics` только owner/admin/sales_lead/explicit role;
+- `integrations` только owner/admin;
+- `permissions/team` только owner/admin.
+
+### API
+
+Добавить endpoints:
+
+- `GET /api/team/members/`;
+- `POST /api/team/members/`;
+- `PATCH /api/team/members/{id}/`;
+- `GET /api/team/roles/`;
+- `POST /api/team/roles/`;
+- `PATCH /api/team/roles/{id}/`;
+- `GET /api/team/permissions/catalog/`;
+- `POST /api/team/roles/{id}/permissions/`;
+- `GET /api/team/departments/`;
+- `POST /api/team/departments/`.
+
+Endpoint `GET /api/auth/me/` должен возвращать:
+
+- current business membership;
+- role;
+- scopes;
+- effective permissions summary.
 
 ### Frontend
 
-Settings → Team:
+Settings → Team & Access:
 
 - список сотрудников;
 - роль;
-- активность;
+- отдел/команда;
+- статус активности;
 - invite placeholder;
+- quick role selector;
 - simple permissions view.
+
+Settings → Roles:
+
+- простые роли;
+- кнопка “Настроить детально”;
+- grouped permissions:
+  - Клиенты;
+  - Заявки;
+  - Сделки;
+  - Чаты;
+  - Календарь;
+  - Аналитика;
+  - Автоматизации;
+  - Настройки;
+  - Экспорт;
+  - Безопасность.
 
 ### UI/UX
 
-Simple roles:
+Simple roles по умолчанию:
 
 - Owner;
 - Admin;
-- Manager;
-- Specialist.
+- Sales manager;
+- Operator;
+- Staff;
+- Marketer;
+- Accountant;
+- Viewer.
 
-Advanced permissions скрыть.
+Advanced permissions спрятать под отдельным раскрытием.
+
+Не показывать пользователю “сырую” техническую матрицу прав в первом экране.
 
 ### Acceptance criteria
 
-- Owner может видеть сотрудников.
-- Manager не может управлять billing/integrations.
+- Owner может видеть и управлять сотрудниками.
+- Owner/Admin может назначать роли.
+- Manager не может управлять billing/integrations/team.
+- Operator может работать с назначенными чатами, но не видеть analytics/billing.
+- Staff видит только назначенные записи/задачи.
+- Backend API запрещает действия даже если кнопку вызвать вручную.
 - Tenant isolation сохранён.
+- Permission changes пишутся в audit log.
+
+---
+
+## PROMPT C1.1 — Scoped CRM Querysets and Object-Level Permissions
+
+Ты — senior backend engineer.
+
+### Цель
+
+Применить RBAC/ABAC не только к UI, но и к queryset/action layer ключевых CRM сущностей.
+
+### Backend
+
+Обновить viewsets и service-layer для:
+
+- clients;
+- leads;
+- deals;
+- appointments;
+- tasks;
+- conversations/inbox;
+- analytics;
+- automations;
+- settings/billing/integrations.
+
+Добавить scoped queryset filtering:
+
+- owner/admin видят весь business;
+- sales_lead видит свой team/department;
+- sales_manager видит own/assigned;
+- operator видит assigned conversations и linked leads;
+- staff видит appointments/tasks, связанные с ним;
+- viewer только read-only scope.
+
+Действия:
+
+- create;
+- update;
+- archive;
+- assign;
+- move_stage;
+- change_status;
+- merge;
+- export.
+
+Каждое действие должно вызывать `assert_can(...)`.
+
+### Frontend
+
+Frontend должен использовать effective permissions из `/api/auth/me/`:
+
+- скрывать недоступные nav items;
+- скрывать buttons/actions;
+- показывать friendly “Нет доступа” вместо crash;
+- не показывать analytics/billing/settings подчинённым без прав.
+
+### Acceptance criteria
+
+- Менеджер не видит чужие сделки при scope `own`.
+- Оператор не видит аналитику.
+- Staff не видит billing/settings.
+- API возвращает 403 при ручном вызове forbidden action.
+- Существующие owner/admin flows не ломаются.
+
+---
+
+## PROMPT C1.2 — Soft Delete, Archive and Accountability Guardrails
+
+Ты — senior CRM backend engineer и security product owner.
+
+### Цель
+
+Запретить скрытие ошибок сотрудников через удаление CRM-данных.
+
+### Backend
+
+Добавить soft-delete/archive foundation для critical entities:
+
+- Client;
+- Lead;
+- Deal;
+- BotConversation / Conversation;
+- Task;
+- Appointment.
+
+Поля или shared mixin:
+
+- `is_archived`;
+- `archived_at`;
+- `archived_by`;
+- `archive_reason`;
+
+Hard delete:
+
+- запрещён обычным сотрудникам;
+- доступен только owner/admin;
+- желательно только для явно безопасных случаев;
+- всегда audit log.
+
+Добавить actions:
+
+- `POST /api/leads/{id}/archive/`;
+- `POST /api/leads/{id}/restore/`;
+- аналогично для core CRM entities.
+
+Lost flow:
+
+- lead/deal status `lost` требует reason;
+- сохранять:
+  - `lost_reason`;
+  - `lost_by`;
+  - `lost_at`;
+  - previous status/stage;
+  - linked conversation/task context.
+
+Inbox accountability:
+
+- если `handoff_required=True`, закрытие conversation требует reason;
+- если клиент ждал ответа и SLA истёк, закрытие/архив пишется как risk event;
+- менеджер не может удалить/скрыть conversation history.
+
+### Frontend
+
+В UI:
+
+- заменить “Удалить” на “Архивировать”;
+- показать поле причины;
+- owner/admin видит архив и может восстановить;
+- в карточке клиента timeline показывает archive/lost events.
+
+### Acceptance criteria
+
+- Manager не может hard-delete лид/клиента/чат.
+- Lost lead/deal требует reason.
+- Archive пишет audit/activity event.
+- Owner видит кто и когда архивировал/пометил lost.
+- Данные не исчезают из истории.
+
+---
+
+## PROMPT C1.3 — Department Analytics Visibility and Manager Accountability
+
+Ты — senior product analyst и CRM architect.
+
+### Цель
+
+Дать руководителю контроль качества работы команды без перегруза BI.
+
+### Backend
+
+Добавить manager/team performance metrics:
+
+- assigned leads;
+- contacted leads;
+- lost leads;
+- lost reason breakdown;
+- overdue handoffs;
+- missed chat handoffs;
+- avg response time placeholder;
+- appointments created;
+- deals won/lost;
+- tasks overdue/completed.
+
+Endpoint:
+
+- `GET /api/team/performance/`
+
+Фильтры:
+
+- date range;
+- team/department;
+- manager;
+- source;
+- pipeline.
+
+### Frontend
+
+Analytics → Team:
+
+- видит только owner/admin/sales_lead;
+- карточки по сотрудникам;
+- warning list:
+  - “лиды без ответа”;
+  - “handoff просрочен”;
+  - “lost без причины”;
+  - “задачи просрочены”.
+
+### Acceptance criteria
+
+- Owner видит performance по всем.
+- Sales lead видит только свой team.
+- Manager видит только свои показатели, если разрешено.
+- Operator/staff не видят team analytics без права.
+
+---
+
+## PROMPT C1.4 — Security UX for Roles Without Bitrix Complexity
+
+Ты — senior product designer и frontend architect.
+
+### Цель
+
+Сделать настройку прав понятной для МСБ.
+
+### Frontend
+
+Создать простую UX-модель:
+
+1. Выбрать сотрудника.
+2. Выбрать preset role.
+3. Выбрать область видимости:
+   - только своё;
+   - своя команда;
+   - весь бизнес.
+4. Advanced настройки открыть только по кнопке.
+
+Advanced groups:
+
+- Продажи;
+- Клиенты;
+- Чаты;
+- Календарь;
+- Задачи;
+- Аналитика;
+- Настройки;
+- Экспорт;
+- Безопасность.
+
+Каждая группа показывает не technical permissions, а понятные уровни:
+
+- Нет доступа;
+- Только просмотр;
+- Работа со своими;
+- Работа с командой;
+- Полное управление.
+
+### Acceptance criteria
+
+- Owner может настроить роль без чтения документации.
+- Новый сотрудник получает безопасный default.
+- Подчинённый не видит скрытые разделы sidebar/header.
+- Forbidden state объясняет, почему нет доступа.
 
 ---
 
@@ -1130,29 +1865,39 @@ Validate automation config before save.
 
 ---
 
-## PROMPT C5 — Manager Performance and SLA
+## PROMPT C5 — Manager Performance and SLA Deepening
 
 Ты — senior analytics engineer.
 
 ### Цель
 
-Добавить контроль команды без перегруза.
+Углубить контроль команды после C1.3: добавить SLA-разрезы и manager effectiveness без BI-перегруза.
+
+Не дублировать `GET /api/team/performance/`, если он уже реализован в C1.3. Расширить его или добавить совместимый analytics endpoint.
 
 ### Backend
 
 Endpoint:
 
 - `GET /api/analytics/team-performance/`
+- или расширение `GET /api/team/performance/`
 
 Metrics:
 
 - assigned leads;
+- contacted leads;
+- lost leads;
+- lost by reason;
 - closed leads;
 - response time;
+- overdue handoffs;
+- missed chat handoffs;
 - overdue tasks;
+- completed tasks;
 - appointments completed;
 - no-show;
 - conversion.
+- SLA overdue by manager/team.
 
 ### Frontend
 
@@ -1161,12 +1906,18 @@ AnalyticsPage:
 - Team tab;
 - manager table;
 - simple badges;
+- SLA warnings;
+- missed handoff warnings;
+- lost reason breakdown;
 - no heavy BI.
 
 ### Acceptance criteria
 
 - Owner/admin видит team performance.
-- Manager видит свои метрики.
+- Sales lead видит свой department/team.
+- Manager видит свои метрики, если разрешено.
+- Operator/staff не видят чужую team performance.
+- SLA/missed handoff выводится как action list, а не сложный BI-dashboard.
 
 ---
 
@@ -1405,6 +2156,9 @@ Header notification dropdown:
 
 Дать владельцу контроль безопасности.
 
+Этот этап должен опираться на C1/C1.1/C1.2, а не создавать вторую систему прав.
+Security Center — это не отдельная админка для всех сотрудников, а owner/admin layer для расследования спорных действий, контроля доступа и поддержки.
+
 ### Backend
 
 В текущем проекте уже есть:
@@ -1422,12 +2176,46 @@ Add/extend:
 - export history;
 - permission change audit;
 - support access grant.
+- archive/restore history;
+- lost reason history;
+- role assignment history;
+- integration settings history.
+- sensitive action risk classification:
+  - low;
+  - medium;
+  - high;
+  - critical.
+
+Critical/high events:
+
+- permission changed;
+- employee role changed;
+- export started/completed;
+- lead/deal/client archived or restored;
+- hard-delete attempt;
+- conversation closed while handoff/SLA risk exists;
+- lead/deal marked lost;
+- responsible user changed;
+- integration settings changed;
+- support access granted/revoked.
 
 Endpoints:
 
 - `/api/security/audit-log/`
 - `/api/security/login-history/`
 - `/api/security/support-grants/`
+- `/api/security/risk-events/`
+
+Filters:
+
+- actor;
+- entity type;
+- entity id;
+- action;
+- risk level;
+- date range;
+- team/department;
+- IP/device if available.
 
 ### Frontend
 
@@ -1437,12 +2225,27 @@ Settings → Security:
 - login history;
 - support access toggle/grant;
 - export logs.
+- permission changes;
+- archived/deleted attempts;
+- missed handoff/lost-lead risk events.
+- filters by user/action/date/risk level;
+- quick link to affected client/lead/deal/conversation;
+- “why this matters” short explanation for high-risk events.
+
+Visibility:
+
+- owner/admin see full Security Center;
+- custom roles can receive explicit `audit_logs.view`;
+- managers/operators/staff do not see security/audit sections by default.
 
 ### Acceptance criteria
 
 - Owner sees audit events.
 - Support access requires explicit grant if enabled.
 - Existing audit writes continue working.
+- Owner can see who archived/lost/merged/exported CRM data.
+- Security Center does not expose sensitive logs to managers without permission.
+- Permission changes and archive/lost actions from C1/C1.2 appear in one audit stream.
 
 ---
 
@@ -1597,29 +2400,35 @@ Mobile primary actions:
 7. A4 — Custom Fields Foundation.
 8. A5 — Pipeline and Stage Engine Upgrade.
 9. A6 — Owner Analytics Dashboard MVP.
-10. B2 — Quick Replies and Templates.
-11. C2 — Task Management Upgrade.
-12. C3 — Automation Builder UI Simple Mode.
-13. C4 — Automation Builder Advanced Mode.
-14. C1 — Role Presets and Team Access.
-15. C5 — Manager Performance and SLA.
-16. C6 — Import and Export Foundation.
-17. D1 — Forms and Lead Capture.
-18. D2 — Tags and Smart Segments.
-19. D4 — Notification Center Upgrade.
-20. D5 — Security and Audit Center.
-21. B3 — WhatsApp Integration Foundation.
-22. B6 — Attachments MVP.
-23. D3 — Public API Tokens and Webhooks.
-24. D6 — Onboarding Templates by Niche.
-25. D7 — Mobile-First Polish Pass.
-26. D8 — Final Competitive QA Pass.
+10. C1 — RBAC/ABAC Foundation and Team Access.
+11. C1.1 — Scoped CRM Querysets and Object-Level Permissions.
+12. C1.2 — Soft Delete, Archive and Accountability Guardrails.
+13. B2 — Quick Replies and Templates.
+14. C2 — Task Management Upgrade.
+15. C3 — Automation Builder UI Simple Mode.
+16. C4 — Automation Builder Advanced Mode.
+17. C1.3 — Department Analytics Visibility and Manager Accountability.
+18. C1.4 — Security UX for Roles Without Bitrix Complexity.
+19. C5 — Manager Performance and SLA.
+20. C6 — Import and Export Foundation.
+21. D1 — Forms and Lead Capture.
+22. D2 — Tags and Smart Segments.
+23. D4 — Notification Center Upgrade.
+24. D5 — Security and Audit Center.
+25. B3 — WhatsApp Integration Foundation.
+26. B6 — Attachments MVP.
+27. D3 — Public API Tokens and Webhooks.
+28. D6 — Onboarding Templates by Niche.
+29. D7 — Mobile-First Polish Pass.
+30. D8 — Final Competitive QA Pass.
 
 Почему порядок изменён:
 
 - CRM drawers и timeline нужны первыми, потому что почти все будущие функции должны отображаться в единой карточке.
 - Inbox UX и AI draft insertion идут раньше WhatsApp, потому что текущий inbox уже есть и быстро даст пользователю ценность.
 - WhatsApp отложен после product UX, чтобы не строить интеграцию поверх слабого интерфейса.
+- RBAC/ABAC поднят раньше automation/import/export, потому что без прав и accountability нельзя безопасно масштабировать CRM на команды 10-100+ человек.
+- Soft-delete/accountability идёт до новых массовых инструментов, чтобы сотрудник не мог скрыть упущенный лид, чат или сделку.
 - Mobile polish оставлен ближе к концу, но mobile constraints должны проверяться на каждом frontend prompt.
 
 ## Notes For Future Codex Runs

@@ -15,10 +15,24 @@ class NotificationViewSet(TenantModelViewSet):
         queryset = super().get_queryset()
         status_filter = self.request.query_params.get("status")
         channel_filter = self.request.query_params.get("channel")
+        category_filter = self.request.query_params.get("category")
+        priority_filter = self.request.query_params.get("priority")
+        unread_filter = self.request.query_params.get("unread")
+        due_filter = self.request.query_params.get("due")
         if status_filter:
             queryset = queryset.filter(status=status_filter)
         if channel_filter:
             queryset = queryset.filter(channel=channel_filter)
+        if category_filter:
+            queryset = queryset.filter(category=category_filter)
+        if priority_filter:
+            queryset = queryset.filter(priority=priority_filter)
+        if unread_filter in {"1", "true", "yes"}:
+            queryset = queryset.filter(read_at__isnull=True)
+        if unread_filter in {"0", "false", "no"}:
+            queryset = queryset.filter(read_at__isnull=False)
+        if due_filter in {"1", "true", "yes"}:
+            queryset = queryset.filter(status=Notification.Statuses.PENDING, send_at__lte=timezone.now())
         return queryset
 
     @action(detail=True, methods=["post"], url_path="mark-sent")
@@ -35,14 +49,40 @@ class NotificationViewSet(TenantModelViewSet):
         notification.save(update_fields=["status", "updated_at"])
         return Response(NotificationSerializer(notification).data)
 
+    @action(detail=True, methods=["post"], url_path="mark-read")
+    def mark_read(self, request, pk=None):
+        notification = self.get_object()
+        notification.mark_read()
+        return Response(NotificationSerializer(notification).data)
+
+    @action(detail=True, methods=["post"], url_path="mark-unread")
+    def mark_unread(self, request, pk=None):
+        notification = self.get_object()
+        notification.mark_unread()
+        return Response(NotificationSerializer(notification).data)
+
+    @action(detail=False, methods=["post"], url_path="mark-all-read")
+    def mark_all_read(self, request):
+        queryset = self.get_queryset().filter(read_at__isnull=True)
+        now = timezone.now()
+        updated = queryset.update(read_at=now, updated_at=now)
+        return Response({"updated": updated})
+
     @action(detail=False, methods=["get"])
     def summary(self, request):
         queryset = self.get_queryset()
         now = timezone.now()
+        unread = queryset.filter(read_at__isnull=True)
         return Response(
             {
                 "pending": queryset.filter(status=Notification.Statuses.PENDING).count(),
                 "failed": queryset.filter(status=Notification.Statuses.FAILED).count(),
                 "due": queryset.filter(status=Notification.Statuses.PENDING, send_at__lte=now).count(),
+                "unread": unread.count(),
+                "urgent": unread.filter(priority=Notification.Priorities.URGENT).count(),
+                "by_category": {
+                    category: unread.filter(category=category).count()
+                    for category in Notification.Categories.values
+                },
             }
         )

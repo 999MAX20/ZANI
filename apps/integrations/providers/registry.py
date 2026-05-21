@@ -1,18 +1,29 @@
 from apps.integrations.providers.mock import MockChannelProvider
 from apps.integrations.providers.telegram import TelegramProvider
 from apps.integrations.providers.website import WebsiteMockProvider
+from apps.integrations.providers.whatsapp import WhatsAppProvider
 
 
 PROVIDERS = {
     "website": WebsiteMockProvider(),
     "telegram": TelegramProvider(),
-    "whatsapp": MockChannelProvider("whatsapp"),
+    "whatsapp": WhatsAppProvider(),
     "instagram": MockChannelProvider("instagram"),
     "email": MockChannelProvider("email"),
 }
 
 
+class UnknownIntegrationProvider(ValueError):
+    pass
+
+
+def registered_providers():
+    return sorted(PROVIDERS.keys())
+
+
 def get_provider(provider):
+    if provider not in PROVIDERS:
+        raise UnknownIntegrationProvider(f"Unknown integration provider: {provider}")
     return PROVIDERS[provider]
 
 

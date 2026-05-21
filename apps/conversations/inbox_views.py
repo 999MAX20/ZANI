@@ -7,20 +7,30 @@ from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
+from apps.bots.ai import suggest_bot_reply
 from apps.bots.inbox_service import assign_conversation, handoff_conversation, mark_conversation_read, send_outbound_message
 from apps.bots.models import BotConversation, BotMessage
+from apps.businesses.access import Actions, Resources, assert_can, can, scope_queryset
 from apps.clients.models import Client
+from apps.clients.serializers import ClientSerializer
+from apps.clients.services import duplicate_payload, find_duplicate_clients
 from apps.conversations.inbox_serializers import (
     InboxAssignSerializer,
     InboxConversationSerializer,
+    InboxCreateClientSerializer,
+    InboxCreateDealSerializer,
     InboxCreateLeadSerializer,
     InboxCreateTaskSerializer,
     InboxHandoffSerializer,
+    InboxLinkClientSerializer,
+    InboxLinkDealSerializer,
     InboxLinkLeadSerializer,
     InboxMessageSerializer,
     InboxOutboundMessageSerializer,
 )
 from apps.core.permissions import accessible_businesses
+from apps.crm.models import Deal, Pipeline, PipelineStage
+from apps.crm.serializers import DealSerializer
 from apps.leads.models import Lead
 from apps.leads.serializers import LeadSerializer
 from apps.tasks.models import Task
@@ -42,10 +52,23 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
             "bot",
             "client",
             "lead",
+            "deal",
             "assigned_to",
         ).prefetch_related("messages")
-        queryset = queryset.filter(business__in=accessible_businesses(self.request.user))
-        return self._apply_filters(queryset)
+        businesses = list(accessible_businesses(self.request.user))
+        filtered = queryset.filter(business__in=businesses)
+        scoped_queryset = queryset.none()
+        for business in businesses:
+            if not can(self.request.user, business, Resources.CONVERSATIONS, Actions.VIEW).allowed:
+                continue
+            scoped_queryset = scoped_queryset | scope_queryset(
+                filtered.filter(business=business),
+                self.request.user,
+                business,
+                Resources.CONVERSATIONS,
+                Actions.VIEW,
+            )
+        return self._apply_filters(scoped_queryset.distinct())
 
     def _apply_filters(self, queryset):
         params = self.request.query_params
@@ -71,7 +94,13 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
         elif unread == "false":
             queryset = queryset.filter(unread_count=0)
 
-        search = params.get("search", "").strip()
+        handoff_required = params.get("handoff_required")
+        if handoff_required == "true":
+            queryset = queryset.filter(handoff_required=True)
+        elif handoff_required == "false":
+            queryset = queryset.filter(handoff_required=False)
+
+        search = (params.get("search") or params.get("q") or "").strip()
         if search:
             queryset = queryset.filter(
                 Q(external_user_id__icontains=search)
@@ -88,6 +117,7 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
     def messages(self, request, pk=None):
         conversation = self.get_object()
         if request.method == "POST":
+            assert_can(request.user, conversation.business, Resources.CONVERSATIONS, Actions.UPDATE, obj=conversation)
             serializer = InboxOutboundMessageSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             message = send_outbound_message(
@@ -105,6 +135,7 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
     @action(detail=True, methods=["post"])
     def assign(self, request, pk=None):
         conversation = self.get_object()
+        assert_can(request.user, conversation.business, Resources.CONVERSATIONS, Actions.MANAGE, obj=conversation)
         serializer = InboxAssignSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -124,6 +155,7 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
     @action(detail=True, methods=["post"])
     def handoff(self, request, pk=None):
         conversation = self.get_object()
+        assert_can(request.user, conversation.business, Resources.CONVERSATIONS, Actions.UPDATE, obj=conversation)
         serializer = InboxHandoffSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -132,12 +164,33 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
 
     @action(detail=True, methods=["post"], url_path="mark-read")
     def mark_read(self, request, pk=None):
-        conversation = mark_conversation_read(self.get_object())
+        conversation = self.get_object()
+        assert_can(request.user, conversation.business, Resources.CONVERSATIONS, Actions.UPDATE, obj=conversation)
+        conversation = mark_conversation_read(conversation)
         return Response(self.get_serializer(conversation).data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["post"], url_path="suggest-reply")
+    def suggest_reply(self, request, pk=None):
+        conversation = self.get_object()
+        assert_can(request.user, conversation.business, Resources.CONVERSATIONS, Actions.UPDATE, obj=conversation)
+        result, log, message_context = suggest_bot_reply(conversation=conversation, user=request.user)
+        return Response(
+            {
+                "suggested_reply": result.output_text,
+                "is_mock": result.is_mock,
+                "model": result.model,
+                "tokens_used": result.tokens_used,
+                "log_id": log.id,
+                "messages_used": len(message_context),
+                "client_id": conversation.client_id,
+                "lead_id": conversation.lead_id,
+            }
+        )
 
     @action(detail=True, methods=["post"], url_path="create-task")
     def create_task(self, request, pk=None):
         conversation = self.get_object()
+        assert_can(request.user, conversation.business, Resources.TASKS, Actions.CREATE)
         serializer = InboxCreateTaskSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -158,6 +211,8 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
     @action(detail=True, methods=["post"], url_path="link-lead")
     def link_lead(self, request, pk=None):
         conversation = self.get_object()
+        assert_can(request.user, conversation.business, Resources.LEADS, Actions.UPDATE)
+        assert_can(request.user, conversation.business, Resources.CONVERSATIONS, Actions.UPDATE, obj=conversation)
         serializer = InboxLinkLeadSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -170,9 +225,63 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
         conversation.save(update_fields=["lead", "client", "updated_at"])
         return Response(self.get_serializer(conversation).data)
 
+    @action(detail=True, methods=["post"], url_path="link-client")
+    def link_client(self, request, pk=None):
+        conversation = self.get_object()
+        assert_can(request.user, conversation.business, Resources.CLIENTS, Actions.UPDATE)
+        assert_can(request.user, conversation.business, Resources.CONVERSATIONS, Actions.UPDATE, obj=conversation)
+        serializer = InboxLinkClientSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        client = Client.objects.filter(id=serializer.validated_data["client_id"], business=conversation.business).first()
+        if client is None:
+            raise ValidationError({"client_id": "Client was not found in this business."})
+        conversation.client = client
+        conversation.save(update_fields=["client", "updated_at"])
+        return Response(self.get_serializer(conversation).data)
+
+    @action(detail=True, methods=["post"], url_path="create-client")
+    def create_client(self, request, pk=None):
+        conversation = self.get_object()
+        assert_can(request.user, conversation.business, Resources.CLIENTS, Actions.CREATE)
+        assert_can(request.user, conversation.business, Resources.CONVERSATIONS, Actions.UPDATE, obj=conversation)
+        serializer = InboxCreateClientSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        if conversation.client_id:
+            return Response({"client": ClientSerializer(conversation.client).data, "duplicates": [], "created": False})
+
+        full_name = serializer.validated_data.get("full_name") or conversation.external_user_id or conversation.external_thread_id or f"Inbox visitor #{conversation.id}"
+        phone = serializer.validated_data.get("phone", "")
+        email = serializer.validated_data.get("email", "")
+        duplicates = find_duplicate_clients(conversation.business, phone=phone, email=email)
+        if duplicates and not serializer.validated_data.get("force_create", False):
+            return Response(
+                {
+                    "client": None,
+                    "duplicates": duplicate_payload(duplicates, phone=phone, email=email),
+                    "created": False,
+                    "requires_confirmation": True,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        client = Client.objects.create(
+            business=conversation.business,
+            full_name=full_name,
+            phone=phone,
+            email=email,
+            source=self._source_from_channel(conversation.channel),
+        )
+        conversation.client = client
+        conversation.save(update_fields=["client", "updated_at"])
+        return Response({"client": ClientSerializer(client).data, "duplicates": [], "created": True}, status=status.HTTP_201_CREATED)
+
     @action(detail=True, methods=["post"], url_path="create-lead")
     def create_lead(self, request, pk=None):
         conversation = self.get_object()
+        assert_can(request.user, conversation.business, Resources.LEADS, Actions.CREATE)
+        assert_can(request.user, conversation.business, Resources.CONVERSATIONS, Actions.UPDATE, obj=conversation)
         serializer = InboxCreateLeadSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -192,6 +301,57 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
         conversation.save(update_fields=["client", "lead", "updated_at"])
         return Response(LeadSerializer(lead).data, status=status.HTTP_201_CREATED)
 
+    @action(detail=True, methods=["post"], url_path="link-deal")
+    def link_deal(self, request, pk=None):
+        conversation = self.get_object()
+        assert_can(request.user, conversation.business, Resources.DEALS, Actions.UPDATE)
+        assert_can(request.user, conversation.business, Resources.CONVERSATIONS, Actions.UPDATE, obj=conversation)
+        serializer = InboxLinkDealSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        deal = Deal.objects.filter(id=serializer.validated_data["deal_id"], business=conversation.business).first()
+        if deal is None:
+            raise ValidationError({"deal_id": "Deal was not found in this business."})
+        conversation.deal = deal
+        if conversation.client is None:
+            conversation.client = deal.client
+        if conversation.lead is None and deal.lead_id:
+            conversation.lead = deal.lead
+        conversation.save(update_fields=["deal", "client", "lead", "updated_at"])
+        return Response(self.get_serializer(conversation).data)
+
+    @action(detail=True, methods=["post"], url_path="create-deal")
+    def create_deal(self, request, pk=None):
+        conversation = self.get_object()
+        assert_can(request.user, conversation.business, Resources.DEALS, Actions.CREATE)
+        assert_can(request.user, conversation.business, Resources.CONVERSATIONS, Actions.UPDATE, obj=conversation)
+        serializer = InboxCreateDealSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        if conversation.deal_id:
+            return Response(DealSerializer(conversation.deal).data)
+
+        client = conversation.client or self._create_client_from_conversation(conversation)
+        lead = conversation.lead
+        pipeline, stage = self._default_pipeline_and_stage(conversation.business)
+        title = serializer.validated_data.get("title") or f"Deal: {client.full_name}"
+        deal = Deal.objects.create(
+            business=conversation.business,
+            client=client,
+            lead=lead,
+            pipeline=pipeline,
+            stage=stage,
+            title=title,
+            amount=serializer.validated_data.get("amount", 0),
+            currency=serializer.validated_data.get("currency") or "KZT",
+            owner=request.user,
+            source=self._source_from_channel(conversation.channel),
+        )
+        conversation.client = client
+        conversation.deal = deal
+        conversation.save(update_fields=["client", "deal", "updated_at"])
+        return Response(DealSerializer(deal).data, status=status.HTTP_201_CREATED)
+
     def _source_from_channel(self, channel):
         allowed_sources = {choice[0] for choice in Lead.Sources.choices}
         return channel if channel in allowed_sources else Lead.Sources.OTHER
@@ -203,6 +363,15 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
             full_name=full_name,
             source=self._source_from_channel(conversation.channel),
         )
+
+    def _default_pipeline_and_stage(self, business):
+        pipeline = Pipeline.objects.filter(business=business, is_default=True).first() or Pipeline.objects.filter(business=business).first()
+        if pipeline is None:
+            pipeline = Pipeline.objects.create(business=business, name="Sales Pipeline", slug="sales", is_default=True)
+        stage = PipelineStage.objects.filter(business=business, pipeline=pipeline).order_by("order", "id").first()
+        if stage is None:
+            stage = PipelineStage.objects.create(business=business, pipeline=pipeline, name="New", order=1, probability=10)
+        return pipeline, stage
 
     def _last_message_text(self, conversation):
         message = conversation.messages.order_by("-created_at").first()

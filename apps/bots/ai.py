@@ -50,6 +50,26 @@ def suggest_bot_reply(*, conversation, user=None):
         "Do not send it automatically. "
         f"Last inbound message: {last_inbound['text'] if last_inbound else 'No inbound message'}"
     )
+    crm_context = {}
+    if conversation.client_id:
+        crm_context["client"] = {
+            "id": conversation.client_id,
+            "full_name": conversation.client.full_name,
+            "phone": conversation.client.phone,
+            "email": conversation.client.email,
+            "source": conversation.client.source,
+            "notes": conversation.client.notes,
+        }
+    if conversation.lead_id:
+        crm_context["lead"] = {
+            "id": conversation.lead_id,
+            "status": conversation.lead.status,
+            "source": conversation.lead.source,
+            "message": conversation.lead.message,
+            "service_id": conversation.lead.service_id,
+        }
+    if crm_context:
+        user_input += f" CRM context: {crm_context}"
     result, log = run_ai_request(
         business=conversation.business,
         user=user,
@@ -62,6 +82,7 @@ def suggest_bot_reply(*, conversation, user=None):
             "channel": conversation.channel,
             "messages": message_context,
             "agent_profile": agent_payload,
+            "crm_context": crm_context,
         },
         allow_mock=True,
     )

@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.utils import timezone
 
 from apps.crm.models import Deal, Pipeline, PipelineStage, StageTransition
 
@@ -18,9 +19,17 @@ class PipelineSerializer(serializers.ModelSerializer):
 
 
 class DealSerializer(serializers.ModelSerializer):
+    sla_overdue = serializers.SerializerMethodField()
+
     class Meta:
         model = Deal
         fields = "__all__"
+        read_only_fields = ["sla_overdue", "lost_at", "lost_by", "previous_status", "previous_stage", "archived_at", "archived_by"]
+
+    def get_sla_overdue(self, obj):
+        if not obj.stage or not obj.stage.sla_minutes or not obj.stage_entered_at:
+            return False
+        return timezone.now() > obj.stage_entered_at + timezone.timedelta(minutes=obj.stage.sla_minutes)
 
     def validate(self, attrs):
         pipeline = attrs.get("pipeline") or getattr(self.instance, "pipeline", None)
@@ -37,4 +46,3 @@ class StageTransitionSerializer(serializers.ModelSerializer):
     class Meta:
         model = StageTransition
         fields = "__all__"
-

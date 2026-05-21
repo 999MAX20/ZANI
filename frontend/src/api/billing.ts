@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import type { Subscription, SubscriptionPlan, UsageSummaryItem } from "../types";
+import type { EntitlementSummaryItem, Subscription, SubscriptionPlan, UsageSummaryItem } from "../types";
 
 type PaginatedResponse<T> = {
   count: number;
@@ -23,6 +23,10 @@ export const billingApi = {
   },
   usageSummary: async () => {
     const { data } = await apiClient.get<UsageSummaryItem[]>("/api/billing/usage-summary/");
+    return data;
+  },
+  entitlements: async () => {
+    const { data } = await apiClient.get<EntitlementSummaryItem[]>("/api/billing/entitlements/");
     return data;
   },
 };

@@ -1,11 +1,14 @@
 from django.db.models import Q
 
-from apps.activities.models import ActivityEvent, Note
-from apps.activities.serializers import ActivityEventSerializer, NoteSerializer
+from apps.activities.models import ActivityEvent, Note, TaggedObject
+from apps.activities.serializers import ActivityEventSerializer, NoteSerializer, TaggedObjectSerializer
 from apps.bots.models import BotConversation
 from apps.clients.models import Client
 from apps.clients.serializers import ClientSerializer
 from apps.conversations.inbox_serializers import InboxConversationSerializer
+from apps.core.models import CustomFieldDefinition, CustomFieldValue
+from apps.core.models import FileAttachment
+from apps.core.serializers import CustomFieldDefinitionSerializer, CustomFieldValueSerializer, FileAttachmentSerializer
 from apps.crm.models import Deal
 from apps.crm.serializers import DealSerializer
 from apps.leads.models import Lead
@@ -29,6 +32,56 @@ def _or_queries(queries):
 
 def _entity_query(entity_refs):
     return _or_queries([Q(entity_type=entity_type, entity_id=str(entity_id)) for entity_type, entity_id in entity_refs if entity_id])
+
+
+def _custom_field_entity(client=None, lead=None, deal=None, appointment=None):
+    if appointment is not None:
+        return "appointment", appointment.id
+    if deal is not None:
+        return "deal", deal.id
+    if lead is not None:
+        return "lead", lead.id
+    if client is not None:
+        return "client", client.id
+    return "", ""
+
+
+def _custom_field_payload(business, *, client=None, lead=None, deal=None, appointment=None):
+    entity_type, entity_id = _custom_field_entity(client=client, lead=lead, deal=deal, appointment=appointment)
+    if not entity_type or not entity_id:
+        return []
+    definitions = CustomFieldDefinition.objects.filter(business=business, entity_type=entity_type, is_active=True)
+    values = {
+        value.definition_id: value
+        for value in CustomFieldValue.objects.filter(
+            business=business,
+            entity_type=entity_type,
+            entity_id=str(entity_id),
+            definition__in=definitions,
+        )
+    }
+    return [
+        {
+            "definition": CustomFieldDefinitionSerializer(definition).data,
+            "value": CustomFieldValueSerializer(values[definition.id]).data if definition.id in values else None,
+        }
+        for definition in definitions
+    ]
+
+
+def _tags_payload(business, entity_refs):
+    if not entity_refs:
+        return []
+    tags = TaggedObject.objects.filter(business=business).select_related("tag").filter(_entity_query(entity_refs)).distinct()
+    return TaggedObjectSerializer(tags, many=True).data
+
+
+def _attachments_payload(business, entity_refs):
+    if not entity_refs:
+        return []
+    entity_query = _or_queries([(Q(entity_type=entity_type.lower(), entity_id=str(entity_id))) for entity_type, entity_id in entity_refs if entity_id])
+    attachments = FileAttachment.objects.filter(business=business).filter(entity_query).distinct()
+    return FileAttachmentSerializer(attachments, many=True).data
 
 
 def build_crm_card_payload(*, business, client=None, lead=None, deal=None, appointment=None):
@@ -128,6 +181,15 @@ def build_crm_card_payload(*, business, client=None, lead=None, deal=None, appoi
         "conversations": InboxConversationSerializer(conversations, many=True).data,
         "timeline": ActivityEventSerializer(timeline, many=True).data,
         "notes": NoteSerializer(notes, many=True).data,
+        "tags": _tags_payload(business, entity_refs),
+        "attachments": _attachments_payload(business, entity_refs),
+        "custom_fields": _custom_field_payload(
+            business,
+            client=client,
+            lead=lead,
+            deal=deal,
+            appointment=appointment,
+        ),
     }
 
 

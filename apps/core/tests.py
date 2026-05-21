@@ -4,6 +4,7 @@ from tempfile import TemporaryDirectory
 from zoneinfo import ZoneInfo
 
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.checks import run_checks
 from django.test import override_settings
 from django.test import TestCase
 from django.urls import reverse
@@ -207,6 +208,36 @@ class PlatformAccessFoundationTests(TestCase):
         self.assertTrue(response.data["is_platform_user"])
         self.assertFalse(response.data["is_merchant_user"])
         self.assertEqual(response.data["businesses"], [])
+
+
+class ProductionReadinessTests(TestCase):
+    def setUp(self):
+        self.api = APIClient()
+
+    def test_readiness_endpoint_checks_database(self):
+        response = self.api.get("/ready/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["checks"]["database"], "ok")
+
+    @override_settings(
+        ENVIRONMENT="production",
+        DEBUG=True,
+        SECRET_KEY="short",
+        ALLOWED_HOSTS=["*"],
+        CORS_ALLOWED_ORIGINS=[],
+        CSRF_TRUSTED_ORIGINS=[],
+        SENTRY_DSN="",
+    )
+    def test_production_settings_check_warns_about_unsafe_baseline(self):
+        warning_ids = {warning.id for warning in run_checks()}
+
+        self.assertIn("zani.W001", warning_ids)
+        self.assertIn("zani.W002", warning_ids)
+        self.assertIn("zani.W003", warning_ids)
+        self.assertIn("zani.W004", warning_ids)
+        self.assertIn("zani.W005", warning_ids)
+        self.assertIn("zani.W006", warning_ids)
 
 
 class PlatformDashboardTests(TestCase):

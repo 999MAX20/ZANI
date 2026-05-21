@@ -8,6 +8,7 @@ class User(AbstractUser):
         PLATFORM_MANAGER = "platform_manager", "Platform manager"
         BUSINESS_OWNER = "business_owner", "Business owner"
         BUSINESS_MANAGER = "business_manager", "Business manager"
+        BUSINESS_OPERATOR = "business_operator", "Business operator"
         MANAGER = "manager", "Manager"
         STAFF = "staff", "Staff"
 
@@ -34,6 +35,7 @@ class User(AbstractUser):
         return self.role in {
             self.Roles.BUSINESS_OWNER,
             self.Roles.BUSINESS_MANAGER,
+            self.Roles.BUSINESS_OPERATOR,
             self.Roles.MANAGER,
             self.Roles.STAFF,
         }

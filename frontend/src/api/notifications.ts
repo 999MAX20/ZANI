@@ -6,6 +6,9 @@ export type NotificationSummary = {
   pending: number;
   failed: number;
   due: number;
+  unread: number;
+  urgent: number;
+  by_category: Record<string, number>;
 };
 
 export const notificationsApi = {
@@ -16,6 +19,18 @@ export const notificationsApi = {
   },
   markSent: async (id: Id) => {
     const { data } = await apiClient.post<Notification>(`/api/notifications/${id}/mark-sent/`);
+    return data;
+  },
+  markRead: async (id: Id) => {
+    const { data } = await apiClient.post<Notification>(`/api/notifications/${id}/mark-read/`);
+    return data;
+  },
+  markUnread: async (id: Id) => {
+    const { data } = await apiClient.post<Notification>(`/api/notifications/${id}/mark-unread/`);
+    return data;
+  },
+  markAllRead: async () => {
+    const { data } = await apiClient.post<{ updated: number }>("/api/notifications/mark-all-read/");
     return data;
   },
   cancel: async (id: Id) => {

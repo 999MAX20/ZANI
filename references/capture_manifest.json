@@ -1,0 +1,86 @@
+[
+  {
+    "name": "saasui_vercel_dashboard",
+    "url": "https://www.saasui.design/pattern/dashboard/vercel",
+    "file": "/Users/maksim/Desktop/Zani/references/uiux/dashboard/saasui_vercel_dashboard.png",
+    "ok": true
+  },
+  {
+    "name": "saasui_baremetrics_dashboard",
+    "url": "https://www.saasui.design/pattern/dashboard/baremetrics",
+    "file": "/Users/maksim/Desktop/Zani/references/uiux/dashboard/saasui_baremetrics_dashboard.png",
+    "ok": true
+  },
+  {
+    "name": "saasui_reclaim_dashboard",
+    "url": "https://www.saasui.design/pattern/dashboard/reclaim",
+    "file": "/Users/maksim/Desktop/Zani/references/uiux/calendar/saasui_reclaim_dashboard.png",
+    "ok": true
+  },
+  {
+    "name": "dribbble_crm_dashboard_clean_scalable",
+    "url": "https://dribbble.com/shots/27063083-CRM-Dashboard-Clean-Scalable-SaaS-Dashboard-UI",
+    "file": "/Users/maksim/Desktop/Zani/references/uiux/dashboard/dribbble_crm_dashboard_clean_scalable.png",
+    "ok": true
+  },
+  {
+    "name": "dribbble_velo_crm_dashboard",
+    "url": "https://dribbble.com/shots/27100188-Velo-Business-Automation-CRM-Dashboard-SaaS-UX-UI-Design",
+    "file": "/Users/maksim/Desktop/Zani/references/uiux/kanban/dribbble_velo_crm_dashboard.png",
+    "ok": true
+  },
+  {
+    "name": "dribbble_ai_crm_dashboard",
+    "url": "https://dribbble.com/shots/27109250-AI-CRM-Dashboard-UI-Design-SaaS-Analytics-Interface",
+    "file": "/Users/maksim/Desktop/Zani/references/uiux/dashboard/dribbble_ai_crm_dashboard.png",
+    "ok": true
+  },
+  {
+    "name": "dribbble_crm_components_system",
+    "url": "https://dribbble.com/shots/27086155-CRM-Dashboard-Components-SaaS-UI-System",
+    "file": "/Users/maksim/Desktop/Zani/references/uiux/dashboard/dribbble_crm_components_system.png",
+    "ok": true
+  },
+  {
+    "name": "saasui_2026_trends",
+    "url": "https://www.saasui.design/blog/7-saas-ui-design-trends-2026",
+    "file": "/Users/maksim/Desktop/Zani/references/uiux/dashboard/saasui_2026_trends.png",
+    "ok": true
+  },
+  {
+    "name": "saasui_calendly_calendar",
+    "url": "https://www.saasui.design/pattern/calendar/calendly",
+    "file": "/Users/maksim/Desktop/Zani/references/uiux/calendar/saasui_calendly_calendar.png",
+    "ok": true
+  },
+  {
+    "name": "saasui_intercom_application",
+    "url": "https://www.saasui.design/application/intercom",
+    "file": "/Users/maksim/Desktop/Zani/references/uiux/inbox/saasui_intercom_application.png",
+    "ok": true
+  },
+  {
+    "name": "saasui_intercom_email",
+    "url": "https://www.saasui.design/pattern/email/intercom",
+    "file": "/Users/maksim/Desktop/Zani/references/uiux/inbox/saasui_intercom_email.png",
+    "ok": true
+  },
+  {
+    "name": "saasui_hubspot_application",
+    "url": "https://www.saasui.design/application/hubspot",
+    "file": "/Users/maksim/Desktop/Zani/references/uiux/crm-card/saasui_hubspot_application.png",
+    "ok": true
+  },
+  {
+    "name": "saasui_hubspot_dashboard",
+    "url": "https://www.saasui.design/pattern/dashboard/hubspot",
+    "file": "/Users/maksim/Desktop/Zani/references/uiux/dashboard/saasui_hubspot_dashboard.png",
+    "ok": true
+  },
+  {
+    "name": "dribbble_ryven_crm_client_dashboard",
+    "url": "https://dribbble.com/shots/26893713-Ryven-CRM-Client-Management-Dashboard-UI",
+    "file": "/Users/maksim/Desktop/Zani/references/uiux/crm-card/dribbble_ryven_crm_client_dashboard.png",
+    "ok": true
+  }
+]

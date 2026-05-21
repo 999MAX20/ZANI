@@ -60,10 +60,10 @@ function CalendarPicker({
   }
 
   return (
-    <div className="relative">
+    <div className="relative w-full sm:w-auto">
       <Button
         variant="secondary"
-        className="h-11 min-w-[170px] justify-between rounded-2xl px-4"
+        className="h-11 w-full justify-between rounded-2xl px-4 sm:min-w-[170px]"
         onClick={() => {
           setMonthDate(parseDate(value));
           setOpen((current) => !current);
@@ -73,7 +73,7 @@ function CalendarPicker({
         <CalendarDays size={18} />
       </Button>
       {open ? (
-        <div className="absolute right-0 top-14 z-30 w-[320px] rounded-3xl border border-slate-200 bg-white p-4 shadow-premium">
+        <div className="fixed inset-x-4 top-28 z-30 rounded-3xl border border-slate-200 bg-white p-4 shadow-premium sm:absolute sm:inset-auto sm:right-0 sm:top-14 sm:w-[320px]">
           <div className="mb-4 flex items-center justify-between">
             <Button variant="ghost" className="h-9 w-9 rounded-full px-0" onClick={() => shiftMonth(-1)} aria-label="Предыдущий месяц"><ChevronLeft size={16} /></Button>
             <p className="font-semibold text-midnight">
@@ -150,12 +150,12 @@ export function CalendarPage() {
         title="Smart calendar"
         description="Дневная сетка записей без лишних виджетов."
         actions={
-          <>
+          <div className="grid w-full grid-cols-[44px_minmax(0,1fr)_44px] gap-2 sm:flex sm:w-auto sm:flex-wrap">
             <Button variant="secondary" className="h-11 w-11 px-0" onClick={() => shiftDate(-1)} aria-label="Предыдущий день"><ChevronLeft size={18} /></Button>
             <CalendarPicker value={date} onChange={setDate} />
             <Button variant="secondary" className="h-11 w-11 px-0" onClick={() => shiftDate(1)} aria-label="Следующий день"><ChevronRight size={18} /></Button>
-            <Button variant="ai" onClick={() => setBookingOpen(true)}><Plus size={18} />New booking</Button>
-          </>
+            <Button variant="ai" className="col-span-3 sm:col-span-1" onClick={() => setBookingOpen(true)}><Plus size={18} />New booking</Button>
+          </div>
         }
       />
       <div className="grid gap-6">

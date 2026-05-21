@@ -1,9 +1,13 @@
 from rest_framework import serializers
 
 from apps.bots.models import BotConversation, BotMessage
+from apps.core.models import FileAttachment
+from apps.core.serializers import FileAttachmentSerializer
 
 
 class InboxMessageSerializer(serializers.ModelSerializer):
+    attachments = serializers.SerializerMethodField()
+
     class Meta:
         model = BotMessage
         fields = [
@@ -20,8 +24,17 @@ class InboxMessageSerializer(serializers.ModelSerializer):
             "delivered_at",
             "read_at",
             "created_at",
+            "attachments",
         ]
         read_only_fields = fields
+
+    def get_attachments(self, obj):
+        attachments = FileAttachment.objects.filter(
+            business=obj.conversation.business,
+            entity_type="bot_message",
+            entity_id=str(obj.id),
+        )
+        return FileAttachmentSerializer(attachments, many=True, context=self.context).data
 
 
 class InboxConversationSerializer(serializers.ModelSerializer):
@@ -31,6 +44,7 @@ class InboxConversationSerializer(serializers.ModelSerializer):
     client_phone = serializers.CharField(source="client.phone", read_only=True)
     assigned_to_email = serializers.CharField(source="assigned_to.email", read_only=True)
     last_message = serializers.SerializerMethodField()
+    attachments = serializers.SerializerMethodField()
 
     class Meta:
         model = BotConversation
@@ -48,6 +62,7 @@ class InboxConversationSerializer(serializers.ModelSerializer):
             "client_name",
             "client_phone",
             "lead",
+            "deal",
             "assigned_to",
             "assigned_to_email",
             "status",
@@ -61,6 +76,7 @@ class InboxConversationSerializer(serializers.ModelSerializer):
             "unread_count",
             "metadata_json",
             "last_message",
+            "attachments",
             "created_at",
             "updated_at",
         ]
@@ -78,6 +94,14 @@ class InboxConversationSerializer(serializers.ModelSerializer):
             "status": message.status,
             "created_at": message.created_at,
         }
+
+    def get_attachments(self, obj):
+        attachments = FileAttachment.objects.filter(
+            business=obj.business,
+            entity_type="bot_conversation",
+            entity_id=str(obj.id),
+        )
+        return FileAttachmentSerializer(attachments, many=True, context=self.context).data
 
 
 class InboxAssignSerializer(serializers.Serializer):
@@ -104,5 +128,26 @@ class InboxLinkLeadSerializer(serializers.Serializer):
     lead_id = serializers.IntegerField(required=True)
 
 
+class InboxLinkClientSerializer(serializers.Serializer):
+    client_id = serializers.IntegerField(required=True)
+
+
+class InboxLinkDealSerializer(serializers.Serializer):
+    deal_id = serializers.IntegerField(required=True)
+
+
+class InboxCreateClientSerializer(serializers.Serializer):
+    full_name = serializers.CharField(required=False, allow_blank=True, max_length=255)
+    phone = serializers.CharField(required=False, allow_blank=True, max_length=64)
+    email = serializers.EmailField(required=False, allow_blank=True)
+    force_create = serializers.BooleanField(required=False, default=False)
+
+
 class InboxCreateLeadSerializer(serializers.Serializer):
     message = serializers.CharField(required=False, allow_blank=True)
+
+
+class InboxCreateDealSerializer(serializers.Serializer):
+    title = serializers.CharField(required=False, allow_blank=True, max_length=255)
+    amount = serializers.DecimalField(required=False, max_digits=12, decimal_places=2)
+    currency = serializers.CharField(required=False, allow_blank=True, max_length=8, default="KZT")

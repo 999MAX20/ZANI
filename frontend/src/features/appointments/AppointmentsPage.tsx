@@ -37,6 +37,10 @@ export function AppointmentsPage() {
       setEditing(undefined);
     },
   });
+  const archiveMutation = useMutation({
+    mutationFn: appointmentsApi.archive,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["appointments"] }),
+  });
 
   const rows = useMemo(() => (appointments.data || []).filter((appointment) => (!date || appointment.start_at.slice(0, 10) === date) && (!status || appointment.status === status)), [appointments.data, date, status]);
 
@@ -46,7 +50,7 @@ export function AppointmentsPage() {
   return (
     <>
       <PageHeader title="Записи" description="Список всех appointment с быстрым изменением статуса." actions={<Button onClick={() => setOpen(true)}><Plus size={18} />Создать запись</Button>} />
-      {mutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(mutation.error)} /></div> : null}
+      {mutation.error || archiveMutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(mutation.error || archiveMutation.error)} /></div> : null}
       <div className="mb-4 grid gap-3 sm:grid-cols-[220px_220px]">
         <Input type="date" value={date} onChange={(event) => setDate(event.target.value)} placeholder={todayISO()} />
         <Select value={status} onChange={(event) => setStatus(event.target.value)} options={[{ value: "", label: "Все статусы" }, { value: "created", label: "Создана" }, { value: "confirmed", label: "Подтверждена" }, { value: "cancelled", label: "Отменена" }, { value: "completed", label: "Завершена" }, { value: "no_show", label: "Не пришёл" }]} />
@@ -69,6 +73,15 @@ export function AppointmentsPage() {
               <div className="flex flex-wrap gap-2">
                 <Button variant="ghost" onClick={() => setDrawerEntity({ type: "appointment", id: appointment.id })}>Карточка</Button>
                 <Button variant="ghost" onClick={() => { setEditing(appointment); setOpen(true); }}>Изменить</Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    const reason = window.prompt("Причина архивации записи");
+                    if (reason !== null) archiveMutation.mutate({ id: appointment.id, reason });
+                  }}
+                >
+                  Архив
+                </Button>
               </div>
             ),
           },

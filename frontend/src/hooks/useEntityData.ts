@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { appointmentsApi } from "../api/appointments";
-import { activityEventsApi } from "../api/activities";
+import { activityEventsApi, segmentsApi, taggedObjectsApi, tagsApi } from "../api/activities";
 import { automationRulesApi } from "../api/automations";
 import { botChannelsApi, botConversationsApi, botMessagesApi, botsApi } from "../api/bots";
 import { clientsApi } from "../api/clients";
@@ -26,6 +26,9 @@ export function useEntityData() {
   const tasks = useQuery({ queryKey: ["tasks"], queryFn: tasksApi.list });
   const notifications = useQuery({ queryKey: ["notifications"], queryFn: notificationsApi.list });
   const activityEvents = useQuery({ queryKey: ["activity-events"], queryFn: activityEventsApi.list });
+  const tags = useQuery({ queryKey: ["tags"], queryFn: tagsApi.list });
+  const taggedObjects = useQuery({ queryKey: ["tagged-objects"], queryFn: taggedObjectsApi.list });
+  const segments = useQuery({ queryKey: ["segments"], queryFn: segmentsApi.list });
   const automationRules = useQuery({ queryKey: ["automation-rules"], queryFn: automationRulesApi.list });
   const bots = useQuery({ queryKey: ["bots"], queryFn: botsApi.list });
   const botChannels = useQuery({ queryKey: ["bot-channels"], queryFn: botChannelsApi.list });
@@ -45,6 +48,9 @@ export function useEntityData() {
     tasks,
     notifications,
     activityEvents,
+    tags,
+    taggedObjects,
+    segments,
     automationRules,
     bots,
     botChannels,

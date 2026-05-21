@@ -33,5 +33,13 @@ export function createCrudApi<T, C = Partial<T>, U = Partial<T>>(endpoint: strin
     remove: async (id: Id) => {
       await apiClient.delete(`${endpoint}${id}/`);
     },
+    archive: async ({ id, reason }: { id: Id; reason: string }) => {
+      const { data } = await apiClient.post<T>(`${endpoint}${id}/archive/`, { reason });
+      return data;
+    },
+    restore: async (id: Id) => {
+      const { data } = await apiClient.post<T>(`${endpoint}${id}/restore/`);
+      return data;
+    },
   };
 }

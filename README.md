@@ -3665,6 +3665,41 @@ npm run e2e:staging
 - `DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py production_readiness_audit OK`;
 - `DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test apps.core.tests_rate_limits apps.core.tests_production_audit OK`.
 
+### Render Supabase Env Builder
+
+Статус: **готово**.
+
+Добавлено:
+
+- Django теперь может собрать Postgres URL из понятных `SUPABASE_*` переменных, если `DATABASE_URL` пустой.
+- Пароль Supabase автоматически URL-encode, поэтому спецсимволы в database password не ломают connection string.
+- Восстановлены env templates:
+  - `.env.example`;
+  - `.env.staging.example`;
+  - `.env.production.example`.
+- `frontend/.env.staging.example` указывает на текущий Render backend:
+  - `https://zani-9lnp.onrender.com`.
+- `docs/deployment.md` обновлен под Render + Supabase split env.
+
+Для Render можно использовать:
+
+```env
+DATABASE_URL=
+SUPABASE_PROJECT_REF=jjpenskqmomrbjqofbss
+SUPABASE_DB_PASSWORD=<database-password-not-anon-key>
+SUPABASE_DB_CONNECTION_MODE=pooler
+SUPABASE_DB_POOLER_HOST=<copy-from-supabase-transaction-pooler>
+SUPABASE_DB_PORT=6543
+SUPABASE_DB_NAME=postgres
+SUPABASE_DB_USER=postgres.jjpenskqmomrbjqofbss
+```
+
+Проверки:
+
+- `env DATABASE_URL='' SUPABASE_* ... .venv/bin/python manage.py check OK`;
+- `DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py makemigrations --check --dry-run OK`;
+- `DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test apps.core.tests_rate_limits apps.core.tests_production_audit OK`.
+
 Files:
 
 - `GET /api/files/private/<path:file_path>/`

@@ -116,7 +116,6 @@ SECRET_KEY=<strong-secret>
 DEBUG=False
 ENVIRONMENT=staging
 ALLOWED_HOSTS=<your-render-host-or-api-domain>
-DATABASE_URL=<supabase-or-managed-postgres-url>
 REDIS_URL=<upstash-or-managed-redis-url>
 CORS_ALLOWED_ORIGINS=<frontend-url>
 CSRF_TRUSTED_ORIGINS=<frontend-url>
@@ -129,6 +128,27 @@ AUTOMATIONS_RUN_INLINE=False
 SENTRY_DSN=<sentry-dsn>
 USE_S3=False
 ```
+
+For Supabase on Render, prefer split variables and leave `DATABASE_URL` empty. The app will build the Postgres URL and URL-encode the password:
+
+```env
+DATABASE_URL=
+SUPABASE_PROJECT_REF=jjpenskqmomrbjqofbss
+SUPABASE_DB_PASSWORD=<database-password-not-anon-key>
+SUPABASE_DB_CONNECTION_MODE=pooler
+SUPABASE_DB_POOLER_HOST=<copy-from-supabase-transaction-pooler>
+SUPABASE_DB_PORT=6543
+SUPABASE_DB_NAME=postgres
+SUPABASE_DB_USER=postgres.jjpenskqmomrbjqofbss
+```
+
+Use values from:
+
+```text
+Supabase -> Project Settings -> Database -> Connection string -> Transaction pooler
+```
+
+Do not use Supabase `anon` or `service_role` keys as the database password.
 
 Create a platform admin:
 

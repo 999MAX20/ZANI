@@ -1,5 +1,6 @@
 from pathlib import Path
 from datetime import timedelta
+from urllib.parse import quote
 
 import environ
 
@@ -30,6 +31,39 @@ ALLOWED_HOSTS = env("ALLOWED_HOSTS", default=["*"])
 CORS_ALLOWED_ORIGINS = env("CORS_ALLOWED_ORIGINS", default=[])
 CORS_ALLOW_CREDENTIALS = env("CORS_ALLOW_CREDENTIALS")
 CSRF_TRUSTED_ORIGINS = env("CSRF_TRUSTED_ORIGINS", default=[])
+
+
+def build_database_url():
+    explicit_url = env("DATABASE_URL", default="")
+    if explicit_url:
+        return explicit_url
+
+    project_ref = env("SUPABASE_PROJECT_REF", default="")
+    password = env("SUPABASE_DB_PASSWORD", default="")
+    if not project_ref or not password:
+        return f"sqlite:///{BASE_DIR / 'db.sqlite3'}"
+
+    connection_mode = env("SUPABASE_DB_CONNECTION_MODE", default="pooler").lower()
+    database_name = env("SUPABASE_DB_NAME", default="postgres")
+    if connection_mode == "direct":
+        username = env("SUPABASE_DB_USER", default="postgres")
+        host = env("SUPABASE_DB_HOST", default=f"db.{project_ref}.supabase.co")
+        port = env("SUPABASE_DB_PORT", default="5432")
+    else:
+        username = env("SUPABASE_DB_USER", default=f"postgres.{project_ref}")
+        host = env("SUPABASE_DB_POOLER_HOST", default=env("SUPABASE_DB_HOST", default=""))
+        region = env("SUPABASE_DB_REGION", default="")
+        if not host and region:
+            host = f"aws-0-{region}.pooler.supabase.com"
+        port = env("SUPABASE_DB_PORT", default="6543")
+
+    return "postgresql://{user}:{password}@{host}:{port}/{database}?sslmode=require".format(
+        user=quote(username, safe=""),
+        password=quote(password, safe=""),
+        host=host,
+        port=port,
+        database=quote(database_name, safe=""),
+    )
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -98,12 +132,7 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
-DATABASES = {
-    "default": env.db(
-        "DATABASE_URL",
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
-    )
-}
+DATABASES = {"default": env.db_url_config(build_database_url())}
 DATABASES["default"]["CONN_MAX_AGE"] = env("DB_CONN_MAX_AGE")
 
 AUTH_USER_MODEL = "accounts.User"

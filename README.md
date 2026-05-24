@@ -5612,6 +5612,10 @@ Frontend production build: OK
   - route-level и app-level error boundaries показывают сообщения и действия на выбранном языке;
   - дни недели, типовые подсказки форм и обязательные ошибки вынесены в RU / KK / EN dictionaries;
   - API-контракты форм не менялись.
+- Platform overview i18n pass:
+  - platform overview page переведена на RU / KK / EN для заголовка, метрик, operational signals, MRR-блока и loading/error states;
+  - форматирование MRR учитывает выбранный язык интерфейса;
+  - API-контракт `/api/platform/overview/` не менялся.
 
 Проверка:
 
@@ -5637,6 +5641,8 @@ Frontend production build after mobile shell/auth pass: OK
 Full backend tests after mobile shell/auth pass: 288 OK
 Full backend tests after shared forms i18n pass: 288 OK
 Frontend production build after shared forms i18n pass: OK
+Full backend tests after platform overview i18n pass: 288 OK
+Frontend production build after platform overview i18n pass: OK
 Visual smoke screenshots: desktop collapsed rail, desktop expanded rail, mobile dashboard OK
 ```
 

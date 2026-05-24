@@ -86,4 +86,6 @@ GOOGLE_OAUTH_CLIENT_IDS=web-client-id,ios-client-id
 
 - Social auth does not replace tenant filtering, RBAC or `/api/auth/me/`.
 - Newly created social users are created as merchant owners by default and receive a trial workspace when `SOCIAL_AUTH_AUTO_CREATE_MERCHANT=True`.
+- The auto-created workspace includes default business roles and the default sales pipeline, so the owner can enter the merchant CRM immediately after `/api/auth/me/`.
+- If `VITE_GOOGLE_CLIENT_ID` or `VITE_APPLE_CLIENT_ID` is empty, the frontend shows a disabled controlled button instead of starting a broken OAuth flow.
 - Platform admins should still be created through admin/management flows, not public social registration.

@@ -5653,6 +5653,10 @@ Frontend production build: OK
   - существующему пользователю при принятии приглашения не перезаписывается текущий пароль, если он уже задан;
   - добавлены regression tests для Telegram contact requirement, чужой business role, слабого пароля и existing-user invite flow;
   - статусы приглашений в Settings и поле email на invite accept page переведены через RU / KK / EN i18n.
+- Google / Apple readiness pass:
+  - social signup теперь создаёт не только trial business и owner membership, но и default business roles + default pipeline;
+  - login page уже держит controlled disabled state, если `VITE_GOOGLE_CLIENT_ID` / `VITE_APPLE_CLIENT_ID` не заданы;
+  - `docs/social-auth.md` уточняет production-readiness поведение и env-контракт без реальных secrets.
 
 Проверка:
 
@@ -5699,6 +5703,9 @@ Frontend production build after integrations page header/filter i18n pass: OK
 Team access invite tests after invite hardening pass: 20 OK
 Full backend tests after invite hardening pass: 292 OK
 Frontend production build after invite hardening pass: OK
+Accounts social auth tests after Google/Apple readiness pass: 8 OK
+Full backend tests after Google/Apple readiness pass: 292 OK
+Frontend production build after Google/Apple readiness pass: OK
 Visual smoke screenshots: desktop collapsed rail, desktop expanded rail, mobile dashboard OK
 ```
 

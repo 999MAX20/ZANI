@@ -11,7 +11,8 @@ from rest_framework.test import APIClient
 from apps.accounts.auth_views import ThrottledTokenObtainPairView, ThrottledTokenRefreshView
 from apps.accounts.models import SocialIdentity, User
 from apps.accounts.social_auth import SocialUserClaims
-from apps.businesses.models import Business, BusinessMember
+from apps.businesses.models import Business, BusinessMember, BusinessRole
+from apps.crm.models import Pipeline
 from apps.core.models import LoginHistory
 
 
@@ -107,6 +108,9 @@ class AuthSecurityBaselineTests(TestCase):
         self.assertFalse(user.has_usable_password())
         self.assertTrue(SocialIdentity.objects.filter(user=user, provider=SocialIdentity.Providers.GOOGLE).exists())
         self.assertTrue(BusinessMember.objects.filter(user=user, role=BusinessMember.Roles.OWNER, is_active=True).exists())
+        business = Business.objects.get(owner=user)
+        self.assertTrue(BusinessRole.objects.filter(business=business, preset_key=BusinessMember.Roles.OWNER, is_active=True).exists())
+        self.assertTrue(Pipeline.objects.filter(business=business).exists())
         self.assertTrue(LoginHistory.objects.filter(user=user, status=LoginHistory.Statuses.SUCCESS).exists())
 
     @patch("apps.accounts.views.verify_social_id_token")

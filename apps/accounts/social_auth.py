@@ -12,7 +12,9 @@ from jwt import PyJWKClient
 from rest_framework.exceptions import AuthenticationFailed, ValidationError
 
 from apps.accounts.models import SocialIdentity, User
-from apps.businesses.models import Business, BusinessMember
+from apps.businesses.access import ensure_default_roles
+from apps.businesses.models import Business, BusinessMember, BusinessRole
+from apps.crm.services import ensure_default_pipeline
 
 
 GOOGLE_ISSUERS = {"https://accounts.google.com", "accounts.google.com"}
@@ -136,7 +138,20 @@ def _ensure_first_business(user: User) -> None:
         slug=_unique_business_slug(user.email),
         status=Business.Statuses.TRIAL,
     )
-    BusinessMember.objects.create(business=business, user=user, role=BusinessMember.Roles.OWNER, is_active=True)
+    ensure_default_roles(business)
+    ensure_default_pipeline(business)
+    owner_role = BusinessRole.objects.filter(
+        business=business,
+        preset_key=BusinessMember.Roles.OWNER,
+        is_active=True,
+    ).first()
+    BusinessMember.objects.create(
+        business=business,
+        user=user,
+        role=BusinessMember.Roles.OWNER,
+        business_role=owner_role,
+        is_active=True,
+    )
 
 
 @transaction.atomic

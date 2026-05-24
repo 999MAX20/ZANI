@@ -5860,3 +5860,8 @@ Backend check after pilot UX/API hardening pass: OK
 Scheduling API regression tests after pilot UX/API hardening pass: 13 OK
 Full backend tests after pilot UX/API hardening pass: 307 OK
 Frontend production build after pilot UX/API hardening pass: OK
+
+Pilot E2E smoke hardening pass: Playwright smoke now covers header notification popover close behavior, booking modal opening from a free calendar slot, and mobile sidebar open/close plus calendar navigation through the full sidebar. Smoke assertions are language-tolerant for RU / KK / EN headings, so language persistence no longer causes false failures.
+
+Targeted Playwright smoke after pilot E2E hardening pass: header notifications + calendar UI + mobile sidebar/calendar OK
+Frontend production build after pilot E2E hardening pass: OK

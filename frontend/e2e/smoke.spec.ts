@@ -116,7 +116,7 @@ test("business owner can use core merchant CRM pages", async ({ page, isMobile }
   await login(page, users.owner, /\/dashboard/);
 
   await expect(page).toHaveURL(/\/dashboard/);
-  await expect(page.getByText("Business cockpit")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Рабочий стол бизнеса|Business dashboard|Бизнес басқару панелі/ })).toBeVisible();
 
   await navigateInsideApp(page, "/dashboard/leads");
   await expect(page.getByRole("heading", { name: "Sales pipeline" })).toBeVisible();
@@ -168,6 +168,17 @@ test("business owner core routes render without 404", async ({ page, isMobile })
     await expect(page.getByText("Страница не найдена")).toHaveCount(0);
     await expect(page.getByText("Unexpected Application Error")).toHaveCount(0);
   }
+});
+
+test("header notifications popover opens and closes safely", async ({ page, isMobile }) => {
+  test.skip(isMobile, "Mobile header tap targets are covered by the mobile smoke.");
+
+  await login(page, users.owner, /\/dashboard/);
+
+  await page.getByRole("button", { name: /Уведомления|Notifications/ }).click();
+  await expect(page.locator("header").getByText(/Уведомления|Notifications/).first()).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("header").getByText(/Уведомления|Notifications/).first()).toBeHidden();
 });
 
 test("core merchant business flow works through API", async ({ page, isMobile }) => {
@@ -370,9 +381,14 @@ test("business owner can create an appointment from calendar UI", async ({ page,
 
   await login(page, users.owner, /\/dashboard/);
   await page.goto("/dashboard/calendar");
-  await expect(page.getByRole("heading", { name: "Smart calendar" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Календарь бизнеса|Business calendar|Бизнес күнтізбесі/ })).toBeVisible();
+
+  await page.getByRole("button", { name: /Свободное окно|Available slot/ }).first().click();
+  await expect(page.getByRole("heading", { name: /Новая запись|New booking|Жаңа жазба/ })).toBeVisible();
+  await page.getByRole("button", { name: /Закрыть|Close/ }).click();
+
   await page.getByRole("button", { name: /Новая запись/ }).click();
-  await expect(page.getByRole("heading", { name: "New booking" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Новая запись|New booking|Жаңа жазба/ })).toBeVisible();
 
   await page.getByLabel("Клиент").selectOption(String(client.id));
   await page.getByLabel("Услуга").selectOption(String(service.id));
@@ -521,9 +537,15 @@ test("mobile owner smoke: dashboard and calendar are reachable", async ({ page, 
   test.skip(!isMobile, "Mobile viewport smoke runs only in the mobile project.");
 
   await login(page, users.owner, /\/dashboard/);
-  await expect(page.getByText("Business cockpit")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Рабочий стол бизнеса|Business dashboard|Бизнес басқару панелі/ })).toBeVisible();
 
-  await page.getByRole("link", { name: /Календарь|Calendar/ }).click();
+  await page.getByRole("button", { name: /Развернуть меню|Expand menu/ }).click();
+  const closeSidebarButton = page.getByRole("button", { name: /Свернуть меню|Collapse menu/ }).last();
+  await expect(closeSidebarButton).toBeVisible();
+  await closeSidebarButton.click();
+
+  await page.getByRole("button", { name: /Ещё|More/ }).click();
+  await page.locator('a[href="/dashboard/calendar"]').first().click();
   await expect(page).toHaveURL(/\/dashboard\/calendar/);
-  await expect(page.getByRole("heading", { name: "Smart calendar" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Календарь бизнеса|Business calendar|Бизнес күнтізбесі/ })).toBeVisible();
 });

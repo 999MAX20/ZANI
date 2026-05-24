@@ -5823,3 +5823,8 @@ Invite registration QA pass: verified backend coverage for owner-created invitat
 Google / Apple readiness pass: social auth remains optional and controlled by env. Backend validates provider ID tokens against configured allowed client IDs, links/creates local Django users and returns the normal JWT pair. Frontend buttons stay disabled with clear "soon/not configured" state when `VITE_GOOGLE_CLIENT_ID` / `VITE_APPLE_CLIENT_ID` are empty, so email/password login is not blocked.
 
 Lightweight integrations readiness pass: Excel/CSV provider rollout gate is green with `--fail-on-blockers`; Telegram gate is green while disabled and documents the required production prerequisites (`TELEGRAM_ENABLED=True`, webhook secret, queue runtime and Sentry). Integration tests for Telegram, connector catalog and provider rollout: 28 OK.
+
+Next implementation specs prepared:
+
+- `docs/telegram-connector-mvp.md`
+- `docs/excel-csv-real-import-mvp.md`

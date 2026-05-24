@@ -5628,6 +5628,10 @@ Frontend production build: OK
   - страница графика работы больше не хранит русские константы дней недели и quick-preset labels;
   - шаблоны Пн-Пт / ежедневно / Пн-Сб локализованы через RU / KK / EN словари;
   - API-контракт `applyPreset` и weekly working-hours form не менялись.
+- Integrations import/onboarding i18n pass:
+  - integration onboarding route и Excel/CSV import panel переведены на RU / KK / EN;
+  - import entity labels, helpers, preview states, mapping, duplicate и row-error copy больше не hardcoded;
+  - API-контракты import jobs и connector capabilities не менялись.
 
 Проверка:
 
@@ -5661,6 +5665,8 @@ Full backend tests after connector cards i18n pass: 288 OK
 Frontend production build after connector cards i18n pass: OK
 Full backend tests after working hours presets i18n pass: 288 OK
 Frontend production build after working hours presets i18n pass: OK
+Full backend tests after integrations import/onboarding i18n pass: 288 OK
+Frontend production build after integrations import/onboarding i18n pass: OK
 Visual smoke screenshots: desktop collapsed rail, desktop expanded rail, mobile dashboard OK
 ```
 

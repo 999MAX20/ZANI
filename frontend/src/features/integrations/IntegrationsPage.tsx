@@ -28,6 +28,7 @@ import { Select } from "../../components/ui/Select";
 import { useAuth } from "../auth/AuthProvider";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useEntityData } from "../../hooks/useEntityData";
+import { useI18n } from "../../lib/i18n";
 import { hasPermission } from "../../lib/permissions";
 import { ConnectorCard } from "./components/ConnectorCard";
 import type { Bot, BotChannel, BusinessConnector, ConnectorCapability, Id, ImportJob } from "../../types";
@@ -35,24 +36,15 @@ import type { Bot, BotChannel, BusinessConnector, ConnectorCapability, Id, Impor
 type CapabilityFilter = "all" | "included" | "self_service" | "request" | "upgrade" | "roadmap";
 type CapabilityGroup = "all" | ConnectorCapability["capability"];
 
-const importEntityOptions: Array<{ value: ImportEntity; label: string; helper: string }> = [
-  { value: "clients", label: "Клиенты", helper: "Создаёт реальные карточки клиентов." },
-  { value: "leads", label: "Заявки", helper: "Создаёт клиентов и заявки." },
-  { value: "sales", label: "Продажи", helper: "Создаёт события продаж для аналитики." },
-  { value: "catalog", label: "Товары / услуги / остатки", helper: "Создаёт услуги и события каталога/остатков." },
+const importEntityOptions: Array<{ value: ImportEntity; labelKey: string; helperKey: string }> = [
+  { value: "clients", labelKey: "integrations.import.clients", helperKey: "integrations.import.clientsHelp" },
+  { value: "leads", labelKey: "integrations.import.leads", helperKey: "integrations.import.leadsHelp" },
+  { value: "sales", labelKey: "integrations.import.sales", helperKey: "integrations.import.salesHelp" },
+  { value: "catalog", labelKey: "integrations.import.catalog", helperKey: "integrations.import.catalogHelp" },
 ];
 
-function capabilityGroupLabel(capability: ConnectorCapability) {
-  const labels: Record<string, string> = {
-    communications: "Коммуникации",
-    sales: "Продажи",
-    calendar: "Календарь",
-    finance: "Финансы",
-    inventory: "Склад",
-    marketing: "Маркетинг",
-    custom: "Кастом",
-  };
-  return labels[capability.capability] || capability.capability;
+function capabilityGroupLabel(capability: ConnectorCapability, t: (key: string) => string) {
+  return t(`integrations.capability.${capability.capability}`) || capability.capability;
 }
 
 function scrollToIntegrationSection(id: string) {
@@ -72,34 +64,35 @@ function IntegrationOnboardingGuide({
   hasWhatsAppRequest: boolean;
   hasAnyDataConnector: boolean;
 }) {
+  const { t } = useI18n();
   const steps = [
     {
-      title: "Импортировать базу",
-      description: "Начните с клиентов, заявок, продаж или каталога через Excel/CSV.",
+      title: t("integrations.guide.importTitle"),
+      description: t("integrations.guide.importText"),
       status: hasAnyDataConnector ? "started" : "first",
       section: "integration-import",
-      cta: hasAnyDataConnector ? "Открыть импорт" : "Начать с импорта",
+      cta: hasAnyDataConnector ? t("integrations.guide.openImport") : t("integrations.guide.startImport"),
     },
     {
-      title: "Включить входящие каналы",
-      description: "Website chat и Telegram дают первые заявки прямо в Inbox.",
+      title: t("integrations.guide.channelsTitle"),
+      description: t("integrations.guide.channelsText"),
       status: hasWebsiteChannel || hasTelegramChannel ? "started" : "next",
       section: hasTelegramChannel ? "integration-website" : "integration-telegram",
-      cta: hasWebsiteChannel || hasTelegramChannel ? "Проверить каналы" : "Подключить канал",
+      cta: hasWebsiteChannel || hasTelegramChannel ? t("integrations.guide.checkChannels") : t("integrations.guide.connectChannel"),
     },
     {
-      title: "Оставить заявку на WhatsApp",
-      description: "WhatsApp/Instagram подключаются честно: через заявку, без ложного auto-connect.",
+      title: t("integrations.guide.whatsappTitle"),
+      description: t("integrations.guide.whatsappText"),
       status: hasWhatsAppRequest ? "done" : "request",
       section: "integration-requests",
-      cta: hasWhatsAppRequest ? "Заявка создана" : "Заполнить заявку",
+      cta: hasWhatsAppRequest ? t("integrations.guide.requestCreated") : t("integrations.guide.fillRequest"),
     },
     {
-      title: "Проверить демо-синхронизацию",
-      description: "Kaspi, 1C, склад и маркетплейсы пока безопасно проверяются демо-событием.",
+      title: t("integrations.guide.demoSyncTitle"),
+      description: t("integrations.guide.demoSyncText"),
       status: connectedCount ? "ready" : "pilot",
       section: "integration-data",
-      cta: "Открыть data connectors",
+      cta: t("integrations.guide.openDataConnectors"),
     },
   ];
 
@@ -117,14 +110,14 @@ function IntegrationOnboardingGuide({
     <div className="mb-5 overflow-hidden rounded-[2rem] border border-white/80 bg-white/92 p-5 shadow-premium backdrop-blur-xl">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Integration onboarding</p>
-          <h2 className="mt-2 text-2xl font-black tracking-tight text-midnight">Подключайте возможности по порядку</h2>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">{t("integrations.guide.eyebrow")}</p>
+          <h2 className="mt-2 text-2xl font-black tracking-tight text-midnight">{t("integrations.guide.title")}</h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-            Владелец видит не “каталог API”, а понятный маршрут: сначала данные, затем входящие каналы, потом заявки на внешние сервисы.
+            {t("integrations.guide.description")}
           </p>
         </div>
         <div className="rounded-3xl bg-slate-950 px-5 py-4 text-white">
-          <p className="text-xs font-black uppercase tracking-[0.14em] text-white/55">Активные подключения</p>
+          <p className="text-xs font-black uppercase tracking-[0.14em] text-white/55">{t("integrations.guide.activeConnections")}</p>
           <p className="mt-1 text-3xl font-black">{connectedCount}</p>
         </div>
       </div>
@@ -160,6 +153,7 @@ function IntegrationOnboardingGuide({
 
 function ExcelCsvImportPanel({ businessId }: { businessId: Id }) {
   const queryClient = useQueryClient();
+  const { t } = useI18n();
   const [entity, setEntity] = useState<ImportEntity>("clients");
   const [file, setFile] = useState<File | null>(null);
   const [activeImportId, setActiveImportId] = useState<Id | null>(null);
@@ -169,7 +163,7 @@ function ExcelCsvImportPanel({ businessId }: { businessId: Id }) {
   });
   const uploadMutation = useMutation({
     mutationFn: () => {
-      if (!file) throw new Error("Выберите CSV или XLSX файл.");
+      if (!file) throw new Error(t("integrations.import.chooseFile"));
       return importExportApi.upload({ business: businessId, entity, file });
     },
     onSuccess: (job) => {
@@ -202,14 +196,14 @@ function ExcelCsvImportPanel({ businessId }: { businessId: Id }) {
     <div id="integration-import" className="scroll-mt-24 mb-5 rounded-3xl border border-emerald-100 bg-white/95 p-5 shadow-soft">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">Excel / CSV connector</p>
-          <h2 className="mt-2 text-2xl font-black text-midnight">Импорт реальных данных</h2>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">{t("integrations.import.eyebrow")}</p>
+          <h2 className="mt-2 text-2xl font-black text-midnight">{t("integrations.import.title")}</h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-            Загрузите CSV/XLSX, проверьте mapping, preview, ошибки строк и только потом подтвердите импорт. Данные остаются в рамках текущего бизнеса.
+            {t("integrations.import.description")}
           </p>
         </div>
         <Button type="button" variant="secondary" onClick={() => templateMutation.mutate(entity)} isLoading={templateMutation.isPending}>
-          <FileSpreadsheet size={16} /> Скачать шаблон
+          <FileSpreadsheet size={16} /> {t("integrations.import.downloadTemplate")}
         </Button>
       </div>
 
@@ -219,38 +213,38 @@ function ExcelCsvImportPanel({ businessId }: { businessId: Id }) {
         <Select
           value={entity}
           onChange={(event) => setEntity(event.target.value as ImportEntity)}
-          options={importEntityOptions.map((item) => ({ value: item.value, label: item.label }))}
+          options={importEntityOptions.map((item) => ({ value: item.value, label: t(item.labelKey) }))}
         />
         <Input type="file" accept=".csv,.xlsx" onChange={(event) => setFile(event.target.files?.[0] || null)} />
         <Button type="button" onClick={() => uploadMutation.mutate()} disabled={!file} isLoading={uploadMutation.isPending}>
-          <Upload size={16} /> Preview
+          <Upload size={16} /> {t("integrations.import.preview")}
         </Button>
       </div>
-      <p className="mt-2 text-sm font-semibold text-slate-500">{selectedOption?.helper}</p>
+      <p className="mt-2 text-sm font-semibold text-slate-500">{selectedOption ? t(selectedOption.helperKey) : ""}</p>
 
       <div className="mt-5 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
         <div className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <p className="font-black text-midnight">{activeImport?.original_filename || "Файл ещё не загружен"}</p>
+              <p className="font-black text-midnight">{activeImport?.original_filename || t("integrations.import.noFile")}</p>
               <p className="mt-1 text-sm text-slate-500">
-                {activeImport ? `${activeImport.entity_type} · ${activeImport.total_rows} строк · ${activeImport.status}` : "Здесь появится preview первых строк."}
+                {activeImport ? t("integrations.import.fileMeta", { entity: activeImport.entity_type, rows: activeImport.total_rows, status: activeImport.status }) : t("integrations.import.previewPlaceholder")}
               </p>
             </div>
             {activeImport?.status === "previewed" && !rowErrors.length ? (
               <Button type="button" onClick={() => confirmMutation.mutate(activeImport.id)} isLoading={confirmMutation.isPending}>
-                Подтвердить импорт
+                {t("integrations.import.confirm")}
               </Button>
             ) : null}
           </div>
 
           {rowErrors.length ? (
             <div className="mt-4 rounded-2xl border border-red-100 bg-red-50 p-3">
-              <p className="text-sm font-black text-red-800">Файл нужно исправить перед импортом</p>
+              <p className="text-sm font-black text-red-800">{t("integrations.import.fixFile")}</p>
               <div className="mt-2 space-y-1">
                 {rowErrors.slice(0, 5).map((item, index) => (
                   <p key={`${item.row}-${item.field}-${index}`} className="text-xs font-semibold text-red-700">
-                    Строка {item.row}, {item.field}: {item.message}
+                    {t("integrations.import.rowError", { row: item.row, field: item.field, message: item.message })}
                   </p>
                 ))}
               </div>
@@ -260,20 +254,20 @@ function ExcelCsvImportPanel({ businessId }: { businessId: Id }) {
           {activeImport ? (
             <div className="mt-4 grid gap-4 lg:grid-cols-2">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Column mapping</p>
+                <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{t("integrations.import.columnMapping")}</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {Object.entries(activeImport.mapping_json || {}).map(([field, header]) => (
                     <span key={field} className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-600">
                       {field} {"<-"} {header}
                     </span>
                   ))}
-                  {!Object.keys(activeImport.mapping_json || {}).length ? <span className="text-sm text-slate-500">Mapping не найден.</span> : null}
+                  {!Object.keys(activeImport.mapping_json || {}).length ? <span className="text-sm text-slate-500">{t("integrations.import.noMapping")}</span> : null}
                 </div>
               </div>
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Duplicates</p>
+                <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{t("integrations.import.duplicates")}</p>
                 <p className={duplicates.length ? "mt-2 text-sm font-bold text-amber-700" : "mt-2 text-sm font-bold text-emerald-700"}>
-                  {duplicates.length} возможных дублей
+                  {t("integrations.import.duplicatesCount", { count: duplicates.length })}
                 </p>
               </div>
             </div>
@@ -285,12 +279,12 @@ function ExcelCsvImportPanel({ businessId }: { businessId: Id }) {
                 {Object.entries(row).slice(0, 6).map(([key, value]) => `${key}: ${value || "-"}`).join(" · ")}
               </div>
             ))}
-            {!(activeImport?.preview_json?.rows || []).length ? <p className="px-3 py-4 text-sm text-slate-500">Preview появится после загрузки файла.</p> : null}
+            {!(activeImport?.preview_json?.rows || []).length ? <p className="px-3 py-4 text-sm text-slate-500">{t("integrations.import.previewEmpty")}</p> : null}
           </div>
         </div>
 
         <div className="rounded-3xl border border-slate-100 bg-white p-4">
-          <p className="font-black text-midnight">История импорта</p>
+          <p className="font-black text-midnight">{t("integrations.import.history")}</p>
           <div className="mt-3 space-y-2">
             {jobs.slice(0, 8).map((job: ImportJob) => (
               <button
@@ -303,7 +297,7 @@ function ExcelCsvImportPanel({ businessId }: { businessId: Id }) {
                 <span className="ml-2 text-slate-500">{job.status} · {job.imported_count}/{job.total_rows}</span>
               </button>
             ))}
-            {!jobsQuery.isLoading && !jobs.length ? <p className="text-sm text-slate-500">Импортов пока нет.</p> : null}
+            {!jobsQuery.isLoading && !jobs.length ? <p className="text-sm text-slate-500">{t("integrations.import.noImports")}</p> : null}
           </div>
         </div>
       </div>
@@ -955,6 +949,7 @@ function DataConnectorsFoundationPanel({
 
 export function IntegrationsPage() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const { business, isLoading: isBusinessLoading } = useActiveBusiness();
   const canManage = hasPermission(user, business?.id, "integrations", "manage");
   const [search, setSearch] = useState("");
@@ -994,7 +989,7 @@ export function IntegrationsPage() {
     return capabilityList.filter((capability) => {
       const matchesSearch =
         !normalizedSearch ||
-        [capability.label, capability.provider, capability.description, capabilityGroupLabel(capability)]
+        [capability.label, capability.provider, capability.description, capabilityGroupLabel(capability, t)]
           .join(" ")
           .toLowerCase()
           .includes(normalizedSearch);
@@ -1008,7 +1003,7 @@ export function IntegrationsPage() {
         (filter === "roadmap" && ["soon", "roadmap"].includes(capability.availability));
       return matchesSearch && matchesGroup && matchesFilter;
     });
-  }, [capabilityList, filter, group, search]);
+  }, [capabilityList, filter, group, search, t]);
   const hasExcelCsv = capabilityList.some((capability) => capability.provider === "excel_csv");
   const websiteChannel = (entityData.botChannels.data || []).find((channel) => channel.channel === "website");
   const telegramChannel = (entityData.botChannels.data || []).find((channel) => channel.channel === "telegram");

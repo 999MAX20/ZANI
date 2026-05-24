@@ -317,13 +317,14 @@ function WebsiteChatConnectorPanel({
   isLoading: boolean;
 }) {
   const queryClient = useQueryClient();
+  const { t } = useI18n();
   const [preview, setPreview] = useState({
-    full_name: "Тестовый посетитель",
+    full_name: t("integrations.website.previewName"),
     phone: "+77015550000",
     email: "",
-    message: "Здравствуйте, хочу узнать свободное время.",
+    message: t("integrations.website.previewMessage"),
   });
-  const [followUpMessage, setFollowUpMessage] = useState("Подскажите, пожалуйста, ближайшее окно.");
+  const [followUpMessage, setFollowUpMessage] = useState(t("integrations.website.followUpMessage"));
   const [conversationId, setConversationId] = useState("");
   const [notice, setNotice] = useState("");
   const apiBaseUrl = (import.meta.env.VITE_API_URL as string | undefined) || window.location.origin;
@@ -345,7 +346,7 @@ function WebsiteChatConnectorPanel({
     },
     onSuccess: (result) => {
       setConversationId(result.conversation_id);
-      setNotice(`Тестовый диалог создан. Lead #${result.lead_id || "-"}, Client #${result.client_id || "-"}.`);
+      setNotice(t("integrations.website.conversationCreated", { lead: result.lead_id || "-", client: result.client_id || "-" }));
       queryClient.invalidateQueries({ queryKey: ["bot-conversations"] });
       queryClient.invalidateQueries({ queryKey: ["bot-messages"] });
       queryClient.invalidateQueries({ queryKey: ["inbox-conversations"] });
@@ -364,7 +365,7 @@ function WebsiteChatConnectorPanel({
       });
     },
     onSuccess: () => {
-      setNotice("Follow-up сообщение добавлено в тот же Inbox диалог.");
+      setNotice(t("integrations.website.followUpAdded"));
       queryClient.invalidateQueries({ queryKey: ["bot-conversations"] });
       queryClient.invalidateQueries({ queryKey: ["bot-messages"] });
       queryClient.invalidateQueries({ queryKey: ["inbox-conversations"] });
@@ -374,7 +375,7 @@ function WebsiteChatConnectorPanel({
   const copySnippet = async () => {
     if (!snippet) return;
     await navigator.clipboard?.writeText(snippet);
-    setNotice("Snippet скопирован.");
+    setNotice(t("integrations.website.snippetCopied"));
   };
 
   const error = createConversation.error || sendFollowUp.error;
@@ -388,30 +389,30 @@ function WebsiteChatConnectorPanel({
           </div>
           <div>
             <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">Website chat</p>
-            <h2 className="mt-2 text-2xl font-black text-midnight">Чат сайта и лендингов</h2>
+            <h2 className="mt-2 text-2xl font-black text-midnight">{t("integrations.website.title")}</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-              Виджет сайта принимает обращение, создаёт клиента, заявку и диалог в Inbox. Технические ключи скрыты: владелец видит только понятную установку и тест сообщения.
+              {t("integrations.website.description")}
             </p>
           </div>
         </div>
         <Link to="/dashboard/inbox?channel=website">
           <Button type="button" variant="secondary">
-            <ExternalLink size={16} /> Открыть Inbox
+            <ExternalLink size={16} /> {t("integrations.website.openInbox")}
           </Button>
         </Link>
       </div>
 
-      {isLoading ? <div className="mt-4"><LoadingState label="Проверяем website channel..." /></div> : null}
+      {isLoading ? <div className="mt-4"><LoadingState label={t("integrations.website.loading")} /></div> : null}
 
       {!isLoading && !websiteChannel ? (
         <div className="mt-5 rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-5">
-          <p className="font-black text-midnight">Website channel пока не создан</p>
+          <p className="font-black text-midnight">{t("integrations.website.notConfiguredTitle")}</p>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            Создайте канал сайта в настройке бота или через onboarding. После этого здесь появятся кнопка копирования кода установки и тест отправки сообщения.
+            {t("integrations.website.notConfiguredText")}
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
-            <Link to="/dashboard/bots"><Button type="button" variant="secondary">Открыть ботов</Button></Link>
-            <Link to="/dashboard/pilot-readiness"><Button type="button" variant="ghost">Проверить готовность</Button></Link>
+            <Link to="/dashboard/bots"><Button type="button" variant="secondary">{t("integrations.website.openBots")}</Button></Link>
+            <Link to="/dashboard/pilot-readiness"><Button type="button" variant="ghost">{t("integrations.website.checkReadiness")}</Button></Link>
           </div>
         </div>
       ) : null}
@@ -422,19 +423,19 @@ function WebsiteChatConnectorPanel({
             <div className="rounded-3xl border border-blue-100 bg-blue-50 p-4">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-sm font-black text-blue-900">Канал сайта: {websiteChannel.status}</p>
+                  <p className="text-sm font-black text-blue-900">{t("integrations.website.channelStatus", { status: websiteChannel.status })}</p>
                   <p className="mt-1 text-xs font-semibold text-blue-700">
-                    Виджет готов. Внутренний код подключения скрыт, чтобы не превращать страницу интеграций в техническую панель.
+                    {t("integrations.website.readyText")}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button type="button" variant="secondary" onClick={copySnippet}>
-                    <Copy size={16} /> Скопировать код установки
+                    <Copy size={16} /> {t("integrations.website.copySnippet")}
                   </Button>
                 </div>
               </div>
               <p className="mt-3 text-xs font-semibold text-blue-700">
-                Код установки копируется в буфер обмена и не отображает внутренний ключ на экране CRM.
+                {t("integrations.website.copyNotice")}
               </p>
             </div>
 
@@ -443,9 +444,9 @@ function WebsiteChatConnectorPanel({
           </div>
 
           <div className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
-            <p className="font-black text-midnight">Тестовое сообщение с сайта</p>
+            <p className="font-black text-midnight">{t("integrations.website.testTitle")}</p>
             <p className="mt-1 text-sm leading-6 text-slate-600">
-              Использует публичный endpoint без авторизации, как реальный посетитель лендинга.
+              {t("integrations.website.testText")}
             </p>
             <form
               className="mt-4 space-y-3"
@@ -454,20 +455,20 @@ function WebsiteChatConnectorPanel({
                 createConversation.mutate();
               }}
             >
-              <Input label="Имя" value={preview.full_name} onChange={(event) => setPreview({ ...preview, full_name: event.target.value })} />
+              <Input label={t("integrations.website.name")} value={preview.full_name} onChange={(event) => setPreview({ ...preview, full_name: event.target.value })} />
               <div className="grid gap-3 sm:grid-cols-2">
-                <Input label="Телефон" value={preview.phone} onChange={(event) => setPreview({ ...preview, phone: event.target.value })} />
+                <Input label={t("integrations.website.phone")} value={preview.phone} onChange={(event) => setPreview({ ...preview, phone: event.target.value })} />
                 <Input label="Email" value={preview.email} onChange={(event) => setPreview({ ...preview, email: event.target.value })} />
               </div>
-              <Input label="Сообщение" value={preview.message} onChange={(event) => setPreview({ ...preview, message: event.target.value })} required />
+              <Input label={t("integrations.website.message")} value={preview.message} onChange={(event) => setPreview({ ...preview, message: event.target.value })} required />
               <Button type="submit" isLoading={createConversation.isPending}>
-                <Send size={16} /> Создать тестовый диалог
+                <Send size={16} /> {t("integrations.website.createDialog")}
               </Button>
             </form>
 
             {conversationId ? (
               <div className="mt-4 rounded-2xl bg-white p-3">
-                <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">Follow-up в тот же диалог</p>
+                <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">{t("integrations.website.followUpTitle")}</p>
                 <Input className="mt-3" value={followUpMessage} onChange={(event) => setFollowUpMessage(event.target.value)} />
                 <Button
                   type="button"
@@ -477,7 +478,7 @@ function WebsiteChatConnectorPanel({
                   isLoading={sendFollowUp.isPending}
                   onClick={() => sendFollowUp.mutate()}
                 >
-                  <Send size={16} /> Добавить сообщение
+                  <Send size={16} /> {t("integrations.website.addMessage")}
                 </Button>
               </div>
             ) : null}

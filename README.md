@@ -5632,6 +5632,10 @@ Frontend production build: OK
   - integration onboarding route и Excel/CSV import panel переведены на RU / KK / EN;
   - import entity labels, helpers, preview states, mapping, duplicate и row-error copy больше не hardcoded;
   - API-контракты import jobs и connector capabilities не менялись.
+- Website Chat integration i18n pass:
+  - блок сайта и лендингов на `/dashboard/integrations` переведён на RU / KK / EN;
+  - тестовое сообщение, follow-up, empty/loading states и copy-snippet notice больше не hardcoded;
+  - публичный website chat API и widget snippet generation не менялись.
 
 Проверка:
 
@@ -5667,6 +5671,8 @@ Full backend tests after working hours presets i18n pass: 288 OK
 Frontend production build after working hours presets i18n pass: OK
 Full backend tests after integrations import/onboarding i18n pass: 288 OK
 Frontend production build after integrations import/onboarding i18n pass: OK
+Full backend tests after website chat integration i18n pass: 288 OK
+Frontend production build after website chat integration i18n pass: OK
 Visual smoke screenshots: desktop collapsed rail, desktop expanded rail, mobile dashboard OK
 ```
 

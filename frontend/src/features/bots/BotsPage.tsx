@@ -15,15 +15,11 @@ import { EmptyState, ErrorState, LoadingState } from "../../components/ui/StateV
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useEntityData } from "../../hooks/useEntityData";
+import { useI18n } from "../../lib/i18n";
 import type { Bot } from "../../types";
 
-const statusOptions = [
-  { value: "draft", label: "Draft" },
-  { value: "active", label: "Active" },
-  { value: "paused", label: "Paused" },
-];
-
 export function BotsPage() {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const { business } = useActiveBusiness();
   const { bots, botChannels, botConversations } = useEntityData();
@@ -39,7 +35,18 @@ export function BotsPage() {
     },
   });
 
-  if (!business) return <ErrorState message="Создайте бизнес в настройках, чтобы подключать ботов." />;
+  const statusOptions = [
+    { value: "draft", label: t("status.draft") },
+    { value: "active", label: t("status.active") },
+    { value: "paused", label: t("status.paused") },
+  ];
+  const languageOptions = [
+    { value: "ru", label: t("language.ru") },
+    { value: "kk", label: t("language.kk") },
+    { value: "en", label: t("language.en") },
+  ];
+
+  if (!business) return <ErrorState message={t("bots.noBusiness")} />;
   if (bots.isLoading || botChannels.isLoading || botConversations.isLoading) return <LoadingState />;
 
   const botList = bots.data || [];
@@ -47,17 +54,17 @@ export function BotsPage() {
   return (
     <>
       <PageHeader
-        title="AI-боты"
-        description="Продуктовая основа ботов: конфигурация, каналы и будущие диалоги без реальных интеграций на этом этапе."
-        actions={<Button variant="ai" onClick={() => setOpen(true)}><Plus size={18} />Создать бота</Button>}
+        title={t("bots.title")}
+        description={t("bots.description")}
+        actions={<Button variant="ai" onClick={() => setOpen(true)}><Plus size={18} />{t("bots.create")}</Button>}
       />
       {mutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(mutation.error)} /></div> : null}
 
       {!botList.length ? (
         <EmptyState
-          title="Ботов пока нет"
-          description="Создайте первого бота, чтобы позже подключить website chat, Telegram, WhatsApp или Instagram канал."
-          action={<Button variant="secondary" onClick={() => setOpen(true)}><Plus size={16} />Создать бота</Button>}
+          title={t("bots.emptyTitle")}
+          description={t("bots.emptyText")}
+          action={<Button variant="secondary" onClick={() => setOpen(true)}><Plus size={16} />{t("bots.create")}</Button>}
         />
       ) : (
         <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
@@ -74,7 +81,7 @@ export function BotsPage() {
                       </div>
                       <div>
                         <h2 className="text-lg font-bold text-midnight">{bot.name}</h2>
-                        <p className="text-sm text-slate-500">Default language: {bot.default_language.toUpperCase()}</p>
+                        <p className="text-sm text-slate-500">{t("bots.defaultLanguage")}: {bot.default_language.toUpperCase()}</p>
                       </div>
                     </div>
                     <StatusBadge status={bot.status} />
@@ -83,24 +90,24 @@ export function BotsPage() {
                   <div className="grid gap-3 sm:grid-cols-3">
                     <div className="rounded-2xl border border-slate-100 bg-white/70 p-3">
                       <Radio className="mb-2 text-brand-600" size={18} />
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Channels</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{t("bots.channels")}</p>
                       <p className="mt-1 text-xl font-bold text-midnight">{channels.length}</p>
                     </div>
                     <div className="rounded-2xl border border-slate-100 bg-white/70 p-3">
                       <MessageSquareText className="mb-2 text-ai-600" size={18} />
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Dialogs</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{t("bots.dialogs")}</p>
                       <p className="mt-1 text-xl font-bold text-midnight">{conversations.length}</p>
                     </div>
                     <div className="rounded-2xl border border-slate-100 bg-white/70 p-3">
                       <Settings2 className="mb-2 text-slate-600" size={18} />
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Mode</p>
-                      <p className="mt-1 text-xl font-bold text-midnight">Manual</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{t("bots.mode")}</p>
+                      <p className="mt-1 text-xl font-bold text-midnight">{t("bots.manual")}</p>
                     </div>
                   </div>
 
                   <div className="mt-5 flex flex-wrap gap-2">
                     <Link to={`/dashboard/bots/${bot.id}`}>
-                      <Button variant="secondary">Открыть</Button>
+                      <Button variant="secondary">{t("common.open")}</Button>
                     </Link>
                   </div>
                 </CardBody>
@@ -110,7 +117,7 @@ export function BotsPage() {
         </div>
       )}
 
-      <Modal title="Создать бота" open={open} onClose={() => setOpen(false)}>
+      <Modal title={t("bots.create")} open={open} onClose={() => setOpen(false)}>
         <form
           className="space-y-4"
           onSubmit={(event) => {
@@ -124,10 +131,10 @@ export function BotsPage() {
             });
           }}
         >
-          <Input label="Название" placeholder="Website assistant" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required />
-          <Select label="Статус" value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })} options={statusOptions} />
-          <Select label="Язык по умолчанию" value={form.default_language} onChange={(event) => setForm({ ...form, default_language: event.target.value })} options={[{ value: "ru", label: "Русский" }, { value: "en", label: "English" }]} />
-          <Button type="submit" isLoading={mutation.isPending}>Сохранить</Button>
+          <Input label={t("bots.name")} placeholder="Website assistant" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required />
+          <Select label={t("bots.status")} value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })} options={statusOptions} />
+          <Select label={t("bots.defaultLanguage")} value={form.default_language} onChange={(event) => setForm({ ...form, default_language: event.target.value })} options={languageOptions} />
+          <Button type="submit" isLoading={mutation.isPending}>{t("common.save")}</Button>
         </form>
       </Modal>
     </>

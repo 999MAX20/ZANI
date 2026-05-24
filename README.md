@@ -5672,6 +5672,10 @@ Frontend production build: OK
 - Calendar shared component i18n pass:
   - `SimpleCalendar` больше не содержит hardcoded fallback текстов `Клиент`, `Услуга`, `Без ресурса`;
   - calendar appointment fallbacks используют общий RU / KK / EN словарь appointment labels.
+- Bots list i18n pass:
+  - `/dashboard/bots` больше не содержит hardcoded RU/EN строк в видимых заголовках, CTA, empty state и форме создания;
+  - добавлены общие ключи `common.save`, `language.*` и bot-specific labels для RU / KK / EN;
+  - API создания бота, статусы и маршруты не менялись.
 
 Проверка:
 
@@ -5732,6 +5736,8 @@ Full backend tests after pilot readiness i18n pass: 293 OK
 Frontend production build after pilot readiness i18n pass: OK
 Full backend tests after calendar shared component i18n pass: 293 OK
 Frontend production build after calendar shared component i18n pass: OK
+Full backend tests after bots list i18n pass: 293 OK
+Frontend production build after bots list i18n pass: OK
 Visual smoke screenshots: desktop collapsed rail, desktop expanded rail, mobile dashboard OK
 ```
 

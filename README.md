@@ -5852,3 +5852,11 @@ Targeted connector/dashboard tests after lightweight provider-ready integrations
 Full backend tests after lightweight provider-ready integrations pass: 305 OK
 Frontend production build after lightweight provider-ready integrations pass: OK
 Render staging QA after lightweight provider-ready integrations pass: `/api/auth/me/`, owner dashboard, connector capabilities, WhatsApp request flow and Kaspi mock-sync OK. Kaspi mock-sync created read-only BusinessEvents and owner dashboard surfaced imported revenue, connector health and attention items.
+
+Pilot UX/API hardening pass: calendar empty slots now open the booking modal for the selected date, the date picker is larger and mobile-friendly, direct appointment API creation accepts `start_at + service` and calculates `end_at`, while rejecting slots outside working hours or overlapping existing appointments. Working-hours forms now block invalid start/end time ranges before submit. Header notifications close on outside click/Escape, and the new `docs/pilot-production-qa-checklist.md` captures the owner/operator/mobile/calendar/integration smoke path before pilot demos.
+
+Backend migration check after pilot UX/API hardening pass: OK
+Backend check after pilot UX/API hardening pass: OK
+Scheduling API regression tests after pilot UX/API hardening pass: 13 OK
+Full backend tests after pilot UX/API hardening pass: 307 OK
+Frontend production build after pilot UX/API hardening pass: OK

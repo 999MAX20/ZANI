@@ -94,6 +94,7 @@ export function WeeklyWorkingHoursForm({
   const { t } = useI18n();
   const [resource, setResource] = useState<string>(initialResource ? String(initialResource) : "");
   const [isSubmitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
   const targetResource = resource ? Number(resource) : null;
   const currentHours = useMemo(
     () =>
@@ -121,7 +122,12 @@ export function WeeklyWorkingHoursForm({
   }
 
   function updateDay(weekday: number, patch: Partial<WeeklyDayValue>) {
+    setError("");
     setDays((current) => current.map((day) => (day.weekday === weekday ? { ...day, ...patch } : day)));
+  }
+
+  function hasInvalidWorkingTime() {
+    return days.some((day) => !day.is_day_off && day.end_time <= day.start_time);
   }
 
   return (
@@ -129,7 +135,12 @@ export function WeeklyWorkingHoursForm({
       className="grid gap-5"
       onSubmit={async (event) => {
         event.preventDefault();
+        if (hasInvalidWorkingTime()) {
+          setError(t("workingHours.invalidTime"));
+          return;
+        }
         setSubmitting(true);
+        setError("");
         try {
           await onSubmit(days.map((day) => ({ ...day, business: businessId, resource: targetResource })));
         } finally {
@@ -168,11 +179,12 @@ export function WeeklyWorkingHoursForm({
         <Button type="button" variant="secondary" onClick={() => applyPreset("salon")}>{t("workingHours.salonPreset")}</Button>
         <Button type="button" variant="secondary" onClick={() => applyPreset("weekdays")}>{t("workingHours.officePreset")}</Button>
       </div>
+      {error ? <div className="rounded-3xl border border-red-100 bg-red-50 p-4 text-sm font-bold text-red-700">{error}</div> : null}
       <div className="grid gap-3">
         {weekdays.map((weekday) => {
           const day = days.find((item) => item.weekday === weekday.value)!;
           return (
-            <div key={weekday.value} className="grid gap-3 rounded-3xl border border-slate-100 bg-white/80 p-3 sm:grid-cols-[120px_1fr_1fr_120px] sm:items-center">
+            <div key={weekday.value} className="grid gap-3 rounded-3xl border border-slate-100 bg-white/80 p-3 sm:grid-cols-[120px_1fr_1fr_140px] sm:items-center">
               <div>
                 <p className="font-bold text-midnight">{t(weekday.labelKey)}</p>
                 <p className="text-xs text-slate-400">{t(weekday.shortKey)}</p>
@@ -191,10 +203,10 @@ export function WeeklyWorkingHoursForm({
                 disabled={day.is_day_off}
                 onChange={(event) => updateDay(weekday.value, { end_time: event.target.value })}
               />
-              <label className="flex items-center gap-2 text-sm font-bold text-slate-700 sm:pt-7">
+              <label className="flex min-h-12 items-center gap-3 rounded-2xl bg-slate-50 px-3 text-sm font-bold text-slate-700 sm:pt-0">
                 <input
                   type="checkbox"
-                  className="h-4 w-4 rounded border-slate-300"
+                  className="h-5 w-5 rounded border-slate-300"
                   checked={day.is_day_off}
                   onChange={(event) => updateDay(weekday.value, { is_day_off: event.target.checked })}
                 />

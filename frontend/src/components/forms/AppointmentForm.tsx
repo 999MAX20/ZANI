@@ -74,6 +74,8 @@ export function AppointmentForm({
     client?: Id | null;
     service?: Id | null;
     lead?: Id | null;
+    date?: string;
+    slot?: string;
     source?: Appointment["source"];
   };
   onSubmit: (payload: Partial<Appointment>) => Promise<unknown>;
@@ -86,8 +88,8 @@ export function AppointmentForm({
       service: initial?.service || prefill?.service || services[0]?.id || 0,
       resource: initial?.resource || undefined,
       lead: initial?.lead || prefill?.lead || undefined,
-      date: initial?.start_at?.slice(0, 10) || todayISO(),
-      slot: initial?.start_at || "",
+      date: initial?.start_at?.slice(0, 10) || prefill?.date || todayISO(),
+      slot: initial?.start_at || prefill?.slot || "",
       status: initial?.status || "created",
       source: initial?.source || prefill?.source || "manual",
       notes: initial?.notes || "",

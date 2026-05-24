@@ -113,13 +113,13 @@ function CalendarPicker({
         <CalendarDays size={18} />
       </Button>
       {open ? (
-        <div className="fixed inset-x-4 top-28 z-30 rounded-3xl border border-slate-200 bg-white p-4 shadow-premium sm:absolute sm:inset-auto sm:right-0 sm:top-14 sm:w-[320px]">
+        <div className="fixed inset-x-3 top-24 z-30 rounded-[2rem] border border-slate-200 bg-white p-4 shadow-premium sm:absolute sm:inset-auto sm:right-0 sm:top-14 sm:w-[340px]">
           <div className="mb-4 flex items-center justify-between">
-            <Button variant="ghost" className="h-9 w-9 rounded-full px-0" onClick={() => shiftMonth(-1)} aria-label={labels.previousMonth}><ChevronLeft size={16} /></Button>
+            <Button variant="ghost" className="h-12 w-12 rounded-full px-0" onClick={() => shiftMonth(-1)} aria-label={labels.previousMonth}><ChevronLeft size={22} /></Button>
             <p className="font-semibold text-midnight">
               {new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }).format(monthDate)}
             </p>
-            <Button variant="ghost" className="h-9 w-9 rounded-full px-0" onClick={() => shiftMonth(1)} aria-label={labels.nextMonth}><ChevronRight size={16} /></Button>
+            <Button variant="ghost" className="h-12 w-12 rounded-full px-0" onClick={() => shiftMonth(1)} aria-label={labels.nextMonth}><ChevronRight size={22} /></Button>
           </div>
           <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold text-slate-400">
             {labels.weekdays.map((day) => <div key={day} className="py-2">{day}</div>)}
@@ -138,7 +138,7 @@ function CalendarPicker({
                     onChange(toDateInputValue(cell));
                     setOpen(false);
                   }}
-                  className={`h-10 rounded-2xl text-sm font-semibold transition disabled:pointer-events-none disabled:opacity-0 ${
+                  className={`h-12 rounded-2xl text-base font-black transition disabled:pointer-events-none disabled:opacity-0 ${
                     isSelected
                       ? "bg-ai-gradient text-white shadow-glow"
                       : isToday
@@ -168,6 +168,7 @@ export function CalendarPage() {
   const [date, setDate] = useState(todayISO());
   const [viewMode, setViewMode] = useState<"day" | "week" | "month">("day");
   const [bookingOpen, setBookingOpen] = useState(false);
+  const [bookingPrefill, setBookingPrefill] = useState<{ date?: string; slot?: string } | null>(null);
   const [drawerEntity, setDrawerEntity] = useState<CrmDrawerEntity | null>(null);
   const [serviceFilter, setServiceFilter] = useState("");
   const [resourceFilter, setResourceFilter] = useState("");
@@ -199,6 +200,11 @@ export function CalendarPage() {
     const nextDate = parseDate(date);
     nextDate.setDate(nextDate.getDate() + days);
     setDate(toDateInputValue(nextDate));
+  }
+
+  function openBookingForDate(nextDate = date) {
+    setBookingPrefill({ date: nextDate });
+    setBookingOpen(true);
   }
 
   if (!business) return <ErrorState message={t("calendar.noBusiness")} />;
@@ -314,7 +320,7 @@ export function CalendarPage() {
                 </button>
               ))}
             </div>
-            <Button variant="ai" className="col-span-3 sm:col-span-1" onClick={() => setBookingOpen(true)}><Plus size={18} />{t("calendar.newBooking")}</Button>
+            <Button variant="ai" className="col-span-3 sm:col-span-1" onClick={() => openBookingForDate(date)}><Plus size={18} />{t("calendar.newBooking")}</Button>
           </div>
         }
       />
@@ -436,7 +442,15 @@ export function CalendarPage() {
                     {items.map((appointment) => {
                       return renderAppointmentCard(appointment);
                     })}
-                    {!items.length ? <div className="h-full rounded-3xl border border-dashed border-slate-200 bg-white/50 p-4 text-sm text-slate-400">{t("calendar.availableSlot")}</div> : null}
+                    {!items.length ? (
+                      <button
+                        type="button"
+                        className="h-full w-full rounded-3xl border border-dashed border-slate-200 bg-white/50 p-4 text-left text-sm font-semibold text-slate-400 transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
+                        onClick={() => openBookingForDate(date)}
+                      >
+                        {t("calendar.availableSlot")}
+                      </button>
+                    ) : null}
                   </div>
                 </div>
               );
@@ -456,7 +470,7 @@ export function CalendarPage() {
                 const items = appointmentList.filter((appointment) => appointment.start_at.slice(0, 10) === key);
                 return (
                   <div key={key} className={`rounded-3xl border p-3 ${key === date ? "border-brand-200 bg-brand-50/60" : "border-slate-100 bg-white/70"}`}>
-                    <button type="button" className="mb-3 text-left" onClick={() => setDate(key)}>
+                    <button type="button" className="mb-3 text-left" onClick={() => { setDate(key); setViewMode("day"); }}>
                       <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">{weekDays[(day.getDay() + 6) % 7]}</p>
                       <p className="text-lg font-bold text-midnight">{day.getDate()}</p>
                     </button>
@@ -488,7 +502,11 @@ export function CalendarPage() {
                     type="button"
                     disabled={!day}
                     className={`min-h-28 bg-white p-3 text-left transition disabled:bg-slate-50 ${day && key === date ? "ring-2 ring-inset ring-brand-400" : "hover:bg-brand-50/60"}`}
-                    onClick={() => day && setDate(key)}
+                    onClick={() => {
+                      if (!day) return;
+                      setDate(key);
+                      setViewMode("day");
+                    }}
                   >
                     {day ? <span className="text-sm font-bold text-midnight">{day.getDate()}</span> : null}
                     {items.length ? <p className="mt-2 rounded-full bg-brand-50 px-2 py-1 text-xs font-bold text-brand-700">{t("calendar.shortCount").replace("{count}", String(items.length))}</p> : null}
@@ -507,13 +525,14 @@ export function CalendarPage() {
       </div>
       {mutation.error ? <div className="mt-4"><ErrorState message={getApiErrorMessage(mutation.error)} /></div> : null}
 
-      <Modal title={t("calendar.newBooking")} open={bookingOpen} onClose={() => setBookingOpen(false)}>
+      <Modal title={t("calendar.newBooking")} open={bookingOpen} onClose={() => { setBookingOpen(false); setBookingPrefill(null); }}>
         <AppointmentForm
           businessId={business.id}
           clients={clients.data || []}
           services={services.data || []}
           resources={resources.data || []}
           leads={leads.data || []}
+          prefill={bookingPrefill || { date }}
           onSubmit={(payload) => mutation.mutateAsync(payload)}
         />
       </Modal>

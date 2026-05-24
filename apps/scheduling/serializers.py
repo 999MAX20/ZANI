@@ -41,6 +41,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
         model = Appointment
         fields = "__all__"
         read_only_fields = ["created_at", "updated_at"]
+        extra_kwargs = {"end_at": {"required": False}}
 
     def validate(self, attrs):
         business = attrs.get("business") or getattr(self.instance, "business", None)

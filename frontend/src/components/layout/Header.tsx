@@ -1,5 +1,5 @@
 import { Bell, Check, LogOut, Menu, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -20,6 +20,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
   const { user, userEmail, logout } = useAuth();
   const { t } = useI18n();
   const [showNotifications, setShowNotifications] = useState(false);
+  const notificationsRef = useRef<HTMLDivElement | null>(null);
   const notifications = useQuery({
     queryKey: ["notifications"],
     queryFn: notificationsApi.list,
@@ -77,6 +78,25 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
     urgent: "bg-red-50 text-red-700",
   };
 
+  useEffect(() => {
+    function handlePointerDown(event: PointerEvent) {
+      if (notificationsRef.current?.contains(event.target as Node)) return;
+      setShowNotifications(false);
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setShowNotifications(false);
+    }
+
+    if (showNotifications) {
+      document.addEventListener("pointerdown", handlePointerDown);
+      document.addEventListener("keydown", handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [showNotifications]);
+
   return (
     <header className="sticky top-0 z-50 px-2 pt-2 sm:px-3 sm:pt-3 lg:px-6">
       <div className="glass-panel flex h-[4.45rem] items-center justify-between rounded-[1.6rem] bg-white/88 px-2.5 sm:h-16 sm:rounded-3xl sm:px-5">
@@ -89,7 +109,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
 
         <div className="flex items-center gap-1.5 sm:gap-2">
           <LanguageSelector className="hidden md:inline-flex" />
-          <div className="relative">
+          <div className="relative" ref={notificationsRef}>
             <Button
               variant="ghost"
               className="relative h-[52px] w-[52px] min-h-[52px] min-w-[52px] rounded-full px-0"

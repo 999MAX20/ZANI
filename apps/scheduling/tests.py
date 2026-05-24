@@ -198,6 +198,70 @@ class CorePlatformTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertGreater(len(response.data), 0)
 
+    def test_appointment_api_rejects_slots_outside_working_hours(self):
+        api = APIClient()
+        api.force_authenticate(self.owner)
+        client = Client.objects.create(business=self.business, full_name="Client")
+        service = Service.objects.create(business=self.business, name="Consultation", duration_minutes=60)
+        WorkingHours.objects.create(
+            business=self.business,
+            weekday=0,
+            start_time=time(9, 0),
+            end_time=time(12, 0),
+        )
+
+        response = api.post(
+            "/api/appointments/",
+            {
+                "business": self.business.id,
+                "client": client.id,
+                "service": service.id,
+                "start_at": "2026-05-11T08:00:00+05:00",
+                "status": Appointment.Statuses.CREATED,
+                "source": Appointment.Sources.MANUAL,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("outside working hours", str(response.data))
+
+    def test_appointment_api_rejects_busy_slots(self):
+        api = APIClient()
+        api.force_authenticate(self.owner)
+        client = Client.objects.create(business=self.business, full_name="Client")
+        service = Service.objects.create(business=self.business, name="Consultation", duration_minutes=60)
+        WorkingHours.objects.create(
+            business=self.business,
+            weekday=0,
+            start_time=time(9, 0),
+            end_time=time(12, 0),
+        )
+        start_at = datetime(2026, 5, 11, 10, 0, tzinfo=ZoneInfo("Asia/Almaty"))
+        Appointment.objects.create(
+            business=self.business,
+            client=client,
+            service=service,
+            start_at=start_at,
+            end_at=start_at + timedelta(minutes=60),
+        )
+
+        response = api.post(
+            "/api/appointments/",
+            {
+                "business": self.business.id,
+                "client": client.id,
+                "service": service.id,
+                "start_at": "2026-05-11T10:30:00+05:00",
+                "status": Appointment.Statuses.CREATED,
+                "source": Appointment.Sources.MANUAL,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("not available", str(response.data))
+
     def test_apply_working_hours_preset_rejects_unknown_key(self):
         api = APIClient()
         api.force_authenticate(self.owner)

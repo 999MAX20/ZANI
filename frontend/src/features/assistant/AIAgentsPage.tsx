@@ -11,6 +11,7 @@ import { EmptyState, ErrorState, LoadingState } from "../../components/ui/StateV
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { Textarea } from "../../components/ui/Textarea";
 import { useActiveBusiness } from "../../hooks/useBusiness";
+import { useI18n } from "../../lib/i18n";
 import type { AgentProfile, Id } from "../../types";
 
 type AgentFormState = {
@@ -24,19 +25,6 @@ type AgentFormState = {
   system_prompt: string;
   rules_text: string;
   escalation_text: string;
-};
-
-const emptyForm: AgentFormState = {
-  id: null,
-  name: "Zani assistant",
-  bot: "",
-  role_description: "Qualify leads and help managers reply faster.",
-  tone: "friendly",
-  language: "ru",
-  is_active: true,
-  system_prompt: "Be concise, helpful and do not promise unavailable slots.",
-  rules_text: "Do not send messages automatically.\nEscalate complex questions to a manager.",
-  escalation_text: "handoff_required: pricing dispute, medical/legal question, angry client",
 };
 
 function jsonFromLines(text: string) {
@@ -64,11 +52,24 @@ function formFromProfile(profile: AgentProfile): AgentFormState {
 }
 
 export function AIAgentsPage() {
+  const { t, language } = useI18n();
   const queryClient = useQueryClient();
   const { business, isLoading: isBusinessLoading } = useActiveBusiness();
   const profiles = useQuery({ queryKey: ["ai-agent-profiles"], queryFn: agentProfilesApi.list });
   const bots = useQuery({ queryKey: ["bots"], queryFn: botsApi.list });
-  const [form, setForm] = useState<AgentFormState>(emptyForm);
+  const createEmptyForm = (): AgentFormState => ({
+    id: null,
+    name: t("aiAgents.defaultName"),
+    bot: "",
+    role_description: t("aiAgents.defaultRoleDescription"),
+    tone: "friendly",
+    language,
+    is_active: true,
+    system_prompt: t("aiAgents.defaultSystemPrompt"),
+    rules_text: t("aiAgents.defaultRules"),
+    escalation_text: t("aiAgents.defaultEscalation"),
+  });
+  const [form, setForm] = useState<AgentFormState>(createEmptyForm);
 
   const selectedProfile = useMemo(() => profiles.data?.find((profile) => profile.id === form.id) || null, [profiles.data, form.id]);
 
@@ -102,21 +103,21 @@ export function AIAgentsPage() {
     },
   });
 
-  if (isBusinessLoading || profiles.isLoading || bots.isLoading) return <LoadingState label="Загружаем AI agents..." />;
-  if (!business) return <ErrorState message="Создайте бизнес, чтобы настраивать AI agents." />;
+  if (isBusinessLoading || profiles.isLoading || bots.isLoading) return <LoadingState label={t("aiAgents.loading")} />;
+  if (!business) return <ErrorState message={t("aiAgents.noBusiness")} />;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-brand-600">Agent profiles</p>
-          <h1 className="mt-2 text-4xl font-black tracking-tight text-midnight sm:text-5xl">AI agents</h1>
+          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-brand-600">{t("aiAgents.eyebrow")}</p>
+          <h1 className="mt-2 text-4xl font-black tracking-tight text-midnight sm:text-5xl">{t("aiAgents.title")}</h1>
           <p className="mt-3 max-w-2xl text-lg text-slate-600">
-            Управляемые профили поведения для AI drafts. Они помогают suggested replies, но не отправляют сообщения автоматически.
+            {t("aiAgents.description")}
           </p>
         </div>
-        <Button variant="secondary" onClick={() => setForm(emptyForm)}>
-          <Plus size={18} />New profile
+        <Button variant="secondary" onClick={() => setForm(createEmptyForm())}>
+          <Plus size={18} />{t("aiAgents.newProfile")}
         </Button>
       </div>
 
@@ -127,12 +128,12 @@ export function AIAgentsPage() {
         <Card className="overflow-hidden">
           <CardBody className="p-0">
             <div className="border-b border-slate-100 p-5">
-              <h2 className="font-bold text-midnight">Profiles</h2>
-              <p className="text-sm text-slate-500">{profiles.data?.length || 0} профилей</p>
+              <h2 className="font-bold text-midnight">{t("aiAgents.profiles")}</h2>
+              <p className="text-sm text-slate-500">{t("aiAgents.profilesCount", { count: profiles.data?.length || 0 })}</p>
             </div>
             {!profiles.data?.length ? (
               <div className="p-4">
-                <EmptyState title="Профилей пока нет" description="Создайте первый agent profile для бота или всего бизнеса." />
+                <EmptyState title={t("aiAgents.emptyTitle")} description={t("aiAgents.emptyDescription")} />
               </div>
             ) : null}
             <div className="divide-y divide-slate-100">
@@ -150,7 +151,7 @@ export function AIAgentsPage() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-bold text-midnight">{profile.name}</p>
-                      <p className="truncate text-sm text-slate-500">{profile.bot_name || "Business default"}</p>
+                      <p className="truncate text-sm text-slate-500">{profile.bot_name || t("aiAgents.businessDefault")}</p>
                       <div className="mt-2 flex gap-2">
                         <StatusBadge status={profile.tone} />
                         {profile.is_active ? <StatusBadge status="active" /> : <StatusBadge status="paused" />}
@@ -170,14 +171,14 @@ export function AIAgentsPage() {
                 <SlidersHorizontal size={22} />
               </div>
               <div>
-                <h2 className="text-xl font-black text-midnight">{form.id ? "Edit agent profile" : "Create agent profile"}</h2>
-                <p className="text-sm text-slate-500">Prompt behavior, tone, language and safe tool placeholders.</p>
+                <h2 className="text-xl font-black text-midnight">{form.id ? t("aiAgents.editTitle") : t("aiAgents.createTitle")}</h2>
+                <p className="text-sm text-slate-500">{t("aiAgents.formDescription")}</p>
               </div>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
               <label className="block">
-                <span className="mb-2 block text-sm font-medium text-slate-700">Name</span>
+                <span className="mb-2 block text-sm font-medium text-slate-700">{t("aiAgents.name")}</span>
                 <input
                   className="h-11 w-full rounded-2xl border border-slate-200 bg-white/85 px-3 text-sm outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100"
                   value={form.name}
@@ -186,13 +187,13 @@ export function AIAgentsPage() {
               </label>
 
               <label className="block">
-                <span className="mb-2 block text-sm font-medium text-slate-700">Bot</span>
+                <span className="mb-2 block text-sm font-medium text-slate-700">{t("aiAgents.bot")}</span>
                 <select
                   className="h-11 w-full rounded-2xl border border-slate-200 bg-white/85 px-3 text-sm outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100"
                   value={form.bot}
                   onChange={(event) => setForm((current) => ({ ...current, bot: event.target.value }))}
                 >
-                  <option value="">Business default</option>
+                  <option value="">{t("aiAgents.businessDefault")}</option>
                   {(bots.data || []).map((bot) => (
                     <option key={bot.id} value={bot.id}>
                       {bot.name}
@@ -202,22 +203,22 @@ export function AIAgentsPage() {
               </label>
 
               <label className="block">
-                <span className="mb-2 block text-sm font-medium text-slate-700">Tone</span>
+                <span className="mb-2 block text-sm font-medium text-slate-700">{t("aiAgents.tone")}</span>
                 <select
                   className="h-11 w-full rounded-2xl border border-slate-200 bg-white/85 px-3 text-sm outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100"
                   value={form.tone}
                   onChange={(event) => setForm((current) => ({ ...current, tone: event.target.value as AgentProfile["tone"] }))}
                 >
-                  <option value="friendly">Friendly</option>
-                  <option value="expert">Expert</option>
-                  <option value="formal">Formal</option>
-                  <option value="sales">Sales</option>
-                  <option value="support">Support</option>
+                  <option value="friendly">{t("status.friendly")}</option>
+                  <option value="expert">{t("status.expert")}</option>
+                  <option value="formal">{t("status.formal")}</option>
+                  <option value="sales">{t("status.sales")}</option>
+                  <option value="support">{t("status.support")}</option>
                 </select>
               </label>
 
               <label className="block">
-                <span className="mb-2 block text-sm font-medium text-slate-700">Language</span>
+                <span className="mb-2 block text-sm font-medium text-slate-700">{t("aiAgents.language")}</span>
                 <input
                   className="h-11 w-full rounded-2xl border border-slate-200 bg-white/85 px-3 text-sm outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100"
                   value={form.language}
@@ -228,22 +229,22 @@ export function AIAgentsPage() {
 
             <div className="mt-4 grid gap-4">
               <Textarea
-                label="Role description"
+                label={t("aiAgents.roleDescription")}
                 value={form.role_description}
                 onChange={(event) => setForm((current) => ({ ...current, role_description: event.target.value }))}
               />
               <Textarea
-                label="System prompt"
+                label={t("aiAgents.systemPrompt")}
                 value={form.system_prompt}
                 onChange={(event) => setForm((current) => ({ ...current, system_prompt: event.target.value }))}
               />
               <Textarea
-                label="Rules"
+                label={t("aiAgents.rules")}
                 value={form.rules_text}
                 onChange={(event) => setForm((current) => ({ ...current, rules_text: event.target.value }))}
               />
               <Textarea
-                label="Escalation rules"
+                label={t("aiAgents.escalationRules")}
                 value={form.escalation_text}
                 onChange={(event) => setForm((current) => ({ ...current, escalation_text: event.target.value }))}
               />
@@ -251,7 +252,7 @@ export function AIAgentsPage() {
 
             <div className="mt-5 flex flex-col gap-3 rounded-3xl border border-ai-100 bg-ai-50 p-4 text-sm text-ai-800 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2 font-semibold">
-                <ShieldCheck size={18} /> Tools are placeholders until confirmation flows are implemented.
+                <ShieldCheck size={18} /> {t("aiAgents.toolsPlaceholder")}
               </div>
               <label className="inline-flex items-center gap-2 font-semibold">
                 <input
@@ -259,13 +260,13 @@ export function AIAgentsPage() {
                   checked={form.is_active}
                   onChange={(event) => setForm((current) => ({ ...current, is_active: event.target.checked }))}
                 />
-                Active
+                {t("status.active")}
               </label>
             </div>
 
             <Button className="mt-5" variant="ai" onClick={() => saveMutation.mutate()} isLoading={saveMutation.isPending}>
               {form.id ? <Save size={18} /> : <CheckCircle2 size={18} />}
-              {form.id ? "Save profile" : "Create profile"}
+              {form.id ? t("aiAgents.saveProfile") : t("aiAgents.createProfile")}
             </Button>
           </CardBody>
         </Card>
@@ -275,8 +276,7 @@ export function AIAgentsPage() {
         <CardBody className="flex items-start gap-3">
           <Bot className="mt-1 text-brand-600" size={20} />
           <p className="text-sm leading-6 text-slate-600">
-            При генерации suggested reply для bot conversation backend сначала ищет активный profile у конкретного бота,
-            затем fallback profile бизнеса. Auto-send не включается.
+            {t("aiAgents.note")}
           </p>
         </CardBody>
       </Card>

@@ -16,11 +16,11 @@ import { useEntityData } from "../../hooks/useEntityData";
 import { useI18n } from "../../lib/i18n";
 import type { WorkingHours } from "../../types";
 
-const weekdays = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
-const presetOptions: Array<{ value: WorkingHoursPreset; label: string; description: string }> = [
-  { value: "weekdays_9_18", label: "Пн-Пт 09:00-18:00", description: "Сб-Вс выходной" },
-  { value: "daily_9_20", label: "Ежедневно 09:00-20:00", description: "Работает каждый день" },
-  { value: "mon_sat_9_18", label: "Пн-Сб 09:00-18:00", description: "Вс выходной" },
+const weekdays = ["weekday.monShort", "weekday.tueShort", "weekday.wedShort", "weekday.thuShort", "weekday.friShort", "weekday.satShort", "weekday.sunShort"];
+const presetOptions: Array<{ value: WorkingHoursPreset; labelKey: string; descriptionKey: string }> = [
+  { value: "weekdays_9_18", labelKey: "workingHours.preset.weekdays", descriptionKey: "workingHours.preset.weekendsOff" },
+  { value: "daily_9_20", labelKey: "workingHours.preset.daily", descriptionKey: "workingHours.preset.everyDay" },
+  { value: "mon_sat_9_18", labelKey: "workingHours.preset.monSat", descriptionKey: "workingHours.preset.sunOff" },
 ];
 
 export function WorkingHoursPage() {
@@ -106,7 +106,7 @@ export function WorkingHoursPage() {
             <Select
               value={preset}
               onChange={(event) => setPreset(event.target.value as WorkingHoursPreset)}
-              options={presetOptions.map((item) => ({ value: item.value, label: `${item.label} · ${item.description}` }))}
+              options={presetOptions.map((item) => ({ value: item.value, label: `${t(item.labelKey)} · ${t(item.descriptionKey)}` }))}
             />
             <Button type="button" isLoading={presetMutation.isPending} onClick={() => presetMutation.mutate()}>
               {t("workingHours.applyPreset")}
@@ -127,7 +127,7 @@ export function WorkingHoursPage() {
         emptyDescription={t("workingHours.emptyText")}
         emptyAction={<Button variant="secondary" onClick={() => setOpen(true)}><Plus size={16} />{t("workingHours.setupWeek")}</Button>}
         columns={[
-          { header: t("workingHours.day"), cell: (item) => weekdays[item.weekday] },
+          { header: t("workingHours.day"), cell: (item) => t(weekdays[item.weekday] || "weekday.monShort") },
           { header: t("workingHours.target"), cell: (item) => resources.data?.find((resource) => resource.id === item.resource)?.name || t("workingHours.wholeBusiness") },
           { header: t("workingHours.time"), cell: (item) => item.is_day_off ? t("workingHours.dayOff") : `${item.start_time.slice(0, 5)} - ${item.end_time.slice(0, 5)}` },
           { header: t("appointments.actions"), cell: (item) => <Button variant="ghost" onClick={() => { setEditingResource(item.resource || null); setOpen(true); }}>{t("workingHours.editWeek")}</Button> },

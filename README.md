@@ -5624,6 +5624,10 @@ Frontend production build: OK
   - повторяемые карточки коннекторов переведены на RU / KK / EN: статусы доступности, setup states, business value, тариф, owner next step и read-only notice;
   - connector hints теперь локализованы и сохраняют честную пилотную логику: self-service, request, upgrade и roadmap без ложного auto-connect;
   - API-контракты connector capabilities и business connectors не менялись.
+- Working hours presets i18n pass:
+  - страница графика работы больше не хранит русские константы дней недели и quick-preset labels;
+  - шаблоны Пн-Пт / ежедневно / Пн-Сб локализованы через RU / KK / EN словари;
+  - API-контракт `applyPreset` и weekly working-hours form не менялись.
 
 Проверка:
 
@@ -5655,6 +5659,8 @@ Full backend tests after onboarding i18n pass: 288 OK
 Frontend production build after onboarding i18n pass: OK
 Full backend tests after connector cards i18n pass: 288 OK
 Frontend production build after connector cards i18n pass: OK
+Full backend tests after working hours presets i18n pass: 288 OK
+Frontend production build after working hours presets i18n pass: OK
 Visual smoke screenshots: desktop collapsed rail, desktop expanded rail, mobile dashboard OK
 ```
 

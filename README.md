@@ -5878,3 +5878,7 @@ Route access stability pass: merchant route permission checks now use `/api/auth
 
 Frontend production build after route access stability pass: OK
 Targeted Playwright route audit after route access stability pass: business owner core routes render without 404 OK
+
+Booking form stability pass: opening a booking from a calendar free slot no longer clears the preselected slot on mount, and the one-click quick working-hours fix now applies to the selected resource when a master/resource is selected.
+
+Frontend production build after booking form stability pass: OK

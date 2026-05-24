@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
 import { z } from "zod";
@@ -99,6 +99,7 @@ export function AppointmentForm({
   const serviceId = form.watch("service");
   const resourceId = form.watch("resource");
   const date = form.watch("date");
+  const skipSlotResetRef = useRef(true);
   const queryClient = useQueryClient();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const selectedService = services.find((service) => service.id === Number(serviceId));
@@ -108,7 +109,7 @@ export function AppointmentForm({
   const hasResources = activeResources.length > 0;
   const selectedDateLabel = new Date(`${date}T00:00:00`).toLocaleDateString(language === "en" ? "en-US" : language === "kk" ? "kk-KZ" : "ru-RU", { weekday: "long", day: "2-digit", month: "long" });
   const quickHoursMutation = useMutation({
-    mutationFn: () => workingHoursApi.applyPreset({ business: businessId, preset: "daily_9_20" }),
+    mutationFn: () => workingHoursApi.applyPreset({ business: businessId, preset: "daily_9_20", resource: resourceId ? Number(resourceId) : "" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["working-hours"] });
       queryClient.invalidateQueries({ queryKey: ["available-slots"] });
@@ -132,6 +133,10 @@ export function AppointmentForm({
 
   useEffect(() => {
     if (!initial) {
+      if (skipSlotResetRef.current) {
+        skipSlotResetRef.current = false;
+        return;
+      }
       form.setValue("slot", "");
       setSubmitError(null);
     }

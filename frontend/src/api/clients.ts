@@ -1,12 +1,12 @@
 import { createCrudApi } from "./crud";
-import { apiClient } from "./client";
+import { apiClient, unwrapList } from "./client";
 import type { Client, DuplicateCheckResponse, Id } from "../types";
 
 export const clientsApi = {
   ...createCrudApi<Client>("/api/clients/"),
   listFiltered: async (params: { q?: string; source?: string; tag?: Id | string; segment?: Id | string }) => {
     const { data } = await apiClient.get<Client[] | { results: Client[] }>("/api/clients/", { params });
-    return Array.isArray(data) ? data : data.results;
+    return unwrapList(data);
   },
   checkDuplicates: async (payload: {
     business: Id;

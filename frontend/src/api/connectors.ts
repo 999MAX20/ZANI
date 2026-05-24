@@ -1,4 +1,4 @@
-import { apiClient } from "./client";
+import { apiClient, unwrapList } from "./client";
 import { createCrudApi } from "./crud";
 import type { BusinessConnector, BusinessEvent, ConnectorCapability, ConnectorCredential, ConnectorSyncRun, Id } from "../types";
 
@@ -33,8 +33,8 @@ export type WhatsAppConnectionRequestPayload = {
 export const businessConnectorsApi = {
   ...createCrudApi<BusinessConnector, BusinessConnectorPayload, Partial<BusinessConnectorPayload>>("/api/business-connectors/"),
   capabilities: async () => {
-    const { data } = await apiClient.get<ConnectorCapability[]>("/api/business-connectors/capabilities/");
-    return data;
+    const { data } = await apiClient.get<ConnectorCapability[] | { results: ConnectorCapability[] }>("/api/business-connectors/capabilities/");
+    return unwrapList(data);
   },
   connect: async (id: Id) => {
     const { data } = await apiClient.post<BusinessConnector>(`/api/business-connectors/${id}/connect/`);

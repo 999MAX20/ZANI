@@ -1,5 +1,5 @@
 import { createCrudApi } from "./crud";
-import { apiClient } from "./client";
+import { apiClient, unwrapList } from "./client";
 import type { ActivityEvent, Client, Id, Note, Segment, SegmentFilter, Tag, TaggedObject } from "../types";
 
 export const activityEventsApi = createCrudApi<ActivityEvent>("/api/activity-events/");
@@ -11,7 +11,7 @@ export const taggedObjectsApi = {
     const { data } = await apiClient.get<TaggedObject[] | { results: TaggedObject[] }>("/api/tagged-objects/", {
       params: { entity_type, entity_id },
     });
-    return Array.isArray(data) ? data : data.results;
+    return unwrapList(data);
   },
 };
 export const segmentFiltersApi = createCrudApi<SegmentFilter>("/api/segment-filters/");

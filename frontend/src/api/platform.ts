@@ -1,4 +1,4 @@
-import { apiClient } from "./client";
+import { apiClient, unwrapList } from "./client";
 import type { PlatformMerchant, PlatformOperationsHealth, PlatformOverview, PlatformSupportAction } from "../types";
 
 export const platformApi = {
@@ -11,8 +11,8 @@ export const platformApi = {
     return data;
   },
   merchants: async () => {
-    const { data } = await apiClient.get<PlatformMerchant[]>("/api/platform/merchants/");
-    return data;
+    const { data } = await apiClient.get<PlatformMerchant[] | { results: PlatformMerchant[] }>("/api/platform/merchants/");
+    return unwrapList(data);
   },
   merchant: async (id: number | string) => {
     const { data } = await apiClient.get<PlatformMerchant>(`/api/platform/merchants/${id}/`);

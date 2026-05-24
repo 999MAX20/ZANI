@@ -5890,3 +5890,7 @@ Frontend production build after frontend API timeout pass: OK
 Merchant integrations UX cleanup pass: Telegram setup now presents a support-assisted owner flow by default, hides secret connection input inside an advanced pilot block, removes visible webhook/provider wording from normal merchant status cards, localizes request/status labels, and removes mixed RU/EN/KK wording from the integrations cards.
 
 Frontend production build after merchant integrations UX cleanup pass: OK
+
+Frontend API list-shape hardening pass: manual list endpoints for clients, tagged objects, integration event logs, connector capabilities and platform merchants now use the shared `unwrapList` helper. Pages stay stable if the backend returns either a plain array or DRF paginated `{ results }` response.
+
+Frontend production build after frontend API list-shape hardening pass: OK

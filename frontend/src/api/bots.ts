@@ -1,5 +1,5 @@
 import { createCrudApi } from "./crud";
-import { apiClient } from "./client";
+import { apiClient, unwrapList } from "./client";
 import type { Bot, BotChannel, BotConversation, BotMessage, IntegrationEventLog } from "../types";
 
 export const botsApi = createCrudApi<Bot>("/api/bots/");
@@ -10,7 +10,7 @@ export const botMessagesApi = createCrudApi<BotMessage>("/api/bot-messages/");
 export const integrationEventLogsApi = {
   list: async (params?: { provider?: string; channel?: string; status?: string; direction?: string }) => {
     const { data } = await apiClient.get<IntegrationEventLog[] | { results: IntegrationEventLog[] }>("/api/integration-event-logs/", { params });
-    return Array.isArray(data) ? data : data.results;
+    return unwrapList(data);
   },
 };
 

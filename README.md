@@ -5616,6 +5616,10 @@ Frontend production build: OK
   - platform overview page переведена на RU / KK / EN для заголовка, метрик, operational signals, MRR-блока и loading/error states;
   - форматирование MRR учитывает выбранный язык интерфейса;
   - API-контракт `/api/platform/overview/` не менялся.
+- Onboarding i18n pass:
+  - быстрый старт, шаблоны ниш, setup checklist, первый канал и первое сообщение переведены на RU / KK / EN;
+  - CTA на dashboard, заявки, календарь, настройки, диалоги и интеграции используют общий словарь навигации;
+  - API-контракты onboarding templates/status/setup-channel/create-first-message не менялись.
 
 Проверка:
 
@@ -5643,6 +5647,8 @@ Full backend tests after shared forms i18n pass: 288 OK
 Frontend production build after shared forms i18n pass: OK
 Full backend tests after platform overview i18n pass: 288 OK
 Frontend production build after platform overview i18n pass: OK
+Full backend tests after onboarding i18n pass: 288 OK
+Frontend production build after onboarding i18n pass: OK
 Visual smoke screenshots: desktop collapsed rail, desktop expanded rail, mobile dashboard OK
 ```
 

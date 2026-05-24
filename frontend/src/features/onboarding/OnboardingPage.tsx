@@ -10,10 +10,12 @@ import { Card, CardBody } from "../../components/ui/Card";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { ErrorState, LoadingState } from "../../components/ui/StateViews";
 import { useActiveBusiness } from "../../hooks/useBusiness";
+import { useI18n } from "../../lib/i18n";
 import type { Business } from "../../types";
 
 export function OnboardingPage() {
   const queryClient = useQueryClient();
+  const { t } = useI18n();
   const { business, isLoading } = useActiveBusiness();
   const [selectedTemplate, setSelectedTemplate] = useState<Business["business_type"]>("other");
   const templates = useQuery({ queryKey: ["onboarding-templates"], queryFn: onboardingApi.templates });
@@ -82,7 +84,7 @@ export function OnboardingPage() {
   });
 
   if (isLoading || templates.isLoading || status.isLoading) return <LoadingState />;
-  if (!business) return <ErrorState message="Сначала создайте бизнес в настройках." />;
+  if (!business) return <ErrorState message={t("onboarding.noBusiness")} />;
 
   const currentStatus = status.data;
   const selected = templates.data?.find((template) => template.key === selectedTemplate) || templates.data?.[0];
@@ -91,9 +93,9 @@ export function OnboardingPage() {
   return (
     <>
       <PageHeader
-        title="Быстрый старт"
-        description="Короткий маршрут до первой рабочей CRM: ниша, канал, первое сообщение и проверка заявки без лишних настроек."
-        actions={<Link to="/dashboard"><Button variant="secondary">Вернуться на dashboard</Button></Link>}
+        title={t("onboarding.title")}
+        description={t("onboarding.description")}
+        actions={<Link to="/dashboard"><Button variant="secondary">{t("onboarding.backDashboard")}</Button></Link>}
       />
       {error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(error)} /></div> : null}
 
@@ -105,8 +107,8 @@ export function OnboardingPage() {
                 <Sparkles size={22} />
               </div>
               <div>
-              <h2 className="text-xl font-black text-midnight">Шаблон ниши</h2>
-                <p className="mt-1 text-sm text-slate-500">Минимальная структура для старта: услуги, воронка, график, ответы и базовые автоматизации.</p>
+                <h2 className="text-xl font-black text-midnight">{t("onboarding.templateTitle")}</h2>
+                <p className="mt-1 text-sm text-slate-500">{t("onboarding.templateText")}</p>
               </div>
             </div>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -125,19 +127,19 @@ export function OnboardingPage() {
             {selected ? (
               <div className="mt-5 rounded-3xl border border-slate-100 bg-slate-50 p-4">
                 <p className="font-black text-midnight">{selected.label}</p>
-                <TemplateLine label="Pipeline" items={selected.stages} />
-                <TemplateLine label="Services" items={selected.services} />
-                <TemplateLine label="Resources" items={selected.resources} />
-                <TemplateLine label="Replies" items={selected.quick_replies} />
+                <TemplateLine label={t("onboarding.templatePipeline")} items={selected.stages} />
+                <TemplateLine label={t("onboarding.templateServices")} items={selected.services} />
+                <TemplateLine label={t("onboarding.templateResources")} items={selected.resources} />
+                <TemplateLine label={t("onboarding.templateReplies")} items={selected.quick_replies} />
               </div>
             ) : null}
             <div className="mt-5 flex flex-wrap gap-2">
               <Button type="button" onClick={() => applyMutation.mutate()} isLoading={applyMutation.isPending}>
                 <Play size={16} />
-                Применить шаблон
+                {t("onboarding.applyTemplate")}
               </Button>
               <Button type="button" variant="secondary" onClick={() => demoMutation.mutate()} isLoading={demoMutation.isPending}>
-                Создать demo flow
+                {t("onboarding.createDemoFlow")}
               </Button>
             </div>
           </CardBody>
@@ -147,9 +149,9 @@ export function OnboardingPage() {
           <CardBody>
             <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Setup checklist</p>
-                <h2 className="mt-2 text-xl font-black text-midnight">Готовность CRM</h2>
-                <p className="mt-1 text-sm text-slate-500">Каждый пункт ведёт к реальному действию, которое менеджер сможет повторить в работе.</p>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">{t("onboarding.checklistEyebrow")}</p>
+                <h2 className="mt-2 text-xl font-black text-midnight">{t("onboarding.checklistTitle")}</h2>
+                <p className="mt-1 text-sm text-slate-500">{t("onboarding.checklistText")}</p>
               </div>
               <div className="rounded-3xl bg-slate-50 px-5 py-3 text-center">
                 <p className="text-3xl font-black text-midnight">{currentStatus?.progress || 0}%</p>
@@ -169,9 +171,9 @@ export function OnboardingPage() {
               ))}
             </div>
             <div className="mt-5 grid gap-2 sm:grid-cols-3">
-              <Link to="/dashboard/leads"><Button className="w-full" variant="secondary">Заявки</Button></Link>
-              <Link to="/dashboard/calendar"><Button className="w-full" variant="secondary">Календарь</Button></Link>
-              <Link to="/dashboard/settings"><Button className="w-full" variant="secondary">Настройки</Button></Link>
+              <Link to="/dashboard/leads"><Button className="w-full" variant="secondary">{t("nav.leads")}</Button></Link>
+              <Link to="/dashboard/calendar"><Button className="w-full" variant="secondary">{t("nav.calendar")}</Button></Link>
+              <Link to="/dashboard/settings"><Button className="w-full" variant="secondary">{t("nav.settings")}</Button></Link>
             </div>
           </CardBody>
         </Card>
@@ -185,9 +187,9 @@ export function OnboardingPage() {
                 <PlugZap size={22} />
               </div>
               <div>
-                <h2 className="text-xl font-black text-midnight">Первый канал</h2>
+                <h2 className="text-xl font-black text-midnight">{t("onboarding.firstChannelTitle")}</h2>
                 <p className="mt-1 text-sm leading-6 text-slate-500">
-                  Для пилота можно начать с Website channel: он не требует внешних токенов и сразу показывает путь от формы или чата к заявке и inbox.
+                  {t("onboarding.firstChannelText")}
                 </p>
               </div>
             </div>
@@ -203,7 +205,7 @@ export function OnboardingPage() {
               </Button>
             </div>
             <div className="mt-4 rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-              Telegram/WhatsApp на этом шаге создают безопасный mock connector с recovery state. Реальные токены подключаются позже в разделе интеграций.
+              {t("onboarding.mockConnectorText")}
             </div>
           </CardBody>
         </Card>
@@ -215,18 +217,18 @@ export function OnboardingPage() {
                 <MessageSquareText size={22} />
               </div>
               <div>
-                <h2 className="text-xl font-black text-midnight">Первое сообщение</h2>
+                <h2 className="text-xl font-black text-midnight">{t("onboarding.firstMessageTitle")}</h2>
                 <p className="mt-1 text-sm leading-6 text-slate-500">
-                  Создаёт тестовое входящее сообщение, клиента и заявку, чтобы менеджер увидел реальный inbox-сценарий без ручной настройки.
+                  {t("onboarding.firstMessageText")}
                 </p>
               </div>
             </div>
             <div className="mt-5 flex flex-wrap gap-2">
               <Button type="button" onClick={() => firstMessageMutation.mutate()} isLoading={firstMessageMutation.isPending}>
-                Создать первое сообщение
+                {t("onboarding.createFirstMessage")}
               </Button>
-              <Link to="/dashboard/conversations"><Button type="button" variant="secondary">Открыть диалоги</Button></Link>
-              <Link to="/dashboard/integrations"><Button type="button" variant="secondary">Интеграции</Button></Link>
+              <Link to="/dashboard/conversations"><Button type="button" variant="secondary">{t("onboarding.openConversations")}</Button></Link>
+              <Link to="/dashboard/integrations"><Button type="button" variant="secondary">{t("nav.integrations")}</Button></Link>
             </div>
           </CardBody>
         </Card>

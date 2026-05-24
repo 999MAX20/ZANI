@@ -5819,3 +5819,5 @@ Frontend production build after remaining frontend i18n cleanup pass: OK
 Remaining i18n cleanup: conversations, integrations, WhatsApp setup, bot creation, lead drag handle, shared email/URL labels and public navigation now use RU / KK / EN dictionary keys instead of hardcoded UI text.
 
 Invite registration QA pass: verified backend coverage for owner-created invitations, WhatsApp/Telegram contact validation, expired/revoked/already accepted token handling, existing-user acceptance, password validation, role assignment and active BusinessMember creation. Current frontend invite screen previews token status, blocks non-pending accepts and redirects accepted employees to login.
+
+Google / Apple readiness pass: social auth remains optional and controlled by env. Backend validates provider ID tokens against configured allowed client IDs, links/creates local Django users and returns the normal JWT pair. Frontend buttons stay disabled with clear "soon/not configured" state when `VITE_GOOGLE_CLIENT_ID` / `VITE_APPLE_CLIENT_ID` are empty, so email/password login is not blocked.

@@ -195,13 +195,13 @@ export function OnboardingPage() {
             </div>
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
               <Button type="button" onClick={() => setupChannelMutation.mutate("website")} isLoading={setupChannelMutation.isPending}>
-                Website
+                {t("onboarding.channelWebsite")}
               </Button>
               <Button type="button" variant="secondary" onClick={() => setupChannelMutation.mutate("telegram")} isLoading={setupChannelMutation.isPending}>
-                Telegram mock
+                {t("onboarding.channelTelegram")}
               </Button>
               <Button type="button" variant="secondary" onClick={() => setupChannelMutation.mutate("whatsapp")} isLoading={setupChannelMutation.isPending}>
-                WhatsApp mock
+                {t("onboarding.channelWhatsapp")}
               </Button>
             </div>
             <div className="mt-4 rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">

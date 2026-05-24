@@ -5898,3 +5898,7 @@ Frontend production build after frontend API list-shape hardening pass: OK
 Mobile navigation regression pass: Playwright mobile smoke now clicks the bottom navigation entries for leads, conversations and tasks before opening the full mobile sidebar and navigating to calendar. This covers the production complaint where mobile bottom controls could appear visible but fail to navigate.
 
 Targeted Playwright mobile smoke after mobile navigation regression pass: OK
+
+Owner onboarding language cleanup pass: first-channel onboarding no longer shows developer/mock wording to merchants. Website, Telegram and WhatsApp setup actions now use owner-friendly RU / KK / EN labels and explain that external channels are connected through integrations and support.
+
+Frontend production build after owner onboarding language cleanup pass: OK

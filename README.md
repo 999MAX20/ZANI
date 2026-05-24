@@ -5620,6 +5620,10 @@ Frontend production build: OK
   - быстрый старт, шаблоны ниш, setup checklist, первый канал и первое сообщение переведены на RU / KK / EN;
   - CTA на dashboard, заявки, календарь, настройки, диалоги и интеграции используют общий словарь навигации;
   - API-контракты onboarding templates/status/setup-channel/create-first-message не менялись.
+- Integration connector cards i18n pass:
+  - повторяемые карточки коннекторов переведены на RU / KK / EN: статусы доступности, setup states, business value, тариф, owner next step и read-only notice;
+  - connector hints теперь локализованы и сохраняют честную пилотную логику: self-service, request, upgrade и roadmap без ложного auto-connect;
+  - API-контракты connector capabilities и business connectors не менялись.
 
 Проверка:
 
@@ -5649,6 +5653,8 @@ Full backend tests after platform overview i18n pass: 288 OK
 Frontend production build after platform overview i18n pass: OK
 Full backend tests after onboarding i18n pass: 288 OK
 Frontend production build after onboarding i18n pass: OK
+Full backend tests after connector cards i18n pass: 288 OK
+Frontend production build after connector cards i18n pass: OK
 Visual smoke screenshots: desktop collapsed rail, desktop expanded rail, mobile dashboard OK
 ```
 

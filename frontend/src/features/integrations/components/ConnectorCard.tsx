@@ -5,17 +5,11 @@ import { getApiErrorMessage } from "../../../api/client";
 import { businessConnectorsApi } from "../../../api/connectors";
 import { Button } from "../../../components/ui/Button";
 import { ErrorState } from "../../../components/ui/StateViews";
+import { useI18n } from "../../../lib/i18n";
 import type { BusinessConnector, ConnectorCapability, Id } from "../../../types";
 
-function availabilityLabel(availability: string) {
-  const labels: Record<string, string> = {
-    included: "В тарифе",
-    upgrade: "В тарифе выше",
-    request: "По заявке",
-    soon: "Скоро",
-    roadmap: "Roadmap",
-  };
-  return labels[availability] || availability;
+function availabilityLabel(availability: string, t: (key: string) => string) {
+  return t(`integrations.availability.${availability}`) || availability;
 }
 
 function planLabel(plan: string) {
@@ -27,15 +21,8 @@ function planLabel(plan: string) {
   return labels[plan] || plan;
 }
 
-function setupStateLabel(state: string) {
-  const labels: Record<string, string> = {
-    active: "Можно включать сейчас",
-    setup_required: "Нужна настройка",
-    request_required: "Подключение через заявку",
-    coming_soon: "Готовится",
-    roadmap: "В дорожной карте",
-  };
-  return labels[state] || state;
+function setupStateLabel(state: string, t: (key: string) => string) {
+  return t(`integrations.setupState.${state}`) || state;
 }
 
 function merchantStatus(connector: BusinessConnector | undefined, capability: ConnectorCapability) {
@@ -49,17 +36,7 @@ function merchantStatus(connector: BusinessConnector | undefined, capability: Co
   return "available";
 }
 
-function merchantStatusUi(status: string) {
-  const labels: Record<string, string> = {
-    available: "Готово к подключению",
-    connected: "Подключено",
-    setup_required: "Требует настройки",
-    pending_request: "Подключается по заявке",
-    coming_soon: "Скоро",
-    unavailable_on_plan: "Недоступно в текущем тарифе",
-    error: "Ошибка подключения",
-    disconnected: "Отключено",
-  };
+function merchantStatusUi(status: string, t: (key: string) => string) {
   const classes: Record<string, string> = {
     available: "bg-blue-50 text-blue-700 ring-blue-100",
     connected: "bg-emerald-50 text-emerald-700 ring-emerald-100",
@@ -70,53 +47,44 @@ function merchantStatusUi(status: string) {
     error: "bg-red-50 text-red-700 ring-red-100",
     disconnected: "bg-slate-100 text-slate-700 ring-slate-200",
   };
-  return { label: labels[status] || status, className: classes[status] || classes.coming_soon };
+  return { label: t(`integrations.merchantStatus.${status}`) || status, className: classes[status] || classes.coming_soon };
 }
 
-function connectorActionHint(capability: ConnectorCapability) {
+function connectorActionHint(capability: ConnectorCapability, t: (key: string, vars?: Record<string, string | number>) => string) {
   if (capability.action_behavior === "self_service") {
-    return "Можно включить в пилоте без внешнего провайдера. Это безопасный self-service коннектор.";
+    return t("integrations.connectorHint.selfService");
   }
   if (capability.action_behavior === "request") {
-    return "Кнопка создаёт заявку подключения внутри ZANI. Реальное подключение выполняет команда ZANI вручную.";
+    return t("integrations.connectorHint.request");
   }
   if (capability.availability === "upgrade") {
-    return `Доступно на тарифе ${planLabel(capability.required_plan)} или выше. Сейчас показываем честный upsell без сломанной кнопки.`;
+    return t("integrations.connectorHint.upgrade", { plan: planLabel(capability.required_plan) });
   }
-  return "Показываем как будущую возможность, без обещания готового production-подключения.";
+  return t("integrations.connectorHint.roadmap");
 }
 
-function connectorTitle(capability: ConnectorCapability) {
-  const labels: Record<string, string> = {
-    communications: "Коммуникации",
-    sales: "Продажи",
-    calendar: "Календарь",
-    finance: "Финансы",
-    inventory: "Склад",
-    marketing: "Маркетинг",
-    custom: "Кастом",
-  };
-  return labels[capability.capability] || capability.capability;
+function connectorTitle(capability: ConnectorCapability, t: (key: string) => string) {
+  return t(`integrations.capability.${capability.capability}`) || capability.capability;
 }
 
-function connectorActionLabel(capability: ConnectorCapability, connector?: BusinessConnector) {
+function connectorActionLabel(capability: ConnectorCapability, t: (key: string) => string, connector?: BusinessConnector) {
   if (connector) {
-    if (connector.status === "disabled") return "Включить снова";
-    if (connector.status === "connected") return "Подключено";
-    return capability.action_behavior === "request" ? "Заявка отправлена" : "Продолжить настройку";
+    if (connector.status === "disabled") return t("integrations.action.reconnect");
+    if (connector.status === "connected") return t("integrations.action.connected");
+    return capability.action_behavior === "request" ? t("integrations.action.requestSent") : t("integrations.action.continueSetup");
   }
-  return capability.primary_action_label || capability.cta_label || "Создать подключение";
+  return capability.primary_action_label || capability.cta_label || t("integrations.action.create");
 }
 
-function connectorSetupMessage(capability: ConnectorCapability, connector?: BusinessConnector) {
+function connectorSetupMessage(capability: ConnectorCapability, t: (key: string) => string, connector?: BusinessConnector) {
   if (connector?.status === "connected") {
-    return "Канал активен. Новые обращения и события будут попадать в Inbox, CRM, аналитику и автоматизации.";
+    return t("integrations.setupMessage.connected");
   }
   if (connector?.status === "needs_attention") {
-    return "Подключение создано и ожидает настройки или ручной проверки команды ZANI.";
+    return t("integrations.setupMessage.needsAttention");
   }
   if (connector?.status === "disabled") {
-    return "Канал отключён. Его можно вернуть после повторной настройки или обращения в поддержку.";
+    return t("integrations.setupMessage.disabled");
   }
   return capability.next_step;
 }
@@ -133,6 +101,7 @@ export function ConnectorCard({
   canManage: boolean;
 }) {
   const queryClient = useQueryClient();
+  const { t } = useI18n();
 
   const createConnector = useMutation({
     mutationFn: () =>
@@ -166,8 +135,8 @@ export function ConnectorCard({
   const isSelfService = capability.action_behavior === "self_service";
   const isRequestOnly = capability.action_behavior === "request";
   const isRoadmapOnly = !isSelfService && !isRequestOnly;
-  const primaryLabel = connectorActionLabel(capability, connector);
-  const statusUi = merchantStatusUi(merchantStatus(connector, capability));
+  const primaryLabel = connectorActionLabel(capability, t, connector);
+  const statusUi = merchantStatusUi(merchantStatus(connector, capability), t);
 
   return (
     <div className="rounded-3xl border border-white/80 bg-white/90 p-5 shadow-soft backdrop-blur-xl">
@@ -178,7 +147,7 @@ export function ConnectorCard({
           </div>
           <div className="min-w-0">
             <p className="text-lg font-black text-midnight">{capability.label}</p>
-            <p className="mt-1 text-sm text-slate-500">{connectorTitle(capability)}</p>
+            <p className="mt-1 text-sm text-slate-500">{connectorTitle(capability, t)}</p>
           </div>
         </div>
         <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-black ring-1 ${statusUi.className}`}>
@@ -197,23 +166,23 @@ export function ConnectorCard({
 
       <div className="mt-5 grid gap-3 text-sm text-slate-600 sm:grid-cols-3">
         <div className="rounded-2xl bg-slate-50 p-3">
-          <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Что даёт бизнесу</p>
-          <p className="mt-1 font-semibold text-midnight">{connectorTitle(capability)}</p>
+          <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{t("integrations.card.businessValue")}</p>
+          <p className="mt-1 font-semibold text-midnight">{connectorTitle(capability, t)}</p>
         </div>
         <div className="rounded-2xl bg-slate-50 p-3">
-          <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Тариф</p>
-          <p className="mt-1 font-semibold text-midnight">{availabilityLabel(capability.availability)} · {planLabel(capability.required_plan)}</p>
+          <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{t("integrations.card.plan")}</p>
+          <p className="mt-1 font-semibold text-midnight">{availabilityLabel(capability.availability, t)} · {planLabel(capability.required_plan)}</p>
         </div>
         <div className="rounded-2xl bg-slate-50 p-3">
-          <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Подключение</p>
-          <p className="mt-1 font-semibold text-midnight">{setupStateLabel(capability.setup_state)}</p>
+          <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{t("integrations.card.connection")}</p>
+          <p className="mt-1 font-semibold text-midnight">{setupStateLabel(capability.setup_state, t)}</p>
         </div>
       </div>
 
       <div className="mt-4 rounded-3xl border border-slate-100 bg-slate-50 p-4">
-        <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Что делать владельцу</p>
-        <p className="mt-2 text-sm leading-6 text-slate-600">{connectorSetupMessage(capability, connector)}</p>
-        <p className="mt-2 text-xs font-semibold text-slate-500">{connectorActionHint(capability)}</p>
+        <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{t("integrations.card.ownerAction")}</p>
+        <p className="mt-2 text-sm leading-6 text-slate-600">{connectorSetupMessage(capability, t, connector)}</p>
+        <p className="mt-2 text-xs font-semibold text-slate-500">{connectorActionHint(capability, t)}</p>
         {capability.pilot_note ? <p className="mt-2 text-xs font-semibold text-slate-500">{capability.pilot_note}</p> : null}
       </div>
 
@@ -231,12 +200,12 @@ export function ConnectorCard({
               </Button>
               {isRequestOnly ? (
                 <p className="rounded-2xl bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-700">
-                  Нажатие создаст заявку подключения. Это не включает внешний сервис автоматически.
+                  {t("integrations.card.requestNotice")}
                 </p>
               ) : null}
               {isRoadmapOnly ? (
                 <p className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">
-                  Кнопка отключена специально: коннектор показан как будущая возможность или тарифный upsell без ложного обещания готового подключения.
+                  {t("integrations.card.roadmapNotice")}
                 </p>
               ) : null}
             </div>
@@ -244,11 +213,11 @@ export function ConnectorCard({
             <>
               {connector.status !== "connected" ? (
                 <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
-                  Подключение создано, но ещё требует настройки или проверки. Для request-коннекторов это нормальный пилотный статус.
+                  {t("integrations.card.pendingNotice")}
                 </div>
               ) : (
                 <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
-                  Подключение активно. Данные из этого канала используются в CRM, Inbox, аналитике и автоматизациях.
+                  {t("integrations.card.connectedNotice")}
                 </div>
               )}
               <div className="flex flex-wrap gap-2">
@@ -256,7 +225,7 @@ export function ConnectorCard({
                   <CheckCircle2 size={16} /> {primaryLabel}
                 </Button>
                 <Button variant="ghost" onClick={() => disconnect.mutate()} isLoading={disconnect.isPending}>
-                  Отключить
+                  {t("integrations.action.disconnect")}
                 </Button>
               </div>
             </>
@@ -265,7 +234,7 @@ export function ConnectorCard({
         </div>
       ) : (
         <p className="mt-5 rounded-2xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">
-          Роль позволяет просматривать интеграции, но не управлять подключениями.
+          {t("integrations.card.readOnly")}
         </p>
       )}
     </div>

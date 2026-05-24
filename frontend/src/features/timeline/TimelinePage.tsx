@@ -5,6 +5,7 @@ import { Card, CardBody } from "../../components/ui/Card";
 import { Input } from "../../components/ui/Input";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { ErrorState, LoadingState } from "../../components/ui/StateViews";
+import { unwrapList } from "../../api/client";
 import { formatDateTime } from "../../lib/format";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useEntityData } from "../../hooks/useEntityData";
@@ -19,7 +20,8 @@ export function TimelinePage() {
   if (!business) return <ErrorState message={t("timeline.noBusiness")} />;
   if (activityEvents.isLoading || clients.isLoading) return <LoadingState />;
 
-  const rows = (activityEvents.data || []).filter((event) => {
+  const clientList = unwrapList(clients.data);
+  const rows = unwrapList(activityEvents.data).filter((event) => {
     const text = `${event.event_type} ${event.text}`.toLowerCase();
     return !search || text.includes(search.toLowerCase());
   });
@@ -56,7 +58,7 @@ export function TimelinePage() {
               <section key={date} className="space-y-3">
                 <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{date}</p>
                 {events.map((event) => {
-                  const client = clients.data?.find((item) => item.id === event.client);
+                  const client = clientList.find((item) => item.id === event.client);
                   return (
                     <div key={event.id} className="rounded-3xl border border-slate-100 bg-white/80 p-4 shadow-sm">
                       <div className="flex items-start gap-3">

@@ -5809,3 +5809,7 @@ Frontend production build after owner access repair pass: OK
 Full backend tests after mobile usability pass: 295 OK
 Frontend production build after mobile usability pass: OK
 Mobile usability pass: enlarged header/sidebar/bottom-nav tap targets, improved mobile sidebar overlay/close behavior, tightened mobile page/card spacing, adapted settings invite/team controls.
+
+Full backend tests after clients/timeline data hardening pass: 295 OK
+Frontend production build after clients/timeline data hardening pass: OK
+Live smoke: /dashboard/clients and /dashboard/timeline load for business_owner@example.com; production demo account currently has 0 clients and 0 activity events, so both pages show empty states until data is created.

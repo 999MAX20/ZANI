@@ -5,7 +5,7 @@ import { useSearchParams } from "react-router-dom";
 
 import { segmentFiltersApi, segmentsApi, taggedObjectsApi, tagsApi } from "../../api/activities";
 import { clientsApi } from "../../api/clients";
-import { getApiErrorMessage } from "../../api/client";
+import { getApiErrorMessage, unwrapList } from "../../api/client";
 import { CrmEntityDrawer, type CrmDrawerEntity } from "../../components/crm/CrmEntityDrawer";
 import { ClientForm } from "../../components/forms/ClientForm";
 import { DataTable } from "../../components/tables/DataTable";
@@ -93,7 +93,7 @@ export function ClientsPage() {
 
   const addTagMutation = useMutation({
     mutationFn: async ({ clientId, tagName }: { clientId: Id; tagName: string }) => {
-      const existing = (tags.data || []).find((tag) => tag.name.toLowerCase() === tagName.toLowerCase());
+      const existing = tagList.find((tag) => tag.name.toLowerCase() === tagName.toLowerCase());
       const tag = existing || await tagsApi.create({ business: business!.id, name: tagName, color: "#2563eb", source: "manual" });
       return taggedObjectsApi.create({ business: business!.id, tag: tag.id, entity_type: "client", entity_id: String(clientId) });
     },
@@ -131,7 +131,14 @@ export function ClientsPage() {
     },
   });
 
-  const rows = filteredClients.data || clients.data || [];
+  const hasActiveFilters = Boolean(search || source || selectedTag || selectedSegment);
+  const clientList = unwrapList<Client>(clients.data);
+  const rows = hasActiveFilters ? unwrapList<Client>(filteredClients.data) : clientList;
+  const leadList = unwrapList(leads.data);
+  const appointmentList = unwrapList(appointments.data);
+  const tagList = unwrapList(tags.data);
+  const taggedObjectList = unwrapList(taggedObjects.data);
+  const segmentList = unwrapList(segments.data);
 
   function clearCreateParam() {
     if (!searchParams.get("create")) return;
@@ -149,21 +156,20 @@ export function ClientsPage() {
     }
   }, [searchParams]);
   const clientTags = useMemo(() => {
-    const map: Record<string, typeof taggedObjects.data> = {};
-    (taggedObjects.data || []).forEach((item) => {
+    const map: Record<string, typeof taggedObjectList> = {};
+    taggedObjectList.forEach((item) => {
       if (item.entity_type !== "client") return;
       map[item.entity_id] = map[item.entity_id] || [];
       map[item.entity_id]?.push(item);
     });
     return map;
-  }, [taggedObjects.data]);
+  }, [taggedObjectList]);
 
   if (!business) return <ErrorState message={t("clients.noBusiness")} />;
   if (clients.isLoading || filteredClients.isLoading) return <LoadingState />;
-  const clientList = clients.data || [];
-  const leadClientIds = new Set((leads.data || []).map((lead) => lead.client));
-  const appointmentClientIds = new Set((appointments.data || []).map((appointment) => appointment.client));
-  const taggedClientIds = new Set((taggedObjects.data || []).filter((item) => item.entity_type === "client").map((item) => item.entity_id));
+  const leadClientIds = new Set(leadList.map((lead) => lead.client));
+  const appointmentClientIds = new Set(appointmentList.map((appointment) => appointment.client));
+  const taggedClientIds = new Set(taggedObjectList.filter((item) => item.entity_type === "client").map((item) => item.entity_id));
 
   return (
     <>
@@ -194,8 +200,8 @@ export function ClientsPage() {
           { value: "whatsapp", label: "WhatsApp" },
           { value: "instagram", label: "Instagram" },
         ]} />
-        <Select value={selectedTag} onChange={(event) => setSelectedTag(event.target.value)} options={[{ value: "", label: t("clients.allTags") }, ...(tags.data || []).map((tag) => ({ value: tag.id, label: tag.name }))]} />
-        <Select value={selectedSegment} onChange={(event) => setSelectedSegment(event.target.value)} options={[{ value: "", label: t("clients.allSegments") }, ...(segments.data || []).map((segment) => ({ value: segment.id, label: `${segment.name} (${segment.cached_count})` }))]} />
+        <Select value={selectedTag} onChange={(event) => setSelectedTag(event.target.value)} options={[{ value: "", label: t("clients.allTags") }, ...tagList.map((tag) => ({ value: tag.id, label: tag.name }))]} />
+        <Select value={selectedSegment} onChange={(event) => setSelectedSegment(event.target.value)} options={[{ value: "", label: t("clients.allSegments") }, ...segmentList.map((segment) => ({ value: segment.id, label: `${segment.name} (${segment.cached_count})` }))]} />
       </div>
       <DataTable
         rows={rows}
@@ -220,8 +226,8 @@ export function ClientsPage() {
             ),
           },
           { header: t("appointment.source"), cell: (client) => client.source },
-          { header: t("nav.leads"), cell: (client) => (leads.data || []).filter((lead) => lead.client === client.id).length },
-          { header: t("nav.appointments"), cell: (client) => (appointments.data || []).filter((appointment) => appointment.client === client.id).length },
+          { header: t("nav.leads"), cell: (client) => leadList.filter((lead) => lead.client === client.id).length },
+          { header: t("nav.appointments"), cell: (client) => appointmentList.filter((appointment) => appointment.client === client.id).length },
           { header: t("clients.created"), cell: (client) => formatDate(client.created_at) },
           {
             header: t("appointments.actions"),
@@ -309,7 +315,7 @@ export function ClientsPage() {
               label={t("clients.value")}
               value={segmentDraft.value}
               onChange={(event) => setSegmentDraft({ ...segmentDraft, value: event.target.value })}
-              options={[{ value: "", label: t("clients.selectTag") }, ...(tags.data || []).map((tag) => ({ value: String(tag.id), label: tag.name }))]}
+              options={[{ value: "", label: t("clients.selectTag") }, ...tagList.map((tag) => ({ value: String(tag.id), label: tag.name }))]}
             />
           ) : (
             <Input label={t("clients.value")} value={segmentDraft.value} onChange={(event) => setSegmentDraft({ ...segmentDraft, value: event.target.value })} />

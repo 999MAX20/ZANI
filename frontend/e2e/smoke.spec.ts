@@ -539,6 +539,18 @@ test("mobile owner smoke: dashboard and calendar are reachable", async ({ page, 
   await login(page, users.owner, /\/dashboard/);
   await expect(page.getByRole("heading", { name: /Рабочий стол бизнеса|Business dashboard|Бизнес басқару панелі/ })).toBeVisible();
 
+  await page.locator('nav a[href="/dashboard/leads"]').click();
+  await expect(page).toHaveURL(/\/dashboard\/leads/);
+  await expect(page.getByText("Unexpected Application Error")).toHaveCount(0);
+
+  await page.locator('nav a[href="/dashboard/conversations"]').click();
+  await expect(page).toHaveURL(/\/dashboard\/conversations/);
+  await expect(page.getByText("Unexpected Application Error")).toHaveCount(0);
+
+  await page.locator('nav a[href="/dashboard/tasks"]').click();
+  await expect(page).toHaveURL(/\/dashboard\/tasks/);
+  await expect(page.getByText("Unexpected Application Error")).toHaveCount(0);
+
   await page.getByRole("button", { name: /Развернуть меню|Expand menu/ }).click();
   const closeSidebarButton = page.getByRole("button", { name: /Свернуть меню|Collapse menu/ }).last();
   await expect(closeSidebarButton).toBeVisible();

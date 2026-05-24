@@ -5894,3 +5894,7 @@ Frontend production build after merchant integrations UX cleanup pass: OK
 Frontend API list-shape hardening pass: manual list endpoints for clients, tagged objects, integration event logs, connector capabilities and platform merchants now use the shared `unwrapList` helper. Pages stay stable if the backend returns either a plain array or DRF paginated `{ results }` response.
 
 Frontend production build after frontend API list-shape hardening pass: OK
+
+Mobile navigation regression pass: Playwright mobile smoke now clicks the bottom navigation entries for leads, conversations and tasks before opening the full mobile sidebar and navigating to calendar. This covers the production complaint where mobile bottom controls could appear visible but fail to navigate.
+
+Targeted Playwright mobile smoke after mobile navigation regression pass: OK

@@ -5594,6 +5594,10 @@ Frontend production build: OK
   - platform shell navigation, descriptions, protected-zone copy, search placeholder and logout action now use RU / KK / EN dictionaries;
   - shared `StatusBadge` no longer hardcodes Russian/English labels and now localizes CRM, connector, notification, priority and AI-tone statuses;
   - fallback for unknown statuses remains safe and shows the raw backend status instead of leaking an i18n key.
+- Dashboard i18n pass:
+  - owner and operator dashboard copy now uses RU / KK / EN dictionaries for page headers, manager workspace, attention blocks, empty states and quick-start hints;
+  - activation modules, mobile onboarding readiness labels and manager work queue no longer contain visible hardcoded Russian strings;
+  - dashboard scan confirms no remaining visible Cyrillic hardcoded strings in `DashboardPage.tsx`.
 - Исправлен demo seed для visual QA:
   - повторное создание демо-менеджеров больше не падает из-за `username`;
   - добавлен тест на username collision.
@@ -5617,6 +5621,7 @@ Full backend tests: 288 OK
 Frontend production build: OK
 Frontend production build after shell i18n: OK
 Frontend production build after platform/status i18n: OK
+Frontend production build after dashboard i18n: OK
 Visual smoke screenshots: desktop collapsed rail, desktop expanded rail, mobile dashboard OK
 ```
 

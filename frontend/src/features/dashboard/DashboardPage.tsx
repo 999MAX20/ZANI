@@ -409,7 +409,7 @@ function OwnerPulseCard({ dashboard }: { dashboard: NonNullable<Awaited<ReturnTy
             </Link>
           ) : null}
           {dashboard.setup ? (
-            <p className="mt-4 text-xs font-bold opacity-70">Готовность подключения бизнеса: {dashboard.setup.score}%</p>
+            <p className="mt-4 text-xs font-bold opacity-70">{t("dashboard.connectionReadiness", { score: dashboard.setup.score })}</p>
           ) : null}
         </div>
         <div className="grid gap-3">
@@ -446,6 +446,7 @@ function OwnerPulseCard({ dashboard }: { dashboard: NonNullable<Awaited<ReturnTy
 
 
 function MobileOwnerOnboardingCard({ dashboard }: { dashboard: NonNullable<Awaited<ReturnType<typeof analyticsApi.ownerDashboard>>> }) {
+  const { t } = useI18n();
   const onboarding = dashboard.mobile_onboarding;
   if (!onboarding) return null;
   const completed = onboarding.steps.filter((step) => step.status === "done").length;
@@ -460,7 +461,7 @@ function MobileOwnerOnboardingCard({ dashboard }: { dashboard: NonNullable<Await
             <Smartphone size={20} />
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">Owner mobile start</p>
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">{t("dashboard.ownerMobileStart")}</p>
             <h2 className="mt-1 text-xl font-black leading-tight text-midnight">{onboarding.headline}</h2>
             <p className="mt-2 text-sm leading-6 text-slate-500">{onboarding.subtext}</p>
           </div>
@@ -469,10 +470,10 @@ function MobileOwnerOnboardingCard({ dashboard }: { dashboard: NonNullable<Await
         <div className="relative rounded-3xl bg-slate-950 p-4 text-white">
           <div className="flex items-end justify-between gap-3">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.14em] text-white/55">Готовность бизнеса</p>
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-white/55">{t("dashboard.businessReadiness")}</p>
               <p className="mt-1 text-4xl font-black">{onboarding.score}%</p>
             </div>
-            <p className="pb-1 text-right text-xs font-semibold text-white/60">{completed} из {total}<br />шагов готово</p>
+            <p className="pb-1 text-right text-xs font-semibold text-white/60">{t("dashboard.stepsReady", { completed, total })}</p>
           </div>
           <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/15">
             <div className="h-full rounded-full bg-white transition-all" style={{ width: `${Math.max(0, Math.min(onboarding.score, 100))}%` }} />
@@ -492,7 +493,7 @@ function MobileOwnerOnboardingCard({ dashboard }: { dashboard: NonNullable<Await
                   <p className="mt-1 text-xs leading-5 text-slate-500">{step.description}</p>
                 </div>
                 <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black uppercase ${step.status === "done" ? "bg-emerald-50 text-emerald-700" : "bg-brand-50 text-brand-700"}`}>
-                  {step.status === "done" ? "готово" : "шаг"}
+                  {step.status === "done" ? t("dashboard.stepDone") : t("dashboard.step")}
                 </span>
               </div>
               <p className="mt-3 text-xs font-black text-brand-700">{step.cta}</p>
@@ -523,6 +524,7 @@ function ManagerWorkQueue({
   clients: Client[];
   services: Service[];
 }) {
+  const { t } = useI18n();
   const urgentLeads = leads.filter((lead) => ["new", "in_progress", "contacted"].includes(lead.status)).slice(0, 4);
   const todayAppointments = appointments.filter((appointment) => isTodayDate(appointment.start_at)).slice(0, 4);
   const openTasks = tasks.filter((task) => task.status !== "done" && task.status !== "cancelled").slice(0, 4);
@@ -533,10 +535,10 @@ function ManagerWorkQueue({
         <CardBody>
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.16em] text-amber-600">Очередь</p>
-              <h2 className="mt-1 text-lg font-black text-midnight">Лиды на ответ</h2>
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-amber-600">{t("dashboard.queue")}</p>
+              <h2 className="mt-1 text-lg font-black text-midnight">{t("dashboard.leadsToAnswer")}</h2>
             </div>
-            <Link to="/dashboard/leads" className="text-sm font-black text-brand-700">Все</Link>
+            <Link to="/dashboard/leads" className="text-sm font-black text-brand-700">{t("common.all")}</Link>
           </div>
           <div className="mt-4 space-y-3">
             {urgentLeads.map((lead) => {
@@ -546,15 +548,15 @@ function ManagerWorkQueue({
                 <Link key={lead.id} to="/dashboard/leads" className="block rounded-2xl border border-slate-100 bg-white/75 p-3 transition hover:bg-white hover:shadow-soft">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="truncate font-bold text-midnight">{client?.full_name || `Lead #${lead.id}`}</p>
-                      <p className="mt-1 truncate text-xs text-slate-500">{service?.name || lead.source} · {lead.message || "Без сообщения"}</p>
+                      <p className="truncate font-bold text-midnight">{client?.full_name || t("dashboard.leadNumber", { id: lead.id })}</p>
+                      <p className="mt-1 truncate text-xs text-slate-500">{service?.name || lead.source} · {lead.message || t("dashboard.noMessage")}</p>
                     </div>
                     <StatusBadge status={lead.status} />
                   </div>
                 </Link>
               );
             })}
-            {!urgentLeads.length ? <EmptyState title="Нет срочных заявок" description="Новые обращения появятся здесь." /> : null}
+            {!urgentLeads.length ? <EmptyState title={t("dashboard.noUrgentLeads")} description={t("dashboard.noUrgentLeadsText")} /> : null}
           </div>
         </CardBody>
       </Card>
@@ -563,10 +565,10 @@ function ManagerWorkQueue({
         <CardBody>
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">Сегодня</p>
-              <h2 className="mt-1 text-lg font-black text-midnight">Записи</h2>
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">{t("common.today")}</p>
+              <h2 className="mt-1 text-lg font-black text-midnight">{t("nav.appointments")}</h2>
             </div>
-            <Link to="/dashboard/calendar" className="text-sm font-black text-brand-700">Календарь</Link>
+            <Link to="/dashboard/calendar" className="text-sm font-black text-brand-700">{t("nav.calendar")}</Link>
           </div>
           <div className="mt-4 space-y-3">
             {todayAppointments.map((appointment) => {
@@ -578,13 +580,13 @@ function ManagerWorkQueue({
                     <CalendarCheck size={17} />
                   </div>
                   <div className="min-w-0">
-                    <p className="truncate font-bold text-midnight">{client?.full_name || "Клиент"}</p>
-                    <p className="mt-1 text-xs text-slate-500">{service?.name || "Услуга"} · {formatDateTime(appointment.start_at)}</p>
+                    <p className="truncate font-bold text-midnight">{client?.full_name || t("common.client")}</p>
+                    <p className="mt-1 text-xs text-slate-500">{service?.name || t("common.service")} · {formatDateTime(appointment.start_at)}</p>
                   </div>
                 </Link>
               );
             })}
-            {!todayAppointments.length ? <EmptyState title="На сегодня записей нет" description="Создайте запись из заявки или календаря." /> : null}
+            {!todayAppointments.length ? <EmptyState title={t("dashboard.noBookingsToday")} description={t("dashboard.noBookingsTodayText")} /> : null}
           </div>
         </CardBody>
       </Card>
@@ -594,9 +596,9 @@ function ManagerWorkQueue({
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.16em] text-ai-700">Follow-up</p>
-              <h2 className="mt-1 text-lg font-black text-midnight">Мои задачи</h2>
+              <h2 className="mt-1 text-lg font-black text-midnight">{t("dashboard.myTasks")}</h2>
             </div>
-            <Link to="/dashboard/tasks" className="text-sm font-black text-brand-700">Задачи</Link>
+            <Link to="/dashboard/tasks" className="text-sm font-black text-brand-700">{t("nav.tasks")}</Link>
           </div>
           <div className="mt-4 space-y-3">
             {openTasks.map((task) => (
@@ -604,13 +606,13 @@ function ManagerWorkQueue({
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="truncate font-bold text-midnight">{task.title}</p>
-                    <p className="mt-1 truncate text-xs text-slate-500">{task.due_at ? formatDateTime(task.due_at) : "Без срока"}</p>
+                    <p className="mt-1 truncate text-xs text-slate-500">{task.due_at ? formatDateTime(task.due_at) : t("dashboard.noDueDate")}</p>
                   </div>
                   <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-black uppercase text-slate-600">{task.priority}</span>
                 </div>
               </Link>
             ))}
-            {!openTasks.length ? <EmptyState title="Нет открытых задач" description="Follow-up задачи появятся здесь." /> : null}
+            {!openTasks.length ? <EmptyState title={t("dashboard.noOpenTasks")} description={t("dashboard.noOpenTasksText")} /> : null}
           </div>
         </CardBody>
       </Card>
@@ -652,7 +654,7 @@ export function DashboardPage() {
 
   if (businessLoading || clients.isLoading || leads.isLoading || appointments.isLoading || services.isLoading || tasks.isLoading || (isOwnerView && metrics.isLoading)) return <PageSkeleton />;
   if (!business) {
-    return <ErrorState message="Бизнес ещё не создан. Откройте настройки и добавьте первый бизнес, чтобы начать работу." />;
+    return <ErrorState message={t("dashboard.noBusiness")} />;
   }
 
   const leadList = leads.data || [];
@@ -676,55 +678,55 @@ export function DashboardPage() {
   const activationModules = [
     {
       title: "WhatsApp",
-      description: "Подключите канал, чтобы заявки и переписка попадали в единую историю клиента.",
+      description: t("dashboard.moduleWhatsapp"),
       status: "connect" as const,
       icon: MessageCircle,
       href: "/dashboard/integrations",
     },
     {
-      title: "AI-бот",
-      description: "Черновик AI-сценария для первичных ответов и квалификации лидов.",
+      title: t("dashboard.moduleAiBot"),
+      description: t("dashboard.moduleAiBotText"),
       status: "beta" as const,
       icon: Bot,
       href: "/dashboard/ai",
     },
     {
-      title: "Сотрудники",
-      description: "Пригласите команду и настройте роли перед раздачей заявок.",
+      title: t("dashboard.moduleTeam"),
+      description: t("dashboard.moduleTeamText"),
       status: "connect" as const,
       icon: Users,
       href: "/dashboard/settings",
     },
     {
-      title: "Услуги",
-      description: "Справочник нужен для записей, стоимости и понятной аналитики.",
+      title: t("nav.services"),
+      description: t("dashboard.moduleServicesText"),
       status: serviceList.length ? "connected" as const : "connect" as const,
       icon: ClipboardList,
       href: "/dashboard/services",
     },
     {
-      title: "Продажи",
-      description: "Воронка уже подготовлена. Первые заявки попадут в CRM автоматически.",
+      title: t("dashboard.moduleSales"),
+      description: t("dashboard.moduleSalesText"),
       status: leadList.length ? "connected" as const : "connect" as const,
       icon: Flame,
       href: "/dashboard/leads",
     },
     {
       title: "Excel / CSV",
-      description: "Импортируйте текущую базу клиентов и заявок без ручного переноса.",
+      description: t("dashboard.moduleImportText"),
       status: "connect" as const,
       icon: FileSpreadsheet,
       href: "/dashboard/settings",
     },
     {
       title: "1C export",
-      description: "Экспорт финансовых и клиентских данных подключается через поддержку.",
+      description: t("dashboard.module1cText"),
       status: "request" as const,
       icon: Package,
     },
     {
-      title: "МойСклад / склад",
-      description: "Складские интеграции запланированы после пилотной CRM-логики.",
+      title: t("dashboard.moduleWarehouse"),
+      description: t("dashboard.moduleWarehouseText"),
       status: "soon" as const,
       icon: Store,
     },
@@ -743,8 +745,8 @@ export function DashboardPage() {
   return (
     <>
       <PageHeader
-        title={isOwnerView ? t("dashboard.title") : "Мой рабочий день"}
-        description={isOwnerView ? "Деньги, спрос и срочные действия в одном первом экране." : "Лиды, задачи и записи без управленческого шума."}
+        title={isOwnerView ? t("dashboard.title") : t("dashboard.managerTitle")}
+        description={isOwnerView ? t("dashboard.ownerPageDescription") : t("dashboard.managerPageDescription")}
       />
 
       <BusinessBankingHero
@@ -764,7 +766,7 @@ export function DashboardPage() {
 
       {metrics.error ? (
         <div className="mb-5 rounded-3xl border border-amber-100 bg-amber-50/80 px-5 py-4 text-sm font-semibold text-amber-800">
-          Не удалось загрузить аналитику владельца. Основные разделы CRM доступны, а метрики обновятся после восстановления API.
+          {t("dashboard.ownerAnalyticsError")}
         </div>
       ) : null}
 
@@ -808,24 +810,24 @@ export function DashboardPage() {
         <Card className="mb-5 overflow-hidden border-brand-100">
           <CardBody className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Operator workspace</p>
-              <h2 className="mt-2 text-2xl font-black text-midnight">Фокус на обработке клиентов</h2>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">{t("dashboard.operatorWorkspace")}</p>
+              <h2 className="mt-2 text-2xl font-black text-midnight">{t("dashboard.operatorFocus")}</h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
-                В этой роли скрыты управленческие и финансовые блоки. Основные действия: ответить в чате, обработать заявку, создать запись и закрыть follow-up.
+                {t("dashboard.operatorFocusText")}
               </p>
             </div>
             <div className="grid grid-cols-3 gap-2 text-center">
               <Link to="/dashboard/leads" className="rounded-2xl bg-slate-50 px-4 py-3 transition hover:bg-white hover:shadow-soft">
                 <p className="text-2xl font-black text-midnight">{myPendingLeads.length}</p>
-                <p className="text-xs font-bold text-slate-500">заявок</p>
+                <p className="text-xs font-bold text-slate-500">{t("dashboard.leadsLabel")}</p>
               </Link>
               <Link to="/dashboard/conversations" className="rounded-2xl bg-slate-50 px-4 py-3 transition hover:bg-white hover:shadow-soft">
                 <MessageSquareText className="mx-auto text-brand-600" size={22} />
-                <p className="mt-1 text-xs font-bold text-slate-500">чаты</p>
+                <p className="mt-1 text-xs font-bold text-slate-500">{t("dashboard.chatsLabel")}</p>
               </Link>
               <Link to="/dashboard/tasks" className="rounded-2xl bg-slate-50 px-4 py-3 transition hover:bg-white hover:shadow-soft">
                 <p className="text-2xl font-black text-midnight">{assignedTasks.length}</p>
-                <p className="text-xs font-bold text-slate-500">задач</p>
+                <p className="text-xs font-bold text-slate-500">{t("dashboard.tasksLabel")}</p>
               </Link>
             </div>
           </CardBody>
@@ -847,32 +849,32 @@ export function DashboardPage() {
           <CardBody>
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-midnight">Что требует внимания</h2>
-                <p className="mt-1 text-sm text-slate-500">Минимальный список действий без лишнего шума.</p>
+                <h2 className="text-lg font-semibold text-midnight">{t("dashboard.attention")}</h2>
+                <p className="mt-1 text-sm text-slate-500">{t("dashboard.attentionText")}</p>
               </div>
             </div>
             <div className="space-y-3">
               <Link to="/dashboard/leads" className="block rounded-2xl border border-slate-100 bg-white/70 p-4 transition hover:bg-slate-50">
-                <p className="font-semibold text-midnight">Ответить новым заявкам</p>
-                <p className="mt-1 text-sm text-slate-500">{newLeadsCount} новых лидов ждут обработки.</p>
+                <p className="font-semibold text-midnight">{t("dashboard.answerNewLeads")}</p>
+                <p className="mt-1 text-sm text-slate-500">{t("dashboard.newLeadsWaiting", { count: newLeadsCount })}</p>
               </Link>
               <Link to="/dashboard/appointments" className="block rounded-2xl border border-slate-100 bg-white/70 p-4 transition hover:bg-slate-50">
-                <p className="font-semibold text-midnight">Проверить записи на сегодня</p>
-                <p className="mt-1 text-sm text-slate-500">{todayAppointmentsCount} записей в календаре.</p>
+                <p className="font-semibold text-midnight">{t("dashboard.checkBookingsToday")}</p>
+                <p className="mt-1 text-sm text-slate-500">{t("dashboard.bookingsInCalendar", { count: todayAppointmentsCount })}</p>
               </Link>
               <Link to="/dashboard/tasks" className="block rounded-2xl border border-slate-100 bg-white/70 p-4 transition hover:bg-slate-50">
-                <p className="font-semibold text-midnight">Открыть задачи команды</p>
-                <p className="mt-1 text-sm text-slate-500">{openTasks} открытых задач по клиентам и follow-up.</p>
+                <p className="font-semibold text-midnight">{t("dashboard.openTeamTasks")}</p>
+                <p className="mt-1 text-sm text-slate-500">{t("dashboard.openClientTasksCount", { count: openTasks })}</p>
               </Link>
               {isOwnerView ? (
                 <Link to="/dashboard/analytics" className="block rounded-2xl border border-slate-100 bg-white/70 p-4 transition hover:bg-slate-50">
-                  <p className="font-semibold text-midnight">Проверить источники заявок</p>
-                  <p className="mt-1 text-sm text-slate-500">{dashboard?.leads_by_source?.[0]?.source || "Источники"} показывают, откуда приходит спрос.</p>
+                  <p className="font-semibold text-midnight">{t("dashboard.checkLeadSources")}</p>
+                  <p className="mt-1 text-sm text-slate-500">{t("dashboard.leadSourcesHint", { source: dashboard?.leads_by_source?.[0]?.source || t("dashboard.sources") })}</p>
                 </Link>
               ) : null}
               {isOwnerView && dashboard?.data_quality && !dashboard.data_quality.has_sales_data ? (
                 <Link to="/dashboard/settings#data-tools" className="block rounded-2xl border border-amber-100 bg-amber-50 p-4 transition hover:bg-amber-100/70">
-                  <p className="font-semibold text-amber-900">Подключить данные продаж</p>
+                  <p className="font-semibold text-amber-900">{t("dashboard.connectSalesData")}</p>
                   <p className="mt-1 text-sm leading-6 text-amber-800">{dashboard.data_quality.recommendation}</p>
                 </Link>
               ) : null}
@@ -883,8 +885,8 @@ export function DashboardPage() {
                       <Rocket size={17} />
                     </div>
                     <div>
-                      <p className="font-semibold text-midnight">Завершить быстрый старт</p>
-                      <p className="mt-1 text-sm text-slate-600">Готовность CRM: {onboarding.data.progress}%.</p>
+                      <p className="font-semibold text-midnight">{t("dashboard.finishQuickStart")}</p>
+                      <p className="mt-1 text-sm text-slate-600">{t("dashboard.crmReadiness", { progress: onboarding.data.progress })}</p>
                     </div>
                   </div>
                 </Link>
@@ -896,8 +898,8 @@ export function DashboardPage() {
                       <ShieldCheck size={17} />
                     </div>
                     <div>
-                      <p className="font-semibold text-midnight">Проверить готовность пилота</p>
-                      <p className="mt-1 text-sm text-slate-600">CRM, импорт, чат, AI, интеграции и smoke path в одном чеклисте.</p>
+                      <p className="font-semibold text-midnight">{t("dashboard.checkPilotReadiness")}</p>
+                      <p className="mt-1 text-sm text-slate-600">{t("dashboard.pilotReadinessText")}</p>
                     </div>
                   </div>
                 </Link>
@@ -908,7 +910,7 @@ export function DashboardPage() {
 
         <Card>
           <CardBody>
-            <h2 className="text-lg font-semibold text-midnight">Последние заявки</h2>
+            <h2 className="text-lg font-semibold text-midnight">{t("dashboard.latestLeads")}</h2>
             <div className="mt-4 space-y-3">
               {leadList.slice(0, 6).map((lead) => {
                 const client = clients.data?.find((item) => item.id === lead.client);
@@ -917,7 +919,7 @@ export function DashboardPage() {
                   <Link key={lead.id} to="/dashboard/leads" className="block rounded-2xl border border-slate-100 bg-white/70 p-3 transition hover:bg-slate-50">
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="truncate font-semibold text-midnight">{client?.full_name || `Lead #${lead.id}`}</p>
+                        <p className="truncate font-semibold text-midnight">{client?.full_name || t("dashboard.leadNumber", { id: lead.id })}</p>
                         <p className="mt-1 truncate text-xs text-slate-500">{service?.name || lead.source} · {formatDateTime(lead.created_at)}</p>
                       </div>
                       <StatusBadge status={lead.status} />
@@ -927,9 +929,9 @@ export function DashboardPage() {
               })}
               {!leadList.length ? (
                 <EmptyState
-                  title="Заявок пока нет"
-                  description="Создайте первую заявку вручную или подключите источник заявок на следующем этапе."
-                  action={<Link to="/dashboard/leads"><Button variant="secondary"><Plus size={16} />Перейти к заявкам</Button></Link>}
+                  title={t("dashboard.noLeads")}
+                  description={t("dashboard.noLeadsText")}
+                  action={<Link to="/dashboard/leads"><Button variant="secondary"><Plus size={16} />{t("dashboard.goLeads")}</Button></Link>}
                 />
               ) : null}
             </div>
@@ -940,7 +942,7 @@ export function DashboardPage() {
       <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_1fr]">
         <Card>
           <CardBody>
-            <h2 className="text-lg font-semibold text-midnight">Ближайшие записи</h2>
+            <h2 className="text-lg font-semibold text-midnight">{t("dashboard.upcomingBookings")}</h2>
             <div className="mt-4 space-y-4">
               {appointmentList.slice(0, 6).map((appointment) => {
                 const client = clients.data?.find((item) => item.id === appointment.client);
@@ -959,9 +961,9 @@ export function DashboardPage() {
               })}
               {!appointmentList.length ? (
                 <EmptyState
-                  title="Записей пока нет"
-                  description="Когда появится первая запись, она будет видна здесь и в календаре."
-                  action={<Link to="/dashboard/appointments"><Button variant="secondary"><CalendarPlus size={16} />Создать запись</Button></Link>}
+                  title={t("dashboard.noBookings")}
+                  description={t("dashboard.noBookingsText")}
+                  action={<Link to="/dashboard/appointments"><Button variant="secondary"><CalendarPlus size={16} />{t("appointment.create")}</Button></Link>}
                 />
               ) : null}
             </div>
@@ -975,20 +977,20 @@ export function DashboardPage() {
                 <Users size={18} />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-midnight">Клиентская база</h2>
-                <p className="text-sm text-slate-500">{clients.data?.length || 0} клиентов в CRM.</p>
+                <h2 className="text-lg font-semibold text-midnight">{t("dashboard.clientBase")}</h2>
+                <p className="text-sm text-slate-500">{t("dashboard.clientsInCrm", { count: clients.data?.length || 0 })}</p>
               </div>
             </div>
             <div className="mt-5 grid gap-3">
               <div className="rounded-2xl border border-slate-100 bg-white/70 p-4">
-                <p className="text-sm font-semibold text-midnight">Быстрый старт</p>
-                <p className="mt-1 text-sm leading-6 text-slate-500">Добавьте услугу, ресурс и рабочее время, затем создайте первую запись из заявки.</p>
+                <p className="text-sm font-semibold text-midnight">{t("dashboard.quickStart")}</p>
+                <p className="mt-1 text-sm leading-6 text-slate-500">{t("dashboard.quickStartText")}</p>
               </div>
               <div className="rounded-2xl border border-slate-100 bg-white/70 p-4">
-                <p className="text-sm font-semibold text-midnight">Выручка</p>
+                <p className="text-sm font-semibold text-midnight">{t("dashboard.revenue")}</p>
                 <p className="mt-1 text-2xl font-bold text-midnight">{`${revenue.toLocaleString("ru-RU")} ₸`}</p>
                 <p className="mt-1 text-xs text-slate-400">
-                  {dashboard?.sales_events_count ? "По загруженным продажам и завершённым записям." : "Оценка по завершённым записям; загрузите продажи для точной картины."}
+                  {dashboard?.sales_events_count ? t("dashboard.revenueExactText") : t("dashboard.revenueEstimateText")}
                 </p>
               </div>
             </div>

@@ -1,4 +1,5 @@
 import type { Appointment, Client, Resource, Service } from "../../types";
+import { useI18n } from "../../lib/i18n";
 import { StatusBadge } from "../ui/StatusBadge";
 
 const hours = Array.from({ length: 11 }, (_, index) => index + 8);
@@ -16,6 +17,8 @@ export function SimpleCalendar({
   services: Service[];
   resources: Resource[];
 }) {
+  const { t } = useI18n();
+
   return (
     <div className="overflow-hidden rounded-[8px] border border-slate-200 bg-white">
       {hours.map((hour) => {
@@ -35,10 +38,10 @@ export function SimpleCalendar({
                 return (
                   <div key={appointment.id} className="rounded-[8px] border-l-4 border-brand-500 bg-brand-50 px-3 py-2">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="font-medium text-ink">{client?.full_name || "Клиент"} · {service?.name || "Услуга"}</p>
+                      <p className="font-medium text-ink">{client?.full_name || t("appointment.client")} · {service?.name || t("appointment.service")}</p>
                       <StatusBadge status={appointment.status} />
                     </div>
-                    <p className="mt-1 text-sm text-slate-500">{resource?.name || "Без ресурса"}</p>
+                    <p className="mt-1 text-sm text-slate-500">{resource?.name || t("appointment.noResource")}</p>
                   </div>
                 );
               })}

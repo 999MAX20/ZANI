@@ -5669,6 +5669,9 @@ Frontend production build: OK
   - `/dashboard/pilot-readiness` больше не держит hardcoded RU строки в компоненте;
   - статусы, прогресс, путь подготовки, smoke path и empty/ready states вынесены в RU / KK / EN словарь;
   - backend checklist payload не менялся, чтобы не ломать текущие pilot readiness API.
+- Calendar shared component i18n pass:
+  - `SimpleCalendar` больше не содержит hardcoded fallback текстов `Клиент`, `Услуга`, `Без ресурса`;
+  - calendar appointment fallbacks используют общий RU / KK / EN словарь appointment labels.
 
 Проверка:
 
@@ -5727,6 +5730,8 @@ Full backend tests after Telegram connector alignment pass: 293 OK
 Frontend production build after Telegram connector alignment pass: OK
 Full backend tests after pilot readiness i18n pass: 293 OK
 Frontend production build after pilot readiness i18n pass: OK
+Full backend tests after calendar shared component i18n pass: 293 OK
+Frontend production build after calendar shared component i18n pass: OK
 Visual smoke screenshots: desktop collapsed rail, desktop expanded rail, mobile dashboard OK
 ```
 

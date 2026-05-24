@@ -5882,3 +5882,7 @@ Targeted Playwright route audit after route access stability pass: business owne
 Booking form stability pass: opening a booking from a calendar free slot no longer clears the preselected slot on mount, and the one-click quick working-hours fix now applies to the selected resource when a master/resource is selected.
 
 Frontend production build after booking form stability pass: OK
+
+Frontend API timeout pass: Axios now has a 20 second request timeout, so slow or hanging Render/API requests fail into visible page errors instead of leaving merchant screens in an endless loading state.
+
+Frontend production build after frontend API timeout pass: OK

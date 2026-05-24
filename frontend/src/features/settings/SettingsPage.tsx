@@ -27,44 +27,44 @@ import { DevelopersSection } from "./DevelopersSection";
 import type { Business, BusinessMembershipSummary, BusinessRole, CrmEntityType, CustomFieldDefinition, QuickReplyTemplate, RolePermission } from "../../types";
 
 const teamRoleOptions = [
-  { value: "owner", label: "Владелец" },
-  { value: "admin", label: "Администратор" },
-  { value: "manager", label: "Менеджер продаж" },
-  { value: "operator", label: "Оператор чатов" },
-  { value: "marketer", label: "Маркетолог" },
-  { value: "accountant", label: "Бухгалтер" },
-  { value: "support", label: "Поддержка" },
-  { value: "staff", label: "Сотрудник" },
+  { value: "owner" },
+  { value: "admin" },
+  { value: "manager" },
+  { value: "operator" },
+  { value: "marketer" },
+  { value: "accountant" },
+  { value: "support" },
+  { value: "staff" },
 ];
 
 const accessGroups = [
-  { key: "sales", label: "Продажи", description: "Заявки, сделки и коммерческая работа.", resources: ["leads", "deals"] },
-  { key: "clients", label: "Клиенты", description: "Карточки клиентов и клиентская база.", resources: ["clients"] },
-  { key: "chats", label: "Чаты", description: "Диалоги, inbox и ответы клиентам.", resources: ["conversations"] },
-  { key: "calendar", label: "Календарь", description: "Записи, расписание и услуги.", resources: ["appointments"] },
-  { key: "tasks", label: "Задачи", description: "Задачи, напоминания и follow-up.", resources: ["tasks"] },
-  { key: "analytics", label: "Аналитика", description: "Отчеты, команда и показатели бизнеса.", resources: ["analytics"] },
-  { key: "settings", label: "Настройки", description: "Бизнес, услуги, ресурсы и график.", resources: ["settings"] },
-  { key: "export", label: "Экспорт", description: "Выгрузки и подготовка данных.", resources: ["billing"] },
-  { key: "security", label: "Безопасность", description: "Команда, роли и аудит доступа.", resources: ["team", "audit_logs"] },
+  { key: "sales", resources: ["leads", "deals"] },
+  { key: "clients", resources: ["clients"] },
+  { key: "chats", resources: ["conversations"] },
+  { key: "calendar", resources: ["appointments"] },
+  { key: "tasks", resources: ["tasks"] },
+  { key: "analytics", resources: ["analytics"] },
+  { key: "settings", resources: ["settings"] },
+  { key: "export", resources: ["billing"] },
+  { key: "security", resources: ["team", "audit_logs"] },
 ];
 
 const visibilityOptions = [
-  { value: "own", label: "Только своё", description: "Сотрудник видит только назначенные ему объекты." },
-  { value: "team", label: "Своя команда", description: "Подходит для тимлида или старшего менеджера." },
-  { value: "business", label: "Весь бизнес", description: "Доступ ко всем объектам компании." },
+  { value: "own" },
+  { value: "team" },
+  { value: "business" },
 ];
 
 const settingsSections = [
-  { id: "team-access", label: "Команда" },
-  { id: "security-center", label: "Безопасность" },
-  { id: "quick-replies", label: "Ответы" },
-  { id: "roles", label: "Роли" },
-  { id: "data-tools", label: "Импорт" },
-  { id: "lead-forms", label: "Формы" },
-  { id: "billing", label: "Тариф" },
-  { id: "custom-fields", label: "Поля" },
-  { id: "business-profile", label: "Бизнес" },
+  { id: "team-access" },
+  { id: "security-center" },
+  { id: "quick-replies" },
+  { id: "roles" },
+  { id: "data-tools" },
+  { id: "lead-forms" },
+  { id: "billing" },
+  { id: "custom-fields" },
+  { id: "business-profile" },
 ];
 
 export function SettingsPage() {

@@ -5590,6 +5590,10 @@ Frontend production build: OK
 - Shell polish i18n pass:
   - header notification categories, notification actions, mobile menu aria-labels and pilot safe 404 page now use RU / KK / EN dictionaries;
   - frontend production build reconfirmed after the shell changes.
+- Platform/status i18n pass:
+  - platform shell navigation, descriptions, protected-zone copy, search placeholder and logout action now use RU / KK / EN dictionaries;
+  - shared `StatusBadge` no longer hardcodes Russian/English labels and now localizes CRM, connector, notification, priority and AI-tone statuses;
+  - fallback for unknown statuses remains safe and shows the raw backend status instead of leaking an i18n key.
 - Исправлен demo seed для visual QA:
   - повторное создание демо-менеджеров больше не падает из-за `username`;
   - добавлен тест на username collision.
@@ -5612,9 +5616,10 @@ Team access invite tests: 16 OK
 Full backend tests: 288 OK
 Frontend production build: OK
 Frontend production build after shell i18n: OK
+Frontend production build after platform/status i18n: OK
 Visual smoke screenshots: desktop collapsed rail, desktop expanded rail, mobile dashboard OK
 ```
 
-GitHub/deploy note: current local folder `/Users/maksim/Desktop/zani 2` is not a git repository (`.git` is absent), so commit/push cannot be performed from this copy until it is linked to the actual GitHub working tree.
+GitHub/deploy note: current local folder `/Users/maksim/Desktop/zani 2` is linked to `https://github.com/999MAX20/ZANI.git` on `main`.
 
 Следующий обязательный UI этап: пройти все merchant pages и заменить оставшиеся hardcoded RU/EN строки на i18n-ключи, затем сделать visual QA по ролям owner/operator/platform.

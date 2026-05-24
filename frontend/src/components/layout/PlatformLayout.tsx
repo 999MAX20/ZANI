@@ -16,23 +16,25 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../../features/auth/AuthProvider";
 import { cn } from "../../lib/cn";
+import { useI18n } from "../../lib/i18n";
 import { Button } from "../ui/Button";
 
 const platformNav = [
-  { to: "/platform", label: "Overview", description: "Product metrics and status", icon: LayoutDashboard, end: true },
-  { to: "/platform/operations", label: "Operations", description: "Queues, providers and support health", icon: Activity },
-  { to: "/platform/merchants", label: "Merchants", description: "Businesses, plans and usage", icon: Store },
-  { to: "/platform/prospects", label: "Prospects", description: "Future internal tools boundary", icon: Target },
-  { to: "/platform/landings", label: "Landings", description: "Demo assets and request flow", icon: FileText },
-  { to: "/platform/outreach", label: "Outreach", description: "Manual pilot outreach status", icon: Send },
-  { to: "/platform/billing", label: "Billing", description: "Future plans and subscriptions", icon: CreditCard },
-  { to: "/platform/analytics", label: "Analytics", description: "Future platform insights", icon: BarChart3 },
-  { to: "/platform/settings", label: "Settings", description: "Platform configuration", icon: Settings },
+  { to: "/platform", label: "platform.nav.overview", description: "platform.nav.overviewText", icon: LayoutDashboard, end: true },
+  { to: "/platform/operations", label: "platform.nav.operations", description: "platform.nav.operationsText", icon: Activity },
+  { to: "/platform/merchants", label: "platform.nav.merchants", description: "platform.nav.merchantsText", icon: Store },
+  { to: "/platform/prospects", label: "platform.nav.prospects", description: "platform.nav.prospectsText", icon: Target },
+  { to: "/platform/landings", label: "platform.nav.landings", description: "platform.nav.landingsText", icon: FileText },
+  { to: "/platform/outreach", label: "platform.nav.outreach", description: "platform.nav.outreachText", icon: Send },
+  { to: "/platform/billing", label: "platform.nav.billing", description: "platform.nav.billingText", icon: CreditCard },
+  { to: "/platform/analytics", label: "platform.nav.analytics", description: "platform.nav.analyticsText", icon: BarChart3 },
+  { to: "/platform/settings", label: "platform.nav.settings", description: "platform.nav.settingsText", icon: Settings },
 ];
 
 export function PlatformLayout() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { t } = useI18n();
 
   return (
     <main className="min-h-screen bg-soft-mesh p-3 sm:p-4">
@@ -44,7 +46,7 @@ export function PlatformLayout() {
             </div>
             <div>
               <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/45">Zani</p>
-              <h1 className="text-lg font-semibold tracking-tight">Platform</h1>
+              <h1 className="text-lg font-semibold tracking-tight">{t("platform.title")}</h1>
             </div>
           </div>
 
@@ -67,8 +69,8 @@ export function PlatformLayout() {
                     <>
                       <Icon size={20} className={cn("mt-0.5 shrink-0", isActive ? "text-brand-600" : "text-white/45 group-hover:text-white")} />
                       <span>
-                        <span className="block">{item.label}</span>
-                        <span className={cn("mt-1 block text-xs font-medium", isActive ? "text-slate-500" : "text-white/35")}>{item.description}</span>
+                        <span className="block">{t(item.label)}</span>
+                        <span className={cn("mt-1 block text-xs font-medium", isActive ? "text-slate-500" : "text-white/35")}>{t(item.description)}</span>
                       </span>
                     </>
                   )}
@@ -78,8 +80,8 @@ export function PlatformLayout() {
           </nav>
 
           <div className="mt-auto rounded-3xl border border-white/10 bg-white/5 p-4">
-            <p className="text-sm font-semibold">Protected platform zone</p>
-            <p className="mt-2 text-xs leading-5 text-white/45">Only platform roles can access these routes.</p>
+            <p className="text-sm font-semibold">{t("platform.protectedTitle")}</p>
+            <p className="mt-2 text-xs leading-5 text-white/45">{t("platform.protectedText")}</p>
           </div>
         </aside>
 
@@ -90,14 +92,14 @@ export function PlatformLayout() {
                 <ShieldCheck size={22} />
               </div>
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Platform Admin</p>
-                <h2 className="text-xl font-semibold tracking-tight text-midnight">Control center</h2>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">{t("platform.admin")}</p>
+                <h2 className="text-xl font-semibold tracking-tight text-midnight">{t("platform.controlCenter")}</h2>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <div className="hidden min-w-[260px] items-center gap-2 rounded-2xl border border-slate-200/80 bg-white/80 px-3 py-2 text-sm text-slate-400 md:flex">
                 <Search size={17} />
-                Platform search placeholder
+                {t("platform.search")}
               </div>
               <div className="hidden text-right sm:block">
                 <p className="text-sm font-semibold text-midnight">{user?.email}</p>
@@ -112,7 +114,7 @@ export function PlatformLayout() {
                 }}
               >
                 <LogOut size={16} />
-                Выйти
+                {t("header.logout")}
               </Button>
             </div>
           </header>
@@ -133,7 +135,7 @@ export function PlatformLayout() {
                   }
                 >
                   <Icon size={17} />
-                  {item.label}
+                  {t(item.label)}
                 </NavLink>
               );
             })}

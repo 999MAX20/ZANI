@@ -1,4 +1,5 @@
 import { cn } from "../../lib/cn";
+import { useI18n } from "../../lib/i18n";
 
 const styles: Record<string, string> = {
   new: "bg-sky-50 text-sky-700 ring-sky-200",
@@ -44,54 +45,14 @@ const styles: Record<string, string> = {
   support: "bg-violet-50 text-violet-700 ring-violet-200",
 };
 
-const labels: Record<string, string> = {
-  new: "Новая",
-  in_progress: "В работе",
-  appointment_created: "Записан",
-  contacted: "Связались",
-  closed: "Закрыта",
-  lost: "Потеряна",
-  created: "Создана",
-  confirmed: "Подтверждена",
-  cancelled: "Отменена",
-  rescheduled: "Перенесена",
-  completed: "Завершена",
-  done: "Готово",
-  no_show: "Не пришёл",
-  active: "Активен",
-  inactive: "Неактивен",
-  trial: "Пробный",
-  blocked: "Заблокирован",
-  draft: "Черновик",
-  paused: "Пауза",
-  connected: "Подключен",
-  needs_attention: "Требует настройки",
-  syncing: "Синхронизация",
-  disabled: "Отключен",
-  expired_credentials: "Истекли ключи",
-  error: "Ошибка",
-  open: "Открыт",
-  archived: "Архив",
-  received: "Получено",
-  queued: "В очереди",
-  pending: "Ожидает",
-  sent: "Отправлено",
-  failed: "Ошибка",
-  low: "Низкая",
-  normal: "Обычная",
-  high: "Высокая",
-  urgent: "Срочная",
-  friendly: "Friendly",
-  expert: "Expert",
-  formal: "Formal",
-  sales: "Sales",
-  support: "Support",
-};
-
 export function StatusBadge({ status }: { status: string }) {
+  const { t } = useI18n();
+  const labelKey = `status.${status}`;
+  const label = t(labelKey);
+
   return (
     <span className={cn("inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1", styles[status] || styles.closed)}>
-      {labels[status] || status}
+      {label === labelKey ? status : label}
     </span>
   );
 }

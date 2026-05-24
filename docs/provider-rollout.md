@@ -6,11 +6,12 @@ Zani does not enable all external providers at once. Every real provider must pa
 
 1. Telegram real webhook.
 2. Website widget and public forms production embed.
-3. Transactional email.
-4. OpenRouter/OpenAI behind AI queue and usage limits.
-5. WhatsApp provider pilot.
-6. Instagram/Meta provider pilot.
-7. Kaspi, marketplaces and 1C after event normalization and support workflow are proven.
+3. Excel/CSV real import as the first data connector.
+4. Transactional email.
+5. OpenRouter/OpenAI behind AI queue and usage limits.
+6. WhatsApp provider pilot.
+7. Instagram/Meta provider pilot.
+8. Kaspi, marketplaces and 1C after event normalization and support workflow are proven.
 
 ## Required Gate For Every Provider
 
@@ -59,6 +60,7 @@ Use the provider-specific form before turning on any real provider env flag.
 
 - Telegram: has provider adapter and webhook verification. Real mode requires `TELEGRAM_ENABLED=True`, `TELEGRAM_WEBHOOK_SECRET`, Redis/Celery runtime and Sentry.
 - Website/public forms: can be used first because it does not require paid provider credentials. Keep public throttles enabled.
+- Excel/CSV: available as the first data connector. It is not an external provider, but it must keep connector catalog metadata, import entity support, upload limits and BusinessEvent normalization green before merchant data onboarding.
 - Transactional email: configure SMTP and run `email_runtime_smoke` before relying on invitations, alerts or recovery emails.
 - OpenRouter/OpenAI: keep mock mode unless AI queue, throttles and usage limits are ready. AI must stay optional for merchants.
 - WhatsApp: current provider is pilot/mock. Do not set `WHATSAPP_ENABLED=True` until a real Meta/Twilio/360dialog adapter, webhook verification and rollback docs exist.

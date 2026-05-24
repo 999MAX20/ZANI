@@ -67,6 +67,7 @@ Next hardening:
 - clearer import previews on mobile;
 - rollback/undo import batch;
 - richer templates for hair salon, clinic, retail and education.
+- readiness gate: `python manage.py provider_rollout_readiness_check --provider excel_csv --fail-on-blockers`.
 
 ### 3. Telegram
 
@@ -92,6 +93,7 @@ Next MVP block:
 - webhook setup status;
 - inbound-to-inbox smoke coverage;
 - clear support fallback when Telegram real mode is disabled.
+- readiness gate: `python manage.py provider_rollout_readiness_check --provider telegram --fail-on-blockers`.
 
 ### 4. WhatsApp
 

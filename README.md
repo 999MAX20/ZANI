@@ -5657,6 +5657,10 @@ Frontend production build: OK
   - social signup теперь создаёт не только trial business и owner membership, но и default business roles + default pipeline;
   - login page уже держит controlled disabled state, если `VITE_GOOGLE_CLIENT_ID` / `VITE_APPLE_CLIENT_ID` не заданы;
   - `docs/social-auth.md` уточняет production-readiness поведение и env-контракт без реальных secrets.
+- Lightweight integration readiness pass:
+  - Excel/CSV добавлен в provider rollout readiness как первый data connector с отдельным `excel_csv` gate;
+  - readiness command теперь проверяет connector catalog, BusinessEvent/idempotency layer, upload limit и импортируемые сущности clients/leads/sales/catalog;
+  - `docs/provider-rollout.md` и `docs/lightweight-integrations-roadmap.md` обновлены под следующий Telegram + Excel/CSV MVP порядок.
 
 Проверка:
 
@@ -5706,6 +5710,10 @@ Frontend production build after invite hardening pass: OK
 Accounts social auth tests after Google/Apple readiness pass: 8 OK
 Full backend tests after Google/Apple readiness pass: 292 OK
 Frontend production build after Google/Apple readiness pass: OK
+Provider rollout readiness tests after Excel/CSV gate pass: 8 OK
+Telegram and Excel/CSV rollout command checks: OK
+Full backend tests after lightweight integration readiness pass: 293 OK
+Frontend production build after lightweight integration readiness pass: OK
 Visual smoke screenshots: desktop collapsed rail, desktop expanded rail, mobile dashboard OK
 ```
 

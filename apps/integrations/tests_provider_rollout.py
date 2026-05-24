@@ -13,6 +13,7 @@ class ProviderRolloutReadinessTests(SimpleTestCase):
 
         providers = {item["provider"]: item for item in result["providers"]}
         self.assertEqual(providers["telegram"]["status"], "ready")
+        self.assertEqual(providers["excel_csv"]["status"], "ready")
         self.assertEqual(providers["whatsapp"]["status"], "ready")
         self.assertEqual(providers["instagram"]["status"], "ready")
 
@@ -78,3 +79,10 @@ class ProviderRolloutReadinessTests(SimpleTestCase):
         call_command("provider_rollout_readiness_check", "--provider=website", "--format=json", stdout=output)
 
         self.assertIn('"provider": "website"', output.getvalue())
+
+    def test_excel_csv_readiness_is_available_as_next_data_connector(self):
+        result = run_provider_rollout_readiness_check(provider="excel_csv")
+
+        excel_csv = result["providers"][0]
+        self.assertEqual(excel_csv["status"], "ready")
+        self.assertIn("excel_csv.import_entities", {gate["key"] for gate in excel_csv["gates"]})

@@ -2,6 +2,7 @@ from dataclasses import asdict, dataclass
 
 from django.conf import settings
 
+from apps.core.models import ImportJob
 from apps.integrations.connectors import CONNECTOR_PROVIDER_CAPABILITIES
 from apps.integrations.models import BusinessConnector
 from apps.integrations.providers.registry import registered_providers
@@ -10,6 +11,7 @@ from apps.integrations.providers.registry import registered_providers
 PROVIDER_ROLLOUT_ORDER = [
     "telegram",
     "website",
+    "excel_csv",
     "email",
     "openai",
     "whatsapp",
@@ -197,6 +199,39 @@ def _website_check(order):
     return _provider_check("website", "Website widget and public forms", order, enabled, gates)
 
 
+def _excel_csv_check(order):
+    enabled = True
+    required_entities = {
+        ImportJob.EntityTypes.CLIENTS,
+        ImportJob.EntityTypes.LEADS,
+        ImportJob.EntityTypes.SALES,
+        ImportJob.EntityTypes.CATALOG,
+    }
+    available_entities = set(ImportJob.EntityTypes.values)
+    gates = [
+        _connector_catalog_gate(BusinessConnector.Providers.EXCEL_CSV),
+        _event_normalization_gate("excel_csv"),
+        _idempotency_gate("excel_csv"),
+        _connector_health_gate("excel_csv"),
+        _gate(
+            "excel_csv.import_entities",
+            "Core import entities exist",
+            required_entities.issubset(available_entities),
+            f"required={sorted(required_entities)}; available={sorted(available_entities)}",
+            "Keep clients, leads, sales and catalog import paths available before real data onboarding.",
+        ),
+        _gate(
+            "excel_csv.upload_limits",
+            "Upload size limit configured",
+            getattr(settings, "MAX_UPLOAD_SIZE_MB", 0) > 0,
+            f"MAX_UPLOAD_SIZE_MB={getattr(settings, 'MAX_UPLOAD_SIZE_MB', None)}",
+            "Keep explicit upload limits before exposing merchant file imports.",
+            severity="warning",
+        ),
+    ]
+    return _provider_check("excel_csv", "Excel/CSV real import", order, enabled, gates)
+
+
 def _email_check(order):
     enabled = _configured(getattr(settings, "EMAIL_HOST", ""))
     gates = [
@@ -332,11 +367,12 @@ def run_provider_rollout_readiness_check(provider=None):
     checks = [
         _telegram_check(1),
         _website_check(2),
-        _email_check(3),
-        _openai_check(4),
-        _whatsapp_check(5),
-        _instagram_check(6),
-        _marketplace_check(7),
+        _excel_csv_check(3),
+        _email_check(4),
+        _openai_check(5),
+        _whatsapp_check(6),
+        _instagram_check(7),
+        _marketplace_check(8),
     ]
     if provider:
         checks = [check for check in checks if check.provider == provider]

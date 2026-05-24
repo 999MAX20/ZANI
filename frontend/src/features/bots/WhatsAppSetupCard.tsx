@@ -9,6 +9,7 @@ import { Card, CardBody } from "../../components/ui/Card";
 import { Input } from "../../components/ui/Input";
 import { Select } from "../../components/ui/Select";
 import { ErrorState } from "../../components/ui/StateViews";
+import { useI18n } from "../../lib/i18n";
 import type { BotChannel } from "../../types";
 
 type WhatsAppSetupCardProps = {
@@ -16,6 +17,7 @@ type WhatsAppSetupCardProps = {
 };
 
 export function WhatsAppSetupCard({ channel }: WhatsAppSetupCardProps) {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const [form, setForm] = useState({
     providerMode: ((channel?.config_json?.provider_mode as "mock" | "disabled" | undefined) || "mock"),
@@ -52,7 +54,7 @@ export function WhatsAppSetupCard({ channel }: WhatsAppSetupCardProps) {
         phoneNumberId: form.phoneNumberId,
     }),
     onSuccess: (data) => {
-      setNotice(`WhatsApp подключение сохранено. Статус: ${data.status}.`);
+      setNotice(t("whatsappSetup.savedNotice", { status: data.status }));
       queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
       queryClient.invalidateQueries({ queryKey: ["whatsapp-status", channel?.id] });
     },
@@ -67,7 +69,7 @@ export function WhatsAppSetupCard({ channel }: WhatsAppSetupCardProps) {
           </div>
           <div>
             <h2 className="text-lg font-bold text-midnight">WhatsApp setup</h2>
-            <p className="text-sm text-slate-500">Безопасная подготовка WhatsApp-подключения без автоматического включения внешнего сервиса.</p>
+            <p className="text-sm text-slate-500">{t("whatsappSetup.description")}</p>
           </div>
         </div>
 
@@ -82,52 +84,52 @@ export function WhatsAppSetupCard({ channel }: WhatsAppSetupCardProps) {
           <div className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-2">
               <Select
-                label="Режим подключения"
+                label={t("whatsappSetup.providerMode")}
                 value={form.providerMode}
                 onChange={(event) => setForm((current) => ({ ...current, providerMode: event.target.value as "mock" | "disabled" }))}
                 options={[
-                  { value: "mock", label: "Демо-режим" },
-                  { value: "disabled", label: "Отключено" },
+                  { value: "mock", label: t("whatsappSetup.modeMock") },
+                  { value: "disabled", label: t("whatsappSetup.modeDisabled") },
                 ]}
               />
               <Input
-                label="ID номера WhatsApp (расширенно)"
+                label={t("whatsappSetup.phoneNumberId")}
                 value={form.phoneNumberId}
                 onChange={(event) => setForm((current) => ({ ...current, phoneNumberId: event.target.value }))}
                 placeholder="dev-phone-id"
               />
             </div>
             <Input
-              label="Секрет подписи (расширенно)"
+              label={t("whatsappSetup.webhookSecret")}
               value={form.webhookSecret}
               onChange={(event) => setForm((current) => ({ ...current, webhookSecret: event.target.value }))}
-              placeholder="опционально"
+              placeholder={t("common.optional")}
             />
             <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-4">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Адрес приёма сообщений</p>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">{t("whatsappSetup.webhookUrl")}</p>
               <p className="mt-2 break-all text-sm font-semibold text-midnight">
                 {status.data?.webhook_url || `${import.meta.env.VITE_API_URL || window.location.origin}/api/integrations/whatsapp/webhook/`}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
               <Button variant="secondary" onClick={() => configMutation.mutate()} isLoading={configMutation.isPending}>
-                <KeyRound size={16} />Сохранить подключение
+                <KeyRound size={16} />{t("whatsappSetup.saveConnection")}
               </Button>
               <Button variant="ghost" onClick={() => status.refetch()} isLoading={status.isFetching}>
-                <Radio size={16} />Проверить статус
+                <Radio size={16} />{t("whatsappSetup.checkStatus")}
               </Button>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
-              <HealthPill label="Режим" value={status.data?.provider_mode === "mock" ? "Демо" : status.data?.provider_mode || form.providerMode} />
-              <HealthPill label="Защита" value={status.data?.webhook_secret_configured ? "настроена" : "не настроена"} />
-              <HealthPill label="Последнее событие" value={status.data?.last_event_status || "нет"} />
+              <HealthPill label={t("whatsappSetup.mode")} value={status.data?.provider_mode === "mock" ? t("whatsappSetup.modeDemo") : status.data?.provider_mode || form.providerMode} />
+              <HealthPill label={t("whatsappSetup.protection")} value={status.data?.webhook_secret_configured ? t("whatsappSetup.configured") : t("whatsappSetup.notConfigured")} />
+              <HealthPill label={t("whatsappSetup.lastEvent")} value={status.data?.last_event_status || t("whatsappSetup.none")} />
             </div>
 
             <div className="rounded-3xl bg-slate-50 p-4">
               <div className="mb-3 flex items-center gap-2">
                 <ShieldCheck size={16} className="text-slate-500" />
-                <p className="text-sm font-bold text-midnight">История тестовых сообщений</p>
+                <p className="text-sm font-bold text-midnight">{t("whatsappSetup.testHistory")}</p>
               </div>
               <div className="space-y-2">
                 {(logs.data || []).slice(0, 5).map((log) => (
@@ -140,14 +142,14 @@ export function WhatsAppSetupCard({ channel }: WhatsAppSetupCardProps) {
                   </div>
                 ))}
                 {!logs.isLoading && !(logs.data || []).length ? (
-                  <p className="text-sm text-slate-500">История пока пустая. Первые тестовые входящие и исходящие сообщения появятся здесь.</p>
+                  <p className="text-sm text-slate-500">{t("whatsappSetup.emptyHistory")}</p>
                 ) : null}
               </div>
             </div>
           </div>
         ) : (
           <div className="rounded-3xl border border-dashed border-slate-200 bg-white/70 p-6 text-sm text-slate-500">
-            Добавьте WhatsApp channel, чтобы подготовить безопасное тестовое подключение без внешней отправки.
+            {t("whatsappSetup.noChannel")}
           </div>
         )}
       </CardBody>

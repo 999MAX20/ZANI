@@ -2,8 +2,8 @@ from django.db.models import Prefetch
 from rest_framework import serializers
 
 from apps.accounts.models import User
-from apps.businesses.access import PERMISSION_CATALOG, ROLE_PRESETS, Actions, normalize_role
-from apps.businesses.models import BusinessMember, RolePermission
+from apps.businesses.access import effective_permissions_for, owner_business_role, user_is_business_owner
+from apps.businesses.models import BusinessMember
 from apps.businesses.serializers import BusinessSerializer
 from apps.core.permissions import accessible_businesses
 
@@ -42,6 +42,18 @@ class CurrentUserSerializer(serializers.ModelSerializer):
         result = []
         for business in self._get_businesses(obj):
             membership = self._membership_for(business)
+            if user_is_business_owner(obj, business):
+                business_role = owner_business_role(business)
+                result.append(
+                    {
+                        "business": business.id,
+                        "role": BusinessMember.Roles.OWNER,
+                        "business_role": business_role.id if business_role else None,
+                        "business_role_name": business_role.name if business_role else "",
+                        "is_active": True,
+                    }
+                )
+                continue
             if not membership:
                 continue
             result.append(
@@ -57,11 +69,7 @@ class CurrentUserSerializer(serializers.ModelSerializer):
 
     def get_effective_permissions(self, obj):
         businesses = self._get_businesses(obj)
-        memberships = [self._membership_for(business) for business in businesses]
-        memberships = [membership for membership in memberships if membership]
-        role_ids = [membership.business_role_id for membership in memberships if membership.business_role_id]
-        role_permissions = self._role_permissions(role_ids)
-        return {str(membership.business_id): self._permissions_for_membership(membership, role_permissions) for membership in memberships}
+        return {str(business.id): effective_permissions_for(obj, business) for business in businesses}
 
     def _get_businesses(self, obj):
         if hasattr(self, "_cached_businesses"):
@@ -85,43 +93,6 @@ class CurrentUserSerializer(serializers.ModelSerializer):
             .filter(business=business, user=self.instance, is_active=True)
             .first()
         )
-
-    def _role_permissions(self, role_ids):
-        if not role_ids:
-            return {}
-        permissions = RolePermission.objects.filter(business_role_id__in=role_ids).only(
-            "business_role_id",
-            "resource",
-            "action",
-            "scope",
-            "is_allowed",
-        )
-        return {(permission.business_role_id, permission.resource, permission.action): permission for permission in permissions}
-
-    def _permissions_for_membership(self, membership, role_permissions):
-        result = []
-        for resource, actions in PERMISSION_CATALOG.items():
-            for action in actions:
-                scope = self._permission_scope(membership, role_permissions, resource, action)
-                if scope and scope != RolePermission.Scopes.NONE:
-                    result.append({"resource": resource, "action": action, "scope": scope})
-        return result
-
-    def _permission_scope(self, membership, role_permissions, resource, action):
-        business_role = membership.business_role
-        if business_role and business_role.is_active:
-            permission = role_permissions.get((business_role.id, resource, action))
-            if permission is None and action != Actions.MANAGE:
-                permission = role_permissions.get((business_role.id, resource, Actions.MANAGE))
-            if permission is not None:
-                return permission.scope if permission.is_allowed else RolePermission.Scopes.NONE
-
-        role = normalize_role(membership.role)
-        permissions = ROLE_PRESETS.get(role, {})
-        if "*" in permissions:
-            return permissions["*"].get(action) or permissions["*"].get(Actions.MANAGE)
-        resource_permissions = permissions.get(resource, {})
-        return resource_permissions.get(action) or resource_permissions.get(Actions.MANAGE)
 
 
 class SocialAuthSerializer(serializers.Serializer):

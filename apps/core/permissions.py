@@ -18,13 +18,14 @@ def accessible_businesses(user):
     if is_platform_admin(user) and not settings.SUPPORT_REQUIRES_GRANT:
         return Business.objects.all()
 
+    owned_query = Business.objects.filter(owner=user)
     membership_query = Business.objects.filter(members__user=user, members__is_active=True)
     support_query = Business.objects.filter(
         support_access_grants__user=user,
         support_access_grants__is_active=True,
         support_access_grants__expires_at__gt=timezone.now(),
     )
-    return (membership_query | support_query).distinct()
+    return (owned_query | membership_query | support_query).distinct()
 
 
 def user_can_access_business(user, business):
@@ -33,6 +34,7 @@ def user_can_access_business(user, business):
     if not user or not user.is_authenticated or business is None:
         return False
     return (
+        business.owner_id == user.id or
         business.members.filter(user=user, is_active=True).exists()
         or business.support_access_grants.filter(user=user, is_active=True, expires_at__gt=timezone.now()).exists()
     )

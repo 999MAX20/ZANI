@@ -19,7 +19,7 @@ from apps.accounts.serializers import (
 )
 from apps.accounts.models import User
 from apps.accounts.social_auth import get_or_create_social_user, verify_social_id_token
-from apps.businesses.access import ensure_default_roles
+from apps.businesses.access import ensure_default_roles, ensure_owner_memberships_for_user
 from apps.businesses.models import Business, BusinessMember, BusinessRole
 from apps.core.models import LoginHistory
 from apps.crm.services import ensure_default_pipeline
@@ -29,6 +29,7 @@ class CurrentUserView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        ensure_owner_memberships_for_user(request.user)
         serializer = CurrentUserSerializer(request.user)
         return Response(serializer.data)
 

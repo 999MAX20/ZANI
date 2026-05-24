@@ -5802,3 +5802,6 @@ Frontend production build after platform admin pages i18n pass: OK
 
 Full backend tests after public pages i18n pass: 293 OK
 Frontend production build after public pages i18n pass: OK
+
+Full backend tests after owner access repair pass: 295 OK
+Frontend production build after owner access repair pass: OK

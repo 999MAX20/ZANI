@@ -129,6 +129,36 @@ def get_membership(user, business):
     )
 
 
+def user_is_business_owner(user, business: Business | None) -> bool:
+    return bool(user and user.is_authenticated and business is not None and business.owner_id == user.id)
+
+
+def owner_business_role(business: Business | None):
+    if business is None:
+        return None
+    return BusinessRole.objects.filter(
+        business=business,
+        preset_key=BusinessMember.Roles.OWNER,
+        is_active=True,
+    ).first()
+
+
+def ensure_owner_memberships_for_user(user):
+    if not user or not user.is_authenticated:
+        return
+    owned_businesses = Business.objects.filter(owner=user).only("id")
+    for business in owned_businesses:
+        BusinessMember.objects.update_or_create(
+            business=business,
+            user=user,
+            defaults={
+                "role": BusinessMember.Roles.OWNER,
+                "business_role": owner_business_role(business),
+                "is_active": True,
+            },
+        )
+
+
 def role_allows(role, resource, action):
     role = normalize_role(role)
     permissions = ROLE_PRESETS.get(role, {})
@@ -166,6 +196,12 @@ def can(user, business: Business | None, resource: str, action: str, obj=None) -
         return PermissionResult(False, reason="No access to this business.")
 
     membership = get_membership(user, business)
+    if user_is_business_owner(user, business):
+        scope = role_allows(BusinessMember.Roles.OWNER, resource, action)
+        if not scope or scope == RolePermission.Scopes.NONE:
+            return PermissionResult(False, reason="Permission denied.")
+        return PermissionResult(True, scope)
+
     if membership is None:
         return PermissionResult(False, reason="No active membership.")
 
@@ -216,6 +252,12 @@ def scope_queryset(queryset, user, business: Business | None, resource: str, act
 def effective_permissions_for(user, business: Business | None):
     if business is None:
         return []
+    if user_is_business_owner(user, business):
+        return [
+            {"resource": resource, "action": action, "scope": RolePermission.Scopes.BUSINESS}
+            for resource, actions in PERMISSION_CATALOG.items()
+            for action in actions
+        ]
     permissions = []
     for resource, actions in PERMISSION_CATALOG.items():
         for action in actions:

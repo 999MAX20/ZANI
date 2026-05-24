@@ -64,6 +64,38 @@ class TeamAccessTests(TestCase):
             business_permissions,
         )
 
+    def test_auth_me_repairs_owner_membership_when_role_is_wrong(self):
+        accountant_role = BusinessRole.objects.get(business=self.business, preset_key=BusinessMember.Roles.ACCOUNTANT)
+        self.owner_member.role = BusinessMember.Roles.ACCOUNTANT
+        self.owner_member.business_role = accountant_role
+        self.owner_member.save(update_fields=["role", "business_role", "updated_at"])
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.get("/api/auth/me/")
+
+        self.assertEqual(response.status_code, 200)
+        self.owner_member.refresh_from_db()
+        self.assertEqual(self.owner_member.role, BusinessMember.Roles.OWNER)
+        self.assertEqual(response.data["memberships"][0]["role"], BusinessMember.Roles.OWNER)
+        business_permissions = response.data["effective_permissions"][str(self.business.id)]
+        self.assertIn(
+            {"resource": Resources.TEAM, "action": Actions.MANAGE, "scope": RolePermission.Scopes.BUSINESS},
+            business_permissions,
+        )
+
+    def test_business_owner_can_manage_team_even_without_membership_row(self):
+        self.owner_member.delete()
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            "/api/team/departments/",
+            {"business": self.business.id, "name": "Front desk"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(Team.objects.filter(business=self.business, name="Front desk").exists())
+
     def test_owner_can_manage_team_members(self):
         self.api.force_authenticate(self.owner)
 

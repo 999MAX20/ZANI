@@ -5902,3 +5902,10 @@ Targeted Playwright mobile smoke after mobile navigation regression pass: OK
 Owner onboarding language cleanup pass: first-channel onboarding no longer shows developer/mock wording to merchants. Website, Telegram and WhatsApp setup actions now use owner-friendly RU / KK / EN labels and explain that external channels are connected through integrations and support.
 
 Frontend production build after owner onboarding language cleanup pass: OK
+
+Final local regression after overnight hardening pass: migration drift check, Django system check, full backend test suite and frontend production build are green.
+
+Backend migration check after final overnight hardening pass: OK
+Backend check after final overnight hardening pass: OK
+Full backend tests after final overnight hardening pass: 307 OK
+Frontend production build after final overnight hardening pass: OK

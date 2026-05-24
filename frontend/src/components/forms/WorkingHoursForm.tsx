@@ -20,13 +20,13 @@ const schema = z.object({
 type Values = z.infer<typeof schema>;
 
 const weekdays = [
-  { value: 0, short: "Пн", label: "Понедельник" },
-  { value: 1, short: "Вт", label: "Вторник" },
-  { value: 2, short: "Ср", label: "Среда" },
-  { value: 3, short: "Чт", label: "Четверг" },
-  { value: 4, short: "Пт", label: "Пятница" },
-  { value: 5, short: "Сб", label: "Суббота" },
-  { value: 6, short: "Вс", label: "Воскресенье" },
+  { value: 0, shortKey: "weekday.monShort", labelKey: "weekday.mon" },
+  { value: 1, shortKey: "weekday.tueShort", labelKey: "weekday.tue" },
+  { value: 2, shortKey: "weekday.wedShort", labelKey: "weekday.wed" },
+  { value: 3, shortKey: "weekday.thuShort", labelKey: "weekday.thu" },
+  { value: 4, shortKey: "weekday.friShort", labelKey: "weekday.fri" },
+  { value: 5, shortKey: "weekday.satShort", labelKey: "weekday.sat" },
+  { value: 6, shortKey: "weekday.sunShort", labelKey: "weekday.sun" },
 ];
 
 export function WorkingHoursForm({
@@ -56,7 +56,7 @@ export function WorkingHoursForm({
     <form className="grid gap-4" onSubmit={form.handleSubmit((values) => onSubmit({ ...values, business: businessId, resource: values.resource || null }))}>
       <Select label={t("workingHours.resource")} options={[{ value: "", label: t("workingHours.wholeBusinessSchedule") }, ...resources.map((resource) => ({ value: resource.id, label: resource.name }))]} {...form.register("resource")} />
       <Select label={t("workingHours.weekday")} options={[
-        ...weekdays.map((day) => ({ value: day.value, label: day.label })),
+        ...weekdays.map((day) => ({ value: day.value, label: t(day.labelKey) })),
       ]} {...form.register("weekday")} />
       <div className="grid gap-4 sm:grid-cols-2">
         <Input label={t("workingHours.start")} type="time" {...form.register("start_time")} />
@@ -174,8 +174,8 @@ export function WeeklyWorkingHoursForm({
           return (
             <div key={weekday.value} className="grid gap-3 rounded-3xl border border-slate-100 bg-white/80 p-3 sm:grid-cols-[120px_1fr_1fr_120px] sm:items-center">
               <div>
-                <p className="font-bold text-midnight">{weekday.label}</p>
-                <p className="text-xs text-slate-400">{weekday.short}</p>
+                <p className="font-bold text-midnight">{t(weekday.labelKey)}</p>
+                <p className="text-xs text-slate-400">{t(weekday.shortKey)}</p>
               </div>
               <Input
                 label={t("workingHours.start")}

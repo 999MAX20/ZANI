@@ -5607,6 +5607,11 @@ Frontend production build: OK
   - login page стала компактнее на телефоне и больше не подставляет устаревший `admin@example.com/admin12345`;
   - публичный hero уменьшен на мобильном, чтобы первый экран не ломался длинным заголовком;
   - `/api/auth/me/` оптимизирован: текущий пользователь, memberships и effective permissions собираются без тяжёлой серии permission-запросов, что убирает зависание логина на Render/Supabase.
+- Shared merchant forms i18n pass:
+  - формы настроек бизнеса, заявки, клиента, записи, услуги, ресурса и графика работы больше не держат основные validation/help тексты hardcoded на русском;
+  - route-level и app-level error boundaries показывают сообщения и действия на выбранном языке;
+  - дни недели, типовые подсказки форм и обязательные ошибки вынесены в RU / KK / EN dictionaries;
+  - API-контракты форм не менялись.
 
 Проверка:
 
@@ -5630,6 +5635,8 @@ Frontend production build after platform/status i18n: OK
 Frontend production build after dashboard i18n: OK
 Frontend production build after mobile shell/auth pass: OK
 Full backend tests after mobile shell/auth pass: 288 OK
+Full backend tests after shared forms i18n pass: 288 OK
+Frontend production build after shared forms i18n pass: OK
 Visual smoke screenshots: desktop collapsed rail, desktop expanded rail, mobile dashboard OK
 ```
 

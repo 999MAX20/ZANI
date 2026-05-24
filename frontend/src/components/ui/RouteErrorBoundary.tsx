@@ -3,12 +3,13 @@ import { isRouteErrorResponse, useNavigate, useRouteError } from "react-router-d
 import { Button } from "./Button";
 import { ErrorState } from "./StateViews";
 import { getApiErrorMessage } from "../../api/client";
+import { useI18n } from "../../lib/i18n";
 
-function getRouteErrorMessage(error: unknown) {
+function getRouteErrorMessage(error: unknown, t: (key: string) => string) {
   if (isRouteErrorResponse(error)) {
-    if (error.status === 404) return "Страница не найдена или больше недоступна.";
-    if (error.status === 403) return "У вашей роли нет доступа к этому разделу.";
-    return error.statusText || "Не удалось открыть раздел.";
+    if (error.status === 404) return t("routeError.notFound");
+    if (error.status === 403) return t("routeError.forbidden");
+    return error.statusText || t("routeError.generic");
   }
   if (error instanceof Error) return error.message;
   return getApiErrorMessage(error);
@@ -17,19 +18,20 @@ function getRouteErrorMessage(error: unknown) {
 export function RouteErrorBoundary() {
   const error = useRouteError();
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   return (
     <div className="min-h-screen bg-app-gradient px-4 py-8 text-slate-900 sm:px-8">
       <div className="mx-auto max-w-3xl">
         <ErrorState
-          message={getRouteErrorMessage(error)}
+          message={getRouteErrorMessage(error, t)}
           action={
             <div className="flex flex-wrap gap-2">
               <Button type="button" variant="secondary" onClick={() => navigate(-1)}>
-                Назад
+                {t("routeError.back")}
               </Button>
               <Button type="button" onClick={() => navigate("/dashboard")}>
-                На главную
+                {t("routeError.home")}
               </Button>
             </div>
           }

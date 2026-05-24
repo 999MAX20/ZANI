@@ -8,20 +8,21 @@ import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { Textarea } from "../ui/Textarea";
 
-const schema = z.object({
-  name: z.string().min(2, "Введите название"),
-  description: z.string().optional(),
-  duration_minutes: z.coerce.number().min(15),
-  price_from: z.string().optional(),
-  is_active: z.boolean(),
-});
+const createSchema = (t: (key: string) => string) =>
+  z.object({
+    name: z.string().min(2, t("services.nameRequired")),
+    description: z.string().optional(),
+    duration_minutes: z.coerce.number().min(15),
+    price_from: z.string().optional(),
+    is_active: z.boolean(),
+  });
 
-type Values = z.infer<typeof schema>;
+type Values = z.infer<ReturnType<typeof createSchema>>;
 
 export function ServiceForm({ businessId, initial, onSubmit }: { businessId: Id; initial?: Service; onSubmit: (payload: Partial<Service>) => Promise<unknown> }) {
   const { t } = useI18n();
   const form = useForm<Values>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(createSchema(t)),
     defaultValues: {
       name: initial?.name || "",
       description: initial?.description || "",

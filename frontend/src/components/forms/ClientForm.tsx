@@ -11,15 +11,17 @@ import { Input } from "../ui/Input";
 import { Select } from "../ui/Select";
 import { Textarea } from "../ui/Textarea";
 
-const schema = z.object({
-  full_name: z.string().min(2, "Введите имя"),
-  phone: z.string().optional(),
-  email: z.string().email("Некорректный email").or(z.literal("")),
-  source: z.string(),
-  notes: z.string().optional(),
-});
+function createSchema(t: (key: string) => string) {
+  return z.object({
+    full_name: z.string().min(2, t("validation.name")),
+    phone: z.string().optional(),
+    email: z.string().email(t("validation.email")).or(z.literal("")),
+    source: z.string(),
+    notes: z.string().optional(),
+  });
+}
 
-type Values = z.infer<typeof schema>;
+type Values = z.infer<ReturnType<typeof createSchema>>;
 
 export function ClientForm({
   businessId,
@@ -38,7 +40,7 @@ export function ClientForm({
   const [duplicates, setDuplicates] = useState<DuplicateClient[]>([]);
   const [duplicateError, setDuplicateError] = useState("");
   const form = useForm<Values>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(createSchema(t)),
     defaultValues: {
       full_name: initial?.full_name || "",
       phone: initial?.phone || "",

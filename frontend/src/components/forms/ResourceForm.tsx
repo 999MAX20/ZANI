@@ -8,18 +8,19 @@ import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { Select } from "../ui/Select";
 
-const schema = z.object({
-  name: z.string().min(2, "Введите название"),
-  resource_type: z.string(),
-  is_active: z.boolean(),
-});
+const createSchema = (t: (key: string) => string) =>
+  z.object({
+    name: z.string().min(2, t("resources.nameRequired")),
+    resource_type: z.string(),
+    is_active: z.boolean(),
+  });
 
-type Values = z.infer<typeof schema>;
+type Values = z.infer<ReturnType<typeof createSchema>>;
 
 export function ResourceForm({ businessId, initial, onSubmit }: { businessId: Id; initial?: Resource; onSubmit: (payload: Partial<Resource>) => Promise<unknown> }) {
   const { t } = useI18n();
   const form = useForm<Values>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(createSchema(t)),
     defaultValues: {
       name: initial?.name || "",
       resource_type: initial?.resource_type || "staff",

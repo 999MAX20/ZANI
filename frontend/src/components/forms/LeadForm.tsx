@@ -5,21 +5,24 @@ import { Link } from "react-router-dom";
 import { z } from "zod";
 
 import { leadsApi } from "../../api/leads";
+import { useI18n } from "../../lib/i18n";
 import type { DuplicateClient, Id, Lead, Service, Client, TeamMember } from "../../types";
 import { Button } from "../ui/Button";
 import { Select } from "../ui/Select";
 import { Textarea } from "../ui/Textarea";
 
-const schema = z.object({
-  client: z.coerce.number().min(1, "Выберите клиента"),
-  service: z.coerce.number().optional(),
-  source: z.string(),
-  status: z.string(),
-  message: z.string().optional(),
-  responsible_user: z.coerce.number().optional(),
-});
+function createSchema(t: (key: string) => string) {
+  return z.object({
+    client: z.coerce.number().min(1, t("leadForm.selectClientError")),
+    service: z.coerce.number().optional(),
+    source: z.string(),
+    status: z.string(),
+    message: z.string().optional(),
+    responsible_user: z.coerce.number().optional(),
+  });
+}
 
-type Values = z.infer<typeof schema>;
+type Values = z.infer<ReturnType<typeof createSchema>>;
 
 export function LeadForm({
   businessId,
@@ -38,12 +41,13 @@ export function LeadForm({
   onSubmit: (payload: Partial<Lead>) => Promise<unknown>;
   onOpenClient?: (id: Id) => void;
 }) {
+  const { t } = useI18n();
   const [duplicates, setDuplicates] = useState<DuplicateClient[]>([]);
   const [relatedLeadsCount, setRelatedLeadsCount] = useState(0);
   const hasClients = clients.length > 0;
   const hasServices = services.length > 0;
   const form = useForm<Values>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(createSchema(t)),
     defaultValues: {
       client: initial?.client || clients[0]?.id || 0,
       service: initial?.service || undefined,
@@ -80,69 +84,69 @@ export function LeadForm({
     <form className="grid gap-4" onSubmit={form.handleSubmit((values) => onSubmit({ ...values, business: businessId, service: values.service || null, responsible_user: values.responsible_user || null } as Partial<Lead>))}>
       {!hasClients ? (
         <div className="rounded-3xl border border-amber-100 bg-amber-50/80 p-4 text-sm text-amber-900">
-          <p className="font-bold">Сначала добавьте клиента</p>
-          <p className="mt-1 leading-6 text-amber-800">Заявка должна быть привязана к человеку или компании, чтобы потом создать запись, задачу и историю общения.</p>
+          <p className="font-bold">{t("leadForm.needClientTitle")}</p>
+          <p className="mt-1 leading-6 text-amber-800">{t("leadForm.needClientText")}</p>
           <Link className="mt-3 inline-flex font-bold text-amber-950 underline-offset-4 hover:underline" to="/dashboard/clients?create=1">
-            Создать клиента
+            {t("clients.create")}
           </Link>
         </div>
       ) : null}
       {!hasServices ? (
         <div className="rounded-3xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-600">
-          <p className="font-bold text-midnight">Услугу можно добавить позже</p>
-          <p className="mt-1 leading-6">Но для записи и слотов услуга нужна: по ней считается длительность и понятнее аналитика спроса.</p>
+          <p className="font-bold text-midnight">{t("leadForm.serviceLaterTitle")}</p>
+          <p className="mt-1 leading-6">{t("leadForm.serviceLaterText")}</p>
           <Link className="mt-3 inline-flex font-bold text-brand-700 underline-offset-4 hover:underline" to="/dashboard/services">
-            Настроить услуги
+            {t("services.title")}
           </Link>
         </div>
       ) : null}
-      <Select label="Клиент" options={[{ value: 0, label: "Выберите клиента" }, ...clients.map((client) => ({ value: client.id, label: `${client.full_name} ${client.phone || ""}` }))]} {...form.register("client")} />
+      <Select label={t("appointment.client")} options={[{ value: 0, label: t("appointment.selectClient") }, ...clients.map((client) => ({ value: client.id, label: `${client.full_name} ${client.phone || ""}` }))]} {...form.register("client")} />
       {duplicates.length || relatedLeadsCount ? (
         <div className="rounded-3xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          <p className="font-black">Есть похожий клиент или активная история</p>
+          <p className="font-black">{t("leadForm.relatedTitle")}</p>
           <p className="mt-1 text-amber-800">
-            {relatedLeadsCount ? `У выбранного клиента уже есть заявок: ${relatedLeadsCount}. ` : ""}
-            Проверьте историю перед созданием новой заявки.
+            {relatedLeadsCount ? `${t("leadForm.relatedCount").replace("{count}", String(relatedLeadsCount))} ` : ""}
+            {t("leadForm.relatedText")}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {duplicates.slice(0, 2).map((client) => (
               <Button key={client.id} type="button" variant="secondary" className="h-9 rounded-xl px-3 text-xs" onClick={() => onOpenClient?.(client.id)}>
-                Открыть существующего клиента
+                {t("clients.openExisting")}
               </Button>
             ))}
             {!duplicates.length && clientId && onOpenClient ? (
               <Button type="button" variant="secondary" className="h-9 rounded-xl px-3 text-xs" onClick={() => onOpenClient(Number(clientId))}>
-                Открыть существующего клиента
+                {t("clients.openExisting")}
               </Button>
             ) : null}
           </div>
         </div>
       ) : null}
-      <Select label="Услуга" options={[{ value: "", label: "Без услуги" }, ...services.map((service) => ({ value: service.id, label: service.name }))]} {...form.register("service")} />
+      <Select label={t("appointment.service")} options={[{ value: "", label: t("leadForm.noService") }, ...services.map((service) => ({ value: service.id, label: service.name }))]} {...form.register("service")} />
       <div className="grid gap-4 sm:grid-cols-2">
-        <Select label="Источник" options={[
-          { value: "manual", label: "Вручную" },
-          { value: "website", label: "Сайт" },
-          { value: "landing", label: "Лендинг" },
+        <Select label={t("appointment.source")} options={[
+          { value: "manual", label: t("clients.sourceManual") },
+          { value: "website", label: t("clients.sourceWebsite") },
+          { value: "landing", label: t("leadForm.sourceLanding") },
           { value: "telegram", label: "Telegram" },
           { value: "whatsapp", label: "WhatsApp" },
           { value: "instagram", label: "Instagram" },
-          { value: "other", label: "Другое" },
+          { value: "other", label: t("clients.sourceOther") },
         ]} {...form.register("source")} />
-        <Select label="Статус" options={[
-          { value: "new", label: "Новая" },
-          { value: "in_progress", label: "В работе" },
-          { value: "appointment_created", label: "Записан" },
-          { value: "contacted", label: "Связались" },
-          { value: "closed", label: "Закрыта" },
-          { value: "lost", label: "Потеряна" },
+        <Select label={t("settings.status")} options={[
+          { value: "new", label: t("status.new") },
+          { value: "in_progress", label: t("status.in_progress") },
+          { value: "appointment_created", label: t("status.appointment_created") },
+          { value: "contacted", label: t("status.contacted") },
+          { value: "closed", label: t("status.closed") },
+          { value: "lost", label: t("status.lost") },
         ]} {...form.register("status")} />
       </div>
       {teamMembers.length ? (
         <Select
-          label="Ответственный"
+          label={t("leads.responsible")}
           options={[
-            { value: "", label: "Назначить позже" },
+            { value: "", label: t("leadForm.assignLater") },
             ...teamMembers
               .filter((member) => member.is_active)
               .map((member) => ({
@@ -153,8 +157,8 @@ export function LeadForm({
           {...form.register("responsible_user")}
         />
       ) : null}
-      <Textarea label="Сообщение" {...form.register("message")} />
-      <Button type="submit" isLoading={form.formState.isSubmitting} disabled={!hasClients}>{duplicates.length || relatedLeadsCount ? "Создать всё равно" : "Сохранить"}</Button>
+      <Textarea label={t("leadForm.message")} {...form.register("message")} />
+      <Button type="submit" isLoading={form.formState.isSubmitting} disabled={!hasClients}>{duplicates.length || relatedLeadsCount ? t("clients.createAnyway") : t("clients.save")}</Button>
     </form>
   );
 }

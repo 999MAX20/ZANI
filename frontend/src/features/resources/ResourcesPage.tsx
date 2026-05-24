@@ -16,13 +16,13 @@ import { useEntityData } from "../../hooks/useEntityData";
 import { useI18n } from "../../lib/i18n";
 import type { Resource } from "../../types";
 
-const resourceTypeLabels: Record<Resource["resource_type"], string> = {
-  staff: "Сотрудник / мастер",
-  room: "Кабинет",
-  hall: "Зал",
-  box: "Бокс / место",
-  equipment: "Оборудование",
-  other: "Другое",
+const resourceTypeLabelKeys: Record<Resource["resource_type"], string> = {
+  staff: "resources.typeStaff",
+  room: "resources.typeRoom",
+  hall: "resources.typeHall",
+  box: "resources.typeBox",
+  equipment: "resources.typeEquipment",
+  other: "resources.typeOther",
 };
 
 function StatCard({ label, value, hint, icon: Icon }: { label: string; value: number | string; hint: string; icon: typeof UsersRound }) {
@@ -87,7 +87,7 @@ export function ResourcesPage() {
         emptyAction={<Button variant="secondary" onClick={() => setOpen(true)}><Plus size={16} />{t("resources.add")}</Button>}
         columns={[
           { header: t("resources.name"), cell: (resource) => <span className="font-medium text-ink">{resource.name}</span> },
-          { header: t("resources.type"), cell: (resource) => resourceTypeLabels[resource.resource_type] || resource.resource_type },
+          { header: t("resources.type"), cell: (resource) => t(resourceTypeLabelKeys[resource.resource_type] || "resources.typeOther") },
           { header: t("resources.bookings"), cell: (resource) => resourceUsage(resource) },
           { header: t("appointment.status"), cell: (resource) => <StatusBadge status={resource.is_active ? "active" : "inactive"} /> },
           { header: t("appointments.actions"), cell: (resource) => <Button variant="ghost" onClick={() => { setEditing(resource); setOpen(true); }}>{t("appointments.edit")}</Button> },

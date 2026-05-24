@@ -5692,6 +5692,10 @@ Frontend production build: OK
   - `AnalyticsPage` больше не содержит hardcoded RU строк и основные смешанные EN/RU подписи метрик вынесены в RU / KK / EN словарь;
   - локализованы no-show, Source ROI, team CSV, probability/avg days, handoff/team labels и team counters;
   - owner/team analytics API и exports не менялись.
+- Resources i18n pass:
+  - `ResourcesPage` больше не хранит resource type labels в компоненте;
+  - типы staff/room/hall/box/equipment/other берутся из существующих RU / KK / EN ключей;
+  - CRUD ресурсов, календарная логика и API не менялись.
 
 Проверка:
 
@@ -5762,6 +5766,8 @@ Full backend tests after timeline i18n pass: 293 OK
 Frontend production build after timeline i18n pass: OK
 Full backend tests after analytics i18n pass: 293 OK
 Frontend production build after analytics i18n pass: OK
+Full backend tests after resources i18n pass: 293 OK
+Frontend production build after resources i18n pass: OK
 Visual smoke screenshots: desktop collapsed rail, desktop expanded rail, mobile dashboard OK
 ```
 

@@ -5665,6 +5665,10 @@ Frontend production build: OK
   - Telegram wizard теперь синхронизирует merchant-facing `BusinessConnector`, чтобы страница интеграций, support health и настройки бота видели один статус;
   - connector хранит только safe metadata (`bot_channel_id`, configured flags, last operation), без bot token и webhook secret;
   - успешный mock/real webhook setup или test connection переводит Telegram connector в `connected`, ошибка переводит в `failed` с `last_error`.
+- Pilot readiness i18n pass:
+  - `/dashboard/pilot-readiness` больше не держит hardcoded RU строки в компоненте;
+  - статусы, прогресс, путь подготовки, smoke path и empty/ready states вынесены в RU / KK / EN словарь;
+  - backend checklist payload не менялся, чтобы не ломать текущие pilot readiness API.
 
 Проверка:
 
@@ -5721,6 +5725,8 @@ Frontend production build after lightweight integration readiness pass: OK
 Telegram integration tests after connector alignment pass: 11 OK
 Full backend tests after Telegram connector alignment pass: 293 OK
 Frontend production build after Telegram connector alignment pass: OK
+Full backend tests after pilot readiness i18n pass: 293 OK
+Frontend production build after pilot readiness i18n pass: OK
 Visual smoke screenshots: desktop collapsed rail, desktop expanded rail, mobile dashboard OK
 ```
 

@@ -8,22 +8,23 @@ import { Card, CardBody, CardHeader } from "../../components/ui/Card";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { ErrorState, LoadingState } from "../../components/ui/StateViews";
 import { cn } from "../../lib/cn";
+import { useI18n } from "../../lib/i18n";
 
 const statusUi = {
   ready: {
-    label: "Готово",
+    labelKey: "pilot.status.ready",
     icon: CheckCircle2,
     className: "border-emerald-100 bg-emerald-50 text-emerald-700",
     dot: "bg-emerald-500",
   },
   needs_attention: {
-    label: "Требует внимания",
+    labelKey: "pilot.status.needsAttention",
     icon: AlertTriangle,
     className: "border-amber-100 bg-amber-50 text-amber-700",
     dot: "bg-amber-500",
   },
   missing: {
-    label: "Не настроено",
+    labelKey: "pilot.status.missing",
     icon: CircleDashed,
     className: "border-slate-100 bg-slate-50 text-slate-600",
     dot: "bg-slate-400",
@@ -31,6 +32,7 @@ const statusUi = {
 };
 
 function ReadinessItemCard({ item }: { item: PilotReadinessItem }) {
+  const { t } = useI18n();
   const ui = statusUi[item.status] || statusUi.missing;
   const Icon = ui.icon;
 
@@ -40,7 +42,7 @@ function ReadinessItemCard({ item }: { item: PilotReadinessItem }) {
         <div className="flex items-start justify-between gap-3">
           <div className={cn("inline-flex items-center gap-2 rounded-2xl border px-3 py-1.5 text-xs font-black", ui.className)}>
             <span className={cn("h-2 w-2 rounded-full", ui.dot)} />
-            {ui.label}
+            {t(ui.labelKey)}
           </div>
           <Icon size={20} className={item.is_ready ? "text-emerald-500" : item.status === "needs_attention" ? "text-amber-500" : "text-slate-400"} />
         </div>
@@ -50,11 +52,11 @@ function ReadinessItemCard({ item }: { item: PilotReadinessItem }) {
         </div>
         <div className="mt-auto flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
           <span className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
-            {typeof item.count === "number" ? `${item.count} шт.` : item.is_ready ? "OK" : "—"}
+            {typeof item.count === "number" ? t("pilot.countShort", { count: item.count }) : item.is_ready ? "OK" : "—"}
           </span>
           {item.href ? (
             <Link to={item.href} className="inline-flex items-center gap-1 text-sm font-bold text-brand-700 hover:text-brand-900">
-              Открыть <ExternalLink size={14} />
+              {t("common.open")} <ExternalLink size={14} />
             </Link>
           ) : null}
         </div>
@@ -64,17 +66,18 @@ function ReadinessItemCard({ item }: { item: PilotReadinessItem }) {
 }
 
 export function PilotReadinessPage() {
+  const { t } = useI18n();
   const readinessQuery = useQuery({
     queryKey: ["pilot-readiness"],
     queryFn: pilotApi.readiness,
   });
 
-  if (readinessQuery.isLoading) return <LoadingState label="Проверяем готовность пилота..." />;
+  if (readinessQuery.isLoading) return <LoadingState label={t("pilot.loading")} />;
   if (readinessQuery.isError) {
     return (
       <ErrorState
-        message="Не удалось загрузить чеклист пилота. Проверьте backend и доступ к бизнесу."
-        action={<Button variant="secondary" onClick={() => readinessQuery.refetch()}><RefreshCw size={16} />Повторить</Button>}
+        message={t("pilot.loadError")}
+        action={<Button variant="secondary" onClick={() => readinessQuery.refetch()}><RefreshCw size={16} />{t("common.retry")}</Button>}
       />
     );
   }
@@ -89,11 +92,11 @@ export function PilotReadinessPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Pilot Readiness"
-        description="Контрольная страница перед показом Zani пилотным клиентам: CRM, демо-данные, бот, inbox, billing, AI, импорт и интеграции."
+        title={t("pilot.title")}
+        description={t("pilot.description")}
         actions={
           <Button variant="secondary" onClick={() => readinessQuery.refetch()}>
-            <RefreshCw size={16} />Обновить чеклист
+            <RefreshCw size={16} />{t("pilot.refresh")}
           </Button>
         }
       />
@@ -105,16 +108,16 @@ export function PilotReadinessPage() {
               <Rocket size={26} />
             </div>
             <div>
-              <p className="text-sm font-bold uppercase tracking-[0.16em] text-brand-600">{data.business?.name || "Бизнес не выбран"}</p>
-              <h2 className="mt-2 text-2xl font-black tracking-tight text-midnight">Пилотная готовность: <span className={scoreTone}>{data.score}%</span></h2>
+              <p className="text-sm font-bold uppercase tracking-[0.16em] text-brand-600">{data.business?.name || t("pilot.noBusiness")}</p>
+              <h2 className="mt-2 text-2xl font-black tracking-tight text-midnight">{t("pilot.scoreTitle")} <span className={scoreTone}>{data.score}%</span></h2>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-                Готово {data.ready_count} из {data.total_count} пунктов. Эта страница не подключает новые внешние сервисы — она показывает, насколько текущий workspace готов к кликабельному пилоту.
+                {t("pilot.scoreText", { ready: data.ready_count, total: data.total_count })}
               </p>
             </div>
           </div>
           <div className="rounded-3xl bg-white/80 p-5 shadow-soft">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-bold text-slate-500">Progress</span>
+              <span className="text-sm font-bold text-slate-500">{t("pilot.progress")}</span>
               <span className={cn("text-2xl font-black", scoreTone)}>{data.score}%</span>
             </div>
             <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-100">
@@ -122,7 +125,7 @@ export function PilotReadinessPage() {
             </div>
             <div className="mt-4 flex items-center gap-2 text-sm font-semibold text-slate-600">
               <ShieldCheck size={17} className="text-brand-600" />
-              Критичных пробелов: {data.critical_missing.length}
+              {t("pilot.criticalGaps", { count: data.critical_missing.length })}
             </div>
           </div>
         </CardBody>
@@ -135,22 +138,22 @@ export function PilotReadinessPage() {
               <ListChecks size={20} />
             </div>
             <div>
-              <p className="text-lg font-black text-midnight">Путь подготовки пилота</p>
-              <p className="mt-1 text-sm text-slate-500">Идём от базы бизнеса к живому клиентскому сценарию, без технических экранов для мерчанта.</p>
+              <p className="text-lg font-black text-midnight">{t("pilot.pathTitle")}</p>
+              <p className="mt-1 text-sm text-slate-500">{t("pilot.pathText")}</p>
             </div>
           </div>
         </CardHeader>
         <CardBody className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           {[
-            { title: "1. Бизнес и команда", text: "Профиль, владелец, оператор, роли и доступы.", href: "/dashboard/settings" },
-            { title: "2. CRM-скелет", text: "Услуги, ресурсы, график, первая заявка и сделка.", href: "/dashboard/onboarding" },
-            { title: "3. Клиентский сценарий", text: "Запись, задача, inbox, website chat и AI-черновик.", href: "/dashboard/inbox" },
-            { title: "4. Рост и данные", text: "Импорт базы, интеграции, billing и финальная проверка.", href: "/dashboard/integrations" },
+            { title: t("pilot.step1Title"), text: t("pilot.step1Text"), href: "/dashboard/settings" },
+            { title: t("pilot.step2Title"), text: t("pilot.step2Text"), href: "/dashboard/onboarding" },
+            { title: t("pilot.step3Title"), text: t("pilot.step3Text"), href: "/dashboard/inbox" },
+            { title: t("pilot.step4Title"), text: t("pilot.step4Text"), href: "/dashboard/integrations" },
           ].map((step) => (
             <Link key={step.title} to={step.href} className="rounded-3xl border border-slate-100 bg-white/75 p-4 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-soft">
               <p className="font-black text-midnight">{step.title}</p>
               <p className="mt-2 text-sm leading-6 text-slate-500">{step.text}</p>
-              <p className="mt-3 text-xs font-black uppercase tracking-[0.12em] text-brand-700">Открыть</p>
+              <p className="mt-3 text-xs font-black uppercase tracking-[0.12em] text-brand-700">{t("common.open")}</p>
             </Link>
           ))}
         </CardBody>
@@ -159,7 +162,7 @@ export function PilotReadinessPage() {
       {missing.length ? (
         <Card>
           <CardHeader>
-            <p className="text-lg font-black text-midnight">Что добить перед пилотом</p>
+            <p className="text-lg font-black text-midnight">{t("pilot.toFixTitle")}</p>
           </CardHeader>
           <CardBody className="grid gap-3 md:grid-cols-2">
             {missing.slice(0, 6).map((item) => (
@@ -173,8 +176,8 @@ export function PilotReadinessPage() {
       ) : (
         <Card className="border-emerald-100 bg-emerald-50/50">
           <CardBody>
-            <p className="text-lg font-black text-emerald-800">Все базовые пункты пилота готовы</p>
-            <p className="mt-2 text-sm text-emerald-700">Можно переходить к end-to-end проверкам widget, inbox и connector statuses.</p>
+            <p className="text-lg font-black text-emerald-800">{t("pilot.readyTitle")}</p>
+            <p className="mt-2 text-sm text-emerald-700">{t("pilot.readyText")}</p>
           </CardBody>
         </Card>
       )}
@@ -185,20 +188,20 @@ export function PilotReadinessPage() {
 
       <Card>
         <CardHeader>
-          <p className="text-lg font-black text-midnight">Следующий ручной smoke path</p>
+          <p className="text-lg font-black text-midnight">{t("pilot.smokeTitle")}</p>
         </CardHeader>
         <CardBody>
           <ol className="grid gap-3 text-sm leading-6 text-slate-600 md:grid-cols-2">
-            <li>1. Войти как demo-owner и открыть Dashboard.</li>
-            <li>2. Проверить Leads, Clients, Deals, Tasks, Calendar.</li>
-            <li>3. Открыть Inbox и проверить тестовый диалог.</li>
-            <li>4. Открыть Bots и убедиться, что website channel есть.</li>
-            <li>5. Открыть AI Assistant и проверить черновик ответа.</li>
-            <li>6. Открыть Integrations и убедиться, что нет тупиковых кнопок.</li>
+            <li>{t("pilot.smoke1")}</li>
+            <li>{t("pilot.smoke2")}</li>
+            <li>{t("pilot.smoke3")}</li>
+            <li>{t("pilot.smoke4")}</li>
+            <li>{t("pilot.smoke5")}</li>
+            <li>{t("pilot.smoke6")}</li>
           </ol>
           {data.next_actions.length ? (
             <div className="mt-5 rounded-3xl border border-brand-100 bg-brand-50/70 p-4">
-              <p className="text-sm font-black text-midnight">Следующие действия по данным системы</p>
+              <p className="text-sm font-black text-midnight">{t("pilot.systemActionsTitle")}</p>
               <ul className="mt-3 grid gap-2 text-sm leading-6 text-slate-600 md:grid-cols-2">
                 {data.next_actions.map((action) => <li key={action}>• {action}</li>)}
               </ul>

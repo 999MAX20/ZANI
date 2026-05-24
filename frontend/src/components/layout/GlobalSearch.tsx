@@ -135,7 +135,7 @@ export function GlobalSearch() {
   return (
     <div ref={rootRef} className={cn("relative", mobileExpanded && "absolute inset-x-16 top-1/2 z-40 -translate-y-1/2 lg:static lg:translate-y-0")}>
       <Button
-        className={cn("h-10 w-10 rounded-full px-0 lg:hidden", mobileExpanded && "hidden")}
+        className={cn("h-12 w-12 rounded-full px-0 lg:hidden", mobileExpanded && "hidden")}
         variant="ghost"
         aria-label={t("search.aria")}
         onClick={() => {
@@ -143,7 +143,7 @@ export function GlobalSearch() {
           openSearch();
         }}
       >
-        <Search size={22} />
+        <Search size={24} strokeWidth={2.35} />
       </Button>
 
       <div

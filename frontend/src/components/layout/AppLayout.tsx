@@ -20,14 +20,14 @@ export function AppLayout() {
       <div className="relative flex min-h-screen">
         <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((value) => !value)} />
         <MobileNav open={menuOpen} onOpen={() => setMenuOpen(true)} onClose={() => setMenuOpen(false)} />
-        <div className="flex min-w-0 flex-1 flex-col pb-24 lg:pb-0">
+        <div className="flex min-w-0 flex-1 flex-col pb-28 lg:pb-0">
           <Header onMenuClick={() => setMenuOpen(true)} />
           <motion.main
             key={location.pathname}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.22 }}
-            className="mx-auto w-full max-w-[1500px] flex-1 px-4 py-6 sm:px-6 lg:px-8"
+            className="mx-auto w-full max-w-[1500px] flex-1 px-3 py-4 sm:px-6 sm:py-6 lg:px-8"
           >
             <Outlet />
           </motion.main>

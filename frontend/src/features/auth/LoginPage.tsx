@@ -56,7 +56,7 @@ export function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { email: "admin@example.com", password: "admin12345" },
+    defaultValues: { email: "", password: "" },
   });
 
   async function onSubmit(values: FormValues) {
@@ -140,8 +140,8 @@ export function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen overflow-hidden bg-soft-mesh px-4 py-8">
-      <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl items-center gap-8 lg:grid-cols-[1.1fr_480px]">
+    <main className="min-h-screen overflow-hidden bg-soft-mesh px-3 py-4 sm:px-4 sm:py-8">
+      <div className="mx-auto grid min-h-[calc(100vh-2rem)] max-w-7xl items-center gap-6 lg:min-h-[calc(100vh-4rem)] lg:grid-cols-[1.1fr_480px] lg:gap-8">
         <section className="relative hidden lg:block">
           <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/75 px-4 py-2 text-sm font-bold text-ai-700 shadow-soft backdrop-blur-xl">
             <Sparkles size={16} />
@@ -167,13 +167,13 @@ export function LoginPage() {
             ))}
           </div>
         </section>
-        <motion.section initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="glass-panel rounded-[2rem] p-6 sm:p-8">
-          <div className="mb-8">
-            <div className="mb-5 grid h-14 w-14 place-items-center rounded-3xl bg-ai-gradient text-white shadow-glow">
-              <Zap size={25} />
+        <motion.section initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="glass-panel rounded-[1.75rem] p-5 sm:rounded-[2rem] sm:p-8">
+          <div className="mb-5 sm:mb-8">
+            <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-ai-gradient text-white shadow-glow sm:mb-5 sm:h-14 sm:w-14 sm:rounded-3xl">
+              <Zap size={22} />
             </div>
             <p className="text-sm font-bold uppercase tracking-[0.16em] text-brand-700">{t("auth.welcome")}</p>
-            <h2 className="mt-2 text-3xl font-semibold tracking-tight text-midnight">{t("auth.signIn")}</h2>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-midnight sm:text-3xl">{t("auth.signIn")}</h2>
             <p className="mt-2 text-sm leading-6 text-slate-500">{t("auth.signInCopy")}</p>
           </div>
 
@@ -183,7 +183,7 @@ export function LoginPage() {
             </div>
           ) : null}
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-2 sm:grid-cols-2 sm:gap-3">
             <Button
               type="button"
               variant="secondary"
@@ -210,13 +210,13 @@ export function LoginPage() {
             </Button>
           </div>
 
-          <div className="my-6 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+          <div className="my-4 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.16em] text-slate-400 sm:my-6">
             <span className="h-px flex-1 bg-slate-200" />
             {t("auth.socialDivider")}
             <span className="h-px flex-1 bg-slate-200" />
           </div>
 
-          <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
+          <form className="space-y-4 sm:space-y-5" onSubmit={handleSubmit(onSubmit)}>
             <Input label={t("auth.email")} type="email" error={errors.email?.message} {...register("email")} />
             <Input label={t("auth.password")} type="password" error={errors.password?.message} {...register("password")} />
             <div className="flex flex-wrap items-center justify-between gap-2 text-sm">

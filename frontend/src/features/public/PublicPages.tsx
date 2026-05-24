@@ -15,16 +15,16 @@ const productCards = [
 
 function Hero({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) {
   return (
-    <section className="px-4 pb-10 pt-10 sm:pt-16">
-      <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+    <section className="px-3 pb-8 pt-6 sm:px-4 sm:pb-10 sm:pt-16">
+      <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-8">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/75 px-4 py-2 text-sm font-bold text-brand-700 shadow-soft backdrop-blur-xl">
+          <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-white/70 bg-white/75 px-3 py-2 text-xs font-bold text-brand-700 shadow-soft backdrop-blur-xl sm:px-4 sm:text-sm">
             <Sparkles size={16} />
-            {eyebrow}
+            <span className="truncate">{eyebrow}</span>
           </div>
-          <h1 className="mt-6 max-w-4xl text-5xl font-semibold leading-[1.02] tracking-tight text-midnight sm:text-6xl lg:text-7xl">{title}</h1>
-          <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">{description}</p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <h1 className="mt-5 max-w-4xl text-4xl font-semibold leading-[1.08] tracking-tight text-midnight sm:mt-6 sm:text-6xl sm:leading-[1.02] lg:text-7xl">{title}</h1>
+          <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600 sm:mt-6 sm:text-lg sm:leading-8">{description}</p>
+          <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row">
             <Link to="/login">
               <Button variant="ai" className="w-full rounded-full px-6 sm:w-auto">
                 Открыть CRM
@@ -38,18 +38,18 @@ function Hero({ eyebrow, title, description }: { eyebrow: string; title: string;
             </Link>
           </div>
         </div>
-        <div className="glass-panel rounded-[2rem] p-5 shadow-premium">
-          <div className="rounded-[1.5rem] bg-midnight p-5 text-white">
+        <div className="glass-panel rounded-[1.6rem] p-3 shadow-premium sm:rounded-[2rem] sm:p-5">
+          <div className="rounded-[1.25rem] bg-midnight p-4 text-white sm:rounded-[1.5rem] sm:p-5">
             <p className="text-sm font-semibold text-white/55">Business cockpit</p>
-            <div className="mt-5 grid gap-3">
+            <div className="mt-4 grid gap-2 sm:mt-5 sm:gap-3">
               {[
                 ["Новые заявки", "12", "needs attention"],
                 ["Записи сегодня", "8", "confirmed"],
                 ["Клиенты", "248", "active base"],
               ].map(([label, value, hint]) => (
-                <div key={label} className="rounded-3xl border border-white/10 bg-white/7 p-4">
+                <div key={label} className="rounded-2xl border border-white/10 bg-white/7 p-3 sm:rounded-3xl sm:p-4">
                   <p className="text-sm text-white/55">{label}</p>
-                  <p className="mt-2 text-4xl font-semibold">{value}</p>
+                  <p className="mt-2 text-3xl font-semibold sm:text-4xl">{value}</p>
                   <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200">{hint}</p>
                 </div>
               ))}

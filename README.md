@@ -5601,6 +5601,12 @@ Frontend production build: OK
 - Исправлен demo seed для visual QA:
   - повторное создание демо-менеджеров больше не падает из-за `username`;
   - добавлен тест на username collision.
+- Mobile shell/auth pass:
+  - верхние мобильные controls в рабочем кабинете увеличены: menu, search, notifications и logout получили нормальные touch targets;
+  - нижняя мобильная навигация поднята выше по z-index, увеличена по высоте и получила более крупные иконки/зоны нажатия;
+  - login page стала компактнее на телефоне и больше не подставляет устаревший `admin@example.com/admin12345`;
+  - публичный hero уменьшен на мобильном, чтобы первый экран не ломался длинным заголовком;
+  - `/api/auth/me/` оптимизирован: текущий пользователь, memberships и effective permissions собираются без тяжёлой серии permission-запросов, что убирает зависание логина на Render/Supabase.
 
 Проверка:
 
@@ -5622,6 +5628,8 @@ Frontend production build: OK
 Frontend production build after shell i18n: OK
 Frontend production build after platform/status i18n: OK
 Frontend production build after dashboard i18n: OK
+Frontend production build after mobile shell/auth pass: OK
+Full backend tests after mobile shell/auth pass: 288 OK
 Visual smoke screenshots: desktop collapsed rail, desktop expanded rail, mobile dashboard OK
 ```
 

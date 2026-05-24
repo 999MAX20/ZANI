@@ -17,15 +17,15 @@ export function PublicLayout() {
 
   return (
     <main className="min-h-screen bg-soft-mesh text-midnight">
-      <header className="sticky top-0 z-30 px-4 py-3">
-        <div className="mx-auto flex max-w-7xl items-center justify-between rounded-3xl border border-white/70 bg-white/85 px-4 py-3 shadow-soft backdrop-blur-2xl">
+      <header className="sticky top-0 z-30 px-3 py-2 sm:px-4 sm:py-3">
+        <div className="mx-auto flex max-w-7xl items-center justify-between rounded-[1.5rem] border border-white/70 bg-white/88 px-3 py-2 shadow-soft backdrop-blur-2xl sm:rounded-3xl sm:px-4 sm:py-3">
           <Link to="/" className="flex items-center gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-2xl bg-ai-gradient text-white shadow-glow">
-              <Sparkles size={22} />
+            <div className="grid h-10 w-10 place-items-center rounded-2xl bg-ai-gradient text-white shadow-glow sm:h-11 sm:w-11">
+              <Sparkles size={20} />
             </div>
             <div>
               <p className="text-base font-bold tracking-tight">Zani</p>
-              <p className="text-xs font-medium text-slate-500">AI Growth OS</p>
+              <p className="text-[11px] font-medium text-slate-500 sm:text-xs">AI Growth OS</p>
             </div>
           </Link>
 
@@ -61,8 +61,8 @@ export function PublicLayout() {
             </Link>
           </div>
 
-          <Button variant="ghost" className="h-11 w-11 rounded-full px-0 md:hidden" onClick={() => setOpen((value) => !value)} aria-label="Open navigation">
-            {open ? <X size={23} /> : <Menu size={23} />}
+          <Button variant="ghost" className="h-10 w-10 rounded-full px-0 md:hidden" onClick={() => setOpen((value) => !value)} aria-label="Open navigation">
+            {open ? <X size={22} /> : <Menu size={22} />}
           </Button>
         </div>
 

@@ -22,13 +22,11 @@ import { useEntityData } from "../../hooks/useEntityData";
 import type { Appointment } from "../../types";
 
 const quickStatuses: Appointment["status"][] = ["confirmed", "completed", "cancelled", "no_show"];
-const statusLabels: Record<Appointment["status"], string> = {
-  created: "Запланирована",
-  confirmed: "Подтвердить",
-  cancelled: "Отменить",
-  rescheduled: "Перенесена",
-  completed: "Завершить",
-  no_show: "Не пришёл",
+const statusActionLabelKeys: Partial<Record<Appointment["status"], string>> = {
+  confirmed: "appointment.actionConfirm",
+  cancelled: "appointment.actionCancel",
+  completed: "appointment.actionComplete",
+  no_show: "appointment.actionNoShow",
 };
 
 function StatCard({ label, value, hint, icon: Icon }: { label: string; value: number | string; hint: string; icon: typeof CalendarCheck }) {
@@ -131,7 +129,7 @@ export function AppointmentsPage() {
                     onClick={() => statusMutation.mutate({ id: appointment.id, status: nextStatus })}
                     isLoading={statusMutation.isPending}
                   >
-                    {statusLabels[nextStatus]}
+                    {t(statusActionLabelKeys[nextStatus] || `status.${nextStatus}`)}
                   </Button>
                 ))}
                 <Button variant="ghost" onClick={() => { setEditing(appointment); setOpen(true); }}>{t("appointments.edit")}</Button>

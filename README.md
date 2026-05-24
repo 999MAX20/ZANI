@@ -5696,6 +5696,10 @@ Frontend production build: OK
   - `ResourcesPage` больше не хранит resource type labels в компоненте;
   - типы staff/room/hall/box/equipment/other берутся из существующих RU / KK / EN ключей;
   - CRUD ресурсов, календарная логика и API не менялись.
+- Appointments i18n pass:
+  - `AppointmentsPage` больше не хранит action labels статусов в компоненте;
+  - quick actions confirm/cancel/complete/no-show используют RU / KK / EN ключи;
+  - список записей, фильтры, archive и CRUD API не менялись.
 
 Проверка:
 
@@ -5768,6 +5772,8 @@ Full backend tests after analytics i18n pass: 293 OK
 Frontend production build after analytics i18n pass: OK
 Full backend tests after resources i18n pass: 293 OK
 Frontend production build after resources i18n pass: OK
+Full backend tests after appointments i18n pass: 293 OK
+Frontend production build after appointments i18n pass: OK
 Visual smoke screenshots: desktop collapsed rail, desktop expanded rail, mobile dashboard OK
 ```
 

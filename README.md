@@ -5644,6 +5644,10 @@ Frontend production build: OK
   - WhatsApp/Instagram request-ready формы переведены на RU / KK / EN без изменения connector request API;
   - data connector cards для Kaspi, 1C, Google Sheets, Email, МойСклад, Wildberries, Ozon и Яндекс.Маркет переведены на RU / KK / EN;
   - demo import notices, request/update CTAs и comments больше не hardcoded.
+- Integrations page header/filter i18n pass:
+  - loading/empty states, PageHeader, safe-token notice, summary cards, search/filter/reset and empty results переведены на RU / KK / EN;
+  - `/dashboard/integrations` больше не содержит видимых hardcoded RU строк, кроме названий брендов/сервисов;
+  - connector filtering/search behavior and API contracts did not change.
 
 Проверка:
 
@@ -5685,6 +5689,8 @@ Full backend tests after Telegram integration wizard i18n pass: 288 OK
 Frontend production build after Telegram integration wizard i18n pass: OK
 Full backend tests after integration request/data panels i18n pass: 288 OK
 Frontend production build after integration request/data panels i18n pass: OK
+Full backend tests after integrations page header/filter i18n pass: 288 OK
+Frontend production build after integrations page header/filter i18n pass: OK
 Visual smoke screenshots: desktop collapsed rail, desktop expanded rail, mobile dashboard OK
 ```
 

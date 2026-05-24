@@ -1026,22 +1026,22 @@ export function IntegrationsPage() {
   );
 
   if (isBusinessLoading || capabilities.isLoading || connectors.isLoading || entityData.bots.isLoading || entityData.botChannels.isLoading) {
-    return <LoadingState label="Загружаем интеграции..." />;
+    return <LoadingState label={t("integrations.page.loading")} />;
   }
 
   if (!business) {
-    return <EmptyState title="Бизнес не выбран" description="Создайте бизнес, чтобы подключать каналы и внешние сервисы." />;
+    return <EmptyState title={t("integrations.page.noBusinessTitle")} description={t("integrations.page.noBusinessDescription")} />;
   }
 
   return (
     <div>
       <PageHeader
-        title="Подключения бизнеса"
-        description="Пилотная карта коннекторов ZANI: self-service каналы, request-подключения, тарифные upsell-модули и roadmap без кнопок в тупик."
+        title={t("integrations.page.title")}
+        description={t("integrations.page.description")}
         actions={
           <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
             <CheckCircle2 className="mr-2 inline" size={16} />
-            Без технических токенов в CRM
+            {t("integrations.page.safeTokenNotice")}
           </div>
         }
       />
@@ -1060,69 +1060,69 @@ export function IntegrationsPage() {
         <div className="rounded-3xl border border-white/80 bg-white/90 p-4 shadow-soft">
           <Sparkles className="text-brand-600" size={20} />
           <p className="mt-2 text-2xl font-black text-midnight">{summary.included}</p>
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">В тарифе</p>
-          <p className="mt-1 text-xs leading-5 text-slate-500">Можно включать в пилоте без внешнего провайдера.</p>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{t("integrations.page.includedTitle")}</p>
+          <p className="mt-1 text-xs leading-5 text-slate-500">{t("integrations.page.includedText")}</p>
         </div>
         <div className="rounded-3xl border border-white/80 bg-white/90 p-4 shadow-soft">
           <Send className="text-violet-600" size={20} />
           <p className="mt-2 text-2xl font-black text-midnight">{summary.request}</p>
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">По заявке</p>
-          <p className="mt-1 text-xs leading-5 text-slate-500">Создаём карточку интереса, но не обещаем auto-connect.</p>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{t("integrations.page.requestTitle")}</p>
+          <p className="mt-1 text-xs leading-5 text-slate-500">{t("integrations.page.requestText")}</p>
         </div>
         <div className="rounded-3xl border border-white/80 bg-white/90 p-4 shadow-soft">
           <Clock3 className="text-amber-600" size={20} />
           <p className="mt-2 text-2xl font-black text-midnight">{summary.roadmap}</p>
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Скоро / Roadmap</p>
-          <p className="mt-1 text-xs leading-5 text-slate-500">Показываем как будущую ценность и upsell.</p>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{t("integrations.page.roadmapTitle")}</p>
+          <p className="mt-1 text-xs leading-5 text-slate-500">{t("integrations.page.roadmapText")}</p>
         </div>
         <div className="rounded-3xl border border-white/80 bg-white/90 p-4 shadow-soft">
           <ShieldCheck className="text-emerald-600" size={20} />
           <p className="mt-2 text-2xl font-black text-midnight">{summary.connected}</p>
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Подключено</p>
-          <p className="mt-1 text-xs leading-5 text-slate-500">Активные коннекторы текущего бизнеса.</p>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{t("integrations.page.connectedTitle")}</p>
+          <p className="mt-1 text-xs leading-5 text-slate-500">{t("integrations.page.connectedText")}</p>
         </div>
       </div>
 
       <div className="mb-5 rounded-3xl border border-white/80 bg-white/90 p-4 shadow-soft">
         <div className="grid gap-3 lg:grid-cols-[1fr_220px_220px_auto]">
-          <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Найти коннектор: WhatsApp, Excel, Kaspi..." />
+          <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t("integrations.page.searchPlaceholder")} />
           <Select
             value={filter}
             onChange={(event) => setFilter(event.target.value as CapabilityFilter)}
             options={[
-              { value: "all", label: "Все статусы" },
-              { value: "included", label: "В тарифе" },
+              { value: "all", label: t("integrations.page.allStatuses") },
+              { value: "included", label: t("integrations.page.includedTitle") },
               { value: "self_service", label: "Self-service" },
-              { value: "request", label: "По заявке" },
-              { value: "upgrade", label: "В тарифе выше" },
-              { value: "roadmap", label: "Скоро / Roadmap" },
+              { value: "request", label: t("integrations.page.requestTitle") },
+              { value: "upgrade", label: t("integrations.page.upgradeTitle") },
+              { value: "roadmap", label: t("integrations.page.roadmapTitle") },
             ]}
           />
           <Select
             value={group}
             onChange={(event) => setGroup(event.target.value as CapabilityGroup)}
             options={[
-              { value: "all", label: "Все направления" },
-              { value: "communications", label: "Коммуникации" },
-              { value: "sales", label: "Продажи" },
-              { value: "calendar", label: "Календарь" },
-              { value: "finance", label: "Финансы" },
-              { value: "inventory", label: "Склад" },
-              { value: "marketing", label: "Маркетинг" },
-              { value: "custom", label: "Кастом" },
+              { value: "all", label: t("integrations.page.allGroups") },
+              { value: "communications", label: t("integrations.capability.communications") },
+              { value: "sales", label: t("integrations.capability.sales") },
+              { value: "calendar", label: t("integrations.capability.calendar") },
+              { value: "finance", label: t("integrations.capability.finance") },
+              { value: "inventory", label: t("integrations.capability.inventory") },
+              { value: "marketing", label: t("integrations.capability.marketing") },
+              { value: "custom", label: t("integrations.capability.custom") },
             ]}
           />
           <Button variant="ghost" onClick={() => { setSearch(""); setFilter("all"); setGroup("all"); }}>
-            <Filter size={16} /> Сбросить
+            <Filter size={16} /> {t("integrations.page.reset")}
           </Button>
         </div>
         <p className="mt-3 text-xs font-semibold text-slate-500">
-          Найдено: {filteredCapabilities.length} из {summary.total}. В пилоте владелец видит, что реально подключается сейчас, что требует заявки, а что является будущим модулем.
+          {t("integrations.page.resultsMeta", { found: filteredCapabilities.length, total: summary.total })}
         </p>
       </div>
 
       {filteredCapabilities.length === 0 ? (
-        <EmptyState title="Коннекторы не найдены" description="Сбросьте фильтры или попробуйте другой поисковый запрос." />
+        <EmptyState title={t("integrations.page.noResultsTitle")} description={t("integrations.page.noResultsDescription")} />
       ) : (
         <div className="mb-5 grid gap-4 xl:grid-cols-2">
           {filteredCapabilities.map((capability) => (

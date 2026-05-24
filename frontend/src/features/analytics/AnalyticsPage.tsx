@@ -80,7 +80,7 @@ export function AnalyticsPage() {
         <Stat label={t("dashboard.newLeads")} value={dashboard?.new_leads || 0} hint={t("analytics.needProcessing")} icon={Flame} />
         <Stat label={t("common.today")} value={dashboard?.appointments_today || 0} hint={t("analytics.bookingsForDay")} icon={CalendarCheck} />
         <Stat label={t("dashboard.conversion")} value={`${conversion}%`} hint={t("dashboard.leadToBooking")} icon={TrendingUp} />
-        <Stat label="No-show" value={noShow} hint="не пришли" icon={TrendingDown} />
+        <Stat label={t("analytics.noShow")} value={noShow} hint={t("analytics.noShowHint")} icon={TrendingDown} />
         <Stat label={t("analytics.completed")} value={completed} hint={t("analytics.servedClients")} icon={CheckCircle2} />
       </div>
 
@@ -107,7 +107,7 @@ export function AnalyticsPage() {
                 [t("dashboard.newLeads"), dashboard?.new_leads || 0],
                 [t("dashboard.openTasks"), dashboard?.open_tasks || 0],
                 [t("analytics.overdueTasks"), dashboard?.overdue_tasks || 0],
-                ["No-show", dashboard?.no_show_count || 0],
+                [t("analytics.noShow"), dashboard?.no_show_count || 0],
               ].map(([label, count]) => (
                 <div key={label} className="flex items-center justify-between py-3">
                   <div>
@@ -145,19 +145,19 @@ export function AnalyticsPage() {
             {report ? (
               <div className="mt-5 grid gap-4 lg:grid-cols-3">
                 <div className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
-                  <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Repeat rate</p>
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{t("analytics.repeatRate")}</p>
                   <p className="mt-2 text-3xl font-black text-midnight">{report.retention_ltv.repeat_rate}%</p>
                   <p className="mt-1 text-sm text-slate-500">{t("analytics.repeatClientsCount", { count: report.retention_ltv.repeat_clients })}</p>
                 </div>
                 <div className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
-                  <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">LTV estimate</p>
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{t("analytics.ltvEstimate")}</p>
                   <p className="mt-2 text-3xl font-black text-midnight">{report.retention_ltv.ltv_estimate}</p>
                   <p className="mt-1 text-sm text-slate-500">{report.retention_ltv.data_quality}</p>
                 </div>
                 <div className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
                   <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{t("analytics.openDeals")}</p>
                   <p className="mt-2 text-3xl font-black text-midnight">{report.funnel_velocity.open_deals}</p>
-                  <p className="mt-1 text-sm text-slate-500">Won/Lost: {report.funnel_velocity.won_deals}/{report.funnel_velocity.lost_deals}</p>
+                  <p className="mt-1 text-sm text-slate-500">{t("analytics.wonLost")}: {report.funnel_velocity.won_deals}/{report.funnel_velocity.lost_deals}</p>
                 </div>
               </div>
             ) : null}
@@ -190,7 +190,7 @@ export function AnalyticsPage() {
         <Card>
           <CardBody>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <h2 className="text-lg font-semibold text-midnight">Source ROI</h2>
+              <h2 className="text-lg font-semibold text-midnight">{t("analytics.sourceRoi")}</h2>
               <Button
                 variant="ghost"
                 className="rounded-full"
@@ -198,7 +198,7 @@ export function AnalyticsPage() {
                 isLoading={exportMutation.isPending}
               >
                 <Download size={16} />
-                Team CSV
+                {t("analytics.teamCsv")}
               </Button>
             </div>
             <div className="mt-4 divide-y divide-slate-100">
@@ -231,7 +231,7 @@ export function AnalyticsPage() {
                     <p className="font-semibold text-midnight">{stage.stage}</p>
                     <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-600">{stage.count}</span>
                   </div>
-                  <p className="mt-1 text-xs text-slate-500">Probability {stage.avg_probability}% · avg days {stage.avg_days_in_stage ?? "-"}</p>
+                  <p className="mt-1 text-xs text-slate-500">{t("analytics.probability")} {stage.avg_probability}% · {t("analytics.avgDays")} {stage.avg_days_in_stage ?? "-"}</p>
                 </div>
               ))}
               {!report?.funnel_velocity.deal_stages.length ? <p className="text-sm text-slate-500">{t("analytics.dealsEmpty")}</p> : null}
@@ -312,7 +312,7 @@ export function AnalyticsPage() {
                             <div className="mt-2 flex flex-wrap gap-2">
                               {asArray<{ id: string | number; name: string; is_lead: boolean }>(member.teams).map((team) => (
                                 <span key={team.id} className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-500">
-                                  {team.name}{team.is_lead ? " · lead" : ""}
+                                  {team.name}{team.is_lead ? ` · ${t("analytics.teamLead")}` : ""}
                                 </span>
                               ))}
                             </div>
@@ -321,19 +321,19 @@ export function AnalyticsPage() {
                             <MiniMetric label={t("nav.leads")} value={member.assigned_leads} />
                             <MiniMetric label={t("analytics.contact")} value={member.contacted_leads} />
                             <MiniMetric label={t("dashboard.conversion")} value={`${member.appointment_conversion_rate}%`} />
-                            <MiniMetric label="Lost" value={member.lost_leads} danger={member.lost_leads > 0} />
+                            <MiniMetric label={t("analytics.lost")} value={member.lost_leads} danger={member.lost_leads > 0} />
                             <MiniMetric label={t("nav.tasks")} value={member.tasks_overdue} danger={member.tasks_overdue > 0} />
                           </div>
                         </div>
                         <div className="mt-3 grid gap-2 text-xs font-semibold text-slate-500 md:grid-cols-4">
-                          <span>Avg response: {member.avg_response_time_minutes ?? "-"} мин</span>
-                          <span>Handoff overdue: {member.overdue_handoffs}</span>
-                          <span>Missed chats: {member.missed_chat_handoffs}</span>
-                          <span>SLA overdue: {member.sla_overdue_deals}</span>
-                          <span>Won/Lost: {member.deals_won}/{member.deals_lost}</span>
-                          <span>No-show: {member.no_show_appointments}</span>
+                          <span>{t("analytics.avgResponse")}: {member.avg_response_time_minutes ?? "-"} {t("analytics.minutesShort")}</span>
+                          <span>{t("analytics.handoffOverdue")}: {member.overdue_handoffs}</span>
+                          <span>{t("analytics.missedChats")}: {member.missed_chat_handoffs}</span>
+                          <span>{t("analytics.slaOverdueShort")}: {member.sla_overdue_deals}</span>
+                          <span>{t("analytics.wonLost")}: {member.deals_won}/{member.deals_lost}</span>
+                          <span>{t("analytics.noShow")}: {member.no_show_appointments}</span>
                           <span>{t("analytics.closedLeads")}: {member.closed_leads}</span>
-                          <span>Appointments: {member.appointments_created}</span>
+                          <span>{t("nav.appointments")}: {member.appointments_created}</span>
                         </div>
                       </div>
                     ))}
@@ -373,15 +373,15 @@ export function AnalyticsPage() {
                         <div className="flex items-start justify-between gap-3">
                           <div>
                             <p className="font-semibold text-midnight">{team.name}</p>
-                            <p className="mt-1 text-xs text-slate-500">{team.members_count} сотрудников · lost rate {team.lost_rate}%</p>
+                            <p className="mt-1 text-xs text-slate-500">{t("analytics.membersCount", { count: team.members_count })} · {t("analytics.lostRate")} {team.lost_rate}%</p>
                           </div>
-                          <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-600">{team.assigned_leads} leads</span>
+                          <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-600">{t("analytics.leadsCount", { count: team.assigned_leads })}</span>
                         </div>
                         <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-semibold text-slate-500">
                           <span>SLA: {team.sla_overdue_deals}</span>
-                          <span>Handoff: {team.overdue_handoffs}</span>
-                          <span>Tasks: {team.tasks_overdue}</span>
-                          <span>No-show: {team.no_show_appointments}</span>
+                          <span>{t("analytics.handoff")}: {team.overdue_handoffs}</span>
+                          <span>{t("nav.tasks")}: {team.tasks_overdue}</span>
+                          <span>{t("analytics.noShow")}: {team.no_show_appointments}</span>
                         </div>
                       </div>
                     ))}

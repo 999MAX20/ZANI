@@ -5688,6 +5688,10 @@ Frontend production build: OK
   - `TimelinePage` больше не содержит hardcoded RU строк в error, empty state и client fallback;
   - группировка дат использует locale активного языка (`ru-RU`, `kk-KZ`, `en-US`);
   - activity events API и timeline filtering не менялись.
+- Analytics i18n pass:
+  - `AnalyticsPage` больше не содержит hardcoded RU строк и основные смешанные EN/RU подписи метрик вынесены в RU / KK / EN словарь;
+  - локализованы no-show, Source ROI, team CSV, probability/avg days, handoff/team labels и team counters;
+  - owner/team analytics API и exports не менялись.
 
 Проверка:
 
@@ -5756,6 +5760,8 @@ Full backend tests after developers settings i18n pass: 293 OK
 Frontend production build after developers settings i18n pass: OK
 Full backend tests after timeline i18n pass: 293 OK
 Frontend production build after timeline i18n pass: OK
+Full backend tests after analytics i18n pass: 293 OK
+Frontend production build after analytics i18n pass: OK
 Visual smoke screenshots: desktop collapsed rail, desktop expanded rail, mobile dashboard OK
 ```
 

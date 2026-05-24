@@ -10,6 +10,7 @@ import { Input } from "../../components/ui/Input";
 import { ErrorState } from "../../components/ui/StateViews";
 import { Textarea } from "../../components/ui/Textarea";
 import { useActiveBusiness } from "../../hooks/useBusiness";
+import { useI18n } from "../../lib/i18n";
 import type { ApiTokenCreateResponse, Id, WebhookDeliveryLog } from "../../types";
 
 const defaultTokenScopes = "clients:read";
@@ -18,11 +19,12 @@ const defaultWebhookEvents = "lead.created,appointment.created,system.test";
 export function DevelopersSection() {
   const queryClient = useQueryClient();
   const { business } = useActiveBusiness();
-  const [tokenName, setTokenName] = useState("CRM integration key");
+  const { t } = useI18n();
+  const [tokenName, setTokenName] = useState(() => t("developers.defaultTokenName"));
   const [tokenScopes, setTokenScopes] = useState(defaultTokenScopes);
   const [lastToken, setLastToken] = useState<ApiTokenCreateResponse | null>(null);
   const [webhookForm, setWebhookForm] = useState({
-    name: "Production webhook",
+    name: t("developers.defaultWebhookName"),
     url: "mock://success",
     secret: "",
     events: defaultWebhookEvents,
@@ -124,26 +126,26 @@ export function DevelopersSection() {
       <CardBody>
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Advanced</p>
-            <h2 className="mt-2 text-2xl font-semibold text-midnight">Ключи интеграций и события</h2>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">{t("developers.advanced")}</p>
+            <h2 className="mt-2 text-2xl font-semibold text-midnight">{t("developers.title")}</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-              Расширенный слой для технических подключений. Используйте его только вместе с разработчиком или поддержкой ZANI.
+              {t("developers.description")}
             </p>
           </div>
           <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
-            {tokens.data?.length || 0} ключей · {webhooks.data?.length || 0} событий
+            {t("developers.summary", { tokens: tokens.data?.length || 0, webhooks: webhooks.data?.length || 0 })}
           </div>
         </div>
         {error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(error)} /></div> : null}
         {lastToken ? (
           <div className="mb-4 rounded-3xl border border-emerald-100 bg-emerald-50 p-4">
-            <p className="font-black text-emerald-900">Скопируйте ключ сейчас</p>
-            <p className="mt-1 text-sm text-emerald-800">Полный ключ показывается только один раз. После закрытия будет видна только короткая метка.</p>
+            <p className="font-black text-emerald-900">{t("developers.copyNow")}</p>
+            <p className="mt-1 text-sm text-emerald-800">{t("developers.copyNowText")}</p>
             <div className="mt-3 flex flex-col gap-2 sm:flex-row">
               <code className="min-w-0 flex-1 break-all rounded-2xl bg-white px-3 py-2 text-sm text-slate-700">{lastToken.token}</code>
               <Button type="button" variant="secondary" onClick={() => copyText(lastToken.token, "token")}>
                 <Copy size={16} />
-                {lastCopied === "token" ? "Скопировано" : "Скопировать"}
+                {lastCopied === "token" ? t("developers.copied") : t("common.copy")}
               </Button>
             </div>
           </div>
@@ -155,8 +157,8 @@ export function DevelopersSection() {
                 <KeyRound size={20} />
               </div>
               <div>
-                <h3 className="font-black text-midnight">Ключи интеграций</h3>
-                <p className="text-sm text-slate-500">Минимально: доступ только на чтение клиентов.</p>
+                <h3 className="font-black text-midnight">{t("developers.tokensTitle")}</h3>
+                <p className="text-sm text-slate-500">{t("developers.tokensText")}</p>
               </div>
             </div>
             <form
@@ -166,10 +168,10 @@ export function DevelopersSection() {
                 createTokenMutation.mutate();
               }}
             >
-              <Input label="Название" value={tokenName} onChange={(event) => setTokenName(event.target.value)} required />
-              <Input label="Права доступа" value={tokenScopes} onChange={(event) => setTokenScopes(event.target.value)} placeholder="clients:read" required />
+              <Input label={t("developers.name")} value={tokenName} onChange={(event) => setTokenName(event.target.value)} required />
+              <Input label={t("developers.scopes")} value={tokenScopes} onChange={(event) => setTokenScopes(event.target.value)} placeholder="clients:read" required />
               <Button type="submit" isLoading={createTokenMutation.isPending}>
-                Создать ключ
+                {t("developers.createToken")}
               </Button>
             </form>
             <div className="mt-5 space-y-2">
@@ -179,24 +181,24 @@ export function DevelopersSection() {
                     <div>
                       <p className="font-bold text-midnight">{token.name}</p>
                       <p className="mt-1 text-xs text-slate-500">{token.token_prefix}... · {token.scopes_json.join(", ")}</p>
-                      <p className="mt-1 text-xs text-slate-400">Последнее использование: {formatDate(token.last_used_at)}</p>
+                      <p className="mt-1 text-xs text-slate-400">{t("developers.lastUsed")} {formatDate(token.last_used_at)}</p>
                     </div>
                     <span className={token.is_active ? "rounded-full bg-green-50 px-2.5 py-1 text-xs font-bold text-green-700" : "rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-500"}>
-                      {token.is_active ? "Активен" : "Отозван"}
+                      {token.is_active ? t("developers.active") : t("developers.revoked")}
                     </span>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Button type="button" variant="secondary" onClick={() => rotateTokenMutation.mutate(token.id)} isLoading={rotateTokenMutation.isPending}>
                       <RotateCcw size={15} />
-                      Обновить
+                      {t("developers.rotate")}
                     </Button>
                     <Button type="button" variant="danger" onClick={() => revokeTokenMutation.mutate(token.id)} disabled={!token.is_active} isLoading={revokeTokenMutation.isPending}>
-                      Отозвать
+                      {t("developers.revoke")}
                     </Button>
                   </div>
                 </div>
               ))}
-              {!tokens.isLoading && !tokens.data?.length ? <p className="text-sm text-slate-500">Ключей пока нет.</p> : null}
+              {!tokens.isLoading && !tokens.data?.length ? <p className="text-sm text-slate-500">{t("developers.noTokens")}</p> : null}
             </div>
           </div>
           <div className="rounded-3xl border border-slate-100 p-4">
@@ -205,8 +207,8 @@ export function DevelopersSection() {
                 <Webhook size={20} />
               </div>
               <div>
-                <h3 className="font-black text-midnight">Внешние события</h3>
-                <p className="text-sm text-slate-500">Для теста можно использовать безопасный демо-адрес.</p>
+                <h3 className="font-black text-midnight">{t("developers.webhooksTitle")}</h3>
+                <p className="text-sm text-slate-500">{t("developers.webhooksText")}</p>
               </div>
             </div>
             <form
@@ -216,16 +218,16 @@ export function DevelopersSection() {
                 createWebhookMutation.mutate();
               }}
             >
-              <Input label="Название" value={webhookForm.name} onChange={(event) => setWebhookForm({ ...webhookForm, name: event.target.value })} required />
+              <Input label={t("developers.name")} value={webhookForm.name} onChange={(event) => setWebhookForm({ ...webhookForm, name: event.target.value })} required />
               <Input label="URL" value={webhookForm.url} onChange={(event) => setWebhookForm({ ...webhookForm, url: event.target.value })} required />
-              <Input label="Секрет подписи" value={webhookForm.secret} onChange={(event) => setWebhookForm({ ...webhookForm, secret: event.target.value })} placeholder="опционально" />
-              <Input label="События" value={webhookForm.events} onChange={(event) => setWebhookForm({ ...webhookForm, events: event.target.value })} required />
+              <Input label={t("developers.signatureSecret")} value={webhookForm.secret} onChange={(event) => setWebhookForm({ ...webhookForm, secret: event.target.value })} placeholder={t("common.optional")} />
+              <Input label={t("developers.events")} value={webhookForm.events} onChange={(event) => setWebhookForm({ ...webhookForm, events: event.target.value })} required />
               <div className="lg:col-span-2 flex flex-wrap gap-2">
-                <Button type="submit" isLoading={createWebhookMutation.isPending}>Добавить событие</Button>
+                <Button type="submit" isLoading={createWebhookMutation.isPending}>{t("developers.addWebhook")}</Button>
                 {webhookForm.secret ? (
                   <Button type="button" variant="secondary" onClick={() => copyText(webhookForm.secret, "secret")}>
                     <Copy size={16} />
-                    {lastCopied === "secret" ? "Скопировано" : "Скопировать секрет"}
+                    {lastCopied === "secret" ? t("developers.copied") : t("developers.copySecret")}
                   </Button>
                 ) : null}
               </div>
@@ -237,28 +239,28 @@ export function DevelopersSection() {
                     <div className="min-w-0">
                       <p className="font-bold text-midnight">{endpoint.name}</p>
                       <p className="mt-1 break-all text-xs text-slate-500">{endpoint.url}</p>
-                      <p className="mt-1 text-xs text-slate-400">{endpoint.events_json.join(", ") || "all events"}</p>
+                      <p className="mt-1 text-xs text-slate-400">{endpoint.events_json.join(", ") || t("developers.allEvents")}</p>
                     </div>
                     <Button type="button" variant="secondary" onClick={() => testDeliveryMutation.mutate(endpoint.id)} isLoading={testDeliveryMutation.isPending}>
                       <Send size={15} />
-                      Проверить
+                      {t("developers.check")}
                     </Button>
                   </div>
                 </div>
               ))}
-              {!webhooks.isLoading && !webhooks.data?.length ? <p className="text-sm text-slate-500">Внешние события пока не настроены.</p> : null}
+              {!webhooks.isLoading && !webhooks.data?.length ? <p className="text-sm text-slate-500">{t("developers.noWebhooks")}</p> : null}
             </div>
           </div>
         </div>
         <div className="mt-5 rounded-3xl border border-slate-100 bg-white p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
             <div>
-              <h3 className="font-black text-midnight">Delivery logs</h3>
-              <p className="mt-1 text-sm text-slate-500">Последние доставки, ответы провайдера и ручной retry для failed событий.</p>
+              <h3 className="font-black text-midnight">{t("developers.deliveryTitle")}</h3>
+              <p className="mt-1 text-sm text-slate-500">{t("developers.deliveryText")}</p>
             </div>
             <Button type="button" variant="secondary" onClick={() => deliveries.refetch()} isLoading={deliveries.isFetching}>
               <RefreshCw size={15} />
-              Обновить
+              {t("developers.refresh")}
             </Button>
           </div>
           <div className="space-y-2">
@@ -268,9 +270,10 @@ export function DevelopersSection() {
                 delivery={delivery}
                 isRetrying={retryDeliveryMutation.isPending}
                 onRetry={(id) => retryDeliveryMutation.mutate(id)}
+                t={t}
               />
             ))}
-            {!deliveries.isLoading && !latestDeliveries.length ? <p className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">Доставок пока нет. Нажмите “Проверить” у внешнего события.</p> : null}
+            {!deliveries.isLoading && !latestDeliveries.length ? <p className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">{t("developers.noDeliveries")}</p> : null}
           </div>
         </div>
       </CardBody>
@@ -278,14 +281,24 @@ export function DevelopersSection() {
   );
 }
 
-function DeliveryRow({ delivery, isRetrying, onRetry }: { delivery: WebhookDeliveryLog; isRetrying: boolean; onRetry: (id: Id) => void }) {
+function DeliveryRow({
+  delivery,
+  isRetrying,
+  onRetry,
+  t,
+}: {
+  delivery: WebhookDeliveryLog;
+  isRetrying: boolean;
+  onRetry: (id: Id) => void;
+  t: (key: string, vars?: Record<string, string | number>) => string;
+}) {
   return (
     <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="font-bold text-midnight">{delivery.event_type} · {delivery.endpoint_name || `Endpoint #${delivery.endpoint}`}</p>
           <p className="mt-1 text-xs text-slate-500">
-            {delivery.idempotency_key} · попыток {delivery.attempts} · HTTP {delivery.response_status || "-"} · {formatDate(delivery.created_at)}
+            {delivery.idempotency_key} · {t("developers.attempts")} {delivery.attempts} · HTTP {delivery.response_status || "-"} · {formatDate(delivery.created_at)}
           </p>
           {delivery.error ? <p className="mt-1 text-xs font-semibold text-red-600">{delivery.error}</p> : null}
         </div>
@@ -293,13 +306,13 @@ function DeliveryRow({ delivery, isRetrying, onRetry }: { delivery: WebhookDeliv
           <span className={deliveryStatusClass(delivery.status)}>{delivery.status}</span>
           {delivery.status === "failed" ? (
             <Button type="button" variant="secondary" onClick={() => onRetry(delivery.id)} isLoading={isRetrying}>
-              Повторить
+              {t("common.retry")}
             </Button>
           ) : null}
         </div>
       </div>
       <details className="mt-3 rounded-2xl bg-white px-3 py-2">
-        <summary className="cursor-pointer text-xs font-bold text-slate-500">Показать технические данные события</summary>
+        <summary className="cursor-pointer text-xs font-bold text-slate-500">{t("developers.showPayload")}</summary>
         <Textarea className="mt-3 text-xs" value={JSON.stringify(delivery.payload_json, null, 2)} readOnly />
       </details>
     </div>

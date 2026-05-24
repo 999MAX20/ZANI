@@ -5680,6 +5680,10 @@ Frontend production build: OK
   - `WhatsAppSetupCard` больше не содержит hardcoded RU строк в форме настройки, статусных карточках и empty states;
   - добавлены RU / KK / EN ключи для безопасного beta/mock WhatsApp setup;
   - provider mode, status check и history log API не менялись.
+- Developers settings i18n pass:
+  - `DevelopersSection` больше не содержит hardcoded RU строк в секции API-ключей, webhooks и delivery logs;
+  - добавлены RU / KK / EN ключи для developer tools, copy states, empty states и webhook delivery descriptions;
+  - API-ключи, webhook endpoints, delivery retry и tenant permissions не менялись.
 
 Проверка:
 
@@ -5744,6 +5748,8 @@ Full backend tests after bots list i18n pass: 293 OK
 Frontend production build after bots list i18n pass: OK
 Full backend tests after WhatsApp setup i18n pass: 293 OK
 Frontend production build after WhatsApp setup i18n pass: OK
+Full backend tests after developers settings i18n pass: 293 OK
+Frontend production build after developers settings i18n pass: OK
 Visual smoke screenshots: desktop collapsed rail, desktop expanded rail, mobile dashboard OK
 ```
 

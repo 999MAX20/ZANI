@@ -5877,3 +5877,4 @@ Frontend production build after team settings UX pass: OK
 Route access stability pass: merchant route permission checks now use `/api/auth/me/` business data as the primary active-business source and only refresh `/api/businesses/` in the background. Direct production entry into pages such as Clients, Timeline or Settings no longer depends on a second businesses request before rendering access.
 
 Frontend production build after route access stability pass: OK
+Targeted Playwright route audit after route access stability pass: business owner core routes render without 404 OK

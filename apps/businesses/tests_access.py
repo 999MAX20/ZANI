@@ -165,6 +165,100 @@ class TeamAccessTests(TestCase):
 
         self.assertEqual(response.status_code, 400)
 
+    def test_telegram_invitation_requires_telegram_contact(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            "/api/team/invitations/",
+            {
+                "business": self.business.id,
+                "email": "missing-telegram@example.com",
+                "role": BusinessMember.Roles.STAFF,
+                "delivery_channel": BusinessInvitation.DeliveryChannels.TELEGRAM,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_invitation_rejects_business_role_from_other_business(self):
+        self.api.force_authenticate(self.owner)
+        other_owner = User.objects.create_user(username="other-owner", email="other-owner@example.com", password="pass12345")
+        other_business = Business.objects.create(owner=other_owner, name="Other", slug="other")
+        ensure_default_roles(other_business)
+        other_role = BusinessRole.objects.get(business=other_business, preset_key=BusinessMember.Roles.MANAGER)
+
+        response = self.api.post(
+            "/api/team/invitations/",
+            {
+                "business": self.business.id,
+                "email": "wrong-role@example.com",
+                "role": BusinessMember.Roles.MANAGER,
+                "business_role": other_role.id,
+                "delivery_channel": BusinessInvitation.DeliveryChannels.MANUAL,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(BusinessInvitation.objects.filter(email="wrong-role@example.com").exists())
+
+    def test_accept_invitation_rejects_common_password(self):
+        invitation = BusinessInvitation.objects.create(
+            business=self.business,
+            invited_by=self.owner,
+            email="weak-password@example.com",
+            role=BusinessMember.Roles.STAFF,
+            delivery_channel=BusinessInvitation.DeliveryChannels.MANUAL,
+            expires_at=timezone.now() + timezone.timedelta(days=7),
+        )
+
+        response = self.api.post(
+            "/api/team/invitations/accept/",
+            {"token": str(invitation.token), "password": "password"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(User.objects.filter(email="weak-password@example.com").exists())
+
+    def test_existing_user_accept_invitation_preserves_password(self):
+        existing_user = User.objects.create_user(
+            username="existing-invite",
+            email="existing-invite@example.com",
+            password="ExistingPass123",
+            role=User.Roles.STAFF,
+        )
+        invitation = BusinessInvitation.objects.create(
+            business=self.business,
+            invited_by=self.owner,
+            email=existing_user.email,
+            phone="+77015550103",
+            role=BusinessMember.Roles.OPERATOR,
+            delivery_channel=BusinessInvitation.DeliveryChannels.MANUAL,
+            expires_at=timezone.now() + timezone.timedelta(days=7),
+        )
+
+        response = self.api.post(
+            "/api/team/invitations/accept/",
+            {"token": str(invitation.token), "password": "NewInvitePass123"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        existing_user.refresh_from_db()
+        self.assertTrue(existing_user.check_password("ExistingPass123"))
+        self.assertEqual(existing_user.phone, "+77015550103")
+        self.assertEqual(existing_user.role, User.Roles.BUSINESS_OPERATOR)
+        self.assertTrue(
+            BusinessMember.objects.filter(
+                business=self.business,
+                user=existing_user,
+                role=BusinessMember.Roles.OPERATOR,
+                is_active=True,
+            ).exists()
+        )
+
     def test_revoked_invitation_cannot_be_accepted(self):
         self.api.force_authenticate(self.owner)
         invitation = BusinessInvitation.objects.create(

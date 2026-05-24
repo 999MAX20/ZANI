@@ -298,15 +298,19 @@ class BusinessInvitationViewSet(TeamAccessMixin, ModelViewSet):
                 role=_user_role_for_business_member(invitation.role),
             )
         else:
+            update_fields = ["role", "is_active"]
             if full_name and not user.full_name:
                 user.full_name = full_name
+                update_fields.append("full_name")
             if phone and not user.phone:
                 user.phone = phone
+                update_fields.append("phone")
             if not user.has_usable_password():
                 user.set_password(serializer.validated_data["password"])
+                update_fields.append("password")
             user.role = _user_role_for_business_member(invitation.role)
             user.is_active = True
-            user.save(update_fields=["full_name", "phone", "password", "role", "is_active"])
+            user.save(update_fields=update_fields)
         membership, _ = BusinessMember.objects.update_or_create(
             business=invitation.business,
             user=user,

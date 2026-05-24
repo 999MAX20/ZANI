@@ -5648,6 +5648,11 @@ Frontend production build: OK
   - loading/empty states, PageHeader, safe-token notice, summary cards, search/filter/reset and empty results переведены на RU / KK / EN;
   - `/dashboard/integrations` больше не содержит видимых hardcoded RU строк, кроме названий брендов/сервисов;
   - connector filtering/search behavior and API contracts did not change.
+- Invite registration hardening pass:
+  - принятие приглашения теперь проходит через стандартные Django password validators, а не только через минимальную длину;
+  - существующему пользователю при принятии приглашения не перезаписывается текущий пароль, если он уже задан;
+  - добавлены regression tests для Telegram contact requirement, чужой business role, слабого пароля и existing-user invite flow;
+  - статусы приглашений в Settings и поле email на invite accept page переведены через RU / KK / EN i18n.
 
 Проверка:
 
@@ -5691,6 +5696,9 @@ Full backend tests after integration request/data panels i18n pass: 288 OK
 Frontend production build after integration request/data panels i18n pass: OK
 Full backend tests after integrations page header/filter i18n pass: 288 OK
 Frontend production build after integrations page header/filter i18n pass: OK
+Team access invite tests after invite hardening pass: 20 OK
+Full backend tests after invite hardening pass: 292 OK
+Frontend production build after invite hardening pass: OK
 Visual smoke screenshots: desktop collapsed rail, desktop expanded rail, mobile dashboard OK
 ```
 

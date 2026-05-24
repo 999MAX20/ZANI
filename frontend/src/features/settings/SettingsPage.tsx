@@ -623,7 +623,9 @@ export function SettingsPage() {
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                           <p className="font-bold text-midnight">{invitation.full_name || invitation.email}</p>
-                          <p className="text-xs text-slate-500">{invitation.email} · {translatedTeamRoleOptions.find((role) => role.value === invitation.role)?.label || invitation.role} · {invitation.status}</p>
+                          <p className="text-xs text-slate-500">
+                            {invitation.email} · {translatedTeamRoleOptions.find((role) => role.value === invitation.role)?.label || invitation.role} · {t(`status.${invitation.status}`)}
+                          </p>
                         </div>
                         <div className="flex flex-wrap gap-2">
                           <a href={inviteShareUrl(invitation)} target="_blank" rel="noreferrer" className="rounded-full bg-slate-950 px-3 py-2 text-xs font-bold text-white">

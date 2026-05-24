@@ -1,3 +1,4 @@
+from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
 from apps.accounts.models import User
@@ -180,6 +181,10 @@ class BusinessInvitationAcceptSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True, min_length=8)
     full_name = serializers.CharField(required=False, allow_blank=True, max_length=255)
     phone = serializers.CharField(required=False, allow_blank=True, max_length=32)
+
+    def validate_password(self, value):
+        validate_password(value)
+        return value
 
 
 class PermissionCatalogSerializer(serializers.Serializer):

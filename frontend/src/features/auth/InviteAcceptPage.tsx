@@ -66,7 +66,7 @@ export function InviteAcceptPage() {
           {acceptMutation.error ? <div className="mt-5"><ErrorState message={getApiErrorMessage(acceptMutation.error)} /></div> : null}
 
           <form className="mt-6 space-y-4" onSubmit={form.handleSubmit((values) => acceptMutation.mutate(values))}>
-            <Input label="Email" value={preview.data?.email || ""} readOnly />
+            <Input label={t("invite.email")} value={preview.data?.email || ""} readOnly />
             <Input label={t("invite.name")} {...form.register("full_name")} placeholder={t("invite.namePlaceholder")} />
             <Input label={t("invite.phone")} {...form.register("phone")} placeholder={t("invite.phonePlaceholder")} />
             <Input label={t("invite.newPassword")} type="password" error={form.formState.errors.password?.message} {...form.register("password")} />

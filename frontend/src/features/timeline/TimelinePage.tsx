@@ -11,12 +11,12 @@ import { useEntityData } from "../../hooks/useEntityData";
 import { useI18n } from "../../lib/i18n";
 
 export function TimelinePage() {
-  const { t } = useI18n();
+  const { language, t } = useI18n();
   const { business } = useActiveBusiness();
   const { activityEvents, clients } = useEntityData();
   const [search, setSearch] = useState("");
 
-  if (!business) return <ErrorState message="Создайте бизнес в настройках, чтобы открыть timeline." />;
+  if (!business) return <ErrorState message={t("timeline.noBusiness")} />;
   if (activityEvents.isLoading || clients.isLoading) return <LoadingState />;
 
   const rows = (activityEvents.data || []).filter((event) => {
@@ -24,7 +24,11 @@ export function TimelinePage() {
     return !search || text.includes(search.toLowerCase());
   });
   const grouped = rows.reduce<Record<string, typeof rows>>((acc, event) => {
-    const key = new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "long", year: "numeric" }).format(new Date(event.created_at));
+    const key = new Intl.DateTimeFormat(language === "en" ? "en-US" : language === "kk" ? "kk-KZ" : "ru-RU", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    }).format(new Date(event.created_at));
     acc[key] = acc[key] || [];
     acc[key].push(event);
     return acc;
@@ -64,7 +68,7 @@ export function TimelinePage() {
                             <p className="font-semibold text-midnight">{event.text || event.event_type}</p>
                             <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-500">{event.category}</span>
                           </div>
-                          <p className="mt-1 text-sm text-slate-500">{client?.full_name || "Без клиента"} · {formatDateTime(event.created_at)}</p>
+                          <p className="mt-1 text-sm text-slate-500">{client?.full_name || t("timeline.noClient")} · {formatDateTime(event.created_at)}</p>
                           {event.text && event.text !== event.event_type ? <p className="mt-2 text-sm leading-6 text-slate-700">{event.event_type}</p> : null}
                         </div>
                       </div>
@@ -75,8 +79,8 @@ export function TimelinePage() {
             ))}
             {!rows.length ? (
               <div className="rounded-3xl border border-dashed border-slate-200 bg-white/60 p-6 text-center">
-                <p className="font-bold text-midnight">Событий пока нет</p>
-                <p className="mt-1 text-sm text-slate-500">Когда клиент оставит заявку, напишет сообщение или получит запись, история появится здесь.</p>
+                <p className="font-bold text-midnight">{t("timeline.emptyTitle")}</p>
+                <p className="mt-1 text-sm text-slate-500">{t("timeline.emptyText")}</p>
               </div>
             ) : null}
           </div>

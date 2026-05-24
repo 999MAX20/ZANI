@@ -5684,6 +5684,10 @@ Frontend production build: OK
   - `DevelopersSection` больше не содержит hardcoded RU строк в секции API-ключей, webhooks и delivery logs;
   - добавлены RU / KK / EN ключи для developer tools, copy states, empty states и webhook delivery descriptions;
   - API-ключи, webhook endpoints, delivery retry и tenant permissions не менялись.
+- Timeline i18n pass:
+  - `TimelinePage` больше не содержит hardcoded RU строк в error, empty state и client fallback;
+  - группировка дат использует locale активного языка (`ru-RU`, `kk-KZ`, `en-US`);
+  - activity events API и timeline filtering не менялись.
 
 Проверка:
 
@@ -5750,6 +5754,8 @@ Full backend tests after WhatsApp setup i18n pass: 293 OK
 Frontend production build after WhatsApp setup i18n pass: OK
 Full backend tests after developers settings i18n pass: 293 OK
 Frontend production build after developers settings i18n pass: OK
+Full backend tests after timeline i18n pass: 293 OK
+Frontend production build after timeline i18n pass: OK
 Visual smoke screenshots: desktop collapsed rail, desktop expanded rail, mobile dashboard OK
 ```
 

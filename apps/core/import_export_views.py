@@ -67,7 +67,15 @@ class ImportJobViewSet(TenantModelViewSet):
         assert_can(request.user, job.business, _resource_for_entity(job.entity_type), Actions.CREATE)
         if job.status == ImportJob.Statuses.IMPORTED:
             raise ValidationError("This import job was already confirmed.")
-        job = confirm_import(job, request)
+        try:
+            job = confirm_import(job, request)
+        except ValidationError:
+            raise
+        except Exception as exc:
+            job.status = ImportJob.Statuses.FAILED
+            job.error = str(exc)
+            job.save(update_fields=["status", "error", "updated_at"])
+            raise
         return Response(self.get_serializer(job).data)
 
 

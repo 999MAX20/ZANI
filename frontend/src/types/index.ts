@@ -1448,6 +1448,7 @@ export type ImportJob = {
   preview_json: {
     headers?: string[];
     rows?: Array<Record<string, string>>;
+    import_summary?: ImportSummary;
   };
   duplicates_json: {
     rows?: Array<{
@@ -1465,10 +1466,24 @@ export type ImportJob = {
   };
   total_rows: number;
   imported_count: number;
+  summary_json?: ImportSummary;
   error: string;
   created_at: string;
   updated_at: string;
   imported_at?: string | null;
+};
+
+export type ImportSummary = {
+  total_rows?: number;
+  preview_rows?: number;
+  errors?: number;
+  duplicates?: number;
+  created?: number;
+  updated?: number;
+  skipped?: number;
+  imported?: number;
+  ready?: boolean;
+  status?: string;
 };
 
 export type LeadFormField = {

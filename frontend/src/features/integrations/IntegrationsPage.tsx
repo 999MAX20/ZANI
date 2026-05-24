@@ -195,6 +195,7 @@ function ExcelCsvImportPanel({ businessId }: { businessId: Id }) {
   const activeImport = jobs.find((job) => job.id === activeImportId) || jobs[0];
   const rowErrors = activeImport?.errors_json?.rows || [];
   const duplicates = activeImport?.duplicates_json?.rows || [];
+  const importSummary = activeImport?.summary_json || activeImport?.preview_json?.import_summary;
   const selectedOption = importEntityOptions.find((item) => item.value === entity);
   const error = jobsQuery.error || uploadMutation.error || confirmMutation.error || templateMutation.error;
 
@@ -243,6 +244,22 @@ function ExcelCsvImportPanel({ businessId }: { businessId: Id }) {
               </Button>
             ) : null}
           </div>
+
+          {importSummary ? (
+            <div className="mt-4 grid gap-2 sm:grid-cols-4">
+              {[
+                { label: t("integrations.import.summaryCreated"), value: importSummary.created || 0 },
+                { label: t("integrations.import.summaryUpdated"), value: importSummary.updated || 0 },
+                { label: t("integrations.import.summarySkipped"), value: importSummary.skipped || 0 },
+                { label: t("integrations.import.summaryErrors"), value: importSummary.errors || 0 },
+              ].map((item) => (
+                <div key={item.label} className="rounded-2xl bg-white px-3 py-2">
+                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-400">{item.label}</p>
+                  <p className="mt-1 text-lg font-black text-midnight">{item.value}</p>
+                </div>
+              ))}
+            </div>
+          ) : null}
 
           {rowErrors.length ? (
             <div className="mt-4 rounded-2xl border border-red-100 bg-red-50 p-3">

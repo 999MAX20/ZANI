@@ -79,7 +79,41 @@ class ImportExportTests(TestCase):
         self.assertEqual(confirm_response.status_code, 200)
         self.assertEqual(confirm_response.data["status"], ImportJob.Statuses.IMPORTED)
         self.assertEqual(confirm_response.data["imported_count"], 2)
-        self.assertEqual(Client.objects.filter(business=self.business).count(), 3)
+        self.assertEqual(confirm_response.data["summary_json"]["created"], 1)
+        self.assertEqual(confirm_response.data["summary_json"]["updated"], 1)
+        self.assertEqual(Client.objects.filter(business=self.business).count(), 2)
+        self.assertEqual(Client.objects.get(business=self.business, phone="+77010000001").email, "copy@example.com")
+
+    def test_repeated_clients_import_is_idempotent_by_contact_identity(self):
+        upload = SimpleUploadedFile(
+            "clients.csv",
+            "full_name,phone,email,source\nNew Client,+77010000002,new@example.com,website\n".encode(),
+            content_type="text/csv",
+        )
+        self.api.force_authenticate(self.owner)
+
+        first_response = self.api.post(
+            "/api/import-jobs/",
+            {"business": self.business.id, "entity_type": ImportJob.EntityTypes.CLIENTS, "source_file": upload},
+            format="multipart",
+        )
+        self.api.post(f"/api/import-jobs/{first_response.data['id']}/confirm/")
+        repeated_upload = SimpleUploadedFile(
+            "clients.csv",
+            "full_name,phone,email,source\nNew Client,+77010000002,new@example.com,website\n".encode(),
+            content_type="text/csv",
+        )
+        second_response = self.api.post(
+            "/api/import-jobs/",
+            {"business": self.business.id, "entity_type": ImportJob.EntityTypes.CLIENTS, "source_file": repeated_upload},
+            format="multipart",
+        )
+        second_confirm = self.api.post(f"/api/import-jobs/{second_response.data['id']}/confirm/")
+
+        self.assertEqual(second_confirm.status_code, 200)
+        self.assertEqual(second_confirm.data["imported_count"], 0)
+        self.assertEqual(second_confirm.data["summary_json"]["skipped"], 1)
+        self.assertEqual(Client.objects.filter(business=self.business, phone="+77010000002").count(), 1)
 
     def test_csv_sales_import_creates_business_events_and_dashboard_revenue(self):
         upload = SimpleUploadedFile(
@@ -111,6 +145,36 @@ class ImportExportTests(TestCase):
         self.assertEqual(dashboard.data["revenue_estimate"], "15000")
         self.assertTrue(dashboard.data["data_quality"]["has_sales_data"])
 
+    def test_repeated_sales_import_is_idempotent_by_external_id(self):
+        self.api.force_authenticate(self.owner)
+        csv_body = "external_id,occurred_at,client_name,phone,item_name,quantity,amount,source\nsale-1,2026-05-22T10:00:00+05:00,Buyer,+77010000004,Consultation,1,15000,manual\n"
+
+        first_response = self.api.post(
+            "/api/import-jobs/",
+            {
+                "business": self.business.id,
+                "entity_type": ImportJob.EntityTypes.SALES,
+                "source_file": SimpleUploadedFile("sales.csv", csv_body.encode(), content_type="text/csv"),
+            },
+            format="multipart",
+        )
+        self.api.post(f"/api/import-jobs/{first_response.data['id']}/confirm/")
+        second_response = self.api.post(
+            "/api/import-jobs/",
+            {
+                "business": self.business.id,
+                "entity_type": ImportJob.EntityTypes.SALES,
+                "source_file": SimpleUploadedFile("sales.csv", csv_body.encode(), content_type="text/csv"),
+            },
+            format="multipart",
+        )
+        second_confirm = self.api.post(f"/api/import-jobs/{second_response.data['id']}/confirm/")
+
+        self.assertEqual(second_confirm.status_code, 200)
+        self.assertEqual(second_confirm.data["imported_count"], 0)
+        self.assertEqual(second_confirm.data["summary_json"]["skipped"], 1)
+        self.assertEqual(BusinessEvent.objects.filter(business=self.business, event_type="sale.recorded", external_id="sale-1").count(), 1)
+
     def test_csv_leads_import_creates_clients_and_leads(self):
         Service.objects.create(business=self.business, name="Consultation", duration_minutes=45)
         upload = SimpleUploadedFile(
@@ -136,6 +200,36 @@ class ImportExportTests(TestCase):
         self.assertEqual(confirm_response.data["imported_count"], 1)
         self.assertTrue(Client.objects.filter(business=self.business, phone="+77010000005").exists())
         self.assertTrue(Lead.objects.filter(business=self.business, message="Need appointment", source=Lead.Sources.LANDING).exists())
+
+    def test_repeated_leads_import_is_idempotent_by_client_and_message(self):
+        self.api.force_authenticate(self.owner)
+        csv_body = "full_name,phone,email,service_name,source,message,status\nLead Client,+77010000005,lead@example.com,,landing,Need appointment,new\n"
+
+        first_response = self.api.post(
+            "/api/import-jobs/",
+            {
+                "business": self.business.id,
+                "entity_type": ImportJob.EntityTypes.LEADS,
+                "source_file": SimpleUploadedFile("leads.csv", csv_body.encode(), content_type="text/csv"),
+            },
+            format="multipart",
+        )
+        self.api.post(f"/api/import-jobs/{first_response.data['id']}/confirm/")
+        second_response = self.api.post(
+            "/api/import-jobs/",
+            {
+                "business": self.business.id,
+                "entity_type": ImportJob.EntityTypes.LEADS,
+                "source_file": SimpleUploadedFile("leads.csv", csv_body.encode(), content_type="text/csv"),
+            },
+            format="multipart",
+        )
+        second_confirm = self.api.post(f"/api/import-jobs/{second_response.data['id']}/confirm/")
+
+        self.assertEqual(second_confirm.status_code, 200)
+        self.assertEqual(second_confirm.data["imported_count"], 0)
+        self.assertEqual(second_confirm.data["summary_json"]["skipped"], 1)
+        self.assertEqual(Lead.objects.filter(business=self.business, message="Need appointment").count(), 1)
 
     def test_csv_catalog_import_creates_service_and_business_event(self):
         upload = SimpleUploadedFile(

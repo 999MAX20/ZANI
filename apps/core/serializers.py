@@ -42,6 +42,7 @@ class BulkCustomFieldValueSerializer(serializers.Serializer):
 
 class ImportJobSerializer(serializers.ModelSerializer):
     actor_email = serializers.EmailField(source="actor.email", read_only=True)
+    summary_json = serializers.SerializerMethodField()
 
     class Meta:
         model = ImportJob
@@ -58,6 +59,7 @@ class ImportJobSerializer(serializers.ModelSerializer):
             "preview_json",
             "duplicates_json",
             "errors_json",
+            "summary_json",
             "total_rows",
             "imported_count",
             "error",
@@ -65,6 +67,18 @@ class ImportJobSerializer(serializers.ModelSerializer):
             "updated_at",
             "imported_at",
         ]
+
+    def get_summary_json(self, obj):
+        summary = ((obj.preview_json or {}).get("import_summary") or {}).copy()
+        summary.setdefault("total_rows", obj.total_rows)
+        summary.setdefault("imported", obj.imported_count)
+        summary.setdefault("errors", len((obj.errors_json or {}).get("rows") or []))
+        summary.setdefault("duplicates", len((obj.duplicates_json or {}).get("rows") or []))
+        summary.setdefault("created", 0)
+        summary.setdefault("updated", 0)
+        summary.setdefault("skipped", 0)
+        summary["status"] = obj.status
+        return summary
 
 
 class AuditLogSerializer(serializers.ModelSerializer):

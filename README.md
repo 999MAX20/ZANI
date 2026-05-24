@@ -5836,3 +5836,11 @@ Telegram connector tests after Telegram Connector MVP hardening pass: 8 OK
 Integration connector tests after Telegram Connector MVP hardening pass: 29 OK
 Full backend tests after Telegram Connector MVP hardening pass: 296 OK
 Frontend production build after Telegram Connector MVP hardening pass: OK
+
+Excel/CSV Real Import MVP pass: repeated client, lead and sales uploads are now idempotent by contact identity, lead context or external sale id. Import preview/confirm responses expose `summary_json` with created, updated, skipped, duplicate and error counts, and integrations/settings screens display that summary before and after confirmation. Invalid row handling and explicit upload limits remain enforced; repeated sale imports reuse the existing BusinessEvent deduplication layer.
+
+Backend check after Excel/CSV Real Import MVP pass: OK
+Import/export tests after Excel/CSV Real Import MVP pass: 12 OK
+Excel/CSV provider rollout gate after Excel/CSV Real Import MVP pass: ready
+Full backend tests after Excel/CSV Real Import MVP pass: 299 OK
+Frontend production build after Excel/CSV Real Import MVP pass: OK

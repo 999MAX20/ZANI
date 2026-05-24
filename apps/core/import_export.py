@@ -1,9 +1,12 @@
 import csv
+import hashlib
 import io
+import json
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 from django.db import transaction
+from django.db.models import Q
 from django.http import HttpResponse
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
@@ -110,7 +113,20 @@ def build_import_preview(job: ImportJob, mapping=None):
     duplicates = duplicate_preview(job, preview_rows, mapping) if job.entity_type == ImportJob.EntityTypes.CLIENTS else []
     row_errors = validate_import_rows(job.entity_type, rows, mapping)
     job.mapping_json = mapping
-    job.preview_json = {"headers": headers, "rows": preview_rows}
+    job.preview_json = {
+        "headers": headers,
+        "rows": preview_rows,
+        "import_summary": {
+            "total_rows": len(rows),
+            "preview_rows": len(preview_rows),
+            "errors": len(row_errors),
+            "duplicates": len(duplicates),
+            "created": 0,
+            "updated": 0,
+            "skipped": 0,
+            "ready": not row_errors,
+        },
+    }
     job.duplicates_json = {"rows": duplicates}
     job.errors_json = {"rows": row_errors}
     job.total_rows = len(rows)
@@ -128,24 +144,36 @@ def confirm_import(job: ImportJob, request):
     if (job.errors_json or {}).get("rows"):
         raise ValidationError("Fix import errors before confirming.")
     rows = read_tabular_file(job.source_file.path)
-    imported = 0
+    summary = {"created": 0, "updated": 0, "skipped": 0}
     for row in rows:
         payload = mapped_payload(row, mapping, job.entity_type)
         if job.entity_type == ImportJob.EntityTypes.CLIENTS:
-            imported += import_client_row(job, payload)
+            result = import_client_row(job, payload)
         elif job.entity_type == ImportJob.EntityTypes.LEADS:
-            imported += import_lead_row(job, payload)
+            result = import_lead_row(job, payload)
         elif job.entity_type == ImportJob.EntityTypes.SALES:
-            imported += import_sale_row(job, payload)
+            result = import_sale_row(job, payload)
         elif job.entity_type == ImportJob.EntityTypes.CATALOG:
-            imported += import_catalog_row(job, payload)
+            result = import_catalog_row(job, payload)
         else:
             raise ValidationError("Unsupported import entity.")
+        summary[result] = summary.get(result, 0) + 1
+    imported = summary["created"] + summary["updated"]
     job.status = ImportJob.Statuses.IMPORTED
     job.imported_count = imported
     job.imported_at = timezone.now()
     job.error = ""
-    job.save(update_fields=["status", "imported_count", "imported_at", "error", "updated_at"])
+    job.preview_json = {
+        **(job.preview_json or {}),
+        "import_summary": {
+            **((job.preview_json or {}).get("import_summary") or {}),
+            **summary,
+            "total_rows": len(rows),
+            "imported": imported,
+            "ready": True,
+        },
+    }
+    job.save(update_fields=["status", "imported_count", "imported_at", "error", "preview_json", "updated_at"])
     write_audit_log(
         request,
         AuditLog.Actions.CREATE,
@@ -165,50 +193,46 @@ def aliases_for_entity(entity_type):
 
 def import_client_row(job, payload):
     if not payload.get("full_name") and not payload.get("phone") and not payload.get("email"):
-        return 0
-    Client.objects.create(
-        business=job.business,
-        full_name=payload.get("full_name") or payload.get("phone") or payload.get("email") or "Imported client",
-        phone=payload.get("phone", ""),
-        email=payload.get("email", ""),
-        source=payload.get("source") or Client.Sources.OTHER,
-        notes=payload.get("notes", ""),
-    )
-    return 1
+        return "skipped"
+    existing = find_import_client(job.business, payload)
+    if existing:
+        changed = fill_missing_client_fields(existing, payload)
+        return "updated" if changed else "skipped"
+    Client.objects.create(business=job.business, **client_defaults(payload))
+    return "created"
 
 
 def import_lead_row(job, payload):
     if not payload.get("full_name") and not payload.get("phone") and not payload.get("email") and not payload.get("message"):
-        return 0
-    client, _ = Client.objects.get_or_create(
-        business=job.business,
-        phone=payload.get("phone", ""),
-        defaults={
-            "full_name": payload.get("full_name") or payload.get("phone") or payload.get("email") or "Imported lead",
-            "email": payload.get("email", ""),
-            "source": payload.get("source") or Client.Sources.OTHER,
-        },
-    )
+        return "skipped"
+    client = find_import_client(job.business, payload)
+    if client:
+        fill_missing_client_fields(client, payload)
+    else:
+        client = Client.objects.create(business=job.business, **client_defaults(payload, fallback="Imported lead"))
     service = None
     if payload.get("service_name"):
         service = Service.objects.filter(business=job.business, name__iexact=payload["service_name"]).first()
     status = payload.get("status") if payload.get("status") in dict(Lead.Statuses.choices) else Lead.Statuses.NEW
     source = payload.get("source") if payload.get("source") in dict(Lead.Sources.choices) else Lead.Sources.OTHER
+    message = payload.get("message") or "Imported lead"
+    if Lead.objects.filter(business=job.business, client=client, service=service, source=source, message=message).exists():
+        return "skipped"
     Lead.objects.create(
         business=job.business,
         client=client,
         service=service,
         source=source,
-        message=payload.get("message") or "Imported lead",
+        message=message,
         status=status,
     )
-    return 1
+    return "created"
 
 
 def import_sale_row(job, payload):
     sale_payload = normalize_sale_payload(payload)
     occurred_at = sale_payload.pop("occurred_at_parsed", None)
-    normalize_business_event(
+    _, created = normalize_business_event(
         business=job.business,
         source=sale_payload.get("source") or "manual_import",
         event_type="sale.recorded",
@@ -216,14 +240,15 @@ def import_sale_row(job, payload):
         payload=sale_payload,
         occurred_at=occurred_at,
     )
-    return 1
+    return "created" if created else "skipped"
 
 
 def import_catalog_row(job, payload):
     catalog_payload = normalize_catalog_payload(payload)
     service = None
+    service_created = False
     if catalog_payload["item_type"] == "service":
-        service, _ = Service.objects.update_or_create(
+        service, service_created = Service.objects.update_or_create(
             business=job.business,
             name=catalog_payload["name"],
             defaults={
@@ -235,14 +260,59 @@ def import_catalog_row(job, payload):
         )
     if service:
         catalog_payload["service_id"] = service.id
-    normalize_business_event(
+    _, event_created = normalize_business_event(
         business=job.business,
         source=catalog_payload.get("source") or "manual_import",
         event_type="catalog.item_imported",
         external_id=catalog_payload.get("sku", ""),
         payload=catalog_payload,
     )
-    return 1
+    if event_created:
+        return "created"
+    if service and service_created:
+        return "created"
+    return "skipped"
+
+
+def find_import_client(business, payload):
+    query = Q()
+    if payload.get("phone"):
+        query |= Q(phone=payload["phone"])
+    if payload.get("email"):
+        query |= Q(email__iexact=payload["email"])
+    if not query:
+        return None
+    return Client.objects.filter(business=business).filter(query).first()
+
+
+def client_defaults(payload, fallback="Imported client"):
+    return {
+        "full_name": payload.get("full_name") or payload.get("phone") or payload.get("email") or fallback,
+        "phone": payload.get("phone", ""),
+        "email": payload.get("email", ""),
+        "source": normalize_client_source(payload.get("source")),
+        "notes": payload.get("notes", ""),
+    }
+
+
+def fill_missing_client_fields(client, payload):
+    changed_fields = []
+    for field in ["full_name", "phone", "email", "notes"]:
+        value = payload.get(field)
+        if value and not getattr(client, field):
+            setattr(client, field, value)
+            changed_fields.append(field)
+    source = normalize_client_source(payload.get("source"))
+    if source and source != client.source and client.source == Client.Sources.OTHER:
+        client.source = source
+        changed_fields.append("source")
+    if changed_fields:
+        client.save(update_fields=[*changed_fields, "updated_at"])
+    return bool(changed_fields)
+
+
+def normalize_client_source(value):
+    return value if value in dict(Client.Sources.choices) else Client.Sources.OTHER
 
 
 def read_tabular_file(path):
@@ -295,12 +365,23 @@ def mapped_payload(row, mapping, entity_type=ImportJob.EntityTypes.CLIENTS):
 
 def duplicate_preview(job, rows, mapping):
     result = []
+    seen = {}
     for index, row in enumerate(rows, start=1):
         payload = mapped_payload(row, mapping, job.entity_type)
+        row_key = stable_import_row_key(payload)
+        if row_key in seen:
+            result.append({"row": index, "payload": payload, "duplicates": [{"id": "", "full_name": f"Duplicate row {seen[row_key]}", "matched_fields": ["file_row"]}]})
+            continue
+        seen[row_key] = index
         duplicates = find_duplicate_clients(job.business, phone=payload.get("phone"), email=payload.get("email"))
         if duplicates:
             result.append({"row": index, "payload": payload, "duplicates": duplicate_payload(duplicates, phone=payload.get("phone"), email=payload.get("email"))})
     return result
+
+
+def stable_import_row_key(payload):
+    normalized = json.dumps(payload or {}, sort_keys=True, ensure_ascii=False)
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
 
 def validate_import_rows(entity_type, rows, mapping):

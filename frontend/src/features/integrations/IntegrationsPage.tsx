@@ -659,33 +659,46 @@ function TelegramConnectorWizard({
           </p>
         </div>
 
-        <form
-          className="rounded-3xl border border-slate-100 bg-white p-4"
-          onSubmit={(event) => {
-            event.preventDefault();
-            saveConfig.mutate();
-          }}
-        >
-          <div className="grid gap-3">
-            <Input
-              label={t("integrations.telegram.botFatherToken")}
-              type="password"
-              value={botToken}
-              onChange={(event) => setBotToken(event.target.value)}
-              placeholder={tokenConfigured ? t("integrations.telegram.tokenReplacePlaceholder") : t("integrations.telegram.tokenPlaceholder")}
-              disabled={!canManage}
-            />
-          </div>
+        <div className="rounded-3xl border border-slate-100 bg-white p-4">
+          <p className="font-black text-midnight">{t("integrations.telegram.supportSetupTitle")}</p>
+          <p className="mt-2 text-sm leading-6 text-slate-600">{t("integrations.telegram.supportSetupText")}</p>
           <div className="mt-4 flex flex-wrap gap-2">
-            <Button type="submit" disabled={!canManage || !botToken.trim()} isLoading={saveConfig.isPending}>
-              <ShieldCheck size={16} /> {t("integrations.telegram.save")}
-            </Button>
             <Button type="button" variant="secondary" disabled={!canManage || !telegramChannel} isLoading={testConnection.isPending} onClick={() => testConnection.mutate()}>
               <CheckCircle2 size={16} /> {t("integrations.telegram.testConnection")}
             </Button>
+            <Link to="/dashboard/inbox?channel=telegram">
+              <Button type="button" variant="ghost">
+                <ExternalLink size={16} /> {t("integrations.telegram.openInbox")}
+              </Button>
+            </Link>
           </div>
-          {!canManage ? <p className="mt-3 text-sm font-semibold text-slate-500">{t("integrations.telegram.readOnly")}</p> : null}
-        </form>
+          <details className="mt-4 rounded-2xl border border-slate-100 bg-slate-50 p-4">
+            <summary className="cursor-pointer text-sm font-black text-midnight">{t("integrations.telegram.advancedSetup")}</summary>
+            <form
+              className="mt-4"
+              onSubmit={(event) => {
+                event.preventDefault();
+                saveConfig.mutate();
+              }}
+            >
+              <Input
+                label={t("integrations.telegram.botFatherToken")}
+                type="password"
+                value={botToken}
+                onChange={(event) => setBotToken(event.target.value)}
+                placeholder={tokenConfigured ? t("integrations.telegram.tokenReplacePlaceholder") : t("integrations.telegram.tokenPlaceholder")}
+                disabled={!canManage}
+              />
+              <p className="mt-2 text-xs font-semibold leading-5 text-slate-500">{t("integrations.telegram.advancedSetupHelp")}</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button type="submit" disabled={!canManage || !botToken.trim()} isLoading={saveConfig.isPending}>
+                  <ShieldCheck size={16} /> {t("integrations.telegram.save")}
+                </Button>
+              </div>
+              {!canManage ? <p className="mt-3 text-sm font-semibold text-slate-500">{t("integrations.telegram.readOnly")}</p> : null}
+            </form>
+          </details>
+        </div>
       </div>
     </div>
   );
@@ -771,7 +784,7 @@ function RequestReadyConnectorPanel({
     <div className="rounded-3xl border border-white/80 bg-white/95 p-5 shadow-soft">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-violet-700">{label} request-ready</p>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-violet-700">{t("integrations.request.eyebrow", { provider: label })}</p>
           <h3 className="mt-2 text-xl font-black text-midnight">{t("integrations.request.title", { provider: label })}</h3>
           <p className="mt-2 text-sm leading-6 text-slate-600">
             {provider === "whatsapp"
@@ -780,7 +793,7 @@ function RequestReadyConnectorPanel({
           </p>
         </div>
         <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-black ring-1 ${isPending ? "bg-violet-50 text-violet-700 ring-violet-100" : "bg-slate-100 text-slate-600 ring-slate-200"}`}>
-          {requestStatus}
+          {t(`status.${requestStatus}`)}
         </span>
       </div>
 
@@ -1151,7 +1164,7 @@ export function IntegrationsPage() {
             options={[
               { value: "all", label: t("integrations.page.allStatuses") },
               { value: "included", label: t("integrations.page.includedTitle") },
-              { value: "self_service", label: "Self-service" },
+              { value: "self_service", label: t("integrations.page.selfServiceTitle") },
               { value: "request", label: t("integrations.page.requestTitle") },
               { value: "upgrade", label: t("integrations.page.upgradeTitle") },
               { value: "roadmap", label: t("integrations.page.roadmapTitle") },

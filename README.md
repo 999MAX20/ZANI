@@ -5886,3 +5886,7 @@ Frontend production build after booking form stability pass: OK
 Frontend API timeout pass: Axios now has a 20 second request timeout, so slow or hanging Render/API requests fail into visible page errors instead of leaving merchant screens in an endless loading state.
 
 Frontend production build after frontend API timeout pass: OK
+
+Merchant integrations UX cleanup pass: Telegram setup now presents a support-assisted owner flow by default, hides secret connection input inside an advanced pilot block, removes visible webhook/provider wording from normal merchant status cards, localizes request/status labels, and removes mixed RU/EN/KK wording from the integrations cards.
+
+Frontend production build after merchant integrations UX cleanup pass: OK

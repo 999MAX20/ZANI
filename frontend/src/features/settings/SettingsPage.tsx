@@ -122,6 +122,7 @@ export function SettingsPage() {
   const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null);
   const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
   const [advancedAccessOpen, setAdvancedAccessOpen] = useState(false);
+  const [copiedInviteId, setCopiedInviteId] = useState<number | null>(null);
   const departments = useQuery({
     queryKey: ["team-departments", business?.id],
     queryFn: teamApi.departments,
@@ -465,6 +466,12 @@ export function SettingsPage() {
     return inviteUrl(invitation.invite_path);
   }
 
+  async function copyInvitation(invitation: { id: number; invite_path: string }) {
+    await navigator.clipboard?.writeText(inviteMessage(invitation.invite_path));
+    setCopiedInviteId(invitation.id);
+    window.setTimeout(() => setCopiedInviteId((current) => (current === invitation.id ? null : current)), 1800);
+  }
+
   return (
     <>
       <PageHeader title={t("settings.title")} description={t("settings.description")} />
@@ -522,6 +529,7 @@ export function SettingsPage() {
                   label={t("settings.memberStep")}
                   value={selectedMember?.id ? String(selectedMember.id) : ""}
                   onChange={(event) => setSelectedMemberId(Number(event.target.value))}
+                  disabled={!members.length || updateMemberMutation.isPending}
                   options={members.map((member) => ({
                     value: String(member.id),
                     label: member.user.full_name || member.user.email,
@@ -531,6 +539,7 @@ export function SettingsPage() {
                   label={t("settings.roleStep")}
                   value={selectedMember?.role || "staff"}
                   onChange={(event) => selectedMember && updateMemberRole(selectedMember.id, event.target.value as BusinessMembershipSummary["role"])}
+                  disabled={!selectedMember || updateMemberMutation.isPending}
                   options={translatedTeamRoleOptions}
                 />
                 <div>
@@ -589,7 +598,10 @@ export function SettingsPage() {
                     inviteMutation.mutate();
                   }}
                 >
-                  <Input label={t("settings.loginEmail")} type="email" value={inviteForm.email} onChange={(event) => setInviteForm({ ...inviteForm, email: event.target.value })} required />
+                  <div>
+                    <Input label={t("settings.loginEmail")} type="email" value={inviteForm.email} onChange={(event) => setInviteForm({ ...inviteForm, email: event.target.value })} required />
+                    <p className="mt-1.5 text-xs leading-5 text-slate-500">{t("settings.loginEmailHelp")}</p>
+                  </div>
                   <Input label={t("settings.fullName")} value={inviteForm.full_name} onChange={(event) => setInviteForm({ ...inviteForm, full_name: event.target.value })} placeholder={t("settings.fullNamePlaceholder")} />
                   <Select
                     label={t("settings.role")}
@@ -608,6 +620,9 @@ export function SettingsPage() {
                       { value: "manual", label: t("settings.copyLink") },
                     ]}
                   />
+                  <p className="rounded-2xl bg-white/70 px-3 py-2 text-xs leading-5 text-slate-500 lg:col-span-2">
+                    {t(`settings.deliveryHelp.${inviteForm.delivery_channel}`)}
+                  </p>
                   {inviteForm.delivery_channel === "whatsapp" ? (
                     <Input label={t("settings.whatsappPhone")} value={inviteForm.phone} onChange={(event) => setInviteForm({ ...inviteForm, phone: event.target.value })} placeholder="+77015550101" required />
                   ) : null}
@@ -629,20 +644,20 @@ export function SettingsPage() {
                           </p>
                         </div>
                         <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-3 sm:flex sm:flex-wrap">
-                          <a href={inviteShareUrl(invitation)} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center justify-center rounded-full bg-slate-950 px-3 py-2 text-xs font-bold text-white">
+                          <a href={inviteShareUrl(invitation)} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center justify-center rounded-full bg-slate-950 px-4 py-2 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-slate-800">
                             {t("settings.send")}
                           </a>
                           <Button
                             type="button"
                             variant="secondary"
-                            className="h-10 rounded-full px-3 text-xs"
-                            onClick={() => navigator.clipboard?.writeText(inviteMessage(invitation.invite_path))}
+                            className="min-h-11 rounded-full px-4 text-sm"
+                            onClick={() => copyInvitation(invitation)}
                           >
                             <Copy size={14} />
-                            {t("settings.copy")}
+                            {copiedInviteId === invitation.id ? t("settings.copied") : t("settings.copy")}
                           </Button>
                           {invitation.status === "pending" ? (
-                            <Button type="button" variant="ghost" className="h-10 rounded-full px-3 text-xs" onClick={() => revokeInvitationMutation.mutate(invitation.id)}>
+                            <Button type="button" variant="ghost" className="min-h-11 rounded-full px-4 text-sm" onClick={() => revokeInvitationMutation.mutate(invitation.id)} isLoading={revokeInvitationMutation.isPending}>
                               {t("settings.revoke")}
                             </Button>
                           ) : null}

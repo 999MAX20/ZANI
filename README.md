@@ -5869,3 +5869,7 @@ Frontend production build after pilot E2E hardening pass: OK
 Frontend perceived-performance pass: TanStack Query no longer refetches all queries on window focus and no longer retries client-side 4xx API errors. This reduces duplicate requests on mobile/browser tab switches and avoids slow repeated retries after permission/auth validation failures.
 
 Frontend production build after perceived-performance pass: OK
+
+Team settings UX pass: employee invitations now explain the difference between login email and WhatsApp/Telegram/email/manual delivery, show channel-specific helper text in RU / KK / EN, provide copy feedback, and use larger mobile-safe invitation action buttons. Member/role controls are disabled while team updates are pending to prevent double actions.
+
+Frontend production build after team settings UX pass: OK

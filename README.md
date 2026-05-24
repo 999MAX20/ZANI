@@ -5786,6 +5786,8 @@ Full backend tests after deals i18n pass: 293 OK
 Frontend production build after deals i18n pass: OK
 Full backend tests after bot detail i18n pass: 293 OK
 Frontend production build after bot detail i18n pass: OK
+Full backend tests after leads runtime i18n pass: 293 OK
+Frontend production build after leads runtime i18n pass: OK
 Visual smoke screenshots: desktop collapsed rail, desktop expanded rail, mobile dashboard OK
 ```
 

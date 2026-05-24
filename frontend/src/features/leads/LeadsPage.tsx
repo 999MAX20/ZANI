@@ -323,7 +323,7 @@ export function LeadsPage() {
       if (action === "closed") return leadsApi.markClosed({ id: lead.id });
       if (action === "reopen") return leadsApi.reopen({ id: lead.id });
       const lostReason = window.prompt(t("leads.lostReason"));
-      if (!lostReason) throw new Error("Укажите причину отказа.");
+      if (!lostReason) throw new Error(t("leads.lostReasonRequired"));
       return leadsApi.markLost({ id: lead.id, lost_reason: lostReason });
     },
     onSuccess: () => {
@@ -335,7 +335,7 @@ export function LeadsPage() {
 
   const appointmentMutation = useMutation({
     mutationFn: (payload: Partial<Appointment>) => {
-      if (!selected?.id || !payload.service || !payload.start_at) throw new Error("Не выбрана заявка, услуга или слот.");
+      if (!selected?.id || !payload.service || !payload.start_at) throw new Error(t("leads.appointmentSelectionRequired"));
       return leadsApi.createAppointment({
         leadId: selected.id,
         payload: { service: payload.service, resource: payload.resource || null, start_at: payload.start_at },
@@ -375,7 +375,7 @@ export function LeadsPage() {
     statusMutation.mutate({ id: activeId, status: targetStatus });
   }
 
-  if (!business) return <ErrorState message="Создайте бизнес в настройках, чтобы работать с заявками." />;
+  if (!business) return <ErrorState message={t("leads.noBusiness")} />;
   if (leads.isLoading || clients.isLoading || services.isLoading) return <LoadingState />;
   const teamMemberList = Array.isArray(teamMembers.data) ? teamMembers.data : [];
 

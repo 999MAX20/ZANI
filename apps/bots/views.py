@@ -49,6 +49,7 @@ def sync_telegram_connector(channel, status=None, last_error="", operation="conf
             "bot_channel_id": channel.id,
             "token_configured": bool(config.get("bot_token")),
             "webhook_secret_configured": bool(config.get("webhook_secret")),
+            "webhook_configured": bool(config.get("webhook_configured")),
             "last_operation": operation,
         }
     )
@@ -130,6 +131,11 @@ class BotChannelViewSet(TenantModelViewSet):
         serializer.is_valid(raise_exception=True)
         result = set_telegram_webhook(channel, serializer.validated_data["webhook_url"])
         connector_status = BusinessConnector.Statuses.CONNECTED if result.get("ok") else BusinessConnector.Statuses.FAILED
+        if result.get("ok"):
+            config = dict(channel.config_json or {})
+            config["webhook_configured"] = True
+            channel.config_json = config
+            channel.save(update_fields=["config_json", "updated_at"])
         sync_telegram_connector(
             channel,
             status=connector_status,
@@ -147,12 +153,30 @@ class BotChannelViewSet(TenantModelViewSet):
             channel=BotChannel.Channels.TELEGRAM,
             status=IntegrationEventLog.Statuses.FAILED,
         ).first()
+        last_inbound_event = IntegrationEventLog.objects.filter(
+            business=channel.bot.business,
+            provider=BotChannel.Channels.TELEGRAM,
+            channel=BotChannel.Channels.TELEGRAM,
+            direction=IntegrationEventLog.Directions.INBOUND,
+        ).first()
+        last_outbound_event = IntegrationEventLog.objects.filter(
+            business=channel.bot.business,
+            provider=BotChannel.Channels.TELEGRAM,
+            channel=BotChannel.Channels.TELEGRAM,
+            direction=IntegrationEventLog.Directions.OUTBOUND,
+        ).first()
+        config = channel.config_json or {}
         return Response(
             {
                 "status": channel.status,
-                "token_configured": bool((channel.config_json or {}).get("bot_token")),
-                "webhook_secret_configured": bool((channel.config_json or {}).get("webhook_secret")),
+                "token_configured": bool(config.get("bot_token")),
+                "webhook_secret_configured": bool(config.get("webhook_secret")),
+                "webhook_configured": bool(config.get("webhook_configured")),
                 "last_error": failed_event.error if failed_event else "",
+                "last_inbound_status": last_inbound_event.status if last_inbound_event else "",
+                "last_inbound_at": last_inbound_event.created_at if last_inbound_event else None,
+                "last_outbound_status": last_outbound_event.status if last_outbound_event else "",
+                "last_outbound_at": last_outbound_event.created_at if last_outbound_event else None,
             }
         )
 

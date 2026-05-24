@@ -55,6 +55,7 @@ class TelegramIntegrationSkeletonTests(TestCase):
         self.assertEqual(conversation.channel, BotConversation.Channels.TELEGRAM)
         self.assertEqual(conversation.external_user_id, "777")
         self.assertEqual(message.text, "Здравствуйте")
+        self.assertEqual(message.external_message_id, "5")
         self.assertEqual(message.payload_json["telegram_username"], "client")
         self.assertTrue(
             IntegrationEventLog.objects.filter(
@@ -64,6 +65,37 @@ class TelegramIntegrationSkeletonTests(TestCase):
                 status=IntegrationEventLog.Statuses.PROCESSED,
             ).exists()
         )
+
+    @override_settings(TELEGRAM_WEBHOOK_SECRET="telegram-secret")
+    def test_telegram_webhook_is_idempotent_for_repeated_message(self):
+        payload = {
+            "update_id": 1000,
+            "message": {
+                "message_id": 5,
+                "from": {"id": 42, "username": "client"},
+                "chat": {"id": 777},
+                "text": "Здравствуйте",
+            },
+        }
+
+        first_response = self.api.post(
+            "/api/integrations/telegram/webhook/",
+            payload,
+            format="json",
+            HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN="telegram-secret",
+        )
+        second_response = self.api.post(
+            "/api/integrations/telegram/webhook/",
+            payload,
+            format="json",
+            HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN="telegram-secret",
+        )
+
+        self.assertEqual(first_response.status_code, 200)
+        self.assertEqual(second_response.status_code, 200)
+        self.assertEqual(BotConversation.objects.count(), 1)
+        self.assertEqual(BotMessage.objects.count(), 1)
+        self.assertTrue(IntegrationEventLog.objects.filter(provider="telegram", payload_json__duplicate=True).exists())
 
     @override_settings(TELEGRAM_WEBHOOK_SECRET="telegram-secret")
     def test_telegram_webhook_rejects_wrong_secret(self):
@@ -128,6 +160,9 @@ class TelegramIntegrationSkeletonTests(TestCase):
         self.assertTrue(status_response.data["webhook_secret_configured"])
         self.assertEqual(webhook_response.status_code, 200)
         self.assertTrue(webhook_response.data["mock"])
+        status_response_after_webhook = self.api.get(f"/api/bot-channels/{self.channel.id}/telegram-status/")
+        self.assertTrue(status_response_after_webhook.data["webhook_configured"])
+        self.assertEqual(status_response_after_webhook.data["last_outbound_status"], IntegrationEventLog.Statuses.MOCKED)
         log = IntegrationEventLog.objects.filter(provider="telegram", status=IntegrationEventLog.Statuses.MOCKED).latest("created_at")
         self.assertNotIn("secret-token", str(log.payload_json))
         connector = BusinessConnector.objects.get(

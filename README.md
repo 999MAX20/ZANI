@@ -5828,3 +5828,11 @@ Next implementation specs prepared:
 
 - `docs/telegram-connector-mvp.md`
 - `docs/excel-csv-real-import-mvp.md`
+
+Telegram Connector MVP hardening pass: inbound Telegram webhook processing is idempotent by Telegram `message_id`, duplicate webhook deliveries no longer create duplicate chat messages, and duplicate inbound events are logged for support diagnostics. Bot channel status now exposes webhook readiness plus last inbound/outbound connector event state. The integrations UI shows webhook state, last Telegram events and a beta notice for production prerequisites.
+
+Backend check after Telegram Connector MVP hardening pass: OK
+Telegram connector tests after Telegram Connector MVP hardening pass: 8 OK
+Integration connector tests after Telegram Connector MVP hardening pass: 29 OK
+Full backend tests after Telegram Connector MVP hardening pass: 296 OK
+Frontend production build after Telegram Connector MVP hardening pass: OK

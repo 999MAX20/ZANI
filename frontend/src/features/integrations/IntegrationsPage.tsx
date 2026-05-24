@@ -51,6 +51,12 @@ function scrollToIntegrationSection(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+function formatIntegrationEvent(status?: string, createdAt?: string | null, emptyLabel?: string) {
+  if (!status && !createdAt) return emptyLabel || "";
+  if (!createdAt) return status || "";
+  return `${status || ""} · ${new Date(createdAt).toLocaleString()}`.trim();
+}
+
 function IntegrationOnboardingGuide({
   connectedCount,
   hasWebsiteChannel,
@@ -612,7 +618,28 @@ function TelegramConnectorWizard({
                 {telegramChannel ? t("integrations.telegram.intakeConfigured") : t("integrations.telegram.intakePending")}
               </p>
             </div>
+            <div className="rounded-2xl bg-white p-3">
+              <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{t("integrations.telegram.webhook")}</p>
+              <p className={telegramStatus.data?.webhook_configured ? "mt-1 font-bold text-emerald-700" : "mt-1 font-bold text-amber-700"}>
+                {telegramStatus.data?.webhook_configured ? t("integrations.telegram.webhookConfigured") : t("integrations.telegram.webhookPending")}
+              </p>
+            </div>
+            <div className="rounded-2xl bg-white p-3">
+              <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{t("integrations.telegram.lastInbound")}</p>
+              <p className="mt-1 text-sm font-bold text-slate-700">
+                {formatIntegrationEvent(telegramStatus.data?.last_inbound_status, telegramStatus.data?.last_inbound_at, t("integrations.telegram.noEvents"))}
+              </p>
+            </div>
+            <div className="rounded-2xl bg-white p-3">
+              <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{t("integrations.telegram.lastOutbound")}</p>
+              <p className="mt-1 text-sm font-bold text-slate-700">
+                {formatIntegrationEvent(telegramStatus.data?.last_outbound_status, telegramStatus.data?.last_outbound_at, t("integrations.telegram.noEvents"))}
+              </p>
+            </div>
           </div>
+          <p className="mt-4 rounded-2xl border border-sky-100 bg-sky-50 px-3 py-2 text-sm font-semibold leading-6 text-sky-800">
+            {t("integrations.telegram.betaNotice")}
+          </p>
         </div>
 
         <form

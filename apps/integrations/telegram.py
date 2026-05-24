@@ -48,6 +48,7 @@ def save_telegram_inbound_message(update, provided_secret):
     channel = resolve_telegram_channel(provided_secret)
     parsed = parse_inbound_update(update)
     business = channel.bot.business
+    external_message_id = parsed.get("message_id") or str(update.get("update_id") or "")
 
     conversation, created = BotConversation.objects.get_or_create(
         business=business,
@@ -61,16 +62,40 @@ def save_telegram_inbound_message(update, provided_secret):
     conversation.updated_at = timezone.now()
     conversation.save(update_fields=["updated_at"])
 
+    if external_message_id:
+        existing_message = BotMessage.objects.filter(
+            conversation=conversation,
+            direction=BotMessage.Directions.INBOUND,
+            external_message_id=external_message_id,
+        ).first()
+        if existing_message:
+            IntegrationEventLog.objects.create(
+                business=conversation.business,
+                provider=BotChannel.Channels.TELEGRAM,
+                channel=BotChannel.Channels.TELEGRAM,
+                direction=IntegrationEventLog.Directions.INBOUND,
+                payload_json={
+                    "update": update,
+                    "conversation_id": conversation.id,
+                    "message_id": existing_message.id,
+                    "duplicate": True,
+                },
+                status=IntegrationEventLog.Statuses.PROCESSED,
+            )
+            return conversation, existing_message
+
     message = BotMessage.objects.create(
         conversation=conversation,
         direction=BotMessage.Directions.INBOUND,
         sender_type=BotMessage.SenderTypes.CLIENT,
         text=parsed["text"],
+        external_message_id=external_message_id,
         payload_json={
             "telegram_update": update,
             "telegram_chat_id": parsed["chat_id"],
             "telegram_sender_id": parsed["sender_id"],
             "telegram_username": parsed["username"],
+            "telegram_message_id": external_message_id,
         },
         status=BotMessage.Statuses.RECEIVED,
     )

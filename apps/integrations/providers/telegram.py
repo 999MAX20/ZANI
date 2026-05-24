@@ -31,6 +31,7 @@ class TelegramProvider(BaseChannelProvider):
             "chat_id": str(chat.get("id") or ""),
             "sender_id": str(sender.get("id") or ""),
             "username": sender.get("username") or "",
+            "message_id": str(message.get("message_id") or ""),
             "text": message.get("text") or message.get("caption") or "",
             "message": message,
         }

@@ -55,7 +55,12 @@ export const telegramChannelApi = {
       status: string;
       token_configured: boolean;
       webhook_secret_configured: boolean;
+      webhook_configured: boolean;
       last_error: string;
+      last_inbound_status: string;
+      last_inbound_at: string | null;
+      last_outbound_status: string;
+      last_outbound_at: string | null;
     }>(`/api/bot-channels/${channelId}/telegram-status/`);
     return data;
   },

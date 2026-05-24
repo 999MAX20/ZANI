@@ -5817,3 +5817,5 @@ Live smoke: /dashboard/clients and /dashboard/timeline load for business_owner@e
 Full backend tests after remaining frontend i18n cleanup pass: 295 OK
 Frontend production build after remaining frontend i18n cleanup pass: OK
 Remaining i18n cleanup: conversations, integrations, WhatsApp setup, bot creation, lead drag handle, shared email/URL labels and public navigation now use RU / KK / EN dictionary keys instead of hardcoded UI text.
+
+Invite registration QA pass: verified backend coverage for owner-created invitations, WhatsApp/Telegram contact validation, expired/revoked/already accepted token handling, existing-user acceptance, password validation, role assignment and active BusinessMember creation. Current frontend invite screen previews token status, blocks non-pending accepts and redirects accepted employees to login.

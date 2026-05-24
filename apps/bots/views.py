@@ -22,9 +22,55 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework.throttling import ScopedRateThrottle
-from apps.integrations.models import IntegrationEventLog
+from apps.integrations.models import BusinessConnector, IntegrationEventLog
 from apps.integrations.telegram import set_telegram_webhook, validate_telegram_token
+
+
+def sync_telegram_connector(channel, status=None, last_error="", operation="config"):
+    config = channel.config_json or {}
+    connector_status = status or (
+        BusinessConnector.Statuses.NEEDS_ATTENTION if config.get("bot_token") else BusinessConnector.Statuses.DRAFT
+    )
+    connector, _ = BusinessConnector.objects.get_or_create(
+        business=channel.bot.business,
+        provider=BusinessConnector.Providers.TELEGRAM,
+        name="Telegram",
+        defaults={
+            "capability": BusinessConnector.Capabilities.COMMUNICATIONS,
+            "auth_type": BusinessConnector.AuthTypes.TOKEN,
+            "status": connector_status,
+        },
+    )
+    safe_config = dict(connector.config_json or {})
+    safe_config.update(
+        {
+            "bot_channel_id": channel.id,
+            "token_configured": bool(config.get("bot_token")),
+            "webhook_secret_configured": bool(config.get("webhook_secret")),
+            "last_operation": operation,
+        }
+    )
+    connector.capability = BusinessConnector.Capabilities.COMMUNICATIONS
+    connector.auth_type = BusinessConnector.AuthTypes.TOKEN
+    connector.status = connector_status
+    connector.config_json = safe_config
+    connector.last_error = last_error
+    if connector_status == BusinessConnector.Statuses.CONNECTED and connector.connected_at is None:
+        connector.connected_at = timezone.now()
+    connector.save(
+        update_fields=[
+            "capability",
+            "auth_type",
+            "status",
+            "config_json",
+            "last_error",
+            "connected_at",
+            "updated_at",
+        ]
+    )
+    return connector
 
 
 class BotViewSet(TenantModelViewSet):
@@ -67,6 +113,7 @@ class BotChannelViewSet(TenantModelViewSet):
         channel.config_json = config
         channel.status = BotChannel.Statuses.ACTIVE if config.get("bot_token") else channel.status
         channel.save(update_fields=["config_json", "status", "updated_at"])
+        sync_telegram_connector(channel, operation="config")
         return Response(
             {
                 "ok": True,
@@ -82,6 +129,13 @@ class BotChannelViewSet(TenantModelViewSet):
         serializer = TelegramSetWebhookSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         result = set_telegram_webhook(channel, serializer.validated_data["webhook_url"])
+        connector_status = BusinessConnector.Statuses.CONNECTED if result.get("ok") else BusinessConnector.Statuses.FAILED
+        sync_telegram_connector(
+            channel,
+            status=connector_status,
+            last_error="" if result.get("ok") else result.get("reason", "Telegram webhook setup failed."),
+            operation="set_webhook",
+        )
         return Response(result)
 
     @action(detail=True, methods=["get"], url_path="telegram-status")
@@ -108,6 +162,13 @@ class BotChannelViewSet(TenantModelViewSet):
         result = validate_telegram_token(channel)
         channel.status = BotChannel.Statuses.ACTIVE if result.get("ok") else BotChannel.Statuses.ERROR
         channel.save(update_fields=["status", "updated_at"])
+        connector_status = BusinessConnector.Statuses.CONNECTED if result.get("ok") else BusinessConnector.Statuses.FAILED
+        sync_telegram_connector(
+            channel,
+            status=connector_status,
+            last_error="" if result.get("ok") else result.get("reason", "Telegram token validation failed."),
+            operation="test_connection",
+        )
         return Response(
             {
                 "ok": result.get("ok", False),

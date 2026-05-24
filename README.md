@@ -5661,6 +5661,10 @@ Frontend production build: OK
   - Excel/CSV добавлен в provider rollout readiness как первый data connector с отдельным `excel_csv` gate;
   - readiness command теперь проверяет connector catalog, BusinessEvent/idempotency layer, upload limit и импортируемые сущности clients/leads/sales/catalog;
   - `docs/provider-rollout.md` и `docs/lightweight-integrations-roadmap.md` обновлены под следующий Telegram + Excel/CSV MVP порядок.
+- Telegram connector alignment pass:
+  - Telegram wizard теперь синхронизирует merchant-facing `BusinessConnector`, чтобы страница интеграций, support health и настройки бота видели один статус;
+  - connector хранит только safe metadata (`bot_channel_id`, configured flags, last operation), без bot token и webhook secret;
+  - успешный mock/real webhook setup или test connection переводит Telegram connector в `connected`, ошибка переводит в `failed` с `last_error`.
 
 Проверка:
 
@@ -5714,6 +5718,9 @@ Provider rollout readiness tests after Excel/CSV gate pass: 8 OK
 Telegram and Excel/CSV rollout command checks: OK
 Full backend tests after lightweight integration readiness pass: 293 OK
 Frontend production build after lightweight integration readiness pass: OK
+Telegram integration tests after connector alignment pass: 11 OK
+Full backend tests after Telegram connector alignment pass: 293 OK
+Frontend production build after Telegram connector alignment pass: OK
 Visual smoke screenshots: desktop collapsed rail, desktop expanded rail, mobile dashboard OK
 ```
 

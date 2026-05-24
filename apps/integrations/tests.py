@@ -4,7 +4,7 @@ from rest_framework.test import APIClient
 from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
 from apps.businesses.models import Business, BusinessMember
 from apps.accounts.models import User
-from apps.integrations.models import IntegrationEventLog
+from apps.integrations.models import BusinessConnector, IntegrationEventLog
 from apps.integrations.providers import get_provider, send_message
 from apps.integrations.telegram import send_telegram_message
 from apps.integrations.whatsapp import send_whatsapp_message
@@ -130,6 +130,17 @@ class TelegramIntegrationSkeletonTests(TestCase):
         self.assertTrue(webhook_response.data["mock"])
         log = IntegrationEventLog.objects.filter(provider="telegram", status=IntegrationEventLog.Statuses.MOCKED).latest("created_at")
         self.assertNotIn("secret-token", str(log.payload_json))
+        connector = BusinessConnector.objects.get(
+            business=self.business,
+            provider=BusinessConnector.Providers.TELEGRAM,
+            name="Telegram",
+        )
+        self.assertEqual(connector.status, BusinessConnector.Statuses.CONNECTED)
+        self.assertTrue(connector.config_json["token_configured"])
+        self.assertTrue(connector.config_json["webhook_secret_configured"])
+        self.assertEqual(connector.config_json["bot_channel_id"], self.channel.id)
+        self.assertNotIn("secret-token", str(connector.config_json))
+        self.assertNotIn("merchant-secret", str(connector.config_json))
 
     @override_settings(TELEGRAM_ENABLED=False)
     def test_telegram_test_connection_uses_controlled_mock_without_leaking_token(self):
@@ -144,6 +155,15 @@ class TelegramIntegrationSkeletonTests(TestCase):
         self.assertNotIn("merchant-token", str(response.data))
         self.channel.refresh_from_db()
         self.assertEqual(self.channel.status, BotChannel.Statuses.ACTIVE)
+        connector = BusinessConnector.objects.get(
+            business=self.business,
+            provider=BusinessConnector.Providers.TELEGRAM,
+            name="Telegram",
+        )
+        self.assertEqual(connector.status, BusinessConnector.Statuses.CONNECTED)
+        self.assertEqual(connector.last_error, "")
+        self.assertIsNotNone(connector.connected_at)
+        self.assertNotIn("merchant-token", str(connector.config_json))
 
     @override_settings(TELEGRAM_ENABLED=False)
     def test_inbox_outbound_telegram_reply_uses_provider_layer(self):

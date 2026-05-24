@@ -22,15 +22,11 @@ import { useEntityData } from "../../hooks/useEntityData";
 import type { Appointment } from "../../types";
 
 const hours = Array.from({ length: 11 }, (_, index) => index + 8);
-const weekDays = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 const appointmentStatusActions: Appointment["status"][] = ["confirmed", "completed", "cancelled", "no_show"];
-const appointmentStatusLabels: Record<Appointment["status"], string> = {
-  created: "Запланирована",
-  confirmed: "Подтвердить",
-  cancelled: "Отменить",
-  rescheduled: "Перенести",
-  completed: "Завершить",
-  no_show: "Не пришёл",
+const localeByLanguage = {
+  ru: "ru-RU",
+  kk: "kk-KZ",
+  en: "en-US",
 };
 
 function parseDate(value: string) {
@@ -45,9 +41,9 @@ function toDateInputValue(value: Date) {
   return `${year}-${month}-${day}`;
 }
 
-function formatPickerDate(value: string) {
+function formatPickerDate(value: string, locale: string) {
   const date = parseDate(value);
-  return new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" }).format(date);
+  return new Intl.DateTimeFormat(locale, { day: "2-digit", month: "2-digit", year: "numeric" }).format(date);
 }
 
 function getWeekDates(value: string) {
@@ -76,13 +72,16 @@ function CalendarPicker({
   value,
   onChange,
   labels,
+  locale,
 }: {
   value: string;
   onChange: (value: string) => void;
+  locale: string;
   labels: {
     previousMonth: string;
     nextMonth: string;
     today: string;
+    weekdays: string[];
   };
 }) {
   const [open, setOpen] = useState(false);
@@ -110,7 +109,7 @@ function CalendarPicker({
           setOpen((current) => !current);
         }}
       >
-        <span>{formatPickerDate(value)}</span>
+        <span>{formatPickerDate(value, locale)}</span>
         <CalendarDays size={18} />
       </Button>
       {open ? (
@@ -118,12 +117,12 @@ function CalendarPicker({
           <div className="mb-4 flex items-center justify-between">
             <Button variant="ghost" className="h-9 w-9 rounded-full px-0" onClick={() => shiftMonth(-1)} aria-label={labels.previousMonth}><ChevronLeft size={16} /></Button>
             <p className="font-semibold text-midnight">
-              {new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }).format(monthDate)}
+              {new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }).format(monthDate)}
             </p>
             <Button variant="ghost" className="h-9 w-9 rounded-full px-0" onClick={() => shiftMonth(1)} aria-label={labels.nextMonth}><ChevronRight size={16} /></Button>
           </div>
           <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold text-slate-400">
-            {weekDays.map((day) => <div key={day} className="py-2">{day}</div>)}
+            {labels.weekdays.map((day) => <div key={day} className="py-2">{day}</div>)}
           </div>
           <div className="mt-1 grid grid-cols-7 gap-1">
             {cells.map((cell, index) => {
@@ -162,7 +161,7 @@ function CalendarPicker({
 }
 
 export function CalendarPage() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const { business } = useActiveBusiness();
   const { appointments, clients, services, resources, leads, workingHours } = useEntityData();
   const queryClient = useQueryClient();
@@ -220,6 +219,24 @@ export function CalendarPage() {
   const confirmedCount = dayAppointments.filter((appointment) => appointment.status === "confirmed").length;
   const completedCount = dayAppointments.filter((appointment) => appointment.status === "completed").length;
   const openSlotsHint = Math.max(0, hours.length - dayAppointments.length);
+  const locale = localeByLanguage[language];
+  const weekDays = [
+    t("weekday.monShort"),
+    t("weekday.tueShort"),
+    t("weekday.wedShort"),
+    t("weekday.thuShort"),
+    t("weekday.friShort"),
+    t("weekday.satShort"),
+    t("weekday.sunShort"),
+  ];
+
+  function getAppointmentActionLabel(status: Appointment["status"]) {
+    if (status === "confirmed") return t("appointment.actionConfirm");
+    if (status === "completed") return t("appointment.actionComplete");
+    if (status === "cancelled") return t("appointment.actionCancel");
+    if (status === "no_show") return t("appointment.actionNoShow");
+    return t(`status.${status}`);
+  }
 
   const renderAppointmentCard = (appointment: Appointment, compact = false) => {
     const client = clients.data?.find((item) => item.id === appointment.client);
@@ -251,7 +268,7 @@ export function CalendarPage() {
                 disabled={statusMutation.isPending}
                 onClick={() => statusMutation.mutate({ id: appointment.id, status })}
               >
-                {appointmentStatusLabels[status]}
+                {getAppointmentActionLabel(status)}
               </button>
             ))}
           </div>
@@ -268,7 +285,17 @@ export function CalendarPage() {
         actions={
           <div className="grid w-full grid-cols-[44px_minmax(0,1fr)_44px] gap-2 sm:flex sm:w-auto sm:flex-wrap">
             <Button variant="secondary" className="h-11 w-11 px-0" onClick={() => shiftDate(-1)} aria-label={t("calendar.previousDay")}><ChevronLeft size={18} /></Button>
-            <CalendarPicker value={date} onChange={setDate} labels={{ previousMonth: t("calendar.previousMonth"), nextMonth: t("calendar.nextMonth"), today: t("calendar.today") }} />
+            <CalendarPicker
+              value={date}
+              onChange={setDate}
+              locale={locale}
+              labels={{
+                previousMonth: t("calendar.previousMonth"),
+                nextMonth: t("calendar.nextMonth"),
+                today: t("calendar.today"),
+                weekdays: weekDays,
+              }}
+            />
             <Button variant="secondary" className="h-11 w-11 px-0" onClick={() => shiftDate(1)} aria-label={t("calendar.nextDay")}><ChevronRight size={18} /></Button>
             <Button variant="secondary" className="col-span-3 h-11 sm:col-span-1" onClick={() => setDate(todayISO())}>{t("calendar.today")}</Button>
             <div className="col-span-3 grid grid-cols-3 rounded-2xl border border-slate-200 bg-white/80 p-1 sm:col-span-1 sm:w-[230px]">
@@ -297,7 +324,7 @@ export function CalendarPage() {
             <div className="absolute -right-16 -top-20 h-44 w-44 rounded-[3rem] bg-brand-400/30 blur-2xl" />
             <div className="relative">
               <p className="text-sm font-bold uppercase tracking-[0.18em] text-white/55">{t("calendar.businessSchedule")}</p>
-              <h2 className="mt-3 text-3xl font-black sm:text-4xl">{formatPickerDate(date)}</h2>
+              <h2 className="mt-3 text-3xl font-black sm:text-4xl">{formatPickerDate(date, locale)}</h2>
               <p className="mt-2 max-w-xl text-sm leading-6 text-white/70">{t("calendar.heroText")}</p>
               <div className="mt-5 grid gap-3 sm:grid-cols-3">
                 <div className="rounded-3xl bg-white/10 p-4 ring-1 ring-white/10">

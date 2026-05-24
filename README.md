@@ -5776,6 +5776,8 @@ Full backend tests after appointments i18n pass: 293 OK
 Frontend production build after appointments i18n pass: OK
 Full backend tests after AI Assistant i18n pass: 293 OK
 Frontend production build after AI Assistant i18n pass: OK
+Full backend tests after calendar page i18n pass: 293 OK
+Frontend production build after calendar page i18n pass: OK
 Visual smoke screenshots: desktop collapsed rail, desktop expanded rail, mobile dashboard OK
 ```
 

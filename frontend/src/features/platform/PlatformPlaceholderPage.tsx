@@ -99,6 +99,19 @@ export const platformPages = {
     description: "Будущая зона prospects/internal tools. Parser, scraping и outreach не входят в публичное ядро продукта.",
     statusItems: ["Route exists", "No prospects models added", "Internal tools boundary preserved"],
   },
+
+  landings: {
+    title: "Landings",
+    eyebrow: "Pilot boundary",
+    description: "Зона будущих демо-лендингов и клиентских посадочных страниц. Сейчас это безопасная заглушка: реальные генераторы и parser tools не добавляются в публичное ядро.",
+    statusItems: ["Route exists", "No landing generator added", "Safe for pilot navigation"],
+  },
+  outreach: {
+    title: "Outreach",
+    eyebrow: "Manual pilot process",
+    description: "Будущая зона ручных касаний и статусов продаж. Массовый outreach и parser остаются internal developer tools и не входят в публичный продукт.",
+    statusItems: ["Route exists", "No outreach automation added", "Internal tools boundary preserved"],
+  },
   billing: {
     title: "Billing",
     eyebrow: "Subscription foundation later",

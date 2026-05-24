@@ -57,6 +57,7 @@ class ImportJobSerializer(serializers.ModelSerializer):
             "mapping_json",
             "preview_json",
             "duplicates_json",
+            "errors_json",
             "total_rows",
             "imported_count",
             "error",

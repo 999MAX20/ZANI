@@ -1,6 +1,6 @@
 import { apiClient } from "./client";
 import { createCrudApi } from "./crud";
-import type { AgentProfile, Id } from "../types";
+import type { AgentProfile, AIToolCallLog, AIToolSuggestResponse, BusinessKnowledgeItem, Id } from "../types";
 
 export type AIAssistantChatResponse = {
   answer: string;
@@ -24,6 +24,14 @@ export const aiApi = {
     });
     return data;
   },
+  suggestTools: async ({ business, message }: { business: Id; message: string }) => {
+    const { data } = await apiClient.post<AIToolSuggestResponse>("/api/ai/tools/suggest/", { business, message });
+    return data;
+  },
+  executeTool: async (logId: Id) => {
+    const { data } = await apiClient.post<AIToolCallLog>(`/api/ai/tools/${logId}/execute/`);
+    return data;
+  },
 };
 
 export type AgentProfilePayload = Omit<Partial<AgentProfile>, "rules_json" | "allowed_tools_json" | "escalation_rules_json"> & {
@@ -33,3 +41,11 @@ export type AgentProfilePayload = Omit<Partial<AgentProfile>, "rules_json" | "al
 };
 
 export const agentProfilesApi = createCrudApi<AgentProfile, AgentProfilePayload, AgentProfilePayload>("/api/ai/agent-profiles/");
+
+export type BusinessKnowledgeItemPayload = Pick<BusinessKnowledgeItem, "business" | "title" | "content" | "category" | "is_active">;
+
+export const businessKnowledgeApi = createCrudApi<
+  BusinessKnowledgeItem,
+  BusinessKnowledgeItemPayload,
+  Partial<BusinessKnowledgeItemPayload>
+>("/api/ai/knowledge-items/");

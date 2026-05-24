@@ -3,7 +3,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from apps.accounts.auth_views import ThrottledTokenObtainPairView, ThrottledTokenRefreshView
-from apps.accounts.views import CurrentUserView
+from apps.accounts.views import CurrentUserView, OwnerSignupView, PasswordResetConfirmView, PasswordResetRequestView, SocialAuthView
 from apps.activities.views import ActivityEventViewSet, NoteViewSet, SegmentFilterViewSet, SegmentViewSet, TaggedObjectViewSet, TagViewSet
 from apps.ai_core.views import (
     AIAssistantChatView,
@@ -27,6 +27,7 @@ from apps.bots.views import (
 )
 from apps.businesses.views import (
     BusinessMemberViewSet,
+    BusinessInvitationViewSet,
     BusinessRoleViewSet,
     BusinessViewSet,
     RolePermissionViewSet,
@@ -42,8 +43,16 @@ from apps.conversations.views import ConversationViewSet, MessageViewSet, QuickR
 from apps.core.file_views import private_media_file
 from apps.core.file_attachment_views import FileAttachmentViewSet
 from apps.core.custom_field_views import CustomFieldDefinitionViewSet, CustomFieldValueViewSet
-from apps.core.import_export_views import ImportJobViewSet, export_entity
-from apps.core.platform_views import platform_merchants, platform_overview
+from apps.core.import_export_views import ImportJobViewSet, export_entity, import_template, manual_catalog_item, manual_sale
+from apps.core.pilot_views import PilotReadinessView
+from apps.core.platform_views import (
+    platform_activate_landing,
+    platform_merchants,
+    platform_merchant_detail,
+    platform_merchant_support_action,
+    platform_overview,
+    platform_operations_health_view,
+)
 from apps.core.security_views import SupportAccessGrantViewSet, security_audit, security_login_history, security_risk_summary
 from apps.core.views import health, health_db, platform_ping, readiness
 from apps.crm.views import DealViewSet, PipelineStageViewSet, PipelineViewSet, StageTransitionViewSet
@@ -60,7 +69,15 @@ from apps.integrations.views import (
     WebhookEndpointViewSet,
     WhatsAppWebhookView,
 )
-from apps.leads.views import LeadFormFieldViewSet, LeadFormSubmissionViewSet, LeadFormViewSet, LeadViewSet, PublicLeadFormSubmitView, PublicLeadFormView
+from apps.leads.views import (
+    LeadFormFieldViewSet,
+    LeadFormSubmissionErrorViewSet,
+    LeadFormSubmissionViewSet,
+    LeadFormViewSet,
+    LeadViewSet,
+    PublicLeadFormSubmitView,
+    PublicLeadFormView,
+)
 from apps.notifications.views import NotificationViewSet
 from apps.onboarding.views import apply_onboarding_template, onboarding_demo_data, onboarding_first_message, onboarding_setup_channel, onboarding_status, onboarding_templates
 from apps.scheduling.views import AppointmentViewSet, ResourceViewSet, WorkingHoursViewSet
@@ -72,6 +89,7 @@ router = DefaultRouter()
 router.register("businesses", BusinessViewSet, basename="business")
 router.register("business-members", BusinessMemberViewSet, basename="business-member")
 router.register("team/members", TeamMemberManagementViewSet, basename="team-member")
+router.register("team/invitations", BusinessInvitationViewSet, basename="team-invitation")
 router.register("team/roles", BusinessRoleViewSet, basename="team-role")
 router.register("team/role-permissions", RolePermissionViewSet, basename="team-role-permission")
 router.register("team/departments", TeamViewSet, basename="team-department")
@@ -86,6 +104,7 @@ router.register("leads", LeadViewSet, basename="lead")
 router.register("lead-forms", LeadFormViewSet, basename="lead-form")
 router.register("lead-form-fields", LeadFormFieldViewSet, basename="lead-form-field")
 router.register("lead-form-submissions", LeadFormSubmissionViewSet, basename="lead-form-submission")
+router.register("lead-form-submission-errors", LeadFormSubmissionErrorViewSet, basename="lead-form-submission-error")
 router.register("resources", ResourceViewSet, basename="resource")
 router.register("working-hours", WorkingHoursViewSet, basename="working-hours")
 router.register("appointments", AppointmentViewSet, basename="appointment")
@@ -140,10 +159,17 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/auth/token/", ThrottledTokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/auth/token/refresh/", ThrottledTokenRefreshView.as_view(), name="token_refresh"),
+    path("api/auth/social/", SocialAuthView.as_view(), name="auth_social"),
+    path("api/auth/signup/owner/", OwnerSignupView.as_view(), name="auth_signup_owner"),
+    path("api/auth/password-reset/request/", PasswordResetRequestView.as_view(), name="auth_password_reset_request"),
+    path("api/auth/password-reset/confirm/", PasswordResetConfirmView.as_view(), name="auth_password_reset_confirm"),
     path("api/auth/me/", CurrentUserView.as_view(), name="auth_me"),
     path("api/team/permissions/catalog/", team_permissions_catalog, name="team_permissions_catalog"),
     path("api/team/performance/", team_performance, name="team_performance"),
     path("api/export/<str:entity_type>/", export_entity, name="export_entity"),
+    path("api/import-templates/<str:entity_type>/", import_template, name="import_template"),
+    path("api/data/sales/", manual_sale, name="manual_sale"),
+    path("api/data/catalog-items/", manual_catalog_item, name="manual_catalog_item"),
     path("api/security/audit/", security_audit, name="security_audit"),
     path("api/security/login-history/", security_login_history, name="security_login_history"),
     path("api/security/risk-summary/", security_risk_summary, name="security_risk_summary"),
@@ -152,7 +178,12 @@ urlpatterns = [
     path("api/analytics/reports/export/", report_export, name="analytics_report_export"),
     path("api/platform/ping/", platform_ping, name="platform_ping"),
     path("api/platform/overview/", platform_overview, name="platform_overview"),
+    path("api/platform/operations-health/", platform_operations_health_view, name="platform_operations_health"),
     path("api/platform/merchants/", platform_merchants, name="platform_merchants"),
+    path("api/platform/merchants/<int:business_id>/", platform_merchant_detail, name="platform_merchant_detail"),
+    path("api/platform/merchants/<int:business_id>/support-actions/", platform_merchant_support_action, name="platform_merchant_support_action"),
+    path("api/platform/activate-landing/", platform_activate_landing, name="platform_activate_landing"),
+    path("api/pilot/readiness/", PilotReadinessView.as_view(), name="pilot_readiness"),
     path("api/onboarding/templates/", onboarding_templates, name="onboarding_templates"),
     path("api/onboarding/status/", onboarding_status, name="onboarding_status"),
     path("api/onboarding/apply-template/", apply_onboarding_template, name="apply_onboarding_template"),

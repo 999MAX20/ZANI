@@ -3,16 +3,22 @@ import { Navigate, RouterProvider, createBrowserRouter } from "react-router-dom"
 
 import { AppLayout } from "../components/layout/AppLayout";
 import { PlatformLayout } from "../components/layout/PlatformLayout";
+import { RouteErrorBoundary } from "../components/ui/RouteErrorBoundary";
 import { ForbiddenState, LoadingState } from "../components/ui/StateViews";
 import { useAuth } from "../features/auth/AuthProvider";
 import { LoginPage } from "../features/auth/LoginPage";
 import { PlatformPlaceholderPage, platformPages } from "../features/platform/PlatformPlaceholderPage";
+import { NotFoundPage } from "../features/pilot/NotFoundPage";
 import { PublicLayout } from "../features/public/PublicLayout";
 import { PublicBotsPage, PublicContactsPage, PublicCrmPage, PublicHomePage, PublicPricingPage } from "../features/public/PublicPages";
 import { useActiveBusiness } from "../hooks/useBusiness";
 import { useI18n } from "../lib/i18n";
-import { forbiddenMessage, hasPermission } from "../lib/permissions";
+import { hasPermission, permissionForbiddenMessage } from "../lib/permissions";
 
+const InviteAcceptPage = lazy(() => import("../features/auth/InviteAcceptPage").then((module) => ({ default: module.InviteAcceptPage })));
+const SignupPage = lazy(() => import("../features/auth/SignupPage").then((module) => ({ default: module.SignupPage })));
+const ForgotPasswordPage = lazy(() => import("../features/auth/ForgotPasswordPage").then((module) => ({ default: module.ForgotPasswordPage })));
+const ResetPasswordPage = lazy(() => import("../features/auth/ResetPasswordPage").then((module) => ({ default: module.ResetPasswordPage })));
 const DashboardPage = lazy(() => import("../features/dashboard/DashboardPage").then((module) => ({ default: module.DashboardPage })));
 const LeadsPage = lazy(() => import("../features/leads/LeadsPage").then((module) => ({ default: module.LeadsPage })));
 const DealsPage = lazy(() => import("../features/deals/DealsPage").then((module) => ({ default: module.DealsPage })));
@@ -34,12 +40,16 @@ const AnalyticsPage = lazy(() => import("../features/analytics/AnalyticsPage").t
 const SettingsPage = lazy(() => import("../features/settings/SettingsPage").then((module) => ({ default: module.SettingsPage })));
 const WorkingHoursPage = lazy(() => import("../features/settings/WorkingHoursPage").then((module) => ({ default: module.WorkingHoursPage })));
 const OnboardingPage = lazy(() => import("../features/onboarding/OnboardingPage").then((module) => ({ default: module.OnboardingPage })));
+const PilotReadinessPage = lazy(() => import("../features/pilot/PilotReadinessPage").then((module) => ({ default: module.PilotReadinessPage })));
 const PlatformOverviewPage = lazy(() => import("../features/platform/PlatformOverviewPage").then((module) => ({ default: module.PlatformOverviewPage })));
+const PlatformOperationsPage = lazy(() => import("../features/platform/PlatformOperationsPage").then((module) => ({ default: module.PlatformOperationsPage })));
 const PlatformMerchantsPage = lazy(() => import("../features/platform/PlatformMerchantsPage").then((module) => ({ default: module.PlatformMerchantsPage })));
+const PlatformMerchantDetailPage = lazy(() => import("../features/platform/PlatformMerchantDetailPage").then((module) => ({ default: module.PlatformMerchantDetailPage })));
 
 function MerchantRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, isMerchantUser, isPlatformUser } = useAuth();
-  if (isLoading) return <LoadingState label="Загружаем доступ..." />;
+  const { t } = useI18n();
+  if (isLoading) return <LoadingState label={t("common.loadingAccess")} />;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   if (!isMerchantUser && isPlatformUser) return <Navigate to="/platform" replace />;
   return isMerchantUser ? children : <Navigate to="/login" replace />;
@@ -47,14 +57,16 @@ function MerchantRoute({ children }: { children: React.ReactNode }) {
 
 function PlatformRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, isPlatformUser } = useAuth();
-  if (isLoading) return <LoadingState label="Загружаем доступ..." />;
+  const { t } = useI18n();
+  if (isLoading) return <LoadingState label={t("common.loadingAccess")} />;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   return isPlatformUser ? children : <Navigate to="/dashboard" replace />;
 }
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, isPlatformUser } = useAuth();
-  if (isLoading) return <LoadingState label="Загружаем доступ..." />;
+  const { t } = useI18n();
+  if (isLoading) return <LoadingState label={t("common.loadingAccess")} />;
   if (!isAuthenticated) return children;
   return <Navigate to={isPlatformUser ? "/platform" : "/dashboard"} replace />;
 }
@@ -74,11 +86,12 @@ function PermissionRoute({
   children: React.ReactNode;
 }) {
   const { user } = useAuth();
+  const { t } = useI18n();
   const { business, isLoading } = useActiveBusiness();
   if (!resource) return children;
-  if (isLoading) return <LoadingState label="Проверяем доступ..." />;
+  if (isLoading) return <LoadingState label={t("common.checkingAccess")} />;
   if (hasPermission(user, business?.id, resource, action)) return children;
-  return <ForbiddenState message={forbiddenMessage(resource, action)} />;
+  return <ForbiddenState message={permissionForbiddenMessage(resource, action, t)} />;
 }
 
 const merchantChildren = [
@@ -95,6 +108,9 @@ const merchantChildren = [
   { path: "bots/:id", resource: "integrations", element: <PageLoader><BotDetailPage /></PageLoader> },
   { path: "integrations", resource: "integrations", element: <PageLoader><IntegrationsPage /></PageLoader> },
   { path: "ai-assistant", resource: "conversations", element: <PageLoader><AIAssistantPage /></PageLoader> },
+  { path: "ai", resource: "conversations", element: <Navigate to="/dashboard/ai-assistant" replace /> },
+  { path: "assistant", resource: "conversations", element: <PageLoader><AIAssistantPage /></PageLoader> },
+  { path: "inbox", resource: "conversations", element: <PageLoader><ConversationsPage /></PageLoader> },
   { path: "ai-agents", resource: "settings", element: <PageLoader><AIAgentsPage /></PageLoader> },
   { path: "automations", resource: "automations", element: <PageLoader><AutomationsPage /></PageLoader> },
   { path: "services", resource: "settings", element: <PageLoader><ServicesPage /></PageLoader> },
@@ -102,7 +118,9 @@ const merchantChildren = [
   { path: "working-hours", resource: "settings", element: <PageLoader><WorkingHoursPage /></PageLoader> },
   { path: "analytics", resource: "analytics", element: <PageLoader><AnalyticsPage /></PageLoader> },
   { path: "onboarding", resource: "settings", element: <PageLoader><OnboardingPage /></PageLoader> },
+  { path: "pilot-readiness", resource: "settings", element: <PageLoader><PilotReadinessPage /></PageLoader> },
   { path: "settings", resource: "settings", element: <PageLoader><SettingsPage /></PageLoader> },
+  { path: "billing", resource: "settings", element: <Navigate to="/dashboard/settings#billing" replace /> },
 ];
 
 const legacyMerchantRoutes = [
@@ -117,6 +135,9 @@ const legacyMerchantRoutes = [
   { path: "/crm-bots", resource: "integrations", element: <PageLoader><BotsPage /></PageLoader> },
   { path: "/integrations", resource: "integrations", element: <PageLoader><IntegrationsPage /></PageLoader> },
   { path: "/ai-assistant", resource: "conversations", element: <PageLoader><AIAssistantPage /></PageLoader> },
+  { path: "/ai", resource: "conversations", element: <Navigate to="/dashboard/ai-assistant" replace /> },
+  { path: "/assistant", resource: "conversations", element: <PageLoader><AIAssistantPage /></PageLoader> },
+  { path: "/inbox", resource: "conversations", element: <PageLoader><ConversationsPage /></PageLoader> },
   { path: "/ai-agents", resource: "settings", element: <PageLoader><AIAgentsPage /></PageLoader> },
   { path: "/automations", resource: "automations", element: <PageLoader><AutomationsPage /></PageLoader> },
   { path: "/services", resource: "settings", element: <PageLoader><ServicesPage /></PageLoader> },
@@ -124,13 +145,16 @@ const legacyMerchantRoutes = [
   { path: "/working-hours", resource: "settings", element: <PageLoader><WorkingHoursPage /></PageLoader> },
   { path: "/analytics", resource: "analytics", element: <PageLoader><AnalyticsPage /></PageLoader> },
   { path: "/onboarding", resource: "settings", element: <PageLoader><OnboardingPage /></PageLoader> },
+  { path: "/pilot-readiness", resource: "settings", element: <PageLoader><PilotReadinessPage /></PageLoader> },
   { path: "/settings", resource: "settings", element: <PageLoader><SettingsPage /></PageLoader> },
+  { path: "/billing", resource: "settings", element: <Navigate to="/dashboard/settings#billing" replace /> },
 ];
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <PublicLayout />,
+    errorElement: <RouteErrorBoundary />,
     children: [
       { index: true, element: <PublicHomePage /> },
       { path: "pricing", element: <PublicPricingPage /> },
@@ -141,6 +165,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/login",
+    errorElement: <RouteErrorBoundary />,
     element: (
       <PublicRoute>
         <LoginPage />
@@ -148,7 +173,44 @@ const router = createBrowserRouter([
     ),
   },
   {
+    path: "/signup",
+    errorElement: <RouteErrorBoundary />,
+    element: (
+      <PublicRoute>
+        <PageLoader><SignupPage /></PageLoader>
+      </PublicRoute>
+    ),
+  },
+  {
+    path: "/forgot-password",
+    errorElement: <RouteErrorBoundary />,
+    element: (
+      <PublicRoute>
+        <PageLoader><ForgotPasswordPage /></PageLoader>
+      </PublicRoute>
+    ),
+  },
+  {
+    path: "/reset-password/:uid/:token",
+    errorElement: <RouteErrorBoundary />,
+    element: (
+      <PublicRoute>
+        <PageLoader><ResetPasswordPage /></PageLoader>
+      </PublicRoute>
+    ),
+  },
+  {
+    path: "/invite/:token",
+    errorElement: <RouteErrorBoundary />,
+    element: (
+      <PublicRoute>
+        <PageLoader><InviteAcceptPage /></PageLoader>
+      </PublicRoute>
+    ),
+  },
+  {
     path: "/platform",
+    errorElement: <RouteErrorBoundary />,
     element: (
       <PlatformRoute>
         <PlatformLayout />
@@ -156,8 +218,12 @@ const router = createBrowserRouter([
     ),
     children: [
       { index: true, element: <PageLoader><PlatformOverviewPage /></PageLoader> },
+      { path: "operations", element: <PageLoader><PlatformOperationsPage /></PageLoader> },
       { path: "merchants", element: <PageLoader><PlatformMerchantsPage /></PageLoader> },
+      { path: "merchants/:id", element: <PageLoader><PlatformMerchantDetailPage /></PageLoader> },
       { path: "prospects", element: <PlatformPlaceholderPage {...platformPages.prospects} /> },
+      { path: "landings", element: <PlatformPlaceholderPage {...platformPages.landings} /> },
+      { path: "outreach", element: <PlatformPlaceholderPage {...platformPages.outreach} /> },
       { path: "billing", element: <PlatformPlaceholderPage {...platformPages.billing} /> },
       { path: "analytics", element: <PlatformPlaceholderPage {...platformPages.analytics} /> },
       { path: "settings", element: <PlatformPlaceholderPage {...platformPages.settings} /> },
@@ -165,6 +231,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/dashboard",
+    errorElement: <RouteErrorBoundary />,
     element: (
       <MerchantRoute>
         <AppLayout />
@@ -181,6 +248,7 @@ const router = createBrowserRouter([
   },
   ...legacyMerchantRoutes.map((route) => ({
     path: route.path,
+    errorElement: <RouteErrorBoundary />,
     element: (
       <MerchantRoute>
         <AppLayout />
@@ -197,6 +265,7 @@ const router = createBrowserRouter([
       },
     ],
   })),
+  { path: "*", element: <NotFoundPage />, errorElement: <RouteErrorBoundary /> },
 ]);
 
 export function AppRouter() {

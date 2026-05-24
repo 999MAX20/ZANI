@@ -19,6 +19,18 @@ plan/ZANI_MASTER_TECH_PLAN.md
 
 ## Обязательные supporting documents
 
+### 0. Production hardening roadmap
+
+```text
+plan/ZANI_PRODUCTION_HARDENING_ROADMAP.md
+```
+
+Назначение:
+
+- актуальный execution roadmap после закрытия core/pilot задач;
+- путь от Render/Supabase staging к paid beta;
+- Redis/Celery, object storage, Sentry, transactional email, backups, load testing and provider rollout.
+
 ### 1. Clean code / architecture rules
 
 ```text

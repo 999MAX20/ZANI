@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.db.models import Q
+from django.db.models import Count, Max, Q, Sum
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -22,6 +22,8 @@ from apps.conversations.inbox_serializers import (
     InboxCreateLeadSerializer,
     InboxCreateTaskSerializer,
     InboxHandoffSerializer,
+    InboxCloseSerializer,
+    InboxPrioritySerializer,
     InboxLinkClientSerializer,
     InboxLinkDealSerializer,
     InboxLinkLeadSerializer,
@@ -70,6 +72,97 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
             )
         return self._apply_filters(scoped_queryset.distinct())
 
+    @action(detail=False, methods=["get"])
+    def summary(self, request):
+        """Return owner/manager friendly inbox health for the mobile dashboard.
+
+        This endpoint intentionally does not promise full production omnichannel.
+        It summarizes the channels already flowing through the inbox and shows
+        WhatsApp/Instagram as pilot roadmap channels when they are not connected yet.
+        """
+        queryset = self.get_queryset()
+        total = queryset.count()
+        unread = queryset.filter(unread_count__gt=0).count()
+        handoff_required = queryset.filter(handoff_required=True).count()
+        assigned_to_me = queryset.filter(assigned_to=request.user).count()
+        unassigned = queryset.filter(assigned_to__isnull=True).count()
+        urgent = queryset.filter(priority=BotConversation.Priorities.URGENT).count()
+        high_priority = queryset.filter(priority__in=[BotConversation.Priorities.HIGH, BotConversation.Priorities.URGENT]).count()
+        bot_paused = queryset.filter(bot_enabled=False).count()
+
+        channel_rows = queryset.values("channel").annotate(
+            total=Count("id"),
+            unread=Sum("unread_count"),
+            handoff_required=Count("id", filter=Q(handoff_required=True)),
+            last_message_at=Max("last_message_at"),
+        )
+        channel_map = {row["channel"]: row for row in channel_rows}
+        channel_catalog = [
+            {
+                "key": BotConversation.Channels.WEBSITE,
+                "label": "Website / landing chat",
+                "status": "available",
+                "pilot_note": "Готово для пилота: сообщения с сайта/лендинга попадают в единый inbox.",
+            },
+            {
+                "key": BotConversation.Channels.TELEGRAM,
+                "label": "Telegram",
+                "status": "beta",
+                "pilot_note": "Beta: можно проверять через подключенный bot token/staging.",
+            },
+            {
+                "key": BotConversation.Channels.WHATSAPP,
+                "label": "WhatsApp",
+                "status": "roadmap",
+                "pilot_note": "На пилоте используем WhatsApp-кнопку. Production API подключается отдельно.",
+            },
+            {
+                "key": BotConversation.Channels.INSTAGRAM,
+                "label": "Instagram Direct",
+                "status": "roadmap",
+                "pilot_note": "Показываем как следующий модуль, не обещаем как готовую production-интеграцию.",
+            },
+        ]
+        channels = []
+        for item in channel_catalog:
+            row = channel_map.get(item["key"], {})
+            channels.append(
+                {
+                    **item,
+                    "total": row.get("total", 0) or 0,
+                    "unread": row.get("unread", 0) or 0,
+                    "handoff_required": row.get("handoff_required", 0) or 0,
+                    "last_message_at": row.get("last_message_at"),
+                    "is_connected": bool(row.get("total")) or item["status"] == "available",
+                }
+            )
+
+        next_actions = []
+        if unread:
+            next_actions.append({"label": "Разобрать непрочитанные", "href": "/dashboard/inbox?unread=true", "priority": "high"})
+        if handoff_required:
+            next_actions.append({"label": "Забрать диалоги у бота", "href": "/dashboard/inbox?handoff_required=true", "priority": "high"})
+        if unassigned:
+            next_actions.append({"label": "Назначить ответственных", "href": "/dashboard/inbox?assigned_to=unassigned", "priority": "normal"})
+        if total == 0:
+            next_actions.append({"label": "Подключить website chat", "href": "/dashboard/integrations", "priority": "normal"})
+
+        return Response(
+            {
+                "total": total,
+                "unread": unread,
+                "handoff_required": handoff_required,
+                "assigned_to_me": assigned_to_me,
+                "unassigned": unassigned,
+                "urgent": urgent,
+                "high_priority": high_priority,
+                "bot_paused": bot_paused,
+                "channels": channels,
+                "next_actions": next_actions,
+                "pilot_positioning": "Unified Inbox собирает обращения с сайта/лендинга и beta-каналов в одном месте. WhatsApp/Instagram отмечены как roadmap, чтобы маркетинг не обещал production раньше времени.",
+            }
+        )
+
     def _apply_filters(self, queryset):
         params = self.request.query_params
 
@@ -81,6 +174,8 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
         assigned_to = params.get("assigned_to")
         if assigned_to == "me":
             queryset = queryset.filter(assigned_to=self.request.user)
+        elif assigned_to == "unassigned":
+            queryset = queryset.filter(assigned_to__isnull=True)
         elif assigned_to:
             queryset = queryset.filter(assigned_to_id=assigned_to)
 
@@ -167,6 +262,62 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
         conversation = self.get_object()
         assert_can(request.user, conversation.business, Resources.CONVERSATIONS, Actions.UPDATE, obj=conversation)
         conversation = mark_conversation_read(conversation)
+        return Response(self.get_serializer(conversation).data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["post"], url_path="mark-unread")
+    def mark_unread(self, request, pk=None):
+        conversation = self.get_object()
+        assert_can(request.user, conversation.business, Resources.CONVERSATIONS, Actions.UPDATE, obj=conversation)
+        conversation.unread_count = max(conversation.unread_count, 1)
+        conversation.save(update_fields=["unread_count", "updated_at"])
+        return Response(self.get_serializer(conversation).data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["post"], url_path="set-priority")
+    def set_priority(self, request, pk=None):
+        conversation = self.get_object()
+        assert_can(request.user, conversation.business, Resources.CONVERSATIONS, Actions.UPDATE, obj=conversation)
+        serializer = InboxPrioritySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        conversation.priority = serializer.validated_data["priority"]
+        conversation.save(update_fields=["priority", "updated_at"])
+        return Response(self.get_serializer(conversation).data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["post"])
+    def close(self, request, pk=None):
+        conversation = self.get_object()
+        assert_can(request.user, conversation.business, Resources.CONVERSATIONS, Actions.UPDATE, obj=conversation)
+        serializer = InboxCloseSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        conversation.status = BotConversation.Statuses.CLOSED
+        conversation.close_reason = serializer.validated_data.get("reason", "")
+        conversation.handoff_required = False
+        conversation.bot_enabled = False
+        conversation.save(update_fields=["status", "close_reason", "handoff_required", "bot_enabled", "updated_at"])
+        BotMessage.objects.create(
+            conversation=conversation,
+            direction=BotMessage.Directions.OUTBOUND,
+            sender_type=BotMessage.SenderTypes.SYSTEM,
+            text="Диалог закрыт менеджером.",
+            status=BotMessage.Statuses.SENT,
+        )
+        return Response(self.get_serializer(conversation).data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["post"])
+    def reopen(self, request, pk=None):
+        conversation = self.get_object()
+        assert_can(request.user, conversation.business, Resources.CONVERSATIONS, Actions.UPDATE, obj=conversation)
+
+        conversation.status = BotConversation.Statuses.OPEN
+        conversation.close_reason = ""
+        conversation.save(update_fields=["status", "close_reason", "updated_at"])
+        BotMessage.objects.create(
+            conversation=conversation,
+            direction=BotMessage.Directions.OUTBOUND,
+            sender_type=BotMessage.SenderTypes.SYSTEM,
+            text="Диалог возвращён в работу.",
+            status=BotMessage.Statuses.SENT,
+        )
         return Response(self.get_serializer(conversation).data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["post"], url_path="suggest-reply")

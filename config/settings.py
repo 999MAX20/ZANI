@@ -21,7 +21,14 @@ env = environ.Env(
     AUDIT_LOG_RETENTION_DAYS=(int, 365),
     LOG_LEVEL=(str, "INFO"),
     CELERY_TASK_DEFAULT_QUEUE=(str, "default"),
+    CELERY_TASK_ALWAYS_EAGER=(bool, False),
+    CELERY_TASK_STORE_EAGER_RESULT=(bool, False),
     AUTOMATIONS_RUN_INLINE=(bool, True),
+    PAID_BETA_STAGING_SMOKE_GREEN=(bool, False),
+    PAID_BETA_BROWSER_E2E_GREEN=(bool, False),
+    PAID_BETA_BACKUP_RESTORE_DRILL_DONE=(bool, False),
+    PAID_BETA_SUPPORT_GRANT_FLOW_TESTED=(bool, False),
+    SOCIAL_AUTH_AUTO_CREATE_MERCHANT=(bool, True),
 )
 environ.Env.read_env(BASE_DIR / ".env")
 
@@ -222,6 +229,9 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "auth_login": env("AUTH_LOGIN_RATE", default="10/min"),
         "auth_refresh": env("AUTH_REFRESH_RATE", default="30/min"),
+        "auth_social": env("AUTH_SOCIAL_RATE", default="20/min"),
+        "auth_signup": env("AUTH_SIGNUP_RATE", default="10/hour"),
+        "auth_password_reset": env("AUTH_PASSWORD_RESET_RATE", default="5/hour"),
         "public_api": env("PUBLIC_API_RATE", default="120/min"),
         "public_form": env("PUBLIC_FORM_RATE", default="60/min"),
         "public_widget": env("PUBLIC_WIDGET_RATE", default="120/min"),
@@ -238,6 +248,10 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=env.int("JWT_REFRESH_TOKEN_DAYS", default=7)),
 }
 
+GOOGLE_OAUTH_CLIENT_IDS = env.list("GOOGLE_OAUTH_CLIENT_IDS", default=[])
+APPLE_OAUTH_CLIENT_IDS = env.list("APPLE_OAUTH_CLIENT_IDS", default=[])
+SOCIAL_AUTH_AUTO_CREATE_MERCHANT = env.bool("SOCIAL_AUTH_AUTO_CREATE_MERCHANT", default=True)
+
 CELERY_BROKER_URL = env("REDIS_URL", default="redis://redis:6379/0")
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 CELERY_TASK_DEFAULT_QUEUE = env("CELERY_TASK_DEFAULT_QUEUE")
@@ -250,7 +264,13 @@ CELERY_TASK_ROUTES = {
 }
 CELERY_TASK_ACKS_LATE = env.bool("CELERY_TASK_ACKS_LATE", default=True)
 CELERY_WORKER_PREFETCH_MULTIPLIER = env.int("CELERY_WORKER_PREFETCH_MULTIPLIER", default=1)
+CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=False)
+CELERY_TASK_STORE_EAGER_RESULT = env.bool("CELERY_TASK_STORE_EAGER_RESULT", default=False)
 AUTOMATIONS_RUN_INLINE = env.bool("AUTOMATIONS_RUN_INLINE", default=True)
+PAID_BETA_STAGING_SMOKE_GREEN = env.bool("PAID_BETA_STAGING_SMOKE_GREEN", default=False)
+PAID_BETA_BROWSER_E2E_GREEN = env.bool("PAID_BETA_BROWSER_E2E_GREEN", default=False)
+PAID_BETA_BACKUP_RESTORE_DRILL_DONE = env.bool("PAID_BETA_BACKUP_RESTORE_DRILL_DONE", default=False)
+PAID_BETA_SUPPORT_GRANT_FLOW_TESTED = env.bool("PAID_BETA_SUPPORT_GRANT_FLOW_TESTED", default=False)
 
 SECURE_SSL_REDIRECT = env("SECURE_SSL_REDIRECT")
 SESSION_COOKIE_SECURE = env("SESSION_COOKIE_SECURE")
@@ -271,6 +291,7 @@ AUDIT_LOG_RETENTION_DAYS = env("AUDIT_LOG_RETENTION_DAYS")
 SENTRY_DSN = env("SENTRY_DSN", default="")
 ENVIRONMENT = env("ENVIRONMENT", default="development")
 RELEASE = env("RELEASE", default="local")
+SENTRY_TRACES_SAMPLE_RATE = env.float("SENTRY_TRACES_SAMPLE_RATE", default=0.05)
 
 TELEGRAM_ENABLED = env.bool("TELEGRAM_ENABLED", default=False)
 TELEGRAM_BASE_API_URL = env("TELEGRAM_BASE_API_URL", default="https://api.telegram.org")
@@ -302,7 +323,7 @@ if SENTRY_DSN:
         dsn=SENTRY_DSN,
         environment=ENVIRONMENT,
         release=RELEASE,
-        traces_sample_rate=env.float("SENTRY_TRACES_SAMPLE_RATE", default=0.05),
+        traces_sample_rate=SENTRY_TRACES_SAMPLE_RATE,
         send_default_pii=False,
     )
 

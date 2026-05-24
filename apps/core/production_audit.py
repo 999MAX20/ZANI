@@ -58,6 +58,7 @@ def _has_required_rate_limit_scopes() -> bool:
     required_scopes = {
         "auth_login",
         "auth_refresh",
+        "auth_social",
         "public_api",
         "public_form",
         "public_widget",
@@ -129,7 +130,8 @@ def run_production_readiness_audit() -> dict:
         _item(
             "queue.redis",
             "Redis broker configured",
-            _configured(settings.CELERY_BROKER_URL) and "redis://" in settings.CELERY_BROKER_URL,
+            _configured(settings.CELERY_BROKER_URL)
+            and (settings.CELERY_BROKER_URL.startswith("redis://") or settings.CELERY_BROKER_URL.startswith("rediss://")),
             f"CELERY_BROKER_URL={settings.CELERY_BROKER_URL}",
             "Use managed Redis for Celery broker/result backend.",
         ),

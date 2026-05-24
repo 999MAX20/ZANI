@@ -1,4 +1,4 @@
-import { apiClient } from "./client";
+import { apiClient, unwrapList } from "./client";
 import { createCrudApi } from "./crud";
 import type { CrmEntityType, CustomFieldDefinition, CustomFieldValue, Id } from "../types";
 
@@ -8,7 +8,7 @@ export const customFieldsApi = {
     const { data } = await apiClient.get<{ results: CustomFieldDefinition[] } | CustomFieldDefinition[]>("/api/custom-fields/", {
       params: { entity_type: entityType },
     });
-    return Array.isArray(data) ? data : data.results;
+    return unwrapList(data);
   },
 };
 
@@ -21,6 +21,6 @@ export const customFieldValuesApi = {
     values: Array<{ definition: Id; value_json: Record<string, unknown> }>;
   }) => {
     const { data } = await apiClient.post<CustomFieldValue[]>("/api/custom-field-values/bulk-upsert/", payload);
-    return data;
+    return unwrapList(data);
   },
 };

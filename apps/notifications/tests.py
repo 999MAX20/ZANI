@@ -21,9 +21,23 @@ class NotificationCenterTests(APITestCase):
             password="pass",
             role=User.Roles.BUSINESS_OWNER,
         )
+        self.operator = User.objects.create_user(
+            username="notification-operator",
+            email="notification-operator@example.com",
+            password="pass",
+            role=User.Roles.BUSINESS_OPERATOR,
+        )
+        self.staff = User.objects.create_user(
+            username="notification-staff",
+            email="notification-staff@example.com",
+            password="pass",
+            role=User.Roles.STAFF,
+        )
         self.business = Business.objects.create(owner=self.owner, name="Notify Clinic", slug="notify-clinic")
         self.other_business = Business.objects.create(owner=self.other_owner, name="Other Notify", slug="other-notify")
         BusinessMember.objects.create(business=self.business, user=self.owner, role=BusinessMember.Roles.OWNER)
+        BusinessMember.objects.create(business=self.business, user=self.operator, role=BusinessMember.Roles.OPERATOR)
+        BusinessMember.objects.create(business=self.business, user=self.staff, role=BusinessMember.Roles.STAFF)
         BusinessMember.objects.create(business=self.other_business, user=self.other_owner, role=BusinessMember.Roles.OWNER)
         self.client_obj = Client.objects.create(business=self.business, full_name="Notify Client", phone="+77015551010")
         other_client = Client.objects.create(business=self.other_business, full_name="Hidden Client", phone="+77015551011")
@@ -77,3 +91,72 @@ class NotificationCenterTests(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["updated"], 1)
         self.assertIsNotNone(second.read_at)
+
+    def test_targeted_notifications_are_visible_to_recipient_and_owner_only(self):
+        operator_notification = Notification.objects.create(
+            business=self.business,
+            recipient=self.operator,
+            client=self.client_obj,
+            channel=Notification.Channels.SYSTEM,
+            category=Notification.Categories.TASKS,
+            text="Оператору: проверить заявку",
+            send_at=timezone.now(),
+        )
+        staff_notification = Notification.objects.create(
+            business=self.business,
+            recipient=self.staff,
+            client=self.client_obj,
+            channel=Notification.Channels.SYSTEM,
+            category=Notification.Categories.TASKS,
+            text="Другому сотруднику",
+            send_at=timezone.now(),
+        )
+
+        self.client.force_authenticate(self.operator)
+        operator_response = self.client.get("/api/notifications/")
+        operator_ids = [item["id"] for item in operator_response.data["results"]]
+
+        self.client.force_authenticate(self.owner)
+        owner_response = self.client.get("/api/notifications/")
+        owner_ids = [item["id"] for item in owner_response.data["results"]]
+
+        self.assertEqual(operator_response.status_code, 200)
+        self.assertIn(operator_notification.id, operator_ids)
+        self.assertNotIn(staff_notification.id, operator_ids)
+        self.assertIn(operator_notification.id, owner_ids)
+
+    def test_business_wide_notifications_are_visible_to_staff(self):
+        business_wide = Notification.objects.create(
+            business=self.business,
+            client=self.client_obj,
+            channel=Notification.Channels.SYSTEM,
+            category=Notification.Categories.SYSTEM,
+            text="Общее уведомление бизнеса",
+            send_at=timezone.now(),
+        )
+
+        self.client.force_authenticate(self.staff)
+        response = self.client.get("/api/notifications/")
+        ids = [item["id"] for item in response.data["results"]]
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(business_wide.id, ids)
+
+    def test_recipient_must_belong_to_business(self):
+        self.client.force_authenticate(self.owner)
+
+        response = self.client.post(
+            "/api/notifications/",
+            {
+                "business": self.business.id,
+                "recipient": self.other_owner.id,
+                "client": self.client_obj.id,
+                "channel": Notification.Channels.SYSTEM,
+                "category": Notification.Categories.SYSTEM,
+                "text": "Неверный адресат",
+                "send_at": timezone.now().isoformat(),
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)

@@ -1,16 +1,38 @@
-import { apiClient } from "./client";
+import { apiClient, unwrapList } from "./client";
+import type { PaginatedResponse } from "./client";
 import type { BotSuggestedReplyResponse } from "./bots";
 import type { BotConversation, BotMessage, Client, Deal, DuplicateClient, Id, Lead, Task } from "../types";
 
-type PaginatedResponse<T> = {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
-};
-
 export type InboxConversation = BotConversation;
 export type InboxMessage = BotMessage;
+
+export type InboxSummary = {
+  total: number;
+  unread: number;
+  handoff_required: number;
+  assigned_to_me: number;
+  unassigned: number;
+  urgent: number;
+  high_priority: number;
+  bot_paused: number;
+  channels: Array<{
+    key: string;
+    label: string;
+    status: "available" | "beta" | "roadmap" | string;
+    pilot_note: string;
+    total: number;
+    unread: number;
+    handoff_required: number;
+    last_message_at?: string | null;
+    is_connected: boolean;
+  }>;
+  next_actions: Array<{
+    label: string;
+    href: string;
+    priority: "low" | "normal" | "high" | "urgent" | string;
+  }>;
+  pilot_positioning: string;
+};
 
 export type InboxFilters = {
   channel?: string;
@@ -29,6 +51,10 @@ function cleanParams(filters: InboxFilters) {
 }
 
 export const inboxApi = {
+  getSummary: async () => {
+    const { data } = await apiClient.get<InboxSummary>("/api/inbox/conversations/summary/");
+    return data;
+  },
   listConversations: async (filters: InboxFilters = {}) => {
     const { data } = await apiClient.get<PaginatedResponse<InboxConversation>>("/api/inbox/conversations/", {
       params: cleanParams(filters),
@@ -40,8 +66,8 @@ export const inboxApi = {
     return data;
   },
   listMessages: async (conversationId: Id) => {
-    const { data } = await apiClient.get<InboxMessage[]>(`/api/inbox/conversations/${conversationId}/messages/`);
-    return data;
+    const { data } = await apiClient.get<InboxMessage[] | { results: InboxMessage[] }>(`/api/inbox/conversations/${conversationId}/messages/`);
+    return unwrapList(data);
   },
   assignToMe: async (conversationId: Id) => {
     const { data } = await apiClient.post<InboxConversation>(`/api/inbox/conversations/${conversationId}/assign/`, {});
@@ -53,6 +79,24 @@ export const inboxApi = {
   },
   markRead: async (conversationId: Id) => {
     const { data } = await apiClient.post<InboxConversation>(`/api/inbox/conversations/${conversationId}/mark-read/`);
+    return data;
+  },
+  markUnread: async (conversationId: Id) => {
+    const { data } = await apiClient.post<InboxConversation>(`/api/inbox/conversations/${conversationId}/mark-unread/`);
+    return data;
+  },
+  setPriority: async ({ conversationId, priority }: { conversationId: Id; priority: NonNullable<InboxConversation["priority"]> }) => {
+    const { data } = await apiClient.post<InboxConversation>(`/api/inbox/conversations/${conversationId}/set-priority/`, {
+      priority,
+    });
+    return data;
+  },
+  closeConversation: async ({ conversationId, reason }: { conversationId: Id; reason?: string }) => {
+    const { data } = await apiClient.post<InboxConversation>(`/api/inbox/conversations/${conversationId}/close/`, { reason });
+    return data;
+  },
+  reopenConversation: async (conversationId: Id) => {
+    const { data } = await apiClient.post<InboxConversation>(`/api/inbox/conversations/${conversationId}/reopen/`);
     return data;
   },
   sendMessage: async ({ conversationId, text }: { conversationId: Id; text: string }) => {

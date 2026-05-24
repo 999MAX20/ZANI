@@ -1,4 +1,4 @@
-import { apiClient } from "./client";
+import { apiClient, unwrapList } from "./client";
 import { createCrudApi } from "./crud";
 import type { ApiToken, ApiTokenCreateResponse, Id, WebhookDeliveryLog, WebhookEndpoint } from "../types";
 
@@ -44,7 +44,7 @@ export const developerApi = {
   deliveries: {
     list: async (params?: { endpoint?: Id; status?: WebhookDeliveryLog["status"] }) => {
       const { data } = await apiClient.get<WebhookDeliveryLog[] | { results: WebhookDeliveryLog[] }>("/api/webhook-deliveries/", { params });
-      return Array.isArray(data) ? data : data.results || [];
+      return unwrapList(data);
     },
     retry: async (id: Id) => {
       const { data } = await apiClient.post<WebhookDeliveryLog>(`/api/webhook-deliveries/${id}/retry/`);

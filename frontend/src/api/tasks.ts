@@ -28,6 +28,18 @@ export const tasksApi = {
     const { data } = await apiClient.post<Task>(`/api/tasks/${id}/assign/`, user_id ? { user_id } : {});
     return data;
   },
+  assignToMe: async (id: Id) => {
+    const { data } = await apiClient.post<Task>(`/api/tasks/${id}/assign-to-me/`, {});
+    return data;
+  },
+  dueToday: async (id: Id) => {
+    const { data } = await apiClient.post<Task>(`/api/tasks/${id}/due-today/`, {});
+    return data;
+  },
+  dueTomorrow: async (id: Id) => {
+    const { data } = await apiClient.post<Task>(`/api/tasks/${id}/due-tomorrow/`, {});
+    return data;
+  },
   addWatcher: async ({ id, user_id }: { id: Id; user_id?: Id }) => {
     const { data } = await apiClient.post<Task>(`/api/tasks/${id}/add-watcher/`, user_id ? { user_id } : {});
     return data;

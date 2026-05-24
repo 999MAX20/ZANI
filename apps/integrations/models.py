@@ -49,6 +49,12 @@ class BusinessConnector(models.Model):
         KASPI = "kaspi", "Kaspi"
         ONE_C = "1c", "1C"
         GOOGLE_CALENDAR = "google_calendar", "Google Calendar"
+        EXCEL_CSV = "excel_csv", "Excel / CSV"
+        GOOGLE_SHEETS = "google_sheets", "Google Sheets"
+        MOYSKLAD = "moysklad", "МойСклад"
+        WILDBERRIES = "wildberries", "Wildberries"
+        OZON = "ozon", "Ozon"
+        YANDEX_MARKET = "yandex_market", "Яндекс.Маркет"
         CUSTOM = "custom", "Custom"
 
     class Capabilities(models.TextChoices):

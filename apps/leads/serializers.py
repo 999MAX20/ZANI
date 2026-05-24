@@ -3,7 +3,7 @@ from rest_framework import serializers
 from apps.clients.models import Client
 from apps.clients.services import duplicate_payload, find_duplicate_clients
 from apps.core.permissions import accessible_businesses
-from apps.leads.models import Lead, LeadForm, LeadFormField, LeadFormSubmission
+from apps.leads.models import Lead, LeadForm, LeadFormField, LeadFormSubmission, LeadFormSubmissionError
 from apps.scheduling.models import Resource
 from apps.services.models import Service
 
@@ -22,6 +22,9 @@ class LeadSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Client must belong to the selected business.")
         if service and business and service.business_id != business.id:
             raise serializers.ValidationError("Service must belong to the selected business.")
+        responsible_user = attrs.get("responsible_user") if "responsible_user" in attrs else getattr(self.instance, "responsible_user", None)
+        if responsible_user and business and not business.members.filter(user=responsible_user, is_active=True).exists():
+            raise serializers.ValidationError({"responsible_user": "Responsible user must be an active business member."})
         return attrs
 
 
@@ -99,6 +102,15 @@ class LeadFormSubmissionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LeadFormSubmission
+        fields = "__all__"
+        read_only_fields = ["created_at"]
+
+
+class LeadFormSubmissionErrorSerializer(serializers.ModelSerializer):
+    form_name = serializers.CharField(source="form.name", read_only=True)
+
+    class Meta:
+        model = LeadFormSubmissionError
         fields = "__all__"
         read_only_fields = ["created_at"]
 

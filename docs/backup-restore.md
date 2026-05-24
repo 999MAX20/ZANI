@@ -81,7 +81,45 @@ Target early-stage RTO/RPO:
 - RPO: 24 hours for MVP, improve with PITR.
 - RTO: 4 hours for early paid beta, improve as merchant count grows.
 
-## 5. Secrets Backup
+## 5. Readiness Check
+
+Run before paid-beta drills:
+
+```bash
+python manage.py backup_restore_readiness_check
+```
+
+JSON mode:
+
+```bash
+python manage.py backup_restore_readiness_check --format=json
+```
+
+Fail when paid-beta blockers exist:
+
+```bash
+python manage.py backup_restore_readiness_check --fail-on-blockers
+```
+
+The command checks:
+
+- managed PostgreSQL instead of SQLite;
+- DB connection reuse;
+- object storage enabled;
+- bucket endpoint/region presence;
+- explicit staging/production environment naming.
+
+It does not perform a real `pg_dump` or provider restore. It is a gate that verifies prerequisites before running the provider-specific drill.
+
+Render/CI gate:
+
+```bash
+scripts/render_h5_backup_readiness.sh
+```
+
+This script must be followed by a manual restore rehearsal into a separate staging database.
+
+## 6. Secrets Backup
 
 Do not put secrets in git.
 
@@ -95,3 +133,16 @@ Keep a secure inventory of:
 - deploy keys.
 
 Use a password manager or managed secret store.
+
+## 7. Incident Communication Template
+
+For paid beta incidents, prepare a short merchant-facing update:
+
+```text
+Мы обнаружили проблему с доступностью/данными Zani.
+Данные защищены, команда выполняет восстановление из резервной копии.
+Ожидаемое время восстановления: <RTO>.
+Следующее обновление: <time>.
+```
+
+Do not disclose internal provider credentials, database hosts or security implementation details in merchant-facing updates.

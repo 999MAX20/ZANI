@@ -31,11 +31,19 @@ class PipelineStageEngineUpgradeTests(TestCase):
             required_fields_json={"fields": ["amount"]},
             sla_minutes=1,
         )
+        self.won_stage = PipelineStage.objects.create(
+            business=self.business,
+            pipeline=self.pipeline,
+            name="Paid",
+            order=3,
+            probability=100,
+            is_won=True,
+        )
         self.lost_stage = PipelineStage.objects.create(
             business=self.business,
             pipeline=self.pipeline,
             name="Lost",
-            order=3,
+            order=4,
             is_lost=True,
             required_fields_json={"fields": ["lost_reason"]},
         )
@@ -81,6 +89,39 @@ class PipelineStageEngineUpgradeTests(TestCase):
         self.assertEqual(self.deal.status, Deal.Statuses.LOST)
         self.assertEqual(self.deal.lost_reason, "No budget")
         self.assertIsNotNone(self.deal.lost_at)
+
+
+    def test_quick_mark_won_moves_to_won_stage_without_dragging(self):
+        response = self.api.post(f"/api/deals/{self.deal.id}/mark-won/", {"amount": "15000"}, format="json")
+
+        self.assertEqual(response.status_code, 200)
+        self.deal.refresh_from_db()
+        self.assertEqual(self.deal.stage, self.won_stage)
+        self.assertEqual(self.deal.status, Deal.Statuses.WON)
+        self.assertEqual(str(self.deal.amount), "15000.00")
+        self.assertIsNotNone(self.deal.won_at)
+        self.assertTrue(ActivityEvent.objects.filter(business=self.business, entity_type="Deal", entity_id=str(self.deal.id), event_type="deal_marked_won").exists())
+
+    def test_quick_mark_lost_requires_reason_and_can_reopen(self):
+        invalid = self.api.post(f"/api/deals/{self.deal.id}/mark-lost/", {}, format="json")
+        valid = self.api.post(f"/api/deals/{self.deal.id}/mark-lost/", {"lost_reason": "Client refused"}, format="json")
+
+        self.assertEqual(invalid.status_code, 400)
+        self.assertEqual(valid.status_code, 200)
+        self.deal.refresh_from_db()
+        self.assertEqual(self.deal.status, Deal.Statuses.LOST)
+        self.assertEqual(self.deal.stage, self.lost_stage)
+        self.assertEqual(self.deal.previous_stage, self.new_stage)
+        self.assertEqual(self.deal.lost_reason, "Client refused")
+
+        reopened = self.api.post(f"/api/deals/{self.deal.id}/reopen/", {}, format="json")
+
+        self.assertEqual(reopened.status_code, 200)
+        self.deal.refresh_from_db()
+        self.assertEqual(self.deal.status, Deal.Statuses.OPEN)
+        self.assertEqual(self.deal.stage, self.new_stage)
+        self.assertEqual(self.deal.lost_reason, "")
+        self.assertTrue(ActivityEvent.objects.filter(business=self.business, entity_type="Deal", entity_id=str(self.deal.id), event_type="deal_reopened").exists())
 
     def test_pipeline_board_returns_stages_with_deals(self):
         response = self.api.get(f"/api/pipelines/{self.pipeline.id}/board/")

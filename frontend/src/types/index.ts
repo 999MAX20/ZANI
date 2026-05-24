@@ -24,6 +24,9 @@ export type Business = {
   telegram: string;
   instagram: string;
   timezone: string;
+  landing_id?: string;
+  landing_domain?: string;
+  landing_preview_url?: string;
   status: "active" | "inactive" | "trial" | "blocked";
   created_at: string;
   updated_at: string;
@@ -110,6 +113,65 @@ export type EntitlementSummaryItem = {
   plan_code: string | null;
 };
 
+export type PlatformOperationsSummary = {
+  total_monitored: number;
+  attention_merchants: number;
+  risk_merchants: number;
+  no_sales_data_merchants: number;
+  form_error_merchants: number;
+  handoff_conversations: number;
+  new_leads_30d: number;
+  form_errors_30d: number;
+  failed_connectors: number;
+};
+
+export type PlatformMerchantOperations = {
+  lead_count: number;
+  new_leads: number;
+  clients_count: number;
+  open_tasks: number;
+  unread_conversations: number;
+  handoff_conversations: number;
+  failed_connectors: number;
+  pending_connectors?: number;
+  connected_connectors: number;
+  form_errors: number;
+  lead_forms: number;
+  sales_events: number;
+  latest_activity_at: string;
+};
+
+export type PlatformMerchantHealth = {
+  score: number;
+  status: "healthy" | "setup" | "attention" | "risk" | string;
+  checks: Record<string, boolean>;
+  blockers: string[];
+  next_action: string;
+};
+
+
+export type PlatformSupportAction = {
+  id: Id;
+  action_type: string;
+  note: string;
+  status: string;
+  created_at: string;
+  actor_email: string | null;
+};
+
+export type PlatformSupportStep = {
+  key: string;
+  label: string;
+  href: string;
+};
+
+export type PlatformSupportWorkflow = {
+  priority: "low" | "medium" | "high" | string;
+  summary: string;
+  next_steps: PlatformSupportStep[];
+  recent_actions: PlatformSupportAction[];
+};
+
 export type PlatformOverview = {
   total_businesses: number;
   active_businesses: number;
@@ -121,9 +183,118 @@ export type PlatformOverview = {
   active_bot_channels: number;
   ai_requests_30d: number;
   conversations_30d: number;
+  operations_summary: PlatformOperationsSummary;
   errors: {
     count: number;
     items: unknown[];
+  };
+};
+
+export type PlatformHealthGate = {
+  key: string;
+  title?: string;
+  status: "pass" | "warn" | "fail" | string;
+  severity?: string;
+  detail: string;
+  action: string;
+};
+
+export type PlatformProviderRolloutCheck = {
+  provider: string;
+  title: string;
+  order: number;
+  enabled: boolean;
+  status: "ready" | "warning" | "blocked" | string;
+  gates: PlatformHealthGate[];
+};
+
+export type PlatformOperationsHealth = {
+  environment: string;
+  release: string;
+  generated_at: string;
+  status: "healthy" | "warning" | "critical" | string;
+  summary: {
+    critical: number;
+    warning: number;
+    active_support_grants: number;
+    connector_requests: number;
+  };
+  runtime: {
+    queue: {
+      broker_configured: boolean;
+      automation_inline: boolean;
+      default_queue: string;
+      queues: string[];
+      status: "healthy" | "warning" | "critical" | string;
+      automation_runs: {
+        pending: number;
+        running: number;
+        failed: number;
+      };
+      failed_connector_syncs: number;
+      failed_webhook_deliveries: number;
+    };
+    production_readiness: {
+      summary: Record<string, number>;
+      failed_items: PlatformHealthGate[];
+      warning_items: PlatformHealthGate[];
+    };
+    backup_readiness: {
+      summary: Record<string, number>;
+      failed_items: PlatformHealthGate[];
+    };
+    provider_rollout: {
+      summary: Record<string, number>;
+      providers: PlatformProviderRolloutCheck[];
+    };
+  };
+  work_queue: {
+    connector_requests: Array<{
+      id: Id;
+      business_id: Id;
+      business_name: string;
+      provider: string;
+      name: string;
+      status: string;
+      last_error: string;
+      updated_at: string;
+      created_by_email: string | null;
+    }>;
+    failed_automation_runs: Array<{
+      id: Id;
+      business_id: Id;
+      business_name: string;
+      trigger_type: string;
+      entity_type: string;
+      entity_id: string;
+      status: string;
+      attempts: number;
+      max_attempts: number;
+      error: string;
+      created_at: string;
+    }>;
+    failed_integration_events: Array<{
+      id: Id;
+      business_id: Id | null;
+      business_name: string;
+      provider: string;
+      channel: string;
+      direction: string;
+      status: string;
+      error: string;
+      created_at: string;
+    }>;
+    failed_webhook_deliveries: Array<{
+      id: Id;
+      business_id: Id;
+      business_name: string;
+      endpoint_name: string;
+      event_type: string;
+      status: string;
+      attempts: number;
+      error: string;
+      created_at: string;
+    }>;
   };
 };
 
@@ -131,11 +302,17 @@ export type PlatformMerchant = {
   id: Id;
   name: string;
   status: Business["status"];
-  created_at: string;
+  created_at?: string;
+  latest_activity_at?: string;
+  landing_id?: string;
+  landing_domain?: string;
   owner: Pick<User, "id" | "email" | "full_name">;
   plan: Pick<SubscriptionPlan, "id" | "name" | "code" | "monthly_price"> | null;
   subscription_status: Subscription["status"] | null;
   usage_summary: UsageSummaryItem[];
+  operations?: PlatformMerchantOperations;
+  health?: PlatformMerchantHealth;
+  support_workflow?: PlatformSupportWorkflow;
 };
 
 export type Bot = {
@@ -228,7 +405,7 @@ export type BusinessConnector = {
   id: Id;
   business: Id;
   business_name?: string;
-  provider: "website" | "telegram" | "whatsapp" | "instagram" | "email" | "kaspi" | "1c" | "google_calendar" | "custom" | string;
+  provider: "website" | "telegram" | "whatsapp" | "instagram" | "email" | "kaspi" | "1c" | "google_calendar" | "excel_csv" | "google_sheets" | "moysklad" | "wildberries" | "ozon" | "yandex_market" | "custom" | string;
   capability: "communications" | "sales" | "calendar" | "finance" | "inventory" | "marketing" | "custom" | string;
   name: string;
   status: "draft" | "connected" | "needs_attention" | "syncing" | "failed" | "disabled" | "expired_credentials";
@@ -251,6 +428,18 @@ export type ConnectorCapability = {
   label: string;
   capability: BusinessConnector["capability"];
   auth_type: BusinessConnector["auth_type"];
+  description: string;
+  launch_status: "available" | "beta" | "soon" | "request" | "roadmap" | string;
+  cta_label: string;
+  next_step: string;
+  pilot_note: string;
+  setup_priority: number;
+  is_pilot_safe: boolean;
+  availability: "included" | "upgrade" | "request" | "soon" | "roadmap" | string;
+  required_plan: "basic" | "business" | "pro" | string;
+  setup_state: "active" | "setup_required" | "request_required" | "coming_soon" | "roadmap" | string;
+  action_behavior: "self_service" | "request" | "disabled" | string;
+  primary_action_label: string;
 };
 
 export type ConnectorCredential = {
@@ -443,6 +632,30 @@ export type TeamMember = {
   updated_at: string;
 };
 
+export type BusinessInvitation = {
+  id: Id;
+  business: Id;
+  business_name?: string;
+  email: string;
+  phone: string;
+  telegram: string;
+  full_name: string;
+  role: BusinessMembershipSummary["role"];
+  business_role: Id | null;
+  business_role_name?: string | null;
+  invited_by: Id | null;
+  invited_by_email?: string | null;
+  delivery_channel: "email" | "whatsapp" | "telegram" | "manual";
+  token: string;
+  invite_path: string;
+  expires_at: string;
+  accepted_at: string | null;
+  revoked_at: string | null;
+  status: "pending" | "accepted" | "revoked" | "expired";
+  created_at: string;
+  updated_at: string;
+};
+
 export type Client = {
   id: Id;
   business: Id;
@@ -479,7 +692,7 @@ export type Lead = {
   business: Id;
   client: Id;
   service: Id | null;
-  source: Client["source"];
+  source: Client["source"] | "landing";
   message: string;
   status: "new" | "in_progress" | "appointment_created" | "contacted" | "closed" | "lost";
   previous_status?: string;
@@ -634,6 +847,9 @@ export type QuickReplyTemplate = {
 export type Notification = {
   id: Id;
   business: Id;
+  recipient: Id | null;
+  recipient_email?: string | null;
+  recipient_name?: string | null;
   client: Id | null;
   client_name?: string | null;
   appointment: Id | null;
@@ -708,6 +924,17 @@ export type AgentProfile = {
   updated_at: string;
 };
 
+export type BusinessKnowledgeItem = {
+  id: Id;
+  business: Id;
+  title: string;
+  content: string;
+  category: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
 export type ActivityEvent = {
   id: Id;
   business: Id;
@@ -721,6 +948,31 @@ export type ActivityEvent = {
   text: string;
   metadata: Record<string, unknown>;
   created_at: string;
+};
+
+
+export type AIToolCallLog = {
+  id: Id;
+  business: Id;
+  user: Id | null;
+  conversation: Id | null;
+  tool_name: string;
+  input_json: Record<string, unknown>;
+  output_json: Record<string, unknown>;
+  status: "suggested" | "executed" | "failed" | "rejected";
+  error: string;
+  created_at: string;
+};
+
+export type AIToolDefinition = {
+  name: string;
+  description: string;
+  requires_confirmation: boolean;
+};
+
+export type AIToolSuggestResponse = {
+  tools: AIToolDefinition[];
+  suggested_actions: AIToolCallLog[];
 };
 
 export type Task = {
@@ -1004,6 +1256,59 @@ export type OwnerDashboardMetrics = {
   overdue_tasks: number;
   manager_response_time: number | null;
   revenue_estimate: string;
+  sales_events_count?: number;
+  revenue?: {
+    today: string;
+    yesterday: string;
+    total_estimate: string;
+    growth_percent: number | null;
+  };
+  business_pulse?: {
+    tone: "setup" | "warning" | "attention" | "growth";
+    title: string;
+    text: string;
+    primary_action?: { label: string; href: string };
+  };
+  recommendations?: Array<{
+    key: string;
+    title: string;
+    description: string;
+    priority: "high" | "medium" | "low";
+    action_label: string;
+    href: string;
+  }>;
+  quick_connect?: Array<{
+    key: string;
+    title: string;
+    description: string;
+    status: "connected" | "connect" | "beta" | "soon" | "request";
+    href: string;
+  }>;
+  setup?: {
+    score: number;
+    sources: Record<string, boolean>;
+  };
+  data_quality?: {
+    has_sales_data: boolean;
+    sales_events_count: number;
+    recommendation: string;
+  };
+  mobile_onboarding?: {
+    headline: string;
+    subtext: string;
+    score: number;
+    primary_action: { label: string; href: string };
+    next_step_key: string;
+    steps: Array<{
+      key: string;
+      title: string;
+      description: string;
+      status: "done" | "todo";
+      href: string;
+      cta: string;
+      priority: number;
+    }>;
+  };
 };
 
 export type TeamPerformanceMember = {
@@ -1135,7 +1440,7 @@ export type ImportJob = {
   business: Id;
   actor: Id | null;
   actor_email?: string;
-  entity_type: "clients" | "leads" | "deals";
+  entity_type: "clients" | "leads" | "deals" | "sales" | "catalog";
   source_file: string;
   original_filename: string;
   status: "uploaded" | "previewed" | "imported" | "failed" | "cancelled";
@@ -1149,6 +1454,13 @@ export type ImportJob = {
       row: number;
       payload: Record<string, string>;
       duplicates: Array<{ id: Id; full_name: string; phone?: string; email?: string; matched_fields: string[] }>;
+    }>;
+  };
+  errors_json?: {
+    rows?: Array<{
+      row: number;
+      field: string;
+      message: string;
     }>;
   };
   total_rows: number;
@@ -1178,6 +1490,9 @@ export type LeadCaptureForm = {
   business: Id;
   name: string;
   public_id: string;
+  landing_id?: string;
+  landing_domain?: string;
+  preview_url?: string;
   title: string;
   description: string;
   source: Lead["source"];
@@ -1199,7 +1514,11 @@ export type LeadFormSubmission = {
   lead: Id | null;
   payload_json: Record<string, unknown>;
   utm_json: Record<string, unknown>;
+  source_context_json?: Record<string, unknown>;
   duplicate_json: Record<string, unknown>;
+  landing_id?: string;
+  page_url?: string;
+  page_domain?: string;
   ip_address?: string | null;
   user_agent: string;
   created_at: string;

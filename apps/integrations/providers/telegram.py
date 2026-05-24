@@ -78,6 +78,61 @@ class TelegramProvider(BaseChannelProvider):
             )
             raise
 
+    def validate_token(self, channel):
+        business = channel.bot.business
+        token = channel.config_json.get("bot_token", "")
+        safe_payload = {"token_configured": bool(token)}
+        if not token:
+            return {
+                "ok": False,
+                "mock": not settings.TELEGRAM_ENABLED,
+                "reason": "Telegram bot token is missing.",
+                "token_configured": False,
+            }
+        if not settings.TELEGRAM_ENABLED:
+            self.log_event(
+                business=business,
+                channel=channel.channel,
+                direction=IntegrationEventLog.Directions.OUTBOUND,
+                payload=safe_payload,
+                status=IntegrationEventLog.Statuses.MOCKED,
+            )
+            return {
+                "ok": True,
+                "mock": True,
+                "reason": "Telegram disabled; token format saved for beta setup.",
+                "token_configured": True,
+            }
+
+        url = f"{settings.TELEGRAM_BASE_API_URL}/bot{token}/getMe"
+        request = urllib_request.Request(url, method="GET")
+        try:
+            with urllib_request.urlopen(request, timeout=10) as response:
+                result = json.loads(response.read().decode("utf-8"))
+            self.log_event(
+                business=business,
+                channel=channel.channel,
+                direction=IntegrationEventLog.Directions.OUTBOUND,
+                payload={**safe_payload, "provider_response": result},
+                status=IntegrationEventLog.Statuses.SENT,
+            )
+            return {
+                "ok": bool(result.get("ok")),
+                "mock": False,
+                "token_configured": True,
+                "bot": result.get("result") or {},
+            }
+        except Exception as exc:
+            self.log_event(
+                business=business,
+                channel=channel.channel,
+                direction=IntegrationEventLog.Directions.OUTBOUND,
+                payload=safe_payload,
+                status=IntegrationEventLog.Statuses.FAILED,
+                error=str(exc),
+            )
+            return {"ok": False, "mock": False, "reason": str(exc), "token_configured": True}
+
     def set_webhook(self, channel, webhook_url):
         business = channel.bot.business
         token = channel.config_json.get("bot_token", "")

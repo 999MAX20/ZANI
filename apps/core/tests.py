@@ -240,6 +240,34 @@ class ProductionReadinessTests(TestCase):
         self.assertIn("zani.W006", warning_ids)
 
 
+class PilotReadinessChecklistTests(TestCase):
+    def setUp(self):
+        self.api = APIClient()
+        self.owner = User.objects.create_user(
+            username="pilot-owner",
+            email="pilot-owner@example.com",
+            password="pass",
+            role=User.Roles.BUSINESS_OWNER,
+        )
+        self.business = Business.objects.create(owner=self.owner, name="Pilot Clinic", slug="pilot-clinic", city="")
+        BusinessMember.objects.create(business=self.business, user=self.owner, role=BusinessMember.Roles.OWNER)
+
+    def test_pilot_readiness_uses_actionable_statuses_and_links(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.get("/api/pilot/readiness/", {"business": self.business.id})
+
+        self.assertEqual(response.status_code, 200)
+        statuses = {item["status"] for item in response.data["items"]}
+        keys = {item["key"]: item for item in response.data["items"]}
+        self.assertNotIn("partial", statuses)
+        self.assertIn("needs_attention", statuses)
+        self.assertIn("crm_configured", keys)
+        self.assertIn("working_hours", keys)
+        self.assertEqual(keys["ai_assistant"]["href"], "/dashboard/ai-assistant")
+        self.assertTrue(all("href" in item for item in response.data["items"]))
+
+
 class PlatformDashboardTests(TestCase):
     def setUp(self):
         self.api = APIClient()
@@ -329,6 +357,11 @@ class FileSafetyFoundationTests(TestCase):
     def setUp(self):
         self.api = APIClient()
         self.user = User.objects.create_user(username="file-user", email="file-user@example.com", password="pass")
+        self.other_user = User.objects.create_user(username="other-file-user", email="other-file-user@example.com", password="pass")
+        self.business = Business.objects.create(owner=self.user, name="File Safety Business", slug="file-safety-business")
+        self.other_business = Business.objects.create(owner=self.other_user, name="Other File Safety Business", slug="other-file-safety-business")
+        BusinessMember.objects.create(business=self.business, user=self.user, role=BusinessMember.Roles.OWNER)
+        BusinessMember.objects.create(business=self.other_business, user=self.other_user, role=BusinessMember.Roles.OWNER)
 
     def test_file_validation_accepts_allowed_file(self):
         uploaded = SimpleUploadedFile("document.pdf", b"content", content_type="application/pdf")
@@ -350,18 +383,30 @@ class FileSafetyFoundationTests(TestCase):
 
     def test_private_media_endpoint_requires_auth_and_serves_private_file(self):
         with TemporaryDirectory() as temp_dir, override_settings(PRIVATE_MEDIA_ROOT=temp_dir, USE_S3=False):
-            private_file = Path(temp_dir) / "business-1" / "note.txt"
+            private_file = Path(temp_dir) / f"business-{self.business.id}" / "note.txt"
             private_file.parent.mkdir(parents=True)
             private_file.write_text("secret note")
 
-            anonymous_response = self.api.get("/api/files/private/business-1/note.txt/")
+            private_url = f"/api/files/private/business-{self.business.id}/note.txt/"
+            anonymous_response = self.api.get(private_url)
             self.assertEqual(anonymous_response.status_code, 401)
 
             self.api.force_authenticate(self.user)
-            response = self.api.get("/api/files/private/business-1/note.txt/")
+            response = self.api.get(private_url)
 
             self.assertEqual(response.status_code, 200)
             self.assertEqual(b"".join(response.streaming_content), b"secret note")
+
+    def test_private_media_endpoint_blocks_another_business_prefix(self):
+        with TemporaryDirectory() as temp_dir, override_settings(PRIVATE_MEDIA_ROOT=temp_dir, USE_S3=False):
+            private_file = Path(temp_dir) / f"business-{self.business.id}" / "note.txt"
+            private_file.parent.mkdir(parents=True)
+            private_file.write_text("secret note")
+
+            self.api.force_authenticate(self.other_user)
+            response = self.api.get(f"/api/files/private/business-{self.business.id}/note.txt/")
+
+            self.assertEqual(response.status_code, 404)
 
     def test_private_media_endpoint_blocks_missing_files(self):
         with TemporaryDirectory() as temp_dir, override_settings(PRIVATE_MEDIA_ROOT=temp_dir, USE_S3=False):

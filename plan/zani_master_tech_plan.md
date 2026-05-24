@@ -1,6 +1,6 @@
 # Zani Master Technical Plan
 
-Дата актуализации: 2026-05-20
+Дата актуализации: 2026-05-22
 
 Этот документ является главным рабочим техпланом Zani. Он объединяет актуальные планы из папки `plan`, фиксирует текущее направление проекта и задает порядок дальнейшей реализации.
 
@@ -926,7 +926,15 @@ Required checks:
 ```bash
 DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py makemigrations --check --dry-run
 DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
-DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test
+DATABASE_URL=sqlite:///db.sqlite3 \
+SECURE_SSL_REDIRECT=False \
+SESSION_COOKIE_SECURE=False \
+CSRF_COOKIE_SECURE=False \
+REDIS_URL=memory:// \
+CELERY_TASK_ALWAYS_EAGER=True \
+CELERY_TASK_STORE_EAGER_RESULT=False \
+AUTOMATIONS_RUN_INLINE=True \
+.venv/bin/python manage.py test
 cd frontend && npm run build
 ```
 
@@ -1037,26 +1045,55 @@ Next recommended task:
 Staging provider provisioning and deployed smoke/E2E execution
 ```
 
-Status: code-side guardrails ready on 2026-05-21.
+Status: completed on 2026-05-22.
 
-Implemented without external provider credentials:
+Implemented:
 
 - public perimeter rate-limit scopes for forms, website widget, integration webhooks, public API and AI assistant;
 - configurable env variables in local/staging/production templates;
 - production readiness audit now verifies required throttle scopes;
 - docs in `docs/rate-limits.md`.
+- Render backend deployment at `https://zani-9lnp.onrender.com`;
+- Render frontend deployment at `https://zani-1.onrender.com`;
+- Supabase Postgres connection through transaction pooler;
+- deployed CORS preflight check;
+- deployed SPA rewrite check for `/login`;
+- deployed API smoke with platform admin and merchant owner;
+- deployed browser E2E with platform, owner, operator and mobile flows;
+- staging execution report in `docs/staging-render-execution-report.md`.
 
 Next recommended task:
 
 ```text
-Staging provider provisioning and deployed smoke/E2E execution
+Create the next production-hardening roadmap
 ```
 
 Reason:
 
-- the CRM foundation, integrations, automation runtime, reporting and initial UI polish are now in place;
-- the next gap is a real staging environment with managed Postgres/Redis/storage/Sentry and deployed smoke results;
-- before adding more large features, the project needs one production-like environment that passes audit, smoke and E2E checks.
+- the current master-tech-plan phases and staging execution task are complete for the controlled-pilot scope;
+- Render/Supabase staging proves deploy, CORS, routing, auth, API smoke and browser E2E;
+- the remaining work is a new roadmap: Redis/Celery worker services, object storage, Sentry, transactional email, backups, load testing and real provider rollout.
+
+Status: completed on 2026-05-23.
+
+Implemented:
+
+- new execution roadmap in `plan/ZANI_PRODUCTION_HARDENING_ROADMAP.md`;
+- staging and production backend env templates restored;
+- staging and production frontend env templates restored;
+- `.gitignore` allows only safe env example templates while keeping real env files ignored.
+
+Next recommended task:
+
+```text
+Phase H1 — Redis / Celery Runtime On Render
+```
+
+Reason:
+
+- queue-backed runtime is required before real providers, AI, delayed automations and paid beta traffic;
+- current staging proves web/db/frontend, but not worker reliability;
+- Celery queues already exist in code and Docker, so the next step is provider/runtime setup and smoke verification.
 
 ## 15. Final Direction
 

@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { formatDateTime } from "../../lib/format";
 import { cn } from "../../lib/cn";
 import { useEntityData } from "../../hooks/useEntityData";
+import { useI18n } from "../../lib/i18n";
 import { Button } from "../ui/Button";
 
 type SearchItem = {
@@ -18,12 +19,22 @@ type SearchItem = {
 };
 
 export function GlobalSearch() {
-  const { clients, leads, appointments, services, deals, tasks } = useEntityData();
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [mobileExpanded, setMobileExpanded] = useState(false);
   const [query, setQuery] = useState("");
   const rootRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const shouldLoadSearchData = open || mobileExpanded;
+  const { clients, leads, appointments, services, deals, tasks } = useEntityData({
+    enabled: shouldLoadSearchData,
+    clients: true,
+    leads: true,
+    appointments: true,
+    services: true,
+    deals: true,
+    tasks: true,
+  });
 
   const items = useMemo<SearchItem[]>(() => {
     const clientList = clients.data || [];
@@ -36,8 +47,8 @@ export function GlobalSearch() {
         id: `client-${client.id}`,
         title: client.full_name,
         subtitle: [client.phone, client.email, client.source].filter(Boolean).join(" · "),
-        type: "Клиент",
-        to: "/clients",
+        type: t("search.client"),
+        to: "/dashboard/clients",
         icon: User,
         haystack: [client.full_name, client.phone, client.email, client.notes, client.source].join(" "),
       })),
@@ -45,8 +56,8 @@ export function GlobalSearch() {
         id: `lead-${lead.id}`,
         title: clientName(lead.client) || `Lead #${lead.id}`,
         subtitle: [serviceName(lead.service), lead.status, lead.source, lead.message].filter(Boolean).join(" · "),
-        type: "Заявка",
-        to: "/leads",
+        type: t("search.lead"),
+        to: "/dashboard/leads",
         icon: Inbox,
         haystack: [clientName(lead.client), serviceName(lead.service), lead.status, lead.source, lead.message].join(" "),
       })),
@@ -54,8 +65,8 @@ export function GlobalSearch() {
         id: `appointment-${appointment.id}`,
         title: clientName(appointment.client) || `Appointment #${appointment.id}`,
         subtitle: [serviceName(appointment.service), appointment.status, formatDateTime(appointment.start_at), appointment.notes].filter(Boolean).join(" · "),
-        type: "Запись",
-        to: "/appointments",
+        type: t("search.booking"),
+        to: "/dashboard/appointments",
         icon: CalendarCheck,
         haystack: [clientName(appointment.client), serviceName(appointment.service), appointment.status, appointment.source, appointment.notes, appointment.start_at].join(" "),
       })),
@@ -63,8 +74,8 @@ export function GlobalSearch() {
         id: `deal-${deal.id}`,
         title: deal.title,
         subtitle: [clientName(deal.client), deal.status, `${deal.amount} ${deal.currency}`].filter(Boolean).join(" · "),
-        type: "Сделка",
-        to: "/deals",
+        type: t("search.deal"),
+        to: "/dashboard/deals",
         icon: KanbanSquare,
         haystack: [deal.title, clientName(deal.client), deal.status, deal.source, deal.notes, deal.amount].join(" "),
       })),
@@ -72,13 +83,13 @@ export function GlobalSearch() {
         id: `task-${task.id}`,
         title: task.title,
         subtitle: [clientName(task.client), task.status, task.priority, task.due_at ? formatDateTime(task.due_at) : ""].filter(Boolean).join(" · "),
-        type: "Задача",
-        to: "/tasks",
+        type: t("search.task"),
+        to: "/dashboard/tasks",
         icon: ListChecks,
         haystack: [task.title, task.description, clientName(task.client), task.status, task.priority].join(" "),
       })),
     ];
-  }, [appointments.data, clients.data, deals.data, leads.data, services.data, tasks.data]);
+  }, [appointments.data, clients.data, deals.data, leads.data, services.data, t, tasks.data]);
 
   const results = useMemo(() => {
     const value = query.trim().toLowerCase();
@@ -126,7 +137,7 @@ export function GlobalSearch() {
       <Button
         className={cn("h-10 w-10 rounded-full px-0 lg:hidden", mobileExpanded && "hidden")}
         variant="ghost"
-        aria-label="Поиск"
+        aria-label={t("search.aria")}
         onClick={() => {
           setMobileExpanded(true);
           openSearch();
@@ -146,7 +157,8 @@ export function GlobalSearch() {
         <input
           ref={inputRef}
           className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-midnight outline-none placeholder:text-slate-400"
-          placeholder="Поиск по CRM: клиенты, заявки, записи..."
+          aria-label={t("search.aria")}
+          placeholder={t("header.search")}
           value={query}
           onFocus={() => setOpen(true)}
           onChange={(event) => {
@@ -155,7 +167,7 @@ export function GlobalSearch() {
           }}
         />
         {query || mobileExpanded ? (
-          <button type="button" className="grid h-8 w-8 place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700" onClick={closeSearch} aria-label="Закрыть поиск">
+          <button type="button" className="grid h-8 w-8 place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700" onClick={closeSearch} aria-label={t("search.close")}>
             <X size={20} />
           </button>
         ) : (
@@ -185,12 +197,12 @@ export function GlobalSearch() {
                       <p className="truncate font-semibold text-midnight">{item.title}</p>
                       <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-500">{item.type}</span>
                     </div>
-                    <p className="mt-1 line-clamp-1 text-xs text-slate-500">{item.subtitle || "Нет дополнительных данных"}</p>
+                    <p className="mt-1 line-clamp-1 text-xs text-slate-500">{item.subtitle || t("search.noMeta")}</p>
                   </div>
                 </Link>
               );
             })}
-            {!results.length ? <p className="px-3 py-6 text-center text-sm text-slate-500">Ничего не найдено в данных CRM.</p> : null}
+            {!results.length ? <p className="px-3 py-6 text-center text-sm text-slate-500">{t("search.empty")}</p> : null}
           </div>
         </div>
       ) : null}

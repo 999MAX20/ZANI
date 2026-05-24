@@ -4,6 +4,13 @@ import { refreshToken } from "./token";
 import { tokenStorage } from "../lib/storage";
 
 const baseURL = import.meta.env.VITE_API_URL || "";
+export const AUTH_EXPIRED_EVENT = "zani:auth-expired";
+
+function notifyAuthExpired() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
+  }
+}
 
 export const apiClient = axios.create({
   baseURL,
@@ -11,6 +18,23 @@ export const apiClient = axios.create({
     "Content-Type": "application/json",
   },
 });
+
+export type PaginatedResponse<T> = {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+};
+
+export function asArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? value as T[] : [];
+}
+
+export function unwrapList<T>(data: T[] | PaginatedResponse<T> | { results?: T[] } | null | undefined) {
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.results)) return data.results;
+  return [];
+}
 
 apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const token = tokenStorage.getAccess();
@@ -33,6 +57,7 @@ apiClient.interceptors.response.use(
     const refresh = tokenStorage.getRefresh();
     if (!refresh) {
       tokenStorage.clear();
+      notifyAuthExpired();
       return Promise.reject(error);
     }
 
@@ -41,9 +66,15 @@ apiClient.interceptors.response.use(
       refreshPromise = null;
     });
 
-    const access = await refreshPromise;
-    originalRequest.headers.Authorization = `Bearer ${access}`;
-    return apiClient(originalRequest);
+    try {
+      const access = await refreshPromise;
+      originalRequest.headers.Authorization = `Bearer ${access}`;
+      return apiClient(originalRequest);
+    } catch (refreshError) {
+      tokenStorage.clear();
+      notifyAuthExpired();
+      return Promise.reject(refreshError);
+    }
   },
 );
 

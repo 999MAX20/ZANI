@@ -22,7 +22,7 @@ The endpoint requires authentication and uses safe path joining to avoid directo
 
 ## S3-Compatible Production
 
-For S3/R2/Yandex-compatible storage:
+For Supabase Storage S3-compatible API, Cloudflare R2, Yandex Object Storage or AWS S3:
 
 ```bash
 USE_S3=True
@@ -35,6 +35,53 @@ AWS_QUERYSTRING_AUTH=True
 ```
 
 S3 is optional. Empty S3 variables do not affect local development while `USE_S3=False`.
+
+Recommended staging choice:
+
+- Cloudflare R2 if you want simple S3-compatible private buckets with predictable pricing;
+- Supabase Storage S3-compatible API if you want to keep database and storage in one vendor;
+- AWS S3 for mature production operations.
+
+Do not use Render container disk for paid beta uploads. Render web disks are not a tenant-safe, redeploy-safe file storage strategy for merchant documents.
+
+Recommended path strategy:
+
+```text
+private/attachments/business-{business_id}/{filename}
+```
+
+The `business-{id}` prefix is part of the object key and must remain stable. Bucket permissions should stay private; access goes through the backend so tenant permissions and audit can be enforced.
+
+## Runtime Smoke
+
+After configuring object storage in staging, run:
+
+```bash
+python manage.py storage_runtime_smoke --business-id <business_id>
+```
+
+For Render Shell or production-like env, prefer:
+
+```bash
+BUSINESS_ID=<business_id> scripts/render_h2_storage_smoke.sh
+```
+
+Optional cleanup:
+
+```bash
+python manage.py storage_runtime_smoke --business-id <business_id> --cleanup
+```
+
+The command creates a tiny private `FileAttachment`, writes it through the active Django storage backend, checks that the object exists, and prints the final object key.
+
+If it fails:
+
+- `USE_S3` may still be `False`;
+- bucket credentials may be wrong;
+- endpoint/region may be wrong;
+- bucket policy may reject writes;
+- Render env may be deployed from old values.
+- backend web and worker services may not share the same storage env.
 
 ## Storage Accounting And Quotas
 
@@ -87,6 +134,14 @@ risk_level = medium
 
 This is important for owner trust: sensitive documents should leave a trace when employees or support users access them.
 
+The legacy local endpoint also checks the `business-{id}` prefix before serving files:
+
+```text
+GET /api/files/private/business-<id>/...
+```
+
+Use `GET /api/file-attachments/{id}/download/` for real CRM files because it enforces object-level entity access and writes the download audit record.
+
 ## Validation Helpers
 
 Use `apps.core.file_validation.validate_file_upload()` before accepting files.
@@ -125,3 +180,26 @@ Not implemented yet:
 - paid storage provider setup.
 - antivirus/provider interface;
 - production retention policy.
+
+## Production Cutover Checklist
+
+1. Create a private bucket.
+2. Set `USE_S3=True` and S3-compatible env variables.
+3. Redeploy backend and workers.
+4. Run `scripts/render_h2_storage_smoke.sh`.
+5. Upload/download a file through CRM UI.
+6. Verify `AuditLog` contains upload/download records.
+7. Verify `GET /api/billing/usage-summary/` shows storage usage.
+8. Keep lifecycle/retention rules documented before paid traffic.
+
+## H2 Acceptance
+
+H2 is green only when:
+
+- object storage is private by default;
+- `USE_S3=True` in staging/production;
+- `storage.object_storage` is green in `production_readiness_audit`;
+- `scripts/render_h2_storage_smoke.sh` passes;
+- another merchant cannot list or download the uploaded file;
+- owner usage summary shows storage usage;
+- download creates an `AuditLog` record.

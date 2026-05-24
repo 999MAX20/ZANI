@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Search, Tags } from "lucide-react";
-import { useMemo, useState } from "react";
+import { CalendarCheck, Inbox, Plus, Search, Tags, UsersRound } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import { segmentFiltersApi, segmentsApi, taggedObjectsApi, tagsApi } from "../../api/activities";
 import { clientsApi } from "../../api/clients";
@@ -15,6 +16,7 @@ import { PageHeader } from "../../components/ui/PageHeader";
 import { Select } from "../../components/ui/Select";
 import { ErrorState, LoadingState } from "../../components/ui/StateViews";
 import { formatDate } from "../../lib/format";
+import { useI18n } from "../../lib/i18n";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useEntityData } from "../../hooks/useEntityData";
 import type { Client, Id, SegmentFilter } from "../../types";
@@ -26,10 +28,29 @@ type SegmentDraft = {
   value: string;
 };
 
+function StatCard({ label, value, hint, icon: Icon }: { label: string; value: number | string; hint: string; icon: typeof UsersRound }) {
+  return (
+    <div className="rounded-3xl border border-white/80 bg-white/85 p-5 shadow-soft">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-bold text-slate-500">{label}</p>
+          <p className="mt-2 text-3xl font-black text-midnight">{value}</p>
+        </div>
+        <div className="grid h-12 w-12 place-items-center rounded-2xl bg-brand-50 text-brand-600">
+          <Icon size={22} />
+        </div>
+      </div>
+      <p className="mt-3 text-sm font-semibold text-slate-500">{hint}</p>
+    </div>
+  );
+}
+
 export function ClientsPage() {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const { business } = useActiveBusiness();
   const { clients, leads, appointments, tags, taggedObjects, segments } = useEntityData();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [open, setOpen] = useState(false);
   const [segmentOpen, setSegmentOpen] = useState(false);
   const [editing, setEditing] = useState<Client | undefined>();
@@ -52,6 +73,7 @@ export function ClientsPage() {
       queryClient.invalidateQueries({ queryKey: ["clients"] });
       setOpen(false);
       setEditing(undefined);
+      clearCreateParam();
     },
   });
 
@@ -110,6 +132,22 @@ export function ClientsPage() {
   });
 
   const rows = filteredClients.data || clients.data || [];
+
+  function clearCreateParam() {
+    if (!searchParams.get("create")) return;
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("create");
+    setSearchParams(nextParams, { replace: true });
+  }
+
+  useEffect(() => {
+    const clientId = Number(searchParams.get("client") || "");
+    if (clientId) setDrawerEntity({ type: "client", id: clientId });
+    if (searchParams.get("create") === "1") {
+      setEditing(undefined);
+      setOpen(true);
+    }
+  }, [searchParams]);
   const clientTags = useMemo(() => {
     const map: Record<string, typeof taggedObjects.data> = {};
     (taggedObjects.data || []).forEach((item) => {
@@ -120,46 +158,56 @@ export function ClientsPage() {
     return map;
   }, [taggedObjects.data]);
 
-  if (!business) return <ErrorState message="Создайте бизнес в настройках, чтобы работать с клиентами." />;
+  if (!business) return <ErrorState message={t("clients.noBusiness")} />;
   if (clients.isLoading || filteredClients.isLoading) return <LoadingState />;
+  const clientList = clients.data || [];
+  const leadClientIds = new Set((leads.data || []).map((lead) => lead.client));
+  const appointmentClientIds = new Set((appointments.data || []).map((appointment) => appointment.client));
+  const taggedClientIds = new Set((taggedObjects.data || []).filter((item) => item.entity_type === "client").map((item) => item.entity_id));
 
   return (
     <>
       <PageHeader
-        title="Клиенты"
-        description="Контакты, теги, сегменты и быстрый доступ к истории."
+        title={t("clients.title")}
+        description={t("clients.description")}
         actions={(
           <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" onClick={() => setSegmentOpen(true)}><Tags size={18} />Сегмент</Button>
-            <Button onClick={() => setOpen(true)}><Plus size={18} />Создать клиента</Button>
+            <Button variant="secondary" onClick={() => setSegmentOpen(true)}><Tags size={18} />{t("clients.segment")}</Button>
+            <Button onClick={() => setOpen(true)}><Plus size={18} />{t("clients.create")}</Button>
           </div>
         )}
       />
+      <section className="mb-5 grid gap-3 lg:grid-cols-4">
+        <StatCard label={t("clients.total")} value={clientList.length} hint={t("clients.totalHint")} icon={UsersRound} />
+        <StatCard label={t("clients.withLeads")} value={leadClientIds.size} hint={t("clients.withLeadsHint")} icon={Inbox} />
+        <StatCard label={t("clients.withBookings")} value={appointmentClientIds.size} hint={t("clients.withBookingsHint")} icon={CalendarCheck} />
+        <StatCard label={t("clients.tagged")} value={taggedClientIds.size} hint={t("clients.taggedHint")} icon={Tags} />
+      </section>
       {mutation.error || mergeMutation.error || archiveMutation.error || addTagMutation.error || createSegmentMutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(mutation.error || mergeMutation.error || archiveMutation.error || addTagMutation.error || createSegmentMutation.error)} /></div> : null}
       <div className="mb-4 grid gap-3 rounded-3xl border border-white/70 bg-white/75 p-4 shadow-sm lg:grid-cols-[1.4fr_0.8fr_0.8fr_0.9fr]">
-        <Input placeholder="Поиск по имени, телефону или email" value={search} onChange={(event) => setSearch(event.target.value)} />
+        <Input placeholder={t("clients.search")} value={search} onChange={(event) => setSearch(event.target.value)} />
         <Select value={source} onChange={(event) => setSource(event.target.value)} options={[
-          { value: "", label: "Все источники" },
+          { value: "", label: t("clients.allSources") },
           { value: "manual", label: "Manual" },
           { value: "website", label: "Website" },
           { value: "telegram", label: "Telegram" },
           { value: "whatsapp", label: "WhatsApp" },
           { value: "instagram", label: "Instagram" },
         ]} />
-        <Select value={selectedTag} onChange={(event) => setSelectedTag(event.target.value)} options={[{ value: "", label: "Все теги" }, ...(tags.data || []).map((tag) => ({ value: tag.id, label: tag.name }))]} />
-        <Select value={selectedSegment} onChange={(event) => setSelectedSegment(event.target.value)} options={[{ value: "", label: "Все сегменты" }, ...(segments.data || []).map((segment) => ({ value: segment.id, label: `${segment.name} (${segment.cached_count})` }))]} />
+        <Select value={selectedTag} onChange={(event) => setSelectedTag(event.target.value)} options={[{ value: "", label: t("clients.allTags") }, ...(tags.data || []).map((tag) => ({ value: tag.id, label: tag.name }))]} />
+        <Select value={selectedSegment} onChange={(event) => setSelectedSegment(event.target.value)} options={[{ value: "", label: t("clients.allSegments") }, ...(segments.data || []).map((segment) => ({ value: segment.id, label: `${segment.name} (${segment.cached_count})` }))]} />
       </div>
       <DataTable
         rows={rows}
-        emptyTitle="Клиентов пока нет"
-        emptyDescription={search ? "По этому запросу клиентов не найдено. Проверьте имя, телефон или email." : "Добавьте первого клиента, чтобы вести заявки, записи и историю общения в одном месте."}
-        emptyAction={<Button variant="secondary" onClick={() => setOpen(true)}><Plus size={16} />Создать клиента</Button>}
+        emptyTitle={t("clients.emptyTitle")}
+        emptyDescription={search ? t("clients.emptyFiltered") : t("clients.emptyText")}
+        emptyAction={<Button variant="secondary" onClick={() => setOpen(true)}><Plus size={16} />{t("clients.create")}</Button>}
         columns={[
-          { header: "Имя", cell: (client) => <span className="font-medium text-ink">{client.full_name}</span> },
-          { header: "Телефон", cell: (client) => client.phone || "-" },
+          { header: t("clients.name"), cell: (client) => <span className="font-medium text-ink">{client.full_name}</span> },
+          { header: t("clients.phone"), cell: (client) => client.phone || "-" },
           { header: "Email", cell: (client) => client.email || "-" },
           {
-            header: "Теги",
+            header: t("clients.tags"),
             cell: (client) => (
               <div className="flex max-w-xs flex-wrap gap-1">
                 {(clientTags[String(client.id)] || []).slice(0, 3).map((item) => (
@@ -167,44 +215,44 @@ export function ClientsPage() {
                     {item.tag_name}
                   </span>
                 ))}
-                {!(clientTags[String(client.id)] || []).length ? <span className="text-xs text-slate-400">нет тегов</span> : null}
+                {!(clientTags[String(client.id)] || []).length ? <span className="text-xs text-slate-400">{t("clients.noTags")}</span> : null}
               </div>
             ),
           },
-          { header: "Источник", cell: (client) => client.source },
-          { header: "Заявки", cell: (client) => (leads.data || []).filter((lead) => lead.client === client.id).length },
-          { header: "Записи", cell: (client) => (appointments.data || []).filter((appointment) => appointment.client === client.id).length },
-          { header: "Создан", cell: (client) => formatDate(client.created_at) },
+          { header: t("appointment.source"), cell: (client) => client.source },
+          { header: t("nav.leads"), cell: (client) => (leads.data || []).filter((lead) => lead.client === client.id).length },
+          { header: t("nav.appointments"), cell: (client) => (appointments.data || []).filter((appointment) => appointment.client === client.id).length },
+          { header: t("clients.created"), cell: (client) => formatDate(client.created_at) },
           {
-            header: "Действия",
+            header: t("appointments.actions"),
             cell: (client) => (
               <div className="flex flex-wrap gap-2">
-                <Button variant="ghost" onClick={() => setDrawerEntity({ type: "client", id: client.id })}><Search size={16} />Карточка</Button>
-                <Button variant="ghost" onClick={() => { setEditing(client); setOpen(true); }}>Изменить</Button>
+                <Button variant="ghost" onClick={() => setDrawerEntity({ type: "client", id: client.id })}><Search size={16} />{t("appointments.card")}</Button>
+                <Button variant="ghost" onClick={() => { setEditing(client); setOpen(true); }}>{t("appointments.edit")}</Button>
                 <Button
                   variant="ghost"
                   onClick={() => {
-                    const tagName = window.prompt("Название тега");
+                    const tagName = window.prompt(t("clients.tagPrompt"));
                     if (tagName) addTagMutation.mutate({ clientId: client.id, tagName });
                   }}
                 >
-                  Тег
+                  {t("clients.tag")}
                 </Button>
                 <Button
                   variant="ghost"
                   onClick={() => {
-                    const reason = window.prompt("Причина архивации клиента");
+                    const reason = window.prompt(t("clients.archiveReason"));
                     if (reason !== null) archiveMutation.mutate({ id: client.id, reason });
                   }}
                 >
-                  Архив
+                  {t("appointments.archive")}
                 </Button>
               </div>
             ),
           },
         ]}
       />
-      <Modal title={editing ? "Редактировать клиента" : "Создать клиента"} open={open} onClose={() => { setOpen(false); setEditing(undefined); }}>
+      <Modal title={editing ? t("clients.editTitle") : t("clients.create")} open={open} onClose={() => { setOpen(false); setEditing(undefined); clearCreateParam(); }}>
         <ClientForm
           businessId={business.id}
           initial={editing}
@@ -220,7 +268,7 @@ export function ClientsPage() {
           }}
         />
       </Modal>
-      <Modal title="Создать сегмент клиентов" open={segmentOpen} onClose={() => setSegmentOpen(false)}>
+      <Modal title={t("clients.createSegment")} open={segmentOpen} onClose={() => setSegmentOpen(false)}>
         <form
           className="space-y-4"
           onSubmit={(event) => {
@@ -228,46 +276,46 @@ export function ClientsPage() {
             createSegmentMutation.mutate();
           }}
         >
-          <Input label="Название сегмента" value={segmentDraft.name} onChange={(event) => setSegmentDraft({ ...segmentDraft, name: event.target.value })} required />
+          <Input label={t("clients.segmentName")} value={segmentDraft.name} onChange={(event) => setSegmentDraft({ ...segmentDraft, name: event.target.value })} required />
           <div className="grid gap-3 sm:grid-cols-2">
             <Select
-              label="Поле"
+              label={t("clients.field")}
               value={segmentDraft.field}
               onChange={(event) => setSegmentDraft({ ...segmentDraft, field: event.target.value as SegmentDraft["field"] })}
               options={[
-                { value: "source", label: "Источник" },
-                { value: "tag", label: "Тег" },
-                { value: "full_name", label: "Имя" },
-                { value: "phone", label: "Телефон" },
+                { value: "source", label: t("appointment.source") },
+                { value: "tag", label: t("clients.tag") },
+                { value: "full_name", label: t("clients.name") },
+                { value: "phone", label: t("clients.phone") },
                 { value: "email", label: "Email" },
-                { value: "notes", label: "Заметки" },
+                { value: "notes", label: t("appointment.notes") },
               ]}
             />
             <Select
-              label="Условие"
+              label={t("clients.condition")}
               value={segmentDraft.operator}
               onChange={(event) => setSegmentDraft({ ...segmentDraft, operator: event.target.value as SegmentDraft["operator"] })}
               options={[
-                { value: "equals", label: "Равно" },
-                { value: "contains", label: "Содержит" },
-                { value: "in", label: "Один из" },
-                { value: "is_empty", label: "Пусто" },
-                { value: "not_empty", label: "Заполнено" },
+                { value: "equals", label: t("clients.equals") },
+                { value: "contains", label: t("clients.contains") },
+                { value: "in", label: t("clients.inList") },
+                { value: "is_empty", label: t("clients.isEmpty") },
+                { value: "not_empty", label: t("clients.notEmpty") },
               ]}
             />
           </div>
           {segmentDraft.field === "tag" ? (
             <Select
-              label="Значение"
+              label={t("clients.value")}
               value={segmentDraft.value}
               onChange={(event) => setSegmentDraft({ ...segmentDraft, value: event.target.value })}
-              options={[{ value: "", label: "Выберите тег" }, ...(tags.data || []).map((tag) => ({ value: String(tag.id), label: tag.name }))]}
+              options={[{ value: "", label: t("clients.selectTag") }, ...(tags.data || []).map((tag) => ({ value: String(tag.id), label: tag.name }))]}
             />
           ) : (
-            <Input label="Значение" value={segmentDraft.value} onChange={(event) => setSegmentDraft({ ...segmentDraft, value: event.target.value })} />
+            <Input label={t("clients.value")} value={segmentDraft.value} onChange={(event) => setSegmentDraft({ ...segmentDraft, value: event.target.value })} />
           )}
           <Button type="submit" isLoading={createSegmentMutation.isPending} disabled={!segmentDraft.name}>
-            Сохранить сегмент
+            {t("clients.saveSegment")}
           </Button>
         </form>
       </Modal>

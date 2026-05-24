@@ -107,6 +107,18 @@ class ConnectorCapabilitySerializer(serializers.Serializer):
     label = serializers.CharField()
     capability = serializers.CharField()
     auth_type = serializers.CharField()
+    description = serializers.CharField()
+    launch_status = serializers.CharField()
+    cta_label = serializers.CharField()
+    next_step = serializers.CharField()
+    pilot_note = serializers.CharField()
+    setup_priority = serializers.IntegerField()
+    is_pilot_safe = serializers.BooleanField()
+    availability = serializers.CharField()
+    required_plan = serializers.CharField()
+    setup_state = serializers.CharField()
+    action_behavior = serializers.CharField()
+    primary_action_label = serializers.CharField()
 
     @classmethod
     def data_list(cls):

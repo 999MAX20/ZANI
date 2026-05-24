@@ -1,13 +1,15 @@
 import { AlertCircle, Inbox, Loader2, ShieldAlert } from "lucide-react";
 
 import { cn } from "../../lib/cn";
+import { useI18n } from "../../lib/i18n";
 
-export function LoadingState({ label = "Загружаем данные..." }: { label?: string }) {
+export function LoadingState({ label }: { label?: string }) {
+  const { t } = useI18n();
   return (
     <div className="rounded-3xl border border-white/70 bg-white/85 p-6 shadow-soft backdrop-blur-xl">
       <div className="flex items-center gap-3 text-sm font-semibold text-slate-600">
         <Loader2 className="animate-spin text-brand-600" size={18} />
-        {label}
+        {label || t("common.loadingData")}
       </div>
       <div className="mt-5 grid gap-3 sm:grid-cols-3">
         <SkeletonBlock className="h-20" />
@@ -18,22 +20,26 @@ export function LoadingState({ label = "Загружаем данные..." }: {
   );
 }
 
-export function ErrorState({ message }: { message: string }) {
+export function ErrorState({ message, action }: { message: string; action?: React.ReactNode }) {
   return (
-    <div className="flex items-start gap-3 rounded-3xl border border-red-100 bg-red-50/85 p-4 text-sm text-red-700 shadow-sm">
-      <AlertCircle className="mt-0.5 shrink-0" size={18} />
-      <span>{message}</span>
+    <div className="flex flex-col gap-3 rounded-3xl border border-red-100 bg-red-50/85 p-4 text-sm text-red-700 shadow-sm sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex items-start gap-3">
+        <AlertCircle className="mt-0.5 shrink-0" size={18} />
+        <span>{message}</span>
+      </div>
+      {action ? <div className="shrink-0">{action}</div> : null}
     </div>
   );
 }
 
 export function ForbiddenState({
-  title = "Раздел скрыт настройками доступа",
+  title,
   message,
 }: {
   title?: string;
   message: string;
 }) {
+  const { t } = useI18n();
   return (
     <div className="rounded-3xl border border-amber-100 bg-amber-50/80 p-6 shadow-soft backdrop-blur-xl">
       <div className="flex items-start gap-4">
@@ -41,10 +47,10 @@ export function ForbiddenState({
           <ShieldAlert size={24} />
         </div>
         <div>
-          <p className="text-lg font-black text-midnight">{title}</p>
+          <p className="text-lg font-black text-midnight">{title || t("permissions.hiddenTitle")}</p>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-amber-900/80">{message}</p>
           <p className="mt-4 rounded-2xl bg-white/75 px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-amber-700">
-            Доступ не удаляет данные, он только скрывает разделы и действия от роли сотрудника.
+            {t("permissions.hiddenText")}
           </p>
         </div>
       </div>

@@ -54,14 +54,14 @@ export function BusinessSettingsForm({
         <Input label="Slug" error={form.formState.errors.slug?.message} {...form.register("slug")} />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Select label="Тип бизнеса" options={[
+        <Select label="Ниша бизнеса" options={[
           { value: "dentistry", label: "Стоматология" },
-          { value: "beauty", label: "Beauty" },
-          { value: "sauna", label: "Сауна" },
+          { value: "beauty", label: "Салон красоты / барбершоп" },
+          { value: "sauna", label: "Сауна / банный комплекс" },
           { value: "autoservice", label: "Автосервис" },
-          { value: "education", label: "Образование" },
-          { value: "medical", label: "Медицина" },
-          { value: "other", label: "Другое" },
+          { value: "education", label: "Образование / курсы" },
+          { value: "medical", label: "Медицина / клиника" },
+          { value: "other", label: "Другая услуга" },
         ]} {...form.register("business_type")} />
         <Select label="Статус" options={[
           { value: "trial", label: "Пробный" },
@@ -76,7 +76,7 @@ export function BusinessSettingsForm({
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <Input label="Телефон" {...form.register("phone")} />
-        <Input label="Timezone" {...form.register("timezone")} />
+        <Input label="Часовой пояс" placeholder="Asia/Almaty" {...form.register("timezone")} />
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
         <Input label="WhatsApp" {...form.register("whatsapp")} />

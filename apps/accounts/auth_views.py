@@ -6,9 +6,9 @@ from apps.core.models import LoginHistory
 from apps.core.permissions import accessible_businesses
 
 
-def _record_login(request, *, status):
-    email = request.data.get("email") or request.data.get("username") or ""
-    user = User.objects.filter(email=email).first() or User.objects.filter(username=email).first()
+def record_login(request, *, status, user=None, email=None):
+    email = email or request.data.get("email") or request.data.get("username") or ""
+    user = user or User.objects.filter(email=email).first() or User.objects.filter(username=email).first()
     business = accessible_businesses(user).first() if user else None
     LoginHistory.objects.create(
         business=business,
@@ -27,12 +27,12 @@ class ThrottledTokenObtainPairView(TokenObtainPairView):
         try:
             response = super().post(request, *args, **kwargs)
         except Exception:
-            _record_login(request, status=LoginHistory.Statuses.FAILED)
+            record_login(request, status=LoginHistory.Statuses.FAILED)
             raise
         if response.status_code < 400:
-            _record_login(request, status=LoginHistory.Statuses.SUCCESS)
+            record_login(request, status=LoginHistory.Statuses.SUCCESS)
         else:
-            _record_login(request, status=LoginHistory.Statuses.FAILED)
+            record_login(request, status=LoginHistory.Statuses.FAILED)
         return response
 
 

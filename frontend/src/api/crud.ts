@@ -1,22 +1,12 @@
-import { apiClient } from "./client";
+import { apiClient, unwrapList } from "./client";
+import type { PaginatedResponse } from "./client";
 import type { Id } from "../types";
-
-type PaginatedResponse<T> = {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
-};
-
-function unwrapList<T>(data: T[] | PaginatedResponse<T>) {
-  return Array.isArray(data) ? data : data.results;
-}
 
 export function createCrudApi<T, C = Partial<T>, U = Partial<T>>(endpoint: string) {
   return {
     list: async () => {
       const { data } = await apiClient.get<T[] | PaginatedResponse<T>>(endpoint);
-      return unwrapList(data);
+      return unwrapList<T>(data);
     },
     get: async (id: Id) => {
       const { data } = await apiClient.get<T>(`${endpoint}${id}/`);

@@ -271,6 +271,7 @@ def _create_notification(action, *, business, entity, payload):
         raise ValueError("Notification action requires entity.client.")
     return Notification.objects.create(
         business=business,
+        recipient=_entity_attr(entity, "responsible_user") or _entity_attr(entity, "owner") or _entity_attr(entity, "assignee"),
         client=client,
         appointment=entity if _entity_type(entity, "Appointment") else _entity_attr(entity, "appointment"),
         channel=config.get("channel", Notification.Channels.SYSTEM),

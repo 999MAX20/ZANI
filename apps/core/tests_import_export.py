@@ -10,6 +10,9 @@ from apps.businesses.access import ensure_default_roles
 from apps.businesses.models import Business, BusinessMember, BusinessRole
 from apps.clients.models import Client
 from apps.core.models import AuditLog, ImportJob
+from apps.integrations.models import BusinessEvent
+from apps.leads.models import Lead
+from apps.services.models import Service
 
 
 TEST_MEDIA_ROOT = tempfile.mkdtemp()
@@ -77,6 +80,147 @@ class ImportExportTests(TestCase):
         self.assertEqual(confirm_response.data["status"], ImportJob.Statuses.IMPORTED)
         self.assertEqual(confirm_response.data["imported_count"], 2)
         self.assertEqual(Client.objects.filter(business=self.business).count(), 3)
+
+    def test_csv_sales_import_creates_business_events_and_dashboard_revenue(self):
+        upload = SimpleUploadedFile(
+            "sales.csv",
+            "external_id,occurred_at,client_name,phone,item_name,quantity,amount,source\nsale-1,2026-05-22T10:00:00+05:00,Buyer,+77010000004,Consultation,1,15000,manual\n".encode(),
+            content_type="text/csv",
+        )
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            "/api/import-jobs/",
+            {"business": self.business.id, "entity_type": ImportJob.EntityTypes.SALES, "source_file": upload},
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["status"], ImportJob.Statuses.PREVIEWED)
+        self.assertEqual(response.data["errors_json"]["rows"], [])
+
+        confirm_response = self.api.post(f"/api/import-jobs/{response.data['id']}/confirm/")
+
+        self.assertEqual(confirm_response.status_code, 200)
+        self.assertEqual(confirm_response.data["imported_count"], 1)
+        self.assertTrue(BusinessEvent.objects.filter(business=self.business, event_type="sale.recorded", payload_json__amount="15000").exists())
+
+        dashboard = self.api.get("/api/analytics/owner-dashboard/", {"business": self.business.id})
+
+        self.assertEqual(dashboard.status_code, 200)
+        self.assertEqual(dashboard.data["revenue_estimate"], "15000")
+        self.assertTrue(dashboard.data["data_quality"]["has_sales_data"])
+
+    def test_csv_leads_import_creates_clients_and_leads(self):
+        Service.objects.create(business=self.business, name="Consultation", duration_minutes=45)
+        upload = SimpleUploadedFile(
+            "leads.csv",
+            "full_name,phone,email,service_name,source,message,status\nLead Client,+77010000005,lead@example.com,Consultation,landing,Need appointment,new\n".encode(),
+            content_type="text/csv",
+        )
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            "/api/import-jobs/",
+            {"business": self.business.id, "entity_type": ImportJob.EntityTypes.LEADS, "source_file": upload},
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["status"], ImportJob.Statuses.PREVIEWED)
+        self.assertEqual(response.data["errors_json"]["rows"], [])
+
+        confirm_response = self.api.post(f"/api/import-jobs/{response.data['id']}/confirm/")
+
+        self.assertEqual(confirm_response.status_code, 200)
+        self.assertEqual(confirm_response.data["imported_count"], 1)
+        self.assertTrue(Client.objects.filter(business=self.business, phone="+77010000005").exists())
+        self.assertTrue(Lead.objects.filter(business=self.business, message="Need appointment", source=Lead.Sources.LANDING).exists())
+
+    def test_csv_catalog_import_creates_service_and_business_event(self):
+        upload = SimpleUploadedFile(
+            "catalog.csv",
+            "item_type,sku,name,description,duration_minutes,price_from,stock_quantity,source\nservice,SVC-1,Consultation,Intro call,45,12000,,manual\nproduct,SKU-1,Serum,Stock item,,9000,5,manual\n".encode(),
+            content_type="text/csv",
+        )
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            "/api/import-jobs/",
+            {"business": self.business.id, "entity_type": ImportJob.EntityTypes.CATALOG, "source_file": upload},
+            format="multipart",
+        )
+        self.assertEqual(response.status_code, 201)
+        confirm_response = self.api.post(f"/api/import-jobs/{response.data['id']}/confirm/")
+
+        self.assertEqual(confirm_response.status_code, 200)
+        self.assertEqual(confirm_response.data["imported_count"], 2)
+        self.assertTrue(Service.objects.filter(business=self.business, name="Consultation", duration_minutes=45).exists())
+        self.assertEqual(BusinessEvent.objects.filter(business=self.business, event_type="catalog.item_imported").count(), 2)
+
+    def test_bad_sales_file_returns_clear_validation_errors_and_blocks_confirm(self):
+        upload = SimpleUploadedFile(
+            "sales.csv",
+            "external_id,amount\nsale-1,not-a-number\n".encode(),
+            content_type="text/csv",
+        )
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            "/api/import-jobs/",
+            {"business": self.business.id, "entity_type": ImportJob.EntityTypes.SALES, "source_file": upload},
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["status"], ImportJob.Statuses.PREVIEWED)
+        self.assertEqual(response.data["errors_json"]["rows"][0]["field"], "amount")
+        self.assertIn("Amount must be a number", response.data["error"])
+
+        confirm_response = self.api.post(f"/api/import-jobs/{response.data['id']}/confirm/")
+
+        self.assertEqual(confirm_response.status_code, 400)
+
+    def test_manual_sale_and_catalog_endpoints_create_business_events(self):
+        self.api.force_authenticate(self.owner)
+
+        sale_response = self.api.post(
+            "/api/data/sales/",
+            {
+                "business": self.business.id,
+                "external_id": "manual-sale-1",
+                "amount": "22000",
+                "item_name": "Manual service",
+                "source": "manual",
+            },
+            format="json",
+        )
+        catalog_response = self.api.post(
+            "/api/data/catalog-items/",
+            {
+                "business": self.business.id,
+                "item_type": "service",
+                "name": "Manual service",
+                "duration_minutes": "30",
+                "price_from": "22000",
+                "source": "manual",
+            },
+            format="json",
+        )
+
+        self.assertEqual(sale_response.status_code, 201)
+        self.assertEqual(catalog_response.status_code, 201)
+        self.assertTrue(Service.objects.filter(business=self.business, name="Manual service").exists())
+        self.assertTrue(BusinessEvent.objects.filter(business=self.business, event_type="sale.recorded", external_id="manual-sale-1").exists())
+
+    def test_import_template_downloads_sample_csv(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.get("/api/import-templates/sales/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/csv; charset=utf-8")
+        self.assertIn("external_id", response.content.decode())
 
     def test_export_clients_requires_permission_and_writes_audit(self):
         Client.objects.create(business=self.business, full_name="Export Client", phone="+77010000003")

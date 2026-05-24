@@ -17,10 +17,22 @@ class BotSerializer(serializers.ModelSerializer):
 
 
 class BotChannelSerializer(serializers.ModelSerializer):
+    SENSITIVE_CONFIG_KEYS = {"bot_token", "webhook_secret", "access_token", "refresh_token", "client_secret"}
+
     class Meta:
         model = BotChannel
         fields = "__all__"
         read_only_fields = ["public_token", "created_at", "updated_at"]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        config = data.get("config_json") or {}
+        if isinstance(config, dict):
+            data["config_json"] = {
+                key: ("configured" if key in self.SENSITIVE_CONFIG_KEYS and value else value)
+                for key, value in config.items()
+            }
+        return data
 
 
 class TelegramChannelConfigSerializer(serializers.Serializer):

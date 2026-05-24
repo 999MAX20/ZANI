@@ -1,20 +1,9 @@
-import { apiClient } from "./client";
+import { apiClient, unwrapList } from "./client";
 import type { EntitlementSummaryItem, Subscription, SubscriptionPlan, UsageSummaryItem } from "../types";
-
-type PaginatedResponse<T> = {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
-};
-
-function unwrapList<T>(data: T[] | PaginatedResponse<T>) {
-  return Array.isArray(data) ? data : data.results;
-}
 
 export const billingApi = {
   plans: async () => {
-    const { data } = await apiClient.get<SubscriptionPlan[] | PaginatedResponse<SubscriptionPlan>>("/api/billing/plans/");
+    const { data } = await apiClient.get<SubscriptionPlan[] | { results: SubscriptionPlan[] }>("/api/billing/plans/");
     return unwrapList(data);
   },
   currentSubscription: async () => {
@@ -22,11 +11,11 @@ export const billingApi = {
     return data;
   },
   usageSummary: async () => {
-    const { data } = await apiClient.get<UsageSummaryItem[]>("/api/billing/usage-summary/");
-    return data;
+    const { data } = await apiClient.get<UsageSummaryItem[] | { results: UsageSummaryItem[] }>("/api/billing/usage-summary/");
+    return unwrapList(data);
   },
   entitlements: async () => {
-    const { data } = await apiClient.get<EntitlementSummaryItem[]>("/api/billing/entitlements/");
-    return data;
+    const { data } = await apiClient.get<EntitlementSummaryItem[] | { results: EntitlementSummaryItem[] }>("/api/billing/entitlements/");
+    return unwrapList(data);
   },
 };

@@ -1,16 +1,19 @@
 from django.db.models import Count, Q
 from django.utils import timezone
 from django.utils.dateparse import parse_date
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.exceptions import PermissionDenied
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
+from apps.accounts.models import User
 from apps.billing.entitlements import EntitlementMetrics, assert_entitlement_allows
 from apps.businesses.access import Actions, Resources, assert_can, can, ensure_default_roles
-from apps.businesses.models import Business, BusinessMember, BusinessRole, RolePermission, Team, TeamMember
+from apps.businesses.models import Business, BusinessInvitation, BusinessMember, BusinessRole, RolePermission, Team, TeamMember
 from apps.businesses.serializers import (
+    BusinessInvitationAcceptSerializer,
+    BusinessInvitationSerializer,
     BusinessMemberSerializer,
     BusinessRoleSerializer,
     BusinessSerializer,
@@ -218,6 +221,113 @@ class TeamMembershipViewSet(TeamAccessMixin, ModelViewSet):
                 raise PermissionDenied("Member not found.")
             return member.business
         return super().get_business_from_request()
+
+
+class BusinessInvitationViewSet(TeamAccessMixin, ModelViewSet):
+    serializer_class = BusinessInvitationSerializer
+    queryset = BusinessInvitation.objects.select_related("business", "business_role", "invited_by")
+
+    def get_permissions(self):
+        if getattr(self, "action", "") in {"accept", "preview"}:
+            return [AllowAny()]
+        return [IsAuthenticated()]
+
+    def get_queryset(self):
+        return self.queryset.filter(business_id__in=self.accessible_business_ids(Actions.VIEW))
+
+    def perform_create(self, serializer):
+        business = self.check_team_permission(Actions.MANAGE)
+        assert_entitlement_allows(business, EntitlementMetrics.USERS)
+        role = serializer.validated_data.get("role", BusinessMember.Roles.STAFF)
+        business_role = serializer.validated_data.get("business_role")
+        if business_role is None:
+            business_role = BusinessRole.objects.filter(business=business, preset_key=role, is_active=True).first()
+        instance = serializer.save(
+            invited_by=self.request.user,
+            business_role=business_role,
+            expires_at=timezone.now() + timezone.timedelta(days=7),
+        )
+        write_audit_log(self.request, AuditLog.Actions.CREATE, instance, business=business)
+
+    @action(detail=True, methods=["post"])
+    def revoke(self, request, pk=None):
+        invitation = self.get_object()
+        business = self.check_team_permission(Actions.MANAGE, instance=invitation)
+        if invitation.accepted_at:
+            raise ValidationError("Accepted invitation cannot be revoked.")
+        invitation.revoked_at = timezone.now()
+        invitation.save(update_fields=["revoked_at", "updated_at"])
+        write_audit_log(request, AuditLog.Actions.UPDATE, invitation, business=business, metadata={"status": "revoked"})
+        return Response(self.get_serializer(invitation).data)
+
+    @action(detail=False, methods=["get"], url_path="preview/(?P<token>[^/.]+)")
+    def preview(self, request, token=None):
+        invitation = BusinessInvitation.objects.select_related("business").filter(token=token).first()
+        if invitation is None:
+            raise ValidationError("Invitation was not found.")
+        return Response(
+            {
+                "business_name": invitation.business.name,
+                "email": invitation.email,
+                "full_name": invitation.full_name,
+                "role": invitation.role,
+                "status": invitation.status,
+                "expires_at": invitation.expires_at,
+            }
+        )
+
+    @action(detail=False, methods=["post"])
+    def accept(self, request):
+        serializer = BusinessInvitationAcceptSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        invitation = BusinessInvitation.objects.select_related("business", "business_role").filter(token=serializer.validated_data["token"]).first()
+        if invitation is None:
+            raise ValidationError("Invitation was not found.")
+        if not invitation.is_pending:
+            raise ValidationError(f"Invitation is {invitation.status}.")
+        user = User.objects.filter(email__iexact=invitation.email).first()
+        full_name = serializer.validated_data.get("full_name") or invitation.full_name
+        phone = (serializer.validated_data.get("phone") or invitation.phone or "").strip()
+        if user is None:
+            user = User.objects.create_user(
+                username=invitation.email,
+                email=invitation.email,
+                password=serializer.validated_data["password"],
+                full_name=full_name,
+                phone=phone,
+                role=_user_role_for_business_member(invitation.role),
+            )
+        else:
+            if full_name and not user.full_name:
+                user.full_name = full_name
+            if phone and not user.phone:
+                user.phone = phone
+            if not user.has_usable_password():
+                user.set_password(serializer.validated_data["password"])
+            user.role = _user_role_for_business_member(invitation.role)
+            user.is_active = True
+            user.save(update_fields=["full_name", "phone", "password", "role", "is_active"])
+        membership, _ = BusinessMember.objects.update_or_create(
+            business=invitation.business,
+            user=user,
+            defaults={
+                "role": invitation.role,
+                "business_role": invitation.business_role,
+                "is_active": True,
+            },
+        )
+        invitation.accepted_at = timezone.now()
+        invitation.save(update_fields=["accepted_at", "updated_at"])
+        write_audit_log(request, AuditLog.Actions.CREATE, membership, business=invitation.business, metadata={"source": "invitation"})
+        return Response({"ok": True, "business": invitation.business_id, "email": user.email, "role": membership.role})
+
+
+def _user_role_for_business_member(role):
+    if role in {BusinessMember.Roles.ADMIN, BusinessMember.Roles.MANAGER}:
+        return User.Roles.BUSINESS_MANAGER
+    if role in {BusinessMember.Roles.OPERATOR, BusinessMember.Roles.MARKETER, BusinessMember.Roles.ACCOUNTANT, BusinessMember.Roles.SUPPORT}:
+        return User.Roles.BUSINESS_OPERATOR
+    return User.Roles.STAFF
 
 
 @api_view(["GET"])

@@ -8,8 +8,9 @@ from apps.integrations.providers.base import BaseChannelProvider
 WHATSAPP_SECRET_HEADER = "HTTP_X_ZANI_WHATSAPP_SECRET"
 
 
-class WhatsAppProvider(BaseChannelProvider):
+class BaseWhatsAppAdapter(BaseChannelProvider):
     provider = "whatsapp"
+    adapter = "base"
 
     def verify_webhook(self, request):
         expected_secret = getattr(settings, "WHATSAPP_WEBHOOK_SECRET", "")
@@ -36,6 +37,38 @@ class WhatsAppProvider(BaseChannelProvider):
             "payload": payload,
             "headers": headers or {},
         }
+
+
+class WhatsAppMetaPlaceholderAdapter(BaseWhatsAppAdapter):
+    adapter = "meta_cloud_placeholder"
+
+    def send_message(self, channel, recipient_id, text, payload=None):
+        return {"ok": False, "mock": False, "provider": self.provider, "adapter": self.adapter, "reason": "Meta Cloud API is not enabled for this pilot."}
+
+
+class WhatsAppTwilioPlaceholderAdapter(BaseWhatsAppAdapter):
+    adapter = "twilio_placeholder"
+
+    def send_message(self, channel, recipient_id, text, payload=None):
+        return {"ok": False, "mock": False, "provider": self.provider, "adapter": self.adapter, "reason": "Twilio WhatsApp provider is not enabled for this pilot."}
+
+
+class WhatsAppDialog360PlaceholderAdapter(BaseWhatsAppAdapter):
+    adapter = "360dialog_placeholder"
+
+    def send_message(self, channel, recipient_id, text, payload=None):
+        return {"ok": False, "mock": False, "provider": self.provider, "adapter": self.adapter, "reason": "360dialog provider is not enabled for this pilot."}
+
+
+class WhatsAppQrPilotPlaceholderAdapter(BaseWhatsAppAdapter):
+    adapter = "qr_pilot_placeholder"
+
+    def send_message(self, channel, recipient_id, text, payload=None):
+        return {"ok": True, "mock": True, "provider": self.provider, "adapter": self.adapter, "reason": "QR pilot is request-only and handled manually."}
+
+
+class WhatsAppProvider(BaseWhatsAppAdapter):
+    adapter = "mock"
 
     def send_message(self, channel, recipient_id, text, payload=None):
         business = channel.bot.business

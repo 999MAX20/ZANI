@@ -43,3 +43,30 @@ class User(AbstractUser):
     @property
     def is_business_manager(self):
         return self.role in {self.Roles.BUSINESS_MANAGER, self.Roles.MANAGER}
+
+
+class SocialIdentity(models.Model):
+    class Providers(models.TextChoices):
+        GOOGLE = "google", "Google"
+        APPLE = "apple", "Apple"
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="social_identities")
+    provider = models.CharField(max_length=32, choices=Providers.choices)
+    subject = models.CharField(max_length=255)
+    email = models.EmailField()
+    email_verified = models.BooleanField(default=False)
+    raw_claims = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["provider", "subject"], name="accounts_social_identity_provider_subject_uniq"),
+        ]
+        indexes = [
+            models.Index(fields=["provider", "email"], name="acct_social_provider_email_idx"),
+            models.Index(fields=["user", "provider"], name="acct_social_user_provider_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.provider}:{self.email}"

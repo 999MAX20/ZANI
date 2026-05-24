@@ -17,18 +17,22 @@ import {
 import { useEffect, useMemo, useState } from "react";
 
 import { appointmentsApi } from "../../api/appointments";
+import { notesApi } from "../../api/activities";
 import { crmCardsApi } from "../../api/crmCards";
 import { customFieldValuesApi } from "../../api/customFields";
 import { dealsApi } from "../../api/deals";
 import { leadsApi } from "../../api/leads";
+import { tasksApi } from "../../api/tasks";
 import { cn } from "../../lib/cn";
 import { formatDateTime } from "../../lib/format";
+import { useI18n } from "../../lib/i18n";
 import type { Appointment, CrmCardPayload, CrmEntityType, Deal, Id, Lead } from "../../types";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { Select } from "../ui/Select";
 import { ErrorState, LoadingState } from "../ui/StateViews";
 import { StatusBadge } from "../ui/StatusBadge";
+import { Textarea } from "../ui/Textarea";
 
 export type CrmDrawerEntity = {
   type: CrmEntityType;
@@ -37,26 +41,26 @@ export type CrmDrawerEntity = {
 
 type TabId = "overview" | "timeline" | "tasks" | "messages" | "notes";
 
-const tabs: { id: TabId; label: string }[] = [
-  { id: "overview", label: "Обзор" },
-  { id: "timeline", label: "История" },
-  { id: "tasks", label: "Задачи" },
-  { id: "messages", label: "Диалоги" },
-  { id: "notes", label: "Заметки" },
+const tabs: { id: TabId; labelKey: string }[] = [
+  { id: "overview", labelKey: "crmCard.overview" },
+  { id: "timeline", labelKey: "crmCard.timeline" },
+  { id: "tasks", labelKey: "crmCard.tasks" },
+  { id: "messages", labelKey: "crmCard.messages" },
+  { id: "notes", labelKey: "crmCard.notes" },
 ];
 
-function getTitle(data?: CrmCardPayload) {
-  if (!data) return "CRM карточка";
+function getTitle(data: CrmCardPayload | undefined, t: (key: string, vars?: Record<string, string | number>) => string) {
+  if (!data) return t("crmCard.title");
   if (data.deal) return data.deal.title;
-  if (data.appointment) return `Запись #${data.appointment.id}`;
-  if (data.lead) return `Заявка #${data.lead.id}`;
-  return data.client?.full_name || "CRM карточка";
+  if (data.appointment) return t("crmCard.appointmentNumber", { id: data.appointment.id });
+  if (data.lead) return t("crmCard.leadNumber", { id: data.lead.id });
+  return data.client?.full_name || t("crmCard.title");
 }
 
-function getSubtitle(data?: CrmCardPayload) {
+function getSubtitle(data: CrmCardPayload | undefined, t: (key: string) => string) {
   const client = data?.client;
-  if (!client) return "Контекст клиента, продаж и коммуникаций";
-  return [client.phone, client.email, client.source].filter(Boolean).join(" · ") || "Контакты пока не заполнены";
+  if (!client) return t("crmCard.subtitle");
+  return [client.phone, client.email, client.source].filter(Boolean).join(" · ") || t("crmCard.noContacts");
 }
 
 function SummaryItem({ icon: Icon, label, value }: { icon: typeof UserRound; label: string; value: React.ReactNode }) {
@@ -72,6 +76,7 @@ function SummaryItem({ icon: Icon, label, value }: { icon: typeof UserRound; lab
 }
 
 export function CrmEntityHeader({ data, onClose }: { data?: CrmCardPayload; onClose: () => void }) {
+  const { t } = useI18n();
   const activeStatus = data?.deal?.status || data?.appointment?.status || data?.lead?.status;
 
   return (
@@ -84,10 +89,10 @@ export function CrmEntityHeader({ data, onClose }: { data?: CrmCardPayload; onCl
             </span>
             {activeStatus ? <StatusBadge status={activeStatus} /> : null}
           </div>
-          <h2 className="truncate text-2xl font-black tracking-tight text-midnight">{getTitle(data)}</h2>
-          <p className="mt-1 text-sm text-slate-500">{getSubtitle(data)}</p>
+          <h2 className="truncate text-2xl font-black tracking-tight text-midnight">{getTitle(data, t)}</h2>
+          <p className="mt-1 text-sm text-slate-500">{getSubtitle(data, t)}</p>
         </div>
-        <Button type="button" variant="ghost" className="h-12 w-12 shrink-0 rounded-full px-0" onClick={onClose} aria-label="Закрыть карточку">
+        <Button type="button" variant="ghost" className="h-12 w-12 shrink-0 rounded-full px-0" onClick={onClose} aria-label={t("crmCard.close")}>
           <X size={28} strokeWidth={2.4} />
         </Button>
       </div>
@@ -96,6 +101,7 @@ export function CrmEntityHeader({ data, onClose }: { data?: CrmCardPayload; onCl
 }
 
 export function CrmEntityTabs({ active, onChange }: { active: TabId; onChange: (tab: TabId) => void }) {
+  const { t } = useI18n();
   return (
     <div className="no-scrollbar flex gap-2 overflow-x-auto px-5 py-4 sm:px-7">
       {tabs.map((tab) => (
@@ -108,7 +114,7 @@ export function CrmEntityTabs({ active, onChange }: { active: TabId; onChange: (
           )}
           onClick={() => onChange(tab.id)}
         >
-          {tab.label}
+          {t(tab.labelKey)}
         </button>
       ))}
     </div>
@@ -116,13 +122,14 @@ export function CrmEntityTabs({ active, onChange }: { active: TabId; onChange: (
 }
 
 export function EntityQuickActions({ data }: { data: CrmCardPayload }) {
+  const { t } = useI18n();
   const phone = data.client?.phone;
   const cleanPhone = phone?.replace(/\D/g, "");
 
   return (
     <div className="flex flex-wrap gap-2">
       <Button variant="secondary" disabled={!phone} onClick={() => phone && (window.location.href = `tel:${phone}`)}>
-        <Phone size={17} /> Позвонить
+        <Phone size={17} /> {t("crmCard.call")}
       </Button>
       <Button
         variant="secondary"
@@ -139,6 +146,7 @@ export function EntityQuickActions({ data }: { data: CrmCardPayload }) {
 }
 
 export function ClientCardContent({ data }: { data: CrmCardPayload }) {
+  const { t } = useI18n();
   const client = data.client;
 
   return (
@@ -158,10 +166,10 @@ export function ClientCardContent({ data }: { data: CrmCardPayload }) {
         </div>
       ) : null}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <SummaryItem icon={UserRound} label="Клиент" value={client?.full_name} />
-        <SummaryItem icon={ClipboardList} label="Заявки" value={data.leads.length} />
-        <SummaryItem icon={WalletCards} label="Сделки" value={data.deals.length} />
-        <SummaryItem icon={CalendarClock} label="Записи" value={data.appointments.length} />
+        <SummaryItem icon={UserRound} label={t("common.client")} value={client?.full_name} />
+        <SummaryItem icon={ClipboardList} label={t("nav.leads")} value={data.leads.length} />
+        <SummaryItem icon={WalletCards} label={t("nav.deals")} value={data.deals.length} />
+        <SummaryItem icon={CalendarClock} label={t("nav.appointments")} value={data.appointments.length} />
       </div>
       {client?.notes ? <div className="rounded-3xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">{client.notes}</div> : null}
       <EntityAttachmentsPanel data={data} />
@@ -170,10 +178,11 @@ export function ClientCardContent({ data }: { data: CrmCardPayload }) {
 }
 
 export function EntityAttachmentsPanel({ data }: { data: CrmCardPayload }) {
+  const { t } = useI18n();
   return (
     <div className="rounded-3xl border border-slate-100 bg-white/80 p-4 shadow-sm">
       <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-400">
-        <Paperclip size={14} /> Вложения
+        <Paperclip size={14} /> {t("crmCard.attachments")}
       </div>
       {data.attachments.length ? (
         <div className="space-y-2">
@@ -196,28 +205,30 @@ export function EntityAttachmentsPanel({ data }: { data: CrmCardPayload }) {
           ))}
         </div>
       ) : (
-        <p className="text-sm leading-6 text-slate-500">Файлы из inbox и CRM будут доступны здесь через приватную загрузку.</p>
+        <p className="text-sm leading-6 text-slate-500">{t("crmCard.noAttachments")}</p>
       )}
     </div>
   );
 }
 
 export function LeadCardContent({ lead }: { lead: Lead | null }) {
+  const { t } = useI18n();
   if (!lead) return null;
 
   return (
     <div className="rounded-3xl border border-slate-100 bg-white/80 p-4 shadow-sm">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h3 className="font-black text-midnight">Заявка #{lead.id}</h3>
+        <h3 className="font-black text-midnight">{t("crmCard.leadNumber", { id: lead.id })}</h3>
         <StatusBadge status={lead.status} />
       </div>
-      <p className="text-sm leading-6 text-slate-600">{lead.message || "Сообщение заявки не заполнено."}</p>
+      <p className="text-sm leading-6 text-slate-600">{lead.message || t("crmCard.noLeadMessage")}</p>
       <p className="mt-3 text-xs font-semibold text-slate-400">{lead.source} · {formatDateTime(lead.created_at)}</p>
     </div>
   );
 }
 
 export function DealCardContent({ deal }: { deal: Deal | null }) {
+  const { t } = useI18n();
   if (!deal) return null;
 
   return (
@@ -227,9 +238,9 @@ export function DealCardContent({ deal }: { deal: Deal | null }) {
         <StatusBadge status={deal.status} />
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
-        <SummaryItem icon={WalletCards} label="Сумма" value={`${Number(deal.amount || 0).toLocaleString("ru-RU")} ${deal.currency}`} />
-        <SummaryItem icon={CheckCircle2} label="Вероятность" value={`${deal.probability}%`} />
-        <SummaryItem icon={CalendarClock} label="Закрытие" value={formatDateTime(deal.expected_close_at)} />
+        <SummaryItem icon={WalletCards} label={t("crmCard.amount")} value={`${Number(deal.amount || 0).toLocaleString("ru-RU")} ${deal.currency}`} />
+        <SummaryItem icon={CheckCircle2} label={t("crmCard.probability")} value={`${deal.probability}%`} />
+        <SummaryItem icon={CalendarClock} label={t("crmCard.closeDate")} value={formatDateTime(deal.expected_close_at)} />
       </div>
       {deal.notes ? <p className="mt-4 text-sm leading-6 text-slate-600">{deal.notes}</p> : null}
     </div>
@@ -237,12 +248,13 @@ export function DealCardContent({ deal }: { deal: Deal | null }) {
 }
 
 export function AppointmentCardContent({ appointment }: { appointment: Appointment | null }) {
+  const { t } = useI18n();
   if (!appointment) return null;
 
   return (
     <div className="rounded-3xl border border-brand-100 bg-gradient-to-r from-brand-50 to-ai-50 p-4 shadow-sm">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h3 className="font-black text-midnight">Запись #{appointment.id}</h3>
+        <h3 className="font-black text-midnight">{t("crmCard.appointmentNumber", { id: appointment.id })}</h3>
         <StatusBadge status={appointment.status} />
       </div>
       <p className="text-sm font-semibold text-slate-700">{formatDateTime(appointment.start_at)} - {formatDateTime(appointment.end_at)}</p>
@@ -252,6 +264,7 @@ export function AppointmentCardContent({ appointment }: { appointment: Appointme
 }
 
 function EntityInlineEditPanel({ data, entity }: { data: CrmCardPayload; entity: CrmDrawerEntity }) {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const lead = data.lead;
   const deal = data.deal;
@@ -302,63 +315,63 @@ function EntityInlineEditPanel({ data, entity }: { data: CrmCardPayload; entity:
     <div className="rounded-3xl border border-brand-100 bg-white/85 p-4 shadow-sm">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h3 className="font-black text-midnight">Быстрое редактирование</h3>
-          <p className="mt-1 text-sm leading-6 text-slate-500">Статус и рабочая заметка меняются прямо из CRM-карточки.</p>
+          <h3 className="font-black text-midnight">{t("crmCard.quickEdit")}</h3>
+          <p className="mt-1 text-sm leading-6 text-slate-500">{t("crmCard.quickEditText")}</p>
         </div>
         <Button type="button" variant="secondary" isLoading={mutation.isPending} onClick={() => mutation.mutate()}>
-          Сохранить
+          {t("clients.save")}
         </Button>
       </div>
-      {mutation.error ? <div className="mb-3"><ErrorState message="Не удалось сохранить изменения карточки." /></div> : null}
+      {mutation.error ? <div className="mb-3"><ErrorState message={t("crmCard.saveError")} /></div> : null}
       {entity.type === "lead" ? (
         <div className="grid gap-3 sm:grid-cols-[220px_1fr]">
           <Select
-            label="Статус заявки"
+            label={t("crmCard.leadStatus")}
             value={leadStatus}
             onChange={(event) => setLeadStatus(event.target.value as Lead["status"])}
             options={[
-              { value: "new", label: "Новая" },
-              { value: "contacted", label: "Связались" },
-              { value: "in_progress", label: "В работе" },
-              { value: "appointment_created", label: "Запись создана" },
-              { value: "closed", label: "Закрыта" },
-              { value: "lost", label: "Потеряна" },
+              { value: "new", label: t("leads.columnNew") },
+              { value: "contacted", label: t("leads.contacted") },
+              { value: "in_progress", label: t("leads.metricActive") },
+              { value: "appointment_created", label: t("appointment.statusCreated") },
+              { value: "closed", label: t("leads.close") },
+              { value: "lost", label: t("leads.lost") },
             ]}
           />
-          <Input label="Сообщение / заметка" value={leadMessage} onChange={(event) => setLeadMessage(event.target.value)} />
+          <Input label={t("crmCard.messageNote")} value={leadMessage} onChange={(event) => setLeadMessage(event.target.value)} />
         </div>
       ) : null}
       {entity.type === "deal" ? (
         <div className="grid gap-3 sm:grid-cols-[220px_1fr]">
           <Select
-            label="Статус сделки"
+            label={t("crmCard.dealStatus")}
             value={dealStatus}
             onChange={(event) => setDealStatus(event.target.value as Deal["status"])}
             options={[
-              { value: "open", label: "Открыта" },
-              { value: "won", label: "Выиграна" },
-              { value: "lost", label: "Потеряна" },
+              { value: "open", label: t("crmCard.open") },
+              { value: "won", label: t("crmCard.won") },
+              { value: "lost", label: t("leads.lost") },
             ]}
           />
-          <Input label="Заметка" value={dealNotes} onChange={(event) => setDealNotes(event.target.value)} />
+          <Input label={t("clients.notes")} value={dealNotes} onChange={(event) => setDealNotes(event.target.value)} />
         </div>
       ) : null}
       {entity.type === "appointment" ? (
         <div className="grid gap-3 sm:grid-cols-[220px_1fr]">
           <Select
-            label="Статус записи"
+            label={t("crmCard.appointmentStatus")}
             value={appointmentStatus}
             onChange={(event) => setAppointmentStatus(event.target.value as Appointment["status"])}
             options={[
-              { value: "created", label: "Создана" },
-              { value: "confirmed", label: "Подтверждена" },
-              { value: "cancelled", label: "Отменена" },
-              { value: "rescheduled", label: "Перенесена" },
-              { value: "completed", label: "Завершена" },
-              { value: "no_show", label: "Не пришёл" },
+              { value: "created", label: t("appointment.statusCreated") },
+              { value: "confirmed", label: t("appointment.statusConfirmed") },
+              { value: "cancelled", label: t("appointment.statusCancelled") },
+              { value: "rescheduled", label: t("appointment.statusRescheduled") },
+              { value: "completed", label: t("appointment.statusCompleted") },
+              { value: "no_show", label: t("appointment.statusNoShow") },
             ]}
           />
-          <Input label="Заметка" value={appointmentNotes} onChange={(event) => setAppointmentNotes(event.target.value)} />
+          <Input label={t("clients.notes")} value={appointmentNotes} onChange={(event) => setAppointmentNotes(event.target.value)} />
         </div>
       ) : null}
     </div>
@@ -366,8 +379,10 @@ function EntityInlineEditPanel({ data, entity }: { data: CrmCardPayload; entity:
 }
 
 export function EntityTimeline({ data }: { data: CrmCardPayload }) {
+  const { language, t } = useI18n();
   const grouped = data.timeline.reduce<Record<string, typeof data.timeline>>((acc, event) => {
-    const key = new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "long", year: "numeric" }).format(new Date(event.created_at));
+    const locale = language === "kk" ? "kk-KZ" : language === "en" ? "en-US" : "ru-RU";
+    const key = new Intl.DateTimeFormat(locale, { day: "2-digit", month: "long", year: "numeric" }).format(new Date(event.created_at));
     acc[key] = acc[key] || [];
     acc[key].push(event);
     return acc;
@@ -393,30 +408,67 @@ export function EntityTimeline({ data }: { data: CrmCardPayload }) {
           ))}
         </div>
       ))}
-      {!data.timeline.length ? <EmptyBlock title="История пока пустая" text="Действия менеджеров, автоматизаций и коммуникаций появятся здесь." /> : null}
+      {!data.timeline.length ? <EmptyBlock title={t("crmCard.emptyTimeline")} text={t("crmCard.emptyTimelineText")} /> : null}
     </div>
   );
 }
 
 export function EntityTasksPanel({ data }: { data: CrmCardPayload }) {
+  const { t } = useI18n();
+  const queryClient = useQueryClient();
+  const [taskTitle, setTaskTitle] = useState("");
+  const businessId = data.client?.business || data.lead?.business || data.deal?.business || data.appointment?.business;
+  const mutation = useMutation({
+    mutationFn: () => {
+      if (!businessId || !taskTitle.trim()) throw new Error("Task title is required.");
+      return tasksApi.create({
+        business: businessId,
+        title: taskTitle.trim(),
+        client: data.client?.id || null,
+        lead: data.lead?.id || null,
+        deal: data.deal?.id || null,
+        appointment: data.appointment?.id || null,
+        priority: "normal",
+        status: "open",
+      });
+    },
+    onSuccess: () => {
+      setTaskTitle("");
+      queryClient.invalidateQueries({ queryKey: ["crm-card"] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
+  });
+
   return (
     <div className="space-y-3">
+      <div className="rounded-3xl border border-brand-100 bg-white/85 p-4 shadow-sm">
+        <h3 className="font-black text-midnight">{t("crmCard.quickTask")}</h3>
+        <p className="mt-1 text-sm leading-6 text-slate-500">{t("crmCard.quickTaskText")}</p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto]">
+          <Input value={taskTitle} onChange={(event) => setTaskTitle(event.target.value)} placeholder={t("crmCard.taskPlaceholder")} />
+          <Button type="button" variant="secondary" isLoading={mutation.isPending} onClick={() => mutation.mutate()}>
+            {t("crmCard.createTask")}
+          </Button>
+        </div>
+        {mutation.error ? <p className="mt-2 text-sm font-semibold text-red-600">{t("crmCard.taskError")}</p> : null}
+      </div>
       {data.tasks.map((task) => (
         <div key={task.id} className="rounded-3xl border border-slate-100 bg-white/80 p-4 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <p className="font-bold text-midnight">{task.title}</p>
             <StatusBadge status={task.status} />
           </div>
-          <p className="mt-1 text-xs text-slate-500">{task.priority} · дедлайн {formatDateTime(task.due_at)}</p>
+          <p className="mt-1 text-xs text-slate-500">{task.priority} · {t("crmCard.deadline")} {formatDateTime(task.due_at)}</p>
           {task.description ? <p className="mt-3 text-sm leading-6 text-slate-600">{task.description}</p> : null}
         </div>
       ))}
-      {!data.tasks.length ? <EmptyBlock title="Задач нет" text="Когда появится follow-up или SLA-задача, она будет видна в карточке." /> : null}
+      {!data.tasks.length ? <EmptyBlock title={t("crmCard.noTasks")} text={t("crmCard.noTasksText")} /> : null}
     </div>
   );
 }
 
 export function EntityConversationsPanel({ data }: { data: CrmCardPayload }) {
+  const { t } = useI18n();
   return (
     <div className="space-y-3">
       {data.conversations.map((conversation) => (
@@ -425,18 +477,57 @@ export function EntityConversationsPanel({ data }: { data: CrmCardPayload }) {
             <p className="font-bold capitalize text-midnight">{conversation.channel}</p>
             <StatusBadge status={conversation.status} />
           </div>
-          <p className="mt-1 text-xs text-slate-500">Непрочитано: {conversation.unread_count || 0} · {formatDateTime(conversation.last_message_at || conversation.updated_at)}</p>
+          <p className="mt-1 text-xs text-slate-500">{t("crmCard.unread")}: {conversation.unread_count || 0} · {formatDateTime(conversation.last_message_at || conversation.updated_at)}</p>
           {conversation.last_message?.text ? <p className="mt-3 text-sm leading-6 text-slate-600">{conversation.last_message.text}</p> : null}
         </div>
       ))}
-      {!data.conversations.length ? <EmptyBlock title="Диалогов нет" text="WhatsApp, Telegram, Instagram и web-chat будут собираться в этой вкладке." /> : null}
+      {!data.conversations.length ? <EmptyBlock title={t("crmCard.noDialogs")} text={t("crmCard.noDialogsText")} /> : null}
     </div>
   );
 }
 
-export function EntityNotesPanel({ data }: { data: CrmCardPayload }) {
+export function EntityNotesPanel({ data, entity }: { data: CrmCardPayload; entity: CrmDrawerEntity }) {
+  const { t } = useI18n();
+  const queryClient = useQueryClient();
+  const [text, setText] = useState("");
+  const businessId = data.client?.business || data.lead?.business || data.deal?.business || data.appointment?.business;
+  const entityType = entity.type.charAt(0).toUpperCase() + entity.type.slice(1);
+  const mutation = useMutation({
+    mutationFn: () => {
+      const noteText = text.trim();
+      if (!noteText) throw new Error("Note text is required.");
+      if (entity.type === "lead" && data.lead) {
+        return leadsApi.addNote({ id: data.lead.id, text: noteText });
+      }
+      if (!businessId) throw new Error("Business is required.");
+      return notesApi.create({
+        business: businessId,
+        client: data.client?.id || null,
+        entity_type: entityType,
+        entity_id: String(entity.id),
+        text: noteText,
+      });
+    },
+    onSuccess: () => {
+      setText("");
+      queryClient.invalidateQueries({ queryKey: ["crm-card", entity.type, entity.id] });
+      queryClient.invalidateQueries({ queryKey: ["activity-events"] });
+    },
+  });
+
   return (
     <div className="space-y-3">
+      <div className="rounded-3xl border border-brand-100 bg-white/85 p-4 shadow-sm">
+        <h3 className="font-black text-midnight">{t("crmCard.comment")}</h3>
+        <p className="mt-1 text-sm leading-6 text-slate-500">{t("crmCard.commentText")}</p>
+        <Textarea className="mt-3" value={text} onChange={(event) => setText(event.target.value)} placeholder={t("crmCard.commentPlaceholder")} />
+        <div className="mt-3 flex justify-end">
+          <Button type="button" variant="secondary" isLoading={mutation.isPending} onClick={() => mutation.mutate()}>
+            {t("crmCard.addComment")}
+          </Button>
+        </div>
+        {mutation.error ? <p className="mt-2 text-sm font-semibold text-red-600">{t("crmCard.commentError")}</p> : null}
+      </div>
       {data.notes.map((note) => (
         <div key={note.id} className="rounded-3xl border border-slate-100 bg-white/80 p-4 shadow-sm">
           <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-400">
@@ -445,12 +536,13 @@ export function EntityNotesPanel({ data }: { data: CrmCardPayload }) {
           <p className="text-sm leading-6 text-slate-700">{note.text}</p>
         </div>
       ))}
-      {!data.notes.length ? <EmptyBlock title="Заметок нет" text="Внутренние комментарии команды будут храниться здесь." /> : null}
+      {!data.notes.length ? <EmptyBlock title={t("crmCard.noNotes")} text={t("crmCard.noNotesText")} /> : null}
     </div>
   );
 }
 
 function EntityCustomFieldsPanel({ data, entity }: { data: CrmCardPayload; entity: CrmDrawerEntity }) {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const [values, setValues] = useState<Record<number, string>>({});
   useEffect(() => {
@@ -484,11 +576,11 @@ function EntityCustomFieldsPanel({ data, entity }: { data: CrmCardPayload; entit
     <div className="rounded-3xl border border-slate-100 bg-white/80 p-4 shadow-sm">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="font-black text-midnight">Дополнительные поля</h3>
-          <p className="mt-1 text-sm text-slate-500">Поля настраиваются в Settings → Custom fields.</p>
+          <h3 className="font-black text-midnight">{t("crmCard.customFields")}</h3>
+          <p className="mt-1 text-sm text-slate-500">{t("crmCard.customFieldsText")}</p>
         </div>
         <Button type="button" variant="secondary" isLoading={mutation.isPending} onClick={() => mutation.mutate()}>
-          Сохранить поля
+          {t("crmCard.saveFields")}
         </Button>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -502,8 +594,8 @@ function EntityCustomFieldsPanel({ data, entity }: { data: CrmCardPayload; entit
                 value={values[field.definition.id] || "false"}
                 onChange={(event) => setValues({ ...values, [field.definition.id]: event.target.value })}
                 options={[
-                  { value: "false", label: "Нет" },
-                  { value: "true", label: "Да" },
+                  { value: "false", label: t("crmCard.no") },
+                  { value: "true", label: t("crmCard.yes") },
                 ]}
               />
             );
@@ -515,7 +607,7 @@ function EntityCustomFieldsPanel({ data, entity }: { data: CrmCardPayload; entit
                 label={field.definition.label}
                 value={values[field.definition.id] || ""}
                 onChange={(event) => setValues({ ...values, [field.definition.id]: event.target.value })}
-                options={[{ value: "", label: "Не выбрано" }, ...options.map((option) => ({ value: option, label: option }))]}
+                options={[{ value: "", label: t("crmCard.notSelected") }, ...options.map((option) => ({ value: option, label: option }))]}
               />
             );
           }
@@ -544,6 +636,7 @@ function EmptyBlock({ title, text }: { title: string; text: string }) {
 }
 
 export function CrmEntityDrawer({ entity, onClose }: { entity: CrmDrawerEntity | null; onClose: () => void }) {
+  const { t } = useI18n();
   const [activeTab, setActiveTab] = useState<TabId>("overview");
   const query = useQuery({
     queryKey: ["crm-card", entity?.type, entity?.id],
@@ -556,7 +649,7 @@ export function CrmEntityDrawer({ entity, onClose }: { entity: CrmDrawerEntity |
     if (activeTab === "timeline") return <EntityTimeline data={data} />;
     if (activeTab === "tasks") return <EntityTasksPanel data={data} />;
     if (activeTab === "messages") return <EntityConversationsPanel data={data} />;
-    if (activeTab === "notes") return <EntityNotesPanel data={data} />;
+    if (activeTab === "notes") return <EntityNotesPanel data={data} entity={entity!} />;
     return (
       <div className="space-y-4">
         <ClientCardContent data={data} />
@@ -581,7 +674,7 @@ export function CrmEntityDrawer({ entity, onClose }: { entity: CrmDrawerEntity |
         <CrmEntityTabs active={activeTab} onChange={setActiveTab} />
         <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-8 sm:px-7">
           {query.isLoading ? <LoadingState /> : null}
-          {query.error ? <ErrorState message="Не удалось загрузить CRM карточку." /> : null}
+          {query.error ? <ErrorState message={t("crmCard.loadError")} /> : null}
           {tabContent}
         </div>
       </aside>

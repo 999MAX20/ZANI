@@ -1,5 +1,8 @@
 from django.conf import settings
 from django.db import models
+from django.db.models import Q
+from django.utils import timezone
+import uuid
 
 
 class TimeStampedModel(models.Model):
@@ -38,9 +41,19 @@ class Business(TimeStampedModel):
     instagram = models.CharField(max_length=64, blank=True)
     timezone = models.CharField(max_length=64, default="UTC")
     status = models.CharField(max_length=32, choices=Statuses.choices, default=Statuses.TRIAL)
+    landing_id = models.CharField(max_length=128, blank=True, db_index=True)
+    landing_domain = models.CharField(max_length=255, blank=True)
+    landing_preview_url = models.URLField(blank=True)
 
     class Meta:
         ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["landing_id"],
+                condition=~Q(landing_id=""),
+                name="unique_business_landing_id",
+            ),
+        ]
 
     def __str__(self):
         return self.name
@@ -168,3 +181,55 @@ class TeamMember(TimeStampedModel):
 
     def __str__(self):
         return f"{self.member} in {self.team}"
+
+
+class BusinessInvitation(TimeStampedModel):
+    class Statuses(models.TextChoices):
+        PENDING = "pending", "Pending"
+        ACCEPTED = "accepted", "Accepted"
+        REVOKED = "revoked", "Revoked"
+        EXPIRED = "expired", "Expired"
+
+    class DeliveryChannels(models.TextChoices):
+        EMAIL = "email", "Email"
+        WHATSAPP = "whatsapp", "WhatsApp"
+        TELEGRAM = "telegram", "Telegram"
+        MANUAL = "manual", "Manual"
+
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name="invitations")
+    email = models.EmailField()
+    phone = models.CharField(max_length=32, blank=True)
+    telegram = models.CharField(max_length=64, blank=True)
+    full_name = models.CharField(max_length=255, blank=True)
+    role = models.CharField(max_length=32, choices=BusinessMember.Roles.choices, default=BusinessMember.Roles.STAFF)
+    business_role = models.ForeignKey(BusinessRole, on_delete=models.SET_NULL, null=True, blank=True, related_name="invitations")
+    invited_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="sent_business_invitations")
+    delivery_channel = models.CharField(max_length=32, choices=DeliveryChannels.choices, default=DeliveryChannels.MANUAL)
+    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    expires_at = models.DateTimeField()
+    accepted_at = models.DateTimeField(null=True, blank=True)
+    revoked_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["business", "email", "accepted_at", "revoked_at"]),
+            models.Index(fields=["token", "expires_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.email} invited to {self.business}"
+
+    @property
+    def status(self):
+        if self.accepted_at:
+            return self.Statuses.ACCEPTED
+        if self.revoked_at:
+            return self.Statuses.REVOKED
+        if self.expires_at <= timezone.now():
+            return self.Statuses.EXPIRED
+        return self.Statuses.PENDING
+
+    @property
+    def is_pending(self):
+        return self.status == self.Statuses.PENDING

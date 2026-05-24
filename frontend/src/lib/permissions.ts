@@ -49,3 +49,16 @@ export function forbiddenMessage(resource: string, action = "view") {
   const actionLabel = action === "view" ? "просмотр" : "это действие";
   return `У вашей роли нет доступа на ${actionLabel} раздела "${label}". Если это нужно для работы, попросите владельца бизнеса изменить роль или область видимости в настройках команды.`;
 }
+
+type Translate = (key: string, vars?: Record<string, string | number>) => string;
+
+export function permissionResourceLabel(resource: string, t: Translate) {
+  return t(`permissions.resource.${resource}`);
+}
+
+export function permissionForbiddenMessage(resource: string, action: string, t: Translate) {
+  return t("permissions.forbidden", {
+    action: action === "view" ? t("permissions.action.view") : t("permissions.action.manage"),
+    resource: permissionResourceLabel(resource, t),
+  });
+}

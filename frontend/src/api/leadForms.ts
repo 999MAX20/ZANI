@@ -1,10 +1,6 @@
-import { apiClient } from "./client";
+import { apiClient, unwrapList } from "./client";
 import { createCrudApi } from "./crud";
 import type { Id, LeadCaptureForm, LeadFormField, LeadFormSubmission } from "../types";
-
-function unwrapList<T>(data: T[] | { results: T[] }) {
-  return Array.isArray(data) ? data : data.results || [];
-}
 
 export const leadFormsApi = {
   ...createCrudApi<LeadCaptureForm>("/api/lead-forms/"),

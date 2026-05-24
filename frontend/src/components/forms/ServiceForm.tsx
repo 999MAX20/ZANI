@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { useI18n } from "../../lib/i18n";
 import type { Id, Service } from "../../types";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
@@ -18,6 +19,7 @@ const schema = z.object({
 type Values = z.infer<typeof schema>;
 
 export function ServiceForm({ businessId, initial, onSubmit }: { businessId: Id; initial?: Service; onSubmit: (payload: Partial<Service>) => Promise<unknown> }) {
+  const { t } = useI18n();
   const form = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -31,17 +33,21 @@ export function ServiceForm({ businessId, initial, onSubmit }: { businessId: Id;
 
   return (
     <form className="grid gap-4" onSubmit={form.handleSubmit((values) => onSubmit({ ...values, business: businessId, price_from: values.price_from || null }))}>
-      <Input label="Название" error={form.formState.errors.name?.message} {...form.register("name")} />
-      <Textarea label="Описание" {...form.register("description")} />
+      <div className="rounded-3xl border border-brand-100 bg-brand-50/60 p-4 text-sm text-slate-700">
+        <p className="font-bold text-midnight">{t("services.formHintTitle")}</p>
+        <p className="mt-1 leading-6">{t("services.formHintText")}</p>
+      </div>
+      <Input label={t("services.name")} error={form.formState.errors.name?.message} {...form.register("name")} />
+      <Textarea label={t("services.descriptionField")} {...form.register("description")} />
       <div className="grid gap-4 sm:grid-cols-2">
-        <Input label="Длительность, минут" type="number" {...form.register("duration_minutes")} />
-        <Input label="Цена от" type="number" step="0.01" {...form.register("price_from")} />
+        <Input label={t("services.durationMinutes")} type="number" {...form.register("duration_minutes")} />
+        <Input label={t("services.priceFrom")} type="number" step="0.01" {...form.register("price_from")} />
       </div>
       <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
         <input type="checkbox" className="h-4 w-4 rounded border-slate-300" {...form.register("is_active")} />
-        Активна
+        {t("services.isActive")}
       </label>
-      <Button type="submit" isLoading={form.formState.isSubmitting}>Сохранить</Button>
+      <Button type="submit" isLoading={form.formState.isSubmitting}>{t("services.save")}</Button>
     </form>
   );
 }

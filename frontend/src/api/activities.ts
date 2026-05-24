@@ -1,8 +1,9 @@
 import { createCrudApi } from "./crud";
 import { apiClient } from "./client";
-import type { ActivityEvent, Client, Id, Segment, SegmentFilter, Tag, TaggedObject } from "../types";
+import type { ActivityEvent, Client, Id, Note, Segment, SegmentFilter, Tag, TaggedObject } from "../types";
 
 export const activityEventsApi = createCrudApi<ActivityEvent>("/api/activity-events/");
+export const notesApi = createCrudApi<Note>("/api/notes/");
 export const tagsApi = createCrudApi<Tag>("/api/tags/");
 export const taggedObjectsApi = {
   ...createCrudApi<TaggedObject>("/api/tagged-objects/"),

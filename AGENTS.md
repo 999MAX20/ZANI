@@ -73,7 +73,15 @@ Run after meaningful backend/frontend changes:
 ```bash
 DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py makemigrations --check --dry-run
 DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
-DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test
+DATABASE_URL=sqlite:///db.sqlite3 \
+SECURE_SSL_REDIRECT=False \
+SESSION_COOKIE_SECURE=False \
+CSRF_COOKIE_SECURE=False \
+REDIS_URL=memory:// \
+CELERY_TASK_ALWAYS_EAGER=True \
+CELERY_TASK_STORE_EAGER_RESULT=False \
+AUTOMATIONS_RUN_INLINE=True \
+.venv/bin/python manage.py test
 cd frontend && npm run build
 ```
 
@@ -107,10 +115,19 @@ Follow:
 
 ```text
 plan/ZANI_MASTER_TECH_PLAN.md
+plan/ZANI_PRODUCTION_HARDENING_ROADMAP.md
 ```
 
-Current recommended next phase:
+Current status:
 
 ```text
-Phase 1 — Production Readiness Baseline
+Core/pilot master-plan scope is complete.
+Production hardening H1-H9 is code/docs ready.
 ```
+
+Next work should focus on:
+
+- provisioning and verifying real staging/production dependencies;
+- keeping paid-beta gates red until Redis/Celery, object storage, Sentry, email, backups, support grants and smoke/E2E checks are green;
+- small reliability/security fixes discovered during local or deployed smoke;
+- UI/UX polish only when it reduces merchant/operator confusion.

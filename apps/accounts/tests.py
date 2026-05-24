@@ -1,11 +1,18 @@
 from django.core.cache import cache
 from django.core.management import call_command
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 from django.test import TestCase
 from io import StringIO
+from unittest.mock import patch
 from rest_framework.test import APIClient
 
 from apps.accounts.auth_views import ThrottledTokenObtainPairView, ThrottledTokenRefreshView
-from apps.accounts.models import User
+from apps.accounts.models import SocialIdentity, User
+from apps.accounts.social_auth import SocialUserClaims
+from apps.businesses.models import Business, BusinessMember
+from apps.core.models import LoginHistory
 
 
 class AuthSecurityBaselineTests(TestCase):
@@ -73,6 +80,118 @@ class AuthSecurityBaselineTests(TestCase):
         )
 
         self.assertEqual(throttled_response.status_code, 429)
+
+    @patch("apps.accounts.views.verify_social_id_token")
+    def test_social_login_creates_merchant_user_and_business(self, verify_token):
+        verify_token.return_value = SocialUserClaims(
+            provider=SocialIdentity.Providers.GOOGLE,
+            subject="google-user-1",
+            email="social-owner@example.com",
+            email_verified=True,
+            full_name="Social Owner",
+            claims={"sub": "google-user-1", "email": "social-owner@example.com"},
+        )
+
+        response = self.api.post(
+            "/api/auth/social/",
+            {"provider": "google", "id_token": "mock-id-token"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("access", response.data)
+        self.assertIn("refresh", response.data)
+        self.assertTrue(response.data["created"])
+        user = User.objects.get(email="social-owner@example.com")
+        self.assertEqual(user.role, User.Roles.BUSINESS_OWNER)
+        self.assertFalse(user.has_usable_password())
+        self.assertTrue(SocialIdentity.objects.filter(user=user, provider=SocialIdentity.Providers.GOOGLE).exists())
+        self.assertTrue(BusinessMember.objects.filter(user=user, role=BusinessMember.Roles.OWNER, is_active=True).exists())
+        self.assertTrue(LoginHistory.objects.filter(user=user, status=LoginHistory.Statuses.SUCCESS).exists())
+
+    @patch("apps.accounts.views.verify_social_id_token")
+    def test_social_login_links_existing_user_by_email(self, verify_token):
+        verify_token.return_value = SocialUserClaims(
+            provider=SocialIdentity.Providers.APPLE,
+            subject="apple-user-1",
+            email=self.user.email,
+            email_verified=True,
+            full_name="",
+            claims={"sub": "apple-user-1", "email": self.user.email},
+        )
+
+        response = self.api.post(
+            "/api/auth/social/",
+            {"provider": "apple", "id_token": "mock-id-token"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.data["created"])
+        self.assertEqual(User.objects.filter(email=self.user.email).count(), 1)
+        self.assertTrue(SocialIdentity.objects.filter(user=self.user, provider=SocialIdentity.Providers.APPLE).exists())
+
+    def test_owner_signup_creates_user_business_and_membership(self):
+        response = self.api.post(
+            "/api/auth/signup/owner/",
+            {
+                "email": "new-owner@example.com",
+                "password": "StrongPass123",
+                "full_name": "New Owner",
+                "phone": "+77015550101",
+                "business_name": "Fresh Salon",
+                "business_type": "beauty",
+                "city": "Almaty",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertIn("access", response.data)
+        user = User.objects.get(email="new-owner@example.com")
+        business = Business.objects.get(owner=user)
+        self.assertEqual(user.role, User.Roles.BUSINESS_OWNER)
+        self.assertEqual(business.name, "Fresh Salon")
+        self.assertTrue(BusinessMember.objects.filter(business=business, user=user, role=BusinessMember.Roles.OWNER, is_active=True).exists())
+
+    def test_password_reset_request_and_confirm_flow(self):
+        request_response = self.api.post(
+            "/api/auth/password-reset/request/",
+            {"email": self.user.email, "delivery_channel": "manual"},
+            format="json",
+        )
+
+        self.assertEqual(request_response.status_code, 200)
+        self.assertTrue(request_response.data["ok"])
+        self.assertIn("reset_path", request_response.data)
+
+        confirm_response = self.api.post(
+            "/api/auth/password-reset/confirm/",
+            {
+                "uid": request_response.data["uid"],
+                "token": request_response.data["token"],
+                "password": "NewStrongPass123",
+            },
+            format="json",
+        )
+
+        self.assertEqual(confirm_response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("NewStrongPass123"))
+
+    def test_password_reset_rejects_invalid_token(self):
+        uid = urlsafe_base64_encode(force_bytes(self.user.pk))
+        token = default_token_generator.make_token(self.user)
+        self.user.set_password("ChangedBeforeConfirm123")
+        self.user.save(update_fields=["password"])
+
+        response = self.api.post(
+            "/api/auth/password-reset/confirm/",
+            {"uid": uid, "token": token, "password": "NewStrongPass123"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
 
 
 class CreatePlatformAdminCommandTests(TestCase):

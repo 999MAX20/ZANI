@@ -4,6 +4,12 @@
 
 Цель: дать минимальный production-like сценарий проверки staging окружения перед подключением реальных WhatsApp/Meta/OpenAI/payment providers.
 
+Последний Render staging execution report:
+
+```text
+docs/staging-render-execution-report.md
+```
+
 ## 1. Когда Запускать
 
 Запускать после каждого staging deploy, после миграций и после изменения env/secrets.
@@ -54,6 +60,7 @@ Backend public checks:
 - `GET /health/`;
 - `GET /health/db/`;
 - `GET /ready/`.
+- `OPTIONS /api/auth/token/` with the deployed frontend `Origin` when `FRONTEND_URL` is provided.
 
 Platform checks:
 
@@ -73,6 +80,17 @@ Merchant checks:
 Frontend check:
 
 - `HEAD /` against `FRONTEND_URL`.
+- `HEAD /login` against `FRONTEND_URL` to verify SPA rewrites.
+
+For Render Static Site, configure a rewrite rule:
+
+```text
+Source: /*
+Destination: /index.html
+Action: Rewrite
+```
+
+Without this rule, deployed browser E2E will fail on direct routes such as `/login`, `/dashboard/settings` and `/platform`.
 
 ## 4. Staging Provider Setup
 
@@ -128,6 +146,8 @@ npm run e2e:staging
 ```
 
 The staging config does not start local Django/Vite servers and does not seed data. The staging database must already contain the required test accounts and demo merchant.
+
+The staging browser timeout is intentionally higher than local E2E timeout because free-tier hosts and managed database poolers can cold-start and make the first auth/database requests slow. Treat persistent timeouts after warm-up as a failure, but do not use local timeout values for deployed smoke.
 
 ## 8. What This Does Not Cover Yet
 

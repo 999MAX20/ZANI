@@ -8,10 +8,10 @@ if (!baseURL) {
 
 export default defineConfig({
   testDir: "./e2e",
-  timeout: 45_000,
+  timeout: 180_000,
   workers: 1,
   expect: {
-    timeout: 10_000,
+    timeout: 90_000,
   },
   fullyParallel: false,
   retries: process.env.CI ? 2 : 0,

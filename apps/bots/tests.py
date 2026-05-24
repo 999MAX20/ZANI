@@ -299,6 +299,81 @@ class InboxBackendTests(TestCase):
             external_user_id="visitor-2",
         )
 
+    def test_inbox_summary_returns_channel_health_and_pilot_positioning(self):
+        BotMessage.objects.create(
+            conversation=self.conversation,
+            direction=BotMessage.Directions.INBOUND,
+            sender_type=BotMessage.SenderTypes.CLIENT,
+            text="Нужно записаться",
+        )
+        self.conversation.handoff_required = True
+        self.conversation.bot_enabled = False
+        self.conversation.unread_count = 1
+        self.conversation.save(update_fields=["handoff_required", "bot_enabled", "unread_count", "updated_at"])
+        BotConversation.objects.create(
+            business=self.business,
+            bot=self.bot,
+            channel=BotConversation.Channels.TELEGRAM,
+            external_user_id="telegram-user",
+        )
+        BotConversation.objects.create(
+            business=self.other_business,
+            bot=self.other_bot,
+            channel=BotConversation.Channels.WHATSAPP,
+            external_user_id="hidden-whatsapp",
+        )
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.get("/api/inbox/conversations/summary/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["total"], 2)
+        self.assertEqual(response.data["unread"], 1)
+        self.assertEqual(response.data["handoff_required"], 1)
+        self.assertEqual(response.data["bot_paused"], 1)
+        channels = {item["key"]: item for item in response.data["channels"]}
+        self.assertEqual(channels["website"]["total"], 1)
+        self.assertEqual(channels["telegram"]["total"], 1)
+        self.assertEqual(channels["whatsapp"]["status"], "roadmap")
+        self.assertEqual(channels["instagram"]["status"], "roadmap")
+        self.assertTrue(response.data["next_actions"])
+        self.assertIn("roadmap", response.data["pilot_positioning"])
+
+    def test_inbox_summary_is_tenant_safe(self):
+        BotConversation.objects.create(
+            business=self.other_business,
+            bot=self.other_bot,
+            channel=BotConversation.Channels.WHATSAPP,
+            external_user_id="hidden-whatsapp",
+            priority=BotConversation.Priorities.URGENT,
+        )
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.get("/api/inbox/conversations/summary/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["total"], 1)
+        self.assertEqual(response.data["urgent"], 0)
+        channels = {item["key"]: item for item in response.data["channels"]}
+        self.assertEqual(channels["whatsapp"]["total"], 0)
+
+    def test_inbox_can_filter_unassigned_conversations(self):
+        assigned = BotConversation.objects.create(
+            business=self.business,
+            bot=self.bot,
+            channel=BotConversation.Channels.WEBSITE,
+            external_user_id="assigned-visitor",
+            assigned_to=self.manager,
+        )
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.get("/api/inbox/conversations/?assigned_to=unassigned")
+
+        self.assertEqual(response.status_code, 200)
+        ids = {item["id"] for item in response.data["results"]}
+        self.assertIn(self.conversation.id, ids)
+        self.assertNotIn(assigned.id, ids)
+
     def test_inbox_conversations_are_tenant_filtered(self):
         BotMessage.objects.create(
             conversation=self.conversation,
@@ -410,6 +485,54 @@ class InboxBackendTests(TestCase):
         self.assertEqual(response.data["status"], BotMessage.Statuses.QUEUED)
         self.conversation.refresh_from_db()
         self.assertIsNotNone(self.conversation.last_outbound_at)
+
+    def test_public_website_chat_flows_into_inbox_and_manager_reply_updates_state(self):
+        channel = BotChannel.objects.create(
+            bot=self.bot,
+            channel=BotChannel.Channels.WEBSITE,
+            status=BotChannel.Statuses.ACTIVE,
+        )
+
+        public_response = self.api.post(
+            f"/api/public/website-chat/{channel.public_token}/conversations/",
+            {
+                "full_name": "Pilot Visitor",
+                "phone": "+77015550999",
+                "message": "Хочу консультацию с сайта",
+                "external_user_id": "pilot-visitor-1",
+            },
+            format="json",
+        )
+
+        self.assertEqual(public_response.status_code, 201)
+        conversation = BotConversation.objects.get(public_id=public_response.data["conversation_id"])
+        self.assertEqual(conversation.business, self.business)
+        self.assertEqual(conversation.channel, BotConversation.Channels.WEBSITE)
+        self.assertEqual(conversation.unread_count, 1)
+        self.assertIsNotNone(conversation.lead)
+        self.assertEqual(BotMessage.objects.filter(conversation=conversation, direction=BotMessage.Directions.INBOUND).count(), 1)
+
+        self.api.force_authenticate(self.owner)
+        inbox_response = self.api.get("/api/inbox/conversations/?channel=website&unread=true&q=консультацию")
+        self.assertEqual(inbox_response.status_code, 200)
+        self.assertEqual(inbox_response.data["count"], 1)
+        self.assertEqual(inbox_response.data["results"][0]["id"], conversation.id)
+
+        reply_response = self.api.post(
+            f"/api/inbox/conversations/{conversation.id}/messages/",
+            {"text": "Здравствуйте, можем записать вас сегодня.", "sender_type": "manager"},
+            format="json",
+        )
+
+        self.assertEqual(reply_response.status_code, 201)
+        self.assertEqual(reply_response.data["direction"], BotMessage.Directions.OUTBOUND)
+        conversation.refresh_from_db()
+        self.assertEqual(conversation.unread_count, 1)
+        self.assertIsNotNone(conversation.last_outbound_at)
+
+        mark_read_response = self.api.post(f"/api/inbox/conversations/{conversation.id}/mark-read/")
+        self.assertEqual(mark_read_response.status_code, 200)
+        self.assertEqual(mark_read_response.data["unread_count"], 0)
 
     def test_inbox_suggest_reply_uses_conversation_context(self):
         BotMessage.objects.create(
@@ -562,3 +685,43 @@ class InboxBackendTests(TestCase):
         )
         self.assertEqual(link_response.status_code, 200)
         self.assertEqual(link_response.data["deal"], other_deal.id)
+
+    def test_inbox_priority_close_reopen_and_mark_unread_actions_work(self):
+        self.api.force_authenticate(self.owner)
+
+        unread_response = self.api.post(f"/api/inbox/conversations/{self.conversation.id}/mark-unread/")
+        self.assertEqual(unread_response.status_code, 200)
+        self.assertEqual(unread_response.data["unread_count"], 1)
+
+        priority_response = self.api.post(
+            f"/api/inbox/conversations/{self.conversation.id}/set-priority/",
+            {"priority": BotConversation.Priorities.URGENT},
+            format="json",
+        )
+        self.assertEqual(priority_response.status_code, 200)
+        self.assertEqual(priority_response.data["priority"], BotConversation.Priorities.URGENT)
+
+        close_response = self.api.post(
+            f"/api/inbox/conversations/{self.conversation.id}/close/",
+            {"reason": "Resolved"},
+            format="json",
+        )
+        self.assertEqual(close_response.status_code, 200)
+        self.assertEqual(close_response.data["status"], BotConversation.Statuses.CLOSED)
+        self.assertFalse(close_response.data["handoff_required"])
+        self.assertFalse(close_response.data["bot_enabled"])
+
+        reopen_response = self.api.post(f"/api/inbox/conversations/{self.conversation.id}/reopen/")
+        self.assertEqual(reopen_response.status_code, 200)
+        self.assertEqual(reopen_response.data["status"], BotConversation.Statuses.OPEN)
+
+    def test_inbox_rejects_invalid_priority(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            f"/api/inbox/conversations/{self.conversation.id}/set-priority/",
+            {"priority": "critical"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)

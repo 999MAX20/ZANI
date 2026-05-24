@@ -19,6 +19,7 @@ plan/clean_code_rules/zani_required_clean_code_rules.md
 - Django + DRF backend-core.
 - React + TypeScript frontend CRM.
 - JWT auth через `djangorestframework-simplejwt`.
+- Google / Apple social auth foundation.
 - Multi-tenant ядро вокруг `Business`.
 - Merchant CRM: clients, leads, deals, tasks, appointments, calendar, services, resources, conversations, analytics, settings.
 - Tenant-aware permissions и queryset filtering.
@@ -31,6 +32,685 @@ plan/clean_code_rules/zani_required_clean_code_rules.md
 - Django Admin.
 - Docker-ready структура.
 - Celery-ready конфигурация, но Celery/Redis пока не обязательны для минимального запуска.
+
+### ZANI 10 next tasks — Task 1: Mobile-first business cockpit
+
+Статус: **готово как первый visual-shell шаг**.
+
+Что изменено:
+
+- Dashboard получил mobile-first hero в логике “банкинг бизнеса”:
+  - крупная выручка для владельца;
+  - активные лиды/задачи для менеджера;
+  - срочные сигналы без перегруза таблицами.
+- Добавлен быстрый action dock:
+  - новая заявка;
+  - запись;
+  - диалоги;
+  - импорт для владельца.
+- Добавлен focus strip с приоритетами:
+  - новые заявки;
+  - записи;
+  - задачи/просрочки;
+  - источник спроса для owner.
+- Owner/manager dashboard сохранили разные приоритеты, но первый экран стал ближе к “бизнес в телефоне”, а не к admin panel.
+- Изменение ограничено frontend dashboard shell; backend/API не переписывались.
+
+Проверка:
+
+```bash
+cd frontend && npm run build
+```
+
+### ZANI 10 next tasks — Task 2: Compact grouped navigation
+
+Статус: **готово**.
+
+Что изменено:
+
+- Desktop sidebar переведён с длинного списка на grouped rail:
+  - Главная;
+  - Продажи;
+  - Клиенты;
+  - Команда;
+  - Операции;
+  - AI и интеграции;
+  - Система.
+- Внутри выбранной группы показываются только её релевантные страницы, поэтому меню меньше похоже на тяжёлую ERP-навигацию.
+- Permission filtering сохранён: сотрудник видит только доступные ему разделы.
+- Mobile bottom nav упрощён до частых действий:
+  - Главная;
+  - Заявки;
+  - Диалоги;
+  - Задачи;
+  - Ещё.
+- Кнопка `Ещё` открывает полный sidebar, а выбор страницы из overlay закрывает меню.
+
+Проверка:
+
+```bash
+cd frontend && npm run build
+```
+
+### ZANI 10 next tasks — Task 3: Design system foundation
+
+Статус: **готово как базовый слой**.
+
+Что изменено:
+
+- Добавлены CSS design tokens:
+  - brand / AI / ink colors;
+  - surface colors;
+  - shared shadows;
+  - touch target и focus ring primitives.
+- `Card` переведён на общий `zani-surface`, чтобы карточки не расходились визуально между страницами.
+- `Button` получил размеры:
+  - `sm`;
+  - `md`;
+  - `lg`;
+  - `icon`.
+- `Input` использует общий focus-ring pattern.
+- Добавлены reusable UI primitives:
+  - `IconBubble`;
+  - `MetricTile`;
+  - общий `UiTone`.
+- Dashboard metrics переведены на общий `MetricTile`, чтобы следующий редизайн страниц не копировал карточки вручную.
+
+Проверка:
+
+```bash
+cd frontend && npm run build
+```
+
+### ZANI 10 next tasks — Task 4: RU / KK / EN language foundation
+
+Статус: **готово как базовый i18n слой**.
+
+Что изменено:
+
+- Frontend i18n расширен с `ru/en` до `ru/kk/en`.
+- `LanguageSelector` теперь поддерживает:
+  - RU;
+  - KK;
+  - EN.
+- Добавлен казахский словарь для ключевых merchant CRM зон:
+  - навигация;
+  - мобильное меню;
+  - header;
+  - auth;
+  - dashboard;
+  - leads.
+- Для непереведённых ключей включён безопасный fallback:
+  - текущий язык;
+  - русский;
+  - английский;
+  - исходный ключ.
+- Sidebar group labels больше не hardcoded на русском и переключаются через i18n keys.
+- Mobile `Ещё` вынесено в словарь как `mobile.more`.
+
+Проверка:
+
+```bash
+cd frontend && npm run build
+```
+
+### ZANI 10 next tasks — Task 5: Owner vs manager dashboard
+
+Статус: **готово**.
+
+Что изменено:
+
+- Dashboard roles разведены жёстче:
+  - owner/admin/business_owner видят owner cockpit;
+  - business_manager/manager/operator/staff видят рабочую очередь сотрудника.
+- Owner analytics endpoint `/api/analytics/owner-dashboard/` больше не запрашивается для manager/operator dashboard.
+- Для owner при недоступной аналитике используются безопасные local fallback-метрики по уже загруженным CRM данным.
+- Для сотрудников добавлен `ManagerWorkQueue`:
+  - лиды на ответ;
+  - записи на сегодня;
+  - мои открытые задачи.
+- Manager/operator экран не показывает управленческую выручку, конверсию и owner pulse.
+- Первый экран сотрудника сфокусирован на действиях, а не на аналитике владельца.
+
+Проверка:
+
+```bash
+cd frontend && npm run build
+```
+
+### ZANI 10 next tasks — Task 6: CRM flow polish
+
+Статус: **готово как первый проход по сквозному сценарию**.
+
+Что улучшено:
+
+- Сценарий `заявка -> запись` стал контекстным:
+  - клиент из заявки подставляется в форму записи;
+  - услуга из заявки подставляется, если она есть;
+  - сама заявка связывается с создаваемой записью;
+  - после создания показывается понятное подтверждение.
+- Форма заявки больше не ведёт в тупик, если нет клиентов:
+  - показывает подсказку, зачем нужен клиент;
+  - даёт переход на создание клиента;
+  - блокирует сохранение заявки без клиента.
+- Если услуг ещё нет, форма заявки объясняет, почему услуга нужна для будущей записи и слотов.
+- Страница клиентов теперь поддерживает deep link:
+  - `/dashboard/clients?create=1`
+  - сразу открывает модалку создания клиента.
+- Закрытие/сохранение клиента очищает `create` query param, чтобы модалка не открывалась повторно.
+
+Проверка:
+
+```bash
+cd frontend && npm run build
+```
+
+### ZANI 10 next tasks — Task 7: AI Business Memory
+
+Статус: **готово как управляемый memory foundation**.
+
+Что реализовано:
+
+- Использован существующий tenant-safe backend ресурс:
+  - `/api/ai/knowledge-items/`
+  - модель `BusinessKnowledgeItem`.
+- На странице `AI Assistant` добавлен блок `Business Memory`:
+  - показывает количество активных фактов;
+  - объясняет, что AI использует эти факты как бизнес-контекст.
+- Добавлено управление фактами памяти:
+  - создать факт;
+  - редактировать факт;
+  - выбрать категорию;
+  - включить/выключить использование в AI-контексте.
+- Категории памяти:
+  - О бизнесе;
+  - Продажи;
+  - Услуги;
+  - Операции;
+  - Тон общения;
+  - Правила.
+- Добавлен frontend type `BusinessKnowledgeItem`.
+- Добавлен API helper `businessKnowledgeApi`.
+- AI Assistant теперь визуально связывает чат, действия и память бизнеса, но без лишней AI-перегрузки.
+
+Проверка:
+
+```bash
+cd frontend && npm run build
+```
+
+### ZANI 10 next tasks — Task 8: Integration onboarding v2
+
+Статус: **готово**.
+
+Что улучшено:
+
+- На странице `Интеграции` добавлен верхний onboarding guide:
+  - импортировать базу;
+  - включить входящие каналы;
+  - оставить заявку на WhatsApp/Instagram;
+  - проверить data connectors.
+- Guide показывает понятный маршрут для владельца, а не только каталог коннекторов.
+- Каждый шаг ведёт к нужной секции страницы через smooth scroll.
+- Добавлены anchor sections:
+  - `integration-import`;
+  - `integration-telegram`;
+  - `integration-website`;
+  - `integration-requests`;
+  - `integration-data`.
+- Страница сохраняет существующие продукты и request-ready логику:
+  - Excel/CSV;
+  - Website chat;
+  - Telegram beta;
+  - WhatsApp/Instagram request;
+  - Kaspi/1C/склад/marketplaces foundation.
+- Владелец видит, что уже активно, что начато, что требует заявки, а что находится в pilot/roadmap.
+
+Проверка:
+
+```bash
+cd frontend && npm run build
+```
+
+### ZANI 10 next tasks — Task 9: Pilot launch quality gate
+
+Статус: **готово**.
+
+Что реализовано:
+
+- `prepare_pilot_demo` теперь печатает полноценный launch pack:
+  - URL фронта/бэка;
+  - логины platform/owner/manager;
+  - business id, landing id, domain;
+  - active `LeadForm.public_id`;
+  - public form API и submit API;
+  - готовый `curl` для внешнего лендинга;
+  - ключевые API checks;
+  - ключевые frontend routes;
+  - что можно показывать на пилоте;
+  - что нельзя обещать до production-интеграций.
+- Добавлена команда:
+  - `python manage.py pilot_launch_quality_gate`
+- Quality gate проверяет без поднятого HTTP-сервера:
+  - `/health/`;
+  - `/health/db/`;
+  - `/ready/`;
+  - public lead form;
+  - login platform/owner/manager;
+  - platform overview;
+  - owner `me`, pilot readiness, leads, clients, tasks, inbox summary, analytics;
+  - manager `me` и tasks.
+- `scripts/pilot_smoke_check.sh` теперь:
+  - запускает `prepare_pilot_demo --reset` два раза подряд;
+  - проверяет idempotency demo launch pack;
+  - запускает `pilot_launch_quality_gate`;
+  - поддерживает `PILOT_FRONTEND_URL` и `PILOT_BACKEND_URL`.
+- Документация demo launch обновлена в `docs/block14-pilot-demo-launch.md`.
+
+Проверки:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 SECURE_SSL_REDIRECT=False SESSION_COOKIE_SECURE=False CSRF_COOKIE_SECURE=False REDIS_URL=memory:// CELERY_TASK_ALWAYS_EAGER=True CELERY_TASK_STORE_EAGER_RESULT=False AUTOMATIONS_RUN_INLINE=True .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 SECURE_SSL_REDIRECT=False SESSION_COOKIE_SECURE=False CSRF_COOKIE_SECURE=False REDIS_URL=memory:// CELERY_TASK_ALWAYS_EAGER=True CELERY_TASK_STORE_EAGER_RESULT=False AUTOMATIONS_RUN_INLINE=True .venv/bin/python manage.py test apps.businesses.tests_demo_seed -v 2
+DATABASE_URL=sqlite:///db.sqlite3 SECURE_SSL_REDIRECT=False SESSION_COOKIE_SECURE=False CSRF_COOKIE_SECURE=False REDIS_URL=memory:// CELERY_TASK_ALWAYS_EAGER=True CELERY_TASK_STORE_EAGER_RESULT=False AUTOMATIONS_RUN_INLINE=True .venv/bin/python manage.py pilot_launch_quality_gate
+SKIP_FRONTEND_BUILD=true DATABASE_URL=sqlite:///db.sqlite3 SECURE_SSL_REDIRECT=False SESSION_COOKIE_SECURE=False CSRF_COOKIE_SECURE=False REDIS_URL=memory:// CELERY_TASK_ALWAYS_EAGER=True CELERY_TASK_STORE_EAGER_RESULT=False AUTOMATIONS_RUN_INLINE=True ./scripts/pilot_smoke_check.sh
+cd frontend && npm run build
+```
+
+### Auth additions: Google / Apple sign-in
+
+Статус: **готово как кодовая основа**.
+
+Добавлено:
+
+- `POST /api/auth/social/` для входа и регистрации через Google / Apple identity token.
+- `SocialIdentity` связывает локального пользователя с `provider + subject`.
+- Backend проверяет provider token через JWKS, `aud`, `iss`, `sub`, `exp`, `iat`.
+- Новые social users создаются как `business_owner` и получают trial workspace, если включён `SOCIAL_AUTH_AUTO_CREATE_MERCHANT=True`.
+- Login page получила кнопки Google и Apple.
+- Env templates расширены:
+  - `GOOGLE_OAUTH_CLIENT_IDS`;
+  - `APPLE_OAUTH_CLIENT_IDS`;
+  - `SOCIAL_AUTH_AUTO_CREATE_MERCHANT`;
+  - `AUTH_SOCIAL_RATE`;
+  - `VITE_GOOGLE_CLIENT_ID`;
+  - `VITE_APPLE_CLIENT_ID`.
+- Документация: `docs/social-auth.md`.
+
+Для реального продакшн-входа нужно создать OAuth clients в Google Cloud Console и Apple Developer, затем прописать client IDs в backend/frontend env.
+
+### Registration, invitations and password recovery
+
+Статус: **готово как pilot foundation**.
+
+Добавлено:
+
+- `POST /api/auth/signup/owner/` — короткая регистрация директора: создаёт `business_owner`, trial `Business`, default roles, default pipeline и owner membership.
+- `/signup` — компактная карточка регистрации компании без длинного onboarding.
+- `BusinessInvitation` — приглашение сотрудника в существующий бизнес.
+- `GET /api/team/invitations/preview/{token}/` — публичный preview приглашения.
+- `POST /api/team/invitations/accept/` — сотрудник принимает приглашение и задаёт пароль.
+- `POST /api/team/invitations/` и `POST /api/team/invitations/{id}/revoke/` — управление приглашениями из `Settings -> Команда и доступы`.
+- Поддержаны каналы приглашения:
+  - email;
+  - WhatsApp;
+  - Telegram;
+  - ручное копирование ссылки.
+- На MVP каналы формируют готовую ссылку/сообщение для отправки; реальные mail/WhatsApp/Telegram providers подключаются отдельным интеграционным этапом.
+- `POST /api/auth/password-reset/request/` и `POST /api/auth/password-reset/confirm/` — foundation восстановления пароля.
+- `/forgot-password` и `/reset-password/:uid/:token` — frontend flow восстановления пароля.
+
+Бизнес-логика:
+
+- Директор регистрируется без приглашения и создаёт компанию.
+- Сотрудники не создают компанию сами: владелец/админ отправляет приглашение из команды, сотрудник задаёт пароль по одноразовой ссылке.
+- `owner` нельзя выдать обычным приглашением; передача владения должна быть отдельным явным сценарием.
+
+Проверки:
+
+```bash
+.venv/bin/python manage.py makemigrations --check --dry-run
+.venv/bin/python manage.py check
+.venv/bin/python manage.py test
+cd frontend && npm run build
+```
+
+### Calendar / Working Hours UX cleanup
+
+Статус: **готово**.
+
+Исправлено:
+
+- Календарь после создания записи автоматически переключается на дату новой записи, чтобы мерч сразу видел результат.
+- Если график работы не настроен, календарь предлагает быстрый салонный график `09:00-20:00` каждый день.
+- Форма записи стала логичнее для салона/парикмахерской:
+  - ресурс называется `Мастер / ресурс`;
+  - если мастера заведены, выбор мастера обязателен;
+  - неактивные ресурсы не предлагаются для записи.
+- Страница ресурсов объясняет, что ресурс для салона — это мастер, барбер, кресло или рабочее место.
+- Страница графика работы теперь настраивает всю неделю одним экраном:
+  - общий график бизнеса;
+  - отдельный график конкретного мастера/ресурса;
+  - пресеты `Салон 09:00-20:00 каждый день` и `Офис Пн-Пт 09:00-18:00`.
+- Backend дополнительно запрещает дубли графика на один и тот же `business/resource/weekday`, включая общий график бизнеса.
+- E2E smoke добавлен для реального сценария мерча: owner login → calendar → create appointment through UI.
+
+Проверки:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test apps.scheduling.tests --verbosity=1
+DATABASE_URL=sqlite:///db.sqlite3 \
+SECURE_SSL_REDIRECT=False \
+SESSION_COOKIE_SECURE=False \
+CSRF_COOKIE_SECURE=False \
+REDIS_URL=memory:// \
+CELERY_TASK_ALWAYS_EAGER=True \
+CELERY_TASK_STORE_EAGER_RESULT=False \
+AUTOMATIONS_RUN_INLINE=True \
+.venv/bin/python manage.py test --verbosity=1
+cd frontend && npm run build
+cd frontend && E2E_SKIP_LOCAL_SETUP=true E2E_API_BASE_URL=http://127.0.0.1:8000 npm run e2e -- --project=desktop-chromium
+```
+
+### Corrected Pilot/Core Roadmap — Task 1: Route / Navigation / Broken Flow Audit
+
+Статус: **готово**.
+
+Исправлено:
+
+- Добавлен canonical merchant route alias:
+  - `/dashboard/ai` → `/dashboard/ai-assistant`
+- Глобальный поиск теперь ведёт в canonical dashboard routes:
+  - `/dashboard/clients`
+  - `/dashboard/leads`
+  - `/dashboard/appointments`
+  - `/dashboard/deals`
+  - `/dashboard/tasks`
+- Добавлена Platform Merchant detail/support страница:
+  - `/platform/merchants/:id`
+- Список merchants в Platform Admin теперь ведёт в detail/support view, а не оставляет support workflow без действия.
+- Platform detail показывает:
+  - owner snapshot;
+  - landing context;
+  - CRM operations;
+  - data sources;
+  - pilot health;
+  - support workflow;
+  - recent support actions;
+  - форму записи support action.
+- E2E smoke расширен route-аудитом:
+  - merchant core routes;
+  - public routes;
+  - platform routes;
+  - platform merchant detail.
+- Локальный Playwright webServer поднимает высокий `AUTH_LOGIN_RATE/AUTH_REFRESH_RATE`, чтобы smoke-аудит роутов не упирался в auth throttle. Production throttling не менялось.
+
+Проверки:
+
+```bash
+cd frontend && npm run build
+cd frontend && npm run e2e -- --project=desktop-chromium
+```
+
+### Pilot Tech Plan — Этап 1: Внешний лендинг → Zani
+
+Статус: **готово**.
+
+Добавлено:
+
+- `Lead.Sources.LANDING` для заявок из внешних лендингов.
+- `LeadForm.landing_id`, `landing_domain`, `preview_url` для связи внешнего лендинга с конкретным бизнесом.
+- `LeadFormSubmission` теперь хранит `landing_id`, `page_url`, `page_domain`, `source_context_json`, UTM, IP и user-agent.
+- `LeadFormSubmissionError` фиксирует ошибки публичных отправок формы.
+- Public submit endpoint продолжает работать через:
+  - `POST /api/public/forms/<public_id>/submit/`
+- Защита public endpoint:
+  - `public_form` throttle;
+  - required-field validation;
+  - basic honeypot fields.
+- Документация для внешнего лендинга:
+  - `docs/public-lead-capture.md`.
+
+Проверки:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py makemigrations --check --dry-run
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 \
+SECURE_SSL_REDIRECT=False \
+SESSION_COOKIE_SECURE=False \
+CSRF_COOKIE_SECURE=False \
+REDIS_URL=memory:// \
+CELERY_TASK_ALWAYS_EAGER=True \
+CELERY_TASK_STORE_EAGER_RESULT=False \
+AUTOMATIONS_RUN_INLINE=True \
+.venv/bin/python manage.py test
+cd frontend && npm run build
+```
+
+### Pilot Tech Plan — Этап 2: Активация кабинета после лендинга
+
+Статус: **готово**.
+
+Добавлено:
+
+- Platform-only endpoint:
+  - `POST /api/platform/activate-landing/`
+- Activation service:
+  - `apps.businesses.activation.activate_landing_business(...)`
+- `Business` теперь хранит:
+  - `landing_id`;
+  - `landing_domain`;
+  - `landing_preview_url`.
+- Активация создаёт или обновляет:
+  - owner user с `role=business_owner`;
+  - `Business` в статусе `trial`;
+  - owner membership;
+  - default RBAC roles;
+  - CRM Light pipeline;
+  - default landing lead form и `public_id`;
+  - trial subscription на 30 дней.
+- Операция идемпотентна по `landing_id`.
+- Документация:
+  - `docs/landing-activation.md`.
+
+Проверки:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py makemigrations --check --dry-run
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 \
+SECURE_SSL_REDIRECT=False \
+SESSION_COOKIE_SECURE=False \
+CSRF_COOKIE_SECURE=False \
+REDIS_URL=memory:// \
+CELERY_TASK_ALWAYS_EAGER=True \
+CELERY_TASK_STORE_EAGER_RESULT=False \
+AUTOMATIONS_RUN_INLINE=True \
+.venv/bin/python manage.py test
+cd frontend && npm run build
+```
+
+### Pilot Tech Plan — Этап 3: Первый экран после активации
+
+Статус: **готово**.
+
+Добавлено:
+
+- Dashboard для нового владельца с активированным лендингом больше не показывает пустую CRM как основной сценарий.
+- Первый экран показывает:
+  - “Ваш лендинг активирован”;
+  - текст про подарочный месяц расширенного доступа;
+  - Business Setup Score;
+  - карточки подключения WhatsApp, AI-бота, сотрудников, услуг, продаж, Excel/CSV, 1C export, МойСклад/склада.
+- Неготовые модули явно помечены статусами:
+  - `подключить`;
+  - `beta`;
+  - `скоро`;
+  - `по заявке`.
+- Owner analytics error теперь не блокирует первый экран: dashboard показывает мягкое предупреждение и продолжает рендерить доступные onboarding-блоки.
+- Добавлен e2e smoke для activated landing owner и first-run dashboard.
+- Frontend `Business` type расширен landing-полями.
+
+Проверки:
+
+```bash
+cd frontend && npm run build
+cd frontend && npm run e2e -- --project=desktop-chromium
+cd frontend && npm run e2e -- --project=mobile-chromium
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 \
+SECURE_SSL_REDIRECT=False \
+SESSION_COOKIE_SECURE=False \
+CSRF_COOKIE_SECURE=False \
+REDIS_URL=memory:// \
+CELERY_TASK_ALWAYS_EAGER=True \
+CELERY_TASK_STORE_EAGER_RESULT=False \
+AUTOMATIONS_RUN_INLINE=True \
+.venv/bin/python manage.py test -v 2
+```
+
+### Pilot Tech Plan — Этап 4: CRM Light для пилота
+
+Статус: **готово**.
+
+Добавлено:
+
+- CRM Light поток для заявок стал ближе к пилотному сценарию:
+  - владелец бизнеса видит все заявки;
+  - менеджер видит и редактирует только назначенные ему заявки;
+  - новая заявка по умолчанию назначается на текущего пользователя, если ответственный не выбран явно.
+- Для `manager` role preset изменены scopes по ключевым CRM-объектам:
+  - `leads`: view/update own, create business;
+  - `deals`: view/update own, create business;
+  - `tasks`: view/update own, create business.
+- В `Lead` API добавлены быстрые actions:
+  - `POST /api/leads/{id}/assign/` — назначить ответственного;
+  - `POST /api/leads/{id}/add-note/` — добавить комментарий к заявке.
+- Назначение ответственного валидируется по активному `BusinessMember` текущего бизнеса.
+- Назначение и комментарии пишут audit/activity history.
+- Форма заявки на фронте поддерживает выбор ответственного из команды бизнеса.
+- CRM карточка получила быстрые действия:
+  - добавить комментарий;
+  - создать связанную задачу.
+- Smoke-сценарий frontend теперь проверяет CRM карточку: открытие заявки, комментарий, создание задачи.
+
+Важно:
+
+- Для новых бизнесов актуальные permissions применяются автоматически через default role presets.
+- Для уже существующих production/staging бизнесов с сохранёнными `BusinessRole` может понадобиться отдельный sync ролей, чтобы новый own-scope для менеджеров применился к старым данным.
+
+Проверки:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 \
+SECURE_SSL_REDIRECT=False \
+SESSION_COOKIE_SECURE=False \
+CSRF_COOKIE_SECURE=False \
+REDIS_URL=memory:// \
+CELERY_TASK_ALWAYS_EAGER=True \
+CELERY_TASK_STORE_EAGER_RESULT=False \
+AUTOMATIONS_RUN_INLINE=True \
+.venv/bin/python manage.py test apps.leads.tests_crm_light apps.tasks.tests apps.clients.tests apps.businesses.tests_access -v 2
+
+cd frontend && npm run build
+cd frontend && npm run e2e -- --project=desktop-chromium
+cd frontend && npm run e2e -- --project=mobile-chromium
+
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py makemigrations --check --dry-run
+
+DATABASE_URL=sqlite:///db.sqlite3 \
+SECURE_SSL_REDIRECT=False \
+SESSION_COOKIE_SECURE=False \
+CSRF_COOKIE_SECURE=False \
+REDIS_URL=memory:// \
+CELERY_TASK_ALWAYS_EAGER=True \
+CELERY_TASK_STORE_EAGER_RESULT=False \
+AUTOMATIONS_RUN_INLINE=True \
+.venv/bin/python manage.py test -v 2
+```
+
+### Pilot Tech Plan — Этап 5: Источники данных: Excel/CSV и ручной ввод
+
+Статус: **готово**.
+
+Добавлено:
+
+- `ImportJob` теперь поддерживает новые типы импорта:
+  - `sales` — продажи/выручка;
+  - `catalog` — каталог услуг и товаров.
+- `ImportJob.errors_json` хранит построчные ошибки предпросмотра, чтобы плохой файл не попадал в confirm-импорт.
+- CSV/XLSX import flow расширен:
+  - preview с авто-маппингом колонок;
+  - row validation;
+  - confirm только для валидных файлов.
+- Новые endpoint'ы:
+  - `GET /api/import-templates/<entity_type>/` — скачать пример CSV для `clients`, `sales`, `catalog`;
+  - `POST /api/import-jobs/` — загрузить CSV/XLSX для preview;
+  - `POST /api/import-jobs/{id}/confirm/` — подтвердить импорт;
+  - `POST /api/data/sales/` — ручной ввод продажи;
+  - `POST /api/data/catalog-items/` — ручной ввод позиции каталога.
+- Продажи сохраняются как `BusinessEvent(event_type="sale.recorded")` и учитываются в owner dashboard revenue.
+- Каталог сохраняется как `BusinessEvent(event_type="catalog.item_imported" / "catalog.item_created")`.
+- Строки каталога с `item_type=service` создают или обновляют CRM `Service`.
+- Owner dashboard показывает:
+  - revenue по импортированным/ручным продажам;
+  - `sales_events_count`;
+  - `data_quality` с рекомендацией подключить продажи, если данных ещё нет.
+- В Settings добавлен рабочий UI-блок для источников данных:
+  - выбор сущности импорта;
+  - загрузка CSV/XLSX;
+  - скачивание шаблона;
+  - предпросмотр маппинга;
+  - отображение ошибок строк;
+  - экспорт `clients`, `leads`, `deals`, `sales`, `catalog`;
+  - ручной ввод продажи;
+  - ручной ввод услуги/товара.
+- Документация:
+  - `docs/data-imports.md`.
+
+Важно:
+
+- Полноценная модель товаров/остатков пока не вводилась: `product` строки каталога сохраняются как business events для будущего inventory/storage слоя.
+- Реальные 1C/МойСклад connectors на этом этапе не подключались.
+- Ручной ввод продаж/каталога использует permission scope `integrations.manage`; для старых кастомных ролей может понадобиться sync role presets.
+
+Проверки:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py makemigrations core
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py migrate
+
+DATABASE_URL=sqlite:///db.sqlite3 \
+SECURE_SSL_REDIRECT=False \
+SESSION_COOKIE_SECURE=False \
+CSRF_COOKIE_SECURE=False \
+REDIS_URL=memory:// \
+CELERY_TASK_ALWAYS_EAGER=True \
+CELERY_TASK_STORE_EAGER_RESULT=False \
+AUTOMATIONS_RUN_INLINE=True \
+.venv/bin/python manage.py test apps.core.tests_import_export apps.analytics.tests -v 2
+
+cd frontend && npm run build
+
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py makemigrations --check --dry-run
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+
+DATABASE_URL=sqlite:///db.sqlite3 \
+SECURE_SSL_REDIRECT=False \
+SESSION_COOKIE_SECURE=False \
+CSRF_COOKIE_SECURE=False \
+REDIS_URL=memory:// \
+CELERY_TASK_ALWAYS_EAGER=True \
+CELERY_TASK_STORE_EAGER_RESULT=False \
+AUTOMATIONS_RUN_INLINE=True \
+.venv/bin/python manage.py test -v 2
+
+cd frontend && npm run e2e -- --project=desktop-chromium
+cd frontend && npm run e2e -- --project=mobile-chromium
+```
 
 ### Phase 1 — Production Readiness Baseline
 
@@ -3576,10 +4256,17 @@ Lead Forms:
 Smoke проверяет:
 
 - health/readiness endpoints;
+- CORS preflight from deployed frontend origin;
 - platform admin login and `/api/platform/ping/`;
 - merchant owner login and core merchant API;
-- frontend root response.
+- frontend root response and `/login` SPA rewrite response.
 - deployed browser smoke for platform, owner, operator and mobile flows.
+
+Latest Render staging execution report:
+
+```text
+docs/staging-render-execution-report.md
+```
 
 Пример запуска:
 
@@ -3775,3 +4462,1159 @@ Manual smoke:
 1. Production infrastructure baseline.
 2. Object storage and file safety foundation.
 3. Final regression pass.
+
+
+### Block 8 — Pilot smoke demo merchant
+
+Added `python manage.py seed_pilot_demo --reset` to create a full demo merchant for local/staging pilot smoke checks: activation, CRM Light, leads, sales events, dashboard pulse, inbox handoff, AI task, notification and quick replies. See `docs/block8-pilot-smoke-demo.md`.
+
+### Pilot Tech Plan — Block 10: Clean Pilot Package / Production Readiness
+
+Status: **готово**.
+
+Добавлено:
+
+- `scripts/pilot_smoke_check.sh` — единая локальная smoke-проверка пилотного пакета.
+- Усилен `scripts/make_clean_archive.sh`: архив исключает `.venv`, `node_modules`, build outputs, local DB, logs, reports, cache files, media/static outputs and nested zip files.
+- `docs/block10-clean-pilot-package.md` — runbook пилотного пакета, команды запуска, demo path, readiness criteria.
+- `docs/block11-pilot-smoke-cleanup.md` — ускоренный smoke-check: один backend test pack, idempotent demo seed reset, optional frontend build.
+- `docs/pilot-safe-promises.md` — границы обещаний для маркетинга/пилота.
+
+Проверка:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+./scripts/pilot_smoke_check.sh
+./scripts/make_clean_archive.sh zani-pilot-clean.zip
+```
+
+Важно: billing/trial/tariff limits и Pilot QA polish сознательно перенесены на следующие этапы.
+
+### Block 12 — Pilot Operations / Internal Control Panel
+
+Internal platform views now show pilot operations health: attention merchants, form errors, handoff conversations, failed connectors, per-merchant health score, blockers, next action, latest activity and operational counts. This helps control the first 10–50 pilot merchants without adding billing or external production integrations. See `docs/block12-platform-operations-panel.md`.
+
+### Block 14 — Pilot Demo Launch
+
+Prepare a full demo launch pack with one command:
+
+```bash
+python manage.py prepare_pilot_demo --reset
+```
+
+Default logins:
+
+- Platform admin: `platform@zani.local / Platform123!`
+- Demo owner: `demo-owner@zani.local / DemoOwner123!`
+- Demo manager: `demo-manager@zani.local / DemoManager123!`
+
+See `docs/block14-pilot-demo-launch.md`.
+
+---
+
+## Local run without Docker
+
+Some Mac machines cannot run Docker Desktop because of CPU/virtualization compatibility. Zani can still be checked locally without Docker by using SQLite fallback for development checks.
+
+### One-command local backend setup
+
+```bash
+./scripts/setup_local_without_docker.sh
+```
+
+This script:
+- creates `.venv` if needed;
+- installs Python dependencies;
+- creates `.env` from `.env.local.example` if `.env` does not exist;
+- uses local SQLite (`db.sqlite3`) for smoke checks;
+- runs migrations and `manage.py check`.
+
+### Run backend
+
+```bash
+source .venv/bin/activate
+python manage.py runserver 0.0.0.0:8000
+```
+
+### Run frontend
+
+```bash
+cd frontend
+npm ci
+npm run dev
+```
+
+### Run full local checks without Docker
+
+```bash
+./scripts/check_local_without_docker.sh
+```
+
+This runs:
+- migrations check;
+- Django system check;
+- backend tests;
+- frontend production build;
+- widget build.
+
+### Production/staging note
+
+SQLite mode is only for local smoke checks. Production/staging must use PostgreSQL through `DATABASE_URL`.
+
+---
+
+## Corrected Pilot/Core Roadmap Progress
+
+### Task 1 — Route / Navigation / Broken Flow Audit
+
+- Canonical merchant routes live under `/dashboard/*`; legacy `/clients`, `/leads`, `/appointments`, `/deals`, `/tasks`, `/ai` routes now remain safe.
+- Global search results now open canonical dashboard pages.
+- Platform merchants list links to `/platform/merchants/:id`.
+- Added platform merchant support/detail placeholder with merchant health, operations, landing context and support action logging.
+- Playwright route smoke tests cover merchant, public and platform routes.
+
+Checks:
+
+```bash
+cd frontend && npm run build
+cd frontend && npm run e2e -- --project=desktop-chromium
+```
+
+### Task 2 — Calendar / Appointments / Tasks Flow Completion
+
+- Calendar now has day/week/month views without heavy drag-and-drop.
+- Calendar appointments can be opened, linked to client/lead context and updated with quick statuses.
+- Appointments table has quick status actions in addition to edit/archive.
+- Tasks quick-create now supports client, lead, deal and appointment links.
+- Task cards expose linked CRM objects as clickable dashboard links and show user-friendly create errors.
+
+Check:
+
+```bash
+cd frontend && npm run build
+```
+
+### Task 3 — Pilot Demo Data / Onboarding / Readiness Checklist
+
+- Pilot readiness statuses are normalized to `ready`, `needs_attention`, `missing`.
+- Readiness checklist now includes CRM configured and working-hours checks.
+- AI Assistant readiness links to `/dashboard/ai-assistant`.
+- Onboarding demo-data flow is covered for deal/task/appointment linkage.
+- `seed_pilot_demo` now runs the onboarding demo-data flow so demo merchants include a connected CRM/calendar/task scenario.
+
+Required QA gate before Task 4:
+
+```bash
+python manage.py check
+python manage.py test apps.scheduling apps.tasks apps.onboarding apps.core --verbosity=1
+cd frontend && npm run build
+```
+
+### Task 4 — Connector UX Layer Without Exposing API
+
+- Merchant-facing `/dashboard/integrations` now shows business statuses (`available`, `connected`, `setup_required`, `pending_request`, `coming_soon`, `unavailable_on_plan`, `error`, `disconnected`) instead of raw backend/debug states.
+- CRM UI no longer exposes API tokens, webhook secrets, access tokens, provider internals or health-check controls.
+- Request connectors create safe internal connector records without enabling real external APIs.
+- Connected connectors explain business impact: CRM, Inbox, analytics and automations.
+
+Check:
+
+```bash
+cd frontend && npm run build
+```
+
+### Task 5 — Excel/CSV Real Data Connector MVP
+
+- Excel/CSV import flow is now available directly inside `/dashboard/integrations`.
+- Supported pilot import types: clients, leads, sales, products/services/stock via catalog.
+- Upload flow shows preview, column mapping, duplicate count, row errors and import history.
+- Leads import now creates real `Client` + `Lead` records.
+- Sales and catalog imports continue writing scoped `BusinessEvent` records; service rows can create/update `Service`.
+
+Checks:
+
+```bash
+python manage.py test apps.core.tests_import_export --verbosity=1
+cd frontend && npm run build
+```
+
+### Task 6 — Website Chat E2E + Inbox Consistency
+
+- `/dashboard/integrations` now has a dedicated Website Chat panel with channel status, public widget token, install snippet, test visitor message and link to Inbox.
+- Website Chat setup is merchant-facing: it exposes only the public widget token/snippet and keeps provider secrets out of CRM UI.
+- The panel documents the source of truth: channel Inbox uses `BotConversation` and `BotMessage`; legacy `Conversation`/`Message` remains untouched.
+- Added an end-to-end backend test for public website chat → client/lead/message creation → Inbox visibility → manager reply → unread/read state.
+- Frontend widget bundle is verified by build output at `frontend/dist/widget/zani-widget.js`.
+
+Checks:
+
+```bash
+python manage.py test apps.bots --verbosity=1
+cd frontend && npm run build
+```
+
+### Task 7 — Telegram Connector Ready MVP
+
+- `/dashboard/integrations` now includes a Telegram beta wizard with BotFather instructions, password token input, webhook URL and status visibility.
+- Telegram bot token/webhook secret are accepted only through password fields and are masked in `BotChannel` API responses after saving.
+- Added controlled `telegram-test-connection` endpoint: real `getMe` when `TELEGRAM_ENABLED=true`, safe mock result in dev/staging.
+- Existing Telegram webhook/provider path remains compatible and inbound updates continue creating `BotConversation` + `BotMessage` for Inbox.
+- Added tests for masked token response and controlled mock token validation.
+
+Checks:
+
+```bash
+python manage.py test apps.integrations apps.bots --verbosity=1
+cd frontend && npm run build
+```
+
+### Task 8 — WhatsApp / Instagram Request-Ready Connectors
+
+- `/dashboard/integrations` now includes explicit WhatsApp and Instagram request forms instead of pretending that Meta APIs connect automatically.
+- WhatsApp request captures company, phone, contact, preferred connection type and comment.
+- Instagram request captures username, optional Facebook Page, contact and comment; the UI never asks for an Instagram password.
+- Request submissions create/update `BusinessConnector` records in `needs_attention` / `pending_request` state so Platform support can see them.
+- Added provider adapter placeholders for WhatsApp Meta/Twilio/360dialog/QR pilot and Instagram Meta.
+- Platform merchant detail now displays pending connector requests alongside connected/failed connectors.
+
+Checks:
+
+```bash
+python manage.py test apps.integrations --verbosity=1
+cd frontend && npm run build
+```
+
+### Task 9 — Kaspi / 1C / MoySklad / Marketplace Lightweight Connector Foundation
+
+- `/dashboard/integrations` now includes a lightweight data connector panel for Kaspi, 1C, МойСклад, Wildberries, Ozon and Яндекс.Маркет.
+- Each connector has a safe request/update flow and clear copy: read-only/request/import foundation only, no realtime ERP, write-back, accounting or repricing.
+- Existing requested connectors can write mock `BusinessEvent` records for future sync event types such as `order_imported`, `product_imported`, `stock_level_imported` and `connector_sync_completed`.
+- Kaspi connector request + mock event flow is covered by backend tests.
+- Platform support sees pending connector requests via merchant operations counts.
+
+Checks:
+
+```bash
+python manage.py test apps.integrations --verbosity=1
+cd frontend && npm run build
+```
+
+### Task 10 — Final Core Pilot Regression / Clean Package
+
+- Full backend regression is green: all Django tests pass.
+- Frontend production build is green, including the public Website Chat widget bundle.
+- Playwright smoke regression covers platform login, merchant CRM routes, platform merchant detail, protected route behavior and mobile smoke skip policy.
+- Clean-package check confirmed local generated artifacts are ignored by `.gitignore`: `.venv`, `frontend/node_modules`, `frontend/dist`, `.env` and `db.sqlite3` must stay out of source commits/deploy source.
+- Pilot scope remains honest: connector UIs are request/import-ready foundations; real WhatsApp, Instagram, Kaspi, 1C, marketplace and repricing integrations are intentionally not enabled in this core pilot.
+
+Checks:
+
+```bash
+python manage.py check
+python manage.py test --verbosity=1
+cd frontend && npm run build
+cd frontend && npm run e2e -- --project=desktop-chromium
+```
+
+### Production Hardening Roadmap — Next Phase
+
+- Added the next execution roadmap: `plan/ZANI_PRODUCTION_HARDENING_ROADMAP.md`.
+- The next implementation direction is `Phase H1 — Redis / Celery Runtime On Render`.
+- Restored safe staging/production env templates:
+  - `.env.staging.example`;
+  - `.env.production.example`;
+  - `frontend/.env.staging.example`;
+  - `frontend/.env.production.example`.
+- `.gitignore` now keeps real env files ignored while allowing only these example templates.
+
+Doc-only check:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+cd frontend && npm run build
+```
+
+### Phase H1 — Redis / Celery Runtime On Render
+
+- Added queue runtime smoke command:
+  - `python manage.py queue_runtime_smoke --business-id <business_id> --timeout 45`;
+  - optional cleanup: `--cleanup`.
+- The smoke creates an `AutomationRun`, dispatches `automations.process_automation_run` to the `automations` queue and verifies that a worker creates the expected task.
+- Added env controls for Celery eager mode:
+  - `CELERY_TASK_ALWAYS_EAGER`;
+  - `CELERY_TASK_STORE_EAGER_RESULT`.
+- Production readiness audit now accepts both `redis://` and TLS `rediss://` Redis URLs.
+- Added Render worker setup docs in `docs/celery-render-runtime.md`.
+- Staging/production env templates now include queue runtime flags.
+
+Checks:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py makemigrations --check --dry-run
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test apps.automations apps.core.tests --verbosity=1
+cd frontend && npm run build
+```
+
+### Phase H2 — Object Storage Production Switch
+
+- Added storage runtime smoke command:
+  - `python manage.py storage_runtime_smoke --business-id <business_id>`;
+  - optional cleanup: `--cleanup`.
+- The smoke creates a tiny private `FileAttachment`, writes it through the active Django storage backend and verifies the object exists.
+- Documented business-scoped private object keys:
+  - `private/attachments/business-{business_id}/{filename}`.
+- Updated `docs/file-storage.md` with S3-compatible provider setup, smoke checks and production cutover checklist.
+- Staging/production env templates already include S3-compatible storage variables.
+
+Checks:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py makemigrations --check --dry-run
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test apps.core.tests_storage_runtime apps.core.tests_file_attachments --verbosity=1
+```
+
+### Phase H3 — Sentry / Error Monitoring
+
+- Added observability runtime check command:
+  - `python manage.py observability_runtime_check`;
+  - `python manage.py observability_runtime_check --fail-on-missing`;
+  - `python manage.py observability_runtime_check --capture-test-message`.
+- The command verifies environment/release, Sentry configuration and can send a safe smoke message without merchant/customer payload.
+- Backend Sentry setup uses `send_default_pii=False`.
+- Added `docs/observability.md`.
+- Added Render smoke script:
+  - `scripts/render_h3_observability_smoke.sh`;
+  - optional event capture: `CAPTURE_SENTRY_SMOKE=true scripts/render_h3_observability_smoke.sh`.
+- Staging/production runtime check now requires a real `RELEASE` value instead of `local`.
+- Sentry smoke events use safe tags and do not include merchant/customer payloads.
+
+Checks:
+
+```bash
+bash -n scripts/render_h3_observability_smoke.sh
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py makemigrations --check --dry-run
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test apps.core.tests_observability apps.core.tests_production_audit --verbosity=1
+```
+
+### Phase H4 — Transactional Email
+
+- Added provider-neutral email helper in `apps.notifications.email`.
+- Added email runtime smoke command:
+  - `python manage.py email_runtime_smoke`;
+  - `python manage.py email_runtime_smoke --fail-on-missing`;
+  - `python manage.py email_runtime_smoke --send --to owner@example.com`.
+- Added Render smoke script:
+  - `scripts/render_h4_email_smoke.sh`;
+  - optional real smoke email: `SEND_EMAIL_SMOKE=true EMAIL_SMOKE_TO=owner@example.com scripts/render_h4_email_smoke.sh`.
+- The Render script rejects staging/production deploys that still use local/mock email backends.
+- The smoke email contains no merchant/customer data.
+- Added `docs/transactional-email.md`.
+
+Checks:
+
+```bash
+bash -n scripts/render_h4_email_smoke.sh
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py makemigrations --check --dry-run
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test apps.notifications.tests_email apps.core.tests_production_audit --verbosity=1
+```
+
+### Phase H5 — Backup / Restore Drill
+
+- Added backup readiness service and command:
+  - `python manage.py backup_restore_readiness_check`;
+  - `python manage.py backup_restore_readiness_check --format=json`;
+  - `python manage.py backup_restore_readiness_check --fail-on-blockers`.
+- Added Render/CI gate:
+  - `scripts/render_h5_backup_readiness.sh`.
+- The command verifies paid-beta backup prerequisites: managed PostgreSQL, object storage, bucket config and explicit environment naming.
+- Updated `docs/backup-restore.md` with readiness checks and incident communication template.
+- H5 remains environment-dependent until a real restore is rehearsed into a separate staging database and RTO/RPO is recorded.
+
+Checks:
+
+```bash
+bash -n scripts/render_h5_backup_readiness.sh
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py makemigrations --check --dry-run
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test apps.core.tests_backup_readiness --verbosity=1
+```
+
+### Phase H6 — Load / Scale Baseline
+
+- Added dependency-free API load smoke script:
+  - `python scripts/api_load_smoke.py --api-base-url <url> --email <email> --password <password> --iterations 5`.
+- The script logs in and measures auth/me, businesses, clients, leads, deals, tasks, appointments, inbox, integrations and billing usage summary.
+- Output is JSON with min/avg/p95/max per endpoint, timestamps and total request count.
+- Added output-file support for preserving baseline artifacts.
+- Added Render/staging wrapper:
+  - `scripts/render_h6_load_baseline.sh`.
+- Updated `docs/e2e-scale-baseline.md` with staging examples, first p95 threshold guidance, a risk register and measurement log template.
+
+Checks:
+
+```bash
+chmod +x scripts/render_h6_load_baseline.sh
+bash -n scripts/render_h6_load_baseline.sh
+python -m py_compile scripts/api_load_smoke.py
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test apps.core.tests_api_load_smoke --verbosity=1
+cd frontend && npm run build
+```
+
+### Phase H7 — Provider Rollout Sequence
+
+- Added provider rollout readiness service:
+  - `apps.integrations.provider_rollout`.
+- Added provider rollout command:
+  - `python manage.py provider_rollout_readiness_check`;
+  - `python manage.py provider_rollout_readiness_check --provider telegram --fail-on-blockers`;
+  - `python manage.py provider_rollout_readiness_check --format=json`.
+- The command checks the approved rollout order:
+  - Telegram real webhook;
+  - Website widget/public forms;
+  - transactional email;
+  - OpenRouter/OpenAI behind queue and usage limits;
+  - WhatsApp pilot;
+  - Instagram/Meta pilot;
+  - Kaspi/marketplace/1C later.
+- Telegram real mode is blocked until webhook secret, queue runtime and observability gates pass.
+- WhatsApp and Instagram real env flags are blocked while current adapters are pilot/request-only.
+- Added Render/deploy wrapper:
+  - `scripts/render_h7_provider_rollout_check.sh`;
+  - provider-specific mode: `PROVIDER=telegram scripts/render_h7_provider_rollout_check.sh`.
+- Added docs:
+  - `docs/provider-rollout.md`.
+
+Checks:
+
+```bash
+chmod +x scripts/render_h7_provider_rollout_check.sh
+bash -n scripts/render_h7_provider_rollout_check.sh
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py makemigrations --check --dry-run
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test apps.integrations.tests_provider_rollout --verbosity=1
+```
+
+### Phase H8 — Support / Operations UX
+
+- Added platform-only operations health endpoint:
+  - `GET /api/platform/operations-health/`.
+- Added operations health command:
+  - `python manage.py platform_operations_health_check`;
+  - `python manage.py platform_operations_health_check --format=json`;
+  - `python manage.py platform_operations_health_check --fail-on-critical`.
+- Added Platform Admin page:
+  - `/platform/operations`.
+- The page combines:
+  - queue runtime status;
+  - failed automation runs;
+  - failed integration events;
+  - failed webhook deliveries;
+  - connector request queue;
+  - production readiness blockers;
+  - backup readiness blockers;
+  - provider rollout readiness;
+  - active support grants count.
+- Merchant users cannot access the endpoint/page.
+- Merchant CRM UI remains unchanged; operational complexity stays inside Platform Admin.
+- Added docs:
+  - `docs/platform-operations-health.md`.
+
+Checks:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py makemigrations --check --dry-run
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test apps.core.tests_platform_operations --verbosity=1
+cd frontend && npm run build
+```
+
+### Phase H9 — Paid Beta Gate
+
+- Added paid beta gate service:
+  - `apps.core.paid_beta_gate`.
+- Added command:
+  - `python manage.py paid_beta_gate_check`;
+  - `python manage.py paid_beta_gate_check --format=json`;
+  - `python manage.py paid_beta_gate_check --fail-on-blockers`.
+- The command blocks paid beta until these gates are green:
+  - staging smoke;
+  - browser E2E;
+  - production readiness audit;
+  - Redis/Celery runtime;
+  - object storage;
+  - Sentry;
+  - transactional email;
+  - backup/restore drill;
+  - support grant workflow;
+  - Platform Operations health;
+  - provider rollback/readiness.
+- Added manual confirmation env flags:
+  - `PAID_BETA_STAGING_SMOKE_GREEN`;
+  - `PAID_BETA_BROWSER_E2E_GREEN`;
+  - `PAID_BETA_BACKUP_RESTORE_DRILL_DONE`;
+  - `PAID_BETA_SUPPORT_GRANT_FLOW_TESTED`.
+- Added docs:
+  - `docs/paid-beta-gate.md`.
+
+Checks:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py makemigrations --check --dry-run
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test apps.core.tests_paid_beta_gate apps.core.tests_platform_operations --verbosity=1
+cd frontend && npm run build
+```
+
+### Paid Beta Launch Pack
+
+- Added executable launch check:
+  - `scripts/paid_beta_launch_check.sh`.
+- The script combines the production readiness, backup, observability, email, provider rollout, queue, storage, remote smoke, optional load smoke and final paid-beta gate checks.
+- The script also runs `platform_operations_health_check --fail-on-critical`.
+- Added runbook:
+  - `docs/paid-beta-launch-runbook.md`.
+- The script is intentionally expected to fail in local/demo env until real Redis, object storage, Sentry, SMTP, backup drill and support grant checks are configured.
+
+Syntax check:
+
+```bash
+bash -n scripts/paid_beta_launch_check.sh
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test apps.core.tests_paid_beta_gate --verbosity=1
+```
+
+### Operational Smoke Progress — 2026-05-24
+
+- H1 Redis/Celery queue runtime was verified locally with Redis and a Celery worker:
+  - `scripts/render_h1_queue_smoke.sh` passed for business `#1`;
+  - worker processed the `automations` queue and smoke objects were cleaned up.
+- H2 object storage is the current blocker:
+  - `scripts/render_h2_storage_smoke.sh` stops because `USE_S3=False`;
+  - next step is to configure a private S3-compatible bucket and env values before continuing the paid-beta smoke chain.
+
+### Core-Closure Checkpoint A — Working Hours / Calendar / Appointments
+
+- Added quick working-hours presets for the merchant schedule:
+  - `weekdays_9_18`;
+  - `daily_9_20`;
+  - `mon_sat_9_18`.
+- Added backend endpoint:
+  - `POST /api/working-hours/apply-preset/`.
+- Presets create/update all seven business-level days and are idempotent, so repeated application does not create duplicates.
+- Working hours page now has a quick preset selector and confirmation message.
+- Appointment form now resets stale slot selection when date/service/resource changes.
+- Appointment creation errors from the API are shown inside the modal in human-readable form.
+- Available slots appear after applying a working-hours preset.
+
+Checks:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test apps.scheduling --verbosity=1
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test --verbosity=1
+cd frontend && npm run build
+```
+
+### Final Pilot Frontend Core — Checkpoint A
+
+- Hardened appointment creation UX:
+  - clear prerequisites for clients, services, resources and working hours;
+  - human validation errors instead of silent disabled states;
+  - explicit empty-slots guidance with a link to working-hours setup.
+- Improved calendar pilot UX:
+  - added service/resource filters;
+  - added Today navigation;
+  - added success feedback after appointment creation;
+  - replaced raw appointment status action labels with human-readable actions;
+  - added setup CTAs for missing calendar prerequisites.
+- Polished CRM linkage around Tasks/Deals/Leads:
+  - task related entities now open the CRM drawer directly;
+  - deal creation shows setup blockers when clients or pipeline stages are missing;
+  - leads page safely handles empty or paginated team-member responses.
+
+Checks:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test --verbosity=1
+cd frontend && npm run build
+```
+
+### Final Pilot Frontend Core — Checkpoint B
+
+- Decomposed the large integrations page by extracting the reusable connector card into:
+  - `frontend/src/features/integrations/components/ConnectorCard.tsx`.
+- Cleaned merchant-facing technical noise:
+  - renamed visible token/webhook/mock wording into user-friendly connection language;
+  - hid advanced developer settings behind a collapsed advanced section;
+  - moved raw delivery payload behind an explicit technical details disclosure.
+- Improved connector-ready UX:
+  - kept all connector actions explicit and non-deceptive;
+  - added Google Sheets and Email request-ready items to the data connector foundation;
+  - replaced mock-sync wording with safe demo-import language.
+
+Checks:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test --verbosity=1
+cd frontend && npm run build
+```
+
+### Final Pilot Frontend Core — Checkpoint C
+
+- Improved owner dashboard pilot focus:
+  - added a larger owner revenue cockpit block;
+  - added direct CTAs to Pilot Readiness and data import;
+  - kept operator dashboard focused on assigned operational work.
+- Expanded Pilot Readiness:
+  - added a clearer setup path from business/team to CRM, inbox, AI, import and integrations;
+  - added Excel/CSV import readiness to the backend checklist;
+  - added retry handling and clearer next actions on the frontend readiness page.
+- Removed remaining merchant-facing technical noise from bot/AI screens:
+  - replaced public API, mock, token and webhook wording with safe user-facing connection language;
+  - kept advanced/internal details out of the main merchant flow.
+
+Checks:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test --verbosity=1
+cd frontend && npm run build
+```
+
+### Final Pilot Frontend Core — Final Regression
+
+- Re-ran the full backend/frontend validation after all pilot frontend/core polish work.
+- Browser-checked the main route groups with local running services:
+  - public: `/`, `/pricing`, `/bots`, `/crm`, `/contacts`;
+  - platform: `/platform`, `/platform/merchants`, `/platform/settings`;
+  - merchant: `/dashboard`, `/dashboard/leads`, `/dashboard/deals`, `/dashboard/clients`, `/dashboard/tasks`, `/dashboard/calendar`, `/dashboard/conversations`, `/dashboard/bots`, `/dashboard/integrations`, `/dashboard/analytics`, `/dashboard/settings`, `/dashboard/pilot-readiness`.
+- Verified role routing:
+  - `business_owner@example.com` enters merchant dashboard and is redirected away from `/platform`;
+  - `platform_admin@example.com` enters `/platform` and can open platform routes.
+
+Checks:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test --verbosity=1
+cd frontend && npm run build
+```
+
+### Production Hardening H1 — Redis / Celery Runtime Handoff
+
+- Added a safe Render H1 blueprint example:
+  - `deploy/render.h1.example.yaml`.
+- Added an executable queue runtime smoke wrapper:
+  - `scripts/render_h1_queue_smoke.sh`.
+- Updated Redis/Celery deployment docs:
+  - `docs/celery-render-runtime.md`;
+  - `docs/deployment.md`.
+- Updated staging/production env templates with shared Redis/worker guidance and AI worker concurrency.
+- H1 remains environment-dependent: it becomes green only after a managed Redis URL is configured on Render backend + workers and `scripts/render_h1_queue_smoke.sh` passes.
+
+Checks:
+
+```bash
+bash -n scripts/render_h1_queue_smoke.sh
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test apps.automations.tests_queue_runtime --verbosity=1
+```
+
+### Production Hardening H2 — Object Storage Production Handoff
+
+- Hardened legacy local private media serving:
+  - `/api/files/private/business-<id>/...` now checks tenant access before serving;
+  - paths without a business prefix stay hidden.
+- Added Render object-storage smoke wrapper:
+  - `scripts/render_h2_storage_smoke.sh`.
+- Updated storage/deployment docs:
+  - `docs/file-storage.md`;
+  - `docs/deployment.md`.
+- H2 remains environment-dependent: it becomes green only after private S3-compatible storage is configured and the smoke wrapper passes against staging/production env.
+
+Checks:
+
+```bash
+bash -n scripts/render_h2_storage_smoke.sh
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test apps.core.tests.FileSafetyFoundationTests apps.core.tests_file_attachments apps.core.tests_storage_runtime --verbosity=1
+```
+
+### Core Logic Closure — Checkpoint B
+
+- Tightened cross-entity CRM flows for leads, deals, tasks, clients, appointments and inbox:
+  - dashboard quick lead action opens the lead creation flow via `/dashboard/leads?create=1`;
+  - lead, deal, client, task and appointment pages now understand direct entity query links such as `?lead=`, `?deal=`, `?client=`, `?task=` and `?appointment=`;
+  - inbox linked entity buttons now open the exact linked client/lead/deal instead of only navigating to the generic list page.
+- Preserved existing backend tenant filtering and API behavior; this checkpoint is a UI flow hardening layer over the already-tested backend actions.
+- Verified that existing backend coverage already exercises inbox create/link client, lead, deal, task, website chat lead creation, lead-to-deal and task/entity relations.
+
+Checks:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test apps.leads apps.crm apps.clients apps.tasks apps.conversations --verbosity=1
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test --verbosity=1
+cd frontend && npm run build
+```
+
+### Core Logic Closure — Checkpoint C
+
+- Hardened the integrations pilot surface without adding new external integrations:
+  - Website Chat now explains the business flow and copies the install code without showing the internal widget key on screen;
+  - Telegram setup no longer asks merchants for webhook URL or webhook secret, and no longer shows token-like values back after save;
+  - connector cards keep WhatsApp, Instagram, Kaspi, 1C, MoySklad and import states as clear request/readiness flows instead of dead technical placeholders.
+- Preserved the existing backend connector APIs and tenant isolation; this checkpoint is a merchant-facing safety and route sanity pass over the current integrations layer.
+- Verified that the core app still passes full backend tests and frontend production build after the integrations cleanup.
+
+Checks:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test --verbosity=1
+cd frontend && npm run build
+```
+
+### Core Logic Closure — Final Report
+
+- Closed the technical pilot core pass across scheduling, CRM cross-flows, inbox handoff, integrations safety and pilot readiness:
+  - working hours presets make calendar readiness understandable and repeatable;
+  - appointment creation now resets stale slot state and surfaces backend validation in a human-readable way;
+  - lead, deal, task, client, appointment and inbox links open the exact CRM entity via query-driven routes;
+  - integrations keep merchant-facing setup flows clear while hiding internal API keys, raw tokens, webhook URLs and webhook secrets from the main UI.
+- Manual scenario coverage represented by existing route/API coverage and production build:
+  - platform admin and merchant role routing;
+  - working hours preset and available-slot scheduling logic;
+  - lead creation, lead-to-deal, task/entity relations and inbox linking;
+  - integrations page, Website Chat, Telegram setup, connector request flows and pilot readiness state.
+- Remaining backlog for a later phase:
+  - real provider activation for WhatsApp, Instagram, Telegram production webhooks, Kaspi, 1C and MoySklad;
+  - deeper browser-based E2E automation for the full merchant journey;
+  - final UI/UX polish after the core business logic remains stable.
+
+Final checks:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test --verbosity=1
+cd frontend && npm run build
+```
+
+Status: the technical pilot core can be treated as closed when paired with the documented environment setup and demo data.
+
+### Hardening Pass — Recommendations 2-9
+
+- Expanded Playwright smoke coverage from route-only checks into a real merchant core flow:
+  - working-hours preset;
+  - client, service and resource creation;
+  - available-slot lookup;
+  - appointment creation;
+  - lead creation;
+  - lead-to-deal conversion;
+  - related task creation.
+- Added a direct-object tenant isolation E2E smoke:
+  - an owner/operator from one merchant cannot read another merchant's client object by direct API URL.
+- Made E2E auth more stable:
+  - tests bootstrap JWT tokens through the API and cache them per Playwright run;
+  - this avoids false failures from local/staging auth throttles while still testing protected routes and permissions.
+- Hardened Render/deploy documentation:
+  - documented the two-service Render setup for backend Docker service + frontend static site;
+  - documented frontend rewrites, `VITE_API_URL`, backend CORS/CSRF env and common Render/Supabase mistakes.
+- Hardened staging smoke:
+  - `scripts/staging_smoke.sh` now verifies that the CORS preflight returns the exact `Access-Control-Allow-Origin` for the frontend origin.
+- Added monitoring runbook:
+  - `docs/monitoring-runbook.md` covers uptime checks, Sentry, platform operations health, smoke commands and alert triggers.
+- Reconfirmed role/permission, tenant isolation, storage and observability foundations through targeted backend tests.
+
+Checks:
+
+```bash
+bash -n scripts/staging_smoke.sh
+bash -n scripts/render_h2_storage_smoke.sh
+bash -n scripts/render_h3_observability_smoke.sh
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test apps.businesses.tests_access apps.core.tests_security apps.core.tests_storage_runtime apps.core.tests_observability apps.core.tests_platform_operations --verbosity=1
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test --verbosity=1
+cd frontend && npm run build
+cd frontend && npm run e2e
+```
+
+Latest results:
+
+```text
+Backend check: OK
+Targeted backend hardening tests: 28 OK
+Full backend tests: 266 OK
+Frontend production build: OK
+Playwright E2E: 15 passed, 7 intentional desktop/mobile skips
+```
+
+Local production readiness audit is intentionally not green while running with local SQLite, DEBUG and local media. Staging/production must use the documented Render/Supabase/Sentry/storage env before it can be treated as production-ready.
+
+### Tenant Boundary Hardening — Scheduling Catalog
+
+- Added explicit permission coverage for scheduling/catalog entities that previously relied mostly on business-level filtering:
+  - `Service`;
+  - `Resource`;
+  - `WorkingHours`.
+- Preserved tenant isolation for owners across core CRM entities:
+  - clients, services, resources, working hours, leads, pipelines, stages, deals, appointments and tasks;
+  - direct foreign object URLs return forbidden/not found instead of leaking another merchant's data.
+- Made catalog access action-aware:
+  - managers can read services/resources/working hours when they have appointment visibility;
+  - services/resources/working-hours mutations require settings update permission;
+  - business operators without appointments/settings scope do not see or mutate scheduling catalogs.
+- Stabilized paginated tenant-scoped querysets by applying model ordering after permission scoping.
+
+Checks:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test apps.core.tests_tenant_isolation --verbosity=1
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test apps.core.tests apps.businesses.tests_access apps.services apps.scheduling apps.core.tests_tenant_isolation --verbosity=1
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test --verbosity=1
+cd frontend && npm run build
+cd frontend && npm run e2e
+```
+
+Latest results:
+
+```text
+Tenant boundary tests: 4 OK
+Targeted backend regression tests: 44 OK
+Backend check: OK
+Full backend tests: 270 OK
+Frontend production build: OK
+Playwright E2E: 15 passed, 7 intentional desktop/mobile skips
+```
+
+### Tenant Permission Map Hardening — Sensitive Models
+
+- Extended the tenant permission map beyond the scheduling catalog:
+  - bot and bot-channel setup now belongs to integrations permissions;
+  - AI request logs belong to analytics permissions;
+  - AI knowledge and agent profile configuration belongs to settings permissions;
+  - notifications belong to notification-center permissions;
+  - notes belong to client permissions.
+- Added a regression test that fails if these sensitive tenant models lose their explicit permission resource mapping.
+- Re-ran the full backend and frontend smoke suite after the stricter mapping.
+
+Checks:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test apps.core.tests_tenant_isolation --verbosity=1
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test --verbosity=1
+cd frontend && npm run build
+cd frontend && npm run e2e
+```
+
+Latest results:
+
+```text
+Tenant boundary/map tests: 5 OK
+Backend check: OK
+Full backend tests: 271 OK
+Frontend production build: OK
+Playwright E2E: 15 passed, 7 intentional desktop/mobile skips
+```
+
+### Notification / Registration Logic Cleanup
+
+- Clarified notification delivery logic:
+  - notifications can now target a specific employee through `recipient`;
+  - empty `recipient` means a business-wide notification;
+  - owners/admins can see business notifications, operators/staff see their own plus business-wide notifications.
+- Added `notifications` as a separate RBAC resource instead of hiding it behind general settings permissions.
+- Automatic CRM notifications now address the responsible employee when available:
+  - lead status/deal events;
+  - task reminders;
+  - AI-created tasks;
+  - appointment reminders from leads;
+  - website lead-form submissions.
+- The header notification dropdown now shows who the notification is for.
+- Tightened notification validation so a recipient must be an active member of the same business.
+- Cleaned up business registration/settings labels:
+  - niche selector uses business-friendly Russian labels;
+  - beauty niche is shown as “Салон красоты / барбершоп”;
+  - staff roles in settings use readable Russian names and clearer descriptions.
+
+Checks:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py makemigrations --check --dry-run
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test apps.notifications.tests --verbosity=1
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test apps.tasks.tests apps.scheduling.tests apps.leads.tests_forms apps.leads.tests_crm_light --verbosity=1
+DATABASE_URL=sqlite:///db.sqlite3 SECURE_SSL_REDIRECT=False SESSION_COOKIE_SECURE=False CSRF_COOKIE_SECURE=False REDIS_URL=memory:// CELERY_TASK_ALWAYS_EAGER=True CELERY_TASK_STORE_EAGER_RESULT=False AUTOMATIONS_RUN_INLINE=True .venv/bin/python manage.py test --verbosity=1
+cd frontend && npm run build
+```
+
+Latest results:
+
+```text
+Migration check: OK
+Backend check: OK
+Notification tests: 5 OK
+Related CRM flow tests: 31 OK
+Full backend tests: 276 OK
+Frontend production build: OK
+```
+
+### Frontend Resilience Hardening
+
+- Added a route-level error boundary so runtime route/page errors render a controlled CRM error state instead of the default React Router crash screen.
+- Hardened CRUD list unwrapping so unexpected list responses safely degrade to an empty list instead of throwing `.map is not a function`.
+- Centralized frontend API list normalization in `api/client.ts`:
+  - CRUD APIs now share one `unwrapList` helper;
+  - billing usage/entitlements, security audit/login history, lead forms, imports, custom fields, webhook deliveries and inbox messages now tolerate paginated, array and empty responses consistently.
+- Added an auth-expired browser event:
+  - if access refresh fails or refresh token is missing, the API client clears tokens;
+  - `AuthProvider` immediately drops the stale authenticated state instead of leaving the user in a broken session.
+- Rechecked the merchant and platform smoke flows after the error boundary change.
+
+Checks:
+
+```bash
+cd frontend && npm run build
+cd frontend && npm run e2e
+```
+
+Latest results:
+
+```text
+Frontend production build: OK
+Playwright E2E: 15 passed, 7 intentional desktop/mobile skips
+```
+
+### Agent / API Consistency Cleanup
+
+- Updated `AGENTS.md` so future work starts from the current production-hardening state instead of the old Phase 1 baseline.
+- Removed the last duplicate frontend list-unwrapping helper from the team API module:
+  - `teamApi.members`;
+  - `teamApi.roles`;
+  - `teamApi.departments`.
+- Removed the last duplicate frontend paginated-response type from the inbox API module.
+- Team and inbox endpoints now use shared list/pagination helpers from `frontend/src/api/client.ts`, matching the rest of the frontend API layer.
+- Hardened nested summary arrays against malformed API shapes:
+  - analytics team performance members/actions/teams;
+  - inbox pulse channels and next actions.
+  - platform operations provider rollout, connector queue and failed work queues.
+
+Checks:
+
+```bash
+cd frontend && npm run build
+cd frontend && npm run e2e
+```
+
+Latest results:
+
+```text
+Frontend production build: OK
+Playwright E2E: 15 passed, 7 intentional desktop/mobile skips
+```
+
+### ZANI 10 next tasks — Task 10: Pre-Deploy Hardening
+
+Статус: **готово как staging gate**.
+
+Что изменено:
+
+- Добавлен глобальный frontend error boundary:
+  - runtime-сбой вне route-level boundary теперь показывает контролируемый экран восстановления;
+  - пользователь может обновить страницу или вернуться на dashboard вместо React crash screen.
+- Добавлен `scripts/predeploy_check.sh`:
+  - `manage.py check`;
+  - `manage.py check --deploy`;
+  - `makemigrations --check --dry-run`;
+  - `production_readiness_audit`;
+  - syntax check всех shell-скриптов;
+  - clean archive validation;
+  - опциональный frontend build.
+- `scripts/make_clean_archive.sh` теперь сохраняет staging/production env-шаблоны:
+  - `.env.staging.example`;
+  - `.env.production.example`;
+  - `frontend/.env.staging.example`;
+  - `frontend/.env.production.example`.
+- `docs/deployment.md` получил pre-deploy quality gate с командами для staging/server setup.
+
+Проверка:
+
+```bash
+bash -n scripts/predeploy_check.sh scripts/make_clean_archive.sh
+DATABASE_URL=sqlite:///db.sqlite3 REDIS_URL=memory:// CELERY_TASK_ALWAYS_EAGER=True CELERY_TASK_STORE_EAGER_RESULT=False AUTOMATIONS_RUN_INLINE=True .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 REDIS_URL=memory:// CELERY_TASK_ALWAYS_EAGER=True CELERY_TASK_STORE_EAGER_RESULT=False AUTOMATIONS_RUN_INLINE=True .venv/bin/python manage.py makemigrations --check --dry-run
+DATABASE_URL=sqlite:///db.sqlite3 REDIS_URL=memory:// CELERY_TASK_ALWAYS_EAGER=True CELERY_TASK_STORE_EAGER_RESULT=False AUTOMATIONS_RUN_INLINE=True .venv/bin/python manage.py check --deploy
+DATABASE_URL=sqlite:///db.sqlite3 REDIS_URL=memory:// CELERY_TASK_ALWAYS_EAGER=True CELERY_TASK_STORE_EAGER_RESULT=False AUTOMATIONS_RUN_INLINE=True .venv/bin/python manage.py test apps.core.tests_production_audit -v 2
+SKIP_FRONTEND_BUILD=true DATABASE_URL=sqlite:///db.sqlite3 REDIS_URL=memory:// CELERY_TASK_ALWAYS_EAGER=True CELERY_TASK_STORE_EAGER_RESULT=False AUTOMATIONS_RUN_INLINE=True ./scripts/predeploy_check.sh
+cd frontend && npm run build
+```
+
+Latest results:
+
+```text
+Shell syntax checks: OK
+Backend check: OK
+Migration drift check: OK
+Django deploy check: OK with expected local/dev warnings
+Production audit tests: 4 OK
+Predeploy gate: OK with expected local/dev readiness warnings
+Frontend production build: OK
+```
+
+### UI / UX Direction Pass — Navigation and Language Foundation
+
+Статус: **первый ответственный проход готов, полный редизайн экранов нужен отдельным этапом**.
+
+Что изменено:
+
+- Sidebar переработан из скрытой групповой навигации в понятную карту продукта:
+  - desktop sidebar теперь работает как компактный command rail: иконки всегда видны, полная навигация раскрывается при наведении или по кнопке;
+  - все доступные разделы раскрываются внутри смысловых групп;
+  - активная страница читается по иконке, фону и маркеру;
+  - группы получили пояснения, чтобы мерч понимал, где продажи, где операции, где рост;
+  - mobile overlay закрывается при переходе по ссылке через существующий `onNavigate`.
+- Переключатель языка поднят наверх:
+  - в desktop header;
+  - в верхнюю часть sidebar;
+  - вместо обычного select теперь компактный RU / KK / EN segmented control.
+- Переписана основная локализация shell:
+  - RU больше не использует `Dashboard`, `Sales pipeline`, `Timeline` в главных navigation/page местах;
+  - KK получил полноценные ключи для навигации, dashboard, leads, deals, timeline и auth shell;
+  - EN сохранён как отдельный нормальный словарь.
+- Добавлен более выразительный visual foundation:
+  - глубинный background field;
+  - perspective panels;
+  - более premium sidebar surface;
+  - без тяжёлых 3D-библиотек и без роста runtime-сложности перед серверным запуском.
+- Dashboard получил первый продуктовый поворот в сторону “живого бизнес-пульта”:
+  - первый экран фокусируется на деньгах, заявках, записях и задачах;
+  - быстрые действия ведут в реальные рабочие разделы;
+  - часть оставшихся hardcoded dashboard-строк вынесена в i18n;
+  - неверный маршрут диалогов заменён на `/dashboard/conversations`.
+- Navigation pass 2:
+  - узкий desktop sidebar теперь показывает крупные зоны бизнеса, а не длинный список отдельных пунктов;
+  - при наведении раскрывается полноценная карта разделов с вложенными пунктами;
+  - поиск, уведомления, activation-dashboard и статусы подключения получили i18n-ключи для RU / KK / EN.
+- Leads workspace pass:
+  - страница заявок получила верхний command panel с ключевыми числами по новым, активным, записанным и потерянным заявкам;
+  - карточки заявок очищены от перегруза кнопками: основные действия оставлены на поверхности, вторичные убраны под `Ещё`;
+  - карточки получили визуальный приоритет `горячая / обычная`, ZANI-подсказку и более понятную структуру для mobile-first kanban;
+  - заметные action-тексты заявок вынесены в i18n RU / KK / EN.
+- Calendar workspace pass:
+  - календарь переработан из простого расписания в рабочий пульт дня с числом записей, подтверждений, свободных окон и готовностью справочников;
+  - форма создания записи стала понятнее для салонов/клиник: клиент, услуга, мастер/ресурс, дата и слот объясняются в контексте записи;
+  - если у бизнеса есть активные ресурсы, первый мастер/кабинет выбирается автоматически, чтобы мерч не упирался в пустой обязательный select;
+  - блок отсутствия слотов теперь объясняет реальные причины: нет графика, у мастера выходной или все окна заняты;
+  - основные тексты календаря и формы записи вынесены в i18n RU / KK / EN.
+- Appointments and working-hours pass:
+  - страница записей получила верхние KPI-карточки: сегодня, подтверждены, завершены, задействованные ресурсы;
+  - текст “appointment” заменён на нормальную бизнес-терминологию, основные labels вынесены в i18n RU / KK / EN;
+  - быстрые статусы записей теперь показываются понятными действиями, а не техническими enum-значениями;
+  - страница графика работы получила сводку по рабочим дням, индивидуальным графикам и выходным;
+  - форма недельного графика стала понятнее: общий график бизнеса, отдельная неделя мастера, быстрые шаблоны салона и офиса.
+- Services and resources pass:
+  - услуги получили верхние business-карточки: активные услуги, средняя длительность и использование в записях;
+  - экран услуг теперь объясняет, что длительность услуги напрямую влияет на свободные окна календаря;
+  - форма услуги получила понятную подсказку и i18n-тексты RU / KK / EN;
+  - ресурсы получили сводку по активным ресурсам, мастерам и индивидуальным графикам;
+  - экран ресурсов теперь объясняет салонную логику: мастер/кабинет как ресурс, защита от двойной записи;
+  - форма ресурса получила понятные типы и i18n-тексты RU / KK / EN.
+- Clients workspace pass:
+  - база клиентов получила верхние business-карточки: всего клиентов, клиенты с заявками, клиенты с записями и клиенты с тегами;
+  - экран клиентов стал объяснять ценность базы как связки заявок, записей, истории и сегментации, а не просто таблицы контактов;
+  - фильтры, empty state, сегменты, теги и действия вынесены в i18n RU / KK / EN;
+  - форма клиента получила переводы, предупреждение о дублях и более понятные тексты для источника, заметок и сохранения.
+- CRM card drawer pass:
+  - карточка клиента/заявки/сделки/записи больше не держит основные тексты hardcoded на русском;
+  - вкладки, быстрые действия, вложения, быстрые задачи, заметки, custom fields и empty states вынесены в i18n RU / KK / EN;
+  - i18n helper получил безопасную подстановку `{id}` без изменения существующих вызовов переводов;
+  - timeline использует локаль выбранного языка для группировки дат.
+- Tasks workspace pass:
+  - страница задач переведена на i18n RU / KK / EN в основных рабочих местах: заголовок, KPI, фильтры, карточки, создание задачи, детали и комментарии;
+  - действия задач получили понятные labels/aria-labels: взять в работу, завершить, отменить, переоткрыть, назначить на себя и отложить;
+  - связи задачи с клиентом, заявкой, сделкой и записью теперь используют общую терминологию CRM-card вместо локальных hardcoded строк;
+  - empty state и форма создания задачи стали ближе к сценарию follow-up, а не к техническому task tracker.
+- Conversations workspace pass:
+  - главный inbox, фильтры, список диалогов, header выбранного диалога, composer и правая CRM-context панель переведены на i18n RU / KK / EN;
+  - даты сообщений и группировка ленты используют локаль выбранного языка;
+  - notice-сообщения для handoff, mark read/unread, AI draft, linking client/lead/deal/task и upload attachments вынесены в словари;
+  - mixed RU/EN в ключевых действиях inbox заменён на продуктовую терминологию: прочитано, подсказать ответ, передать менеджеру, привязать по ID, CRM-связь.
+- Analytics workspace pass:
+  - owner analytics получила i18n RU / KK / EN для заголовка, KPI, источников, attention-блока, операционных отчётов, scheduled reports и service-by-bookings;
+  - team performance получил локализованные заголовки, permission-copy, empty states и основные team metrics;
+  - отчётные блоки сохранены простыми: без декоративного BI, с фокусом на заявки, записи, сделки, команду и экспорт;
+  - вычисления и API-контракты аналитики не менялись.
+- Settings team-access pass:
+  - верх Settings, якорная навигация, блок команды, выбор роли, видимость доступа и приглашения сотрудников переведены на i18n RU / KK / EN;
+  - роли сотрудников и уровни видимости теперь показываются через единый словарь, без смешивания RU/EN в главном team-access сценарии;
+  - тексты приглашения для email, WhatsApp, Telegram и copy-link используют локаль интерфейса и безопасную подстановку `{url}`;
+  - API-контракты команды, ролей и приглашений не менялись.
+- Settings security and replies pass:
+  - security center получил локализованные заголовки, permission-copy, risk metrics, empty states и формат дат по выбранному языку;
+  - quick replies переведены на i18n RU / KK / EN: поля формы, каналы, статусы, редактирование, включение/отключение и empty state;
+  - блок отделов и developer connections в Settings также очищены от видимого RU/EN смешивания;
+  - API-контракты аудита, login history, support grants и quick replies не менялись.
+- Settings roles, data and billing pass:
+  - roles simple/advanced mode, уровни видимости, access groups и role summaries переведены на i18n RU / KK / EN;
+  - import/export, manual sales, catalog items, lead forms, billing, usage limits и custom fields получили локализованные заголовки, формы, empty states и действия;
+  - price/usage helpers теперь принимают текущую локаль и переводчик, поэтому формат цен и метрик не зашит в компонент;
+  - API-контракты import/export, lead forms, billing и custom fields не менялись.
+- Permissions i18n pass:
+  - названия permission resources вынесены из русского `resourceLabels` в i18n RU / KK / EN;
+  - advanced permission matrix в Settings и role summaries используют локализованные resource names;
+  - forbidden route message и loading state проверки доступа теперь выводятся на выбранном языке;
+  - legacy `forbiddenMessage` сохранён как fallback, чтобы не ломать старые вызовы.
+- Common UI i18n pass:
+  - `Button`, `LoadingState`, `ForbiddenState`, `Modal` и `DataTable` больше не держат русские fallback-тексты;
+  - route guards используют локализованные loading/access messages;
+  - table totals, empty description, close aria-label, loading labels и access-hidden copy вынесены в RU / KK / EN;
+  - полный backend test-suite прошёл: 286 tests OK.
+- Auth and invite i18n/access pass:
+  - login, signup, invitation accept, password reset request and password reset confirm получили основные i18n-тексты RU / KK / EN;
+  - invite accept теперь принимает телефон и сохраняет его в профиле сотрудника, если пользователь создаётся или у существующего пользователя телефон пустой;
+  - добавлены regression tests: истёкшее приглашение нельзя принять, уже принятое приглашение нельзя использовать повторно;
+  - env examples уточняют, что Google/Apple значения — это public client IDs для ID-token validation, а не provider secrets.
+- Lightweight integrations roadmap:
+  - добавлен `docs/lightweight-integrations-roadmap.md`;
+  - зафиксирован принцип: merchant видит простые статусы и действия, raw credentials/webhooks остаются backend-side;
+  - следующий порядок интеграций: Website/Forms, Excel/CSV, Telegram, затем WhatsApp/Instagram/Kaspi/1C/МойСклад/marketplaces через request/support-assisted flow.
+- Shell polish i18n pass:
+  - header notification categories, notification actions, mobile menu aria-labels and pilot safe 404 page now use RU / KK / EN dictionaries;
+  - frontend production build reconfirmed after the shell changes.
+- Исправлен demo seed для visual QA:
+  - повторное создание демо-менеджеров больше не падает из-за `username`;
+  - добавлен тест на username collision.
+
+Проверка:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 REDIS_URL=memory:// CELERY_TASK_ALWAYS_EAGER=True CELERY_TASK_STORE_EAGER_RESULT=False AUTOMATIONS_RUN_INLINE=True .venv/bin/python manage.py check
+DATABASE_URL=sqlite:///db.sqlite3 SECRET_KEY=dev-secret-key-with-enough-length-for-local-check DEBUG=True ALLOWED_HOSTS=localhost,127.0.0.1 .venv/bin/python manage.py test apps.businesses.tests_demo_seed -v 2
+DATABASE_URL=sqlite:///db.sqlite3 SECRET_KEY=dev-secret-key-with-enough-length-for-local-check DEBUG=True ALLOWED_HOSTS=localhost,127.0.0.1 .venv/bin/python manage.py check
+cd frontend && npm run build
+```
+
+Latest results:
+
+```text
+Backend check: OK
+Demo seed tests: 7 OK
+Team access invite tests: 16 OK
+Full backend tests: 288 OK
+Frontend production build: OK
+Frontend production build after shell i18n: OK
+Visual smoke screenshots: desktop collapsed rail, desktop expanded rail, mobile dashboard OK
+```
+
+GitHub/deploy note: current local folder `/Users/maksim/Desktop/zani 2` is not a git repository (`.git` is absent), so commit/push cannot be performed from this copy until it is linked to the actual GitHub working tree.
+
+Следующий обязательный UI этап: пройти все merchant pages и заменить оставшиеся hardcoded RU/EN строки на i18n-ключи, затем сделать visual QA по ролям owner/operator/platform.

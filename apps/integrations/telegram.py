@@ -103,3 +103,7 @@ def send_telegram_message(channel, chat_id, text):
 
 def set_telegram_webhook(channel, webhook_url):
     return get_provider(BotChannel.Channels.TELEGRAM).set_webhook(channel, webhook_url)
+
+
+def validate_telegram_token(channel):
+    return get_provider(BotChannel.Channels.TELEGRAM).validate_token(channel)

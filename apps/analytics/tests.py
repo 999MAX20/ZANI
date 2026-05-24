@@ -9,6 +9,7 @@ from apps.accounts.models import User
 from apps.businesses.models import Business, BusinessMember
 from apps.clients.models import Client
 from apps.core.models import AuditLog
+from apps.integrations.models import BusinessEvent
 from apps.crm.models import Deal, Pipeline, PipelineStage
 from apps.leads.models import Lead
 from apps.scheduling.models import Appointment
@@ -77,6 +78,38 @@ class OwnerDashboardAnalyticsTests(TestCase):
         self.assertEqual(response.data["overdue_tasks"], 1)
         self.assertEqual(response.data["revenue_estimate"], "15000")
         self.assertEqual(response.data["leads_by_source"][0]["source"], Lead.Sources.WEBSITE)
+        self.assertIn("business_pulse", response.data)
+        self.assertIn("recommendations", response.data)
+        self.assertIn("quick_connect", response.data)
+        self.assertIn("setup", response.data)
+        self.assertIn("mobile_onboarding", response.data)
+        self.assertEqual(response.data["mobile_onboarding"]["score"], response.data["setup"]["score"])
+        self.assertEqual(response.data["mobile_onboarding"]["steps"][0]["key"], "landing")
+        self.assertTrue(any(item["key"] == "sales_data" for item in response.data["mobile_onboarding"]["steps"]))
+        self.assertEqual(response.data["business_pulse"]["tone"], "setup")
+        self.assertTrue(any(item["key"] == "upload_sales" for item in response.data["recommendations"]))
+        self.assertEqual(response.data["quick_connect"][0]["key"], "whatsapp")
+
+
+    def test_owner_dashboard_uses_sales_events_for_business_pulse(self):
+        BusinessEvent.objects.create(
+            business=self.business,
+            source="csv",
+            event_type="sale.recorded",
+            deduplication_key="sale-1",
+            payload_json={"amount": "25000"},
+        )
+
+        response = self.api.get("/api/analytics/owner-dashboard/", {"business": self.business.id})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["sales_events_count"], 1)
+        self.assertEqual(response.data["data_quality"]["has_sales_data"], True)
+        self.assertEqual(response.data["business_pulse"]["tone"], "growth")
+        self.assertEqual(response.data["revenue"]["total_estimate"], "25000")
+        self.assertTrue(response.data["setup"]["sources"]["sales_data"])
+        sales_step = next(item for item in response.data["mobile_onboarding"]["steps"] if item["key"] == "sales_data")
+        self.assertEqual(sales_step["status"], "done")
 
     def test_owner_dashboard_is_tenant_safe(self):
         self.api.force_authenticate(self.other_owner)

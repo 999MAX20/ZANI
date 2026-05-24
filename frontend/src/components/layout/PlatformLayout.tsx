@@ -1,6 +1,9 @@
 import {
   BarChart3,
   CreditCard,
+  FileText,
+  Activity,
+  Send,
   LayoutDashboard,
   LogOut,
   Search,
@@ -17,8 +20,11 @@ import { Button } from "../ui/Button";
 
 const platformNav = [
   { to: "/platform", label: "Overview", description: "Product metrics and status", icon: LayoutDashboard, end: true },
+  { to: "/platform/operations", label: "Operations", description: "Queues, providers and support health", icon: Activity },
   { to: "/platform/merchants", label: "Merchants", description: "Businesses, plans and usage", icon: Store },
   { to: "/platform/prospects", label: "Prospects", description: "Future internal tools boundary", icon: Target },
+  { to: "/platform/landings", label: "Landings", description: "Demo assets and request flow", icon: FileText },
+  { to: "/platform/outreach", label: "Outreach", description: "Manual pilot outreach status", icon: Send },
   { to: "/platform/billing", label: "Billing", description: "Future plans and subscriptions", icon: CreditCard },
   { to: "/platform/analytics", label: "Analytics", description: "Future platform insights", icon: BarChart3 },
   { to: "/platform/settings", label: "Settings", description: "Platform configuration", icon: Settings },

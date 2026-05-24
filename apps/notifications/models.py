@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
@@ -35,6 +36,14 @@ class Notification(TimeStampedModel):
         URGENT = "urgent", "Urgent"
 
     business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name="notifications")
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="notifications",
+        help_text="Empty recipient means a business-wide notification.",
+    )
     client = models.ForeignKey(Client, on_delete=models.PROTECT, null=True, blank=True, related_name="notifications")
     appointment = models.ForeignKey(Appointment, on_delete=models.CASCADE, null=True, blank=True, related_name="notifications")
     channel = models.CharField(max_length=32, choices=Channels.choices, default=Channels.SYSTEM)
@@ -52,6 +61,7 @@ class Notification(TimeStampedModel):
         indexes = [
             models.Index(fields=["business", "status", "read_at", "send_at"]),
             models.Index(fields=["business", "category", "priority"]),
+            models.Index(fields=["business", "recipient", "read_at"]),
         ]
 
     def __str__(self):

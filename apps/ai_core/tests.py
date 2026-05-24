@@ -1,4 +1,5 @@
 from django.test import TestCase, override_settings
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.accounts.models import User
@@ -10,6 +11,7 @@ from apps.businesses.models import Business, BusinessMember
 from apps.clients.models import Client
 from apps.leads.models import Lead
 from apps.tasks.models import Task
+from apps.notifications.models import Notification
 
 
 class AICoreFoundationTests(TestCase):
@@ -192,6 +194,46 @@ class AICoreFoundationTests(TestCase):
         task = Task.objects.get()
         self.assertEqual(task.title, "AI follow-up")
         self.assertEqual(task.business, self.business)
+        self.assertIsNotNone(task.due_at)
+        notification = Notification.objects.get(business=self.business, category=Notification.Categories.TASKS)
+        self.assertIn("AI создал задачу", notification.text)
+        self.assertEqual(notification.action_url, f"/dashboard/tasks?task={task.id}")
+        self.assertTrue(response.data["output_json"]["notification_created"])
+        self.assertEqual(response.data["output_json"]["calendar_status"], "scheduled")
+
+
+    def test_ai_tool_execute_creates_task_with_due_reminder_and_assignee(self):
+        due_at = timezone.now() + timezone.timedelta(days=1)
+        reminder_at = due_at - timezone.timedelta(hours=2)
+        log = AIToolCallLog.objects.create(
+            business=self.business,
+            user=self.owner,
+            tool_name="create_task",
+            input_json={
+                "title": "Launch weekend promo",
+                "description": "Prepare campaign assets.",
+                "recommendation": "Sales dropped on weekends. Create a promotion task.",
+                "priority": "urgent",
+                "assignee_id": self.owner.id,
+                "due_at": due_at.isoformat(),
+                "reminder_at": reminder_at.isoformat(),
+            },
+        )
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(f"/api/ai/tools/{log.id}/execute/")
+
+        self.assertEqual(response.status_code, 200)
+        task = Task.objects.get(title="Launch weekend promo")
+        self.assertEqual(task.assignee, self.owner)
+        self.assertEqual(task.priority, Task.Priorities.URGENT)
+        self.assertIsNotNone(task.due_at)
+        self.assertIsNotNone(task.reminder_at)
+        self.assertIn("AI recommendation", task.description)
+        notification = Notification.objects.get(business=self.business, category=Notification.Categories.TASKS)
+        self.assertEqual(notification.priority, Notification.Priorities.HIGH)
+        self.assertEqual(notification.action_label, "Открыть задачу")
+        self.assertEqual(response.data["output_json"]["assignee_id"], self.owner.id)
 
     def test_ai_tool_execute_rejects_foreign_business_access(self):
         log = AIToolCallLog.objects.create(

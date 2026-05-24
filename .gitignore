@@ -1,30 +1,47 @@
-.env
-.env.*
-!.env.example
-!.env.staging.example
-!.env.production.example
-!frontend/.env.example
-!frontend/.env.staging.example
-!frontend/.env.production.example
-.DS_Store
-__MACOSX/
+# Python
 .venv/
 venv/
 __pycache__/
 *.py[cod]
-db.sqlite3
+*$py.class
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .coverage
-coverage.xml
 htmlcov/
+
+# Django/local generated
+.env
+.env.*
+!.env.example
+!.env.local.example
+!.env.staging.example
+!.env.production.example
+!frontend/.env.staging.example
+!frontend/.env.production.example
+db.sqlite3
+media/
 staticfiles/
-*.tsbuildinfo
-frontend/vite.config.js
-frontend/vite.config.d.ts
-plan/test_user
+*.log
+
+# Node/frontend
 node_modules/
 frontend/node_modules/
 dist/
-frontend/dist/
 build/
-zani-clean.zip
+frontend/dist/
+*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
+coverage/
+playwright-report/
+test-results/
+
+# OS/editor
+.DS_Store
+__MACOSX/
+.vscode/
+.idea/
+
+# Archives
+*.zip

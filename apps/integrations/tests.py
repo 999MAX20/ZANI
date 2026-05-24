@@ -119,12 +119,31 @@ class TelegramIntegrationSkeletonTests(TestCase):
 
         self.assertEqual(config_response.status_code, 200)
         self.assertTrue(config_response.data["token_configured"])
+        channel_response = self.api.get(f"/api/bot-channels/{self.channel.id}/")
+        self.assertEqual(channel_response.status_code, 200)
+        self.assertEqual(channel_response.data["config_json"]["bot_token"], "configured")
+        self.assertEqual(channel_response.data["config_json"]["webhook_secret"], "configured")
+        self.assertNotIn("secret-token", str(channel_response.data))
         self.assertEqual(status_response.status_code, 200)
         self.assertTrue(status_response.data["webhook_secret_configured"])
         self.assertEqual(webhook_response.status_code, 200)
         self.assertTrue(webhook_response.data["mock"])
         log = IntegrationEventLog.objects.filter(provider="telegram", status=IntegrationEventLog.Statuses.MOCKED).latest("created_at")
         self.assertNotIn("secret-token", str(log.payload_json))
+
+    @override_settings(TELEGRAM_ENABLED=False)
+    def test_telegram_test_connection_uses_controlled_mock_without_leaking_token(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(f"/api/bot-channels/{self.channel.id}/telegram-test-connection/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data["ok"])
+        self.assertTrue(response.data["mock"])
+        self.assertTrue(response.data["token_configured"])
+        self.assertNotIn("merchant-token", str(response.data))
+        self.channel.refresh_from_db()
+        self.assertEqual(self.channel.status, BotChannel.Statuses.ACTIVE)
 
     @override_settings(TELEGRAM_ENABLED=False)
     def test_inbox_outbound_telegram_reply_uses_provider_layer(self):

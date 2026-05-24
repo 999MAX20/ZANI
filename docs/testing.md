@@ -4,10 +4,20 @@
 
 ```bash
 DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
-DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test -v 2
+DATABASE_URL=sqlite:///db.sqlite3 \
+SECURE_SSL_REDIRECT=False \
+SESSION_COOKIE_SECURE=False \
+CSRF_COOKIE_SECURE=False \
+REDIS_URL=memory:// \
+CELERY_TASK_ALWAYS_EAGER=True \
+CELERY_TASK_STORE_EAGER_RESULT=False \
+AUTOMATIONS_RUN_INLINE=True \
+.venv/bin/python manage.py test -v 2
 cd frontend
 npm run build
 ```
+
+Why these overrides matter: local `.env` may contain staging/production values such as SSL redirects or managed Redis placeholders. Backend tests should verify application behavior, not require a local Redis daemon or HTTPS test client redirects.
 
 For a clean frontend dependency check:
 
@@ -39,7 +49,15 @@ If a future test needs a provider integration, mock the provider/client explicit
 1. Run verbose tests:
 
    ```bash
-   DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test -v 2
+   DATABASE_URL=sqlite:///db.sqlite3 \
+   SECURE_SSL_REDIRECT=False \
+   SESSION_COOKIE_SECURE=False \
+   CSRF_COOKIE_SECURE=False \
+   REDIS_URL=memory:// \
+   CELERY_TASK_ALWAYS_EAGER=True \
+   CELERY_TASK_STORE_EAGER_RESULT=False \
+   AUTOMATIONS_RUN_INLINE=True \
+   .venv/bin/python manage.py test -v 2
    ```
 
 2. Check the last printed test name.

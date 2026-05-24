@@ -50,9 +50,9 @@ export function WhatsAppSetupCard({ channel }: WhatsAppSetupCardProps) {
         providerMode: form.providerMode,
         webhookSecret: form.webhookSecret,
         phoneNumberId: form.phoneNumberId,
-      }),
+    }),
     onSuccess: (data) => {
-      setNotice(`WhatsApp ${data.provider_mode} mode saved. Status: ${data.status}.`);
+      setNotice(`WhatsApp подключение сохранено. Статус: ${data.status}.`);
       queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
       queryClient.invalidateQueries({ queryKey: ["whatsapp-status", channel?.id] });
     },
@@ -67,7 +67,7 @@ export function WhatsAppSetupCard({ channel }: WhatsAppSetupCardProps) {
           </div>
           <div>
             <h2 className="text-lg font-bold text-midnight">WhatsApp setup</h2>
-            <p className="text-sm text-slate-500">Provider abstraction без платного провайдера: mock или disabled mode.</p>
+            <p className="text-sm text-slate-500">Безопасная подготовка WhatsApp-подключения без автоматического включения внешнего сервиса.</p>
           </div>
         </div>
 
@@ -82,52 +82,52 @@ export function WhatsAppSetupCard({ channel }: WhatsAppSetupCardProps) {
           <div className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-2">
               <Select
-                label="Provider mode"
+                label="Режим подключения"
                 value={form.providerMode}
                 onChange={(event) => setForm((current) => ({ ...current, providerMode: event.target.value as "mock" | "disabled" }))}
                 options={[
-                  { value: "mock", label: "Mock mode" },
-                  { value: "disabled", label: "Disabled" },
+                  { value: "mock", label: "Демо-режим" },
+                  { value: "disabled", label: "Отключено" },
                 ]}
               />
               <Input
-                label="Phone number ID"
+                label="ID номера WhatsApp (расширенно)"
                 value={form.phoneNumberId}
                 onChange={(event) => setForm((current) => ({ ...current, phoneNumberId: event.target.value }))}
                 placeholder="dev-phone-id"
               />
             </div>
             <Input
-              label="Webhook secret"
+              label="Секрет подписи (расширенно)"
               value={form.webhookSecret}
               onChange={(event) => setForm((current) => ({ ...current, webhookSecret: event.target.value }))}
-              placeholder="merchant-whatsapp-secret"
+              placeholder="опционально"
             />
             <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-4">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Webhook URL</p>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Адрес приёма сообщений</p>
               <p className="mt-2 break-all text-sm font-semibold text-midnight">
                 {status.data?.webhook_url || `${import.meta.env.VITE_API_URL || window.location.origin}/api/integrations/whatsapp/webhook/`}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
               <Button variant="secondary" onClick={() => configMutation.mutate()} isLoading={configMutation.isPending}>
-                <KeyRound size={16} />Save config
+                <KeyRound size={16} />Сохранить подключение
               </Button>
               <Button variant="ghost" onClick={() => status.refetch()} isLoading={status.isFetching}>
-                <Radio size={16} />Check status
+                <Radio size={16} />Проверить статус
               </Button>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
-              <HealthPill label="Mode" value={status.data?.provider_mode || form.providerMode} />
-              <HealthPill label="Secret" value={status.data?.webhook_secret_configured ? "configured" : "missing"} />
-              <HealthPill label="Last event" value={status.data?.last_event_status || "none"} />
+              <HealthPill label="Режим" value={status.data?.provider_mode === "mock" ? "Демо" : status.data?.provider_mode || form.providerMode} />
+              <HealthPill label="Защита" value={status.data?.webhook_secret_configured ? "настроена" : "не настроена"} />
+              <HealthPill label="Последнее событие" value={status.data?.last_event_status || "нет"} />
             </div>
 
             <div className="rounded-3xl bg-slate-50 p-4">
               <div className="mb-3 flex items-center gap-2">
                 <ShieldCheck size={16} className="text-slate-500" />
-                <p className="text-sm font-bold text-midnight">Inbound/outbound logs</p>
+                <p className="text-sm font-bold text-midnight">История тестовых сообщений</p>
               </div>
               <div className="space-y-2">
                 {(logs.data || []).slice(0, 5).map((log) => (
@@ -140,14 +140,14 @@ export function WhatsAppSetupCard({ channel }: WhatsAppSetupCardProps) {
                   </div>
                 ))}
                 {!logs.isLoading && !(logs.data || []).length ? (
-                  <p className="text-sm text-slate-500">Логов пока нет. Mock inbound/outbound появится здесь после первого сообщения.</p>
+                  <p className="text-sm text-slate-500">История пока пустая. Первые тестовые входящие и исходящие сообщения появятся здесь.</p>
                 ) : null}
               </div>
             </div>
           </div>
         ) : (
           <div className="rounded-3xl border border-dashed border-slate-200 bg-white/70 p-6 text-sm text-slate-500">
-            Добавьте WhatsApp channel, чтобы включить mock webhook и проверить provider layer без credentials.
+            Добавьте WhatsApp channel, чтобы подготовить безопасное тестовое подключение без внешней отправки.
           </div>
         )}
       </CardBody>

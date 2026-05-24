@@ -1,4 +1,5 @@
 import { EmptyState, SkeletonBlock } from "../ui/StateViews";
+import { useI18n } from "../../lib/i18n";
 
 export type Column<T> = {
   header: string;
@@ -10,7 +11,7 @@ export function DataTable<T>({
   rows,
   columns,
   emptyTitle,
-  emptyDescription = "Здесь появятся первые записи после создания.",
+  emptyDescription,
   emptyAction,
   isLoading = false,
 }: {
@@ -21,6 +22,8 @@ export function DataTable<T>({
   emptyAction?: React.ReactNode;
   isLoading?: boolean;
 }) {
+  const { t } = useI18n();
+  const resolvedEmptyDescription = emptyDescription || t("table.emptyDescription");
   if (isLoading) {
     return (
       <div className="rounded-3xl border border-white/70 bg-white/85 p-5 shadow-soft backdrop-blur-xl">
@@ -34,7 +37,7 @@ export function DataTable<T>({
   }
 
   if (!rows.length) {
-    return <EmptyState title={emptyTitle} description={emptyDescription} action={emptyAction} />;
+    return <EmptyState title={emptyTitle} description={resolvedEmptyDescription} action={emptyAction} />;
   }
 
   return (
@@ -67,8 +70,8 @@ export function DataTable<T>({
         </table>
       </div>
       <div className="flex items-center justify-between border-t border-slate-100 px-5 py-4 text-xs font-semibold text-slate-500">
-        <span>Всего: {rows.length}</span>
-        <span className="rounded-full bg-slate-100 px-3 py-1">CRM records</span>
+        <span>{t("table.total", { count: rows.length })}</span>
+        <span className="rounded-full bg-slate-100 px-3 py-1">{t("table.records")}</span>
       </div>
     </div>
   );

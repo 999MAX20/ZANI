@@ -2,6 +2,7 @@ from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 from django.test import TestCase
+from rest_framework.test import APIClient
 
 from apps.accounts.models import User
 from apps.analytics.models import AnalyticsEvent
@@ -149,3 +150,62 @@ class CorePlatformTests(TestCase):
             ).exists()
         )
         self.assertTrue(Notification.objects.filter(appointment=appointment).exists())
+
+    def test_apply_working_hours_preset_creates_weekdays_without_duplicates(self):
+        api = APIClient()
+        api.force_authenticate(self.owner)
+
+        response = api.post(
+            "/api/working-hours/apply-preset/",
+            {"business": self.business.id, "preset": "weekdays_9_18"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["count"], 7)
+        self.assertEqual(WorkingHours.objects.filter(business=self.business, resource__isnull=True).count(), 7)
+        monday = WorkingHours.objects.get(business=self.business, weekday=0, resource__isnull=True)
+        sunday = WorkingHours.objects.get(business=self.business, weekday=6, resource__isnull=True)
+        self.assertFalse(monday.is_day_off)
+        self.assertEqual(monday.start_time, time(9, 0))
+        self.assertEqual(monday.end_time, time(18, 0))
+        self.assertTrue(sunday.is_day_off)
+
+        second_response = api.post(
+            "/api/working-hours/apply-preset/",
+            {"business": self.business.id, "preset": "weekdays_9_18"},
+            format="json",
+        )
+
+        self.assertEqual(second_response.status_code, 200)
+        self.assertEqual(WorkingHours.objects.filter(business=self.business, resource__isnull=True).count(), 7)
+
+    def test_available_slots_appear_after_working_hours_preset(self):
+        api = APIClient()
+        api.force_authenticate(self.owner)
+        service = Service.objects.create(business=self.business, name="Consultation", duration_minutes=60)
+        api.post(
+            "/api/working-hours/apply-preset/",
+            {"business": self.business.id, "preset": "weekdays_9_18"},
+            format="json",
+        )
+
+        response = api.get(
+            "/api/appointments/available-slots/",
+            {"business_id": self.business.id, "service_id": service.id, "date": "2026-05-11"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertGreater(len(response.data), 0)
+
+    def test_apply_working_hours_preset_rejects_unknown_key(self):
+        api = APIClient()
+        api.force_authenticate(self.owner)
+
+        response = api.post(
+            "/api/working-hours/apply-preset/",
+            {"business": self.business.id, "preset": "unknown"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)

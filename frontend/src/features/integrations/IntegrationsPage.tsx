@@ -1,21 +1,48 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, CheckCircle2, KeyRound, Link2, PlugZap, RefreshCw, ShieldCheck, Unplug } from "lucide-react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  Clock3,
+  Copy,
+  ExternalLink,
+  FileSpreadsheet,
+  Filter,
+  MessageSquareText,
+  Send,
+  ShieldCheck,
+  Sparkles,
+  Upload,
+} from "lucide-react";
+import { Link } from "react-router-dom";
 
-import { businessConnectorsApi, connectorCredentialsApi } from "../../api/connectors";
+import { botChannelsApi, botsApi, telegramChannelApi, websiteChatApi } from "../../api/bots";
+import { businessConnectorsApi, type BusinessConnectorPayload } from "../../api/connectors";
+import { importExportApi, type ImportEntity } from "../../api/importExport";
 import { getApiErrorMessage } from "../../api/client";
 import { Button } from "../../components/ui/Button";
 import { EmptyState, ErrorState, LoadingState } from "../../components/ui/StateViews";
 import { Input } from "../../components/ui/Input";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { Select } from "../../components/ui/Select";
-import { StatusBadge } from "../../components/ui/StatusBadge";
 import { useAuth } from "../auth/AuthProvider";
 import { useActiveBusiness } from "../../hooks/useBusiness";
+import { useEntityData } from "../../hooks/useEntityData";
 import { hasPermission } from "../../lib/permissions";
-import type { BusinessConnector, ConnectorCapability, Id } from "../../types";
+import { ConnectorCard } from "./components/ConnectorCard";
+import type { Bot, BotChannel, BusinessConnector, ConnectorCapability, Id, ImportJob } from "../../types";
 
-function connectorTitle(capability: ConnectorCapability) {
+type CapabilityFilter = "all" | "included" | "self_service" | "request" | "upgrade" | "roadmap";
+type CapabilityGroup = "all" | ConnectorCapability["capability"];
+
+const importEntityOptions: Array<{ value: ImportEntity; label: string; helper: string }> = [
+  { value: "clients", label: "Клиенты", helper: "Создаёт реальные карточки клиентов." },
+  { value: "leads", label: "Заявки", helper: "Создаёт клиентов и заявки." },
+  { value: "sales", label: "Продажи", helper: "Создаёт события продаж для аналитики." },
+  { value: "catalog", label: "Товары / услуги / остатки", helper: "Создаёт услуги и события каталога/остатков." },
+];
+
+function capabilityGroupLabel(capability: ConnectorCapability) {
   const labels: Record<string, string> = {
     communications: "Коммуникации",
     sales: "Продажи",
@@ -28,157 +55,900 @@ function connectorTitle(capability: ConnectorCapability) {
   return labels[capability.capability] || capability.capability;
 }
 
-function ConnectorCard({
-  capability,
+function scrollToIntegrationSection(id: string) {
+  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function IntegrationOnboardingGuide({
+  connectedCount,
+  hasWebsiteChannel,
+  hasTelegramChannel,
+  hasWhatsAppRequest,
+  hasAnyDataConnector,
+}: {
+  connectedCount: number;
+  hasWebsiteChannel: boolean;
+  hasTelegramChannel: boolean;
+  hasWhatsAppRequest: boolean;
+  hasAnyDataConnector: boolean;
+}) {
+  const steps = [
+    {
+      title: "Импортировать базу",
+      description: "Начните с клиентов, заявок, продаж или каталога через Excel/CSV.",
+      status: hasAnyDataConnector ? "started" : "first",
+      section: "integration-import",
+      cta: hasAnyDataConnector ? "Открыть импорт" : "Начать с импорта",
+    },
+    {
+      title: "Включить входящие каналы",
+      description: "Website chat и Telegram дают первые заявки прямо в Inbox.",
+      status: hasWebsiteChannel || hasTelegramChannel ? "started" : "next",
+      section: hasTelegramChannel ? "integration-website" : "integration-telegram",
+      cta: hasWebsiteChannel || hasTelegramChannel ? "Проверить каналы" : "Подключить канал",
+    },
+    {
+      title: "Оставить заявку на WhatsApp",
+      description: "WhatsApp/Instagram подключаются честно: через заявку, без ложного auto-connect.",
+      status: hasWhatsAppRequest ? "done" : "request",
+      section: "integration-requests",
+      cta: hasWhatsAppRequest ? "Заявка создана" : "Заполнить заявку",
+    },
+    {
+      title: "Проверить демо-синхронизацию",
+      description: "Kaspi, 1C, склад и маркетплейсы пока безопасно проверяются демо-событием.",
+      status: connectedCount ? "ready" : "pilot",
+      section: "integration-data",
+      cta: "Открыть data connectors",
+    },
+  ];
+
+  const statusClass: Record<string, string> = {
+    first: "bg-brand-50 text-brand-700 ring-brand-100",
+    next: "bg-slate-100 text-slate-700 ring-slate-200",
+    request: "bg-violet-50 text-violet-700 ring-violet-100",
+    started: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+    done: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+    ready: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+    pilot: "bg-amber-50 text-amber-700 ring-amber-100",
+  };
+
+  return (
+    <div className="mb-5 overflow-hidden rounded-[2rem] border border-white/80 bg-white/92 p-5 shadow-premium backdrop-blur-xl">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Integration onboarding</p>
+          <h2 className="mt-2 text-2xl font-black tracking-tight text-midnight">Подключайте возможности по порядку</h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+            Владелец видит не “каталог API”, а понятный маршрут: сначала данные, затем входящие каналы, потом заявки на внешние сервисы.
+          </p>
+        </div>
+        <div className="rounded-3xl bg-slate-950 px-5 py-4 text-white">
+          <p className="text-xs font-black uppercase tracking-[0.14em] text-white/55">Активные подключения</p>
+          <p className="mt-1 text-3xl font-black">{connectedCount}</p>
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-3 xl:grid-cols-4">
+        {steps.map((step, index) => (
+          <button
+            key={step.title}
+            type="button"
+            onClick={() => scrollToIntegrationSection(step.section)}
+            className="group rounded-3xl border border-slate-100 bg-slate-50/80 p-4 text-left transition hover:-translate-y-0.5 hover:bg-white hover:shadow-soft"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white text-midnight shadow-sm">
+                {index + 1}
+              </span>
+              <span className={`rounded-full px-2 py-1 text-[10px] font-black uppercase ring-1 ${statusClass[step.status]}`}>
+                {step.status}
+              </span>
+            </div>
+            <p className="mt-4 font-black text-midnight">{step.title}</p>
+            <p className="mt-1 min-h-[48px] text-sm leading-6 text-slate-500">{step.description}</p>
+            <p className="mt-3 inline-flex items-center gap-2 text-sm font-black text-brand-700">
+              {step.cta}
+              <ArrowRight size={15} className="transition group-hover:translate-x-0.5" />
+            </p>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ExcelCsvImportPanel({ businessId }: { businessId: Id }) {
+  const queryClient = useQueryClient();
+  const [entity, setEntity] = useState<ImportEntity>("clients");
+  const [file, setFile] = useState<File | null>(null);
+  const [activeImportId, setActiveImportId] = useState<Id | null>(null);
+  const jobsQuery = useQuery({
+    queryKey: ["import-jobs", businessId],
+    queryFn: importExportApi.importJobs,
+  });
+  const uploadMutation = useMutation({
+    mutationFn: () => {
+      if (!file) throw new Error("Выберите CSV или XLSX файл.");
+      return importExportApi.upload({ business: businessId, entity, file });
+    },
+    onSuccess: (job) => {
+      setActiveImportId(job.id);
+      setFile(null);
+      queryClient.invalidateQueries({ queryKey: ["import-jobs"] });
+    },
+  });
+  const confirmMutation = useMutation({
+    mutationFn: importExportApi.confirm,
+    onSuccess: (job) => {
+      setActiveImportId(job.id);
+      queryClient.invalidateQueries({ queryKey: ["import-jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
+      queryClient.invalidateQueries({ queryKey: ["services"] });
+    },
+  });
+  const templateMutation = useMutation({
+    mutationFn: importExportApi.downloadTemplate,
+  });
+  const jobs = jobsQuery.data || [];
+  const activeImport = jobs.find((job) => job.id === activeImportId) || jobs[0];
+  const rowErrors = activeImport?.errors_json?.rows || [];
+  const duplicates = activeImport?.duplicates_json?.rows || [];
+  const selectedOption = importEntityOptions.find((item) => item.value === entity);
+  const error = jobsQuery.error || uploadMutation.error || confirmMutation.error || templateMutation.error;
+
+  return (
+    <div id="integration-import" className="scroll-mt-24 mb-5 rounded-3xl border border-emerald-100 bg-white/95 p-5 shadow-soft">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">Excel / CSV connector</p>
+          <h2 className="mt-2 text-2xl font-black text-midnight">Импорт реальных данных</h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+            Загрузите CSV/XLSX, проверьте mapping, preview, ошибки строк и только потом подтвердите импорт. Данные остаются в рамках текущего бизнеса.
+          </p>
+        </div>
+        <Button type="button" variant="secondary" onClick={() => templateMutation.mutate(entity)} isLoading={templateMutation.isPending}>
+          <FileSpreadsheet size={16} /> Скачать шаблон
+        </Button>
+      </div>
+
+      {error ? <div className="mt-4"><ErrorState message={getApiErrorMessage(error)} /></div> : null}
+
+      <div className="mt-5 grid gap-3 lg:grid-cols-[240px_1fr_auto]">
+        <Select
+          value={entity}
+          onChange={(event) => setEntity(event.target.value as ImportEntity)}
+          options={importEntityOptions.map((item) => ({ value: item.value, label: item.label }))}
+        />
+        <Input type="file" accept=".csv,.xlsx" onChange={(event) => setFile(event.target.files?.[0] || null)} />
+        <Button type="button" onClick={() => uploadMutation.mutate()} disabled={!file} isLoading={uploadMutation.isPending}>
+          <Upload size={16} /> Preview
+        </Button>
+      </div>
+      <p className="mt-2 text-sm font-semibold text-slate-500">{selectedOption?.helper}</p>
+
+      <div className="mt-5 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+        <div className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="font-black text-midnight">{activeImport?.original_filename || "Файл ещё не загружен"}</p>
+              <p className="mt-1 text-sm text-slate-500">
+                {activeImport ? `${activeImport.entity_type} · ${activeImport.total_rows} строк · ${activeImport.status}` : "Здесь появится preview первых строк."}
+              </p>
+            </div>
+            {activeImport?.status === "previewed" && !rowErrors.length ? (
+              <Button type="button" onClick={() => confirmMutation.mutate(activeImport.id)} isLoading={confirmMutation.isPending}>
+                Подтвердить импорт
+              </Button>
+            ) : null}
+          </div>
+
+          {rowErrors.length ? (
+            <div className="mt-4 rounded-2xl border border-red-100 bg-red-50 p-3">
+              <p className="text-sm font-black text-red-800">Файл нужно исправить перед импортом</p>
+              <div className="mt-2 space-y-1">
+                {rowErrors.slice(0, 5).map((item, index) => (
+                  <p key={`${item.row}-${item.field}-${index}`} className="text-xs font-semibold text-red-700">
+                    Строка {item.row}, {item.field}: {item.message}
+                  </p>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {activeImport ? (
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Column mapping</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {Object.entries(activeImport.mapping_json || {}).map(([field, header]) => (
+                    <span key={field} className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-600">
+                      {field} {"<-"} {header}
+                    </span>
+                  ))}
+                  {!Object.keys(activeImport.mapping_json || {}).length ? <span className="text-sm text-slate-500">Mapping не найден.</span> : null}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Duplicates</p>
+                <p className={duplicates.length ? "mt-2 text-sm font-bold text-amber-700" : "mt-2 text-sm font-bold text-emerald-700"}>
+                  {duplicates.length} возможных дублей
+                </p>
+              </div>
+            </div>
+          ) : null}
+
+          <div className="mt-4 overflow-hidden rounded-2xl border border-slate-100 bg-white">
+            {(activeImport?.preview_json?.rows || []).slice(0, 5).map((row, index) => (
+              <div key={index} className="border-b border-slate-100 px-3 py-2 text-xs text-slate-600 last:border-b-0">
+                {Object.entries(row).slice(0, 6).map(([key, value]) => `${key}: ${value || "-"}`).join(" · ")}
+              </div>
+            ))}
+            {!(activeImport?.preview_json?.rows || []).length ? <p className="px-3 py-4 text-sm text-slate-500">Preview появится после загрузки файла.</p> : null}
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-slate-100 bg-white p-4">
+          <p className="font-black text-midnight">История импорта</p>
+          <div className="mt-3 space-y-2">
+            {jobs.slice(0, 8).map((job: ImportJob) => (
+              <button
+                key={job.id}
+                type="button"
+                onClick={() => setActiveImportId(job.id)}
+                className="w-full rounded-2xl bg-slate-50 px-3 py-2 text-left text-sm transition hover:bg-slate-100"
+              >
+                <span className="font-bold text-midnight">#{job.id} {job.entity_type}</span>
+                <span className="ml-2 text-slate-500">{job.status} · {job.imported_count}/{job.total_rows}</span>
+              </button>
+            ))}
+            {!jobsQuery.isLoading && !jobs.length ? <p className="text-sm text-slate-500">Импортов пока нет.</p> : null}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function buildWebsiteWidgetSnippet(publicToken: string, apiBaseUrl: string) {
+  return `<script src="/widget/zani-widget.js" data-zani-token="${publicToken}" data-zani-api="${apiBaseUrl}"></script>`;
+}
+
+function WebsiteChatConnectorPanel({
+  websiteChannel,
+  isLoading,
+}: {
+  websiteChannel?: BotChannel;
+  isLoading: boolean;
+}) {
+  const queryClient = useQueryClient();
+  const [preview, setPreview] = useState({
+    full_name: "Тестовый посетитель",
+    phone: "+77015550000",
+    email: "",
+    message: "Здравствуйте, хочу узнать свободное время.",
+  });
+  const [followUpMessage, setFollowUpMessage] = useState("Подскажите, пожалуйста, ближайшее окно.");
+  const [conversationId, setConversationId] = useState("");
+  const [notice, setNotice] = useState("");
+  const apiBaseUrl = (import.meta.env.VITE_API_URL as string | undefined) || window.location.origin;
+  const snippet = websiteChannel ? buildWebsiteWidgetSnippet(websiteChannel.public_token, apiBaseUrl) : "";
+
+  const createConversation = useMutation({
+    mutationFn: () => {
+      if (!websiteChannel) throw new Error("Website channel is not configured.");
+      return websiteChatApi.createConversation({
+        publicToken: websiteChannel.public_token,
+        payload: {
+          full_name: preview.full_name,
+          phone: preview.phone,
+          email: preview.email,
+          message: preview.message,
+          external_user_id: `preview-${Date.now()}`,
+        },
+      });
+    },
+    onSuccess: (result) => {
+      setConversationId(result.conversation_id);
+      setNotice(`Тестовый диалог создан. Lead #${result.lead_id || "-"}, Client #${result.client_id || "-"}.`);
+      queryClient.invalidateQueries({ queryKey: ["bot-conversations"] });
+      queryClient.invalidateQueries({ queryKey: ["bot-messages"] });
+      queryClient.invalidateQueries({ queryKey: ["inbox-conversations"] });
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
+    },
+  });
+
+  const sendFollowUp = useMutation({
+    mutationFn: () => {
+      if (!websiteChannel || !conversationId) throw new Error("Create a conversation first.");
+      return websiteChatApi.sendMessage({
+        publicToken: websiteChannel.public_token,
+        conversationId,
+        message: followUpMessage,
+      });
+    },
+    onSuccess: () => {
+      setNotice("Follow-up сообщение добавлено в тот же Inbox диалог.");
+      queryClient.invalidateQueries({ queryKey: ["bot-conversations"] });
+      queryClient.invalidateQueries({ queryKey: ["bot-messages"] });
+      queryClient.invalidateQueries({ queryKey: ["inbox-conversations"] });
+    },
+  });
+
+  const copySnippet = async () => {
+    if (!snippet) return;
+    await navigator.clipboard?.writeText(snippet);
+    setNotice("Snippet скопирован.");
+  };
+
+  const error = createConversation.error || sendFollowUp.error;
+
+  return (
+    <div id="integration-website" className="scroll-mt-24 mb-5 rounded-3xl border border-blue-100 bg-white/95 p-5 shadow-soft">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex gap-3">
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-blue-50 text-blue-700">
+            <MessageSquareText size={22} />
+          </div>
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">Website chat</p>
+            <h2 className="mt-2 text-2xl font-black text-midnight">Чат сайта и лендингов</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+              Виджет сайта принимает обращение, создаёт клиента, заявку и диалог в Inbox. Технические ключи скрыты: владелец видит только понятную установку и тест сообщения.
+            </p>
+          </div>
+        </div>
+        <Link to="/dashboard/inbox?channel=website">
+          <Button type="button" variant="secondary">
+            <ExternalLink size={16} /> Открыть Inbox
+          </Button>
+        </Link>
+      </div>
+
+      {isLoading ? <div className="mt-4"><LoadingState label="Проверяем website channel..." /></div> : null}
+
+      {!isLoading && !websiteChannel ? (
+        <div className="mt-5 rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-5">
+          <p className="font-black text-midnight">Website channel пока не создан</p>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            Создайте канал сайта в настройке бота или через onboarding. После этого здесь появятся кнопка копирования кода установки и тест отправки сообщения.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link to="/dashboard/bots"><Button type="button" variant="secondary">Открыть ботов</Button></Link>
+            <Link to="/dashboard/pilot-readiness"><Button type="button" variant="ghost">Проверить готовность</Button></Link>
+          </div>
+        </div>
+      ) : null}
+
+      {websiteChannel ? (
+        <div className="mt-5 grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
+          <div className="space-y-4">
+            <div className="rounded-3xl border border-blue-100 bg-blue-50 p-4">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-black text-blue-900">Канал сайта: {websiteChannel.status}</p>
+                  <p className="mt-1 text-xs font-semibold text-blue-700">
+                    Виджет готов. Внутренний код подключения скрыт, чтобы не превращать страницу интеграций в техническую панель.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" variant="secondary" onClick={copySnippet}>
+                    <Copy size={16} /> Скопировать код установки
+                  </Button>
+                </div>
+              </div>
+              <p className="mt-3 text-xs font-semibold text-blue-700">
+                Код установки копируется в буфер обмена и не отображает внутренний ключ на экране CRM.
+              </p>
+            </div>
+
+            {notice ? <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{notice}</div> : null}
+            {error ? <ErrorState message={getApiErrorMessage(error)} /> : null}
+          </div>
+
+          <div className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
+            <p className="font-black text-midnight">Тестовое сообщение с сайта</p>
+            <p className="mt-1 text-sm leading-6 text-slate-600">
+              Использует публичный endpoint без авторизации, как реальный посетитель лендинга.
+            </p>
+            <form
+              className="mt-4 space-y-3"
+              onSubmit={(event) => {
+                event.preventDefault();
+                createConversation.mutate();
+              }}
+            >
+              <Input label="Имя" value={preview.full_name} onChange={(event) => setPreview({ ...preview, full_name: event.target.value })} />
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Input label="Телефон" value={preview.phone} onChange={(event) => setPreview({ ...preview, phone: event.target.value })} />
+                <Input label="Email" value={preview.email} onChange={(event) => setPreview({ ...preview, email: event.target.value })} />
+              </div>
+              <Input label="Сообщение" value={preview.message} onChange={(event) => setPreview({ ...preview, message: event.target.value })} required />
+              <Button type="submit" isLoading={createConversation.isPending}>
+                <Send size={16} /> Создать тестовый диалог
+              </Button>
+            </form>
+
+            {conversationId ? (
+              <div className="mt-4 rounded-2xl bg-white p-3">
+                <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">Follow-up в тот же диалог</p>
+                <Input className="mt-3" value={followUpMessage} onChange={(event) => setFollowUpMessage(event.target.value)} />
+                <Button
+                  type="button"
+                  className="mt-3"
+                  variant="secondary"
+                  disabled={!followUpMessage.trim()}
+                  isLoading={sendFollowUp.isPending}
+                  onClick={() => sendFollowUp.mutate()}
+                >
+                  <Send size={16} /> Добавить сообщение
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function TelegramConnectorWizard({
+  businessId,
+  bots,
+  telegramChannel,
+  canManage,
+}: {
+  businessId: Id;
+  bots: Bot[];
+  telegramChannel?: BotChannel;
+  canManage: boolean;
+}) {
+  const queryClient = useQueryClient();
+  const [botToken, setBotToken] = useState("");
+  const [notice, setNotice] = useState("");
+  const webhookUrl = `${(import.meta.env.VITE_API_URL as string | undefined) || window.location.origin}/api/integrations/telegram/webhook/`;
+
+  const telegramStatus = useQuery({
+    queryKey: ["telegram-status", telegramChannel?.id],
+    queryFn: () => telegramChannelApi.status(telegramChannel!.id),
+    enabled: Boolean(telegramChannel?.id),
+  });
+
+  const ensureChannel = async () => {
+    if (telegramChannel) return telegramChannel;
+    const bot = bots[0] || await botsApi.create({
+      business: businessId,
+      name: "Telegram bot",
+      status: "active",
+      default_language: "ru",
+      settings_json: {},
+    });
+    return botChannelsApi.create({
+      bot: bot.id,
+      channel: "telegram",
+      status: "draft",
+      external_id: "",
+      config_json: {},
+    });
+  };
+
+  const saveConfig = useMutation({
+    mutationFn: async () => {
+      const channel = await ensureChannel();
+      const config = await telegramChannelApi.configure({
+        channelId: channel.id,
+        botToken,
+      });
+      const webhook = await telegramChannelApi.setWebhook({ channelId: channel.id, webhookUrl });
+      return { channel, config, webhook };
+    },
+    onSuccess: (result) => {
+      setBotToken("");
+      setNotice(result.webhook?.mock ? `Настройки сохранены. Проверка выполнена в безопасном демо-режиме: ${result.webhook.reason}` : "Настройки Telegram сохранены.");
+      queryClient.invalidateQueries({ queryKey: ["bots"] });
+      queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
+      queryClient.invalidateQueries({ queryKey: ["telegram-status"] });
+    },
+  });
+
+  const testConnection = useMutation({
+    mutationFn: async () => {
+      const channel = await ensureChannel();
+      return telegramChannelApi.testConnection(channel.id);
+    },
+    onSuccess: (result) => {
+      setNotice(result.ok ? (result.mock ? "Код подключения сохранён, проверка выполнена в безопасном демо-режиме." : "Telegram подключение успешно проверено.") : `Проверка не прошла: ${result.reason || "неизвестная ошибка"}`);
+      queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
+      queryClient.invalidateQueries({ queryKey: ["telegram-status"] });
+    },
+  });
+
+  const error = saveConfig.error || testConnection.error || telegramStatus.error;
+  const tokenConfigured = telegramStatus.data?.token_configured || telegramChannel?.config_json?.bot_token === "configured";
+
+  return (
+    <div id="integration-telegram" className="scroll-mt-24 mb-5 rounded-3xl border border-sky-100 bg-white/95 p-5 shadow-soft">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-sky-700">Telegram beta connector</p>
+          <h2 className="mt-2 text-2xl font-black text-midnight">Подключение Telegram</h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+            Первый внешний канал для пилота: сообщения из Telegram попадают в Inbox. Код от BotFather сохраняется безопасно и не показывается после сохранения.
+          </p>
+        </div>
+        <Link to="/dashboard/inbox?channel=telegram">
+          <Button type="button" variant="secondary"><ExternalLink size={16} /> Telegram Inbox</Button>
+        </Link>
+      </div>
+
+      {error ? <div className="mt-4"><ErrorState message={getApiErrorMessage(error)} /></div> : null}
+      {notice ? <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{notice}</div> : null}
+
+      <div className="mt-5 grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
+        <div className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
+          <p className="font-black text-midnight">Инструкция для владельца</p>
+          <ol className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
+            <li>1. Откройте Telegram и найдите `@BotFather`.</li>
+            <li>2. Создайте бота командой `/newbot` и скопируйте код подключения.</li>
+            <li>3. Вставьте код ниже. После сохранения он больше не отображается в CRM.</li>
+            <li>4. Нажмите “Проверить подключение”. В тестовой среде проверка выполнится безопасно, без отправки клиентам.</li>
+          </ol>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl bg-white p-3">
+              <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Код подключения</p>
+              <p className={tokenConfigured ? "mt-1 font-bold text-emerald-700" : "mt-1 font-bold text-amber-700"}>
+                {tokenConfigured ? "Сохранён" : "Не задан"}
+              </p>
+            </div>
+            <div className="rounded-2xl bg-white p-3">
+              <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Приём сообщений</p>
+              <p className={telegramChannel ? "mt-1 font-bold text-emerald-700" : "mt-1 font-bold text-amber-700"}>
+                {telegramChannel ? "Настроен внутри ZANI" : "Будет настроен после сохранения"}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <form
+          className="rounded-3xl border border-slate-100 bg-white p-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            saveConfig.mutate();
+          }}
+        >
+          <div className="grid gap-3">
+            <Input
+              label="Код от BotFather"
+              type="password"
+              value={botToken}
+              onChange={(event) => setBotToken(event.target.value)}
+              placeholder={tokenConfigured ? "Код уже сохранён. Введите новый только для замены." : "Вставьте код из BotFather"}
+              disabled={!canManage}
+            />
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button type="submit" disabled={!canManage || !botToken.trim()} isLoading={saveConfig.isPending}>
+              <ShieldCheck size={16} /> Сохранить
+            </Button>
+            <Button type="button" variant="secondary" disabled={!canManage || !telegramChannel} isLoading={testConnection.isPending} onClick={() => testConnection.mutate()}>
+              <CheckCircle2 size={16} /> Проверить подключение
+            </Button>
+          </div>
+          {!canManage ? <p className="mt-3 text-sm font-semibold text-slate-500">Ваша роль позволяет смотреть статус, но не менять Telegram подключение.</p> : null}
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function RequestReadyConnectorPanel({
+  provider,
   connector,
   businessId,
   canManage,
 }: {
-  capability: ConnectorCapability;
+  provider: "whatsapp" | "instagram";
   connector?: BusinessConnector;
   businessId: Id;
   canManage: boolean;
 }) {
   const queryClient = useQueryClient();
-  const [secret, setSecret] = useState("");
-  const [secretKey, setSecretKey] = useState("access_token");
+  const [form, setForm] = useState<Record<string, string>>(
+    provider === "whatsapp"
+      ? {
+          company_name: "",
+          phone_number: "",
+          contact_person: "",
+          preferred_connection_type: "not_sure",
+          comment: "",
+        }
+      : {
+          instagram_username: "",
+          facebook_page: "",
+          contact_person: "",
+          comment: "",
+        },
+  );
+  const label = provider === "whatsapp" ? "WhatsApp" : "Instagram";
+  const isPending = connector?.status === "needs_attention";
 
-  const createConnector = useMutation({
-    mutationFn: () =>
-      businessConnectorsApi.create({
-        business: businessId,
-        provider: capability.provider,
-        name: capability.label,
-        capability: capability.capability,
-        auth_type: capability.auth_type,
-        scopes_json: [],
-        config_json: {},
-      }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["business-connectors"] }),
-  });
-
-  const saveCredential = useMutation({
+  const submitRequest = useMutation({
     mutationFn: () => {
-      if (!connector) throw new Error("Connector is required.");
-      return connectorCredentialsApi.create({ connector: connector.id, key: secretKey, value: secret });
+      const payload: BusinessConnectorPayload = {
+        business: businessId,
+        provider,
+        name: `${label} connection request`,
+        capability: "communications",
+        auth_type: provider === "whatsapp" ? "qr" : "oauth",
+        scopes_json: [],
+        config_json: {
+          request_type: `${provider}_connection_request`,
+          request_status: "pending_request",
+          requested_from_ui: true,
+          provider_ready: provider === "whatsapp" ? ["meta_placeholder", "twilio_placeholder", "360dialog_placeholder", "qr_pilot_placeholder"] : ["meta_placeholder"],
+          form,
+        },
+      };
+      if (connector) {
+        return businessConnectorsApi.update({ id: connector.id, payload });
+      }
+      return businessConnectorsApi.create(payload);
     },
     onSuccess: () => {
-      setSecret("");
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
     },
   });
 
-  const healthCheck = useMutation({
-    mutationFn: () => {
-      if (!connector) throw new Error("Connector is required.");
-      return businessConnectorsApi.healthCheck(connector.id);
+  return (
+    <div className="rounded-3xl border border-white/80 bg-white/95 p-5 shadow-soft">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-violet-700">{label} request-ready</p>
+          <h3 className="mt-2 text-xl font-black text-midnight">{label}: заявка на подключение</h3>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            {provider === "whatsapp"
+              ? "Собираем данные для ручной проверки канала. Реальное внешнее подключение не включается автоматически."
+              : "Собираем данные для будущего Meta-ready подключения. Пароль Instagram не нужен и не запрашивается."}
+          </p>
+        </div>
+        <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-black ring-1 ${isPending ? "bg-violet-50 text-violet-700 ring-violet-100" : "bg-slate-100 text-slate-600 ring-slate-200"}`}>
+          {isPending ? "pending_request" : connector?.status || "not_requested"}
+        </span>
+      </div>
+
+      <form
+        className="mt-4 grid gap-3"
+        onSubmit={(event) => {
+          event.preventDefault();
+          submitRequest.mutate();
+        }}
+      >
+        {provider === "whatsapp" ? (
+          <>
+            <Input label="Название компании" value={form.company_name || ""} onChange={(event) => setForm({ ...form, company_name: event.target.value })} disabled={!canManage} />
+            <Input label="Номер WhatsApp" value={form.phone_number || ""} onChange={(event) => setForm({ ...form, phone_number: event.target.value })} disabled={!canManage} />
+            <Input label="Контактное лицо" value={form.contact_person || ""} onChange={(event) => setForm({ ...form, contact_person: event.target.value })} disabled={!canManage} />
+            <Select
+              value={form.preferred_connection_type || "not_sure"}
+              onChange={(event) => setForm({ ...form, preferred_connection_type: event.target.value })}
+              disabled={!canManage}
+              options={[
+                { value: "official_provider", label: "Официальное подключение" },
+                { value: "qr_pilot", label: "QR pilot" },
+                { value: "not_sure", label: "Пока не знаю" },
+              ]}
+            />
+          </>
+        ) : (
+          <>
+            <Input label="Instagram username" value={form.instagram_username || ""} onChange={(event) => setForm({ ...form, instagram_username: event.target.value })} disabled={!canManage} />
+            <Input label="Facebook Page, если есть" value={form.facebook_page || ""} onChange={(event) => setForm({ ...form, facebook_page: event.target.value })} disabled={!canManage} />
+            <Input label="Контактное лицо" value={form.contact_person || ""} onChange={(event) => setForm({ ...form, contact_person: event.target.value })} disabled={!canManage} />
+          </>
+        )}
+        <Input label="Комментарий" value={form.comment || ""} onChange={(event) => setForm({ ...form, comment: event.target.value })} disabled={!canManage} />
+        <Button type="submit" variant="secondary" disabled={!canManage} isLoading={submitRequest.isPending}>
+          <Send size={16} /> {connector ? "Обновить заявку" : "Отправить заявку"}
+        </Button>
+      </form>
+      {submitRequest.error ? <div className="mt-3"><ErrorState message={getApiErrorMessage(submitRequest.error)} /></div> : null}
+      {submitRequest.isSuccess ? <p className="mt-3 rounded-2xl bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-700">Заявка сохранена. Platform support увидит её как connector request.</p> : null}
+    </div>
+  );
+}
+
+const dataConnectorCatalog: Array<{
+  provider: BusinessConnector["provider"];
+  label: string;
+  capability: BusinessConnector["capability"];
+  eventType: string;
+  description: string;
+}> = [
+  {
+    provider: "kaspi",
+    label: "Kaspi",
+    capability: "finance",
+    eventType: "order_imported",
+    description: "Read-only visibility: заказы, продажи и будущая аналитика. Без repricing и write-back.",
+  },
+  {
+    provider: "1c",
+    label: "1C",
+    capability: "inventory",
+    eventType: "product_imported",
+    description: "На пилоте — через файлы и Excel/CSV pipeline. Full sync и бухгалтерию не делаем.",
+  },
+  {
+    provider: "google_sheets",
+    label: "Google Sheets",
+    capability: "sales",
+    eventType: "sheet_row_imported",
+    description: "Request-ready импорт таблиц для клиентов, заявок и продаж. Без фоновой синхронизации на пилоте.",
+  },
+  {
+    provider: "email",
+    label: "Email",
+    capability: "communications",
+    eventType: "email_channel_requested",
+    description: "Заявка на подключение почты для заявок и уведомлений. Транзакционная отправка подключается отдельно.",
+  },
+  {
+    provider: "moysklad",
+    label: "МойСклад",
+    capability: "inventory",
+    eventType: "stock_level_imported",
+    description: "Request-ready foundation для остатков и каталога после пилота.",
+  },
+  {
+    provider: "wildberries",
+    label: "Wildberries",
+    capability: "finance",
+    eventType: "order_imported",
+    description: "Marketplace visibility roadmap: продажи, SKU, остатки, возвраты.",
+  },
+  {
+    provider: "ozon",
+    label: "Ozon",
+    capability: "finance",
+    eventType: "order_imported",
+    description: "Marketplace visibility roadmap без write-back и управления ценами.",
+  },
+  {
+    provider: "yandex_market",
+    label: "Яндекс.Маркет",
+    capability: "finance",
+    eventType: "order_imported",
+    description: "Будущий marketplace connector для рынка РФ, сейчас только заявка/interest.",
+  },
+];
+
+function DataConnectorsFoundationPanel({
+  businessId,
+  connectorByProvider,
+  canManage,
+}: {
+  businessId: Id;
+  connectorByProvider: Map<string, BusinessConnector>;
+  canManage: boolean;
+}) {
+  const queryClient = useQueryClient();
+  const [commentByProvider, setCommentByProvider] = useState<Record<string, string>>({});
+  const [notice, setNotice] = useState("");
+
+  const requestConnector = useMutation({
+    mutationFn: ({ provider, label, capability, comment }: { provider: BusinessConnector["provider"]; label: string; capability: BusinessConnector["capability"]; comment: string }) => {
+      const existing = connectorByProvider.get(provider);
+      const payload: BusinessConnectorPayload = {
+        business: businessId,
+        provider,
+        name: `${label} connector request`,
+        capability,
+        auth_type: "connector",
+        scopes_json: [],
+        config_json: {
+          request_status: "pending_request",
+          requested_from_ui: true,
+          pilot_mode: "request_or_import_only",
+          no_write_back: true,
+          comment,
+        },
+      };
+      if (existing) {
+        return businessConnectorsApi.update({ id: existing.id, payload });
+      }
+      return businessConnectorsApi.create(payload);
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["business-connectors"] }),
+    onSuccess: (connector) => {
+      setNotice(`${connector.name}: заявка сохранена.`);
+      queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
+    },
   });
 
-  const disconnect = useMutation({
-    mutationFn: () => {
-      if (!connector) throw new Error("Connector is required.");
-      return businessConnectorsApi.disconnect(connector.id);
+  const mockSync = useMutation({
+    mutationFn: ({ connector, eventType }: { connector: BusinessConnector; eventType: string }) =>
+      businessConnectorsApi.ingestEvent({
+        id: connector.id,
+        payload: {
+          event_type: eventType,
+          external_id: `mock-${connector.provider}-${Date.now()}`,
+          payload_json: {
+            source: connector.provider,
+            amount: eventType === "order_imported" ? 12000 : undefined,
+            sku: eventType !== "order_imported" ? "DEMO-SKU" : undefined,
+            quantity: eventType === "stock_level_imported" ? 7 : undefined,
+            note: "Pilot demo import event; no external API call was made.",
+          },
+        },
+      }),
+    onSuccess: () => {
+      setNotice("Демо-событие импорта записано. Это безопасная проверка будущей синхронизации без внешнего подключения.");
+      queryClient.invalidateQueries({ queryKey: ["business-events"] });
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["business-connectors"] }),
   });
 
-  const error = createConnector.error || saveCredential.error || healthCheck.error || disconnect.error;
-  const isConnected = connector?.status === "connected";
+  const error = requestConnector.error || mockSync.error;
 
   return (
-    <div className="rounded-3xl border border-white/80 bg-white/90 p-5 shadow-soft backdrop-blur-xl">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex min-w-0 items-start gap-3">
-          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-slate-100 text-brand-600">
-            {isConnected ? <ShieldCheck size={22} /> : <PlugZap size={22} />}
-          </div>
-          <div className="min-w-0">
-            <p className="text-lg font-black text-midnight">{capability.label}</p>
-            <p className="mt-1 text-sm text-slate-500">{connectorTitle(capability)} · {capability.auth_type}</p>
-          </div>
-        </div>
-        {connector ? <StatusBadge status={connector.status} /> : <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">Не подключен</span>}
-      </div>
-
-      {connector?.last_error ? (
-        <div className="mt-4 flex gap-2 rounded-2xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-          <AlertTriangle className="mt-0.5 shrink-0" size={16} />
-          <span>{connector.last_error}</span>
-        </div>
-      ) : null}
-
-      <div className="mt-5 grid gap-3 text-sm text-slate-600 sm:grid-cols-3">
-        <div className="rounded-2xl bg-slate-50 p-3">
-          <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Provider</p>
-          <p className="mt-1 font-semibold text-midnight">{capability.provider}</p>
-        </div>
-        <div className="rounded-2xl bg-slate-50 p-3">
-          <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Credentials</p>
-          <p className="mt-1 font-semibold text-midnight">{connector?.credentials_count || 0}</p>
-        </div>
-        <div className="rounded-2xl bg-slate-50 p-3">
-          <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Last sync</p>
-          <p className="mt-1 font-semibold text-midnight">{connector?.last_sync_at ? new Date(connector.last_sync_at).toLocaleString() : "Нет"}</p>
-        </div>
-      </div>
-
-      <div className="mt-4 rounded-3xl border border-slate-100 bg-slate-50 p-4">
-        <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Рекомендуемый запуск</p>
-        <p className="mt-2 text-sm leading-6 text-slate-600">
-          {isConnected
-            ? "Коннектор создан. Проверьте health status, затем подключайте события через automation и inbox."
-            : "Начните с создания коннектора без секрета. Реальные ключи добавляйте только после проверки прав и источника токена."}
+    <div id="integration-data" className="scroll-mt-24 mb-5 rounded-3xl border border-amber-100 bg-white/95 p-5 shadow-soft">
+      <div>
+        <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">Data connectors foundation</p>
+        <h2 className="mt-2 text-2xl font-black text-midnight">Kaspi / 1C / склад / marketplaces</h2>
+        <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
+          Лёгкий слой под будущие интеграции: заявка, статус и безопасная демо-проверка импорта. Без ERP, realtime full sync, write-back, repricing и бухгалтерской логики.
         </p>
       </div>
 
-      {canManage ? (
-        <div className="mt-5 space-y-3">
-          {!connector ? (
-            <Button onClick={() => createConnector.mutate()} isLoading={createConnector.isPending}>
-              <Link2 size={16} /> Создать коннектор
-            </Button>
-          ) : (
-            <>
-              <div className="grid gap-3 md:grid-cols-[180px_1fr_auto]">
-                <Select
-                  value={secretKey}
-                  onChange={(event) => setSecretKey(event.target.value)}
-                  options={[
-                    { value: "access_token", label: "Access token" },
-                    { value: "webhook_secret", label: "Webhook secret" },
-                    { value: "refresh_token", label: "Refresh token" },
-                    { value: "api_key", label: "API key" },
-                  ]}
-                />
-                <Input
-                  value={secret}
-                  onChange={(event) => setSecret(event.target.value)}
-                  placeholder="Секрет не будет показан после сохранения"
-                  type="password"
-                />
-                <Button onClick={() => saveCredential.mutate()} disabled={!secret} isLoading={saveCredential.isPending}>
-                  <KeyRound size={16} /> Сохранить
+      {notice ? <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{notice}</div> : null}
+      {error ? <div className="mt-4"><ErrorState message={getApiErrorMessage(error)} /></div> : null}
+
+      <div className="mt-5 grid gap-4 xl:grid-cols-3">
+        {dataConnectorCatalog.map((item) => {
+          const connector = connectorByProvider.get(item.provider);
+          const comment = commentByProvider[item.provider] || "";
+          return (
+            <div key={item.provider} className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-lg font-black text-midnight">{item.label}</p>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">{item.description}</p>
+                </div>
+                <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-xs font-black text-slate-600 ring-1 ring-slate-200">
+                  {connector?.status || "request"}
+                </span>
+              </div>
+              <Input
+                className="mt-4"
+                placeholder="Комментарий к заявке"
+                value={comment}
+                onChange={(event) => setCommentByProvider({ ...commentByProvider, [item.provider]: event.target.value })}
+                disabled={!canManage}
+              />
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={!canManage}
+                  isLoading={requestConnector.isPending}
+                  onClick={() => requestConnector.mutate({ provider: item.provider, label: item.label, capability: item.capability, comment })}
+                >
+                  <Send size={16} /> {connector ? "Обновить" : "Запросить"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  disabled={!canManage || !connector}
+                  isLoading={mockSync.isPending}
+                  onClick={() => connector && mockSync.mutate({ connector, eventType: item.eventType })}
+                >
+                  Проверить демо-импорт
                 </Button>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <Button variant="secondary" onClick={() => healthCheck.mutate()} isLoading={healthCheck.isPending}>
-                  <RefreshCw size={16} /> Health check
-                </Button>
-                <Button variant="ghost" onClick={() => disconnect.mutate()} isLoading={disconnect.isPending}>
-                  <Unplug size={16} /> Отключить
-                </Button>
-              </div>
-            </>
-          )}
-          {error ? <ErrorState message={getApiErrorMessage(error)} /> : null}
-        </div>
-      ) : (
-        <p className="mt-5 rounded-2xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">
-          Роль позволяет просматривать интеграции, но не управлять подключениями.
-        </p>
-      )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -187,6 +957,9 @@ export function IntegrationsPage() {
   const { user } = useAuth();
   const { business, isLoading: isBusinessLoading } = useActiveBusiness();
   const canManage = hasPermission(user, business?.id, "integrations", "manage");
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<CapabilityFilter>("all");
+  const [group, setGroup] = useState<CapabilityGroup>("all");
 
   const capabilities = useQuery({
     queryKey: ["connector-capabilities"],
@@ -197,6 +970,7 @@ export function IntegrationsPage() {
     queryFn: businessConnectorsApi.list,
     enabled: Boolean(business?.id),
   });
+  const entityData = useEntityData({ enabled: Boolean(business?.id), bots: true, botChannels: true });
 
   const connectorByProvider = useMemo(() => {
     const map = new Map<string, BusinessConnector>();
@@ -204,7 +978,47 @@ export function IntegrationsPage() {
     return map;
   }, [connectors.data]);
 
-  if (isBusinessLoading || capabilities.isLoading || connectors.isLoading) {
+  const capabilityList = capabilities.data || [];
+  const summary = useMemo(() => {
+    return {
+      total: capabilityList.length,
+      included: capabilityList.filter((item) => item.availability === "included").length,
+      request: capabilityList.filter((item) => item.action_behavior === "request").length,
+      roadmap: capabilityList.filter((item) => ["soon", "roadmap"].includes(item.availability)).length,
+      connected: (connectors.data || []).filter((item) => item.status === "connected").length,
+    };
+  }, [capabilityList, connectors.data]);
+
+  const filteredCapabilities = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase();
+    return capabilityList.filter((capability) => {
+      const matchesSearch =
+        !normalizedSearch ||
+        [capability.label, capability.provider, capability.description, capabilityGroupLabel(capability)]
+          .join(" ")
+          .toLowerCase()
+          .includes(normalizedSearch);
+      const matchesGroup = group === "all" || capability.capability === group;
+      const matchesFilter =
+        filter === "all" ||
+        (filter === "self_service" && capability.action_behavior === "self_service") ||
+        (filter === "request" && capability.action_behavior === "request") ||
+        (filter === "included" && capability.availability === "included") ||
+        (filter === "upgrade" && capability.availability === "upgrade") ||
+        (filter === "roadmap" && ["soon", "roadmap"].includes(capability.availability));
+      return matchesSearch && matchesGroup && matchesFilter;
+    });
+  }, [capabilityList, filter, group, search]);
+  const hasExcelCsv = capabilityList.some((capability) => capability.provider === "excel_csv");
+  const websiteChannel = (entityData.botChannels.data || []).find((channel) => channel.channel === "website");
+  const telegramChannel = (entityData.botChannels.data || []).find((channel) => channel.channel === "telegram");
+  const bots = entityData.bots.data || [];
+  const hasWhatsAppRequest = Boolean(connectorByProvider.get("whatsapp"));
+  const hasAnyDataConnector = ["kaspi", "1c", "google_sheets", "moysklad", "wildberries", "ozon", "yandex_market", "excel_csv"].some((provider) =>
+    connectorByProvider.has(provider),
+  );
+
+  if (isBusinessLoading || capabilities.isLoading || connectors.isLoading || entityData.bots.isLoading || entityData.botChannels.isLoading) {
     return <LoadingState label="Загружаем интеграции..." />;
   }
 
@@ -215,29 +1029,129 @@ export function IntegrationsPage() {
   return (
     <div>
       <PageHeader
-        title="Интеграции"
-        description="Единая панель подключений: каналы, внешние сервисы, health status и безопасное хранение ключей без показа raw credentials."
+        title="Подключения бизнеса"
+        description="Пилотная карта коннекторов ZANI: self-service каналы, request-подключения, тарифные upsell-модули и roadmap без кнопок в тупик."
         actions={
           <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
             <CheckCircle2 className="mr-2 inline" size={16} />
-            Секреты маскируются в API
+            Без технических токенов в CRM
           </div>
         }
       />
 
       {capabilities.error || connectors.error ? <ErrorState message={getApiErrorMessage(capabilities.error || connectors.error)} /> : null}
 
-      <div className="grid gap-4 xl:grid-cols-2">
-        {(capabilities.data || []).map((capability) => (
-          <ConnectorCard
-            key={capability.provider}
-            capability={capability}
-            connector={connectorByProvider.get(capability.provider)}
-            businessId={business.id}
-            canManage={canManage}
-          />
-        ))}
+      <IntegrationOnboardingGuide
+        connectedCount={summary.connected}
+        hasWebsiteChannel={Boolean(websiteChannel)}
+        hasTelegramChannel={Boolean(telegramChannel)}
+        hasWhatsAppRequest={hasWhatsAppRequest}
+        hasAnyDataConnector={hasAnyDataConnector}
+      />
+
+      <div className="mb-5 grid gap-3 md:grid-cols-4">
+        <div className="rounded-3xl border border-white/80 bg-white/90 p-4 shadow-soft">
+          <Sparkles className="text-brand-600" size={20} />
+          <p className="mt-2 text-2xl font-black text-midnight">{summary.included}</p>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">В тарифе</p>
+          <p className="mt-1 text-xs leading-5 text-slate-500">Можно включать в пилоте без внешнего провайдера.</p>
+        </div>
+        <div className="rounded-3xl border border-white/80 bg-white/90 p-4 shadow-soft">
+          <Send className="text-violet-600" size={20} />
+          <p className="mt-2 text-2xl font-black text-midnight">{summary.request}</p>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">По заявке</p>
+          <p className="mt-1 text-xs leading-5 text-slate-500">Создаём карточку интереса, но не обещаем auto-connect.</p>
+        </div>
+        <div className="rounded-3xl border border-white/80 bg-white/90 p-4 shadow-soft">
+          <Clock3 className="text-amber-600" size={20} />
+          <p className="mt-2 text-2xl font-black text-midnight">{summary.roadmap}</p>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Скоро / Roadmap</p>
+          <p className="mt-1 text-xs leading-5 text-slate-500">Показываем как будущую ценность и upsell.</p>
+        </div>
+        <div className="rounded-3xl border border-white/80 bg-white/90 p-4 shadow-soft">
+          <ShieldCheck className="text-emerald-600" size={20} />
+          <p className="mt-2 text-2xl font-black text-midnight">{summary.connected}</p>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Подключено</p>
+          <p className="mt-1 text-xs leading-5 text-slate-500">Активные коннекторы текущего бизнеса.</p>
+        </div>
       </div>
+
+      <div className="mb-5 rounded-3xl border border-white/80 bg-white/90 p-4 shadow-soft">
+        <div className="grid gap-3 lg:grid-cols-[1fr_220px_220px_auto]">
+          <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Найти коннектор: WhatsApp, Excel, Kaspi..." />
+          <Select
+            value={filter}
+            onChange={(event) => setFilter(event.target.value as CapabilityFilter)}
+            options={[
+              { value: "all", label: "Все статусы" },
+              { value: "included", label: "В тарифе" },
+              { value: "self_service", label: "Self-service" },
+              { value: "request", label: "По заявке" },
+              { value: "upgrade", label: "В тарифе выше" },
+              { value: "roadmap", label: "Скоро / Roadmap" },
+            ]}
+          />
+          <Select
+            value={group}
+            onChange={(event) => setGroup(event.target.value as CapabilityGroup)}
+            options={[
+              { value: "all", label: "Все направления" },
+              { value: "communications", label: "Коммуникации" },
+              { value: "sales", label: "Продажи" },
+              { value: "calendar", label: "Календарь" },
+              { value: "finance", label: "Финансы" },
+              { value: "inventory", label: "Склад" },
+              { value: "marketing", label: "Маркетинг" },
+              { value: "custom", label: "Кастом" },
+            ]}
+          />
+          <Button variant="ghost" onClick={() => { setSearch(""); setFilter("all"); setGroup("all"); }}>
+            <Filter size={16} /> Сбросить
+          </Button>
+        </div>
+        <p className="mt-3 text-xs font-semibold text-slate-500">
+          Найдено: {filteredCapabilities.length} из {summary.total}. В пилоте владелец видит, что реально подключается сейчас, что требует заявки, а что является будущим модулем.
+        </p>
+      </div>
+
+      {filteredCapabilities.length === 0 ? (
+        <EmptyState title="Коннекторы не найдены" description="Сбросьте фильтры или попробуйте другой поисковый запрос." />
+      ) : (
+        <div className="mb-5 grid gap-4 xl:grid-cols-2">
+          {filteredCapabilities.map((capability) => (
+            <ConnectorCard
+              key={capability.provider}
+              capability={capability}
+              connector={connectorByProvider.get(capability.provider)}
+              businessId={business.id}
+              canManage={canManage}
+            />
+          ))}
+        </div>
+      )}
+
+      {hasExcelCsv ? <ExcelCsvImportPanel businessId={business.id} /> : null}
+
+      <div id="integration-requests" className="scroll-mt-24 mb-5 grid gap-4 xl:grid-cols-2">
+        <RequestReadyConnectorPanel
+          provider="whatsapp"
+          connector={connectorByProvider.get("whatsapp")}
+          businessId={business.id}
+          canManage={canManage}
+        />
+        <RequestReadyConnectorPanel
+          provider="instagram"
+          connector={connectorByProvider.get("instagram")}
+          businessId={business.id}
+          canManage={canManage}
+        />
+      </div>
+
+      <DataConnectorsFoundationPanel businessId={business.id} connectorByProvider={connectorByProvider} canManage={canManage} />
+
+      <TelegramConnectorWizard businessId={business.id} bots={bots} telegramChannel={telegramChannel} canManage={canManage} />
+
+      <WebsiteChatConnectorPanel websiteChannel={websiteChannel} isLoading={entityData.botChannels.isLoading} />
     </div>
   );
 }

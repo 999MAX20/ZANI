@@ -5,12 +5,13 @@ from apps.accounts.models import User
 from apps.businesses.models import Business, BusinessMember
 from apps.clients.models import Client
 from apps.conversations.models import QuickReplyTemplate
-from apps.crm.models import PipelineStage
+from apps.crm.models import Deal, PipelineStage
 from apps.integrations.models import BusinessConnector, BusinessEvent
 from apps.leads.models import Lead
 from apps.scheduling.models import Appointment, WorkingHours
 from apps.services.models import Service
 from apps.bots.models import BotChannel, BotConversation, BotMessage
+from apps.tasks.models import Task
 
 
 class OnboardingTests(TestCase):
@@ -82,6 +83,8 @@ class OnboardingTests(TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertTrue(Client.objects.filter(business=self.business).exists())
         self.assertTrue(Lead.objects.filter(business=self.business).exists())
+        self.assertTrue(Deal.objects.filter(business=self.business).exists())
+        self.assertTrue(Task.objects.filter(business=self.business, deal__isnull=False, appointment__isnull=False).exists())
         self.assertTrue(Appointment.objects.filter(business=self.business).exists())
         self.assertGreaterEqual(response.data["completed"], 8)
 

@@ -1,3 +1,5 @@
+from decimal import Decimal, InvalidOperation
+
 from django.utils.dateparse import parse_date
 from django.db.models import Count, Sum
 from django.utils import timezone
@@ -15,6 +17,7 @@ from apps.businesses.access import Actions, Resources, assert_can, scope_queryse
 from apps.core.permissions import accessible_businesses, user_can_access_business
 from apps.core.viewsets import TenantModelViewSet
 from apps.leads.models import Lead
+from apps.integrations.models import BusinessConnector, BusinessEvent
 from apps.scheduling.models import Appointment
 from apps.tasks.models import Task
 
@@ -62,25 +65,118 @@ def owner_dashboard(request):
         .order_by("-count", "source")
     )
     completed_appointments = appointments.filter(status=Appointment.Statuses.COMPLETED)
-    revenue = completed_appointments.aggregate(total=Sum("service__price_from"))["total"] or 0
+    appointment_revenue = completed_appointments.aggregate(total=Sum("service__price_from"))["total"] or 0
+    sales_events = BusinessEvent.objects.filter(business=business, event_type="sale.recorded")
+    imported_revenue = sum((_payload_amount(event.payload_json) for event in sales_events), Decimal("0"))
+    revenue = appointment_revenue + imported_revenue
+    now = timezone.now()
     open_tasks = tasks.exclude(status__in=[Task.Statuses.DONE, Task.Statuses.CANCELLED])
-
-    return Response(
-        {
-            "business": business.id,
-            "new_leads": leads.filter(status=Lead.Statuses.NEW).count(),
-            "total_leads": total_leads,
-            "leads_by_source": leads_by_source,
-            "appointments_today": appointments.filter(start_at__date=today).count(),
-            "appointments_completed": completed_appointments.count(),
-            "no_show_count": appointments.filter(status=Appointment.Statuses.NO_SHOW).count(),
-            "conversion_lead_to_appointment": conversion,
-            "open_tasks": open_tasks.count(),
-            "overdue_tasks": open_tasks.filter(due_at__lt=timezone.now()).count(),
-            "manager_response_time": None,
-            "revenue_estimate": str(revenue),
-        }
+    new_leads_count = leads.filter(status=Lead.Statuses.NEW).count()
+    overdue_tasks_count = open_tasks.filter(due_at__lt=now).count()
+    sales_events_count = sales_events.count()
+    today_imported_revenue = sum(
+        (_payload_amount(event.payload_json) for event in sales_events.filter(occurred_at__date=today)),
+        Decimal("0"),
     )
+    yesterday = today - timezone.timedelta(days=1)
+    yesterday_imported_revenue = sum(
+        (_payload_amount(event.payload_json) for event in sales_events.filter(occurred_at__date=yesterday)),
+        Decimal("0"),
+    )
+    connected_connectors = BusinessConnector.objects.filter(
+        business=business,
+        status__in=[BusinessConnector.Statuses.CONNECTED, BusinessConnector.Statuses.SYNCING],
+    )
+    setup_sources = {
+        "landing": bool(business.landing_id or business.landing_domain or business.landing_preview_url),
+        "lead_form": business.lead_forms.filter(is_active=True).exists(),
+        "sales_data": sales_events.exists(),
+        "communications": connected_connectors.filter(capability=BusinessConnector.Capabilities.COMMUNICATIONS).exists(),
+        "inventory": connected_connectors.filter(capability=BusinessConnector.Capabilities.INVENTORY).exists(),
+    }
+    setup_score = round((sum(1 for value in setup_sources.values() if value) / len(setup_sources)) * 100)
+    recommendations = _build_owner_recommendations(
+        has_sales_data=sales_events.exists(),
+        new_leads_count=new_leads_count,
+        overdue_tasks_count=overdue_tasks_count,
+        setup_sources=setup_sources,
+    )
+
+    mobile_onboarding = _build_mobile_owner_onboarding(
+        business=business,
+        setup_score=setup_score,
+        setup_sources=setup_sources,
+        has_sales_data=sales_events.exists(),
+        new_leads_count=new_leads_count,
+        overdue_tasks_count=overdue_tasks_count,
+    )
+
+    response_payload = {
+        "business": business.id,
+        "new_leads": new_leads_count,
+        "total_leads": total_leads,
+        "leads_by_source": leads_by_source,
+        "appointments_today": appointments.filter(start_at__date=today).count(),
+        "appointments_completed": completed_appointments.count(),
+        "no_show_count": appointments.filter(status=Appointment.Statuses.NO_SHOW).count(),
+        "conversion_lead_to_appointment": conversion,
+        "open_tasks": open_tasks.count(),
+        "overdue_tasks": overdue_tasks_count,
+        "manager_response_time": None,
+        "revenue_estimate": str(revenue),
+        "sales_events_count": sales_events_count,
+        "revenue": {
+            "today": str(today_imported_revenue),
+            "yesterday": str(yesterday_imported_revenue),
+            "total_estimate": str(revenue),
+            "growth_percent": _growth_percent(today_imported_revenue, yesterday_imported_revenue),
+        },
+        "business_pulse": _build_business_pulse(
+            has_sales_data=sales_events.exists(),
+            new_leads_count=new_leads_count,
+            overdue_tasks_count=overdue_tasks_count,
+            revenue=revenue,
+            top_source=leads_by_source[0]["source"] if leads_by_source else "",
+            setup_score=setup_score,
+        ),
+        "recommendations": recommendations,
+        "quick_connect": [
+            {
+                "key": "whatsapp",
+                "title": "Подключить WhatsApp",
+                "description": "Чтобы заявки и переписка попадали в ZANI, а владелец видел обработку клиентов.",
+                "status": "connect" if not setup_sources["communications"] else "connected",
+                "href": "/dashboard/integrations",
+            },
+            {
+                "key": "excel_csv",
+                "title": "Загрузить Excel / CSV",
+                "description": "Дайте ZANI продажи и услуги, чтобы dashboard показывал бизнес, а не пустоту.",
+                "status": "connect" if not setup_sources["sales_data"] else "connected",
+                "href": "/dashboard/settings#data-tools",
+            },
+            {
+                "key": "staff",
+                "title": "Добавить сотрудников",
+                "description": "Назначайте заявки и задачи, чтобы видеть ответственность по каждому клиенту.",
+                "status": "connect",
+                "href": "/dashboard/settings",
+            },
+        ],
+        "setup": {
+            "score": setup_score,
+            "sources": setup_sources,
+        },
+        "data_quality": {
+            "has_sales_data": sales_events.exists(),
+            "sales_events_count": sales_events_count,
+            "recommendation": "Загрузите CSV продаж или добавьте продажу вручную, чтобы ZANI считал выручку без догадок."
+            if not sales_events.exists()
+            else "Данные продаж подключены. ZANI использует загруженные события для базовой выручки.",
+        },
+        "mobile_onboarding": mobile_onboarding,
+    }
+    return Response(response_payload)
 
 
 @api_view(["GET"])
@@ -122,6 +218,175 @@ def report_export(request):
     return response
 
 
+
+def _build_mobile_owner_onboarding(*, business, setup_score, setup_sources, has_sales_data, new_leads_count, overdue_tasks_count):
+    steps = [
+        {
+            "key": "landing",
+            "title": "Лендинг активирован",
+            "description": "ZANI уже знает источник заявок и может принимать лиды из формы.",
+            "status": "done" if setup_sources.get("landing") else "todo",
+            "href": business.landing_preview_url or "/dashboard/leads",
+            "cta": "Открыть лендинг" if business.landing_preview_url else "Проверить заявки",
+            "priority": 1,
+        },
+        {
+            "key": "lead_form",
+            "title": "Форма заявок подключена",
+            "description": "Новая заявка с сайта попадёт в CRM Light и создаст уведомление.",
+            "status": "done" if setup_sources.get("lead_form") else "todo",
+            "href": "/dashboard/leads",
+            "cta": "Открыть CRM",
+            "priority": 2,
+        },
+        {
+            "key": "communications",
+            "title": "Подключить сообщения",
+            "description": "WhatsApp/Telegram/сайт дадут ZANI живые обращения и историю общения с клиентом.",
+            "status": "done" if setup_sources.get("communications") else "todo",
+            "href": "/dashboard/integrations",
+            "cta": "Подключить канал",
+            "priority": 3,
+        },
+        {
+            "key": "sales_data",
+            "title": "Загрузить продажи",
+            "description": "Без продаж AI не будет выдумывать аналитику. CSV/Excel даст выручку, динамику и первые выводы.",
+            "status": "done" if has_sales_data else "todo",
+            "href": "/dashboard/settings#data-tools",
+            "cta": "Загрузить Excel",
+            "priority": 4,
+        },
+        {
+            "key": "team",
+            "title": "Добавить сотрудников",
+            "description": "Назначайте заявки и задачи, чтобы владелец видел ответственность и скорость обработки.",
+            "status": "todo",
+            "href": "/dashboard/settings",
+            "cta": "Добавить команду",
+            "priority": 5,
+        },
+    ]
+    todo_steps = [step for step in steps if step["status"] != "done"]
+    if overdue_tasks_count:
+        headline = "Есть задачи, которые требуют реакции"
+        subtext = f"{overdue_tasks_count} задач просрочены. Начните с них, чтобы не потерять клиентов."
+        primary_action = {"label": "Открыть задачи", "href": "/dashboard/tasks"}
+    elif new_leads_count:
+        headline = "Новые заявки ждут обработки"
+        subtext = f"{new_leads_count} заявок нужно быстро разобрать или назначить менеджеру."
+        primary_action = {"label": "Открыть заявки", "href": "/dashboard/leads"}
+    elif todo_steps:
+        headline = "ZANI готовится увидеть бизнес полностью"
+        subtext = "Подключайте источники по шагам. Первый месяц расширенного доступа уже включён."
+        primary_action = {"label": todo_steps[0]["cta"], "href": todo_steps[0]["href"]}
+    else:
+        headline = "Базовый контур подключён"
+        subtext = "CRM, форма и данные готовы. Следующий шаг — AI-задачи и регулярные отчёты владельцу."
+        primary_action = {"label": "Открыть AI", "href": "/dashboard/ai"}
+    return {
+        "headline": headline,
+        "subtext": subtext,
+        "score": setup_score,
+        "primary_action": primary_action,
+        "steps": steps,
+        "next_step_key": todo_steps[0]["key"] if todo_steps else "ai",
+    }
+
+
+def _growth_percent(today_value, yesterday_value):
+    if not yesterday_value:
+        return None if not today_value else 100
+    return round(((today_value - yesterday_value) / yesterday_value) * 100)
+
+
+def _build_business_pulse(*, has_sales_data, new_leads_count, overdue_tasks_count, revenue, top_source, setup_score):
+    if not has_sales_data:
+        return {
+            "tone": "setup",
+            "title": "ZANI ждёт данные продаж",
+            "text": "Лендинг и CRM уже подключены. Загрузите Excel/CSV или добавьте продажи вручную, чтобы владелец увидел выручку, каналы и первые AI-выводы.",
+            "primary_action": {"label": "Загрузить Excel", "href": "/dashboard/settings#data-tools"},
+        }
+    if overdue_tasks_count:
+        return {
+            "tone": "warning",
+            "title": "Есть просроченные задачи",
+            "text": f"{overdue_tasks_count} задач требуют реакции. Проверьте ответственных, чтобы заявки не зависали без обработки.",
+            "primary_action": {"label": "Открыть задачи", "href": "/dashboard/tasks"},
+        }
+    if new_leads_count:
+        return {
+            "tone": "attention",
+            "title": "Новые заявки ждут обработки",
+            "text": f"Сегодня в работе {new_leads_count} новых заявок. Быстрая реакция поможет не потерять клиентов.",
+            "primary_action": {"label": "Открыть заявки", "href": "/dashboard/leads"},
+        }
+    if revenue:
+        source_text = f" Лучший источник сейчас: {top_source}." if top_source else ""
+        return {
+            "tone": "growth",
+            "title": "Бизнес начал давать данные",
+            "text": f"ZANI уже видит продажи и может считать базовую выручку.{source_text} Следующий шаг — подключить каналы и сотрудников.",
+            "primary_action": {"label": "Подключить каналы", "href": "/dashboard/integrations"},
+        }
+    return {
+        "tone": "setup",
+        "title": "Настройка бизнеса продолжается",
+        "text": f"Готовность подключения: {setup_score}%. Добавьте сотрудников, услуги и источники данных, чтобы dashboard стал полезнее.",
+        "primary_action": {"label": "Быстрый старт", "href": "/dashboard/onboarding"},
+    }
+
+
+def _build_owner_recommendations(*, has_sales_data, new_leads_count, overdue_tasks_count, setup_sources):
+    recommendations = []
+    if not setup_sources.get("communications"):
+        recommendations.append({
+            "key": "connect_communications",
+            "title": "Подключить WhatsApp / Telegram",
+            "description": "Так заявки и сообщения начнут попадать в единый кабинет, а сотрудники смогут быстрее отвечать клиентам.",
+            "priority": "high",
+            "action_label": "Подключить",
+            "href": "/dashboard/integrations",
+        })
+    if not has_sales_data:
+        recommendations.append({
+            "key": "upload_sales",
+            "title": "Загрузить продажи",
+            "description": "Без продаж ZANI не будет выдумывать аналитику. Загрузите Excel/CSV, чтобы увидеть выручку и динамику.",
+            "priority": "high",
+            "action_label": "Загрузить данные",
+            "href": "/dashboard/settings#data-tools",
+        })
+    if new_leads_count:
+        recommendations.append({
+            "key": "process_new_leads",
+            "title": "Разобрать новые заявки",
+            "description": f"{new_leads_count} новых заявок ждут реакции. Назначьте ответственного или создайте задачу.",
+            "priority": "medium",
+            "action_label": "Открыть заявки",
+            "href": "/dashboard/leads",
+        })
+    if overdue_tasks_count:
+        recommendations.append({
+            "key": "fix_overdue_tasks",
+            "title": "Закрыть просроченные задачи",
+            "description": f"{overdue_tasks_count} задач просрочены. Это риск потерять клиента или не выполнить обещанное действие.",
+            "priority": "high",
+            "action_label": "Открыть задачи",
+            "href": "/dashboard/tasks",
+        })
+    if not recommendations:
+        recommendations.append({
+            "key": "next_growth_step",
+            "title": "Подключить следующий источник данных",
+            "description": "Добавьте канал, сотрудников или склад, чтобы ZANI показывал больше причин роста и просадок.",
+            "priority": "medium",
+            "action_label": "Открыть интеграции",
+            "href": "/dashboard/integrations",
+        })
+    return recommendations[:4]
+
 def _resolve_business(request):
     business_id = request.query_params.get("business")
     businesses = accessible_businesses(request.user)
@@ -136,3 +401,10 @@ def _resolve_business(request):
     if not user_can_access_business(request.user, business):
         raise ValidationError({"business": "Business is not available."})
     return business
+
+
+def _payload_amount(payload):
+    try:
+        return Decimal(str((payload or {}).get("amount", "0")).replace(",", "."))
+    except (InvalidOperation, TypeError, ValueError):
+        return Decimal("0")

@@ -5,11 +5,23 @@ from rest_framework.response import Response
 
 from apps.businesses.access import Actions, Resources, assert_can
 from apps.core.audit import write_audit_log
-from apps.core.import_export import build_import_preview, confirm_import, export_clients, export_deals, export_leads
+from apps.core.import_export import (
+    build_import_preview,
+    confirm_import,
+    create_manual_catalog_item,
+    create_manual_sale,
+    export_catalog,
+    export_clients,
+    export_deals,
+    export_leads,
+    export_sales,
+    import_template_response,
+)
 from apps.core.models import AuditLog, ImportJob
 from apps.core.permissions import accessible_businesses
 from apps.core.serializers import ImportJobSerializer
 from apps.core.viewsets import TenantModelViewSet
+from apps.integrations.serializers import BusinessEventSerializer
 
 
 class ImportJobViewSet(TenantModelViewSet):
@@ -81,7 +93,43 @@ def export_entity(request, entity_type):
         return export_leads(business)
     if entity_type == ImportJob.EntityTypes.DEALS:
         return export_deals(business)
+    if entity_type == ImportJob.EntityTypes.SALES:
+        return export_sales(business)
+    if entity_type == ImportJob.EntityTypes.CATALOG:
+        return export_catalog(business)
     raise ValidationError("Unsupported export entity.")
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def import_template(request, entity_type):
+    return import_template_response(entity_type)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def manual_sale(request):
+    business = _resolve_business_for_write(request)
+    assert_can(request.user, business, Resources.INTEGRATIONS, Actions.MANAGE)
+    event = create_manual_sale(business, request.data, request)
+    return Response(BusinessEventSerializer(event).data, status=201)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def manual_catalog_item(request):
+    business = _resolve_business_for_write(request)
+    assert_can(request.user, business, Resources.INTEGRATIONS, Actions.MANAGE)
+    event = create_manual_catalog_item(business, request.data, request)
+    return Response(BusinessEventSerializer(event).data, status=201)
+
+
+def _resolve_business_for_write(request):
+    business_id = request.data.get("business") or request.query_params.get("business")
+    business = accessible_businesses(request.user).filter(id=business_id).first() if business_id else accessible_businesses(request.user).first()
+    if business is None:
+        raise PermissionDenied("Business is required.")
+    return business
 
 
 def _resource_for_entity(entity_type):
@@ -91,6 +139,8 @@ def _resource_for_entity(entity_type):
         return Resources.LEADS
     if entity_type == ImportJob.EntityTypes.DEALS:
         return Resources.DEALS
+    if entity_type in {ImportJob.EntityTypes.SALES, ImportJob.EntityTypes.CATALOG}:
+        return Resources.INTEGRATIONS
     raise ValidationError("Unsupported import/export entity.")
 
 

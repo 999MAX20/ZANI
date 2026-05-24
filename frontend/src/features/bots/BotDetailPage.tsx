@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Bot as BotIcon, KeyRound, MessageSquareText, Plus, Radio, Send, ShieldCheck, Sparkles, Webhook } from "lucide-react";
+import { ArrowLeft, Bot as BotIcon, Copy, ExternalLink, KeyRound, MessageSquareText, Plus, Radio, Send, ShieldCheck, Sparkles, Webhook } from "lucide-react";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
@@ -35,6 +35,9 @@ export function BotDetailPage() {
     message: "Здравствуйте, хочу записаться на консультацию.",
   });
   const [previewResult, setPreviewResult] = useState<string | null>(null);
+  const [previewConversationId, setPreviewConversationId] = useState<string | null>(null);
+  const [followUpMessage, setFollowUpMessage] = useState("Спасибо! Подскажите ближайшее свободное время?");
+  const [copyNotice, setCopyNotice] = useState<string | null>(null);
   const [suggestedReply, setSuggestedReply] = useState<BotSuggestedReplyResponse | null>(null);
   const [telegramForm, setTelegramForm] = useState({
     botToken: "",
@@ -66,33 +69,44 @@ export function BotDetailPage() {
         channelId,
         botToken: telegramForm.botToken,
         webhookSecret: telegramForm.webhookSecret,
-      }),
+    }),
     onSuccess: (data) => {
-      setTelegramNotice(`Telegram config saved. Token: ${data.token_configured ? "configured" : "missing"}.`);
+      setTelegramNotice(data.token_configured ? "Telegram подключение сохранено." : "Сохранено, но код подключения ещё не указан.");
       queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
     },
   });
   const telegramWebhookMutation = useMutation({
     mutationFn: (channelId: number) => telegramChannelApi.setWebhook({ channelId, webhookUrl: telegramForm.webhookUrl }),
-    onSuccess: (data) => setTelegramNotice(data.mock ? `Webhook mock set: ${data.reason}` : "Webhook set."),
+    onSuccess: (data) => setTelegramNotice(data.mock ? `Адрес сохранён в безопасном тестовом режиме: ${data.reason}` : "Адрес приёма сообщений применён."),
   });
   const telegramStatusMutation = useMutation({
     mutationFn: (channelId: number) => telegramChannelApi.status(channelId),
     onSuccess: (data) =>
       setTelegramNotice(
-        `Status: ${data.status}. Token: ${data.token_configured ? "configured" : "missing"}. Last error: ${data.last_error || "none"}.`,
+        `Статус: ${data.status}. Код подключения: ${data.token_configured ? "настроен" : "не указан"}. ${data.last_error ? `Ошибка: ${data.last_error}.` : ""}`,
       ),
   });
   const previewMutation = useMutation({
     mutationFn: (publicToken: string) => websiteChatApi.createConversation({ publicToken, payload: preview }),
     onSuccess: (data) => {
-      setPreviewResult(`Conversation ${data.conversation_id} создана. Lead: ${data.lead_id || "не создан"}.`);
+      setPreviewConversationId(data.conversation_id);
+      setPreviewResult(`Conversation ${data.conversation_id} создана. Lead: ${data.lead_id || "не создан"}. Сообщение должно появиться в Inbox.`);
       queryClient.invalidateQueries({ queryKey: ["bot-conversations"] });
       queryClient.invalidateQueries({ queryKey: ["bot-messages"] });
       queryClient.invalidateQueries({ queryKey: ["clients"] });
       queryClient.invalidateQueries({ queryKey: ["leads"] });
     },
   });
+  const followUpMutation = useMutation({
+    mutationFn: ({ publicToken, conversationId }: { publicToken: string; conversationId: string }) =>
+      websiteChatApi.sendMessage({ publicToken, conversationId, message: followUpMessage }),
+    onSuccess: (data) => {
+      setPreviewResult(`Follow-up сообщение добавлено в conversation ${data.conversation_id}. Проверьте Inbox и unread counter.`);
+      queryClient.invalidateQueries({ queryKey: ["bot-conversations"] });
+      queryClient.invalidateQueries({ queryKey: ["bot-messages"] });
+    },
+  });
+
   const suggestReplyMutation = useMutation({
     mutationFn: (conversationId: number) => botAiApi.suggestReply(conversationId),
     onSuccess: (data) => setSuggestedReply(data),
@@ -118,7 +132,7 @@ export function BotDetailPage() {
     <>
       <PageHeader
         title={bot.data.name}
-        description="Placeholder настройки бота. Реальные webhook, AI-ответы и виджет будут подключаться следующими этапами."
+        description="Пилотная настройка каналов: website chat уже можно проверить end-to-end, Telegram/WhatsApp ведём как beta/request."
         actions={
           <>
             <Link to="/dashboard/bots"><Button variant="secondary"><ArrowLeft size={16} />Назад</Button></Link>
@@ -155,6 +169,7 @@ export function BotDetailPage() {
       ) : null}
       {addWhatsAppChannel.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(addWhatsAppChannel.error)} /></div> : null}
       {previewMutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(previewMutation.error)} /></div> : null}
+      {followUpMutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(followUpMutation.error)} /></div> : null}
       {suggestReplyMutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(suggestReplyMutation.error)} /></div> : null}
 
       <div className="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
@@ -191,7 +206,7 @@ export function BotDetailPage() {
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold text-midnight">Channels</h2>
-                <p className="text-sm text-slate-500">Токены и секреты будут храниться в `config_json`, не в `.env`.</p>
+	                <p className="text-sm text-slate-500">Коды подключения хранятся безопасно и не показываются после сохранения.</p>
               </div>
             </div>
             <div className="grid gap-3">
@@ -205,7 +220,7 @@ export function BotDetailPage() {
                       <p className="font-semibold text-midnight">{channelLabels[channel.channel]}</p>
                       <p className="text-sm text-slate-500">{channel.external_id || "External ID не задан"}</p>
                       {channel.channel === "website" ? (
-                        <p className="mt-1 break-all text-xs font-semibold text-brand-700">Token: {channel.public_token}</p>
+	                        <p className="mt-1 text-xs font-semibold text-brand-700">Код виджета настроен</p>
                       ) : null}
                     </div>
                   </div>
@@ -231,46 +246,46 @@ export function BotDetailPage() {
               </div>
               <div>
                 <h2 className="text-lg font-bold text-midnight">Telegram beta setup</h2>
-                <p className="text-sm text-slate-500">Token хранится в channel config, в логах показываем только факт настройки.</p>
+	                <p className="text-sm text-slate-500">Код подключения сохраняется безопасно, в логах показываем только факт настройки.</p>
               </div>
             </div>
             {telegramNotice ? <div className="mb-4 rounded-2xl bg-blue-50 p-3 text-sm font-semibold text-blue-800">{telegramNotice}</div> : null}
             {telegramChannel ? (
               <div className="space-y-4">
                 <Input
-                  label="Bot token"
+	                  label="Код от BotFather"
                   type="password"
                   value={telegramForm.botToken}
                   onChange={(event) => setTelegramForm({ ...telegramForm, botToken: event.target.value })}
                   placeholder="123456:ABC..."
                 />
                 <Input
-                  label="Webhook secret"
+	                  label="Секрет подписи (расширенно)"
                   value={telegramForm.webhookSecret}
                   onChange={(event) => setTelegramForm({ ...telegramForm, webhookSecret: event.target.value })}
-                  placeholder="merchant-secret"
+	                  placeholder="опционально"
                 />
                 <Input
-                  label="Webhook URL"
+	                  label="Адрес приёма сообщений (расширенно)"
                   value={telegramForm.webhookUrl}
                   onChange={(event) => setTelegramForm({ ...telegramForm, webhookUrl: event.target.value })}
                 />
                 <div className="flex flex-wrap gap-2">
                   <Button variant="secondary" onClick={() => telegramConfigMutation.mutate(telegramChannel.id)} isLoading={telegramConfigMutation.isPending}>
-                    <KeyRound size={16} />Save config
+	                    <KeyRound size={16} />Сохранить подключение
                   </Button>
                   <Button variant="ai" onClick={() => telegramWebhookMutation.mutate(telegramChannel.id)} isLoading={telegramWebhookMutation.isPending}>
-                    <ShieldCheck size={16} />Set webhook
+	                    <ShieldCheck size={16} />Применить адрес
                   </Button>
                   <Button variant="ghost" onClick={() => telegramStatusMutation.mutate(telegramChannel.id)} isLoading={telegramStatusMutation.isPending}>
-                    <Radio size={16} />Check status
+	                    <Radio size={16} />Проверить статус
                   </Button>
                 </div>
-                <p className="text-xs leading-5 text-slate-500">Status check не раскрывает полный token и показывает только last error из provider logs.</p>
+	                <p className="text-xs leading-5 text-slate-500">Проверка не раскрывает код подключения и показывает только безопасный статус.</p>
               </div>
             ) : (
               <div className="rounded-3xl border border-dashed border-slate-200 bg-white/70 p-6 text-sm text-slate-500">
-                Добавьте Telegram channel, чтобы настроить token и webhook.
+	                Добавьте Telegram channel, чтобы настроить подключение.
               </div>
             )}
           </CardBody>
@@ -286,11 +301,33 @@ export function BotDetailPage() {
               </div>
               <div>
                 <h2 className="text-lg font-bold text-midnight">Website chat preview</h2>
-                <p className="text-sm text-slate-500">Отправляет тестовое сообщение через public API без авторизации.</p>
+	                <p className="text-sm text-slate-500">Отправляет тестовое сообщение так, как это сделает посетитель сайта.</p>
               </div>
             </div>
             {websiteChannel ? (
-              <form
+              <div className="space-y-5">
+                <div className="rounded-3xl border border-brand-100 bg-brand-50 p-4 text-sm text-brand-900">
+                  <div className="flex items-center justify-between gap-3">
+	                    <p className="font-black">Код установки виджета</p>
+                    <StatusBadge status={websiteChannel.status} />
+                  </div>
+	                  <pre className="mt-3 overflow-auto rounded-2xl bg-white/80 p-3 text-xs text-slate-700">{`<script src="/widget/zani-widget.js" data-zani-token="${websiteChannel.public_token}" data-zani-api="http://localhost:8000"></script>`}</pre>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => {
+	                        navigator.clipboard?.writeText(`<script src="/widget/zani-widget.js" data-zani-token="${websiteChannel.public_token}" data-zani-api="http://localhost:8000"></script>`);
+	                        setCopyNotice("Код установки скопирован.");
+                      }}
+                    >
+	                      <Copy size={16} />Скопировать код
+                    </Button>
+                    <Link to="/dashboard/conversations"><Button type="button" variant="ghost"><ExternalLink size={16} />Открыть Inbox</Button></Link>
+                  </div>
+                  {copyNotice ? <p className="mt-2 text-xs font-semibold text-brand-700">{copyNotice}</p> : null}
+                </div>
+                <form
                 className="space-y-4"
                 onSubmit={(event) => {
                   event.preventDefault();
@@ -303,8 +340,29 @@ export function BotDetailPage() {
                   <Input label="Email" value={preview.email} onChange={(event) => setPreview({ ...preview, email: event.target.value })} />
                 </div>
                 <Textarea label="Сообщение" value={preview.message} onChange={(event) => setPreview({ ...preview, message: event.target.value })} required />
-                <Button type="submit" variant="ai" isLoading={previewMutation.isPending}><Send size={16} />Отправить тест</Button>
+                <Button type="submit" variant="ai" isLoading={previewMutation.isPending}><Send size={16} />Создать тестовый диалог</Button>
               </form>
+              {previewConversationId ? (
+                <div className="rounded-3xl border border-slate-100 bg-white/80 p-4">
+                  <p className="text-sm font-black text-midnight">Шаг 2: отправить второе сообщение в тот же диалог</p>
+                  <Textarea
+                    className="mt-3"
+                    value={followUpMessage}
+                    onChange={(event) => setFollowUpMessage(event.target.value)}
+                  />
+                  <Button
+                    className="mt-3"
+                    type="button"
+                    variant="secondary"
+                    isLoading={followUpMutation.isPending}
+                    disabled={!followUpMessage.trim()}
+                    onClick={() => followUpMutation.mutate({ publicToken: websiteChannel.public_token, conversationId: previewConversationId })}
+                  >
+                    <Send size={16} />Добавить follow-up
+                  </Button>
+                </div>
+              ) : null}
+              </div>
             ) : (
               <div className="rounded-3xl border border-dashed border-slate-200 bg-white/70 p-6 text-sm text-slate-500">
                 Сначала добавьте website channel. После этого здесь появится форма тестового сообщения.
@@ -317,7 +375,7 @@ export function BotDetailPage() {
           <CardBody>
             <h2 className="text-lg font-bold text-midnight">Preview result</h2>
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              Если в тестовом сообщении указан телефон или email, backend создаёт клиента и заявку со source `website`.
+              Если в тестовом сообщении указан телефон или email, backend создаёт клиента и заявку со source `website`. После отправки откройте Inbox: диалог должен быть виден менеджеру.
             </p>
             <div className="mt-5 rounded-3xl bg-slate-50 p-4 text-sm font-semibold text-slate-700">
               {previewResult || "Пока тестовых сообщений не было."}
@@ -372,7 +430,7 @@ export function BotDetailPage() {
             </div>
             {suggestedReply ? (
               <p className="mt-3 text-xs font-semibold text-slate-400">
-                log #{suggestedReply.log_id} · {suggestedReply.model} · {suggestedReply.is_mock ? "mock" : `${suggestedReply.tokens_used} tokens`} · messages: {suggestedReply.messages_used}
+                Черновик #{suggestedReply.log_id} · {suggestedReply.is_mock ? "тестовый режим" : "AI ответ"} · сообщений учтено: {suggestedReply.messages_used}
               </p>
             ) : null}
           </CardBody>

@@ -117,6 +117,33 @@ class TasksAndNotificationsPolishTests(TestCase):
         self.assertEqual(task.assignee, self.owner)
         self.assertIsNotNone(task.snoozed_until)
 
+
+    def test_task_assign_to_me_and_due_quick_actions_create_notifications(self):
+        task = Task.objects.create(business=self.business, title="Call hot lead", client=self.client, priority=Task.Priorities.HIGH)
+        self.api.force_authenticate(self.owner)
+
+        assign_response = self.api.post(f"/api/tasks/{task.id}/assign-to-me/")
+        due_today_response = self.api.post(f"/api/tasks/{task.id}/due-today/")
+        due_tomorrow_response = self.api.post(f"/api/tasks/{task.id}/due-tomorrow/")
+
+        self.assertEqual(assign_response.status_code, 200)
+        self.assertEqual(assign_response.data["assignee"], self.owner.id)
+        self.assertEqual(assign_response.data["status"], Task.Statuses.IN_PROGRESS)
+        self.assertEqual(due_today_response.status_code, 200)
+        self.assertIsNotNone(due_today_response.data["due_at"])
+        self.assertIsNotNone(due_today_response.data["reminder_at"])
+        self.assertEqual(due_tomorrow_response.status_code, 200)
+        self.assertIsNotNone(due_tomorrow_response.data["due_at"])
+        self.assertGreaterEqual(Notification.objects.filter(business=self.business, category=Notification.Categories.TASKS).count(), 3)
+
+    def test_task_assign_to_me_is_tenant_safe(self):
+        task = Task.objects.create(business=self.other_business, title="Hidden task")
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(f"/api/tasks/{task.id}/assign-to-me/")
+
+        self.assertEqual(response.status_code, 404)
+
     def test_notification_summary_and_actions_are_tenant_scoped(self):
         own_notification = Notification.objects.create(
             business=self.business,

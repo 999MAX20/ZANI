@@ -12,6 +12,7 @@ import { realtimeIntervals, realtimeQueryOptions } from "../../lib/realtime";
 import { Button } from "../ui/Button";
 import { StatusBadge } from "../ui/StatusBadge";
 import { GlobalSearch } from "./GlobalSearch";
+import { LanguageSelector } from "./LanguageSelector";
 
 export function Header({ onMenuClick }: { onMenuClick: () => void }) {
   const navigate = useNavigate();
@@ -62,12 +63,12 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
     return acc;
   }, {});
   const categoryLabels: Record<string, string> = {
-    sales: "Продажи",
-    finance: "Финансы",
-    system: "Система",
-    ai_alerts: "AI alerts",
-    outreach: "Outreach",
-    tasks: "Задачи",
+    sales: t("notification.category.sales"),
+    finance: t("notification.category.finance"),
+    system: t("notification.category.system"),
+    ai_alerts: t("notification.category.aiAlerts"),
+    outreach: t("notification.category.outreach"),
+    tasks: t("notification.category.tasks"),
   };
   const priorityClass: Record<string, string> = {
     low: "bg-slate-50 text-slate-500",
@@ -80,18 +81,19 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
     <header className="sticky top-0 z-10 px-3 pt-3 lg:px-6">
       <div className="glass-panel flex h-16 items-center justify-between rounded-3xl px-3 sm:px-5">
         <div className="flex min-w-0 items-center gap-3">
-          <Button className="h-10 w-10 rounded-full px-0 lg:hidden" variant="ghost" onClick={onMenuClick} aria-label="Открыть меню">
+          <Button className="h-10 w-10 rounded-full px-0 lg:hidden" variant="ghost" onClick={onMenuClick} aria-label={t("sidebar.expand")}>
             <Menu size={20} />
           </Button>
           <GlobalSearch />
         </div>
 
         <div className="flex items-center gap-2">
+          <LanguageSelector className="hidden md:inline-flex" />
           <div className="relative">
             <Button
               variant="ghost"
               className="relative h-11 w-11 rounded-full px-0"
-              aria-label="Уведомления"
+              aria-label={t("header.notifications")}
               onClick={() => setShowNotifications((current) => !current)}
             >
               <Bell size={42} strokeWidth={2.25} />
@@ -105,11 +107,16 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
               <div className="fixed inset-x-3 top-20 max-h-[76vh] overflow-y-auto rounded-3xl border border-white/70 bg-white/95 p-4 text-sm shadow-premium backdrop-blur-xl sm:absolute sm:inset-auto sm:right-0 sm:top-12 sm:w-[26rem]">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-semibold text-midnight">Уведомления</p>
-                    <p className="mt-0.5 text-xs text-slate-400">{notificationSummary.data?.due || 0} требуют внимания сейчас · {notificationSummary.data?.urgent || 0} срочных</p>
+                    <p className="font-semibold text-midnight">{t("header.notifications")}</p>
+                    <p className="mt-0.5 text-xs text-slate-400">
+                      {t("header.notificationsSummary", {
+                        due: notificationSummary.data?.due || 0,
+                        urgent: notificationSummary.data?.urgent || 0,
+                      })}
+                    </p>
                   </div>
                   <Button variant="ghost" className="h-9 rounded-full px-3 text-xs" onClick={() => markAllReadMutation.mutate()} disabled={!unreadCount}>
-                    <Check size={14} /> Всё прочитано
+                    <Check size={14} /> {t("header.markAllRead")}
                   </Button>
                 </div>
                 <div className="mt-4 space-y-4">
@@ -127,7 +134,9 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
                                 </span>
                               </div>
                               <p className="line-clamp-2 font-semibold text-midnight">{notification.text}</p>
-                              <p className="mt-1 text-xs text-slate-500">{notification.client_name || "CRM"} · {formatDateTime(notification.send_at)}</p>
+                              <p className="mt-1 text-xs text-slate-500">
+                                {notification.recipient_name || notification.recipient_email || t("notification.allBusiness")} · {notification.client_name || "CRM"} · {formatDateTime(notification.send_at)}
+                              </p>
                             </div>
                             <StatusBadge status={notification.status} />
                           </div>
@@ -143,13 +152,13 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
                                 }}
                               >
                                 <Sparkles size={14} />
-                                {notification.action_label || "Открыть"}
+                                {notification.action_label || t("common.open")}
                               </Button>
                             ) : null}
                             {!notification.read_at ? (
                               <Button variant="ghost" className="h-9 rounded-full px-3 text-xs" onClick={() => markReadMutation.mutate(notification.id)}>
                                 <Check size={15} />
-                                Прочитано
+                                {t("notification.read")}
                               </Button>
                             ) : null}
                             {notification.status === "pending" ? (
@@ -158,7 +167,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
                                 className="h-9 rounded-full px-3 text-xs"
                                 onClick={() => markSentMutation.mutate(notification.id)}
                               >
-                                Отправлено
+                                {t("notification.sent")}
                               </Button>
                             ) : null}
                           </div>
@@ -168,7 +177,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
                   ))}
                   {!latestNotifications.length ? (
                     <p className="rounded-2xl bg-slate-50 p-4 leading-6 text-slate-500">
-                      Уведомлений пока нет. Напоминания по записям и CRM-события будут появляться здесь.
+                      {t("header.noNotifications")}
                     </p>
                   ) : null}
                 </div>
@@ -177,7 +186,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
                   onClick={() => setShowNotifications(false)}
                   className="mt-4 block rounded-2xl bg-slate-950 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-slate-800"
                 >
-                  Открыть задачи
+                  {t("header.openTasks")}
                 </Link>
               </div>
             ) : null}

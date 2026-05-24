@@ -1,16 +1,6 @@
-import { apiClient } from "./client";
-import type { BusinessRole, Id, RolePermission, TeamDepartment, TeamMember } from "../types";
-
-type PaginatedResponse<T> = {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
-};
-
-function unwrapList<T>(data: T[] | PaginatedResponse<T>) {
-  return Array.isArray(data) ? data : data.results || [];
-}
+import { apiClient, unwrapList } from "./client";
+import type { PaginatedResponse } from "./client";
+import type { BusinessInvitation, BusinessMembershipSummary, BusinessRole, Id, RolePermission, TeamDepartment, TeamMember } from "../types";
 
 export type PermissionCatalog = {
   resources: { resource: string; actions: string[] }[];
@@ -24,6 +14,42 @@ export const teamApi = {
   },
   updateMember: async ({ id, payload }: { id: Id; payload: Partial<TeamMember> }) => {
     const { data } = await apiClient.patch<TeamMember>(`/api/team/members/${id}/`, payload);
+    return data;
+  },
+  invitations: async () => {
+    const { data } = await apiClient.get<BusinessInvitation[] | PaginatedResponse<BusinessInvitation>>("/api/team/invitations/");
+    return unwrapList(data);
+  },
+  createInvitation: async (payload: {
+    business: Id;
+    email: string;
+    phone?: string;
+    telegram?: string;
+    full_name?: string;
+    role: BusinessMembershipSummary["role"];
+    business_role?: Id | null;
+    delivery_channel?: BusinessInvitation["delivery_channel"];
+  }) => {
+    const { data } = await apiClient.post<BusinessInvitation>("/api/team/invitations/", payload);
+    return data;
+  },
+  revokeInvitation: async (id: Id) => {
+    const { data } = await apiClient.post<BusinessInvitation>(`/api/team/invitations/${id}/revoke/`);
+    return data;
+  },
+  previewInvitation: async (token: string) => {
+    const { data } = await apiClient.get<Pick<BusinessInvitation, "business_name" | "email" | "full_name" | "role" | "status" | "expires_at">>(
+      `/api/team/invitations/preview/${token}/`,
+    );
+    return data;
+  },
+  acceptInvitation: async ({ token, password, full_name, phone }: { token: string; password: string; full_name?: string; phone?: string }) => {
+    const { data } = await apiClient.post<{ ok: boolean; business: Id; email: string; role: BusinessMembershipSummary["role"] }>("/api/team/invitations/accept/", {
+      token,
+      password,
+      full_name,
+      phone,
+    });
     return data;
   },
   roles: async () => {

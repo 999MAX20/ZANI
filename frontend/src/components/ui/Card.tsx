@@ -5,7 +5,7 @@ type CardProps = React.HTMLAttributes<HTMLElement> & {
 };
 
 export function Card({ className, children, ...props }: CardProps) {
-  return <section className={cn("premium-card rounded-3xl", className)} {...props}>{children}</section>;
+  return <section className={cn("zani-surface rounded-3xl", className)} {...props}>{children}</section>;
 }
 
 export function CardHeader({ className, children }: { className?: string; children: React.ReactNode }) {

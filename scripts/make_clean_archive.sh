@@ -12,7 +12,12 @@ rm -f "$ARCHIVE_PATH"
 
 rsync -a ./ "$TMP_DIR/zani/" \
   --include=".env.example" \
+  --include=".env.local.example" \
+  --include=".env.staging.example" \
+  --include=".env.production.example" \
   --include="frontend/.env.example" \
+  --include="frontend/.env.staging.example" \
+  --include="frontend/.env.production.example" \
   --exclude=".git/" \
   --exclude=".env" \
   --exclude=".env.*" \
@@ -24,12 +29,23 @@ rsync -a ./ "$TMP_DIR/zani/" \
   --exclude="dist/" \
   --exclude="build/" \
   --exclude="db.sqlite3" \
+  --exclude="media/" \
+  --exclude="staticfiles/" \
+  --exclude="test-results/" \
+  --exclude="playwright-report/" \
+  --exclude="coverage/" \
+  --exclude=".coverage" \
   --exclude="__MACOSX/" \
   --exclude=".DS_Store" \
   --exclude="__pycache__/" \
   --exclude="*.pyc" \
+  --exclude="*.pyo" \
+  --exclude="*.log" \
+  --exclude="*.zip" \
   --exclude="*.tsbuildinfo" \
   --exclude=".pytest_cache/" \
+  --exclude=".mypy_cache/" \
+  --exclude=".ruff_cache/" \
   --exclude="htmlcov/" \
   --exclude="$ARCHIVE_NAME"
 

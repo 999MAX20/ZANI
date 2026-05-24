@@ -59,7 +59,12 @@ class ArchiveGuardrailTests(TestCase):
         self.assertFalse(self.client.is_archived)
 
     def test_lost_lead_requires_reason_and_tracks_actor(self):
-        lead = Lead.objects.create(business=self.business, client=self.client, status=Lead.Statuses.NEW)
+        lead = Lead.objects.create(
+            business=self.business,
+            client=self.client,
+            status=Lead.Statuses.NEW,
+            responsible_user=self.manager,
+        )
         self.api.force_authenticate(self.manager)
 
         missing_reason = self.api.patch(f"/api/leads/{lead.id}/", {"status": Lead.Statuses.LOST}, format="json")

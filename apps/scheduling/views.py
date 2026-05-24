@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from apps.automations.engine import run_automations_for_event
 from apps.automations.models import AutomationRule
 from apps.activities.services import create_activity_event
+from apps.businesses.access import Actions, Resources, assert_can
 from apps.core.crm_cards import appointment_crm_card
 from apps.core.permissions import user_can_access_business
 from apps.core.viewsets import TenantModelViewSet
@@ -18,7 +19,7 @@ from apps.scheduling.serializers import (
     ResourceSerializer,
     WorkingHoursSerializer,
 )
-from apps.scheduling.services import get_available_slots
+from apps.scheduling.services import apply_working_hours_preset, get_available_slots
 from apps.services.models import Service
 
 
@@ -26,10 +27,58 @@ class ResourceViewSet(TenantModelViewSet):
     queryset = Resource.objects.select_related("business")
     serializer_class = ResourceSerializer
 
+    def get_access_resource(self):
+        if self.action in {"list", "retrieve"}:
+            return Resources.APPOINTMENTS
+        return Resources.SETTINGS
+
+    def get_access_action(self):
+        if self.action in {"list", "retrieve"}:
+            return Actions.VIEW
+        return Actions.UPDATE
+
 
 class WorkingHoursViewSet(TenantModelViewSet):
     queryset = WorkingHours.objects.select_related("business", "resource")
     serializer_class = WorkingHoursSerializer
+
+    def get_access_resource(self):
+        if self.action in {"list", "retrieve"}:
+            return Resources.APPOINTMENTS
+        return Resources.SETTINGS
+
+    def get_access_action(self):
+        if self.action in {"list", "retrieve"}:
+            return Actions.VIEW
+        return Actions.UPDATE
+
+    @action(detail=False, methods=["post"], url_path="apply-preset")
+    def apply_preset(self, request):
+        business_id = request.data.get("business")
+        preset = request.data.get("preset")
+        resource_id = request.data.get("resource")
+
+        if not business_id or not preset:
+            raise ValidationError("business and preset are required.")
+
+        business = Business.objects.filter(id=business_id).first()
+        if not business or not user_can_access_business(request.user, business):
+            raise ValidationError("Business is not available.")
+        assert_can(request.user, business, Resources.SETTINGS, Actions.UPDATE)
+
+        resource = None
+        if resource_id:
+            resource = Resource.objects.filter(id=resource_id, business=business).first()
+            if not resource:
+                raise ValidationError("Resource is not available.")
+
+        try:
+            working_hours = apply_working_hours_preset(business, preset, resource=resource)
+        except ValueError as exc:
+            raise ValidationError(str(exc)) from exc
+
+        serializer = self.get_serializer(working_hours, many=True)
+        return Response({"preset": preset, "count": len(working_hours), "results": serializer.data})
 
 
 class AppointmentViewSet(TenantModelViewSet):

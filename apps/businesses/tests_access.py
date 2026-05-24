@@ -4,7 +4,7 @@ from rest_framework.test import APIClient
 
 from apps.accounts.models import User
 from apps.businesses.access import Actions, Resources, ensure_default_roles
-from apps.businesses.models import Business, BusinessMember, BusinessRole, RolePermission, Team, TeamMember
+from apps.businesses.models import Business, BusinessInvitation, BusinessMember, BusinessRole, RolePermission, Team, TeamMember
 from apps.bots.models import Bot, BotConversation
 from apps.clients.models import Client
 from apps.crm.models import Deal, Pipeline, PipelineStage
@@ -92,6 +92,138 @@ class TeamAccessTests(TestCase):
 
         self.assertEqual(response.status_code, 403)
         self.assertFalse(Team.objects.filter(business=self.business, name="Sales").exists())
+
+    def test_owner_can_create_and_accept_whatsapp_invitation(self):
+        self.api.force_authenticate(self.owner)
+
+        create_response = self.api.post(
+            "/api/team/invitations/",
+            {
+                "business": self.business.id,
+                "email": "invited-manager@example.com",
+                "phone": "+77015550102",
+                "full_name": "Invited Manager",
+                "role": BusinessMember.Roles.MANAGER,
+                "delivery_channel": BusinessInvitation.DeliveryChannels.WHATSAPP,
+            },
+            format="json",
+        )
+
+        self.assertEqual(create_response.status_code, 201)
+        invitation = BusinessInvitation.objects.get(email="invited-manager@example.com")
+        self.assertEqual(invitation.invited_by, self.owner)
+        self.assertEqual(invitation.business, self.business)
+        self.assertEqual(invitation.status, BusinessInvitation.Statuses.PENDING)
+        self.assertIn("/invite/", create_response.data["invite_path"])
+
+        self.api.force_authenticate(user=None)
+        accept_response = self.api.post(
+            "/api/team/invitations/accept/",
+            {"token": str(invitation.token), "password": "InvitePass123", "full_name": "Accepted Manager"},
+            format="json",
+        )
+
+        self.assertEqual(accept_response.status_code, 200)
+        user = User.objects.get(email="invited-manager@example.com")
+        self.assertTrue(user.check_password("InvitePass123"))
+        self.assertEqual(user.phone, "+77015550102")
+        self.assertEqual(user.role, User.Roles.BUSINESS_MANAGER)
+        self.assertTrue(BusinessMember.objects.filter(business=self.business, user=user, role=BusinessMember.Roles.MANAGER, is_active=True).exists())
+        invitation.refresh_from_db()
+        self.assertEqual(invitation.status, BusinessInvitation.Statuses.ACCEPTED)
+
+    def test_manager_cannot_create_invitation(self):
+        self.api.force_authenticate(self.manager)
+
+        response = self.api.post(
+            "/api/team/invitations/",
+            {
+                "business": self.business.id,
+                "email": "no-access@example.com",
+                "role": BusinessMember.Roles.STAFF,
+                "delivery_channel": BusinessInvitation.DeliveryChannels.MANUAL,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(BusinessInvitation.objects.filter(email="no-access@example.com").exists())
+
+    def test_whatsapp_invitation_requires_phone(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            "/api/team/invitations/",
+            {
+                "business": self.business.id,
+                "email": "missing-phone@example.com",
+                "role": BusinessMember.Roles.STAFF,
+                "delivery_channel": BusinessInvitation.DeliveryChannels.WHATSAPP,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_revoked_invitation_cannot_be_accepted(self):
+        self.api.force_authenticate(self.owner)
+        invitation = BusinessInvitation.objects.create(
+            business=self.business,
+            invited_by=self.owner,
+            email="revoked@example.com",
+            role=BusinessMember.Roles.STAFF,
+            delivery_channel=BusinessInvitation.DeliveryChannels.MANUAL,
+            expires_at=timezone.now() + timezone.timedelta(days=7),
+            revoked_at=timezone.now(),
+        )
+        self.api.force_authenticate(user=None)
+
+        response = self.api.post(
+            "/api/team/invitations/accept/",
+            {"token": str(invitation.token), "password": "InvitePass123"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_expired_invitation_cannot_be_accepted(self):
+        invitation = BusinessInvitation.objects.create(
+            business=self.business,
+            invited_by=self.owner,
+            email="expired@example.com",
+            role=BusinessMember.Roles.STAFF,
+            delivery_channel=BusinessInvitation.DeliveryChannels.MANUAL,
+            expires_at=timezone.now() - timezone.timedelta(minutes=1),
+        )
+
+        response = self.api.post(
+            "/api/team/invitations/accept/",
+            {"token": str(invitation.token), "password": "InvitePass123"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(User.objects.filter(email="expired@example.com").exists())
+
+    def test_accepted_invitation_cannot_be_reused(self):
+        invitation = BusinessInvitation.objects.create(
+            business=self.business,
+            invited_by=self.owner,
+            email="single-use@example.com",
+            role=BusinessMember.Roles.STAFF,
+            delivery_channel=BusinessInvitation.DeliveryChannels.MANUAL,
+            expires_at=timezone.now() + timezone.timedelta(days=7),
+            accepted_at=timezone.now(),
+        )
+
+        response = self.api.post(
+            "/api/team/invitations/accept/",
+            {"token": str(invitation.token), "password": "InvitePass123"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(User.objects.filter(email="single-use@example.com").exists())
 
     def test_role_permission_change_is_audit_logged(self):
         self.api.force_authenticate(self.owner)

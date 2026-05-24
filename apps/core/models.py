@@ -210,6 +210,8 @@ class ImportJob(models.Model):
         CLIENTS = "clients", "Clients"
         LEADS = "leads", "Leads"
         DEALS = "deals", "Deals"
+        SALES = "sales", "Sales"
+        CATALOG = "catalog", "Catalog"
 
     class Statuses(models.TextChoices):
         UPLOADED = "uploaded", "Uploaded"
@@ -227,6 +229,7 @@ class ImportJob(models.Model):
     mapping_json = models.JSONField(default=dict, blank=True)
     preview_json = models.JSONField(default=dict, blank=True)
     duplicates_json = models.JSONField(default=dict, blank=True)
+    errors_json = models.JSONField(default=dict, blank=True)
     total_rows = models.PositiveIntegerField(default=0)
     imported_count = models.PositiveIntegerField(default=0)
     error = models.TextField(blank=True)

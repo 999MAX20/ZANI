@@ -112,6 +112,14 @@ class InboxHandoffSerializer(serializers.Serializer):
     reason = serializers.CharField(required=False, allow_blank=True)
 
 
+class InboxCloseSerializer(serializers.Serializer):
+    reason = serializers.CharField(required=False, allow_blank=True)
+
+
+class InboxPrioritySerializer(serializers.Serializer):
+    priority = serializers.ChoiceField(choices=["low", "normal", "high", "urgent"])
+
+
 class InboxOutboundMessageSerializer(serializers.Serializer):
     text = serializers.CharField(required=True, allow_blank=False, trim_whitespace=True)
     sender_type = serializers.ChoiceField(choices=["manager"], default="manager")

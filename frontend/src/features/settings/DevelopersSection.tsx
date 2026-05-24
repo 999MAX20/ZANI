@@ -18,7 +18,7 @@ const defaultWebhookEvents = "lead.created,appointment.created,system.test";
 export function DevelopersSection() {
   const queryClient = useQueryClient();
   const { business } = useActiveBusiness();
-  const [tokenName, setTokenName] = useState("CRM API token");
+  const [tokenName, setTokenName] = useState("CRM integration key");
   const [tokenScopes, setTokenScopes] = useState(defaultTokenScopes);
   const [lastToken, setLastToken] = useState<ApiTokenCreateResponse | null>(null);
   const [webhookForm, setWebhookForm] = useState({
@@ -124,26 +124,26 @@ export function DevelopersSection() {
       <CardBody>
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Developers</p>
-            <h2 className="mt-2 text-2xl font-semibold text-midnight">API tokens и webhooks</h2>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Advanced</p>
+            <h2 className="mt-2 text-2xl font-semibold text-midnight">Ключи интеграций и события</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-              Интеграционный слой для внешних сервисов: scoped tokens, delivery logs, retries и idempotency keys без доступа к чужим данным.
+              Расширенный слой для технических подключений. Используйте его только вместе с разработчиком или поддержкой ZANI.
             </p>
           </div>
           <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
-            {tokens.data?.length || 0} tokens · {webhooks.data?.length || 0} hooks
+            {tokens.data?.length || 0} ключей · {webhooks.data?.length || 0} событий
           </div>
         </div>
         {error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(error)} /></div> : null}
         {lastToken ? (
           <div className="mb-4 rounded-3xl border border-emerald-100 bg-emerald-50 p-4">
-            <p className="font-black text-emerald-900">Скопируйте токен сейчас</p>
-            <p className="mt-1 text-sm text-emerald-800">Полный ключ показывается только один раз. В базе хранится только hash.</p>
+            <p className="font-black text-emerald-900">Скопируйте ключ сейчас</p>
+            <p className="mt-1 text-sm text-emerald-800">Полный ключ показывается только один раз. После закрытия будет видна только короткая метка.</p>
             <div className="mt-3 flex flex-col gap-2 sm:flex-row">
               <code className="min-w-0 flex-1 break-all rounded-2xl bg-white px-3 py-2 text-sm text-slate-700">{lastToken.token}</code>
               <Button type="button" variant="secondary" onClick={() => copyText(lastToken.token, "token")}>
                 <Copy size={16} />
-                {lastCopied === "token" ? "Скопировано" : "Copy"}
+                {lastCopied === "token" ? "Скопировано" : "Скопировать"}
               </Button>
             </div>
           </div>
@@ -155,8 +155,8 @@ export function DevelopersSection() {
                 <KeyRound size={20} />
               </div>
               <div>
-                <h3 className="font-black text-midnight">API tokens</h3>
-                <p className="text-sm text-slate-500">Минимально: `clients:read` для внешнего read API.</p>
+                <h3 className="font-black text-midnight">Ключи интеграций</h3>
+                <p className="text-sm text-slate-500">Минимально: доступ только на чтение клиентов.</p>
               </div>
             </div>
             <form
@@ -167,9 +167,9 @@ export function DevelopersSection() {
               }}
             >
               <Input label="Название" value={tokenName} onChange={(event) => setTokenName(event.target.value)} required />
-              <Input label="Scopes" value={tokenScopes} onChange={(event) => setTokenScopes(event.target.value)} placeholder="clients:read" required />
+              <Input label="Права доступа" value={tokenScopes} onChange={(event) => setTokenScopes(event.target.value)} placeholder="clients:read" required />
               <Button type="submit" isLoading={createTokenMutation.isPending}>
-                Создать token
+                Создать ключ
               </Button>
             </form>
             <div className="mt-5 space-y-2">
@@ -179,24 +179,24 @@ export function DevelopersSection() {
                     <div>
                       <p className="font-bold text-midnight">{token.name}</p>
                       <p className="mt-1 text-xs text-slate-500">{token.token_prefix}... · {token.scopes_json.join(", ")}</p>
-                      <p className="mt-1 text-xs text-slate-400">Last used: {formatDate(token.last_used_at)}</p>
+                      <p className="mt-1 text-xs text-slate-400">Последнее использование: {formatDate(token.last_used_at)}</p>
                     </div>
                     <span className={token.is_active ? "rounded-full bg-green-50 px-2.5 py-1 text-xs font-bold text-green-700" : "rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-500"}>
-                      {token.is_active ? "Active" : "Revoked"}
+                      {token.is_active ? "Активен" : "Отозван"}
                     </span>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Button type="button" variant="secondary" onClick={() => rotateTokenMutation.mutate(token.id)} isLoading={rotateTokenMutation.isPending}>
                       <RotateCcw size={15} />
-                      Rotate
+                      Обновить
                     </Button>
                     <Button type="button" variant="danger" onClick={() => revokeTokenMutation.mutate(token.id)} disabled={!token.is_active} isLoading={revokeTokenMutation.isPending}>
-                      Revoke
+                      Отозвать
                     </Button>
                   </div>
                 </div>
               ))}
-              {!tokens.isLoading && !tokens.data?.length ? <p className="text-sm text-slate-500">Токенов пока нет.</p> : null}
+              {!tokens.isLoading && !tokens.data?.length ? <p className="text-sm text-slate-500">Ключей пока нет.</p> : null}
             </div>
           </div>
           <div className="rounded-3xl border border-slate-100 p-4">
@@ -205,8 +205,8 @@ export function DevelopersSection() {
                 <Webhook size={20} />
               </div>
               <div>
-                <h3 className="font-black text-midnight">Webhook endpoints</h3>
-                <p className="text-sm text-slate-500">Для dev можно использовать `mock://success` и `mock://fail`.</p>
+                <h3 className="font-black text-midnight">Внешние события</h3>
+                <p className="text-sm text-slate-500">Для теста можно использовать безопасный демо-адрес.</p>
               </div>
             </div>
             <form
@@ -218,14 +218,14 @@ export function DevelopersSection() {
             >
               <Input label="Название" value={webhookForm.name} onChange={(event) => setWebhookForm({ ...webhookForm, name: event.target.value })} required />
               <Input label="URL" value={webhookForm.url} onChange={(event) => setWebhookForm({ ...webhookForm, url: event.target.value })} required />
-              <Input label="Secret" value={webhookForm.secret} onChange={(event) => setWebhookForm({ ...webhookForm, secret: event.target.value })} placeholder="optional signing secret" />
-              <Input label="Events" value={webhookForm.events} onChange={(event) => setWebhookForm({ ...webhookForm, events: event.target.value })} required />
+              <Input label="Секрет подписи" value={webhookForm.secret} onChange={(event) => setWebhookForm({ ...webhookForm, secret: event.target.value })} placeholder="опционально" />
+              <Input label="События" value={webhookForm.events} onChange={(event) => setWebhookForm({ ...webhookForm, events: event.target.value })} required />
               <div className="lg:col-span-2 flex flex-wrap gap-2">
-                <Button type="submit" isLoading={createWebhookMutation.isPending}>Добавить webhook</Button>
+                <Button type="submit" isLoading={createWebhookMutation.isPending}>Добавить событие</Button>
                 {webhookForm.secret ? (
                   <Button type="button" variant="secondary" onClick={() => copyText(webhookForm.secret, "secret")}>
                     <Copy size={16} />
-                    {lastCopied === "secret" ? "Скопировано" : "Copy secret"}
+                    {lastCopied === "secret" ? "Скопировано" : "Скопировать секрет"}
                   </Button>
                 ) : null}
               </div>
@@ -241,12 +241,12 @@ export function DevelopersSection() {
                     </div>
                     <Button type="button" variant="secondary" onClick={() => testDeliveryMutation.mutate(endpoint.id)} isLoading={testDeliveryMutation.isPending}>
                       <Send size={15} />
-                      Test
+                      Проверить
                     </Button>
                   </div>
                 </div>
               ))}
-              {!webhooks.isLoading && !webhooks.data?.length ? <p className="text-sm text-slate-500">Webhook endpoints пока не настроены.</p> : null}
+              {!webhooks.isLoading && !webhooks.data?.length ? <p className="text-sm text-slate-500">Внешние события пока не настроены.</p> : null}
             </div>
           </div>
         </div>
@@ -258,7 +258,7 @@ export function DevelopersSection() {
             </div>
             <Button type="button" variant="secondary" onClick={() => deliveries.refetch()} isLoading={deliveries.isFetching}>
               <RefreshCw size={15} />
-              Refresh
+              Обновить
             </Button>
           </div>
           <div className="space-y-2">
@@ -270,7 +270,7 @@ export function DevelopersSection() {
                 onRetry={(id) => retryDeliveryMutation.mutate(id)}
               />
             ))}
-            {!deliveries.isLoading && !latestDeliveries.length ? <p className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">Доставок пока нет. Нажмите Test у webhook endpoint.</p> : null}
+            {!deliveries.isLoading && !latestDeliveries.length ? <p className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">Доставок пока нет. Нажмите “Проверить” у внешнего события.</p> : null}
           </div>
         </div>
       </CardBody>
@@ -285,7 +285,7 @@ function DeliveryRow({ delivery, isRetrying, onRetry }: { delivery: WebhookDeliv
         <div>
           <p className="font-bold text-midnight">{delivery.event_type} · {delivery.endpoint_name || `Endpoint #${delivery.endpoint}`}</p>
           <p className="mt-1 text-xs text-slate-500">
-            {delivery.idempotency_key} · attempts {delivery.attempts} · HTTP {delivery.response_status || "-"} · {formatDate(delivery.created_at)}
+            {delivery.idempotency_key} · попыток {delivery.attempts} · HTTP {delivery.response_status || "-"} · {formatDate(delivery.created_at)}
           </p>
           {delivery.error ? <p className="mt-1 text-xs font-semibold text-red-600">{delivery.error}</p> : null}
         </div>
@@ -293,12 +293,15 @@ function DeliveryRow({ delivery, isRetrying, onRetry }: { delivery: WebhookDeliv
           <span className={deliveryStatusClass(delivery.status)}>{delivery.status}</span>
           {delivery.status === "failed" ? (
             <Button type="button" variant="secondary" onClick={() => onRetry(delivery.id)} isLoading={isRetrying}>
-              Retry
+              Повторить
             </Button>
           ) : null}
         </div>
       </div>
-      <Textarea className="mt-3 text-xs" value={JSON.stringify(delivery.payload_json, null, 2)} readOnly />
+      <details className="mt-3 rounded-2xl bg-white px-3 py-2">
+        <summary className="cursor-pointer text-xs font-bold text-slate-500">Показать технические данные события</summary>
+        <Textarea className="mt-3 text-xs" value={JSON.stringify(delivery.payload_json, null, 2)} readOnly />
+      </details>
     </div>
   );
 }

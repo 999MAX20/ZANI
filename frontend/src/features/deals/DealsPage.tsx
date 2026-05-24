@@ -2,8 +2,9 @@ import { DndContext, DragEndEvent, PointerSensor, useDroppable, useSensor, useSe
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ArrowRight, CalendarClock, GripVertical, KanbanSquare, ListChecks, MessageSquareText, Plus, Sparkles, UserRound } from "lucide-react";
-import { useMemo, useState } from "react";
+import { AlertTriangle, ArrowRight, CalendarClock, CheckCircle2, GripVertical, KanbanSquare, ListChecks, MessageSquareText, Plus, RotateCcw, Sparkles, UserRound, XCircle } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import { dealsApi } from "../../api/deals";
 import { CrmEntityDrawer, type CrmDrawerEntity } from "../../components/crm/CrmEntityDrawer";
@@ -18,6 +19,7 @@ import { StatusBadge } from "../../components/ui/StatusBadge";
 import { formatDate, formatDateTime } from "../../lib/format";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useEntityData } from "../../hooks/useEntityData";
+import { useI18n } from "../../lib/i18n";
 import type { ActivityEvent, Client, Deal, Id, PipelineStage, Task } from "../../types";
 
 const sourceLabels: Record<string, string> = {
@@ -40,6 +42,10 @@ function DealCard({
   nextTask,
   lastActivity,
   onOpen,
+  onMarkWon,
+  onMarkLost,
+  onReopen,
+  isActionPending,
 }: {
   deal: Deal;
   client?: Client;
@@ -47,6 +53,10 @@ function DealCard({
   nextTask?: Task;
   lastActivity?: ActivityEvent;
   onOpen: () => void;
+  onMarkWon: () => void;
+  onMarkLost: () => void;
+  onReopen: () => void;
+  isActionPending?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: `deal-${deal.id}` });
   const style = { transform: CSS.Transform.toString(transform), transition };
@@ -104,8 +114,24 @@ function DealCard({
         </div>
       </div>
 
-      <Button variant="ghost" className="mt-4 h-9 w-full rounded-xl text-xs" onClick={onOpen}>
-        Open deal <ArrowRight size={14} />
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        {deal.status === "open" ? (
+          <>
+            <Button type="button" variant="secondary" className="h-9 rounded-xl px-2 text-xs" onClick={onMarkWon} disabled={isActionPending}>
+              <CheckCircle2 size={14} /> Оплатил
+            </Button>
+            <Button type="button" variant="danger" className="h-9 rounded-xl px-2 text-xs" onClick={onMarkLost} disabled={isActionPending}>
+              <XCircle size={14} /> Отказ
+            </Button>
+          </>
+        ) : (
+          <Button type="button" variant="secondary" className="col-span-2 h-9 rounded-xl px-2 text-xs" onClick={onReopen} disabled={isActionPending}>
+            <RotateCcw size={14} /> Вернуть в работу
+          </Button>
+        )}
+      </div>
+      <Button variant="ghost" className="mt-2 h-9 w-full rounded-xl text-xs" onClick={onOpen}>
+        Открыть сделку <ArrowRight size={14} />
       </Button>
     </article>
   );
@@ -152,16 +178,24 @@ function StageColumn({
 }
 
 export function DealsPage() {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const { business } = useActiveBusiness();
   const { clients, leads, pipelines, pipelineStages, deals, tasks, activityEvents, botConversations } = useEntityData();
+  const [searchParams] = useSearchParams();
   const [createOpen, setCreateOpen] = useState(false);
   const [detailDeal, setDetailDeal] = useState<Deal | null>(null);
   const [drawerEntity, setDrawerEntity] = useState<CrmDrawerEntity | null>(null);
   const [pipelineId, setPipelineId] = useState("");
   const [search, setSearch] = useState("");
   const [form, setForm] = useState({ title: "", client: "", pipeline: "", stage: "", amount: "0", source: "manual" });
+  const [actionDealId, setActionDealId] = useState<Id | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+
+  useEffect(() => {
+    const dealId = Number(searchParams.get("deal") || "");
+    if (dealId) setDrawerEntity({ type: "deal", id: dealId });
+  }, [searchParams]);
 
   const activePipeline = Number(pipelineId || pipelines.data?.find((pipeline) => pipeline.is_default)?.id || pipelines.data?.[0]?.id || 0);
   const activeStages = useMemo(
@@ -190,6 +224,36 @@ export function DealsPage() {
     mutationFn: ({ id, stage, lost_reason }: { id: Id; stage: Id; lost_reason?: string }) => dealsApi.moveStage({ id, stage, lost_reason }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["deals"] }),
   });
+
+  const quickActionMutation = useMutation({
+    mutationFn: ({ id, action, lost_reason, amount }: { id: Id; action: "won" | "lost" | "reopen"; lost_reason?: string; amount?: string | number }) => {
+      if (action === "won") return dealsApi.markWon({ id, amount });
+      if (action === "lost") return dealsApi.markLost({ id, lost_reason: lost_reason || "" });
+      return dealsApi.reopen({ id });
+    },
+    onMutate: ({ id }) => setActionDealId(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["deals"] });
+      queryClient.invalidateQueries({ queryKey: ["activity-events"] });
+    },
+    onSettled: () => setActionDealId(null),
+  });
+
+  function handleMarkWon(deal: Deal) {
+    const amount = Number(deal.amount || 0) > 0 ? deal.amount : window.prompt("Какая сумма оплаты?", "0");
+    if (amount === null) return;
+    quickActionMutation.mutate({ id: deal.id, action: "won", amount });
+  }
+
+  function handleMarkLost(deal: Deal) {
+    const lostReason = window.prompt("Почему отказ / потеряли сделку?");
+    if (!lostReason) return;
+    quickActionMutation.mutate({ id: deal.id, action: "lost", lost_reason: lostReason });
+  }
+
+  function handleReopen(deal: Deal) {
+    quickActionMutation.mutate({ id: deal.id, action: "reopen" });
+  }
 
   function handleDragEnd(event: DragEndEvent) {
     const activeId = String(event.active.id);
@@ -224,17 +288,17 @@ export function DealsPage() {
     <>
       <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-brand-600">Sales pipeline</p>
-          <h1 className="mt-2 text-4xl font-black tracking-tight text-midnight sm:text-5xl">Deals</h1>
-          <p className="mt-3 max-w-2xl text-lg text-slate-600">Kanban pipeline для денег, задач, активности и следующего действия.</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-brand-600">{t("deals.eyebrow")}</p>
+          <h1 className="mt-2 text-4xl font-black tracking-tight text-midnight sm:text-5xl">{t("deals.title")}</h1>
+          <p className="mt-3 max-w-2xl text-lg text-slate-600">{t("deals.description")}</p>
         </div>
         <Button variant="ai" onClick={() => setCreateOpen(true)}>
-          <Plus size={18} />Create deal
+          <Plus size={18} />{t("deals.create")}
         </Button>
       </div>
 
-      {createMutation.error || moveMutation.error ? (
-        <div className="mt-4"><ErrorState message="Не удалось сохранить сделку или изменить стадию." /></div>
+      {createMutation.error || moveMutation.error || quickActionMutation.error ? (
+        <div className="mt-4"><ErrorState message="Не удалось сохранить сделку, изменить стадию или выполнить действие." /></div>
       ) : null}
 
       {!pipelineOptions.length ? (
@@ -286,6 +350,10 @@ export function DealsPage() {
                               nextTask={nextTask}
                               lastActivity={lastActivity}
                               onOpen={() => setDrawerEntity({ type: "deal", id: deal.id })}
+                              onMarkWon={() => handleMarkWon(deal)}
+                              onMarkLost={() => handleMarkLost(deal)}
+                              onReopen={() => handleReopen(deal)}
+                              isActionPending={quickActionMutation.isPending && actionDealId === deal.id}
                             />
                           );
                         })}
@@ -309,6 +377,7 @@ export function DealsPage() {
           className="space-y-4"
           onSubmit={(event) => {
             event.preventDefault();
+            if (!clients.data?.length || !stagesForForm.length) return;
             createMutation.mutate({
               business: business.id,
               title: form.title,
@@ -321,6 +390,16 @@ export function DealsPage() {
             });
           }}
         >
+          {!clients.data?.length ? (
+            <div className="rounded-3xl border border-amber-100 bg-amber-50 p-4 text-sm font-bold text-amber-900">
+              Для сделки нужен клиент. Создайте клиента, затем вернитесь к pipeline.
+            </div>
+          ) : null}
+          {!stagesForForm.length ? (
+            <div className="rounded-3xl border border-amber-100 bg-amber-50 p-4 text-sm font-bold text-amber-900">
+              Для сделки нужна хотя бы одна стадия pipeline. Настройте pipeline в админке или через API.
+            </div>
+          ) : null}
           <Input placeholder="Название сделки" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} required />
           <Select
             value={form.client}
@@ -349,7 +428,7 @@ export function DealsPage() {
             ]}
           />
           <Input type="number" placeholder="Сумма" value={form.amount} onChange={(event) => setForm({ ...form, amount: event.target.value })} />
-          <Button type="submit" isLoading={createMutation.isPending}>Сохранить</Button>
+          <Button type="submit" isLoading={createMutation.isPending} disabled={!clients.data?.length || !stagesForForm.length}>Сохранить</Button>
         </form>
       </Modal>
 
@@ -431,7 +510,7 @@ export function DealsPage() {
 
             <Card>
               <CardBody>
-                <h3 className="mb-3 font-bold text-midnight">Timeline</h3>
+                <h3 className="mb-3 font-bold text-midnight">{t("deals.timeline")}</h3>
                 <div className="space-y-3">
                   {selectedTimeline.map((event) => (
                     <div key={event.id} className="rounded-2xl border border-slate-100 p-3 text-sm">

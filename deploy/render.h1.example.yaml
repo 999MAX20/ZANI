@@ -1,0 +1,114 @@
+# ZANI Render H1 blueprint example.
+#
+# This file is intentionally stored under deploy/ and is not named render.yaml.
+# Copy it to Render Blueprint manually only after reviewing service names,
+# regions, plans and secret values.
+#
+# H1 goal:
+# - keep backend web service on Docker;
+# - add Redis-backed Celery workers;
+# - run automations asynchronously with AUTOMATIONS_RUN_INLINE=False;
+# - prove runtime with `python manage.py queue_runtime_smoke`.
+
+services:
+  - type: web
+    name: zani-backend
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /ready/
+    envVars:
+      - key: SECRET_KEY
+        sync: false
+      - key: DEBUG
+        value: "False"
+      - key: ENVIRONMENT
+        value: staging
+      - key: RELEASE
+        value: render-staging
+      - key: ALLOWED_HOSTS
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: AUTOMATIONS_RUN_INLINE
+        value: "False"
+      - key: CELERY_TASK_ALWAYS_EAGER
+        value: "False"
+      - key: CELERY_TASK_STORE_EAGER_RESULT
+        value: "False"
+      - key: CELERY_TASK_ACKS_LATE
+        value: "True"
+      - key: CELERY_WORKER_PREFETCH_MULTIPLIER
+        value: "1"
+      - key: CELERY_TASK_DEFAULT_QUEUE
+        value: default
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false
+      - key: SECURE_PROXY_SSL_HEADER
+        value: HTTP_X_FORWARDED_PROTO,https
+      - key: SECURE_SSL_REDIRECT
+        value: "True"
+      - key: SESSION_COOKIE_SECURE
+        value: "True"
+      - key: CSRF_COOKIE_SECURE
+        value: "True"
+      - key: SUPPORT_REQUIRES_GRANT
+        value: "True"
+
+  - type: worker
+    name: zani-worker-default
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerCommand: celery -A config worker --loglevel=info --queues=default,automations,notifications --concurrency=${CELERY_WORKER_CONCURRENCY:-1}
+    envVars:
+      - fromGroup: zani-backend-env
+
+  - type: worker
+    name: zani-worker-integrations
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerCommand: celery -A config worker --loglevel=info --queues=integrations,webhooks_outbound --concurrency=${CELERY_WORKER_CONCURRENCY:-1}
+    envVars:
+      - fromGroup: zani-backend-env
+
+  # Enable only when OPENAI_API_KEY, cost controls and AI usage limits are ready.
+  - type: worker
+    name: zani-worker-ai
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerCommand: celery -A config worker --loglevel=info --queues=ai --concurrency=${CELERY_AI_WORKER_CONCURRENCY:-1}
+    envVars:
+      - fromGroup: zani-backend-env
+
+  # Optional in early staging. Enable when delayed automations/retries/reports
+  # must run without manual command execution.
+  - type: worker
+    name: zani-celery-beat
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerCommand: celery -A config beat --loglevel=info
+    envVars:
+      - fromGroup: zani-backend-env
+
+  - type: web
+    name: zani-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false

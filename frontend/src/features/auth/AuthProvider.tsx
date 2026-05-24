@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-import { getCurrentUser, login as apiLogin, logout as apiLogout } from "../../api/auth";
+import { AUTH_EXPIRED_EVENT } from "../../api/client";
+import { getCurrentUser, login as apiLogin, logout as apiLogout, socialLogin as apiSocialLogin, type SocialProvider } from "../../api/auth";
 import { tokenStorage } from "../../lib/storage";
 import type { Business, CurrentUser } from "../../types";
 
@@ -14,6 +15,7 @@ type AuthContextValue = {
   isPlatformUser: boolean;
   isMerchantUser: boolean;
   login: (email: string, password: string) => Promise<CurrentUser>;
+  loginWithSocial: (provider: SocialProvider, idToken: string) => Promise<CurrentUser>;
   logout: () => void;
 };
 
@@ -26,6 +28,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let active = true;
+
+    function handleAuthExpired() {
+      if (!active) return;
+      setUser(null);
+      setAuthenticated(false);
+      setLoading(false);
+    }
+
+    window.addEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired);
 
     async function loadUser() {
       if (!tokenStorage.getAccess()) {
@@ -53,6 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       active = false;
+      window.removeEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired);
     };
   }, []);
 
@@ -68,6 +80,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isMerchantUser: Boolean(user?.is_merchant_user),
       login: async (email: string, password: string) => {
         await apiLogin({ email, password });
+        const currentUser = await getCurrentUser();
+        setAuthenticated(true);
+        setUser(currentUser);
+        tokenStorage.setEmail(currentUser.email);
+        return currentUser;
+      },
+      loginWithSocial: async (provider: SocialProvider, idToken: string) => {
+        await apiSocialLogin({ provider, idToken });
         const currentUser = await getCurrentUser();
         setAuthenticated(true);
         setUser(currentUser);

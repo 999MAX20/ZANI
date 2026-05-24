@@ -25,6 +25,14 @@ class WorkingHoursSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Resource must belong to the selected business.")
         if start_time and end_time and start_time >= end_time:
             raise serializers.ValidationError("start_time must be before end_time.")
+        if business is not None and attrs.get("weekday", getattr(self.instance, "weekday", None)) is not None:
+            weekday = attrs.get("weekday", getattr(self.instance, "weekday", None))
+            duplicate_query = WorkingHours.objects.filter(business=business, resource=resource, weekday=weekday)
+            if self.instance is not None:
+                duplicate_query = duplicate_query.exclude(pk=self.instance.pk)
+            if duplicate_query.exists():
+                target = "resource" if resource else "business"
+                raise serializers.ValidationError(f"Working hours for this {target} and weekday already exist.")
         return attrs
 
 

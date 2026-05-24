@@ -24,7 +24,7 @@ from rest_framework.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
 from rest_framework.throttling import ScopedRateThrottle
 from apps.integrations.models import IntegrationEventLog
-from apps.integrations.telegram import set_telegram_webhook
+from apps.integrations.telegram import set_telegram_webhook, validate_telegram_token
 
 
 class BotViewSet(TenantModelViewSet):
@@ -99,6 +99,23 @@ class BotChannelViewSet(TenantModelViewSet):
                 "token_configured": bool((channel.config_json or {}).get("bot_token")),
                 "webhook_secret_configured": bool((channel.config_json or {}).get("webhook_secret")),
                 "last_error": failed_event.error if failed_event else "",
+            }
+        )
+
+    @action(detail=True, methods=["post"], url_path="telegram-test-connection")
+    def telegram_test_connection(self, request, pk=None):
+        channel = self._get_telegram_channel()
+        result = validate_telegram_token(channel)
+        channel.status = BotChannel.Statuses.ACTIVE if result.get("ok") else BotChannel.Statuses.ERROR
+        channel.save(update_fields=["status", "updated_at"])
+        return Response(
+            {
+                "ok": result.get("ok", False),
+                "mock": result.get("mock", False),
+                "reason": result.get("reason", ""),
+                "status": channel.status,
+                "token_configured": result.get("token_configured", False),
+                "bot": result.get("bot", {}),
             }
         )
 

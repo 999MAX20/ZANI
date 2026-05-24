@@ -3,6 +3,15 @@
 @tailwind utilities;
 
 :root {
+  --zani-brand: #06b6d4;
+  --zani-brand-strong: #2563eb;
+  --zani-ai: #8b5cf6;
+  --zani-ink: #172033;
+  --zani-midnight: #07111f;
+  --zani-surface: rgba(255, 255, 255, 0.88);
+  --zani-border: rgba(226, 232, 240, 0.86);
+  --zani-shadow-soft: 0 18px 50px rgba(15, 23, 42, 0.08);
+  --zani-shadow-premium: 0 24px 70px rgba(15, 23, 42, 0.12);
   color: #172033;
   background: #f8fbff;
   font-family:
@@ -17,8 +26,8 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background:
-    radial-gradient(circle at 15% 10%, rgba(14, 165, 233, 0.16), transparent 26%),
-    radial-gradient(circle at 88% 0%, rgba(139, 92, 246, 0.14), transparent 28%),
+    linear-gradient(115deg, rgba(14, 165, 233, 0.12), transparent 32%),
+    linear-gradient(245deg, rgba(139, 92, 246, 0.12), transparent 34%),
     linear-gradient(180deg, #f8fbff 0%, #eef5ff 100%);
 }
 
@@ -44,6 +53,40 @@ select {
   background: rgba(6, 182, 212, 0.2);
 }
 
+@layer components {
+  .zani-surface {
+    border: 1px solid var(--zani-border);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), var(--zani-surface));
+    box-shadow: var(--zani-shadow-soft);
+    backdrop-filter: blur(18px);
+  }
+
+  .zani-surface-strong {
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: var(--zani-shadow-premium);
+    backdrop-filter: blur(24px);
+  }
+
+  .zani-touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .zani-focus-ring {
+    outline: none;
+    transition:
+      border-color 160ms ease,
+      box-shadow 160ms ease,
+      transform 160ms ease;
+  }
+
+  .zani-focus-ring:focus-visible {
+    border-color: var(--zani-brand);
+    box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.16);
+  }
+}
+
 .glass-panel {
   border: 1px solid rgba(255, 255, 255, 0.72);
   background: rgba(255, 255, 255, 0.76);
@@ -57,6 +100,43 @@ select {
   box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
 }
 
+.zani-depth-field {
+  background:
+    linear-gradient(120deg, transparent 0 18%, rgba(14, 165, 233, 0.08) 18% 19%, transparent 19% 100%),
+    linear-gradient(58deg, transparent 0 58%, rgba(124, 58, 237, 0.07) 58% 59%, transparent 59% 100%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent);
+  transform: translateZ(0);
+}
+
+.zani-depth-field::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(14, 165, 233, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(14, 165, 233, 0.045) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.45), transparent 70%);
+}
+
+.zani-perspective-panel {
+  border: 1px solid rgba(255, 255, 255, 0.74);
+  border-radius: 2rem;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.68), rgba(236, 254, 255, 0.22)),
+    repeating-linear-gradient(90deg, rgba(14, 165, 233, 0.08) 0 1px, transparent 1px 42px);
+  box-shadow: 0 34px 90px rgba(15, 23, 42, 0.11);
+  transform: perspective(900px) rotateX(58deg) rotateZ(-14deg);
+  filter: blur(0.2px);
+}
+
+.zani-perspective-panel-alt {
+  transform: perspective(900px) rotateX(62deg) rotateZ(10deg);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.64), rgba(245, 243, 255, 0.24)),
+    repeating-linear-gradient(0deg, rgba(124, 58, 237, 0.07) 0 1px, transparent 1px 34px);
+}
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -64,4 +144,20 @@ select {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+@media (max-width: 640px) {
+  .premium-card {
+    border-radius: 1.35rem;
+  }
+
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+
+  .mobile-safe-bottom {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem);
+  }
 }

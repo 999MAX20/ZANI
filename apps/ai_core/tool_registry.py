@@ -1,12 +1,14 @@
 from dataclasses import dataclass
 
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 
 from apps.ai_core.models import AIToolCallLog
 from apps.clients.models import Client
 from apps.crm.models import Deal, PipelineStage
 from apps.leads.models import Lead
 from apps.tasks.models import Task
+from apps.notifications.models import Notification
 
 
 @dataclass(frozen=True)
@@ -19,7 +21,7 @@ class AIToolDefinition:
 TOOLS = {
     "create_lead": AIToolDefinition("create_lead", "Create a CRM lead from confirmed context."),
     "create_client": AIToolDefinition("create_client", "Create a client profile."),
-    "create_task": AIToolDefinition("create_task", "Create a follow-up task for a manager."),
+    "create_task": AIToolDefinition("create_task", "Create an actionable task and calendar reminder from an AI recommendation."),
     "create_deal": AIToolDefinition("create_deal", "Create a deal in the default pipeline."),
     "summarize_conversation": AIToolDefinition("summarize_conversation", "Summarize the selected conversation."),
     "qualify_lead": AIToolDefinition("qualify_lead", "Score and qualify a lead or conversation."),
@@ -124,18 +126,45 @@ def _execute_create_lead(log, user):
 
 def _execute_create_task(log, user):
     conversation = log.conversation
+    assignee = _resolve_task_assignee(log, user)
+    due_at = _parse_optional_datetime(log.input_json.get("due_at")) or timezone.now()
+    reminder_at = _parse_optional_datetime(log.input_json.get("reminder_at"))
+    description = log.input_json.get("description", "")
+    recommendation = log.input_json.get("recommendation") or log.input_json.get("reason")
+    if recommendation and recommendation not in description:
+        description = f"{description}\n\nAI recommendation: {recommendation}".strip()
     task = Task.objects.create(
         business=log.business,
         title=log.input_json.get("title") or "AI suggested follow-up",
-        description=log.input_json.get("description", ""),
+        description=description,
         client=conversation.client if conversation else None,
         lead=conversation.lead if conversation else None,
-        assignee=user if user and user.is_authenticated else None,
+        assignee=assignee,
         created_by=user if user and user.is_authenticated else None,
         priority=log.input_json.get("priority") or Task.Priorities.NORMAL,
-        due_at=log.input_json.get("due_at") or timezone.now(),
+        due_at=due_at,
+        reminder_at=reminder_at,
     )
-    return {"task_id": task.id}
+    Notification.objects.create(
+        business=log.business,
+        recipient=task.assignee,
+        client=task.client,
+        channel=Notification.Channels.SYSTEM,
+        category=Notification.Categories.TASKS,
+        priority=Notification.Priorities.HIGH if task.priority in {Task.Priorities.HIGH, Task.Priorities.URGENT} else Notification.Priorities.NORMAL,
+        text=f"AI создал задачу: {task.title}",
+        send_at=timezone.now(),
+        action_url=f"/dashboard/tasks?task={task.id}",
+        action_label="Открыть задачу",
+    )
+    return {
+        "task_id": task.id,
+        "assignee_id": task.assignee_id,
+        "due_at": task.due_at.isoformat() if task.due_at else None,
+        "reminder_at": task.reminder_at.isoformat() if task.reminder_at else None,
+        "calendar_status": "scheduled" if task.due_at else "unscheduled",
+        "notification_created": True,
+    }
 
 
 def _execute_create_deal(log, user):
@@ -188,3 +217,29 @@ def _last_message_text(conversation):
         return ""
     message = conversation.messages.order_by("-created_at").first()
     return message.text if message else ""
+
+
+def _parse_optional_datetime(value):
+    if not value:
+        return None
+    if hasattr(value, "isoformat"):
+        return value
+    parsed = parse_datetime(str(value))
+    if parsed is None:
+        return None
+    if timezone.is_naive(parsed):
+        parsed = timezone.make_aware(parsed, timezone.get_current_timezone())
+    return parsed
+
+
+def _resolve_task_assignee(log, user):
+    assignee_id = log.input_json.get("assignee_id") or log.input_json.get("responsible_user_id")
+    if assignee_id:
+        member = log.business.members.filter(user_id=assignee_id, is_active=True).select_related("user").first()
+        if member:
+            return member.user
+    if log.conversation and log.conversation.assigned_to_id:
+        return log.conversation.assigned_to
+    if user and user.is_authenticated and log.business.members.filter(user=user, is_active=True).exists():
+        return user
+    return log.business.owner

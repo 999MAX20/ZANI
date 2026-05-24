@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Bot, Building2, CircleAlert, CreditCard, MessageCircle, Sparkles, Store, Users } from "lucide-react";
+import { Bot, Building2, CircleAlert, CreditCard, MessageCircle, ShieldAlert, Sparkles, Store, TrendingUp, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { platformApi } from "../../api/platform";
@@ -68,6 +68,37 @@ export function PlatformOverviewPage() {
         })}
       </div>
 
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Card>
+          <CardBody className="p-5">
+            <ShieldAlert className="text-amber-600" size={22} />
+            <p className="mt-4 text-3xl font-bold text-midnight">{data.operations_summary.attention_merchants}</p>
+            <p className="mt-1 text-sm font-semibold text-slate-500">Нужны действия команды</p>
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody className="p-5">
+            <CircleAlert className="text-red-600" size={22} />
+            <p className="mt-4 text-3xl font-bold text-midnight">{data.operations_summary.form_errors_30d}</p>
+            <p className="mt-1 text-sm font-semibold text-slate-500">Ошибки форм / 30д</p>
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody className="p-5">
+            <MessageCircle className="text-brand-600" size={22} />
+            <p className="mt-4 text-3xl font-bold text-midnight">{data.operations_summary.handoff_conversations}</p>
+            <p className="mt-1 text-sm font-semibold text-slate-500">Диалоги ждут оператора</p>
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody className="p-5">
+            <TrendingUp className="text-emerald-600" size={22} />
+            <p className="mt-4 text-3xl font-bold text-midnight">{data.operations_summary.new_leads_30d}</p>
+            <p className="mt-1 text-sm font-semibold text-slate-500">Новые лиды / 30д</p>
+          </CardBody>
+        </Card>
+      </div>
+
       <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
         <Card>
           <CardBody className="p-6">
@@ -111,7 +142,7 @@ export function PlatformOverviewPage() {
             <div>
               <h2 className="text-lg font-semibold text-midnight">Errors placeholder</h2>
               <p className="mt-1 text-sm leading-6 text-slate-500">
-                Сейчас ошибок в platform overview: {data.errors.count}. Реальный error monitoring будет подключаться отдельным production этапом.
+                Сейчас ошибок в platform overview: {data.errors.count}. Операционные сигналы пилота: {data.operations_summary.failed_connectors} интеграций требуют внимания, {data.operations_summary.no_sales_data_merchants} мерчей без данных продаж.
               </p>
             </div>
           </div>

@@ -20,6 +20,7 @@ class Resources:
     INTEGRATIONS = "integrations"
     AUTOMATIONS = "automations"
     AUDIT_LOGS = "audit_logs"
+    NOTIFICATIONS = "notifications"
 
 
 class Actions:
@@ -44,6 +45,7 @@ PERMISSION_CATALOG = {
     Resources.INTEGRATIONS: [Actions.VIEW, Actions.MANAGE],
     Resources.AUTOMATIONS: [Actions.VIEW, Actions.CREATE, Actions.UPDATE, Actions.DELETE, Actions.MANAGE],
     Resources.AUDIT_LOGS: [Actions.VIEW, Actions.MANAGE],
+    Resources.NOTIFICATIONS: [Actions.VIEW, Actions.UPDATE, Actions.MANAGE],
 }
 
 ROLE_PRESETS = {
@@ -55,12 +57,13 @@ ROLE_PRESETS = {
     },
     BusinessMember.Roles.MANAGER: {
         Resources.CLIENTS: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.CREATE: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.BUSINESS},
-        Resources.LEADS: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.CREATE: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.BUSINESS},
-        Resources.DEALS: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.CREATE: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.BUSINESS},
+        Resources.LEADS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.CREATE: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.OWN},
+        Resources.DEALS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.CREATE: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.OWN},
         Resources.APPOINTMENTS: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.CREATE: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.BUSINESS},
         Resources.CONVERSATIONS: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.CREATE: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.BUSINESS, Actions.MANAGE: RolePermission.Scopes.BUSINESS},
-        Resources.TASKS: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.CREATE: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.BUSINESS},
+        Resources.TASKS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.CREATE: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.OWN},
         Resources.ANALYTICS: {Actions.VIEW: RolePermission.Scopes.BUSINESS},
+        Resources.NOTIFICATIONS: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.BUSINESS},
         Resources.SETTINGS: {Actions.VIEW: RolePermission.Scopes.BUSINESS},
     },
     BusinessMember.Roles.OPERATOR: {
@@ -68,17 +71,20 @@ ROLE_PRESETS = {
         Resources.LEADS: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.CREATE: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.OWN},
         Resources.CONVERSATIONS: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.CREATE: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.OWN},
         Resources.TASKS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.UPDATE: RolePermission.Scopes.OWN},
+        Resources.NOTIFICATIONS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.UPDATE: RolePermission.Scopes.OWN},
     },
     BusinessMember.Roles.MARKETER: {
         Resources.CLIENTS: {Actions.VIEW: RolePermission.Scopes.BUSINESS},
         Resources.LEADS: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.CREATE: RolePermission.Scopes.BUSINESS},
         Resources.ANALYTICS: {Actions.VIEW: RolePermission.Scopes.BUSINESS},
         Resources.AUTOMATIONS: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.CREATE: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.BUSINESS},
+        Resources.NOTIFICATIONS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.UPDATE: RolePermission.Scopes.OWN},
     },
     BusinessMember.Roles.ACCOUNTANT: {
         Resources.CLIENTS: {Actions.VIEW: RolePermission.Scopes.BUSINESS},
         Resources.ANALYTICS: {Actions.VIEW: RolePermission.Scopes.BUSINESS},
         Resources.BILLING: {Actions.VIEW: RolePermission.Scopes.BUSINESS},
+        Resources.NOTIFICATIONS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.UPDATE: RolePermission.Scopes.OWN},
     },
     BusinessMember.Roles.SUPPORT: {
         Resources.CLIENTS: {Actions.VIEW: RolePermission.Scopes.BUSINESS},
@@ -86,12 +92,14 @@ ROLE_PRESETS = {
         Resources.DEALS: {Actions.VIEW: RolePermission.Scopes.BUSINESS},
         Resources.APPOINTMENTS: {Actions.VIEW: RolePermission.Scopes.BUSINESS},
         Resources.CONVERSATIONS: {Actions.VIEW: RolePermission.Scopes.BUSINESS},
+        Resources.NOTIFICATIONS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.UPDATE: RolePermission.Scopes.OWN},
     },
     BusinessMember.Roles.STAFF: {
         Resources.CLIENTS: {Actions.VIEW: RolePermission.Scopes.BUSINESS},
         Resources.LEADS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.UPDATE: RolePermission.Scopes.OWN},
         Resources.APPOINTMENTS: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.OWN},
         Resources.TASKS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.UPDATE: RolePermission.Scopes.OWN},
+        Resources.NOTIFICATIONS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.UPDATE: RolePermission.Scopes.OWN},
     },
 }
 
@@ -198,6 +206,8 @@ def scope_queryset(queryset, user, business: Business | None, resource: str, act
             return queryset.filter(assignee=user)
         if "created_by" in model_fields:
             return queryset.filter(created_by=user)
+        if "recipient" in model_fields:
+            return queryset.filter(recipient=user) | queryset.filter(recipient__isnull=True)
         if "user" in model_fields:
             return queryset.filter(user=user)
     return queryset

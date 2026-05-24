@@ -2,14 +2,24 @@ from django.utils import timezone
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from apps.businesses.access import Actions, assert_can
 from apps.core.viewsets import TenantModelViewSet
 from apps.notifications.models import Notification
 from apps.notifications.serializers import NotificationSerializer
 
 
 class NotificationViewSet(TenantModelViewSet):
-    queryset = Notification.objects.select_related("business", "client", "appointment")
+    queryset = Notification.objects.select_related("business", "client", "appointment", "recipient")
     serializer_class = NotificationSerializer
+    action_permission_map = {
+        **TenantModelViewSet.action_permission_map,
+        "mark_read": Actions.UPDATE,
+        "mark_unread": Actions.UPDATE,
+        "mark_all_read": Actions.UPDATE,
+        "mark_sent": Actions.MANAGE,
+        "cancel": Actions.MANAGE,
+        "summary": Actions.VIEW,
+    }
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -38,6 +48,7 @@ class NotificationViewSet(TenantModelViewSet):
     @action(detail=True, methods=["post"], url_path="mark-sent")
     def mark_sent(self, request, pk=None):
         notification = self.get_object()
+        assert_can(request.user, notification.business, self.get_access_resource(), Actions.MANAGE, obj=notification)
         notification.status = Notification.Statuses.SENT
         notification.save(update_fields=["status", "updated_at"])
         return Response(NotificationSerializer(notification).data)
@@ -45,6 +56,7 @@ class NotificationViewSet(TenantModelViewSet):
     @action(detail=True, methods=["post"])
     def cancel(self, request, pk=None):
         notification = self.get_object()
+        assert_can(request.user, notification.business, self.get_access_resource(), Actions.MANAGE, obj=notification)
         notification.status = Notification.Statuses.CANCELLED
         notification.save(update_fields=["status", "updated_at"])
         return Response(NotificationSerializer(notification).data)
@@ -52,12 +64,14 @@ class NotificationViewSet(TenantModelViewSet):
     @action(detail=True, methods=["post"], url_path="mark-read")
     def mark_read(self, request, pk=None):
         notification = self.get_object()
+        assert_can(request.user, notification.business, self.get_access_resource(), Actions.UPDATE, obj=notification)
         notification.mark_read()
         return Response(NotificationSerializer(notification).data)
 
     @action(detail=True, methods=["post"], url_path="mark-unread")
     def mark_unread(self, request, pk=None):
         notification = self.get_object()
+        assert_can(request.user, notification.business, self.get_access_resource(), Actions.UPDATE, obj=notification)
         notification.mark_unread()
         return Response(NotificationSerializer(notification).data)
 

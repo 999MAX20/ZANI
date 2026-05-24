@@ -28,6 +28,12 @@ class BusinessConnectorFoundationTests(TestCase):
             password="pass",
             role=User.Roles.BUSINESS_OWNER,
         )
+        self.platform_admin = User.objects.create_user(
+            username="connector-platform",
+            email="connector-platform@example.com",
+            password="pass",
+            role=User.Roles.PLATFORM_ADMIN,
+        )
         self.business = Business.objects.create(owner=self.owner, name="Connector Clinic", slug="connector-clinic")
         self.other_business = Business.objects.create(owner=self.other_owner, name="Other Connector Clinic", slug="other-connector-clinic")
         BusinessMember.objects.create(business=self.business, user=self.owner, role=BusinessMember.Roles.OWNER)
@@ -153,3 +159,154 @@ class BusinessConnectorFoundationTests(TestCase):
         self.assertEqual(first.status_code, 201)
         self.assertEqual(second.status_code, 200)
         self.assertEqual(first.data["id"], second.data["id"])
+
+    def test_whatsapp_and_instagram_connection_requests_are_platform_visible_without_secrets(self):
+        self.api.force_authenticate(self.owner)
+
+        whatsapp_response = self.api.post(
+            "/api/business-connectors/",
+            {
+                "business": self.business.id,
+                "provider": BusinessConnector.Providers.WHATSAPP,
+                "name": "WhatsApp connection request",
+                "capability": BusinessConnector.Capabilities.COMMUNICATIONS,
+                "auth_type": BusinessConnector.AuthTypes.QR,
+                "config_json": {
+                    "request_status": "pending_request",
+                    "form": {
+                        "company_name": "Connector Clinic",
+                        "phone_number": "+77015550101",
+                        "preferred_connection_type": "official_provider",
+                        "comment": "Need official provider",
+                    },
+                },
+            },
+            format="json",
+        )
+        instagram_response = self.api.post(
+            "/api/business-connectors/",
+            {
+                "business": self.business.id,
+                "provider": BusinessConnector.Providers.INSTAGRAM,
+                "name": "Instagram connection request",
+                "capability": BusinessConnector.Capabilities.COMMUNICATIONS,
+                "auth_type": BusinessConnector.AuthTypes.OAUTH,
+                "config_json": {
+                    "request_status": "pending_request",
+                    "form": {
+                        "instagram_username": "connector_clinic",
+                        "facebook_page": "Connector Clinic",
+                        "contact_person": "Owner",
+                        "comment": "Owner approved request",
+                    },
+                },
+            },
+            format="json",
+        )
+
+        self.assertEqual(whatsapp_response.status_code, 201)
+        self.assertEqual(instagram_response.status_code, 201)
+        self.assertEqual(whatsapp_response.data["status"], BusinessConnector.Statuses.NEEDS_ATTENTION)
+        self.assertEqual(instagram_response.data["status"], BusinessConnector.Statuses.NEEDS_ATTENTION)
+        self.assertNotIn("password", str(instagram_response.data).lower())
+
+        self.api.force_authenticate(self.platform_admin)
+        platform_response = self.api.get("/api/business-connectors/")
+
+        self.assertEqual(platform_response.status_code, 200)
+        providers = {item["provider"] for item in platform_response.data["results"]}
+        self.assertIn(BusinessConnector.Providers.WHATSAPP, providers)
+        self.assertIn(BusinessConnector.Providers.INSTAGRAM, providers)
+
+    def test_data_connector_request_and_mock_sync_event_work_without_full_sync(self):
+        self.api.force_authenticate(self.owner)
+
+        connector_response = self.api.post(
+            "/api/business-connectors/",
+            {
+                "business": self.business.id,
+                "provider": BusinessConnector.Providers.KASPI,
+                "name": "Kaspi connector request",
+                "capability": BusinessConnector.Capabilities.FINANCE,
+                "auth_type": BusinessConnector.AuthTypes.CONNECTOR,
+                "config_json": {
+                    "request_status": "pending_request",
+                    "pilot_mode": "request_or_import_only",
+                    "no_write_back": True,
+                },
+            },
+            format="json",
+        )
+
+        self.assertEqual(connector_response.status_code, 201)
+        self.assertEqual(connector_response.data["status"], BusinessConnector.Statuses.NEEDS_ATTENTION)
+        self.assertTrue(connector_response.data["config_json"]["no_write_back"])
+
+        event_response = self.api.post(
+            f"/api/business-connectors/{connector_response.data['id']}/events/",
+            {
+                "event_type": "order_imported",
+                "external_id": "kaspi-order-1",
+                "payload_json": {"amount": 12000, "note": "mock sync only"},
+            },
+            format="json",
+        )
+
+        self.assertEqual(event_response.status_code, 201)
+        self.assertEqual(event_response.data["event_type"], "order_imported")
+        self.assertEqual(event_response.data["source"], BusinessConnector.Providers.KASPI)
+
+
+class ConnectorOnboardingCatalogTests(TestCase):
+    def setUp(self):
+        self.api = APIClient()
+        self.owner = User.objects.create_user(
+            username="catalog-owner",
+            email="catalog-owner@example.com",
+            password="pass",
+            role=User.Roles.BUSINESS_OWNER,
+        )
+        self.business = Business.objects.create(owner=self.owner, name="Catalog Clinic", slug="catalog-clinic")
+        BusinessMember.objects.create(business=self.business, user=self.owner, role=BusinessMember.Roles.OWNER)
+
+    def test_capabilities_include_pilot_onboarding_metadata(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.get("/api/business-connectors/capabilities/")
+
+        self.assertEqual(response.status_code, 200)
+        by_provider = {item["provider"]: item for item in response.data}
+        self.assertIn(BusinessConnector.Providers.WEBSITE, by_provider)
+        self.assertIn(BusinessConnector.Providers.EXCEL_CSV, by_provider)
+        self.assertIn(BusinessConnector.Providers.WHATSAPP, by_provider)
+        self.assertIn(BusinessConnector.Providers.KASPI, by_provider)
+        self.assertEqual(by_provider[BusinessConnector.Providers.WEBSITE]["launch_status"], "available")
+        self.assertEqual(by_provider[BusinessConnector.Providers.EXCEL_CSV]["launch_status"], "available")
+        self.assertTrue(by_provider[BusinessConnector.Providers.EXCEL_CSV]["is_pilot_safe"])
+        self.assertEqual(by_provider[BusinessConnector.Providers.KASPI]["launch_status"], "roadmap")
+        self.assertFalse(by_provider[BusinessConnector.Providers.KASPI]["is_pilot_safe"])
+        self.assertIn("next_step", by_provider[BusinessConnector.Providers.WHATSAPP])
+        self.assertIn("pilot_note", by_provider[BusinessConnector.Providers.INSTAGRAM])
+        self.assertEqual(by_provider[BusinessConnector.Providers.WEBSITE]["availability"], "included")
+        self.assertEqual(by_provider[BusinessConnector.Providers.WEBSITE]["required_plan"], "basic")
+        self.assertEqual(by_provider[BusinessConnector.Providers.WEBSITE]["action_behavior"], "self_service")
+        self.assertEqual(by_provider[BusinessConnector.Providers.WHATSAPP]["availability"], "request")
+        self.assertEqual(by_provider[BusinessConnector.Providers.KASPI]["setup_state"], "roadmap")
+
+    def test_owner_can_create_excel_csv_connector_without_secret(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            "/api/business-connectors/",
+            {
+                "business": self.business.id,
+                "provider": BusinessConnector.Providers.EXCEL_CSV,
+                "name": "Excel / CSV imports",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["capability"], BusinessConnector.Capabilities.SALES)
+        self.assertEqual(response.data["auth_type"], BusinessConnector.AuthTypes.NONE)
+        self.assertEqual(response.data["status"], BusinessConnector.Statuses.CONNECTED)

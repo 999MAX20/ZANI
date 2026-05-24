@@ -8,8 +8,10 @@ import { ErrorState, LoadingState } from "../../components/ui/StateViews";
 import { formatDateTime } from "../../lib/format";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useEntityData } from "../../hooks/useEntityData";
+import { useI18n } from "../../lib/i18n";
 
 export function TimelinePage() {
+  const { t } = useI18n();
   const { business } = useActiveBusiness();
   const { activityEvents, clients } = useEntityData();
   const [search, setSearch] = useState("");
@@ -38,10 +40,10 @@ export function TimelinePage() {
 
   return (
     <>
-      <PageHeader title="Timeline" description="Единая история клиента: CRM, сообщения, записи, задачи и автоматизации." />
+      <PageHeader title={t("timeline.title")} description={t("timeline.description")} />
       <div className="mb-5 flex items-center gap-3 rounded-3xl border border-slate-200 bg-white px-4 py-2">
         <Search size={17} className="text-slate-400" />
-        <Input className="border-0 shadow-none" placeholder="Поиск по событиям" value={search} onChange={(event) => setSearch(event.target.value)} />
+        <Input className="border-0 shadow-none" placeholder={t("timeline.search")} value={search} onChange={(event) => setSearch(event.target.value)} />
       </div>
       <Card>
         <CardBody>

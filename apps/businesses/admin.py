@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from apps.businesses.models import Business, BusinessMember, BusinessRole, RolePermission, RolePreset, Team, TeamMember
+from apps.businesses.models import Business, BusinessInvitation, BusinessMember, BusinessRole, RolePermission, RolePreset, Team, TeamMember
 
 
 @admin.register(Business)
@@ -16,6 +16,14 @@ class BusinessMemberAdmin(admin.ModelAdmin):
     list_display = ("business", "user", "role", "business_role", "is_active", "created_at")
     list_filter = ("role", "is_active")
     search_fields = ("business__name", "user__email", "user__full_name")
+
+
+@admin.register(BusinessInvitation)
+class BusinessInvitationAdmin(admin.ModelAdmin):
+    list_display = ("email", "business", "role", "delivery_channel", "status", "expires_at", "created_at")
+    list_filter = ("role", "delivery_channel", "accepted_at", "revoked_at")
+    search_fields = ("business__name", "email", "phone", "telegram", "full_name")
+    readonly_fields = ("token", "accepted_at", "revoked_at", "created_at", "updated_at")
 
 
 @admin.register(RolePreset)

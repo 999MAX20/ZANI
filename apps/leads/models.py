@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.db.models import Q
 import uuid
 
 from apps.businesses.models import Business, TimeStampedModel
@@ -18,6 +19,7 @@ class Lead(TimeStampedModel):
 
     class Sources(models.TextChoices):
         WEBSITE = "website", "Website"
+        LANDING = "landing", "Landing"
         TELEGRAM = "telegram", "Telegram"
         WHATSAPP = "whatsapp", "WhatsApp"
         INSTAGRAM = "instagram", "Instagram"
@@ -73,6 +75,9 @@ class LeadForm(TimeStampedModel):
     business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name="lead_forms")
     name = models.CharField(max_length=255)
     public_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    landing_id = models.CharField(max_length=128, blank=True, db_index=True)
+    landing_domain = models.CharField(max_length=255, blank=True)
+    preview_url = models.URLField(blank=True)
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     source = models.CharField(max_length=32, choices=Lead.Sources.choices, default=Lead.Sources.WEBSITE)
@@ -91,6 +96,13 @@ class LeadForm(TimeStampedModel):
         indexes = [
             models.Index(fields=["business", "is_active", "created_at"]),
             models.Index(fields=["public_id", "is_active"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["landing_id"],
+                condition=~Q(landing_id=""),
+                name="unique_active_lead_form_landing_id",
+            ),
         ]
 
     def __str__(self):
@@ -131,7 +143,11 @@ class LeadFormSubmission(models.Model):
     lead = models.ForeignKey(Lead, on_delete=models.SET_NULL, null=True, blank=True, related_name="form_submissions")
     payload_json = models.JSONField(default=dict, blank=True)
     utm_json = models.JSONField(default=dict, blank=True)
+    source_context_json = models.JSONField(default=dict, blank=True)
     duplicate_json = models.JSONField(default=dict, blank=True)
+    landing_id = models.CharField(max_length=128, blank=True)
+    page_url = models.URLField(blank=True)
+    page_domain = models.CharField(max_length=255, blank=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -141,7 +157,34 @@ class LeadFormSubmission(models.Model):
         indexes = [
             models.Index(fields=["business", "form", "created_at"]),
             models.Index(fields=["lead", "created_at"]),
+            models.Index(fields=["business", "landing_id", "created_at"]),
+            models.Index(fields=["business", "page_domain", "created_at"]),
         ]
 
     def __str__(self):
         return f"{self.form} submission #{self.id}"
+
+
+class LeadFormSubmissionError(models.Model):
+    form = models.ForeignKey(LeadForm, on_delete=models.SET_NULL, null=True, blank=True, related_name="submission_errors")
+    business = models.ForeignKey(Business, on_delete=models.SET_NULL, null=True, blank=True, related_name="lead_form_submission_errors")
+    public_id = models.CharField(max_length=128, blank=True)
+    landing_id = models.CharField(max_length=128, blank=True)
+    page_url = models.URLField(blank=True)
+    page_domain = models.CharField(max_length=255, blank=True)
+    payload_json = models.JSONField(default=dict, blank=True)
+    error_message = models.TextField()
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["business", "created_at"]),
+            models.Index(fields=["public_id", "created_at"]),
+            models.Index(fields=["landing_id", "created_at"]),
+        ]
+
+    def __str__(self):
+        return f"Lead form error #{self.id}: {self.error_message[:64]}"

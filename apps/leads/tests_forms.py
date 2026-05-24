@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.test import TestCase
 from rest_framework.test import APIClient
 
@@ -8,7 +9,7 @@ from apps.automations.models import AutomationAction, AutomationRule, Automation
 from apps.businesses.access import ensure_default_roles
 from apps.businesses.models import Business, BusinessMember, BusinessRole
 from apps.clients.models import Client
-from apps.leads.models import Lead, LeadForm, LeadFormSubmission
+from apps.leads.models import Lead, LeadForm, LeadFormSubmission, LeadFormSubmissionError
 from apps.tasks.models import Task
 
 
@@ -78,6 +79,97 @@ class LeadFormCaptureTests(TestCase):
         self.assertTrue(ActivityEvent.objects.filter(event_type="form_submitted").exists())
         self.assertTrue(AutomationRun.objects.filter(rule=rule, status=AutomationRun.Statuses.SUCCESS).exists())
         self.assertTrue(Task.objects.filter(title="Call new lead").exists())
+
+    def test_public_landing_form_preserves_source_context_and_is_tenant_scoped(self):
+        other_owner = User.objects.create_user(username="other-owner", email="other-owner@example.com", password="pass12345")
+        other_business = Business.objects.create(owner=other_owner, name="Other Clinic", slug="other-clinic")
+        ensure_default_roles(other_business)
+        BusinessMember.objects.create(
+            business=other_business,
+            user=other_owner,
+            role=BusinessMember.Roles.OWNER,
+            business_role=BusinessRole.objects.get(business=other_business, preset_key=BusinessMember.Roles.OWNER),
+        )
+        form = LeadForm.objects.create(
+            business=self.business,
+            name="Landing form",
+            title="Landing",
+            source=Lead.Sources.LANDING,
+            landing_id="landing-forms-clinic-001",
+            landing_domain="promo.forms-clinic.test",
+            default_responsible_user=self.owner,
+        )
+        form.fields.create(key="phone", label="Phone", field_type="phone", is_required=True)
+
+        response = self.api.post(
+            f"/api/public/forms/{form.public_id}/submit/",
+            {
+                "full_name": "Landing Client",
+                "phone": "+77017770011",
+                "message": "Заявка с внешнего лендинга",
+                "landing_id": "landing-forms-clinic-001",
+                "page_url": "https://promo.forms-clinic.test/spring",
+                "campaign": "spring-pilot",
+                "utm_source": "meta",
+                "utm_medium": "cpc",
+            },
+            format="json",
+            HTTP_USER_AGENT="LandingBot/1.0",
+            REMOTE_ADDR="10.10.10.10",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        lead = Lead.objects.get(business=self.business)
+        submission = LeadFormSubmission.objects.get(business=self.business)
+        self.assertEqual(lead.source, Lead.Sources.LANDING)
+        self.assertEqual(submission.landing_id, "landing-forms-clinic-001")
+        self.assertEqual(submission.page_domain, "promo.forms-clinic.test")
+        self.assertEqual(submission.utm_json["utm_source"], "meta")
+        self.assertEqual(submission.source_context_json["campaign"], "spring-pilot")
+        self.assertEqual(submission.user_agent, "LandingBot/1.0")
+        self.assertEqual(str(submission.ip_address), "10.10.10.10")
+
+        self.api.force_authenticate(other_owner)
+        leads_response = self.api.get("/api/leads/")
+        submissions_response = self.api.get("/api/lead-form-submissions/")
+        self.assertEqual(leads_response.status_code, 200)
+        self.assertEqual(submissions_response.status_code, 200)
+        self.assertEqual(leads_response.data["count"], 0)
+        self.assertEqual(submissions_response.data["count"], 0)
+
+    def test_public_form_validation_error_is_logged(self):
+        form = LeadForm.objects.create(business=self.business, name="Required form", title="Lead")
+        form.fields.create(key="phone", label="Phone", field_type="phone", is_required=True)
+
+        response = self.api.post(
+            f"/api/public/forms/{form.public_id}/submit/",
+            {"full_name": "No Phone", "page_url": "https://demo.example/lead"},
+            format="json",
+            REMOTE_ADDR="10.10.10.11",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        error = LeadFormSubmissionError.objects.get()
+        self.assertEqual(error.form, form)
+        self.assertEqual(error.business, self.business)
+        self.assertIn("Required fields missing", error.error_message)
+        self.assertEqual(error.page_domain, "demo.example")
+
+    def test_public_form_has_throttle_and_honeypot_spam_guard(self):
+        self.assertIn("public_form", settings.REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"])
+        form = LeadForm.objects.create(business=self.business, name="Throttle form", title="Lead")
+        form.fields.create(key="phone", label="Phone", field_type="phone", is_required=True)
+        url = f"/api/public/forms/{form.public_id}/submit/"
+
+        response = self.api.post(
+            url,
+            {"phone": "+77010000001", "website_url": "https://spam.example"},
+            format="json",
+            REMOTE_ADDR="10.10.10.12",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertTrue(LeadFormSubmissionError.objects.filter(form=form, error_message="Submission rejected.").exists())
 
     def test_duplicate_submission_reuses_client_and_marks_warning(self):
         existing = Client.objects.create(business=self.business, full_name="Existing", phone="+77015550101")

@@ -109,8 +109,36 @@ class DealViewSet(TenantModelViewSet):
         except PipelineStage.DoesNotExist as exc:
             raise ValidationError({"stage": "Stage does not exist in this deal pipeline."}) from exc
         self._validate_transition(deal, stage, request)
+        return self._apply_stage(deal=deal, stage=stage, request=request)
 
+    @action(detail=True, methods=["post"], url_path="mark-won")
+    def mark_won(self, request, pk=None):
+        deal = self.get_object()
+        stage = self._get_terminal_stage(deal, is_won=True)
+        if request.data.get("amount") not in (None, ""):
+            deal.amount = request.data.get("amount")
+        return self._apply_stage(deal=deal, stage=stage, request=request, event_type="deal_marked_won", activity_text="Сделка отмечена как оплаченная/успешная")
+
+    @action(detail=True, methods=["post"], url_path="mark-lost")
+    def mark_lost(self, request, pk=None):
+        deal = self.get_object()
+        stage = self._get_terminal_stage(deal, is_lost=True)
+        lost_reason = (request.data.get("lost_reason") or "").strip()
+        if not lost_reason:
+            raise ValidationError({"lost_reason": "Reason is required when deal is lost."})
+        return self._apply_stage(deal=deal, stage=stage, request=request, event_type="deal_marked_lost", activity_text="Сделка закрыта как отказ", lost_reason=lost_reason)
+
+    @action(detail=True, methods=["post"], url_path="reopen")
+    def reopen(self, request, pk=None):
+        deal = self.get_object()
+        stage = self._get_reopen_stage(deal)
+        return self._apply_stage(deal=deal, stage=stage, request=request, event_type="deal_reopened", activity_text="Сделка возвращена в работу")
+
+    def _apply_stage(self, *, deal, stage, request, event_type="deal_stage_changed", activity_text=None, lost_reason=None):
+        previous_status = deal.status
+        previous_stage = deal.stage
         now = timezone.now()
+
         deal.stage = stage
         deal.probability = stage.probability
         deal.stage_entered_at = now
@@ -119,19 +147,17 @@ class DealViewSet(TenantModelViewSet):
             deal.won_at = deal.won_at or now
             deal.lost_at = None
             deal.lost_by = None
-            deal.previous_status = ""
-            deal.previous_stage = None
+            deal.previous_status = previous_status if previous_status != Deal.Statuses.WON else ""
+            deal.previous_stage = previous_stage if getattr(previous_stage, "id", None) else None
             deal.lost_reason = ""
         elif stage.is_lost:
-            previous_status = deal.status
-            previous_stage = deal.stage
             deal.status = Deal.Statuses.LOST
             deal.lost_at = deal.lost_at or now
             deal.lost_by = request.user
-            deal.previous_status = previous_status
-            deal.previous_stage = previous_stage
+            deal.previous_status = previous_status if previous_status != Deal.Statuses.LOST else ""
+            deal.previous_stage = previous_stage if getattr(previous_stage, "id", None) else None
             deal.won_at = None
-            deal.lost_reason = request.data.get("lost_reason", deal.lost_reason)
+            deal.lost_reason = lost_reason if lost_reason is not None else request.data.get("lost_reason", deal.lost_reason)
         else:
             deal.status = Deal.Statuses.OPEN
             deal.won_at = None
@@ -140,9 +166,33 @@ class DealViewSet(TenantModelViewSet):
             deal.previous_status = ""
             deal.previous_stage = None
             deal.lost_reason = ""
-        deal.save(update_fields=["stage", "probability", "stage_entered_at", "status", "won_at", "lost_at", "lost_by", "lost_reason", "previous_status", "previous_stage", "updated_at"])
-        write_activity_event(request, "deal_stage_changed", deal, text=f"Сделка перешла на стадию: {stage.name}")
+        deal.save(update_fields=["stage", "probability", "stage_entered_at", "status", "amount", "won_at", "lost_at", "lost_by", "lost_reason", "previous_status", "previous_stage", "updated_at"])
+        write_activity_event(request, event_type, deal, text=activity_text or f"Сделка перешла на стадию: {stage.name}")
         return Response(DealSerializer(deal).data)
+
+    def _get_terminal_stage(self, deal, *, is_won=False, is_lost=False):
+        query = PipelineStage.objects.filter(business=deal.business, pipeline=deal.pipeline)
+        if is_won:
+            query = query.filter(is_won=True)
+        if is_lost:
+            query = query.filter(is_lost=True)
+        stage = query.order_by("order", "id").first()
+        if not stage:
+            raise ValidationError({"stage": "Terminal stage is not configured for this pipeline."})
+        return stage
+
+    def _get_reopen_stage(self, deal):
+        if deal.previous_stage_id and not (deal.previous_stage.is_won or deal.previous_stage.is_lost):
+            return deal.previous_stage
+        stage = PipelineStage.objects.filter(
+            business=deal.business,
+            pipeline=deal.pipeline,
+            is_won=False,
+            is_lost=False,
+        ).order_by("order", "id").first()
+        if not stage:
+            raise ValidationError({"stage": "Open stage is not configured for this pipeline."})
+        return stage
 
     def _validate_transition(self, deal, stage, request):
         transition = StageTransition.objects.filter(

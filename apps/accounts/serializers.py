@@ -60,3 +60,32 @@ class CurrentUserSerializer(serializers.ModelSerializer):
             str(business.id): effective_permissions_for(obj, business)
             for business in businesses
         }
+
+
+class SocialAuthSerializer(serializers.Serializer):
+    provider = serializers.ChoiceField(choices=["google", "apple"])
+    id_token = serializers.CharField(required=True, allow_blank=False, trim_whitespace=True)
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    delivery_channel = serializers.ChoiceField(choices=["email", "whatsapp", "telegram", "manual"], default="email")
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
+    password = serializers.CharField(min_length=8, write_only=True)
+
+
+class OwnerSignupSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(min_length=8, write_only=True)
+    full_name = serializers.CharField(required=False, allow_blank=True, max_length=255)
+    phone = serializers.CharField(required=False, allow_blank=True, max_length=32)
+    business_name = serializers.CharField(max_length=255)
+    business_type = serializers.ChoiceField(
+        choices=["dentistry", "beauty", "sauna", "autoservice", "education", "medical", "other"],
+        default="other",
+    )
+    city = serializers.CharField(required=False, allow_blank=True, max_length=128)

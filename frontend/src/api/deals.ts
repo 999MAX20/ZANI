@@ -11,4 +11,16 @@ export const dealsApi = {
     const { data } = await apiClient.post<Deal>(`/api/deals/${id}/move-stage/`, { stage, lost_reason });
     return data;
   },
+  markWon: async ({ id, amount }: { id: Id; amount?: string | number }) => {
+    const { data } = await apiClient.post<Deal>(`/api/deals/${id}/mark-won/`, amount !== undefined ? { amount } : {});
+    return data;
+  },
+  markLost: async ({ id, lost_reason }: { id: Id; lost_reason: string }) => {
+    const { data } = await apiClient.post<Deal>(`/api/deals/${id}/mark-lost/`, { lost_reason });
+    return data;
+  },
+  reopen: async ({ id }: { id: Id }) => {
+    const { data } = await apiClient.post<Deal>(`/api/deals/${id}/reopen/`, {});
+    return data;
+  },
 };

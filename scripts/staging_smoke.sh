@@ -7,6 +7,7 @@ PLATFORM_ADMIN_EMAIL="${PLATFORM_ADMIN_EMAIL:-}"
 PLATFORM_ADMIN_PASSWORD="${PLATFORM_ADMIN_PASSWORD:-}"
 MERCHANT_OWNER_EMAIL="${MERCHANT_OWNER_EMAIL:-}"
 MERCHANT_OWNER_PASSWORD="${MERCHANT_OWNER_PASSWORD:-}"
+PYTHON_BIN="${PYTHON_BIN:-}"
 
 if [[ -z "$API_BASE_URL" ]]; then
   echo "API_BASE_URL is required, for example: https://api-staging.zani.example" >&2
@@ -17,6 +18,17 @@ API_BASE_URL="${API_BASE_URL%/}"
 
 tmp_dir="$(mktemp -d)"
 trap 'rm -rf "$tmp_dir"' EXIT
+
+if [[ -z "$PYTHON_BIN" ]]; then
+  if command -v python3 >/dev/null 2>&1; then
+    PYTHON_BIN="python3"
+  elif command -v python >/dev/null 2>&1; then
+    PYTHON_BIN="python"
+  else
+    echo "python3 or python is required for JSON parsing." >&2
+    exit 2
+  fi
+fi
 
 request_json() {
   local method="$1"
@@ -36,7 +48,7 @@ extract_json_field() {
   local file_path="$1"
   local field_name="$2"
 
-  python - "$file_path" "$field_name" <<'PY'
+  "$PYTHON_BIN" - "$file_path" "$field_name" <<'PY'
 import json
 import sys
 
@@ -105,6 +117,23 @@ check_endpoint "/health/" "health"
 check_endpoint "/health/db/" "health db"
 check_endpoint "/ready/" "ready"
 
+if [[ -n "$FRONTEND_URL" ]]; then
+  echo "== CORS preflight smoke =="
+  cors_headers="$tmp_dir/cors_headers.txt"
+  curl --fail --silent --show-error \
+    --request OPTIONS \
+    --dump-header "$cors_headers" \
+    --header "Origin: ${FRONTEND_URL%/}" \
+    --header "Access-Control-Request-Method: POST" \
+    "$API_BASE_URL/api/auth/token/" >/dev/null
+
+  if ! grep -qi "^access-control-allow-origin: ${FRONTEND_URL%/}" "$cors_headers"; then
+    echo "CORS preflight did not return Access-Control-Allow-Origin for ${FRONTEND_URL%/}." >&2
+    echo "Check backend CORS_ALLOWED_ORIGINS and redeploy." >&2
+    exit 1
+  fi
+fi
+
 if [[ -n "$PLATFORM_ADMIN_EMAIL" && -n "$PLATFORM_ADMIN_PASSWORD" ]]; then
   login_and_check_me "$PLATFORM_ADMIN_EMAIL" "$PLATFORM_ADMIN_PASSWORD" "platform_admin"
 else
@@ -119,7 +148,11 @@ fi
 
 if [[ -n "$FRONTEND_URL" ]]; then
   echo "== Frontend smoke =="
-  curl --fail --silent --show-error --head "${FRONTEND_URL%/}/" >/dev/null
+  frontend_base_url="${FRONTEND_URL%/}"
+  curl --fail --silent --show-error --head "$frontend_base_url/" >/dev/null
+
+  echo "== Frontend SPA route smoke =="
+  curl --fail --silent --show-error --head "$frontend_base_url/login" >/dev/null
 else
   echo "Skipping frontend smoke: FRONTEND_URL is not set."
 fi

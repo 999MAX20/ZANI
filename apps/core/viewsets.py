@@ -23,14 +23,21 @@ class TenantModelViewSet(ModelViewSet):
         "Pipeline": "deals",
         "PipelineStage": "deals",
         "StageTransition": "deals",
+        "Service": "settings",
+        "Resource": "settings",
+        "WorkingHours": "settings",
         "Appointment": "appointments",
         "Task": "tasks",
+        "Bot": "integrations",
+        "BotChannel": "integrations",
         "BotConversation": "conversations",
         "BotMessage": "conversations",
         "Conversation": "conversations",
         "Message": "conversations",
+        "Notification": "notifications",
         "AnalyticsEvent": "analytics",
         "ActivityEvent": "analytics",
+        "Note": "clients",
         "Tag": "clients",
         "TaggedObject": "clients",
         "Segment": "clients",
@@ -42,6 +49,9 @@ class TenantModelViewSet(ModelViewSet):
         "CustomFieldDefinition": "settings",
         "CustomFieldValue": "settings",
         "ImportJob": "clients",
+        "AIRequestLog": "analytics",
+        "BusinessKnowledgeItem": "settings",
+        "AgentProfile": "settings",
         "BusinessConnector": "integrations",
         "ConnectorCredential": "integrations",
     }
@@ -92,7 +102,8 @@ class TenantModelViewSet(ModelViewSet):
                 continue
             business_queryset = filtered.filter(**{self.business_lookup: business})
             scoped_queryset = scoped_queryset | scope_queryset(business_queryset, user, business, resource, Actions.VIEW)
-        return scoped_queryset.distinct()
+        ordering = getattr(queryset.model._meta, "ordering", None) or ["pk"]
+        return scoped_queryset.distinct().order_by(*ordering)
 
     def _business_from_serializer(self, serializer):
         business = serializer.validated_data.get("business")

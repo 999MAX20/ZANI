@@ -57,3 +57,10 @@ class ProductionReadinessAuditTests(TestCase):
         payload = json.loads(output.getvalue())
         self.assertIn("summary", payload)
         self.assertIn("items", payload)
+
+    @override_settings(CELERY_BROKER_URL="rediss://default:password@redis.example.com:6379/0")
+    def test_audit_accepts_tls_redis_urls(self):
+        audit = run_production_readiness_audit()
+
+        queue_item = next(item for item in audit["items"] if item["key"] == "queue.redis")
+        self.assertEqual(queue_item["status"], "pass")

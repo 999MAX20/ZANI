@@ -33,6 +33,8 @@ export default {
       },
       backgroundImage: {
         "ai-gradient": "linear-gradient(135deg, #06b6d4 0%, #2563eb 48%, #8b5cf6 100%)",
+        "sidebar-depth":
+          "linear-gradient(140deg, rgba(255,255,255,.92), rgba(240,249,255,.72) 46%, rgba(245,243,255,.76)), linear-gradient(180deg, rgba(255,255,255,.28), rgba(14,165,233,.08))",
         "soft-mesh":
           "radial-gradient(circle at 20% 20%, rgba(14, 165, 233, .18), transparent 28%), radial-gradient(circle at 80% 0%, rgba(139, 92, 246, .18), transparent 30%), linear-gradient(180deg, #f8fbff 0%, #eef5ff 100%)",
       },

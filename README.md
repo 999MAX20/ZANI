@@ -5851,3 +5851,4 @@ Backend check after lightweight provider-ready integrations pass: OK
 Targeted connector/dashboard tests after lightweight provider-ready integrations pass: 22 OK
 Full backend tests after lightweight provider-ready integrations pass: 305 OK
 Frontend production build after lightweight provider-ready integrations pass: OK
+Render staging QA after lightweight provider-ready integrations pass: `/api/auth/me/`, owner dashboard, connector capabilities, WhatsApp request flow and Kaspi mock-sync OK. Kaspi mock-sync created read-only BusinessEvents and owner dashboard surfaced imported revenue, connector health and attention items.

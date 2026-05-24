@@ -68,7 +68,7 @@ export function WhatsAppSetupCard({ channel }: WhatsAppSetupCardProps) {
             <MessageCircle size={20} />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-midnight">WhatsApp setup</h2>
+            <h2 className="text-lg font-bold text-midnight">{t("whatsappSetup.title")}</h2>
             <p className="text-sm text-slate-500">{t("whatsappSetup.description")}</p>
           </div>
         </div>
@@ -96,7 +96,7 @@ export function WhatsAppSetupCard({ channel }: WhatsAppSetupCardProps) {
                 label={t("whatsappSetup.phoneNumberId")}
                 value={form.phoneNumberId}
                 onChange={(event) => setForm((current) => ({ ...current, phoneNumberId: event.target.value }))}
-                placeholder="dev-phone-id"
+                placeholder={t("whatsappSetup.phoneNumberPlaceholder")}
               />
             </div>
             <Input

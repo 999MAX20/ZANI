@@ -64,7 +64,7 @@ export function ForgotPasswordPage() {
         {error ? <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
 
         <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
-          <Input label="Email" type="email" error={errors.email?.message} {...register("email")} />
+          <Input label={t("common.email")} type="email" error={errors.email?.message} {...register("email")} />
           <Select
             label={t("passwordReset.deliveryChannel")}
             options={[

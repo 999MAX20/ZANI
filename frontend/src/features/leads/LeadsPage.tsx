@@ -163,7 +163,7 @@ function LeadCard({
               className="cursor-grab rounded-lg p-1 text-slate-300 transition hover:bg-slate-100 hover:text-slate-500 active:cursor-grabbing"
               {...attributes}
               {...listeners}
-              aria-label="Drag lead"
+              aria-label={t("leads.dragLead")}
             >
               <GripVertical size={14} />
             </button>

@@ -83,7 +83,7 @@ export function ClientForm({
       <Input label={t("clients.name")} error={form.formState.errors.full_name?.message} {...form.register("full_name")} />
       <div className="grid gap-4 sm:grid-cols-2">
         <Input label={t("clients.phone")} {...form.register("phone")} />
-        <Input label="Email" error={form.formState.errors.email?.message} {...form.register("email")} />
+        <Input label={t("common.email")} error={form.formState.errors.email?.message} {...form.register("email")} />
       </div>
       {duplicates.length ? (
         <div className="rounded-3xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">

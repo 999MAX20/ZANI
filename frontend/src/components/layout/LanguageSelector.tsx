@@ -10,7 +10,7 @@ const languageOptions = [
 ] as const;
 
 export function LanguageSelector({ className }: { className?: string }) {
-  const { language, setLanguage } = useI18n();
+  const { language, setLanguage, t } = useI18n();
 
   return (
     <div
@@ -18,7 +18,7 @@ export function LanguageSelector({ className }: { className?: string }) {
         "inline-flex h-11 items-center gap-1 rounded-full border border-slate-200/70 bg-white/80 p-1 text-sm font-black text-slate-600 shadow-sm",
         className,
       )}
-      aria-label="Language"
+      aria-label={t("common.language")}
       role="group"
     >
       <Languages size={16} className="mx-2 text-brand-600" />

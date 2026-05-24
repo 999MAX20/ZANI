@@ -4,16 +4,17 @@ import { Link, NavLink, Outlet } from "react-router-dom";
 
 import { Button } from "../../components/ui/Button";
 import { cn } from "../../lib/cn";
-
-const navItems = [
-  { to: "/crm", label: "CRM" },
-  { to: "/bots", label: "AI bots" },
-  { to: "/pricing", label: "Pricing" },
-  { to: "/contacts", label: "Contacts" },
-];
+import { useI18n } from "../../lib/i18n";
 
 export function PublicLayout() {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
+  const navItems = [
+    { to: "/crm", label: t("public.nav.crm") },
+    { to: "/bots", label: t("public.nav.bots") },
+    { to: "/pricing", label: t("public.nav.pricing") },
+    { to: "/contacts", label: t("public.nav.contacts") },
+  ];
 
   return (
     <main className="min-h-screen bg-soft-mesh text-midnight">
@@ -56,12 +57,12 @@ export function PublicLayout() {
             <Link to="/contacts">
               <Button variant="ai" className="rounded-full">
                 <Bot size={16} />
-                Connect CRM
+                {t("public.nav.connectCrm")}
               </Button>
             </Link>
           </div>
 
-          <Button variant="ghost" className="h-10 w-10 rounded-full px-0 md:hidden" onClick={() => setOpen((value) => !value)} aria-label="Open navigation">
+          <Button variant="ghost" className="h-10 w-10 rounded-full px-0 md:hidden" onClick={() => setOpen((value) => !value)} aria-label={t("common.openNavigation")}>
             {open ? <X size={22} /> : <Menu size={22} />}
           </Button>
         </div>

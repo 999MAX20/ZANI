@@ -219,7 +219,7 @@ export function DevelopersSection() {
               }}
             >
               <Input label={t("developers.name")} value={webhookForm.name} onChange={(event) => setWebhookForm({ ...webhookForm, name: event.target.value })} required />
-              <Input label="URL" value={webhookForm.url} onChange={(event) => setWebhookForm({ ...webhookForm, url: event.target.value })} required />
+              <Input label={t("common.url")} value={webhookForm.url} onChange={(event) => setWebhookForm({ ...webhookForm, url: event.target.value })} required />
               <Input label={t("developers.signatureSecret")} value={webhookForm.secret} onChange={(event) => setWebhookForm({ ...webhookForm, secret: event.target.value })} placeholder={t("common.optional")} />
               <Input label={t("developers.events")} value={webhookForm.events} onChange={(event) => setWebhookForm({ ...webhookForm, events: event.target.value })} required />
               <div className="lg:col-span-2 flex flex-wrap gap-2">

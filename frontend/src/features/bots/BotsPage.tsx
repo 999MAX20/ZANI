@@ -131,7 +131,7 @@ export function BotsPage() {
             });
           }}
         >
-          <Input label={t("bots.name")} placeholder="Website assistant" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required />
+          <Input label={t("bots.name")} placeholder={t("bots.websiteAssistantPlaceholder")} value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required />
           <Select label={t("bots.status")} value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })} options={statusOptions} />
           <Select label={t("bots.defaultLanguage")} value={form.default_language} onChange={(event) => setForm({ ...form, default_language: event.target.value })} options={languageOptions} />
           <Button type="submit" isLoading={mutation.isPending}>{t("common.save")}</Button>

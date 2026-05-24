@@ -388,7 +388,7 @@ function WebsiteChatConnectorPanel({
             <MessageSquareText size={22} />
           </div>
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">Website chat</p>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">{t("integrations.website.eyebrow")}</p>
             <h2 className="mt-2 text-2xl font-black text-midnight">{t("integrations.website.title")}</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
               {t("integrations.website.description")}
@@ -458,7 +458,7 @@ function WebsiteChatConnectorPanel({
               <Input label={t("integrations.website.name")} value={preview.full_name} onChange={(event) => setPreview({ ...preview, full_name: event.target.value })} />
               <div className="grid gap-3 sm:grid-cols-2">
                 <Input label={t("integrations.website.phone")} value={preview.phone} onChange={(event) => setPreview({ ...preview, phone: event.target.value })} />
-                <Input label="Email" value={preview.email} onChange={(event) => setPreview({ ...preview, email: event.target.value })} />
+                <Input label={t("common.email")} value={preview.email} onChange={(event) => setPreview({ ...preview, email: event.target.value })} />
               </div>
               <Input label={t("integrations.website.message")} value={preview.message} onChange={(event) => setPreview({ ...preview, message: event.target.value })} required />
               <Button type="submit" isLoading={createConversation.isPending}>
@@ -576,14 +576,14 @@ function TelegramConnectorWizard({
     <div id="integration-telegram" className="scroll-mt-24 mb-5 rounded-3xl border border-sky-100 bg-white/95 p-5 shadow-soft">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-sky-700">Telegram beta connector</p>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-sky-700">{t("integrations.telegram.eyebrow")}</p>
           <h2 className="mt-2 text-2xl font-black text-midnight">{t("integrations.telegram.title")}</h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
             {t("integrations.telegram.description")}
           </p>
         </div>
         <Link to="/dashboard/inbox?channel=telegram">
-          <Button type="button" variant="secondary"><ExternalLink size={16} /> Telegram Inbox</Button>
+          <Button type="button" variant="secondary"><ExternalLink size={16} /> {t("integrations.telegram.openInbox")}</Button>
         </Link>
       </div>
 
@@ -748,7 +748,7 @@ function RequestReadyConnectorPanel({
           </>
         ) : (
           <>
-            <Input label="Instagram username" value={form.instagram_username || ""} onChange={(event) => setForm({ ...form, instagram_username: event.target.value })} disabled={!canManage} />
+            <Input label={t("integrations.instagram.username")} value={form.instagram_username || ""} onChange={(event) => setForm({ ...form, instagram_username: event.target.value })} disabled={!canManage} />
             <Input label={t("integrations.request.facebookPage")} value={form.facebook_page || ""} onChange={(event) => setForm({ ...form, facebook_page: event.target.value })} disabled={!canManage} />
             <Input label={t("integrations.request.contactPerson")} value={form.contact_person || ""} onChange={(event) => setForm({ ...form, contact_person: event.target.value })} disabled={!canManage} />
           </>
@@ -899,7 +899,7 @@ function DataConnectorsFoundationPanel({
   return (
     <div id="integration-data" className="scroll-mt-24 mb-5 rounded-3xl border border-amber-100 bg-white/95 p-5 shadow-soft">
       <div>
-        <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">Data connectors foundation</p>
+        <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">{t("integrations.data.eyebrow")}</p>
         <h2 className="mt-2 text-2xl font-black text-midnight">{t("integrations.data.title")}</h2>
         <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
           {t("integrations.data.description")}

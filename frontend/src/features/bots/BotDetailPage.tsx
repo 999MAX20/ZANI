@@ -336,7 +336,7 @@ export function BotDetailPage() {
                 <Input label={t("botDetail.name")} value={preview.full_name} onChange={(event) => setPreview({ ...preview, full_name: event.target.value })} />
                 <div className="grid gap-3 sm:grid-cols-2">
                   <Input label={t("botDetail.phone")} value={preview.phone} onChange={(event) => setPreview({ ...preview, phone: event.target.value })} />
-                  <Input label="Email" value={preview.email} onChange={(event) => setPreview({ ...preview, email: event.target.value })} />
+                  <Input label={t("common.email")} value={preview.email} onChange={(event) => setPreview({ ...preview, email: event.target.value })} />
                 </div>
                 <Textarea label={t("botDetail.message")} value={preview.message} onChange={(event) => setPreview({ ...preview, message: event.target.value })} required />
                 <Button type="submit" variant="ai" isLoading={previewMutation.isPending}><Send size={16} />{t("botDetail.createTestConversation")}</Button>

@@ -564,7 +564,7 @@ export function ConversationsPage() {
                 </div>
                 <div className="rounded-2xl bg-white px-3 py-3 shadow-sm ring-1 ring-slate-100">
                   <p className="text-2xl font-black text-amber-600">{inboxSummary.data.handoff_required}</p>
-                  <p className="text-xs font-bold text-slate-500">handoff</p>
+                  <p className="text-xs font-bold text-slate-500">{t("conversations.handoff")}</p>
                 </div>
               </div>
             </div>
@@ -713,7 +713,7 @@ export function ConversationsPage() {
                 {selected ? <ChannelBadge channel={selected.channel} /> : null}
                 {selected ? <StatusBadge status={selected.status} /> : null}
                 {selected ? <StatusBadge status={selected.priority || "normal"} /> : null}
-                {selected?.handoff_required ? <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700 ring-1 ring-amber-200">Handoff</span> : null}
+                {selected?.handoff_required ? <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700 ring-1 ring-amber-200">{t("conversations.handoff")}</span> : null}
                 {(selected?.unread_count || 0) > 0 ? <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700 ring-1 ring-red-200">{t("conversations.unreadCount", { count: selected?.unread_count || 0 })}</span> : null}
               </div>
             </div>
@@ -1000,7 +1000,7 @@ export function ConversationsPage() {
                       selected &&
                       createTaskMutation.mutate({
                         conversationId: selected.id,
-                        title: `Follow up: ${getConversationTitle(selected, t("conversations.selectDialog"))}`,
+                        title: t("conversations.followUpTaskTitle", { title: getConversationTitle(selected, t("conversations.selectDialog")) }),
                       })
                     }
                     isLoading={createTaskMutation.isPending}
@@ -1014,7 +1014,7 @@ export function ConversationsPage() {
                   <div className="flex gap-2">
                     <input
                       className="min-w-0 flex-1 rounded-2xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none"
-                      placeholder="Client ID"
+                      placeholder={t("conversations.clientIdPlaceholder")}
                       value={clientIdInput}
                       onChange={(event) => setClientIdInput(event.target.value)}
                     />
@@ -1040,7 +1040,7 @@ export function ConversationsPage() {
                   <div className="flex gap-2">
                     <input
                       className="min-w-0 flex-1 rounded-2xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none"
-                      placeholder="Lead ID"
+                      placeholder={t("conversations.leadIdPlaceholder")}
                       value={leadIdInput}
                       onChange={(event) => setLeadIdInput(event.target.value)}
                     />
@@ -1066,7 +1066,7 @@ export function ConversationsPage() {
                   <div className="flex gap-2">
                     <input
                       className="min-w-0 flex-1 rounded-2xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none"
-                      placeholder="Deal ID"
+                      placeholder={t("conversations.dealIdPlaceholder")}
                       value={dealIdInput}
                       onChange={(event) => setDealIdInput(event.target.value)}
                     />

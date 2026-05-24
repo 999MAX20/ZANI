@@ -5813,3 +5813,7 @@ Mobile usability pass: enlarged header/sidebar/bottom-nav tap targets, improved 
 Full backend tests after clients/timeline data hardening pass: 295 OK
 Frontend production build after clients/timeline data hardening pass: OK
 Live smoke: /dashboard/clients and /dashboard/timeline load for business_owner@example.com; production demo account currently has 0 clients and 0 activity events, so both pages show empty states until data is created.
+
+Full backend tests after remaining frontend i18n cleanup pass: 295 OK
+Frontend production build after remaining frontend i18n cleanup pass: OK
+Remaining i18n cleanup: conversations, integrations, WhatsApp setup, bot creation, lead drag handle, shared email/URL labels and public navigation now use RU / KK / EN dictionary keys instead of hardcoded UI text.

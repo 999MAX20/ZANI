@@ -595,7 +595,7 @@ function ManagerWorkQueue({
         <CardBody>
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.16em] text-ai-700">Follow-up</p>
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-ai-700">{t("dashboard.followUp")}</p>
               <h2 className="mt-1 text-lg font-black text-midnight">{t("dashboard.myTasks")}</h2>
             </div>
             <Link to="/dashboard/tasks" className="text-sm font-black text-brand-700">{t("nav.tasks")}</Link>

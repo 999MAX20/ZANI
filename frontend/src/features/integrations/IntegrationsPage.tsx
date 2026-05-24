@@ -501,6 +501,7 @@ function TelegramConnectorWizard({
   canManage: boolean;
 }) {
   const queryClient = useQueryClient();
+  const { t } = useI18n();
   const [botToken, setBotToken] = useState("");
   const [notice, setNotice] = useState("");
   const webhookUrl = `${(import.meta.env.VITE_API_URL as string | undefined) || window.location.origin}/api/integrations/telegram/webhook/`;
@@ -541,7 +542,11 @@ function TelegramConnectorWizard({
     },
     onSuccess: (result) => {
       setBotToken("");
-      setNotice(result.webhook?.mock ? `Настройки сохранены. Проверка выполнена в безопасном демо-режиме: ${result.webhook.reason}` : "Настройки Telegram сохранены.");
+      setNotice(
+        result.webhook?.mock
+          ? t("integrations.telegram.savedMock", { reason: result.webhook.reason || t("integrations.telegram.unknownError") })
+          : t("integrations.telegram.saved")
+      );
       queryClient.invalidateQueries({ queryKey: ["bots"] });
       queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
       queryClient.invalidateQueries({ queryKey: ["telegram-status"] });
@@ -554,7 +559,11 @@ function TelegramConnectorWizard({
       return telegramChannelApi.testConnection(channel.id);
     },
     onSuccess: (result) => {
-      setNotice(result.ok ? (result.mock ? "Код подключения сохранён, проверка выполнена в безопасном демо-режиме." : "Telegram подключение успешно проверено.") : `Проверка не прошла: ${result.reason || "неизвестная ошибка"}`);
+      setNotice(
+        result.ok
+          ? (result.mock ? t("integrations.telegram.testMock") : t("integrations.telegram.testOk"))
+          : t("integrations.telegram.testFailed", { reason: result.reason || t("integrations.telegram.unknownError") })
+      );
       queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
       queryClient.invalidateQueries({ queryKey: ["telegram-status"] });
     },
@@ -568,9 +577,9 @@ function TelegramConnectorWizard({
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.18em] text-sky-700">Telegram beta connector</p>
-          <h2 className="mt-2 text-2xl font-black text-midnight">Подключение Telegram</h2>
+          <h2 className="mt-2 text-2xl font-black text-midnight">{t("integrations.telegram.title")}</h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-            Первый внешний канал для пилота: сообщения из Telegram попадают в Inbox. Код от BotFather сохраняется безопасно и не показывается после сохранения.
+            {t("integrations.telegram.description")}
           </p>
         </div>
         <Link to="/dashboard/inbox?channel=telegram">
@@ -583,24 +592,24 @@ function TelegramConnectorWizard({
 
       <div className="mt-5 grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
         <div className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
-          <p className="font-black text-midnight">Инструкция для владельца</p>
+          <p className="font-black text-midnight">{t("integrations.telegram.ownerGuide")}</p>
           <ol className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
-            <li>1. Откройте Telegram и найдите `@BotFather`.</li>
-            <li>2. Создайте бота командой `/newbot` и скопируйте код подключения.</li>
-            <li>3. Вставьте код ниже. После сохранения он больше не отображается в CRM.</li>
-            <li>4. Нажмите “Проверить подключение”. В тестовой среде проверка выполнится безопасно, без отправки клиентам.</li>
+            <li>{t("integrations.telegram.step1")}</li>
+            <li>{t("integrations.telegram.step2")}</li>
+            <li>{t("integrations.telegram.step3")}</li>
+            <li>{t("integrations.telegram.step4")}</li>
           </ol>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <div className="rounded-2xl bg-white p-3">
-              <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Код подключения</p>
+              <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{t("integrations.telegram.token")}</p>
               <p className={tokenConfigured ? "mt-1 font-bold text-emerald-700" : "mt-1 font-bold text-amber-700"}>
-                {tokenConfigured ? "Сохранён" : "Не задан"}
+                {tokenConfigured ? t("integrations.telegram.tokenSaved") : t("integrations.telegram.tokenMissing")}
               </p>
             </div>
             <div className="rounded-2xl bg-white p-3">
-              <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Приём сообщений</p>
+              <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{t("integrations.telegram.messageIntake")}</p>
               <p className={telegramChannel ? "mt-1 font-bold text-emerald-700" : "mt-1 font-bold text-amber-700"}>
-                {telegramChannel ? "Настроен внутри ZANI" : "Будет настроен после сохранения"}
+                {telegramChannel ? t("integrations.telegram.intakeConfigured") : t("integrations.telegram.intakePending")}
               </p>
             </div>
           </div>
@@ -615,23 +624,23 @@ function TelegramConnectorWizard({
         >
           <div className="grid gap-3">
             <Input
-              label="Код от BotFather"
+              label={t("integrations.telegram.botFatherToken")}
               type="password"
               value={botToken}
               onChange={(event) => setBotToken(event.target.value)}
-              placeholder={tokenConfigured ? "Код уже сохранён. Введите новый только для замены." : "Вставьте код из BotFather"}
+              placeholder={tokenConfigured ? t("integrations.telegram.tokenReplacePlaceholder") : t("integrations.telegram.tokenPlaceholder")}
               disabled={!canManage}
             />
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
             <Button type="submit" disabled={!canManage || !botToken.trim()} isLoading={saveConfig.isPending}>
-              <ShieldCheck size={16} /> Сохранить
+              <ShieldCheck size={16} /> {t("integrations.telegram.save")}
             </Button>
             <Button type="button" variant="secondary" disabled={!canManage || !telegramChannel} isLoading={testConnection.isPending} onClick={() => testConnection.mutate()}>
-              <CheckCircle2 size={16} /> Проверить подключение
+              <CheckCircle2 size={16} /> {t("integrations.telegram.testConnection")}
             </Button>
           </div>
-          {!canManage ? <p className="mt-3 text-sm font-semibold text-slate-500">Ваша роль позволяет смотреть статус, но не менять Telegram подключение.</p> : null}
+          {!canManage ? <p className="mt-3 text-sm font-semibold text-slate-500">{t("integrations.telegram.readOnly")}</p> : null}
         </form>
       </div>
     </div>

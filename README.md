@@ -5636,6 +5636,10 @@ Frontend production build: OK
   - блок сайта и лендингов на `/dashboard/integrations` переведён на RU / KK / EN;
   - тестовое сообщение, follow-up, empty/loading states и copy-snippet notice больше не hardcoded;
   - публичный website chat API и widget snippet generation не менялись.
+- Telegram integration wizard i18n pass:
+  - Telegram beta wizard переведён на RU / KK / EN: инструкция BotFather, статусы токена, приём сообщений, save/test notices и read-only state;
+  - техническая логика safe demo/mock checks сохранена без изменения Telegram API контрактов;
+  - владелец видит понятный setup flow без вывода сохранённого кода подключения.
 
 Проверка:
 
@@ -5673,6 +5677,8 @@ Full backend tests after integrations import/onboarding i18n pass: 288 OK
 Frontend production build after integrations import/onboarding i18n pass: OK
 Full backend tests after website chat integration i18n pass: 288 OK
 Frontend production build after website chat integration i18n pass: OK
+Full backend tests after Telegram integration wizard i18n pass: 288 OK
+Frontend production build after Telegram integration wizard i18n pass: OK
 Visual smoke screenshots: desktop collapsed rail, desktop expanded rail, mobile dashboard OK
 ```
 

@@ -5796,3 +5796,6 @@ Visual smoke screenshots: desktop collapsed rail, desktop expanded rail, mobile 
 GitHub/deploy note: current local folder `/Users/maksim/Desktop/zani 2` is linked to `https://github.com/999MAX20/ZANI.git` on `main`.
 
 Следующий обязательный UI этап: пройти все merchant pages и заменить оставшиеся hardcoded RU/EN строки на i18n-ключи, затем сделать visual QA по ролям owner/operator/platform.
+
+Full backend tests after platform admin pages i18n pass: 293 OK
+Frontend production build after platform admin pages i18n pass: OK

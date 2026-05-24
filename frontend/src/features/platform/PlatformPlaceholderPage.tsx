@@ -1,26 +1,29 @@
 import { ArrowRight, CheckCircle2, Clock3, ShieldCheck } from "lucide-react";
 
 import { Card, CardBody } from "../../components/ui/Card";
+import { useI18n } from "../../lib/i18n";
 
 type PlatformPlaceholderPageProps = {
-  title: string;
-  eyebrow: string;
-  description: string;
+  titleKey: string;
+  eyebrowKey: string;
+  descriptionKey: string;
   statusItems: string[];
 };
 
-export function PlatformPlaceholderPage({ title, eyebrow, description, statusItems }: PlatformPlaceholderPageProps) {
+export function PlatformPlaceholderPage({ titleKey, eyebrowKey, descriptionKey, statusItems }: PlatformPlaceholderPageProps) {
+  const { t } = useI18n();
+
   return (
     <div className="space-y-5">
       <section className="glass-panel rounded-[2rem] p-6 sm:p-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">{eyebrow}</p>
-            <h1 className="mt-3 text-4xl font-semibold tracking-tight text-midnight sm:text-5xl">{title}</h1>
-            <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">{description}</p>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">{t(eyebrowKey)}</p>
+            <h1 className="mt-3 text-4xl font-semibold tracking-tight text-midnight sm:text-5xl">{t(titleKey)}</h1>
+            <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">{t(descriptionKey)}</p>
           </div>
           <div className="rounded-3xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
-            Access layer active
+            {t("platform.placeholder.accessLayerActive")}
           </div>
         </div>
       </section>
@@ -33,11 +36,9 @@ export function PlatformPlaceholderPage({ title, eyebrow, description, statusIte
                 <ShieldCheck size={23} />
               </div>
               <div>
-                <h2 className="text-xl font-semibold tracking-tight text-midnight">Placeholder only</h2>
+                <h2 className="text-xl font-semibold tracking-tight text-midnight">{t("platform.placeholder.placeholderOnly")}</h2>
                 <p className="mt-2 leading-7 text-slate-600">
-                  Эта страница намеренно не содержит реальной бизнес-логики. На этапе 1.2 мы фиксируем
-                  отдельный Platform Admin интерфейс и защищенные routes, не добавляя API merchants,
-                  prospects, subscriptions или billing.
+                  {t("platform.placeholder.placeholderText")}
                 </p>
               </div>
             </div>
@@ -46,12 +47,12 @@ export function PlatformPlaceholderPage({ title, eyebrow, description, statusIte
 
         <Card>
           <CardBody className="p-6">
-            <h2 className="text-xl font-semibold tracking-tight text-midnight">Readiness</h2>
+            <h2 className="text-xl font-semibold tracking-tight text-midnight">{t("platform.placeholder.readiness")}</h2>
             <div className="mt-4 space-y-3">
               {statusItems.map((item) => (
                 <div key={item} className="flex items-start gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700">
                   <CheckCircle2 className="mt-0.5 shrink-0 text-emerald-500" size={18} />
-                  {item}
+                  {t(item)}
                 </div>
               ))}
             </div>
@@ -65,12 +66,12 @@ export function PlatformPlaceholderPage({ title, eyebrow, description, statusIte
             <div className="flex items-start gap-3">
               <Clock3 className="mt-1 text-brand-600" size={21} />
               <div>
-                <h2 className="text-lg font-semibold text-midnight">Next roadmap step</h2>
-                <p className="mt-1 text-sm leading-6 text-slate-500">Реальные platform modules появятся только в следующих изолированных этапах.</p>
+                <h2 className="text-lg font-semibold text-midnight">{t("platform.placeholder.nextRoadmapStep")}</h2>
+                <p className="mt-1 text-sm leading-6 text-slate-500">{t("platform.placeholder.nextRoadmapText")}</p>
               </div>
             </div>
             <div className="inline-flex items-center gap-2 rounded-2xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-600">
-              Stage controlled
+              {t("platform.placeholder.stageControlled")}
               <ArrowRight size={16} />
             </div>
           </div>
@@ -82,52 +83,52 @@ export function PlatformPlaceholderPage({ title, eyebrow, description, statusIte
 
 export const platformPages = {
   overview: {
-    title: "Platform overview",
-    eyebrow: "Stage 1.2",
-    description: "Отдельная панель владельцев платформы с защищенным layout. Сейчас это интерфейсная оболочка без реальной операционной логики.",
-    statusItems: ["PlatformRoute protects the page", "Merchant sidebar is not rendered here", "Foundation is ready for future modules"],
+    titleKey: "platform.placeholder.overview.title",
+    eyebrowKey: "platform.placeholder.overview.eyebrow",
+    descriptionKey: "platform.placeholder.overview.description",
+    statusItems: ["platform.placeholder.overview.status1", "platform.placeholder.overview.status2", "platform.placeholder.overview.status3"],
   },
   merchants: {
-    title: "Merchants",
-    eyebrow: "Future operations",
-    description: "Будущая зона управления мерчантами. На этом этапе реальные merchants API и dashboards не добавляются.",
-    statusItems: ["Route exists", "No merchant API added", "Ready for later platform module"],
+    titleKey: "platform.placeholder.merchants.title",
+    eyebrowKey: "platform.placeholder.merchants.eyebrow",
+    descriptionKey: "platform.placeholder.merchants.description",
+    statusItems: ["platform.placeholder.merchants.status1", "platform.placeholder.merchants.status2", "platform.placeholder.merchants.status3"],
   },
   prospects: {
-    title: "Prospects",
-    eyebrow: "Internal tools boundary",
-    description: "Будущая зона prospects/internal tools. Parser, scraping и outreach не входят в публичное ядро продукта.",
-    statusItems: ["Route exists", "No prospects models added", "Internal tools boundary preserved"],
+    titleKey: "platform.placeholder.prospects.title",
+    eyebrowKey: "platform.placeholder.prospects.eyebrow",
+    descriptionKey: "platform.placeholder.prospects.description",
+    statusItems: ["platform.placeholder.prospects.status1", "platform.placeholder.prospects.status2", "platform.placeholder.prospects.status3"],
   },
 
   landings: {
-    title: "Landings",
-    eyebrow: "Pilot boundary",
-    description: "Зона будущих демо-лендингов и клиентских посадочных страниц. Сейчас это безопасная заглушка: реальные генераторы и parser tools не добавляются в публичное ядро.",
-    statusItems: ["Route exists", "No landing generator added", "Safe for pilot navigation"],
+    titleKey: "platform.placeholder.landings.title",
+    eyebrowKey: "platform.placeholder.landings.eyebrow",
+    descriptionKey: "platform.placeholder.landings.description",
+    statusItems: ["platform.placeholder.landings.status1", "platform.placeholder.landings.status2", "platform.placeholder.landings.status3"],
   },
   outreach: {
-    title: "Outreach",
-    eyebrow: "Manual pilot process",
-    description: "Будущая зона ручных касаний и статусов продаж. Массовый outreach и parser остаются internal developer tools и не входят в публичный продукт.",
-    statusItems: ["Route exists", "No outreach automation added", "Internal tools boundary preserved"],
+    titleKey: "platform.placeholder.outreach.title",
+    eyebrowKey: "platform.placeholder.outreach.eyebrow",
+    descriptionKey: "platform.placeholder.outreach.description",
+    statusItems: ["platform.placeholder.outreach.status1", "platform.placeholder.outreach.status2", "platform.placeholder.outreach.status3"],
   },
   billing: {
-    title: "Billing",
-    eyebrow: "Subscription foundation later",
-    description: "Будущая зона тарифов и подписок платформы. Реальная оплата и billing API будут добавлены отдельным этапом.",
-    statusItems: ["Route exists", "No payment logic added", "No subscription models added"],
+    titleKey: "platform.placeholder.billing.title",
+    eyebrowKey: "platform.placeholder.billing.eyebrow",
+    descriptionKey: "platform.placeholder.billing.description",
+    statusItems: ["platform.placeholder.billing.status1", "platform.placeholder.billing.status2", "platform.placeholder.billing.status3"],
   },
   analytics: {
-    title: "Platform analytics",
-    eyebrow: "Insights later",
-    description: "Будущая аналитика платформы. На этом этапе графики, MRR и operational dashboards намеренно не реализуются.",
-    statusItems: ["Route exists", "No charts added", "No analytics API added"],
+    titleKey: "platform.placeholder.analytics.title",
+    eyebrowKey: "platform.placeholder.analytics.eyebrow",
+    descriptionKey: "platform.placeholder.analytics.description",
+    statusItems: ["platform.placeholder.analytics.status1", "platform.placeholder.analytics.status2", "platform.placeholder.analytics.status3"],
   },
   settings: {
-    title: "Platform settings",
-    eyebrow: "Configuration later",
-    description: "Будущая зона настроек платформы. Сейчас здесь только защищенный placeholder для следующей итерации.",
-    statusItems: ["Route exists", "Access protected", "No product settings changed"],
+    titleKey: "platform.placeholder.settings.title",
+    eyebrowKey: "platform.placeholder.settings.eyebrow",
+    descriptionKey: "platform.placeholder.settings.description",
+    statusItems: ["platform.placeholder.settings.status1", "platform.placeholder.settings.status2", "platform.placeholder.settings.status3"],
   },
 };

@@ -5873,3 +5873,7 @@ Frontend production build after perceived-performance pass: OK
 Team settings UX pass: employee invitations now explain the difference between login email and WhatsApp/Telegram/email/manual delivery, show channel-specific helper text in RU / KK / EN, provide copy feedback, and use larger mobile-safe invitation action buttons. Member/role controls are disabled while team updates are pending to prevent double actions.
 
 Frontend production build after team settings UX pass: OK
+
+Route access stability pass: merchant route permission checks now use `/api/auth/me/` business data as the primary active-business source and only refresh `/api/businesses/` in the background. Direct production entry into pages such as Clients, Timeline or Settings no longer depends on a second businesses request before rendering access.
+
+Frontend production build after route access stability pass: OK

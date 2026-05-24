@@ -4,7 +4,11 @@ from rest_framework.test import APIClient
 from apps.accounts.models import User
 from apps.businesses.models import Business, BusinessMember
 from apps.integrations.connectors import decrypt_credential_value, normalize_business_event
+from apps.integrations.kaspi import KASPI_EVENT_TYPES, build_kaspi_mock_events
+from apps.integrations.moysklad import MOYSKLAD_EVENT_TYPES, build_moysklad_mock_events, moysklad_entity_to_import_type
 from apps.integrations.models import BusinessConnector, BusinessEvent, ConnectorCredential
+from apps.integrations.one_c import ONE_C_EVENT_TYPES, build_one_c_mock_events, one_c_entity_to_import_type
+from apps.core.models import ImportJob
 
 
 class BusinessConnectorFoundationTests(TestCase):
@@ -88,6 +92,68 @@ class BusinessConnectorFoundationTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 403)
+
+    def test_owner_can_create_whatsapp_request_with_provider_decision(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            "/api/business-connectors/whatsapp-request/",
+            {
+                "business": self.business.id,
+                "company_name": "Connector Clinic",
+                "phone_number": "+77015550101",
+                "contact_person": "Owner",
+                "preferred_method": "meta_cloud",
+                "monthly_messages": 1200,
+                "has_meta_assets": True,
+                "comment": "Need official WhatsApp",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["provider"], BusinessConnector.Providers.WHATSAPP)
+        self.assertEqual(response.data["status"], BusinessConnector.Statuses.PROVIDER_CONFIGURING)
+        self.assertEqual(response.data["auth_type"], BusinessConnector.AuthTypes.QR)
+        config = response.data["config_json"]
+        self.assertEqual(config["request_status"], BusinessConnector.Statuses.PROVIDER_CONFIGURING)
+        self.assertEqual(config["provider_decision"]["provider_key"], "meta_cloud_placeholder")
+        self.assertEqual(config["form"]["phone_number"], "+77015550101")
+        self.assertNotIn("access_token", str(response.data).lower())
+        self.assertNotIn("client_secret", str(response.data).lower())
+
+    def test_operator_cannot_create_whatsapp_request(self):
+        self.api.force_authenticate(self.operator)
+
+        response = self.api.post(
+            "/api/business-connectors/whatsapp-request/",
+            {
+                "business": self.business.id,
+                "company_name": "Connector Clinic",
+                "phone_number": "+77015550101",
+                "preferred_method": "qr_pilot",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_whatsapp_request_rejects_provider_secrets(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            "/api/business-connectors/whatsapp-request/",
+            {
+                "business": self.business.id,
+                "company_name": "Connector Clinic",
+                "phone_number": "+77015550101",
+                "preferred_method": "qr_pilot",
+                "comment": "access_token=do-not-store-this",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
 
     def test_other_merchant_cannot_see_connector(self):
         connector = BusinessConnector.objects.create(
@@ -242,19 +308,56 @@ class BusinessConnectorFoundationTests(TestCase):
         self.assertEqual(connector_response.data["status"], BusinessConnector.Statuses.NEEDS_ATTENTION)
         self.assertTrue(connector_response.data["config_json"]["no_write_back"])
 
-        event_response = self.api.post(
-            f"/api/business-connectors/{connector_response.data['id']}/events/",
-            {
-                "event_type": "order_imported",
-                "external_id": "kaspi-order-1",
-                "payload_json": {"amount": 12000, "note": "mock sync only"},
-            },
-            format="json",
-        )
+        event_response = self.api.post(f"/api/business-connectors/{connector_response.data['id']}/mock-sync/", format="json")
 
         self.assertEqual(event_response.status_code, 201)
-        self.assertEqual(event_response.data["event_type"], "order_imported")
-        self.assertEqual(event_response.data["source"], BusinessConnector.Providers.KASPI)
+        self.assertEqual(len(event_response.data), 3)
+        event_types = {event["event_type"] for event in event_response.data}
+        self.assertIn(KASPI_EVENT_TYPES["order_imported"], event_types)
+        self.assertIn(KASPI_EVENT_TYPES["sale_detected"], event_types)
+        self.assertIn(KASPI_EVENT_TYPES["product_activity"], event_types)
+        self.assertTrue(all(event["source"] == BusinessConnector.Providers.KASPI for event in event_response.data))
+
+        second_event_response = self.api.post(f"/api/business-connectors/{connector_response.data['id']}/mock-sync/", format="json")
+
+        self.assertEqual(second_event_response.status_code, 201)
+        self.assertEqual(BusinessEvent.objects.filter(connector_id=connector_response.data["id"]).count(), 3)
+
+    def test_kaspi_mock_events_are_read_only_visibility_events(self):
+        events = build_kaspi_mock_events(prefix="clinic")
+
+        self.assertEqual([event.event_type for event in events], [
+            "kaspi_order_imported",
+            "kaspi_sale_detected",
+            "kaspi_product_activity",
+        ])
+        self.assertTrue(all(event.payload["read_only"] for event in events))
+        self.assertTrue(all(event.payload["source"] == BusinessConnector.Providers.KASPI for event in events))
+
+    def test_one_c_adapter_reuses_excel_csv_import_entities(self):
+        self.assertEqual(one_c_entity_to_import_type("clients"), ImportJob.EntityTypes.CLIENTS)
+        self.assertEqual(one_c_entity_to_import_type("counterparties"), ImportJob.EntityTypes.CLIENTS)
+        self.assertEqual(one_c_entity_to_import_type("sales"), ImportJob.EntityTypes.SALES)
+        self.assertEqual(one_c_entity_to_import_type("products"), ImportJob.EntityTypes.CATALOG)
+        self.assertEqual(one_c_entity_to_import_type("stock"), ImportJob.EntityTypes.CATALOG)
+
+        events = build_one_c_mock_events(prefix="clinic")
+
+        self.assertIn(ONE_C_EVENT_TYPES["sale"], [event["event_type"] for event in events])
+        self.assertTrue(all(event["payload"]["read_only"] for event in events))
+        self.assertTrue(all(event["payload"]["source"] == BusinessConnector.Providers.ONE_C for event in events))
+
+    def test_moysklad_adapter_reuses_excel_csv_import_entities(self):
+        self.assertEqual(moysklad_entity_to_import_type("clients"), ImportJob.EntityTypes.CLIENTS)
+        self.assertEqual(moysklad_entity_to_import_type("sales"), ImportJob.EntityTypes.SALES)
+        self.assertEqual(moysklad_entity_to_import_type("products"), ImportJob.EntityTypes.CATALOG)
+        self.assertEqual(moysklad_entity_to_import_type("stock"), ImportJob.EntityTypes.CATALOG)
+
+        events = build_moysklad_mock_events(prefix="clinic")
+
+        self.assertIn(MOYSKLAD_EVENT_TYPES["stock"], [event["event_type"] for event in events])
+        self.assertTrue(all(event["payload"]["read_only"] for event in events))
+        self.assertTrue(all(event["payload"]["source"] == BusinessConnector.Providers.MOYSKLAD for event in events))
 
 
 class ConnectorOnboardingCatalogTests(TestCase):

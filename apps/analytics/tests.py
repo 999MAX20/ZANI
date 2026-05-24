@@ -9,7 +9,7 @@ from apps.accounts.models import User
 from apps.businesses.models import Business, BusinessMember
 from apps.clients.models import Client
 from apps.core.models import AuditLog
-from apps.integrations.models import BusinessEvent
+from apps.integrations.models import BusinessConnector, BusinessEvent
 from apps.crm.models import Deal, Pipeline, PipelineStage
 from apps.leads.models import Lead
 from apps.scheduling.models import Appointment
@@ -82,6 +82,9 @@ class OwnerDashboardAnalyticsTests(TestCase):
         self.assertIn("recommendations", response.data)
         self.assertIn("quick_connect", response.data)
         self.assertIn("setup", response.data)
+        self.assertIn("connector_health", response.data)
+        self.assertIn("latest_business_events", response.data)
+        self.assertIn("attention_items", response.data)
         self.assertIn("mobile_onboarding", response.data)
         self.assertEqual(response.data["mobile_onboarding"]["score"], response.data["setup"]["score"])
         self.assertEqual(response.data["mobile_onboarding"]["steps"][0]["key"], "landing")
@@ -92,11 +95,18 @@ class OwnerDashboardAnalyticsTests(TestCase):
 
 
     def test_owner_dashboard_uses_sales_events_for_business_pulse(self):
+        BusinessConnector.objects.create(
+            business=self.business,
+            provider=BusinessConnector.Providers.KASPI,
+            name="Kaspi connector request",
+            status=BusinessConnector.Statuses.PENDING_REQUEST,
+            capability=BusinessConnector.Capabilities.FINANCE,
+        )
         BusinessEvent.objects.create(
             business=self.business,
-            source="csv",
-            event_type="sale.recorded",
-            deduplication_key="sale-1",
+            source=BusinessConnector.Providers.KASPI,
+            event_type="kaspi_sale_detected",
+            deduplication_key="kaspi-sale-1",
             payload_json={"amount": "25000"},
         )
 
@@ -107,6 +117,8 @@ class OwnerDashboardAnalyticsTests(TestCase):
         self.assertEqual(response.data["data_quality"]["has_sales_data"], True)
         self.assertEqual(response.data["business_pulse"]["tone"], "growth")
         self.assertEqual(response.data["revenue"]["total_estimate"], "25000")
+        self.assertEqual(response.data["latest_business_events"][0]["event_type"], "kaspi_sale_detected")
+        self.assertEqual(response.data["connector_health"]["pending"], 1)
         self.assertTrue(response.data["setup"]["sources"]["sales_data"])
         sales_step = next(item for item in response.data["mobile_onboarding"]["steps"] if item["key"] == "sales_data")
         self.assertEqual(sales_step["status"], "done")

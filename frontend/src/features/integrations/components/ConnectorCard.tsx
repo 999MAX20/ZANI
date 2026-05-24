@@ -27,8 +27,10 @@ function setupStateLabel(state: string, t: (key: string) => string) {
 
 function merchantStatus(connector: BusinessConnector | undefined, capability: ConnectorCapability) {
   if (connector?.status === "connected") return "connected";
-  if (connector?.status === "failed" || connector?.status === "expired_credentials") return "error";
-  if (connector?.status === "disabled") return "disconnected";
+  if (connector?.status === "failed" || connector?.status === "error" || connector?.status === "expired_credentials") return "error";
+  if (connector?.status === "disabled" || connector?.status === "disconnected") return "disconnected";
+  if (connector?.status === "pending_request" || connector?.status === "provider_configuring") return "pending_request";
+  if (connector?.status === "setup_required") return "setup_required";
   if (connector?.status === "needs_attention" && capability.action_behavior === "request") return "pending_request";
   if (connector?.status === "needs_attention" || connector?.status === "draft" || connector?.status === "syncing") return "setup_required";
   if (capability.availability === "upgrade") return "unavailable_on_plan";
@@ -80,7 +82,7 @@ function connectorSetupMessage(capability: ConnectorCapability, t: (key: string)
   if (connector?.status === "connected") {
     return t("integrations.setupMessage.connected");
   }
-  if (connector?.status === "needs_attention") {
+  if (connector?.status === "needs_attention" || connector?.status === "pending_request" || connector?.status === "setup_required" || connector?.status === "provider_configuring") {
     return t("integrations.setupMessage.needsAttention");
   }
   if (connector?.status === "disabled") {

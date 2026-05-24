@@ -69,6 +69,11 @@ class BusinessConnector(models.Model):
     class Statuses(models.TextChoices):
         DRAFT = "draft", "Draft"
         CONNECTED = "connected", "Connected"
+        PENDING_REQUEST = "pending_request", "Pending request"
+        SETUP_REQUIRED = "setup_required", "Setup required"
+        PROVIDER_CONFIGURING = "provider_configuring", "Provider configuring"
+        ERROR = "error", "Error"
+        DISCONNECTED = "disconnected", "Disconnected"
         NEEDS_ATTENTION = "needs_attention", "Needs attention"
         SYNCING = "syncing", "Syncing"
         FAILED = "failed", "Failed"

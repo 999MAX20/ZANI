@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from apps.businesses.models import Business
 from apps.integrations.connectors import available_connector_capabilities, create_or_update_credential, defaults_for_provider
 from apps.integrations.models import (
     ApiToken,
@@ -11,6 +12,7 @@ from apps.integrations.models import (
     WebhookDeliveryLog,
     WebhookEndpoint,
 )
+from apps.integrations.whatsapp.base import build_whatsapp_provider_decision
 
 
 class IntegrationEventLogSerializer(serializers.ModelSerializer):
@@ -100,6 +102,66 @@ class BusinessConnectorSerializer(serializers.ModelSerializer):
         attrs.setdefault("capability", defaults["capability"])
         attrs.setdefault("auth_type", defaults["auth_type"])
         return attrs
+
+
+class WhatsAppConnectionRequestSerializer(serializers.Serializer):
+    business = serializers.PrimaryKeyRelatedField(queryset=Business.objects.all())
+    company_name = serializers.CharField(max_length=160, allow_blank=False)
+    phone_number = serializers.CharField(max_length=48, allow_blank=False)
+    contact_person = serializers.CharField(max_length=120, allow_blank=True, required=False)
+    preferred_method = serializers.ChoiceField(
+        choices=["not_sure", "qr_pilot", "meta_cloud", "360dialog", "twilio"],
+        default="not_sure",
+    )
+    monthly_messages = serializers.IntegerField(min_value=0, max_value=500000, required=False, default=0)
+    has_meta_assets = serializers.BooleanField(required=False, default=False)
+    internal_notes = serializers.CharField(max_length=1000, allow_blank=True, required=False)
+    comment = serializers.CharField(max_length=1000, allow_blank=True, required=False)
+
+    def validate_phone_number(self, value):
+        clean = value.strip()
+        if len(clean) < 7:
+            raise serializers.ValidationError("WhatsApp number is too short.")
+        return clean
+
+    def validate(self, attrs):
+        forbidden = ("token", "secret", "password", "webhook", "verify_token", "access_token", "client_secret")
+        combined = " ".join(str(value).lower() for value in attrs.values())
+        if any(word in combined for word in forbidden):
+            raise serializers.ValidationError("Do not send provider secrets in merchant connection requests.")
+        return attrs
+
+    def build_config(self):
+        decision = build_whatsapp_provider_decision(
+            self.validated_data.get("preferred_method"),
+            self.validated_data.get("monthly_messages"),
+            self.validated_data.get("has_meta_assets"),
+        )
+        return {
+            "request_type": "whatsapp_connection_request",
+            "request_status": decision.status,
+            "requested_from_ui": True,
+            "provider_ready": [
+                "meta_cloud_placeholder",
+                "twilio_placeholder",
+                "360dialog_placeholder",
+                "qr_pilot_placeholder",
+            ],
+            "provider_decision": decision.__dict__,
+            "form": {
+                "company_name": self.validated_data["company_name"],
+                "phone_number": self.validated_data["phone_number"],
+                "contact_person": self.validated_data.get("contact_person", ""),
+                "preferred_method": self.validated_data.get("preferred_method", "not_sure"),
+                "monthly_messages": self.validated_data.get("monthly_messages", 0),
+                "has_meta_assets": self.validated_data.get("has_meta_assets", False),
+                "comment": self.validated_data.get("comment", ""),
+            },
+            "support": {
+                "internal_notes": self.validated_data.get("internal_notes", ""),
+                "next_step": decision.next_step,
+            },
+        }
 
 
 class ConnectorCapabilitySerializer(serializers.Serializer):

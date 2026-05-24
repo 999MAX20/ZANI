@@ -17,6 +17,8 @@ from apps.core.models import AuditLog
 from apps.core.permissions import accessible_businesses, is_platform_admin
 from apps.core.viewsets import TenantModelViewSet
 from apps.integrations.connectors import normalize_business_event, run_connector_healthcheck, update_connector_health
+from apps.integrations.kaspi import build_kaspi_mock_events
+from apps.integrations.moysklad import build_moysklad_mock_events
 from apps.integrations.models import (
     ApiToken,
     BusinessConnector,
@@ -27,6 +29,7 @@ from apps.integrations.models import (
     WebhookDeliveryLog,
     WebhookEndpoint,
 )
+from apps.integrations.one_c import build_one_c_mock_events
 from apps.integrations.public_api import authenticate_api_token
 from apps.integrations.serializers import (
     ApiTokenSerializer,
@@ -36,6 +39,7 @@ from apps.integrations.serializers import (
     ConnectorCredentialSerializer,
     ConnectorSyncRunSerializer,
     IntegrationEventLogSerializer,
+    WhatsAppConnectionRequestSerializer,
     WebhookDeliveryLogSerializer,
     WebhookEndpointSerializer,
 )
@@ -96,6 +100,38 @@ class BusinessConnectorViewSet(TenantModelViewSet):
     def capabilities(self, request):
         return Response(ConnectorCapabilitySerializer.data_list())
 
+    @action(detail=False, methods=["post"], url_path="whatsapp-request")
+    def whatsapp_request(self, request):
+        serializer = WhatsAppConnectionRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        business = serializer.validated_data["business"]
+        assert_can(request.user, business, Resources.INTEGRATIONS, Actions.MANAGE)
+        config = serializer.build_config()
+        decision = config["provider_decision"]
+        connector, created = BusinessConnector.objects.update_or_create(
+            business=business,
+            provider=BusinessConnector.Providers.WHATSAPP,
+            name="WhatsApp connection request",
+            defaults={
+                "capability": BusinessConnector.Capabilities.COMMUNICATIONS,
+                "auth_type": BusinessConnector.AuthTypes.QR,
+                "status": decision["status"],
+                "config_json": config,
+                "scopes_json": [],
+                "last_error": "",
+                "created_by": request.user,
+            },
+        )
+        write_audit_log(
+            request,
+            AuditLog.Actions.CREATE if created else AuditLog.Actions.UPDATE,
+            connector,
+            business=business,
+            metadata={"kind": "whatsapp_connection_request_saved", "provider_decision": decision["provider_key"]},
+        )
+        response_status = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        return Response(self.get_serializer(connector).data, status=response_status)
+
     @action(detail=True, methods=["post"])
     def connect(self, request, pk=None):
         connector = self.get_object()
@@ -137,6 +173,45 @@ class BusinessConnectorViewSet(TenantModelViewSet):
         )
         status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
         return Response(BusinessEventSerializer(event).data, status=status_code)
+
+    @action(detail=True, methods=["post"], url_path="mock-sync")
+    def mock_sync(self, request, pk=None):
+        connector = self.get_object()
+        assert_can(request.user, connector.business, Resources.INTEGRATIONS, Actions.MANAGE, obj=connector)
+        mock_events = build_connector_mock_events(connector)
+        if not mock_events:
+            return Response({"detail": "Mock sync is available only for lightweight data connectors."}, status=status.HTTP_400_BAD_REQUEST)
+
+        events = []
+        for item in mock_events:
+            payload = item.payload if hasattr(item, "payload") else item["payload"]
+            event_type = item.event_type if hasattr(item, "event_type") else item["event_type"]
+            external_id = item.external_id if hasattr(item, "external_id") else item["external_id"]
+            event, _created = normalize_business_event(
+                business=connector.business,
+                connector=connector,
+                source=connector.provider,
+                event_type=event_type,
+                external_id=external_id,
+                payload=payload,
+            )
+            events.append(event)
+
+        connector.last_sync_at = timezone.now()
+        connector.save(update_fields=["last_sync_at", "updated_at"])
+        write_audit_log(request, AuditLog.Actions.UPDATE, connector, business=connector.business, metadata={"kind": "connector_mock_sync", "events": len(events)})
+        return Response(BusinessEventSerializer(events, many=True).data, status=status.HTTP_201_CREATED)
+
+
+def build_connector_mock_events(connector):
+    prefix = f"demo-{connector.provider}-{connector.id}"
+    if connector.provider == BusinessConnector.Providers.KASPI:
+        return build_kaspi_mock_events(prefix=prefix)
+    if connector.provider == BusinessConnector.Providers.ONE_C:
+        return build_one_c_mock_events(prefix=prefix)
+    if connector.provider == BusinessConnector.Providers.MOYSKLAD:
+        return build_moysklad_mock_events(prefix=prefix)
+    return []
 
 
 class ConnectorCredentialViewSet(TenantModelViewSet):

@@ -710,7 +710,9 @@ function RequestReadyConnectorPanel({
           company_name: "",
           phone_number: "",
           contact_person: "",
-          preferred_connection_type: "not_sure",
+          preferred_method: "not_sure",
+          monthly_messages: "0",
+          has_meta_assets: "false",
           comment: "",
         }
       : {
@@ -722,21 +724,36 @@ function RequestReadyConnectorPanel({
   );
   const label = provider === "whatsapp" ? "WhatsApp" : "Instagram";
   const isPending = connector?.status === "needs_attention";
+  const requestStatus = connector?.status === "pending_request" || connector?.status === "provider_configuring" || connector?.status === "setup_required" || isPending
+    ? connector.status
+    : connector?.status || "not_requested";
 
   const submitRequest = useMutation({
     mutationFn: () => {
+      if (provider === "whatsapp") {
+        return businessConnectorsApi.requestWhatsApp({
+          business: businessId,
+          company_name: form.company_name || "",
+          phone_number: form.phone_number || "",
+          contact_person: form.contact_person || "",
+          preferred_method: (form.preferred_method || "not_sure") as "not_sure" | "qr_pilot" | "meta_cloud" | "360dialog" | "twilio",
+          monthly_messages: Number(form.monthly_messages || 0),
+          has_meta_assets: form.has_meta_assets === "true",
+          comment: form.comment || "",
+        });
+      }
       const payload: BusinessConnectorPayload = {
         business: businessId,
         provider,
         name: `${label} connection request`,
         capability: "communications",
-        auth_type: provider === "whatsapp" ? "qr" : "oauth",
+        auth_type: "oauth",
         scopes_json: [],
         config_json: {
           request_type: `${provider}_connection_request`,
           request_status: "pending_request",
           requested_from_ui: true,
-          provider_ready: provider === "whatsapp" ? ["meta_placeholder", "twilio_placeholder", "360dialog_placeholder", "qr_pilot_placeholder"] : ["meta_placeholder"],
+          provider_ready: ["meta_placeholder"],
           form,
         },
       };
@@ -763,7 +780,7 @@ function RequestReadyConnectorPanel({
           </p>
         </div>
         <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-black ring-1 ${isPending ? "bg-violet-50 text-violet-700 ring-violet-100" : "bg-slate-100 text-slate-600 ring-slate-200"}`}>
-          {isPending ? "pending_request" : connector?.status || "not_requested"}
+          {requestStatus}
         </span>
       </div>
 
@@ -780,13 +797,25 @@ function RequestReadyConnectorPanel({
             <Input label={t("integrations.request.whatsappNumber")} value={form.phone_number || ""} onChange={(event) => setForm({ ...form, phone_number: event.target.value })} disabled={!canManage} />
             <Input label={t("integrations.request.contactPerson")} value={form.contact_person || ""} onChange={(event) => setForm({ ...form, contact_person: event.target.value })} disabled={!canManage} />
             <Select
-              value={form.preferred_connection_type || "not_sure"}
-              onChange={(event) => setForm({ ...form, preferred_connection_type: event.target.value })}
+              value={form.preferred_method || "not_sure"}
+              onChange={(event) => setForm({ ...form, preferred_method: event.target.value })}
               disabled={!canManage}
               options={[
-                { value: "official_provider", label: t("integrations.request.officialProvider") },
-                { value: "qr_pilot", label: "QR pilot" },
                 { value: "not_sure", label: t("integrations.request.notSure") },
+                { value: "qr_pilot", label: t("integrations.request.qrPilot") },
+                { value: "meta_cloud", label: "Meta Cloud API" },
+                { value: "360dialog", label: "360dialog" },
+                { value: "twilio", label: "Twilio" },
+              ]}
+            />
+            <Input label={t("integrations.request.monthlyMessages")} type="number" value={form.monthly_messages || "0"} onChange={(event) => setForm({ ...form, monthly_messages: event.target.value })} disabled={!canManage} />
+            <Select
+              value={form.has_meta_assets || "false"}
+              onChange={(event) => setForm({ ...form, has_meta_assets: event.target.value })}
+              disabled={!canManage}
+              options={[
+                { value: "false", label: t("integrations.request.metaAssetsNo") },
+                { value: "true", label: t("integrations.request.metaAssetsYes") },
               ]}
             />
           </>
@@ -820,14 +849,14 @@ const dataConnectorCatalog: Array<{
     label: "Kaspi",
     descriptionKey: "integrations.data.kaspiDescription",
     capability: "finance",
-    eventType: "order_imported",
+    eventType: "kaspi_order_imported",
   },
   {
     provider: "1c",
     label: "1C",
     descriptionKey: "integrations.data.oneCDescription",
     capability: "inventory",
-    eventType: "product_imported",
+    eventType: "sale_imported",
   },
   {
     provider: "google_sheets",
@@ -848,7 +877,7 @@ const dataConnectorCatalog: Array<{
     label: "МойСклад",
     descriptionKey: "integrations.data.moyskladDescription",
     capability: "inventory",
-    eventType: "stock_level_imported",
+    eventType: "moysklad_stock_imported",
   },
   {
     provider: "wildberries",
@@ -917,21 +946,7 @@ function DataConnectorsFoundationPanel({
   });
 
   const mockSync = useMutation({
-    mutationFn: ({ connector, eventType }: { connector: BusinessConnector; eventType: string }) =>
-      businessConnectorsApi.ingestEvent({
-        id: connector.id,
-        payload: {
-          event_type: eventType,
-          external_id: `mock-${connector.provider}-${Date.now()}`,
-          payload_json: {
-            source: connector.provider,
-            amount: eventType === "order_imported" ? 12000 : undefined,
-            sku: eventType !== "order_imported" ? "DEMO-SKU" : undefined,
-            quantity: eventType === "stock_level_imported" ? 7 : undefined,
-            note: "Pilot demo import event; no external API call was made.",
-          },
-        },
-      }),
+    mutationFn: ({ connector }: { connector: BusinessConnector; eventType: string }) => businessConnectorsApi.mockSync(connector.id),
     onSuccess: () => {
       setNotice(t("integrations.data.demoImported"));
       queryClient.invalidateQueries({ queryKey: ["business-events"] });

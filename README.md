@@ -5844,3 +5844,10 @@ Import/export tests after Excel/CSV Real Import MVP pass: 12 OK
 Excel/CSV provider rollout gate after Excel/CSV Real Import MVP pass: ready
 Full backend tests after Excel/CSV Real Import MVP pass: 299 OK
 Frontend production build after Excel/CSV Real Import MVP pass: OK
+
+Lightweight provider-ready integrations pass: KK dictionary parity is enforced in frontend build, WhatsApp has a support-assisted provider-ready request flow without exposing WABA/webhook/token internals, and Kaspi / 1C / МойСклад have lightweight read-only adapter skeletons plus mock-sync events for business visibility. Owner dashboard now consumes imported sales, connector health, latest BusinessEvents and attention items without adding heavy BI.
+
+Backend check after lightweight provider-ready integrations pass: OK
+Targeted connector/dashboard tests after lightweight provider-ready integrations pass: 22 OK
+Full backend tests after lightweight provider-ready integrations pass: 305 OK
+Frontend production build after lightweight provider-ready integrations pass: OK

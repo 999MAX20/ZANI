@@ -21,6 +21,14 @@ from apps.integrations.models import BusinessConnector, BusinessEvent
 from apps.scheduling.models import Appointment
 from apps.tasks.models import Task
 
+SALES_REVENUE_EVENT_TYPES = [
+    "sale.recorded",
+    "sale_imported",
+    "kaspi_order_imported",
+    "kaspi_sale_detected",
+    "moysklad_sale_imported",
+]
+
 
 class AnalyticsEventViewSet(TenantModelViewSet):
     queryset = AnalyticsEvent.objects.select_related("business", "client")
@@ -66,7 +74,7 @@ def owner_dashboard(request):
     )
     completed_appointments = appointments.filter(status=Appointment.Statuses.COMPLETED)
     appointment_revenue = completed_appointments.aggregate(total=Sum("service__price_from"))["total"] or 0
-    sales_events = BusinessEvent.objects.filter(business=business, event_type="sale.recorded")
+    sales_events = BusinessEvent.objects.filter(business=business, event_type__in=SALES_REVENUE_EVENT_TYPES)
     imported_revenue = sum((_payload_amount(event.payload_json) for event in sales_events), Decimal("0"))
     revenue = appointment_revenue + imported_revenue
     now = timezone.now()
@@ -87,6 +95,8 @@ def owner_dashboard(request):
         business=business,
         status__in=[BusinessConnector.Statuses.CONNECTED, BusinessConnector.Statuses.SYNCING],
     )
+    connector_health = _build_connector_health(business)
+    latest_business_events = _latest_business_events(business)
     setup_sources = {
         "landing": bool(business.landing_id or business.landing_domain or business.landing_preview_url),
         "lead_form": business.lead_forms.filter(is_active=True).exists(),
@@ -174,6 +184,14 @@ def owner_dashboard(request):
             if not sales_events.exists()
             else "Данные продаж подключены. ZANI использует загруженные события для базовой выручки.",
         },
+        "connector_health": connector_health,
+        "latest_business_events": latest_business_events,
+        "attention_items": _build_attention_items(
+            new_leads_count=new_leads_count,
+            overdue_tasks_count=overdue_tasks_count,
+            connector_health=connector_health,
+            has_sales_data=sales_events.exists(),
+        ),
         "mobile_onboarding": mobile_onboarding,
     }
     return Response(response_payload)
@@ -408,3 +426,53 @@ def _payload_amount(payload):
         return Decimal(str((payload or {}).get("amount", "0")).replace(",", "."))
     except (InvalidOperation, TypeError, ValueError):
         return Decimal("0")
+
+
+def _build_connector_health(business):
+    connectors = BusinessConnector.objects.filter(business=business)
+    return {
+        "connected": connectors.filter(status__in=[BusinessConnector.Statuses.CONNECTED, BusinessConnector.Statuses.SYNCING]).count(),
+        "pending": connectors.filter(status__in=[
+            BusinessConnector.Statuses.PENDING_REQUEST,
+            BusinessConnector.Statuses.PROVIDER_CONFIGURING,
+            BusinessConnector.Statuses.SETUP_REQUIRED,
+            BusinessConnector.Statuses.NEEDS_ATTENTION,
+        ]).count(),
+        "error": connectors.filter(status__in=[
+            BusinessConnector.Statuses.ERROR,
+            BusinessConnector.Statuses.FAILED,
+            BusinessConnector.Statuses.EXPIRED_CREDENTIALS,
+        ]).count(),
+        "total": connectors.count(),
+    }
+
+
+def _latest_business_events(business):
+    events = BusinessEvent.objects.filter(business=business).select_related("connector").order_by("-occurred_at", "-created_at")[:6]
+    return [
+        {
+            "id": event.id,
+            "event_type": event.event_type,
+            "source": event.source,
+            "connector": event.connector.name if event.connector else "",
+            "occurred_at": event.occurred_at.isoformat(),
+            "status": event.status,
+            "amount": str(_payload_amount(event.payload_json)),
+        }
+        for event in events
+    ]
+
+
+def _build_attention_items(*, new_leads_count, overdue_tasks_count, connector_health, has_sales_data):
+    items = []
+    if new_leads_count:
+        items.append({"key": "new_leads", "count": new_leads_count, "tone": "warning", "href": "/dashboard/leads"})
+    if overdue_tasks_count:
+        items.append({"key": "overdue_tasks", "count": overdue_tasks_count, "tone": "danger", "href": "/dashboard/tasks"})
+    if connector_health["error"]:
+        items.append({"key": "connector_errors", "count": connector_health["error"], "tone": "danger", "href": "/dashboard/integrations"})
+    if connector_health["pending"]:
+        items.append({"key": "connector_pending", "count": connector_health["pending"], "tone": "info", "href": "/dashboard/integrations"})
+    if not has_sales_data:
+        items.append({"key": "sales_data", "count": 0, "tone": "info", "href": "/dashboard/integrations"})
+    return items[:5]

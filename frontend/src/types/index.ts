@@ -408,7 +408,7 @@ export type BusinessConnector = {
   provider: "website" | "telegram" | "whatsapp" | "instagram" | "email" | "kaspi" | "1c" | "google_calendar" | "excel_csv" | "google_sheets" | "moysklad" | "wildberries" | "ozon" | "yandex_market" | "custom" | string;
   capability: "communications" | "sales" | "calendar" | "finance" | "inventory" | "marketing" | "custom" | string;
   name: string;
-  status: "draft" | "connected" | "needs_attention" | "syncing" | "failed" | "disabled" | "expired_credentials";
+  status: "draft" | "connected" | "pending_request" | "setup_required" | "provider_configuring" | "error" | "disconnected" | "needs_attention" | "syncing" | "failed" | "disabled" | "expired_credentials";
   auth_type: "none" | "token" | "oauth" | "qr" | "login" | "connector";
   config_json: Record<string, unknown>;
   scopes_json: string[];
@@ -1293,6 +1293,27 @@ export type OwnerDashboardMetrics = {
     sales_events_count: number;
     recommendation: string;
   };
+  connector_health?: {
+    connected: number;
+    pending: number;
+    error: number;
+    total: number;
+  };
+  latest_business_events?: Array<{
+    id: Id;
+    event_type: string;
+    source: string;
+    connector: string;
+    occurred_at: string;
+    status: string;
+    amount: string;
+  }>;
+  attention_items?: Array<{
+    key: "new_leads" | "overdue_tasks" | "connector_errors" | "connector_pending" | "sales_data" | string;
+    count: number;
+    tone: "warning" | "danger" | "info" | string;
+    href: string;
+  }>;
   mobile_onboarding?: {
     headline: string;
     subtext: string;

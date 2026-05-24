@@ -854,6 +854,12 @@ export function DashboardPage() {
               </div>
             </div>
             <div className="space-y-3">
+              {dashboard?.attention_items?.map((item) => (
+                <Link key={item.key} to={item.href} className="block rounded-2xl border border-slate-100 bg-white/70 p-4 transition hover:bg-slate-50">
+                  <p className="font-semibold text-midnight">{t(`dashboard.attention.${item.key}.title`)}</p>
+                  <p className="mt-1 text-sm text-slate-500">{t(`dashboard.attention.${item.key}.text`, { count: item.count })}</p>
+                </Link>
+              ))}
               <Link to="/dashboard/leads" className="block rounded-2xl border border-slate-100 bg-white/70 p-4 transition hover:bg-slate-50">
                 <p className="font-semibold text-midnight">{t("dashboard.answerNewLeads")}</p>
                 <p className="mt-1 text-sm text-slate-500">{t("dashboard.newLeadsWaiting", { count: newLeadsCount })}</p>
@@ -997,6 +1003,37 @@ export function DashboardPage() {
           </CardBody>
         </Card> : null}
       </div>
+
+      {isOwnerView && dashboard?.latest_business_events?.length ? (
+        <Card className="mt-6">
+          <CardBody>
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-midnight">{t("dashboard.latestBusinessEvents")}</h2>
+                <p className="mt-1 text-sm text-slate-500">{t("dashboard.latestBusinessEventsText")}</p>
+              </div>
+              {dashboard.connector_health ? (
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
+                  {t("dashboard.connectorHealth", {
+                    connected: dashboard.connector_health.connected,
+                    pending: dashboard.connector_health.pending,
+                    error: dashboard.connector_health.error,
+                  })}
+                </span>
+              ) : null}
+            </div>
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {dashboard.latest_business_events.slice(0, 6).map((event) => (
+                <div key={event.id} className="rounded-2xl border border-slate-100 bg-white/70 p-4">
+                  <p className="text-xs font-black uppercase tracking-[0.12em] text-slate-400">{event.source}</p>
+                  <p className="mt-2 font-semibold text-midnight">{event.event_type}</p>
+                  <p className="mt-1 text-sm text-slate-500">{event.connector || event.status}</p>
+                </div>
+              ))}
+            </div>
+          </CardBody>
+        </Card>
+      ) : null}
       </>
       ) : null}
     </>

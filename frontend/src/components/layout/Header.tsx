@@ -78,25 +78,25 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
   };
 
   return (
-    <header className="sticky top-0 z-40 px-2 pt-2 sm:px-3 sm:pt-3 lg:px-6">
-      <div className="glass-panel flex h-[4.25rem] items-center justify-between rounded-[1.6rem] px-2.5 sm:h-16 sm:rounded-3xl sm:px-5">
+    <header className="sticky top-0 z-50 px-2 pt-2 sm:px-3 sm:pt-3 lg:px-6">
+      <div className="glass-panel flex h-[4.45rem] items-center justify-between rounded-[1.6rem] bg-white/88 px-2.5 sm:h-16 sm:rounded-3xl sm:px-5">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-          <Button className="h-12 w-12 rounded-full px-0 lg:hidden" variant="ghost" onClick={onMenuClick} aria-label={t("sidebar.expand")}>
-            <Menu size={24} strokeWidth={2.35} />
+          <Button className="h-[52px] w-[52px] min-h-[52px] min-w-[52px] rounded-full px-0 lg:hidden" variant="ghost" onClick={onMenuClick} aria-label={t("sidebar.expand")}>
+            <Menu size={28} strokeWidth={2.35} />
           </Button>
           <GlobalSearch />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <LanguageSelector className="hidden md:inline-flex" />
           <div className="relative">
             <Button
               variant="ghost"
-              className="relative h-12 w-12 rounded-full px-0"
+              className="relative h-[52px] w-[52px] min-h-[52px] min-w-[52px] rounded-full px-0"
               aria-label={t("header.notifications")}
               onClick={() => setShowNotifications((current) => !current)}
             >
-              <Bell size={26} strokeWidth={2.35} />
+              <Bell size={30} strokeWidth={2.35} />
               {unreadCount ? (
                 <span className="absolute -right-1 -top-1 min-w-6 rounded-full bg-brand-600 px-1.5 py-0.5 text-[11px] font-bold text-white ring-2 ring-white">
                   {unreadCount > 9 ? "9+" : unreadCount}
@@ -197,13 +197,13 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
           </div>
           <Button
             variant="secondary"
-            className="h-12 rounded-full px-3 sm:h-10"
+            className="h-[52px] min-h-[52px] rounded-full px-3 sm:h-10 sm:min-h-10"
             onClick={() => {
               logout();
               navigate("/login");
             }}
           >
-            <LogOut size={22} className="sm:h-4 sm:w-4" />
+            <LogOut size={26} className="sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">{t("header.logout")}</span>
           </Button>
         </div>

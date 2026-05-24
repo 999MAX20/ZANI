@@ -613,8 +613,8 @@ export function SettingsPage() {
                   {inviteForm.delivery_channel === "telegram" ? (
                     <Input label="Telegram" value={inviteForm.telegram} onChange={(event) => setInviteForm({ ...inviteForm, telegram: event.target.value })} placeholder="@username" required />
                   ) : null}
-                  <div className="flex items-end">
-                    <Button type="submit" isLoading={inviteMutation.isPending}>{t("settings.createInvite")}</Button>
+                  <div className="flex items-end lg:col-span-2">
+                    <Button type="submit" className="min-h-[52px] w-full lg:w-auto" isLoading={inviteMutation.isPending}>{t("settings.createInvite")}</Button>
                   </div>
                 </form>
                 <div className="mt-4 space-y-2">
@@ -627,21 +627,21 @@ export function SettingsPage() {
                             {invitation.email} · {translatedTeamRoleOptions.find((role) => role.value === invitation.role)?.label || invitation.role} · {t(`status.${invitation.status}`)}
                           </p>
                         </div>
-                        <div className="flex flex-wrap gap-2">
-                          <a href={inviteShareUrl(invitation)} target="_blank" rel="noreferrer" className="rounded-full bg-slate-950 px-3 py-2 text-xs font-bold text-white">
+                        <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-3 sm:flex sm:flex-wrap">
+                          <a href={inviteShareUrl(invitation)} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center justify-center rounded-full bg-slate-950 px-3 py-2 text-xs font-bold text-white">
                             {t("settings.send")}
                           </a>
                           <Button
                             type="button"
                             variant="secondary"
-                            className="h-9 rounded-full px-3 text-xs"
+                            className="h-10 rounded-full px-3 text-xs"
                             onClick={() => navigator.clipboard?.writeText(inviteMessage(invitation.invite_path))}
                           >
                             <Copy size={14} />
                             {t("settings.copy")}
                           </Button>
                           {invitation.status === "pending" ? (
-                            <Button type="button" variant="ghost" className="h-9 rounded-full px-3 text-xs" onClick={() => revokeInvitationMutation.mutate(invitation.id)}>
+                            <Button type="button" variant="ghost" className="h-10 rounded-full px-3 text-xs" onClick={() => revokeInvitationMutation.mutate(invitation.id)}>
                               {t("settings.revoke")}
                             </Button>
                           ) : null}
@@ -656,14 +656,14 @@ export function SettingsPage() {
             <div className="rounded-3xl border border-slate-100 p-4">
               <h3 className="text-base font-bold text-midnight">{t("settings.departments")}</h3>
               <form
-                className="mt-3 flex gap-2"
+                className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto]"
                 onSubmit={(event) => {
                   event.preventDefault();
                   if (departmentName.trim()) departmentMutation.mutate();
                 }}
               >
                 <Input value={departmentName} onChange={(event) => setDepartmentName(event.target.value)} placeholder={t("settings.departmentPlaceholder")} />
-                <Button type="submit" variant="secondary" isLoading={departmentMutation.isPending}>+</Button>
+                <Button type="submit" variant="secondary" className="min-h-[48px] px-5" isLoading={departmentMutation.isPending}>+</Button>
               </form>
               <div className="mt-4 space-y-2">
                 {(departments.data || []).map((department) => (

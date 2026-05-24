@@ -5805,3 +5805,7 @@ Frontend production build after public pages i18n pass: OK
 
 Full backend tests after owner access repair pass: 295 OK
 Frontend production build after owner access repair pass: OK
+
+Full backend tests after mobile usability pass: 295 OK
+Frontend production build after mobile usability pass: OK
+Mobile usability pass: enlarged header/sidebar/bottom-nav tap targets, improved mobile sidebar overlay/close behavior, tightened mobile page/card spacing, adapted settings invite/team controls.

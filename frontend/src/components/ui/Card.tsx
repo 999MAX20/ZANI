@@ -9,9 +9,9 @@ export function Card({ className, children, ...props }: CardProps) {
 }
 
 export function CardHeader({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <div className={cn("border-b border-slate-100/80 px-5 py-4", className)}>{children}</div>;
+  return <div className={cn("border-b border-slate-100/80 px-4 py-4 sm:px-5", className)}>{children}</div>;
 }
 
 export function CardBody({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <div className={cn("p-5", className)}>{children}</div>;
+  return <div className={cn("p-4 sm:p-5", className)}>{children}</div>;
 }

@@ -133,9 +133,9 @@ export function GlobalSearch() {
   }
 
   return (
-    <div ref={rootRef} className={cn("relative", mobileExpanded && "absolute inset-x-16 top-1/2 z-40 -translate-y-1/2 lg:static lg:translate-y-0")}>
+    <div ref={rootRef} className={cn("relative", mobileExpanded && "absolute inset-x-[4.35rem] top-1/2 z-[70] -translate-y-1/2 lg:static lg:translate-y-0")}>
       <Button
-        className={cn("h-12 w-12 rounded-full px-0 lg:hidden", mobileExpanded && "hidden")}
+        className={cn("h-[52px] w-[52px] min-h-[52px] min-w-[52px] rounded-full px-0 lg:hidden", mobileExpanded && "hidden")}
         variant="ghost"
         aria-label={t("search.aria")}
         onClick={() => {
@@ -148,9 +148,9 @@ export function GlobalSearch() {
 
       <div
         className={cn(
-          "hidden h-11 items-center gap-3 rounded-2xl border border-slate-200/70 bg-white/80 px-3 text-sm shadow-sm",
+          "hidden h-11 items-center gap-3 rounded-2xl border border-slate-200/70 bg-white/90 px-3 text-sm shadow-sm",
           "lg:flex lg:min-w-[340px]",
-          mobileExpanded && "flex min-w-0",
+          mobileExpanded && "flex h-[52px] min-w-0 rounded-full",
         )}
       >
         <Search size={21} className="shrink-0 text-slate-400" />
@@ -178,8 +178,8 @@ export function GlobalSearch() {
       </div>
 
       {open ? (
-        <div className="fixed inset-x-3 top-20 z-40 rounded-3xl border border-white/70 bg-white p-3 shadow-premium lg:absolute lg:inset-x-auto lg:left-0 lg:top-full lg:mt-2 lg:w-[min(92vw,560px)]">
-          <div className="max-h-[420px] space-y-1 overflow-auto">
+        <div className="fixed inset-x-3 top-20 z-[70] rounded-3xl border border-white/70 bg-white p-3 shadow-premium lg:absolute lg:inset-x-auto lg:left-0 lg:top-full lg:mt-2 lg:w-[min(92vw,560px)]">
+          <div className="max-h-[min(62vh,420px)] space-y-1 overflow-auto">
             {results.map((item) => {
               const Icon = item.icon;
               return (
@@ -187,7 +187,7 @@ export function GlobalSearch() {
                   key={item.id}
                   to={item.to}
                   onClick={closeSearch}
-                  className="flex items-start gap-3 rounded-2xl px-3 py-3 transition hover:bg-slate-50"
+                  className="flex min-h-[62px] items-start gap-3 rounded-2xl px-3 py-3 transition hover:bg-slate-50 active:scale-[0.99]"
                 >
                   <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-slate-100 text-slate-600">
                     <Icon size={18} />

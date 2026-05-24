@@ -33,3 +33,7 @@ npm run build
 - `POST /api/auth/token/refresh/`
 
 Их можно поменять в `src/api/auth.ts`.
+
+Full backend tests after mobile usability pass: 295 OK
+Frontend production build after mobile usability pass: OK
+Mobile usability pass: enlarged header/sidebar/bottom-nav tap targets, improved mobile sidebar overlay/close behavior, tightened mobile page/card spacing, adapted settings invite/team controls.

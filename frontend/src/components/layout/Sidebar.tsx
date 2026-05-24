@@ -148,7 +148,7 @@ export function Sidebar({
       className={cn(
         "group/sidebar relative z-20 m-3 shrink-0 rounded-[2rem] border border-white/70 bg-white/84 shadow-premium backdrop-blur-2xl transition-all duration-300",
         "before:pointer-events-none before:absolute before:inset-0 before:rounded-[2rem] before:bg-sidebar-depth before:opacity-80",
-        forceVisible && "m-0 h-dvh max-h-dvh rounded-none rounded-r-[2rem] bg-white/95 before:rounded-none before:rounded-r-[2rem]",
+        forceVisible && "m-0 h-dvh max-h-dvh rounded-none rounded-r-[2rem] bg-white/96 shadow-[0_30px_90px_rgba(15,23,42,0.24)] before:rounded-none before:rounded-r-[2rem]",
         isExpanded ? "w-[318px]" : "w-[92px]",
         !forceVisible && "hidden lg:block",
       )}
@@ -168,7 +168,7 @@ export function Sidebar({
         </div>
 
         {isExpanded ? (
-          <div className="mb-4">
+          <div className="mb-4 pr-14">
             <LanguageSelector className="w-full justify-between rounded-2xl bg-white/88" />
           </div>
         ) : null}
@@ -232,19 +232,19 @@ export function Sidebar({
                       onClick={onNavigate}
                       title={t(item.label)}
                       className={cn(
-                        "group relative flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-black text-slate-700 transition-all duration-200",
+                        "group relative flex min-h-[58px] items-center gap-3 rounded-2xl px-3 py-3 text-sm font-black text-slate-700 transition-all duration-200 active:scale-[0.99]",
                         "hover:-translate-y-0.5 hover:bg-white hover:text-midnight hover:shadow-soft",
                         active && "bg-white text-midnight shadow-soft ring-1 ring-cyan-100",
                       )}
                     >
                       <span
                         className={cn(
-                          "grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-slate-100 text-slate-500 transition",
+                          "grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-slate-100 text-slate-500 transition",
                           active && "bg-ai-gradient text-white shadow-glow",
                           !active && "group-hover:bg-cyan-50 group-hover:text-brand-700",
                         )}
                       >
-                        <Icon size={18} strokeWidth={2.2} />
+                        <Icon size={20} strokeWidth={2.25} />
                       </span>
                       <span className="min-w-0 truncate">{t(item.label)}</span>
                       {active ? <span className="ml-auto h-2 w-2 rounded-full bg-brand-500 shadow-glow" /> : null}

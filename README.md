@@ -5865,3 +5865,7 @@ Pilot E2E smoke hardening pass: Playwright smoke now covers header notification 
 
 Targeted Playwright smoke after pilot E2E hardening pass: header notifications + calendar UI + mobile sidebar/calendar OK
 Frontend production build after pilot E2E hardening pass: OK
+
+Frontend perceived-performance pass: TanStack Query no longer refetches all queries on window focus and no longer retries client-side 4xx API errors. This reduces duplicate requests on mobile/browser tab switches and avoids slow repeated retries after permission/auth validation failures.
+
+Frontend production build after perceived-performance pass: OK

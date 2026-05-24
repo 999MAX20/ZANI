@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import axios from "axios";
 import { useState } from "react";
 
 import { AuthProvider } from "../features/auth/AuthProvider";
@@ -11,7 +12,13 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
         defaultOptions: {
           queries: {
             staleTime: 30_000,
-            retry: 1,
+            refetchOnWindowFocus: false,
+            retry: (failureCount, error) => {
+              if (axios.isAxiosError(error) && error.response?.status && error.response.status < 500) {
+                return false;
+              }
+              return failureCount < 1;
+            },
           },
         },
       }),

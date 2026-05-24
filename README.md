@@ -5640,6 +5640,10 @@ Frontend production build: OK
   - Telegram beta wizard переведён на RU / KK / EN: инструкция BotFather, статусы токена, приём сообщений, save/test notices и read-only state;
   - техническая логика safe demo/mock checks сохранена без изменения Telegram API контрактов;
   - владелец видит понятный setup flow без вывода сохранённого кода подключения.
+- Integration request/data panels i18n pass:
+  - WhatsApp/Instagram request-ready формы переведены на RU / KK / EN без изменения connector request API;
+  - data connector cards для Kaspi, 1C, Google Sheets, Email, МойСклад, Wildberries, Ozon и Яндекс.Маркет переведены на RU / KK / EN;
+  - demo import notices, request/update CTAs и comments больше не hardcoded.
 
 Проверка:
 
@@ -5679,6 +5683,8 @@ Full backend tests after website chat integration i18n pass: 288 OK
 Frontend production build after website chat integration i18n pass: OK
 Full backend tests after Telegram integration wizard i18n pass: 288 OK
 Frontend production build after Telegram integration wizard i18n pass: OK
+Full backend tests after integration request/data panels i18n pass: 288 OK
+Frontend production build after integration request/data panels i18n pass: OK
 Visual smoke screenshots: desktop collapsed rail, desktop expanded rail, mobile dashboard OK
 ```
 

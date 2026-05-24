@@ -659,6 +659,7 @@ function RequestReadyConnectorPanel({
   canManage: boolean;
 }) {
   const queryClient = useQueryClient();
+  const { t } = useI18n();
   const [form, setForm] = useState<Record<string, string>>(
     provider === "whatsapp"
       ? {
@@ -710,11 +711,11 @@ function RequestReadyConnectorPanel({
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.18em] text-violet-700">{label} request-ready</p>
-          <h3 className="mt-2 text-xl font-black text-midnight">{label}: заявка на подключение</h3>
+          <h3 className="mt-2 text-xl font-black text-midnight">{t("integrations.request.title", { provider: label })}</h3>
           <p className="mt-2 text-sm leading-6 text-slate-600">
             {provider === "whatsapp"
-              ? "Собираем данные для ручной проверки канала. Реальное внешнее подключение не включается автоматически."
-              : "Собираем данные для будущего Meta-ready подключения. Пароль Instagram не нужен и не запрашивается."}
+              ? t("integrations.request.whatsappText")
+              : t("integrations.request.instagramText")}
           </p>
         </div>
         <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-black ring-1 ${isPending ? "bg-violet-50 text-violet-700 ring-violet-100" : "bg-slate-100 text-slate-600 ring-slate-200"}`}>
@@ -731,34 +732,34 @@ function RequestReadyConnectorPanel({
       >
         {provider === "whatsapp" ? (
           <>
-            <Input label="Название компании" value={form.company_name || ""} onChange={(event) => setForm({ ...form, company_name: event.target.value })} disabled={!canManage} />
-            <Input label="Номер WhatsApp" value={form.phone_number || ""} onChange={(event) => setForm({ ...form, phone_number: event.target.value })} disabled={!canManage} />
-            <Input label="Контактное лицо" value={form.contact_person || ""} onChange={(event) => setForm({ ...form, contact_person: event.target.value })} disabled={!canManage} />
+            <Input label={t("integrations.request.companyName")} value={form.company_name || ""} onChange={(event) => setForm({ ...form, company_name: event.target.value })} disabled={!canManage} />
+            <Input label={t("integrations.request.whatsappNumber")} value={form.phone_number || ""} onChange={(event) => setForm({ ...form, phone_number: event.target.value })} disabled={!canManage} />
+            <Input label={t("integrations.request.contactPerson")} value={form.contact_person || ""} onChange={(event) => setForm({ ...form, contact_person: event.target.value })} disabled={!canManage} />
             <Select
               value={form.preferred_connection_type || "not_sure"}
               onChange={(event) => setForm({ ...form, preferred_connection_type: event.target.value })}
               disabled={!canManage}
               options={[
-                { value: "official_provider", label: "Официальное подключение" },
+                { value: "official_provider", label: t("integrations.request.officialProvider") },
                 { value: "qr_pilot", label: "QR pilot" },
-                { value: "not_sure", label: "Пока не знаю" },
+                { value: "not_sure", label: t("integrations.request.notSure") },
               ]}
             />
           </>
         ) : (
           <>
             <Input label="Instagram username" value={form.instagram_username || ""} onChange={(event) => setForm({ ...form, instagram_username: event.target.value })} disabled={!canManage} />
-            <Input label="Facebook Page, если есть" value={form.facebook_page || ""} onChange={(event) => setForm({ ...form, facebook_page: event.target.value })} disabled={!canManage} />
-            <Input label="Контактное лицо" value={form.contact_person || ""} onChange={(event) => setForm({ ...form, contact_person: event.target.value })} disabled={!canManage} />
+            <Input label={t("integrations.request.facebookPage")} value={form.facebook_page || ""} onChange={(event) => setForm({ ...form, facebook_page: event.target.value })} disabled={!canManage} />
+            <Input label={t("integrations.request.contactPerson")} value={form.contact_person || ""} onChange={(event) => setForm({ ...form, contact_person: event.target.value })} disabled={!canManage} />
           </>
         )}
-        <Input label="Комментарий" value={form.comment || ""} onChange={(event) => setForm({ ...form, comment: event.target.value })} disabled={!canManage} />
+        <Input label={t("integrations.request.comment")} value={form.comment || ""} onChange={(event) => setForm({ ...form, comment: event.target.value })} disabled={!canManage} />
         <Button type="submit" variant="secondary" disabled={!canManage} isLoading={submitRequest.isPending}>
-          <Send size={16} /> {connector ? "Обновить заявку" : "Отправить заявку"}
+          <Send size={16} /> {connector ? t("integrations.request.update") : t("integrations.request.submit")}
         </Button>
       </form>
       {submitRequest.error ? <div className="mt-3"><ErrorState message={getApiErrorMessage(submitRequest.error)} /></div> : null}
-      {submitRequest.isSuccess ? <p className="mt-3 rounded-2xl bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-700">Заявка сохранена. Platform support увидит её как connector request.</p> : null}
+      {submitRequest.isSuccess ? <p className="mt-3 rounded-2xl bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-700">{t("integrations.request.saved")}</p> : null}
     </div>
   );
 }
@@ -766,65 +767,65 @@ function RequestReadyConnectorPanel({
 const dataConnectorCatalog: Array<{
   provider: BusinessConnector["provider"];
   label: string;
+  descriptionKey: string;
   capability: BusinessConnector["capability"];
   eventType: string;
-  description: string;
 }> = [
   {
     provider: "kaspi",
     label: "Kaspi",
+    descriptionKey: "integrations.data.kaspiDescription",
     capability: "finance",
     eventType: "order_imported",
-    description: "Read-only visibility: заказы, продажи и будущая аналитика. Без repricing и write-back.",
   },
   {
     provider: "1c",
     label: "1C",
+    descriptionKey: "integrations.data.oneCDescription",
     capability: "inventory",
     eventType: "product_imported",
-    description: "На пилоте — через файлы и Excel/CSV pipeline. Full sync и бухгалтерию не делаем.",
   },
   {
     provider: "google_sheets",
     label: "Google Sheets",
+    descriptionKey: "integrations.data.googleSheetsDescription",
     capability: "sales",
     eventType: "sheet_row_imported",
-    description: "Request-ready импорт таблиц для клиентов, заявок и продаж. Без фоновой синхронизации на пилоте.",
   },
   {
     provider: "email",
     label: "Email",
+    descriptionKey: "integrations.data.emailDescription",
     capability: "communications",
     eventType: "email_channel_requested",
-    description: "Заявка на подключение почты для заявок и уведомлений. Транзакционная отправка подключается отдельно.",
   },
   {
     provider: "moysklad",
     label: "МойСклад",
+    descriptionKey: "integrations.data.moyskladDescription",
     capability: "inventory",
     eventType: "stock_level_imported",
-    description: "Request-ready foundation для остатков и каталога после пилота.",
   },
   {
     provider: "wildberries",
     label: "Wildberries",
+    descriptionKey: "integrations.data.wildberriesDescription",
     capability: "finance",
     eventType: "order_imported",
-    description: "Marketplace visibility roadmap: продажи, SKU, остатки, возвраты.",
   },
   {
     provider: "ozon",
     label: "Ozon",
+    descriptionKey: "integrations.data.ozonDescription",
     capability: "finance",
     eventType: "order_imported",
-    description: "Marketplace visibility roadmap без write-back и управления ценами.",
   },
   {
     provider: "yandex_market",
     label: "Яндекс.Маркет",
+    descriptionKey: "integrations.data.yandexMarketDescription",
     capability: "finance",
     eventType: "order_imported",
-    description: "Будущий marketplace connector для рынка РФ, сейчас только заявка/interest.",
   },
 ];
 
@@ -838,6 +839,7 @@ function DataConnectorsFoundationPanel({
   canManage: boolean;
 }) {
   const queryClient = useQueryClient();
+  const { t } = useI18n();
   const [commentByProvider, setCommentByProvider] = useState<Record<string, string>>({});
   const [notice, setNotice] = useState("");
 
@@ -865,7 +867,7 @@ function DataConnectorsFoundationPanel({
       return businessConnectorsApi.create(payload);
     },
     onSuccess: (connector) => {
-      setNotice(`${connector.name}: заявка сохранена.`);
+      setNotice(t("integrations.data.requestSaved", { name: connector.name }));
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
     },
   });
@@ -887,7 +889,7 @@ function DataConnectorsFoundationPanel({
         },
       }),
     onSuccess: () => {
-      setNotice("Демо-событие импорта записано. Это безопасная проверка будущей синхронизации без внешнего подключения.");
+      setNotice(t("integrations.data.demoImported"));
       queryClient.invalidateQueries({ queryKey: ["business-events"] });
     },
   });
@@ -898,9 +900,9 @@ function DataConnectorsFoundationPanel({
     <div id="integration-data" className="scroll-mt-24 mb-5 rounded-3xl border border-amber-100 bg-white/95 p-5 shadow-soft">
       <div>
         <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">Data connectors foundation</p>
-        <h2 className="mt-2 text-2xl font-black text-midnight">Kaspi / 1C / склад / marketplaces</h2>
+        <h2 className="mt-2 text-2xl font-black text-midnight">{t("integrations.data.title")}</h2>
         <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
-          Лёгкий слой под будущие интеграции: заявка, статус и безопасная демо-проверка импорта. Без ERP, realtime full sync, write-back, repricing и бухгалтерской логики.
+          {t("integrations.data.description")}
         </p>
       </div>
 
@@ -916,7 +918,7 @@ function DataConnectorsFoundationPanel({
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-lg font-black text-midnight">{item.label}</p>
-                  <p className="mt-1 text-sm leading-6 text-slate-600">{item.description}</p>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">{t(item.descriptionKey)}</p>
                 </div>
                 <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-xs font-black text-slate-600 ring-1 ring-slate-200">
                   {connector?.status || "request"}
@@ -924,7 +926,7 @@ function DataConnectorsFoundationPanel({
               </div>
               <Input
                 className="mt-4"
-                placeholder="Комментарий к заявке"
+                placeholder={t("integrations.data.commentPlaceholder")}
                 value={comment}
                 onChange={(event) => setCommentByProvider({ ...commentByProvider, [item.provider]: event.target.value })}
                 disabled={!canManage}
@@ -937,7 +939,7 @@ function DataConnectorsFoundationPanel({
                   isLoading={requestConnector.isPending}
                   onClick={() => requestConnector.mutate({ provider: item.provider, label: item.label, capability: item.capability, comment })}
                 >
-                  <Send size={16} /> {connector ? "Обновить" : "Запросить"}
+                  <Send size={16} /> {connector ? t("integrations.data.update") : t("integrations.data.request")}
                 </Button>
                 <Button
                   type="button"
@@ -946,7 +948,7 @@ function DataConnectorsFoundationPanel({
                   isLoading={mockSync.isPending}
                   onClick={() => connector && mockSync.mutate({ connector, eventType: item.eventType })}
                 >
-                  Проверить демо-импорт
+                  {t("integrations.data.checkDemoImport")}
                 </Button>
               </div>
             </div>

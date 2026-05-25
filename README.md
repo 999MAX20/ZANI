@@ -5965,3 +5965,8 @@ Working-hours overview UX pass: the schedule settings page now shows a business-
 
 Backend check after working-hours overview UX pass: OK
 Frontend production build after working-hours overview UX pass: OK
+
+Appointment no-slots guidance pass: the appointment form now checks the selected date and resource working-hours rows when no calendar slots are available. Merchants see a specific cause: missing schedule, day off, service longer than the working window, or fully booked time, with localized RU / KK / EN copy.
+
+Backend check after appointment no-slots guidance pass: OK
+Frontend production build after appointment no-slots guidance pass: OK

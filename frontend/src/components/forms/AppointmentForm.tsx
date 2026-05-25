@@ -10,7 +10,7 @@ import { getApiErrorMessage } from "../../api/client";
 import { workingHoursApi } from "../../api/workingHours";
 import { todayISO } from "../../lib/format";
 import { useI18n } from "../../lib/i18n";
-import type { Appointment, Client, Id, Lead, Resource, Service } from "../../types";
+import type { Appointment, Client, Id, Lead, Resource, Service, WorkingHours } from "../../types";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { Select } from "../ui/Select";
@@ -52,6 +52,23 @@ function SetupNotice({
       </Link>
     </div>
   );
+}
+
+function timeToMinutes(value: string) {
+  const [hours, minutes] = value.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+function getSelectedWorkingHours(rows: WorkingHours[], weekday: number, resourceId: Id | null) {
+  const resourceHours = resourceId ? rows.find((row) => row.resource === resourceId && row.weekday === weekday) : null;
+  return resourceHours || rows.find((row) => !row.resource && row.weekday === weekday) || null;
+}
+
+function getNoSlotsReasonKey(hours: WorkingHours | null, durationMinutes: number) {
+  if (!hours) return "appointment.noSlotsReasonMissingHours";
+  if (hours.is_day_off) return "appointment.noSlotsReasonDayOff";
+  if (timeToMinutes(hours.end_time) - timeToMinutes(hours.start_time) < durationMinutes) return "appointment.noSlotsReasonTooShort";
+  return "appointment.noSlotsReasonBusy";
 }
 
 export function AppointmentForm({
@@ -108,7 +125,10 @@ export function AppointmentForm({
   const hasServices = services.length > 0;
   const activeResources = resources.filter((resource) => resource.is_active);
   const hasResources = activeResources.length > 0;
-  const selectedDateLabel = new Date(`${date}T00:00:00`).toLocaleDateString(language === "en" ? "en-US" : language === "kk" ? "kk-KZ" : "ru-RU", { weekday: "long", day: "2-digit", month: "long" });
+  const locale = language === "en" ? "en-US" : language === "kk" ? "kk-KZ" : "ru-RU";
+  const selectedDate = new Date(`${date}T00:00:00`);
+  const selectedDateLabel = selectedDate.toLocaleDateString(locale, { weekday: "long", day: "2-digit", month: "long" });
+  const selectedWeekday = (selectedDate.getDay() + 6) % 7;
   const quickHoursMutation = useMutation({
     mutationFn: () => workingHoursApi.applyPreset({ business: businessId, preset: "daily_9_20", resource: resourceId ? Number(resourceId) : "" }),
     onSuccess: () => {
@@ -131,6 +151,13 @@ export function AppointmentForm({
     enabled: Boolean(businessId && serviceId && date && !initial),
   });
   const noSlots = !initial && !slots.isLoading && slots.data?.length === 0;
+  const workingHours = useQuery({
+    queryKey: ["working-hours"],
+    queryFn: workingHoursApi.list,
+    enabled: Boolean(noSlots),
+  });
+  const selectedHours = noSlots ? getSelectedWorkingHours(workingHours.data || [], selectedWeekday, resourceId ? Number(resourceId) : null) : null;
+  const noSlotsReasonKey = getNoSlotsReasonKey(selectedHours, selectedService?.duration_minutes || 30);
 
   useEffect(() => {
     if (!initial) {
@@ -224,7 +251,7 @@ export function AppointmentForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <Input label={t("appointment.date")} type="date" error={form.formState.errors.date?.message} {...form.register("date")} disabled={Boolean(initial)} />
         {initial ? (
-          <Input label={t("appointment.time")} value={new Date(initial.start_at).toLocaleTimeString(language === "en" ? "en-US" : "ru-RU", { hour: "2-digit", minute: "2-digit" })} readOnly />
+          <Input label={t("appointment.time")} value={new Date(initial.start_at).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })} readOnly />
         ) : (
           <Select
             label={t("appointment.slot")}
@@ -240,7 +267,7 @@ export function AppointmentForm({
               },
               ...(slots.data || []).map((slot) => ({
                 value: slot.start_at,
-                label: new Date(slot.start_at).toLocaleTimeString(language === "en" ? "en-US" : "ru-RU", { hour: "2-digit", minute: "2-digit" }),
+                label: new Date(slot.start_at).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" }),
               })),
             ]}
             {...form.register("slot")}
@@ -256,13 +283,13 @@ export function AppointmentForm({
         <div className="rounded-3xl border border-amber-100 bg-amber-50/80 p-4 text-sm text-amber-900">
           <p className="font-bold">{t("appointment.noSlotsForDate").replace("{date}", selectedDateLabel)}</p>
           <p className="mt-1 leading-6 text-amber-800">
-            {t("appointment.noSlotsReason")}
+            {t(noSlotsReasonKey)}
           </p>
-          <ul className="mt-3 list-disc space-y-1 pl-5 text-amber-800">
-            <li>{t("appointment.reasonHours")}</li>
-            <li>{t("appointment.reasonResource")}</li>
-            <li>{t("appointment.reasonBusy")}</li>
-          </ul>
+          {selectedHours && !selectedHours.is_day_off ? (
+            <p className="mt-2 text-xs font-bold uppercase tracking-[0.14em] text-amber-700">
+              {t("appointment.workingWindow").replace("{start}", selectedHours.start_time.slice(0, 5)).replace("{end}", selectedHours.end_time.slice(0, 5))}
+            </p>
+          ) : null}
           <div className="mt-3 flex flex-wrap gap-2">
             <Button type="button" variant="secondary" isLoading={quickHoursMutation.isPending} onClick={() => quickHoursMutation.mutate()}>
               {t("appointment.applyQuickHours")}

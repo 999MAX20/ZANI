@@ -5925,3 +5925,9 @@ Frontend production build after lead-form copy cleanup pass: OK
 Language selector compactness pass: the header/sidebar language control now renders as one compact dropdown instead of three adjacent language buttons. This prevents cramped header text such as RU/KK/EN being read as one merged label on deployed/mobile layouts.
 
 Frontend production build after language selector compactness pass: OK
+
+Continuation regression after merchant UI cleanup pass: Django system check, full backend test suite and frontend production build are green after the WhatsApp/Telegram bot setup cleanup, lead-form copy cleanup and compact language selector changes.
+
+Backend check after continuation regression pass: OK
+Full backend tests after continuation regression pass: 307 OK
+Frontend production build after continuation regression pass: OK

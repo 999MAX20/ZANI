@@ -24,7 +24,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
   const notifications = useQuery({
     queryKey: ["notifications"],
     queryFn: notificationsApi.list,
-    refetchInterval: realtimeIntervals.notificationsMs,
+    enabled: showNotifications,
     ...realtimeQueryOptions,
   });
   const notificationSummary = useQuery({
@@ -48,7 +48,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
     },
   });
 
-  const unreadCount = notificationSummary.data?.unread ?? (notifications.data || []).filter((item) => !item.read_at).length;
+  const unreadCount = notificationSummary.data?.unread ?? 0;
   const latestNotifications = [...(notifications.data || [])].sort((a, b) => Number(!b.read_at) - Number(!a.read_at) || new Date(b.send_at).getTime() - new Date(a.send_at).getTime()).slice(0, 7);
   const groupedNotifications = latestNotifications.reduce<Record<string, typeof latestNotifications>>((acc, notification) => {
     const key = notification.category || "system";

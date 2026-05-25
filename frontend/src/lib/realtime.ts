@@ -1,5 +1,5 @@
 export const realtimeIntervals = {
-  notificationsMs: 20_000,
+  notificationsMs: 60_000,
   inboxConversationsMs: 12_000,
   inboxMessagesMs: 7_000,
 };

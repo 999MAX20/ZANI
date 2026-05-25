@@ -6174,3 +6174,8 @@ AI provider activation pass: added `/api/ai/assistant/status/` and a visible pro
 Backend check after AI provider activation pass: OK
 Targeted AI tests after AI provider activation pass: 15 OK
 Frontend production build after AI provider activation pass: OK
+
+Render perceived-performance pass: the merchant dashboard no longer blocks initial render on the heavier owner analytics endpoint, the header no longer loads the full notification list on every page, notification summary polling was reduced, and auth retry logic no longer tries to refresh tokens for auth endpoints themselves. This reduces route-switch request fan-out and removes avoidable 401 retry noise while preserving live notification counts.
+
+Backend check after Render perceived-performance pass: OK
+Frontend production build after Render perceived-performance pass: OK

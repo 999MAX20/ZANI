@@ -12,6 +12,10 @@ function notifyAuthExpired() {
   }
 }
 
+function isAuthEndpoint(url = "") {
+  return url.includes("/api/auth/token/") || url.includes("/api/auth/token/refresh/") || url.includes("/api/auth/social/");
+}
+
 export const apiClient = axios.create({
   baseURL,
   timeout: 20_000,
@@ -51,7 +55,7 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
-    if (error.response?.status !== 401 || originalRequest._retry) {
+    if (error.response?.status !== 401 || originalRequest._retry || isAuthEndpoint(originalRequest.url || "")) {
       return Promise.reject(error);
     }
 

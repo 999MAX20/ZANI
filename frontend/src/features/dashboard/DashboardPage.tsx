@@ -652,7 +652,7 @@ export function DashboardPage() {
     retry: false,
   });
 
-  if (businessLoading || clients.isLoading || leads.isLoading || appointments.isLoading || services.isLoading || tasks.isLoading || (isOwnerView && metrics.isLoading)) return <PageSkeleton />;
+  if (businessLoading || clients.isLoading || leads.isLoading || appointments.isLoading || services.isLoading || tasks.isLoading) return <PageSkeleton />;
   if (!business) {
     return <ErrorState message={t("dashboard.noBusiness")} />;
   }

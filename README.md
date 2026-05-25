@@ -137,6 +137,24 @@ DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
 cd frontend && npm run build
 ```
 
+### Service setup UX hardening
+
+Статус: **готово**.
+
+Что изменено:
+
+- В форму создания услуги добавлены быстрые шаблоны: консультация, стрижка, процедура, диагностика.
+- Шаблон заполняет название, описание, длительность, стартовую цену и активный статус.
+- Шаблоны показываются только при создании новой услуги, чтобы не мешать редактированию существующего прайса.
+- Все тексты добавлены в RU / KK / EN.
+
+Проверка:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+cd frontend && npm run build
+```
+
 ### ZANI 10 next tasks — Task 1: Mobile-first business cockpit
 
 Статус: **готово как первый visual-shell шаг**.

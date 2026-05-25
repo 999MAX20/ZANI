@@ -19,6 +19,19 @@ const createSchema = (t: (key: string) => string) =>
 
 type Values = z.infer<ReturnType<typeof createSchema>>;
 
+type ServiceTemplate = {
+  key: string;
+  durationMinutes: number;
+  priceFrom: string;
+};
+
+const serviceTemplates: ServiceTemplate[] = [
+  { key: "consultation", durationMinutes: 30, priceFrom: "0" },
+  { key: "haircut", durationMinutes: 60, priceFrom: "5000" },
+  { key: "beautyProcedure", durationMinutes: 90, priceFrom: "12000" },
+  { key: "diagnostics", durationMinutes: 45, priceFrom: "7000" },
+];
+
 export function ServiceForm({ businessId, initial, onSubmit }: { businessId: Id; initial?: Service; onSubmit: (payload: Partial<Service>) => Promise<unknown> }) {
   const { t } = useI18n();
   const form = useForm<Values>({
@@ -32,12 +45,33 @@ export function ServiceForm({ businessId, initial, onSubmit }: { businessId: Id;
     },
   });
 
+  function applyTemplate(template: ServiceTemplate) {
+    form.setValue("name", t(`services.template.${template.key}.name`), { shouldDirty: true, shouldValidate: true });
+    form.setValue("description", t(`services.template.${template.key}.description`), { shouldDirty: true });
+    form.setValue("duration_minutes", template.durationMinutes, { shouldDirty: true, shouldValidate: true });
+    form.setValue("price_from", template.priceFrom, { shouldDirty: true });
+    form.setValue("is_active", true, { shouldDirty: true });
+  }
+
   return (
     <form className="grid gap-4" onSubmit={form.handleSubmit((values) => onSubmit({ ...values, business: businessId, price_from: values.price_from || null }))}>
       <div className="rounded-3xl border border-brand-100 bg-brand-50/60 p-4 text-sm text-slate-700">
         <p className="font-bold text-midnight">{t("services.formHintTitle")}</p>
         <p className="mt-1 leading-6">{t("services.formHintText")}</p>
       </div>
+      {!initial ? (
+        <div className="rounded-3xl border border-slate-100 bg-white/80 p-4">
+          <p className="text-sm font-black text-midnight">{t("services.templatesTitle")}</p>
+          <p className="mt-1 text-sm leading-6 text-slate-500">{t("services.templatesText")}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {serviceTemplates.map((template) => (
+              <Button key={template.key} type="button" variant="secondary" onClick={() => applyTemplate(template)}>
+                {t(`services.template.${template.key}.name`)}
+              </Button>
+            ))}
+          </div>
+        </div>
+      ) : null}
       <Input label={t("services.name")} error={form.formState.errors.name?.message} {...form.register("name")} />
       <Textarea label={t("services.descriptionField")} {...form.register("description")} />
       <div className="grid gap-4 sm:grid-cols-2">

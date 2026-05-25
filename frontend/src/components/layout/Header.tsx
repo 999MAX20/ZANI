@@ -24,12 +24,13 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
   const notifications = useQuery({
     queryKey: ["notifications"],
     queryFn: notificationsApi.list,
-    enabled: showNotifications,
+    enabled: Boolean(user) && showNotifications,
     ...realtimeQueryOptions,
   });
   const notificationSummary = useQuery({
     queryKey: ["notifications-summary"],
     queryFn: notificationsApi.summary,
+    enabled: Boolean(user),
     refetchInterval: realtimeIntervals.notificationsMs,
     ...realtimeQueryOptions,
   });

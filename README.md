@@ -6192,3 +6192,5 @@ OpenRouter env cleanup pass: local, staging and production env templates now use
 Backend check after OpenRouter env cleanup pass: OK
 Targeted AI tests after OpenRouter env cleanup pass: 15 OK
 Frontend production build after OpenRouter env cleanup pass: OK
+
+Browser console auth/CORS noise pass: notification summary and notification list queries now run only after the authenticated user is loaded. Realtime queries no longer refetch on every window focus, so switching back to the tab does not trigger extra notification/inbox requests. External curl checks against `https://zani-9lnp.onrender.com/api/notifications/summary/` confirmed that current backend CORS headers are present for `https://zani-1.onrender.com`; remaining 401 entries are auth-token/session state, not missing CORS configuration.

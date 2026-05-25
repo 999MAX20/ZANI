@@ -5,6 +5,6 @@ export const realtimeIntervals = {
 };
 
 export const realtimeQueryOptions = {
-  refetchOnWindowFocus: true,
+  refetchOnWindowFocus: false,
   refetchOnReconnect: true,
 };

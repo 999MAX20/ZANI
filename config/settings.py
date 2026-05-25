@@ -312,9 +312,7 @@ KIMI_API_KEY = env("KIMI_API_KEY", default="")
 KIMI_BASE_URL = env("KIMI_BASE_URL", default="https://api.moonshot.ai/v1")
 
 _AI_PROVIDER_DEFAULT = "mock"
-if KIMI_API_KEY:
-    _AI_PROVIDER_DEFAULT = "kimi"
-elif OPENROUTER_API_KEY:
+if OPENROUTER_API_KEY:
     _AI_PROVIDER_DEFAULT = "openrouter"
 elif OPENAI_API_KEY:
     _AI_PROVIDER_DEFAULT = "openai"

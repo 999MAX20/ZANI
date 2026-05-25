@@ -78,13 +78,27 @@ PUBLIC_FORM_RATE=60/min
 PUBLIC_WIDGET_RATE=120/min
 INTEGRATION_WEBHOOK_RATE=300/min
 AI_ASSISTANT_RATE=30/min
+AI_ENABLED=True
+AI_PROVIDER=openrouter
+AI_MODEL=openrouter/auto
+AI_FAST_MODEL=openrouter/auto
+AI_SMART_MODEL=openrouter/auto
+AI_CHEAP_MODEL=openrouter/auto
+AI_DEFAULT_MODEL_TIER=smart
+AI_PROMPT_MODEL_TIERS={"crm_assistant":"smart","lead_reply":"fast","client_summary":"smart","daily_summary":"smart","notification_summary":"cheap"}
+AI_TEMPERATURE=0.4
+AI_HTTP_TIMEOUT_SECONDS=20
+OPENROUTER_API_KEY=replace-with-openrouter-api-key
+OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+OPENROUTER_SITE_URL=https://app.your-domain.com
+OPENROUTER_APP_NAME=ZANI
 SENTRY_DSN=https://...
 ```
 
 Strongly recommended production variables:
 
 - `SENTRY_DSN` for error monitoring.
-- `OPENAI_API_KEY` for AI features.
+- `OPENROUTER_API_KEY` for AI features.
 - `TELEGRAM_ENABLED=True` and Telegram channel tokens inside bot channel config for Telegram.
 - Email SMTP variables for transactional email.
 - Storage variables are optional; keep `USE_S3=False` for local media or configure S3/R2/Yandex-compatible storage.

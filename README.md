@@ -6162,7 +6162,7 @@ Backend check after merchant navigation performance pass: OK
 Full backend tests after merchant navigation performance pass: 309 OK
 Frontend production build after merchant navigation performance pass: OK
 
-AI provider architecture pass: the central AI assistant now uses a provider layer instead of direct OpenAI-only wiring. Supported runtime providers are `mock`, `kimi`, `openrouter` and `openai`, with env-controlled model tiers for fast / smart / cheap tasks and prompt-type routing. Missing or failing real providers fall back to controlled mock responses when allowed, so merchant CRM flows do not break if an AI quota or key is unavailable.
+AI provider architecture pass: the central AI assistant now uses a provider layer instead of direct OpenAI-only wiring. The active external gateway for deployment is OpenRouter, with env-controlled model tiers for fast / smart / cheap tasks and prompt-type routing. Missing or failing real providers fall back to controlled mock responses when allowed, so merchant CRM flows do not break if an AI quota or key is unavailable.
 
 Backend check after AI provider architecture pass: OK
 Targeted AI/provider tests after AI provider architecture pass: 21 OK
@@ -6186,3 +6186,9 @@ Sidebar language selector cleanup pass: the expanded sidebar language control is
 
 Backend check after dashboard shell/sidebar language pass: OK
 Frontend production build after dashboard shell/sidebar language pass: OK
+
+OpenRouter env cleanup pass: local, staging and production env templates now use OpenRouter as the configured external AI gateway. Kimi variables and Kimi default model values were removed from `.env*`, OpenRouter model tiers default to `openrouter/auto`, and deployment docs now list the exact OpenRouter variables needed for Render.
+
+Backend check after OpenRouter env cleanup pass: OK
+Targeted AI tests after OpenRouter env cleanup pass: 15 OK
+Frontend production build after OpenRouter env cleanup pass: OK

@@ -57,6 +57,23 @@ function formatIntegrationEvent(status?: string, createdAt?: string | null, empt
   return `${status || ""} · ${new Date(createdAt).toLocaleString()}`.trim();
 }
 
+function dataConnectorStatusLabel(status: BusinessConnector["status"] | undefined, t: (key: string) => string) {
+  if (!status) return t("integrations.data.status.request");
+  const labels: Record<string, string> = {
+    connected: "integrations.merchantStatus.connected",
+    pending_request: "integrations.merchantStatus.pending_request",
+    provider_configuring: "integrations.merchantStatus.pending_request",
+    setup_required: "integrations.merchantStatus.setup_required",
+    needs_attention: "integrations.merchantStatus.setup_required",
+    failed: "integrations.merchantStatus.error",
+    error: "integrations.merchantStatus.error",
+    expired_credentials: "integrations.merchantStatus.error",
+    disabled: "integrations.merchantStatus.disconnected",
+    disconnected: "integrations.merchantStatus.disconnected",
+  };
+  return t(labels[status] || "integrations.merchantStatus.available");
+}
+
 function IntegrationOnboardingGuide({
   connectedCount,
   hasWebsiteChannel,
@@ -935,7 +952,7 @@ function DataConnectorsFoundationPanel({
       const payload: BusinessConnectorPayload = {
         business: businessId,
         provider,
-        name: `${label} connector request`,
+        name: label,
         capability,
         auth_type: "connector",
         scopes_json: [],
@@ -993,7 +1010,7 @@ function DataConnectorsFoundationPanel({
                   <p className="mt-1 text-sm leading-6 text-slate-600">{t(item.descriptionKey)}</p>
                 </div>
                 <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-xs font-black text-slate-600 ring-1 ring-slate-200">
-                  {connector?.status || "request"}
+                  {dataConnectorStatusLabel(connector?.status, t)}
                 </span>
               </div>
               <Input

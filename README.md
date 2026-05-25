@@ -5945,3 +5945,7 @@ Frontend production build after source-filter localization cleanup pass: OK
 Telegram integration copy cleanup pass: the merchant-visible Telegram setup now presents a support-assisted connection flow and readiness status instead of BotFather/code-oriented instructions. Secret setup details remain confined to the advanced pilot block.
 
 Frontend production build after Telegram integration copy cleanup pass: OK
+
+Data connector status cleanup pass: Kaspi / 1C / warehouse / marketplace request cards now show merchant-friendly localized statuses instead of raw connector state values, and saved requests use the product name without technical `connector request` naming.
+
+Frontend production build after data connector status cleanup pass: OK

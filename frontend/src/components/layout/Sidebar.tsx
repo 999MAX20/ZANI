@@ -168,8 +168,9 @@ export function Sidebar({
         </div>
 
         {isExpanded ? (
-          <div className="mb-4 pr-14">
-            <LanguageSelector className="w-full justify-between rounded-2xl bg-white/88" />
+          <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-white/70 bg-white/64 px-3 py-2 pr-14 shadow-soft">
+            <span className="truncate text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">{t("common.language")}</span>
+            <LanguageSelector className="h-9 w-[112px] shrink-0 rounded-xl border-slate-100 bg-white px-2.5 shadow-none" />
           </div>
         ) : null}
 

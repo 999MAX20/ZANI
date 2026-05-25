@@ -652,7 +652,7 @@ export function DashboardPage() {
     retry: false,
   });
 
-  if (businessLoading || clients.isLoading || leads.isLoading || appointments.isLoading || services.isLoading || tasks.isLoading) return <PageSkeleton />;
+  if (businessLoading) return <PageSkeleton />;
   if (!business) {
     return <ErrorState message={t("dashboard.noBusiness")} />;
   }
@@ -662,6 +662,7 @@ export function DashboardPage() {
   const taskList = tasks.data || [];
   const serviceList = services.data || [];
   const clientList = clients.data || [];
+  const isCoreDataLoading = clients.isLoading || leads.isLoading || appointments.isLoading || services.isLoading || tasks.isLoading;
   const dashboard = metrics.data;
   const setupItems = [
     Boolean(business.landing_id || business.landing_domain || business.landing_preview_url),
@@ -763,6 +764,12 @@ export function DashboardPage() {
       />
 
       <QuickActionDock isOwnerView={isOwnerView} />
+
+      {isCoreDataLoading ? (
+        <div className="mb-5 rounded-3xl border border-cyan-100 bg-white/78 px-5 py-4 text-sm font-semibold text-slate-600 shadow-soft">
+          {t("dashboard.loadingCoreData")}
+        </div>
+      ) : null}
 
       {metrics.error ? (
         <div className="mb-5 rounded-3xl border border-amber-100 bg-amber-50/80 px-5 py-4 text-sm font-semibold text-amber-800">

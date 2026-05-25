@@ -6179,3 +6179,10 @@ Render perceived-performance pass: the merchant dashboard no longer blocks initi
 
 Backend check after Render perceived-performance pass: OK
 Frontend production build after Render perceived-performance pass: OK
+
+Dashboard shell loading pass: the merchant dashboard no longer blocks its first render on leads, clients, services, appointments and tasks queries. It now renders the main owner/manager shell after the active business is available, then shows a small inline note while fresh CRM data continues loading. This improves perceived speed on Render/Supabase latency without changing tenant filtering or page data contracts.
+
+Sidebar language selector cleanup pass: the expanded sidebar language control is now a compact real dropdown with a chevron and a small localized label instead of a full-width oversized pill. The shared selector remains reusable in the header and sidebar.
+
+Backend check after dashboard shell/sidebar language pass: OK
+Frontend production build after dashboard shell/sidebar language pass: OK

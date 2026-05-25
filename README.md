@@ -155,6 +155,23 @@ DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
 cd frontend && npm run build
 ```
 
+### Calendar slot selection UX hardening
+
+Статус: **готово**.
+
+Что изменено:
+
+- Клик по свободному часу в дневной сетке календаря теперь открывает форму записи с попыткой автоматически выбрать соответствующий свободный слот.
+- Автовыбор происходит после загрузки `available-slots` и не ломает ручной выбор времени.
+- Это уменьшает лишние действия при создании записи из календаря владельцем или менеджером.
+
+Проверка:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+cd frontend && npm run build
+```
+
 ### ZANI 10 next tasks — Task 1: Mobile-first business cockpit
 
 Статус: **готово как первый visual-shell шаг**.

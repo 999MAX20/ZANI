@@ -94,6 +94,7 @@ export function AppointmentForm({
     lead?: Id | null;
     date?: string;
     slot?: string;
+    hour?: number;
     source?: Appointment["source"];
   };
   onSubmit: (payload: Partial<Appointment>) => Promise<unknown>;
@@ -169,6 +170,12 @@ export function AppointmentForm({
       setSubmitError(null);
     }
   }, [date, serviceId, resourceId, initial, form]);
+
+  useEffect(() => {
+    if (initial || prefill?.hour == null || form.getValues("slot") || !slots.data?.length) return;
+    const matchingSlot = slots.data.find((slot) => new Date(slot.start_at).getHours() === prefill.hour);
+    if (matchingSlot) form.setValue("slot", matchingSlot.start_at, { shouldDirty: true, shouldValidate: true });
+  }, [form, initial, prefill?.hour, slots.data]);
 
   return (
     <form

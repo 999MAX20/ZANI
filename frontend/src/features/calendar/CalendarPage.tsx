@@ -168,7 +168,7 @@ export function CalendarPage() {
   const [date, setDate] = useState(todayISO());
   const [viewMode, setViewMode] = useState<"day" | "week" | "month">("day");
   const [bookingOpen, setBookingOpen] = useState(false);
-  const [bookingPrefill, setBookingPrefill] = useState<{ date?: string; slot?: string; service?: number; resource?: number } | null>(null);
+  const [bookingPrefill, setBookingPrefill] = useState<{ date?: string; slot?: string; hour?: number; service?: number; resource?: number } | null>(null);
   const [drawerEntity, setDrawerEntity] = useState<CrmDrawerEntity | null>(null);
   const [serviceFilter, setServiceFilter] = useState("");
   const [resourceFilter, setResourceFilter] = useState("");
@@ -202,9 +202,10 @@ export function CalendarPage() {
     setDate(toDateInputValue(nextDate));
   }
 
-  function openBookingForDate(nextDate = date) {
+  function openBookingForDate(nextDate = date, hour?: number) {
     setBookingPrefill({
       date: nextDate,
+      hour,
       service: serviceFilter ? Number(serviceFilter) : undefined,
       resource: resourceFilter ? Number(resourceFilter) : undefined,
     });
@@ -450,7 +451,7 @@ export function CalendarPage() {
                       <button
                         type="button"
                         className="h-full w-full rounded-3xl border border-dashed border-slate-200 bg-white/50 p-4 text-left text-sm font-semibold text-slate-400 transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
-                        onClick={() => openBookingForDate(date)}
+                        onClick={() => openBookingForDate(date, hour)}
                       >
                         {t("calendar.availableSlot")}
                       </button>

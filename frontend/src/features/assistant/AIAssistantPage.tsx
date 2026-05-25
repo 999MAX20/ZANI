@@ -1,5 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bot, BookOpenText, CalendarCheck, CheckCircle2, ClipboardList, Cpu, Plus, Send, Sparkles, Wand2 } from "lucide-react";
+import {
+  Bot,
+  BookOpenText,
+  CalendarCheck,
+  CheckCircle2,
+  ClipboardList,
+  Cpu,
+  History,
+  MessageSquareText,
+  Plus,
+  Send,
+  Sparkles,
+  Wand2,
+} from "lucide-react";
 import { useState } from "react";
 
 import { aiApi, businessKnowledgeApi, type AIAssistantChatResponse } from "../../api/ai";
@@ -39,6 +52,12 @@ const emptyMemoryDraft = {
   is_active: true,
 };
 
+type ChatHistoryItem = {
+  question: string;
+  response: AIAssistantChatResponse;
+  createdAt: string;
+};
+
 function memoryDraftFromItem(item?: BusinessKnowledgeItem) {
   return item
     ? {
@@ -55,7 +74,8 @@ export function AIAssistantPage() {
   const { business, isLoading } = useActiveBusiness();
   const queryClient = useQueryClient();
   const [message, setMessage] = useState(() => t("aiAssistant.defaultQuestion"));
-  const [history, setHistory] = useState<{ question: string; response: AIAssistantChatResponse }[]>([]);
+  const [history, setHistory] = useState<ChatHistoryItem[]>([]);
+  const [selectedLogId, setSelectedLogId] = useState<Id | null>(null);
   const [suggestedActions, setSuggestedActions] = useState<AIToolCallLog[]>([]);
   const [memoryOpen, setMemoryOpen] = useState(false);
   const [editingMemory, setEditingMemory] = useState<BusinessKnowledgeItem | undefined>();
@@ -79,7 +99,9 @@ export function AIAssistantPage() {
       return aiApi.assistantChat({ business: business.id, message: question, prompt_type: "crm_assistant" });
     },
     onSuccess: (response, question) => {
-      setHistory((current) => [{ question, response }, ...current].slice(0, 6));
+      const nextItem = { question, response, createdAt: new Date().toISOString() };
+      setHistory((current) => [nextItem, ...current].slice(0, 12));
+      setSelectedLogId(response.log_id);
       setMessage("");
     },
   });
@@ -131,9 +153,16 @@ export function AIAssistantPage() {
   if (isLoading) return <LoadingState />;
   if (!business) return <ErrorState message={t("aiAssistant.noBusiness")} />;
 
-  const latest = history[0]?.response;
+  const selectedHistoryItem = history.find((item) => item.response.log_id === selectedLogId) || history[0];
   const activeMemoryItems = (memory.data || []).filter((item) => item.is_active);
   const memoryCategoryOptions = memoryCategories.map((item) => ({ value: item.value, label: t(item.labelKey) }));
+  const providerLabel = aiStatus.data
+    ? t("aiAssistant.providerStatus", {
+        provider: aiStatus.data.provider,
+        mode: aiStatus.data.mode === "live" ? t("aiAssistant.modeLive") : t("aiAssistant.modeMock"),
+        model: aiStatus.data.model,
+      })
+    : t("aiAssistant.providerChecking");
 
   return (
     <>
@@ -151,50 +180,154 @@ export function AIAssistantPage() {
           </div>
         )}
       />
-      {chatMutation.error || memoryMutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(chatMutation.error || memoryMutation.error)} /></div> : null}
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_420px]">
-        <Card className="overflow-hidden bg-midnight text-white">
-          <CardBody className="p-8">
-            <div className="grid h-14 w-14 place-items-center rounded-3xl bg-white/10">
-              <Bot size={28} />
-            </div>
-            <h2 className="mt-8 max-w-3xl text-4xl font-semibold tracking-tight">
-              {latest?.answer || t("aiAssistant.heroFallback")}
-            </h2>
-            <p className="mt-4 max-w-2xl leading-7 text-white/65">
-              {latest?.is_mock
-                ? t("aiAssistant.mockModeText")
-                : t("aiAssistant.liveModeText")}
-            </p>
-            <div className="mt-6 inline-flex flex-wrap items-center gap-2 rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm text-white/75">
-              <Cpu size={16} />
-              {aiStatus.data
-                ? t("aiAssistant.providerStatus", {
-                    provider: aiStatus.data.provider,
-                    mode: aiStatus.data.mode === "live" ? t("aiAssistant.modeLive") : t("aiAssistant.modeMock"),
-                    model: aiStatus.data.model,
-                  })
-                : t("aiAssistant.providerChecking")}
-            </div>
-            <div className="mt-8 grid gap-3 md:grid-cols-3">
-              <div className="rounded-3xl bg-white/8 p-4">
-                <p className="text-sm text-white/55">{t("aiAssistant.metricNewLeads")}</p>
-                <p className="mt-1 text-2xl font-bold">{latest?.context.new_leads_count ?? "-"}</p>
-              </div>
-              <div className="rounded-3xl bg-white/8 p-4">
-                <p className="text-sm text-white/55">{t("aiAssistant.metricOpenAppointments")}</p>
-                <p className="mt-1 text-2xl font-bold">{latest?.context.open_appointments_count ?? "-"}</p>
-              </div>
-              <div className="rounded-3xl bg-white/8 p-4">
-                <p className="text-sm text-white/55">{t("aiAssistant.metricClients")}</p>
-                <p className="mt-1 text-2xl font-bold">{latest?.context.clients_count ?? "-"}</p>
-              </div>
-            </div>
-          </CardBody>
-        </Card>
+      {chatMutation.error || memoryMutation.error ? (
+        <div className="mb-4"><ErrorState message={getApiErrorMessage(chatMutation.error || memoryMutation.error)} /></div>
+      ) : null}
 
-        <div className="space-y-4">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_400px]">
+        <section className="flex min-h-[calc(100vh-13rem)] flex-col overflow-hidden rounded-[2rem] border border-white/80 bg-white/92 shadow-premium backdrop-blur-xl">
+          <div className="flex flex-col gap-4 border-b border-slate-100/90 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <div className="flex items-center gap-3">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-ai-gradient text-white shadow-glow">
+                <Bot size={24} />
+              </div>
+              <div>
+                <p className="text-lg font-black text-midnight">{t("aiAssistant.chatTitle")}</p>
+                <p className="mt-1 text-sm font-semibold text-slate-500">{t("aiAssistant.liveModeText")}</p>
+              </div>
+            </div>
+            <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-slate-100 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500">
+              <Cpu size={15} className="shrink-0 text-brand-600" />
+              <span className="truncate">{providerLabel}</span>
+            </div>
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
+            {!history.length ? (
+              <div className="mx-auto flex min-h-[24rem] max-w-3xl flex-col items-center justify-center text-center">
+                <div className="grid h-16 w-16 place-items-center rounded-[1.5rem] bg-ai-gradient text-white shadow-glow">
+                  <MessageSquareText size={30} />
+                </div>
+                <h2 className="mt-5 text-3xl font-black tracking-tight text-midnight sm:text-4xl">{t("aiAssistant.heroFallback")}</h2>
+                <p className="mt-3 max-w-2xl text-base leading-7 text-slate-500">{t("aiAssistant.activeFactsSummary", { count: activeMemoryItems.length })}</p>
+                <div className="mt-6 flex flex-wrap justify-center gap-2">
+                  {quickPromptKeys.map((key) => {
+                    const item = t(key);
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => ask(item)}
+                        className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-brand-200 hover:text-brand-700 hover:shadow-soft"
+                      >
+                        {item}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div className="mx-auto max-w-4xl space-y-6">
+                {[...history].reverse().map((item) => (
+                  <div key={`${item.response.log_id}-${item.question}`} className="space-y-4">
+                    <div className="flex justify-end">
+                      <div className="max-w-[86%] rounded-[1.5rem] rounded-br-md bg-midnight px-5 py-4 text-sm font-semibold leading-6 text-white shadow-soft">
+                        {item.question}
+                      </div>
+                    </div>
+                    <div className="flex justify-start gap-3">
+                      <div className="mt-1 grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-ai-gradient text-white shadow-sm">
+                        <Sparkles size={17} />
+                      </div>
+                      <div className="max-w-[88%] rounded-[1.5rem] rounded-tl-md border border-slate-100 bg-slate-50 px-5 py-4 shadow-sm">
+                        <p className="whitespace-pre-wrap text-sm leading-7 text-slate-800">{item.response.answer}</p>
+                        <p className="mt-3 text-xs font-semibold text-slate-400">
+                          {t("aiAssistant.historyMeta", {
+                            id: item.response.log_id,
+                            mode: item.response.is_mock ? t("aiAssistant.modeMock") : `${item.response.provider} · ${item.response.model}`,
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {chatMutation.isPending ? (
+                  <div className="flex items-center gap-3 text-sm font-semibold text-slate-500">
+                    <div className="grid h-9 w-9 place-items-center rounded-2xl bg-ai-gradient text-white"><Sparkles size={16} /></div>
+                    {t("common.loading")}
+                  </div>
+                ) : null}
+              </div>
+            )}
+          </div>
+
+          <div className="border-t border-slate-100/90 bg-white/96 p-4 sm:p-5">
+            <div className="mx-auto max-w-4xl">
+              <Textarea
+                label={t("aiAssistant.questionLabel")}
+                value={message}
+                onChange={(event) => setMessage(event.target.value)}
+                placeholder={t("aiAssistant.questionPlaceholder")}
+              />
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-wrap gap-2">
+                  {quickPromptKeys.slice(0, 2).map((key) => {
+                    const item = t(key);
+                    return (
+                      <Button key={key} type="button" variant="ghost" size="sm" onClick={() => setMessage(item)}>
+                        <Wand2 size={14} />{item}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="secondary" onClick={() => suggestActions()} isLoading={actionSuggestMutation.isPending}>
+                    <ClipboardList size={16} />{t("aiAssistant.createActions")}
+                  </Button>
+                  <Button variant="ai" onClick={() => ask()} isLoading={chatMutation.isPending} disabled={!message.trim()}>
+                    <Send size={16} />{t("aiAssistant.ask")}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <aside className="space-y-4 xl:sticky xl:top-24 xl:max-h-[calc(100vh-7rem)] xl:overflow-y-auto xl:pr-1">
+          <Card>
+            <CardBody>
+              <div className="mb-4 flex items-center gap-3">
+                <div className="grid h-10 w-10 place-items-center rounded-2xl bg-slate-50 text-brand-700">
+                  <History size={19} />
+                </div>
+                <div>
+                  <p className="font-black text-midnight">{t("aiAssistant.historyTitle")}</p>
+                  <p className="text-sm font-semibold text-slate-500">{t("aiAssistant.historySubtitle")}</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {history.map((item) => {
+                  const active = selectedHistoryItem?.response.log_id === item.response.log_id;
+                  return (
+                    <button
+                      key={`${item.response.log_id}-${item.createdAt}`}
+                      type="button"
+                      onClick={() => setSelectedLogId(item.response.log_id)}
+                      className={`w-full rounded-2xl border p-3 text-left transition hover:bg-white hover:shadow-soft ${active ? "border-brand-200 bg-brand-50/70" : "border-slate-100 bg-slate-50/70"}`}
+                    >
+                      <p className="line-clamp-2 text-sm font-black text-midnight">{item.question}</p>
+                      <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{item.response.answer}</p>
+                    </button>
+                  );
+                })}
+                {!history.length ? (
+                  <p className="rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-500">{t("aiAssistant.emptyHistoryText")}</p>
+                ) : null}
+              </div>
+            </CardBody>
+          </Card>
+
           <Card>
             <CardBody>
               <div className="mb-4 flex items-start gap-3 rounded-3xl border border-brand-100 bg-brand-50/70 p-4">
@@ -208,25 +341,6 @@ export function AIAssistantPage() {
                   </p>
                 </div>
               </div>
-              <Textarea
-                label={t("aiAssistant.questionLabel")}
-                value={message}
-                onChange={(event) => setMessage(event.target.value)}
-                placeholder={t("aiAssistant.questionPlaceholder")}
-              />
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                <Button className="w-full" variant="ai" onClick={() => ask()} isLoading={chatMutation.isPending}>
-                  <Send size={16} />{t("aiAssistant.ask")}
-                </Button>
-                <Button className="w-full" variant="secondary" onClick={() => suggestActions()} isLoading={actionSuggestMutation.isPending}>
-                  <ClipboardList size={16} />{t("aiAssistant.createActions")}
-                </Button>
-              </div>
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardBody>
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">{t("aiAssistant.memoryEyebrow")}</p>
@@ -237,7 +351,7 @@ export function AIAssistantPage() {
                 </Button>
               </div>
               <div className="mt-4 space-y-3">
-                {(memory.data || []).slice(0, 5).map((item) => (
+                {(memory.data || []).slice(0, 4).map((item) => (
                   <button
                     key={item.id}
                     type="button"
@@ -253,7 +367,6 @@ export function AIAssistantPage() {
                         {item.is_active ? t("aiAssistant.active") : t("aiAssistant.off")}
                       </span>
                     </div>
-                    <p className="mt-3 text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{item.category || "business"}</p>
                   </button>
                 ))}
                 {!memory.data?.length ? (
@@ -300,41 +413,24 @@ export function AIAssistantPage() {
             </CardBody>
           </Card>
 
-          {quickPromptKeys.map((key) => {
-            const item = t(key);
-            return (
-            <Card key={key}>
-              <CardBody className="flex items-center gap-3">
-                <CheckCircle2 className="text-emerald-500" size={20} />
-                <p className="flex-1 font-medium text-midnight">{item}</p>
-                <Button variant="ghost" className="rounded-xl" onClick={() => ask(item)} isLoading={chatMutation.isPending}>
-                  <Wand2 size={16} />{t("aiAssistant.run")}
-                </Button>
-              </CardBody>
-            </Card>
-            );
-          })}
-        </div>
+          <div className="grid gap-2">
+            {quickPromptKeys.map((key) => {
+              const item = t(key);
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => ask(item)}
+                  className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white/80 p-3 text-left font-medium text-midnight shadow-sm transition hover:-translate-y-0.5 hover:bg-white hover:shadow-soft"
+                >
+                  <CheckCircle2 className="shrink-0 text-emerald-500" size={18} />
+                  <span className="flex-1 text-sm">{item}</span>
+                </button>
+              );
+            })}
+          </div>
+        </aside>
       </div>
-
-      {history.length ? (
-        <div className="mt-6 grid gap-4">
-          {history.map((item) => (
-            <Card key={`${item.response.log_id}-${item.question}`}>
-              <CardBody>
-                <p className="text-sm font-semibold text-slate-500">{item.question}</p>
-                <p className="mt-2 leading-7 text-midnight">{item.response.answer}</p>
-                <p className="mt-3 text-xs font-semibold text-slate-400">
-                  {t("aiAssistant.historyMeta", {
-                    id: item.response.log_id,
-                    mode: item.response.is_mock ? t("aiAssistant.modeMock") : `${item.response.provider} · ${item.response.model}`,
-                  })}
-                </p>
-              </CardBody>
-            </Card>
-          ))}
-        </div>
-      ) : null}
 
       <Modal title={editingMemory ? t("aiAssistant.editMemoryTitle") : t("aiAssistant.addMemoryTitle")} open={memoryOpen} onClose={() => { setMemoryOpen(false); setEditingMemory(undefined); setMemoryDraft(emptyMemoryDraft); }}>
         <form

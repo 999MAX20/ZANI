@@ -1240,7 +1240,7 @@ export function SettingsPage() {
             <div className="space-y-3">
               {(leadForms.data || []).map((form) => {
                 const publicUrl = `${apiOrigin}/api/public/forms/${form.public_id}/submit/`;
-                const embedCode = `<form method="POST" action="${publicUrl}"><input name="full_name" /><input name="phone" /><button>Send</button></form>`;
+                const embedCode = `<form method="POST" action="${publicUrl}"><input name="full_name" /><input name="phone" /><button>${t("settings.send")}</button></form>`;
                 return (
                   <div key={form.id} className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">

@@ -5917,3 +5917,7 @@ Frontend production build after WhatsApp merchant safety cleanup pass: OK
 Bot channel safety cleanup pass: the bot detail Telegram card no longer exposes BotFather tokens, webhook secrets or webhook URLs in the normal merchant UI. Owners now see status, support-assisted setup copy and a route to Integrations; the website widget snippet also uses the configured frontend API URL instead of a hardcoded localhost backend.
 
 Frontend production build after bot channel safety cleanup pass: OK
+
+Lead-form copy cleanup pass: generated lead-form embed snippets now localize the submit button text and the settings description no longer mixes internal automation event names into merchant-facing RU / KK copy.
+
+Frontend production build after lead-form copy cleanup pass: OK

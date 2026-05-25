@@ -1,3 +1,5 @@
+import type React from "react";
+
 import { EmptyState, SkeletonBlock } from "../ui/StateViews";
 import { useI18n } from "../../lib/i18n";
 
@@ -42,7 +44,25 @@ export function DataTable<T>({
 
   return (
     <div className="overflow-hidden rounded-3xl border border-white/70 bg-white/90 shadow-soft backdrop-blur-xl">
-      <div className="overflow-x-auto">
+      <div className="divide-y divide-slate-100 md:hidden">
+        {rows.map((row, index) => (
+          <article key={index} className="space-y-3 p-4">
+            {columns.map((column, columnIndex) => (
+              <div key={column.header} className={columnIndex === 0 ? "" : "flex items-start justify-between gap-4"}>
+                {columnIndex === 0 ? (
+                  <div className="text-sm font-black text-midnight">{column.cell(row)}</div>
+                ) : (
+                  <>
+                    <span className="shrink-0 text-[11px] font-black uppercase tracking-[0.12em] text-slate-400">{column.header}</span>
+                    <div className="min-w-0 text-right text-sm font-semibold text-slate-700">{column.cell(row)}</div>
+                  </>
+                )}
+              </div>
+            ))}
+          </article>
+        ))}
+      </div>
+      <div className="hidden overflow-x-auto md:block">
         <table className="min-w-full divide-y divide-slate-100">
           <thead className="bg-slate-50/80">
             <tr>

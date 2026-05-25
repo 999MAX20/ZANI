@@ -6,6 +6,7 @@ import { useSearchParams } from "react-router-dom";
 import { segmentFiltersApi, segmentsApi, taggedObjectsApi, tagsApi } from "../../api/activities";
 import { clientsApi } from "../../api/clients";
 import { getApiErrorMessage, unwrapList } from "../../api/client";
+import { PageAiHints, type PageAiHint } from "../../components/ai/PageAiHints";
 import { CrmEntityDrawer, type CrmDrawerEntity } from "../../components/crm/CrmEntityDrawer";
 import { ClientForm } from "../../components/forms/ClientForm";
 import { DataTable } from "../../components/tables/DataTable";
@@ -170,6 +171,39 @@ export function ClientsPage() {
   const leadClientIds = new Set(leadList.map((lead) => lead.client));
   const appointmentClientIds = new Set(appointmentList.map((appointment) => appointment.client));
   const taggedClientIds = new Set(taggedObjectList.filter((item) => item.entity_type === "client").map((item) => item.entity_id));
+  const clientsWithoutActivity = clientList.filter((client) => !leadClientIds.has(client.id) && !appointmentClientIds.has(client.id)).length;
+  const clientAiHints: PageAiHint[] = [
+    clientsWithoutActivity > 0
+      ? {
+          id: "inactive-clients",
+          title: t("clients.aiInactiveTitle"),
+          description: t("clients.aiInactiveDesc", { count: clientsWithoutActivity }),
+          icon: UsersRound,
+          severity: "warning",
+        }
+      : {
+          id: "clients-linked",
+          title: t("clients.aiLinkedTitle"),
+          description: t("clients.aiLinkedDesc"),
+          icon: CalendarCheck,
+          severity: "good",
+        },
+    taggedClientIds.size === 0 && clientList.length > 0
+      ? {
+          id: "no-tags",
+          title: t("clients.aiTagsTitle"),
+          description: t("clients.aiTagsDesc"),
+          icon: Tags,
+          severity: "info",
+        }
+      : {
+          id: "segments-ready",
+          title: t("clients.aiSegmentsTitle"),
+          description: t("clients.aiSegmentsDesc", { count: taggedClientIds.size }),
+          icon: Tags,
+          severity: "info",
+        },
+  ];
 
   return (
     <>
@@ -189,6 +223,7 @@ export function ClientsPage() {
         <StatCard label={t("clients.withBookings")} value={appointmentClientIds.size} hint={t("clients.withBookingsHint")} icon={CalendarCheck} />
         <StatCard label={t("clients.tagged")} value={taggedClientIds.size} hint={t("clients.taggedHint")} icon={Tags} />
       </section>
+      <PageAiHints items={clientAiHints} className="mb-5" />
       {mutation.error || mergeMutation.error || archiveMutation.error || addTagMutation.error || createSegmentMutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(mutation.error || mergeMutation.error || archiveMutation.error || addTagMutation.error || createSegmentMutation.error)} /></div> : null}
       <div className="mb-4 grid gap-3 rounded-3xl border border-white/70 bg-white/75 p-4 shadow-sm lg:grid-cols-[1.4fr_0.8fr_0.8fr_0.9fr]">
         <Input placeholder={t("clients.search")} value={search} onChange={(event) => setSearch(event.target.value)} />

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Copy, Send, ShieldAlert, ShieldCheck, SlidersHorizontal } from "lucide-react";
+import { CalendarClock, Copy, Send, ShieldAlert, ShieldCheck, SlidersHorizontal, Stethoscope, UsersRound } from "lucide-react";
+import { Link } from "react-router-dom";
 
 import { billingApi } from "../../api/billing";
 import { businessesApi } from "../../api/businesses";
@@ -62,6 +63,7 @@ const settingsSections = [
   { id: "security-center" },
   { id: "quick-replies" },
   { id: "roles" },
+  { id: "operations-setup" },
   { id: "data-tools" },
   { id: "lead-forms" },
   { id: "billing" },
@@ -422,6 +424,11 @@ export function SettingsPage() {
     { value: "catalog", label: t("settings.entity.catalog") },
   ];
   const locale = language === "kk" ? "kk-KZ" : language === "en" ? "en-US" : "ru-RU";
+  const operationsSetup = [
+    { key: "services", href: "/dashboard/services", icon: Stethoscope },
+    { key: "resources", href: "/dashboard/resources", icon: UsersRound },
+    { key: "working-hours", href: "/dashboard/working-hours", icon: CalendarClock },
+  ];
 
   function updateMemberRole(memberId: number, roleKey: BusinessMembershipSummary["role"]) {
     if (roleKey === "owner") return;
@@ -1068,6 +1075,34 @@ export function SettingsPage() {
               </div>
             </div>
           ) : null}
+        </CardBody>
+      </Card>
+      <Card id="operations-setup" className="mb-5 scroll-mt-24">
+        <CardBody>
+          <div className="mb-5">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">{t("settings.operationsEyebrow")}</p>
+            <h2 className="mt-2 text-2xl font-semibold text-midnight">{t("settings.operationsTitle")}</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">{t("settings.operationsText")}</p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            {operationsSetup.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.key}
+                  to={item.href}
+                  className="group rounded-3xl border border-slate-100 bg-white/80 p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft"
+                >
+                  <div className="grid h-11 w-11 place-items-center rounded-2xl bg-brand-50 text-brand-700">
+                    <Icon size={20} />
+                  </div>
+                  <p className="mt-4 font-black text-midnight">{t(`settings.operations.${item.key}.title`)}</p>
+                  <p className="mt-1 text-sm leading-6 text-slate-500">{t(`settings.operations.${item.key}.text`)}</p>
+                  <span className="mt-4 inline-flex text-sm font-black text-brand-700">{t("settings.openSection")}</span>
+                </Link>
+              );
+            })}
+          </div>
         </CardBody>
       </Card>
       <Card id="data-tools" className="mb-5 scroll-mt-24">

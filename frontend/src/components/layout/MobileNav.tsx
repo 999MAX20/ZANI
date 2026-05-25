@@ -1,4 +1,4 @@
-import { Home, Inbox, ListChecks, MessageSquareText, MoreHorizontal, X } from "lucide-react";
+import { Home, Inbox, MessageSquareText, MoreHorizontal, Users, X } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 import { cn } from "../../lib/cn";
@@ -12,8 +12,8 @@ import { Sidebar } from "./Sidebar";
 const bottomItems = [
   { to: "/dashboard", label: "mobile.home", icon: Home },
   { to: "/dashboard/leads", label: "nav.leads", icon: Inbox, resource: "leads" },
+  { to: "/dashboard/clients", label: "nav.clients", icon: Users, resource: "clients" },
   { to: "/dashboard/conversations", label: "nav.conversations", icon: MessageSquareText, resource: "conversations" },
-  { to: "/dashboard/tasks", label: "nav.tasks", icon: ListChecks, resource: "tasks" },
 ];
 
 export function MobileNav({ open, onOpen, onClose }: { open: boolean; onOpen: () => void; onClose: () => void }) {

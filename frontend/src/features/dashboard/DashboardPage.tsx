@@ -29,6 +29,7 @@ import { useQuery } from "@tanstack/react-query";
 import { analyticsApi } from "../../api/analytics";
 import { billingApi } from "../../api/billing";
 import { onboardingApi } from "../../api/onboarding";
+import { AiInsightCard, type AiInsightSeverity } from "../../components/ai/AiInsightCard";
 import { Card, CardBody } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { PageHeader } from "../../components/ui/PageHeader";
@@ -170,7 +171,7 @@ function QuickActionDock({ isOwnerView }: { isOwnerView: boolean }) {
   const { t } = useI18n();
   const actions = [
     { label: t("dashboard.quickLead"), href: "/dashboard/leads?create=1", icon: Plus, variant: "ai" as const },
-    { label: t("dashboard.quickBooking"), href: "/dashboard/appointments", icon: CalendarPlus, variant: "secondary" as const },
+    { label: t("dashboard.quickBooking"), href: "/dashboard/calendar", icon: CalendarPlus, variant: "secondary" as const },
     { label: t("dashboard.quickDialogs"), href: "/dashboard/conversations", icon: MessageSquareText, variant: "secondary" as const },
     ...(isOwnerView ? [{ label: t("dashboard.quickImport"), href: "/dashboard/integrations", icon: FileSpreadsheet, variant: "secondary" as const }] : []),
   ];
@@ -327,7 +328,7 @@ function ActivationDashboard({
                   <Button variant="secondary"><Store size={17} />{t("dashboard.openLanding")}</Button>
                 </a>
               ) : null}
-              <Link to="/dashboard/settings"><Button variant="ai"><PlugZap size={17} />{t("dashboard.connectData")}</Button></Link>
+              <Link to="/dashboard/integrations"><Button variant="ai"><PlugZap size={17} />{t("dashboard.connectData")}</Button></Link>
             </div>
             {landingDomain ? <p className="mt-3 text-sm font-semibold text-slate-500">{t("dashboard.source")}: {landingDomain}</p> : null}
           </div>
@@ -394,6 +395,12 @@ function OwnerPulseCard({ dashboard }: { dashboard: NonNullable<Awaited<ReturnTy
 
   if (!pulse) return null;
 
+  const recommendationSeverity = (priority: "high" | "medium" | "low"): AiInsightSeverity => {
+    if (priority === "high") return "warning";
+    if (priority === "medium") return "info";
+    return "good";
+  };
+
   return (
     <Card className={`mt-6 overflow-hidden ${toneClass}`}>
       <CardBody className="grid gap-5 xl:grid-cols-[1fr_1fr]">
@@ -417,15 +424,17 @@ function OwnerPulseCard({ dashboard }: { dashboard: NonNullable<Awaited<ReturnTy
             <p className="text-sm font-black text-midnight">{t("dashboard.zaniRecommendations")}</p>
             <div className="mt-3 space-y-3">
               {recommendations.slice(0, 3).map((item) => (
-                <Link key={item.key} to={item.href} className="block rounded-2xl bg-white/70 p-3 transition hover:bg-white hover:shadow-soft">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-semibold text-midnight">{item.title}</p>
-                      <p className="mt-1 text-xs leading-5 text-slate-500">{item.description}</p>
-                    </div>
-                    <span className={`rounded-full px-2 py-1 text-[10px] font-black uppercase ${item.priority === "high" ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-600"}`}>{item.priority}</span>
-                  </div>
-                </Link>
+                <AiInsightCard
+                  key={item.key}
+                  title={item.title}
+                  description={item.description}
+                  actionLabel={item.action_label}
+                  href={item.href}
+                  icon={item.priority === "high" ? AlertTriangle : Bot}
+                  severity={recommendationSeverity(item.priority)}
+                  compact
+                  className="rounded-2xl bg-white/70 p-3 shadow-none ring-1 ring-white/80 hover:bg-white"
+                />
               ))}
             </div>
           </div>
@@ -689,7 +698,7 @@ export function DashboardPage() {
       description: t("dashboard.moduleAiBotText"),
       status: "beta" as const,
       icon: Bot,
-      href: "/dashboard/ai",
+      href: "/dashboard/integrations",
     },
     {
       title: t("dashboard.moduleTeam"),
@@ -703,7 +712,7 @@ export function DashboardPage() {
       description: t("dashboard.moduleServicesText"),
       status: serviceList.length ? "connected" as const : "connect" as const,
       icon: ClipboardList,
-      href: "/dashboard/services",
+      href: "/dashboard/settings",
     },
     {
       title: t("dashboard.moduleSales"),
@@ -871,7 +880,7 @@ export function DashboardPage() {
                 <p className="font-semibold text-midnight">{t("dashboard.answerNewLeads")}</p>
                 <p className="mt-1 text-sm text-slate-500">{t("dashboard.newLeadsWaiting", { count: newLeadsCount })}</p>
               </Link>
-              <Link to="/dashboard/appointments" className="block rounded-2xl border border-slate-100 bg-white/70 p-4 transition hover:bg-slate-50">
+              <Link to="/dashboard/calendar" className="block rounded-2xl border border-slate-100 bg-white/70 p-4 transition hover:bg-slate-50">
                 <p className="font-semibold text-midnight">{t("dashboard.checkBookingsToday")}</p>
                 <p className="mt-1 text-sm text-slate-500">{t("dashboard.bookingsInCalendar", { count: todayAppointmentsCount })}</p>
               </Link>
@@ -976,7 +985,7 @@ export function DashboardPage() {
                 <EmptyState
                   title={t("dashboard.noBookings")}
                   description={t("dashboard.noBookingsText")}
-                  action={<Link to="/dashboard/appointments"><Button variant="secondary"><CalendarPlus size={16} />{t("appointment.create")}</Button></Link>}
+                  action={<Link to="/dashboard/calendar"><Button variant="secondary"><CalendarPlus size={16} />{t("appointment.create")}</Button></Link>}
                 />
               ) : null}
             </div>

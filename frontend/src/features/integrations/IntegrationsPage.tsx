@@ -35,6 +35,9 @@ import type { Bot, BotChannel, BusinessConnector, ConnectorCapability, Id, Impor
 
 type CapabilityFilter = "all" | "included" | "self_service" | "request" | "upgrade" | "roadmap";
 type CapabilityGroup = "all" | ConnectorCapability["capability"];
+type MerchantConnectionGroup = "messaging" | "imports" | "sales" | "website" | "accounting";
+
+const connectionGroups: MerchantConnectionGroup[] = ["messaging", "imports", "sales", "website", "accounting"];
 
 const importEntityOptions: Array<{ value: ImportEntity; labelKey: string; helperKey: string }> = [
   { value: "clients", labelKey: "integrations.import.clients", helperKey: "integrations.import.clientsHelp" },
@@ -45,6 +48,18 @@ const importEntityOptions: Array<{ value: ImportEntity; labelKey: string; helper
 
 function capabilityGroupLabel(capability: ConnectorCapability, t: (key: string) => string) {
   return t(`integrations.capability.${capability.capability}`) || capability.capability;
+}
+
+function merchantConnectionGroup(capability: ConnectorCapability): MerchantConnectionGroup {
+  if (["telegram", "whatsapp", "instagram"].includes(capability.provider)) return "messaging";
+  if (["excel_csv", "google_sheets"].includes(capability.provider)) return "imports";
+  if (["kaspi", "wildberries", "ozon", "yandex_market"].includes(capability.provider)) return "sales";
+  if (["website_chat", "website_widget", "landing", "site"].includes(capability.provider)) return "website";
+  if (["1c", "moysklad", "stripe"].includes(capability.provider)) return "accounting";
+  if (capability.capability === "communications") return "messaging";
+  if (capability.capability === "sales" || capability.capability === "marketing") return "sales";
+  if (capability.capability === "inventory" || capability.capability === "finance") return "accounting";
+  return "imports";
 }
 
 function scrollToIntegrationSection(id: string) {
@@ -1105,6 +1120,14 @@ export function IntegrationsPage() {
       return matchesSearch && matchesGroup && matchesFilter;
     });
   }, [capabilityList, filter, group, search, t]);
+  const groupedCapabilities = useMemo(() => {
+    return connectionGroups
+      .map((groupKey) => ({
+        key: groupKey,
+        items: filteredCapabilities.filter((capability) => merchantConnectionGroup(capability) === groupKey),
+      }))
+      .filter((section) => section.items.length > 0);
+  }, [filteredCapabilities]);
   const hasExcelCsv = capabilityList.some((capability) => capability.provider === "excel_csv");
   const websiteChannel = (entityData.botChannels.data || []).find((channel) => channel.channel === "website");
   const telegramChannel = (entityData.botChannels.data || []).find((channel) => channel.channel === "telegram");
@@ -1213,15 +1236,26 @@ export function IntegrationsPage() {
       {filteredCapabilities.length === 0 ? (
         <EmptyState title={t("integrations.page.noResultsTitle")} description={t("integrations.page.noResultsDescription")} />
       ) : (
-        <div className="mb-5 grid gap-4 xl:grid-cols-2">
-          {filteredCapabilities.map((capability) => (
-            <ConnectorCard
-              key={capability.provider}
-              capability={capability}
-              connector={connectorByProvider.get(capability.provider)}
-              businessId={business.id}
-              canManage={canManage}
-            />
+        <div className="mb-5 space-y-5">
+          {groupedCapabilities.map((section) => (
+            <section key={section.key} className="scroll-mt-24">
+              <div className="mb-3">
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">{t(`integrations.group.${section.key}.eyebrow`)}</p>
+                <h2 className="mt-1 text-xl font-black text-midnight">{t(`integrations.group.${section.key}.title`)}</h2>
+                <p className="mt-1 text-sm leading-6 text-slate-500">{t(`integrations.group.${section.key}.text`)}</p>
+              </div>
+              <div className="grid gap-4 xl:grid-cols-2">
+                {section.items.map((capability) => (
+                  <ConnectorCard
+                    key={capability.provider}
+                    capability={capability}
+                    connector={connectorByProvider.get(capability.provider)}
+                    businessId={business.id}
+                    canManage={canManage}
+                  />
+                ))}
+              </div>
+            </section>
           ))}
         </div>
       )}

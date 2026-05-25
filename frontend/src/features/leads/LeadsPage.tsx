@@ -22,6 +22,7 @@ import { useSearchParams } from "react-router-dom";
 import { getApiErrorMessage } from "../../api/client";
 import { leadsApi } from "../../api/leads";
 import { teamApi } from "../../api/team";
+import { PageAiHints, type PageAiHint } from "../../components/ai/PageAiHints";
 import { CrmEntityDrawer, type CrmDrawerEntity } from "../../components/crm/CrmEntityDrawer";
 import { AppointmentForm } from "../../components/forms/AppointmentForm";
 import { LeadForm } from "../../components/forms/LeadForm";
@@ -378,6 +379,46 @@ export function LeadsPage() {
   if (!business) return <ErrorState message={t("leads.noBusiness")} />;
   if (leads.isLoading || clients.isLoading || services.isLoading) return <LoadingState />;
   const teamMemberList = Array.isArray(teamMembers.data) ? teamMembers.data : [];
+  const newLeads = rows.filter((lead) => lead.status === "new").length;
+  const activeLeads = rows.filter((lead) => ["contacted", "in_progress"].includes(lead.status)).length;
+  const leadAiHints: PageAiHint[] = [
+    newLeads > 0
+      ? {
+          id: "new-leads",
+          title: t("leads.aiNewTitle"),
+          description: t("leads.aiNewDesc", { count: newLeads }),
+          actionLabel: t("leads.aiOpenNew"),
+          href: "/dashboard/leads",
+          icon: Flame,
+          severity: "warning",
+        }
+      : {
+          id: "no-new-leads",
+          title: t("leads.aiCalmTitle"),
+          description: t("leads.aiCalmDesc"),
+          icon: CheckCircle2,
+          severity: "good",
+        },
+    activeLeads > 0
+      ? {
+          id: "active-leads",
+          title: t("leads.aiActiveTitle"),
+          description: t("leads.aiActiveDesc", { count: activeLeads }),
+          actionLabel: t("leads.aiReviewPipeline"),
+          href: "/dashboard/leads",
+          icon: UserRoundCheck,
+          severity: "info",
+        }
+      : {
+          id: "empty-pipeline",
+          title: t("leads.aiDataTitle"),
+          description: t("leads.aiDataDesc"),
+          href: "/dashboard/integrations",
+          actionLabel: t("leads.aiConnectSources"),
+          icon: Bot,
+          severity: "info",
+        },
+  ];
 
   return (
     <>
@@ -386,6 +427,7 @@ export function LeadsPage() {
         description={t("leads.description")}
       />
       <LeadCommandHero rows={rows} onCreate={() => { setSelected(undefined); setOpen(true); }} t={t} />
+      <PageAiHints items={leadAiHints} className="mb-5" />
       {leadMutation.error || appointmentMutation.error || statusMutation.error || archiveMutation.error || quickActionMutation.error ? (
         <div className="mb-4"><ErrorState message={getApiErrorMessage(leadMutation.error || appointmentMutation.error || statusMutation.error || archiveMutation.error || quickActionMutation.error)} /></div>
       ) : null}

@@ -163,6 +163,7 @@ export function ClientCardContent({ data }: { data: CrmCardPayload }) {
   return (
     <div className="space-y-5">
       <EntityQuickActions data={data} />
+      <EntityDecisionSnapshot data={data} />
       {data.tags.length ? (
         <div className="flex flex-wrap gap-2">
           {data.tags.map((item) => (
@@ -184,6 +185,36 @@ export function ClientCardContent({ data }: { data: CrmCardPayload }) {
       </div>
       {client?.notes ? <div className="rounded-3xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">{client.notes}</div> : null}
       <EntityAttachmentsPanel data={data} />
+    </div>
+  );
+}
+
+function EntityDecisionSnapshot({ data }: { data: CrmCardPayload }) {
+  const { t } = useI18n();
+  const openTasks = data.tasks.filter((task) => !["done", "cancelled"].includes(task.status));
+  const latestEvent = data.timeline[0];
+  const latestConversation = data.conversations[0];
+
+  return (
+    <div className="grid gap-3 lg:grid-cols-3">
+      <div className="rounded-3xl border border-brand-100 bg-brand-50/70 p-4">
+        <p className="text-xs font-black uppercase tracking-[0.14em] text-brand-700">{t("crmCard.snapshotNext")}</p>
+        <p className="mt-2 text-sm font-semibold leading-6 text-slate-700">
+          {openTasks[0]?.title || t("crmCard.snapshotNoTasks")}
+        </p>
+      </div>
+      <div className="rounded-3xl border border-slate-100 bg-white/80 p-4 shadow-sm">
+        <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">{t("crmCard.snapshotHistory")}</p>
+        <p className="mt-2 text-sm font-semibold leading-6 text-slate-700">
+          {latestEvent ? `${latestEvent.text || latestEvent.event_type} · ${formatDateTime(latestEvent.created_at)}` : t("crmCard.emptyTimelineText")}
+        </p>
+      </div>
+      <div className="rounded-3xl border border-slate-100 bg-white/80 p-4 shadow-sm">
+        <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">{t("crmCard.snapshotMessages")}</p>
+        <p className="mt-2 text-sm font-semibold leading-6 text-slate-700">
+          {latestConversation?.last_message?.text || t("crmCard.noDialogsText")}
+        </p>
+      </div>
     </div>
   );
 }

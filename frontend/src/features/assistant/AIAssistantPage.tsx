@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
-  ArrowRight,
   BookOpenText,
   CalendarCheck,
   CheckCircle2,
@@ -28,15 +27,14 @@ import { PageHeader } from "../../components/ui/PageHeader";
 import { Select } from "../../components/ui/Select";
 import { Textarea } from "../../components/ui/Textarea";
 import { ErrorState, LoadingState } from "../../components/ui/StateViews";
+import { AiInsightCard, aiInsightDotClass, type AiInsightSeverity } from "../../components/ai/AiInsightCard";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useEntityData } from "../../hooks/useEntityData";
 import { useI18n } from "../../lib/i18n";
 
-type InsightSeverity = "critical" | "warning" | "good" | "info";
-
 type NavigatorInsight = {
   id: string;
-  severity: InsightSeverity;
+  severity: AiInsightSeverity;
   title: string;
   description: string;
   actionLabel: string;
@@ -92,20 +90,6 @@ function isWithin(dateValue: string | null | undefined, from: Date, to: Date) {
 function hoursSince(dateValue: string | null | undefined, now: Date) {
   if (!dateValue) return 0;
   return (now.getTime() - new Date(dateValue).getTime()) / 36e5;
-}
-
-function severityClasses(severity: InsightSeverity) {
-  if (severity === "critical") return "border-red-100 bg-red-50/80 text-red-700";
-  if (severity === "warning") return "border-amber-100 bg-amber-50/80 text-amber-700";
-  if (severity === "good") return "border-emerald-100 bg-emerald-50/80 text-emerald-700";
-  return "border-sky-100 bg-sky-50/80 text-sky-700";
-}
-
-function dotClasses(severity: InsightSeverity) {
-  if (severity === "critical") return "bg-red-500";
-  if (severity === "warning") return "bg-amber-400";
-  if (severity === "good") return "bg-emerald-500";
-  return "bg-sky-500";
 }
 
 export function AIAssistantPage() {
@@ -425,7 +409,7 @@ export function AIAssistantPage() {
               <div className="mt-5 grid gap-3">
                 {navigatorData.summary.map((item, index) => (
                   <div key={item} className="flex items-start gap-3 rounded-3xl border border-slate-100 bg-slate-50/70 p-4">
-                    <span className={`mt-1 h-3 w-3 rounded-full ${dotClasses(index === 0 ? "info" : index === 1 ? "good" : index === 2 ? "warning" : "critical")}`} />
+                    <span className={`mt-1 h-3 w-3 rounded-full ${aiInsightDotClass(index === 0 ? "info" : index === 1 ? "good" : index === 2 ? "warning" : "critical")}`} />
                     <p className="text-sm font-semibold leading-6 text-slate-700">{item}</p>
                   </div>
                 ))}
@@ -451,28 +435,17 @@ export function AIAssistantPage() {
                 </span>
               </div>
               <div className="mt-5 grid gap-3">
-                {navigatorData.insights.map((insight) => {
-                  const Icon = insight.icon;
-                  return (
-                    <a
-                      key={insight.id}
-                      href={insight.href}
-                      className="group flex flex-col gap-4 rounded-3xl border border-slate-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft sm:flex-row sm:items-center"
-                    >
-                      <div className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl border ${severityClasses(insight.severity)}`}>
-                        <Icon size={22} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-black text-midnight">{insight.title}</p>
-                        <p className="mt-1 text-sm leading-6 text-slate-500">{insight.description}</p>
-                      </div>
-                      <div className="inline-flex items-center gap-2 text-sm font-black text-brand-700">
-                        {insight.actionLabel}
-                        <ArrowRight size={16} className="transition group-hover:translate-x-1" />
-                      </div>
-                    </a>
-                  );
-                })}
+                {navigatorData.insights.map((insight) => (
+                  <AiInsightCard
+                    key={insight.id}
+                    title={insight.title}
+                    description={insight.description}
+                    actionLabel={insight.actionLabel}
+                    href={insight.href}
+                    icon={insight.icon}
+                    severity={insight.severity}
+                  />
+                ))}
               </div>
             </CardBody>
           </Card>

@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 
 import { analyticsApi } from "../../api/analytics";
 import { asArray, getApiErrorMessage } from "../../api/client";
+import { PageAiHints, type PageAiHint } from "../../components/ai/PageAiHints";
 import { Card, CardBody } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { PageHeader } from "../../components/ui/PageHeader";
@@ -72,6 +73,56 @@ export function AnalyticsPage() {
   const teamPerformanceMembers = asArray<TeamPerformanceMember>(teamPerformance.data?.members);
   const teamPerformanceActions = asArray<TeamPerformanceActionItem>(teamPerformance.data?.action_items);
   const teamPerformanceTeams = asArray<TeamPerformanceTeam>(teamPerformance.data?.teams);
+  const topSource = sourceRows[0];
+  const analyticsHints: PageAiHint[] = [
+    topSource
+      ? {
+          id: "top-source",
+          title: t("analytics.aiTopSourceTitle"),
+          description: t("analytics.aiTopSourceDesc", { source: topSource.source, count: topSource.count }),
+          icon: TrendingUp,
+          severity: "info",
+        }
+      : {
+          id: "missing-sources",
+          title: t("analytics.aiMissingSourcesTitle"),
+          description: t("analytics.aiMissingSourcesDesc"),
+          icon: AlertTriangle,
+          severity: "warning",
+        },
+    noShow > 0
+      ? {
+          id: "no-show",
+          title: t("analytics.aiNoShowTitle"),
+          description: t("analytics.aiNoShowDesc", { count: noShow }),
+          icon: TrendingDown,
+          severity: "warning",
+        }
+      : {
+          id: "no-show-clear",
+          title: t("analytics.aiNoShowClearTitle"),
+          description: t("analytics.aiNoShowClearDesc"),
+          icon: CheckCircle2,
+          severity: "good",
+        },
+    report?.retention_ltv?.data_quality
+      ? {
+          id: "data-quality",
+          title: t("analytics.aiDataQualityTitle"),
+          description: report.retention_ltv.data_quality,
+          icon: ShieldAlert,
+          severity: report.retention_ltv.repeat_rate ? "info" : "warning",
+        }
+      : {
+          id: "sales-data",
+          title: t("analytics.aiSalesDataTitle"),
+          description: t("analytics.aiSalesDataDesc"),
+          href: "/dashboard/integrations",
+          actionLabel: t("analytics.aiConnectData"),
+          icon: ShieldAlert,
+          severity: "warning",
+        },
+  ];
 
   return (
     <>
@@ -83,6 +134,8 @@ export function AnalyticsPage() {
         <Stat label={t("analytics.noShow")} value={noShow} hint={t("analytics.noShowHint")} icon={TrendingDown} />
         <Stat label={t("analytics.completed")} value={completed} hint={t("analytics.servedClients")} icon={CheckCircle2} />
       </div>
+
+      <PageAiHints items={analyticsHints} className="mt-6" />
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_1fr]">
         <Card>

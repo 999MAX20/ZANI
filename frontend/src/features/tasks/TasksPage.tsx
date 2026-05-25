@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { getApiErrorMessage } from "../../api/client";
 import { tasksApi } from "../../api/tasks";
+import { PageAiHints, type PageAiHint } from "../../components/ai/PageAiHints";
 import { CrmEntityDrawer, type CrmDrawerEntity } from "../../components/crm/CrmEntityDrawer";
 import { Button } from "../../components/ui/Button";
 import { Card, CardBody } from "../../components/ui/Card";
@@ -149,6 +150,40 @@ export function TasksPage() {
   });
   const overdueTasks = activeTasks.filter((task) => task.due_at && new Date(task.due_at) < new Date()).length;
   const highPriorityTasks = activeTasks.filter((task) => ["high", "urgent"].includes(task.priority)).length;
+  const taskAiHints: PageAiHint[] = [
+    overdueTasks > 0
+      ? {
+          id: "overdue",
+          title: t("tasks.aiOverdueTitle"),
+          description: t("tasks.aiOverdueDesc", { count: overdueTasks }),
+          actionLabel: t("tasks.aiOpenOverdue"),
+          href: "/dashboard/tasks",
+          icon: Clock,
+          severity: "critical",
+        }
+      : {
+          id: "no-overdue",
+          title: t("tasks.aiNoOverdueTitle"),
+          description: t("tasks.aiNoOverdueDesc"),
+          icon: Check,
+          severity: "good",
+        },
+    highPriorityTasks > 0
+      ? {
+          id: "priority",
+          title: t("tasks.aiPriorityTitle"),
+          description: t("tasks.aiPriorityDesc", { count: highPriorityTasks }),
+          icon: BellPlus,
+          severity: "warning",
+        }
+      : {
+          id: "priority-clear",
+          title: t("tasks.aiPlanTitle"),
+          description: t("tasks.aiPlanDesc"),
+          icon: CalendarPlus,
+          severity: "info",
+        },
+  ];
 
   return (
     <>
@@ -189,6 +224,8 @@ export function TasksPage() {
           </CardBody>
         </Card>
       </div>
+
+      <PageAiHints items={taskAiHints} className="mb-5" />
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
         {[

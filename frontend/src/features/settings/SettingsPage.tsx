@@ -394,6 +394,7 @@ export function SettingsPage() {
     label: t(`settings.role.${option.value}`),
   }));
   const editableTeamRoleOptions = translatedTeamRoleOptions.filter((option) => option.value !== "owner");
+  const roleDescription = (role: string) => t(`settings.roleDescription.${role}`);
   const translatedVisibilityOptions = visibilityOptions.map((option) => ({
     ...option,
     label: t(`settings.visibility.${option.value}`),
@@ -558,7 +559,7 @@ export function SettingsPage() {
                     <div>
                       <p className="text-lg font-black text-midnight">{selectedMember.user.full_name || selectedMember.user.email}</p>
                       <p className="mt-1 text-sm text-slate-500">
-                        {selectedMember.user.email} · {selectedMember.business_role_name || selectedRole?.name || "Staff"}
+                        {selectedMember.user.email} · {translatedTeamRoleOptions.find((role) => role.value === selectedMember.role)?.label || selectedMember.business_role_name || selectedRole?.name || t("settings.role.staff")}
                       </p>
                     </div>
                     <span className={selectedMember.is_active ? "rounded-full bg-green-50 px-3 py-1.5 text-xs font-bold text-green-700" : "rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-500"}>
@@ -566,6 +567,11 @@ export function SettingsPage() {
                     </span>
                   </div>
                   <div className="mt-4 grid gap-2 md:grid-cols-3">
+                    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3 md:col-span-3">
+                      <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{t("settings.currentRole")}</p>
+                      <p className="mt-1 text-sm font-bold text-midnight">{translatedTeamRoleOptions.find((role) => role.value === selectedMember.role)?.label || selectedMember.role}</p>
+                      <p className="mt-1 text-xs leading-5 text-slate-500">{roleDescription(selectedMember.role)}</p>
+                    </div>
                     {translatedVisibilityOptions.map((option) => (
                       <div
                         key={option.value}
@@ -611,6 +617,10 @@ export function SettingsPage() {
                     onChange={(event) => setInviteForm({ ...inviteForm, role: event.target.value as BusinessMembershipSummary["role"] })}
                     options={editableTeamRoleOptions}
                   />
+                  <div className="rounded-2xl bg-white/70 px-3 py-2 text-xs leading-5 text-slate-500">
+                    <span className="font-bold text-slate-700">{translatedTeamRoleOptions.find((role) => role.value === inviteForm.role)?.label}:</span>{" "}
+                    {roleDescription(inviteForm.role)}
+                  </div>
                   <Select
                     label={t("settings.delivery")}
                     value={inviteForm.delivery_channel}

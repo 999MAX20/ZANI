@@ -5982,3 +5982,8 @@ Backend check after team ownership safety pass: OK
 Targeted team-access tests after team ownership safety pass: 24 OK
 Full backend tests after team ownership safety pass: 309 OK
 Frontend production build after team ownership safety pass: OK
+
+Team role clarity pass: Settings now explains what each employee role means directly near the role selector and selected employee card. This makes owner/admin/manager/operator/staff choices clearer for small-business owners without exposing low-level permission internals.
+
+Backend check after team role clarity pass: OK
+Frontend production build after team role clarity pass: OK

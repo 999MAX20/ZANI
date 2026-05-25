@@ -21,7 +21,7 @@ def run_ai_request(
 ):
     assert_entitlement_allows(business, EntitlementMetrics.AI_REQUESTS)
     context = get_business_knowledge_context(business)
-    prompt = build_prompt(prompt_type=prompt_type, user_input=user_input, context=context)
+    prompt = build_prompt(prompt_type=prompt_type, user_input=user_input, context=context, runtime_context=input_json)
     result = generate_text(
         prompt,
         prompt_type=prompt_type,

@@ -6201,3 +6201,9 @@ AI Assistant chat layout pass: the AI Assistant page now uses a ChatGPT-style wo
 
 Backend check after AI Assistant chat layout pass: OK
 Frontend production build after AI Assistant chat layout pass: OK
+
+AI Navigator concept pass: the former AI Assistant page was repositioned into an AI Navigator. The section now prioritizes fact-based business signals, daily summaries, overdue work, stale leads, handoff conversations and stuck deals instead of a free-form always-on chat. The UI explicitly states that ZANI AI uses only the current merchant workspace data and connected integrations. Backend AI prompts now include the same data-boundary guardrail and pass runtime workspace facts into the prompt so OpenRouter responses are constrained to provided business context.
+
+Backend check after AI Navigator concept pass: OK
+Targeted AI tests after AI Navigator concept pass: 15 OK
+Frontend production build after AI Navigator concept pass: OK

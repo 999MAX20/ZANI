@@ -1,22 +1,24 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Bot,
+  AlertTriangle,
+  ArrowRight,
   BookOpenText,
   CalendarCheck,
   CheckCircle2,
-  ClipboardList,
+  Clock3,
   Cpu,
-  History,
-  MessageSquareText,
+  MessageSquareWarning,
   Plus,
-  Send,
+  RefreshCw,
   Sparkles,
-  Wand2,
+  TrendingDown,
+  Users,
+  type LucideIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
-import { aiApi, businessKnowledgeApi, type AIAssistantChatResponse } from "../../api/ai";
-import type { AIToolCallLog, BusinessKnowledgeItem, Id } from "../../types";
+import { aiApi, businessKnowledgeApi } from "../../api/ai";
+import type { BusinessKnowledgeItem, Id } from "../../types";
 import { getApiErrorMessage } from "../../api/client";
 import { Button } from "../../components/ui/Button";
 import { Card, CardBody } from "../../components/ui/Card";
@@ -27,14 +29,20 @@ import { Select } from "../../components/ui/Select";
 import { Textarea } from "../../components/ui/Textarea";
 import { ErrorState, LoadingState } from "../../components/ui/StateViews";
 import { useActiveBusiness } from "../../hooks/useBusiness";
+import { useEntityData } from "../../hooks/useEntityData";
 import { useI18n } from "../../lib/i18n";
 
-const quickPromptKeys = [
-  "aiAssistant.quick.attention",
-  "aiAssistant.quick.firstClient",
-  "aiAssistant.quick.managerPlan",
-  "aiAssistant.quick.risks",
-];
+type InsightSeverity = "critical" | "warning" | "good" | "info";
+
+type NavigatorInsight = {
+  id: string;
+  severity: InsightSeverity;
+  title: string;
+  description: string;
+  actionLabel: string;
+  href: string;
+  icon: LucideIcon;
+};
 
 const memoryCategories = [
   { value: "business", labelKey: "aiAssistant.memory.category.business" },
@@ -52,12 +60,6 @@ const emptyMemoryDraft = {
   is_active: true,
 };
 
-type ChatHistoryItem = {
-  question: string;
-  response: AIAssistantChatResponse;
-  createdAt: string;
-};
-
 function memoryDraftFromItem(item?: BusinessKnowledgeItem) {
   return item
     ? {
@@ -69,17 +71,62 @@ function memoryDraftFromItem(item?: BusinessKnowledgeItem) {
     : emptyMemoryDraft;
 }
 
+function startOfDay(date: Date) {
+  const copy = new Date(date);
+  copy.setHours(0, 0, 0, 0);
+  return copy;
+}
+
+function addDays(date: Date, days: number) {
+  const copy = new Date(date);
+  copy.setDate(copy.getDate() + days);
+  return copy;
+}
+
+function isWithin(dateValue: string | null | undefined, from: Date, to: Date) {
+  if (!dateValue) return false;
+  const date = new Date(dateValue);
+  return date >= from && date < to;
+}
+
+function hoursSince(dateValue: string | null | undefined, now: Date) {
+  if (!dateValue) return 0;
+  return (now.getTime() - new Date(dateValue).getTime()) / 36e5;
+}
+
+function severityClasses(severity: InsightSeverity) {
+  if (severity === "critical") return "border-red-100 bg-red-50/80 text-red-700";
+  if (severity === "warning") return "border-amber-100 bg-amber-50/80 text-amber-700";
+  if (severity === "good") return "border-emerald-100 bg-emerald-50/80 text-emerald-700";
+  return "border-sky-100 bg-sky-50/80 text-sky-700";
+}
+
+function dotClasses(severity: InsightSeverity) {
+  if (severity === "critical") return "bg-red-500";
+  if (severity === "warning") return "bg-amber-400";
+  if (severity === "good") return "bg-emerald-500";
+  return "bg-sky-500";
+}
+
 export function AIAssistantPage() {
   const { t } = useI18n();
   const { business, isLoading } = useActiveBusiness();
   const queryClient = useQueryClient();
-  const [message, setMessage] = useState(() => t("aiAssistant.defaultQuestion"));
-  const [history, setHistory] = useState<ChatHistoryItem[]>([]);
-  const [selectedLogId, setSelectedLogId] = useState<Id | null>(null);
-  const [suggestedActions, setSuggestedActions] = useState<AIToolCallLog[]>([]);
+  const [aiBrief, setAiBrief] = useState("");
   const [memoryOpen, setMemoryOpen] = useState(false);
   const [editingMemory, setEditingMemory] = useState<BusinessKnowledgeItem | undefined>();
   const [memoryDraft, setMemoryDraft] = useState(emptyMemoryDraft);
+
+  const { clients, leads, appointments, deals, tasks, botConversations, activityEvents } = useEntityData({
+    enabled: Boolean(business),
+    clients: true,
+    leads: true,
+    appointments: true,
+    deals: true,
+    tasks: true,
+    botConversations: true,
+    activityEvents: true,
+  });
 
   const memory = useQuery({
     queryKey: ["ai-knowledge-items", business?.id],
@@ -91,36 +138,6 @@ export function AIAssistantPage() {
     queryKey: ["ai-assistant-status", business?.id],
     queryFn: () => aiApi.assistantStatus(business!.id),
     enabled: Boolean(business),
-  });
-
-  const chatMutation = useMutation({
-    mutationFn: (question: string) => {
-      if (!business) throw new Error("Business is not selected.");
-      return aiApi.assistantChat({ business: business.id, message: question, prompt_type: "crm_assistant" });
-    },
-    onSuccess: (response, question) => {
-      const nextItem = { question, response, createdAt: new Date().toISOString() };
-      setHistory((current) => [nextItem, ...current].slice(0, 12));
-      setSelectedLogId(response.log_id);
-      setMessage("");
-    },
-  });
-
-  const actionSuggestMutation = useMutation({
-    mutationFn: (question: string) => {
-      if (!business) throw new Error("Business is not selected.");
-      return aiApi.suggestTools({ business: business.id, message: question || t("aiAssistant.defaultNextAction") });
-    },
-    onSuccess: (response) => {
-      setSuggestedActions(response.suggested_actions.filter((action) => action.tool_name === "create_task").slice(0, 3));
-    },
-  });
-
-  const actionExecuteMutation = useMutation({
-    mutationFn: (logId: Id) => aiApi.executeTool(logId),
-    onSuccess: (updatedAction) => {
-      setSuggestedActions((current) => current.map((action) => (action.id === updatedAction.id ? updatedAction : action)));
-    },
   });
 
   const memoryMutation = useMutation({
@@ -139,21 +156,199 @@ export function AIAssistantPage() {
     },
   });
 
-  function ask(question = message) {
-    const cleanQuestion = question.trim();
-    if (!cleanQuestion) return;
-    chatMutation.mutate(cleanQuestion);
-  }
+  const navigatorData = useMemo(() => {
+    const now = new Date();
+    const todayStart = startOfDay(now);
+    const tomorrowStart = addDays(todayStart, 1);
+    const yesterdayStart = addDays(todayStart, -1);
 
-  function suggestActions(question = message) {
-    const cleanQuestion = question.trim() || t("aiAssistant.defaultNextAction");
-    actionSuggestMutation.mutate(cleanQuestion);
-  }
+    const clientRows = clients.data || [];
+    const leadRows = (leads.data || []).filter((lead) => !lead.is_archived);
+    const appointmentRows = (appointments.data || []).filter((appointment) => !appointment.is_archived);
+    const dealRows = (deals.data || []).filter((deal) => !deal.is_archived);
+    const taskRows = (tasks.data || []).filter((task) => !task.is_archived);
+    const conversationRows = botConversations.data || [];
+    const eventRows = activityEvents.data || [];
+
+    const leadsToday = leadRows.filter((lead) => isWithin(lead.created_at, todayStart, tomorrowStart));
+    const leadsYesterday = leadRows.filter((lead) => isWithin(lead.created_at, yesterdayStart, todayStart));
+    const activeAppointmentsToday = appointmentRows.filter(
+      (appointment) => isWithin(appointment.start_at, todayStart, tomorrowStart)
+        && ["created", "confirmed"].includes(appointment.status),
+    );
+    const overdueTasks = taskRows.filter(
+      (task) => ["open", "in_progress"].includes(task.status) && task.due_at && new Date(task.due_at) < now,
+    );
+    const staleLeads = leadRows.filter(
+      (lead) => ["new", "in_progress"].includes(lead.status) && hoursSince(lead.updated_at || lead.created_at, now) >= 2,
+    );
+    const stuckDeals = dealRows.filter(
+      (deal) => deal.status === "open" && (deal.sla_overdue || hoursSince(deal.updated_at || deal.created_at, now) >= 48),
+    );
+    const handoffConversations = conversationRows.filter(
+      (conversation) => conversation.status === "open" && (conversation.handoff_required || (conversation.unread_count || 0) > 0),
+    );
+    const lostLeadsToday = leadRows.filter((lead) => lead.status === "lost" && isWithin(lead.lost_at || lead.updated_at, todayStart, tomorrowStart));
+    const salesEventsToday = eventRows.filter(
+      (event) => isWithin(event.created_at, todayStart, tomorrowStart)
+        && ["sale_imported", "kaspi_sale_detected", "kaspi_order_imported"].includes(event.event_type),
+    );
+
+    const insights: NavigatorInsight[] = [];
+
+    if (leadsYesterday.length >= 3 && leadsToday.length < Math.ceil(leadsYesterday.length * 0.75)) {
+      const delta = Math.round(((leadsYesterday.length - leadsToday.length) / leadsYesterday.length) * 100);
+      insights.push({
+        id: "lead_drop",
+        severity: "warning",
+        title: t("aiNavigator.insight.leadDrop.title", { percent: delta }),
+        description: t("aiNavigator.insight.leadDrop.text", { today: leadsToday.length, yesterday: leadsYesterday.length }),
+        actionLabel: t("aiNavigator.openLeads"),
+        href: "/dashboard/leads",
+        icon: TrendingDown,
+      });
+    }
+
+    if (staleLeads.length) {
+      insights.push({
+        id: "stale_leads",
+        severity: staleLeads.length >= 5 ? "critical" : "warning",
+        title: t("aiNavigator.insight.staleLeads.title", { count: staleLeads.length }),
+        description: t("aiNavigator.insight.staleLeads.text"),
+        actionLabel: t("aiNavigator.openLeads"),
+        href: "/dashboard/leads",
+        icon: Clock3,
+      });
+    }
+
+    if (handoffConversations.length) {
+      insights.push({
+        id: "handoff_conversations",
+        severity: handoffConversations.length >= 3 ? "critical" : "warning",
+        title: t("aiNavigator.insight.handoff.title", { count: handoffConversations.length }),
+        description: t("aiNavigator.insight.handoff.text"),
+        actionLabel: t("aiNavigator.openConversations"),
+        href: "/dashboard/conversations",
+        icon: MessageSquareWarning,
+      });
+    }
+
+    if (overdueTasks.length) {
+      insights.push({
+        id: "overdue_tasks",
+        severity: overdueTasks.length >= 5 ? "critical" : "warning",
+        title: t("aiNavigator.insight.overdueTasks.title", { count: overdueTasks.length }),
+        description: t("aiNavigator.insight.overdueTasks.text"),
+        actionLabel: t("aiNavigator.openTasks"),
+        href: "/dashboard/tasks",
+        icon: AlertTriangle,
+      });
+    }
+
+    if (stuckDeals.length) {
+      insights.push({
+        id: "stuck_deals",
+        severity: "warning",
+        title: t("aiNavigator.insight.stuckDeals.title", { count: stuckDeals.length }),
+        description: t("aiNavigator.insight.stuckDeals.text"),
+        actionLabel: t("aiNavigator.openDeals"),
+        href: "/dashboard/deals",
+        icon: Clock3,
+      });
+    }
+
+    if (!insights.length && leadRows.length + appointmentRows.length + taskRows.length < 5) {
+      insights.push({
+        id: "not_enough_data",
+        severity: "info",
+        title: t("aiNavigator.insight.notEnough.title"),
+        description: t("aiNavigator.insight.notEnough.text"),
+        actionLabel: t("aiNavigator.openIntegrations"),
+        href: "/dashboard/integrations",
+        icon: BookOpenText,
+      });
+    }
+
+    if (!insights.length) {
+      insights.push({
+        id: "stable",
+        severity: "good",
+        title: t("aiNavigator.insight.stable.title"),
+        description: t("aiNavigator.insight.stable.text"),
+        actionLabel: t("aiNavigator.openDashboard"),
+        href: "/dashboard",
+        icon: CheckCircle2,
+      });
+    }
+
+    const summary = [
+      leadsToday.length > 0
+        ? t("aiNavigator.summary.leadsToday", { count: leadsToday.length })
+        : t("aiNavigator.summary.noNewLeads"),
+      activeAppointmentsToday.length > 0
+        ? t("aiNavigator.summary.appointmentsToday", { count: activeAppointmentsToday.length })
+        : t("aiNavigator.summary.noAppointments"),
+      overdueTasks.length > 0
+        ? t("aiNavigator.summary.overdueTasks", { count: overdueTasks.length })
+        : t("aiNavigator.summary.noOverdueTasks"),
+      staleLeads.length > 0
+        ? t("aiNavigator.summary.staleLeads", { count: staleLeads.length })
+        : t("aiNavigator.summary.noStaleLeads"),
+    ];
+
+    return {
+      now,
+      summary,
+      insights,
+      metrics: {
+        leadsToday: leadsToday.length,
+        appointmentsToday: activeAppointmentsToday.length,
+        overdueTasks: overdueTasks.length,
+        clients: clientRows.length,
+        staleLeads: staleLeads.length,
+        stuckDeals: stuckDeals.length,
+        lostLeadsToday: lostLeadsToday.length,
+        salesEventsToday: salesEventsToday.length,
+      },
+      factsForAi: {
+        business_id: business?.id,
+        business_name: business?.name,
+        leads_today: leadsToday.length,
+        leads_yesterday: leadsYesterday.length,
+        active_appointments_today: activeAppointmentsToday.length,
+        overdue_tasks: overdueTasks.length,
+        stale_leads_over_2h: staleLeads.length,
+        stuck_deals_over_48h: stuckDeals.length,
+        handoff_conversations: handoffConversations.length,
+        lost_leads_today: lostLeadsToday.length,
+        sales_events_today: salesEventsToday.length,
+        clients_total: clientRows.length,
+        generated_at: now.toISOString(),
+      },
+    };
+  }, [activityEvents.data, appointments.data, botConversations.data, business?.id, business?.name, clients.data, deals.data, leads.data, tasks.data, t]);
+
+  const briefMutation = useMutation({
+    mutationFn: () => {
+      if (!business) throw new Error("Business is not selected.");
+      return aiApi.assistantChat({
+        business: business.id,
+        prompt_type: "daily_summary",
+        message: [
+          "Сформируй короткую бизнес-сводку ZANI.",
+          "Используй только факты ниже. Не добавляй внешние данные, рынок, конкурентов или неподтвержденные причины.",
+          "Если фактов недостаточно, прямо напиши: недостаточно данных для вывода.",
+          `Факты кабинета: ${JSON.stringify(navigatorData.factsForAi)}`,
+        ].join("\n"),
+      });
+    },
+    onSuccess: (response) => setAiBrief(response.answer),
+  });
 
   if (isLoading) return <LoadingState />;
   if (!business) return <ErrorState message={t("aiAssistant.noBusiness")} />;
 
-  const selectedHistoryItem = history.find((item) => item.response.log_id === selectedLogId) || history[0];
+  const isDataLoading = clients.isLoading || leads.isLoading || appointments.isLoading || deals.isLoading || tasks.isLoading || botConversations.isLoading || activityEvents.isLoading;
   const activeMemoryItems = (memory.data || []).filter((item) => item.is_active);
   const memoryCategoryOptions = memoryCategories.map((item) => ({ value: item.value, label: t(item.labelKey) }));
   const providerLabel = aiStatus.data
@@ -167,163 +362,154 @@ export function AIAssistantPage() {
   return (
     <>
       <PageHeader
-        title={t("aiAssistant.title")}
-        description={t("aiAssistant.description")}
+        title={t("aiNavigator.title")}
+        description={t("aiNavigator.description")}
         actions={(
           <div className="flex flex-wrap gap-2">
             <Button variant="secondary" onClick={() => { setEditingMemory(undefined); setMemoryDraft(emptyMemoryDraft); setMemoryOpen(true); }}>
               <Plus size={18} />{t("aiAssistant.addMemoryFact")}
             </Button>
-            <Button variant="ai" onClick={() => ask(t("aiAssistant.dailyBriefPrompt"))} isLoading={chatMutation.isPending}>
-              <Sparkles size={18} />{t("aiAssistant.dailyBrief")}
+            <Button variant="ai" onClick={() => briefMutation.mutate()} isLoading={briefMutation.isPending}>
+              <RefreshCw size={18} />{t("aiNavigator.refreshBrief")}
             </Button>
           </div>
         )}
       />
 
-      {chatMutation.error || memoryMutation.error ? (
-        <div className="mb-4"><ErrorState message={getApiErrorMessage(chatMutation.error || memoryMutation.error)} /></div>
+      {briefMutation.error || memoryMutation.error ? (
+        <div className="mb-4"><ErrorState message={getApiErrorMessage(briefMutation.error || memoryMutation.error)} /></div>
       ) : null}
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_400px]">
-        <section className="flex min-h-[calc(100vh-13rem)] flex-col overflow-hidden rounded-[2rem] border border-white/80 bg-white/92 shadow-premium backdrop-blur-xl">
-          <div className="flex flex-col gap-4 border-b border-slate-100/90 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-            <div className="flex items-center gap-3">
-              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-ai-gradient text-white shadow-glow">
-                <Bot size={24} />
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="space-y-5">
+          <Card className="overflow-hidden border-0 bg-ai-gradient text-white shadow-glow">
+            <CardBody className="p-5 sm:p-7">
+              <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                <div className="max-w-3xl">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-xs font-black uppercase tracking-[0.16em] text-white/80">
+                    <Sparkles size={15} />
+                    {t("aiNavigator.todayBrief")}
+                  </div>
+                  <h2 className="mt-5 text-3xl font-black leading-tight tracking-tight sm:text-4xl">
+                    {t("aiNavigator.businessUnderControl")}
+                  </h2>
+                  <p className="mt-3 max-w-2xl text-sm leading-6 text-white/75">
+                    {t("aiNavigator.factBasedNotice")}
+                  </p>
+                </div>
+                <div className="rounded-3xl bg-white/15 p-4 text-sm font-bold text-white/85">
+                  {isDataLoading ? t("common.loading") : t("aiNavigator.generatedFromCabinet")}
+                </div>
               </div>
-              <div>
-                <p className="text-lg font-black text-midnight">{t("aiAssistant.chatTitle")}</p>
-                <p className="mt-1 text-sm font-semibold text-slate-500">{t("aiAssistant.liveModeText")}</p>
-              </div>
-            </div>
-            <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-slate-100 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500">
-              <Cpu size={15} className="shrink-0 text-brand-600" />
-              <span className="truncate">{providerLabel}</span>
-            </div>
-          </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
-            {!history.length ? (
-              <div className="mx-auto flex min-h-[24rem] max-w-3xl flex-col items-center justify-center text-center">
-                <div className="grid h-16 w-16 place-items-center rounded-[1.5rem] bg-ai-gradient text-white shadow-glow">
-                  <MessageSquareText size={30} />
-                </div>
-                <h2 className="mt-5 text-3xl font-black tracking-tight text-midnight sm:text-4xl">{t("aiAssistant.heroFallback")}</h2>
-                <p className="mt-3 max-w-2xl text-base leading-7 text-slate-500">{t("aiAssistant.activeFactsSummary", { count: activeMemoryItems.length })}</p>
-                <div className="mt-6 flex flex-wrap justify-center gap-2">
-                  {quickPromptKeys.map((key) => {
-                    const item = t(key);
-                    return (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => ask(item)}
-                        className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-brand-200 hover:text-brand-700 hover:shadow-soft"
-                      >
-                        {item}
-                      </button>
-                    );
-                  })}
-                </div>
+              <div className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <MetricTile label={t("aiNavigator.metric.leadsToday")} value={navigatorData.metrics.leadsToday} />
+                <MetricTile label={t("aiNavigator.metric.appointments")} value={navigatorData.metrics.appointmentsToday} />
+                <MetricTile label={t("aiNavigator.metric.overdueTasks")} value={navigatorData.metrics.overdueTasks} />
+                <MetricTile label={t("aiNavigator.metric.clients")} value={navigatorData.metrics.clients} />
               </div>
-            ) : (
-              <div className="mx-auto max-w-4xl space-y-6">
-                {[...history].reverse().map((item) => (
-                  <div key={`${item.response.log_id}-${item.question}`} className="space-y-4">
-                    <div className="flex justify-end">
-                      <div className="max-w-[86%] rounded-[1.5rem] rounded-br-md bg-midnight px-5 py-4 text-sm font-semibold leading-6 text-white shadow-soft">
-                        {item.question}
-                      </div>
-                    </div>
-                    <div className="flex justify-start gap-3">
-                      <div className="mt-1 grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-ai-gradient text-white shadow-sm">
-                        <Sparkles size={17} />
-                      </div>
-                      <div className="max-w-[88%] rounded-[1.5rem] rounded-tl-md border border-slate-100 bg-slate-50 px-5 py-4 shadow-sm">
-                        <p className="whitespace-pre-wrap text-sm leading-7 text-slate-800">{item.response.answer}</p>
-                        <p className="mt-3 text-xs font-semibold text-slate-400">
-                          {t("aiAssistant.historyMeta", {
-                            id: item.response.log_id,
-                            mode: item.response.is_mock ? t("aiAssistant.modeMock") : `${item.response.provider} · ${item.response.model}`,
-                          })}
-                        </p>
-                      </div>
-                    </div>
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardBody className="p-5 sm:p-6">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">{t("aiNavigator.summaryEyebrow")}</p>
+                  <h2 className="mt-2 text-2xl font-black text-midnight">{t("aiNavigator.summaryTitle")}</h2>
+                </div>
+                <span className="rounded-full bg-slate-50 px-3 py-1.5 text-xs font-black text-slate-500">
+                  {t("aiNavigator.noExternalData")}
+                </span>
+              </div>
+              <div className="mt-5 grid gap-3">
+                {navigatorData.summary.map((item, index) => (
+                  <div key={item} className="flex items-start gap-3 rounded-3xl border border-slate-100 bg-slate-50/70 p-4">
+                    <span className={`mt-1 h-3 w-3 rounded-full ${dotClasses(index === 0 ? "info" : index === 1 ? "good" : index === 2 ? "warning" : "critical")}`} />
+                    <p className="text-sm font-semibold leading-6 text-slate-700">{item}</p>
                   </div>
                 ))}
-                {chatMutation.isPending ? (
-                  <div className="flex items-center gap-3 text-sm font-semibold text-slate-500">
-                    <div className="grid h-9 w-9 place-items-center rounded-2xl bg-ai-gradient text-white"><Sparkles size={16} /></div>
-                    {t("common.loading")}
-                  </div>
-                ) : null}
               </div>
-            )}
-          </div>
+              {aiBrief ? (
+                <div className="mt-5 rounded-3xl border border-brand-100 bg-brand-50/70 p-4">
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">{t("aiNavigator.aiInterpretation")}</p>
+                  <p className="mt-2 whitespace-pre-wrap text-sm font-semibold leading-7 text-slate-700">{aiBrief}</p>
+                </div>
+              ) : null}
+            </CardBody>
+          </Card>
 
-          <div className="border-t border-slate-100/90 bg-white/96 p-4 sm:p-5">
-            <div className="mx-auto max-w-4xl">
-              <Textarea
-                label={t("aiAssistant.questionLabel")}
-                value={message}
-                onChange={(event) => setMessage(event.target.value)}
-                placeholder={t("aiAssistant.questionPlaceholder")}
-              />
-              <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex flex-wrap gap-2">
-                  {quickPromptKeys.slice(0, 2).map((key) => {
-                    const item = t(key);
-                    return (
-                      <Button key={key} type="button" variant="ghost" size="sm" onClick={() => setMessage(item)}>
-                        <Wand2 size={14} />{item}
-                      </Button>
-                    );
-                  })}
+          <Card>
+            <CardBody className="p-5 sm:p-6">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-red-500">{t("aiNavigator.attentionEyebrow")}</p>
+                  <h2 className="mt-2 text-2xl font-black text-midnight">{t("aiNavigator.attentionTitle")}</h2>
                 </div>
-                <div className="flex gap-2">
-                  <Button variant="secondary" onClick={() => suggestActions()} isLoading={actionSuggestMutation.isPending}>
-                    <ClipboardList size={16} />{t("aiAssistant.createActions")}
-                  </Button>
-                  <Button variant="ai" onClick={() => ask()} isLoading={chatMutation.isPending} disabled={!message.trim()}>
-                    <Send size={16} />{t("aiAssistant.ask")}
-                  </Button>
-                </div>
+                <span className="rounded-full bg-slate-50 px-3 py-1.5 text-xs font-black text-slate-500">
+                  {t("aiNavigator.itemsCount", { count: navigatorData.insights.length })}
+                </span>
               </div>
-            </div>
-          </div>
-        </section>
+              <div className="mt-5 grid gap-3">
+                {navigatorData.insights.map((insight) => {
+                  const Icon = insight.icon;
+                  return (
+                    <a
+                      key={insight.id}
+                      href={insight.href}
+                      className="group flex flex-col gap-4 rounded-3xl border border-slate-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft sm:flex-row sm:items-center"
+                    >
+                      <div className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl border ${severityClasses(insight.severity)}`}>
+                        <Icon size={22} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-black text-midnight">{insight.title}</p>
+                        <p className="mt-1 text-sm leading-6 text-slate-500">{insight.description}</p>
+                      </div>
+                      <div className="inline-flex items-center gap-2 text-sm font-black text-brand-700">
+                        {insight.actionLabel}
+                        <ArrowRight size={16} className="transition group-hover:translate-x-1" />
+                      </div>
+                    </a>
+                  );
+                })}
+              </div>
+            </CardBody>
+          </Card>
+        </div>
 
         <aside className="space-y-4 xl:sticky xl:top-24 xl:max-h-[calc(100vh-7rem)] xl:overflow-y-auto xl:pr-1">
           <Card>
             <CardBody>
-              <div className="mb-4 flex items-center gap-3">
-                <div className="grid h-10 w-10 place-items-center rounded-2xl bg-slate-50 text-brand-700">
-                  <History size={19} />
+              <div className="flex items-start gap-3">
+                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-slate-50 text-brand-700">
+                  <Cpu size={20} />
                 </div>
                 <div>
-                  <p className="font-black text-midnight">{t("aiAssistant.historyTitle")}</p>
-                  <p className="text-sm font-semibold text-slate-500">{t("aiAssistant.historySubtitle")}</p>
+                  <p className="font-black text-midnight">{t("aiNavigator.dataPolicyTitle")}</p>
+                  <p className="mt-1 text-sm leading-6 text-slate-500">{t("aiNavigator.dataPolicyText")}</p>
                 </div>
               </div>
-              <div className="space-y-2">
-                {history.map((item) => {
-                  const active = selectedHistoryItem?.response.log_id === item.response.log_id;
-                  return (
-                    <button
-                      key={`${item.response.log_id}-${item.createdAt}`}
-                      type="button"
-                      onClick={() => setSelectedLogId(item.response.log_id)}
-                      className={`w-full rounded-2xl border p-3 text-left transition hover:bg-white hover:shadow-soft ${active ? "border-brand-200 bg-brand-50/70" : "border-slate-100 bg-slate-50/70"}`}
-                    >
-                      <p className="line-clamp-2 text-sm font-black text-midnight">{item.question}</p>
-                      <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{item.response.answer}</p>
-                    </button>
-                  );
-                })}
-                {!history.length ? (
-                  <p className="rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-500">{t("aiAssistant.emptyHistoryText")}</p>
-                ) : null}
+              <div className="mt-4 rounded-2xl bg-slate-50 p-3 text-xs font-bold leading-5 text-slate-500">
+                {providerLabel}
+              </div>
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardBody>
+              <div className="flex items-center gap-3">
+                <div className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-50 text-emerald-700">
+                  <Users size={20} />
+                </div>
+                <div>
+                  <p className="font-black text-midnight">{t("aiNavigator.roleHelpTitle")}</p>
+                  <p className="text-sm text-slate-500">{t("aiNavigator.roleHelpText")}</p>
+                </div>
+              </div>
+              <div className="mt-4 space-y-2">
+                <p className="rounded-2xl bg-slate-50 p-3 text-sm font-semibold text-slate-600">{t("aiNavigator.ownerHelp")}</p>
+                <p className="rounded-2xl bg-slate-50 p-3 text-sm font-semibold text-slate-600">{t("aiNavigator.managerHelp")}</p>
               </div>
             </CardBody>
           </Card>
@@ -342,10 +528,7 @@ export function AIAssistantPage() {
                 </div>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">{t("aiAssistant.memoryEyebrow")}</p>
-                  <h2 className="mt-1 text-lg font-black text-midnight">{t("aiAssistant.memoryTitle")}</h2>
-                </div>
+                <h2 className="text-lg font-black text-midnight">{t("aiAssistant.memoryTitle")}</h2>
                 <Button variant="ghost" size="sm" onClick={() => { setEditingMemory(undefined); setMemoryDraft(emptyMemoryDraft); setMemoryOpen(true); }}>
                   <Plus size={15} />{t("aiAssistant.add")}
                 </Button>
@@ -377,58 +560,6 @@ export function AIAssistantPage() {
               </div>
             </CardBody>
           </Card>
-
-          <Card>
-            <CardBody>
-              <div className="flex items-center gap-3">
-                <div className="grid h-10 w-10 place-items-center rounded-2xl bg-violet-50 text-violet-600">
-                  <CalendarCheck size={20} />
-                </div>
-                <div>
-                  <p className="font-semibold text-midnight">{t("aiAssistant.taskFlowTitle")}</p>
-                  <p className="text-sm text-slate-500">{t("aiAssistant.taskFlowText")}</p>
-                </div>
-              </div>
-              <div className="mt-4 space-y-3">
-                {suggestedActions.length ? suggestedActions.map((action) => (
-                  <div key={action.id} className="rounded-3xl border border-slate-100 bg-slate-50/80 p-4">
-                    <p className="text-sm font-semibold text-midnight">{String(action.input_json.title || t("aiAssistant.actionFallback"))}</p>
-                    <p className="mt-1 text-xs text-slate-500">{t("aiAssistant.actionStatus", { status: action.status, tool: action.tool_name })}</p>
-                    {action.status === "executed" ? (
-                      <p className="mt-2 rounded-2xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
-                        {t("aiAssistant.taskCreated", { id: String(action.output_json.task_id || "-") })}
-                      </p>
-                    ) : (
-                      <Button className="mt-3 w-full" variant="secondary" onClick={() => actionExecuteMutation.mutate(action.id)} isLoading={actionExecuteMutation.isPending}>
-                        <CalendarCheck size={16} />{t("aiAssistant.createTask")}
-                      </Button>
-                    )}
-                  </div>
-                )) : (
-                  <p className="rounded-3xl bg-slate-50 p-4 text-sm text-slate-500">
-                    {t("aiAssistant.emptyActionsText")}
-                  </p>
-                )}
-              </div>
-            </CardBody>
-          </Card>
-
-          <div className="grid gap-2">
-            {quickPromptKeys.map((key) => {
-              const item = t(key);
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => ask(item)}
-                  className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white/80 p-3 text-left font-medium text-midnight shadow-sm transition hover:-translate-y-0.5 hover:bg-white hover:shadow-soft"
-                >
-                  <CheckCircle2 className="shrink-0 text-emerald-500" size={18} />
-                  <span className="flex-1 text-sm">{item}</span>
-                </button>
-              );
-            })}
-          </div>
         </aside>
       </div>
 
@@ -474,5 +605,14 @@ export function AIAssistantPage() {
         </form>
       </Modal>
     </>
+  );
+}
+
+function MetricTile({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-3xl bg-white/15 p-4">
+      <p className="text-xs font-bold uppercase tracking-[0.14em] text-white/65">{label}</p>
+      <p className="mt-3 text-3xl font-black text-white">{value}</p>
+    </div>
   );
 }

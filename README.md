@@ -5931,3 +5931,5 @@ Continuation regression after merchant UI cleanup pass: Django system check, ful
 Backend check after continuation regression pass: OK
 Full backend tests after continuation regression pass: 307 OK
 Frontend production build after continuation regression pass: OK
+
+OAuth env documentation pass: `.env.example`, `.env.staging.example` and `.env.production.example` now include the frontend social-login variables `VITE_GOOGLE_CLIENT_ID` and `VITE_APPLE_CLIENT_ID` alongside `VITE_API_URL`, matching the existing controlled Google/Apple login implementation.

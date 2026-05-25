@@ -17,6 +17,7 @@ type FormValues = {
   email: string;
   phone: string;
   password: string;
+  password_confirm: string;
   business_name: string;
   business_type: string;
   city?: string;
@@ -30,9 +31,13 @@ export function SignupPage() {
     email: z.string().email(t("validation.email")),
     phone: z.string().min(5, t("validation.phone")),
     password: z.string().min(8, t("validation.passwordMin")),
+    password_confirm: z.string().min(1, t("passwordReset.repeatPasswordRequired")),
     business_name: z.string().min(2, t("validation.businessName")),
     business_type: z.string().min(1),
     city: z.string().optional(),
+  }).refine((values) => values.password === values.password_confirm, {
+    message: t("passwordReset.passwordMismatch"),
+    path: ["password_confirm"],
   });
   const businessTypeOptions = [
     { value: "beauty", label: t("businessType.beauty") },
@@ -56,7 +61,15 @@ export function SignupPage() {
   async function onSubmit(values: FormValues) {
     setError(null);
     try {
-      await signupOwner(values);
+      await signupOwner({
+        full_name: values.full_name,
+        email: values.email,
+        phone: values.phone,
+        password: values.password,
+        business_name: values.business_name,
+        business_type: values.business_type,
+        city: values.city,
+      });
       navigate("/dashboard");
     } catch (err) {
       setError(getApiErrorMessage(err));
@@ -93,17 +106,34 @@ export function SignupPage() {
 
           {error ? <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
 
-          <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Input label={t("signup.yourName")} error={errors.full_name?.message} {...register("full_name")} />
-              <Input label={t("signup.phone")} error={errors.phone?.message} {...register("phone")} />
-            </div>
-            <Input label={t("signup.email")} type="email" error={errors.email?.message} {...register("email")} />
-            <Input label={t("auth.password")} type="password" error={errors.password?.message} {...register("password")} />
-            <Input label={t("signup.businessName")} error={errors.business_name?.message} {...register("business_name")} />
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Select label={t("signup.businessType")} options={businessTypeOptions} error={errors.business_type?.message} {...register("business_type")} />
-              <Input label={t("signup.city")} error={errors.city?.message} {...register("city")} />
+          <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
+            <section className="rounded-3xl border border-white/70 bg-white/55 p-4">
+              <p className="mb-3 text-xs font-black uppercase tracking-[0.14em] text-brand-700">{t("signup.accountSection")}</p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Input label={t("signup.yourName")} error={errors.full_name?.message} {...register("full_name")} />
+                <Input label={t("signup.phone")} error={errors.phone?.message} {...register("phone")} />
+              </div>
+              <div className="mt-4 space-y-4">
+                <Input label={t("signup.email")} type="email" error={errors.email?.message} {...register("email")} />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Input label={t("auth.password")} type="password" error={errors.password?.message} {...register("password")} />
+                  <Input label={t("signup.passwordConfirm")} type="password" error={errors.password_confirm?.message} {...register("password_confirm")} />
+                </div>
+              </div>
+            </section>
+
+            <section className="rounded-3xl border border-white/70 bg-white/55 p-4">
+              <p className="mb-3 text-xs font-black uppercase tracking-[0.14em] text-brand-700">{t("signup.businessSection")}</p>
+              <Input label={t("signup.businessName")} error={errors.business_name?.message} {...register("business_name")} />
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <Select label={t("signup.businessType")} options={businessTypeOptions} error={errors.business_type?.message} {...register("business_type")} />
+                <Input label={t("signup.cityOptional")} error={errors.city?.message} {...register("city")} />
+              </div>
+              <p className="mt-3 text-xs leading-5 text-slate-500">{t("signup.nextText")}</p>
+            </section>
+
+            <div className="rounded-3xl border border-brand-100 bg-brand-50/70 px-4 py-3 text-sm leading-6 text-slate-600">
+              {t("signup.startNote")}
             </div>
             <Button variant="ai" className="w-full" type="submit" isLoading={isSubmitting}>
               {t("signup.submit")}

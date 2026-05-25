@@ -55,6 +55,27 @@ DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
 cd frontend && npm run build
 ```
 
+### Owner signup UX hardening
+
+Статус: **готово**.
+
+Что изменено:
+
+- Регистрация директора разделена на две понятные зоны:
+  - доступ владельца;
+  - данные бизнеса.
+- Добавлено повторное поле пароля с проверкой совпадения.
+- Город помечен как необязательный, чтобы стартовая регистрация не выглядела длинной.
+- Добавлено короткое объяснение: на первом шаге создаются только владелец и рабочее пространство, а сотрудники, роли, интеграции и график настраиваются после входа.
+- Все новые тексты добавлены в RU / KK / EN.
+
+Проверка:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+cd frontend && npm run build
+```
+
 ### ZANI 10 next tasks — Task 1: Mobile-first business cockpit
 
 Статус: **готово как первый visual-shell шаг**.

@@ -5921,3 +5921,7 @@ Frontend production build after bot channel safety cleanup pass: OK
 Lead-form copy cleanup pass: generated lead-form embed snippets now localize the submit button text and the settings description no longer mixes internal automation event names into merchant-facing RU / KK copy.
 
 Frontend production build after lead-form copy cleanup pass: OK
+
+Language selector compactness pass: the header/sidebar language control now renders as one compact dropdown instead of three adjacent language buttons. This prevents cramped header text such as RU/KK/EN being read as one merged label on deployed/mobile layouts.
+
+Frontend production build after language selector compactness pass: OK

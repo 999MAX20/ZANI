@@ -13,28 +13,25 @@ export function LanguageSelector({ className }: { className?: string }) {
   const { language, setLanguage, t } = useI18n();
 
   return (
-    <div
+    <label
       className={cn(
-        "inline-flex h-11 items-center gap-1 rounded-full border border-slate-200/70 bg-white/80 p-1 text-sm font-black text-slate-600 shadow-sm",
+        "inline-flex h-11 items-center gap-2 rounded-full border border-slate-200/70 bg-white/80 px-3 text-sm font-black text-slate-600 shadow-sm",
         className,
       )}
       aria-label={t("common.language")}
-      role="group"
     >
-      <Languages size={16} className="mx-2 text-brand-600" />
-      {languageOptions.map((option) => (
-        <button
-          key={option.value}
-          type="button"
-          className={cn(
-            "h-8 rounded-full px-2.5 text-xs transition",
-            language === option.value ? "bg-midnight text-white shadow-soft" : "text-slate-500 hover:bg-slate-100 hover:text-midnight",
-          )}
-          onClick={() => setLanguage(option.value)}
-        >
-          {option.label}
-        </button>
-      ))}
-    </div>
+      <Languages size={17} className="shrink-0 text-brand-600" />
+      <select
+        value={language}
+        onChange={(event) => setLanguage(event.target.value as typeof language)}
+        className="min-w-[4.25rem] cursor-pointer appearance-none bg-transparent text-sm font-black text-midnight outline-none"
+      >
+        {languageOptions.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }

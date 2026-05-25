@@ -5909,3 +5909,7 @@ Backend migration check after final overnight hardening pass: OK
 Backend check after final overnight hardening pass: OK
 Full backend tests after final overnight hardening pass: 307 OK
 Frontend production build after final overnight hardening pass: OK
+
+WhatsApp merchant safety cleanup pass: the bot-level WhatsApp card no longer exposes provider mode, phone-number ids, webhook URLs or webhook secrets to merchants. The visible flow is now support-assisted: owners see safe setup copy, a pilot preparation action, status, protection state and recent test history in RU / KK / EN.
+
+Frontend production build after WhatsApp merchant safety cleanup pass: OK

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Bot as BotIcon, Copy, ExternalLink, KeyRound, MessageSquareText, Plus, Radio, Send, ShieldCheck, Sparkles, Webhook } from "lucide-react";
+import { ArrowLeft, Bot as BotIcon, Copy, ExternalLink, MessageSquareText, Plus, Radio, Send, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
@@ -34,11 +34,6 @@ export function BotDetailPage() {
   const [followUpMessage, setFollowUpMessage] = useState(t("botDetail.followUpDefault"));
   const [copyNotice, setCopyNotice] = useState<string | null>(null);
   const [suggestedReply, setSuggestedReply] = useState<BotSuggestedReplyResponse | null>(null);
-  const [telegramForm, setTelegramForm] = useState({
-    botToken: "",
-    webhookSecret: "",
-    webhookUrl: `${import.meta.env.VITE_API_URL || window.location.origin}/api/integrations/telegram/webhook/`,
-  });
   const [telegramNotice, setTelegramNotice] = useState<string | null>(null);
   const bot = useQuery({
     queryKey: ["bots", botId],
@@ -57,22 +52,6 @@ export function BotDetailPage() {
   const addWhatsAppChannel = useMutation({
     mutationFn: () => botChannelsApi.create({ bot: botId, channel: "whatsapp", status: "draft", external_id: "", config_json: { provider_mode: "mock" } }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["bot-channels"] }),
-  });
-  const telegramConfigMutation = useMutation({
-    mutationFn: (channelId: number) =>
-      telegramChannelApi.configure({
-        channelId,
-        botToken: telegramForm.botToken,
-        webhookSecret: telegramForm.webhookSecret,
-    }),
-    onSuccess: (data) => {
-      setTelegramNotice(data.token_configured ? t("botDetail.telegramSaved") : t("botDetail.telegramSavedNoToken"));
-      queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
-    },
-  });
-  const telegramWebhookMutation = useMutation({
-    mutationFn: (channelId: number) => telegramChannelApi.setWebhook({ channelId, webhookUrl: telegramForm.webhookUrl }),
-    onSuccess: (data) => setTelegramNotice(data.mock ? t("botDetail.webhookMockSaved", { reason: data.reason || "-" }) : t("botDetail.webhookApplied")),
   });
   const telegramStatusMutation = useMutation({
     mutationFn: (channelId: number) => telegramChannelApi.status(channelId),
@@ -126,6 +105,10 @@ export function BotDetailPage() {
   const latestConversationMessages = latestConversation
     ? messages.filter((message) => message.conversation === latestConversation.id).slice(-6)
     : [];
+  const widgetApiBase = import.meta.env.VITE_API_URL || window.location.origin;
+  const widgetSnippet = websiteChannel
+    ? `<script src="/widget/zani-widget.js" data-zani-token="${websiteChannel.public_token}" data-zani-api="${widgetApiBase}"></script>`
+    : "";
 
   return (
     <>
@@ -163,8 +146,8 @@ export function BotDetailPage() {
         }
       />
       {addWebsiteChannel.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(addWebsiteChannel.error)} /></div> : null}
-      {addTelegramChannel.error || telegramConfigMutation.error || telegramWebhookMutation.error || telegramStatusMutation.error ? (
-        <div className="mb-4"><ErrorState message={getApiErrorMessage(addTelegramChannel.error || telegramConfigMutation.error || telegramWebhookMutation.error || telegramStatusMutation.error)} /></div>
+      {addTelegramChannel.error || telegramStatusMutation.error ? (
+        <div className="mb-4"><ErrorState message={getApiErrorMessage(addTelegramChannel.error || telegramStatusMutation.error)} /></div>
       ) : null}
       {addWhatsAppChannel.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(addWhatsAppChannel.error)} /></div> : null}
       {previewMutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(previewMutation.error)} /></div> : null}
@@ -241,7 +224,7 @@ export function BotDetailPage() {
           <CardBody>
             <div className="mb-5 flex items-center gap-3">
               <div className="grid h-11 w-11 place-items-center rounded-2xl bg-blue-50 text-blue-700">
-                <Webhook size={20} />
+                <Radio size={20} />
               </div>
               <div>
                 <h2 className="text-lg font-bold text-midnight">{t("botDetail.telegramTitle")}</h2>
@@ -251,34 +234,17 @@ export function BotDetailPage() {
             {telegramNotice ? <div className="mb-4 rounded-2xl bg-blue-50 p-3 text-sm font-semibold text-blue-800">{telegramNotice}</div> : null}
             {telegramChannel ? (
               <div className="space-y-4">
-                <Input
-                  label={t("botDetail.botFatherToken")}
-                  type="password"
-                  value={telegramForm.botToken}
-                  onChange={(event) => setTelegramForm({ ...telegramForm, botToken: event.target.value })}
-                  placeholder="123456:ABC..."
-                />
-                <Input
-                  label={t("botDetail.webhookSecret")}
-                  value={telegramForm.webhookSecret}
-                  onChange={(event) => setTelegramForm({ ...telegramForm, webhookSecret: event.target.value })}
-                  placeholder={t("botDetail.optional")}
-                />
-                <Input
-                  label={t("botDetail.webhookUrl")}
-                  value={telegramForm.webhookUrl}
-                  onChange={(event) => setTelegramForm({ ...telegramForm, webhookUrl: event.target.value })}
-                />
+                <div className="rounded-3xl border border-blue-100 bg-blue-50 p-4">
+                  <p className="text-sm font-bold text-blue-950">{t("botDetail.telegramSupportTitle")}</p>
+                  <p className="mt-1 text-sm leading-6 text-blue-900">{t("botDetail.telegramSupportText")}</p>
+                </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button variant="secondary" onClick={() => telegramConfigMutation.mutate(telegramChannel.id)} isLoading={telegramConfigMutation.isPending}>
-                    <KeyRound size={16} />{t("botDetail.saveConnection")}
-                  </Button>
-                  <Button variant="ai" onClick={() => telegramWebhookMutation.mutate(telegramChannel.id)} isLoading={telegramWebhookMutation.isPending}>
-                    <ShieldCheck size={16} />{t("botDetail.applyWebhook")}
-                  </Button>
                   <Button variant="ghost" onClick={() => telegramStatusMutation.mutate(telegramChannel.id)} isLoading={telegramStatusMutation.isPending}>
                     <Radio size={16} />{t("botDetail.checkStatus")}
                   </Button>
+                  <Link to="/dashboard/integrations">
+                    <Button variant="secondary" type="button"><ExternalLink size={16} />{t("botDetail.openIntegrations")}</Button>
+                  </Link>
                 </div>
                 <p className="text-xs leading-5 text-slate-500">{t("botDetail.statusSafe")}</p>
               </div>
@@ -310,13 +276,13 @@ export function BotDetailPage() {
                     <p className="font-black">{t("botDetail.widgetInstallCode")}</p>
                     <StatusBadge status={websiteChannel.status} />
                   </div>
-	                  <pre className="mt-3 overflow-auto rounded-2xl bg-white/80 p-3 text-xs text-slate-700">{`<script src="/widget/zani-widget.js" data-zani-token="${websiteChannel.public_token}" data-zani-api="http://localhost:8000"></script>`}</pre>
+	                  <pre className="mt-3 overflow-auto rounded-2xl bg-white/80 p-3 text-xs text-slate-700">{widgetSnippet}</pre>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Button
                       type="button"
                       variant="secondary"
                       onClick={() => {
-	                        navigator.clipboard?.writeText(`<script src="/widget/zani-widget.js" data-zani-token="${websiteChannel.public_token}" data-zani-api="http://localhost:8000"></script>`);
+	                        navigator.clipboard?.writeText(widgetSnippet);
                         setCopyNotice(t("botDetail.widgetCodeCopied"));
                       }}
                     >

@@ -5970,3 +5970,8 @@ Appointment no-slots guidance pass: the appointment form now checks the selected
 
 Backend check after appointment no-slots guidance pass: OK
 Frontend production build after appointment no-slots guidance pass: OK
+
+Notification header cleanup pass: the merchant notification dropdown no longer exposes a delivery-management action that can fail for limited roles. It now focuses on read/open actions and shows localized priority labels in RU / KK / EN instead of raw values like `urgent`.
+
+Backend check after notification header cleanup pass: OK
+Frontend production build after notification header cleanup pass: OK

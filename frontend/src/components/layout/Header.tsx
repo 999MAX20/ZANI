@@ -33,13 +33,6 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
     refetchInterval: realtimeIntervals.notificationsMs,
     ...realtimeQueryOptions,
   });
-  const markSentMutation = useMutation({
-    mutationFn: notificationsApi.markSent,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
-      queryClient.invalidateQueries({ queryKey: ["notifications-summary"] });
-    },
-  });
   const markReadMutation = useMutation({
     mutationFn: notificationsApi.markRead,
     onSuccess: () => {
@@ -76,6 +69,12 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
     normal: "bg-brand-50 text-brand-700",
     high: "bg-amber-50 text-amber-700",
     urgent: "bg-red-50 text-red-700",
+  };
+  const priorityLabels: Record<string, string> = {
+    low: t("notification.priority.low"),
+    normal: t("notification.priority.normal"),
+    high: t("notification.priority.high"),
+    urgent: t("notification.priority.urgent"),
   };
 
   useEffect(() => {
@@ -150,7 +149,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
                               <div className="mb-1 flex flex-wrap items-center gap-2">
                                 {!notification.read_at ? <span className="h-2 w-2 rounded-full bg-brand-600" /> : null}
                                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase ${priorityClass[notification.priority] || priorityClass.normal}`}>
-                                  {notification.priority}
+                                  {priorityLabels[notification.priority] || notification.priority}
                                 </span>
                               </div>
                               <p className="line-clamp-2 font-semibold text-midnight">{notification.text}</p>
@@ -179,15 +178,6 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
                               <Button variant="ghost" className="h-9 rounded-full px-3 text-xs" onClick={() => markReadMutation.mutate(notification.id)}>
                                 <Check size={15} />
                                 {t("notification.read")}
-                              </Button>
-                            ) : null}
-                            {notification.status === "pending" ? (
-                              <Button
-                                variant="ghost"
-                                className="h-9 rounded-full px-3 text-xs"
-                                onClick={() => markSentMutation.mutate(notification.id)}
-                              >
-                                {t("notification.sent")}
                               </Button>
                             ) : null}
                           </div>

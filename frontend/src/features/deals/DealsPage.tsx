@@ -176,7 +176,7 @@ export function DealsPage() {
   const { t } = useI18n();
   const queryClient = useQueryClient();
   const { business } = useActiveBusiness();
-  const { clients, leads, pipelines, pipelineStages, deals, tasks, activityEvents, botConversations } = useEntityData();
+  const { clients, leads, pipelines, pipelineStages, deals, tasks, activityEvents, botConversations } = useEntityData({ clients: true, leads: true, pipelines: true, pipelineStages: true, deals: true, tasks: true, activityEvents: true, botConversations: true });
   const [searchParams] = useSearchParams();
   const [createOpen, setCreateOpen] = useState(false);
   const [detailDeal, setDetailDeal] = useState<Deal | null>(null);

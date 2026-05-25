@@ -50,7 +50,7 @@ export function AppointmentsPage() {
   const { t } = useI18n();
   const queryClient = useQueryClient();
   const { business } = useActiveBusiness();
-  const { appointments, clients, services, resources, leads } = useEntityData();
+  const { appointments, clients, services, resources, leads } = useEntityData({ appointments: true, clients: true, services: true, resources: true, leads: true });
   const [searchParams] = useSearchParams();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Appointment | undefined>();

@@ -70,7 +70,7 @@ export function AutomationsPage() {
   const { t, language } = useI18n();
   const queryClient = useQueryClient();
   const { business } = useActiveBusiness();
-  const { automationRules } = useEntityData();
+  const { automationRules } = useEntityData({ automationRules: true });
   const templates = useQuery({ queryKey: ["automation-templates"], queryFn: automationRulesApi.templates });
   const runs = useQuery({ queryKey: ["automation-runs"], queryFn: automationRunsApi.list });
   const [createOpen, setCreateOpen] = useState(false);

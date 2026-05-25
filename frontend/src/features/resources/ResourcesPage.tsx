@@ -46,7 +46,7 @@ export function ResourcesPage() {
   const { t } = useI18n();
   const queryClient = useQueryClient();
   const { business } = useActiveBusiness();
-  const { resources, appointments, workingHours } = useEntityData();
+  const { resources, appointments, workingHours } = useEntityData({ resources: true, appointments: true, workingHours: true });
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Resource | undefined>();
   const [draft, setDraft] = useState<Partial<Resource> | undefined>();

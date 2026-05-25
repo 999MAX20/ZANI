@@ -49,7 +49,7 @@ export function ClientsPage() {
   const { t } = useI18n();
   const queryClient = useQueryClient();
   const { business } = useActiveBusiness();
-  const { clients, leads, appointments, tags, taggedObjects, segments } = useEntityData();
+  const { clients, leads, appointments, tags, taggedObjects, segments } = useEntityData({ clients: true, leads: true, appointments: true, tags: true, taggedObjects: true, segments: true });
   const [searchParams, setSearchParams] = useSearchParams();
   const [open, setOpen] = useState(false);
   const [segmentOpen, setSegmentOpen] = useState(false);

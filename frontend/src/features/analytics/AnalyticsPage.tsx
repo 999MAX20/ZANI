@@ -32,7 +32,7 @@ function Stat({ label, value, hint, icon: Icon }: { label: string; value: number
 export function AnalyticsPage() {
   const { t } = useI18n();
   const { business } = useActiveBusiness();
-  const { appointments, services } = useEntityData();
+  const { appointments, services } = useEntityData({ appointments: true, services: true });
   const metrics = useQuery({
     queryKey: ["owner-dashboard", business?.id],
     queryFn: () => analyticsApi.ownerDashboard(business?.id),

@@ -163,7 +163,7 @@ function CalendarPicker({
 export function CalendarPage() {
   const { t, language } = useI18n();
   const { business } = useActiveBusiness();
-  const { appointments, clients, services, resources, leads, workingHours } = useEntityData();
+  const { appointments, clients, services, resources, leads, workingHours } = useEntityData({ appointments: true, clients: true, services: true, resources: true, leads: true, workingHours: true });
   const queryClient = useQueryClient();
   const [date, setDate] = useState(todayISO());
   const [viewMode, setViewMode] = useState<"day" | "week" | "month">("day");

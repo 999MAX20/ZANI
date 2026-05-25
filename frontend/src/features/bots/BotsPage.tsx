@@ -22,7 +22,7 @@ export function BotsPage() {
   const { t } = useI18n();
   const queryClient = useQueryClient();
   const { business } = useActiveBusiness();
-  const { bots, botChannels, botConversations } = useEntityData();
+  const { bots, botChannels, botConversations } = useEntityData({ bots: true, botChannels: true, botConversations: true });
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: "", status: "draft", default_language: "ru" });
 

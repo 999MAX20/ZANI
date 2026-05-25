@@ -37,7 +37,7 @@ export function ServicesPage() {
   const { t } = useI18n();
   const queryClient = useQueryClient();
   const { business } = useActiveBusiness();
-  const { services, appointments } = useEntityData();
+  const { services, appointments } = useEntityData({ services: true, appointments: true });
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Service | undefined>();
   const mutation = useMutation({

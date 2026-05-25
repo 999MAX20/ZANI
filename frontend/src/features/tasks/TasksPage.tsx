@@ -51,7 +51,7 @@ export function TasksPage() {
   const queryClient = useQueryClient();
   const { business } = useActiveBusiness();
   const { user } = useAuth();
-  const { appointments, clients, deals, leads, services, tasks } = useEntityData();
+  const { appointments, clients, deals, leads, services, tasks } = useEntityData({ appointments: true, clients: true, deals: true, leads: true, services: true, tasks: true });
   const [searchParams] = useSearchParams();
   const [open, setOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);

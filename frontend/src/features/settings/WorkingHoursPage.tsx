@@ -27,7 +27,7 @@ export function WorkingHoursPage() {
   const { t } = useI18n();
   const queryClient = useQueryClient();
   const { business } = useActiveBusiness();
-  const { workingHours, resources } = useEntityData();
+  const { workingHours, resources } = useEntityData({ workingHours: true, resources: true });
   const [open, setOpen] = useState(false);
   const [editingResource, setEditingResource] = useState<number | null>(null);
   const [preset, setPreset] = useState<WorkingHoursPreset>("weekdays_9_18");

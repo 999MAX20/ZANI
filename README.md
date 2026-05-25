@@ -6155,3 +6155,9 @@ Calendar perceived-performance pass: the calendar page no longer blocks the enti
 Backend check after calendar perceived-performance pass: OK
 Full backend tests after calendar perceived-performance pass: 309 OK
 Frontend production build after calendar perceived-performance pass: OK
+
+Merchant navigation performance pass: merchant pages no longer use the all-entity `useEntityData()` default on every route. Each page now requests only the entities it actually renders, and React Query keeps successful data fresh for 5 minutes with a 30-minute cache window. This reduces API fan-out on Render/Supabase and makes page switching faster after the first load.
+
+Backend check after merchant navigation performance pass: OK
+Full backend tests after merchant navigation performance pass: 309 OK
+Frontend production build after merchant navigation performance pass: OK

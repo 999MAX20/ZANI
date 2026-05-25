@@ -253,7 +253,7 @@ function KanbanColumn({
 export function LeadsPage() {
   const queryClient = useQueryClient();
   const { business } = useActiveBusiness();
-  const { clients, services, resources, leads } = useEntityData();
+  const { clients, services, resources, leads } = useEntityData({ clients: true, services: true, resources: true, leads: true });
   const { t } = useI18n();
   const [searchParams, setSearchParams] = useSearchParams();
   const [open, setOpen] = useState(false);

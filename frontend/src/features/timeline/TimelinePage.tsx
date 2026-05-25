@@ -14,7 +14,7 @@ import { useI18n } from "../../lib/i18n";
 export function TimelinePage() {
   const { language, t } = useI18n();
   const { business } = useActiveBusiness();
-  const { activityEvents, clients } = useEntityData();
+  const { activityEvents, clients } = useEntityData({ activityEvents: true, clients: true });
   const [search, setSearch] = useState("");
 
   if (!business) return <ErrorState message={t("timeline.noBusiness")} />;

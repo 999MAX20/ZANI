@@ -22,7 +22,7 @@ export function BotDetailPage() {
   const params = useParams();
   const botId = Number(params.id);
   const queryClient = useQueryClient();
-  const { botChannels, botConversations, botMessages } = useEntityData();
+  const { botChannels, botConversations, botMessages } = useEntityData({ botChannels: true, botConversations: true, botMessages: true });
   const [preview, setPreview] = useState({
     full_name: t("botDetail.previewNameDefault"),
     phone: "+77010000000",

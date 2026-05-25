@@ -76,6 +76,31 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
     high: t("notification.priority.high"),
     urgent: t("notification.priority.urgent"),
   };
+  const legacyNotificationRoutes: Record<string, string> = {
+    "/leads": "/dashboard/leads",
+    "/clients": "/dashboard/clients",
+    "/deals": "/dashboard/deals",
+    "/tasks": "/dashboard/tasks",
+    "/calendar": "/dashboard/calendar",
+    "/appointments": "/dashboard/appointments",
+    "/conversations": "/dashboard/inbox",
+    "/integrations": "/dashboard/integrations",
+    "/settings": "/dashboard/settings",
+  };
+
+  function notificationAudienceLabel(notification: (typeof latestNotifications)[number]) {
+    if (notification.recipient && notification.recipient === user?.id) return t("notification.toMe");
+    if (notification.recipient_name || notification.recipient_email) {
+      return t("notification.toUser", { name: notification.recipient_name || notification.recipient_email || "" });
+    }
+    return t("notification.toTeam");
+  }
+
+  function resolveNotificationRoute(url: string) {
+    const [path, query = ""] = url.split("?");
+    const route = legacyNotificationRoutes[path] || url;
+    return query && legacyNotificationRoutes[path] ? `${route}?${query}` : route;
+  }
 
   useEffect(() => {
     function handlePointerDown(event: PointerEvent) {
@@ -154,7 +179,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
                               </div>
                               <p className="line-clamp-2 font-semibold text-midnight">{notification.text}</p>
                               <p className="mt-1 text-xs text-slate-500">
-                                {notification.recipient_name || notification.recipient_email || t("notification.allBusiness")} · {notification.client_name || "CRM"} · {formatDateTime(notification.send_at)}
+                                {notificationAudienceLabel(notification)} · {notification.client_name || "CRM"} · {formatDateTime(notification.send_at)}
                               </p>
                             </div>
                             <StatusBadge status={notification.status} />
@@ -167,7 +192,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
                                 onClick={() => {
                                   markReadMutation.mutate(notification.id);
                                   setShowNotifications(false);
-                                  navigate(notification.action_url);
+                                  navigate(resolveNotificationRoute(notification.action_url));
                                 }}
                               >
                                 <Sparkles size={14} />

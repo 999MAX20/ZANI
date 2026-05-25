@@ -76,6 +76,27 @@ DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
 cd frontend && npm run build
 ```
 
+### Notification center UX hardening
+
+Статус: **готово**.
+
+Что изменено:
+
+- В dropdown уведомлений теперь явно видно, кому адресовано событие:
+  - лично текущему пользователю;
+  - конкретному сотруднику;
+  - всей команде бизнеса.
+- Старые короткие ссылки уведомлений вида `/leads`, `/tasks`, `/clients` нормализуются в актуальные merchant routes `/dashboard/...`.
+- Это предотвращает переход в несуществующие страницы при клике по старым или вручную созданным уведомлениям.
+- Новые подписи локализованы для RU / KK / EN.
+
+Проверка:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+cd frontend && npm run build
+```
+
 ### ZANI 10 next tasks — Task 1: Mobile-first business cockpit
 
 Статус: **готово как первый visual-shell шаг**.

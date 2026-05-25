@@ -194,11 +194,11 @@ export function ClientsPage() {
         <Input placeholder={t("clients.search")} value={search} onChange={(event) => setSearch(event.target.value)} />
         <Select value={source} onChange={(event) => setSource(event.target.value)} options={[
           { value: "", label: t("clients.allSources") },
-          { value: "manual", label: "Manual" },
-          { value: "website", label: "Website" },
-          { value: "telegram", label: "Telegram" },
-          { value: "whatsapp", label: "WhatsApp" },
-          { value: "instagram", label: "Instagram" },
+          { value: "manual", label: t("source.manual") },
+          { value: "website", label: t("source.website") },
+          { value: "telegram", label: t("source.telegram") },
+          { value: "whatsapp", label: t("source.whatsapp") },
+          { value: "instagram", label: t("source.instagram") },
         ]} />
         <Select value={selectedTag} onChange={(event) => setSelectedTag(event.target.value)} options={[{ value: "", label: t("clients.allTags") }, ...tagList.map((tag) => ({ value: tag.id, label: tag.name }))]} />
         <Select value={selectedSegment} onChange={(event) => setSelectedSegment(event.target.value)} options={[{ value: "", label: t("clients.allSegments") }, ...segmentList.map((segment) => ({ value: segment.id, label: `${segment.name} (${segment.cached_count})` }))]} />

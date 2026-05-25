@@ -5937,3 +5937,7 @@ OAuth env documentation pass: `.env.example`, `.env.staging.example` and `.env.p
 Conversation localization cleanup pass: inbox channel labels, visitor fallback titles, channel status chips and CRM-card conversation channel names now use the shared RU / KK / EN dictionary instead of raw technical labels such as `website`, `available` or `visitor`.
 
 Frontend production build after conversation localization cleanup pass: OK
+
+Source-filter localization cleanup pass: Leads and Clients source filters now use shared source labels in RU / KK / EN instead of hardcoded `Manual`, `Website` and `Landing` labels.
+
+Frontend production build after source-filter localization cleanup pass: OK

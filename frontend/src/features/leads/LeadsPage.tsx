@@ -396,7 +396,15 @@ export function LeadsPage() {
       ) : null}
       <div className="mb-5 grid gap-3 md:grid-cols-[1fr_240px]">
         <Input placeholder={t("leads.search")} value={search} onChange={(event) => setSearch(event.target.value)} />
-        <Select value={source} onChange={(event) => setSource(event.target.value)} options={[{ value: "", label: t("leads.allSources") }, { value: "manual", label: "Manual" }, { value: "website", label: "Website" }, { value: "landing", label: "Landing" }, { value: "telegram", label: "Telegram" }, { value: "whatsapp", label: "WhatsApp" }, { value: "instagram", label: "Instagram" }]} />
+        <Select value={source} onChange={(event) => setSource(event.target.value)} options={[
+          { value: "", label: t("leads.allSources") },
+          { value: "manual", label: t("source.manual") },
+          { value: "website", label: t("source.website") },
+          { value: "landing", label: t("source.landing") },
+          { value: "telegram", label: t("source.telegram") },
+          { value: "whatsapp", label: t("source.whatsapp") },
+          { value: "instagram", label: t("source.instagram") },
+        ]} />
       </div>
 
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>

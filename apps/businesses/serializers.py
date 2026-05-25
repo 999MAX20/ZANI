@@ -113,6 +113,18 @@ class TeamMemberManagementSerializer(serializers.ModelSerializer):
             for membership in obj.team_memberships.select_related("team").all()
         ]
 
+    def validate(self, attrs):
+        role = attrs.get("role")
+        is_active = attrs.get("is_active")
+        current_role = getattr(self.instance, "role", None)
+        if role == BusinessMember.Roles.OWNER and current_role != BusinessMember.Roles.OWNER:
+            raise serializers.ValidationError("Ownership transfer must be handled explicitly.")
+        if current_role == BusinessMember.Roles.OWNER and role and role != BusinessMember.Roles.OWNER:
+            raise serializers.ValidationError("Business owner role cannot be changed from the team screen.")
+        if current_role == BusinessMember.Roles.OWNER and is_active is False:
+            raise serializers.ValidationError("Business owner cannot be deactivated from the team screen.")
+        return attrs
+
 
 class BusinessInvitationSerializer(serializers.ModelSerializer):
     invited_by_email = serializers.EmailField(source="invited_by.email", read_only=True)

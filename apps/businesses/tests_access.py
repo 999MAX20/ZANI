@@ -113,6 +113,38 @@ class TeamAccessTests(TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertTrue(BusinessMember.objects.filter(business=self.business, user=self.staff_user).exists())
 
+    def test_team_screen_cannot_promote_member_to_owner(self):
+        staff_member = BusinessMember.objects.create(
+            business=self.business,
+            user=self.staff_user,
+            role=BusinessMember.Roles.STAFF,
+            business_role=BusinessRole.objects.get(business=self.business, preset_key=BusinessMember.Roles.STAFF),
+        )
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.patch(
+            f"/api/team/members/{staff_member.id}/",
+            {"role": BusinessMember.Roles.OWNER},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        staff_member.refresh_from_db()
+        self.assertEqual(staff_member.role, BusinessMember.Roles.STAFF)
+
+    def test_team_screen_cannot_deactivate_owner(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.patch(
+            f"/api/team/members/{self.owner_member.id}/",
+            {"is_active": False},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.owner_member.refresh_from_db()
+        self.assertTrue(self.owner_member.is_active)
+
     def test_manager_cannot_manage_team(self):
         self.api.force_authenticate(self.manager)
 

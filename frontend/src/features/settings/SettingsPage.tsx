@@ -393,6 +393,7 @@ export function SettingsPage() {
     ...option,
     label: t(`settings.role.${option.value}`),
   }));
+  const editableTeamRoleOptions = translatedTeamRoleOptions.filter((option) => option.value !== "owner");
   const translatedVisibilityOptions = visibilityOptions.map((option) => ({
     ...option,
     label: t(`settings.visibility.${option.value}`),
@@ -418,6 +419,7 @@ export function SettingsPage() {
   const locale = language === "kk" ? "kk-KZ" : language === "en" ? "en-US" : "ru-RU";
 
   function updateMemberRole(memberId: number, roleKey: BusinessMembershipSummary["role"]) {
+    if (roleKey === "owner") return;
     const role = roles.find((item) => item.preset_key === roleKey);
     updateMemberMutation.mutate({
       id: memberId,
@@ -539,8 +541,8 @@ export function SettingsPage() {
                   label={t("settings.roleStep")}
                   value={selectedMember?.role || "staff"}
                   onChange={(event) => selectedMember && updateMemberRole(selectedMember.id, event.target.value as BusinessMembershipSummary["role"])}
-                  disabled={!selectedMember || updateMemberMutation.isPending}
-                  options={translatedTeamRoleOptions}
+                  disabled={!selectedMember || selectedMember.role === "owner" || updateMemberMutation.isPending}
+                  options={selectedMember?.role === "owner" ? translatedTeamRoleOptions.filter((option) => option.value === "owner") : editableTeamRoleOptions}
                 />
                 <div>
                   <p className="mb-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{t("settings.visibilityStep")}</p>
@@ -607,7 +609,7 @@ export function SettingsPage() {
                     label={t("settings.role")}
                     value={inviteForm.role}
                     onChange={(event) => setInviteForm({ ...inviteForm, role: event.target.value as BusinessMembershipSummary["role"] })}
-                    options={translatedTeamRoleOptions.filter((option) => option.value !== "owner")}
+                    options={editableTeamRoleOptions}
                   />
                   <Select
                     label={t("settings.delivery")}

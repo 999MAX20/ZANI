@@ -5975,3 +5975,10 @@ Notification header cleanup pass: the merchant notification dropdown no longer e
 
 Backend check after notification header cleanup pass: OK
 Frontend production build after notification header cleanup pass: OK
+
+Team ownership safety pass: ownership can no longer be assigned, downgraded or deactivated through the regular employee/team screen. Owner transfer remains an explicit future workflow, while normal employee roles stay editable from Settings.
+
+Backend check after team ownership safety pass: OK
+Targeted team-access tests after team ownership safety pass: 24 OK
+Full backend tests after team ownership safety pass: 309 OK
+Frontend production build after team ownership safety pass: OK

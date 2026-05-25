@@ -5987,3 +5987,8 @@ Team role clarity pass: Settings now explains what each employee role means dire
 
 Backend check after team role clarity pass: OK
 Frontend production build after team role clarity pass: OK
+
+Employee invite confirmation pass: after creating an employee invitation, Settings now shows an explicit success block with the invited email, role, and immediate actions to send or copy the invite link. This removes ambiguity after the form submits, especially on mobile.
+
+Backend check after employee invite confirmation pass: OK
+Frontend production build after employee invite confirmation pass: OK

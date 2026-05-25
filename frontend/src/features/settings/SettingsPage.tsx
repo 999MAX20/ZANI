@@ -24,7 +24,7 @@ import { permissionResourceLabel } from "../../lib/permissions";
 import { useI18n } from "../../lib/i18n";
 import { useAuth } from "../auth/AuthProvider";
 import { DevelopersSection } from "./DevelopersSection";
-import type { Business, BusinessMembershipSummary, BusinessRole, CrmEntityType, CustomFieldDefinition, QuickReplyTemplate, RolePermission } from "../../types";
+import type { Business, BusinessInvitation, BusinessMembershipSummary, BusinessRole, CrmEntityType, CustomFieldDefinition, QuickReplyTemplate, RolePermission } from "../../types";
 
 const teamRoleOptions = [
   { value: "owner" },
@@ -123,6 +123,7 @@ export function SettingsPage() {
   const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
   const [advancedAccessOpen, setAdvancedAccessOpen] = useState(false);
   const [copiedInviteId, setCopiedInviteId] = useState<number | null>(null);
+  const [lastCreatedInvite, setLastCreatedInvite] = useState<BusinessInvitation | null>(null);
   const departments = useQuery({
     queryKey: ["team-departments", business?.id],
     queryFn: teamApi.departments,
@@ -249,7 +250,8 @@ export function SettingsPage() {
         delivery_channel: inviteForm.delivery_channel,
       });
     },
-    onSuccess: () => {
+    onSuccess: (invitation) => {
+      setLastCreatedInvite(invitation);
       setInviteForm({ email: "", phone: "", telegram: "", full_name: "", role: "operator", delivery_channel: "whatsapp" });
       queryClient.invalidateQueries({ queryKey: ["team-invitations"] });
     },
@@ -645,6 +647,26 @@ export function SettingsPage() {
                     <Button type="submit" className="min-h-[52px] w-full lg:w-auto" isLoading={inviteMutation.isPending}>{t("settings.createInvite")}</Button>
                   </div>
                 </form>
+                {lastCreatedInvite ? (
+                  <div className="mt-4 rounded-3xl border border-emerald-100 bg-emerald-50 p-4">
+                    <p className="font-bold text-emerald-950">{t("settings.inviteCreatedTitle")}</p>
+                    <p className="mt-1 text-sm leading-6 text-emerald-800">
+                      {t("settings.inviteCreatedText", {
+                        email: lastCreatedInvite.email,
+                        role: translatedTeamRoleOptions.find((role) => role.value === lastCreatedInvite.role)?.label || lastCreatedInvite.role,
+                      })}
+                    </p>
+                    <div className="mt-3 grid gap-2 min-[420px]:grid-cols-2">
+                      <a href={inviteShareUrl(lastCreatedInvite)} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center justify-center rounded-full bg-emerald-700 px-4 py-2 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-emerald-800">
+                        {t("settings.sendInviteNow")}
+                      </a>
+                      <Button type="button" variant="secondary" className="min-h-11 rounded-full px-4 text-sm" onClick={() => copyInvitation(lastCreatedInvite)}>
+                        <Copy size={14} />
+                        {copiedInviteId === lastCreatedInvite.id ? t("settings.copied") : t("settings.copy")}
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
                 <div className="mt-4 space-y-2">
                   {(invitations.data || []).slice(0, 4).map((invitation) => (
                     <div key={invitation.id} className="rounded-2xl bg-white px-3 py-3">

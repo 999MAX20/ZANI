@@ -5955,3 +5955,8 @@ Regression after integrations copy/status cleanup: Django system check, full bac
 Backend check after integrations cleanup regression pass: OK
 Full backend tests after integrations cleanup regression pass: 307 OK
 Frontend production build after integrations cleanup regression pass: OK
+
+Calendar booking UX pass: appointment creation no longer forces a staff/resource selection when the business-wide schedule is enough. Calendar filters now prefill the booking form, but leaving resource empty uses the general working hours, reducing false “no slots” cases for merchants.
+
+Backend check after calendar booking UX pass: OK
+Frontend production build after calendar booking UX pass: OK

@@ -168,7 +168,7 @@ export function CalendarPage() {
   const [date, setDate] = useState(todayISO());
   const [viewMode, setViewMode] = useState<"day" | "week" | "month">("day");
   const [bookingOpen, setBookingOpen] = useState(false);
-  const [bookingPrefill, setBookingPrefill] = useState<{ date?: string; slot?: string } | null>(null);
+  const [bookingPrefill, setBookingPrefill] = useState<{ date?: string; slot?: string; service?: number; resource?: number } | null>(null);
   const [drawerEntity, setDrawerEntity] = useState<CrmDrawerEntity | null>(null);
   const [serviceFilter, setServiceFilter] = useState("");
   const [resourceFilter, setResourceFilter] = useState("");
@@ -203,7 +203,11 @@ export function CalendarPage() {
   }
 
   function openBookingForDate(nextDate = date) {
-    setBookingPrefill({ date: nextDate });
+    setBookingPrefill({
+      date: nextDate,
+      service: serviceFilter ? Number(serviceFilter) : undefined,
+      resource: resourceFilter ? Number(resourceFilter) : undefined,
+    });
     setBookingOpen(true);
   }
 

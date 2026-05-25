@@ -73,6 +73,7 @@ export function AppointmentForm({
   prefill?: {
     client?: Id | null;
     service?: Id | null;
+    resource?: Id | null;
     lead?: Id | null;
     date?: string;
     slot?: string;
@@ -86,7 +87,7 @@ export function AppointmentForm({
     defaultValues: {
       client: initial?.client || prefill?.client || clients[0]?.id || 0,
       service: initial?.service || prefill?.service || services[0]?.id || 0,
-      resource: initial?.resource || undefined,
+      resource: initial?.resource || prefill?.resource || undefined,
       lead: initial?.lead || prefill?.lead || undefined,
       date: initial?.start_at?.slice(0, 10) || prefill?.date || todayISO(),
       slot: initial?.start_at || prefill?.slot || "",
@@ -142,22 +143,12 @@ export function AppointmentForm({
     }
   }, [date, serviceId, resourceId, initial, form]);
 
-  useEffect(() => {
-    if (!initial && activeResources.length && !form.getValues("resource")) {
-      form.setValue("resource", activeResources[0].id);
-    }
-  }, [activeResources.length, form, initial]);
-
   return (
     <form
       className="grid gap-4"
       onSubmit={form.handleSubmit(async (values) => {
         setSubmitError(null);
         const startAt = initial?.start_at || values.slot;
-        if (!initial && hasResources && !values.resource) {
-          form.setError("resource", { message: t("appointment.selectResourceError") });
-          return;
-        }
         if (!initial && !startAt) {
           form.setError("slot", { message: t("appointment.selectSlotError") });
           return;
@@ -210,7 +201,7 @@ export function AppointmentForm({
       ) : null}
       {hasResources ? (
         <div className="rounded-3xl border border-brand-100 bg-brand-50/70 p-4 text-sm text-brand-900">
-          <p className="font-bold">{t("appointment.resourceSelectedTitle")}</p>
+          <p className="font-bold">{t("appointment.resourceOptionalTitle")}</p>
           <p className="mt-1 leading-6">{t("appointment.resourceSelectedText")}</p>
         </div>
       ) : null}
@@ -223,7 +214,7 @@ export function AppointmentForm({
           label={t("appointment.resource")}
           error={form.formState.errors.resource?.message}
           options={[
-            { value: "", label: hasResources ? t("appointment.selectResource") : t("appointment.noResource") },
+            { value: "", label: t("appointment.businessSchedule") },
             ...activeResources.map((resource) => ({ value: resource.id, label: resource.name })),
           ]}
           {...form.register("resource")}

@@ -121,6 +121,21 @@ export function WeeklyWorkingHoursForm({
     );
   }
 
+  function copyBusinessSchedule() {
+    setError("");
+    setDays(
+      weekdays.map((day) => {
+        const businessDay = existingHours.find((item) => item.weekday === day.value && !item.resource);
+        return {
+          weekday: day.value,
+          start_time: businessDay?.start_time?.slice(0, 5) || "09:00",
+          end_time: businessDay?.end_time?.slice(0, 5) || "18:00",
+          is_day_off: businessDay?.is_day_off ?? day.value === 6,
+        };
+      }),
+    );
+  }
+
   function updateDay(weekday: number, patch: Partial<WeeklyDayValue>) {
     setError("");
     setDays((current) => current.map((day) => (day.weekday === weekday ? { ...day, ...patch } : day)));
@@ -178,6 +193,9 @@ export function WeeklyWorkingHoursForm({
       <div className="flex flex-wrap gap-2">
         <Button type="button" variant="secondary" onClick={() => applyPreset("salon")}>{t("workingHours.salonPreset")}</Button>
         <Button type="button" variant="secondary" onClick={() => applyPreset("weekdays")}>{t("workingHours.officePreset")}</Button>
+        {targetResource ? (
+          <Button type="button" variant="secondary" onClick={copyBusinessSchedule}>{t("workingHours.copyBusinessSchedule")}</Button>
+        ) : null}
       </div>
       {error ? <div className="rounded-3xl border border-red-100 bg-red-50 p-4 text-sm font-bold text-red-700">{error}</div> : null}
       <div className="grid gap-3">

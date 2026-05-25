@@ -119,6 +119,24 @@ DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
 cd frontend && npm run build
 ```
 
+### Working hours staff schedule UX hardening
+
+Статус: **готово**.
+
+Что изменено:
+
+- В недельной настройке графика для конкретного мастера/ресурса добавлена кнопка `Скопировать график бизнеса`.
+- Это закрывает частый сценарий: сначала владелец задаёт общий график, затем быстро применяет его к сотруднику и меняет только отличающиеся дни.
+- Кнопка показывается только при настройке конкретного ресурса, чтобы не путать общий график бизнеса.
+- Все новые тексты добавлены в RU / KK / EN.
+
+Проверка:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+cd frontend && npm run build
+```
+
 ### ZANI 10 next tasks — Task 1: Mobile-first business cockpit
 
 Статус: **готово как первый visual-shell шаг**.

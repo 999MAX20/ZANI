@@ -5949,3 +5949,9 @@ Frontend production build after Telegram integration copy cleanup pass: OK
 Data connector status cleanup pass: Kaspi / 1C / warehouse / marketplace request cards now show merchant-friendly localized statuses instead of raw connector state values, and saved requests use the product name without technical `connector request` naming.
 
 Frontend production build after data connector status cleanup pass: OK
+
+Regression after integrations copy/status cleanup: Django system check, full backend test suite and frontend production build are green after the conversation/source localization, Telegram copy cleanup and data connector status cleanup.
+
+Backend check after integrations cleanup regression pass: OK
+Full backend tests after integrations cleanup regression pass: 307 OK
+Frontend production build after integrations cleanup regression pass: OK

@@ -16,6 +16,7 @@ type FormValues = {
   full_name?: string;
   phone?: string;
   password: string;
+  password_confirm: string;
 };
 
 export function InviteAcceptPage() {
@@ -26,6 +27,10 @@ export function InviteAcceptPage() {
     full_name: z.string().optional(),
     phone: z.string().optional(),
     password: z.string().min(8, t("validation.passwordMin")),
+    password_confirm: z.string().min(1, t("passwordReset.repeatPasswordRequired")),
+  }).refine((values) => values.password === values.password_confirm, {
+    message: t("passwordReset.passwordMismatch"),
+    path: ["password_confirm"],
   });
   const preview = useQuery({
     queryKey: ["team-invitation-preview", token],
@@ -34,12 +39,17 @@ export function InviteAcceptPage() {
     retry: false,
   });
   const acceptMutation = useMutation({
-    mutationFn: (values: FormValues) => teamApi.acceptInvitation({ token, ...values }),
+    mutationFn: (values: FormValues) => teamApi.acceptInvitation({
+      token,
+      full_name: values.full_name,
+      phone: values.phone,
+      password: values.password,
+    }),
     onSuccess: () => navigate("/login"),
   });
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    values: { full_name: preview.data?.full_name || "", phone: "", password: "" },
+    values: { full_name: preview.data?.full_name || "", phone: "", password: "", password_confirm: "" },
   });
 
   if (preview.isLoading) return <LoadingState label={t("invite.checking")} />;
@@ -63,6 +73,13 @@ export function InviteAcceptPage() {
               {t("invite.inactive", { status: preview.data.status })}
             </div>
           ) : null}
+          {preview.data?.status === "pending" ? (
+            <div className="mt-5 rounded-3xl border border-brand-100 bg-brand-50/70 p-4">
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-brand-700">{t("invite.assignedRole")}</p>
+              <p className="mt-1 text-lg font-black text-midnight">{t(`settings.role.${preview.data.role}`)}</p>
+              <p className="mt-1 text-sm leading-6 text-slate-500">{t(`settings.roleDescription.${preview.data.role}`)}</p>
+            </div>
+          ) : null}
           {acceptMutation.error ? <div className="mt-5"><ErrorState message={getApiErrorMessage(acceptMutation.error)} /></div> : null}
 
           <form className="mt-6 space-y-4" onSubmit={form.handleSubmit((values) => acceptMutation.mutate(values))}>
@@ -70,6 +87,7 @@ export function InviteAcceptPage() {
             <Input label={t("invite.name")} {...form.register("full_name")} placeholder={t("invite.namePlaceholder")} />
             <Input label={t("invite.phone")} {...form.register("phone")} placeholder={t("invite.phonePlaceholder")} />
             <Input label={t("invite.newPassword")} type="password" error={form.formState.errors.password?.message} {...form.register("password")} />
+            <Input label={t("passwordReset.repeatPassword")} type="password" error={form.formState.errors.password_confirm?.message} {...form.register("password_confirm")} />
             <Button className="w-full" variant="ai" type="submit" isLoading={acceptMutation.isPending} disabled={preview.data?.status !== "pending"}>
               <CheckCircle2 size={18} />
               {t("invite.accept")}

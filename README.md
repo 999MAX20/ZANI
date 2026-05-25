@@ -33,6 +33,28 @@ plan/clean_code_rules/zani_required_clean_code_rules.md
 - Docker-ready структура.
 - Celery-ready конфигурация, но Celery/Redis пока не обязательны для минимального запуска.
 
+### Auth UX hardening — password reset and invites
+
+Статус: **готово**.
+
+Что изменено:
+
+- Экран восстановления пароля теперь корректно учитывает выбранный канал:
+  - email открывает `mailto`;
+  - WhatsApp открывает share-link;
+  - Telegram открывает share-link;
+  - ручной канал оставляет только копирование ссылки.
+- Тема и текст отправки локализованы для RU / KK / EN.
+- Экран принятия приглашения теперь явно показывает назначенную роль сотрудника и её смысл.
+- При принятии приглашения добавлено повторное поле пароля, чтобы снизить риск ошибки при первом входе.
+
+Проверка:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+cd frontend && npm run build
+```
+
 ### ZANI 10 next tasks — Task 1: Mobile-first business cockpit
 
 Статус: **готово как первый visual-shell шаг**.

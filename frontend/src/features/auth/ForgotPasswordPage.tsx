@@ -30,6 +30,7 @@ export function ForgotPasswordPage() {
     defaultValues: { delivery_channel: "email" },
   });
   const email = watch("email");
+  const deliveryChannel = watch("delivery_channel");
   const resetUrl = useMemo(() => (resetPath ? `${window.location.origin}${resetPath}` : ""), [resetPath]);
 
   async function onSubmit(values: FormValues) {
@@ -43,10 +44,36 @@ export function ForgotPasswordPage() {
     }
   }
 
-  function shareUrl() {
-    const text = encodeURIComponent(t("passwordReset.shareBody", { url: resetUrl }));
-    return `mailto:${encodeURIComponent(email || "")}?subject=Zani password reset&body=${text}`;
+  function shareTarget() {
+    const body = t("passwordReset.shareBody", { url: resetUrl });
+    const encodedBody = encodeURIComponent(body);
+    const encodedUrl = encodeURIComponent(resetUrl);
+
+    if (deliveryChannel === "whatsapp") {
+      return {
+        href: `https://wa.me/?text=${encodedBody}`,
+        label: t("passwordReset.sendWhatsApp"),
+      };
+    }
+
+    if (deliveryChannel === "telegram") {
+      return {
+        href: `https://t.me/share/url?url=${encodedUrl}&text=${encodeURIComponent(t("passwordReset.shareTitle"))}`,
+        label: t("passwordReset.sendTelegram"),
+      };
+    }
+
+    if (deliveryChannel === "email") {
+      return {
+        href: `mailto:${encodeURIComponent(email || "")}?subject=${encodeURIComponent(t("passwordReset.shareTitle"))}&body=${encodedBody}`,
+        label: t("passwordReset.sendEmail"),
+      };
+    }
+
+    return null;
   }
+
+  const share = resetUrl ? shareTarget() : null;
 
   return (
     <main className="grid min-h-screen place-items-center bg-soft-mesh px-4 py-8">
@@ -91,10 +118,12 @@ export function ForgotPasswordPage() {
                 <Copy size={16} />
                 {t("common.copy")}
               </Button>
-              <a className="inline-flex min-h-10 items-center justify-center gap-2 rounded-2xl border border-slate-200/80 bg-white/80 px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm" href={shareUrl()}>
-                <Send size={16} />
-                {t("passwordReset.sendEmail")}
-              </a>
+              {share ? (
+                <a className="inline-flex min-h-10 items-center justify-center gap-2 rounded-2xl border border-slate-200/80 bg-white/80 px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm" href={share.href} target="_blank" rel="noreferrer">
+                  <Send size={16} />
+                  {share.label}
+                </a>
+              ) : null}
             </div>
           </div>
         ) : null}

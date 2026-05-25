@@ -30,11 +30,14 @@ For local development, copy `.env.example` to `.env`.
 For staging/production, use the tracked templates as a checklist and put real values into the deploy provider secrets:
 
 ```text
+.env.render.example
 .env.staging.example
 .env.production.example
 frontend/.env.staging.example
 frontend/.env.production.example
 ```
+
+For the current Render setup, prefer `.env.render.example`. It intentionally contains only the services connected now: Render frontend/backend URLs, Supabase Postgres, CORS/CSRF, JWT/rate limits, local demo media, inline task mode and OpenRouter. Do not paste unused Redis, S3, Telegram, WhatsApp, SMTP or Sentry variables until those services are actually connected.
 
 ## Pre-Deploy Quality Gate
 

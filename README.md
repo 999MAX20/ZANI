@@ -6194,3 +6194,5 @@ Targeted AI tests after OpenRouter env cleanup pass: 15 OK
 Frontend production build after OpenRouter env cleanup pass: OK
 
 Browser console auth/CORS noise pass: notification summary and notification list queries now run only after the authenticated user is loaded. Realtime queries no longer refetch on every window focus, so switching back to the tab does not trigger extra notification/inbox requests. External curl checks against `https://zani-9lnp.onrender.com/api/notifications/summary/` confirmed that current backend CORS headers are present for `https://zani-1.onrender.com`; remaining 401 entries are auth-token/session state, not missing CORS configuration.
+
+Render env simplification pass: added `.env.render.example` as the current source checklist for Render deploy variables. It contains only the connected minimal stack: Render frontend/backend URLs, Supabase Postgres, CORS/CSRF, JWT/rate limits, inline task mode, local demo media and OpenRouter. Unconnected services such as Redis, S3, Telegram, WhatsApp, SMTP and Sentry are intentionally excluded until they are introduced.

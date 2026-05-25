@@ -251,14 +251,23 @@ def _email_check(order):
 
 
 def _openai_check(order):
-    enabled = _configured(getattr(settings, "OPENAI_API_KEY", ""))
+    configured_keys = {
+        "openai": _configured(getattr(settings, "OPENAI_API_KEY", "")),
+        "openrouter": _configured(getattr(settings, "OPENROUTER_API_KEY", "")),
+        "kimi": _configured(getattr(settings, "KIMI_API_KEY", "")),
+    }
+    enabled = bool(getattr(settings, "AI_ENABLED", True)) and any(configured_keys.values())
     gates = [
         _gate(
             "openai.api_key",
             "AI provider key configured only when ready",
             True,
-            f"OPENAI_API_KEY configured={enabled}; OPENAI_MODEL={getattr(settings, 'OPENAI_MODEL', '')}",
-            "Keep AI mock mode when key is missing; do not block merchant CRM workflows.",
+            (
+                f"AI_PROVIDER={getattr(settings, 'AI_PROVIDER', 'mock')}; "
+                f"configured_keys={configured_keys}; "
+                f"fast={getattr(settings, 'AI_FAST_MODEL', '')}; smart={getattr(settings, 'AI_SMART_MODEL', '')}"
+            ),
+            "Keep AI mock mode when provider keys are missing; do not block merchant CRM workflows.",
         ),
         _queue_gate("openai", enabled),
         _gate(

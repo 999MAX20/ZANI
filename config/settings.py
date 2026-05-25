@@ -1,6 +1,7 @@
 from pathlib import Path
 from datetime import timedelta
 from urllib.parse import quote
+import json
 
 import environ
 
@@ -296,11 +297,56 @@ SENTRY_TRACES_SAMPLE_RATE = env.float("SENTRY_TRACES_SAMPLE_RATE", default=0.05)
 TELEGRAM_ENABLED = env.bool("TELEGRAM_ENABLED", default=False)
 TELEGRAM_BASE_API_URL = env("TELEGRAM_BASE_API_URL", default="https://api.telegram.org")
 TELEGRAM_WEBHOOK_SECRET = env("TELEGRAM_WEBHOOK_SECRET", default="")
-OPENAI_API_KEY = env("OPENAI_API_KEY", default="")
-OPENAI_MODEL = env("OPENAI_MODEL", default="gpt-4.1-mini")
-OPENAI_TEMPERATURE = env.float("OPENAI_TEMPERATURE", default=0.4)
 WHATSAPP_ENABLED = env.bool("WHATSAPP_ENABLED", default=False)
 INSTAGRAM_ENABLED = env.bool("INSTAGRAM_ENABLED", default=False)
+
+OPENAI_API_KEY = env("OPENAI_API_KEY", default="")
+OPENAI_BASE_URL = env("OPENAI_BASE_URL", default="https://api.openai.com/v1")
+OPENAI_MODEL = env("OPENAI_MODEL", default="gpt-4.1-mini")
+OPENAI_TEMPERATURE = env.float("OPENAI_TEMPERATURE", default=0.4)
+OPENROUTER_API_KEY = env("OPENROUTER_API_KEY", default="")
+OPENROUTER_BASE_URL = env("OPENROUTER_BASE_URL", default="https://openrouter.ai/api/v1")
+OPENROUTER_SITE_URL = env("OPENROUTER_SITE_URL", default="")
+OPENROUTER_APP_NAME = env("OPENROUTER_APP_NAME", default="ZANI")
+KIMI_API_KEY = env("KIMI_API_KEY", default="")
+KIMI_BASE_URL = env("KIMI_BASE_URL", default="https://api.moonshot.ai/v1")
+
+_AI_PROVIDER_DEFAULT = "mock"
+if KIMI_API_KEY:
+    _AI_PROVIDER_DEFAULT = "kimi"
+elif OPENROUTER_API_KEY:
+    _AI_PROVIDER_DEFAULT = "openrouter"
+elif OPENAI_API_KEY:
+    _AI_PROVIDER_DEFAULT = "openai"
+
+AI_ENABLED = env.bool("AI_ENABLED", default=True)
+AI_PROVIDER = env("AI_PROVIDER", default=_AI_PROVIDER_DEFAULT).lower()
+AI_MODEL = env("AI_MODEL", default="")
+if not AI_MODEL:
+    AI_MODEL = {
+        "kimi": "kimi-k2.6",
+        "openrouter": "openrouter/auto",
+        "openai": OPENAI_MODEL,
+    }.get(AI_PROVIDER, "mock-ai")
+AI_FAST_MODEL = env("AI_FAST_MODEL", default=AI_MODEL)
+AI_SMART_MODEL = env("AI_SMART_MODEL", default=AI_MODEL)
+AI_CHEAP_MODEL = env("AI_CHEAP_MODEL", default=AI_FAST_MODEL)
+AI_DEFAULT_MODEL_TIER = env("AI_DEFAULT_MODEL_TIER", default="smart")
+AI_PROMPT_MODEL_TIERS = env(
+    "AI_PROMPT_MODEL_TIERS",
+    default=json.dumps(
+        {
+            "crm_assistant": "smart",
+            "lead_reply": "fast",
+            "client_summary": "smart",
+            "daily_summary": "smart",
+            "notification_summary": "cheap",
+        }
+    ),
+)
+AI_TEMPERATURE = env.float("AI_TEMPERATURE", default=OPENAI_TEMPERATURE)
+AI_HTTP_TIMEOUT_SECONDS = env.int("AI_HTTP_TIMEOUT_SECONDS", default=20)
+
 EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend")
 EMAIL_HOST = env("EMAIL_HOST", default="")
 EMAIL_PORT = env.int("EMAIL_PORT", default=587)
@@ -311,6 +357,9 @@ DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="Zani <no-reply@zani.loca
 
 if "test" in __import__("sys").argv:
     OPENAI_API_KEY = ""
+    OPENROUTER_API_KEY = ""
+    KIMI_API_KEY = ""
+    AI_PROVIDER = "mock"
     TELEGRAM_ENABLED = False
     WHATSAPP_ENABLED = False
     INSTAGRAM_ENABLED = False

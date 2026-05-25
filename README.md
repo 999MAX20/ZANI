@@ -6161,3 +6161,10 @@ Merchant navigation performance pass: merchant pages no longer use the all-entit
 Backend check after merchant navigation performance pass: OK
 Full backend tests after merchant navigation performance pass: 309 OK
 Frontend production build after merchant navigation performance pass: OK
+
+AI provider architecture pass: the central AI assistant now uses a provider layer instead of direct OpenAI-only wiring. Supported runtime providers are `mock`, `kimi`, `openrouter` and `openai`, with env-controlled model tiers for fast / smart / cheap tasks and prompt-type routing. Missing or failing real providers fall back to controlled mock responses when allowed, so merchant CRM flows do not break if an AI quota or key is unavailable.
+
+Backend check after AI provider architecture pass: OK
+Targeted AI/provider tests after AI provider architecture pass: 21 OK
+Full backend tests after AI provider architecture pass: 310 OK
+Frontend production build after AI provider architecture pass: OK

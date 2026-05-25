@@ -7,11 +7,28 @@ from apps.billing.entitlements import EntitlementMetrics, assert_entitlement_all
 from apps.billing.usage import increment_usage
 
 
-def run_ai_request(*, business, prompt_type, user_input, source=AIRequestLog.Sources.CRM, user=None, input_json=None, allow_mock=True):
+def run_ai_request(
+    *,
+    business,
+    prompt_type,
+    user_input,
+    source=AIRequestLog.Sources.CRM,
+    user=None,
+    input_json=None,
+    allow_mock=True,
+    model=None,
+    model_tier=None,
+):
     assert_entitlement_allows(business, EntitlementMetrics.AI_REQUESTS)
     context = get_business_knowledge_context(business)
     prompt = build_prompt(prompt_type=prompt_type, user_input=user_input, context=context)
-    result = generate_text(prompt, allow_mock=allow_mock)
+    result = generate_text(
+        prompt,
+        prompt_type=prompt_type,
+        model=model,
+        model_tier=model_tier,
+        allow_mock=allow_mock,
+    )
     log = AIRequestLog.objects.create(
         business=business,
         user=user,
@@ -20,6 +37,8 @@ def run_ai_request(*, business, prompt_type, user_input, source=AIRequestLog.Sou
         input_json={
             "user_input": user_input,
             "context": context,
+            "ai_provider": result.provider,
+            "ai_model_tier": model_tier,
             **(input_json or {}),
         },
         output_text=result.output_text,

@@ -1,6 +1,10 @@
 from dataclasses import dataclass
+import json
 
 from django.conf import settings
+
+from apps.ai_core.providers import get_ai_provider
+from apps.ai_core.providers.base import AIProviderError
 
 
 class AIClientError(Exception):
@@ -13,41 +17,56 @@ class AIClientResult:
     model: str
     tokens_used: int = 0
     is_mock: bool = False
+    provider: str = "mock"
 
 
-def generate_text(prompt, *, model=None, temperature=None, allow_mock=True):
-    model = model or settings.OPENAI_MODEL
-    temperature = settings.OPENAI_TEMPERATURE if temperature is None else temperature
+def _prompt_tier(prompt_type):
+    try:
+        prompt_tiers = json.loads(settings.AI_PROMPT_MODEL_TIERS or "{}")
+    except json.JSONDecodeError:
+        prompt_tiers = {}
+    return prompt_tiers.get(prompt_type) or settings.AI_DEFAULT_MODEL_TIER
 
-    if not settings.OPENAI_API_KEY:
-        if allow_mock:
-            return AIClientResult(
-                output_text="AI mock response: OPENAI_API_KEY is not configured.",
-                model=model,
-                tokens_used=0,
-                is_mock=True,
-            )
-        raise AIClientError("OPENAI_API_KEY is not configured.")
+
+def resolve_model(*, prompt_type=None, model=None, model_tier=None):
+    if model:
+        return model
+
+    tier = model_tier or _prompt_tier(prompt_type or "")
+    models_by_tier = {
+        "fast": settings.AI_FAST_MODEL,
+        "cheap": settings.AI_CHEAP_MODEL,
+        "smart": settings.AI_SMART_MODEL,
+    }
+    return models_by_tier.get(tier) or settings.AI_MODEL
+
+
+def generate_text(prompt, *, model=None, model_tier=None, prompt_type=None, temperature=None, allow_mock=True):
+    provider_name = "mock" if not settings.AI_ENABLED else settings.AI_PROVIDER
+    selected_model = resolve_model(prompt_type=prompt_type, model=model, model_tier=model_tier)
+    temperature = settings.AI_TEMPERATURE if temperature is None else temperature
 
     try:
-        from openai import OpenAI
-    except ImportError as exc:
-        if allow_mock:
-            return AIClientResult(
-                output_text="AI mock response: openai package is not installed.",
-                model=model,
-                tokens_used=0,
-                is_mock=True,
-            )
-        raise AIClientError("openai package is not installed.") from exc
+        response = get_ai_provider(provider_name).generate_text(
+            prompt,
+            model=selected_model,
+            temperature=temperature,
+            timeout_seconds=settings.AI_HTTP_TIMEOUT_SECONDS,
+        )
+    except AIProviderError as exc:
+        if not allow_mock:
+            raise AIClientError(str(exc)) from exc
+        response = get_ai_provider("mock").generate_text(
+            prompt,
+            model=selected_model,
+            temperature=temperature,
+            timeout_seconds=settings.AI_HTTP_TIMEOUT_SECONDS,
+        )
 
-    client = OpenAI(api_key=settings.OPENAI_API_KEY)
-    response = client.responses.create(
-        model=model,
-        input=prompt,
-        temperature=temperature,
+    return AIClientResult(
+        output_text=response.output_text,
+        model=response.model,
+        tokens_used=response.tokens_used,
+        is_mock=response.is_mock,
+        provider=response.provider,
     )
-    output_text = getattr(response, "output_text", "") or ""
-    usage = getattr(response, "usage", None)
-    tokens_used = getattr(usage, "total_tokens", 0) if usage else 0
-    return AIClientResult(output_text=output_text, model=model, tokens_used=tokens_used, is_mock=False)

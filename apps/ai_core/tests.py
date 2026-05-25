@@ -3,7 +3,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.accounts.models import User
-from apps.ai_core.ai_client import AIClientError, generate_text
+from apps.ai_core.ai_client import AIClientError, generate_text, resolve_model
 from apps.ai_core.models import AIToolCallLog, AIRequestLog, AgentProfile, BusinessKnowledgeItem
 from apps.bots.models import Bot, BotConversation, BotMessage
 from apps.ai_core.services import run_ai_request
@@ -34,19 +34,31 @@ class AICoreFoundationTests(TestCase):
         BusinessMember.objects.create(business=self.business, user=self.owner, role=BusinessMember.Roles.OWNER)
         BusinessMember.objects.create(business=self.other_business, user=self.other_owner, role=BusinessMember.Roles.OWNER)
 
-    @override_settings(OPENAI_API_KEY="")
+    @override_settings(AI_PROVIDER="mock", OPENAI_API_KEY="", OPENROUTER_API_KEY="", KIMI_API_KEY="")
     def test_generate_text_returns_mock_without_key(self):
         result = generate_text("Hello")
 
         self.assertTrue(result.is_mock)
-        self.assertIn("OPENAI_API_KEY", result.output_text)
+        self.assertEqual(result.provider, "mock")
+        self.assertIn("mock response", result.output_text)
 
-    @override_settings(OPENAI_API_KEY="")
+    @override_settings(
+        AI_PROVIDER="kimi",
+        AI_FAST_MODEL="kimi-fast",
+        AI_SMART_MODEL="kimi-smart",
+        AI_PROMPT_MODEL_TIERS='{"lead_reply": "fast"}',
+    )
+    def test_resolve_model_uses_prompt_tiers(self):
+        self.assertEqual(resolve_model(prompt_type="lead_reply"), "kimi-fast")
+        self.assertEqual(resolve_model(prompt_type="crm_assistant"), "kimi-smart")
+        self.assertEqual(resolve_model(model="manual-model"), "manual-model")
+
+    @override_settings(AI_PROVIDER="kimi", KIMI_API_KEY="")
     def test_generate_text_can_return_controlled_error_without_key(self):
         with self.assertRaises(AIClientError):
             generate_text("Hello", allow_mock=False)
 
-    @override_settings(OPENAI_API_KEY="")
+    @override_settings(AI_PROVIDER="mock", OPENAI_API_KEY="", OPENROUTER_API_KEY="", KIMI_API_KEY="")
     def test_run_ai_request_logs_mock_response(self):
         BusinessKnowledgeItem.objects.create(
             business=self.business,
@@ -68,6 +80,7 @@ class AICoreFoundationTests(TestCase):
         self.assertEqual(log.user, self.owner)
         self.assertEqual(log.prompt_type, "test_prompt")
         self.assertEqual(log.input_json["context"][0]["title"], "Working hours")
+        self.assertEqual(log.input_json["ai_provider"], "mock")
 
     def test_knowledge_items_are_tenant_filtered(self):
         BusinessKnowledgeItem.objects.create(business=self.business, title="Own", content="Visible")
@@ -116,7 +129,7 @@ class AICoreFoundationTests(TestCase):
         )
         self.assertEqual(invalid_response.status_code, 400)
 
-    @override_settings(OPENAI_API_KEY="")
+    @override_settings(AI_PROVIDER="mock", OPENAI_API_KEY="", OPENROUTER_API_KEY="", KIMI_API_KEY="")
     def test_ai_assistant_chat_returns_mock_and_logs_context(self):
         client = Client.objects.create(business=self.business, full_name="AI Client", phone="+77010000000")
         Lead.objects.create(business=self.business, client=client, source=Lead.Sources.WEBSITE, message="Need appointment")
@@ -136,7 +149,7 @@ class AICoreFoundationTests(TestCase):
         self.assertEqual(log.user, self.owner)
         self.assertEqual(log.input_json["crm_context"]["summary"]["new_leads_count"], 1)
 
-    @override_settings(OPENAI_API_KEY="")
+    @override_settings(AI_PROVIDER="mock", OPENAI_API_KEY="", OPENROUTER_API_KEY="", KIMI_API_KEY="")
     def test_ai_assistant_chat_rejects_foreign_business(self):
         self.api.force_authenticate(self.owner)
 

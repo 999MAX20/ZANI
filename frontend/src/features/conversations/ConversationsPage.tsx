@@ -31,11 +31,17 @@ import { cn } from "../../lib/cn";
 import { useI18n, type Language } from "../../lib/i18n";
 import { realtimeIntervals, realtimeQueryOptions } from "../../lib/realtime";
 
-const channels: Record<string, { label: string; className: string }> = {
-  website: { label: "Website", className: "bg-sky-50 text-sky-700 ring-sky-200" },
-  telegram: { label: "Telegram", className: "bg-blue-50 text-blue-700 ring-blue-200" },
-  whatsapp: { label: "WhatsApp", className: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
-  instagram: { label: "Instagram", className: "bg-fuchsia-50 text-fuchsia-700 ring-fuchsia-200" },
+const channels: Record<string, { labelKey: string; className: string }> = {
+  website: { labelKey: "channel.website", className: "bg-sky-50 text-sky-700 ring-sky-200" },
+  telegram: { labelKey: "channel.telegram", className: "bg-blue-50 text-blue-700 ring-blue-200" },
+  whatsapp: { labelKey: "channel.whatsapp", className: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
+  instagram: { labelKey: "channel.instagram", className: "bg-fuchsia-50 text-fuchsia-700 ring-fuchsia-200" },
+};
+
+const channelStatuses: Record<string, string> = {
+  available: "conversations.channelStatus.available",
+  beta: "conversations.channelStatus.beta",
+  unavailable: "conversations.channelStatus.unavailable",
 };
 
 function localeFor(language: Language) {
@@ -54,14 +60,22 @@ function formatDateTime(value: string | null | undefined, language: Language, em
   }).format(new Date(value));
 }
 
-function getConversationTitle(conversation: InboxConversation | null | undefined, emptyTitle: string) {
+function getConversationTitle(conversation: InboxConversation | null | undefined, emptyTitle: string, channelVisitorTitle?: string) {
   if (!conversation) return emptyTitle;
-  return conversation.client_name || conversation.external_user_id || `${channels[conversation.channel]?.label || conversation.channel} visitor`;
+  return conversation.client_name || conversation.external_user_id || channelVisitorTitle || emptyTitle;
 }
 
 function ChannelBadge({ channel }: { channel: string }) {
-  const config = channels[channel] || { label: channel, className: "bg-slate-100 text-slate-700 ring-slate-200" };
-  return <span className={cn("inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1", config.className)}>{config.label}</span>;
+  const { t } = useI18n();
+  const config = channels[channel] || { labelKey: "", className: "bg-slate-100 text-slate-700 ring-slate-200" };
+  const label = config.labelKey ? t(config.labelKey) : channel;
+  return <span className={cn("inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1", config.className)}>{label}</span>;
+}
+
+function ChannelStatusBadge({ status }: { status: string }) {
+  const { t } = useI18n();
+  const label = channelStatuses[status] ? t(channelStatuses[status]) : status;
+  return <span className={cn("rounded-full px-2 py-1 text-[11px] font-black uppercase", status === "available" ? "bg-emerald-50 text-emerald-700" : status === "beta" ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-600")}>{label}</span>;
 }
 
 function ConversationListItem({
@@ -74,7 +88,8 @@ function ConversationListItem({
   onClick: () => void;
 }) {
   const { language, t } = useI18n();
-  const title = getConversationTitle(conversation, t("conversations.selectDialog"));
+  const channelLabel = channels[conversation.channel]?.labelKey ? t(channels[conversation.channel].labelKey) : conversation.channel;
+  const title = getConversationTitle(conversation, t("conversations.selectDialog"), t("conversations.visitorFallback", { channel: channelLabel }));
   const lastText = conversation.last_message?.text || t("conversations.noMessagesShort");
 
   return (
@@ -231,6 +246,10 @@ export function ConversationsPage() {
 
   const items = conversations.data?.results || [];
   const selected = useMemo(() => items.find((item) => item.id === selectedId) || items[0] || null, [items, selectedId]);
+  const getLocalizedConversationTitle = (conversation: InboxConversation | null | undefined) => {
+    const channelLabel = conversation?.channel && channels[conversation.channel]?.labelKey ? t(channels[conversation.channel].labelKey) : conversation?.channel || "";
+    return getConversationTitle(conversation, t("conversations.selectDialog"), t("conversations.visitorFallback", { channel: channelLabel }));
+  };
 
   useEffect(() => {
     const conversationFromUrl = Number(searchParams.get("conversation") || "");
@@ -577,7 +596,7 @@ export function ConversationsPage() {
                 >
                   <div className="mb-3 flex items-center justify-between gap-2">
                     <ChannelBadge channel={channel.key} />
-                    <span className={cn("rounded-full px-2 py-1 text-[11px] font-black uppercase", channel.status === "available" ? "bg-emerald-50 text-emerald-700" : channel.status === "beta" ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-600")}>{channel.status}</span>
+                    <ChannelStatusBadge status={channel.status} />
                   </div>
                   <p className="text-2xl font-black text-midnight">{channel.total}</p>
                   <p className="mt-1 text-xs font-semibold leading-5 text-slate-500">{channel.pilot_note}</p>
@@ -627,10 +646,10 @@ export function ConversationsPage() {
                   onChange={(event) => patchFilters({ channel: event.target.value })}
                 >
                   <option value="">{t("conversations.allChannels")}</option>
-                  <option value="website">Website</option>
-                  <option value="telegram">Telegram</option>
-                  <option value="whatsapp">WhatsApp</option>
-                  <option value="instagram">Instagram</option>
+                  <option value="website">{t("channel.website")}</option>
+                  <option value="telegram">{t("channel.telegram")}</option>
+                  <option value="whatsapp">{t("channel.whatsapp")}</option>
+                  <option value="instagram">{t("channel.instagram")}</option>
                 </select>
                 <select
                   className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none"
@@ -708,7 +727,7 @@ export function ConversationsPage() {
         <Card className="overflow-hidden">
           <div className="flex flex-col gap-3 border-b border-slate-100 p-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-xl font-black text-midnight">{getConversationTitle(selected, t("conversations.selectDialog"))}</h2>
+              <h2 className="text-xl font-black text-midnight">{getLocalizedConversationTitle(selected)}</h2>
               <div className="mt-2 flex flex-wrap gap-2">
                 {selected ? <ChannelBadge channel={selected.channel} /> : null}
                 {selected ? <StatusBadge status={selected.status} /> : null}
@@ -878,7 +897,7 @@ export function ConversationsPage() {
               <div className="space-y-4">
                 <div className="rounded-3xl bg-slate-50 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{t("common.client")}</p>
-                  <p className="mt-2 font-bold text-midnight">{getConversationTitle(selected, t("conversations.selectDialog"))}</p>
+                  <p className="mt-2 font-bold text-midnight">{getLocalizedConversationTitle(selected)}</p>
                   <p className="mt-1 text-sm text-slate-500">{selected.client_phone || selected.external_user_id || t("conversations.noContact")}</p>
                   <p className="mt-2 text-xs font-semibold text-slate-400">{selected.client ? `${t("common.client")} #${selected.client}` : t("conversations.clientNotCreated")}</p>
                 </div>
@@ -972,7 +991,7 @@ export function ConversationsPage() {
                   <Button
                     variant="secondary"
                     className="w-full justify-start"
-                    onClick={() => selected && (selected.client ? navigate(`/dashboard/clients?client=${selected.client}`) : createClientMutation.mutate({ conversationId: selected.id, full_name: getConversationTitle(selected, t("conversations.selectDialog")) }))}
+                    onClick={() => selected && (selected.client ? navigate(`/dashboard/clients?client=${selected.client}`) : createClientMutation.mutate({ conversationId: selected.id, full_name: getLocalizedConversationTitle(selected) }))}
                     isLoading={createClientMutation.isPending}
                   >
                     <ExternalLink size={17} /> {selected.client ? t("conversations.clientLinkedButton") : t("clients.create")}
@@ -988,7 +1007,7 @@ export function ConversationsPage() {
                   <Button
                     variant="secondary"
                     className="w-full justify-start"
-                    onClick={() => selected && (selected.deal ? navigate(`/dashboard/deals?deal=${selected.deal}`) : createDealMutation.mutate({ conversationId: selected.id, title: `${t("nav.deals")}: ${getConversationTitle(selected, t("conversations.selectDialog"))}` }))}
+                    onClick={() => selected && (selected.deal ? navigate(`/dashboard/deals?deal=${selected.deal}`) : createDealMutation.mutate({ conversationId: selected.id, title: `${t("nav.deals")}: ${getLocalizedConversationTitle(selected)}` }))}
                     isLoading={createDealMutation.isPending}
                   >
                     <ExternalLink size={17} /> {selected.deal ? t("conversations.openLinkedDeal") : t("deals.create")}
@@ -1000,7 +1019,7 @@ export function ConversationsPage() {
                       selected &&
                       createTaskMutation.mutate({
                         conversationId: selected.id,
-                        title: t("conversations.followUpTaskTitle", { title: getConversationTitle(selected, t("conversations.selectDialog")) }),
+                        title: t("conversations.followUpTaskTitle", { title: getLocalizedConversationTitle(selected) }),
                       })
                     }
                     isLoading={createTaskMutation.isPending}

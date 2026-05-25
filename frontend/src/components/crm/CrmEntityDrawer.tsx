@@ -63,6 +63,17 @@ function getSubtitle(data: CrmCardPayload | undefined, t: (key: string) => strin
   return [client.phone, client.email, client.source].filter(Boolean).join(" · ") || t("crmCard.noContacts");
 }
 
+function getChannelLabel(channel: string, t: (key: string) => string) {
+  const labels: Record<string, string> = {
+    website: "channel.website",
+    telegram: "channel.telegram",
+    whatsapp: "channel.whatsapp",
+    instagram: "channel.instagram",
+    manual: "channel.manual",
+  };
+  return labels[channel] ? t(labels[channel]) : channel;
+}
+
 function SummaryItem({ icon: Icon, label, value }: { icon: typeof UserRound; label: string; value: React.ReactNode }) {
   return (
     <div className="rounded-3xl border border-slate-100 bg-white/80 p-4 shadow-sm">
@@ -474,7 +485,7 @@ export function EntityConversationsPanel({ data }: { data: CrmCardPayload }) {
       {data.conversations.map((conversation) => (
         <div key={conversation.id} className="rounded-3xl border border-slate-100 bg-white/80 p-4 shadow-sm">
           <div className="flex items-center justify-between gap-3">
-            <p className="font-bold capitalize text-midnight">{conversation.channel}</p>
+            <p className="font-bold text-midnight">{getChannelLabel(conversation.channel, t)}</p>
             <StatusBadge status={conversation.status} />
           </div>
           <p className="mt-1 text-xs text-slate-500">{t("crmCard.unread")}: {conversation.unread_count || 0} · {formatDateTime(conversation.last_message_at || conversation.updated_at)}</p>

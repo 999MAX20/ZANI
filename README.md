@@ -5933,3 +5933,7 @@ Full backend tests after continuation regression pass: 307 OK
 Frontend production build after continuation regression pass: OK
 
 OAuth env documentation pass: `.env.example`, `.env.staging.example` and `.env.production.example` now include the frontend social-login variables `VITE_GOOGLE_CLIENT_ID` and `VITE_APPLE_CLIENT_ID` alongside `VITE_API_URL`, matching the existing controlled Google/Apple login implementation.
+
+Conversation localization cleanup pass: inbox channel labels, visitor fallback titles, channel status chips and CRM-card conversation channel names now use the shared RU / KK / EN dictionary instead of raw technical labels such as `website`, `available` or `visitor`.
+
+Frontend production build after conversation localization cleanup pass: OK

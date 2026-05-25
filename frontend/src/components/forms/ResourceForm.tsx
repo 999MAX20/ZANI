@@ -17,7 +17,7 @@ const createSchema = (t: (key: string) => string) =>
 
 type Values = z.infer<ReturnType<typeof createSchema>>;
 
-export function ResourceForm({ businessId, initial, onSubmit }: { businessId: Id; initial?: Resource; onSubmit: (payload: Partial<Resource>) => Promise<unknown> }) {
+export function ResourceForm({ businessId, initial, onSubmit }: { businessId: Id; initial?: Partial<Resource>; onSubmit: (payload: Partial<Resource>) => Promise<unknown> }) {
   const { t } = useI18n();
   const form = useForm<Values>({
     resolver: zodResolver(createSchema(t)),

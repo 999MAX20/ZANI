@@ -172,6 +172,24 @@ DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
 cd frontend && npm run build
 ```
 
+### Team role guide UX hardening
+
+Статус: **готово**.
+
+Что изменено:
+
+- В настройках сотрудников добавлен блок `Кого какой ролью приглашать`.
+- Владелец может одним кликом выбрать тип роли для приглашения: менеджер, оператор, сотрудник или бухгалтер.
+- Блок использует существующие role descriptions и не меняет backend RBAC, только делает выдачу доступов понятнее.
+- Все новые тексты добавлены в RU / KK / EN.
+
+Проверка:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+cd frontend && npm run build
+```
+
 ### ZANI 10 next tasks — Task 1: Mobile-first business cockpit
 
 Статус: **готово как первый visual-shell шаг**.

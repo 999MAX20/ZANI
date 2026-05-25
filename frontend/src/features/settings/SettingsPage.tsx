@@ -55,6 +55,8 @@ const visibilityOptions = [
   { value: "business" },
 ];
 
+const roleGuideKeys = ["manager", "operator", "staff", "accountant"] as const;
+
 const settingsSections = [
   { id: "team-access" },
   { id: "security-center" },
@@ -553,6 +555,25 @@ export function SettingsPage() {
                     <p className="font-bold text-midnight">{translatedVisibilityLabel(selectedVisibility, t)}</p>
                     <p className="mt-1 text-xs leading-5 text-slate-500">{translatedVisibilityDescription(selectedVisibility, t)}</p>
                   </div>
+                </div>
+              </div>
+              <div className="mt-4 rounded-3xl border border-slate-100 bg-slate-50/70 p-4">
+                <p className="text-sm font-black text-midnight">{t("settings.roleGuideTitle")}</p>
+                <p className="mt-1 text-sm leading-6 text-slate-500">{t("settings.roleGuideText")}</p>
+                <div className="mt-3 grid gap-2 md:grid-cols-2">
+                  {roleGuideKeys.map((roleKey) => (
+                    <button
+                      key={roleKey}
+                      type="button"
+                      className={`rounded-2xl border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-soft ${
+                        inviteForm.role === roleKey ? "border-brand-200 bg-white shadow-sm" : "border-white bg-white/70"
+                      }`}
+                      onClick={() => setInviteForm((current) => ({ ...current, role: roleKey }))}
+                    >
+                      <p className="text-sm font-black text-midnight">{t(`settings.role.${roleKey}`)}</p>
+                      <p className="mt-1 text-xs leading-5 text-slate-500">{roleDescription(roleKey)}</p>
+                    </button>
+                  ))}
                 </div>
               </div>
               {selectedMember ? (

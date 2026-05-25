@@ -72,6 +72,21 @@ export function WorkingHoursPage() {
   const businessDays = rows.filter((row) => !row.resource && !row.is_day_off).length;
   const resourceSchedules = new Set(rows.map((row) => row.resource).filter(Boolean)).size;
   const dayOffRows = rows.filter((row) => row.is_day_off).length;
+  const businessWeek = weekdays.map((key, index) => rows.find((row) => !row.resource && row.weekday === index) || null);
+  const resourceSummary = activeResources.map((resource) => {
+    const resourceRows = rows.filter((row) => row.resource === resource.id);
+    return {
+      resource,
+      workingDays: resourceRows.filter((row) => !row.is_day_off).length,
+      configuredDays: resourceRows.length,
+    };
+  });
+
+  function formatHours(row: WorkingHours | null) {
+    if (!row) return t("workingHours.notConfigured");
+    if (row.is_day_off) return t("workingHours.dayOff");
+    return `${row.start_time.slice(0, 5)} - ${row.end_time.slice(0, 5)}`;
+  }
 
   return (
     <>
@@ -121,6 +136,55 @@ export function WorkingHoursPage() {
       ) : null}
       {mutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(mutation.error)} /></div> : null}
       {presetMutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(presetMutation.error)} /></div> : null}
+      <section className="mb-5 grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+        <div className="rounded-[2rem] border border-white/80 bg-white/85 p-5 shadow-soft">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-600">{t("workingHours.wholeBusinessSchedule")}</p>
+              <h2 className="mt-1 text-xl font-black text-midnight">{t("workingHours.weekOverview")}</h2>
+            </div>
+            <Button variant="secondary" onClick={() => { setEditingResource(null); setOpen(true); }}>
+              {t("workingHours.editWeek")}
+            </Button>
+          </div>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-7">
+            {businessWeek.map((row, index) => (
+              <div key={weekdays[index]} className={`rounded-2xl border p-3 ${row && !row.is_day_off ? "border-brand-100 bg-brand-50/70" : "border-slate-100 bg-slate-50"}`}>
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{t(weekdays[index])}</p>
+                <p className={`mt-2 text-sm font-black ${row && !row.is_day_off ? "text-brand-800" : "text-slate-500"}`}>{formatHours(row)}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="rounded-[2rem] border border-white/80 bg-white/85 p-5 shadow-soft">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-600">{t("workingHours.resourceSchedules")}</p>
+              <h2 className="mt-1 text-xl font-black text-midnight">{t("workingHours.staffOverview")}</h2>
+            </div>
+            <Button variant="secondary" onClick={() => setOpen(true)}>
+              {t("workingHours.setupWeek")}
+            </Button>
+          </div>
+          <div className="mt-4 space-y-2">
+            {resourceSummary.length ? resourceSummary.map((item) => (
+              <button
+                key={item.resource.id}
+                type="button"
+                className="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-left transition hover:bg-brand-50"
+                onClick={() => { setEditingResource(item.resource.id); setOpen(true); }}
+              >
+                <span className="font-bold text-midnight">{item.resource.name}</span>
+                <span className="text-sm font-bold text-slate-500">
+                  {item.configuredDays ? t("workingHours.configuredDays").replace("{count}", String(item.workingDays)) : t("workingHours.usesBusinessSchedule")}
+                </span>
+              </button>
+            )) : (
+              <p className="rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-500">{t("workingHours.noResourcesText")}</p>
+            )}
+          </div>
+        </div>
+      </section>
       <DataTable
         rows={rows}
         emptyTitle={t("workingHours.emptyTitle")}

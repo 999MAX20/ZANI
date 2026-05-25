@@ -5960,3 +5960,8 @@ Calendar booking UX pass: appointment creation no longer forces a staff/resource
 
 Backend check after calendar booking UX pass: OK
 Frontend production build after calendar booking UX pass: OK
+
+Working-hours overview UX pass: the schedule settings page now shows a business-wide weekly overview and a compact staff/room schedule summary before the raw rows. Merchants can understand whether the business schedule is enough, which resources have custom hours, and edit the relevant week from one clear entry point.
+
+Backend check after working-hours overview UX pass: OK
+Frontend production build after working-hours overview UX pass: OK

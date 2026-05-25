@@ -6168,3 +6168,9 @@ Backend check after AI provider architecture pass: OK
 Targeted AI/provider tests after AI provider architecture pass: 21 OK
 Full backend tests after AI provider architecture pass: 310 OK
 Frontend production build after AI provider architecture pass: OK
+
+AI provider activation pass: added `/api/ai/assistant/status/` and a visible provider badge on the AI Assistant page. Owners can now see whether AI is running in `live` or `mock` mode, which provider is selected and which model is active. Chat responses also return provider/model metadata, and OpenAI-compatible providers now handle both string and structured message content.
+
+Backend check after AI provider activation pass: OK
+Targeted AI tests after AI provider activation pass: 15 OK
+Frontend production build after AI provider activation pass: OK

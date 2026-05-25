@@ -5,6 +5,7 @@ import type { AgentProfile, AIToolCallLog, AIToolSuggestResponse, BusinessKnowle
 export type AIAssistantChatResponse = {
   answer: string;
   is_mock: boolean;
+  provider: string;
   model: string;
   tokens_used: number;
   log_id: Id;
@@ -15,7 +16,24 @@ export type AIAssistantChatResponse = {
   };
 };
 
+export type AIAssistantStatusResponse = {
+  enabled: boolean;
+  provider: string;
+  mode: "mock" | "live";
+  ready: boolean;
+  key_configured: boolean;
+  model: string;
+  fast_model: string;
+  cheap_model: string;
+};
+
 export const aiApi = {
+  assistantStatus: async (business: Id) => {
+    const { data } = await apiClient.get<AIAssistantStatusResponse>("/api/ai/assistant/status/", {
+      params: { business },
+    });
+    return data;
+  },
   assistantChat: async ({ business, message, prompt_type }: { business: Id; message: string; prompt_type?: string }) => {
     const { data } = await apiClient.post<AIAssistantChatResponse>("/api/ai/assistant/chat/", {
       business,

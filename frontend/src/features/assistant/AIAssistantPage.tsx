@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bot, BookOpenText, CalendarCheck, CheckCircle2, ClipboardList, Plus, Send, Sparkles, Wand2 } from "lucide-react";
+import { Bot, BookOpenText, CalendarCheck, CheckCircle2, ClipboardList, Cpu, Plus, Send, Sparkles, Wand2 } from "lucide-react";
 import { useState } from "react";
 
 import { aiApi, businessKnowledgeApi, type AIAssistantChatResponse } from "../../api/ai";
@@ -64,6 +64,12 @@ export function AIAssistantPage() {
   const memory = useQuery({
     queryKey: ["ai-knowledge-items", business?.id],
     queryFn: businessKnowledgeApi.list,
+    enabled: Boolean(business),
+  });
+
+  const aiStatus = useQuery({
+    queryKey: ["ai-assistant-status", business?.id],
+    queryFn: () => aiApi.assistantStatus(business!.id),
     enabled: Boolean(business),
   });
 
@@ -161,6 +167,16 @@ export function AIAssistantPage() {
                 ? t("aiAssistant.mockModeText")
                 : t("aiAssistant.liveModeText")}
             </p>
+            <div className="mt-6 inline-flex flex-wrap items-center gap-2 rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm text-white/75">
+              <Cpu size={16} />
+              {aiStatus.data
+                ? t("aiAssistant.providerStatus", {
+                    provider: aiStatus.data.provider,
+                    mode: aiStatus.data.mode === "live" ? t("aiAssistant.modeLive") : t("aiAssistant.modeMock"),
+                    model: aiStatus.data.model,
+                  })
+                : t("aiAssistant.providerChecking")}
+            </div>
             <div className="mt-8 grid gap-3 md:grid-cols-3">
               <div className="rounded-3xl bg-white/8 p-4">
                 <p className="text-sm text-white/55">{t("aiAssistant.metricNewLeads")}</p>
@@ -311,7 +327,7 @@ export function AIAssistantPage() {
                 <p className="mt-3 text-xs font-semibold text-slate-400">
                   {t("aiAssistant.historyMeta", {
                     id: item.response.log_id,
-                    mode: item.response.is_mock ? t("aiAssistant.modeMock") : t("aiAssistant.modeAi"),
+                    mode: item.response.is_mock ? t("aiAssistant.modeMock") : `${item.response.provider} · ${item.response.model}`,
                   })}
                 </p>
               </CardBody>

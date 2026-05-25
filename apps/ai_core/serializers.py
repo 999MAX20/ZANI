@@ -41,6 +41,10 @@ class AIAssistantChatSerializer(serializers.Serializer):
     prompt_type = serializers.CharField(required=False, default="crm_assistant")
 
 
+class AIAssistantStatusSerializer(serializers.Serializer):
+    business = serializers.PrimaryKeyRelatedField(queryset=Business.objects.all())
+
+
 class AIToolCallLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = AIToolCallLog

@@ -7,6 +7,7 @@ from apps.accounts.views import CurrentUserView, OwnerSignupView, PasswordResetC
 from apps.activities.views import ActivityEventViewSet, NoteViewSet, SegmentFilterViewSet, SegmentViewSet, TaggedObjectViewSet, TagViewSet
 from apps.ai_core.views import (
     AIAssistantChatView,
+    AIAssistantStatusView,
     AIToolExecuteView,
     AIToolSuggestView,
     AIRequestLogViewSet,
@@ -207,6 +208,7 @@ urlpatterns = [
     path("api/integrations/telegram/webhook/", TelegramWebhookView.as_view(), name="telegram_webhook"),
     path("api/integrations/whatsapp/webhook/", WhatsAppWebhookView.as_view(), name="whatsapp_webhook"),
     path("api/public-api/clients/", PublicApiClientsView.as_view(), name="public_api_clients"),
+    path("api/ai/assistant/status/", AIAssistantStatusView.as_view(), name="ai_assistant_status"),
     path("api/ai/assistant/chat/", AIAssistantChatView.as_view(), name="ai_assistant_chat"),
     path("api/ai/tools/suggest/", AIToolSuggestView.as_view(), name="ai_tools_suggest"),
     path("api/ai/tools/<int:log_id>/execute/", AIToolExecuteView.as_view(), name="ai_tools_execute"),

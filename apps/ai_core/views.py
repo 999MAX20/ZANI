@@ -7,6 +7,7 @@ from apps.ai_core.assistant import assert_business_access, build_crm_context
 from apps.ai_core.models import AIToolCallLog, AIRequestLog, AgentProfile, BusinessKnowledgeItem
 from apps.ai_core.serializers import (
     AIAssistantChatSerializer,
+    AIAssistantStatusSerializer,
     AIToolCallLogSerializer,
     AIToolSuggestSerializer,
     AIRequestLogSerializer,
@@ -64,10 +65,45 @@ class AIAssistantChatView(APIView):
             {
                 "answer": result.output_text,
                 "is_mock": result.is_mock,
+                "provider": result.provider,
                 "model": result.model,
                 "tokens_used": result.tokens_used,
                 "log_id": log.id,
                 "context": crm_context["summary"],
+            }
+        )
+
+
+class AIAssistantStatusView(APIView):
+    def get(self, request):
+        serializer = AIAssistantStatusSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        business = serializer.validated_data["business"]
+        try:
+            assert_business_access(request.user, business)
+        except PermissionError as exc:
+            raise PermissionDenied(str(exc)) from exc
+
+        from django.conf import settings
+
+        provider = settings.AI_PROVIDER
+        configured_keys = {
+            "kimi": bool(settings.KIMI_API_KEY),
+            "openrouter": bool(settings.OPENROUTER_API_KEY),
+            "openai": bool(settings.OPENAI_API_KEY),
+        }
+        key_ready = provider == "mock" or configured_keys.get(provider, False)
+        mode = "mock" if provider == "mock" or not key_ready or not settings.AI_ENABLED else "live"
+        return Response(
+            {
+                "enabled": settings.AI_ENABLED,
+                "provider": provider,
+                "mode": mode,
+                "ready": bool(settings.AI_ENABLED and key_ready),
+                "key_configured": key_ready,
+                "model": settings.AI_SMART_MODEL,
+                "fast_model": settings.AI_FAST_MODEL,
+                "cheap_model": settings.AI_CHEAP_MODEL,
             }
         )
 

@@ -4,6 +4,20 @@ from urllib import error, request
 from apps.ai_core.providers.base import AIProviderError, AIProviderResponse, BaseAIProvider
 
 
+def _message_content_to_text(content):
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts = []
+        for item in content:
+            if isinstance(item, str):
+                parts.append(item)
+            elif isinstance(item, dict):
+                parts.append(str(item.get("text") or item.get("content") or ""))
+        return "\n".join(part for part in parts if part)
+    return str(content or "")
+
+
 class OpenAICompatibleProvider(BaseAIProvider):
     api_key = ""
     base_url = ""
@@ -52,7 +66,7 @@ class OpenAICompatibleProvider(BaseAIProvider):
 
         choices = data.get("choices") or []
         message = choices[0].get("message", {}) if choices else {}
-        output_text = message.get("content") or ""
+        output_text = _message_content_to_text(message.get("content"))
         usage = data.get("usage") or {}
         return AIProviderResponse(
             output_text=output_text,

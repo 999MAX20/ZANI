@@ -149,6 +149,29 @@ class AICoreFoundationTests(TestCase):
         self.assertEqual(log.user, self.owner)
         self.assertEqual(log.input_json["crm_context"]["summary"]["new_leads_count"], 1)
 
+    @override_settings(AI_ENABLED=True, AI_PROVIDER="kimi", KIMI_API_KEY="test-key", AI_SMART_MODEL="kimi-k2.6")
+    def test_ai_assistant_status_reports_configured_provider(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.get("/api/ai/assistant/status/", {"business": self.business.id})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data["ready"])
+        self.assertEqual(response.data["provider"], "kimi")
+        self.assertEqual(response.data["mode"], "live")
+        self.assertEqual(response.data["model"], "kimi-k2.6")
+
+    @override_settings(AI_ENABLED=True, AI_PROVIDER="kimi", KIMI_API_KEY="", AI_SMART_MODEL="kimi-k2.6")
+    def test_ai_assistant_status_reports_missing_key_as_mock_mode(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.get("/api/ai/assistant/status/", {"business": self.business.id})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.data["ready"])
+        self.assertEqual(response.data["provider"], "kimi")
+        self.assertEqual(response.data["mode"], "mock")
+
     @override_settings(AI_PROVIDER="mock", OPENAI_API_KEY="", OPENROUTER_API_KEY="", KIMI_API_KEY="")
     def test_ai_assistant_chat_rejects_foreign_business(self):
         self.api.force_authenticate(self.owner)

@@ -5941,3 +5941,7 @@ Frontend production build after conversation localization cleanup pass: OK
 Source-filter localization cleanup pass: Leads and Clients source filters now use shared source labels in RU / KK / EN instead of hardcoded `Manual`, `Website` and `Landing` labels.
 
 Frontend production build after source-filter localization cleanup pass: OK
+
+Telegram integration copy cleanup pass: the merchant-visible Telegram setup now presents a support-assisted connection flow and readiness status instead of BotFather/code-oriented instructions. Secret setup details remain confined to the advanced pilot block.
+
+Frontend production build after Telegram integration copy cleanup pass: OK

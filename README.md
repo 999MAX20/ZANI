@@ -6149,3 +6149,9 @@ Employee invite confirmation pass: after creating an employee invitation, Settin
 
 Backend check after employee invite confirmation pass: OK
 Frontend production build after employee invite confirmation pass: OK
+
+Calendar perceived-performance pass: the calendar page no longer blocks the entire screen while appointments, clients, services, resources, leads and working hours load. It now renders the working shell immediately, shows an inline loading state, avoids false setup warnings before queries finish, disables booking only while required client/service data is still loading, and keeps schedule rows readable during slow Render API responses.
+
+Backend check after calendar perceived-performance pass: OK
+Full backend tests after calendar perceived-performance pass: 309 OK
+Frontend production build after calendar perceived-performance pass: OK

@@ -213,9 +213,16 @@ export function CalendarPage() {
   }
 
   if (!business) return <ErrorState message={t("calendar.noBusiness")} />;
-  if (appointments.isLoading || clients.isLoading || services.isLoading || resources.isLoading || leads.isLoading || workingHours.isLoading) return <LoadingState />;
 
-  const appointmentList = (appointments.data || []).filter((item) => {
+  const appointmentItems = appointments.data || [];
+  const clientItems = clients.data || [];
+  const serviceItems = services.data || [];
+  const resourceItems = resources.data || [];
+  const leadItems = leads.data || [];
+  const workingHourItems = workingHours.data || [];
+  const isCalendarDataLoading = appointments.isLoading || clients.isLoading || services.isLoading || resources.isLoading || leads.isLoading || workingHours.isLoading;
+
+  const appointmentList = appointmentItems.filter((item) => {
     if (serviceFilter && item.service !== Number(serviceFilter)) return false;
     if (resourceFilter && item.resource !== Number(resourceFilter)) return false;
     return true;
@@ -223,10 +230,10 @@ export function CalendarPage() {
   const dayAppointments = appointmentList.filter((item) => item.start_at.slice(0, 10) === date);
   const weekDates = getWeekDates(date);
   const monthDates = getMonthDates(date);
-  const hasClients = Boolean(clients.data?.length);
-  const hasServices = Boolean(services.data?.length);
-  const hasResources = Boolean(resources.data?.length);
-  const hasWorkingHours = Boolean(workingHours.data?.length);
+  const hasClients = Boolean(clientItems.length);
+  const hasServices = Boolean(serviceItems.length);
+  const hasResources = Boolean(resourceItems.length);
+  const hasWorkingHours = Boolean(workingHourItems.length);
   const confirmedCount = dayAppointments.filter((appointment) => appointment.status === "confirmed").length;
   const completedCount = dayAppointments.filter((appointment) => appointment.status === "completed").length;
   const openSlotsHint = Math.max(0, hours.length - dayAppointments.length);
@@ -250,10 +257,10 @@ export function CalendarPage() {
   }
 
   const renderAppointmentCard = (appointment: Appointment, compact = false) => {
-    const client = clients.data?.find((item) => item.id === appointment.client);
-    const service = services.data?.find((item) => item.id === appointment.service);
-    const resource = resources.data?.find((item) => item.id === appointment.resource);
-    const lead = leads.data?.find((item) => item.id === appointment.lead);
+    const client = clientItems.find((item) => item.id === appointment.client);
+    const service = serviceItems.find((item) => item.id === appointment.service);
+    const resource = resourceItems.find((item) => item.id === appointment.resource);
+    const lead = leadItems.find((item) => item.id === appointment.lead);
 
     return (
       <div
@@ -325,10 +332,22 @@ export function CalendarPage() {
                 </button>
               ))}
             </div>
-            <Button variant="ai" className="col-span-3 sm:col-span-1" onClick={() => openBookingForDate(date)}><Plus size={18} />{t("calendar.newBooking")}</Button>
+            <Button
+              variant="ai"
+              className="col-span-3 sm:col-span-1"
+              disabled={clients.isLoading || services.isLoading}
+              onClick={() => openBookingForDate(date)}
+            >
+              <Plus size={18} />{t("calendar.newBooking")}
+            </Button>
           </div>
         }
       />
+      {isCalendarDataLoading ? (
+        <div className="mb-4">
+          <LoadingState label={t("calendar.loadingInline")} />
+        </div>
+      ) : null}
       <section className="mb-5 overflow-hidden rounded-[2rem] border border-white/80 bg-white/80 p-5 shadow-soft backdrop-blur-xl">
         <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
           <div className="relative overflow-hidden rounded-[1.6rem] bg-midnight p-5 text-white">
@@ -364,7 +383,7 @@ export function CalendarPage() {
               ].map((item) => (
                 <div key={item.label} className="flex items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 text-sm font-bold shadow-sm">
                   <span className="text-slate-700">{item.label}</span>
-                  <span className={item.ready ? "text-green-600" : "text-amber-600"}>{item.ready ? t("calendar.ready") : t("calendar.needsSetup")}</span>
+                  <span className={item.ready ? "text-green-600" : "text-amber-600"}>{isCalendarDataLoading ? t("common.loading") : item.ready ? t("calendar.ready") : t("calendar.needsSetup")}</span>
                 </div>
               ))}
             </div>
@@ -379,12 +398,14 @@ export function CalendarPage() {
         <Select
           value={serviceFilter}
           onChange={(event) => setServiceFilter(event.target.value)}
-          options={[{ value: "", label: t("calendar.allServices") }, ...(services.data || []).map((service) => ({ value: String(service.id), label: service.name }))]}
+          disabled={services.isLoading}
+          options={[{ value: "", label: t("calendar.allServices") }, ...serviceItems.map((service) => ({ value: String(service.id), label: service.name }))]}
         />
         <Select
           value={resourceFilter}
           onChange={(event) => setResourceFilter(event.target.value)}
-          options={[{ value: "", label: t("calendar.allResources") }, ...(resources.data || []).map((resource) => ({ value: String(resource.id), label: resource.name }))]}
+          disabled={resources.isLoading}
+          options={[{ value: "", label: t("calendar.allResources") }, ...resourceItems.map((resource) => ({ value: String(resource.id), label: resource.name }))]}
         />
       </div>
       {notice ? (
@@ -393,17 +414,17 @@ export function CalendarPage() {
         </div>
       ) : null}
       <div className="mb-5 grid gap-3 lg:grid-cols-4">
-        {!hasClients ? (
+        {!clients.isLoading && !hasClients ? (
           <Link className="rounded-3xl border border-amber-100 bg-amber-50 p-4 text-sm font-bold text-amber-900 transition hover:-translate-y-0.5 hover:shadow-soft" to="/dashboard/clients">
             {t("calendar.setupClient")}
           </Link>
         ) : null}
-        {!hasServices ? (
+        {!services.isLoading && !hasServices ? (
           <Link className="rounded-3xl border border-amber-100 bg-amber-50 p-4 text-sm font-bold text-amber-900 transition hover:-translate-y-0.5 hover:shadow-soft" to="/dashboard/services">
             {t("calendar.setupService")}
           </Link>
         ) : null}
-        {!hasWorkingHours ? (
+        {!workingHours.isLoading && !hasWorkingHours ? (
           <div className="rounded-3xl border border-amber-100 bg-amber-50 p-4 text-sm text-amber-900">
             <p className="font-bold">{t("calendar.setupHoursTitle")}</p>
             <p className="mt-1 leading-6">{t("calendar.setupHoursText")}</p>
@@ -417,7 +438,7 @@ export function CalendarPage() {
             </div>
           </div>
         ) : null}
-        {!hasResources ? (
+        {!resources.isLoading && !hasResources ? (
           <Link className="rounded-3xl border border-slate-100 bg-white/70 p-4 text-sm font-bold text-slate-700 transition hover:-translate-y-0.5 hover:shadow-soft" to="/dashboard/resources">
             {t("calendar.setupResources")}
           </Link>
@@ -434,7 +455,7 @@ export function CalendarPage() {
           </div>
           {!dayAppointments.length ? (
             <div className="border-b border-slate-100 bg-brand-50/50 px-5 py-4 text-sm font-medium text-brand-800">
-              {t("calendar.freeDayHint")}
+              {appointments.isLoading ? t("calendar.loadingAppointments") : t("calendar.freeDayHint")}
             </div>
           ) : null}
           <div className="divide-y divide-slate-100">
@@ -444,10 +465,12 @@ export function CalendarPage() {
                 <div key={hour} className="grid min-h-24 grid-cols-[76px_1fr] sm:grid-cols-[110px_1fr]">
                   <div className="bg-slate-50/70 px-4 py-4 text-sm font-semibold text-slate-500">{String(hour).padStart(2, "0")}:00</div>
                   <div className="space-y-3 p-3">
-                    {items.map((appointment) => {
-                      return renderAppointmentCard(appointment);
-                    })}
-                    {!items.length ? (
+                    {appointments.isLoading ? (
+                      <div className="h-full w-full animate-pulse rounded-3xl bg-slate-100/80 p-4 text-sm font-semibold text-slate-400">
+                        {t("calendar.loadingAppointments")}
+                      </div>
+                    ) : items.map((appointment) => renderAppointmentCard(appointment))}
+                    {!appointments.isLoading && !items.length ? (
                       <button
                         type="button"
                         className="h-full w-full rounded-3xl border border-dashed border-slate-200 bg-white/50 p-4 text-left text-sm font-semibold text-slate-400 transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
@@ -480,8 +503,10 @@ export function CalendarPage() {
                       <p className="text-lg font-bold text-midnight">{day.getDate()}</p>
                     </button>
                     <div className="space-y-2">
-                      {items.map((appointment) => renderAppointmentCard(appointment, true))}
-                      {!items.length ? <p className="rounded-2xl border border-dashed border-slate-200 p-3 text-xs font-semibold text-slate-400">{t("calendar.free")}</p> : null}
+                      {appointments.isLoading ? (
+                        <p className="rounded-2xl bg-slate-100 p-3 text-xs font-semibold text-slate-400">{t("calendar.loadingAppointments")}</p>
+                      ) : items.map((appointment) => renderAppointmentCard(appointment, true))}
+                      {!appointments.isLoading && !items.length ? <p className="rounded-2xl border border-dashed border-slate-200 p-3 text-xs font-semibold text-slate-400">{t("calendar.free")}</p> : null}
                     </div>
                   </div>
                 );
@@ -517,7 +542,7 @@ export function CalendarPage() {
                     {items.length ? <p className="mt-2 rounded-full bg-brand-50 px-2 py-1 text-xs font-bold text-brand-700">{t("calendar.shortCount").replace("{count}", String(items.length))}</p> : null}
                     <div className="mt-2 space-y-1">
                       {items.slice(0, 2).map((appointment) => {
-                        const client = clients.data?.find((item) => item.id === appointment.client);
+                        const client = clientItems.find((item) => item.id === appointment.client);
                         return <p key={appointment.id} className="truncate rounded-xl bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">{client?.full_name || t("common.client")}</p>;
                       })}
                     </div>
@@ -533,10 +558,10 @@ export function CalendarPage() {
       <Modal title={t("calendar.newBooking")} open={bookingOpen} onClose={() => { setBookingOpen(false); setBookingPrefill(null); }}>
         <AppointmentForm
           businessId={business.id}
-          clients={clients.data || []}
-          services={services.data || []}
-          resources={resources.data || []}
-          leads={leads.data || []}
+          clients={clientItems}
+          services={serviceItems}
+          resources={resourceItems}
+          leads={leadItems}
           prefill={bookingPrefill || { date }}
           onSubmit={(payload) => mutation.mutateAsync(payload)}
         />

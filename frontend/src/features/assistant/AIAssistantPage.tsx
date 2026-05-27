@@ -2,10 +2,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
   BookOpenText,
-  CalendarCheck,
   CheckCircle2,
   Clock3,
   Cpu,
+  DatabaseZap,
+  ExternalLink,
   MessageSquareWarning,
   Plus,
   RefreshCw,
@@ -15,8 +16,9 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 
-import { aiApi, businessKnowledgeApi } from "../../api/ai";
+import { aiApi, businessKnowledgeApi, type AIAnalystSource } from "../../api/ai";
 import type { BusinessKnowledgeItem, Id } from "../../types";
 import { getApiErrorMessage } from "../../api/client";
 import { Button } from "../../components/ui/Button";
@@ -121,6 +123,12 @@ export function AIAssistantPage() {
   const aiStatus = useQuery({
     queryKey: ["ai-assistant-status", business?.id],
     queryFn: () => aiApi.assistantStatus(business!.id),
+    enabled: Boolean(business),
+  });
+
+  const analystBrief = useQuery({
+    queryKey: ["ai-analyst-brief", business?.id],
+    queryFn: () => aiApi.analystBrief({ business: business!.id, limit: 24 }),
     enabled: Boolean(business),
   });
 
@@ -332,9 +340,10 @@ export function AIAssistantPage() {
   if (isLoading) return <LoadingState />;
   if (!business) return <ErrorState message={t("aiAssistant.noBusiness")} />;
 
-  const isDataLoading = clients.isLoading || leads.isLoading || appointments.isLoading || deals.isLoading || tasks.isLoading || botConversations.isLoading || activityEvents.isLoading;
+  const isDataLoading = clients.isLoading || leads.isLoading || appointments.isLoading || deals.isLoading || tasks.isLoading || botConversations.isLoading || activityEvents.isLoading || analystBrief.isLoading;
   const activeMemoryItems = (memory.data || []).filter((item) => item.is_active);
   const memoryCategoryOptions = memoryCategories.map((item) => ({ value: item.value, label: t(item.labelKey) }));
+  const analystSourcesById = new Map((analystBrief.data?.sources || []).map((source) => [source.id, source]));
   const providerLabel = aiStatus.data
     ? t("aiAssistant.providerStatus", {
         provider: aiStatus.data.provider,
@@ -360,8 +369,8 @@ export function AIAssistantPage() {
         )}
       />
 
-      {briefMutation.error || memoryMutation.error ? (
-        <div className="mb-4"><ErrorState message={getApiErrorMessage(briefMutation.error || memoryMutation.error)} /></div>
+      {briefMutation.error || memoryMutation.error || analystBrief.error ? (
+        <div className="mb-4"><ErrorState message={getApiErrorMessage(briefMutation.error || memoryMutation.error || analystBrief.error)} /></div>
       ) : null}
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
@@ -418,6 +427,68 @@ export function AIAssistantPage() {
                 <div className="mt-5 rounded-3xl border border-brand-100 bg-brand-50/70 p-4">
                   <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">{t("aiNavigator.aiInterpretation")}</p>
                   <p className="mt-2 whitespace-pre-wrap text-sm font-semibold leading-7 text-slate-700">{aiBrief}</p>
+                </div>
+              ) : null}
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardBody className="p-5 sm:p-6">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-700">BusinessEvent AI</p>
+                  <h2 className="mt-2 text-2xl font-black text-midnight">Инсайты по интеграциям</h2>
+                  <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">
+                    AI Analyst читает последние события интеграций, цитирует источники и предлагает только подтверждаемые действия.
+                  </p>
+                </div>
+                <Button variant="secondary" size="sm" onClick={() => analystBrief.refetch()} isLoading={analystBrief.isFetching}>
+                  <RefreshCw size={15} />Обновить
+                </Button>
+              </div>
+
+              <div className="mt-5 grid gap-3">
+                {(analystBrief.data?.insights || []).map((insight) => (
+                  <div key={insight.id} className="rounded-3xl border border-slate-100 bg-slate-50/70 p-4">
+                    <div className="flex items-start gap-3">
+                      <span className={`mt-1 h-3 w-3 rounded-full ${aiInsightDotClass(insight.severity)}`} />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-black text-midnight">{insight.title}</p>
+                        <p className="mt-1 text-sm font-semibold leading-6 text-slate-600">{insight.summary}</p>
+                        <SourceChips sourceIds={insight.source_ids} sourcesById={analystSourcesById} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {!analystBrief.isLoading && !(analystBrief.data?.insights || []).length ? (
+                  <p className="rounded-3xl bg-slate-50 p-4 text-sm font-semibold leading-6 text-slate-500">
+                    Пока нет BusinessEvent для анализа. Подключите канал или загрузите данные на странице подключений.
+                  </p>
+                ) : null}
+              </div>
+
+              {(analystBrief.data?.actions || []).length ? (
+                <div className="mt-5">
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Предлагаемые действия</p>
+                  <div className="mt-3 grid gap-3">
+                    {(analystBrief.data?.actions || []).map((action) => (
+                      <div key={action.id} className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="min-w-0">
+                            <span className="rounded-full bg-violet-50 px-2 py-1 text-[10px] font-black uppercase text-violet-700">
+                              {action.priority}
+                            </span>
+                            <p className="mt-2 font-black text-midnight">{action.label}</p>
+                            <p className="mt-1 text-sm font-semibold leading-6 text-slate-600">{action.description}</p>
+                            <SourceChips sourceIds={action.source_ids} sourcesById={analystSourcesById} />
+                          </div>
+                          <Link to={action.href} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2 text-sm font-black text-midnight transition hover:bg-white hover:shadow-soft">
+                            Открыть <ExternalLink size={15} />
+                          </Link>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ) : null}
             </CardBody>
@@ -586,6 +657,33 @@ function MetricTile({ label, value }: { label: string; value: number }) {
     <div className="rounded-3xl bg-white/15 p-4">
       <p className="text-xs font-bold uppercase tracking-[0.14em] text-white/65">{label}</p>
       <p className="mt-3 text-3xl font-black text-white">{value}</p>
+    </div>
+  );
+}
+
+function SourceChips({
+  sourceIds,
+  sourcesById,
+}: {
+  sourceIds: string[];
+  sourcesById: Map<string, AIAnalystSource>;
+}) {
+  if (!sourceIds.length) return null;
+  return (
+    <div className="mt-3 flex flex-wrap gap-2">
+      {sourceIds.map((sourceId) => {
+        const source = sourcesById.get(sourceId);
+        return (
+          <span
+            key={sourceId}
+            className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[11px] font-black text-slate-500 ring-1 ring-slate-100"
+            title={source ? `${source.label} · ${source.summary}` : sourceId}
+          >
+            <DatabaseZap size={12} />
+            {source ? `${source.id} · ${source.label}` : sourceId}
+          </span>
+        );
+      })}
     </div>
   );
 }

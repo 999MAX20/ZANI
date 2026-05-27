@@ -3,9 +3,11 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
+from apps.ai_core.analyst import build_event_analyst_brief
 from apps.ai_core.assistant import assert_business_access, build_crm_context
 from apps.ai_core.models import AIToolCallLog, AIRequestLog, AgentProfile, BusinessKnowledgeItem
 from apps.ai_core.serializers import (
+    AIAnalystBriefSerializer,
     AIAssistantChatSerializer,
     AIAssistantStatusSerializer,
     AIToolCallLogSerializer,
@@ -106,6 +108,27 @@ class AIAssistantStatusView(APIView):
                 "cheap_model": settings.AI_CHEAP_MODEL,
             }
         )
+
+
+class AIAnalystBriefView(APIView):
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "ai_assistant"
+
+    def get(self, request):
+        serializer = AIAnalystBriefSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        business = serializer.validated_data["business"]
+        try:
+            assert_business_access(request.user, business)
+        except PermissionError as exc:
+            raise PermissionDenied(str(exc)) from exc
+
+        brief = build_event_analyst_brief(
+            business=business,
+            user=request.user,
+            limit=serializer.validated_data["limit"],
+        )
+        return Response(brief)
 
 
 class AIToolSuggestView(APIView):

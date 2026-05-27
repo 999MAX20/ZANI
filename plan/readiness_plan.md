@@ -487,16 +487,17 @@ Implemented:
 - AI assistant page exists.
 - Page calls `/api/ai/assistant/chat/`.
 - AI assistant links to leads, conversations, tasks, deals, and integrations.
+- AI Analyst now has a dedicated backend brief endpoint that reads recent `BusinessEvent` records, masks sensitive payload fields, logs the AI request, and returns cited insights plus proposed actions.
+- `/dashboard/ai-assistant` automatically loads the BusinessEvent analyst brief and shows source chips such as `BE-123 · kaspi.order.received` for every insight/action.
 
 Before production:
 
-- Reposition from generic chat to AI Analyst with grounded business context.
-- Make every insight cite source records: leads, deals, conversations, orders, stock, integrations.
-- Add confirmable actions with audit trail.
+- Extend cited insights beyond `BusinessEvent` to leads, deals, conversations, orders, stock, tasks, and appointments.
+- Convert proposed actions into confirmable `AIToolCallLog` actions with audit trail.
 - Add safety rules for destructive actions.
 - Add memory/session model per business.
-- Add prompt/version logging.
-- Add tests for grounded answer, missing data, hallucination guard, and permission scope.
+- Add prompt/version logging beyond raw `prompt_type`.
+- Add tests for grounded answer quality, missing data, hallucination guard, and permission scope across all cited entity types.
 
 ### `/dashboard/clients` - Clients
 

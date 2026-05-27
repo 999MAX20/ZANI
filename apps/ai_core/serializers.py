@@ -45,6 +45,11 @@ class AIAssistantStatusSerializer(serializers.Serializer):
     business = serializers.PrimaryKeyRelatedField(queryset=Business.objects.all())
 
 
+class AIAnalystBriefSerializer(serializers.Serializer):
+    business = serializers.PrimaryKeyRelatedField(queryset=Business.objects.all())
+    limit = serializers.IntegerField(required=False, min_value=1, max_value=50, default=24)
+
+
 class AIToolCallLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = AIToolCallLog

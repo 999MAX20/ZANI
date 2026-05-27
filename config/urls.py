@@ -6,6 +6,7 @@ from apps.accounts.auth_views import ThrottledTokenObtainPairView, ThrottledToke
 from apps.accounts.views import CurrentUserView, OwnerSignupView, PasswordResetConfirmView, PasswordResetRequestView, SocialAuthView
 from apps.activities.views import ActivityEventViewSet, NoteViewSet, SegmentFilterViewSet, SegmentViewSet, TaggedObjectViewSet, TagViewSet
 from apps.ai_core.views import (
+    AIAnalystBriefView,
     AIAssistantChatView,
     AIAssistantStatusView,
     AIToolExecuteView,
@@ -210,6 +211,7 @@ urlpatterns = [
     path("api/public-api/clients/", PublicApiClientsView.as_view(), name="public_api_clients"),
     path("api/ai/assistant/status/", AIAssistantStatusView.as_view(), name="ai_assistant_status"),
     path("api/ai/assistant/chat/", AIAssistantChatView.as_view(), name="ai_assistant_chat"),
+    path("api/ai/analyst/brief/", AIAnalystBriefView.as_view(), name="ai_analyst_brief"),
     path("api/ai/tools/suggest/", AIToolSuggestView.as_view(), name="ai_tools_suggest"),
     path("api/ai/tools/<int:log_id>/execute/", AIToolExecuteView.as_view(), name="ai_tools_execute"),
     path("api/", include(router.urls)),

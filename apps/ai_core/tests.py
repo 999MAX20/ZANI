@@ -9,6 +9,7 @@ from apps.bots.models import Bot, BotConversation, BotMessage
 from apps.ai_core.services import run_ai_request
 from apps.businesses.models import Business, BusinessMember
 from apps.clients.models import Client
+from apps.integrations.models import BusinessConnector, BusinessEvent
 from apps.leads.models import Lead
 from apps.tasks.models import Task
 from apps.notifications.models import Notification
@@ -181,6 +182,47 @@ class AICoreFoundationTests(TestCase):
             {"business": self.other_business.id, "message": "Show data"},
             format="json",
         )
+
+        self.assertEqual(response.status_code, 403)
+
+    @override_settings(AI_PROVIDER="mock", OPENAI_API_KEY="", OPENROUTER_API_KEY="", KIMI_API_KEY="")
+    def test_ai_analyst_brief_reads_business_events_and_cites_sources(self):
+        connector = BusinessConnector.objects.create(
+            business=self.business,
+            provider=BusinessConnector.Providers.KASPI,
+            capability=BusinessConnector.Capabilities.SALES,
+            name="Kaspi",
+            status=BusinessConnector.Statuses.CONNECTED,
+        )
+        event = BusinessEvent.objects.create(
+            business=self.business,
+            connector=connector,
+            source=BusinessConnector.Providers.KASPI,
+            event_type="order.received",
+            external_id="order-1",
+            deduplication_key="order-1",
+            status=BusinessEvent.Statuses.RECEIVED,
+            payload_json={"amount": 15000, "api_key": "secret-key"},
+        )
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.get("/api/ai/analyst/brief/", {"business": self.business.id})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data["is_mock"])
+        self.assertEqual(response.data["sources"][0]["id"], f"BE-{event.id}")
+        self.assertEqual(response.data["sources"][0]["payload"]["api_key"], "***")
+        self.assertTrue(response.data["insights"])
+        self.assertIn(f"BE-{event.id}", response.data["insights"][0]["source_ids"])
+        self.assertTrue(response.data["actions"])
+        log = AIRequestLog.objects.get(prompt_type="business_event_analyst")
+        self.assertEqual(log.business, self.business)
+        self.assertEqual(log.input_json["business_event_sources"][0]["id"], f"BE-{event.id}")
+
+    def test_ai_analyst_brief_rejects_foreign_business(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.get("/api/ai/analyst/brief/", {"business": self.other_business.id})
 
         self.assertEqual(response.status_code, 403)
 

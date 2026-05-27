@@ -27,6 +27,50 @@ export type AIAssistantStatusResponse = {
   cheap_model: string;
 };
 
+export type AIAnalystSource = {
+  id: string;
+  event_id: Id;
+  label: string;
+  source: string;
+  event_type: string;
+  status: string;
+  occurred_at: string;
+  connector: string | null;
+  external_id: string;
+  summary: string;
+  payload: Record<string, unknown>;
+};
+
+export type AIAnalystInsight = {
+  id: string;
+  severity: "critical" | "warning" | "info" | "good";
+  title: string;
+  summary: string;
+  source_ids: string[];
+};
+
+export type AIAnalystAction = {
+  id: string;
+  priority: "high" | "medium" | "low";
+  label: string;
+  description: string;
+  href: string;
+  source_ids: string[];
+};
+
+export type AIAnalystBriefResponse = {
+  generated_at: string;
+  is_mock: boolean;
+  provider: string;
+  model: string;
+  tokens_used: number;
+  log_id: Id;
+  sources: AIAnalystSource[];
+  insights: AIAnalystInsight[];
+  actions: AIAnalystAction[];
+  raw_answer: string;
+};
+
 export const aiApi = {
   assistantStatus: async (business: Id) => {
     const { data } = await apiClient.get<AIAssistantStatusResponse>("/api/ai/assistant/status/", {
@@ -39,6 +83,12 @@ export const aiApi = {
       business,
       message,
       prompt_type,
+    });
+    return data;
+  },
+  analystBrief: async ({ business, limit = 24 }: { business: Id; limit?: number }) => {
+    const { data } = await apiClient.get<AIAnalystBriefResponse>("/api/ai/analyst/brief/", {
+      params: { business, limit },
     });
     return data;
   },

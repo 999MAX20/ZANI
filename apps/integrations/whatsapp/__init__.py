@@ -7,6 +7,7 @@ from apps.billing.models import UsageCounter
 from apps.billing.usage import increment_usage
 from apps.bots.inbox_service import register_bot_message
 from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
+from apps.conversations.auto_pipeline import maybe_run_auto_pipeline
 from apps.integrations.models import IntegrationEventLog
 from apps.integrations.providers import parse_webhook, send_message, verify_webhook
 
@@ -15,12 +16,17 @@ def verify_whatsapp_secret(request):
     return verify_webhook(BotChannel.Channels.WHATSAPP, request)
 
 
-def resolve_whatsapp_channel(provided_secret):
+def resolve_whatsapp_channel(provided_secret="", phone_number_id=""):
     candidates = (
         BotChannel.objects.select_related("bot", "bot__business")
         .filter(channel=BotChannel.Channels.WHATSAPP, status__in=[BotChannel.Statuses.DRAFT, BotChannel.Statuses.ACTIVE])
         .exclude(bot__status=Bot.Statuses.PAUSED)
     )
+    if phone_number_id:
+        channel = candidates.filter(config_json__phone_number_id=phone_number_id).first() or candidates.filter(external_id=phone_number_id).first()
+        if channel:
+            return channel
+
     for channel in candidates:
         channel_secret = (channel.config_json or {}).get("webhook_secret")
         if channel_secret and channel_secret == provided_secret:
@@ -41,9 +47,9 @@ def parse_inbound_message(payload, headers=None):
     return parsed
 
 
-def save_whatsapp_inbound_message(payload, provided_secret, headers=None):
-    channel = resolve_whatsapp_channel(provided_secret)
+def save_whatsapp_inbound_message(payload, provided_secret="", headers=None):
     parsed = parse_inbound_message(payload, headers=headers)
+    channel = resolve_whatsapp_channel(provided_secret, phone_number_id=parsed.get("phone_number_id", ""))
     business = channel.bot.business
 
     conversation, created = BotConversation.objects.get_or_create(
@@ -58,20 +64,46 @@ def save_whatsapp_inbound_message(payload, provided_secret, headers=None):
     conversation.updated_at = timezone.now()
     conversation.save(update_fields=["updated_at"])
 
+    external_message_id = parsed.get("message_id", "")
+    if external_message_id:
+        existing_message = BotMessage.objects.filter(
+            conversation=conversation,
+            direction=BotMessage.Directions.INBOUND,
+            external_message_id=external_message_id,
+        ).first()
+        if existing_message:
+            IntegrationEventLog.objects.create(
+                business=conversation.business,
+                provider=BotChannel.Channels.WHATSAPP,
+                channel=BotChannel.Channels.WHATSAPP,
+                direction=IntegrationEventLog.Directions.INBOUND,
+                payload_json={
+                    "payload": payload,
+                    "conversation_id": conversation.id,
+                    "message_id": existing_message.id,
+                    "duplicate": True,
+                },
+                status=IntegrationEventLog.Statuses.PROCESSED,
+            )
+            return conversation, existing_message
+
     message = BotMessage.objects.create(
         conversation=conversation,
         direction=BotMessage.Directions.INBOUND,
         sender_type=BotMessage.SenderTypes.CLIENT,
         text=parsed["text"],
-        external_message_id=parsed.get("message_id", ""),
+        external_message_id=external_message_id,
         payload_json={
             "whatsapp_payload": payload,
             "whatsapp_sender_id": parsed["sender_id"],
             "whatsapp_sender_name": parsed.get("sender_name", ""),
+            "whatsapp_phone_number_id": parsed.get("phone_number_id", ""),
+            "whatsapp_display_phone_number": parsed.get("display_phone_number", ""),
         },
         status=BotMessage.Statuses.RECEIVED,
     )
     register_bot_message(message)
+    maybe_run_auto_pipeline(conversation=conversation, message=message, channel=channel)
     IntegrationEventLog.objects.create(
         business=conversation.business,
         provider=BotChannel.Channels.WHATSAPP,

@@ -3,7 +3,7 @@ import { ArrowLeft, Bot as BotIcon, Copy, ExternalLink, MessageSquareText, Plus,
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
-import { botAiApi, botChannelsApi, botsApi, telegramChannelApi, websiteChatApi, type BotSuggestedReplyResponse } from "../../api/bots";
+import { botAiApi, botChannelsApi, botsApi, websiteChatApi, type BotSuggestedReplyResponse } from "../../api/bots";
 import { getApiErrorMessage } from "../../api/client";
 import { Button } from "../../components/ui/Button";
 import { Card, CardBody } from "../../components/ui/Card";
@@ -15,6 +15,7 @@ import { ErrorState, LoadingState } from "../../components/ui/StateViews";
 import { useEntityData } from "../../hooks/useEntityData";
 import { useI18n } from "../../lib/i18n";
 import type { BotChannel } from "../../types";
+import { TelegramSetupCard } from "./TelegramSetupCard";
 import { WhatsAppSetupCard } from "./WhatsAppSetupCard";
 
 export function BotDetailPage() {
@@ -34,7 +35,6 @@ export function BotDetailPage() {
   const [followUpMessage, setFollowUpMessage] = useState(t("botDetail.followUpDefault"));
   const [copyNotice, setCopyNotice] = useState<string | null>(null);
   const [suggestedReply, setSuggestedReply] = useState<BotSuggestedReplyResponse | null>(null);
-  const [telegramNotice, setTelegramNotice] = useState<string | null>(null);
   const bot = useQuery({
     queryKey: ["bots", botId],
     queryFn: () => botsApi.get(botId),
@@ -52,17 +52,6 @@ export function BotDetailPage() {
   const addWhatsAppChannel = useMutation({
     mutationFn: () => botChannelsApi.create({ bot: botId, channel: "whatsapp", status: "draft", external_id: "", config_json: { provider_mode: "mock" } }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["bot-channels"] }),
-  });
-  const telegramStatusMutation = useMutation({
-    mutationFn: (channelId: number) => telegramChannelApi.status(channelId),
-    onSuccess: (data) =>
-      setTelegramNotice(
-        t("botDetail.telegramStatus", {
-          status: data.status,
-          token: data.token_configured ? t("botDetail.tokenConfigured") : t("botDetail.tokenMissing"),
-          error: data.last_error ? t("botDetail.telegramStatusError", { error: data.last_error }) : "",
-        }),
-      ),
   });
   const previewMutation = useMutation({
     mutationFn: (publicToken: string) => websiteChatApi.createConversation({ publicToken, payload: preview }),
@@ -146,8 +135,8 @@ export function BotDetailPage() {
         }
       />
       {addWebsiteChannel.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(addWebsiteChannel.error)} /></div> : null}
-      {addTelegramChannel.error || telegramStatusMutation.error ? (
-        <div className="mb-4"><ErrorState message={getApiErrorMessage(addTelegramChannel.error || telegramStatusMutation.error)} /></div>
+      {addTelegramChannel.error ? (
+        <div className="mb-4"><ErrorState message={getApiErrorMessage(addTelegramChannel.error)} /></div>
       ) : null}
       {addWhatsAppChannel.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(addWhatsAppChannel.error)} /></div> : null}
       {previewMutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(previewMutation.error)} /></div> : null}
@@ -220,41 +209,7 @@ export function BotDetailPage() {
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_1fr]">
-        <Card>
-          <CardBody>
-            <div className="mb-5 flex items-center gap-3">
-              <div className="grid h-11 w-11 place-items-center rounded-2xl bg-blue-50 text-blue-700">
-                <Radio size={20} />
-              </div>
-              <div>
-                <h2 className="text-lg font-bold text-midnight">{t("botDetail.telegramTitle")}</h2>
-                <p className="text-sm text-slate-500">{t("botDetail.telegramDescription")}</p>
-              </div>
-            </div>
-            {telegramNotice ? <div className="mb-4 rounded-2xl bg-blue-50 p-3 text-sm font-semibold text-blue-800">{telegramNotice}</div> : null}
-            {telegramChannel ? (
-              <div className="space-y-4">
-                <div className="rounded-3xl border border-blue-100 bg-blue-50 p-4">
-                  <p className="text-sm font-bold text-blue-950">{t("botDetail.telegramSupportTitle")}</p>
-                  <p className="mt-1 text-sm leading-6 text-blue-900">{t("botDetail.telegramSupportText")}</p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button variant="ghost" onClick={() => telegramStatusMutation.mutate(telegramChannel.id)} isLoading={telegramStatusMutation.isPending}>
-                    <Radio size={16} />{t("botDetail.checkStatus")}
-                  </Button>
-                  <Link to="/dashboard/integrations">
-                    <Button variant="secondary" type="button"><ExternalLink size={16} />{t("botDetail.openIntegrations")}</Button>
-                  </Link>
-                </div>
-                <p className="text-xs leading-5 text-slate-500">{t("botDetail.statusSafe")}</p>
-              </div>
-            ) : (
-              <div className="rounded-3xl border border-dashed border-slate-200 bg-white/70 p-6 text-sm text-slate-500">
-                {t("botDetail.addTelegramFirst")}
-              </div>
-            )}
-          </CardBody>
-        </Card>
+        <TelegramSetupCard channel={telegramChannel} />
 
         <WhatsAppSetupCard channel={whatsappChannel} />
 

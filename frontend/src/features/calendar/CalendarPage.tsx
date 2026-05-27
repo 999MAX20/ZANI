@@ -1,4 +1,4 @@
-import { CalendarDays, ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, ListChecks, Plus, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
@@ -12,6 +12,7 @@ import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { Modal } from "../../components/ui/Modal";
 import { PageHeader } from "../../components/ui/PageHeader";
+import { FilterChips, FloatingActionButton } from "../../components/ui/Primitives";
 import { Select } from "../../components/ui/Select";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { ErrorState, LoadingState } from "../../components/ui/StateViews";
@@ -19,7 +20,7 @@ import { formatDateTime, todayISO } from "../../lib/format";
 import { useI18n } from "../../lib/i18n";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useEntityData } from "../../hooks/useEntityData";
-import type { Appointment } from "../../types";
+import type { Appointment, Task } from "../../types";
 
 const hours = Array.from({ length: 11 }, (_, index) => index + 8);
 const appointmentStatusActions: Appointment["status"][] = ["confirmed", "completed", "cancelled", "no_show"];
@@ -163,7 +164,7 @@ function CalendarPicker({
 export function CalendarPage() {
   const { t, language } = useI18n();
   const { business } = useActiveBusiness();
-  const { appointments, clients, services, resources, leads, workingHours } = useEntityData({ appointments: true, clients: true, services: true, resources: true, leads: true, workingHours: true });
+  const { appointments, clients, services, resources, leads, workingHours, tasks } = useEntityData({ appointments: true, clients: true, services: true, resources: true, leads: true, workingHours: true, tasks: true });
   const queryClient = useQueryClient();
   const [date, setDate] = useState(todayISO());
   const [viewMode, setViewMode] = useState<"day" | "week" | "month">("day");
@@ -220,6 +221,7 @@ export function CalendarPage() {
   const resourceItems = resources.data || [];
   const leadItems = leads.data || [];
   const workingHourItems = workingHours.data || [];
+  const taskItems = (tasks.data || []) as Task[];
   const isCalendarDataLoading = appointments.isLoading || clients.isLoading || services.isLoading || resources.isLoading || leads.isLoading || workingHours.isLoading;
 
   const appointmentList = appointmentItems.filter((item) => {
@@ -230,6 +232,7 @@ export function CalendarPage() {
   const dayAppointments = appointmentList.filter((item) => item.start_at.slice(0, 10) === date);
   const weekDates = getWeekDates(date);
   const monthDates = getMonthDates(date);
+  const dayTasks = taskItems.filter((task) => task.due_at?.slice(0, 10) === date && !["done", "cancelled"].includes(task.status));
   const hasClients = Boolean(clientItems.length);
   const hasServices = Boolean(serviceItems.length);
   const hasResources = Boolean(resourceItems.length);
@@ -247,6 +250,19 @@ export function CalendarPage() {
     t("weekday.satShort"),
     t("weekday.sunShort"),
   ];
+  const mobileWeekOptions = weekDates.map((day) => {
+    const key = toDateInputValue(day);
+    return {
+      value: key,
+      label: `${weekDays[(day.getDay() + 6) % 7]} ${day.getDate()}`,
+      count: appointmentList.filter((appointment) => appointment.start_at.slice(0, 10) === key).length,
+    };
+  });
+  const calendarAiText = !hasClients || !hasServices || !hasWorkingHours
+    ? t("calendar.aiSetupText")
+    : dayAppointments.length
+      ? t("calendar.aiBusyText", { count: dayAppointments.length, tasks: dayTasks.length })
+      : t("calendar.aiFreeText", { tasks: dayTasks.length });
 
   function getAppointmentActionLabel(status: Appointment["status"]) {
     if (status === "confirmed") return t("appointment.actionConfirm");
@@ -348,7 +364,70 @@ export function CalendarPage() {
           <LoadingState label={t("calendar.loadingInline")} />
         </div>
       ) : null}
-      <section className="mb-5 overflow-hidden rounded-[2rem] border border-white/80 bg-white/80 p-5 shadow-soft backdrop-blur-xl">
+      <section className="mb-5 space-y-3 lg:hidden">
+        <FilterChips value={date} options={mobileWeekOptions} onChange={setDate} />
+        <div className="grid grid-cols-3 gap-2">
+          <div className="rounded-3xl bg-white/86 p-4 text-center shadow-sm ring-1 ring-white/80">
+            <p className="text-xs font-black text-slate-400">{t("calendar.bookings")}</p>
+            <p className="mt-1 text-2xl font-black text-midnight">{dayAppointments.length}</p>
+          </div>
+          <div className="rounded-3xl bg-white/86 p-4 text-center shadow-sm ring-1 ring-white/80">
+            <p className="text-xs font-black text-slate-400">{t("calendar.openSlots")}</p>
+            <p className="mt-1 text-2xl font-black text-midnight">{openSlotsHint}</p>
+          </div>
+          <div className="rounded-3xl bg-white/86 p-4 text-center shadow-sm ring-1 ring-white/80">
+            <p className="text-xs font-black text-slate-400">{t("calendar.tasksToday")}</p>
+            <p className="mt-1 text-2xl font-black text-midnight">{dayTasks.length}</p>
+          </div>
+        </div>
+        <div className="rounded-3xl border border-ai-100 bg-white/86 p-4 shadow-sm">
+          <div className="flex items-start gap-3">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-ai-gradient text-white shadow-glow">
+              <Sparkles size={20} />
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-ai-600">{t("calendar.aiHint")}</p>
+              <p className="mt-2 text-sm font-semibold leading-6 text-slate-700">{calendarAiText}</p>
+            </div>
+          </div>
+        </div>
+        <div className="rounded-3xl border border-white/80 bg-white/86 p-4 shadow-sm">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">{t("calendar.mobileAgenda")}</p>
+              <p className="mt-1 font-black text-midnight">{formatPickerDate(date, locale)}</p>
+            </div>
+            <Button variant="ai" className="h-11 rounded-2xl px-3" disabled={clients.isLoading || services.isLoading} onClick={() => openBookingForDate(date)}>
+              <Plus size={18} />
+            </Button>
+          </div>
+          <div className="space-y-3">
+            {dayAppointments.slice(0, 4).map((appointment) => renderAppointmentCard(appointment, true))}
+            {!dayAppointments.length ? (
+              <button
+                type="button"
+                className="w-full rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-4 text-left text-sm font-bold text-slate-500"
+                onClick={() => openBookingForDate(date)}
+              >
+                {t("calendar.freeDayHint")}
+              </button>
+            ) : null}
+            {dayTasks.length ? (
+              <div className="rounded-3xl bg-slate-50 p-4">
+                <div className="mb-2 flex items-center gap-2 text-sm font-black text-midnight">
+                  <ListChecks size={17} /> {t("calendar.tasksToday")}
+                </div>
+                <div className="space-y-2">
+                  {dayTasks.slice(0, 3).map((task) => (
+                    <p key={task.id} className="rounded-2xl bg-white px-3 py-2 text-sm font-semibold text-slate-600">{task.title}</p>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </section>
+      <section className="mb-5 hidden overflow-hidden rounded-[2rem] border border-white/80 bg-white/80 p-5 shadow-soft backdrop-blur-xl lg:block">
         <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
           <div className="relative overflow-hidden rounded-[1.6rem] bg-midnight p-5 text-white">
             <div className="absolute -right-16 -top-20 h-44 w-44 rounded-[3rem] bg-brand-400/30 blur-2xl" />
@@ -567,6 +646,7 @@ export function CalendarPage() {
         />
       </Modal>
       <CrmEntityDrawer entity={drawerEntity} onClose={() => setDrawerEntity(null)} />
+      <FloatingActionButton label={t("calendar.newBooking")} icon={Plus} onClick={() => openBookingForDate(date)} />
     </>
   );
 }

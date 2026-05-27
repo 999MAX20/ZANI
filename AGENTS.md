@@ -14,7 +14,9 @@ Read these files before non-trivial work:
 For UI work, also read:
 
 ```text
-plan/ui-ux/reference_analysis.md
+plan/ZANI_UI_REFERENCES_DEEP_ANALYSIS_26_05_UPDATED.md
+plan/ZANI_UI_UX_PRODUCTION_MASTER_PLAN_26_05.md
+references/
 ```
 
 For integrations/onboarding work, also read:
@@ -131,3 +133,61 @@ Next work should focus on:
 - keeping paid-beta gates red until Redis/Celery, object storage, Sentry, email, backups, support grants and smoke/E2E checks are green;
 - small reliability/security fixes discovered during local or deployed smoke;
 - UI/UX polish only when it reduces merchant/operator confusion.
+
+# ZANI UI CONTENT RULE — NO FILLER / NO FAKE MARKETING BLOCKS
+
+Codex must NOT create decorative, marketing, demo, motivational, or explanatory UI blocks unless they are explicitly required in the task specification.
+
+Forbidden examples:
+- "ZANI E2E DEMO"
+- "Бизнес под контролем"
+- "Все заявки, записи и задачи собраны в одной рабочей панели"
+- "Полный контроль владельца"
+- "Доступны деньги, команда, подключения, аналитика и настройки бизнеса"
+- Any similar generic blocks, banners, cards, slogans, badges, empty promo sections, or artificial explanations.
+
+Every visible block on a ZANI page must have a clear product purpose:
+1. Navigation
+2. KPI / metric
+3. Real business data
+4. Action button
+5. Form
+6. Table/list/entity card
+7. Chart/analytics
+8. Integration status
+9. Empty state with a real next action
+10. System notification or alert
+
+Codex must not invent static Russian text for pages.
+All visible page text must come only from:
+- the current task prompt;
+- existing page structure;
+- approved ZANI copy/content map;
+- i18n/constants file;
+- real API/data model fields.
+
+If the task does not provide exact text, Codex must use neutral functional labels only, for example:
+- "Заявки"
+- "Сделки"
+- "Клиенты"
+- "Задачи"
+- "Подключения"
+- "Аналитика"
+- "Настройки"
+
+Inside the authenticated ZANI app, the interface is NOT a marketing landing page.
+Dashboard pages must not explain what ZANI is.
+They must show business state, actions, metrics, tasks, leads, deals, alerts, integrations, and AI recommendations.
+
+Before finishing any UI task, Codex must check:
+- Did I add any static headline or paragraph that was not requested?
+- Does every new card/block have a real business function?
+- Is this block connected to data, action, navigation, empty state, or setting?
+- Would this text look like fake demo/landing content inside a real SaaS cabinet?
+
+If the answer is no, Codex must remove the block.
+
+IMPORTANT UI RULE:
+Do not add any extra marketing/demo/filler blocks or invented Russian text.
+Only implement the requested functional UI.
+If a block does not display data, action, navigation, setting, status, or a real empty state — do not create it.

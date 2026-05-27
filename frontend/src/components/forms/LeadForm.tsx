@@ -81,7 +81,7 @@ export function LeadForm({
   }, [businessId, clientId, initial?.id]);
 
   return (
-    <form className="grid gap-4" onSubmit={form.handleSubmit((values) => onSubmit({ ...values, business: businessId, service: values.service || null, responsible_user: values.responsible_user || null } as Partial<Lead>))}>
+    <form className="grid gap-4 rounded-3xl border border-slate-100 bg-white p-4 shadow-sm sm:p-5" onSubmit={form.handleSubmit((values) => onSubmit({ ...values, business: businessId, service: values.service || null, responsible_user: values.responsible_user || null } as Partial<Lead>))}>
       {!hasClients ? (
         <div className="rounded-3xl border border-amber-100 bg-amber-50/80 p-4 text-sm text-amber-900">
           <p className="font-bold">{t("leadForm.needClientTitle")}</p>

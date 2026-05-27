@@ -159,3 +159,19 @@ class InboxCreateDealSerializer(serializers.Serializer):
     title = serializers.CharField(required=False, allow_blank=True, max_length=255)
     amount = serializers.DecimalField(required=False, max_digits=12, decimal_places=2)
     currency = serializers.CharField(required=False, allow_blank=True, max_length=8, default="KZT")
+
+
+class InboxRunPipelineSerializer(serializers.Serializer):
+    use_ai_qualification = serializers.BooleanField(required=False, default=True)
+    apply_ai_decisions = serializers.BooleanField(required=False, default=True)
+    create_lead = serializers.BooleanField(required=False, default=True)
+    create_deal = serializers.BooleanField(required=False, default=True)
+    create_task = serializers.BooleanField(required=False, default=True)
+    lead_message = serializers.CharField(required=False, allow_blank=True)
+    deal_title = serializers.CharField(required=False, allow_blank=True, max_length=255)
+    deal_amount = serializers.DecimalField(required=False, max_digits=12, decimal_places=2, default=0)
+    deal_currency = serializers.CharField(required=False, allow_blank=True, max_length=8, default="KZT")
+    task_title = serializers.CharField(required=False, allow_blank=True, max_length=255)
+    task_description = serializers.CharField(required=False, allow_blank=True)
+    task_priority = serializers.ChoiceField(choices=["low", "normal", "high", "urgent"], default="normal")
+    task_due_at = serializers.DateTimeField(required=False, allow_null=True)

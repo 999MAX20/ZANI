@@ -1,4 +1,5 @@
-import { Home, Inbox, MessageSquareText, MoreHorizontal, Users, X } from "lucide-react";
+import { Home, Inbox, KanbanSquare, MessageSquareText, MoreHorizontal, X } from "lucide-react";
+import { useEffect } from "react";
 import { NavLink } from "react-router-dom";
 
 import { cn } from "../../lib/cn";
@@ -12,7 +13,7 @@ import { Sidebar } from "./Sidebar";
 const bottomItems = [
   { to: "/dashboard", label: "mobile.home", icon: Home },
   { to: "/dashboard/leads", label: "nav.leads", icon: Inbox, resource: "leads" },
-  { to: "/dashboard/clients", label: "nav.clients", icon: Users, resource: "clients" },
+  { to: "/dashboard/deals", label: "nav.deals", icon: KanbanSquare, resource: "deals" },
   { to: "/dashboard/conversations", label: "nav.conversations", icon: MessageSquareText, resource: "conversations" },
 ];
 
@@ -22,10 +23,23 @@ export function MobileNav({ open, onOpen, onClose }: { open: boolean; onOpen: ()
   const { business } = useActiveBusiness();
   const visibleBottomItems = bottomItems.filter((item) => !item.resource || hasPermission(user, business?.id, item.resource));
 
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    const previousOverscroll = document.body.style.overscrollBehavior;
+    document.body.style.overflow = "hidden";
+    document.body.style.overscrollBehavior = "contain";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.body.style.overscrollBehavior = previousOverscroll;
+    };
+  }, [open]);
+
   return (
     <>
       {open ? (
-        <div className="fixed inset-0 z-[80] bg-slate-950/50 backdrop-blur-md lg:hidden">
+        <div className="fixed inset-0 z-[80] bg-slate-950/42 backdrop-blur-md lg:hidden">
           <button
             type="button"
             className="absolute inset-0 cursor-default"
@@ -34,11 +48,11 @@ export function MobileNav({ open, onOpen, onClose }: { open: boolean; onOpen: ()
           />
           <div className="relative h-full w-[min(390px,94vw)]">
             <div className="absolute right-3 top-3 z-50">
-              <Button variant="secondary" className="h-14 w-14 rounded-full px-0 shadow-premium" onClick={onClose} aria-label={t("sidebar.collapse")}>
+              <Button variant="secondary" className="h-[52px] w-[52px] rounded-full border border-slate-100 bg-white px-0 shadow-premium" onClick={onClose} aria-label={t("sidebar.collapse")}>
                 <X size={30} strokeWidth={2.4} />
               </Button>
             </div>
-            <Sidebar forceVisible onNavigate={onClose} />
+            <Sidebar forceVisible mobileDrawer onNavigate={onClose} />
           </div>
         </div>
       ) : null}

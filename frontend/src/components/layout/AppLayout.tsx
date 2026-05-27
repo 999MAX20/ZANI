@@ -19,6 +19,7 @@ export function AppLayout() {
       </div>
       <div className="relative flex min-h-screen">
         <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((value) => !value)} />
+        <div className={collapsed ? "hidden shrink-0 transition-[width] duration-300 lg:block lg:w-[116px]" : "hidden shrink-0 transition-[width] duration-300 lg:block lg:w-[342px]"} />
         <MobileNav open={menuOpen} onOpen={() => setMenuOpen(true)} onClose={() => setMenuOpen(false)} />
         <div className="flex min-w-0 flex-1 flex-col pb-28 lg:pb-0">
           <Header onMenuClick={() => setMenuOpen(true)} />

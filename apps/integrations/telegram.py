@@ -7,6 +7,7 @@ from apps.billing.models import UsageCounter
 from apps.billing.usage import increment_usage
 from apps.bots.inbox_service import register_bot_message
 from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
+from apps.conversations.auto_pipeline import maybe_run_auto_pipeline
 from apps.integrations.models import IntegrationEventLog
 from apps.integrations.providers import get_provider, parse_webhook, send_message, verify_webhook
 
@@ -100,6 +101,7 @@ def save_telegram_inbound_message(update, provided_secret):
         status=BotMessage.Statuses.RECEIVED,
     )
     register_bot_message(message)
+    maybe_run_auto_pipeline(conversation=conversation, message=message, channel=channel)
     IntegrationEventLog.objects.create(
         business=conversation.business,
         provider=BotChannel.Channels.TELEGRAM,
@@ -132,3 +134,27 @@ def set_telegram_webhook(channel, webhook_url):
 
 def validate_telegram_token(channel):
     return get_provider(BotChannel.Channels.TELEGRAM).validate_token(channel)
+
+
+def sync_telegram_updates(channel, limit=20):
+    config = dict(channel.config_json or {})
+    last_update_id = config.get("last_update_id")
+    offset = int(last_update_id) + 1 if last_update_id is not None else None
+    result = get_provider(BotChannel.Channels.TELEGRAM).get_updates(channel, offset=offset, limit=limit)
+    if not result.get("ok"):
+        return {"ok": False, "processed": 0, "updates_count": 0, "reason": result.get("reason") or result.get("description", "")}
+
+    processed = 0
+    updates = result.get("result") or []
+    webhook_secret = config.get("webhook_secret", "")
+    for update in updates:
+        update_id = update.get("update_id")
+        if update_id is not None:
+            config["last_update_id"] = max(int(config.get("last_update_id") or update_id), int(update_id))
+        conversation, message = save_telegram_inbound_message(update, webhook_secret)
+        if conversation and message:
+            processed += 1
+
+    channel.config_json = config
+    channel.save(update_fields=["config_json", "updated_at"])
+    return {"ok": True, "processed": processed, "updates_count": len(updates)}

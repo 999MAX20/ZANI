@@ -313,6 +313,29 @@ def create_or_update_credential(connector, key, raw_value, expires_at=None):
 
 
 def connector_has_active_credentials(connector):
+    if connector.provider == BusinessConnector.Providers.TELEGRAM:
+        config = connector.config_json or {}
+        bot_channel_id = config.get("bot_channel_id")
+        if bot_channel_id:
+            from apps.bots.models import BotChannel
+
+            return BotChannel.objects.filter(
+                id=bot_channel_id,
+                channel=BotChannel.Channels.TELEGRAM,
+            ).exclude(config_json__bot_token="").exists()
+        return bool(config.get("token_configured"))
+    if connector.provider == BusinessConnector.Providers.WHATSAPP:
+        config = connector.config_json or {}
+        bot_channel_id = config.get("bot_channel_id")
+        if bot_channel_id:
+            from apps.bots.models import BotChannel
+
+            return BotChannel.objects.filter(
+                id=bot_channel_id,
+                channel=BotChannel.Channels.WHATSAPP,
+            ).exclude(config_json__access_token="").exclude(config_json__phone_number_id="").exists()
+        return bool(config.get("access_token_configured") and config.get("phone_number_id_configured"))
+
     now = timezone.now()
     return connector.credentials.filter(expires_at__isnull=True).exists() or connector.credentials.filter(expires_at__gt=now).exists()
 

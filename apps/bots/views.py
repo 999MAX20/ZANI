@@ -1,3 +1,6 @@
+import secrets
+
+from django.conf import settings
 from apps.bots.ai import suggest_bot_reply
 from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
 from apps.bots.serializers import (
@@ -25,7 +28,8 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework.throttling import ScopedRateThrottle
 from apps.integrations.models import BusinessConnector, IntegrationEventLog
-from apps.integrations.telegram import set_telegram_webhook, validate_telegram_token
+from apps.integrations.providers import get_provider
+from apps.integrations.telegram import set_telegram_webhook, sync_telegram_updates as pull_telegram_updates, validate_telegram_token
 
 
 def sync_telegram_connector(channel, status=None, last_error="", operation="config"):
@@ -74,6 +78,44 @@ def sync_telegram_connector(channel, status=None, last_error="", operation="conf
     return connector
 
 
+def sync_whatsapp_connector(channel, status=None, last_error="", operation="config"):
+    config = channel.config_json or {}
+    credentials_configured = bool((config.get("phone_number_id") or channel.external_id) and config.get("access_token"))
+    connector_status = status or (
+        BusinessConnector.Statuses.CONNECTED if credentials_configured else BusinessConnector.Statuses.NEEDS_ATTENTION
+    )
+    connector, _ = BusinessConnector.objects.get_or_create(
+        business=channel.bot.business,
+        provider=BusinessConnector.Providers.WHATSAPP,
+        name="WhatsApp",
+        defaults={
+            "capability": BusinessConnector.Capabilities.COMMUNICATIONS,
+            "auth_type": BusinessConnector.AuthTypes.TOKEN,
+            "status": connector_status,
+        },
+    )
+    safe_config = dict(connector.config_json or {})
+    safe_config.update(
+        {
+            "bot_channel_id": channel.id,
+            "provider_mode": config.get("provider_mode") or "mock",
+            "phone_number_id_configured": bool(config.get("phone_number_id") or channel.external_id),
+            "access_token_configured": bool(config.get("access_token")),
+            "business_account_id_configured": bool(config.get("business_account_id")),
+            "last_operation": operation,
+        }
+    )
+    connector.capability = BusinessConnector.Capabilities.COMMUNICATIONS
+    connector.auth_type = BusinessConnector.AuthTypes.TOKEN
+    connector.status = connector_status
+    connector.config_json = safe_config
+    connector.last_error = last_error
+    if connector_status == BusinessConnector.Statuses.CONNECTED and connector.connected_at is None:
+        connector.connected_at = timezone.now()
+    connector.save(update_fields=["capability", "auth_type", "status", "config_json", "last_error", "connected_at", "updated_at"])
+    return connector
+
+
 class BotViewSet(TenantModelViewSet):
     queryset = Bot.objects.select_related("business")
     serializer_class = BotSerializer
@@ -111,6 +153,8 @@ class BotChannelViewSet(TenantModelViewSet):
             config["bot_token"] = serializer.validated_data["bot_token"]
         if "webhook_secret" in serializer.validated_data:
             config["webhook_secret"] = serializer.validated_data["webhook_secret"]
+        if config.get("bot_token") and not config.get("webhook_secret"):
+            config["webhook_secret"] = secrets.token_urlsafe(32)
         channel.config_json = config
         channel.status = BotChannel.Statuses.ACTIVE if config.get("bot_token") else channel.status
         channel.save(update_fields=["config_json", "status", "updated_at"])
@@ -166,12 +210,14 @@ class BotChannelViewSet(TenantModelViewSet):
             direction=IntegrationEventLog.Directions.OUTBOUND,
         ).first()
         config = channel.config_json or {}
+        webhook_url = request.build_absolute_uri("/api/integrations/telegram/webhook/")
         return Response(
             {
                 "status": channel.status,
                 "token_configured": bool(config.get("bot_token")),
                 "webhook_secret_configured": bool(config.get("webhook_secret")),
                 "webhook_configured": bool(config.get("webhook_configured")),
+                "webhook_url": webhook_url,
                 "last_error": failed_event.error if failed_event else "",
                 "last_inbound_status": last_inbound_event.status if last_inbound_event else "",
                 "last_inbound_at": last_inbound_event.created_at if last_inbound_event else None,
@@ -204,6 +250,18 @@ class BotChannelViewSet(TenantModelViewSet):
             }
         )
 
+    @action(detail=True, methods=["post"], url_path="sync-telegram-updates")
+    def sync_telegram_updates(self, request, pk=None):
+        channel = self._get_telegram_channel()
+        result = pull_telegram_updates(channel, limit=20)
+        sync_telegram_connector(
+            channel,
+            status=BusinessConnector.Statuses.CONNECTED if result.get("ok") else BusinessConnector.Statuses.FAILED,
+            last_error="" if result.get("ok") else result.get("reason", "Telegram updates sync failed."),
+            operation="sync_updates",
+        )
+        return Response(result)
+
     @action(detail=True, methods=["post"], url_path="whatsapp-config")
     def whatsapp_config(self, request, pk=None):
         channel = self._get_whatsapp_channel()
@@ -213,18 +271,47 @@ class BotChannelViewSet(TenantModelViewSet):
         for key, value in serializer.validated_data.items():
             config[key] = value
         if not config.get("provider_mode"):
-            config["provider_mode"] = "mock"
+            config["provider_mode"] = "meta_cloud" if config.get("access_token") and config.get("phone_number_id") else "mock"
         channel.config_json = config
         channel.external_id = config.get("phone_number_id", channel.external_id)
         channel.status = BotChannel.Statuses.PAUSED if config.get("provider_mode") == "disabled" else BotChannel.Statuses.ACTIVE
         channel.save(update_fields=["config_json", "external_id", "status", "updated_at"])
+        sync_whatsapp_connector(channel, operation="config")
         return Response(
             {
                 "ok": True,
                 "provider_mode": config["provider_mode"],
                 "status": channel.status,
                 "phone_number_id_configured": bool(config.get("phone_number_id") or channel.external_id),
+                "access_token_configured": bool(config.get("access_token")),
                 "webhook_secret_configured": bool(config.get("webhook_secret")),
+            }
+        )
+
+    @action(detail=True, methods=["post"], url_path="whatsapp-test-connection")
+    def whatsapp_test_connection(self, request, pk=None):
+        channel = self._get_whatsapp_channel()
+        result = get_provider(BotChannel.Channels.WHATSAPP).validate_credentials(channel)
+        channel.status = BotChannel.Statuses.ACTIVE if result.get("ok") else BotChannel.Statuses.ERROR
+        channel.save(update_fields=["status", "updated_at"])
+        connector_status = BusinessConnector.Statuses.CONNECTED if result.get("ok") else BusinessConnector.Statuses.FAILED
+        sync_whatsapp_connector(
+            channel,
+            status=connector_status,
+            last_error="" if result.get("ok") else result.get("reason", "WhatsApp credentials validation failed."),
+            operation="test_connection",
+        )
+        config = channel.config_json or {}
+        return Response(
+            {
+                "ok": result.get("ok", False),
+                "mock": result.get("mock", False),
+                "reason": result.get("reason", ""),
+                "status": channel.status,
+                "provider_mode": config.get("provider_mode") or "mock",
+                "phone_number_id_configured": bool(config.get("phone_number_id") or channel.external_id),
+                "access_token_configured": bool(config.get("access_token")),
+                "phone_number": result.get("phone_number", {}),
             }
         )
 
@@ -250,7 +337,11 @@ class BotChannelViewSet(TenantModelViewSet):
                 "provider_mode": config.get("provider_mode") or "mock",
                 "webhook_url": webhook_url,
                 "phone_number_id_configured": bool(config.get("phone_number_id") or channel.external_id),
+                "access_token_configured": bool(config.get("access_token")),
+                "business_account_id_configured": bool(config.get("business_account_id")),
                 "webhook_secret_configured": bool(config.get("webhook_secret")),
+                "verify_token_configured": bool(settings.WHATSAPP_VERIFY_TOKEN),
+                "app_secret_configured": bool(settings.WHATSAPP_APP_SECRET),
                 "last_error": failed_event.error if failed_event else "",
                 "last_event_status": last_event.status if last_event else "",
                 "last_event_at": last_event.created_at if last_event else None,

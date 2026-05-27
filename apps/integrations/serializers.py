@@ -164,6 +164,21 @@ class WhatsAppConnectionRequestSerializer(serializers.Serializer):
         }
 
 
+class WhatsAppEmbeddedSignupStartSerializer(serializers.Serializer):
+    business = serializers.PrimaryKeyRelatedField(queryset=Business.objects.all())
+    redirect_uri = serializers.URLField(required=False, allow_blank=True)
+
+
+class WhatsAppEmbeddedSignupCompleteSerializer(serializers.Serializer):
+    business = serializers.PrimaryKeyRelatedField(queryset=Business.objects.all())
+    code = serializers.CharField(required=True, allow_blank=False, trim_whitespace=True)
+    state = serializers.CharField(required=True, allow_blank=False, trim_whitespace=True)
+    redirect_uri = serializers.URLField(required=False, allow_blank=True)
+    phone_number_id = serializers.CharField(required=True, allow_blank=False, trim_whitespace=True)
+    waba_id = serializers.CharField(required=False, allow_blank=True, trim_whitespace=True)
+    display_phone_number = serializers.CharField(required=False, allow_blank=True, trim_whitespace=True)
+
+
 class ConnectorCapabilitySerializer(serializers.Serializer):
     provider = serializers.CharField()
     label = serializers.CharField()

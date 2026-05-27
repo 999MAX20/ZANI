@@ -56,6 +56,7 @@ export const telegramChannelApi = {
       token_configured: boolean;
       webhook_secret_configured: boolean;
       webhook_configured: boolean;
+      webhook_url: string;
       last_error: string;
       last_inbound_status: string;
       last_inbound_at: string | null;
@@ -75,14 +76,27 @@ export const telegramChannelApi = {
     }>(`/api/bot-channels/${channelId}/telegram-test-connection/`);
     return data;
   },
+  syncUpdates: async (channelId: number) => {
+    const { data } = await apiClient.post<{
+      ok: boolean;
+      processed: number;
+      updates_count: number;
+      reason?: string;
+    }>(`/api/bot-channels/${channelId}/sync-telegram-updates/`);
+    return data;
+  },
 };
 
 export type WhatsAppChannelStatus = {
   status: string;
-  provider_mode: "mock" | "disabled";
+  provider_mode: "mock" | "meta_cloud" | "disabled";
   webhook_url: string;
   phone_number_id_configured: boolean;
+  access_token_configured: boolean;
+  business_account_id_configured: boolean;
   webhook_secret_configured: boolean;
+  verify_token_configured: boolean;
+  app_secret_configured: boolean;
   last_error: string;
   last_event_status: string;
   last_event_at: string | null;
@@ -94,23 +108,46 @@ export const whatsappChannelApi = {
     providerMode,
     webhookSecret,
     phoneNumberId,
+    accessToken,
+    businessAccountId,
+    displayPhoneNumber,
   }: {
     channelId: number;
-    providerMode: "mock" | "disabled";
-    webhookSecret: string;
-    phoneNumberId: string;
+    providerMode: "mock" | "meta_cloud" | "disabled";
+    webhookSecret?: string;
+    phoneNumberId?: string;
+    accessToken?: string;
+    businessAccountId?: string;
+    displayPhoneNumber?: string;
   }) => {
     const { data } = await apiClient.post<{
       ok: boolean;
-      provider_mode: "mock" | "disabled";
+      provider_mode: "mock" | "meta_cloud" | "disabled";
       status: string;
       phone_number_id_configured: boolean;
+      access_token_configured: boolean;
       webhook_secret_configured: boolean;
     }>(`/api/bot-channels/${channelId}/whatsapp-config/`, {
       provider_mode: providerMode,
       webhook_secret: webhookSecret,
       phone_number_id: phoneNumberId,
+      access_token: accessToken,
+      business_account_id: businessAccountId,
+      display_phone_number: displayPhoneNumber,
     });
+    return data;
+  },
+  testConnection: async (channelId: number) => {
+    const { data } = await apiClient.post<{
+      ok: boolean;
+      mock: boolean;
+      reason: string;
+      status: string;
+      provider_mode: "mock" | "meta_cloud" | "disabled";
+      phone_number_id_configured: boolean;
+      access_token_configured: boolean;
+      phone_number: Record<string, unknown>;
+    }>(`/api/bot-channels/${channelId}/whatsapp-test-connection/`);
     return data;
   },
   status: async (channelId: number) => {

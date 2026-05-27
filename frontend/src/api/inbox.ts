@@ -36,6 +36,7 @@ export type InboxSummary = {
 
 export type InboxFilters = {
   channel?: string;
+  bot?: string;
   status?: string;
   assigned_to?: string;
   priority?: string;
@@ -44,6 +45,36 @@ export type InboxFilters = {
   handoff_required?: string;
   search?: string;
   q?: string;
+};
+
+export type InboxPipelineResult = {
+  conversation: InboxConversation;
+  client: Client;
+  lead: Lead | null;
+  deal: Deal | null;
+  task: Task | null;
+  qualification: {
+    intent: string;
+    confidence: number;
+    summary: string;
+    service_name?: string;
+    preferred_time_text?: string;
+    urgency: string;
+    should_create_lead: boolean;
+    should_create_deal: boolean;
+    should_create_task: boolean;
+    should_create_appointment: boolean;
+    next_action: string;
+    reason: string;
+    requires_human_review: boolean;
+  } | null;
+  ai_log_id: Id | null;
+  created: {
+    client: boolean;
+    lead: boolean;
+    deal: boolean;
+    task: boolean;
+  };
 };
 
 function cleanParams(filters: InboxFilters) {
@@ -143,6 +174,19 @@ export const inboxApi = {
   },
   createDeal: async ({ conversationId, title }: { conversationId: Id; title?: string }) => {
     const { data } = await apiClient.post<Deal>(`/api/inbox/conversations/${conversationId}/create-deal/`, { title });
+    return data;
+  },
+  runPipeline: async ({ conversationId, dealTitle }: { conversationId: Id; dealTitle?: string }) => {
+    const { data } = await apiClient.post<InboxPipelineResult>(`/api/inbox/conversations/${conversationId}/run-pipeline/`, {
+      create_lead: true,
+      create_deal: true,
+      create_task: true,
+      use_ai_qualification: true,
+      apply_ai_decisions: true,
+      deal_title: dealTitle,
+      task_title: dealTitle ? `Следующий шаг: ${dealTitle}` : undefined,
+      task_priority: "normal",
+    });
     return data;
   },
   linkDeal: async ({ conversationId, dealId }: { conversationId: Id; dealId: Id }) => {

@@ -1,120 +1,110 @@
-# Zani Plan Workspace
+# ZANI Plan Index
 
-Эта папка содержит актуальные технические планы и архив старых документов.
+Last cleaned: 2026-05-27
 
-## Главный актуальный техплан
+This folder now contains only active planning documents that should guide future implementation. Old prompt packs, outdated master plans, duplicate UI references, empty files, and historical `.docx` plans were removed because they conflicted with the current CRM reform direction.
+
+## Current Source Of Truth
+
+Primary product readiness plan:
 
 ```text
-plan/ZANI_MASTER_TECH_PLAN.md
+readiness_plan.md
 ```
 
-Назначение:
+Use this before deciding what to build next. It tracks:
 
-- единый source of truth по текущему направлению проекта;
-- актуальная roadmap после выполнения prompts 13.05;
-- production-readiness путь к 10 000 мерчантов;
-- integration/onboarding стратегия 20.05;
-- Definition of Done;
-- порядок дальнейшей работы.
+- what is already implemented;
+- page-by-page readiness;
+- production gaps;
+- priority roadmap;
+- the automatic inbound workflow gap;
+- cross-cutting production requirements.
 
-## Обязательные supporting documents
+Primary UI/design rules:
 
-### 0. Production hardening roadmap
+```text
+docs/design-system.md
+```
+
+Use this before frontend work. It defines:
+
+- color system;
+- form and modal style;
+- filter style;
+- page layout principles;
+- CRM vs AI visual hierarchy.
+
+## Active Documents In This Folder
+
+### Business Logic
+
+```text
+plan/business_logic_implementation_plan.md
+plan/auto_crm_pipeline_plan.md
+```
+
+Use for core CRM workflow work:
+
+- manual and automatic inbound pipeline;
+- AI qualification guard rules;
+- conversation to client/lead/deal/task logic;
+- production-safe automation boundaries.
+
+### Production Hardening
 
 ```text
 plan/ZANI_PRODUCTION_HARDENING_ROADMAP.md
 ```
 
-Назначение:
+Use for infrastructure and production reliability work:
 
-- актуальный execution roadmap после закрытия core/pilot задач;
-- путь от Render/Supabase staging к paid beta;
-- Redis/Celery, object storage, Sentry, transactional email, backups, load testing and provider rollout.
+- Redis/Celery;
+- object storage;
+- Sentry/error reporting;
+- transactional email;
+- backups;
+- load testing;
+- provider rollout.
 
-### 1. Clean code / architecture rules
+### Clean Code Rules
 
 ```text
 plan/clean_code_rules/zani_required_clean_code_rules.md
 ```
 
-Назначение:
+Use as the engineering contract for new implementation:
 
-- источник правды по архитектурным правилам Codex для Zani;
-- tenant isolation, permissions, audit и provider-first подход;
-- правила декомпозиции backend/frontend;
-- обязательный Definition of Done для новых задач.
+- reuse existing layers first;
+- preserve tenant isolation;
+- keep business logic out of bloated views;
+- avoid frontend page monoliths;
+- keep API clients/types separate from UI;
+- test permissions and critical workflows.
 
-### 2. UI/UX reference analysis
+## Cleanup Summary
 
-```text
-plan/ui-ux/reference_analysis.md
-```
+Removed categories:
 
-Назначение:
+- old master plans from 13.05, 20.05, 25.05, 26.05;
+- generated Codex prompt packs;
+- duplicated UI reference analysis files;
+- historical archive documents;
+- obsolete `.docx` planning files;
+- empty and system files.
 
-- направление визуального и UX-развития;
-- правила для dashboard, sidebar, inbox, kanban, calendar, CRM card, mobile UX;
-- использовать перед frontend/UI задачами.
+Reason:
 
-### 3. Integration/onboarding plan
+- The current reform is now tracked in `readiness_plan.md`.
+- UI decisions are now tracked in `docs/design-system.md`.
+- Keeping old prompt packs made future work ambiguous and encouraged outdated implementation paths.
 
-```text
-plan/plan_20_05/zani_integration_onboarding_master_plan_20_05.md
-```
+## Working Rule
 
-Назначение:
+For product work, read in this order:
 
-- invisible integrations;
-- event-first connector architecture;
-- AI-native progressive onboarding;
-- business capability based integrations UX.
-
-## Исторические планы
-
-```text
-plan/teh plan 13.05.md
-plan/zani_execution_prompts_from_13_05.md
-```
-
-Статус: выполнены как основная очередь prompts 01-30 и больше не являются главным execution-source.
-
-Оставлены как историческая детализация по уже реализованным CRM-модулям.
-
-## Правила выполнения
-
-- Выполнять только один prompt за раз.
-- Перед началом читать `plan/ZANI_MASTER_TECH_PLAN.md`.
-- Для интеграций читать `plan/plan_20_05/zani_integration_onboarding_master_plan_20_05.md`.
-- Для UI читать `plan/ui-ux/reference_analysis.md`.
-- Не переходить к следующему prompt, пока текущий не прошёл проверки.
-- Если проверки упали, остановиться и исправить текущий этап.
-- После каждого этапа обновлять README/docs.
-- Не считать `Foundation` или `MVP` завершённой фичей без минимального UI, workflow, permissions и проверок.
-- Соблюдать `plan/clean_code_rules/zani_required_clean_code_rules.md` как обязательный clean-code contract.
-- Соблюдать корневой `AGENTS.md` как рабочий контракт для Codex/AI agents.
-
-## Обязательные проверки
-
-```bash
-DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py makemigrations --check --dry-run
-DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
-DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test
-cd frontend && npm run build
-```
-
-Если добавлены миграции:
-
-```bash
-DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py makemigrations
-DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py migrate
-```
-
-## Архив
-
-Старые и исходные документы лежат в:
-
-```text
-plan/archive/
-```
-
-Они нужны как история рассуждений и источники, но не являются текущими execution-plan файлами.
+1. `readiness_plan.md`
+2. `docs/design-system.md`
+3. `plan/business_logic_implementation_plan.md` or `plan/auto_crm_pipeline_plan.md` if the task touches CRM workflows.
+4. `plan/clean_code_rules/zani_required_clean_code_rules.md`
+5. `plan/ZANI_PRODUCTION_HARDENING_ROADMAP.md` only if the task touches production infrastructure.

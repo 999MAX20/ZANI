@@ -1,550 +1,646 @@
-import { DndContext, DragEndEvent, PointerSensor, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
-import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  ArrowUpRight,
-  Bot,
+  AlertTriangle,
   CalendarPlus,
-  CheckCircle2,
-  Flame,
-  GripVertical,
+  ClipboardList,
+  CheckCheck,
+  CircleDollarSign,
+  CircleDot,
   MessageCircle,
-  MoreHorizontal,
   Phone,
   Plus,
-  Sparkles,
-  UserRoundCheck,
+  Search,
+  UserCheck,
+  XCircle,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import { getApiErrorMessage } from "../../api/client";
 import { leadsApi } from "../../api/leads";
+import { tasksApi } from "../../api/tasks";
 import { teamApi } from "../../api/team";
-import { PageAiHints, type PageAiHint } from "../../components/ai/PageAiHints";
 import { CrmEntityDrawer, type CrmDrawerEntity } from "../../components/crm/CrmEntityDrawer";
 import { AppointmentForm } from "../../components/forms/AppointmentForm";
 import { LeadForm } from "../../components/forms/LeadForm";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { Modal } from "../../components/ui/Modal";
-import { PageHeader } from "../../components/ui/PageHeader";
 import { Select } from "../../components/ui/Select";
-import { StatusBadge } from "../../components/ui/StatusBadge";
-import { ErrorState, LoadingState } from "../../components/ui/StateViews";
+import { EmptyState, ErrorState, LoadingState } from "../../components/ui/StateViews";
+import { cn } from "../../lib/cn";
 import { formatDateTime } from "../../lib/format";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useEntityData } from "../../hooks/useEntityData";
-import { useI18n } from "../../lib/i18n";
-import type { Appointment, Lead } from "../../types";
+import type { Appointment, Client, Id, Lead, Service, Task } from "../../types";
+import { useAuth } from "../auth/AuthProvider";
 
-const columns: { id: Lead["status"]; titleKey: string; hintKey: string }[] = [
-  { id: "new", titleKey: "leads.columnNew", hintKey: "leads.columnNewHint" },
-  { id: "contacted", titleKey: "leads.columnContacted", hintKey: "leads.columnContactedHint" },
-  { id: "in_progress", titleKey: "leads.columnQualified", hintKey: "leads.columnQualifiedHint" },
-  { id: "appointment_created", titleKey: "leads.columnBooked", hintKey: "leads.columnBookedHint" },
-  { id: "closed", titleKey: "leads.columnWon", hintKey: "leads.columnWonHint" },
-  { id: "lost", titleKey: "leads.columnLost", hintKey: "leads.columnLostHint" },
-];
+type LeadFilter = "all" | "new" | "unassigned" | "mine" | "active" | "closed";
+type LeadAction = "take" | "contacted" | "deal" | "closed" | "lost" | "reopen" | "assign";
 
-function LeadCommandHero({
-  rows,
-  onCreate,
-  t,
-}: {
-  rows: Lead[];
-  onCreate: () => void;
-  t: (key: string) => string;
-}) {
-  const newCount = rows.filter((lead) => lead.status === "new").length;
-  const activeCount = rows.filter((lead) => ["contacted", "in_progress"].includes(lead.status)).length;
-  const bookedCount = rows.filter((lead) => lead.status === "appointment_created").length;
-  const lostCount = rows.filter((lead) => lead.status === "lost").length;
-  const metrics = [
-    { label: t("leads.metricNew"), value: newCount, icon: Flame, className: "bg-amber-50 text-amber-700 ring-amber-100" },
-    { label: t("leads.metricActive"), value: activeCount, icon: UserRoundCheck, className: "bg-brand-50 text-brand-700 ring-brand-100" },
-    { label: t("leads.metricBooked"), value: bookedCount, icon: CalendarPlus, className: "bg-emerald-50 text-emerald-700 ring-emerald-100" },
-    { label: t("leads.metricLost"), value: lostCount, icon: CheckCircle2, className: "bg-slate-100 text-slate-700 ring-slate-200" },
-  ];
+const statusLabels: Record<Lead["status"], string> = {
+  new: "Новая",
+  contacted: "Связались",
+  in_progress: "В работе",
+  appointment_created: "Запись",
+  closed: "Закрыта",
+  lost: "Отказ",
+};
 
-  return (
-    <section className="mb-5 overflow-hidden rounded-[2rem] border border-white/75 bg-white/82 p-4 shadow-premium backdrop-blur-xl sm:p-5">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-        <div className="max-w-2xl">
-          <div className="inline-flex items-center gap-2 rounded-full bg-ai-50 px-3 py-1 text-xs font-black uppercase tracking-[0.14em] text-ai-700 ring-1 ring-ai-100">
-            <Sparkles size={14} />
-            {t("leads.commandTitle")}
-          </div>
-          <h2 className="mt-3 text-2xl font-black tracking-tight text-midnight sm:text-3xl">{t("leads.title")}</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-600">{t("leads.commandText")}</p>
-        </div>
-        <Button variant="ai" className="h-12 rounded-2xl px-5" onClick={onCreate}>
-          <Plus size={18} />
-          {t("leads.new")}
-        </Button>
-      </div>
-      <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {metrics.map((metric) => {
-          const Icon = metric.icon;
-          return (
-            <div key={metric.label} className="rounded-3xl border border-slate-100 bg-white/85 p-4 shadow-sm">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-bold text-slate-500">{metric.label}</p>
-                  <p className="mt-1 text-3xl font-black text-midnight">{metric.value}</p>
-                </div>
-                <div className={`grid h-11 w-11 place-items-center rounded-2xl ring-1 ${metric.className}`}>
-                  <Icon size={20} />
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </section>
-  );
+const statusClass: Record<Lead["status"], string> = {
+  new: "bg-amber-50 text-amber-700 ring-amber-200",
+  contacted: "bg-blue-50 text-blue-700 ring-blue-200",
+  in_progress: "bg-violet-50 text-violet-700 ring-violet-200",
+  appointment_created: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+  closed: "bg-slate-900 text-white ring-slate-900",
+  lost: "bg-red-50 text-red-700 ring-red-200",
+};
+
+const sourceLabels: Record<string, string> = {
+  website: "Сайт",
+  landing: "Лендинг",
+  telegram: "Telegram",
+  whatsapp: "WhatsApp",
+  instagram: "Instagram",
+  manual: "Вручную",
+  parser: "Парсер",
+  other: "Другое",
+};
+
+function Pill({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <span className={cn("inline-flex rounded-full px-2.5 py-1 text-xs font-black ring-1", className)}>{children}</span>;
 }
 
-function LeadCard({
+function initials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase() || "L";
+}
+
+function getClient(lead: Lead, clients: Client[]) {
+  return clients.find((client) => client.id === lead.client);
+}
+
+function getService(lead: Lead, services: Service[]) {
+  return services.find((service) => service.id === lead.service);
+}
+
+function leadTitle(lead: Lead | null | undefined, clients: Client[]) {
+  if (!lead) return "Выберите заявку";
+  return getClient(lead, clients)?.full_name || `Заявка #${lead.id}`;
+}
+
+function nextAction(lead: Lead) {
+  if (lead.status === "new") return "Связаться с клиентом";
+  if (lead.status === "contacted") return "Квалифицировать потребность";
+  if (lead.status === "in_progress") return "Создать сделку или запись";
+  if (lead.status === "appointment_created") return "Проконтролировать визит";
+  if (lead.status === "closed") return "Проверить результат";
+  return "Понять причину отказа";
+}
+
+function toDateTimeLocal(value: Date) {
+  const offset = value.getTimezoneOffset();
+  return new Date(value.getTime() - offset * 60_000).toISOString().slice(0, 16);
+}
+
+function LeadQueueItem({
   lead,
-  clientName,
-  phone,
-  serviceName,
-  responsibleName,
-  onOpen,
-  onBook,
-  onArchive,
-  onAiReply,
-  onTakeInWork,
-  onMarkContacted,
-  onCreateDeal,
-  onCloseSuccess,
-  onMarkLost,
-  onReopen,
-  isActionLoading,
-  t,
+  client,
+  service,
+  selected,
+  onClick,
 }: {
   lead: Lead;
-  clientName: string;
-  phone?: string;
-  serviceName?: string;
-  responsibleName?: string;
-  onOpen: () => void;
-  onBook: () => void;
-  onArchive: () => void;
-  onAiReply: () => void;
-  onTakeInWork: () => void;
-  onMarkContacted: () => void;
-  onCreateDeal: () => void;
-  onCloseSuccess: () => void;
-  onMarkLost: () => void;
-  onReopen: () => void;
-  isActionLoading?: boolean;
-  t: (key: string) => string;
+  client?: Client;
+  service?: Service;
+  selected: boolean;
+  onClick: () => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: String(lead.id) });
-  const [actionsOpen, setActionsOpen] = useState(false);
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-  const isHot = ["new", "in_progress"].includes(lead.status);
-
+  const title = client?.full_name || `Заявка #${lead.id}`;
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`group overflow-hidden rounded-3xl border border-white/70 bg-white/90 p-4 shadow-sm backdrop-blur-xl transition-all hover:-translate-y-1 hover:shadow-premium ${isDragging ? "opacity-60 ring-2 ring-brand-300" : ""}`}
+    <button
+      type="button"
+      className={cn(
+        "w-full border-b border-slate-100 px-5 py-4 text-left transition hover:bg-slate-50",
+        selected ? "bg-brand-50/80" : "bg-white",
+      )}
+      onClick={onClick}
     >
-      <div className="mb-3 flex items-start justify-between gap-3">
-        <div className="min-w-0">
+      <div className="flex items-center gap-4">
+        <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white text-sm font-black text-brand-700 ring-1 ring-slate-200">
+          {initials(title)}
+        </div>
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <button
-              className="cursor-grab rounded-lg p-1 text-slate-300 transition hover:bg-slate-100 hover:text-slate-500 active:cursor-grabbing"
-              {...attributes}
-              {...listeners}
-              aria-label={t("leads.dragLead")}
-            >
-              <GripVertical size={14} />
-            </button>
-            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-black uppercase ${isHot ? "bg-amber-50 text-amber-700" : "bg-slate-100 text-slate-500"}`}>
-              <Flame size={12} />
-              {isHot ? t("leads.priorityHot") : t("leads.priorityNormal")}
-            </span>
+            <p className="min-w-0 flex-1 truncate font-black text-midnight">{title}</p>
+            <span className="shrink-0 text-xs font-bold text-slate-400">{formatDateTime(lead.created_at)}</span>
           </div>
-          <p className="mt-3 truncate text-lg font-black text-midnight">{clientName}</p>
-          <p className="mt-1 truncate text-xs font-semibold text-slate-500">{phone || t("leads.noPhone")} · {serviceName || lead.source}</p>
-          <p className="mt-1 truncate text-[11px] font-semibold text-slate-400">{t("leads.responsible")}: {responsibleName || t("leads.unassigned")}</p>
-        </div>
-        <StatusBadge status={lead.status} />
-      </div>
-      <p className="line-clamp-3 min-h-[48px] text-sm leading-6 text-slate-600">{lead.message || t("leads.aiNote")}</p>
-      <div className="mt-4 rounded-2xl border border-ai-100 bg-gradient-to-br from-ai-50 to-white p-3 text-xs leading-5 text-ai-700">
-        <span className="font-black">ZANI:</span> {t("leads.aiCard")}
-      </div>
-      <div className="mt-4 grid grid-cols-[1fr_auto_auto] gap-2">
-        <Button variant="ai" className="h-10 rounded-2xl px-3 text-xs" onClick={onOpen}>
-          {t("leads.open")}
-          <ArrowUpRight size={14} />
-        </Button>
-        <Button variant="secondary" className="h-10 w-10 rounded-2xl px-0" onClick={onBook} aria-label={t("leads.book")}>
-          <CalendarPlus size={16} />
-        </Button>
-        {phone ? (
-          <Button variant="secondary" className="h-10 w-10 rounded-2xl px-0" onClick={() => window.open(`https://wa.me/${phone.replace(/\D/g, "")}`, "_blank", "noopener,noreferrer")} aria-label="WhatsApp">
-            <MessageCircle size={15} />
-          </Button>
-        ) : null}
-      </div>
-      <button
-        type="button"
-        className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-50 px-3 py-2 text-xs font-black text-slate-500 transition hover:bg-slate-100 hover:text-midnight"
-        onClick={() => setActionsOpen((value) => !value)}
-      >
-        <MoreHorizontal size={15} />
-        {t("leads.moreActions")}
-      </button>
-      {actionsOpen ? (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {lead.status === "new" ? <Button variant="ghost" className="h-9 rounded-xl px-3 text-xs" disabled={isActionLoading} onClick={onTakeInWork}>{t("leads.takeWork")}</Button> : null}
-          {lead.status === "new" || lead.status === "in_progress" ? <Button variant="ghost" className="h-9 rounded-xl px-3 text-xs" disabled={isActionLoading} onClick={onMarkContacted}>{t("leads.contacted")}</Button> : null}
-          {lead.status !== "closed" && lead.status !== "lost" ? <Button variant="ghost" className="h-9 rounded-xl px-3 text-xs" disabled={isActionLoading} onClick={onCreateDeal}>{t("leads.deal")}</Button> : null}
-          {lead.status !== "closed" && lead.status !== "lost" ? <Button variant="ghost" className="h-9 rounded-xl px-3 text-xs" disabled={isActionLoading} onClick={onCloseSuccess}>{t("leads.close")}</Button> : null}
-          {lead.status !== "lost" ? <Button variant="ghost" className="h-9 rounded-xl px-3 text-xs" disabled={isActionLoading} onClick={onMarkLost}>{t("leads.lost")}</Button> : null}
-          {lead.status === "lost" ? <Button variant="ghost" className="h-9 rounded-xl px-3 text-xs" disabled={isActionLoading} onClick={onReopen}>{t("leads.reopen")}</Button> : null}
-          <Button variant="ghost" className="h-9 rounded-xl px-3 text-xs" onClick={onArchive}>{t("leads.archive")}</Button>
-          <Button variant="ghost" className="h-9 rounded-xl px-3 text-xs" onClick={onAiReply}><Bot size={15} />{t("leads.aiReply")}</Button>
-        </div>
-      ) : null}
-      <p className="mt-3 text-[11px] font-medium text-slate-400">{formatDateTime(lead.created_at)}</p>
-    </div>
-  );
-}
-
-function KanbanColumn({
-  id,
-  title,
-  hint,
-  children,
-}: {
-  id: Lead["status"];
-  title: string;
-  hint: string;
-  children: React.ReactNode;
-}) {
-  const { setNodeRef, isOver } = useDroppable({ id });
-
-  return (
-    <section
-      ref={setNodeRef}
-      className={`min-h-[420px] min-w-[84vw] snap-start rounded-3xl border border-white/70 bg-white/45 p-3 shadow-soft backdrop-blur-xl transition sm:min-w-[340px] lg:min-w-0 ${isOver ? "ring-2 ring-brand-300" : ""}`}
-    >
-      <div className="mb-3 flex items-center justify-between px-1">
-        <div>
-          <h2 className="font-semibold text-midnight">{title}</h2>
-          <p className="text-xs text-slate-500">{hint}</p>
+          <p className="mt-1 truncate text-sm font-medium text-slate-500">
+            {client?.phone || "без телефона"} · {service?.name || sourceLabels[lead.source] || lead.source}
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <Pill className={statusClass[lead.status]}>{statusLabels[lead.status]}</Pill>
+            <span className="text-xs font-bold text-slate-400">{nextAction(lead)}</span>
+          </div>
         </div>
       </div>
-      {children}
-    </section>
+    </button>
   );
 }
 
 export function LeadsPage() {
   const queryClient = useQueryClient();
   const { business } = useActiveBusiness();
-  const { clients, services, resources, leads } = useEntityData({ clients: true, services: true, resources: true, leads: true });
-  const { t } = useI18n();
+  const { user } = useAuth();
+  const { clients, services, resources, leads, tasks, deals, appointments, botConversations } = useEntityData({
+    clients: true,
+    services: true,
+    resources: true,
+    leads: true,
+    tasks: true,
+    deals: true,
+    appointments: true,
+    botConversations: true,
+  });
   const [searchParams, setSearchParams] = useSearchParams();
-  const [open, setOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState<number | null>(() => Number(searchParams.get("lead")) || null);
+  const [createOpen, setCreateOpen] = useState(searchParams.get("create") === "1");
   const [appointmentOpen, setAppointmentOpen] = useState(false);
-  const [selected, setSelected] = useState<Lead | undefined>();
   const [drawerEntity, setDrawerEntity] = useState<CrmDrawerEntity | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [filter, setFilter] = useState<LeadFilter>("all");
   const [source, setSource] = useState("");
   const [search, setSearch] = useState("");
+  const [notice, setNotice] = useState<string | null>(null);
+  const [lostLead, setLostLead] = useState<Lead | null>(null);
+  const [lostReason, setLostReason] = useState("");
+  const [nextActionOpen, setNextActionOpen] = useState(false);
+  const [nextActionDraft, setNextActionDraft] = useState({
+    title: "Связаться с клиентом",
+    due_at: toDateTimeLocal(new Date(Date.now() + 24 * 60 * 60 * 1000)),
+    assignee: "",
+    priority: "normal" as Task["priority"],
+  });
+
   const teamMembers = useQuery({
     queryKey: ["team-members", business?.id],
     queryFn: teamApi.members,
     enabled: Boolean(business),
     retry: false,
   });
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
-  function clearCreateParam() {
-    if (!searchParams.get("create")) return;
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.delete("create");
-    setSearchParams(nextParams, { replace: true });
-  }
+  const allLeads = leads.data || [];
+  const clientList = clients.data || [];
+  const serviceList = services.data || [];
+  const taskList = tasks.data || [];
+  const dealList = deals.data || [];
+  const appointmentList = appointments.data || [];
+  const conversationList = botConversations.data || [];
+  const teamList = Array.isArray(teamMembers.data) ? teamMembers.data : [];
 
-  useEffect(() => {
-    if (searchParams.get("create") === "1") {
-      setSelected(undefined);
-      setOpen(true);
-    }
-  }, [searchParams]);
+  const rows = useMemo(() => {
+    const value = search.trim().toLowerCase();
+    return allLeads.filter((lead) => {
+      const client = getClient(lead, clientList);
+      const service = getService(lead, serviceList);
+      const matchesSearch = !value || [client?.full_name, client?.phone, client?.email, lead.message, service?.name]
+        .join(" ")
+        .toLowerCase()
+        .includes(value);
+      const matchesSource = !source || lead.source === source;
+      const matchesFilter =
+        filter === "all" ||
+        (filter === "new" && lead.status === "new") ||
+        (filter === "unassigned" && !lead.responsible_user) ||
+        (filter === "mine" && Boolean(user?.id && lead.responsible_user === user.id)) ||
+        (filter === "active" && ["contacted", "in_progress", "appointment_created"].includes(lead.status)) ||
+        (filter === "closed" && ["closed", "lost"].includes(lead.status));
+      return matchesSearch && matchesSource && matchesFilter;
+    });
+  }, [allLeads, clientList, filter, search, serviceList, source, user?.id]);
 
-  useEffect(() => {
-    const leadId = Number(searchParams.get("lead") || "");
-    if (leadId) setDrawerEntity({ type: "lead", id: leadId });
-  }, [searchParams]);
+  const selected = useMemo(() => rows.find((lead) => lead.id === selectedId) || rows[0] || null, [rows, selectedId]);
+  const selectedClient = selected ? getClient(selected, clientList) : undefined;
+  const selectedService = selected ? getService(selected, serviceList) : undefined;
+  const selectedResponsible = selected ? teamList.find((member) => member.user.id === selected.responsible_user) : undefined;
+  const selectedTasks = selected
+    ? taskList
+        .filter((task) => task.lead === selected.id && !["done", "cancelled"].includes(task.status))
+        .sort((a, b) => String(a.due_at || "9999").localeCompare(String(b.due_at || "9999")))
+    : [];
+  const selectedNextTask = selectedTasks[0];
+  const selectedDeals = selected ? dealList.filter((deal) => deal.lead === selected.id || deal.client === selected.client) : [];
+  const selectedAppointments = selected ? appointmentList.filter((appointment) => appointment.lead === selected.id || appointment.client === selected.client) : [];
+  const selectedConversations = selected ? conversationList.filter((conversation) => conversation.lead === selected.id || conversation.client === selected.client) : [];
 
   const leadMutation = useMutation({
-    mutationFn: (payload: Partial<Lead>) => selected ? leadsApi.update({ id: selected.id, payload }) : leadsApi.create(payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["leads"] });
-      setOpen(false);
-      setSelected(undefined);
-      clearCreateParam();
+    mutationFn: (payload: Partial<Lead>) => leadsApi.create(payload),
+    onSuccess: async (lead) => {
+      setCreateOpen(false);
+      setNotice("Заявка создана.");
+      setSelectedId(lead.id);
+      await queryClient.invalidateQueries({ queryKey: ["leads"] });
     },
   });
 
-  function closeLeadModal() {
-    setOpen(false);
-    setSelected(undefined);
-    clearCreateParam();
-  }
-
-  const statusMutation = useMutation({
-    mutationFn: ({ id, status, lost_reason }: { id: number; status: Lead["status"]; lost_reason?: string }) => leadsApi.update({ id, payload: { status, lost_reason } }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["leads"] }),
-  });
-  const archiveMutation = useMutation({
-    mutationFn: leadsApi.archive,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["leads"] }),
-  });
-
-  const quickActionMutation = useMutation({
-    mutationFn: async ({ action, lead }: { action: "take" | "contacted" | "deal" | "closed" | "lost" | "reopen"; lead: Lead }): Promise<unknown> => {
+  const actionMutation = useMutation({
+    mutationFn: async ({ action, lead, user_id, lost_reason }: { action: LeadAction; lead: Lead; user_id?: Id; lost_reason?: string }) => {
       if (action === "take") return leadsApi.takeInWork({ id: lead.id });
       if (action === "contacted") return leadsApi.markContacted({ id: lead.id });
       if (action === "deal") return leadsApi.createDeal({ id: lead.id });
       if (action === "closed") return leadsApi.markClosed({ id: lead.id });
       if (action === "reopen") return leadsApi.reopen({ id: lead.id });
-      const lostReason = window.prompt(t("leads.lostReason"));
-      if (!lostReason) throw new Error(t("leads.lostReasonRequired"));
-      return leadsApi.markLost({ id: lead.id, lost_reason: lostReason });
+      if (action === "assign") return leadsApi.assign({ id: lead.id, user_id });
+      if (!lost_reason) throw new Error("Нужна причина отказа.");
+      return leadsApi.markLost({ id: lead.id, lost_reason });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["leads"] });
-      queryClient.invalidateQueries({ queryKey: ["deals"] });
-      setNotice(t("leads.actionDone"));
+    onSuccess: async (_, variables) => {
+      const labels = {
+        take: "Заявка взята в работу.",
+        contacted: "Статус обновлен: связались.",
+        deal: "Сделка создана.",
+        closed: "Заявка закрыта успешно.",
+        lost: "Заявка закрыта как отказ.",
+        reopen: "Заявка возвращена в работу.",
+        assign: "Заявка назначена на вас.",
+      };
+      setNotice(labels[variables.action]);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["leads"] }),
+        queryClient.invalidateQueries({ queryKey: ["deals"] }),
+      ]);
+    },
+  });
+
+  const nextActionMutation = useMutation({
+    mutationFn: (lead: Lead) =>
+      tasksApi.create({
+        business: business!.id,
+        title: nextActionDraft.title,
+        description: "",
+        client: lead.client,
+        lead: lead.id,
+        deal: null,
+        appointment: null,
+        parent_task: null,
+        assignee: nextActionDraft.assignee ? Number(nextActionDraft.assignee) : lead.responsible_user || null,
+        created_by: null,
+        watchers: [],
+        due_at: new Date(nextActionDraft.due_at).toISOString(),
+        reminder_at: null,
+        snoozed_until: null,
+        priority: nextActionDraft.priority,
+        status: "open",
+        recurrence_rule: "",
+      }),
+    onSuccess: async () => {
+      setNextActionOpen(false);
+      setNotice("Следующее действие создано.");
+      await queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
 
   const appointmentMutation = useMutation({
     mutationFn: (payload: Partial<Appointment>) => {
-      if (!selected?.id || !payload.service || !payload.start_at) throw new Error(t("leads.appointmentSelectionRequired"));
+      if (!selected?.id || !payload.service || !payload.start_at) throw new Error("Выберите услугу и время записи.");
       return leadsApi.createAppointment({
         leadId: selected.id,
         payload: { service: payload.service, resource: payload.resource || null, start_at: payload.start_at },
       });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["appointments"] });
-      queryClient.invalidateQueries({ queryKey: ["leads"] });
+    onSuccess: async () => {
       setAppointmentOpen(false);
-      setNotice(t("leads.appointmentCreated"));
-      setSelected(undefined);
+      setNotice("Запись создана из заявки.");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["appointments"] }),
+        queryClient.invalidateQueries({ queryKey: ["leads"] }),
+      ]);
     },
   });
 
-  const rows = useMemo(() => {
-    const searchValue = search.toLowerCase();
-    return (leads.data || []).filter((lead) => {
-      const client = clients.data?.find((item) => item.id === lead.client);
-      const matchesSearch = !searchValue || [client?.full_name, client?.phone, lead.message].join(" ").toLowerCase().includes(searchValue);
-      return matchesSearch && (!source || lead.source === source);
-    });
-  }, [clients.data, leads.data, search, source]);
-
-  function handleDragEnd(event: DragEndEvent) {
-    const activeId = Number(event.active.id);
-    const overId = String(event.over?.id || "");
-    const hoveredLead = rows.find((lead) => String(lead.id) === overId);
-    const targetStatus = columns.find((column) => column.id === overId)?.id || hoveredLead?.status;
-    const currentLead = rows.find((lead) => lead.id === activeId);
-    if (!targetStatus || !activeId || currentLead?.status === targetStatus) return;
-    if (targetStatus === "lost") {
-      const lostReason = window.prompt(t("leads.lostReason"));
-      if (!lostReason) return;
-      statusMutation.mutate({ id: activeId, status: targetStatus, lost_reason: lostReason });
-      return;
-    }
-    statusMutation.mutate({ id: activeId, status: targetStatus });
+  function openLead(lead: Lead) {
+    setSelectedId(lead.id);
+    const next = new URLSearchParams(searchParams);
+    next.set("lead", String(lead.id));
+    next.delete("create");
+    setSearchParams(next, { replace: true });
   }
 
-  if (!business) return <ErrorState message={t("leads.noBusiness")} />;
-  if (leads.isLoading || clients.isLoading || services.isLoading) return <LoadingState />;
-  const teamMemberList = Array.isArray(teamMembers.data) ? teamMembers.data : [];
-  const newLeads = rows.filter((lead) => lead.status === "new").length;
-  const activeLeads = rows.filter((lead) => ["contacted", "in_progress"].includes(lead.status)).length;
-  const leadAiHints: PageAiHint[] = [
-    newLeads > 0
-      ? {
-          id: "new-leads",
-          title: t("leads.aiNewTitle"),
-          description: t("leads.aiNewDesc", { count: newLeads }),
-          actionLabel: t("leads.aiOpenNew"),
-          href: "/dashboard/leads",
-          icon: Flame,
-          severity: "warning",
-        }
-      : {
-          id: "no-new-leads",
-          title: t("leads.aiCalmTitle"),
-          description: t("leads.aiCalmDesc"),
-          icon: CheckCircle2,
-          severity: "good",
-        },
-    activeLeads > 0
-      ? {
-          id: "active-leads",
-          title: t("leads.aiActiveTitle"),
-          description: t("leads.aiActiveDesc", { count: activeLeads }),
-          actionLabel: t("leads.aiReviewPipeline"),
-          href: "/dashboard/leads",
-          icon: UserRoundCheck,
-          severity: "info",
-        }
-      : {
-          id: "empty-pipeline",
-          title: t("leads.aiDataTitle"),
-          description: t("leads.aiDataDesc"),
-          href: "/dashboard/integrations",
-          actionLabel: t("leads.aiConnectSources"),
-          icon: Bot,
-          severity: "info",
-        },
+  function closeCreateModal() {
+    setCreateOpen(false);
+    const next = new URLSearchParams(searchParams);
+    next.delete("create");
+    setSearchParams(next, { replace: true });
+  }
+
+  if (!business) return <ErrorState message="Сначала выберите бизнес." />;
+  if (leads.isLoading || clients.isLoading || services.isLoading || tasks.isLoading) return <LoadingState label="Загружаю заявки" />;
+
+  const actionError = leadMutation.error || actionMutation.error || appointmentMutation.error || nextActionMutation.error || clients.error || services.error || leads.error;
+  const filters = [
+    { value: "all" as const, label: "Все", count: allLeads.length },
+    { value: "new" as const, label: "Новые", count: allLeads.filter((lead) => lead.status === "new").length },
+    { value: "unassigned" as const, label: "Без менеджера", count: allLeads.filter((lead) => !lead.responsible_user).length },
+    { value: "mine" as const, label: "Мои", count: allLeads.filter((lead) => user?.id && lead.responsible_user === user.id).length },
+    { value: "active" as const, label: "В работе", count: allLeads.filter((lead) => ["contacted", "in_progress", "appointment_created"].includes(lead.status)).length },
+    { value: "closed" as const, label: "Закрытые", count: allLeads.filter((lead) => ["closed", "lost"].includes(lead.status)).length },
   ];
 
   return (
-    <>
-      <PageHeader
-        title={t("leads.title")}
-        description={t("leads.description")}
-      />
-      <LeadCommandHero rows={rows} onCreate={() => { setSelected(undefined); setOpen(true); }} t={t} />
-      <PageAiHints items={leadAiHints} className="mb-5" />
-      {leadMutation.error || appointmentMutation.error || statusMutation.error || archiveMutation.error || quickActionMutation.error ? (
-        <div className="mb-4"><ErrorState message={getApiErrorMessage(leadMutation.error || appointmentMutation.error || statusMutation.error || archiveMutation.error || quickActionMutation.error)} /></div>
-      ) : null}
-      {notice ? (
-        <div className="mb-4 rounded-3xl border border-ai-100 bg-ai-50 px-4 py-3 text-sm font-medium text-ai-800">
-          {notice}
-        </div>
-      ) : null}
-      <div className="mb-5 grid gap-3 md:grid-cols-[1fr_240px]">
-        <Input placeholder={t("leads.search")} value={search} onChange={(event) => setSearch(event.target.value)} />
-        <Select value={source} onChange={(event) => setSource(event.target.value)} options={[
-          { value: "", label: t("leads.allSources") },
-          { value: "manual", label: t("source.manual") },
-          { value: "website", label: t("source.website") },
-          { value: "landing", label: t("source.landing") },
-          { value: "telegram", label: t("source.telegram") },
-          { value: "whatsapp", label: t("source.whatsapp") },
-          { value: "instagram", label: t("source.instagram") },
-        ]} />
-      </div>
+    <div className="space-y-3">
+      {notice ? <div className="rounded-2xl border border-ai-100 bg-ai-50 px-4 py-3 text-sm font-bold text-ai-800">{notice}</div> : null}
+      {actionError ? <ErrorState message={getApiErrorMessage(actionError)} /> : null}
 
-      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-        <div className="no-scrollbar flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 lg:grid lg:grid-cols-3 2xl:grid-cols-6">
-          {columns.map((column) => {
-            const columnLeads = rows.filter((lead) => lead.status === column.id);
-            return (
-              <SortableContext key={column.id} items={columnLeads.map((lead) => String(lead.id))} strategy={verticalListSortingStrategy}>
-                <KanbanColumn id={column.id} title={t(column.titleKey)} hint={t(column.hintKey)}>
-                  <div className="mb-3 flex justify-end px-1">
-                    <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-500 shadow-sm">{columnLeads.length}</span>
-                  </div>
-                  <div className="space-y-3">
-                    {columnLeads.map((lead) => {
-                      const client = clients.data?.find((item) => item.id === lead.client);
-                      const service = services.data?.find((item) => item.id === lead.service);
-                      const responsible = teamMemberList.find((member) => member.user.id === lead.responsible_user);
-                      return (
-                        <LeadCard
-                          key={lead.id}
-                          lead={lead}
-                          clientName={client?.full_name || `Lead #${lead.id}`}
-                          phone={client?.phone}
-                          serviceName={service?.name}
-                          responsibleName={responsible?.user.full_name || responsible?.user.email}
-                          onOpen={() => setDrawerEntity({ type: "lead", id: lead.id })}
-                          onBook={() => { setSelected(lead); setAppointmentOpen(true); }}
-                          onArchive={() => {
-                            const reason = window.prompt(t("leads.archiveReason"));
-                            if (reason !== null) archiveMutation.mutate({ id: lead.id, reason });
-                          }}
-                          onAiReply={() => setNotice(t("leads.aiDraftReady"))}
-                          onTakeInWork={() => quickActionMutation.mutate({ action: "take", lead })}
-                          onMarkContacted={() => quickActionMutation.mutate({ action: "contacted", lead })}
-                          onCreateDeal={() => quickActionMutation.mutate({ action: "deal", lead })}
-                          onCloseSuccess={() => quickActionMutation.mutate({ action: "closed", lead })}
-                          onMarkLost={() => quickActionMutation.mutate({ action: "lost", lead })}
-                          onReopen={() => quickActionMutation.mutate({ action: "reopen", lead })}
-                          isActionLoading={quickActionMutation.isPending}
-                          t={t}
-                        />
-                      );
-                    })}
-                    {!columnLeads.length ? (
-                      <div className="rounded-3xl border border-dashed border-slate-200 bg-white/50 p-6 text-center text-sm text-slate-400">
-                        {t("leads.dropHere")}
-                      </div>
-                    ) : null}
-                  </div>
-                </KanbanColumn>
-              </SortableContext>
-            );
-          })}
-        </div>
-      </DndContext>
+      <section className="grid min-h-[720px] overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-soft lg:h-[calc(100vh-132px)] lg:grid-cols-[430px_minmax(0,1fr)]">
+        <aside className="flex min-h-0 flex-col border-b border-slate-200 bg-white lg:border-b-0 lg:border-r">
+          <div className="space-y-4 p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h1 className="text-2xl font-black tracking-tight text-midnight">Заявки</h1>
+                <p className="mt-1 text-sm font-semibold text-slate-500">{rows.length} в текущей очереди</p>
+              </div>
+              <Button className="h-11 rounded-xl px-4" variant="ai" onClick={() => setCreateOpen(true)}>
+                <Plus size={17} /> Новая
+              </Button>
+            </div>
 
-      <Modal title={selected ? t("leads.intelligence") : t("leads.create")} open={open} onClose={closeLeadModal}>
-        {selected ? (
-          <div className="mb-5 grid gap-3 rounded-3xl bg-slate-50 p-4 text-sm text-slate-700">
-            <div className="flex items-start gap-3">
-              <Sparkles size={18} className="mt-1 text-ai-600" />
-              <p>{selected.message || t("leads.aiSummary")}</p>
+            <label className="flex h-12 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-500">
+              <Search size={18} />
+              <input
+                className="min-w-0 flex-1 bg-transparent font-semibold outline-none placeholder:text-slate-400"
+                placeholder="Поиск по имени, телефону или запросу"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            </label>
+
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {filters.map((item) => (
+                <button
+                  key={item.value}
+                  type="button"
+                  className={cn(
+                    "shrink-0 rounded-xl px-3 py-2 text-sm font-black transition",
+                    filter === item.value ? "bg-midnight text-white" : "bg-slate-100 text-slate-500 hover:bg-slate-200",
+                  )}
+                  onClick={() => setFilter(item.value)}
+                >
+                  {item.label} <span className="opacity-70">{item.count}</span>
+                </button>
+              ))}
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Button variant="secondary" onClick={() => {
-                const phone = clients.data?.find((client) => client.id === selected.client)?.phone;
-                if (phone) window.location.href = `tel:${phone}`;
-              }}><Phone size={16} />{t("leads.call")}</Button>
-              <Button variant="secondary" onClick={() => {
-                const phone = clients.data?.find((client) => client.id === selected.client)?.phone?.replace(/\D/g, "");
-                if (phone) window.open(`https://wa.me/${phone}`, "_blank", "noopener,noreferrer");
-              }}><MessageCircle size={16} />WhatsApp</Button>
-              <Button variant="ai" onClick={() => setNotice(t("leads.aiDraftReady"))}><Bot size={16} />{t("leads.aiReply")}</Button>
-            </div>
+
+            <Select
+              className="rounded-xl"
+              value={source}
+              onChange={(event) => setSource(event.target.value)}
+              options={[
+                { value: "", label: "Все источники" },
+                ...Object.entries(sourceLabels).map(([value, label]) => ({ value, label })),
+              ]}
+            />
           </div>
-        ) : null}
+
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {!rows.length ? (
+              <div className="p-5">
+                <EmptyState title="Заявок нет" description="Новые заявки из форм, inbox и ручного ввода появятся в этой очереди." />
+              </div>
+            ) : null}
+            {rows.map((lead) => (
+              <LeadQueueItem
+                key={lead.id}
+                lead={lead}
+                client={getClient(lead, clientList)}
+                service={getService(lead, serviceList)}
+                selected={lead.id === selected?.id}
+                onClick={() => openLead(lead)}
+              />
+            ))}
+          </div>
+        </aside>
+
+        <main className="flex min-h-0 flex-col bg-slate-50/40">
+          {!selected ? (
+            <div className="grid flex-1 place-items-center p-8">
+              <div className="text-center">
+                <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-white text-brand-600 shadow-sm">
+                  <CircleDot size={26} />
+                </div>
+                <p className="text-2xl font-black text-slate-400">Выберите заявку</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="border-b border-slate-200 bg-white px-5 py-4">
+                <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+                  <div className="min-w-0">
+                    <h2 className="truncate text-2xl font-black text-midnight">{leadTitle(selected, clientList)}</h2>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <Pill className={statusClass[selected.status]}>{statusLabels[selected.status]}</Pill>
+                      <Pill className="bg-white text-slate-500 ring-slate-200">{sourceLabels[selected.source] || selected.source}</Pill>
+                      {selectedService ? <Pill className="bg-white text-slate-500 ring-slate-200">{selectedService.name}</Pill> : null}
+                      <Pill className={selected.responsible_user ? "bg-blue-50 text-blue-700 ring-blue-200" : "bg-amber-50 text-amber-700 ring-amber-200"}>
+                        {selectedResponsible?.user.full_name || selectedResponsible?.user.email || "без менеджера"}
+                      </Pill>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <Button variant="secondary" disabled={!selectedClient?.phone} onClick={() => selectedClient?.phone && (window.location.href = `tel:${selectedClient.phone}`)}>
+                      <Phone size={17} /> Позвонить
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      disabled={!selectedClient?.phone}
+                      onClick={() => {
+                        const phone = selectedClient?.phone?.replace(/\D/g, "");
+                        if (phone) window.open(`https://wa.me/${phone}`, "_blank", "noopener,noreferrer");
+                      }}
+                    >
+                      <MessageCircle size={17} /> WhatsApp
+                    </Button>
+                    <Button variant="ai" onClick={() => actionMutation.mutate({ action: "assign", lead: selected })} isLoading={actionMutation.isPending}>
+                      <UserCheck size={17} /> Взять
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="min-h-0 flex-1 overflow-y-auto p-5">
+                <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+                  <section className="space-y-4">
+                    <div className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+                      <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Запрос клиента</p>
+                      <p className="mt-3 min-h-24 text-base leading-7 text-slate-700">{selected.message || "Комментарий по заявке не указан."}</p>
+                    </div>
+
+                    <div className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+                      <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Следующее действие</p>
+                      {selectedNextTask ? (
+                        <div className="mt-3 rounded-2xl bg-slate-50 p-4">
+                          <p className="text-xl font-black text-midnight">{selectedNextTask.title}</p>
+                          <p className="mt-1 text-sm font-semibold text-slate-500">{formatDateTime(selectedNextTask.due_at)} · {selectedNextTask.priority}</p>
+                        </div>
+                      ) : (
+                        <div className="mt-3 rounded-2xl bg-amber-50 p-4">
+                          <p className="text-xl font-black text-amber-900">{nextAction(selected)}</p>
+                          <p className="mt-1 text-sm font-semibold text-amber-700">Реальная задача еще не создана.</p>
+                        </div>
+                      )}
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <Button
+                          variant="secondary"
+                          onClick={() => {
+                            setNextActionDraft({
+                              title: nextAction(selected),
+                              due_at: toDateTimeLocal(new Date(Date.now() + 24 * 60 * 60 * 1000)),
+                              assignee: selected.responsible_user ? String(selected.responsible_user) : "",
+                              priority: "normal",
+                            });
+                            setNextActionOpen(true);
+                          }}
+                        >
+                          <ClipboardList size={17} /> Задача
+                        </Button>
+                        {selected.status === "new" ? (
+                          <Button variant="secondary" onClick={() => actionMutation.mutate({ action: "contacted", lead: selected })} isLoading={actionMutation.isPending}>
+                            <CheckCheck size={17} /> Связались
+                          </Button>
+                        ) : null}
+                        {["new", "contacted", "lost"].includes(selected.status) ? (
+                          <Button variant="secondary" onClick={() => actionMutation.mutate({ action: "take", lead: selected })} isLoading={actionMutation.isPending}>
+                            <UserCheck size={17} /> В работу
+                          </Button>
+                        ) : null}
+                        {!["closed", "lost"].includes(selected.status) ? (
+                          <>
+                            <Button variant="ai" onClick={() => actionMutation.mutate({ action: "deal", lead: selected })} isLoading={actionMutation.isPending}>
+                              <CircleDollarSign size={17} /> Сделка
+                            </Button>
+                            <Button variant="secondary" onClick={() => setAppointmentOpen(true)}>
+                              <CalendarPlus size={17} /> Запись
+                            </Button>
+                            <Button variant="secondary" onClick={() => actionMutation.mutate({ action: "closed", lead: selected })} isLoading={actionMutation.isPending}>
+                              <CheckCheck size={17} /> Успешно
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              onClick={() => {
+                                setLostLead(selected);
+                                setLostReason(selected.lost_reason || "");
+                              }}
+                              isLoading={actionMutation.isPending}
+                            >
+                              <XCircle size={17} /> Отказ
+                            </Button>
+                          </>
+                        ) : (
+                          <Button variant="secondary" onClick={() => actionMutation.mutate({ action: "reopen", lead: selected })} isLoading={actionMutation.isPending}>
+                            <CircleDot size={17} /> Вернуть
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </section>
+
+                  <aside className="space-y-4">
+                    <div className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+                      <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Клиент</p>
+                      <p className="mt-3 text-lg font-black text-midnight">{selectedClient?.full_name || `client #${selected.client}`}</p>
+                      <p className="mt-1 text-sm font-semibold text-slate-500">{selectedClient?.phone || "телефон не указан"}</p>
+                      <p className="mt-1 text-sm font-semibold text-slate-500">{selectedClient?.email || "email не указан"}</p>
+                      <Button className="mt-4 w-full justify-center" variant="secondary" onClick={() => setDrawerEntity({ type: "client", id: selected.client })}>
+                        Открыть клиента
+                      </Button>
+                    </div>
+
+                    <div className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+                      <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Контроль</p>
+                      <div className="mt-3 space-y-3 text-sm font-semibold text-slate-600">
+                        <Select
+                          label="Ответственный"
+                          value={selected.responsible_user ? String(selected.responsible_user) : ""}
+                          onChange={(event) => actionMutation.mutate({ action: "assign", lead: selected, user_id: event.target.value ? Number(event.target.value) : undefined })}
+                          options={[
+                            { value: "", label: "Назначить на себя" },
+                            ...teamList.map((member) => ({ value: String(member.user.id), label: member.user.full_name || member.user.email })),
+                          ]}
+                        />
+                        <div className="flex items-center justify-between gap-3">
+                          <span>Создана</span>
+                          <span className="text-right text-slate-900">{formatDateTime(selected.created_at)}</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <span>Обновлена</span>
+                          <span className="text-right text-slate-900">{formatDateTime(selected.updated_at)}</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <span>Источник</span>
+                          <span className="text-right text-slate-900">{sourceLabels[selected.source] || selected.source}</span>
+                        </div>
+                        {selected.lost_reason ? (
+                          <div className="rounded-2xl bg-red-50 p-3 text-red-700">
+                            <AlertTriangle size={16} className="mb-2" />
+                            {selected.lost_reason}
+                          </div>
+                        ) : null}
+                      </div>
+                      <Button className="mt-4 w-full justify-center" variant="secondary" onClick={() => setDrawerEntity({ type: "lead", id: selected.id })}>
+                        Полная карточка
+                      </Button>
+                    </div>
+
+                    <div className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+                      <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Связанные данные</p>
+                      <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                        <div className="rounded-2xl bg-slate-50 p-3">
+                          <p className="text-lg font-black text-midnight">{selectedDeals.length}</p>
+                          <p className="text-xs font-bold text-slate-400">сделки</p>
+                        </div>
+                        <div className="rounded-2xl bg-slate-50 p-3">
+                          <p className="text-lg font-black text-midnight">{selectedAppointments.length}</p>
+                          <p className="text-xs font-bold text-slate-400">записи</p>
+                        </div>
+                        <div className="rounded-2xl bg-slate-50 p-3">
+                          <p className="text-lg font-black text-midnight">{selectedConversations.length}</p>
+                          <p className="text-xs font-bold text-slate-400">диалоги</p>
+                        </div>
+                      </div>
+                    </div>
+                  </aside>
+                </div>
+              </div>
+            </>
+          )}
+        </main>
+      </section>
+
+      <Modal title="Новая заявка" open={createOpen} onClose={closeCreateModal}>
         <LeadForm
           businessId={business.id}
-          clients={clients.data || []}
-          services={services.data || []}
-          teamMembers={teamMemberList}
-          initial={selected}
+          clients={clientList}
+          services={serviceList}
+          teamMembers={teamList}
           onSubmit={(payload) => leadMutation.mutateAsync(payload)}
           onOpenClient={(id) => {
-            setOpen(false);
-            setSelected(undefined);
+            setCreateOpen(false);
             setDrawerEntity({ type: "client", id });
           }}
         />
       </Modal>
 
-      <Modal title={t("leads.bookFromLead")} open={appointmentOpen} onClose={() => setAppointmentOpen(false)}>
+      <Modal title="Запись из заявки" open={appointmentOpen} onClose={() => setAppointmentOpen(false)}>
         <AppointmentForm
           businessId={business.id}
-          clients={clients.data || []}
-          services={services.data || []}
+          clients={clientList}
+          services={serviceList}
           resources={resources.data || []}
-          leads={leads.data || []}
+          leads={allLeads}
           prefill={{
             client: selected?.client,
             service: selected?.service,
@@ -554,7 +650,81 @@ export function LeadsPage() {
           onSubmit={(payload) => appointmentMutation.mutateAsync({ ...payload, lead: selected?.id || payload.lead, client: selected?.client || payload.client, service: selected?.service || payload.service })}
         />
       </Modal>
+
+      <Modal title="Следующее действие" open={nextActionOpen} onClose={() => setNextActionOpen(false)}>
+        {selected ? (
+          <form
+            className="space-y-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              nextActionMutation.mutate(selected);
+            }}
+          >
+            <Input label="Задача" value={nextActionDraft.title} onChange={(event) => setNextActionDraft({ ...nextActionDraft, title: event.target.value })} required />
+            <Input label="Дедлайн" type="datetime-local" value={nextActionDraft.due_at} onChange={(event) => setNextActionDraft({ ...nextActionDraft, due_at: event.target.value })} required />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Select
+                label="Ответственный"
+                value={nextActionDraft.assignee}
+                onChange={(event) => setNextActionDraft({ ...nextActionDraft, assignee: event.target.value })}
+                options={[
+                  { value: "", label: "Ответственный заявки" },
+                  ...teamList.map((member) => ({ value: String(member.user.id), label: member.user.full_name || member.user.email })),
+                ]}
+              />
+              <Select
+                label="Приоритет"
+                value={nextActionDraft.priority}
+                onChange={(event) => setNextActionDraft({ ...nextActionDraft, priority: event.target.value as Task["priority"] })}
+                options={[
+                  { value: "low", label: "Низкий" },
+                  { value: "normal", label: "Обычный" },
+                  { value: "high", label: "Высокий" },
+                  { value: "urgent", label: "Срочно" },
+                ]}
+              />
+            </div>
+            <Button type="submit" isLoading={nextActionMutation.isPending}>Создать задачу</Button>
+          </form>
+        ) : null}
+      </Modal>
+
+      <Modal title="Закрыть заявку как отказ" open={Boolean(lostLead)} onClose={() => setLostLead(null)}>
+        {lostLead ? (
+          <form
+            className="space-y-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              actionMutation.mutate({ action: "lost", lead: lostLead, lost_reason: lostReason });
+              setLostLead(null);
+              setLostReason("");
+            }}
+          >
+            <div className="rounded-3xl bg-slate-50 p-4">
+              <p className="font-black text-midnight">{leadTitle(lostLead, clientList)}</p>
+              <p className="mt-1 text-sm font-semibold text-slate-500">{lostLead.message || "Без комментария"}</p>
+            </div>
+            <Select
+              label="Тип причины"
+              value={lostReason}
+              onChange={(event) => setLostReason(event.target.value)}
+              options={[
+                { value: "", label: "Выберите причину" },
+                { value: "Не отвечает", label: "Не отвечает" },
+                { value: "Дорого", label: "Дорого" },
+                { value: "Выбрал конкурента", label: "Выбрал конкурента" },
+                { value: "Нет бюджета", label: "Нет бюджета" },
+                { value: "Дубль", label: "Дубль" },
+                { value: "Неактуально", label: "Неактуально" },
+              ]}
+            />
+            <Input label="Комментарий" value={lostReason} onChange={(event) => setLostReason(event.target.value)} required />
+            <Button type="submit" variant="danger" isLoading={actionMutation.isPending} disabled={!lostReason}>Закрыть как отказ</Button>
+          </form>
+        ) : null}
+      </Modal>
+
       <CrmEntityDrawer entity={drawerEntity} onClose={() => setDrawerEntity(null)} />
-    </>
+    </div>
   );
 }

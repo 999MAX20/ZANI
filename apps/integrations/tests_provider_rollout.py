@@ -62,12 +62,25 @@ class ProviderRolloutReadinessTests(SimpleTestCase):
         AUTOMATIONS_RUN_INLINE=False,
         SENTRY_DSN="https://example@sentry.invalid/1",
     )
-    def test_whatsapp_real_mode_is_blocked_until_real_adapter_exists(self):
+    def test_whatsapp_real_mode_requires_meta_webhook_security(self):
         result = run_provider_rollout_readiness_check(provider="whatsapp")
 
         whatsapp = result["providers"][0]
         self.assertEqual(whatsapp["status"], "blocked")
-        self.assertIn("whatsapp.real_adapter", {gate["key"] for gate in whatsapp["gates"] if gate["status"] == "fail"})
+        self.assertIn("whatsapp.meta_cloud_security", {gate["key"] for gate in whatsapp["gates"] if gate["status"] == "fail"})
+
+    @override_settings(
+        WHATSAPP_ENABLED=True,
+        WHATSAPP_VERIFY_TOKEN="verify",
+        WHATSAPP_APP_SECRET="app-secret",
+        CELERY_BROKER_URL="rediss://redis.example.com:6379/0",
+        AUTOMATIONS_RUN_INLINE=False,
+        SENTRY_DSN="https://example@sentry.invalid/1",
+    )
+    def test_whatsapp_real_mode_passes_with_meta_security_and_runtime(self):
+        result = run_provider_rollout_readiness_check(provider="whatsapp")
+
+        self.assertEqual(result["providers"][0]["status"], "ready")
 
     def test_management_command_can_fail_on_blockers(self):
         with override_settings(OPENAI_API_KEY="sk-test", AUTOMATIONS_RUN_INLINE=True):

@@ -1,805 +1,383 @@
 import { useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  ArrowRight,
+  AlertTriangle,
   CheckCircle2,
-  Clock3,
-  Copy,
+  DatabaseZap,
   ExternalLink,
   FileSpreadsheet,
-  Filter,
-  MessageSquareText,
+  Link2,
+  RefreshCw,
+  Search,
   Send,
   ShieldCheck,
-  Sparkles,
   Upload,
+  XCircle,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import { botChannelsApi, botsApi, telegramChannelApi, websiteChatApi } from "../../api/bots";
-import { businessConnectorsApi, type BusinessConnectorPayload } from "../../api/connectors";
+import {
+  businessConnectorsApi,
+  businessEventsApi,
+  connectorSyncRunsApi,
+  type BusinessConnectorPayload,
+} from "../../api/connectors";
+import { botChannelsApi, botsApi, integrationEventLogsApi, telegramChannelApi, whatsappChannelApi } from "../../api/bots";
 import { importExportApi, type ImportEntity } from "../../api/importExport";
 import { getApiErrorMessage } from "../../api/client";
 import { Button } from "../../components/ui/Button";
 import { EmptyState, ErrorState, LoadingState } from "../../components/ui/StateViews";
 import { Input } from "../../components/ui/Input";
+import { Modal } from "../../components/ui/Modal";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { Select } from "../../components/ui/Select";
 import { useAuth } from "../auth/AuthProvider";
 import { useActiveBusiness } from "../../hooks/useBusiness";
-import { useEntityData } from "../../hooks/useEntityData";
-import { useI18n } from "../../lib/i18n";
+import { cn } from "../../lib/cn";
 import { hasPermission } from "../../lib/permissions";
-import { ConnectorCard } from "./components/ConnectorCard";
-import type { Bot, BotChannel, BusinessConnector, ConnectorCapability, Id, ImportJob } from "../../types";
+import type {
+  BotChannel,
+  Bot,
+  BusinessConnector,
+  BusinessEvent,
+  ConnectorCapability,
+  ConnectorSyncRun,
+  Id,
+  ImportJob,
+  IntegrationEventLog,
+} from "../../types";
 
-type CapabilityFilter = "all" | "included" | "self_service" | "request" | "upgrade" | "roadmap";
-type CapabilityGroup = "all" | ConnectorCapability["capability"];
-type MerchantConnectionGroup = "messaging" | "imports" | "sales" | "website" | "accounting";
+type ProviderKey = BusinessConnector["provider"];
+type ProviderGroup = "messages" | "data" | "marketplace" | "system";
 
-const connectionGroups: MerchantConnectionGroup[] = ["messaging", "imports", "sales", "website", "accounting"];
-
-const importEntityOptions: Array<{ value: ImportEntity; labelKey: string; helperKey: string }> = [
-  { value: "clients", labelKey: "integrations.import.clients", helperKey: "integrations.import.clientsHelp" },
-  { value: "leads", labelKey: "integrations.import.leads", helperKey: "integrations.import.leadsHelp" },
-  { value: "sales", labelKey: "integrations.import.sales", helperKey: "integrations.import.salesHelp" },
-  { value: "catalog", labelKey: "integrations.import.catalog", helperKey: "integrations.import.catalogHelp" },
+const providerCatalog: Array<{
+  provider: ProviderKey;
+  fallbackLabel: string;
+  group: ProviderGroup;
+  logo?: string;
+  primaryUse: string;
+  requestName: string;
+}> = [
+  {
+    provider: "website",
+    fallbackLabel: "Website chat",
+    group: "messages",
+    primaryUse: "Заявки и сообщения с сайта",
+    requestName: "Website chat",
+  },
+  {
+    provider: "telegram",
+    fallbackLabel: "Telegram",
+    group: "messages",
+    logo: "/integrations_logos/telegram.png",
+    primaryUse: "Бот, входящие сообщения и handoff",
+    requestName: "Telegram",
+  },
+  {
+    provider: "whatsapp",
+    fallbackLabel: "WhatsApp",
+    group: "messages",
+    logo: "/integrations_logos/whatsapp.png",
+    primaryUse: "Основной канал общения с клиентами",
+    requestName: "WhatsApp connection request",
+  },
+  {
+    provider: "instagram",
+    fallbackLabel: "Instagram",
+    group: "messages",
+    logo: "/integrations_logos/instagram.png",
+    primaryUse: "Direct, заявки и handoff оператору",
+    requestName: "Instagram connection request",
+  },
+  {
+    provider: "excel_csv",
+    fallbackLabel: "Excel / CSV",
+    group: "data",
+    primaryUse: "Быстрая загрузка клиентов, продаж и каталога",
+    requestName: "Excel / CSV",
+  },
+  {
+    provider: "1c",
+    fallbackLabel: "1C",
+    group: "data",
+    logo: "/integrations_logos/1c.png",
+    primaryUse: "Продажи, счета, остатки и справочники",
+    requestName: "1C export/import",
+  },
+  {
+    provider: "moysklad",
+    fallbackLabel: "МойСклад",
+    group: "data",
+    primaryUse: "Склад, остатки и каталог товаров",
+    requestName: "МойСклад",
+  },
+  {
+    provider: "kaspi",
+    fallbackLabel: "Kaspi",
+    group: "marketplace",
+    logo: "/integrations_logos/kaspi.png",
+    primaryUse: "Заказы, оплаты, цены и товарные риски",
+    requestName: "Kaspi",
+  },
+  {
+    provider: "wildberries",
+    fallbackLabel: "Wildberries",
+    group: "marketplace",
+    logo: "/integrations_logos/wildberries.png",
+    primaryUse: "Заказы, SKU, остатки и возвраты",
+    requestName: "Wildberries",
+  },
+  {
+    provider: "google_sheets",
+    fallbackLabel: "Google Sheets",
+    group: "system",
+    primaryUse: "Регулярный импорт таблиц без разработки",
+    requestName: "Google Sheets",
+  },
+  {
+    provider: "email",
+    fallbackLabel: "Email",
+    group: "system",
+    primaryUse: "Уведомления, входящие письма и fallback",
+    requestName: "Email",
+  },
 ];
 
-function capabilityGroupLabel(capability: ConnectorCapability, t: (key: string) => string) {
-  return t(`integrations.capability.${capability.capability}`) || capability.capability;
+const groupLabels: Record<ProviderGroup, { title: string; text: string }> = {
+  messages: {
+    title: "Каналы и боты",
+    text: "Все входящие каналы, которые должны создавать лиды, диалоги и задачи менеджеру.",
+  },
+  data: {
+    title: "Учет и склад",
+    text: "Источники фактов для AI-аналитика: продажи, остатки, каталог и документы.",
+  },
+  marketplace: {
+    title: "Маркетплейсы",
+    text: "Заказы, оплаты, остатки и ценовые риски по внешним площадкам.",
+  },
+  system: {
+    title: "Системные источники",
+    text: "Дополнительные способы загрузки данных и служебные каналы.",
+  },
+};
+
+const statusTone: Record<string, string> = {
+  connected: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+  active: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+  received: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+  processed: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+  succeeded: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+  pending_request: "bg-violet-50 text-violet-700 ring-violet-100",
+  provider_configuring: "bg-violet-50 text-violet-700 ring-violet-100",
+  setup_required: "bg-amber-50 text-amber-700 ring-amber-100",
+  needs_attention: "bg-amber-50 text-amber-700 ring-amber-100",
+  syncing: "bg-blue-50 text-blue-700 ring-blue-100",
+  draft: "bg-slate-100 text-slate-700 ring-slate-200",
+  disabled: "bg-slate-100 text-slate-700 ring-slate-200",
+  disconnected: "bg-slate-100 text-slate-700 ring-slate-200",
+  roadmap: "bg-slate-100 text-slate-700 ring-slate-200",
+  soon: "bg-slate-100 text-slate-700 ring-slate-200",
+  request: "bg-violet-50 text-violet-700 ring-violet-100",
+  failed: "bg-red-50 text-red-700 ring-red-100",
+  error: "bg-red-50 text-red-700 ring-red-100",
+  expired_credentials: "bg-red-50 text-red-700 ring-red-100",
+};
+
+const providerLogos = new Set(
+  providerCatalog
+    .map((item) => item.logo)
+    .filter(Boolean),
+);
+
+function formatDate(value?: string | null) {
+  if (!value) return "Нет данных";
+  return new Date(value).toLocaleString("ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
-function merchantConnectionGroup(capability: ConnectorCapability): MerchantConnectionGroup {
-  if (["telegram", "whatsapp", "instagram"].includes(capability.provider)) return "messaging";
-  if (["excel_csv", "google_sheets"].includes(capability.provider)) return "imports";
-  if (["kaspi", "wildberries", "ozon", "yandex_market"].includes(capability.provider)) return "sales";
-  if (["website_chat", "website_widget", "landing", "site"].includes(capability.provider)) return "website";
-  if (["1c", "moysklad", "stripe"].includes(capability.provider)) return "accounting";
-  if (capability.capability === "communications") return "messaging";
-  if (capability.capability === "sales" || capability.capability === "marketing") return "sales";
-  if (capability.capability === "inventory" || capability.capability === "finance") return "accounting";
-  return "imports";
-}
-
-function scrollToIntegrationSection(id: string) {
-  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
-function formatIntegrationEvent(status?: string, createdAt?: string | null, emptyLabel?: string) {
-  if (!status && !createdAt) return emptyLabel || "";
-  if (!createdAt) return status || "";
-  return `${status || ""} · ${new Date(createdAt).toLocaleString()}`.trim();
-}
-
-function dataConnectorStatusLabel(status: BusinessConnector["status"] | undefined, t: (key: string) => string) {
-  if (!status) return t("integrations.data.status.request");
+function readableStatus(status?: string, fallback = "Не подключено") {
+  if (!status) return fallback;
   const labels: Record<string, string> = {
-    connected: "integrations.merchantStatus.connected",
-    pending_request: "integrations.merchantStatus.pending_request",
-    provider_configuring: "integrations.merchantStatus.pending_request",
-    setup_required: "integrations.merchantStatus.setup_required",
-    needs_attention: "integrations.merchantStatus.setup_required",
-    failed: "integrations.merchantStatus.error",
-    error: "integrations.merchantStatus.error",
-    expired_credentials: "integrations.merchantStatus.error",
-    disabled: "integrations.merchantStatus.disconnected",
-    disconnected: "integrations.merchantStatus.disconnected",
+    active: "Активно",
+    connected: "Подключено",
+    draft: "Черновик",
+    pending_request: "Запрошено",
+    provider_configuring: "Настраивается",
+    setup_required: "Нужна настройка",
+    needs_attention: "Требует внимания",
+    syncing: "Синхронизация",
+    disabled: "Отключено",
+    disconnected: "Отключено",
+    error: "Ошибка",
+    failed: "Ошибка",
+    expired_credentials: "Доступ истек",
+    roadmap: "Roadmap",
+    soon: "Скоро",
+    request: "По заявке",
+    received: "Получено",
+    processed: "Обработано",
+    ignored: "Пропущено",
+    succeeded: "Успешно",
+    running: "В процессе",
+    queued: "В очереди",
   };
-  return t(labels[status] || "integrations.merchantStatus.available");
+  return labels[status] || status;
 }
 
-function IntegrationOnboardingGuide({
-  connectedCount,
-  hasWebsiteChannel,
-  hasTelegramChannel,
-  hasWhatsAppRequest,
-  hasAnyDataConnector,
+function statusClass(status?: string) {
+  return statusTone[status || ""] || "bg-slate-100 text-slate-700 ring-slate-200";
+}
+
+function providerTitle(provider: ProviderKey, capability?: ConnectorCapability) {
+  return capability?.label || providerCatalog.find((item) => item.provider === provider)?.fallbackLabel || provider;
+}
+
+function providerLogo(provider: ProviderKey) {
+  return providerCatalog.find((item) => item.provider === provider)?.logo;
+}
+
+function providerCapability(provider: ProviderKey, capabilities: ConnectorCapability[]) {
+  return capabilities.find((item) => item.provider === provider);
+}
+
+function providerConnector(provider: ProviderKey, connectors: BusinessConnector[]) {
+  return connectors.find((item) => item.provider === provider);
+}
+
+function providerChannel(provider: ProviderKey, channels: BotChannel[]) {
+  if (!["website", "telegram", "whatsapp", "instagram"].includes(String(provider))) return undefined;
+  return channels.find((item) => item.channel === provider);
+}
+
+function deriveProviderStatus({
+  capability,
+  channel,
+  connector,
 }: {
-  connectedCount: number;
-  hasWebsiteChannel: boolean;
-  hasTelegramChannel: boolean;
-  hasWhatsAppRequest: boolean;
-  hasAnyDataConnector: boolean;
+  capability?: ConnectorCapability;
+  channel?: BotChannel;
+  connector?: BusinessConnector;
 }) {
-  const { t } = useI18n();
-  const steps = [
-    {
-      title: t("integrations.guide.importTitle"),
-      description: t("integrations.guide.importText"),
-      status: hasAnyDataConnector ? "started" : "first",
-      section: "integration-import",
-      cta: hasAnyDataConnector ? t("integrations.guide.openImport") : t("integrations.guide.startImport"),
-    },
-    {
-      title: t("integrations.guide.channelsTitle"),
-      description: t("integrations.guide.channelsText"),
-      status: hasWebsiteChannel || hasTelegramChannel ? "started" : "next",
-      section: hasTelegramChannel ? "integration-website" : "integration-telegram",
-      cta: hasWebsiteChannel || hasTelegramChannel ? t("integrations.guide.checkChannels") : t("integrations.guide.connectChannel"),
-    },
-    {
-      title: t("integrations.guide.whatsappTitle"),
-      description: t("integrations.guide.whatsappText"),
-      status: hasWhatsAppRequest ? "done" : "request",
-      section: "integration-requests",
-      cta: hasWhatsAppRequest ? t("integrations.guide.requestCreated") : t("integrations.guide.fillRequest"),
-    },
-    {
-      title: t("integrations.guide.demoSyncTitle"),
-      description: t("integrations.guide.demoSyncText"),
-      status: connectedCount ? "ready" : "pilot",
-      section: "integration-data",
-      cta: t("integrations.guide.openDataConnectors"),
-    },
-  ];
+  if (connector?.status) return connector.status;
+  if (channel?.status === "active") return "active";
+  if (channel?.status) return channel.status;
+  if (capability?.availability === "roadmap" || capability?.launch_status === "roadmap") return "roadmap";
+  if (capability?.availability === "request" || capability?.launch_status === "request") return "request";
+  if (capability?.launch_status === "soon") return "soon";
+  if (capability?.setup_state === "active" || capability?.availability === "included") return "setup_required";
+  return "draft";
+}
 
-  const statusClass: Record<string, string> = {
-    first: "bg-brand-50 text-brand-700 ring-brand-100",
-    next: "bg-slate-100 text-slate-700 ring-slate-200",
-    request: "bg-violet-50 text-violet-700 ring-violet-100",
-    started: "bg-emerald-50 text-emerald-700 ring-emerald-100",
-    done: "bg-emerald-50 text-emerald-700 ring-emerald-100",
-    ready: "bg-emerald-50 text-emerald-700 ring-emerald-100",
-    pilot: "bg-amber-50 text-amber-700 ring-amber-100",
-  };
+function compactPayload(payload: Record<string, unknown>) {
+  const entries = Object.entries(payload || {}).slice(0, 4);
+  if (!entries.length) return "Без payload";
+  return entries
+    .map(([key, value]) => {
+      if (value === null || value === undefined || value === "") return `${key}: -`;
+      if (typeof value === "object") return `${key}: object`;
+      return `${key}: ${String(value).slice(0, 48)}`;
+    })
+    .join(" · ");
+}
 
+function LogoMark({ logo, label }: { logo?: string; label: string }) {
+  if (logo && providerLogos.has(logo)) {
+    return (
+      <img
+        src={logo}
+        alt=""
+        className="h-11 w-11 rounded-2xl bg-white object-contain p-2 shadow-sm ring-1 ring-slate-100"
+      />
+    );
+  }
   return (
-    <div className="mb-5 overflow-hidden rounded-[2rem] border border-white/80 bg-white/92 p-5 shadow-premium backdrop-blur-xl">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">{t("integrations.guide.eyebrow")}</p>
-          <h2 className="mt-2 text-2xl font-black tracking-tight text-midnight">{t("integrations.guide.title")}</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-            {t("integrations.guide.description")}
-          </p>
-        </div>
-        <div className="rounded-3xl bg-slate-950 px-5 py-4 text-white">
-          <p className="text-xs font-black uppercase tracking-[0.14em] text-white/55">{t("integrations.guide.activeConnections")}</p>
-          <p className="mt-1 text-3xl font-black">{connectedCount}</p>
-        </div>
-      </div>
-
-      <div className="mt-5 grid gap-3 xl:grid-cols-4">
-        {steps.map((step, index) => (
-          <button
-            key={step.title}
-            type="button"
-            onClick={() => scrollToIntegrationSection(step.section)}
-            className="group rounded-3xl border border-slate-100 bg-slate-50/80 p-4 text-left transition hover:-translate-y-0.5 hover:bg-white hover:shadow-soft"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white text-midnight shadow-sm">
-                {index + 1}
-              </span>
-              <span className={`rounded-full px-2 py-1 text-[10px] font-black uppercase ring-1 ${statusClass[step.status]}`}>
-                {step.status}
-              </span>
-            </div>
-            <p className="mt-4 font-black text-midnight">{step.title}</p>
-            <p className="mt-1 min-h-[48px] text-sm leading-6 text-slate-500">{step.description}</p>
-            <p className="mt-3 inline-flex items-center gap-2 text-sm font-black text-brand-700">
-              {step.cta}
-              <ArrowRight size={15} className="transition group-hover:translate-x-0.5" />
-            </p>
-          </button>
-        ))}
-      </div>
-    </div>
+    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-slate-950 text-sm font-black text-white shadow-sm">
+      {label.slice(0, 2).toUpperCase()}
+    </span>
   );
 }
 
-function ExcelCsvImportPanel({ businessId }: { businessId: Id }) {
-  const queryClient = useQueryClient();
-  const { t } = useI18n();
-  const [entity, setEntity] = useState<ImportEntity>("clients");
-  const [file, setFile] = useState<File | null>(null);
-  const [activeImportId, setActiveImportId] = useState<Id | null>(null);
-  const jobsQuery = useQuery({
-    queryKey: ["import-jobs", businessId],
-    queryFn: importExportApi.importJobs,
-  });
-  const uploadMutation = useMutation({
-    mutationFn: () => {
-      if (!file) throw new Error(t("integrations.import.chooseFile"));
-      return importExportApi.upload({ business: businessId, entity, file });
-    },
-    onSuccess: (job) => {
-      setActiveImportId(job.id);
-      setFile(null);
-      queryClient.invalidateQueries({ queryKey: ["import-jobs"] });
-    },
-  });
-  const confirmMutation = useMutation({
-    mutationFn: importExportApi.confirm,
-    onSuccess: (job) => {
-      setActiveImportId(job.id);
-      queryClient.invalidateQueries({ queryKey: ["import-jobs"] });
-      queryClient.invalidateQueries({ queryKey: ["clients"] });
-      queryClient.invalidateQueries({ queryKey: ["leads"] });
-      queryClient.invalidateQueries({ queryKey: ["services"] });
-    },
-  });
-  const templateMutation = useMutation({
-    mutationFn: importExportApi.downloadTemplate,
-  });
-  const jobs = jobsQuery.data || [];
-  const activeImport = jobs.find((job) => job.id === activeImportId) || jobs[0];
-  const rowErrors = activeImport?.errors_json?.rows || [];
-  const duplicates = activeImport?.duplicates_json?.rows || [];
-  const importSummary = activeImport?.summary_json || activeImport?.preview_json?.import_summary;
-  const selectedOption = importEntityOptions.find((item) => item.value === entity);
-  const error = jobsQuery.error || uploadMutation.error || confirmMutation.error || templateMutation.error;
-
-  return (
-    <div id="integration-import" className="scroll-mt-24 mb-5 rounded-3xl border border-emerald-100 bg-white/95 p-5 shadow-soft">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">{t("integrations.import.eyebrow")}</p>
-          <h2 className="mt-2 text-2xl font-black text-midnight">{t("integrations.import.title")}</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-            {t("integrations.import.description")}
-          </p>
-        </div>
-        <Button type="button" variant="secondary" onClick={() => templateMutation.mutate(entity)} isLoading={templateMutation.isPending}>
-          <FileSpreadsheet size={16} /> {t("integrations.import.downloadTemplate")}
-        </Button>
-      </div>
-
-      {error ? <div className="mt-4"><ErrorState message={getApiErrorMessage(error)} /></div> : null}
-
-      <div className="mt-5 grid gap-3 lg:grid-cols-[240px_1fr_auto]">
-        <Select
-          value={entity}
-          onChange={(event) => setEntity(event.target.value as ImportEntity)}
-          options={importEntityOptions.map((item) => ({ value: item.value, label: t(item.labelKey) }))}
-        />
-        <Input type="file" accept=".csv,.xlsx" onChange={(event) => setFile(event.target.files?.[0] || null)} />
-        <Button type="button" onClick={() => uploadMutation.mutate()} disabled={!file} isLoading={uploadMutation.isPending}>
-          <Upload size={16} /> {t("integrations.import.preview")}
-        </Button>
-      </div>
-      <p className="mt-2 text-sm font-semibold text-slate-500">{selectedOption ? t(selectedOption.helperKey) : ""}</p>
-
-      <div className="mt-5 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-        <div className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <p className="font-black text-midnight">{activeImport?.original_filename || t("integrations.import.noFile")}</p>
-              <p className="mt-1 text-sm text-slate-500">
-                {activeImport ? t("integrations.import.fileMeta", { entity: activeImport.entity_type, rows: activeImport.total_rows, status: activeImport.status }) : t("integrations.import.previewPlaceholder")}
-              </p>
-            </div>
-            {activeImport?.status === "previewed" && !rowErrors.length ? (
-              <Button type="button" onClick={() => confirmMutation.mutate(activeImport.id)} isLoading={confirmMutation.isPending}>
-                {t("integrations.import.confirm")}
-              </Button>
-            ) : null}
-          </div>
-
-          {importSummary ? (
-            <div className="mt-4 grid gap-2 sm:grid-cols-4">
-              {[
-                { label: t("integrations.import.summaryCreated"), value: importSummary.created || 0 },
-                { label: t("integrations.import.summaryUpdated"), value: importSummary.updated || 0 },
-                { label: t("integrations.import.summarySkipped"), value: importSummary.skipped || 0 },
-                { label: t("integrations.import.summaryErrors"), value: importSummary.errors || 0 },
-              ].map((item) => (
-                <div key={item.label} className="rounded-2xl bg-white px-3 py-2">
-                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-400">{item.label}</p>
-                  <p className="mt-1 text-lg font-black text-midnight">{item.value}</p>
-                </div>
-              ))}
-            </div>
-          ) : null}
-
-          {rowErrors.length ? (
-            <div className="mt-4 rounded-2xl border border-red-100 bg-red-50 p-3">
-              <p className="text-sm font-black text-red-800">{t("integrations.import.fixFile")}</p>
-              <div className="mt-2 space-y-1">
-                {rowErrors.slice(0, 5).map((item, index) => (
-                  <p key={`${item.row}-${item.field}-${index}`} className="text-xs font-semibold text-red-700">
-                    {t("integrations.import.rowError", { row: item.row, field: item.field, message: item.message })}
-                  </p>
-                ))}
-              </div>
-            </div>
-          ) : null}
-
-          {activeImport ? (
-            <div className="mt-4 grid gap-4 lg:grid-cols-2">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{t("integrations.import.columnMapping")}</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {Object.entries(activeImport.mapping_json || {}).map(([field, header]) => (
-                    <span key={field} className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-600">
-                      {field} {"<-"} {header}
-                    </span>
-                  ))}
-                  {!Object.keys(activeImport.mapping_json || {}).length ? <span className="text-sm text-slate-500">{t("integrations.import.noMapping")}</span> : null}
-                </div>
-              </div>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{t("integrations.import.duplicates")}</p>
-                <p className={duplicates.length ? "mt-2 text-sm font-bold text-amber-700" : "mt-2 text-sm font-bold text-emerald-700"}>
-                  {t("integrations.import.duplicatesCount", { count: duplicates.length })}
-                </p>
-              </div>
-            </div>
-          ) : null}
-
-          <div className="mt-4 overflow-hidden rounded-2xl border border-slate-100 bg-white">
-            {(activeImport?.preview_json?.rows || []).slice(0, 5).map((row, index) => (
-              <div key={index} className="border-b border-slate-100 px-3 py-2 text-xs text-slate-600 last:border-b-0">
-                {Object.entries(row).slice(0, 6).map(([key, value]) => `${key}: ${value || "-"}`).join(" · ")}
-              </div>
-            ))}
-            {!(activeImport?.preview_json?.rows || []).length ? <p className="px-3 py-4 text-sm text-slate-500">{t("integrations.import.previewEmpty")}</p> : null}
-          </div>
-        </div>
-
-        <div className="rounded-3xl border border-slate-100 bg-white p-4">
-          <p className="font-black text-midnight">{t("integrations.import.history")}</p>
-          <div className="mt-3 space-y-2">
-            {jobs.slice(0, 8).map((job: ImportJob) => (
-              <button
-                key={job.id}
-                type="button"
-                onClick={() => setActiveImportId(job.id)}
-                className="w-full rounded-2xl bg-slate-50 px-3 py-2 text-left text-sm transition hover:bg-slate-100"
-              >
-                <span className="font-bold text-midnight">#{job.id} {job.entity_type}</span>
-                <span className="ml-2 text-slate-500">{job.status} · {job.imported_count}/{job.total_rows}</span>
-              </button>
-            ))}
-            {!jobsQuery.isLoading && !jobs.length ? <p className="text-sm text-slate-500">{t("integrations.import.noImports")}</p> : null}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function buildWebsiteWidgetSnippet(publicToken: string, apiBaseUrl: string) {
-  return `<script src="/widget/zani-widget.js" data-zani-token="${publicToken}" data-zani-api="${apiBaseUrl}"></script>`;
-}
-
-function WebsiteChatConnectorPanel({
-  websiteChannel,
-  isLoading,
+function MetricCard({
+  icon,
+  label,
+  value,
+  tone,
 }: {
-  websiteChannel?: BotChannel;
-  isLoading: boolean;
+  icon: ReactNode;
+  label: string;
+  value: string | number;
+  tone: string;
 }) {
-  const queryClient = useQueryClient();
-  const { t } = useI18n();
-  const [preview, setPreview] = useState({
-    full_name: t("integrations.website.previewName"),
-    phone: "+77015550000",
-    email: "",
-    message: t("integrations.website.previewMessage"),
-  });
-  const [followUpMessage, setFollowUpMessage] = useState(t("integrations.website.followUpMessage"));
-  const [conversationId, setConversationId] = useState("");
-  const [notice, setNotice] = useState("");
-  const apiBaseUrl = (import.meta.env.VITE_API_URL as string | undefined) || window.location.origin;
-  const snippet = websiteChannel ? buildWebsiteWidgetSnippet(websiteChannel.public_token, apiBaseUrl) : "";
-
-  const createConversation = useMutation({
-    mutationFn: () => {
-      if (!websiteChannel) throw new Error("Website channel is not configured.");
-      return websiteChatApi.createConversation({
-        publicToken: websiteChannel.public_token,
-        payload: {
-          full_name: preview.full_name,
-          phone: preview.phone,
-          email: preview.email,
-          message: preview.message,
-          external_user_id: `preview-${Date.now()}`,
-        },
-      });
-    },
-    onSuccess: (result) => {
-      setConversationId(result.conversation_id);
-      setNotice(t("integrations.website.conversationCreated", { lead: result.lead_id || "-", client: result.client_id || "-" }));
-      queryClient.invalidateQueries({ queryKey: ["bot-conversations"] });
-      queryClient.invalidateQueries({ queryKey: ["bot-messages"] });
-      queryClient.invalidateQueries({ queryKey: ["inbox-conversations"] });
-      queryClient.invalidateQueries({ queryKey: ["leads"] });
-      queryClient.invalidateQueries({ queryKey: ["clients"] });
-    },
-  });
-
-  const sendFollowUp = useMutation({
-    mutationFn: () => {
-      if (!websiteChannel || !conversationId) throw new Error("Create a conversation first.");
-      return websiteChatApi.sendMessage({
-        publicToken: websiteChannel.public_token,
-        conversationId,
-        message: followUpMessage,
-      });
-    },
-    onSuccess: () => {
-      setNotice(t("integrations.website.followUpAdded"));
-      queryClient.invalidateQueries({ queryKey: ["bot-conversations"] });
-      queryClient.invalidateQueries({ queryKey: ["bot-messages"] });
-      queryClient.invalidateQueries({ queryKey: ["inbox-conversations"] });
-    },
-  });
-
-  const copySnippet = async () => {
-    if (!snippet) return;
-    await navigator.clipboard?.writeText(snippet);
-    setNotice(t("integrations.website.snippetCopied"));
-  };
-
-  const error = createConversation.error || sendFollowUp.error;
-
   return (
-    <div id="integration-website" className="scroll-mt-24 mb-5 rounded-3xl border border-blue-100 bg-white/95 p-5 shadow-soft">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="flex gap-3">
-          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-blue-50 text-blue-700">
-            <MessageSquareText size={22} />
-          </div>
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">{t("integrations.website.eyebrow")}</p>
-            <h2 className="mt-2 text-2xl font-black text-midnight">{t("integrations.website.title")}</h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-              {t("integrations.website.description")}
-            </p>
-          </div>
-        </div>
-        <Link to="/dashboard/inbox?channel=website">
-          <Button type="button" variant="secondary">
-            <ExternalLink size={16} /> {t("integrations.website.openInbox")}
-          </Button>
-        </Link>
-      </div>
-
-      {isLoading ? <div className="mt-4"><LoadingState label={t("integrations.website.loading")} /></div> : null}
-
-      {!isLoading && !websiteChannel ? (
-        <div className="mt-5 rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-5">
-          <p className="font-black text-midnight">{t("integrations.website.notConfiguredTitle")}</p>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            {t("integrations.website.notConfiguredText")}
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Link to="/dashboard/bots"><Button type="button" variant="secondary">{t("integrations.website.openBots")}</Button></Link>
-            <Link to="/dashboard/pilot-readiness"><Button type="button" variant="ghost">{t("integrations.website.checkReadiness")}</Button></Link>
-          </div>
-        </div>
-      ) : null}
-
-      {websiteChannel ? (
-        <div className="mt-5 grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
-          <div className="space-y-4">
-            <div className="rounded-3xl border border-blue-100 bg-blue-50 p-4">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm font-black text-blue-900">{t("integrations.website.channelStatus", { status: websiteChannel.status })}</p>
-                  <p className="mt-1 text-xs font-semibold text-blue-700">
-                    {t("integrations.website.readyText")}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button type="button" variant="secondary" onClick={copySnippet}>
-                    <Copy size={16} /> {t("integrations.website.copySnippet")}
-                  </Button>
-                </div>
-              </div>
-              <p className="mt-3 text-xs font-semibold text-blue-700">
-                {t("integrations.website.copyNotice")}
-              </p>
-            </div>
-
-            {notice ? <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{notice}</div> : null}
-            {error ? <ErrorState message={getApiErrorMessage(error)} /> : null}
-          </div>
-
-          <div className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
-            <p className="font-black text-midnight">{t("integrations.website.testTitle")}</p>
-            <p className="mt-1 text-sm leading-6 text-slate-600">
-              {t("integrations.website.testText")}
-            </p>
-            <form
-              className="mt-4 space-y-3"
-              onSubmit={(event) => {
-                event.preventDefault();
-                createConversation.mutate();
-              }}
-            >
-              <Input label={t("integrations.website.name")} value={preview.full_name} onChange={(event) => setPreview({ ...preview, full_name: event.target.value })} />
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Input label={t("integrations.website.phone")} value={preview.phone} onChange={(event) => setPreview({ ...preview, phone: event.target.value })} />
-                <Input label={t("common.email")} value={preview.email} onChange={(event) => setPreview({ ...preview, email: event.target.value })} />
-              </div>
-              <Input label={t("integrations.website.message")} value={preview.message} onChange={(event) => setPreview({ ...preview, message: event.target.value })} required />
-              <Button type="submit" isLoading={createConversation.isPending}>
-                <Send size={16} /> {t("integrations.website.createDialog")}
-              </Button>
-            </form>
-
-            {conversationId ? (
-              <div className="mt-4 rounded-2xl bg-white p-3">
-                <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">{t("integrations.website.followUpTitle")}</p>
-                <Input className="mt-3" value={followUpMessage} onChange={(event) => setFollowUpMessage(event.target.value)} />
-                <Button
-                  type="button"
-                  className="mt-3"
-                  variant="secondary"
-                  disabled={!followUpMessage.trim()}
-                  isLoading={sendFollowUp.isPending}
-                  onClick={() => sendFollowUp.mutate()}
-                >
-                  <Send size={16} /> {t("integrations.website.addMessage")}
-                </Button>
-              </div>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
+    <div className="rounded-3xl border border-white/80 bg-white/92 p-4 shadow-soft">
+      <div className={`grid h-10 w-10 place-items-center rounded-2xl ${tone}`}>{icon}</div>
+      <p className="mt-3 text-2xl font-black text-midnight">{value}</p>
+      <p className="mt-1 text-xs font-black uppercase tracking-[0.14em] text-slate-400">{label}</p>
     </div>
   );
 }
 
-function TelegramConnectorWizard({
+function ProviderCard({
   businessId,
   bots,
-  telegramChannel,
   canManage,
+  capability,
+  channel,
+  connector,
+  provider,
+  onImport,
 }: {
   businessId: Id;
   bots: Bot[];
-  telegramChannel?: BotChannel;
   canManage: boolean;
-}) {
-  const queryClient = useQueryClient();
-  const { t } = useI18n();
-  const [botToken, setBotToken] = useState("");
-  const [notice, setNotice] = useState("");
-  const webhookUrl = `${(import.meta.env.VITE_API_URL as string | undefined) || window.location.origin}/api/integrations/telegram/webhook/`;
-
-  const telegramStatus = useQuery({
-    queryKey: ["telegram-status", telegramChannel?.id],
-    queryFn: () => telegramChannelApi.status(telegramChannel!.id),
-    enabled: Boolean(telegramChannel?.id),
-  });
-
-  const ensureChannel = async () => {
-    if (telegramChannel) return telegramChannel;
-    const bot = bots[0] || await botsApi.create({
-      business: businessId,
-      name: "Telegram bot",
-      status: "active",
-      default_language: "ru",
-      settings_json: {},
-    });
-    return botChannelsApi.create({
-      bot: bot.id,
-      channel: "telegram",
-      status: "draft",
-      external_id: "",
-      config_json: {},
-    });
-  };
-
-  const saveConfig = useMutation({
-    mutationFn: async () => {
-      const channel = await ensureChannel();
-      const config = await telegramChannelApi.configure({
-        channelId: channel.id,
-        botToken,
-      });
-      const webhook = await telegramChannelApi.setWebhook({ channelId: channel.id, webhookUrl });
-      return { channel, config, webhook };
-    },
-    onSuccess: (result) => {
-      setBotToken("");
-      setNotice(
-        result.webhook?.mock
-          ? t("integrations.telegram.savedMock", { reason: result.webhook.reason || t("integrations.telegram.unknownError") })
-          : t("integrations.telegram.saved")
-      );
-      queryClient.invalidateQueries({ queryKey: ["bots"] });
-      queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
-      queryClient.invalidateQueries({ queryKey: ["telegram-status"] });
-    },
-  });
-
-  const testConnection = useMutation({
-    mutationFn: async () => {
-      const channel = await ensureChannel();
-      return telegramChannelApi.testConnection(channel.id);
-    },
-    onSuccess: (result) => {
-      setNotice(
-        result.ok
-          ? (result.mock ? t("integrations.telegram.testMock") : t("integrations.telegram.testOk"))
-          : t("integrations.telegram.testFailed", { reason: result.reason || t("integrations.telegram.unknownError") })
-      );
-      queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
-      queryClient.invalidateQueries({ queryKey: ["telegram-status"] });
-    },
-  });
-
-  const error = saveConfig.error || testConnection.error || telegramStatus.error;
-  const tokenConfigured = telegramStatus.data?.token_configured || telegramChannel?.config_json?.bot_token === "configured";
-
-  return (
-    <div id="integration-telegram" className="scroll-mt-24 mb-5 rounded-3xl border border-sky-100 bg-white/95 p-5 shadow-soft">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-sky-700">{t("integrations.telegram.eyebrow")}</p>
-          <h2 className="mt-2 text-2xl font-black text-midnight">{t("integrations.telegram.title")}</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-            {t("integrations.telegram.description")}
-          </p>
-        </div>
-        <Link to="/dashboard/inbox?channel=telegram">
-          <Button type="button" variant="secondary"><ExternalLink size={16} /> {t("integrations.telegram.openInbox")}</Button>
-        </Link>
-      </div>
-
-      {error ? <div className="mt-4"><ErrorState message={getApiErrorMessage(error)} /></div> : null}
-      {notice ? <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{notice}</div> : null}
-
-      <div className="mt-5 grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
-        <div className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
-          <p className="font-black text-midnight">{t("integrations.telegram.ownerGuide")}</p>
-          <ol className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
-            <li>{t("integrations.telegram.step1")}</li>
-            <li>{t("integrations.telegram.step2")}</li>
-            <li>{t("integrations.telegram.step3")}</li>
-            <li>{t("integrations.telegram.step4")}</li>
-          </ol>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl bg-white p-3">
-              <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{t("integrations.telegram.token")}</p>
-              <p className={tokenConfigured ? "mt-1 font-bold text-emerald-700" : "mt-1 font-bold text-amber-700"}>
-                {tokenConfigured ? t("integrations.telegram.tokenSaved") : t("integrations.telegram.tokenMissing")}
-              </p>
-            </div>
-            <div className="rounded-2xl bg-white p-3">
-              <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{t("integrations.telegram.messageIntake")}</p>
-              <p className={telegramChannel ? "mt-1 font-bold text-emerald-700" : "mt-1 font-bold text-amber-700"}>
-                {telegramChannel ? t("integrations.telegram.intakeConfigured") : t("integrations.telegram.intakePending")}
-              </p>
-            </div>
-            <div className="rounded-2xl bg-white p-3">
-              <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{t("integrations.telegram.webhook")}</p>
-              <p className={telegramStatus.data?.webhook_configured ? "mt-1 font-bold text-emerald-700" : "mt-1 font-bold text-amber-700"}>
-                {telegramStatus.data?.webhook_configured ? t("integrations.telegram.webhookConfigured") : t("integrations.telegram.webhookPending")}
-              </p>
-            </div>
-            <div className="rounded-2xl bg-white p-3">
-              <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{t("integrations.telegram.lastInbound")}</p>
-              <p className="mt-1 text-sm font-bold text-slate-700">
-                {formatIntegrationEvent(telegramStatus.data?.last_inbound_status, telegramStatus.data?.last_inbound_at, t("integrations.telegram.noEvents"))}
-              </p>
-            </div>
-            <div className="rounded-2xl bg-white p-3">
-              <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{t("integrations.telegram.lastOutbound")}</p>
-              <p className="mt-1 text-sm font-bold text-slate-700">
-                {formatIntegrationEvent(telegramStatus.data?.last_outbound_status, telegramStatus.data?.last_outbound_at, t("integrations.telegram.noEvents"))}
-              </p>
-            </div>
-          </div>
-          <p className="mt-4 rounded-2xl border border-sky-100 bg-sky-50 px-3 py-2 text-sm font-semibold leading-6 text-sky-800">
-            {t("integrations.telegram.betaNotice")}
-          </p>
-        </div>
-
-        <div className="rounded-3xl border border-slate-100 bg-white p-4">
-          <p className="font-black text-midnight">{t("integrations.telegram.supportSetupTitle")}</p>
-          <p className="mt-2 text-sm leading-6 text-slate-600">{t("integrations.telegram.supportSetupText")}</p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Button type="button" variant="secondary" disabled={!canManage || !telegramChannel} isLoading={testConnection.isPending} onClick={() => testConnection.mutate()}>
-              <CheckCircle2 size={16} /> {t("integrations.telegram.testConnection")}
-            </Button>
-            <Link to="/dashboard/inbox?channel=telegram">
-              <Button type="button" variant="ghost">
-                <ExternalLink size={16} /> {t("integrations.telegram.openInbox")}
-              </Button>
-            </Link>
-          </div>
-          <details className="mt-4 rounded-2xl border border-slate-100 bg-slate-50 p-4">
-            <summary className="cursor-pointer text-sm font-black text-midnight">{t("integrations.telegram.advancedSetup")}</summary>
-            <form
-              className="mt-4"
-              onSubmit={(event) => {
-                event.preventDefault();
-                saveConfig.mutate();
-              }}
-            >
-              <Input
-                label={t("integrations.telegram.botFatherToken")}
-                type="password"
-                value={botToken}
-                onChange={(event) => setBotToken(event.target.value)}
-                placeholder={tokenConfigured ? t("integrations.telegram.tokenReplacePlaceholder") : t("integrations.telegram.tokenPlaceholder")}
-                disabled={!canManage}
-              />
-              <p className="mt-2 text-xs font-semibold leading-5 text-slate-500">{t("integrations.telegram.advancedSetupHelp")}</p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Button type="submit" disabled={!canManage || !botToken.trim()} isLoading={saveConfig.isPending}>
-                  <ShieldCheck size={16} /> {t("integrations.telegram.save")}
-                </Button>
-              </div>
-              {!canManage ? <p className="mt-3 text-sm font-semibold text-slate-500">{t("integrations.telegram.readOnly")}</p> : null}
-            </form>
-          </details>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function RequestReadyConnectorPanel({
-  provider,
-  connector,
-  businessId,
-  canManage,
-}: {
-  provider: "whatsapp" | "instagram";
+  capability?: ConnectorCapability;
+  channel?: BotChannel;
   connector?: BusinessConnector;
-  businessId: Id;
-  canManage: boolean;
+  provider: (typeof providerCatalog)[number];
+  onImport: () => void;
 }) {
   const queryClient = useQueryClient();
-  const { t } = useI18n();
-  const [form, setForm] = useState<Record<string, string>>(
-    provider === "whatsapp"
-      ? {
-          company_name: "",
-          phone_number: "",
-          contact_person: "",
-          preferred_method: "not_sure",
-          monthly_messages: "0",
-          has_meta_assets: "false",
-          comment: "",
-        }
-      : {
-          instagram_username: "",
-          facebook_page: "",
-          contact_person: "",
-          comment: "",
-        },
-  );
-  const label = provider === "whatsapp" ? "WhatsApp" : "Instagram";
-  const isPending = connector?.status === "needs_attention";
-  const requestStatus = connector?.status === "pending_request" || connector?.status === "provider_configuring" || connector?.status === "setup_required" || isPending
-    ? connector.status
-    : connector?.status || "not_requested";
+  const [connectOpen, setConnectOpen] = useState(false);
+  const [apiKey, setApiKey] = useState("");
+  const [accountId, setAccountId] = useState("");
+  const [webhookSecret, setWebhookSecret] = useState("");
+  const [notice, setNotice] = useState<string | null>(null);
+  const status = deriveProviderStatus({ capability, channel, connector });
+  const title = providerTitle(provider.provider, capability);
+  const isDataProvider = ["kaspi", "1c", "moysklad", "wildberries"].includes(String(provider.provider));
+  const isRequestProvider = ["whatsapp", "instagram", "kaspi", "1c", "moysklad", "wildberries", "google_sheets", "email"].includes(String(provider.provider));
 
-  const submitRequest = useMutation({
+  const requestConnector = useMutation({
     mutationFn: () => {
-      if (provider === "whatsapp") {
+      if (provider.provider === "whatsapp") {
         return businessConnectorsApi.requestWhatsApp({
           business: businessId,
-          company_name: form.company_name || "",
-          phone_number: form.phone_number || "",
-          contact_person: form.contact_person || "",
-          preferred_method: (form.preferred_method || "not_sure") as "not_sure" | "qr_pilot" | "meta_cloud" | "360dialog" | "twilio",
-          monthly_messages: Number(form.monthly_messages || 0),
-          has_meta_assets: form.has_meta_assets === "true",
-          comment: form.comment || "",
+          company_name: "ZANI merchant",
+          phone_number: "+77000000000",
+          contact_person: "",
+          preferred_method: "not_sure",
+          monthly_messages: 0,
+          has_meta_assets: false,
+          comment: "Запрос создан из status center.",
         });
       }
       const payload: BusinessConnectorPayload = {
         business: businessId,
-        provider,
-        name: `${label} connection request`,
-        capability: "communications",
-        auth_type: "oauth",
+        provider: provider.provider,
+        name: provider.requestName,
+        capability: capability?.capability,
+        auth_type: capability?.auth_type,
         scopes_json: [],
         config_json: {
-          request_type: `${provider}_connection_request`,
-          request_status: "pending_request",
           requested_from_ui: true,
-          provider_ready: ["meta_placeholder"],
-          form,
+          request_status: "pending_request",
+          source: "integrations_status_center",
         },
       };
       if (connector) {
@@ -812,265 +390,772 @@ function RequestReadyConnectorPanel({
     },
   });
 
-  return (
-    <div className="rounded-3xl border border-white/80 bg-white/95 p-5 shadow-soft">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-violet-700">{t("integrations.request.eyebrow", { provider: label })}</p>
-          <h3 className="mt-2 text-xl font-black text-midnight">{t("integrations.request.title", { provider: label })}</h3>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            {provider === "whatsapp"
-              ? t("integrations.request.whatsappText")
-              : t("integrations.request.instagramText")}
-          </p>
-        </div>
-        <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-black ring-1 ${isPending ? "bg-violet-50 text-violet-700 ring-violet-100" : "bg-slate-100 text-slate-600 ring-slate-200"}`}>
-          {t(`status.${requestStatus}`)}
-        </span>
-      </div>
-
-      <form
-        className="mt-4 grid gap-3"
-        onSubmit={(event) => {
-          event.preventDefault();
-          submitRequest.mutate();
-        }}
-      >
-        {provider === "whatsapp" ? (
-          <>
-            <Input label={t("integrations.request.companyName")} value={form.company_name || ""} onChange={(event) => setForm({ ...form, company_name: event.target.value })} disabled={!canManage} />
-            <Input label={t("integrations.request.whatsappNumber")} value={form.phone_number || ""} onChange={(event) => setForm({ ...form, phone_number: event.target.value })} disabled={!canManage} />
-            <Input label={t("integrations.request.contactPerson")} value={form.contact_person || ""} onChange={(event) => setForm({ ...form, contact_person: event.target.value })} disabled={!canManage} />
-            <Select
-              value={form.preferred_method || "not_sure"}
-              onChange={(event) => setForm({ ...form, preferred_method: event.target.value })}
-              disabled={!canManage}
-              options={[
-                { value: "not_sure", label: t("integrations.request.notSure") },
-                { value: "qr_pilot", label: t("integrations.request.qrPilot") },
-                { value: "meta_cloud", label: "Meta Cloud API" },
-                { value: "360dialog", label: "360dialog" },
-                { value: "twilio", label: "Twilio" },
-              ]}
-            />
-            <Input label={t("integrations.request.monthlyMessages")} type="number" value={form.monthly_messages || "0"} onChange={(event) => setForm({ ...form, monthly_messages: event.target.value })} disabled={!canManage} />
-            <Select
-              value={form.has_meta_assets || "false"}
-              onChange={(event) => setForm({ ...form, has_meta_assets: event.target.value })}
-              disabled={!canManage}
-              options={[
-                { value: "false", label: t("integrations.request.metaAssetsNo") },
-                { value: "true", label: t("integrations.request.metaAssetsYes") },
-              ]}
-            />
-          </>
-        ) : (
-          <>
-            <Input label={t("integrations.instagram.username")} value={form.instagram_username || ""} onChange={(event) => setForm({ ...form, instagram_username: event.target.value })} disabled={!canManage} />
-            <Input label={t("integrations.request.facebookPage")} value={form.facebook_page || ""} onChange={(event) => setForm({ ...form, facebook_page: event.target.value })} disabled={!canManage} />
-            <Input label={t("integrations.request.contactPerson")} value={form.contact_person || ""} onChange={(event) => setForm({ ...form, contact_person: event.target.value })} disabled={!canManage} />
-          </>
-        )}
-        <Input label={t("integrations.request.comment")} value={form.comment || ""} onChange={(event) => setForm({ ...form, comment: event.target.value })} disabled={!canManage} />
-        <Button type="submit" variant="secondary" disabled={!canManage} isLoading={submitRequest.isPending}>
-          <Send size={16} /> {connector ? t("integrations.request.update") : t("integrations.request.submit")}
-        </Button>
-      </form>
-      {submitRequest.error ? <div className="mt-3"><ErrorState message={getApiErrorMessage(submitRequest.error)} /></div> : null}
-      {submitRequest.isSuccess ? <p className="mt-3 rounded-2xl bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-700">{t("integrations.request.saved")}</p> : null}
-    </div>
-  );
-}
-
-const dataConnectorCatalog: Array<{
-  provider: BusinessConnector["provider"];
-  label: string;
-  descriptionKey: string;
-  capability: BusinessConnector["capability"];
-  eventType: string;
-}> = [
-  {
-    provider: "kaspi",
-    label: "Kaspi",
-    descriptionKey: "integrations.data.kaspiDescription",
-    capability: "finance",
-    eventType: "kaspi_order_imported",
-  },
-  {
-    provider: "1c",
-    label: "1C",
-    descriptionKey: "integrations.data.oneCDescription",
-    capability: "inventory",
-    eventType: "sale_imported",
-  },
-  {
-    provider: "google_sheets",
-    label: "Google Sheets",
-    descriptionKey: "integrations.data.googleSheetsDescription",
-    capability: "sales",
-    eventType: "sheet_row_imported",
-  },
-  {
-    provider: "email",
-    label: "Email",
-    descriptionKey: "integrations.data.emailDescription",
-    capability: "communications",
-    eventType: "email_channel_requested",
-  },
-  {
-    provider: "moysklad",
-    label: "МойСклад",
-    descriptionKey: "integrations.data.moyskladDescription",
-    capability: "inventory",
-    eventType: "moysklad_stock_imported",
-  },
-  {
-    provider: "wildberries",
-    label: "Wildberries",
-    descriptionKey: "integrations.data.wildberriesDescription",
-    capability: "finance",
-    eventType: "order_imported",
-  },
-  {
-    provider: "ozon",
-    label: "Ozon",
-    descriptionKey: "integrations.data.ozonDescription",
-    capability: "finance",
-    eventType: "order_imported",
-  },
-  {
-    provider: "yandex_market",
-    label: "Яндекс.Маркет",
-    descriptionKey: "integrations.data.yandexMarketDescription",
-    capability: "finance",
-    eventType: "order_imported",
-  },
-];
-
-function DataConnectorsFoundationPanel({
-  businessId,
-  connectorByProvider,
-  canManage,
-}: {
-  businessId: Id;
-  connectorByProvider: Map<string, BusinessConnector>;
-  canManage: boolean;
-}) {
-  const queryClient = useQueryClient();
-  const { t } = useI18n();
-  const [commentByProvider, setCommentByProvider] = useState<Record<string, string>>({});
-  const [notice, setNotice] = useState("");
-
-  const requestConnector = useMutation({
-    mutationFn: ({ provider, label, capability, comment }: { provider: BusinessConnector["provider"]; label: string; capability: BusinessConnector["capability"]; comment: string }) => {
-      const existing = connectorByProvider.get(provider);
-      const payload: BusinessConnectorPayload = {
-        business: businessId,
-        provider,
-        name: label,
-        capability,
-        auth_type: "connector",
-        scopes_json: [],
-        config_json: {
-          request_status: "pending_request",
-          requested_from_ui: true,
-          pilot_mode: "request_or_import_only",
-          no_write_back: true,
-          comment,
-        },
-      };
-      if (existing) {
-        return businessConnectorsApi.update({ id: existing.id, payload });
-      }
-      return businessConnectorsApi.create(payload);
-    },
-    onSuccess: (connector) => {
-      setNotice(t("integrations.data.requestSaved", { name: connector.name }));
+  const healthCheck = useMutation({
+    mutationFn: () => businessConnectorsApi.healthCheck(connector!.id),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
+      queryClient.invalidateQueries({ queryKey: ["connector-sync-runs"] });
     },
   });
 
   const mockSync = useMutation({
-    mutationFn: ({ connector }: { connector: BusinessConnector; eventType: string }) => businessConnectorsApi.mockSync(connector.id),
+    mutationFn: () => businessConnectorsApi.mockSync(connector!.id),
     onSuccess: () => {
-      setNotice(t("integrations.data.demoImported"));
       queryClient.invalidateQueries({ queryKey: ["business-events"] });
+      queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
     },
   });
 
-  const error = requestConnector.error || mockSync.error;
+  const saveGenericConfig = useMutation({
+    mutationFn: () => {
+      const payload: BusinessConnectorPayload = {
+        business: businessId,
+        provider: provider.provider,
+        name: provider.requestName,
+        capability: capability?.capability,
+        auth_type: capability?.auth_type || "token",
+        scopes_json: [],
+        config_json: {
+          account_id: accountId,
+          api_key: apiKey,
+          webhook_secret: webhookSecret,
+          configured_from_ui: true,
+        },
+      };
+      if (connector) return businessConnectorsApi.update({ id: connector.id, payload });
+      return businessConnectorsApi.create(payload);
+    },
+    onSuccess: () => {
+      setNotice("Данные подключения сохранены.");
+      setApiKey("");
+      setWebhookSecret("");
+      queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
+    },
+  });
+
+  const error = requestConnector.error || healthCheck.error || mockSync.error || saveGenericConfig.error;
+  const isConnected = ["connected", "active"].includes(status);
+  const isUnavailable = ["roadmap", "soon"].includes(status);
 
   return (
-    <div id="integration-data" className="scroll-mt-24 mb-5 rounded-3xl border border-amber-100 bg-white/95 p-5 shadow-soft">
-      <div>
-        <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">{t("integrations.data.eyebrow")}</p>
-        <h2 className="mt-2 text-2xl font-black text-midnight">{t("integrations.data.title")}</h2>
-        <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
-          {t("integrations.data.description")}
-        </p>
+    <article className={cn("min-h-[172px] rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft", isUnavailable && "opacity-60")}>
+      <div className="flex items-start justify-between gap-4">
+        <LogoMark logo={provider.logo} label={title} />
+        <Button
+          type="button"
+          className="h-10 min-w-[148px] rounded-xl px-5 text-sm"
+          disabled={!canManage || isUnavailable}
+          onClick={() => {
+            if (provider.provider === "excel_csv") {
+              onImport();
+              return;
+            }
+            setConnectOpen(true);
+          }}
+        >
+          {isConnected ? "Настроить" : "Подключить"}
+        </Button>
       </div>
 
-      {notice ? <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{notice}</div> : null}
-      {error ? <div className="mt-4"><ErrorState message={getApiErrorMessage(error)} /></div> : null}
+      <div className="mt-6">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="text-xl font-black tracking-tight text-midnight">{title}</h3>
+          <span className={`rounded-full px-2.5 py-1 text-xs font-black ring-1 ${statusClass(status)}`}>{readableStatus(status, "Не подключен")}</span>
+        </div>
+        <p className="mt-3 text-sm font-semibold leading-6 text-slate-500">{provider.primaryUse}</p>
+      </div>
 
-      <div className="mt-5 grid gap-4 xl:grid-cols-3">
-        {dataConnectorCatalog.map((item) => {
-          const connector = connectorByProvider.get(item.provider);
-          const comment = commentByProvider[item.provider] || "";
-          return (
-            <div key={item.provider} className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-lg font-black text-midnight">{item.label}</p>
-                  <p className="mt-1 text-sm leading-6 text-slate-600">{t(item.descriptionKey)}</p>
-                </div>
-                <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-xs font-black text-slate-600 ring-1 ring-slate-200">
-                  {dataConnectorStatusLabel(connector?.status, t)}
-                </span>
+      {connector?.last_error ? (
+        <div className="mt-3 rounded-2xl border border-red-100 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
+          {connector.last_error}
+        </div>
+      ) : null}
+
+      {error ? <div className="mt-3"><ErrorState message={getApiErrorMessage(error)} /></div> : null}
+
+      <Modal title={`Подключение: ${title}`} open={connectOpen} onClose={() => setConnectOpen(false)}>
+        <div className="space-y-4">
+          {notice ? <div className="rounded-2xl bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800">{notice}</div> : null}
+          {provider.provider === "telegram" ? (
+            <TelegramInlineSetup businessId={businessId} bots={bots} canManage={canManage} channel={channel} />
+          ) : (
+            <div className="space-y-4 rounded-3xl border border-slate-100 bg-white p-4">
+              <div>
+                <p className="text-sm font-black text-midnight">{title}</p>
+                <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">{provider.primaryUse}</p>
               </div>
-              <Input
-                className="mt-4"
-                placeholder={t("integrations.data.commentPlaceholder")}
-                value={comment}
-                onChange={(event) => setCommentByProvider({ ...commentByProvider, [item.provider]: event.target.value })}
-                disabled={!canManage}
-              />
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  disabled={!canManage}
-                  isLoading={requestConnector.isPending}
-                  onClick={() => requestConnector.mutate({ provider: item.provider, label: item.label, capability: item.capability, comment })}
-                >
-                  <Send size={16} /> {connector ? t("integrations.data.update") : t("integrations.data.request")}
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  disabled={!canManage || !connector}
-                  isLoading={mockSync.isPending}
-                  onClick={() => connector && mockSync.mutate({ connector, eventType: item.eventType })}
-                >
-                  {t("integrations.data.checkDemoImport")}
-                </Button>
+              {provider.provider === "website" ? (
+                <div className="rounded-2xl bg-slate-50 p-3 text-sm font-semibold text-slate-600">
+                  Website chat работает через публичный widget token канала. Дополнительные keys не требуются.
+                </div>
+              ) : (
+                <>
+                  <Input label="Account / Business ID" value={accountId} onChange={(event) => setAccountId(event.target.value)} placeholder="ID аккаунта, магазина или кабинета" />
+                  <Input label="API key / Access token" value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder="Вставьте token" type="password" autoComplete="off" />
+                  <Input label="Webhook secret / Verify token" value={webhookSecret} onChange={(event) => setWebhookSecret(event.target.value)} placeholder="Опционально" type="password" autoComplete="off" />
+                </>
+              )}
+              <div className="flex flex-wrap gap-2">
+                {provider.provider !== "website" ? (
+                  <Button type="button" disabled={!canManage || (!apiKey.trim() && !accountId.trim())} isLoading={saveGenericConfig.isPending} onClick={() => saveGenericConfig.mutate()}>
+                    <ShieldCheck size={16} /> Сохранить
+                  </Button>
+                ) : null}
+                {connector ? (
+                  <Button type="button" variant="secondary" disabled={!canManage} isLoading={healthCheck.isPending} onClick={() => healthCheck.mutate()}>
+                    <RefreshCw size={16} /> Проверить
+                  </Button>
+                ) : null}
+                {connector && isDataProvider ? (
+                  <Button type="button" variant="secondary" disabled={!canManage} isLoading={mockSync.isPending} onClick={() => mockSync.mutate()}>
+                    <DatabaseZap size={16} /> Demo sync
+                  </Button>
+                ) : null}
+                {isRequestProvider && !connector ? (
+                  <Button type="button" variant="secondary" disabled={!canManage} isLoading={requestConnector.isPending} onClick={() => requestConnector.mutate()}>
+                    <Send size={16} /> Запросить подключение
+                  </Button>
+                ) : null}
+                {["telegram", "whatsapp", "instagram", "website"].includes(String(provider.provider)) ? (
+                  <Link to={`/dashboard/conversations?channel=${provider.provider}`}>
+                    <Button type="button" variant="ghost">
+                      <Link2 size={16} /> Inbox
+                    </Button>
+                  </Link>
+                ) : null}
               </div>
             </div>
-          );
-        })}
+          )}
+        </div>
+      </Modal>
+    </article>
+  );
+}
+
+function TelegramInlineSetup({
+  businessId,
+  bots,
+  canManage,
+  channel,
+}: {
+  businessId: Id;
+  bots: Bot[];
+  canManage: boolean;
+  channel?: BotChannel;
+}) {
+  const queryClient = useQueryClient();
+  const [botToken, setBotToken] = useState("");
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const status = useQuery({
+    queryKey: ["telegram-status", channel?.id],
+    queryFn: () => telegramChannelApi.status(Number(channel?.id)),
+    enabled: Boolean(channel?.id),
+  });
+
+  const ensureChannel = useMutation({
+    mutationFn: async () => {
+      const bot = bots[0] || await botsApi.create({
+        business: businessId,
+        name: "Telegram bot",
+        status: "active",
+        default_language: "ru",
+        settings_json: {},
+      });
+      return botChannelsApi.create({
+        bot: bot.id,
+        channel: "telegram",
+        status: "draft",
+        external_id: "",
+        config_json: {},
+      });
+    },
+    onSuccess: () => {
+      setNotice("Telegram channel создан. Теперь вставьте BotFather token.");
+      queryClient.invalidateQueries({ queryKey: ["bots"] });
+      queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
+    },
+  });
+
+  const saveToken = useMutation({
+    mutationFn: () => telegramChannelApi.configure({ channelId: Number(channel?.id), botToken }),
+    onSuccess: () => {
+      setBotToken("");
+      setNotice("Token сохранен. Проверьте token и подключите webhook.");
+      queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
+      queryClient.invalidateQueries({ queryKey: ["telegram-status", channel?.id] });
+      queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
+    },
+  });
+
+  const testConnection = useMutation({
+    mutationFn: () => telegramChannelApi.testConnection(Number(channel?.id)),
+    onSuccess: (data) => {
+      setNotice(data.ok ? "Token проверен." : data.reason || "Token не прошел проверку.");
+      queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
+      queryClient.invalidateQueries({ queryKey: ["telegram-status", channel?.id] });
+      queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
+    },
+  });
+
+  const setWebhook = useMutation({
+    mutationFn: async () => {
+      const current = status.data || await telegramChannelApi.status(Number(channel?.id));
+      return telegramChannelApi.setWebhook({ channelId: Number(channel?.id), webhookUrl: current.webhook_url });
+    },
+    onSuccess: (data) => {
+      setNotice(
+        data.ok && data.mock
+          ? "Локальный режим: webhook не установлен в Telegram. Используйте «Загрузить сообщения» или публичный HTTPS URL."
+          : data.ok
+            ? "Webhook подключен. Напишите сообщение боту и проверьте Inbox."
+            : data.reason || "Webhook не подключен.",
+      );
+      queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
+      queryClient.invalidateQueries({ queryKey: ["telegram-status", channel?.id] });
+      queryClient.invalidateQueries({ queryKey: ["integration-event-logs"] });
+      queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
+    },
+  });
+
+  const syncUpdates = useMutation({
+    mutationFn: () => telegramChannelApi.syncUpdates(Number(channel?.id)),
+    onSuccess: (data) => {
+      setNotice(data.ok ? `Загружено обновлений: ${data.processed}. Проверьте Conversations.` : data.reason || "Не удалось загрузить сообщения Telegram.");
+      queryClient.invalidateQueries({ queryKey: ["inbox-conversations"] });
+      queryClient.invalidateQueries({ queryKey: ["inbox-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["telegram-status", channel?.id] });
+      queryClient.invalidateQueries({ queryKey: ["integration-event-logs"] });
+      queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
+    },
+  });
+
+  const error = ensureChannel.error || saveToken.error || testConnection.error || setWebhook.error || syncUpdates.error || status.error;
+  const tokenConfigured = Boolean(status.data?.token_configured);
+  const webhookConfigured = Boolean(status.data?.webhook_configured);
+
+  if (!channel) {
+    return (
+      <div className="w-full space-y-3">
+        {error ? <ErrorState message={getApiErrorMessage(error)} /> : null}
+        {notice ? <div className="rounded-2xl bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800">{notice}</div> : null}
+        <Button type="button" disabled={!canManage} isLoading={ensureChannel.isPending} onClick={() => ensureChannel.mutate()}>
+          <Send size={16} /> Создать Telegram channel
+        </Button>
       </div>
+    );
+  }
+
+  return (
+    <div className="w-full space-y-4 rounded-3xl border border-slate-100 bg-slate-50/70 p-4">
+      {error ? <ErrorState message={getApiErrorMessage(error)} /> : null}
+      {notice ? <div className="rounded-2xl bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800">{notice}</div> : null}
+
+      <div className="grid gap-2 sm:grid-cols-3">
+        <div className="rounded-2xl bg-white p-3">
+          <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Token</p>
+          <p className="mt-1 text-sm font-black text-midnight">{tokenConfigured ? "Сохранен" : "Нужен"}</p>
+        </div>
+        <div className="rounded-2xl bg-white p-3">
+          <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Secret</p>
+          <p className="mt-1 text-sm font-black text-midnight">{status.data?.webhook_secret_configured ? "Готов" : "Авто"}</p>
+        </div>
+        <div className="rounded-2xl bg-white p-3">
+          <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Webhook</p>
+          <p className="mt-1 text-sm font-black text-midnight">
+            {status.data?.last_outbound_status === "mocked" ? "Локально" : webhookConfigured ? "Подключен" : "Нужен"}
+          </p>
+        </div>
+      </div>
+
+      <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-end">
+        <Input
+          label={tokenConfigured ? "BotFather token сохранен приватно" : "BotFather token"}
+          value={botToken}
+          onChange={(event) => setBotToken(event.target.value)}
+          placeholder={tokenConfigured ? "Token уже сохранен. Вставьте новый только для замены." : "123456789:AA..."}
+          type="password"
+          autoComplete="off"
+        />
+        <Button
+          type="button"
+          variant={botToken.trim().length >= 9 ? "primary" : "secondary"}
+          disabled={!canManage || botToken.trim().length < 9}
+          isLoading={saveToken.isPending}
+          onClick={() => saveToken.mutate()}
+          className="min-w-[172px]"
+        >
+          <ShieldCheck size={16} /> {tokenConfigured ? "Заменить token" : "Сохранить token"}
+        </Button>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-3">
+        <button
+          type="button"
+          disabled={!canManage || !tokenConfigured || testConnection.isPending}
+          onClick={() => testConnection.mutate()}
+          className="flex min-h-[78px] items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-blue-50 text-blue-700">
+            <RefreshCw size={18} />
+          </span>
+          <span>
+            <span className="block text-sm font-black text-midnight">Проверить token</span>
+            <span className="mt-1 block text-xs font-semibold text-slate-500">Telegram getMe</span>
+          </span>
+        </button>
+        <button
+          type="button"
+          disabled={!canManage || !tokenConfigured || setWebhook.isPending || status.isFetching}
+          onClick={() => setWebhook.mutate()}
+          className="flex min-h-[78px] items-center gap-3 rounded-2xl bg-midnight px-4 text-left text-white shadow-premium transition hover:-translate-y-0.5 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white/12 text-white">
+            <CheckCircle2 size={18} />
+          </span>
+          <span>
+            <span className="block text-sm font-black">Подключить webhook</span>
+            <span className="mt-1 block text-xs font-semibold text-white/70">Входящие сообщения</span>
+          </span>
+        </button>
+        <button
+          type="button"
+          disabled={!canManage || !tokenConfigured || syncUpdates.isPending}
+          onClick={() => syncUpdates.mutate()}
+          className="flex min-h-[78px] items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-slate-100 text-slate-700">
+            <RefreshCw size={18} />
+          </span>
+          <span>
+            <span className="block text-sm font-black text-midnight">Загрузить сообщения</span>
+            <span className="mt-1 block text-xs font-semibold text-slate-500">Для локального режима</span>
+          </span>
+        </button>
+      </div>
+      <p className="text-xs font-semibold leading-5 text-slate-500">
+        Сейчас локальный адрес не доступен Telegram из интернета. Для теста нажмите «Загрузить сообщения» после отправки сообщения боту. Для production нужен публичный HTTPS URL.
+      </p>
+    </div>
+  );
+}
+
+function WhatsAppInlineSetup({
+  businessId,
+  bots,
+  canManage,
+  channel,
+}: {
+  businessId: Id;
+  bots: Bot[];
+  canManage: boolean;
+  channel?: BotChannel;
+}) {
+  const queryClient = useQueryClient();
+  const [phoneNumberId, setPhoneNumberId] = useState("");
+  const [accessToken, setAccessToken] = useState("");
+  const [businessAccountId, setBusinessAccountId] = useState("");
+  const [displayPhoneNumber, setDisplayPhoneNumber] = useState("");
+  const [signupCode, setSignupCode] = useState("");
+  const [signupState, setSignupState] = useState("");
+  const [signupRedirectUri, setSignupRedirectUri] = useState("");
+  const [signupPhoneNumberId, setSignupPhoneNumberId] = useState("");
+  const [signupWabaId, setSignupWabaId] = useState("");
+  const [signupDisplayPhone, setSignupDisplayPhone] = useState("");
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const status = useQuery({
+    queryKey: ["whatsapp-status", channel?.id],
+    queryFn: () => whatsappChannelApi.status(Number(channel?.id)),
+    enabled: Boolean(channel?.id),
+  });
+
+  const ensureChannel = useMutation({
+    mutationFn: async () => {
+      const bot = bots[0] || await botsApi.create({
+        business: businessId,
+        name: "WhatsApp bot",
+        status: "active",
+        default_language: "ru",
+        settings_json: {},
+      });
+      return botChannelsApi.create({
+        bot: bot.id,
+        channel: "whatsapp",
+        status: "draft",
+        external_id: "",
+        config_json: { provider_mode: "meta_cloud" },
+      });
+    },
+    onSuccess: () => {
+      setNotice("WhatsApp channel создан. Теперь добавьте Meta Cloud credentials.");
+      queryClient.invalidateQueries({ queryKey: ["bots"] });
+      queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
+    },
+  });
+
+  const saveCredentials = useMutation({
+    mutationFn: () => whatsappChannelApi.configure({
+      channelId: Number(channel?.id),
+      providerMode: "meta_cloud",
+      phoneNumberId,
+      accessToken,
+      businessAccountId,
+      displayPhoneNumber,
+    }),
+    onSuccess: () => {
+      setPhoneNumberId("");
+      setAccessToken("");
+      setBusinessAccountId("");
+      setDisplayPhoneNumber("");
+      setNotice("WhatsApp credentials сохранены приватно. Теперь проверьте подключение.");
+      queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
+      queryClient.invalidateQueries({ queryKey: ["whatsapp-status", channel?.id] });
+      queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
+    },
+  });
+
+  const testConnection = useMutation({
+    mutationFn: () => whatsappChannelApi.testConnection(Number(channel?.id)),
+    onSuccess: (data) => {
+      setNotice(data.ok ? "WhatsApp credentials проверены." : data.reason || "WhatsApp credentials не прошли проверку.");
+      queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
+      queryClient.invalidateQueries({ queryKey: ["whatsapp-status", channel?.id] });
+      queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
+    },
+  });
+
+  const startEmbeddedSignup = useMutation({
+    mutationFn: () => businessConnectorsApi.startWhatsAppEmbeddedSignup({
+      business: businessId,
+      redirectUri: window.location.origin + "/dashboard/integrations",
+    }),
+    onSuccess: (data) => {
+      setSignupState(data.state);
+      setSignupRedirectUri(data.redirect_uri);
+      setNotice(data.app_configured ? "Meta Embedded Signup открыт. После завершения вставьте code и phone_number_id ниже." : "Meta app env не настроен. Проверьте META_APP_ID/META_APP_SECRET.");
+      window.open(data.authorization_url, "zani_whatsapp_meta_signup", "width=720,height=820");
+    },
+  });
+
+  const completeEmbeddedSignup = useMutation({
+    mutationFn: () => businessConnectorsApi.completeWhatsAppEmbeddedSignup({
+      business: businessId,
+      code: signupCode,
+      state: signupState,
+      redirect_uri: signupRedirectUri || window.location.origin + "/dashboard/integrations",
+      phone_number_id: signupPhoneNumberId,
+      waba_id: signupWabaId,
+      display_phone_number: signupDisplayPhone,
+    }),
+    onSuccess: () => {
+      setSignupCode("");
+      setSignupPhoneNumberId("");
+      setSignupWabaId("");
+      setSignupDisplayPhone("");
+      setNotice("WhatsApp подключен через Meta Embedded Signup.");
+      queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
+      queryClient.invalidateQueries({ queryKey: ["whatsapp-status", channel?.id] });
+      queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
+    },
+  });
+
+  const error = ensureChannel.error || saveCredentials.error || testConnection.error || startEmbeddedSignup.error || completeEmbeddedSignup.error || status.error;
+  const credentialsConfigured = Boolean(status.data?.phone_number_id_configured && status.data?.access_token_configured);
+
+  if (!channel) {
+    return (
+      <div className="w-full space-y-3">
+        {error ? <ErrorState message={getApiErrorMessage(error)} /> : null}
+        {notice ? <div className="rounded-2xl bg-green-50 px-3 py-2 text-sm font-semibold text-green-800">{notice}</div> : null}
+        <Button type="button" disabled={!canManage} isLoading={ensureChannel.isPending} onClick={() => ensureChannel.mutate()}>
+          <Send size={16} /> Создать WhatsApp channel
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full space-y-4 rounded-3xl border border-slate-100 bg-slate-50/70 p-4">
+      {error ? <ErrorState message={getApiErrorMessage(error)} /> : null}
+      {notice ? <div className="rounded-2xl bg-green-50 px-3 py-2 text-sm font-semibold text-green-800">{notice}</div> : null}
+
+      <div className="grid gap-2 sm:grid-cols-3">
+        <div className="rounded-2xl bg-white p-3">
+          <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Phone ID</p>
+          <p className="mt-1 text-sm font-black text-midnight">{status.data?.phone_number_id_configured ? "Сохранен" : "Нужен"}</p>
+        </div>
+        <div className="rounded-2xl bg-white p-3">
+          <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Access token</p>
+          <p className="mt-1 text-sm font-black text-midnight">{status.data?.access_token_configured ? "Сохранен" : "Нужен"}</p>
+        </div>
+        <div className="rounded-2xl bg-white p-3">
+          <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Webhook verify</p>
+          <p className="mt-1 text-sm font-black text-midnight">{status.data?.verify_token_configured ? "Готов" : "Env"}</p>
+        </div>
+      </div>
+
+      <div className="rounded-3xl border border-green-100 bg-green-50 p-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-sm font-black text-green-950">Meta Embedded Signup</p>
+            <p className="mt-1 text-sm font-semibold leading-6 text-green-800">
+              Основной production-flow: мерчант логинится в Meta, выбирает WABA и номер, ZANI сохраняет доступы.
+            </p>
+          </div>
+          <Button type="button" disabled={!canManage} isLoading={startEmbeddedSignup.isPending} onClick={() => startEmbeddedSignup.mutate()}>
+            <ExternalLink size={16} /> Подключить через Meta
+          </Button>
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <Input label="Meta code" value={signupCode} onChange={(event) => setSignupCode(event.target.value)} placeholder="Code после Embedded Signup" />
+          <Input label="Phone number ID" value={signupPhoneNumberId} onChange={(event) => setSignupPhoneNumberId(event.target.value)} placeholder="ID выбранного номера" />
+          <Input label="WABA ID" value={signupWabaId} onChange={(event) => setSignupWabaId(event.target.value)} placeholder="Опционально" />
+          <Input label="Display phone" value={signupDisplayPhone} onChange={(event) => setSignupDisplayPhone(event.target.value)} placeholder="+770..." />
+        </div>
+        <div className="mt-3">
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={!canManage || !signupCode.trim() || !signupState.trim() || !signupPhoneNumberId.trim()}
+            isLoading={completeEmbeddedSignup.isPending}
+            onClick={() => completeEmbeddedSignup.mutate()}
+          >
+            <ShieldCheck size={16} /> Завершить подключение
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <Input label="Phone number ID" value={phoneNumberId} onChange={(event) => setPhoneNumberId(event.target.value)} placeholder={status.data?.phone_number_id_configured ? "Phone number ID уже сохранен" : "1234567890"} />
+        <Input label="Access token хранится приватно" value={accessToken} onChange={(event) => setAccessToken(event.target.value)} placeholder={status.data?.access_token_configured ? "Token уже сохранен. Вставьте новый только для замены." : "EAAG..."} type="password" autoComplete="off" />
+        <Input label="WABA ID" value={businessAccountId} onChange={(event) => setBusinessAccountId(event.target.value)} placeholder="Опционально" />
+        <Input label="Display phone" value={displayPhoneNumber} onChange={(event) => setDisplayPhoneNumber(event.target.value)} placeholder="+770..." />
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <Button
+          type="button"
+          disabled={!canManage || (!phoneNumberId.trim() && !accessToken.trim())}
+          isLoading={saveCredentials.isPending}
+          onClick={() => saveCredentials.mutate()}
+        >
+          <ShieldCheck size={16} /> {credentialsConfigured ? "Обновить credentials" : "Сохранить credentials"}
+        </Button>
+        <Button type="button" variant="secondary" disabled={!canManage || !credentialsConfigured} isLoading={testConnection.isPending} onClick={() => testConnection.mutate()}>
+          <RefreshCw size={16} /> Проверить Meta доступ
+        </Button>
+      </div>
+
+      <p className="text-xs font-semibold leading-5 text-slate-500">
+        Webhook URL: {status.data?.webhook_url || "/api/integrations/whatsapp/webhook/"}. Verify token и App Secret задаются в production .env.
+      </p>
+    </div>
+  );
+}
+
+function ImportPanel({ businessId }: { businessId: Id }) {
+  const queryClient = useQueryClient();
+  const [entity, setEntity] = useState<ImportEntity>("clients");
+  const [file, setFile] = useState<File | null>(null);
+  const [activeJob, setActiveJob] = useState<ImportJob | null>(null);
+
+  const jobsQuery = useQuery({
+    queryKey: ["import-jobs", businessId],
+    queryFn: importExportApi.importJobs,
+  });
+
+  const upload = useMutation({
+    mutationFn: () => {
+      if (!file) throw new Error("Выберите CSV или XLSX файл.");
+      return importExportApi.upload({ business: businessId, entity, file });
+    },
+    onSuccess: (job) => {
+      setActiveJob(job);
+      setFile(null);
+      queryClient.invalidateQueries({ queryKey: ["import-jobs"] });
+    },
+  });
+
+  const confirm = useMutation({
+    mutationFn: (jobId: Id) => importExportApi.confirm(jobId),
+    onSuccess: (job) => {
+      setActiveJob(job);
+      queryClient.invalidateQueries({ queryKey: ["import-jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
+      queryClient.invalidateQueries({ queryKey: ["services"] });
+    },
+  });
+
+  const template = useMutation({
+    mutationFn: importExportApi.downloadTemplate,
+  });
+
+  const jobs = jobsQuery.data || [];
+  const selected = activeJob || jobs[0];
+  const errors = selected?.errors_json?.rows || [];
+  const previewRows = selected?.preview_json?.rows || [];
+  const importError = jobsQuery.error || upload.error || confirm.error || template.error;
+
+  return (
+    <section id="integration-import" className="scroll-mt-24 rounded-3xl border border-emerald-100 bg-white/95 p-5 shadow-soft">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Быстрый импорт</p>
+          <h2 className="mt-1 text-2xl font-black text-midnight">Excel / CSV как fallback для MVP</h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+            Пока 1C, Kaspi и склад подключаются по заявке, данные можно загрузить файлом и сразу дать AI-аналитику факты.
+          </p>
+        </div>
+        <Button type="button" variant="secondary" isLoading={template.isPending} onClick={() => template.mutate(entity)}>
+          <FileSpreadsheet size={16} /> Шаблон
+        </Button>
+      </div>
+
+      {importError ? <div className="mt-4"><ErrorState message={getApiErrorMessage(importError)} /></div> : null}
+
+      <div className="mt-5 grid gap-3 lg:grid-cols-[220px_1fr_auto]">
+        <Select
+          value={entity}
+          onChange={(event) => setEntity(event.target.value as ImportEntity)}
+          options={[
+            { value: "clients", label: "Клиенты" },
+            { value: "leads", label: "Заявки" },
+            { value: "sales", label: "Продажи" },
+            { value: "catalog", label: "Каталог" },
+          ]}
+        />
+        <Input type="file" accept=".csv,.xlsx" onChange={(event) => setFile(event.target.files?.[0] || null)} />
+        <Button type="button" disabled={!file} isLoading={upload.isPending} onClick={() => upload.mutate()}>
+          <Upload size={16} /> Проверить файл
+        </Button>
+      </div>
+
+      <div className="mt-5 grid gap-4 xl:grid-cols-[1fr_360px]">
+        <div className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="font-black text-midnight">{selected?.original_filename || "Файл еще не выбран"}</p>
+              <p className="mt-1 text-sm text-slate-500">
+                {selected ? `${selected.entity_type} · ${selected.total_rows} строк · ${readableStatus(selected.status)}` : "Загрузите файл, чтобы увидеть preview и ошибки."}
+              </p>
+            </div>
+            {selected?.status === "previewed" && !errors.length ? (
+              <Button type="button" isLoading={confirm.isPending} onClick={() => confirm.mutate(selected.id)}>
+                Импортировать
+              </Button>
+            ) : null}
+          </div>
+
+          {errors.length ? (
+            <div className="mt-4 rounded-2xl border border-red-100 bg-red-50 p-3">
+              <p className="text-sm font-black text-red-800">Нужно исправить файл</p>
+              {errors.slice(0, 5).map((item, index) => (
+                <p key={`${item.row}-${item.field}-${index}`} className="mt-1 text-xs font-semibold text-red-700">
+                  Строка {item.row}, {item.field}: {item.message}
+                </p>
+              ))}
+            </div>
+          ) : null}
+
+          <div className="mt-4 overflow-hidden rounded-2xl border border-slate-100 bg-white">
+            {previewRows.slice(0, 5).map((row, index) => (
+              <div key={index} className="border-b border-slate-100 px-3 py-2 text-xs text-slate-600 last:border-b-0">
+                {Object.entries(row).slice(0, 6).map(([key, value]) => `${key}: ${value || "-"}`).join(" · ")}
+              </div>
+            ))}
+            {!previewRows.length ? <p className="px-3 py-4 text-sm text-slate-500">Preview появится после проверки файла.</p> : null}
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-slate-100 bg-white p-4">
+          <p className="font-black text-midnight">История импортов</p>
+          <div className="mt-3 space-y-2">
+            {jobs.slice(0, 8).map((job) => (
+              <button
+                key={job.id}
+                type="button"
+                onClick={() => setActiveJob(job)}
+                className="w-full rounded-2xl bg-slate-50 px-3 py-2 text-left text-sm transition hover:bg-slate-100"
+              >
+                <span className="font-bold text-midnight">#{job.id} {job.entity_type}</span>
+                <span className="ml-2 text-slate-500">{job.status} · {job.imported_count}/{job.total_rows}</span>
+              </button>
+            ))}
+            {!jobsQuery.isLoading && !jobs.length ? <p className="text-sm text-slate-500">Импортов пока нет.</p> : null}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function EventRow({ event }: { event: BusinessEvent }) {
+  return (
+    <div className="grid gap-3 border-b border-slate-100 px-4 py-3 last:border-b-0 lg:grid-cols-[160px_1fr_120px_130px] lg:items-center">
+      <div className="flex items-center gap-2">
+        <LogoMark logo={providerLogo(event.source)} label={event.source} />
+        <div className="min-w-0">
+          <p className="truncate text-sm font-black text-midnight">{event.source}</p>
+          <p className="text-xs text-slate-500">{formatDate(event.occurred_at)}</p>
+        </div>
+      </div>
+      <div className="min-w-0">
+        <p className="truncate text-sm font-black text-midnight">{event.event_type}</p>
+        <p className="mt-1 truncate text-xs font-semibold text-slate-500">{compactPayload(event.payload_json)}</p>
+      </div>
+      <span className={`w-fit rounded-full px-2.5 py-1 text-xs font-black ring-1 ${statusClass(event.status)}`}>
+        {readableStatus(event.status)}
+      </span>
+      <p className="text-xs font-semibold text-slate-500">{event.connector_name || "Без коннектора"}</p>
+    </div>
+  );
+}
+
+function LogRow({ log }: { log: IntegrationEventLog }) {
+  return (
+    <div className="grid gap-3 border-b border-slate-100 px-4 py-3 last:border-b-0 lg:grid-cols-[160px_1fr_110px] lg:items-center">
+      <div className="flex items-center gap-2">
+        <LogoMark logo={providerLogo(log.provider)} label={log.provider} />
+        <div>
+          <p className="text-sm font-black text-midnight">{log.provider}</p>
+          <p className="text-xs text-slate-500">{formatDate(log.created_at)}</p>
+        </div>
+      </div>
+      <div>
+        <p className="text-sm font-semibold text-slate-700">{log.direction} · {log.channel || "default"}</p>
+        <p className="mt-1 text-xs text-slate-500">{log.error || compactPayload(log.payload_json)}</p>
+      </div>
+      <span className={`w-fit rounded-full px-2.5 py-1 text-xs font-black ring-1 ${statusClass(log.status)}`}>
+        {readableStatus(log.status)}
+      </span>
+    </div>
+  );
+}
+
+function SyncRunRow({ run }: { run: ConnectorSyncRun }) {
+  return (
+    <div className="grid gap-3 border-b border-slate-100 px-4 py-3 last:border-b-0 lg:grid-cols-[1fr_120px_130px_100px] lg:items-center">
+      <div>
+        <p className="text-sm font-black text-midnight">{run.connector_name || `Connector #${run.connector}`}</p>
+        <p className="mt-1 text-xs text-slate-500">{run.mode} · {formatDate(run.created_at)}</p>
+      </div>
+      <span className={`w-fit rounded-full px-2.5 py-1 text-xs font-black ring-1 ${statusClass(run.status)}`}>
+        {readableStatus(run.status)}
+      </span>
+      <p className="text-xs font-semibold text-slate-500">{run.events_processed}/{run.events_received} событий</p>
+      <p className="truncate text-xs text-red-600">{run.error}</p>
     </div>
   );
 }
 
 export function IntegrationsPage() {
   const { user } = useAuth();
-  const { t } = useI18n();
   const { business, isLoading: isBusinessLoading } = useActiveBusiness();
   const canManage = hasPermission(user, business?.id, "integrations", "manage");
-  const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<CapabilityFilter>("all");
-  const [group, setGroup] = useState<CapabilityGroup>("all");
+  const [query, setQuery] = useState("");
+  const [group, setGroup] = useState<ProviderGroup | "all">("all");
 
   const capabilities = useQuery({
     queryKey: ["connector-capabilities"],
@@ -1081,207 +1166,201 @@ export function IntegrationsPage() {
     queryFn: businessConnectorsApi.list,
     enabled: Boolean(business?.id),
   });
-  const entityData = useEntityData({ enabled: Boolean(business?.id), bots: true, botChannels: true });
+  const channels = useQuery({
+    queryKey: ["bot-channels", business?.id],
+    queryFn: botChannelsApi.list,
+    enabled: Boolean(business?.id),
+  });
+  const bots = useQuery({
+    queryKey: ["bots", business?.id],
+    queryFn: botsApi.list,
+    enabled: Boolean(business?.id),
+  });
+  const events = useQuery({
+    queryKey: ["business-events", business?.id],
+    queryFn: businessEventsApi.list,
+    enabled: Boolean(business?.id),
+  });
+  const logs = useQuery({
+    queryKey: ["integration-event-logs", business?.id],
+    queryFn: () => integrationEventLogsApi.list(),
+    enabled: Boolean(business?.id),
+  });
+  const syncRuns = useQuery({
+    queryKey: ["connector-sync-runs", business?.id],
+    queryFn: connectorSyncRunsApi.list,
+    enabled: Boolean(business?.id),
+  });
 
-  const connectorByProvider = useMemo(() => {
-    const map = new Map<string, BusinessConnector>();
-    (connectors.data || []).forEach((connector) => map.set(connector.provider, connector));
-    return map;
-  }, [connectors.data]);
+  const data = useMemo(() => {
+    const capabilityList = capabilities.data || [];
+    const connectorList = connectors.data || [];
+    const channelList = channels.data || [];
+    const normalizedQuery = query.trim().toLowerCase();
+    return providerCatalog
+      .map((item) => {
+        const capability = providerCapability(item.provider, capabilityList);
+        const connector = providerConnector(item.provider, connectorList);
+        const channel = providerChannel(item.provider, channelList);
+        const status = deriveProviderStatus({ capability, channel, connector });
+        const label = providerTitle(item.provider, capability);
+        return { ...item, capability, channel, connector, label, status };
+      })
+      .filter((item) => {
+        const matchesGroup = group === "all" || item.group === group;
+        const matchesQuery = !normalizedQuery || [item.label, item.provider, item.primaryUse].join(" ").toLowerCase().includes(normalizedQuery);
+        return matchesGroup && matchesQuery;
+      });
+  }, [capabilities.data, channels.data, connectors.data, group, query]);
 
-  const capabilityList = capabilities.data || [];
   const summary = useMemo(() => {
+    const connectorList = connectors.data || [];
+    const eventList = events.data || [];
+    const syncList = syncRuns.data || [];
+    const connected = data.filter((item) => ["connected", "active"].includes(item.status)).length;
+    const attention = data.filter((item) => ["needs_attention", "error", "failed", "expired_credentials"].includes(item.status)).length;
     return {
-      total: capabilityList.length,
-      included: capabilityList.filter((item) => item.availability === "included").length,
-      request: capabilityList.filter((item) => item.action_behavior === "request").length,
-      roadmap: capabilityList.filter((item) => ["soon", "roadmap"].includes(item.availability)).length,
-      connected: (connectors.data || []).filter((item) => item.status === "connected").length,
+      connected,
+      attention,
+      eventsToday: eventList.length,
+      failedSyncs: syncList.filter((item) => item.status === "failed").length + connectorList.filter((item) => ["failed", "error"].includes(item.status)).length,
     };
-  }, [capabilityList, connectors.data]);
+  }, [connectors.data, data, events.data, syncRuns.data]);
 
-  const filteredCapabilities = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
-    return capabilityList.filter((capability) => {
-      const matchesSearch =
-        !normalizedSearch ||
-        [capability.label, capability.provider, capability.description, capabilityGroupLabel(capability, t)]
-          .join(" ")
-          .toLowerCase()
-          .includes(normalizedSearch);
-      const matchesGroup = group === "all" || capability.capability === group;
-      const matchesFilter =
-        filter === "all" ||
-        (filter === "self_service" && capability.action_behavior === "self_service") ||
-        (filter === "request" && capability.action_behavior === "request") ||
-        (filter === "included" && capability.availability === "included") ||
-        (filter === "upgrade" && capability.availability === "upgrade") ||
-        (filter === "roadmap" && ["soon", "roadmap"].includes(capability.availability));
-      return matchesSearch && matchesGroup && matchesFilter;
-    });
-  }, [capabilityList, filter, group, search, t]);
-  const groupedCapabilities = useMemo(() => {
-    return connectionGroups
-      .map((groupKey) => ({
-        key: groupKey,
-        items: filteredCapabilities.filter((capability) => merchantConnectionGroup(capability) === groupKey),
-      }))
-      .filter((section) => section.items.length > 0);
-  }, [filteredCapabilities]);
-  const hasExcelCsv = capabilityList.some((capability) => capability.provider === "excel_csv");
-  const websiteChannel = (entityData.botChannels.data || []).find((channel) => channel.channel === "website");
-  const telegramChannel = (entityData.botChannels.data || []).find((channel) => channel.channel === "telegram");
-  const bots = entityData.bots.data || [];
-  const hasWhatsAppRequest = Boolean(connectorByProvider.get("whatsapp"));
-  const hasAnyDataConnector = ["kaspi", "1c", "google_sheets", "moysklad", "wildberries", "ozon", "yandex_market", "excel_csv"].some((provider) =>
-    connectorByProvider.has(provider),
-  );
-
-  if (isBusinessLoading || capabilities.isLoading || connectors.isLoading || entityData.bots.isLoading || entityData.botChannels.isLoading) {
-    return <LoadingState label={t("integrations.page.loading")} />;
+  if (isBusinessLoading || capabilities.isLoading || connectors.isLoading || channels.isLoading || bots.isLoading) {
+    return <LoadingState label="Загружаем статус интеграций..." />;
   }
 
   if (!business) {
-    return <EmptyState title={t("integrations.page.noBusinessTitle")} description={t("integrations.page.noBusinessDescription")} />;
+    return <EmptyState title="Нет бизнеса" description="Создайте бизнес, чтобы подключать каналы, склад, 1C и Kaspi." />;
   }
+
+  const pageError = capabilities.error || connectors.error || channels.error || bots.error || events.error || logs.error || syncRuns.error;
 
   return (
     <div>
       <PageHeader
-        title={t("integrations.page.title")}
-        description={t("integrations.page.description")}
+        title="Подключения"
+        description="Статус-центр интеграций: что подключено, где ошибка, когда была синхронизация и какое действие нужно сделать."
         actions={
-          <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
-            <CheckCircle2 className="mr-2 inline" size={16} />
-            {t("integrations.page.safeTokenNotice")}
-          </div>
+          <Link to="/dashboard/ai-assistant">
+            <Button type="button" variant="secondary">
+              <DatabaseZap size={16} /> Открыть AI-анализ
+            </Button>
+          </Link>
         }
       />
 
-      {capabilities.error || connectors.error ? <ErrorState message={getApiErrorMessage(capabilities.error || connectors.error)} /> : null}
+      {pageError ? <div className="mb-4"><ErrorState message={getApiErrorMessage(pageError)} /></div> : null}
 
-      <IntegrationOnboardingGuide
-        connectedCount={summary.connected}
-        hasWebsiteChannel={Boolean(websiteChannel)}
-        hasTelegramChannel={Boolean(telegramChannel)}
-        hasWhatsAppRequest={hasWhatsAppRequest}
-        hasAnyDataConnector={hasAnyDataConnector}
-      />
+      <section className="mb-5 grid gap-3 md:grid-cols-4">
+        <MetricCard icon={<CheckCircle2 size={19} />} label="Подключено" value={summary.connected} tone="bg-emerald-50 text-emerald-700" />
+        <MetricCard icon={<AlertTriangle size={19} />} label="Требуют внимания" value={summary.attention} tone="bg-amber-50 text-amber-700" />
+        <MetricCard icon={<DatabaseZap size={19} />} label="Бизнес-события" value={summary.eventsToday} tone="bg-blue-50 text-blue-700" />
+        <MetricCard icon={<XCircle size={19} />} label="Ошибки sync" value={summary.failedSyncs} tone="bg-red-50 text-red-700" />
+      </section>
 
-      <div className="mb-5 grid gap-3 md:grid-cols-4">
-        <div className="rounded-3xl border border-white/80 bg-white/90 p-4 shadow-soft">
-          <Sparkles className="text-brand-600" size={20} />
-          <p className="mt-2 text-2xl font-black text-midnight">{summary.included}</p>
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{t("integrations.page.includedTitle")}</p>
-          <p className="mt-1 text-xs leading-5 text-slate-500">{t("integrations.page.includedText")}</p>
-        </div>
-        <div className="rounded-3xl border border-white/80 bg-white/90 p-4 shadow-soft">
-          <Send className="text-violet-600" size={20} />
-          <p className="mt-2 text-2xl font-black text-midnight">{summary.request}</p>
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{t("integrations.page.requestTitle")}</p>
-          <p className="mt-1 text-xs leading-5 text-slate-500">{t("integrations.page.requestText")}</p>
-        </div>
-        <div className="rounded-3xl border border-white/80 bg-white/90 p-4 shadow-soft">
-          <Clock3 className="text-amber-600" size={20} />
-          <p className="mt-2 text-2xl font-black text-midnight">{summary.roadmap}</p>
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{t("integrations.page.roadmapTitle")}</p>
-          <p className="mt-1 text-xs leading-5 text-slate-500">{t("integrations.page.roadmapText")}</p>
-        </div>
-        <div className="rounded-3xl border border-white/80 bg-white/90 p-4 shadow-soft">
-          <ShieldCheck className="text-emerald-600" size={20} />
-          <p className="mt-2 text-2xl font-black text-midnight">{summary.connected}</p>
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{t("integrations.page.connectedTitle")}</p>
-          <p className="mt-1 text-xs leading-5 text-slate-500">{t("integrations.page.connectedText")}</p>
-        </div>
-      </div>
-
-      <div className="mb-5 rounded-3xl border border-white/80 bg-white/90 p-4 shadow-soft">
-        <div className="grid gap-3 lg:grid-cols-[1fr_220px_220px_auto]">
-          <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t("integrations.page.searchPlaceholder")} />
-          <Select
-            value={filter}
-            onChange={(event) => setFilter(event.target.value as CapabilityFilter)}
-            options={[
-              { value: "all", label: t("integrations.page.allStatuses") },
-              { value: "included", label: t("integrations.page.includedTitle") },
-              { value: "self_service", label: t("integrations.page.selfServiceTitle") },
-              { value: "request", label: t("integrations.page.requestTitle") },
-              { value: "upgrade", label: t("integrations.page.upgradeTitle") },
-              { value: "roadmap", label: t("integrations.page.roadmapTitle") },
-            ]}
-          />
+      <section className="mb-5 rounded-3xl border border-white/80 bg-white/92 p-4 shadow-soft">
+        <div className="grid gap-3 lg:grid-cols-[1fr_220px]">
+          <label className="flex min-h-12 items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 text-sm font-semibold text-slate-500">
+            <Search size={18} />
+            <input
+              className="min-w-0 flex-1 bg-transparent outline-none"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Поиск: Kaspi, Telegram, 1C..."
+            />
+          </label>
           <Select
             value={group}
-            onChange={(event) => setGroup(event.target.value as CapabilityGroup)}
+            onChange={(event) => setGroup(event.target.value as ProviderGroup | "all")}
             options={[
-              { value: "all", label: t("integrations.page.allGroups") },
-              { value: "communications", label: t("integrations.capability.communications") },
-              { value: "sales", label: t("integrations.capability.sales") },
-              { value: "calendar", label: t("integrations.capability.calendar") },
-              { value: "finance", label: t("integrations.capability.finance") },
-              { value: "inventory", label: t("integrations.capability.inventory") },
-              { value: "marketing", label: t("integrations.capability.marketing") },
-              { value: "custom", label: t("integrations.capability.custom") },
+              { value: "all", label: "Все группы" },
+              { value: "messages", label: groupLabels.messages.title },
+              { value: "data", label: groupLabels.data.title },
+              { value: "marketplace", label: groupLabels.marketplace.title },
+              { value: "system", label: groupLabels.system.title },
             ]}
           />
-          <Button variant="ghost" onClick={() => { setSearch(""); setFilter("all"); setGroup("all"); }}>
-            <Filter size={16} /> {t("integrations.page.reset")}
-          </Button>
         </div>
-        <p className="mt-3 text-xs font-semibold text-slate-500">
-          {t("integrations.page.resultsMeta", { found: filteredCapabilities.length, total: summary.total })}
-        </p>
-      </div>
+      </section>
 
-      {filteredCapabilities.length === 0 ? (
-        <EmptyState title={t("integrations.page.noResultsTitle")} description={t("integrations.page.noResultsDescription")} />
-      ) : (
-        <div className="mb-5 space-y-5">
-          {groupedCapabilities.map((section) => (
-            <section key={section.key} className="scroll-mt-24">
+      <section className="mb-6 space-y-5">
+        {(["messages", "data", "marketplace", "system"] as ProviderGroup[]).map((groupKey) => {
+          const items = data.filter((item) => item.group === groupKey);
+          if (!items.length) return null;
+          return (
+            <div key={groupKey}>
               <div className="mb-3">
-                <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">{t(`integrations.group.${section.key}.eyebrow`)}</p>
-                <h2 className="mt-1 text-xl font-black text-midnight">{t(`integrations.group.${section.key}.title`)}</h2>
-                <p className="mt-1 text-sm leading-6 text-slate-500">{t(`integrations.group.${section.key}.text`)}</p>
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">{groupLabels[groupKey].title}</p>
+                <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">{groupLabels[groupKey].text}</p>
               </div>
-              <div className="grid gap-4 xl:grid-cols-2">
-                {section.items.map((capability) => (
-                  <ConnectorCard
-                    key={capability.provider}
-                    capability={capability}
-                    connector={connectorByProvider.get(capability.provider)}
+              <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+                {items.map((item) => (
+                  <ProviderCard
+                    key={item.provider}
                     businessId={business.id}
+                    bots={bots.data || []}
                     canManage={canManage}
+                    capability={item.capability}
+                    channel={item.channel}
+                    connector={item.connector}
+                    provider={item}
+                    onImport={() => document.getElementById("integration-import")?.scrollIntoView({ behavior: "smooth", block: "start" })}
                   />
                 ))}
               </div>
-            </section>
-          ))}
-        </div>
-      )}
+            </div>
+          );
+        })}
+      </section>
 
-      {hasExcelCsv ? <ExcelCsvImportPanel businessId={business.id} /> : null}
-
-      <div id="integration-requests" className="scroll-mt-24 mb-5 grid gap-4 xl:grid-cols-2">
-        <RequestReadyConnectorPanel
-          provider="whatsapp"
-          connector={connectorByProvider.get("whatsapp")}
-          businessId={business.id}
-          canManage={canManage}
-        />
-        <RequestReadyConnectorPanel
-          provider="instagram"
-          connector={connectorByProvider.get("instagram")}
-          businessId={business.id}
-          canManage={canManage}
-        />
+      <div className="mb-6">
+        <ImportPanel businessId={business.id} />
       </div>
 
-      <DataConnectorsFoundationPanel businessId={business.id} connectorByProvider={connectorByProvider} canManage={canManage} />
+      <section className="mb-6 grid gap-5 xl:grid-cols-[1fr_0.9fr]">
+        <div className="overflow-hidden rounded-3xl border border-slate-100 bg-white/95 shadow-soft">
+          <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
+            <div>
+              <h2 className="text-lg font-black text-midnight">Последние бизнес-события</h2>
+              <p className="text-sm font-semibold text-slate-500">Эти факты должен читать AI-аналитик.</p>
+            </div>
+          </div>
+          {(events.data || []).slice(0, 10).map((event) => <EventRow key={event.id} event={event} />)}
+          {!events.isLoading && !(events.data || []).length ? (
+            <div className="p-4">
+              <EmptyState title="Событий пока нет" description="Сделайте demo sync или импорт файла, чтобы появились факты для аналитики." />
+            </div>
+          ) : null}
+        </div>
 
-      <TelegramConnectorWizard businessId={business.id} bots={bots} telegramChannel={telegramChannel} canManage={canManage} />
+        <div className="overflow-hidden rounded-3xl border border-slate-100 bg-white/95 shadow-soft">
+          <div className="border-b border-slate-100 px-4 py-3">
+            <h2 className="text-lg font-black text-midnight">Журнал каналов</h2>
+            <p className="text-sm font-semibold text-slate-500">Webhook, входящие и исходящие события.</p>
+          </div>
+          {(logs.data || []).slice(0, 8).map((log) => <LogRow key={log.id} log={log} />)}
+          {!logs.isLoading && !(logs.data || []).length ? (
+            <div className="p-4">
+              <EmptyState title="Логов пока нет" description="После сообщений ботов или webhook-событий здесь появится журнал." />
+            </div>
+          ) : null}
+        </div>
+      </section>
 
-      <WebsiteChatConnectorPanel websiteChannel={websiteChannel} isLoading={entityData.botChannels.isLoading} />
+      <section className="overflow-hidden rounded-3xl border border-slate-100 bg-white/95 shadow-soft">
+        <div className="border-b border-slate-100 px-4 py-3">
+          <h2 className="text-lg font-black text-midnight">Запуски синхронизации</h2>
+          <p className="text-sm font-semibold text-slate-500">Health-check, pull, manual и demo sync.</p>
+        </div>
+        {(syncRuns.data || []).slice(0, 10).map((run) => <SyncRunRow key={run.id} run={run} />)}
+        {!syncRuns.isLoading && !(syncRuns.data || []).length ? (
+          <div className="p-4">
+            <EmptyState title="Sync run пока нет" description="Нажмите Проверить или Demo sync у нужного подключения." />
+          </div>
+        ) : null}
+      </section>
     </div>
   );
 }

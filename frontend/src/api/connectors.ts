@@ -30,6 +30,24 @@ export type WhatsAppConnectionRequestPayload = {
   comment?: string;
 };
 
+export type WhatsAppEmbeddedSignupStartResponse = {
+  authorization_url: string;
+  state: string;
+  redirect_uri: string;
+  app_configured: boolean;
+  config_id_configured: boolean;
+};
+
+export type WhatsAppEmbeddedSignupCompletePayload = {
+  business: Id;
+  code: string;
+  state: string;
+  redirect_uri?: string;
+  phone_number_id: string;
+  waba_id?: string;
+  display_phone_number?: string;
+};
+
 export const businessConnectorsApi = {
   ...createCrudApi<BusinessConnector, BusinessConnectorPayload, Partial<BusinessConnectorPayload>>("/api/business-connectors/"),
   capabilities: async () => {
@@ -58,6 +76,17 @@ export const businessConnectorsApi = {
   },
   requestWhatsApp: async (payload: WhatsAppConnectionRequestPayload) => {
     const { data } = await apiClient.post<BusinessConnector>("/api/business-connectors/whatsapp-request/", payload);
+    return data;
+  },
+  startWhatsAppEmbeddedSignup: async ({ business, redirectUri }: { business: Id; redirectUri?: string }) => {
+    const { data } = await apiClient.post<WhatsAppEmbeddedSignupStartResponse>("/api/business-connectors/whatsapp-embedded-signup/start/", {
+      business,
+      redirect_uri: redirectUri,
+    });
+    return data;
+  },
+  completeWhatsAppEmbeddedSignup: async (payload: WhatsAppEmbeddedSignupCompletePayload) => {
+    const { data } = await apiClient.post<{ ok: boolean; channel_id: Id; connector: BusinessConnector }>("/api/business-connectors/whatsapp-embedded-signup/complete/", payload);
     return data;
   },
 };

@@ -6,6 +6,7 @@ from apps.accounts.models import User
 from apps.ai_core.models import AIRequestLog, AgentProfile, BusinessKnowledgeItem
 from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
 from apps.businesses.models import Business, BusinessMember
+from apps.clients.models import Client
 from apps.crm.models import Deal, Pipeline, PipelineStage
 from apps.leads.models import Lead
 from apps.tasks.models import Task
@@ -158,6 +159,53 @@ class BotsFoundationTests(TestCase):
         self.assertEqual(response.data["conversation_id"], str(conversation.public_id))
         self.assertEqual(BotMessage.objects.count(), 1)
         self.assertEqual(BotMessage.objects.get().text, "Второе сообщение")
+
+    @override_settings(AI_PROVIDER="mock", OPENAI_API_KEY="", OPENROUTER_API_KEY="")
+    def test_public_website_chat_auto_pipeline_lead_task_mode_is_guarded_and_idempotent(self):
+        bot = Bot.objects.create(business=self.business, name="Website auto bot", status=Bot.Statuses.ACTIVE)
+        channel = BotChannel.objects.create(
+            bot=bot,
+            channel=BotChannel.Channels.WEBSITE,
+            status=BotChannel.Statuses.ACTIVE,
+            config_json={
+                "auto_crm_pipeline": {
+                    "enabled": True,
+                    "mode": "lead_task",
+                    "require_review_on_fallback": False,
+                }
+            },
+        )
+
+        response = self.api.post(
+            f"/api/public/website-chat/{channel.public_token}/conversations/",
+            {
+                "message": "Здравствуйте, хочу записаться на консультацию",
+                "external_user_id": "auto-visitor-100",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        conversation = BotConversation.objects.get(public_id=response.data["conversation_id"])
+        self.assertIsNotNone(conversation.client_id)
+        self.assertIsNotNone(conversation.lead_id)
+        self.assertIsNone(conversation.deal_id)
+        self.assertTrue(Task.objects.filter(business=self.business, client=conversation.client, lead=conversation.lead, deal__isnull=True).exists())
+        auto_meta = conversation.metadata_json["auto_crm_pipeline"]
+        self.assertEqual(auto_meta["status"], "created_lead_task")
+        self.assertEqual(auto_meta["qualification"]["intent"], "appointment_request")
+
+        second_response = self.api.post(
+            f"/api/public/website-chat/{channel.public_token}/conversations/{conversation.public_id}/messages/",
+            {"message": "И еще вопрос по цене"},
+            format="json",
+        )
+
+        self.assertEqual(second_response.status_code, 201)
+        conversation.refresh_from_db()
+        self.assertEqual(Client.objects.filter(business=self.business).count(), 1)
+        self.assertEqual(Lead.objects.filter(business=self.business, client=conversation.client).count(), 1)
+        self.assertEqual(Task.objects.filter(business=self.business, client=conversation.client, lead=conversation.lead).count(), 1)
 
     def test_public_website_chat_rejects_non_website_channel(self):
         bot = Bot.objects.create(business=self.business, name="Telegram bot", status=Bot.Statuses.ACTIVE)
@@ -685,6 +733,55 @@ class InboxBackendTests(TestCase):
         )
         self.assertEqual(link_response.status_code, 200)
         self.assertEqual(link_response.data["deal"], other_deal.id)
+
+    def test_inbox_run_pipeline_creates_idempotent_crm_chain(self):
+        conversation = BotConversation.objects.create(
+            business=self.business,
+            bot=self.bot,
+            channel=BotConversation.Channels.WHATSAPP,
+            external_user_id="+77017770000",
+        )
+        BotMessage.objects.create(
+            conversation=conversation,
+            direction=BotMessage.Directions.INBOUND,
+            sender_type=BotMessage.SenderTypes.CLIENT,
+            text="Здравствуйте, хочу записаться и узнать цену",
+            payload_json={"whatsapp_profile_name": "Pipeline Client"},
+        )
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            f"/api/inbox/conversations/{conversation.id}/run-pipeline/",
+            {"deal_title": "WhatsApp deal", "create_task": True},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["created"], {"client": True, "lead": True, "deal": True, "task": True})
+        self.assertEqual(response.data["qualification"]["intent"], "appointment_request")
+        self.assertGreaterEqual(response.data["qualification"]["confidence"], 0.7)
+        self.assertIsNotNone(response.data["ai_log_id"])
+        conversation.refresh_from_db()
+        self.assertEqual(conversation.client_id, response.data["client"]["id"])
+        self.assertEqual(conversation.lead_id, response.data["lead"]["id"])
+        self.assertEqual(conversation.deal_id, response.data["deal"]["id"])
+        self.assertEqual(response.data["deal"]["lead"], response.data["lead"]["id"])
+        self.assertEqual(response.data["task"]["deal"], response.data["deal"]["id"])
+        self.assertEqual(conversation.metadata_json["conversation_pipeline"]["qualification"]["intent"], "appointment_request")
+        self.assertTrue(AIRequestLog.objects.filter(prompt_type="conversation_qualification", id=response.data["ai_log_id"]).exists())
+
+        second_response = self.api.post(
+            f"/api/inbox/conversations/{conversation.id}/run-pipeline/",
+            {"deal_title": "WhatsApp deal", "create_task": True},
+            format="json",
+        )
+
+        self.assertEqual(second_response.status_code, 200)
+        self.assertEqual(second_response.data["created"], {"client": False, "lead": False, "deal": False, "task": False})
+        self.assertEqual(Client.objects.filter(business=self.business, whatsapp_id="+77017770000").count(), 1)
+        self.assertEqual(Lead.objects.filter(business=self.business, client_id=response.data["client"]["id"]).count(), 1)
+        self.assertEqual(Deal.objects.filter(business=self.business, client_id=response.data["client"]["id"]).count(), 1)
+        self.assertEqual(Task.objects.filter(business=self.business, client_id=response.data["client"]["id"]).count(), 1)
 
     def test_inbox_priority_close_reopen_and_mark_unread_actions_work(self):
         self.api.force_authenticate(self.owner)

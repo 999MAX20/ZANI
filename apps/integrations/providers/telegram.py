@@ -1,4 +1,5 @@
 import json
+from urllib import parse as urllib_parse
 from urllib import request as urllib_request
 
 from django.conf import settings
@@ -17,9 +18,23 @@ class TelegramProvider(BaseChannelProvider):
     def verify_webhook(self, request):
         expected_secret = settings.TELEGRAM_WEBHOOK_SECRET
         provided_secret = request.META.get(TELEGRAM_SECRET_HEADER, "")
-        if expected_secret and provided_secret != expected_secret:
+        if expected_secret and provided_secret == expected_secret:
+            return provided_secret
+        if provided_secret and self._is_channel_secret(provided_secret):
+            return provided_secret
+        if expected_secret:
             raise PermissionDenied("Invalid Telegram webhook secret.")
         return provided_secret
+
+    def _is_channel_secret(self, provided_secret):
+        from apps.bots.models import Bot, BotChannel
+
+        return BotChannel.objects.filter(
+            channel=BotChannel.Channels.TELEGRAM,
+            status__in=[BotChannel.Statuses.DRAFT, BotChannel.Statuses.ACTIVE],
+            bot__status__in=[Bot.Statuses.DRAFT, Bot.Statuses.ACTIVE],
+            config_json__webhook_secret=provided_secret,
+        ).exists()
 
     def parse_webhook(self, payload, headers=None):
         message = payload.get("message") or payload.get("edited_message")
@@ -134,10 +149,58 @@ class TelegramProvider(BaseChannelProvider):
             )
             return {"ok": False, "mock": False, "reason": str(exc), "token_configured": True}
 
+    def get_updates(self, channel, *, offset=None, limit=20):
+        business = channel.bot.business
+        token = channel.config_json.get("bot_token", "")
+        safe_payload = {"token_configured": bool(token), "offset": offset, "limit": limit}
+        if not token:
+            self.log_event(
+                business=business,
+                channel=channel.channel,
+                direction=IntegrationEventLog.Directions.INBOUND,
+                payload=safe_payload,
+                status=IntegrationEventLog.Statuses.FAILED,
+                error="Telegram bot token is missing.",
+            )
+            return {"ok": False, "result": [], "reason": "Telegram bot token is missing."}
+
+        params = {"limit": max(1, min(int(limit or 20), 100))}
+        if offset is not None:
+            params["offset"] = int(offset)
+        url = f"{settings.TELEGRAM_BASE_API_URL}/bot{token}/getUpdates?{urllib_parse.urlencode(params)}"
+        request = urllib_request.Request(url, method="GET")
+        try:
+            with urllib_request.urlopen(request, timeout=10) as response:
+                result = json.loads(response.read().decode("utf-8"))
+            self.log_event(
+                business=business,
+                channel=channel.channel,
+                direction=IntegrationEventLog.Directions.INBOUND,
+                payload={**safe_payload, "updates_count": len(result.get("result") or [])},
+                status=IntegrationEventLog.Statuses.SENT if result.get("ok") else IntegrationEventLog.Statuses.FAILED,
+                error="" if result.get("ok") else str(result.get("description") or ""),
+            )
+            return result
+        except Exception as exc:
+            self.log_event(
+                business=business,
+                channel=channel.channel,
+                direction=IntegrationEventLog.Directions.INBOUND,
+                payload=safe_payload,
+                status=IntegrationEventLog.Statuses.FAILED,
+                error=str(exc),
+            )
+            return {"ok": False, "result": [], "reason": str(exc)}
+
     def set_webhook(self, channel, webhook_url):
         business = channel.bot.business
         token = channel.config_json.get("bot_token", "")
-        safe_payload = {"webhook_url": webhook_url, "token_configured": bool(token)}
+        webhook_secret = channel.config_json.get("webhook_secret", "")
+        safe_payload = {
+            "webhook_url": webhook_url,
+            "token_configured": bool(token),
+            "webhook_secret_configured": bool(webhook_secret),
+        }
         if not settings.TELEGRAM_ENABLED or not token:
             self.log_event(
                 business=business,
@@ -147,11 +210,21 @@ class TelegramProvider(BaseChannelProvider):
                 status=IntegrationEventLog.Statuses.MOCKED,
             )
             return {"ok": True, "mock": True, "reason": "Telegram disabled or bot token missing."}
+        if not webhook_secret:
+            self.log_event(
+                business=business,
+                channel=channel.channel,
+                direction=IntegrationEventLog.Directions.OUTBOUND,
+                payload=safe_payload,
+                status=IntegrationEventLog.Statuses.FAILED,
+                error="Telegram webhook secret is missing.",
+            )
+            return {"ok": False, "mock": False, "reason": "Telegram webhook secret is missing."}
 
         url = f"{settings.TELEGRAM_BASE_API_URL}/bot{token}/setWebhook"
         request = urllib_request.Request(
             url,
-            data=json.dumps({"url": webhook_url}).encode("utf-8"),
+            data=json.dumps({"url": webhook_url, "secret_token": webhook_secret}).encode("utf-8"),
             headers={"Content-Type": "application/json"},
             method="POST",
         )

@@ -29,9 +29,11 @@ from apps.conversations.inbox_serializers import (
     InboxLinkLeadSerializer,
     InboxMessageSerializer,
     InboxOutboundMessageSerializer,
+    InboxRunPipelineSerializer,
 )
+from apps.conversations.pipeline import default_pipeline_and_stage, last_message_text, run_conversation_pipeline, source_from_channel
 from apps.core.permissions import accessible_businesses
-from apps.crm.models import Deal, Pipeline, PipelineStage
+from apps.crm.models import Deal
 from apps.crm.serializers import DealSerializer
 from apps.leads.models import Lead
 from apps.leads.serializers import LeadSerializer
@@ -170,6 +172,10 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
             value = params.get(field)
             if value:
                 queryset = queryset.filter(**{field: value})
+
+        bot = params.get("bot")
+        if bot:
+            queryset = queryset.filter(bot_id=bot)
 
         assigned_to = params.get("assigned_to")
         if assigned_to == "me":
@@ -359,6 +365,52 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
         )
         return Response(TaskSerializer(task).data, status=status.HTTP_201_CREATED)
 
+    @action(detail=True, methods=["post"], url_path="run-pipeline")
+    def run_pipeline(self, request, pk=None):
+        conversation = self.get_object()
+        assert_can(request.user, conversation.business, Resources.CONVERSATIONS, Actions.UPDATE, obj=conversation)
+        assert_can(request.user, conversation.business, Resources.CLIENTS, Actions.CREATE)
+        serializer = InboxRunPipelineSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        if data.get("create_lead", True):
+            assert_can(request.user, conversation.business, Resources.LEADS, Actions.CREATE)
+        if data.get("create_deal", True):
+            assert_can(request.user, conversation.business, Resources.DEALS, Actions.CREATE)
+        if data.get("create_task", True):
+            assert_can(request.user, conversation.business, Resources.TASKS, Actions.CREATE)
+
+        result = run_conversation_pipeline(
+            conversation=conversation,
+            actor=request.user,
+            create_lead=data.get("create_lead", True),
+            create_deal=data.get("create_deal", True),
+            create_task=data.get("create_task", True),
+            lead_message=data.get("lead_message", ""),
+            deal_title=data.get("deal_title", ""),
+            deal_amount=data.get("deal_amount", 0),
+            deal_currency=data.get("deal_currency") or "KZT",
+            task_title=data.get("task_title", ""),
+            task_description=data.get("task_description", ""),
+            task_priority=data.get("task_priority", Task.Priorities.NORMAL),
+            task_due_at=data.get("task_due_at"),
+            use_ai_qualification=data.get("use_ai_qualification", True),
+            apply_ai_decisions=data.get("apply_ai_decisions", True),
+        )
+        return Response(
+            {
+                "conversation": self.get_serializer(result.conversation).data,
+                "client": ClientSerializer(result.client).data,
+                "lead": LeadSerializer(result.lead).data if result.lead else None,
+                "deal": DealSerializer(result.deal).data if result.deal else None,
+                "task": TaskSerializer(result.task).data if result.task else None,
+                "created": result.created,
+                "qualification": result.qualification.to_dict() if result.qualification else None,
+                "ai_log_id": result.ai_log_id,
+            },
+            status=status.HTTP_200_OK,
+        )
+
     @action(detail=True, methods=["post"], url_path="link-lead")
     def link_lead(self, request, pk=None):
         conversation = self.get_object()
@@ -439,18 +491,16 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
         if conversation.lead_id:
             return Response(LeadSerializer(conversation.lead).data)
 
-        client = conversation.client or self._create_client_from_conversation(conversation)
-        lead = Lead.objects.create(
-            business=conversation.business,
-            client=client,
-            source=self._source_from_channel(conversation.channel),
-            message=serializer.validated_data.get("message") or self._last_message_text(conversation),
-            responsible_user=request.user,
+        result = run_conversation_pipeline(
+            conversation=conversation,
+            actor=request.user,
+            create_lead=True,
+            create_deal=False,
+            create_task=False,
+            lead_message=serializer.validated_data.get("message", ""),
+            use_ai_qualification=False,
         )
-        conversation.client = client
-        conversation.lead = lead
-        conversation.save(update_fields=["client", "lead", "updated_at"])
-        return Response(LeadSerializer(lead).data, status=status.HTTP_201_CREATED)
+        return Response(LeadSerializer(result.lead).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["post"], url_path="link-deal")
     def link_deal(self, request, pk=None):
@@ -482,48 +532,28 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
         if conversation.deal_id:
             return Response(DealSerializer(conversation.deal).data)
 
-        client = conversation.client or self._create_client_from_conversation(conversation)
-        lead = conversation.lead
-        pipeline, stage = self._default_pipeline_and_stage(conversation.business)
-        title = serializer.validated_data.get("title") or f"Deal: {client.full_name}"
-        deal = Deal.objects.create(
-            business=conversation.business,
-            client=client,
-            lead=lead,
-            pipeline=pipeline,
-            stage=stage,
-            title=title,
-            amount=serializer.validated_data.get("amount", 0),
-            currency=serializer.validated_data.get("currency") or "KZT",
-            owner=request.user,
-            source=self._source_from_channel(conversation.channel),
+        result = run_conversation_pipeline(
+            conversation=conversation,
+            actor=request.user,
+            create_lead=True,
+            create_deal=True,
+            create_task=False,
+            deal_title=serializer.validated_data.get("title", ""),
+            deal_amount=serializer.validated_data.get("amount", 0),
+            deal_currency=serializer.validated_data.get("currency") or "KZT",
+            use_ai_qualification=False,
         )
-        conversation.client = client
-        conversation.deal = deal
-        conversation.save(update_fields=["client", "deal", "updated_at"])
-        return Response(DealSerializer(deal).data, status=status.HTTP_201_CREATED)
+        return Response(DealSerializer(result.deal).data, status=status.HTTP_201_CREATED)
 
     def _source_from_channel(self, channel):
-        allowed_sources = {choice[0] for choice in Lead.Sources.choices}
-        return channel if channel in allowed_sources else Lead.Sources.OTHER
+        return source_from_channel(channel)
 
     def _create_client_from_conversation(self, conversation):
-        full_name = conversation.external_user_id or conversation.external_thread_id or f"Inbox visitor #{conversation.id}"
-        return Client.objects.create(
-            business=conversation.business,
-            full_name=full_name,
-            source=self._source_from_channel(conversation.channel),
-        )
+        result = run_conversation_pipeline(conversation=conversation, create_lead=False, create_deal=False, create_task=False, source="api")
+        return result.client
 
     def _default_pipeline_and_stage(self, business):
-        pipeline = Pipeline.objects.filter(business=business, is_default=True).first() or Pipeline.objects.filter(business=business).first()
-        if pipeline is None:
-            pipeline = Pipeline.objects.create(business=business, name="Sales Pipeline", slug="sales", is_default=True)
-        stage = PipelineStage.objects.filter(business=business, pipeline=pipeline).order_by("order", "id").first()
-        if stage is None:
-            stage = PipelineStage.objects.create(business=business, pipeline=pipeline, name="New", order=1, probability=10)
-        return pipeline, stage
+        return default_pipeline_and_stage(business)
 
     def _last_message_text(self, conversation):
-        message = conversation.messages.order_by("-created_at").first()
-        return message.text if message else ""
+        return last_message_text(conversation)

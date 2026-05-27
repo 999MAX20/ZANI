@@ -6,6 +6,7 @@ from apps.billing.models import UsageCounter
 from apps.billing.entitlements import EntitlementMetrics, assert_entitlement_allows
 from apps.billing.usage import increment_usage
 from apps.clients.models import Client
+from apps.conversations.auto_pipeline import maybe_run_auto_pipeline
 from apps.leads.models import Lead
 
 
@@ -45,9 +46,12 @@ class TelegramSetWebhookSerializer(serializers.Serializer):
 
 
 class WhatsAppChannelConfigSerializer(serializers.Serializer):
-    provider_mode = serializers.ChoiceField(choices=["mock", "disabled"], required=False)
+    provider_mode = serializers.ChoiceField(choices=["mock", "meta_cloud", "disabled"], required=False)
     webhook_secret = serializers.CharField(required=False, allow_blank=True, trim_whitespace=True)
     phone_number_id = serializers.CharField(required=False, allow_blank=True, trim_whitespace=True)
+    access_token = serializers.CharField(required=False, allow_blank=True, trim_whitespace=True)
+    business_account_id = serializers.CharField(required=False, allow_blank=True, trim_whitespace=True)
+    display_phone_number = serializers.CharField(required=False, allow_blank=True, trim_whitespace=True)
 
 
 class BotConversationSerializer(serializers.ModelSerializer):
@@ -149,6 +153,7 @@ class PublicWebsiteChatConversationCreateSerializer(serializers.Serializer):
             },
         )
         register_bot_message(bot_message)
+        maybe_run_auto_pipeline(conversation=conversation, message=bot_message, channel=channel)
         return {"conversation": conversation, "message": bot_message, "client": client, "lead": lead}
 
     def _get_or_create_client(self, business, full_name, phone, email):
@@ -199,4 +204,6 @@ class PublicWebsiteChatMessageCreateSerializer(serializers.Serializer):
             payload_json={"source": "website_chat"},
         )
         register_bot_message(bot_message)
+        channel = BotChannel.objects.filter(bot=conversation.bot, channel=BotChannel.Channels.WEBSITE).first()
+        maybe_run_auto_pipeline(conversation=conversation, message=bot_message, channel=channel)
         return bot_message

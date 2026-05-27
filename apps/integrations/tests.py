@@ -1,3 +1,8 @@
+import json
+import hashlib
+import hmac
+from unittest.mock import patch
+
 from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
@@ -6,7 +11,7 @@ from apps.businesses.models import Business, BusinessMember
 from apps.accounts.models import User
 from apps.integrations.models import BusinessConnector, IntegrationEventLog
 from apps.integrations.providers import get_provider, send_message
-from apps.integrations.telegram import send_telegram_message
+from apps.integrations.telegram import send_telegram_message, set_telegram_webhook
 from apps.integrations.whatsapp import send_whatsapp_message
 
 
@@ -109,6 +114,28 @@ class TelegramIntegrationSkeletonTests(TestCase):
         self.assertEqual(response.status_code, 403)
         self.assertEqual(BotMessage.objects.count(), 0)
 
+    @override_settings(TELEGRAM_WEBHOOK_SECRET="platform-secret")
+    def test_telegram_webhook_accepts_merchant_channel_secret(self):
+        response = self.api.post(
+            "/api/integrations/telegram/webhook/",
+            {
+                "update_id": 1001,
+                "message": {
+                    "message_id": 6,
+                    "from": {"id": 43, "username": "merchant_client"},
+                    "chat": {"id": 778},
+                    "text": "Сообщение в бот мерчанта",
+                },
+            },
+            format="json",
+            HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN="telegram-secret",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        conversation = BotConversation.objects.get()
+        self.assertEqual(conversation.bot, self.bot)
+        self.assertEqual(conversation.external_user_id, "778")
+
     @override_settings(TELEGRAM_ENABLED=False)
     def test_outbound_send_is_mock_when_disabled(self):
         result = send_telegram_message(self.channel, chat_id="777", text="Hello")
@@ -201,6 +228,55 @@ class TelegramIntegrationSkeletonTests(TestCase):
         self.assertNotIn("merchant-token", str(connector.config_json))
 
     @override_settings(TELEGRAM_ENABLED=False)
+    def test_telegram_connector_health_uses_bot_channel_token_config(self):
+        self.api.force_authenticate(self.owner)
+        self.api.post(f"/api/bot-channels/{self.channel.id}/telegram-test-connection/")
+        connector = BusinessConnector.objects.get(
+            business=self.business,
+            provider=BusinessConnector.Providers.TELEGRAM,
+            name="Telegram",
+        )
+
+        response = self.api.post(f"/api/business-connectors/{connector.id}/health-check/")
+
+        self.assertEqual(response.status_code, 200)
+        connector.refresh_from_db()
+        self.assertEqual(response.data["status"], "succeeded")
+        self.assertEqual(connector.status, BusinessConnector.Statuses.CONNECTED)
+        self.assertEqual(connector.last_error, "")
+
+    @override_settings(TELEGRAM_ENABLED=True, TELEGRAM_BASE_API_URL="https://api.telegram.test")
+    def test_set_telegram_webhook_sends_channel_secret_token(self):
+        captured = {}
+
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, traceback):
+                return False
+
+            def read(self):
+                return json.dumps({"ok": True, "result": True}).encode("utf-8")
+
+        def fake_urlopen(request, timeout):
+            captured["url"] = request.full_url
+            captured["payload"] = json.loads(request.data.decode("utf-8"))
+            captured["timeout"] = timeout
+            return FakeResponse()
+
+        with patch("apps.integrations.providers.telegram.urllib_request.urlopen", side_effect=fake_urlopen):
+            result = set_telegram_webhook(self.channel, "https://api.zani.kz/api/integrations/telegram/webhook/")
+
+        self.assertTrue(result["ok"])
+        self.assertEqual(captured["url"], "https://api.telegram.test/botmerchant-token/setWebhook")
+        self.assertEqual(captured["payload"]["url"], "https://api.zani.kz/api/integrations/telegram/webhook/")
+        self.assertEqual(captured["payload"]["secret_token"], "telegram-secret")
+        log = IntegrationEventLog.objects.filter(provider="telegram", status=IntegrationEventLog.Statuses.SENT).latest("created_at")
+        self.assertTrue(log.payload_json["webhook_secret_configured"])
+        self.assertNotIn("telegram-secret", str(log.payload_json))
+
+    @override_settings(TELEGRAM_ENABLED=False)
     def test_inbox_outbound_telegram_reply_uses_provider_layer(self):
         conversation = BotConversation.objects.create(
             business=self.business,
@@ -282,6 +358,67 @@ class WhatsAppIntegrationFoundationTests(TestCase):
             ).exists()
         )
 
+    @override_settings(WHATSAPP_VERIFY_TOKEN="verify-token")
+    def test_whatsapp_webhook_get_verification_returns_challenge(self):
+        response = self.api.get(
+            "/api/integrations/whatsapp/webhook/?hub.mode=subscribe&hub.verify_token=verify-token&hub.challenge=challenge-123"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content.decode("utf-8"), "challenge-123")
+
+    @override_settings(WHATSAPP_APP_SECRET="app-secret")
+    def test_meta_whatsapp_webhook_routes_by_phone_number_id_and_signature(self):
+        self.channel.config_json = {
+            "provider_mode": "meta_cloud",
+            "phone_number_id": "phone-123",
+            "access_token": "meta-token",
+        }
+        self.channel.external_id = "phone-123"
+        self.channel.save(update_fields=["config_json", "external_id", "updated_at"])
+        payload = {
+            "object": "whatsapp_business_account",
+            "entry": [
+                {
+                    "changes": [
+                        {
+                            "value": {
+                                "metadata": {"phone_number_id": "phone-123", "display_phone_number": "77015550101"},
+                                "contacts": [{"profile": {"name": "Meta Client"}, "wa_id": "77015550102"}],
+                                "messages": [
+                                    {
+                                        "from": "77015550102",
+                                        "id": "wamid.1",
+                                        "timestamp": "1710000000",
+                                        "type": "text",
+                                        "text": {"body": "Meta Cloud hello"},
+                                    }
+                                ],
+                            }
+                        }
+                    ]
+                }
+            ],
+        }
+        raw_payload = json.dumps(payload).encode("utf-8")
+        signature = "sha256=" + hmac.new(b"app-secret", raw_payload, hashlib.sha256).hexdigest()
+
+        response = self.api.generic(
+            "POST",
+            "/api/integrations/whatsapp/webhook/",
+            raw_payload,
+            content_type="application/json",
+            HTTP_X_HUB_SIGNATURE_256=signature,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        conversation = BotConversation.objects.get(channel=BotConversation.Channels.WHATSAPP)
+        message = BotMessage.objects.get(conversation=conversation)
+        self.assertEqual(conversation.external_user_id, "77015550102")
+        self.assertEqual(message.text, "Meta Cloud hello")
+        self.assertEqual(message.external_message_id, "wamid.1")
+        self.assertEqual(message.payload_json["whatsapp_phone_number_id"], "phone-123")
+
     def test_whatsapp_outbound_uses_provider_layer(self):
         result = send_whatsapp_message(self.channel, recipient_id="+77015550101", text="Здравствуйте")
 
@@ -311,6 +448,90 @@ class WhatsAppIntegrationFoundationTests(TestCase):
         self.assertTrue(config_response.data["webhook_secret_configured"])
         self.assertEqual(status_response.status_code, 200)
         self.assertIn("/api/integrations/whatsapp/webhook/", status_response.data["webhook_url"])
+
+    @override_settings(WHATSAPP_ENABLED=False)
+    def test_merchant_can_configure_meta_cloud_credentials_and_test_mock(self):
+        self.api.force_authenticate(self.owner)
+
+        config_response = self.api.post(
+            f"/api/bot-channels/{self.channel.id}/whatsapp-config/",
+            {
+                "provider_mode": "meta_cloud",
+                "phone_number_id": "phone-123",
+                "access_token": "meta-access-token",
+                "business_account_id": "waba-123",
+                "display_phone_number": "+77015550101",
+            },
+            format="json",
+        )
+        test_response = self.api.post(f"/api/bot-channels/{self.channel.id}/whatsapp-test-connection/")
+
+        self.assertEqual(config_response.status_code, 200)
+        self.assertEqual(config_response.data["provider_mode"], "meta_cloud")
+        self.assertTrue(config_response.data["phone_number_id_configured"])
+        self.assertTrue(config_response.data["access_token_configured"])
+        self.assertEqual(test_response.status_code, 200)
+        self.assertTrue(test_response.data["ok"])
+        self.assertTrue(test_response.data["mock"])
+        channel_response = self.api.get(f"/api/bot-channels/{self.channel.id}/")
+        self.assertEqual(channel_response.data["config_json"]["access_token"], "configured")
+        self.assertNotIn("meta-access-token", str(channel_response.data))
+        connector = BusinessConnector.objects.get(business=self.business, provider=BusinessConnector.Providers.WHATSAPP, name="WhatsApp")
+        self.assertEqual(connector.status, BusinessConnector.Statuses.CONNECTED)
+        self.assertTrue(connector.config_json["access_token_configured"])
+        self.assertNotIn("meta-access-token", str(connector.config_json))
+
+    @override_settings(META_APP_ID="app-id", META_APP_SECRET="app-secret", WHATSAPP_EMBEDDED_SIGNUP_CONFIG_ID="config-id")
+    def test_whatsapp_embedded_signup_start_returns_authorization_url(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            "/api/business-connectors/whatsapp-embedded-signup/start/",
+            {"business": self.business.id, "redirect_uri": "https://app.zani.kz/dashboard/integrations"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("facebook.com/dialog/oauth", response.data["authorization_url"])
+        self.assertIn("state=", response.data["authorization_url"])
+        self.assertTrue(response.data["app_configured"])
+        self.assertTrue(response.data["config_id_configured"])
+
+    @override_settings(META_APP_ID="app-id", META_APP_SECRET="app-secret")
+    def test_whatsapp_embedded_signup_complete_saves_channel_and_connector(self):
+        self.api.force_authenticate(self.owner)
+        start_response = self.api.post(
+            "/api/business-connectors/whatsapp-embedded-signup/start/",
+            {"business": self.business.id, "redirect_uri": "https://app.zani.kz/dashboard/integrations"},
+            format="json",
+        )
+
+        with patch(
+            "apps.integrations.whatsapp.embedded_signup.exchange_code_for_access_token",
+            return_value={"access_token": "embedded-access-token"},
+        ):
+            complete_response = self.api.post(
+                "/api/business-connectors/whatsapp-embedded-signup/complete/",
+                {
+                    "business": self.business.id,
+                    "code": "embedded-code",
+                    "state": start_response.data["state"],
+                    "redirect_uri": "https://app.zani.kz/dashboard/integrations",
+                    "phone_number_id": "phone-embedded",
+                    "waba_id": "waba-embedded",
+                    "display_phone_number": "+77015550101",
+                },
+                format="json",
+            )
+
+        self.assertEqual(complete_response.status_code, 200)
+        channel = BotChannel.objects.get(channel=BotChannel.Channels.WHATSAPP, external_id="phone-embedded")
+        self.assertEqual(channel.config_json["provider_mode"], "meta_cloud")
+        self.assertEqual(channel.config_json["access_token"], "embedded-access-token")
+        connector = BusinessConnector.objects.get(business=self.business, provider=BusinessConnector.Providers.WHATSAPP, name="WhatsApp")
+        self.assertEqual(connector.status, BusinessConnector.Statuses.CONNECTED)
+        self.assertTrue(connector.config_json["embedded_signup"])
+        self.assertNotIn("embedded-access-token", str(connector.config_json))
 
     def test_integration_logs_are_tenant_scoped(self):
         IntegrationEventLog.objects.create(

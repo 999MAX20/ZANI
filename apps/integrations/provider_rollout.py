@@ -293,16 +293,24 @@ def _whatsapp_check(order):
         _idempotency_gate("whatsapp"),
         _connector_health_gate("whatsapp"),
         _gate(
-            "whatsapp.real_adapter",
-            "Real paid provider adapter is intentionally gated",
-            not enabled,
-            f"WHATSAPP_ENABLED={enabled}; current adapter is pilot/mock placeholder.",
-            "Do not set WHATSAPP_ENABLED=True until Meta/Twilio/360dialog adapter, webhook verification and recovery docs are implemented.",
+            "whatsapp.meta_cloud_security",
+            "Meta Cloud webhook security configured before real mode",
+            (not enabled)
+            or (
+                _configured(getattr(settings, "WHATSAPP_VERIFY_TOKEN", ""))
+                and _configured(getattr(settings, "WHATSAPP_APP_SECRET", ""))
+            ),
+            (
+                f"WHATSAPP_ENABLED={enabled}; "
+                f"WHATSAPP_VERIFY_TOKEN configured={bool(getattr(settings, 'WHATSAPP_VERIFY_TOKEN', ''))}; "
+                f"WHATSAPP_APP_SECRET configured={bool(getattr(settings, 'WHATSAPP_APP_SECRET', ''))}"
+            ),
+            "Set WHATSAPP_VERIFY_TOKEN and WHATSAPP_APP_SECRET before enabling Meta Cloud webhook traffic.",
         ),
         _queue_gate("whatsapp", enabled),
         _observability_gate("whatsapp", enabled),
     ]
-    return _provider_check("whatsapp", "WhatsApp provider pilot", order, enabled, gates)
+    return _provider_check("whatsapp", "WhatsApp Meta Cloud provider", order, enabled, gates)
 
 
 def _instagram_check(order):

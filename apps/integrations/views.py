@@ -6,7 +6,9 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework.views import APIView
+from django.conf import settings
 from django.db.models import Count
+from django.http import HttpResponse
 from django.utils import timezone
 
 from apps.businesses.access import Actions, Resources, assert_can, can
@@ -40,12 +42,15 @@ from apps.integrations.serializers import (
     ConnectorSyncRunSerializer,
     IntegrationEventLogSerializer,
     WhatsAppConnectionRequestSerializer,
+    WhatsAppEmbeddedSignupCompleteSerializer,
+    WhatsAppEmbeddedSignupStartSerializer,
     WebhookDeliveryLogSerializer,
     WebhookEndpointSerializer,
 )
 from apps.integrations.telegram import save_telegram_inbound_message, verify_telegram_secret
 from apps.integrations.webhooks import deliver_webhook_event
 from apps.integrations.whatsapp import save_whatsapp_inbound_message, verify_whatsapp_secret
+from apps.integrations.whatsapp.embedded_signup import build_embedded_signup_url, complete_embedded_signup
 
 
 class IntegrationEventLogViewSet(ReadOnlyModelViewSet):
@@ -131,6 +136,59 @@ class BusinessConnectorViewSet(TenantModelViewSet):
         )
         response_status = status.HTTP_201_CREATED if created else status.HTTP_200_OK
         return Response(self.get_serializer(connector).data, status=response_status)
+
+    @action(detail=False, methods=["post"], url_path="whatsapp-embedded-signup/start")
+    def whatsapp_embedded_signup_start(self, request):
+        serializer = WhatsAppEmbeddedSignupStartSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        business = serializer.validated_data["business"]
+        assert_can(request.user, business, Resources.INTEGRATIONS, Actions.MANAGE)
+        redirect_uri = serializer.validated_data.get("redirect_uri") or request.build_absolute_uri("/dashboard/integrations")
+        authorization_url, state = build_embedded_signup_url(business=business, user=request.user, redirect_uri=redirect_uri)
+        return Response(
+            {
+                "authorization_url": authorization_url,
+                "state": state,
+                "redirect_uri": redirect_uri,
+                "app_configured": bool(settings.META_APP_ID and settings.META_APP_SECRET),
+                "config_id_configured": bool(settings.WHATSAPP_EMBEDDED_SIGNUP_CONFIG_ID),
+            }
+        )
+
+    @action(detail=False, methods=["post"], url_path="whatsapp-embedded-signup/complete")
+    def whatsapp_embedded_signup_complete(self, request):
+        serializer = WhatsAppEmbeddedSignupCompleteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        business = serializer.validated_data["business"]
+        assert_can(request.user, business, Resources.INTEGRATIONS, Actions.MANAGE)
+        redirect_uri = serializer.validated_data.get("redirect_uri") or request.build_absolute_uri("/dashboard/integrations")
+        try:
+            channel, connector = complete_embedded_signup(
+                business=business,
+                user=request.user,
+                code=serializer.validated_data["code"],
+                state=serializer.validated_data["state"],
+                redirect_uri=redirect_uri,
+                phone_number_id=serializer.validated_data["phone_number_id"],
+                waba_id=serializer.validated_data.get("waba_id", ""),
+                display_phone_number=serializer.validated_data.get("display_phone_number", ""),
+            )
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        write_audit_log(
+            request,
+            AuditLog.Actions.UPDATE,
+            connector,
+            business=business,
+            metadata={"kind": "whatsapp_embedded_signup_completed", "bot_channel_id": channel.id},
+        )
+        return Response(
+            {
+                "ok": True,
+                "channel_id": channel.id,
+                "connector": self.get_serializer(connector).data,
+            }
+        )
 
     @action(detail=True, methods=["post"])
     def connect(self, request, pk=None):
@@ -412,6 +470,14 @@ class WhatsAppWebhookView(APIView):
     authentication_classes = []
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "integration_webhook"
+
+    def get(self, request):
+        mode = request.query_params.get("hub.mode")
+        token = request.query_params.get("hub.verify_token")
+        challenge = request.query_params.get("hub.challenge")
+        if mode == "subscribe" and token and token == settings.WHATSAPP_VERIFY_TOKEN and challenge:
+            return HttpResponse(challenge, status=200, content_type="text/plain")
+        return Response({"detail": "Invalid WhatsApp verification token."}, status=status.HTTP_403_FORBIDDEN)
 
     def post(self, request):
         provided_secret = verify_whatsapp_secret(request)

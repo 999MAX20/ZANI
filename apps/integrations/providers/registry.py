@@ -1,5 +1,5 @@
 from apps.integrations.providers.mock import MockChannelProvider
-from apps.integrations.providers.instagram import InstagramMetaPlaceholderAdapter
+from apps.integrations.providers.instagram import InstagramProvider
 from apps.integrations.providers.telegram import TelegramProvider
 from apps.integrations.providers.website import WebsiteMockProvider
 from apps.integrations.providers.whatsapp import WhatsAppProvider
@@ -9,7 +9,7 @@ PROVIDERS = {
     "website": WebsiteMockProvider(),
     "telegram": TelegramProvider(),
     "whatsapp": WhatsAppProvider(),
-    "instagram": InstagramMetaPlaceholderAdapter(),
+    "instagram": InstagramProvider(),
     "email": MockChannelProvider("email"),
 }
 

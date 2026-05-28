@@ -7,10 +7,37 @@ from django.utils import timezone
 from apps.analytics.models import AnalyticsEvent
 from apps.leads.models import Lead
 from apps.notifications.models import Notification
-from apps.scheduling.models import Appointment, WorkingHours
+from apps.scheduling.models import Appointment, AppointmentMessageSetting, WorkingHours
 
 
 SLOT_STEP_MINUTES = 30
+APPOINTMENT_CONFIRMATION_LABEL = "Подтвердить запись"
+APPOINTMENT_REMINDER_LABEL = "Напомнить о записи"
+APPOINTMENT_THANK_YOU_LABEL = "Поблагодарить после визита"
+
+APPOINTMENT_MESSAGE_DEFAULTS = {
+    AppointmentMessageSetting.Scenarios.CONFIRMATION: {
+        "label": APPOINTMENT_CONFIRMATION_LABEL,
+        "offset_minutes": -24 * 60,
+        "template_text": (
+            "Здравствуйте, {client_name}! Подтвердите, пожалуйста, запись на {service_name}{resource_text} "
+            "{date} в {time}.{address_text} Ответьте «Да», если всё в силе, или «Отменить», если нужно перенести."
+        ),
+    },
+    AppointmentMessageSetting.Scenarios.REMINDER: {
+        "label": APPOINTMENT_REMINDER_LABEL,
+        "offset_minutes": -2 * 60,
+        "template_text": "Напоминаем о записи на {service_name}{resource_text} сегодня в {time}.{address_text} Ждём вас!",
+    },
+    AppointmentMessageSetting.Scenarios.THANK_YOU: {
+        "label": APPOINTMENT_THANK_YOU_LABEL,
+        "offset_minutes": 30,
+        "template_text": (
+            "Спасибо, что выбрали нас! Надеемся, услуга «{service_name}» прошла отлично. "
+            "Если остались вопросы или хотите записаться снова, просто ответьте на это сообщение."
+        ),
+    },
+}
 
 WORKING_HOURS_PRESETS = {
     "weekdays_9_18": {
@@ -205,15 +232,172 @@ def create_appointment_from_lead(lead, service, start_at, resource=None):
         source=appointment.source,
         metadata={"appointment_id": appointment.id, "lead_id": lead.id},
     )
-    Notification.objects.create(
-        business=lead.business,
-        recipient=lead.responsible_user or lead.business.owner,
-        client=lead.client,
-        appointment=appointment,
-        channel=Notification.Channels.SYSTEM,
-        text=f"Reminder: appointment for {service.name} at {appointment.start_at:%Y-%m-%d %H:%M}",
-        send_at=appointment.start_at - timedelta(hours=2),
-        status=Notification.Statuses.PENDING,
-    )
+    schedule_appointment_followups(appointment, responsible_user=lead.responsible_user)
 
     return appointment
+
+
+def schedule_appointment_followups(appointment, *, responsible_user=None):
+    if appointment.status in {Appointment.Statuses.CANCELLED, Appointment.Statuses.COMPLETED, Appointment.Statuses.NO_SHOW}:
+        return []
+
+    cancel_appointment_followups(appointment)
+    now = timezone.now()
+    notifications = []
+    for kind, label, send_at, text, channel in _appointment_followup_specs(appointment):
+        if send_at <= now:
+            send_at = now + timedelta(minutes=5)
+        recipient = None if channel != Notification.Channels.SYSTEM else (responsible_user or appointment.business.owner)
+        notifications.append(
+            Notification.objects.create(
+                business=appointment.business,
+                recipient=recipient,
+                client=appointment.client,
+                appointment=appointment,
+                channel=channel,
+                category=Notification.Categories.SALES,
+                priority=Notification.Priorities.HIGH if kind == "confirmation" else Notification.Priorities.NORMAL,
+                text=text,
+                send_at=send_at,
+                status=Notification.Statuses.PENDING,
+                action_url=f"/dashboard/calendar?appointment={appointment.id}",
+                action_label=label,
+            )
+        )
+    return notifications
+
+
+def schedule_post_service_followup(appointment, *, responsible_user=None):
+    if appointment.status != Appointment.Statuses.COMPLETED:
+        return None
+    setting = get_appointment_message_setting(appointment.business, AppointmentMessageSetting.Scenarios.THANK_YOU)
+    if not setting.is_enabled:
+        return None
+    Notification.objects.filter(
+        business=appointment.business,
+        appointment=appointment,
+        status=Notification.Statuses.PENDING,
+        action_label=APPOINTMENT_THANK_YOU_LABEL,
+    ).update(status=Notification.Statuses.CANCELLED, updated_at=timezone.now())
+
+    channel = _appointment_notification_channel(appointment.client, setting.channel_policy)
+    recipient = None if channel != Notification.Channels.SYSTEM else (responsible_user or appointment.business.owner)
+    send_at = max(timezone.now() + timedelta(minutes=5), appointment.end_at + timedelta(minutes=setting.offset_minutes))
+    return Notification.objects.create(
+        business=appointment.business,
+        recipient=recipient,
+        client=appointment.client,
+        appointment=appointment,
+        channel=channel,
+        category=Notification.Categories.SALES,
+        priority=Notification.Priorities.NORMAL,
+        text=render_appointment_message(appointment, setting.template_text),
+        send_at=send_at,
+        status=Notification.Statuses.PENDING,
+        action_url=f"/dashboard/calendar?appointment={appointment.id}",
+        action_label=APPOINTMENT_THANK_YOU_LABEL,
+    )
+
+
+def cancel_appointment_followups(appointment):
+    labels = {APPOINTMENT_CONFIRMATION_LABEL, APPOINTMENT_REMINDER_LABEL, APPOINTMENT_THANK_YOU_LABEL}
+    return Notification.objects.filter(
+        business=appointment.business,
+        appointment=appointment,
+        status=Notification.Statuses.PENDING,
+        action_label__in=labels,
+    ).update(status=Notification.Statuses.CANCELLED, updated_at=timezone.now())
+
+
+def _appointment_followup_specs(appointment):
+    specs = []
+    for scenario in [AppointmentMessageSetting.Scenarios.CONFIRMATION, AppointmentMessageSetting.Scenarios.REMINDER]:
+        setting = get_appointment_message_setting(appointment.business, scenario)
+        if not setting.is_enabled:
+            continue
+        specs.append(
+            (
+                scenario,
+                setting.label,
+                appointment.start_at + timedelta(minutes=setting.offset_minutes),
+                render_appointment_message(appointment, setting.template_text),
+                _appointment_notification_channel(appointment.client, setting.channel_policy),
+            )
+        )
+    return specs
+
+
+def ensure_appointment_message_settings(business):
+    settings = []
+    for scenario, defaults in APPOINTMENT_MESSAGE_DEFAULTS.items():
+        setting, _ = AppointmentMessageSetting.objects.get_or_create(
+            business=business,
+            scenario=scenario,
+            defaults={
+                "label": defaults["label"],
+                "offset_minutes": defaults["offset_minutes"],
+                "template_text": defaults["template_text"],
+                "channel_policy": AppointmentMessageSetting.ChannelPolicies.AUTO,
+                "is_enabled": True,
+            },
+        )
+        settings.append(setting)
+    return settings
+
+
+def get_appointment_message_setting(business, scenario):
+    setting = AppointmentMessageSetting.objects.filter(business=business, scenario=scenario).first()
+    if setting:
+        return setting
+    defaults = APPOINTMENT_MESSAGE_DEFAULTS[scenario]
+    return AppointmentMessageSetting(
+        business=business,
+        scenario=scenario,
+        label=defaults["label"],
+        offset_minutes=defaults["offset_minutes"],
+        template_text=defaults["template_text"],
+        channel_policy=AppointmentMessageSetting.ChannelPolicies.AUTO,
+        is_enabled=True,
+    )
+
+
+def render_appointment_message(appointment, template_text):
+    local_start = timezone.localtime(appointment.start_at, _business_zone(appointment.business))
+    local_end = timezone.localtime(appointment.end_at, _business_zone(appointment.business))
+    address = appointment.business.address or ""
+    values = {
+        "business_name": appointment.business.name,
+        "client_name": appointment.client.full_name or appointment.client.phone or "клиент",
+        "service_name": appointment.service.name,
+        "resource_name": appointment.resource.name if appointment.resource_id else "",
+        "resource_text": f" у {appointment.resource.name}" if appointment.resource_id else "",
+        "date": local_start.strftime("%d.%m"),
+        "time": local_start.strftime("%H:%M"),
+        "end_time": local_end.strftime("%H:%M"),
+        "address": address,
+        "address_text": f" Адрес: {address}." if address else "",
+    }
+    return template_text.format_map(_SafeFormatDict(values))
+
+
+def _appointment_notification_channel(client, channel_policy):
+    if channel_policy == AppointmentMessageSetting.ChannelPolicies.AUTO:
+        return _preferred_client_channel(client)
+    return channel_policy
+
+
+def _preferred_client_channel(client):
+    if client.telegram_id:
+        return Notification.Channels.TELEGRAM
+    if client.whatsapp_id:
+        return Notification.Channels.WHATSAPP
+    if client.email:
+        return Notification.Channels.EMAIL
+    if client.phone:
+        return Notification.Channels.SMS
+    return Notification.Channels.SYSTEM
+
+
+class _SafeFormatDict(dict):
+    def __missing__(self, key):
+        return "{" + key + "}"

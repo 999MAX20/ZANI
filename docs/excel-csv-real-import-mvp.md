@@ -22,8 +22,10 @@ Already available:
 - preview before confirm;
 - import templates;
 - sales/catalog normalization into `BusinessEvent`;
+- automatic `Excel / CSV` connector status and `ConnectorSyncRun` on confirm;
 - catalog service rows can create/update `Service`;
 - upload size gate;
+- row count gate through `IMPORT_MAX_ROWS`;
 - provider rollout gate:
 
 ```bash
@@ -46,7 +48,8 @@ Current gate is green.
   - duplicate detection;
   - idempotency by external id or stable row hash;
   - import batch summary;
-  - clear failed/partial status.
+- clear failed/partial status.
+- support-visible connector health and last import summary.
 - Do not silently overwrite critical CRM data without a preview.
 
 ### Frontend
@@ -58,6 +61,7 @@ Current gate is green.
   - preview rows/errors;
   - confirm import;
   - show result summary.
+- Merchant-facing copy should stay simple: no connector id, no internal IP, no technical runbook on the main card.
 - Optimize mobile UX:
   - one primary action per step;
   - no dense tables on the first screen;
@@ -71,6 +75,7 @@ Current gate is green.
 - Catalog import creates/updates services from `item_type=service`.
 - Duplicate rows are handled idempotently.
 - Invalid file type/oversized file is rejected.
+- Empty files and row-limit overflow are rejected.
 - Operator without permission cannot import revenue/catalog data.
 
 ## Production Gate
@@ -82,6 +87,7 @@ Before using for real paid-beta merchant data:
 - sample rollback procedure is documented;
 - row-level errors are understandable to non-technical users;
 - import job audit is visible to owner/support;
+- `Excel / CSV` connector last sync and sync run are visible to support;
 - provider rollout gate remains green.
 
 ## Non-goals
@@ -91,4 +97,3 @@ Before using for real paid-beta merchant data:
 - No accounting reconciliation.
 - No inventory write-back.
 - No automatic destructive merge.
-

@@ -1,4 +1,5 @@
 from apps.integrations.models import IntegrationEventLog
+from apps.integrations.sanitization import sanitize_config
 
 
 class BaseChannelProvider:
@@ -19,7 +20,7 @@ class BaseChannelProvider:
             provider=self.provider,
             channel=channel,
             direction=direction,
-            payload_json=payload or {},
+            payload_json=sanitize_config(payload or {}),
             status=status,
             error=error,
         )

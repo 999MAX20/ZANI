@@ -10,6 +10,9 @@ from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
 from apps.conversations.auto_pipeline import maybe_run_auto_pipeline
 from apps.integrations.models import IntegrationEventLog
 from apps.integrations.providers import get_provider, parse_webhook, send_message, verify_webhook
+from apps.notifications.delivery import handle_appointment_followup_reply
+from apps.outreach.consent import record_inbound_consent
+from apps.integrations.sanitization import sanitize_config
 
 
 TELEGRAM_SECRET_HEADER = "HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN"
@@ -30,8 +33,8 @@ def resolve_telegram_channel(provided_secret):
         if channel_secret and channel_secret == provided_secret:
             return channel
 
-    if candidates.count() == 1 and not provided_secret:
-        return candidates.first()
+    if not provided_secret:
+        raise PermissionDenied("Telegram webhook secret is required.")
 
     raise ValidationError("Telegram bot channel was not resolved.")
 
@@ -48,6 +51,7 @@ def parse_inbound_update(update):
 def save_telegram_inbound_message(update, provided_secret):
     channel = resolve_telegram_channel(provided_secret)
     parsed = parse_inbound_update(update)
+    safe_update = sanitize_config(update)
     business = channel.bot.business
     external_message_id = parsed.get("message_id") or str(update.get("update_id") or "")
 
@@ -76,7 +80,7 @@ def save_telegram_inbound_message(update, provided_secret):
                 channel=BotChannel.Channels.TELEGRAM,
                 direction=IntegrationEventLog.Directions.INBOUND,
                 payload_json={
-                    "update": update,
+                    "update": safe_update,
                     "conversation_id": conversation.id,
                     "message_id": existing_message.id,
                     "duplicate": True,
@@ -92,7 +96,7 @@ def save_telegram_inbound_message(update, provided_secret):
         text=parsed["text"],
         external_message_id=external_message_id,
         payload_json={
-            "telegram_update": update,
+            "telegram_update": safe_update,
             "telegram_chat_id": parsed["chat_id"],
             "telegram_sender_id": parsed["sender_id"],
             "telegram_username": parsed["username"],
@@ -101,13 +105,26 @@ def save_telegram_inbound_message(update, provided_secret):
         status=BotMessage.Statuses.RECEIVED,
     )
     register_bot_message(message)
+    handle_appointment_followup_reply(
+        business=conversation.business,
+        channel=BotConversation.Channels.TELEGRAM,
+        external_user_id=conversation.external_user_id,
+        text=message.text,
+    )
     maybe_run_auto_pipeline(conversation=conversation, message=message, channel=channel)
+    record_inbound_consent(
+        business=conversation.business,
+        channel=BotConversation.Channels.TELEGRAM,
+        external_user_id=conversation.external_user_id,
+        text=message.text,
+        conversation=conversation,
+    )
     IntegrationEventLog.objects.create(
         business=conversation.business,
         provider=BotChannel.Channels.TELEGRAM,
         channel=BotChannel.Channels.TELEGRAM,
         direction=IntegrationEventLog.Directions.INBOUND,
-        payload_json={"update": update, "conversation_id": conversation.id, "message_id": message.id},
+        payload_json={"update": safe_update, "conversation_id": conversation.id, "message_id": message.id},
         status=IntegrationEventLog.Statuses.PROCESSED,
     )
     run_automations_for_event(

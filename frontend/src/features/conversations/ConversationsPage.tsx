@@ -1,10 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
-  Bot,
+  CalendarCheck,
   CheckCheck,
   CheckSquare,
-  CircleDot,
+  ExternalLink,
   Filter,
   MessageSquare,
   PauseCircle,
@@ -14,6 +14,7 @@ import {
   Sparkles,
   Square,
   UserCheck,
+  UserRound,
   X,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -77,11 +78,23 @@ function Tooltip({ label, children }: { label: string; children: React.ReactNode
   );
 }
 
-function ToolbarGroup({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
+function StatCard({ icon, label, value, delta, tone = "brand" }: { icon: React.ReactNode; label: string; value: number | string; delta?: string; tone?: "brand" | "amber" | "blue" | "violet" }) {
+  const tones = {
+    brand: "bg-brand-50 text-brand-700",
+    amber: "bg-amber-50 text-amber-700",
+    blue: "bg-blue-50 text-blue-700",
+    violet: "bg-violet-50 text-violet-700",
+  };
   return (
-    <div className={cn("flex min-w-0 items-center gap-2 rounded-2xl border border-slate-100 bg-slate-50/80 px-2.5 py-2", className)}>
-      <span className="shrink-0 px-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">{label}</span>
-      <div className="flex min-w-0 flex-wrap items-center gap-2">{children}</div>
+    <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-3 shadow-sm">
+      <div className={cn("grid h-11 w-11 shrink-0 place-items-center rounded-2xl", tones[tone])}>{icon}</div>
+      <div className="min-w-0">
+        <p className="truncate text-xs font-bold text-slate-500">{label}</p>
+        <div className="mt-1 flex items-baseline gap-2">
+          <p className="text-2xl font-black text-midnight">{value}</p>
+          {delta ? <span className="text-xs font-black text-emerald-600">{delta}</span> : null}
+        </div>
+      </div>
     </div>
   );
 }
@@ -117,15 +130,21 @@ function ConversationItem({
   onClick: () => void;
 }) {
   const preview = conversation.last_message?.text || "История пока пустая";
+  const initials = conversationTitle(conversation)
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
     <div
       className={cn(
-        "w-full border-b border-slate-100 px-5 py-4 text-left transition hover:bg-slate-50",
-        active ? "bg-brand-50/70" : "bg-white",
+        "w-full border-b border-slate-100 px-4 py-3 text-left transition hover:bg-slate-50",
+        active ? "bg-brand-50/80" : "bg-white",
       )}
     >
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         {selectable ? (
           <button
             type="button"
@@ -136,8 +155,9 @@ function ConversationItem({
             {selectedForBulk ? <CheckSquare size={19} /> : <Square size={19} />}
           </button>
         ) : null}
-        <div className="relative grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-slate-200 bg-white text-brand-600 shadow-sm">
-          <MessageSquare size={22} />
+        <div className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full border border-slate-200 bg-white text-sm font-black text-brand-700 shadow-sm">
+          {initials || <MessageSquare size={18} />}
+          <span className={cn("absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full border-2 border-white", conversation.channel === "telegram" ? "bg-blue-500" : conversation.channel === "whatsapp" ? "bg-emerald-500" : conversation.channel === "instagram" ? "bg-pink-500" : "bg-slate-400")} />
           {(conversation.unread_count || 0) > 0 ? (
             <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-midnight px-1 text-[10px] font-black text-white">
               {conversation.unread_count}
@@ -147,13 +167,13 @@ function ConversationItem({
         <button type="button" className="min-w-0 flex-1 text-left" onClick={onClick}>
           <div className="flex items-center gap-2">
             <p className="min-w-0 flex-1 truncate font-black text-midnight">{conversationTitle(conversation)}</p>
-            {conversation.bot_enabled ? <PlayCircle className="shrink-0 text-emerald-500" size={16} /> : <PauseCircle className="shrink-0 text-slate-400" size={16} />}
             <span className="shrink-0 text-xs font-bold text-slate-400">{formatDateTime(conversation.last_message_at)}</span>
           </div>
           <p className="mt-1 truncate text-sm font-medium text-slate-500">{preview}</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <span className="text-xs font-bold text-slate-400">{channelLabels[conversation.channel] || conversation.channel}</span>
-            {conversation.handoff_required ? <span className="text-xs font-bold text-amber-600">нужен оператор</span> : null}
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-black text-slate-500">{channelLabels[conversation.channel] || conversation.channel}</span>
+            {conversation.handoff_required ? <span className="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-black text-red-600">Без ответа</span> : null}
+            {!conversation.handoff_required && !conversation.bot_enabled ? <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-black text-amber-600">Пауза</span> : null}
           </div>
         </button>
       </div>
@@ -170,8 +190,8 @@ function MessageBubble({ message }: { message: InboxMessage }) {
     <div className={cn("flex", inbound ? "justify-start" : "justify-end")}>
       <div
         className={cn(
-          "max-w-[76%] rounded-3xl px-4 py-3 text-sm leading-6 shadow-sm",
-          inbound ? "border border-slate-100 bg-white text-slate-700" : ai ? "bg-ai-50 text-ai-800 ring-1 ring-ai-100" : "bg-midnight text-white",
+          "max-w-[74%] rounded-2xl px-4 py-3 text-sm leading-6 shadow-sm",
+          inbound ? "border border-slate-100 bg-white text-slate-700" : ai ? "bg-ai-50 text-ai-800 ring-1 ring-ai-100" : "bg-brand-50 text-slate-800 ring-1 ring-brand-100",
         )}
       >
         <div className="mb-1 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] opacity-60">
@@ -179,7 +199,11 @@ function MessageBubble({ message }: { message: InboxMessage }) {
           {author}
         </div>
         <p className="whitespace-pre-wrap">{message.text || "Пустое сообщение"}</p>
-        {message.status === "failed" ? <p className="mt-2 text-xs font-bold text-red-500">{message.error_text || "Не отправлено"}</p> : null}
+        {message.error_text ? (
+          <p className={cn("mt-2 text-xs font-bold", message.status === "failed" ? "text-red-500" : "text-amber-500")}>
+            {message.error_text}
+          </p>
+        ) : null}
       </div>
     </div>
   );
@@ -261,13 +285,20 @@ export function ConversationsPage() {
     const params = new URLSearchParams(searchParams);
     params.set("conversation", String(id));
     setSearchParams(params, { replace: true });
+    const conversation = items.find((item) => item.id === id);
+    if ((conversation?.unread_count || 0) > 0) {
+      markReadMutation.mutate(id);
+    }
   }
 
   const invalidateInbox = async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["inbox-summary"] }),
+      queryClient.invalidateQueries({ queryKey: ["inbox-summary"], exact: false }),
       queryClient.invalidateQueries({ queryKey: ["inbox-conversations"] }),
       queryClient.invalidateQueries({ queryKey: ["inbox-messages", selected?.id] }),
+      queryClient.invalidateQueries({ queryKey: ["notifications-summary"] }),
+      queryClient.invalidateQueries({ queryKey: ["notifications"] }),
     ]);
   };
 
@@ -304,7 +335,6 @@ export function ConversationsPage() {
   const markReadMutation = useMutation({
     mutationFn: inboxApi.markRead,
     onSuccess: async () => {
-      setNotice("Диалог отмечен прочитанным.");
       await invalidateInbox();
     },
   });
@@ -346,6 +376,14 @@ export function ConversationsPage() {
     onSuccess: async () => {
       setDraft("");
       setNotice("Ответ отправлен.");
+      await invalidateInbox();
+    },
+  });
+
+  const retryMessageMutation = useMutation({
+    mutationFn: inboxApi.retryMessage,
+    onSuccess: async () => {
+      setNotice("Сообщение отправлено повторно.");
       await invalidateInbox();
     },
   });
@@ -444,6 +482,7 @@ export function ConversationsPage() {
     reopenMutation.error ||
     suggestMutation.error ||
     sendMutation.error ||
+    retryMessageMutation.error ||
     createClientMutation.error ||
     createLeadMutation.error ||
     createDealMutation.error ||
@@ -457,6 +496,11 @@ export function ConversationsPage() {
     sendMutation.mutate({ conversationId: selected.id, text });
   }
 
+  function runSelectedPipeline() {
+    if (!selected) return;
+    runPipelineMutation.mutate({ conversationId: selected.id, dealTitle: `Сделка: ${conversationTitle(selected)}` });
+  }
+
   const tabs = [
     { value: "all" as const, label: "Все", count: summary.data?.total ?? 0 },
     { value: "errors" as const, label: "Ошибки", count: summary.data?.handoff_required ?? 0 },
@@ -465,11 +509,18 @@ export function ConversationsPage() {
   const selectedInsight = selected ? getAutoPipelineInsight(selected) : null;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {notice ? <div className="rounded-2xl border border-ai-100 bg-ai-50 px-4 py-3 text-sm font-bold text-ai-800">{notice}</div> : null}
       {actionError ? <ErrorState message={getApiErrorMessage(actionError)} /> : null}
 
-      <section className="grid min-h-[720px] overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-soft lg:h-[calc(100vh-132px)] lg:grid-cols-[390px_minmax(0,1fr)]">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <StatCard icon={<MessageSquare size={20} />} label="Всего диалогов" value={summary.data?.total ?? 0} delta="+ за сегодня" tone="brand" />
+        <StatCard icon={<AlertTriangle size={20} />} label="Без ответа" value={summary.data?.handoff_required ?? 0} tone="amber" />
+        <StatCard icon={<MessageSquare size={20} />} label="В работе" value={summary.data?.assigned_to_me ?? 0} tone="blue" />
+        <StatCard icon={<CheckCheck size={20} />} label="Непрочитанные" value={summary.data?.unread_messages ?? 0} tone="violet" />
+      </div>
+
+      <section className="grid min-h-[720px] overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-soft lg:h-[calc(100vh-238px)] lg:grid-cols-[340px_minmax(0,1fr)] 2xl:grid-cols-[340px_minmax(560px,1fr)_300px]">
         <aside className="flex min-h-0 flex-col border-b border-slate-200 bg-white lg:border-b-0 lg:border-r">
           <div className="space-y-3 p-5">
             <h1 className="text-2xl font-black tracking-tight text-midnight">Диалоги</h1>
@@ -650,144 +701,53 @@ export function ConversationsPage() {
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-2">
-                    <ToolbarGroup label="AI">
-                      <Tooltip label="Сгенерировать черновик ответа на основе последних сообщений и CRM-контекста. Ответ не отправляется клиенту автоматически.">
-                        <Button variant="ai" disabled={!selected} onClick={() => suggestMutation.mutate(selected.id)} isLoading={suggestMutation.isPending} aria-label="Сгенерировать AI-ответ">
-                          <Sparkles size={17} /> AI-ответ
-                        </Button>
-                      </Tooltip>
-                    </ToolbarGroup>
-                    <ToolbarGroup label="Диалог">
-                      <Tooltip label="Назначить этот диалог на себя, чтобы было понятно, кто отвечает клиенту.">
-                        <Button variant="secondary" disabled={!selected} onClick={() => assignMutation.mutate(selected.id)} isLoading={assignMutation.isPending} aria-label="Взять диалог">
-                          <UserCheck size={17} /> Взять
-                        </Button>
-                      </Tooltip>
-                      <Tooltip label={selected.bot_enabled ? "Поставить бота на паузу в этом диалоге. Клиент останется в ручной обработке." : "Включить бота обратно для этого диалога."}>
-                        <Button
-                          variant="secondary"
-                          disabled={!selected}
-                          onClick={() => toggleBotMutation.mutate({ conversationId: selected.id, botEnabled: !selected.bot_enabled })}
-                          isLoading={toggleBotMutation.isPending}
-                          aria-label={selected.bot_enabled ? "Поставить бота на паузу" : "Запустить бота"}
-                        >
-                          {selected.bot_enabled ? <PauseCircle size={17} /> : <PlayCircle size={17} />}
-                          {selected.bot_enabled ? "Пауза" : "Запуск"}
-                        </Button>
-                      </Tooltip>
-                      <Tooltip label="Отметить диалог прочитанным и убрать счетчик новых сообщений.">
-                        <Button variant="secondary" disabled={!selected} onClick={() => markReadMutation.mutate(selected.id)} isLoading={markReadMutation.isPending} aria-label="Отметить прочитанным">
-                          <CheckCheck size={17} />
-                        </Button>
-                      </Tooltip>
-                    </ToolbarGroup>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex flex-wrap items-center gap-2">
-                  <ToolbarGroup label="CRM" className="grow">
-                    <Tooltip label="AI квалифицирует диалог и одной операцией создает или переиспользует клиента, лид, сделку и next task. Повторный запуск не должен создавать дубли.">
-                      <Button
-                        variant="ai"
-                        className="h-9 rounded-xl px-3 text-xs"
-                        onClick={() => runPipelineMutation.mutate({ conversationId: selected.id, dealTitle: `Сделка: ${conversationTitle(selected)}` })}
-                        isLoading={runPipelineMutation.isPending}
-                        aria-label="Запустить CRM pipeline"
-                      >
-                        <Sparkles size={15} /> CRM pipeline
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Tooltip label="Назначить этот диалог на себя, чтобы было понятно, кто отвечает клиенту.">
+                      <Button variant="secondary" disabled={!selected} onClick={() => assignMutation.mutate(selected.id)} isLoading={assignMutation.isPending} aria-label="Взять диалог">
+                        <UserCheck size={17} /> Назначить
                       </Button>
                     </Tooltip>
-                    <Tooltip label={selected.client ? "Клиент уже связан с диалогом." : "Создать клиента из данных диалога или найденного контакта."}>
+                    <Tooltip label={selected.bot_enabled ? "Поставить бота на паузу в этом диалоге." : "Включить бота обратно для этого диалога."}>
                       <Button
                         variant="secondary"
-                        className="h-9 rounded-xl px-3 text-xs"
-                        disabled={Boolean(selected.client)}
-                        onClick={() => createClientMutation.mutate({ conversationId: selected.id })}
-                        isLoading={createClientMutation.isPending}
-                        aria-label="Создать клиента"
+                        disabled={!selected}
+                        onClick={() => toggleBotMutation.mutate({ conversationId: selected.id, botEnabled: !selected.bot_enabled })}
+                        isLoading={toggleBotMutation.isPending}
+                        aria-label={selected.bot_enabled ? "Поставить бота на паузу" : "Запустить бота"}
                       >
-                        <UserCheck size={15} /> Клиент
+                        {selected.bot_enabled ? <PauseCircle size={17} /> : <PlayCircle size={17} />}
                       </Button>
                     </Tooltip>
-                    <Tooltip label={selected.lead ? "Лид уже связан с диалогом." : "Создать лид из последнего сообщения клиента."}>
-                      <Button
-                        variant="secondary"
-                        className="h-9 rounded-xl px-3 text-xs"
-                        disabled={Boolean(selected.lead)}
-                        onClick={() => createLeadMutation.mutate({ conversationId: selected.id, message: selected.last_message?.text })}
-                        isLoading={createLeadMutation.isPending}
-                        aria-label="Создать лид"
-                      >
-                        <CircleDot size={15} /> Лид
-                      </Button>
-                    </Tooltip>
-                    <Tooltip label={selected.deal ? "Сделка уже связана с диалогом." : "Создать сделку. Если лида еще нет, backend сначала создаст лид и свяжет цепочку."}>
-                      <Button
-                        variant="secondary"
-                        className="h-9 rounded-xl px-3 text-xs"
-                        disabled={Boolean(selected.deal)}
-                        onClick={() => createDealMutation.mutate({ conversationId: selected.id, title: `Сделка: ${conversationTitle(selected)}` })}
-                        isLoading={createDealMutation.isPending}
-                        aria-label="Создать сделку"
-                      >
-                        <CircleDot size={15} /> Сделка
-                      </Button>
-                    </Tooltip>
-                    <Tooltip label="Создать next task для менеджера по этому диалогу. Задача связывается с клиентом/лидом/сделкой, если они уже есть.">
-                      <Button
-                        variant="secondary"
-                        className="h-9 rounded-xl px-3 text-xs"
-                        onClick={() => createTaskMutation.mutate({ conversationId: selected.id, title: `Ответить ${conversationTitle(selected)}` })}
-                        isLoading={createTaskMutation.isPending}
-                        aria-label="Создать задачу"
-                      >
-                        <CheckCheck size={15} /> Задача
-                      </Button>
-                    </Tooltip>
-                  </ToolbarGroup>
-                  <ToolbarGroup label="Контроль">
                     <Tooltip label="Передать диалог человеку и выключить автоматическую обработку ботом.">
                       <Button
                         variant="secondary"
-                        className="h-9 rounded-xl px-3 text-xs"
                         onClick={() => handoffMutation.mutate({ conversationId: selected.id, reason: "manager_requested_from_inbox" })}
                         isLoading={handoffMutation.isPending}
                         aria-label="Передать оператору"
                       >
-                        <AlertTriangle size={15} /> Оператору
+                        <AlertTriangle size={17} />
                       </Button>
                     </Tooltip>
                     {selected.status === "closed" ? (
                       <Tooltip label="Вернуть закрытый диалог в работу и снова разрешить ответ менеджера.">
-                        <Button variant="secondary" className="h-9 rounded-xl px-3 text-xs" onClick={() => reopenMutation.mutate(selected.id)} isLoading={reopenMutation.isPending} aria-label="Открыть диалог">
-                          <PlayCircle size={15} /> Открыть
+                        <Button variant="secondary" onClick={() => reopenMutation.mutate(selected.id)} isLoading={reopenMutation.isPending} aria-label="Открыть диалог">
+                          <PlayCircle size={17} /> Открыть
                         </Button>
                       </Tooltip>
                     ) : (
                       <Tooltip label="Закрыть диалог после обработки. История останется доступной в карточке клиента и inbox.">
                         <Button
                           variant="secondary"
-                          className="h-9 rounded-xl px-3 text-xs"
                           onClick={() => closeMutation.mutate({ conversationId: selected.id, reason: "closed_from_inbox" })}
                           isLoading={closeMutation.isPending}
                           aria-label="Закрыть диалог"
                         >
-                          <CheckCheck size={15} /> Закрыть
+                          <CheckCheck size={17} /> Закрыть
                         </Button>
                       </Tooltip>
                     )}
-                  </ToolbarGroup>
-                </div>
-                {selectedInsight && (selectedInsight.intent || selectedInsight.status) ? (
-                  <div className="mt-3 flex flex-wrap items-center gap-2 rounded-2xl border border-ai-100 bg-ai-50 px-3 py-2 text-xs font-bold text-ai-800">
-                    <Sparkles size={15} />
-                    {selectedInsight.status ? <span>pipeline: {selectedInsight.status}</span> : null}
-                    {selectedInsight.intent ? <span>intent: {selectedInsight.intent}</span> : null}
-                    {selectedInsight.confidence !== null ? <span>confidence: {selectedInsight.confidence}%</span> : null}
-                    {selectedInsight.nextAction ? <span className="min-w-0 truncate">next: {selectedInsight.nextAction}</span> : null}
                   </div>
-                ) : null}
+                </div>
               </div>
 
               <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
@@ -833,6 +793,73 @@ export function ConversationsPage() {
             </>
           )}
         </main>
+
+        <aside className="hidden min-h-0 flex-col gap-3 overflow-y-auto border-l border-slate-200 bg-white p-4 2xl:flex">
+          {selected ? (
+            <>
+              <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-brand-50 text-brand-700">
+                    <UserRound size={22} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-black text-midnight">{selected.client_name || conversationTitle(selected)}</p>
+                    <p className="mt-1 truncate text-sm font-bold text-slate-500">{selected.client_phone || selected.external_user_id || "Контакт не указан"}</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Pill className="bg-emerald-50 text-emerald-700 ring-emerald-100">{selected.client ? "Клиент" : "Новый"}</Pill>
+                      <Pill className="bg-slate-50 text-slate-600 ring-slate-200">{channelLabels[selected.channel] || selected.channel}</Pill>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Канал</p>
+                <div className="mt-3 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="font-black text-midnight">{channelLabels[selected.channel] || selected.channel}</p>
+                    <p className="mt-1 text-sm font-bold text-slate-500">{selected.bot_enabled ? "Бот активен" : "Бот на паузе"}</p>
+                  </div>
+                  {selected.bot_enabled ? <PlayCircle className="text-emerald-500" size={22} /> : <PauseCircle className="text-amber-500" size={22} />}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Следующая задача</p>
+                <div className="mt-3 flex items-start gap-3">
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-violet-50 text-violet-700">
+                    <CalendarCheck size={18} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-black text-midnight">{selectedInsight?.nextAction || (selected.handoff_required ? "Ответить клиенту" : "Проверить CRM-цепочку")}</p>
+                    <button type="button" className="mt-2 inline-flex items-center gap-1 text-xs font-black text-brand-600" onClick={runSelectedPipeline}>
+                      Открыть в CRM <ExternalLink size={13} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-ai-100 bg-ai-50 p-4 shadow-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="flex items-center gap-2 font-black text-ai-900"><Sparkles size={18} /> AI-подсказка</p>
+                  <span className="rounded-full bg-white px-2 py-1 text-[10px] font-black text-ai-700">BETA</span>
+                </div>
+                <p className="mt-3 text-sm font-bold leading-6 text-ai-800">
+                  {selectedInsight?.intent ? `Намерение: ${selectedInsight.intent}.` : "AI может подготовить черновик ответа и собрать CRM-цепочку."}
+                  {selectedInsight?.confidence !== null && selectedInsight?.confidence !== undefined ? ` Уверенность ${selectedInsight.confidence}%.` : ""}
+                </p>
+                <div className="mt-3 rounded-2xl bg-white p-3 text-sm font-semibold leading-6 text-slate-700">
+                  {draft || selectedInsight?.nextAction || "Нажмите AI-ответ, чтобы подготовить текст для клиента."}
+                </div>
+                <Button className="mt-3 w-full rounded-xl" variant="ai" onClick={() => suggestMutation.mutate(selected.id)} isLoading={suggestMutation.isPending}>
+                  <Sparkles size={16} /> AI-ответ
+                </Button>
+              </div>
+            </>
+          ) : (
+            <div className="grid flex-1 place-items-center text-center text-sm font-bold text-slate-400">Выберите диалог, чтобы увидеть клиента и подсказки.</div>
+          )}
+        </aside>
       </section>
     </div>
   );

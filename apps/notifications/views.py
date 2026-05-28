@@ -1,11 +1,13 @@
 from django.utils import timezone
+from django.db.models import Q
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from apps.businesses.access import Actions, assert_can
 from apps.core.viewsets import TenantModelViewSet
-from apps.notifications.models import Notification
-from apps.notifications.serializers import NotificationSerializer
+from apps.notifications.delivery import deliver_notification
+from apps.notifications.models import Notification, NotificationPreference
+from apps.notifications.serializers import NotificationPreferenceSerializer, NotificationSerializer
 
 
 class NotificationViewSet(TenantModelViewSet):
@@ -18,11 +20,17 @@ class NotificationViewSet(TenantModelViewSet):
         "mark_all_read": Actions.UPDATE,
         "mark_sent": Actions.MANAGE,
         "cancel": Actions.MANAGE,
+        "retry": Actions.MANAGE,
         "summary": Actions.VIEW,
     }
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        queryset = queryset.exclude(
+            Q(action_url__startswith="/dashboard/conversations")
+            & Q(recipient__isnull=False)
+            & ~Q(recipient=self.request.user)
+        )
         status_filter = self.request.query_params.get("status")
         channel_filter = self.request.query_params.get("channel")
         category_filter = self.request.query_params.get("category")
@@ -60,6 +68,19 @@ class NotificationViewSet(TenantModelViewSet):
         notification.status = Notification.Statuses.CANCELLED
         notification.save(update_fields=["status", "updated_at"])
         return Response(NotificationSerializer(notification).data)
+
+    @action(detail=True, methods=["post"])
+    def retry(self, request, pk=None):
+        notification = self.get_object()
+        assert_can(request.user, notification.business, self.get_access_resource(), Actions.MANAGE, obj=notification)
+        if notification.status != Notification.Statuses.FAILED:
+            return Response({"detail": "Only failed notifications can be retried.", "notification": NotificationSerializer(notification).data}, status=400)
+        notification.status = Notification.Statuses.PENDING
+        notification.send_at = timezone.now()
+        notification.save(update_fields=["status", "send_at", "updated_at"])
+        result = deliver_notification(notification)
+        notification.refresh_from_db()
+        return Response({"result": result, "notification": NotificationSerializer(notification).data})
 
     @action(detail=True, methods=["post"], url_path="mark-read")
     def mark_read(self, request, pk=None):
@@ -100,3 +121,28 @@ class NotificationViewSet(TenantModelViewSet):
                 },
             }
         )
+
+
+class NotificationPreferenceViewSet(TenantModelViewSet):
+    queryset = NotificationPreference.objects.select_related("business", "user")
+    serializer_class = NotificationPreferenceSerializer
+    access_resource = "notifications"
+    action_permission_map = {
+        **TenantModelViewSet.action_permission_map,
+        "create": Actions.UPDATE,
+        "update": Actions.UPDATE,
+        "partial_update": Actions.UPDATE,
+        "destroy": Actions.UPDATE,
+    }
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        user_filter = self.request.query_params.get("user")
+        category_filter = self.request.query_params.get("category")
+        if user_filter == "me":
+            queryset = queryset.filter(user=self.request.user)
+        elif user_filter:
+            queryset = queryset.filter(user_id=user_filter)
+        if category_filter:
+            queryset = queryset.filter(category=category_filter)
+        return queryset

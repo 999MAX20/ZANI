@@ -10,6 +10,10 @@ from apps.clients.models import Client
 from apps.clients.services import duplicate_payload, find_duplicate_clients
 from apps.leads.models import Lead, LeadFormSubmission, LeadFormSubmissionError
 from apps.notifications.models import Notification
+from apps.integrations.sanitization import sanitize_config
+from apps.outreach.consent import payload_has_explicit_consent
+from apps.outreach.models import OutreachCampaign
+from apps.outreach.services import record_explicit_consent
 
 
 HONEYPOT_FIELDS = {"website_url", "company_website", "homepage"}
@@ -17,6 +21,7 @@ HONEYPOT_FIELDS = {"website_url", "company_website", "homepage"}
 
 def submit_lead_form(*, lead_form, payload, request=None):
     payload = dict(payload)
+    safe_payload = sanitize_config(payload)
     spam_fields = [field for field in HONEYPOT_FIELDS if str(payload.get(field, "")).strip()]
     if spam_fields:
         raise ValueError("Submission rejected.")
@@ -60,6 +65,14 @@ def submit_lead_form(*, lead_form, payload, request=None):
                 source=_client_source(source),
                 notes=message,
             )
+        if phone and payload_has_explicit_consent(payload, channel=OutreachCampaign.Channels.WHATSAPP):
+            record_explicit_consent(
+                client=client,
+                channel=OutreachCampaign.Channels.WHATSAPP,
+                source="lead_form",
+                note=f"Explicit consent from form {lead_form.public_id}.",
+                evidence={"lead_form": str(lead_form.public_id), "fields": {key: payload.get(key) for key in ["marketing_consent", "outreach_consent", "newsletter_consent", "whatsapp_consent"]}},
+            )
         lead = Lead.objects.create(
             business=lead_form.business,
             client=client,
@@ -72,7 +85,7 @@ def submit_lead_form(*, lead_form, payload, request=None):
             business=lead_form.business,
             client=client,
             lead=lead,
-            payload_json=payload,
+            payload_json=safe_payload,
             utm_json=utm,
             source_context_json=source_context,
             duplicate_json={"duplicates": duplicate_rows},
@@ -121,6 +134,7 @@ def submit_lead_form(*, lead_form, payload, request=None):
 
 def log_lead_form_submission_error(*, form=None, public_id="", payload=None, error_message="", request=None):
     payload = dict(payload or {})
+    safe_payload = sanitize_config(payload)
     page_url = str(payload.get("page_url") or payload.get("url") or "").strip()
     page_domain = _page_domain(page_url) or str(payload.get("domain") or getattr(form, "landing_domain", "") or "").strip()
     return LeadFormSubmissionError.objects.create(
@@ -130,7 +144,7 @@ def log_lead_form_submission_error(*, form=None, public_id="", payload=None, err
         landing_id=str(payload.get("landing_id") or getattr(form, "landing_id", "") or "").strip(),
         page_url=page_url,
         page_domain=page_domain,
-        payload_json=payload,
+        payload_json=safe_payload,
         error_message=str(error_message),
         ip_address=_client_ip(request),
         user_agent=request.META.get("HTTP_USER_AGENT", "") if request else "",

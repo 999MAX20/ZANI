@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from apps.scheduling.models import Appointment, Resource, WorkingHours
+from apps.scheduling.models import Appointment, AppointmentMessageSetting, Resource, WorkingHours
 
 
 @admin.register(Resource)
@@ -22,3 +22,10 @@ class AppointmentAdmin(admin.ModelAdmin):
     list_display = ("id", "business", "client", "service", "resource", "start_at", "end_at", "status", "source")
     list_filter = ("status", "source", "business", "resource")
     search_fields = ("client__full_name", "client__phone", "service__name", "resource__name", "notes")
+
+
+@admin.register(AppointmentMessageSetting)
+class AppointmentMessageSettingAdmin(admin.ModelAdmin):
+    list_display = ("business", "scenario", "is_enabled", "offset_minutes", "channel_policy")
+    list_filter = ("scenario", "is_enabled", "channel_policy")
+    search_fields = ("business__name", "label")

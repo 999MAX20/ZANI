@@ -4,10 +4,31 @@ from rest_framework.test import APIClient
 from apps.accounts.models import User
 from apps.businesses.models import Business, BusinessMember
 from apps.integrations.connectors import decrypt_credential_value, normalize_business_event
-from apps.integrations.kaspi import KASPI_EVENT_TYPES, build_kaspi_mock_events
-from apps.integrations.moysklad import MOYSKLAD_EVENT_TYPES, build_moysklad_mock_events, moysklad_entity_to_import_type
-from apps.integrations.models import BusinessConnector, BusinessEvent, ConnectorCredential
+from apps.integrations.kaspi import KASPI_EVENT_TYPES, build_kaspi_events_from_orders, build_kaspi_mock_events
+from apps.integrations.moysklad import (
+    MOYSKLAD_EVENT_TYPES,
+    build_moysklad_mock_events,
+    build_moysklad_product_events,
+    build_moysklad_sale_events,
+    build_moysklad_stock_events,
+    moysklad_entity_to_import_type,
+)
+from apps.integrations.models import BusinessConnector, BusinessEvent, ConnectorCredential, IntegrationEventLog
 from apps.integrations.one_c import ONE_C_EVENT_TYPES, build_one_c_mock_events, one_c_entity_to_import_type
+from apps.integrations.ozon import (
+    OZON_EVENT_TYPES,
+    build_ozon_events_from_fbo_postings,
+    build_ozon_events_from_fbs_postings,
+    build_ozon_events_from_stocks,
+    build_ozon_mock_events,
+)
+from apps.integrations.wildberries import (
+    WILDBERRIES_EVENT_TYPES,
+    build_wildberries_events_from_orders,
+    build_wildberries_events_from_sales,
+    build_wildberries_events_from_stocks,
+    build_wildberries_mock_events,
+)
 from apps.core.models import ImportJob
 
 
@@ -77,6 +98,70 @@ class BusinessConnectorFoundationTests(TestCase):
         credential = ConnectorCredential.objects.get(id=credential_response.data["id"])
         self.assertEqual(decrypt_credential_value(credential.encrypted_value), "123456:super-secret-token")
         self.assertNotIn("super-secret-token", credential.encrypted_value)
+
+    def test_connector_config_secrets_are_masked_in_api_responses(self):
+        connector = BusinessConnector.objects.create(
+            business=self.business,
+            provider=BusinessConnector.Providers.CUSTOM,
+            name="Custom webhook",
+            config_json={
+                "access_token": "raw-access-token",
+                "api_key": "raw-api-key",
+                "webhook_secret_configured": True,
+                "nested": {"client_secret": "raw-client-secret"},
+            },
+            created_by=self.owner,
+        )
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.get(f"/api/business-connectors/{connector.id}/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["config_json"]["access_token"], "configured")
+        self.assertEqual(response.data["config_json"]["api_key"], "configured")
+        self.assertTrue(response.data["config_json"]["webhook_secret_configured"])
+        self.assertEqual(response.data["config_json"]["nested"]["client_secret"], "configured")
+        self.assertNotIn("raw-access-token", str(response.data))
+        self.assertNotIn("raw-api-key", str(response.data))
+        self.assertNotIn("raw-client-secret", str(response.data))
+
+    def test_event_payload_secrets_are_masked_in_api_responses(self):
+        connector = BusinessConnector.objects.create(
+            business=self.business,
+            provider=BusinessConnector.Providers.CUSTOM,
+            name="Custom events",
+            created_by=self.owner,
+        )
+        BusinessEvent.objects.create(
+            business=self.business,
+            connector=connector,
+            source=BusinessConnector.Providers.CUSTOM,
+            event_type="custom.event",
+            external_id="event-1",
+            deduplication_key="event-1",
+            payload_json={"api_key": "raw-api-key", "nested": {"access_token": "raw-access-token"}},
+        )
+        IntegrationEventLog.objects.create(
+            business=self.business,
+            provider=BusinessConnector.Providers.CUSTOM,
+            channel="custom",
+            direction=IntegrationEventLog.Directions.INBOUND,
+            status=IntegrationEventLog.Statuses.RECEIVED,
+            payload_json={"client_secret": "raw-client-secret"},
+        )
+        self.api.force_authenticate(self.owner)
+
+        event_response = self.api.get("/api/business-events/")
+        log_response = self.api.get("/api/integration-event-logs/")
+
+        self.assertEqual(event_response.status_code, 200)
+        self.assertEqual(log_response.status_code, 200)
+        self.assertEqual(event_response.data["results"][0]["payload_json"]["api_key"], "configured")
+        self.assertEqual(event_response.data["results"][0]["payload_json"]["nested"]["access_token"], "configured")
+        self.assertEqual(log_response.data["results"][0]["payload_json"]["client_secret"], "configured")
+        self.assertNotIn("raw-api-key", str(event_response.data))
+        self.assertNotIn("raw-access-token", str(event_response.data))
+        self.assertNotIn("raw-client-secret", str(log_response.data))
 
     def test_operator_cannot_manage_connectors(self):
         self.api.force_authenticate(self.operator)
@@ -226,6 +311,34 @@ class BusinessConnectorFoundationTests(TestCase):
         self.assertEqual(second.status_code, 200)
         self.assertEqual(first.data["id"], second.data["id"])
 
+    def test_ingested_connector_event_sanitizes_secrets_before_storage(self):
+        connector = BusinessConnector.objects.create(
+            business=self.business,
+            provider=BusinessConnector.Providers.CUSTOM,
+            name="Custom events",
+            auth_type=BusinessConnector.AuthTypes.NONE,
+            created_by=self.owner,
+        )
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            f"/api/business-connectors/{connector.id}/events/",
+            {
+                "event_type": "custom.secure_event",
+                "external_id": "secure-event-1",
+                "payload_json": {"amount": "15000", "api_key": "raw-api-key", "nested": {"access_token": "raw-access-token"}},
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        event = BusinessEvent.objects.get(id=response.data["id"])
+        self.assertEqual(event.payload_json["amount"], "15000")
+        self.assertEqual(event.payload_json["api_key"], "configured")
+        self.assertEqual(event.payload_json["nested"]["access_token"], "configured")
+        self.assertNotIn("raw-api-key", str(event.payload_json))
+        self.assertNotIn("raw-access-token", str(event.payload_json))
+
     def test_whatsapp_and_instagram_connection_requests_are_platform_visible_without_secrets(self):
         self.api.force_authenticate(self.owner)
 
@@ -334,6 +447,67 @@ class BusinessConnectorFoundationTests(TestCase):
         self.assertTrue(all(event.payload["read_only"] for event in events))
         self.assertTrue(all(event.payload["source"] == BusinessConnector.Providers.KASPI for event in events))
 
+    def test_owner_can_configure_kaspi_token_and_run_read_only_mock_sync(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            "/api/business-connectors/kaspi-config/",
+            {
+                "business": self.business.id,
+                "api_token": "kaspi-secret-token",
+                "merchant_id": "merchant-1",
+                "order_state": "ARCHIVE",
+                "sync_days": 7,
+                "page_size": 10,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["provider"], BusinessConnector.Providers.KASPI)
+        self.assertEqual(response.data["status"], BusinessConnector.Statuses.CONNECTED)
+        self.assertTrue(response.data["config_json"]["api_token_configured"])
+        self.assertTrue(response.data["config_json"]["read_only"])
+        self.assertNotIn("kaspi-secret-token", str(response.data))
+        connector = BusinessConnector.objects.get(id=response.data["id"])
+        credential = ConnectorCredential.objects.get(connector=connector, key="api_token")
+        self.assertEqual(decrypt_credential_value(credential.encrypted_value), "kaspi-secret-token")
+
+        test_response = self.api.post(f"/api/business-connectors/{connector.id}/kaspi-test-connection/")
+        sync_response = self.api.post(f"/api/business-connectors/{connector.id}/kaspi-sync-orders/")
+
+        self.assertEqual(test_response.status_code, 200)
+        self.assertTrue(test_response.data["ok"])
+        self.assertTrue(test_response.data["mock"])
+        self.assertEqual(sync_response.status_code, 201)
+        self.assertTrue(sync_response.data["ok"])
+        self.assertTrue(sync_response.data["mock"])
+        self.assertEqual(BusinessEvent.objects.filter(connector=connector, source=BusinessConnector.Providers.KASPI).count(), 3)
+
+    def test_kaspi_orders_payload_normalizes_to_read_only_events(self):
+        events = build_kaspi_events_from_orders(
+            {
+                "data": [
+                    {
+                        "id": "order-1",
+                        "attributes": {
+                            "code": "KSP-1",
+                            "totalPrice": 18500,
+                            "status": "COMPLETED",
+                            "state": "ARCHIVE",
+                            "paymentMode": "PAY_WITH_CREDIT",
+                            "deliveryMode": "DELIVERY_LOCAL",
+                            "creationDate": 1710000000000,
+                        },
+                    }
+                ]
+            }
+        )
+
+        self.assertEqual([event.event_type for event in events], [KASPI_EVENT_TYPES["order_imported"], KASPI_EVENT_TYPES["sale_detected"]])
+        self.assertTrue(all(event.payload["read_only"] for event in events))
+        self.assertEqual(events[0].payload["amount"], "18500")
+
     def test_one_c_adapter_reuses_excel_csv_import_entities(self):
         self.assertEqual(one_c_entity_to_import_type("clients"), ImportJob.EntityTypes.CLIENTS)
         self.assertEqual(one_c_entity_to_import_type("counterparties"), ImportJob.EntityTypes.CLIENTS)
@@ -358,6 +532,189 @@ class BusinessConnectorFoundationTests(TestCase):
         self.assertIn(MOYSKLAD_EVENT_TYPES["stock"], [event["event_type"] for event in events])
         self.assertTrue(all(event["payload"]["read_only"] for event in events))
         self.assertTrue(all(event["payload"]["source"] == BusinessConnector.Providers.MOYSKLAD for event in events))
+
+    def test_owner_can_configure_moysklad_token_and_run_mock_sync(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            "/api/business-connectors/moysklad-config/",
+            {
+                "business": self.business.id,
+                "access_token": "moysklad-secret-token",
+                "entities": ["products", "stock", "sales", "clients"],
+                "page_size": 25,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["provider"], BusinessConnector.Providers.MOYSKLAD)
+        self.assertEqual(response.data["auth_type"], BusinessConnector.AuthTypes.TOKEN)
+        self.assertEqual(response.data["status"], BusinessConnector.Statuses.CONNECTED)
+        self.assertTrue(response.data["config_json"]["access_token_configured"])
+        connector = BusinessConnector.objects.get(id=response.data["id"])
+        credential = ConnectorCredential.objects.get(connector=connector, key="access_token")
+        self.assertEqual(decrypt_credential_value(credential.encrypted_value), "moysklad-secret-token")
+
+        test_response = self.api.post(f"/api/business-connectors/{connector.id}/moysklad-test-connection/")
+        sync_response = self.api.post(f"/api/business-connectors/{connector.id}/moysklad-sync/")
+
+        self.assertEqual(test_response.status_code, 200)
+        self.assertTrue(test_response.data["ok"])
+        self.assertTrue(test_response.data["mock"])
+        self.assertEqual(sync_response.status_code, 201)
+        self.assertTrue(sync_response.data["ok"])
+        self.assertTrue(sync_response.data["mock"])
+        self.assertEqual(BusinessEvent.objects.filter(connector=connector, source=BusinessConnector.Providers.MOYSKLAD).count(), 4)
+
+    def test_moysklad_payloads_normalize_to_read_only_events(self):
+        product_events = build_moysklad_product_events({"rows": [{"id": "prod-1", "name": "Serum", "article": "SKU-1"}]})
+        stock_events = build_moysklad_stock_events({"rows": [{"assortmentId": "prod-1", "name": "Serum", "quantity": 7}]})
+        sale_events = build_moysklad_sale_events({"rows": [{"id": "sale-1", "name": "0001", "sum": 1850000, "agent": {"name": "Buyer"}}]})
+
+        self.assertEqual(product_events[0].event_type, MOYSKLAD_EVENT_TYPES["product"])
+        self.assertEqual(stock_events[0].payload["quantity"], "7")
+        self.assertEqual(sale_events[0].payload["amount"], "18500")
+        self.assertTrue(product_events[0].payload["read_only"])
+
+    def test_owner_can_configure_wildberries_token_and_run_mock_sync(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            "/api/business-connectors/wildberries-config/",
+            {
+                "business": self.business.id,
+                "api_token": "wildberries-secret-token",
+                "entities": ["orders", "sales"],
+                "sync_days": 7,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["provider"], BusinessConnector.Providers.WILDBERRIES)
+        self.assertEqual(response.data["auth_type"], BusinessConnector.AuthTypes.TOKEN)
+        self.assertEqual(response.data["status"], BusinessConnector.Statuses.CONNECTED)
+        self.assertTrue(response.data["config_json"]["api_token_configured"])
+        self.assertTrue(response.data["config_json"]["read_only"])
+        self.assertNotIn("wildberries-secret-token", str(response.data))
+        connector = BusinessConnector.objects.get(id=response.data["id"])
+        credential = ConnectorCredential.objects.get(connector=connector, key="api_token")
+        self.assertEqual(decrypt_credential_value(credential.encrypted_value), "wildberries-secret-token")
+
+        test_response = self.api.post(f"/api/business-connectors/{connector.id}/wildberries-test-connection/")
+        sync_response = self.api.post(f"/api/business-connectors/{connector.id}/wildberries-sync/")
+
+        self.assertEqual(test_response.status_code, 200)
+        self.assertTrue(test_response.data["ok"])
+        self.assertTrue(test_response.data["mock"])
+        self.assertEqual(sync_response.status_code, 201)
+        self.assertTrue(sync_response.data["ok"])
+        self.assertTrue(sync_response.data["mock"])
+        self.assertEqual(BusinessEvent.objects.filter(connector=connector, source=BusinessConnector.Providers.WILDBERRIES).count(), 3)
+
+    def test_wildberries_payloads_normalize_to_read_only_events(self):
+        order_events = build_wildberries_events_from_orders([
+            {"srid": "order-1", "gNumber": "WB-1", "nmId": 123, "supplierArticle": "SKU-1", "finishedPrice": 1200, "isCancel": False}
+        ])
+        sale_events = build_wildberries_events_from_sales([
+            {"saleID": "S1", "srid": "sale-1", "forPay": 950, "supplierArticle": "SKU-1"}
+        ])
+        stock_events = build_wildberries_events_from_stocks([
+            {"barcode": "barcode-1", "nmId": 123, "supplierArticle": "SKU-1", "quantityFull": 8}
+        ])
+
+        self.assertEqual(order_events[0].event_type, WILDBERRIES_EVENT_TYPES["order"])
+        self.assertEqual(sale_events[0].event_type, WILDBERRIES_EVENT_TYPES["sale"])
+        self.assertEqual(stock_events[0].event_type, WILDBERRIES_EVENT_TYPES["stock"])
+        self.assertEqual(order_events[0].payload["amount"], "1200")
+        self.assertEqual(stock_events[0].payload["quantity"], "8")
+        self.assertTrue(order_events[0].payload["read_only"])
+
+    def test_wildberries_mock_events_are_read_only_visibility_events(self):
+        events = build_wildberries_mock_events(prefix="shop")
+
+        self.assertEqual([event.event_type for event in events], [
+            WILDBERRIES_EVENT_TYPES["order"],
+            WILDBERRIES_EVENT_TYPES["sale"],
+            WILDBERRIES_EVENT_TYPES["stock"],
+        ])
+        self.assertTrue(all(event.payload["read_only"] for event in events))
+        self.assertTrue(all(event.payload["source"] == BusinessConnector.Providers.WILDBERRIES for event in events))
+
+    def test_owner_can_configure_ozon_credentials_and_run_mock_sync(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            "/api/business-connectors/ozon-config/",
+            {
+                "business": self.business.id,
+                "client_id": "ozon-client-id",
+                "api_key": "ozon-secret-api-key",
+                "entities": ["fbs_postings", "fbo_postings", "stocks"],
+                "sync_days": 7,
+                "limit": 25,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["provider"], BusinessConnector.Providers.OZON)
+        self.assertEqual(response.data["auth_type"], BusinessConnector.AuthTypes.TOKEN)
+        self.assertEqual(response.data["status"], BusinessConnector.Statuses.CONNECTED)
+        self.assertTrue(response.data["config_json"]["client_id_configured"])
+        self.assertTrue(response.data["config_json"]["api_key_configured"])
+        self.assertTrue(response.data["config_json"]["read_only"])
+        self.assertNotIn("ozon-secret-api-key", str(response.data))
+        connector = BusinessConnector.objects.get(id=response.data["id"])
+        self.assertEqual(decrypt_credential_value(ConnectorCredential.objects.get(connector=connector, key="client_id").encrypted_value), "ozon-client-id")
+        self.assertEqual(decrypt_credential_value(ConnectorCredential.objects.get(connector=connector, key="api_key").encrypted_value), "ozon-secret-api-key")
+
+        test_response = self.api.post(f"/api/business-connectors/{connector.id}/ozon-test-connection/")
+        sync_response = self.api.post(f"/api/business-connectors/{connector.id}/ozon-sync/")
+
+        self.assertEqual(test_response.status_code, 200)
+        self.assertTrue(test_response.data["ok"])
+        self.assertTrue(test_response.data["mock"])
+        self.assertEqual(sync_response.status_code, 201)
+        self.assertTrue(sync_response.data["ok"])
+        self.assertTrue(sync_response.data["mock"])
+        self.assertEqual(BusinessEvent.objects.filter(connector=connector, source=BusinessConnector.Providers.OZON).count(), 3)
+
+    def test_ozon_payloads_normalize_to_read_only_events(self):
+        fbs_events = build_ozon_events_from_fbs_postings(
+            {
+                "result": {
+                    "postings": [
+                        {
+                            "posting_number": "FBS-1",
+                            "status": "awaiting_packaging",
+                            "products": [{"offer_id": "SKU-1", "price": "1200"}],
+                        }
+                    ]
+                }
+            }
+        )
+        fbo_events = build_ozon_events_from_fbo_postings({"result": {"postings": [{"posting_number": "FBO-1", "status": "delivered", "products": []}]}})
+        stock_events = build_ozon_events_from_stocks({"result": {"items": [{"product_id": 1, "offer_id": "SKU-1", "stocks": [{"present": 7}, {"present": 2}]}]}})
+
+        self.assertEqual(fbs_events[0].event_type, OZON_EVENT_TYPES["fbs_posting"])
+        self.assertEqual(fbo_events[0].event_type, OZON_EVENT_TYPES["fbo_posting"])
+        self.assertEqual(stock_events[0].event_type, OZON_EVENT_TYPES["stock"])
+        self.assertEqual(fbs_events[0].payload["amount"], "1200")
+        self.assertEqual(stock_events[0].payload["total_stock"], "9")
+        self.assertTrue(fbs_events[0].payload["read_only"])
+
+    def test_ozon_mock_events_are_read_only_visibility_events(self):
+        events = build_ozon_mock_events(prefix="shop")
+
+        self.assertEqual([event.event_type for event in events], [
+            OZON_EVENT_TYPES["fbs_posting"],
+            OZON_EVENT_TYPES["fbo_posting"],
+            OZON_EVENT_TYPES["stock"],
+        ])
+        self.assertTrue(all(event.payload["read_only"] for event in events))
+        self.assertTrue(all(event.payload["source"] == BusinessConnector.Providers.OZON for event in events))
 
 
 class ConnectorOnboardingCatalogTests(TestCase):
@@ -386,15 +743,25 @@ class ConnectorOnboardingCatalogTests(TestCase):
         self.assertEqual(by_provider[BusinessConnector.Providers.WEBSITE]["launch_status"], "available")
         self.assertEqual(by_provider[BusinessConnector.Providers.EXCEL_CSV]["launch_status"], "available")
         self.assertTrue(by_provider[BusinessConnector.Providers.EXCEL_CSV]["is_pilot_safe"])
-        self.assertEqual(by_provider[BusinessConnector.Providers.KASPI]["launch_status"], "roadmap")
-        self.assertFalse(by_provider[BusinessConnector.Providers.KASPI]["is_pilot_safe"])
+        self.assertEqual(by_provider[BusinessConnector.Providers.KASPI]["launch_status"], "beta")
+        self.assertTrue(by_provider[BusinessConnector.Providers.KASPI]["is_pilot_safe"])
         self.assertIn("next_step", by_provider[BusinessConnector.Providers.WHATSAPP])
         self.assertIn("pilot_note", by_provider[BusinessConnector.Providers.INSTAGRAM])
         self.assertEqual(by_provider[BusinessConnector.Providers.WEBSITE]["availability"], "included")
         self.assertEqual(by_provider[BusinessConnector.Providers.WEBSITE]["required_plan"], "basic")
         self.assertEqual(by_provider[BusinessConnector.Providers.WEBSITE]["action_behavior"], "self_service")
-        self.assertEqual(by_provider[BusinessConnector.Providers.WHATSAPP]["availability"], "request")
-        self.assertEqual(by_provider[BusinessConnector.Providers.KASPI]["setup_state"], "roadmap")
+        self.assertEqual(by_provider[BusinessConnector.Providers.WHATSAPP]["availability"], "included")
+        self.assertEqual(by_provider[BusinessConnector.Providers.WHATSAPP]["action_behavior"], "self_service")
+        self.assertEqual(by_provider[BusinessConnector.Providers.KASPI]["setup_state"], "setup_required")
+        self.assertEqual(by_provider[BusinessConnector.Providers.MOYSKLAD]["launch_status"], "beta")
+        self.assertEqual(by_provider[BusinessConnector.Providers.MOYSKLAD]["availability"], "included")
+        self.assertTrue(by_provider[BusinessConnector.Providers.MOYSKLAD]["is_pilot_safe"])
+        self.assertEqual(by_provider[BusinessConnector.Providers.WILDBERRIES]["launch_status"], "beta")
+        self.assertEqual(by_provider[BusinessConnector.Providers.WILDBERRIES]["availability"], "included")
+        self.assertTrue(by_provider[BusinessConnector.Providers.WILDBERRIES]["is_pilot_safe"])
+        self.assertEqual(by_provider[BusinessConnector.Providers.OZON]["launch_status"], "beta")
+        self.assertEqual(by_provider[BusinessConnector.Providers.OZON]["availability"], "included")
+        self.assertTrue(by_provider[BusinessConnector.Providers.OZON]["is_pilot_safe"])
 
     def test_owner_can_create_excel_csv_connector_without_secret(self):
         self.api.force_authenticate(self.owner)

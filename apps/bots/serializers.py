@@ -7,6 +7,10 @@ from apps.billing.entitlements import EntitlementMetrics, assert_entitlement_all
 from apps.billing.usage import increment_usage
 from apps.clients.models import Client
 from apps.conversations.auto_pipeline import maybe_run_auto_pipeline
+from apps.outreach.consent import payload_has_explicit_consent
+from apps.outreach.models import OutreachCampaign
+from apps.outreach.services import record_explicit_consent
+from apps.integrations.sanitization import sanitize_config
 from apps.leads.models import Lead
 
 
@@ -18,8 +22,6 @@ class BotSerializer(serializers.ModelSerializer):
 
 
 class BotChannelSerializer(serializers.ModelSerializer):
-    SENSITIVE_CONFIG_KEYS = {"bot_token", "webhook_secret", "access_token", "refresh_token", "client_secret"}
-
     class Meta:
         model = BotChannel
         fields = "__all__"
@@ -27,12 +29,7 @@ class BotChannelSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        config = data.get("config_json") or {}
-        if isinstance(config, dict):
-            data["config_json"] = {
-                key: ("configured" if key in self.SENSITIVE_CONFIG_KEYS and value else value)
-                for key, value in config.items()
-            }
+        data["config_json"] = sanitize_config(data.get("config_json") or {})
         return data
 
 
@@ -52,6 +49,14 @@ class WhatsAppChannelConfigSerializer(serializers.Serializer):
     access_token = serializers.CharField(required=False, allow_blank=True, trim_whitespace=True)
     business_account_id = serializers.CharField(required=False, allow_blank=True, trim_whitespace=True)
     display_phone_number = serializers.CharField(required=False, allow_blank=True, trim_whitespace=True)
+
+
+class InstagramChannelConfigSerializer(serializers.Serializer):
+    provider_mode = serializers.ChoiceField(choices=["mock", "meta_graph", "disabled"], required=False)
+    instagram_user_id = serializers.CharField(required=False, allow_blank=True, trim_whitespace=True)
+    access_token = serializers.CharField(required=False, allow_blank=True, trim_whitespace=True)
+    page_id = serializers.CharField(required=False, allow_blank=True, trim_whitespace=True)
+    username = serializers.CharField(required=False, allow_blank=True, trim_whitespace=True)
 
 
 class BotConversationSerializer(serializers.ModelSerializer):
@@ -110,6 +115,10 @@ class PublicWebsiteChatConversationCreateSerializer(serializers.Serializer):
     email = serializers.EmailField(required=False, allow_blank=True)
     message = serializers.CharField(required=True, allow_blank=False)
     external_user_id = serializers.CharField(required=False, allow_blank=True, max_length=255)
+    marketing_consent = serializers.BooleanField(required=False, default=False)
+    outreach_consent = serializers.BooleanField(required=False, default=False)
+    newsletter_consent = serializers.BooleanField(required=False, default=False)
+    whatsapp_consent = serializers.BooleanField(required=False, default=False)
 
     def create(self, validated_data):
         channel = self.context["channel"]
@@ -124,6 +133,14 @@ class PublicWebsiteChatConversationCreateSerializer(serializers.Serializer):
 
         if phone or email:
             client = self._get_or_create_client(business, full_name, phone, email)
+            if phone and payload_has_explicit_consent(validated_data, channel=OutreachCampaign.Channels.WHATSAPP):
+                record_explicit_consent(
+                    client=client,
+                    channel=OutreachCampaign.Channels.WHATSAPP,
+                    source="website_chat",
+                    note="Explicit website chat consent.",
+                    evidence={"fields": {key: validated_data.get(key) for key in ["marketing_consent", "outreach_consent", "newsletter_consent", "whatsapp_consent"]}},
+                )
             lead = Lead.objects.create(
                 business=business,
                 client=client,

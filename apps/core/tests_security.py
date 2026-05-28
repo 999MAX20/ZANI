@@ -1,4 +1,5 @@
 from django.utils import timezone
+from django.test import override_settings
 from rest_framework.test import APITestCase
 
 from apps.accounts.models import User
@@ -13,6 +14,7 @@ class SecurityCenterTests(APITestCase):
         self.owner = User.objects.create_user(username="security-owner", email="security-owner@example.com", password="pass", role=User.Roles.BUSINESS_OWNER)
         self.staff = User.objects.create_user(username="security-staff", email="security-staff@example.com", password="pass", role=User.Roles.STAFF)
         self.support = User.objects.create_user(username="security-support", email="security-support@example.com", password="pass", role=User.Roles.STAFF)
+        self.platform_admin = User.objects.create_user(username="security-platform", email="security-platform@example.com", password="pass", role=User.Roles.PLATFORM_ADMIN)
         self.business = Business.objects.create(owner=self.owner, name="Security Clinic", slug="security-clinic")
         BusinessMember.objects.create(business=self.business, user=self.owner, role=BusinessMember.Roles.OWNER)
         BusinessMember.objects.create(business=self.business, user=self.staff, role=BusinessMember.Roles.STAFF)
@@ -77,3 +79,46 @@ class SecurityCenterTests(APITestCase):
         self.assertEqual(response.status_code, 201)
         self.assertTrue(SupportAccessGrant.objects.filter(business=self.business, user=self.support).exists())
         self.assertTrue(AuditLog.objects.filter(business=self.business, action=AuditLog.Actions.SUPPORT_ACCESS, risk_level=AuditLog.RiskLevels.HIGH).exists())
+
+    @override_settings(SUPPORT_REQUIRES_GRANT=True)
+    def test_platform_admin_needs_support_grant_for_security_center(self):
+        self.client.force_authenticate(self.platform_admin)
+
+        no_grant = self.client.get("/api/security/audit/", {"business": self.business.id})
+        self.assertEqual(no_grant.status_code, 403)
+
+        SupportAccessGrant.objects.create(
+            business=self.business,
+            user=self.platform_admin,
+            reason="Support ticket #2",
+            expires_at=timezone.now() + timezone.timedelta(hours=1),
+            created_by=self.owner,
+        )
+
+        with_grant = self.client.get("/api/security/audit/", {"business": self.business.id})
+        self.assertEqual(with_grant.status_code, 200)
+        self.assertEqual(with_grant.data[0]["id"], self.audit.id)
+
+    @override_settings(SUPPORT_REQUIRES_GRANT=True)
+    def test_platform_admin_needs_support_grant_for_tenant_api(self):
+        self.client.force_authenticate(self.platform_admin)
+
+        no_grant_list = self.client.get("/api/clients/")
+        no_grant_detail = self.client.get(f"/api/clients/{self.client_obj.id}/")
+        self.assertEqual(no_grant_list.status_code, 200)
+        self.assertEqual(no_grant_list.data["results"], [])
+        self.assertEqual(no_grant_detail.status_code, 404)
+
+        SupportAccessGrant.objects.create(
+            business=self.business,
+            user=self.platform_admin,
+            reason="Support ticket #3",
+            expires_at=timezone.now() + timezone.timedelta(hours=1),
+            created_by=self.owner,
+        )
+
+        with_grant_list = self.client.get("/api/clients/")
+        with_grant_detail = self.client.get(f"/api/clients/{self.client_obj.id}/")
+        self.assertEqual(with_grant_list.status_code, 200)
+        self.assertEqual([item["id"] for item in with_grant_list.data["results"]], [self.client_obj.id])
+        self.assertEqual(with_grant_detail.status_code, 200)

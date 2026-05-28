@@ -5,6 +5,7 @@ import json
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
+from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponse
@@ -23,7 +24,7 @@ from apps.core.audit import write_audit_log
 from apps.core.models import AuditLog, ImportJob
 from apps.crm.models import Deal
 from apps.integrations.connectors import normalize_business_event
-from apps.integrations.models import BusinessEvent
+from apps.integrations.models import BusinessConnector, BusinessEvent, ConnectorSyncRun
 from apps.leads.models import Lead
 from apps.services.models import Service
 
@@ -109,7 +110,7 @@ def build_import_preview(job: ImportJob, mapping=None):
     rows = read_tabular_file(job.source_file.path)
     headers = list(rows[0].keys()) if rows else []
     mapping = mapping or guess_mapping(headers, aliases_for_entity(job.entity_type))
-    preview_rows = rows[:10]
+    preview_rows = rows[: settings.IMPORT_PREVIEW_ROWS]
     duplicates = duplicate_preview(job, preview_rows, mapping) if job.entity_type == ImportJob.EntityTypes.CLIENTS else []
     row_errors = validate_import_rows(job.entity_type, rows, mapping)
     job.mapping_json = mapping
@@ -144,20 +145,38 @@ def confirm_import(job: ImportJob, request):
     if (job.errors_json or {}).get("rows"):
         raise ValidationError("Fix import errors before confirming.")
     rows = read_tabular_file(job.source_file.path)
+    connector = ensure_excel_csv_connector(job)
+    sync_run = ConnectorSyncRun.objects.create(
+        business=job.business,
+        connector=connector,
+        mode=ConnectorSyncRun.Modes.MANUAL,
+        status=ConnectorSyncRun.Statuses.RUNNING,
+        started_at=timezone.now(),
+    )
     summary = {"created": 0, "updated": 0, "skipped": 0}
-    for row in rows:
-        payload = mapped_payload(row, mapping, job.entity_type)
-        if job.entity_type == ImportJob.EntityTypes.CLIENTS:
-            result = import_client_row(job, payload)
-        elif job.entity_type == ImportJob.EntityTypes.LEADS:
-            result = import_lead_row(job, payload)
-        elif job.entity_type == ImportJob.EntityTypes.SALES:
-            result = import_sale_row(job, payload)
-        elif job.entity_type == ImportJob.EntityTypes.CATALOG:
-            result = import_catalog_row(job, payload)
-        else:
-            raise ValidationError("Unsupported import entity.")
-        summary[result] = summary.get(result, 0) + 1
+    try:
+        for row in rows:
+            payload = mapped_payload(row, mapping, job.entity_type)
+            if job.entity_type == ImportJob.EntityTypes.CLIENTS:
+                result = import_client_row(job, payload)
+            elif job.entity_type == ImportJob.EntityTypes.LEADS:
+                result = import_lead_row(job, payload)
+            elif job.entity_type == ImportJob.EntityTypes.SALES:
+                result = import_sale_row(job, payload, connector=connector)
+            elif job.entity_type == ImportJob.EntityTypes.CATALOG:
+                result = import_catalog_row(job, payload, connector=connector)
+            else:
+                raise ValidationError("Unsupported import entity.")
+            summary[result] = summary.get(result, 0) + 1
+    except Exception as exc:
+        sync_run.status = ConnectorSyncRun.Statuses.FAILED
+        sync_run.error = str(exc)
+        sync_run.finished_at = timezone.now()
+        sync_run.save(update_fields=["status", "error", "finished_at"])
+        connector.status = BusinessConnector.Statuses.FAILED
+        connector.last_error = str(exc)
+        connector.save(update_fields=["status", "last_error", "updated_at"])
+        raise
     imported = summary["created"] + summary["updated"]
     job.status = ImportJob.Statuses.IMPORTED
     job.imported_count = imported
@@ -174,6 +193,29 @@ def confirm_import(job: ImportJob, request):
         },
     }
     job.save(update_fields=["status", "imported_count", "imported_at", "error", "preview_json", "updated_at"])
+    sync_run.status = ConnectorSyncRun.Statuses.SUCCEEDED
+    sync_run.events_received = len(rows)
+    sync_run.events_processed = imported
+    sync_run.finished_at = timezone.now()
+    sync_run.save(update_fields=["status", "events_received", "events_processed", "finished_at"])
+    connector.status = BusinessConnector.Statuses.CONNECTED
+    connector.last_error = ""
+    connector.last_sync_at = sync_run.finished_at
+    connector.connected_at = connector.connected_at or timezone.now()
+    connector.config_json = {
+        **(connector.config_json or {}),
+        "last_entity_type": job.entity_type,
+        "last_import_job_id": job.id,
+        "last_filename": job.original_filename,
+        "last_summary": summary,
+        "supported_entities": [
+            ImportJob.EntityTypes.CLIENTS,
+            ImportJob.EntityTypes.LEADS,
+            ImportJob.EntityTypes.SALES,
+            ImportJob.EntityTypes.CATALOG,
+        ],
+    }
+    connector.save(update_fields=["status", "last_error", "last_sync_at", "connected_at", "config_json", "updated_at"])
     write_audit_log(
         request,
         AuditLog.Actions.CREATE,
@@ -182,6 +224,65 @@ def confirm_import(job: ImportJob, request):
         metadata={"kind": "import_confirmed", "entity_type": job.entity_type, "rows": imported},
     )
     return job
+
+
+def ensure_excel_csv_connector(job):
+    connector, _ = BusinessConnector.objects.get_or_create(
+        business=job.business,
+        provider=BusinessConnector.Providers.EXCEL_CSV,
+        name="Excel / CSV",
+        defaults={
+            "capability": BusinessConnector.Capabilities.SALES,
+            "auth_type": BusinessConnector.AuthTypes.NONE,
+            "status": BusinessConnector.Statuses.CONNECTED,
+            "created_by": job.actor,
+            "connected_at": timezone.now(),
+            "config_json": {
+                "source": "file_import",
+                "supported_entities": [
+                    ImportJob.EntityTypes.CLIENTS,
+                    ImportJob.EntityTypes.LEADS,
+                    ImportJob.EntityTypes.SALES,
+                    ImportJob.EntityTypes.CATALOG,
+                ],
+            },
+        },
+    )
+    if connector.status not in {BusinessConnector.Statuses.CONNECTED, BusinessConnector.Statuses.SYNCING}:
+        connector.status = BusinessConnector.Statuses.CONNECTED
+        connector.last_error = ""
+        if connector.connected_at is None:
+            connector.connected_at = timezone.now()
+        connector.save(update_fields=["status", "last_error", "connected_at", "updated_at"])
+    return connector
+
+
+def mark_excel_csv_import_failed(job, error):
+    connector = ensure_excel_csv_connector(job)
+    message = str(error)
+    run = ConnectorSyncRun.objects.create(
+        business=job.business,
+        connector=connector,
+        mode=ConnectorSyncRun.Modes.MANUAL,
+        status=ConnectorSyncRun.Statuses.FAILED,
+        started_at=timezone.now(),
+        finished_at=timezone.now(),
+        events_received=job.total_rows,
+        events_processed=0,
+        error=message,
+    )
+    connector.status = BusinessConnector.Statuses.FAILED
+    connector.last_error = message
+    connector.last_sync_at = run.finished_at
+    connector.config_json = {
+        **(connector.config_json or {}),
+        "last_entity_type": job.entity_type,
+        "last_import_job_id": job.id,
+        "last_filename": job.original_filename,
+        "last_summary": {"created": 0, "updated": 0, "skipped": 0, "error": message},
+    }
+    connector.save(update_fields=["status", "last_error", "last_sync_at", "config_json", "updated_at"])
+    return run
 
 
 def aliases_for_entity(entity_type):
@@ -229,7 +330,7 @@ def import_lead_row(job, payload):
     return "created"
 
 
-def import_sale_row(job, payload):
+def import_sale_row(job, payload, connector=None):
     sale_payload = normalize_sale_payload(payload)
     occurred_at = sale_payload.pop("occurred_at_parsed", None)
     _, created = normalize_business_event(
@@ -238,12 +339,13 @@ def import_sale_row(job, payload):
         event_type="sale.recorded",
         external_id=sale_payload.get("external_id", ""),
         payload=sale_payload,
+        connector=connector,
         occurred_at=occurred_at,
     )
     return "created" if created else "skipped"
 
 
-def import_catalog_row(job, payload):
+def import_catalog_row(job, payload, connector=None):
     catalog_payload = normalize_catalog_payload(payload)
     service = None
     service_created = False
@@ -266,6 +368,7 @@ def import_catalog_row(job, payload):
         event_type="catalog.item_imported",
         external_id=catalog_payload.get("sku", ""),
         payload=catalog_payload,
+        connector=connector,
     )
     if event_created:
         return "created"
@@ -319,7 +422,11 @@ def read_tabular_file(path):
     extension = Path(path).suffix.lower()
     if extension == ".csv":
         with open(path, newline="", encoding="utf-8-sig") as file:
-            return list(csv.DictReader(file))
+            reader = csv.DictReader(file)
+            rows = list(reader)
+            if not reader.fieldnames:
+                raise ValidationError("Import file is empty.")
+            return normalize_tabular_rows(rows)
     if extension == ".xlsx":
         if load_workbook is None:
             raise ValidationError("XLSX import requires openpyxl. Install requirements.txt and retry.")
@@ -327,13 +434,29 @@ def read_tabular_file(path):
         sheet = workbook.active
         rows = list(sheet.iter_rows(values_only=True))
         if not rows:
-            return []
+            raise ValidationError("Import file is empty.")
         headers = [str(value or "").strip() for value in rows[0]]
         result = []
         for values in rows[1:]:
             result.append({headers[index]: cell_to_string(value) for index, value in enumerate(values) if index < len(headers)})
-        return result
+        workbook.close()
+        return normalize_tabular_rows(result)
     raise ValidationError("Only CSV and XLSX files are supported.")
+
+
+def normalize_tabular_rows(rows):
+    if not rows:
+        raise ValidationError("Import file is empty.")
+    normalized_rows = []
+    for row in rows:
+        clean_row = {str(key or "").strip(): cell_to_string(value) for key, value in (row or {}).items() if str(key or "").strip()}
+        if any(value for value in clean_row.values()):
+            normalized_rows.append(clean_row)
+    if not normalized_rows:
+        raise ValidationError("Import file has headers but no data rows.")
+    if len(normalized_rows) > settings.IMPORT_MAX_ROWS:
+        raise ValidationError(f"Import file has too many rows. Maximum is {settings.IMPORT_MAX_ROWS}.")
+    return normalized_rows
 
 
 def cell_to_string(value):

@@ -1,6 +1,8 @@
 from apps.ai_core.models import AIRequestLog, AgentProfile
 from apps.ai_core.services import run_ai_request
 from apps.bots.models import BotMessage
+from apps.bots.sales_playbooks import build_sales_playbook_context
+from apps.bots.scheduling_context import build_bot_scheduling_context
 
 
 def build_bot_conversation_context(conversation, limit=12):
@@ -16,8 +18,10 @@ def build_bot_conversation_context(conversation, limit=12):
     ]
 
 
-def suggest_bot_reply(*, conversation, user=None):
+def suggest_bot_reply(*, conversation, user=None, auto_mode=False, qualification=None):
     message_context = build_bot_conversation_context(conversation)
+    scheduling_context = build_bot_scheduling_context(conversation, qualification=qualification) if auto_mode else {}
+    sales_playbook = build_sales_playbook_context(conversation.business) if auto_mode else {}
     agent_profile = (
         AgentProfile.objects.filter(business=conversation.business, bot=conversation.bot, is_active=True).order_by("-updated_at").first()
         or AgentProfile.objects.filter(business=conversation.business, bot__isnull=True, is_active=True).order_by("-updated_at").first()
@@ -44,12 +48,19 @@ def suggest_bot_reply(*, conversation, user=None):
             f"Tone: {agent_profile.tone}. Language: {agent_profile.language}. "
             f"System prompt: {agent_profile.system_prompt or 'Use concise helpful replies.'} "
         )
-    user_input = (
-        agent_instruction +
-        "Generate a short, helpful CRM manager reply for this bot conversation. "
-        "Do not send it automatically. "
-        f"Last inbound message: {last_inbound['text'] if last_inbound else 'No inbound message'}"
-    )
+    if auto_mode:
+        reply_instruction = (
+            "Generate a short, sales-oriented bot reply for this conversation. "
+            "The reply may be sent automatically, so do not promise discounts, final booking, delivery, payment, or availability unless it is explicitly confirmed in context. "
+            "Follow sales_playbook exactly for this business type. "
+            "Use available scheduling context when present. Offer only real slots from next_available_slots. "
+            "Use service prices from services.price_from and explain them as 'от' when price_from is present. "
+            "If service, preferred master/resource, day, or exact slot is missing, ask one clear next question instead of inventing details. "
+        )
+    else:
+        reply_instruction = "Generate a short, helpful CRM manager reply for this bot conversation. Do not send it automatically. "
+
+    user_input = agent_instruction + reply_instruction + f"Last inbound message: {last_inbound['text'] if last_inbound else 'No inbound message'}"
     crm_context = {}
     if conversation.client_id:
         crm_context["client"] = {
@@ -70,6 +81,10 @@ def suggest_bot_reply(*, conversation, user=None):
         }
     if crm_context:
         user_input += f" CRM context: {crm_context}"
+    if scheduling_context:
+        user_input += f" Scheduling context: {scheduling_context}"
+    if sales_playbook:
+        user_input += f" Sales playbook: {sales_playbook}"
     result, log = run_ai_request(
         business=conversation.business,
         user=user,
@@ -83,6 +98,8 @@ def suggest_bot_reply(*, conversation, user=None):
             "messages": message_context,
             "agent_profile": agent_payload,
             "crm_context": crm_context,
+            "scheduling_context": scheduling_context,
+            "sales_playbook": sales_playbook,
         },
         allow_mock=True,
     )

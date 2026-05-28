@@ -1,10 +1,13 @@
 import { Home, Inbox, KanbanSquare, MessageSquareText, MoreHorizontal, X } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { NavLink } from "react-router-dom";
 
 import { cn } from "../../lib/cn";
+import { inboxApi } from "../../api/inbox";
 import { hasPermission } from "../../lib/permissions";
 import { useI18n } from "../../lib/i18n";
+import { realtimeIntervals, realtimeQueryOptions } from "../../lib/realtime";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useAuth } from "../../features/auth/AuthProvider";
 import { Button } from "../ui/Button";
@@ -22,6 +25,14 @@ export function MobileNav({ open, onOpen, onClose }: { open: boolean; onOpen: ()
   const { user } = useAuth();
   const { business } = useActiveBusiness();
   const visibleBottomItems = bottomItems.filter((item) => !item.resource || hasPermission(user, business?.id, item.resource));
+  const inboxSummary = useQuery({
+    queryKey: ["inbox-summary", business?.id],
+    queryFn: inboxApi.getSummary,
+    enabled: Boolean(user) && Boolean(business?.id) && hasPermission(user, business?.id, "conversations"),
+    refetchInterval: realtimeIntervals.inboxConversationsMs,
+    ...realtimeQueryOptions,
+  });
+  const unreadMessages = inboxSummary.data?.unread_messages ?? inboxSummary.data?.unread ?? 0;
 
   useEffect(() => {
     if (!open) return;
@@ -72,7 +83,14 @@ export function MobileNav({ open, onOpen, onClose }: { open: boolean; onOpen: ()
                 )
               }
             >
-              <Icon size={26} strokeWidth={2.35} />
+              <span className="relative">
+                <Icon size={26} strokeWidth={2.35} />
+                {item.to === "/dashboard/conversations" && unreadMessages ? (
+                  <span className="absolute -right-3 -top-2 min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-black leading-none text-white ring-2 ring-white">
+                    {unreadMessages > 99 ? "99+" : unreadMessages}
+                  </span>
+                ) : null}
+              </span>
               <span className="line-clamp-1 max-w-full">{t(item.label)}</span>
             </NavLink>
           );

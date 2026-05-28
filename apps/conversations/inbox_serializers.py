@@ -120,6 +120,10 @@ class InboxPrioritySerializer(serializers.Serializer):
     priority = serializers.ChoiceField(choices=["low", "normal", "high", "urgent"])
 
 
+class InboxRetryMessageSerializer(serializers.Serializer):
+    message_id = serializers.IntegerField()
+
+
 class InboxOutboundMessageSerializer(serializers.Serializer):
     text = serializers.CharField(required=True, allow_blank=False, trim_whitespace=True)
     sender_type = serializers.ChoiceField(choices=["manager"], default="manager")

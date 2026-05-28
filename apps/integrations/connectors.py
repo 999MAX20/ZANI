@@ -10,6 +10,7 @@ from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from apps.integrations.models import BusinessConnector, BusinessEvent, ConnectorCredential, ConnectorSyncRun
+from apps.integrations.sanitization import sanitize_config
 
 
 CONNECTOR_PROVIDER_CAPABILITIES = {
@@ -29,11 +30,11 @@ CONNECTOR_PROVIDER_CAPABILITIES = {
         "capability": BusinessConnector.Capabilities.COMMUNICATIONS,
         "auth_type": BusinessConnector.AuthTypes.QR,
         "label": "WhatsApp",
-        "description": "На пилоте безопасно начинать с WhatsApp-кнопки и статуса beta для расширенной интеграции.",
+        "description": "Meta Embedded Signup для подключения WhatsApp Business номера мерчанта без ручных API-настроек.",
         "launch_status": "beta",
         "cta_label": "Подключить WhatsApp",
-        "next_step": "Сначала включите кнопку WhatsApp. Полный API подключается отдельно после provider-проверки.",
-        "pilot_note": "Не обещать полноценный WhatsApp API как готовый production.",
+        "next_step": "Мерчант нажимает «Подключить через Meta», выбирает бизнес и номер, затем проверяет Inbox.",
+        "pilot_note": "Production зависит от Meta app/env, webhook HTTPS и App Review/permissions.",
         "setup_priority": 20,
         "is_pilot_safe": True,
     },
@@ -65,13 +66,13 @@ CONNECTOR_PROVIDER_CAPABILITIES = {
         "capability": BusinessConnector.Capabilities.COMMUNICATIONS,
         "auth_type": BusinessConnector.AuthTypes.OAUTH,
         "label": "Instagram",
-        "description": "Instagram Direct остаётся в roadmap/beta, пока нет production provider.",
-        "launch_status": "soon",
-        "cta_label": "Оставить заявку на подключение",
-        "next_step": "Покажите статус 'скоро' и собирайте интерес, не обещая production Direct.",
-        "pilot_note": "Не продавать как готовую омниканальность.",
+        "description": "Meta OAuth для Instagram Direct: входящие сообщения, Inbox и handoff оператору.",
+        "launch_status": "beta",
+        "cta_label": "Подключить Instagram",
+        "next_step": "Мерчант нажимает «Подключить через Meta», выбирает страницу с Instagram Business account и проверяет Inbox.",
+        "pilot_note": "Production требует Meta permissions/review для Instagram messaging.",
         "setup_priority": 50,
-        "is_pilot_safe": False,
+        "is_pilot_safe": True,
     },
     BusinessConnector.Providers.GOOGLE_SHEETS: {
         "capability": BusinessConnector.Capabilities.SALES,
@@ -99,51 +100,51 @@ CONNECTOR_PROVIDER_CAPABILITIES = {
     },
     BusinessConnector.Providers.MOYSKLAD: {
         "capability": BusinessConnector.Capabilities.INVENTORY,
-        "auth_type": BusinessConnector.AuthTypes.CONNECTOR,
+        "auth_type": BusinessConnector.AuthTypes.TOKEN,
         "label": "МойСклад",
-        "description": "Склад и остатки подключаются по заявке; для пилота используем CSV/Excel fallback.",
-        "launch_status": "request",
-        "cta_label": "Запросить подключение",
-        "next_step": "Сначала загрузите остатки через Excel/CSV, затем подключайте МойСклад по заявке.",
-        "pilot_note": "Roadmap/request, не готовый массовый provider.",
+        "description": "Read-only импорт каталога, остатков, продаж и контрагентов из МойСклад. Сейчас через ключ доступа, далее через app install.",
+        "launch_status": "beta",
+        "cta_label": "Подключить МойСклад",
+        "next_step": "Мерчант вводит ключ доступа как временный self-service baseline; позже заменяем на авторизацию приложения.",
+        "pilot_note": "Без обратной записи, изменения остатков и документов в МойСклад.",
         "setup_priority": 80,
-        "is_pilot_safe": False,
+        "is_pilot_safe": True,
     },
     BusinessConnector.Providers.KASPI: {
         "capability": BusinessConnector.Capabilities.FINANCE,
-        "auth_type": BusinessConnector.AuthTypes.CONNECTOR,
+        "auth_type": BusinessConnector.AuthTypes.TOKEN,
         "label": "Kaspi",
-        "description": "Marketplace visibility: продажи, цены, остатки и демпинг — будущий платный модуль.",
-        "launch_status": "roadmap",
-        "cta_label": "Скоро",
-        "next_step": "Показывайте как будущий модуль, не как готовую интеграцию.",
-        "pilot_note": "Не обещать auto-repricing и realtime Kaspi на пилоте.",
+        "description": "Read-only импорт заказов и безопасный pricing agent с порогом минимальной цены.",
+        "launch_status": "beta",
+        "cta_label": "Подключить Kaspi",
+        "next_step": "Мерчант вводит ключ доступа продавца Kaspi, загружает заказы и включает рекомендации цен с минимальным порогом.",
+        "pilot_note": "Write-back цен отключен по умолчанию; сначала рекомендации и approval.",
         "setup_priority": 90,
-        "is_pilot_safe": False,
+        "is_pilot_safe": True,
     },
     BusinessConnector.Providers.WILDBERRIES: {
         "capability": BusinessConnector.Capabilities.FINANCE,
-        "auth_type": BusinessConnector.AuthTypes.CONNECTOR,
+        "auth_type": BusinessConnector.AuthTypes.TOKEN,
         "label": "Wildberries",
-        "description": "Marketplace visibility roadmap для продаж, SKU, остатков и возвратов.",
-        "launch_status": "roadmap",
-        "cta_label": "Скоро",
-        "next_step": "Собирать интерес и готовить provider после пилота.",
-        "pilot_note": "Roadmap.",
+        "description": "Read-only импорт заказов, продаж и остатков Wildberries через статистический токен продавца.",
+        "launch_status": "beta",
+        "cta_label": "Подключить Wildberries",
+        "next_step": "Мерчант вводит токен категории Statistics; ZANI проверяет доступ и загружает marketplace события.",
+        "pilot_note": "Без изменения цен, поставок, карточек и заказов. Остатки держим опционально из-за изменения WB endpoints.",
         "setup_priority": 100,
-        "is_pilot_safe": False,
+        "is_pilot_safe": True,
     },
     BusinessConnector.Providers.OZON: {
         "capability": BusinessConnector.Capabilities.FINANCE,
-        "auth_type": BusinessConnector.AuthTypes.CONNECTOR,
+        "auth_type": BusinessConnector.AuthTypes.TOKEN,
         "label": "Ozon",
-        "description": "Marketplace visibility roadmap для продаж, SKU, остатков и возвратов.",
-        "launch_status": "roadmap",
-        "cta_label": "Скоро",
-        "next_step": "Собирать интерес и готовить provider после пилота.",
-        "pilot_note": "Roadmap.",
+        "description": "Read-only импорт FBS/FBO отправлений и остатков Ozon через Client-Id и API key продавца.",
+        "launch_status": "beta",
+        "cta_label": "Подключить Ozon",
+        "next_step": "Мерчант вводит Client-Id и API key из кабинета Ozon Seller; ZANI проверяет доступ и загружает marketplace события.",
+        "pilot_note": "Без обновления цен, остатков, карточек, сборки и отмены заказов.",
         "setup_priority": 110,
-        "is_pilot_safe": False,
+        "is_pilot_safe": True,
     },
     BusinessConnector.Providers.YANDEX_MARKET: {
         "capability": BusinessConnector.Capabilities.FINANCE,
@@ -200,14 +201,14 @@ CONNECTOR_AVAILABILITY_DEFAULTS = {
     BusinessConnector.Providers.WEBSITE: {"availability": "included", "required_plan": "basic", "setup_state": "active", "action_behavior": "self_service", "primary_action_label": "Настроить сайт-чат"},
     BusinessConnector.Providers.EXCEL_CSV: {"availability": "included", "required_plan": "basic", "setup_state": "active", "action_behavior": "self_service", "primary_action_label": "Загрузить файл"},
     BusinessConnector.Providers.TELEGRAM: {"availability": "included", "required_plan": "business", "setup_state": "setup_required", "action_behavior": "self_service", "primary_action_label": "Открыть beta-настройку"},
-    BusinessConnector.Providers.WHATSAPP: {"availability": "request", "required_plan": "business", "setup_state": "request_required", "action_behavior": "request", "primary_action_label": "Запросить подключение"},
-    BusinessConnector.Providers.INSTAGRAM: {"availability": "request", "required_plan": "pro", "setup_state": "request_required", "action_behavior": "request", "primary_action_label": "Оставить заявку"},
+    BusinessConnector.Providers.WHATSAPP: {"availability": "included", "required_plan": "business", "setup_state": "setup_required", "action_behavior": "self_service", "primary_action_label": "Подключить через Meta"},
+    BusinessConnector.Providers.INSTAGRAM: {"availability": "included", "required_plan": "pro", "setup_state": "setup_required", "action_behavior": "self_service", "primary_action_label": "Открыть beta-настройку"},
     BusinessConnector.Providers.GOOGLE_SHEETS: {"availability": "upgrade", "required_plan": "business", "setup_state": "coming_soon", "action_behavior": "disabled", "primary_action_label": "В тарифе выше"},
     BusinessConnector.Providers.ONE_C: {"availability": "request", "required_plan": "pro", "setup_state": "request_required", "action_behavior": "request", "primary_action_label": "Запросить подключение"},
-    BusinessConnector.Providers.MOYSKLAD: {"availability": "request", "required_plan": "pro", "setup_state": "request_required", "action_behavior": "request", "primary_action_label": "Запросить подключение"},
-    BusinessConnector.Providers.KASPI: {"availability": "roadmap", "required_plan": "pro", "setup_state": "roadmap", "action_behavior": "disabled", "primary_action_label": "Скоро"},
-    BusinessConnector.Providers.WILDBERRIES: {"availability": "roadmap", "required_plan": "pro", "setup_state": "roadmap", "action_behavior": "disabled", "primary_action_label": "Скоро"},
-    BusinessConnector.Providers.OZON: {"availability": "roadmap", "required_plan": "pro", "setup_state": "roadmap", "action_behavior": "disabled", "primary_action_label": "Скоро"},
+    BusinessConnector.Providers.MOYSKLAD: {"availability": "included", "required_plan": "pro", "setup_state": "setup_required", "action_behavior": "self_service", "primary_action_label": "Открыть beta-настройку"},
+    BusinessConnector.Providers.KASPI: {"availability": "included", "required_plan": "pro", "setup_state": "setup_required", "action_behavior": "self_service", "primary_action_label": "Открыть beta-настройку"},
+    BusinessConnector.Providers.WILDBERRIES: {"availability": "included", "required_plan": "pro", "setup_state": "setup_required", "action_behavior": "self_service", "primary_action_label": "Открыть beta-настройку"},
+    BusinessConnector.Providers.OZON: {"availability": "included", "required_plan": "pro", "setup_state": "setup_required", "action_behavior": "self_service", "primary_action_label": "Открыть beta-настройку"},
     BusinessConnector.Providers.YANDEX_MARKET: {"availability": "roadmap", "required_plan": "pro", "setup_state": "roadmap", "action_behavior": "disabled", "primary_action_label": "Скоро"},
     BusinessConnector.Providers.EMAIL: {"availability": "upgrade", "required_plan": "business", "setup_state": "coming_soon", "action_behavior": "disabled", "primary_action_label": "В тарифе выше"},
     BusinessConnector.Providers.GOOGLE_CALENDAR: {"availability": "upgrade", "required_plan": "business", "setup_state": "coming_soon", "action_behavior": "disabled", "primary_action_label": "В тарифе выше"},
@@ -335,6 +336,17 @@ def connector_has_active_credentials(connector):
                 channel=BotChannel.Channels.WHATSAPP,
             ).exclude(config_json__access_token="").exclude(config_json__phone_number_id="").exists()
         return bool(config.get("access_token_configured") and config.get("phone_number_id_configured"))
+    if connector.provider == BusinessConnector.Providers.INSTAGRAM:
+        config = connector.config_json or {}
+        bot_channel_id = config.get("bot_channel_id")
+        if bot_channel_id:
+            from apps.bots.models import BotChannel
+
+            return BotChannel.objects.filter(
+                id=bot_channel_id,
+                channel=BotChannel.Channels.INSTAGRAM,
+            ).exclude(config_json__access_token="").exclude(config_json__instagram_user_id="").exists()
+        return bool(config.get("access_token_configured") and config.get("instagram_user_id_configured"))
 
     now = timezone.now()
     return connector.credentials.filter(expires_at__isnull=True).exists() or connector.credentials.filter(expires_at__gt=now).exists()
@@ -363,12 +375,13 @@ def business_event_deduplication_key(source, event_type, payload, external_id=""
 
 def normalize_business_event(business, source, event_type, payload, external_id="", connector=None, occurred_at=None):
     deduplication_key = business_event_deduplication_key(source, event_type, payload, external_id=external_id)
+    safe_payload = sanitize_config(payload or {})
     defaults = {
         "connector": connector,
         "event_type": event_type,
         "external_id": external_id or "",
         "occurred_at": occurred_at or timezone.now(),
-        "payload_json": payload or {},
+        "payload_json": safe_payload,
         "status": BusinessEvent.Statuses.RECEIVED,
     }
     try:

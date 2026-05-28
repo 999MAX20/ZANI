@@ -9,6 +9,7 @@ export type InboxMessage = BotMessage;
 export type InboxSummary = {
   total: number;
   unread: number;
+  unread_messages: number;
   handoff_required: number;
   assigned_to_me: number;
   unassigned: number;
@@ -134,6 +135,12 @@ export const inboxApi = {
     const { data } = await apiClient.post<InboxMessage>(`/api/inbox/conversations/${conversationId}/messages/`, {
       text,
       sender_type: "manager",
+    });
+    return data;
+  },
+  retryMessage: async ({ conversationId, messageId }: { conversationId: Id; messageId: Id }) => {
+    const { data } = await apiClient.post<InboxMessage>(`/api/inbox/conversations/${conversationId}/retry-message/`, {
+      message_id: messageId,
     });
     return data;
   },

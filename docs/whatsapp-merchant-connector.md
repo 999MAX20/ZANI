@@ -60,7 +60,8 @@ Sensitive values are masked in API responses.
 5. ZANI opens the returned `authorization_url`.
 6. Merchant logs in to Meta and selects/creates Business, WABA and phone number.
 7. Meta returns an authorization `code` and selected WhatsApp phone metadata.
-8. ZANI calls `POST /api/business-connectors/whatsapp-embedded-signup/complete/` with:
+8. The integrations UI listens for the OAuth popup callback and Meta Embedded Signup `postMessage` result, then fills the returned `code`, `state`, `phone_number_id`, `waba_id` and display phone when Meta provides them.
+9. ZANI calls `POST /api/business-connectors/whatsapp-embedded-signup/complete/` with:
    - `business`;
    - `code`;
    - `state`;
@@ -68,10 +69,12 @@ Sensitive values are masked in API responses.
    - `phone_number_id`;
    - `waba_id`;
    - `display_phone_number`.
-9. Backend exchanges `code` for access token, stores credentials in `BotChannel`, and marks the connector connected.
-10. Merchant sends a message to the connected WhatsApp number and verifies it appears in Unified Inbox.
+10. Backend exchanges `code` for access token, stores credentials in `BotChannel`, and marks the connector connected.
+11. Merchant sends a message to the connected WhatsApp number and verifies it appears in Unified Inbox.
 
 ## Manual Fallback Flow
+
+This is for support/debugging, not the primary merchant path.
 
 1. Create or select a merchant bot in ZANI.
 2. Open `/dashboard/integrations`.
@@ -99,6 +102,45 @@ Sensitive values are masked in API responses.
 ## Local Development
 
 When `WHATSAPP_ENABLED=False`, credentials can be saved and checked in mock mode. Real inbound webhooks require public HTTPS or a tunneling tool.
+
+## Local Real Test
+
+Use this flow before staging:
+
+1. Start the local Django API with real Meta settings:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 \
+WHATSAPP_ENABLED=True \
+WHATSAPP_VERIFY_TOKEN=... \
+WHATSAPP_APP_SECRET=... \
+META_APP_ID=... \
+META_APP_SECRET=... \
+WHATSAPP_EMBEDDED_SIGNUP_CONFIG_ID=... \
+.venv/bin/python manage.py runserver 0.0.0.0:8000
+```
+
+2. Start a public HTTPS tunnel to Django, for example to local port `8000`.
+3. Run the local real-test checklist:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 \
+WHATSAPP_ENABLED=True \
+WHATSAPP_VERIFY_TOKEN=... \
+WHATSAPP_APP_SECRET=... \
+META_APP_ID=... \
+META_APP_SECRET=... \
+WHATSAPP_EMBEDDED_SIGNUP_CONFIG_ID=... \
+.venv/bin/python manage.py whatsapp_local_real_test_check --public-url https://YOUR-TUNNEL-DOMAIN --fail-on-missing
+```
+
+4. In Meta App Dashboard configure:
+   - Webhook callback URL from the command output;
+   - Verify token from `WHATSAPP_VERIFY_TOKEN`;
+   - Embedded Signup redirect URI from the command output.
+5. Open ZANI through the same public app origin if testing Meta JS SDK browser restrictions, then use `/dashboard/integrations` -> WhatsApp -> `Подключить через Meta`.
+6. After Embedded Signup completes, press `Завершить подключение`, then `Проверить Meta доступ`.
+7. Send a WhatsApp message to the connected number and confirm it appears in Unified Inbox.
 
 ## Rollback
 

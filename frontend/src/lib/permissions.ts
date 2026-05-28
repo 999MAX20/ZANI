@@ -19,6 +19,7 @@ export const resourceLabels: Record<string, string> = {
   billing: "Оплата",
   integrations: "Интеграции",
   automations: "Автоматизации",
+  notifications: "Уведомления и рассылки",
 };
 
 export const scopeLabels: Record<string, string> = {

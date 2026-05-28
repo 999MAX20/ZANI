@@ -227,6 +227,17 @@ class ProductionReadinessTests(TestCase):
         ALLOWED_HOSTS=["*"],
         CORS_ALLOWED_ORIGINS=[],
         CSRF_TRUSTED_ORIGINS=[],
+        SECURE_SSL_REDIRECT=False,
+        SESSION_COOKIE_SECURE=False,
+        CSRF_COOKIE_SECURE=False,
+        SECURE_HSTS_SECONDS=0,
+        SECURE_HSTS_INCLUDE_SUBDOMAINS=False,
+        SECURE_HSTS_PRELOAD=False,
+        SECURE_PROXY_SSL_HEADER=None,
+        SUPPORT_REQUIRES_GRANT=False,
+        CELERY_BROKER_URL="memory://",
+        AUTOMATIONS_RUN_INLINE=True,
+        USE_S3=False,
         SENTRY_DSN="",
     )
     def test_production_settings_check_warns_about_unsafe_baseline(self):
@@ -238,6 +249,222 @@ class ProductionReadinessTests(TestCase):
         self.assertIn("zani.W004", warning_ids)
         self.assertIn("zani.W005", warning_ids)
         self.assertIn("zani.W006", warning_ids)
+        self.assertIn("zani.W007", warning_ids)
+        self.assertIn("zani.W008", warning_ids)
+        self.assertIn("zani.W009", warning_ids)
+        self.assertIn("zani.W010", warning_ids)
+        self.assertIn("zani.W011", warning_ids)
+        self.assertIn("zani.W012", warning_ids)
+        self.assertIn("zani.W013", warning_ids)
+        self.assertIn("zani.W014", warning_ids)
+
+    @override_settings(ENVIRONMENT="production", SECRET_KEY="x" * 64)
+    def test_production_settings_check_warns_about_low_entropy_secret_key(self):
+        warning_ids = {warning.id for warning in run_checks()}
+
+        self.assertIn("zani.W002", warning_ids)
+
+    @override_settings(ENVIRONMENT="production", SECRET_KEY="vZ9!rQ2#mN8$kL4%pT6@wX1&bC7?gH3+sD5^yF0")
+    def test_production_settings_check_accepts_high_entropy_secret_key(self):
+        warning_ids = {warning.id for warning in run_checks()}
+
+        self.assertNotIn("zani.W002", warning_ids)
+
+    @override_settings(
+        ENVIRONMENT="production",
+        ALLOWED_HOSTS=["api.example.com"],
+        CORS_ALLOWED_ORIGINS=["http://localhost:5173", "https://app.example.com"],
+        CSRF_TRUSTED_ORIGINS=["https://127.0.0.1:5173"],
+    )
+    def test_production_settings_check_warns_about_dev_origins(self):
+        warning_ids = {warning.id for warning in run_checks()}
+
+        self.assertIn("zani.W004", warning_ids)
+        self.assertIn("zani.W005", warning_ids)
+
+    @override_settings(
+        ENVIRONMENT="production",
+        ALLOWED_HOSTS=["api.example.com"],
+        CORS_ALLOWED_ORIGINS=["https://app.example.com"],
+        CSRF_TRUSTED_ORIGINS=["https://app.example.com", "https://api.example.com"],
+    )
+    def test_production_settings_check_accepts_public_https_origins(self):
+        warning_ids = {warning.id for warning in run_checks()}
+
+        self.assertNotIn("zani.W004", warning_ids)
+        self.assertNotIn("zani.W005", warning_ids)
+
+    @override_settings(
+        ENVIRONMENT="production",
+        USE_S3=True,
+        AWS_STORAGE_BUCKET_NAME="",
+        AWS_QUERYSTRING_AUTH=False,
+        AWS_DEFAULT_ACL="public-read",
+        STORAGES={"default": {"BACKEND": "django.core.files.storage.FileSystemStorage"}},
+    )
+    def test_production_settings_check_warns_about_incomplete_object_storage(self):
+        warning_ids = {warning.id for warning in run_checks()}
+
+        self.assertIn("zani.W012", warning_ids)
+
+    @override_settings(
+        ENVIRONMENT="production",
+        USE_S3=True,
+        AWS_STORAGE_BUCKET_NAME="zani-private-files",
+        AWS_QUERYSTRING_AUTH=True,
+        AWS_DEFAULT_ACL=None,
+        STORAGES={"default": {"BACKEND": "storages.backends.s3.S3Storage"}},
+    )
+    def test_production_settings_check_accepts_private_object_storage(self):
+        warning_ids = {warning.id for warning in run_checks()}
+
+        self.assertNotIn("zani.W012", warning_ids)
+
+    @override_settings(
+        ENVIRONMENT="production",
+        DATABASES={"default": {"ENGINE": "django.db.backends.postgresql", "CONN_MAX_AGE": 60}},
+    )
+    def test_production_settings_check_warns_about_postgres_without_tls(self):
+        warning_ids = {warning.id for warning in run_checks()}
+
+        self.assertIn("zani.W009", warning_ids)
+
+    @override_settings(
+        ENVIRONMENT="production",
+        DATABASES={
+            "default": {
+                "ENGINE": "django.db.backends.postgresql",
+                "CONN_MAX_AGE": 60,
+                "OPTIONS": {"sslmode": "require"},
+            }
+        },
+    )
+    def test_production_settings_check_accepts_tls_postgres(self):
+        warning_ids = {warning.id for warning in run_checks()}
+
+        self.assertNotIn("zani.W009", warning_ids)
+
+    @override_settings(ENVIRONMENT="production", CELERY_BROKER_URL="redis://redis.example.com:6379/0")
+    def test_production_settings_check_warns_about_plaintext_redis(self):
+        warning_ids = {warning.id for warning in run_checks()}
+
+        self.assertIn("zani.W010", warning_ids)
+
+    @override_settings(ENVIRONMENT="production", CELERY_BROKER_URL="rediss://redis.example.com:6379/0")
+    def test_production_settings_check_accepts_tls_redis(self):
+        warning_ids = {warning.id for warning in run_checks()}
+
+        self.assertNotIn("zani.W010", warning_ids)
+
+    @override_settings(
+        ENVIRONMENT="production",
+        EMAIL_HOST="smtp.example.net",
+        DEFAULT_FROM_EMAIL="Zani <no-reply@zani.local>",
+        EMAIL_USE_TLS=True,
+        EMAIL_USE_SSL=False,
+    )
+    def test_production_settings_check_warns_about_local_sender_email_domain(self):
+        warning_ids = {warning.id for warning in run_checks()}
+
+        self.assertIn("zani.W014", warning_ids)
+
+    @override_settings(
+        ENVIRONMENT="production",
+        EMAIL_HOST="smtp.example.net",
+        DEFAULT_FROM_EMAIL="Zani <no-reply@zani.example.net>",
+        EMAIL_USE_TLS=False,
+        EMAIL_USE_SSL=False,
+    )
+    def test_production_settings_check_warns_about_unencrypted_email(self):
+        warning_ids = {warning.id for warning in run_checks()}
+
+        self.assertIn("zani.W014", warning_ids)
+
+    @override_settings(
+        ENVIRONMENT="production",
+        EMAIL_HOST="smtp.example.net",
+        DEFAULT_FROM_EMAIL="Zani <no-reply@zani.example.net>",
+        EMAIL_USE_TLS=True,
+        EMAIL_USE_SSL=False,
+    )
+    def test_production_settings_check_accepts_secure_transactional_email(self):
+        warning_ids = {warning.id for warning in run_checks()}
+
+        self.assertNotIn("zani.W014", warning_ids)
+
+    @override_settings(
+        ENVIRONMENT="production",
+        SENTRY_DSN="http://public@example.com/1",
+        RELEASE="release-20260528",
+        SENTRY_TRACES_SAMPLE_RATE=0.05,
+    )
+    def test_production_settings_check_warns_about_non_https_sentry_dsn(self):
+        warning_ids = {warning.id for warning in run_checks()}
+
+        self.assertIn("zani.W006", warning_ids)
+
+    @override_settings(
+        ENVIRONMENT="production",
+        SENTRY_DSN="https://public@example.com/1",
+        RELEASE="local",
+        SENTRY_TRACES_SAMPLE_RATE=0.05,
+    )
+    def test_production_settings_check_warns_about_local_sentry_release(self):
+        warning_ids = {warning.id for warning in run_checks()}
+
+        self.assertIn("zani.W006", warning_ids)
+
+    @override_settings(
+        ENVIRONMENT="production",
+        SENTRY_DSN="https://public@example.com/1",
+        RELEASE="release-20260528",
+        SENTRY_TRACES_SAMPLE_RATE=1.0,
+    )
+    def test_production_settings_check_warns_about_excessive_sentry_sample_rate(self):
+        warning_ids = {warning.id for warning in run_checks()}
+
+        self.assertIn("zani.W006", warning_ids)
+
+    @override_settings(
+        ENVIRONMENT="production",
+        SENTRY_DSN="https://public@example.com/1",
+        RELEASE="release-20260528",
+        SENTRY_TRACES_SAMPLE_RATE=0.05,
+    )
+    def test_production_settings_check_accepts_safe_sentry_observability(self):
+        warning_ids = {warning.id for warning in run_checks()}
+
+        self.assertNotIn("zani.W006", warning_ids)
+
+    @override_settings(
+        ENVIRONMENT="production",
+        SECURE_SSL_REDIRECT=True,
+        SESSION_COOKIE_SECURE=True,
+        CSRF_COOKIE_SECURE=True,
+        SECURE_HSTS_SECONDS=31536000,
+        SECURE_HSTS_INCLUDE_SUBDOMAINS=True,
+        SECURE_HSTS_PRELOAD=True,
+        SECURE_PROXY_SSL_HEADER=None,
+    )
+    def test_production_settings_check_warns_about_missing_proxy_ssl_header(self):
+        warning_ids = {warning.id for warning in run_checks()}
+
+        self.assertIn("zani.W007", warning_ids)
+
+    @override_settings(
+        ENVIRONMENT="production",
+        SECURE_SSL_REDIRECT=True,
+        SESSION_COOKIE_SECURE=True,
+        CSRF_COOKIE_SECURE=True,
+        SECURE_HSTS_SECONDS=31536000,
+        SECURE_HSTS_INCLUDE_SUBDOMAINS=True,
+        SECURE_HSTS_PRELOAD=True,
+        SECURE_PROXY_SSL_HEADER=("HTTP_X_FORWARDED_PROTO", "https"),
+    )
+    def test_production_settings_check_accepts_full_https_security(self):
+        warning_ids = {warning.id for warning in run_checks()}
+
+        self.assertNotIn("zani.W007", warning_ids)
 
 
 class PilotReadinessChecklistTests(TestCase):
@@ -364,20 +591,23 @@ class FileSafetyFoundationTests(TestCase):
         BusinessMember.objects.create(business=self.other_business, user=self.other_user, role=BusinessMember.Roles.OWNER)
 
     def test_file_validation_accepts_allowed_file(self):
-        uploaded = SimpleUploadedFile("document.pdf", b"content", content_type="application/pdf")
+        uploaded = SimpleUploadedFile("document.pdf", b"%PDF-1.4\ncontent", content_type="application/pdf")
 
         self.assertEqual(normalize_extension(uploaded.name), "pdf")
         self.assertIs(validate_file_upload(uploaded, max_size_mb=1), uploaded)
 
     def test_file_validation_rejects_extension_content_type_and_size(self):
         bad_extension = SimpleUploadedFile("payload.exe", b"content", content_type="application/octet-stream")
-        bad_type = SimpleUploadedFile("document.pdf", b"content", content_type="application/octet-stream")
-        too_large = SimpleUploadedFile("document.pdf", b"x" * 11, content_type="application/pdf")
+        bad_type = SimpleUploadedFile("document.pdf", b"%PDF-1.4\ncontent", content_type="application/octet-stream")
+        bad_signature = SimpleUploadedFile("document.pdf", b"content", content_type="application/pdf")
+        too_large = SimpleUploadedFile("document.pdf", b"%PDF-1.4\n" + b"x" * 11, content_type="application/pdf")
 
         with self.assertRaises(ValidationError):
             validate_file_upload(bad_extension)
         with self.assertRaises(ValidationError):
             validate_file_upload(bad_type)
+        with self.assertRaises(ValidationError):
+            validate_file_upload(bad_signature)
         with self.assertRaises(ValidationError):
             validate_file_upload(too_large, max_size_mb=0.000001)
 

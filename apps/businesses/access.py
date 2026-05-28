@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from rest_framework.exceptions import PermissionDenied
 
 from apps.businesses.models import Business, BusinessMember, BusinessRole, RolePermission
-from apps.core.permissions import is_platform_admin, user_can_access_business
+from apps.core.permissions import platform_admin_has_global_access, is_platform_admin, user_can_access_business
 
 
 class Resources:
@@ -190,10 +190,13 @@ def role_permission_allows(business_role: BusinessRole | None, resource, action)
 
 
 def can(user, business: Business | None, resource: str, action: str, obj=None) -> PermissionResult:
-    if is_platform_admin(user):
+    if platform_admin_has_global_access(user):
         return PermissionResult(True, RolePermission.Scopes.BUSINESS)
     if not user_can_access_business(user, business):
         return PermissionResult(False, reason="No access to this business.")
+
+    if is_platform_admin(user):
+        return PermissionResult(True, RolePermission.Scopes.BUSINESS)
 
     membership = get_membership(user, business)
     if user_is_business_owner(user, business):

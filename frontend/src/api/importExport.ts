@@ -4,8 +4,10 @@ import type { Id, ImportJob } from "../types";
 export type ImportEntity = "clients" | "leads" | "sales" | "catalog";
 
 export const importExportApi = {
-  importJobs: async () => {
-    const { data } = await apiClient.get<ImportJob[] | { results: ImportJob[] }>("/api/import-jobs/");
+  importJobs: async (business?: Id) => {
+    const { data } = await apiClient.get<ImportJob[] | { results: ImportJob[] }>("/api/import-jobs/", {
+      params: business ? { business } : undefined,
+    });
     return unwrapList(data);
   },
   upload: async ({ business, entity, file }: { business: Id; entity: ImportEntity; file: File }) => {

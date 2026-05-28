@@ -5,6 +5,7 @@ from apps.accounts.models import User
 from apps.businesses.models import Business, BusinessMember
 from apps.clients.models import Client
 from apps.integrations.models import ApiToken, WebhookDeliveryLog, WebhookEndpoint
+from apps.integrations.webhooks import deliver_webhook_event
 
 
 def unwrap_response_list(response):
@@ -110,6 +111,24 @@ class PublicApiAndWebhookTests(TestCase):
         self.assertEqual(token_response.status_code, 403)
         self.assertEqual(webhook_response.status_code, 403)
 
+    def test_webhook_endpoint_rejects_local_and_private_urls(self):
+        self.api.force_authenticate(self.owner)
+
+        localhost_response = self.api.post(
+            "/api/webhook-endpoints/",
+            {"business": self.business.id, "name": "Local hook", "url": "http://127.0.0.1:8000/internal", "events_json": ["system.test"]},
+            format="json",
+        )
+        private_response = self.api.post(
+            "/api/webhook-endpoints/",
+            {"business": self.business.id, "name": "Private hook", "url": "http://10.0.0.5/hook", "events_json": ["system.test"]},
+            format="json",
+        )
+
+        self.assertEqual(localhost_response.status_code, 400)
+        self.assertEqual(private_response.status_code, 400)
+        self.assertEqual(WebhookEndpoint.objects.count(), 0)
+
     def test_webhook_delivery_success_and_failure_are_logged(self):
         self.api.force_authenticate(self.owner)
         success_response = self.api.post(
@@ -134,6 +153,29 @@ class PublicApiAndWebhookTests(TestCase):
         self.assertEqual(retry_response.status_code, 200)
         self.assertGreaterEqual(retry_response.data["attempts"], 2)
         self.assertEqual(WebhookEndpoint.objects.count(), 2)
+
+    def test_webhook_delivery_sanitizes_payload_before_storage(self):
+        endpoint = WebhookEndpoint.objects.create(
+            business=self.business,
+            name="Secure hook",
+            url="mock://success",
+            events_json=["system.test"],
+            created_by=self.owner,
+        )
+
+        log = deliver_webhook_event(
+            endpoint,
+            "system.test",
+            {"visible": True, "api_key": "raw-api-key", "nested": {"access_token": "raw-access-token"}},
+            "secure-delivery",
+        )
+
+        self.assertEqual(log.status, WebhookDeliveryLog.Statuses.SENT)
+        self.assertTrue(log.payload_json["visible"])
+        self.assertEqual(log.payload_json["api_key"], "configured")
+        self.assertEqual(log.payload_json["nested"]["access_token"], "configured")
+        self.assertNotIn("raw-api-key", str(log.payload_json))
+        self.assertNotIn("raw-access-token", str(log.payload_json))
 
     def test_other_merchant_cannot_see_webhooks_or_tokens(self):
         ApiToken.objects.create(business=self.business, name="Hidden token", scopes_json=["clients:read"], created_by=self.owner)

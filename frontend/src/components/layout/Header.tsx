@@ -1,11 +1,13 @@
-import { Bell, Check, LogOut, Menu, Sparkles } from "lucide-react";
+import { Bell, Check, LogOut, Menu, MessageSquareText, Sparkles, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { notificationsApi } from "../../api/notifications";
+import { inboxApi } from "../../api/inbox";
 import { useAuth } from "../../features/auth/AuthProvider";
+import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useI18n } from "../../lib/i18n";
 import { formatDateTime } from "../../lib/format";
 import { realtimeIntervals, realtimeQueryOptions } from "../../lib/realtime";
@@ -18,9 +20,12 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user, userEmail, logout } = useAuth();
+  const { business } = useActiveBusiness();
   const { t } = useI18n();
   const [showNotifications, setShowNotifications] = useState(false);
+  const [chatToastOpen, setChatToastOpen] = useState(false);
   const notificationsRef = useRef<HTMLDivElement | null>(null);
+  const previousUnreadMessagesRef = useRef<number | null>(null);
   const notifications = useQuery({
     queryKey: ["notifications"],
     queryFn: notificationsApi.list,
@@ -32,6 +37,13 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
     queryFn: notificationsApi.summary,
     enabled: Boolean(user),
     refetchInterval: realtimeIntervals.notificationsMs,
+    ...realtimeQueryOptions,
+  });
+  const inboxSummary = useQuery({
+    queryKey: ["inbox-summary", business?.id],
+    queryFn: inboxApi.getSummary,
+    enabled: Boolean(user) && Boolean(business?.id),
+    refetchInterval: realtimeIntervals.inboxConversationsMs,
     ...realtimeQueryOptions,
   });
   const markReadMutation = useMutation({
@@ -50,6 +62,9 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
   });
 
   const unreadCount = notificationSummary.data?.unread ?? 0;
+  const unreadChatMessages = inboxSummary.data?.unread_messages ?? inboxSummary.data?.unread ?? 0;
+  const activeMembership = user?.memberships?.find((membership) => String(membership.business) === String(business?.id) && membership.is_active);
+  const receivesChatToasts = Boolean(user && activeMembership?.role !== "owner" && user.role !== "business_owner");
   const latestNotifications = [...(notifications.data || [])].sort((a, b) => Number(!b.read_at) - Number(!a.read_at) || new Date(b.send_at).getTime() - new Date(a.send_at).getTime()).slice(0, 7);
   const groupedNotifications = latestNotifications.reduce<Record<string, typeof latestNotifications>>((acc, notification) => {
     const key = notification.category || "system";
@@ -84,7 +99,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
     "/tasks": "/dashboard/tasks",
     "/calendar": "/dashboard/calendar",
     "/appointments": "/dashboard/appointments",
-    "/conversations": "/dashboard/inbox",
+    "/conversations": "/dashboard/conversations",
     "/integrations": "/dashboard/integrations",
     "/settings": "/dashboard/settings",
   };
@@ -121,6 +136,15 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [showNotifications]);
+
+  useEffect(() => {
+    const previous = previousUnreadMessagesRef.current;
+    previousUnreadMessagesRef.current = unreadChatMessages;
+    if (!receivesChatToasts || previous === null || unreadChatMessages <= previous) return;
+    setChatToastOpen(true);
+    const timer = window.setTimeout(() => setChatToastOpen(false), 6500);
+    return () => window.clearTimeout(timer);
+  }, [receivesChatToasts, unreadChatMessages]);
 
   return (
     <header className="sticky top-0 z-50 px-2 pt-2 sm:px-3 sm:pt-3 lg:px-6">
@@ -227,6 +251,39 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
               </div>
             ) : null}
           </div>
+          {chatToastOpen ? (
+            <div className="fixed right-4 top-24 z-[90] w-[min(360px,calc(100vw-2rem))] rounded-3xl border border-white/80 bg-white p-4 shadow-premium ring-1 ring-red-100">
+              <div className="flex items-start gap-3">
+                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-red-50 text-red-600">
+                  <MessageSquareText size={21} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-black text-midnight">Новое сообщение</p>
+                  <p className="mt-1 text-sm font-semibold leading-5 text-slate-500">
+                    В чатах есть непрочитанные сообщения: {unreadChatMessages > 99 ? "99+" : unreadChatMessages}.
+                  </p>
+                  <button
+                    type="button"
+                    className="mt-3 rounded-2xl bg-slate-950 px-3 py-2 text-xs font-black text-white transition hover:bg-slate-800"
+                    onClick={() => {
+                      setChatToastOpen(false);
+                      navigate("/dashboard/conversations?unread=true");
+                    }}
+                  >
+                    Открыть сообщения
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-slate-400 transition hover:bg-slate-50 hover:text-slate-700"
+                  onClick={() => setChatToastOpen(false)}
+                  aria-label={t("common.close")}
+                >
+                  <X size={17} />
+                </button>
+              </div>
+            </div>
+          ) : null}
           <div className="hidden text-right lg:block">
             <p className="text-xs font-semibold text-midnight">{userEmail}</p>
             <p className="text-[11px] text-slate-400">{user?.role || t("header.role")}</p>

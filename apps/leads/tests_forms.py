@@ -80,6 +80,30 @@ class LeadFormCaptureTests(TestCase):
         self.assertTrue(AutomationRun.objects.filter(rule=rule, status=AutomationRun.Statuses.SUCCESS).exists())
         self.assertTrue(Task.objects.filter(title="Call new lead").exists())
 
+    def test_public_form_sanitizes_secret_like_payload_before_storage(self):
+        form = LeadForm.objects.create(business=self.business, name="Secure form", title="Lead")
+        form.fields.create(key="phone", label="Phone", field_type="phone", is_required=True)
+
+        response = self.api.post(
+            f"/api/public/forms/{form.public_id}/submit/",
+            {
+                "full_name": "Secure Client",
+                "phone": "+77015550101",
+                "message": "Хочу записаться",
+                "api_key": "raw-api-key",
+                "nested": {"access_token": "raw-access-token"},
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        submission = LeadFormSubmission.objects.get()
+        self.assertEqual(submission.payload_json["phone"], "+77015550101")
+        self.assertEqual(submission.payload_json["api_key"], "configured")
+        self.assertEqual(submission.payload_json["nested"]["access_token"], "configured")
+        self.assertNotIn("raw-api-key", str(submission.payload_json))
+        self.assertNotIn("raw-access-token", str(submission.payload_json))
+
     def test_public_landing_form_preserves_source_context_and_is_tenant_scoped(self):
         other_owner = User.objects.create_user(username="other-owner", email="other-owner@example.com", password="pass12345")
         other_business = Business.objects.create(owner=other_owner, name="Other Clinic", slug="other-clinic")

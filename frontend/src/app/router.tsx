@@ -31,9 +31,11 @@ const TimelinePage = lazy(() => import("../features/timeline/TimelinePage").then
 const BotsPage = lazy(() => import("../features/bots/BotsPage").then((module) => ({ default: module.BotsPage })));
 const BotDetailPage = lazy(() => import("../features/bots/BotDetailPage").then((module) => ({ default: module.BotDetailPage })));
 const IntegrationsPage = lazy(() => import("../features/integrations/IntegrationsPage").then((module) => ({ default: module.IntegrationsPage })));
+const PricingPage = lazy(() => import("../features/pricing/PricingPage").then((module) => ({ default: module.PricingPage })));
 const AIAssistantPage = lazy(() => import("../features/assistant/AIAssistantPage").then((module) => ({ default: module.AIAssistantPage })));
 const AIAgentsPage = lazy(() => import("../features/assistant/AIAgentsPage").then((module) => ({ default: module.AIAgentsPage })));
 const AutomationsPage = lazy(() => import("../features/automations/AutomationsPage").then((module) => ({ default: module.AutomationsPage })));
+const OutreachPage = lazy(() => import("../features/outreach/OutreachPage").then((module) => ({ default: module.OutreachPage })));
 const ResourcesPage = lazy(() => import("../features/resources/ResourcesPage").then((module) => ({ default: module.ResourcesPage })));
 const ServicesPage = lazy(() => import("../features/services/ServicesPage").then((module) => ({ default: module.ServicesPage })));
 const AnalyticsPage = lazy(() => import("../features/analytics/AnalyticsPage").then((module) => ({ default: module.AnalyticsPage })));
@@ -107,12 +109,14 @@ const merchantChildren = [
   { path: "bots", resource: "integrations", element: <PageLoader><BotsPage /></PageLoader> },
   { path: "bots/:id", resource: "integrations", element: <PageLoader><BotDetailPage /></PageLoader> },
   { path: "integrations", resource: "integrations", element: <PageLoader><IntegrationsPage /></PageLoader> },
+  { path: "pricing", resource: "integrations", element: <PageLoader><PricingPage /></PageLoader> },
   { path: "ai-assistant", resource: "conversations", element: <PageLoader><AIAssistantPage /></PageLoader> },
   { path: "ai", resource: "conversations", element: <Navigate to="/dashboard/ai-assistant" replace /> },
   { path: "assistant", resource: "conversations", element: <PageLoader><AIAssistantPage /></PageLoader> },
   { path: "inbox", resource: "conversations", element: <PageLoader><ConversationsPage /></PageLoader> },
   { path: "ai-agents", resource: "settings", element: <PageLoader><AIAgentsPage /></PageLoader> },
   { path: "automations", resource: "automations", element: <PageLoader><AutomationsPage /></PageLoader> },
+  { path: "outreach", resource: "notifications", element: <PageLoader><OutreachPage /></PageLoader> },
   { path: "services", resource: "settings", element: <PageLoader><ServicesPage /></PageLoader> },
   { path: "resources", resource: "settings", element: <PageLoader><ResourcesPage /></PageLoader> },
   { path: "working-hours", resource: "settings", element: <PageLoader><WorkingHoursPage /></PageLoader> },
@@ -134,12 +138,14 @@ const legacyMerchantRoutes = [
   { path: "/timeline", resource: "analytics", element: <PageLoader><TimelinePage /></PageLoader> },
   { path: "/crm-bots", resource: "integrations", element: <PageLoader><BotsPage /></PageLoader> },
   { path: "/integrations", resource: "integrations", element: <PageLoader><IntegrationsPage /></PageLoader> },
+  { path: "/pricing", resource: "integrations", element: <PageLoader><PricingPage /></PageLoader> },
   { path: "/ai-assistant", resource: "conversations", element: <PageLoader><AIAssistantPage /></PageLoader> },
   { path: "/ai", resource: "conversations", element: <Navigate to="/dashboard/ai-assistant" replace /> },
   { path: "/assistant", resource: "conversations", element: <PageLoader><AIAssistantPage /></PageLoader> },
   { path: "/inbox", resource: "conversations", element: <PageLoader><ConversationsPage /></PageLoader> },
   { path: "/ai-agents", resource: "settings", element: <PageLoader><AIAgentsPage /></PageLoader> },
   { path: "/automations", resource: "automations", element: <PageLoader><AutomationsPage /></PageLoader> },
+  { path: "/outreach", resource: "notifications", element: <PageLoader><OutreachPage /></PageLoader> },
   { path: "/services", resource: "settings", element: <PageLoader><ServicesPage /></PageLoader> },
   { path: "/resources", resource: "settings", element: <PageLoader><ResourcesPage /></PageLoader> },
   { path: "/working-hours", resource: "settings", element: <PageLoader><WorkingHoursPage /></PageLoader> },

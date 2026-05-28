@@ -12,14 +12,15 @@ from apps.core.crm_cards import appointment_crm_card
 from apps.core.permissions import user_can_access_business
 from apps.core.viewsets import TenantModelViewSet
 from apps.businesses.models import Business
-from apps.scheduling.models import Appointment, Resource, WorkingHours
+from apps.scheduling.models import Appointment, AppointmentMessageSetting, Resource, WorkingHours
 from apps.scheduling.serializers import (
+    AppointmentMessageSettingSerializer,
     AppointmentSerializer,
     AvailableSlotSerializer,
     ResourceSerializer,
     WorkingHoursSerializer,
 )
-from apps.scheduling.services import apply_working_hours_preset, get_available_slots
+from apps.scheduling.services import apply_working_hours_preset, cancel_appointment_followups, ensure_appointment_message_settings, get_available_slots, schedule_appointment_followups, schedule_post_service_followup
 from apps.services.models import Service
 
 
@@ -81,6 +82,22 @@ class WorkingHoursViewSet(TenantModelViewSet):
         return Response({"preset": preset, "count": len(working_hours), "results": serializer.data})
 
 
+class AppointmentMessageSettingViewSet(TenantModelViewSet):
+    queryset = AppointmentMessageSetting.objects.select_related("business")
+    serializer_class = AppointmentMessageSettingSerializer
+    access_resource = Resources.SETTINGS
+
+    def list(self, request, *args, **kwargs):
+        business_id = request.query_params.get("business")
+        business = Business.objects.filter(id=business_id).first() if business_id else Business.objects.filter(owner=request.user).first()
+        if not business or not user_can_access_business(request.user, business):
+            raise ValidationError("Business is not available.")
+        assert_can(request.user, business, Resources.SETTINGS, Actions.VIEW)
+        settings = ensure_appointment_message_settings(business)
+        serializer = self.get_serializer(settings, many=True)
+        return Response(serializer.data)
+
+
 class AppointmentViewSet(TenantModelViewSet):
     queryset = Appointment.objects.select_related("business", "client", "lead", "service", "resource")
     serializer_class = AppointmentSerializer
@@ -88,6 +105,7 @@ class AppointmentViewSet(TenantModelViewSet):
     def perform_create(self, serializer):
         super().perform_create(serializer)
         appointment = serializer.instance
+        schedule_appointment_followups(appointment)
         run_automations_for_event(
             business=appointment.business,
             trigger_type=AutomationRule.TriggerTypes.APPOINTMENT_CREATED,
@@ -97,9 +115,13 @@ class AppointmentViewSet(TenantModelViewSet):
 
     def perform_update(self, serializer):
         previous_status = serializer.instance.status
+        previous_start_at = serializer.instance.start_at
+        previous_service_id = serializer.instance.service_id
+        previous_resource_id = serializer.instance.resource_id
         super().perform_update(serializer)
         appointment = serializer.instance
         if previous_status != Appointment.Statuses.CANCELLED and appointment.status == Appointment.Statuses.CANCELLED:
+            cancel_appointment_followups(appointment)
             create_activity_event(
                 business=appointment.business,
                 client=appointment.client,
@@ -116,6 +138,26 @@ class AppointmentViewSet(TenantModelViewSet):
                 entity=appointment,
                 payload={"trigger_type": AutomationRule.TriggerTypes.APPOINTMENT_CANCELLED, "appointment_id": appointment.id},
             )
+        elif previous_status != Appointment.Statuses.COMPLETED and appointment.status == Appointment.Statuses.COMPLETED:
+            cancel_appointment_followups(appointment)
+            schedule_post_service_followup(appointment)
+            create_activity_event(
+                business=appointment.business,
+                client=appointment.client,
+                actor=self.request.user,
+                event_type="appointment_completed",
+                instance=appointment,
+                category="appointment",
+                text=f"Визит завершён: {appointment.start_at:%d.%m.%Y %H:%M}",
+                metadata={"from": previous_status, "to": appointment.status},
+            )
+        elif appointment.status not in {Appointment.Statuses.CANCELLED, Appointment.Statuses.COMPLETED, Appointment.Statuses.NO_SHOW} and (
+            previous_start_at != appointment.start_at
+            or previous_service_id != appointment.service_id
+            or previous_resource_id != appointment.resource_id
+            or previous_status != appointment.status
+        ):
+            schedule_appointment_followups(appointment)
 
     @action(detail=False, methods=["get"], url_path="available-slots")
     def available_slots(self, request):

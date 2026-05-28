@@ -82,6 +82,34 @@ class ProviderRolloutReadinessTests(SimpleTestCase):
 
         self.assertEqual(result["providers"][0]["status"], "ready")
 
+    @override_settings(
+        INSTAGRAM_ENABLED=True,
+        CELERY_BROKER_URL="redis://localhost:6379/0",
+        AUTOMATIONS_RUN_INLINE=False,
+        SENTRY_DSN="https://example@sentry.invalid/1",
+        META_APP_SECRET="",
+        INSTAGRAM_APP_SECRET="",
+    )
+    def test_instagram_real_mode_requires_meta_webhook_security(self):
+        result = run_provider_rollout_readiness_check(provider="instagram")
+
+        instagram = result["providers"][0]
+        self.assertEqual(instagram["status"], "blocked")
+        self.assertIn("instagram.meta_graph_security", {gate["key"] for gate in instagram["gates"] if gate["status"] == "fail"})
+
+    @override_settings(
+        INSTAGRAM_ENABLED=True,
+        INSTAGRAM_VERIFY_TOKEN="verify",
+        INSTAGRAM_APP_SECRET="app-secret",
+        CELERY_BROKER_URL="rediss://redis.example.com:6379/0",
+        AUTOMATIONS_RUN_INLINE=False,
+        SENTRY_DSN="https://example@sentry.invalid/1",
+    )
+    def test_instagram_real_mode_passes_with_meta_security_and_runtime(self):
+        result = run_provider_rollout_readiness_check(provider="instagram")
+
+        self.assertEqual(result["providers"][0]["status"], "ready")
+
     def test_management_command_can_fail_on_blockers(self):
         with override_settings(OPENAI_API_KEY="sk-test", AUTOMATIONS_RUN_INLINE=True):
             with self.assertRaises(CommandError):

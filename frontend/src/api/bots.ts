@@ -57,6 +57,9 @@ export const telegramChannelApi = {
       webhook_secret_configured: boolean;
       webhook_configured: boolean;
       webhook_url: string;
+      webhook_public_ready: boolean;
+      inbound_backend_ready: boolean;
+      inbound_ready: boolean;
       last_error: string;
       last_inbound_status: string;
       last_inbound_at: string | null;
@@ -152,6 +155,71 @@ export const whatsappChannelApi = {
   },
   status: async (channelId: number) => {
     const { data } = await apiClient.get<WhatsAppChannelStatus>(`/api/bot-channels/${channelId}/whatsapp-status/`);
+    return data;
+  },
+};
+
+export type InstagramChannelStatus = {
+  status: string;
+  provider_mode: "mock" | "meta_graph" | "disabled";
+  webhook_url: string;
+  instagram_user_id_configured: boolean;
+  access_token_configured: boolean;
+  page_id_configured: boolean;
+  verify_token_configured: boolean;
+  app_secret_configured: boolean;
+  last_error: string;
+  last_event_status: string;
+  last_event_at: string | null;
+};
+
+export const instagramChannelApi = {
+  configure: async ({
+    channelId,
+    providerMode,
+    instagramUserId,
+    accessToken,
+    pageId,
+    username,
+  }: {
+    channelId: number;
+    providerMode: "mock" | "meta_graph" | "disabled";
+    instagramUserId?: string;
+    accessToken?: string;
+    pageId?: string;
+    username?: string;
+  }) => {
+    const { data } = await apiClient.post<{
+      ok: boolean;
+      provider_mode: "mock" | "meta_graph" | "disabled";
+      status: string;
+      instagram_user_id_configured: boolean;
+      access_token_configured: boolean;
+      page_id_configured: boolean;
+    }>(`/api/bot-channels/${channelId}/instagram-config/`, {
+      provider_mode: providerMode,
+      instagram_user_id: instagramUserId,
+      access_token: accessToken,
+      page_id: pageId,
+      username,
+    });
+    return data;
+  },
+  testConnection: async (channelId: number) => {
+    const { data } = await apiClient.post<{
+      ok: boolean;
+      mock: boolean;
+      reason: string;
+      status: string;
+      provider_mode: "mock" | "meta_graph" | "disabled";
+      instagram_user_id_configured: boolean;
+      access_token_configured: boolean;
+      instagram_account: Record<string, unknown>;
+    }>(`/api/bot-channels/${channelId}/instagram-test-connection/`);
+    return data;
+  },
+  status: async (channelId: number) => {
+    const { data } = await apiClient.get<InstagramChannelStatus>(`/api/bot-channels/${channelId}/instagram-status/`);
     return data;
   },
 };

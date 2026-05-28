@@ -1,3 +1,6 @@
+from urllib.parse import urlparse
+
+from django.conf import settings
 from rest_framework import serializers
 
 from apps.businesses.models import Business
@@ -12,7 +15,41 @@ from apps.integrations.models import (
     WebhookDeliveryLog,
     WebhookEndpoint,
 )
+from apps.integrations.sanitization import sanitize_config
+from apps.integrations.webhooks import validate_outbound_webhook_url
 from apps.integrations.whatsapp.base import build_whatsapp_provider_decision
+
+
+def _url_origin(value):
+    parsed = urlparse(str(value or "").strip())
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        return ""
+    port = f":{parsed.port}" if parsed.port else ""
+    return f"{parsed.scheme}://{parsed.hostname.lower()}{port}"
+
+
+def _allowed_redirect_origins():
+    return {
+        origin.rstrip("/")
+        for origin in [*getattr(settings, "CORS_ALLOWED_ORIGINS", []), *getattr(settings, "CSRF_TRUSTED_ORIGINS", [])]
+        if origin
+    }
+
+
+def validate_oauth_redirect_uri(value):
+    parsed = urlparse(str(value or "").strip())
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        raise serializers.ValidationError("OAuth redirect_uri must be an absolute http or https URL.")
+    hostname = parsed.hostname.lower()
+    if parsed.username or parsed.password or parsed.fragment:
+        raise serializers.ValidationError("OAuth redirect_uri must not include credentials or a fragment.")
+    if settings.DEBUG and parsed.scheme == "http" and hostname in {"localhost", "127.0.0.1"}:
+        return str(value).strip()
+    if parsed.scheme != "https":
+        raise serializers.ValidationError("OAuth redirect_uri must use https outside local development.")
+    if _url_origin(value) not in _allowed_redirect_origins():
+        raise serializers.ValidationError("OAuth redirect_uri origin is not allowed.")
+    return str(value).strip()
 
 
 class IntegrationEventLogSerializer(serializers.ModelSerializer):
@@ -33,6 +70,11 @@ class IntegrationEventLogSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = fields
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["payload_json"] = sanitize_config(data.get("payload_json") or {})
+        return data
 
 
 class BusinessConnectorSerializer(serializers.ModelSerializer):
@@ -88,6 +130,11 @@ class BusinessConnectorSerializer(serializers.ModelSerializer):
         if value is not None:
             return value
         return obj.credentials.count()
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["config_json"] = sanitize_config(data.get("config_json") or {})
+        return data
 
     def validate_config_json(self, value):
         if value in (None, ""):
@@ -168,6 +215,11 @@ class WhatsAppEmbeddedSignupStartSerializer(serializers.Serializer):
     business = serializers.PrimaryKeyRelatedField(queryset=Business.objects.all())
     redirect_uri = serializers.URLField(required=False, allow_blank=True)
 
+    def validate_redirect_uri(self, value):
+        if not value:
+            return value
+        return validate_oauth_redirect_uri(value)
+
 
 class WhatsAppEmbeddedSignupCompleteSerializer(serializers.Serializer):
     business = serializers.PrimaryKeyRelatedField(queryset=Business.objects.all())
@@ -177,6 +229,82 @@ class WhatsAppEmbeddedSignupCompleteSerializer(serializers.Serializer):
     phone_number_id = serializers.CharField(required=True, allow_blank=False, trim_whitespace=True)
     waba_id = serializers.CharField(required=False, allow_blank=True, trim_whitespace=True)
     display_phone_number = serializers.CharField(required=False, allow_blank=True, trim_whitespace=True)
+
+    def validate_redirect_uri(self, value):
+        if not value:
+            return value
+        return validate_oauth_redirect_uri(value)
+
+
+class InstagramOAuthStartSerializer(serializers.Serializer):
+    business = serializers.PrimaryKeyRelatedField(queryset=Business.objects.all())
+    redirect_uri = serializers.URLField(required=False, allow_blank=True)
+
+    def validate_redirect_uri(self, value):
+        if not value:
+            return value
+        return validate_oauth_redirect_uri(value)
+
+
+class InstagramOAuthCompleteSerializer(serializers.Serializer):
+    business = serializers.PrimaryKeyRelatedField(queryset=Business.objects.all())
+    code = serializers.CharField(required=True, allow_blank=False, trim_whitespace=True)
+    state = serializers.CharField(required=True, allow_blank=False, trim_whitespace=True)
+    redirect_uri = serializers.URLField(required=False, allow_blank=True)
+    page_id = serializers.CharField(required=False, allow_blank=True, trim_whitespace=True)
+
+    def validate_redirect_uri(self, value):
+        if not value:
+            return value
+        return validate_oauth_redirect_uri(value)
+
+
+class KaspiConnectorConfigSerializer(serializers.Serializer):
+    business = serializers.PrimaryKeyRelatedField(queryset=Business.objects.all())
+    api_token = serializers.CharField(required=False, allow_blank=True, trim_whitespace=True)
+    merchant_id = serializers.CharField(required=False, allow_blank=True, trim_whitespace=True)
+    order_state = serializers.ChoiceField(
+        choices=["NEW", "ARCHIVE", "KASPI_DELIVERY", "PICKUP", "SIGN_REQUIRED"],
+        required=False,
+        default="ARCHIVE",
+    )
+    sync_days = serializers.IntegerField(required=False, min_value=1, max_value=90, default=14)
+    page_size = serializers.IntegerField(required=False, min_value=1, max_value=100, default=20)
+
+
+class MoySkladConnectorConfigSerializer(serializers.Serializer):
+    business = serializers.PrimaryKeyRelatedField(queryset=Business.objects.all())
+    access_token = serializers.CharField(required=False, allow_blank=True, trim_whitespace=True)
+    entities = serializers.ListField(
+        child=serializers.ChoiceField(choices=["products", "stock", "sales", "clients"]),
+        required=False,
+        default=["products", "stock", "sales", "clients"],
+    )
+    page_size = serializers.IntegerField(required=False, min_value=1, max_value=100, default=50)
+
+
+class WildberriesConnectorConfigSerializer(serializers.Serializer):
+    business = serializers.PrimaryKeyRelatedField(queryset=Business.objects.all())
+    api_token = serializers.CharField(required=False, allow_blank=True, trim_whitespace=True)
+    entities = serializers.ListField(
+        child=serializers.ChoiceField(choices=["orders", "sales", "stocks"]),
+        required=False,
+        default=["orders", "sales"],
+    )
+    sync_days = serializers.IntegerField(required=False, min_value=1, max_value=90, default=7)
+
+
+class OzonConnectorConfigSerializer(serializers.Serializer):
+    business = serializers.PrimaryKeyRelatedField(queryset=Business.objects.all())
+    client_id = serializers.CharField(required=False, allow_blank=True, trim_whitespace=True)
+    api_key = serializers.CharField(required=False, allow_blank=True, trim_whitespace=True)
+    entities = serializers.ListField(
+        child=serializers.ChoiceField(choices=["fbs_postings", "fbo_postings", "stocks"]),
+        required=False,
+        default=["fbs_postings", "fbo_postings", "stocks"],
+    )
+    sync_days = serializers.IntegerField(required=False, min_value=1, max_value=90, default=7)
+    limit = serializers.IntegerField(required=False, min_value=1, max_value=1000, default=50)
 
 
 class ConnectorCapabilitySerializer(serializers.Serializer):
@@ -272,6 +400,11 @@ class BusinessEventSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["payload_json"] = sanitize_config(data.get("payload_json") or {})
+        return data
+
 
 class ConnectorSyncRunSerializer(serializers.ModelSerializer):
     connector_name = serializers.CharField(source="connector.name", read_only=True)
@@ -346,6 +479,12 @@ class WebhookEndpointSerializer(serializers.ModelSerializer):
         read_only_fields = ["created_by", "created_at", "updated_at"]
         extra_kwargs = {"secret": {"write_only": True, "required": False, "allow_blank": True}}
 
+    def validate_url(self, value):
+        try:
+            return validate_outbound_webhook_url(value, allow_mock=True)
+        except ValueError as exc:
+            raise serializers.ValidationError(str(exc)) from exc
+
 
 class WebhookDeliveryLogSerializer(serializers.ModelSerializer):
     endpoint_name = serializers.CharField(source="endpoint.name", read_only=True)
@@ -370,3 +509,8 @@ class WebhookDeliveryLogSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = fields
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["payload_json"] = sanitize_config(data.get("payload_json") or {})
+        return data

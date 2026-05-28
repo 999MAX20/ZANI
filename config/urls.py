@@ -65,12 +65,14 @@ from apps.integrations.views import (
     ConnectorCredentialViewSet,
     ConnectorSyncRunViewSet,
     IntegrationEventLogViewSet,
+    InstagramWebhookView,
     PublicApiClientsView,
     TelegramWebhookView,
     WebhookDeliveryLogViewSet,
     WebhookEndpointViewSet,
     WhatsAppWebhookView,
 )
+from apps.pricing.views import KaspiCompetitorOfferViewSet, KaspiPriceChangeLogViewSet, KaspiPricingAlertViewSet, KaspiPricingControlViewSet, KaspiPricingRecommendationViewSet, KaspiPricingRuleViewSet, PricingCatalogItemViewSet
 from apps.leads.views import (
     LeadFormFieldViewSet,
     LeadFormSubmissionErrorViewSet,
@@ -80,9 +82,10 @@ from apps.leads.views import (
     PublicLeadFormSubmitView,
     PublicLeadFormView,
 )
-from apps.notifications.views import NotificationViewSet
+from apps.notifications.views import NotificationPreferenceViewSet, NotificationViewSet
 from apps.onboarding.views import apply_onboarding_template, onboarding_demo_data, onboarding_first_message, onboarding_setup_channel, onboarding_status, onboarding_templates
-from apps.scheduling.views import AppointmentViewSet, ResourceViewSet, WorkingHoursViewSet
+from apps.outreach.views import OutreachCampaignViewSet, OutreachConsentViewSet, OutreachRecipientViewSet, OutreachTemplateViewSet
+from apps.scheduling.views import AppointmentMessageSettingViewSet, AppointmentViewSet, ResourceViewSet, WorkingHoursViewSet
 from apps.services.views import ServiceViewSet
 from apps.tasks.views import TaskViewSet
 
@@ -110,10 +113,16 @@ router.register("lead-form-submission-errors", LeadFormSubmissionErrorViewSet, b
 router.register("resources", ResourceViewSet, basename="resource")
 router.register("working-hours", WorkingHoursViewSet, basename="working-hours")
 router.register("appointments", AppointmentViewSet, basename="appointment")
+router.register("appointment-message-settings", AppointmentMessageSettingViewSet, basename="appointment-message-setting")
 router.register("conversations", ConversationViewSet, basename="conversation")
 router.register("messages", MessageViewSet, basename="message")
 router.register("quick-replies", QuickReplyTemplateViewSet, basename="quick-reply")
 router.register("notifications", NotificationViewSet, basename="notification")
+router.register("notification-preferences", NotificationPreferenceViewSet, basename="notification-preference")
+router.register("outreach/templates", OutreachTemplateViewSet, basename="outreach-template")
+router.register("outreach/campaigns", OutreachCampaignViewSet, basename="outreach-campaign")
+router.register("outreach/recipients", OutreachRecipientViewSet, basename="outreach-recipient")
+router.register("outreach/consents", OutreachConsentViewSet, basename="outreach-consent")
 router.register("analytics-events", AnalyticsEventViewSet, basename="analytics-event")
 router.register("report-widgets", ReportWidgetViewSet, basename="report-widget")
 router.register("scheduled-reports", ScheduledReportViewSet, basename="scheduled-report")
@@ -153,6 +162,13 @@ router.register("connector-sync-runs", ConnectorSyncRunViewSet, basename="connec
 router.register("api-tokens", ApiTokenViewSet, basename="api-token")
 router.register("webhook-endpoints", WebhookEndpointViewSet, basename="webhook-endpoint")
 router.register("webhook-deliveries", WebhookDeliveryLogViewSet, basename="webhook-delivery")
+router.register("pricing/kaspi/rules", KaspiPricingRuleViewSet, basename="kaspi-pricing-rule")
+router.register("pricing/kaspi/catalog", PricingCatalogItemViewSet, basename="kaspi-pricing-catalog")
+router.register("pricing/kaspi/control", KaspiPricingControlViewSet, basename="kaspi-pricing-control")
+router.register("pricing/kaspi/alerts", KaspiPricingAlertViewSet, basename="kaspi-pricing-alert")
+router.register("pricing/kaspi/competitor-offers", KaspiCompetitorOfferViewSet, basename="kaspi-competitor-offer")
+router.register("pricing/kaspi/recommendations", KaspiPricingRecommendationViewSet, basename="kaspi-pricing-recommendation")
+router.register("pricing/kaspi/change-logs", KaspiPriceChangeLogViewSet, basename="kaspi-price-change-log")
 
 urlpatterns = [
     path("health/", health, name="health"),
@@ -208,6 +224,7 @@ urlpatterns = [
     ),
     path("api/integrations/telegram/webhook/", TelegramWebhookView.as_view(), name="telegram_webhook"),
     path("api/integrations/whatsapp/webhook/", WhatsAppWebhookView.as_view(), name="whatsapp_webhook"),
+    path("api/integrations/instagram/webhook/", InstagramWebhookView.as_view(), name="instagram_webhook"),
     path("api/public-api/clients/", PublicApiClientsView.as_view(), name="public_api_clients"),
     path("api/ai/assistant/status/", AIAssistantStatusView.as_view(), name="ai_assistant_status"),
     path("api/ai/assistant/chat/", AIAssistantChatView.as_view(), name="ai_assistant_chat"),

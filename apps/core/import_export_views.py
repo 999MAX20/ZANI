@@ -2,6 +2,7 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from django.conf import settings
 
 from apps.businesses.access import Actions, Resources, assert_can
 from apps.core.audit import write_audit_log
@@ -16,7 +17,9 @@ from apps.core.import_export import (
     export_leads,
     export_sales,
     import_template_response,
+    mark_excel_csv_import_failed,
 )
+from apps.core.file_validation import validate_file_upload
 from apps.core.models import AuditLog, ImportJob
 from apps.core.permissions import accessible_businesses
 from apps.core.serializers import ImportJobSerializer
@@ -30,7 +33,11 @@ class ImportJobViewSet(TenantModelViewSet):
     access_resource = Resources.CLIENTS
 
     def get_queryset(self):
-        return super().get_queryset().filter(actor=self.request.user) if not self.request.user.is_platform_user else super().get_queryset()
+        queryset = super().get_queryset()
+        business_id = self.request.query_params.get("business")
+        if business_id:
+            queryset = queryset.filter(business_id=business_id)
+        return queryset.filter(actor=self.request.user) if not self.request.user.is_platform_user else queryset
 
     def perform_create(self, serializer):
         business = serializer.validated_data["business"]
@@ -45,6 +52,7 @@ class ImportJobViewSet(TenantModelViewSet):
             job.status = ImportJob.Statuses.FAILED
             job.error = str(exc)
             job.save(update_fields=["status", "error", "updated_at"])
+            mark_excel_csv_import_failed(job, exc)
             raise
         write_audit_log(
             self.request,
@@ -153,8 +161,14 @@ def _resource_for_entity(entity_type):
 
 
 def _validate_import_file(upload):
-    name = getattr(upload, "name", "").lower()
-    if not (name.endswith(".csv") or name.endswith(".xlsx")):
-        raise ValidationError("Upload a CSV or XLSX file.")
-    if getattr(upload, "size", 0) > 5 * 1024 * 1024:
-        raise ValidationError("Import file must be 5MB or smaller.")
+    validate_file_upload(
+        upload,
+        allowed_extensions=["csv", "xlsx"],
+        allowed_content_types=[
+            "text/csv",
+            "application/csv",
+            "application/vnd.ms-excel",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        ],
+        max_size_mb=settings.MAX_UPLOAD_SIZE_MB,
+    )

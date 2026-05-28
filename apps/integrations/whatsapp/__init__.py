@@ -1,5 +1,5 @@
 from django.utils import timezone
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from apps.automations.engine import run_automations_for_event
 from apps.automations.models import AutomationRule
@@ -10,6 +10,9 @@ from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
 from apps.conversations.auto_pipeline import maybe_run_auto_pipeline
 from apps.integrations.models import IntegrationEventLog
 from apps.integrations.providers import parse_webhook, send_message, verify_webhook
+from apps.integrations.sanitization import sanitize_config
+from apps.notifications.delivery import handle_appointment_followup_reply
+from apps.outreach.consent import record_inbound_consent
 
 
 def verify_whatsapp_secret(request):
@@ -32,8 +35,8 @@ def resolve_whatsapp_channel(provided_secret="", phone_number_id=""):
         if channel_secret and channel_secret == provided_secret:
             return channel
 
-    if candidates.count() == 1 and not provided_secret:
-        return candidates.first()
+    if not provided_secret and not phone_number_id:
+        raise PermissionDenied("WhatsApp webhook secret or phone number id is required.")
 
     raise ValidationError("WhatsApp channel was not resolved.")
 
@@ -49,6 +52,7 @@ def parse_inbound_message(payload, headers=None):
 
 def save_whatsapp_inbound_message(payload, provided_secret="", headers=None):
     parsed = parse_inbound_message(payload, headers=headers)
+    safe_payload = sanitize_config(payload)
     channel = resolve_whatsapp_channel(provided_secret, phone_number_id=parsed.get("phone_number_id", ""))
     business = channel.bot.business
 
@@ -78,7 +82,7 @@ def save_whatsapp_inbound_message(payload, provided_secret="", headers=None):
                 channel=BotChannel.Channels.WHATSAPP,
                 direction=IntegrationEventLog.Directions.INBOUND,
                 payload_json={
-                    "payload": payload,
+                    "payload": safe_payload,
                     "conversation_id": conversation.id,
                     "message_id": existing_message.id,
                     "duplicate": True,
@@ -94,7 +98,7 @@ def save_whatsapp_inbound_message(payload, provided_secret="", headers=None):
         text=parsed["text"],
         external_message_id=external_message_id,
         payload_json={
-            "whatsapp_payload": payload,
+            "whatsapp_payload": safe_payload,
             "whatsapp_sender_id": parsed["sender_id"],
             "whatsapp_sender_name": parsed.get("sender_name", ""),
             "whatsapp_phone_number_id": parsed.get("phone_number_id", ""),
@@ -103,13 +107,26 @@ def save_whatsapp_inbound_message(payload, provided_secret="", headers=None):
         status=BotMessage.Statuses.RECEIVED,
     )
     register_bot_message(message)
+    handle_appointment_followup_reply(
+        business=conversation.business,
+        channel=BotConversation.Channels.WHATSAPP,
+        external_user_id=conversation.external_user_id,
+        text=message.text,
+    )
     maybe_run_auto_pipeline(conversation=conversation, message=message, channel=channel)
+    record_inbound_consent(
+        business=conversation.business,
+        channel=BotConversation.Channels.WHATSAPP,
+        external_user_id=conversation.external_user_id,
+        text=message.text,
+        conversation=conversation,
+    )
     IntegrationEventLog.objects.create(
         business=conversation.business,
         provider=BotChannel.Channels.WHATSAPP,
         channel=BotChannel.Channels.WHATSAPP,
         direction=IntegrationEventLog.Directions.INBOUND,
-        payload_json={"payload": payload, "conversation_id": conversation.id, "message_id": message.id},
+        payload_json={"payload": safe_payload, "conversation_id": conversation.id, "message_id": message.id},
         status=IntegrationEventLog.Statuses.PROCESSED,
     )
     run_automations_for_event(

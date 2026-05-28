@@ -35,6 +35,8 @@ environ.Env.read_env(BASE_DIR / ".env")
 
 SECRET_KEY = env("SECRET_KEY", default="change-me-in-production")
 DEBUG = env("DEBUG")
+ENVIRONMENT = env("ENVIRONMENT", default="development")
+IS_PRODUCTION_LIKE_ENVIRONMENT = ENVIRONMENT in {"production", "staging"}
 ALLOWED_HOSTS = env("ALLOWED_HOSTS", default=["*"])
 CORS_ALLOWED_ORIGINS = env("CORS_ALLOWED_ORIGINS", default=[])
 CORS_ALLOW_CREDENTIALS = env("CORS_ALLOW_CREDENTIALS")
@@ -99,9 +101,11 @@ INSTALLED_APPS = [
     "apps.tasks",
     "apps.conversations",
     "apps.notifications",
+    "apps.outreach",
     "apps.analytics",
     "apps.core",
     "apps.integrations",
+    "apps.pricing",
     "apps.onboarding",
 ]
 
@@ -165,6 +169,8 @@ PRIVATE_MEDIA_ROOT = env("PRIVATE_MEDIA_ROOT", default=str(BASE_DIR / "media" / 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 MAX_UPLOAD_SIZE_MB = env.int("MAX_UPLOAD_SIZE_MB", default=10)
+IMPORT_MAX_ROWS = env.int("IMPORT_MAX_ROWS", default=5000)
+IMPORT_PREVIEW_ROWS = env.int("IMPORT_PREVIEW_ROWS", default=10)
 ALLOWED_UPLOAD_EXTENSIONS = env.list(
     "ALLOWED_UPLOAD_EXTENSIONS",
     default=["jpg", "jpeg", "png", "webp", "pdf", "txt", "doc", "docx", "xls", "xlsx", "mp3", "ogg", "wav"],
@@ -258,6 +264,8 @@ CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 CELERY_TASK_DEFAULT_QUEUE = env("CELERY_TASK_DEFAULT_QUEUE")
 CELERY_TASK_ROUTES = {
     "apps.integrations.*": {"queue": "integrations"},
+    "apps.pricing.*": {"queue": "integrations"},
+    "pricing.*": {"queue": "integrations"},
     "apps.automations.*": {"queue": "automations"},
     "apps.notifications.*": {"queue": "notifications"},
     "apps.ai_core.*": {"queue": "ai"},
@@ -273,9 +281,9 @@ PAID_BETA_BROWSER_E2E_GREEN = env.bool("PAID_BETA_BROWSER_E2E_GREEN", default=Fa
 PAID_BETA_BACKUP_RESTORE_DRILL_DONE = env.bool("PAID_BETA_BACKUP_RESTORE_DRILL_DONE", default=False)
 PAID_BETA_SUPPORT_GRANT_FLOW_TESTED = env.bool("PAID_BETA_SUPPORT_GRANT_FLOW_TESTED", default=False)
 
-SECURE_SSL_REDIRECT = env("SECURE_SSL_REDIRECT")
-SESSION_COOKIE_SECURE = env("SESSION_COOKIE_SECURE")
-CSRF_COOKIE_SECURE = env("CSRF_COOKIE_SECURE")
+SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=IS_PRODUCTION_LIKE_ENVIRONMENT)
+SESSION_COOKIE_SECURE = env.bool("SESSION_COOKIE_SECURE", default=IS_PRODUCTION_LIKE_ENVIRONMENT)
+CSRF_COOKIE_SECURE = env.bool("CSRF_COOKIE_SECURE", default=IS_PRODUCTION_LIKE_ENVIRONMENT)
 SECURE_PROXY_SSL_HEADER_VALUE = env("SECURE_PROXY_SSL_HEADER", default="")
 SECURE_PROXY_SSL_HEADER = (
     tuple(SECURE_PROXY_SSL_HEADER_VALUE.split(",", 1))
@@ -286,11 +294,10 @@ SECURE_HSTS_SECONDS = env.int("SECURE_HSTS_SECONDS", default=0 if DEBUG else 315
 SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", default=not DEBUG)
 SECURE_HSTS_PRELOAD = env.bool("SECURE_HSTS_PRELOAD", default=not DEBUG)
 
-SUPPORT_REQUIRES_GRANT = env("SUPPORT_REQUIRES_GRANT")
+SUPPORT_REQUIRES_GRANT = env.bool("SUPPORT_REQUIRES_GRANT", default=IS_PRODUCTION_LIKE_ENVIRONMENT)
 AUDIT_LOG_RETENTION_DAYS = env("AUDIT_LOG_RETENTION_DAYS")
 
 SENTRY_DSN = env("SENTRY_DSN", default="")
-ENVIRONMENT = env("ENVIRONMENT", default="development")
 RELEASE = env("RELEASE", default="local")
 SENTRY_TRACES_SAMPLE_RATE = env.float("SENTRY_TRACES_SAMPLE_RATE", default=0.05)
 
@@ -307,6 +314,36 @@ META_APP_SECRET = env("META_APP_SECRET", default="")
 WHATSAPP_EMBEDDED_SIGNUP_CONFIG_ID = env("WHATSAPP_EMBEDDED_SIGNUP_CONFIG_ID", default="")
 WHATSAPP_EMBEDDED_SIGNUP_LOGIN_URL = env("WHATSAPP_EMBEDDED_SIGNUP_LOGIN_URL", default="https://www.facebook.com/dialog/oauth")
 INSTAGRAM_ENABLED = env.bool("INSTAGRAM_ENABLED", default=False)
+INSTAGRAM_GRAPH_API_VERSION = env("INSTAGRAM_GRAPH_API_VERSION", default="v25.0")
+INSTAGRAM_GRAPH_BASE_URL = env("INSTAGRAM_GRAPH_BASE_URL", default="https://graph.facebook.com")
+INSTAGRAM_VERIFY_TOKEN = env("INSTAGRAM_VERIFY_TOKEN", default="")
+INSTAGRAM_APP_SECRET = env("INSTAGRAM_APP_SECRET", default=META_APP_SECRET)
+KASPI_ENABLED = env.bool("KASPI_ENABLED", default=False)
+KASPI_API_BASE_URL = env("KASPI_API_BASE_URL", default="https://kaspi.kz/shop/api/v2")
+KASPI_REPRICING_ENABLED = env.bool("KASPI_REPRICING_ENABLED", default=False)
+KASPI_REPRICING_WRITE_ENABLED = env.bool("KASPI_REPRICING_WRITE_ENABLED", default=False)
+KASPI_REPRICING_SCHEDULE_ENABLED = env.bool("KASPI_REPRICING_SCHEDULE_ENABLED", default=False)
+KASPI_REPRICING_INTERVAL_SECONDS = env.int("KASPI_REPRICING_INTERVAL_SECONDS", default=1800)
+KASPI_REPRICING_APPLY_AUTOPILOT = env.bool("KASPI_REPRICING_APPLY_AUTOPILOT", default=False)
+KASPI_PRICE_WRITE_PROVIDER = env("KASPI_PRICE_WRITE_PROVIDER", default="price_feed")
+KASPI_PRICE_WRITE_API_URL = env("KASPI_PRICE_WRITE_API_URL", default="")
+KASPI_PRICE_WRITE_API_KEY = env("KASPI_PRICE_WRITE_API_KEY", default="")
+KASPI_COMPETITOR_MONITOR_PROVIDER = env("KASPI_COMPETITOR_MONITOR_PROVIDER", default="mock")
+KASPI_COMPETITOR_MONITOR_API_URL = env("KASPI_COMPETITOR_MONITOR_API_URL", default="")
+KASPI_COMPETITOR_MONITOR_API_KEY = env("KASPI_COMPETITOR_MONITOR_API_KEY", default="")
+CELERY_BEAT_SCHEDULE = {}
+if KASPI_REPRICING_SCHEDULE_ENABLED:
+    CELERY_BEAT_SCHEDULE["kaspi-pricing-cycle"] = {
+        "task": "pricing.run_kaspi_pricing_cycle",
+        "schedule": KASPI_REPRICING_INTERVAL_SECONDS,
+        "kwargs": {"apply_autopilot": KASPI_REPRICING_APPLY_AUTOPILOT},
+    }
+MOYSKLAD_ENABLED = env.bool("MOYSKLAD_ENABLED", default=False)
+MOYSKLAD_API_BASE_URL = env("MOYSKLAD_API_BASE_URL", default="https://api.moysklad.ru/api/remap/1.2")
+WILDBERRIES_ENABLED = env.bool("WILDBERRIES_ENABLED", default=False)
+WILDBERRIES_STATISTICS_API_BASE_URL = env("WILDBERRIES_STATISTICS_API_BASE_URL", default="https://statistics-api.wildberries.ru")
+OZON_ENABLED = env.bool("OZON_ENABLED", default=False)
+OZON_SELLER_API_BASE_URL = env("OZON_SELLER_API_BASE_URL", default="https://api-seller.ozon.ru")
 
 OPENAI_API_KEY = env("OPENAI_API_KEY", default="")
 OPENAI_BASE_URL = env("OPENAI_BASE_URL", default="https://api.openai.com/v1")
@@ -366,6 +403,10 @@ if "test" in __import__("sys").argv:
     OPENROUTER_API_KEY = ""
     KIMI_API_KEY = ""
     AI_PROVIDER = "mock"
+    CELERY_BROKER_URL = "memory://"
+    CELERY_RESULT_BACKEND = "cache+memory://"
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_TASK_STORE_EAGER_RESULT = False
     TELEGRAM_ENABLED = False
     WHATSAPP_ENABLED = False
     INSTAGRAM_ENABLED = False

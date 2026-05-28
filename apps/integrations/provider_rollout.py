@@ -323,16 +323,24 @@ def _instagram_check(order):
         _idempotency_gate("instagram"),
         _connector_health_gate("instagram"),
         _gate(
-            "instagram.real_adapter",
-            "Meta Instagram Direct is intentionally gated",
-            not enabled,
-            f"INSTAGRAM_ENABLED={enabled}; current adapter is request-only placeholder.",
-            "Do not set INSTAGRAM_ENABLED=True until Meta OAuth/webhook adapter and permission review are implemented.",
+            "instagram.meta_graph_security",
+            "Meta Instagram webhook security configured before real mode",
+            (not enabled)
+            or (
+                _configured(getattr(settings, "INSTAGRAM_VERIFY_TOKEN", ""))
+                and _configured(getattr(settings, "INSTAGRAM_APP_SECRET", "") or getattr(settings, "META_APP_SECRET", ""))
+            ),
+            (
+                f"INSTAGRAM_ENABLED={enabled}; "
+                f"INSTAGRAM_VERIFY_TOKEN configured={bool(getattr(settings, 'INSTAGRAM_VERIFY_TOKEN', ''))}; "
+                f"INSTAGRAM_APP_SECRET/META_APP_SECRET configured={bool(getattr(settings, 'INSTAGRAM_APP_SECRET', '') or getattr(settings, 'META_APP_SECRET', ''))}"
+            ),
+            "Set INSTAGRAM_VERIFY_TOKEN and INSTAGRAM_APP_SECRET or META_APP_SECRET before enabling Instagram webhook traffic.",
         ),
         _queue_gate("instagram", enabled),
         _observability_gate("instagram", enabled),
     ]
-    return _provider_check("instagram", "Instagram/Meta provider pilot", order, enabled, gates)
+    return _provider_check("instagram", "Instagram Meta Graph provider", order, enabled, gates)
 
 
 def _marketplace_check(order):
@@ -347,10 +355,10 @@ def _marketplace_check(order):
     gates = [
         _gate(
             "marketplace.catalog",
-            "Marketplace connectors are represented as request/roadmap",
+            "Marketplace connectors are represented in the catalog",
             all(provider in CONNECTOR_PROVIDER_CAPABILITIES for provider in required),
             f"providers={required}",
-            "Keep marketplace providers request-only until event normalization, support workflow and reconciliation are proven.",
+            "Keep marketplace write-back disabled until event normalization, support workflow and reconciliation are proven.",
             severity="warning",
         ),
         _event_normalization_gate("marketplace"),

@@ -1,4 +1,5 @@
 from dataclasses import asdict, dataclass
+from email.utils import parseaddr
 
 from django.conf import settings
 
@@ -29,6 +30,39 @@ def _item(key, title, condition, detail, action):
 
 def _required_bool(name):
     return bool(getattr(settings, name, False))
+
+
+def _has_transactional_email():
+    _, email_address = parseaddr(str(getattr(settings, "DEFAULT_FROM_EMAIL", "") or ""))
+    email_domain = email_address.rsplit("@", 1)[-1].lower() if "@" in email_address else ""
+    return all(
+        [
+            bool(str(getattr(settings, "EMAIL_HOST", "")).strip()),
+            bool(email_address),
+            email_domain not in {"", "localhost", "local", "test.local", "zani.local", "example.com"},
+            bool(getattr(settings, "EMAIL_USE_TLS", False)) or bool(getattr(settings, "EMAIL_USE_SSL", False)),
+        ]
+    )
+
+
+def _has_sentry_observability():
+    from urllib.parse import urlparse
+
+    parsed = urlparse(str(getattr(settings, "SENTRY_DSN", "") or ""))
+    release = str(getattr(settings, "RELEASE", "") or "").strip().lower()
+    sample_rate = getattr(settings, "SENTRY_TRACES_SAMPLE_RATE", None)
+    try:
+        sample_rate = float(sample_rate)
+    except (TypeError, ValueError):
+        return False
+    return all(
+        [
+            parsed.scheme == "https",
+            bool(parsed.hostname),
+            release not in {"", "local", "test", "development"},
+            0 <= sample_rate <= 0.2,
+        ]
+    )
 
 
 def run_paid_beta_gate_check():
@@ -65,11 +99,11 @@ def run_paid_beta_gate_check():
         ),
         _item(
             "runtime.redis_celery",
-            "Redis/Celery runtime is enabled",
+            "TLS Redis/Celery runtime is enabled",
             not settings.AUTOMATIONS_RUN_INLINE
-            and str(settings.CELERY_BROKER_URL).startswith(("redis://", "rediss://")),
+            and str(settings.CELERY_BROKER_URL).startswith("rediss://"),
             f"broker={settings.CELERY_BROKER_URL}; AUTOMATIONS_RUN_INLINE={settings.AUTOMATIONS_RUN_INLINE}",
-            "Use managed Redis and running Celery workers before paid beta.",
+            "Use managed Redis over TLS and running Celery workers before paid beta.",
         ),
         _item(
             "storage.object_storage",
@@ -80,17 +114,26 @@ def run_paid_beta_gate_check():
         ),
         _item(
             "observability.sentry",
-            "Sentry is enabled",
-            bool(settings.SENTRY_DSN),
-            f"SENTRY_DSN configured={bool(settings.SENTRY_DSN)}",
-            "Configure Sentry or equivalent error monitoring before paid beta.",
+            "Sentry observability is enabled",
+            _has_sentry_observability(),
+            "SENTRY_DSN configured={dsn}; RELEASE={release}; traces_sample_rate={sample_rate}".format(
+                dsn=bool(settings.SENTRY_DSN),
+                release=settings.RELEASE,
+                sample_rate=settings.SENTRY_TRACES_SAMPLE_RATE,
+            ),
+            "Configure HTTPS Sentry or equivalent monitoring with a deploy release id before paid beta.",
         ),
         _item(
             "email.transactional",
-            "Transactional email is enabled",
-            bool(settings.EMAIL_HOST) and bool(settings.DEFAULT_FROM_EMAIL),
-            f"EMAIL_HOST configured={bool(settings.EMAIL_HOST)}; DEFAULT_FROM_EMAIL={settings.DEFAULT_FROM_EMAIL}",
-            "Configure transactional SMTP and run email_runtime_smoke.",
+            "Secure transactional email is enabled",
+            _has_transactional_email(),
+            "EMAIL_HOST configured={host}; DEFAULT_FROM_EMAIL={from_email}; tls={tls}; ssl={ssl}".format(
+                host=bool(settings.EMAIL_HOST),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                tls=getattr(settings, "EMAIL_USE_TLS", False),
+                ssl=getattr(settings, "EMAIL_USE_SSL", False),
+            ),
+            "Configure transactional SMTP with TLS/SSL, use a verified non-local sender domain and run email_runtime_smoke.",
         ),
         _item(
             "backup.restore_drill",

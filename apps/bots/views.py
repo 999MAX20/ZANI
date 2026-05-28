@@ -1,4 +1,6 @@
 import secrets
+import ipaddress
+from urllib.parse import urlparse
 
 from django.conf import settings
 from apps.bots.ai import suggest_bot_reply
@@ -8,6 +10,7 @@ from apps.bots.serializers import (
     BotConversationSerializer,
     BotMessageSerializer,
     BotSerializer,
+    InstagramChannelConfigSerializer,
     PublicWebsiteChatChannelSerializer,
     PublicWebsiteChatConversationCreateSerializer,
     PublicWebsiteChatMessageCreateSerializer,
@@ -30,6 +33,20 @@ from rest_framework.throttling import ScopedRateThrottle
 from apps.integrations.models import BusinessConnector, IntegrationEventLog
 from apps.integrations.providers import get_provider
 from apps.integrations.telegram import set_telegram_webhook, sync_telegram_updates as pull_telegram_updates, validate_telegram_token
+
+
+def is_public_https_url(url):
+    parsed = urlparse(url or "")
+    if parsed.scheme != "https" or not parsed.hostname:
+        return False
+    hostname = parsed.hostname.lower()
+    if hostname in {"localhost", "127.0.0.1", "0.0.0.0"} or hostname.endswith(".local"):
+        return False
+    try:
+        ip = ipaddress.ip_address(hostname)
+    except ValueError:
+        return True
+    return not (ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved)
 
 
 def sync_telegram_connector(channel, status=None, last_error="", operation="config"):
@@ -116,6 +133,44 @@ def sync_whatsapp_connector(channel, status=None, last_error="", operation="conf
     return connector
 
 
+def sync_instagram_connector(channel, status=None, last_error="", operation="config"):
+    config = channel.config_json or {}
+    credentials_configured = bool((config.get("instagram_user_id") or channel.external_id) and config.get("access_token"))
+    connector_status = status or (
+        BusinessConnector.Statuses.CONNECTED if credentials_configured else BusinessConnector.Statuses.NEEDS_ATTENTION
+    )
+    connector, _ = BusinessConnector.objects.get_or_create(
+        business=channel.bot.business,
+        provider=BusinessConnector.Providers.INSTAGRAM,
+        name="Instagram",
+        defaults={
+            "capability": BusinessConnector.Capabilities.COMMUNICATIONS,
+            "auth_type": BusinessConnector.AuthTypes.OAUTH,
+            "status": connector_status,
+        },
+    )
+    safe_config = dict(connector.config_json or {})
+    safe_config.update(
+        {
+            "bot_channel_id": channel.id,
+            "provider_mode": config.get("provider_mode") or "mock",
+            "instagram_user_id_configured": bool(config.get("instagram_user_id") or channel.external_id),
+            "access_token_configured": bool(config.get("access_token")),
+            "page_id_configured": bool(config.get("page_id")),
+            "last_operation": operation,
+        }
+    )
+    connector.capability = BusinessConnector.Capabilities.COMMUNICATIONS
+    connector.auth_type = BusinessConnector.AuthTypes.OAUTH
+    connector.status = connector_status
+    connector.config_json = safe_config
+    connector.last_error = last_error
+    if connector_status == BusinessConnector.Statuses.CONNECTED and connector.connected_at is None:
+        connector.connected_at = timezone.now()
+    connector.save(update_fields=["capability", "auth_type", "status", "config_json", "last_error", "connected_at", "updated_at"])
+    return connector
+
+
 class BotViewSet(TenantModelViewSet):
     queryset = Bot.objects.select_related("business")
     serializer_class = BotSerializer
@@ -141,6 +196,12 @@ class BotChannelViewSet(TenantModelViewSet):
         channel = self.get_object()
         if channel.channel != BotChannel.Channels.WHATSAPP:
             raise PermissionDenied("This action is only available for WhatsApp channels.")
+        return channel
+
+    def _get_instagram_channel(self):
+        channel = self.get_object()
+        if channel.channel != BotChannel.Channels.INSTAGRAM:
+            raise PermissionDenied("This action is only available for Instagram channels.")
         return channel
 
     @action(detail=True, methods=["post"], url_path="telegram-config")
@@ -211,6 +272,8 @@ class BotChannelViewSet(TenantModelViewSet):
         ).first()
         config = channel.config_json or {}
         webhook_url = request.build_absolute_uri("/api/integrations/telegram/webhook/")
+        inbound_backend_ready = bool(last_inbound_event and last_inbound_event.status == IntegrationEventLog.Statuses.PROCESSED)
+        webhook_public_ready = is_public_https_url(webhook_url)
         return Response(
             {
                 "status": channel.status,
@@ -218,6 +281,9 @@ class BotChannelViewSet(TenantModelViewSet):
                 "webhook_secret_configured": bool(config.get("webhook_secret")),
                 "webhook_configured": bool(config.get("webhook_configured")),
                 "webhook_url": webhook_url,
+                "webhook_public_ready": webhook_public_ready,
+                "inbound_backend_ready": inbound_backend_ready,
+                "inbound_ready": bool(config.get("webhook_configured") and webhook_public_ready and inbound_backend_ready),
                 "last_error": failed_event.error if failed_event else "",
                 "last_inbound_status": last_inbound_event.status if last_inbound_event else "",
                 "last_inbound_at": last_inbound_event.created_at if last_inbound_event else None,
@@ -342,6 +408,91 @@ class BotChannelViewSet(TenantModelViewSet):
                 "webhook_secret_configured": bool(config.get("webhook_secret")),
                 "verify_token_configured": bool(settings.WHATSAPP_VERIFY_TOKEN),
                 "app_secret_configured": bool(settings.WHATSAPP_APP_SECRET),
+                "last_error": failed_event.error if failed_event else "",
+                "last_event_status": last_event.status if last_event else "",
+                "last_event_at": last_event.created_at if last_event else None,
+            }
+        )
+
+    @action(detail=True, methods=["post"], url_path="instagram-config")
+    def instagram_config(self, request, pk=None):
+        channel = self._get_instagram_channel()
+        serializer = InstagramChannelConfigSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        config = dict(channel.config_json or {})
+        for key, value in serializer.validated_data.items():
+            config[key] = value
+        if not config.get("provider_mode"):
+            config["provider_mode"] = "meta_graph" if config.get("access_token") and config.get("instagram_user_id") else "mock"
+        channel.config_json = config
+        channel.external_id = config.get("instagram_user_id", channel.external_id)
+        channel.status = BotChannel.Statuses.PAUSED if config.get("provider_mode") == "disabled" else BotChannel.Statuses.ACTIVE
+        channel.save(update_fields=["config_json", "external_id", "status", "updated_at"])
+        sync_instagram_connector(channel, operation="config")
+        return Response(
+            {
+                "ok": True,
+                "provider_mode": config["provider_mode"],
+                "status": channel.status,
+                "instagram_user_id_configured": bool(config.get("instagram_user_id") or channel.external_id),
+                "access_token_configured": bool(config.get("access_token")),
+                "page_id_configured": bool(config.get("page_id")),
+            }
+        )
+
+    @action(detail=True, methods=["post"], url_path="instagram-test-connection")
+    def instagram_test_connection(self, request, pk=None):
+        channel = self._get_instagram_channel()
+        result = get_provider(BotChannel.Channels.INSTAGRAM).validate_credentials(channel)
+        channel.status = BotChannel.Statuses.ACTIVE if result.get("ok") else BotChannel.Statuses.ERROR
+        channel.save(update_fields=["status", "updated_at"])
+        connector_status = BusinessConnector.Statuses.CONNECTED if result.get("ok") else BusinessConnector.Statuses.FAILED
+        sync_instagram_connector(
+            channel,
+            status=connector_status,
+            last_error="" if result.get("ok") else result.get("reason", "Instagram credentials validation failed."),
+            operation="test_connection",
+        )
+        config = channel.config_json or {}
+        return Response(
+            {
+                "ok": result.get("ok", False),
+                "mock": result.get("mock", False),
+                "reason": result.get("reason", ""),
+                "status": channel.status,
+                "provider_mode": config.get("provider_mode") or "mock",
+                "instagram_user_id_configured": bool(config.get("instagram_user_id") or channel.external_id),
+                "access_token_configured": bool(config.get("access_token")),
+                "instagram_account": result.get("instagram_account", {}),
+            }
+        )
+
+    @action(detail=True, methods=["get"], url_path="instagram-status")
+    def instagram_status(self, request, pk=None):
+        channel = self._get_instagram_channel()
+        failed_event = IntegrationEventLog.objects.filter(
+            business=channel.bot.business,
+            provider=BotChannel.Channels.INSTAGRAM,
+            channel=BotChannel.Channels.INSTAGRAM,
+            status=IntegrationEventLog.Statuses.FAILED,
+        ).first()
+        last_event = IntegrationEventLog.objects.filter(
+            business=channel.bot.business,
+            provider=BotChannel.Channels.INSTAGRAM,
+            channel=BotChannel.Channels.INSTAGRAM,
+        ).first()
+        webhook_url = request.build_absolute_uri("/api/integrations/instagram/webhook/")
+        config = channel.config_json or {}
+        return Response(
+            {
+                "status": channel.status,
+                "provider_mode": config.get("provider_mode") or "mock",
+                "webhook_url": webhook_url,
+                "instagram_user_id_configured": bool(config.get("instagram_user_id") or channel.external_id),
+                "access_token_configured": bool(config.get("access_token")),
+                "page_id_configured": bool(config.get("page_id")),
+                "verify_token_configured": bool(settings.INSTAGRAM_VERIFY_TOKEN),
+                "app_secret_configured": bool(settings.INSTAGRAM_APP_SECRET or settings.META_APP_SECRET),
                 "last_error": failed_event.error if failed_event else "",
                 "last_event_status": last_event.status if last_event else "",
                 "last_event_at": last_event.created_at if last_event else None,

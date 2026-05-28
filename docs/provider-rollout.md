@@ -63,9 +63,14 @@ Use the provider-specific form before turning on any real provider env flag.
 - Excel/CSV: available as the first data connector. It is not an external provider, but it must keep connector catalog metadata, import entity support, upload limits and BusinessEvent normalization green before merchant data onboarding.
 - Transactional email: configure SMTP and run `email_runtime_smoke` before relying on invitations, alerts or recovery emails.
 - OpenRouter/OpenAI: keep mock mode unless AI queue, throttles and usage limits are ready. AI must stay optional for merchants.
-- WhatsApp: current provider is pilot/mock. Do not set `WHATSAPP_ENABLED=True` until a real Meta/Twilio/360dialog adapter, webhook verification and rollback docs exist.
-- Instagram/Meta: current adapter is request-only. Do not set `INSTAGRAM_ENABLED=True` until Meta OAuth/webhook and permission-review flow are ready.
-- Kaspi/marketplaces/1C: keep request/roadmap until reconciliation, support tooling and data import/export recovery are stable.
+- WhatsApp: production path is Meta Embedded Signup + Meta Cloud API. Manual credentials are support fallback only. Do not set `WHATSAPP_ENABLED=True` until `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_APP_SECRET`, public HTTPS webhook delivery, Redis/Celery runtime, Sentry and the WhatsApp readiness check are green.
+- Instagram/Meta: primary path is Meta OAuth for a Page linked to Instagram Business. Manual credentials are support fallback only. Do not set `INSTAGRAM_ENABLED=True` until `INSTAGRAM_VERIFY_TOKEN`, `INSTAGRAM_APP_SECRET` or `META_APP_SECRET`, public HTTPS webhook delivery, Redis/Celery runtime, Sentry and the Instagram readiness check are green.
+- Kaspi: beta read-only orders import is available behind `KASPI_ENABLED`; current self-service baseline uses merchant access key, with official partner authorization as the long-term target. Keep write-back, repricing and order mutations disabled.
+- МойСклад: beta read-only catalog/stock/sales/client import is available behind `MOYSKLAD_ENABLED`; current self-service baseline uses merchant access key, with app/install authorization as the long-term target. Keep write-back disabled.
+- Wildberries: beta read-only marketplace import is available behind `WILDBERRIES_ENABLED`; current self-service baseline uses merchant Statistics token. Keep price/card/supply/order write-back disabled.
+- Ozon: beta read-only marketplace import is available behind `OZON_ENABLED`; current self-service baseline uses merchant `Client-Id` and `API key`. Keep price/stock/card/order write-back disabled.
+- 1C: target is push-based ZANI Agent/app flow. Do not make raw endpoint/token setup the primary merchant UX.
+- Other marketplaces: keep request/roadmap until reconciliation, support tooling and data import/export recovery are stable.
 
 ## Environment Rule
 

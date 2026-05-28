@@ -95,3 +95,35 @@ class Appointment(TimeStampedModel):
 
     def __str__(self):
         return f"{self.client} at {self.start_at}"
+
+
+class AppointmentMessageSetting(TimeStampedModel):
+    class Scenarios(models.TextChoices):
+        CONFIRMATION = "confirmation", "Confirmation"
+        REMINDER = "reminder", "Reminder"
+        THANK_YOU = "thank_you", "Thank you"
+
+    class ChannelPolicies(models.TextChoices):
+        AUTO = "auto", "Auto"
+        TELEGRAM = "telegram", "Telegram"
+        WHATSAPP = "whatsapp", "WhatsApp"
+        EMAIL = "email", "Email"
+        SMS = "sms", "SMS"
+        SYSTEM = "system", "System"
+
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name="appointment_message_settings")
+    scenario = models.CharField(max_length=32, choices=Scenarios.choices)
+    label = models.CharField(max_length=120)
+    is_enabled = models.BooleanField(default=True)
+    offset_minutes = models.IntegerField()
+    channel_policy = models.CharField(max_length=32, choices=ChannelPolicies.choices, default=ChannelPolicies.AUTO)
+    template_text = models.TextField()
+
+    class Meta:
+        ordering = ["scenario"]
+        constraints = [
+            models.UniqueConstraint(fields=["business", "scenario"], name="unique_appointment_message_scenario"),
+        ]
+
+    def __str__(self):
+        return f"{self.business}: {self.scenario}"

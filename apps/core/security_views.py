@@ -7,18 +7,15 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from apps.businesses.access import Actions, Resources, assert_can, can
-from apps.businesses.models import Business
 from apps.core.audit import write_audit_log
 from apps.core.models import AuditLog, LoginHistory, SupportAccessGrant
-from apps.core.permissions import accessible_businesses, is_platform_admin
+from apps.core.permissions import accessible_businesses
 from apps.core.serializers import AuditLogSerializer, LoginHistorySerializer, SupportAccessGrantSerializer
 
 
 def _security_business(request):
     business_id = request.query_params.get("business") or request.data.get("business")
     businesses = accessible_businesses(request.user)
-    if is_platform_admin(request.user):
-        businesses = Business.objects.all()
     business = businesses.filter(id=business_id).first() if business_id else businesses.first()
     if not business:
         raise PermissionDenied("Business is required.")
@@ -100,8 +97,6 @@ class SupportAccessGrantViewSet(ModelViewSet):
 
     def get_queryset(self):
         businesses = accessible_businesses(self.request.user)
-        if is_platform_admin(self.request.user):
-            businesses = Business.objects.all()
         allowed_ids = [business.id for business in businesses if can(self.request.user, business, Resources.AUDIT_LOGS, Actions.VIEW).allowed]
         queryset = self.queryset.filter(business_id__in=allowed_ids)
         business_id = self.request.query_params.get("business")

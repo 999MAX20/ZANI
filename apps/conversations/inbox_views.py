@@ -24,6 +24,7 @@ from apps.conversations.inbox_serializers import (
     InboxHandoffSerializer,
     InboxCloseSerializer,
     InboxPrioritySerializer,
+    InboxRetryMessageSerializer,
     InboxLinkClientSerializer,
     InboxLinkDealSerializer,
     InboxLinkLeadSerializer,
@@ -85,6 +86,7 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
         queryset = self.get_queryset()
         total = queryset.count()
         unread = queryset.filter(unread_count__gt=0).count()
+        unread_messages = queryset.aggregate(total=Sum("unread_count"))["total"] or 0
         handoff_required = queryset.filter(handoff_required=True).count()
         assigned_to_me = queryset.filter(assigned_to=request.user).count()
         unassigned = queryset.filter(assigned_to__isnull=True).count()
@@ -153,6 +155,7 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
             {
                 "total": total,
                 "unread": unread,
+                "unread_messages": unread_messages,
                 "handoff_required": handoff_required,
                 "assigned_to_me": assigned_to_me,
                 "unassigned": unassigned,
@@ -232,6 +235,36 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
         messages = conversation.messages.order_by("created_at")
         serializer = InboxMessageSerializer(messages, many=True)
         return Response(serializer.data)
+
+    @action(detail=True, methods=["post"], url_path="retry-message")
+    def retry_message(self, request, pk=None):
+        conversation = self.get_object()
+        assert_can(request.user, conversation.business, Resources.CONVERSATIONS, Actions.UPDATE, obj=conversation)
+        serializer = InboxRetryMessageSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        original = conversation.messages.filter(id=serializer.validated_data["message_id"]).first()
+        if original is None:
+            raise ValidationError({"message_id": "Message was not found in this conversation."})
+        if original.direction != BotMessage.Directions.OUTBOUND:
+            raise ValidationError({"message_id": "Only outbound messages can be retried."})
+        if original.sender_type == BotMessage.SenderTypes.SYSTEM:
+            raise ValidationError({"message_id": "System messages cannot be retried."})
+        if original.status == BotMessage.Statuses.SENT:
+            raise ValidationError({"message_id": "Sent messages do not need retry."})
+
+        retried = send_outbound_message(
+            conversation=conversation,
+            text=original.text,
+            user=request.user,
+            sender_type=original.sender_type,
+        )
+        retried.payload_json = {
+            **(retried.payload_json or {}),
+            "retry_of_message_id": original.id,
+        }
+        retried.save(update_fields=["payload_json"])
+        return Response(InboxMessageSerializer(retried).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["post"])
     def assign(self, request, pk=None):

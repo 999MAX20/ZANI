@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.notifications.models import Notification
+from apps.notifications.models import Notification, NotificationPreference
 
 
 class NotificationSerializer(serializers.ModelSerializer):
@@ -25,4 +25,21 @@ class NotificationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Appointment must belong to the selected business.")
         if recipient and business and not business.members.filter(user=recipient, is_active=True).exists():
             raise serializers.ValidationError("Recipient must be an active member of the selected business.")
+        return attrs
+
+
+class NotificationPreferenceSerializer(serializers.ModelSerializer):
+    user_email = serializers.EmailField(source="user.email", read_only=True)
+    user_name = serializers.CharField(source="user.full_name", read_only=True)
+
+    class Meta:
+        model = NotificationPreference
+        fields = "__all__"
+        read_only_fields = ["created_at", "updated_at"]
+
+    def validate(self, attrs):
+        business = attrs.get("business") or getattr(self.instance, "business", None)
+        user = attrs.get("user") or getattr(self.instance, "user", None)
+        if user and business and not business.members.filter(user=user, is_active=True).exists() and business.owner_id != user.id:
+            raise serializers.ValidationError("User must be an active member of the selected business.")
         return attrs

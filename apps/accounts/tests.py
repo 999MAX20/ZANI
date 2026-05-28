@@ -4,6 +4,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from django.test import TestCase
+from rest_framework.throttling import ScopedRateThrottle
 from io import StringIO
 from unittest.mock import patch
 from rest_framework.test import APIClient
@@ -66,7 +67,34 @@ class AuthSecurityBaselineTests(TestCase):
         self.assertEqual(reused_refresh_response.status_code, 401)
 
     def test_login_endpoint_is_throttled(self):
-        for _ in range(10):
+        previous_rates = ScopedRateThrottle.THROTTLE_RATES
+        ScopedRateThrottle.THROTTLE_RATES = {**previous_rates, "auth_login": "10/min"}
+        cache.clear()
+        try:
+            for _ in range(10):
+                response = self.api.post(
+                    "/api/auth/token/",
+                    {"email": self.user.email, "password": "wrong"},
+                    format="json",
+                )
+                self.assertEqual(response.status_code, 401)
+
+            throttled_response = self.api.post(
+                "/api/auth/token/",
+                {"email": self.user.email, "password": "wrong"},
+                format="json",
+            )
+
+            self.assertEqual(throttled_response.status_code, 429)
+        finally:
+            ScopedRateThrottle.THROTTLE_RATES = previous_rates
+            cache.clear()
+
+    def test_login_endpoint_respects_stricter_throttle_rate(self):
+        previous_rates = ScopedRateThrottle.THROTTLE_RATES
+        ScopedRateThrottle.THROTTLE_RATES = {**previous_rates, "auth_login": "1/min"}
+        cache.clear()
+        try:
             response = self.api.post(
                 "/api/auth/token/",
                 {"email": self.user.email, "password": "wrong"},
@@ -74,13 +102,16 @@ class AuthSecurityBaselineTests(TestCase):
             )
             self.assertEqual(response.status_code, 401)
 
-        throttled_response = self.api.post(
-            "/api/auth/token/",
-            {"email": self.user.email, "password": "wrong"},
-            format="json",
-        )
+            throttled_response = self.api.post(
+                "/api/auth/token/",
+                {"email": self.user.email, "password": "wrong"},
+                format="json",
+            )
 
-        self.assertEqual(throttled_response.status_code, 429)
+            self.assertEqual(throttled_response.status_code, 429)
+        finally:
+            ScopedRateThrottle.THROTTLE_RATES = previous_rates
+            cache.clear()
 
     @patch("apps.accounts.views.verify_social_id_token")
     def test_social_login_creates_merchant_user_and_business(self, verify_token):

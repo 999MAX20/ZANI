@@ -7,6 +7,10 @@ def is_platform_admin(user):
     return bool(user and user.is_authenticated and (user.is_superuser or user.role == "platform_admin"))
 
 
+def platform_admin_has_global_access(user):
+    return is_platform_admin(user) and not settings.SUPPORT_REQUIRES_GRANT
+
+
 def is_platform_user(user):
     return bool(user and user.is_authenticated and getattr(user, "is_platform_user", False))
 
@@ -15,7 +19,7 @@ def accessible_businesses(user):
     from apps.businesses.models import Business
     from apps.core.models import SupportAccessGrant
 
-    if is_platform_admin(user) and not settings.SUPPORT_REQUIRES_GRANT:
+    if platform_admin_has_global_access(user):
         return Business.objects.all()
 
     owned_query = Business.objects.filter(owner=user)
@@ -29,7 +33,7 @@ def accessible_businesses(user):
 
 
 def user_can_access_business(user, business):
-    if is_platform_admin(user) and not settings.SUPPORT_REQUIRES_GRANT:
+    if platform_admin_has_global_access(user):
         return True
     if not user or not user.is_authenticated or business is None:
         return False

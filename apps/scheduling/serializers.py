@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.scheduling.models import Appointment, Resource, WorkingHours
+from apps.scheduling.models import Appointment, AppointmentMessageSetting, Resource, WorkingHours
 from apps.scheduling.services import validate_appointment_availability
 
 
@@ -69,6 +69,24 @@ class AppointmentSerializer(serializers.ModelSerializer):
             except ValueError as exc:
                 raise serializers.ValidationError(str(exc)) from exc
             attrs["end_at"] = calculated_end
+        return attrs
+
+
+class AppointmentMessageSettingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AppointmentMessageSetting
+        fields = "__all__"
+        read_only_fields = ["created_at", "updated_at"]
+
+    def validate(self, attrs):
+        offset_minutes = attrs.get("offset_minutes", getattr(self.instance, "offset_minutes", 0))
+        scenario = attrs.get("scenario", getattr(self.instance, "scenario", None))
+        if scenario in {AppointmentMessageSetting.Scenarios.CONFIRMATION, AppointmentMessageSetting.Scenarios.REMINDER} and offset_minutes >= 0:
+            raise serializers.ValidationError("Confirmation and reminder offsets must be before appointment start.")
+        if scenario == AppointmentMessageSetting.Scenarios.THANK_YOU and offset_minutes < 0:
+            raise serializers.ValidationError("Thank-you offset must be after appointment end.")
+        if abs(offset_minutes) > 60 * 24 * 30:
+            raise serializers.ValidationError("offset_minutes is too large.")
         return attrs
 
 

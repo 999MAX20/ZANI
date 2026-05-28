@@ -80,3 +80,22 @@ class Notification(TimeStampedModel):
         if self.read_at is not None:
             self.read_at = None
             self.save(update_fields=["read_at", "updated_at"])
+
+
+class NotificationPreference(TimeStampedModel):
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name="notification_preferences")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notification_preferences")
+    category = models.CharField(max_length=32, choices=Notification.Categories.choices)
+    in_app_enabled = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["category"]
+        constraints = [
+            models.UniqueConstraint(fields=["business", "user", "category"], name="unique_notification_preference_per_user_category"),
+        ]
+        indexes = [
+            models.Index(fields=["business", "user", "category"]),
+        ]
+
+    def __str__(self):
+        return f"{self.user} {self.category} notifications for {self.business}"

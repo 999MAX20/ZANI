@@ -25,7 +25,7 @@ from apps.businesses.serializers import (
 )
 from apps.core.audit import write_audit_log
 from apps.core.models import AuditLog
-from apps.core.permissions import IsTenantMember, accessible_businesses, is_platform_admin
+from apps.core.permissions import IsTenantMember, accessible_businesses, is_platform_admin, platform_admin_has_global_access
 from apps.core.viewsets import TenantModelViewSet
 from apps.crm.models import Deal
 from apps.leads.models import Lead
@@ -39,7 +39,7 @@ class BusinessViewSet(ModelViewSet):
     permission_classes = [IsTenantMember]
 
     def get_queryset(self):
-        return Business.objects.all() if is_platform_admin(self.request.user) else accessible_businesses(self.request.user)
+        return Business.objects.all() if platform_admin_has_global_access(self.request.user) else accessible_businesses(self.request.user)
 
     def perform_create(self, serializer):
         owner = serializer.validated_data.get("owner") or self.request.user
@@ -78,7 +78,7 @@ class TeamAccessMixin:
 
     def accessible_business_ids(self, action=Actions.VIEW):
         businesses = accessible_businesses(self.request.user)
-        if is_platform_admin(self.request.user):
+        if platform_admin_has_global_access(self.request.user):
             return list(businesses.values_list("id", flat=True))
         return [
             business.id

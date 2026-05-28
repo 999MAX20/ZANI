@@ -1,14 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { CalendarClock, Copy, Send, ShieldAlert, ShieldCheck, SlidersHorizontal, Stethoscope, UsersRound } from "lucide-react";
+import { CalendarCheck2, CalendarClock, Copy, Send, ShieldAlert, ShieldCheck, SlidersHorizontal, Stethoscope, UsersRound } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { billingApi } from "../../api/billing";
+import { appointmentMessageSettingsApi } from "../../api/appointments";
 import { businessesApi } from "../../api/businesses";
 import { getApiErrorMessage } from "../../api/client";
 import { customFieldsApi } from "../../api/customFields";
 import { importExportApi, type ImportEntity } from "../../api/importExport";
 import { leadFormsApi, leadFormSubmissionsApi } from "../../api/leadForms";
+import { notificationsApi } from "../../api/notifications";
 import { quickRepliesApi } from "../../api/quickReplies";
 import { securityApi } from "../../api/security";
 import { teamApi } from "../../api/team";
@@ -25,7 +27,7 @@ import { permissionResourceLabel } from "../../lib/permissions";
 import { useI18n } from "../../lib/i18n";
 import { useAuth } from "../auth/AuthProvider";
 import { DevelopersSection } from "./DevelopersSection";
-import type { Business, BusinessInvitation, BusinessMembershipSummary, BusinessRole, CrmEntityType, CustomFieldDefinition, QuickReplyTemplate, RolePermission } from "../../types";
+import type { AppointmentMessageSetting, Business, BusinessInvitation, BusinessMembershipSummary, BusinessRole, CrmEntityType, CustomFieldDefinition, Notification, NotificationPreference, QuickReplyTemplate, RolePermission } from "../../types";
 
 const teamRoleOptions = [
   { value: "owner" },
@@ -57,8 +59,17 @@ const visibilityOptions = [
 ];
 
 const roleGuideKeys = ["manager", "operator", "staff", "accountant"] as const;
+const notificationCategories: Array<{ category: Notification["category"]; title: string; description: string }> = [
+  { category: "sales", title: "Продажи и записи", description: "Заявки, сделки, подтверждения и ответы клиентов по записям." },
+  { category: "tasks", title: "Задачи", description: "Назначения, просрочки и действия, которые требуют ручной работы." },
+  { category: "outreach", title: "Рассылки", description: "Подготовка кампаний, запуск, завершение, opt-out и ошибки кампаний." },
+  { category: "ai_alerts", title: "ИИ-рекомендации", description: "Рекомендации AI Analyst и подсказки по подключению сервисов." },
+  { category: "system", title: "Системные", description: "Технические события, ошибки доставки и состояние интеграций." },
+  { category: "finance", title: "Финансы", description: "Оплаты, счета, тарифы и финансовые события." },
+];
 
 const settingsSections = [
+  { id: "appointment-messages" },
   { id: "team-access" },
   { id: "security-center" },
   { id: "quick-replies" },
@@ -69,6 +80,30 @@ const settingsSections = [
   { id: "billing" },
   { id: "custom-fields" },
   { id: "business-profile" },
+];
+
+const appointmentScenarioLabels: Record<AppointmentMessageSetting["scenario"], { title: string; description: string }> = {
+  confirmation: {
+    title: "Подтверждение записи",
+    description: "Сообщение клиенту до визита, чтобы снизить неявки и сразу поймать отмену или перенос.",
+  },
+  reminder: {
+    title: "Напоминание перед визитом",
+    description: "Короткое сообщение за несколько часов до записи с услугой, временем, мастером и адресом.",
+  },
+  thank_you: {
+    title: "После оказания услуги",
+    description: "Спасибо после завершённого визита, повторная запись или мягкий запрос обратной связи.",
+  },
+};
+
+const appointmentChannelOptions = [
+  { value: "auto", label: "Авто: лучший канал клиента" },
+  { value: "telegram", label: "Telegram" },
+  { value: "whatsapp", label: "WhatsApp" },
+  { value: "email", label: "Email" },
+  { value: "sms", label: "SMS" },
+  { value: "system", label: "Внутри CRM" },
 ];
 
 export function SettingsPage() {
@@ -145,9 +180,10 @@ export function SettingsPage() {
   const [activeImportId, setActiveImportId] = useState<number | null>(null);
   const [manualSaleForm, setManualSaleForm] = useState({ external_id: "", client_name: "", item_name: "", amount: "", source: "manual" });
   const [manualCatalogForm, setManualCatalogForm] = useState({ item_type: "service", sku: "", name: "", duration_minutes: "30", price_from: "", stock_quantity: "", source: "manual" });
+  const [appointmentMessageDrafts, setAppointmentMessageDrafts] = useState<Record<number, Partial<AppointmentMessageSetting>>>({});
   const importJobs = useQuery({
     queryKey: ["import-jobs", business?.id],
-    queryFn: importExportApi.importJobs,
+    queryFn: () => importExportApi.importJobs(business?.id),
     enabled: Boolean(business),
   });
   const leadForms = useQuery({
@@ -183,6 +219,16 @@ export function SettingsPage() {
     queryFn: securityApi.supportGrants.list,
     enabled: Boolean(business),
     retry: false,
+  });
+  const notificationPreferences = useQuery({
+    queryKey: ["notification-preferences", business?.id, user?.id],
+    queryFn: () => notificationsApi.preferences.list({ user: "me" }),
+    enabled: Boolean(business?.id && user?.id),
+  });
+  const appointmentMessageSettings = useQuery({
+    queryKey: ["appointment-message-settings", business?.id],
+    queryFn: () => appointmentMessageSettingsApi.list({ business: business?.id }),
+    enabled: Boolean(business?.id),
   });
   const [editingQuickReplyId, setEditingQuickReplyId] = useState<number | null>(null);
   const [quickReplyEditForm, setQuickReplyEditForm] = useState({
@@ -365,6 +411,31 @@ export function SettingsPage() {
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["lead-forms"] }),
   });
+  const notificationPreferenceMutation = useMutation({
+    mutationFn: ({ category, enabled }: { category: Notification["category"]; enabled: boolean }) => {
+      if (!business || !user) throw new Error("Business and user are required.");
+      const existing = (notificationPreferences.data || []).find((preference) => preference.category === category);
+      const payload: Partial<NotificationPreference> = {
+        business: business.id,
+        user: user.id,
+        category,
+        in_app_enabled: enabled,
+      };
+      if (existing) return notificationsApi.preferences.update({ id: existing.id, payload });
+      return notificationsApi.preferences.create(payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notification-preferences"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+  const appointmentMessageMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: number; payload: Partial<AppointmentMessageSetting> }) => appointmentMessageSettingsApi.update({ id, payload }),
+    onSuccess: () => {
+      setAppointmentMessageDrafts({});
+      queryClient.invalidateQueries({ queryKey: ["appointment-message-settings"] });
+    },
+  });
 
   function startEditingQuickReply(template: QuickReplyTemplate) {
     setEditingQuickReplyId(Number(template.id));
@@ -429,6 +500,11 @@ export function SettingsPage() {
     { key: "resources", href: "/dashboard/resources", icon: UsersRound },
     { key: "working-hours", href: "/dashboard/working-hours", icon: CalendarClock },
   ];
+  const preferenceByCategory = new Map((notificationPreferences.data || []).map((preference) => [preference.category, preference]));
+  const appointmentMessages = appointmentMessageSettings.data || [];
+  const appointmentMessageValue = <K extends keyof AppointmentMessageSetting>(setting: AppointmentMessageSetting, key: K): AppointmentMessageSetting[K] => {
+    return (appointmentMessageDrafts[Number(setting.id)]?.[key] as AppointmentMessageSetting[K] | undefined) ?? setting[key];
+  };
 
   function updateMemberRole(memberId: number, roleKey: BusinessMembershipSummary["role"]) {
     if (roleKey === "owner") return;
@@ -502,6 +578,155 @@ export function SettingsPage() {
                 {section.label}
               </a>
             ))}
+          </div>
+        </CardBody>
+      </Card>
+      <Card id="appointment-messages" className="mb-5 scroll-mt-24">
+        <CardBody>
+          <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Записи</p>
+              <h2 className="mt-2 text-2xl font-semibold text-midnight">Авто-сообщения по записям</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+                Настройте боевые сценарии: подтверждение записи, напоминание перед визитом и сообщение после услуги. Переменные: {"{client_name}"}, {"{service_name}"}, {"{resource_text}"}, {"{date}"}, {"{time}"}, {"{address_text}"}.
+              </p>
+            </div>
+            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-brand-50 text-brand-700">
+              <CalendarCheck2 size={22} />
+            </div>
+          </div>
+          {appointmentMessageMutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(appointmentMessageMutation.error)} /></div> : null}
+          {appointmentMessageSettings.isLoading ? (
+            <div className="rounded-3xl border border-slate-100 bg-slate-50 p-5 text-sm font-bold text-slate-500">Загружаем сценарии сообщений...</div>
+          ) : (
+            <div className="grid gap-4 xl:grid-cols-3">
+              {appointmentMessages.map((setting) => {
+                const meta = appointmentScenarioLabels[setting.scenario];
+                const enabled = Boolean(appointmentMessageValue(setting, "is_enabled"));
+                const offsetValue = Number(appointmentMessageValue(setting, "offset_minutes"));
+                const hasDraft = Boolean(appointmentMessageDrafts[Number(setting.id)]);
+                return (
+                  <div key={setting.id} className="flex flex-col rounded-3xl border border-slate-100 bg-slate-50/70 p-4">
+                    <div className="mb-4 flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-black text-midnight">{meta.title}</p>
+                        <p className="mt-1 text-sm font-semibold leading-5 text-slate-500">{meta.description}</p>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={appointmentMessageMutation.isPending}
+                        onClick={() =>
+                          appointmentMessageMutation.mutate({
+                            id: Number(setting.id),
+                            payload: { is_enabled: !enabled },
+                          })
+                        }
+                        className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-black transition ${
+                          enabled ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100" : "bg-slate-200 text-slate-600 hover:bg-slate-300"
+                        }`}
+                      >
+                        {enabled ? "Включено" : "Пауза"}
+                      </button>
+                    </div>
+                    <div className="grid gap-3">
+                      <Input
+                        label={setting.scenario === "thank_you" ? "Через минут после визита" : "За минут до записи"}
+                        type="number"
+                        value={Math.abs(offsetValue)}
+                        onChange={(event) => {
+                          const raw = Number(event.target.value || 0);
+                          const nextValue = setting.scenario === "thank_you" ? Math.abs(raw) : -Math.abs(raw);
+                          setAppointmentMessageDrafts((current) => ({
+                            ...current,
+                            [Number(setting.id)]: { ...current[Number(setting.id)], offset_minutes: nextValue },
+                          }));
+                        }}
+                      />
+                      <Select
+                        label="Канал доставки"
+                        value={String(appointmentMessageValue(setting, "channel_policy"))}
+                        onChange={(event) =>
+                          setAppointmentMessageDrafts((current) => ({
+                            ...current,
+                            [Number(setting.id)]: { ...current[Number(setting.id)], channel_policy: event.target.value as AppointmentMessageSetting["channel_policy"] },
+                          }))
+                        }
+                        options={appointmentChannelOptions}
+                      />
+                      <Textarea
+                        label="Текст сообщения"
+                        rows={6}
+                        value={String(appointmentMessageValue(setting, "template_text"))}
+                        onChange={(event) =>
+                          setAppointmentMessageDrafts((current) => ({
+                            ...current,
+                            [Number(setting.id)]: { ...current[Number(setting.id)], template_text: event.target.value },
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="mt-auto pt-4">
+                      <Button
+                        className="w-full"
+                        variant={hasDraft ? "primary" : "secondary"}
+                        disabled={!hasDraft || appointmentMessageMutation.isPending}
+                        onClick={() =>
+                          appointmentMessageMutation.mutate({
+                            id: Number(setting.id),
+                            payload: appointmentMessageDrafts[Number(setting.id)],
+                          })
+                        }
+                      >
+                        Сохранить сценарий
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardBody>
+      </Card>
+      <Card id="notification-preferences" className="mb-5 scroll-mt-24">
+        <CardBody>
+          <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Уведомления</p>
+              <h2 className="mt-2 text-2xl font-semibold text-midnight">Личные настройки шума</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+                Отключайте обычные in-app уведомления по категориям. Критичные high/urgent события, ошибки доставки и важные действия всё равно будут показаны.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
+              {notificationPreferences.data?.filter((item) => item.in_app_enabled === false).length || 0} отключено
+            </div>
+          </div>
+          {notificationPreferenceMutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(notificationPreferenceMutation.error)} /></div> : null}
+          <div className="grid gap-3 lg:grid-cols-2">
+            {notificationCategories.map((item) => {
+              const preference = preferenceByCategory.get(item.category);
+              const enabled = preference?.in_app_enabled !== false;
+              return (
+                <div key={item.category} className="rounded-3xl border border-slate-100 bg-slate-50/70 p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="font-black text-midnight">{item.title}</p>
+                      <p className="mt-1 text-sm font-semibold leading-5 text-slate-500">{item.description}</p>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={notificationPreferenceMutation.isPending}
+                      onClick={() => notificationPreferenceMutation.mutate({ category: item.category, enabled: !enabled })}
+                      className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-black transition ${
+                        enabled ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100" : "bg-slate-200 text-slate-600 hover:bg-slate-300"
+                      }`}
+                    >
+                      {enabled ? "Включено" : "Выключено"}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </CardBody>
       </Card>

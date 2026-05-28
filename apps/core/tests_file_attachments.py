@@ -34,7 +34,7 @@ class FileAttachmentTests(TestCase):
 
     def test_allowed_file_upload_and_private_download(self):
         self.api.force_authenticate(self.owner)
-        upload = SimpleUploadedFile("contract.pdf", b"contract", content_type="application/pdf")
+        upload = SimpleUploadedFile("contract.pdf", b"%PDF-1.4\ncontract", content_type="application/pdf")
 
         response = self.api.post(
             "/api/file-attachments/",

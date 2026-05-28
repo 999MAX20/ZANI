@@ -1,8 +1,11 @@
+from urllib.parse import urlparse
+
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
 
 PRODUCTION_ENVIRONMENTS = {"staging", "production"}
+PLACEHOLDER_RELEASES = {"", "local", "test", "development"}
 
 
 class Command(BaseCommand):
@@ -21,8 +24,15 @@ class Command(BaseCommand):
         self.stdout.write(f"Sentry traces sample rate: {settings.SENTRY_TRACES_SAMPLE_RATE}")
         self.stdout.write("PII policy: send_default_pii=False")
 
-        if settings.ENVIRONMENT in PRODUCTION_ENVIRONMENTS and settings.RELEASE == "local":
+        if settings.ENVIRONMENT in PRODUCTION_ENVIRONMENTS and str(settings.RELEASE).strip().lower() in PLACEHOLDER_RELEASES:
             raise CommandError("RELEASE must be set to a deploy identifier in staging/production.")
+
+        if settings.ENVIRONMENT in PRODUCTION_ENVIRONMENTS and sentry_configured:
+            parsed_dsn = urlparse(str(settings.SENTRY_DSN))
+            if parsed_dsn.scheme != "https" or not parsed_dsn.hostname:
+                raise CommandError("SENTRY_DSN must be an HTTPS DSN in staging/production.")
+            if not 0 <= float(settings.SENTRY_TRACES_SAMPLE_RATE) <= 0.2:
+                raise CommandError("SENTRY_TRACES_SAMPLE_RATE must be between 0 and 0.2 in staging/production.")
 
         if not sentry_configured:
             message = "SENTRY_DSN is not configured."

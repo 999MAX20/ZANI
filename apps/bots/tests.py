@@ -1,5 +1,10 @@
+from datetime import time
+from io import StringIO
+
+from django.core.management import call_command
 from django.test import TestCase
 from django.test import override_settings
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.accounts.models import User
@@ -9,6 +14,10 @@ from apps.businesses.models import Business, BusinessMember
 from apps.clients.models import Client
 from apps.crm.models import Deal, Pipeline, PipelineStage
 from apps.leads.models import Lead
+from apps.notifications.models import Notification
+from apps.notifications.delivery import handle_appointment_followup_reply, process_due_notifications
+from apps.scheduling.models import Appointment, AppointmentMessageSetting, Resource, WorkingHours
+from apps.services.models import Service
 from apps.tasks.models import Task
 
 
@@ -207,6 +216,292 @@ class BotsFoundationTests(TestCase):
         self.assertEqual(Lead.objects.filter(business=self.business, client=conversation.client).count(), 1)
         self.assertEqual(Task.objects.filter(business=self.business, client=conversation.client, lead=conversation.lead).count(), 1)
 
+    @override_settings(AI_PROVIDER="mock", OPENAI_API_KEY="", OPENROUTER_API_KEY="")
+    def test_public_website_chat_auto_pipeline_can_sell_and_create_draft_deal(self):
+        bot = Bot.objects.create(business=self.business, name="Website sales bot", status=Bot.Statuses.ACTIVE)
+        channel = BotChannel.objects.create(
+            bot=bot,
+            channel=BotChannel.Channels.WEBSITE,
+            status=BotChannel.Statuses.ACTIVE,
+            config_json={
+                "auto_crm_pipeline": {
+                    "enabled": True,
+                    "mode": "draft_deal",
+                    "require_review_on_fallback": False,
+                    "min_deal_confidence": 0.7,
+                    "auto_send_reply": True,
+                }
+            },
+        )
+
+        response = self.api.post(
+            f"/api/public/website-chat/{channel.public_token}/conversations/",
+            {
+                "full_name": "Sales Visitor",
+                "phone": "+77015550111",
+                "message": "Здравствуйте, хочу записаться на консультацию и узнать цену",
+                "external_user_id": "sales-visitor-100",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        conversation = BotConversation.objects.get(public_id=response.data["conversation_id"])
+        self.assertIsNotNone(conversation.client_id)
+        self.assertIsNotNone(conversation.lead_id)
+        self.assertIsNotNone(conversation.deal_id)
+        self.assertTrue(Deal.objects.filter(business=self.business, client=conversation.client, lead=conversation.lead).exists())
+        self.assertTrue(Task.objects.filter(business=self.business, client=conversation.client, lead=conversation.lead, deal=conversation.deal).exists())
+        auto_reply = BotMessage.objects.filter(
+            conversation=conversation,
+            direction=BotMessage.Directions.OUTBOUND,
+            sender_type=BotMessage.SenderTypes.BOT,
+        ).first()
+        self.assertIsNotNone(auto_reply)
+        self.assertTrue(auto_reply.text)
+        self.assertTrue(auto_reply.payload_json["auto_crm_pipeline"])
+        auto_meta = conversation.metadata_json["auto_crm_pipeline"]
+        self.assertEqual(auto_meta["status"], "created_draft_deal")
+        self.assertEqual(auto_meta["auto_reply"]["message_id"], auto_reply.id)
+
+    @override_settings(AI_PROVIDER="mock", OPENAI_API_KEY="", OPENROUTER_API_KEY="")
+    def test_auto_sales_reply_receives_playbook_prices_resources_and_slots(self):
+        self.business.business_type = Business.BusinessTypes.DENTISTRY
+        self.business.save(update_fields=["business_type", "updated_at"])
+        Service.objects.create(
+            business=self.business,
+            name="Консультация стоматолога",
+            duration_minutes=60,
+            price_from=15000,
+        )
+        resource = Resource.objects.create(business=self.business, name="Айгерим", resource_type=Resource.ResourceTypes.STAFF)
+        today = timezone.localdate()
+        WorkingHours.objects.create(
+            business=self.business,
+            resource=resource,
+            weekday=today.weekday(),
+            start_time=time(9, 0),
+            end_time=time(18, 0),
+        )
+        bot = Bot.objects.create(business=self.business, name="Dentistry sales bot", status=Bot.Statuses.ACTIVE)
+        channel = BotChannel.objects.create(
+            bot=bot,
+            channel=BotChannel.Channels.WEBSITE,
+            status=BotChannel.Statuses.ACTIVE,
+            config_json={
+                "auto_crm_pipeline": {
+                    "enabled": True,
+                    "mode": "draft_deal",
+                    "require_review_on_fallback": False,
+                    "min_deal_confidence": 0.7,
+                    "auto_send_reply": True,
+                }
+            },
+        )
+
+        response = self.api.post(
+            f"/api/public/website-chat/{channel.public_token}/conversations/",
+            {
+                "full_name": "Dental Visitor",
+                "phone": "+77015550222",
+                "message": "Хочу записаться на консультацию стоматолога к Айгерим, какая цена?",
+                "external_user_id": "dental-visitor-100",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        log = AIRequestLog.objects.filter(prompt_type="bot_suggest_reply").latest("id")
+        scheduling = log.input_json["scheduling_context"]
+        playbook = log.input_json["sales_playbook"]
+        self.assertEqual(playbook["business_type"], Business.BusinessTypes.DENTISTRY)
+        self.assertEqual(scheduling["matched_service"]["name"], "Консультация стоматолога")
+        self.assertEqual(scheduling["matched_service"]["price_from"], "15000.00")
+        self.assertEqual(scheduling["matched_resource"]["name"], "Айгерим")
+        self.assertTrue(scheduling["next_available_slots"])
+
+    @override_settings(AI_PROVIDER="mock", OPENAI_API_KEY="", OPENROUTER_API_KEY="")
+    def test_auto_pipeline_books_appointment_when_client_selects_offered_slot(self):
+        service = Service.objects.create(
+            business=self.business,
+            name="Консультация стоматолога",
+            duration_minutes=60,
+            price_from=15000,
+        )
+        resource = Resource.objects.create(business=self.business, name="Айгерим", resource_type=Resource.ResourceTypes.STAFF)
+        today = timezone.localdate()
+        WorkingHours.objects.create(
+            business=self.business,
+            resource=resource,
+            weekday=today.weekday(),
+            start_time=time(9, 0),
+            end_time=time(18, 0),
+        )
+        bot = Bot.objects.create(business=self.business, name="Booking sales bot", status=Bot.Statuses.ACTIVE)
+        channel = BotChannel.objects.create(
+            bot=bot,
+            channel=BotChannel.Channels.WEBSITE,
+            status=BotChannel.Statuses.ACTIVE,
+            config_json={
+                "auto_crm_pipeline": {
+                    "enabled": True,
+                    "mode": "draft_deal",
+                    "require_review_on_fallback": False,
+                    "min_deal_confidence": 0.7,
+                    "auto_send_reply": True,
+                    "create_appointment": True,
+                }
+            },
+        )
+
+        first_response = self.api.post(
+            f"/api/public/website-chat/{channel.public_token}/conversations/",
+            {
+                "full_name": "Booking Visitor",
+                "phone": "+77015550333",
+                "message": "Хочу записаться на консультацию стоматолога к Айгерим",
+                "external_user_id": "booking-visitor-100",
+            },
+            format="json",
+        )
+        self.assertEqual(first_response.status_code, 201)
+        conversation = BotConversation.objects.get(public_id=first_response.data["conversation_id"])
+        self.assertTrue(conversation.metadata_json["auto_booking"]["offered_slots"])
+
+        second_response = self.api.post(
+            f"/api/public/website-chat/{channel.public_token}/conversations/{conversation.public_id}/messages/",
+            {"message": "1 вариант подходит"},
+            format="json",
+        )
+
+        self.assertEqual(second_response.status_code, 201)
+        conversation.refresh_from_db()
+        appointment = Appointment.objects.get(business=self.business, client=conversation.client, lead=conversation.lead)
+        self.assertEqual(appointment.service, service)
+        self.assertEqual(appointment.resource, resource)
+        self.assertEqual(appointment.source, Appointment.Sources.WEBSITE)
+        self.assertEqual(conversation.metadata_json["auto_booking"]["status"], "booked")
+        self.assertEqual(conversation.metadata_json["auto_booking"]["appointment_id"], appointment.id)
+        self.assertTrue(Notification.objects.filter(business=self.business, appointment=appointment, action_label="Подтвердить запись").exists())
+        self.assertTrue(
+            BotMessage.objects.filter(
+                conversation=conversation,
+                direction=BotMessage.Directions.OUTBOUND,
+                sender_type=BotMessage.SenderTypes.BOT,
+                text__contains="Готово, записали",
+            ).exists()
+        )
+
+    @override_settings(AI_PROVIDER="mock", OPENAI_API_KEY="", OPENROUTER_API_KEY="")
+    def test_auto_booking_runs_appointment_message_delivery_and_confirmation_reply(self):
+        service = Service.objects.create(
+            business=self.business,
+            name="Консультация",
+            duration_minutes=60,
+            price_from=12000,
+        )
+        resource = Resource.objects.create(business=self.business, name="Мастер Алия", resource_type=Resource.ResourceTypes.STAFF)
+        tomorrow = timezone.localdate() + timezone.timedelta(days=1)
+        WorkingHours.objects.create(
+            business=self.business,
+            resource=resource,
+            weekday=tomorrow.weekday(),
+            start_time=time(9, 0),
+            end_time=time(18, 0),
+        )
+        AppointmentMessageSetting.objects.create(
+            business=self.business,
+            scenario=AppointmentMessageSetting.Scenarios.CONFIRMATION,
+            label="Подтвердить запись",
+            is_enabled=True,
+            offset_minutes=-180,
+            channel_policy=AppointmentMessageSetting.ChannelPolicies.SYSTEM,
+            template_text="Боевой тест: {client_name}, подтвердите {service_name}{resource_text} {date} в {time}.",
+        )
+        AppointmentMessageSetting.objects.create(
+            business=self.business,
+            scenario=AppointmentMessageSetting.Scenarios.REMINDER,
+            label="Напомнить о записи",
+            is_enabled=True,
+            offset_minutes=-60,
+            channel_policy=AppointmentMessageSetting.ChannelPolicies.SYSTEM,
+            template_text="Напоминание: {service_name} в {time}.",
+        )
+        bot = Bot.objects.create(business=self.business, name="Battle booking bot", status=Bot.Statuses.ACTIVE)
+        channel = BotChannel.objects.create(
+            bot=bot,
+            channel=BotChannel.Channels.WEBSITE,
+            status=BotChannel.Statuses.ACTIVE,
+            config_json={
+                "auto_crm_pipeline": {
+                    "enabled": True,
+                    "mode": "draft_deal",
+                    "require_review_on_fallback": False,
+                    "min_deal_confidence": 0.7,
+                    "auto_send_reply": True,
+                    "create_appointment": True,
+                }
+            },
+        )
+
+        first_response = self.api.post(
+            f"/api/public/website-chat/{channel.public_token}/conversations/",
+            {
+                "full_name": "Battle Client",
+                "phone": "+77015550444",
+                "message": "Хочу записаться на консультацию к Мастер Алия",
+                "external_user_id": "battle-visitor-100",
+            },
+            format="json",
+        )
+        self.assertEqual(first_response.status_code, 201)
+        conversation = BotConversation.objects.get(public_id=first_response.data["conversation_id"])
+        self.assertTrue(conversation.metadata_json["auto_booking"]["offered_slots"])
+
+        second_response = self.api.post(
+            f"/api/public/website-chat/{channel.public_token}/conversations/{conversation.public_id}/messages/",
+            {"message": "Первый вариант подходит"},
+            format="json",
+        )
+        self.assertEqual(second_response.status_code, 201)
+
+        conversation.refresh_from_db()
+        appointment = Appointment.objects.get(business=self.business, client=conversation.client, lead=conversation.lead)
+        confirmation = Notification.objects.get(appointment=appointment, action_label="Подтвердить запись")
+        reminder = Notification.objects.get(appointment=appointment, action_label="Напомнить о записи")
+        self.assertEqual(confirmation.channel, Notification.Channels.SYSTEM)
+        self.assertIn("Боевой тест: Battle Client", confirmation.text)
+        self.assertEqual(reminder.channel, Notification.Channels.SYSTEM)
+
+        confirmation.send_at = timezone.now() - timezone.timedelta(minutes=1)
+        confirmation.save(update_fields=["send_at", "updated_at"])
+        delivery_results = process_due_notifications()
+        confirmation.refresh_from_db()
+        self.assertEqual(delivery_results[0]["status"], "sent")
+        self.assertEqual(confirmation.status, Notification.Statuses.SENT)
+
+        conversation.client.telegram_id = "battle-client-tg"
+        conversation.client.save(update_fields=["telegram_id", "updated_at"])
+        reply_result = handle_appointment_followup_reply(
+            business=self.business,
+            channel=Notification.Channels.TELEGRAM,
+            external_user_id="battle-client-tg",
+            text="Да",
+        )
+        appointment.refresh_from_db()
+        self.assertEqual(reply_result["status"], "confirmed")
+        self.assertEqual(appointment.status, Appointment.Statuses.CONFIRMED)
+
+    @override_settings(AI_PROVIDER="mock", OPENAI_API_KEY="", OPENROUTER_API_KEY="", KIMI_API_KEY="")
+    def test_crm_pipeline_runtime_check_command_passes_in_safe_mode(self):
+        output = StringIO()
+
+        call_command("crm_pipeline_runtime_check", "--json", stdout=output)
+
+        payload = output.getvalue()
+        self.assertIn('"ok": true', payload)
+        self.assertIn('"client reply confirms appointment"', payload)
+
     def test_public_website_chat_rejects_non_website_channel(self):
         bot = Bot.objects.create(business=self.business, name="Telegram bot", status=Bot.Statuses.ACTIVE)
         channel = BotChannel.objects.create(
@@ -377,6 +672,7 @@ class InboxBackendTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["total"], 2)
         self.assertEqual(response.data["unread"], 1)
+        self.assertEqual(response.data["unread_messages"], 1)
         self.assertEqual(response.data["handoff_required"], 1)
         self.assertEqual(response.data["bot_paused"], 1)
         channels = {item["key"]: item for item in response.data["channels"]}
@@ -469,10 +765,46 @@ class InboxBackendTests(TestCase):
         self.assertEqual(self.conversation.unread_count, 1)
         self.assertIsNotNone(self.conversation.last_message_at)
         self.assertIsNotNone(self.conversation.last_inbound_at)
+        self.assertFalse(Notification.objects.filter(business=self.business, recipient=self.owner, action_url__contains="/dashboard/conversations").exists())
+        manager_notification = Notification.objects.get(business=self.business, recipient=self.manager, action_url__contains="/dashboard/conversations")
+        self.assertIn("Можно записаться?", manager_notification.text)
 
         inbox_response = self.api.get("/api/inbox/conversations/?unread=true&search=записаться")
         self.assertEqual(inbox_response.status_code, 200)
         self.assertEqual(inbox_response.data["count"], 1)
+
+        owner_summary = self.api.get("/api/notifications/summary/")
+        self.assertEqual(owner_summary.data["unread"], 0)
+        self.api.force_authenticate(self.manager)
+        manager_summary = self.api.get("/api/notifications/summary/")
+        self.assertEqual(manager_summary.data["unread"], 1)
+
+    def test_assigned_inbound_chat_notification_only_goes_to_assignee(self):
+        operator = User.objects.create_user(
+            username="inbox-operator",
+            email="inbox-operator@example.com",
+            password="pass",
+            role=User.Roles.BUSINESS_OPERATOR,
+        )
+        BusinessMember.objects.create(business=self.business, user=operator, role=BusinessMember.Roles.OPERATOR)
+        self.conversation.assigned_to = self.manager
+        self.conversation.save(update_fields=["assigned_to", "updated_at"])
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            "/api/bot-messages/",
+            {
+                "conversation": self.conversation.id,
+                "direction": BotMessage.Directions.INBOUND,
+                "sender_type": BotMessage.SenderTypes.CLIENT,
+                "text": "Проверьте запись",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(Notification.objects.filter(business=self.business, recipient=self.manager).exists())
+        self.assertFalse(Notification.objects.filter(business=self.business, recipient=operator).exists())
 
     def test_inbox_messages_assign_handoff_and_mark_read_actions_work(self):
         self.api.force_authenticate(self.owner)
@@ -531,8 +863,31 @@ class InboxBackendTests(TestCase):
         self.assertEqual(response.data["direction"], BotMessage.Directions.OUTBOUND)
         self.assertEqual(response.data["sender_type"], BotMessage.SenderTypes.MANAGER)
         self.assertEqual(response.data["status"], BotMessage.Statuses.QUEUED)
+        self.assertEqual(response.data["error_text"], "Channel provider is not connected.")
         self.conversation.refresh_from_db()
         self.assertIsNotNone(self.conversation.last_outbound_at)
+
+    def test_manager_can_retry_unsent_outbound_message_from_inbox(self):
+        self.api.force_authenticate(self.owner)
+        original = BotMessage.objects.create(
+            conversation=self.conversation,
+            direction=BotMessage.Directions.OUTBOUND,
+            sender_type=BotMessage.SenderTypes.MANAGER,
+            text="Повторить отправку",
+            status=BotMessage.Statuses.FAILED,
+            error_text="Provider delivery failed.",
+        )
+
+        response = self.api.post(
+            f"/api/inbox/conversations/{self.conversation.id}/retry-message/",
+            {"message_id": original.id},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["direction"], BotMessage.Directions.OUTBOUND)
+        self.assertEqual(response.data["text"], original.text)
+        self.assertEqual(response.data["payload_json"]["retry_of_message_id"], original.id)
 
     def test_public_website_chat_flows_into_inbox_and_manager_reply_updates_state(self):
         channel = BotChannel.objects.create(

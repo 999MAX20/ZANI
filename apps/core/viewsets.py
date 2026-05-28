@@ -8,7 +8,7 @@ from apps.businesses.access import Actions, assert_can, can, scope_queryset
 from apps.core.archive import archive_instance, can_hard_delete, restore_instance, supports_archive
 from apps.core.audit import write_audit_log
 from apps.core.models import AuditLog
-from apps.core.permissions import IsTenantMember, accessible_businesses, is_platform_admin, user_can_access_business
+from apps.core.permissions import IsTenantMember, accessible_businesses, platform_admin_has_global_access, user_can_access_business
 
 
 class TenantModelViewSet(ModelViewSet):
@@ -26,6 +26,7 @@ class TenantModelViewSet(ModelViewSet):
         "Service": "settings",
         "Resource": "settings",
         "WorkingHours": "settings",
+        "AppointmentMessageSetting": "settings",
         "Appointment": "appointments",
         "Task": "tasks",
         "Bot": "integrations",
@@ -35,6 +36,10 @@ class TenantModelViewSet(ModelViewSet):
         "Conversation": "conversations",
         "Message": "conversations",
         "Notification": "notifications",
+        "OutreachTemplate": "notifications",
+        "OutreachCampaign": "notifications",
+        "OutreachRecipient": "notifications",
+        "OutreachConsent": "notifications",
         "AnalyticsEvent": "analytics",
         "ActivityEvent": "analytics",
         "Note": "clients",
@@ -81,7 +86,7 @@ class TenantModelViewSet(ModelViewSet):
         queryset = super().get_queryset()
         user = self.request.user
 
-        if is_platform_admin(user):
+        if platform_admin_has_global_access(user):
             return queryset
 
         businesses = list(accessible_businesses(user))

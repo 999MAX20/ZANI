@@ -10,7 +10,7 @@ from apps.billing.storage import assert_storage_quota_allows
 from apps.core.audit import write_audit_log
 from apps.core.file_attachments import assert_attachment_access, resolve_attachment_entity
 from apps.core.models import AuditLog, FileAttachment
-from apps.core.permissions import IsTenantMember, accessible_businesses, is_platform_admin, user_can_access_business
+from apps.core.permissions import IsTenantMember, accessible_businesses, platform_admin_has_global_access, user_can_access_business
 from apps.core.serializers import FileAttachmentSerializer
 
 
@@ -23,7 +23,7 @@ class FileAttachmentViewSet(ModelViewSet):
     def get_queryset(self):
         queryset = FileAttachment.objects.select_related("business", "uploaded_by")
         user = self.request.user
-        if is_platform_admin(user):
+        if platform_admin_has_global_access(user):
             filtered = queryset
         else:
             filtered = queryset.none()

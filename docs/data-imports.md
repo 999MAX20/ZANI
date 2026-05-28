@@ -7,6 +7,7 @@ Stage 5 adds a small, safe data-ingestion layer for pilot merchants that do not 
 Merchants can upload CSV/XLSX files for:
 
 - `clients` — CRM client base;
+- `leads` — incoming requests and lead history;
 - `sales` — revenue/order events;
 - `catalog` — services and product/stock rows.
 
@@ -21,6 +22,7 @@ The flow is intentionally two-step:
 POST /api/import-jobs/
 POST /api/import-jobs/{id}/confirm/
 GET /api/import-templates/clients/
+GET /api/import-templates/leads/
 GET /api/import-templates/sales/
 GET /api/import-templates/catalog/
 POST /api/data/sales/
@@ -28,9 +30,19 @@ POST /api/data/catalog-items/
 ```
 
 `sales` and `catalog` imports are normalized into `BusinessEvent`.
+Every confirmed import also updates the support-visible `Excel / CSV` `BusinessConnector` and writes a `ConnectorSyncRun`, so support can see the last import status, filename and summary.
 
 Catalog rows with `item_type=service` also create or update CRM `Service` records.
 Product rows are stored as catalog events for the future inventory module.
+
+## Production limits
+
+- File types: `.csv`, `.xlsx`.
+- Default max file size: `MAX_UPLOAD_SIZE_MB=10`.
+- Default max rows per file: `IMPORT_MAX_ROWS=5000`.
+- Default preview rows: `IMPORT_PREVIEW_ROWS=10`.
+- Empty files and files with headers but no data rows are rejected before confirmation.
+- Import is idempotent where a stable identity exists: clients by phone/email, leads by client/message, sales by external id or event payload, catalog by SKU/event payload.
 
 ## Sales CSV headers
 

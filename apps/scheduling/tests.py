@@ -2,6 +2,7 @@ from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 from django.test import TestCase
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.accounts.models import User
@@ -10,8 +11,8 @@ from apps.businesses.models import Business, BusinessMember
 from apps.clients.models import Client
 from apps.leads.models import Lead
 from apps.notifications.models import Notification
-from apps.scheduling.models import Appointment, Resource, WorkingHours
-from apps.scheduling.services import create_appointment_from_lead, get_available_slots
+from apps.scheduling.models import Appointment, AppointmentMessageSetting, Resource, WorkingHours
+from apps.scheduling.services import create_appointment_from_lead, get_available_slots, schedule_appointment_followups, schedule_post_service_followup
 from apps.services.models import Service
 
 
@@ -149,7 +150,187 @@ class CorePlatformTests(TestCase):
                 event_type=AnalyticsEvent.EventTypes.APPOINTMENT_CREATED,
             ).exists()
         )
-        self.assertTrue(Notification.objects.filter(appointment=appointment).exists())
+        self.assertEqual(Notification.objects.filter(appointment=appointment, status=Notification.Statuses.PENDING).count(), 2)
+
+    def test_appointment_followups_prefer_client_channel_and_schedule_confirmation_and_reminder(self):
+        client = Client.objects.create(
+            business=self.business,
+            full_name="Telegram Client",
+            phone="+77015550000",
+            telegram_id="tg-100",
+        )
+        service = Service.objects.create(business=self.business, name="Consultation", duration_minutes=60)
+        start_at = timezone.now() + timedelta(days=3)
+        appointment = Appointment.objects.create(
+            business=self.business,
+            client=client,
+            service=service,
+            start_at=start_at,
+            end_at=start_at + timedelta(minutes=60),
+        )
+
+        notifications = schedule_appointment_followups(appointment)
+
+        self.assertEqual(len(notifications), 2)
+        self.assertEqual({item.channel for item in notifications}, {Notification.Channels.TELEGRAM})
+        self.assertEqual({item.action_label for item in notifications}, {"Подтвердить запись", "Напомнить о записи"})
+        confirmation = Notification.objects.get(appointment=appointment, action_label="Подтвердить запись")
+        reminder = Notification.objects.get(appointment=appointment, action_label="Напомнить о записи")
+        self.assertEqual(confirmation.send_at, start_at - timedelta(hours=24))
+        self.assertEqual(reminder.send_at, start_at - timedelta(hours=2))
+
+    def test_appointment_followups_use_business_message_settings(self):
+        client = Client.objects.create(
+            business=self.business,
+            full_name="Aruzhan",
+            telegram_id="tg-101",
+        )
+        service = Service.objects.create(business=self.business, name="Haircut", duration_minutes=60)
+        start_at = timezone.now() + timedelta(days=2)
+        appointment = Appointment.objects.create(
+            business=self.business,
+            client=client,
+            service=service,
+            start_at=start_at,
+            end_at=start_at + timedelta(minutes=60),
+        )
+        AppointmentMessageSetting.objects.update_or_create(
+            business=self.business,
+            scenario=AppointmentMessageSetting.Scenarios.REMINDER,
+            defaults={
+                "label": "Напомнить о записи",
+                "is_enabled": False,
+                "offset_minutes": -60,
+                "channel_policy": AppointmentMessageSetting.ChannelPolicies.AUTO,
+                "template_text": "Напоминание для {client_name}",
+            },
+        )
+        AppointmentMessageSetting.objects.update_or_create(
+            business=self.business,
+            scenario=AppointmentMessageSetting.Scenarios.CONFIRMATION,
+            defaults={
+                "label": "Подтвердить запись",
+                "is_enabled": True,
+                "offset_minutes": -180,
+                "channel_policy": AppointmentMessageSetting.ChannelPolicies.SYSTEM,
+                "template_text": "Здравствуйте, {client_name}. Услуга: {service_name}.",
+            },
+        )
+
+        notifications = schedule_appointment_followups(appointment)
+
+        self.assertEqual(len(notifications), 1)
+        notification = notifications[0]
+        self.assertEqual(notification.channel, Notification.Channels.SYSTEM)
+        self.assertEqual(notification.send_at, start_at - timedelta(minutes=180))
+        self.assertIn("Здравствуйте, Aruzhan. Услуга: Haircut.", notification.text)
+
+    def test_completed_appointment_schedules_post_service_thank_you(self):
+        client = Client.objects.create(
+            business=self.business,
+            full_name="Telegram Client",
+            telegram_id="tg-200",
+        )
+        service = Service.objects.create(business=self.business, name="Consultation", duration_minutes=60)
+        start_at = timezone.now() - timedelta(hours=2)
+        appointment = Appointment.objects.create(
+            business=self.business,
+            client=client,
+            service=service,
+            start_at=start_at,
+            end_at=start_at + timedelta(minutes=60),
+            status=Appointment.Statuses.COMPLETED,
+        )
+
+        notification = schedule_post_service_followup(appointment)
+
+        self.assertIsNotNone(notification)
+        self.assertEqual(notification.channel, Notification.Channels.TELEGRAM)
+        self.assertEqual(notification.action_label, "Поблагодарить после визита")
+        self.assertIn("Спасибо, что выбрали нас", notification.text)
+        self.assertGreater(notification.send_at, timezone.now())
+
+    def test_disabled_thank_you_setting_skips_post_service_followup(self):
+        client = Client.objects.create(
+            business=self.business,
+            full_name="Telegram Client",
+            telegram_id="tg-201",
+        )
+        service = Service.objects.create(business=self.business, name="Consultation", duration_minutes=60)
+        start_at = timezone.now() - timedelta(hours=2)
+        appointment = Appointment.objects.create(
+            business=self.business,
+            client=client,
+            service=service,
+            start_at=start_at,
+            end_at=start_at + timedelta(minutes=60),
+            status=Appointment.Statuses.COMPLETED,
+        )
+        AppointmentMessageSetting.objects.create(
+            business=self.business,
+            scenario=AppointmentMessageSetting.Scenarios.THANK_YOU,
+            label="Поблагодарить после визита",
+            is_enabled=False,
+            offset_minutes=30,
+            channel_policy=AppointmentMessageSetting.ChannelPolicies.AUTO,
+            template_text="Спасибо",
+        )
+
+        notification = schedule_post_service_followup(appointment)
+
+        self.assertIsNone(notification)
+        self.assertFalse(Notification.objects.filter(appointment=appointment).exists())
+
+    def test_appointment_message_settings_api_returns_defaults(self):
+        api = APIClient()
+        api.force_authenticate(self.owner)
+
+        response = api.get("/api/appointment-message-settings/", {"business": self.business.id})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 3)
+        self.assertEqual(
+            {item["scenario"] for item in response.data},
+            {"confirmation", "reminder", "thank_you"},
+        )
+
+    def test_appointment_api_cancels_pending_followups_when_cancelled(self):
+        api = APIClient()
+        api.force_authenticate(self.owner)
+        client = Client.objects.create(business=self.business, full_name="Client", phone="+77015550123")
+        service = Service.objects.create(business=self.business, name="Consultation", duration_minutes=60)
+        WorkingHours.objects.create(
+            business=self.business,
+            weekday=0,
+            start_time=time(9, 0),
+            end_time=time(18, 0),
+        )
+
+        response = api.post(
+            "/api/appointments/",
+            {
+                "business": self.business.id,
+                "client": client.id,
+                "service": service.id,
+                "start_at": "2026-05-11T10:00:00+05:00",
+                "status": Appointment.Statuses.CREATED,
+                "source": Appointment.Sources.MANUAL,
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 201)
+        appointment_id = response.data["id"]
+        self.assertEqual(Notification.objects.filter(appointment_id=appointment_id, status=Notification.Statuses.PENDING).count(), 2)
+
+        cancel_response = api.patch(
+            f"/api/appointments/{appointment_id}/",
+            {"status": Appointment.Statuses.CANCELLED},
+            format="json",
+        )
+
+        self.assertEqual(cancel_response.status_code, 200)
+        self.assertEqual(Notification.objects.filter(appointment_id=appointment_id, status=Notification.Statuses.PENDING).count(), 0)
+        self.assertEqual(Notification.objects.filter(appointment_id=appointment_id, status=Notification.Statuses.CANCELLED).count(), 2)
 
     def test_apply_working_hours_preset_creates_weekdays_without_duplicates(self):
         api = APIClient()

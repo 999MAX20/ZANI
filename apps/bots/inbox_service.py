@@ -7,7 +7,18 @@ from apps.billing.models import UsageCounter
 from apps.billing.entitlements import EntitlementMetrics, assert_entitlement_allows
 from apps.billing.usage import increment_usage
 from apps.bots.models import BotChannel, BotMessage
+from apps.businesses.models import BusinessMember
 from apps.integrations.providers import send_message
+from apps.notifications.models import Notification
+
+
+CHAT_NOTIFICATION_ROLES = {
+    BusinessMember.Roles.ADMIN,
+    BusinessMember.Roles.MANAGER,
+    BusinessMember.Roles.OPERATOR,
+    BusinessMember.Roles.SUPPORT,
+    BusinessMember.Roles.STAFF,
+}
 
 
 def register_bot_message(message):
@@ -30,6 +41,8 @@ def register_bot_message(message):
     conversation.save(update_fields=update_fields)
     conversation.refresh_from_db(fields=["unread_count"])
     increment_usage(conversation.business, UsageCounter.Metrics.BOT_MESSAGES)
+    if message.direction == BotMessage.Directions.INBOUND:
+        create_inbound_message_notifications(conversation, message)
     if conversation.client_id or conversation.lead_id:
         create_activity_event(
             business=conversation.business,
@@ -42,6 +55,53 @@ def register_bot_message(message):
             metadata={"conversation_id": conversation.id, "lead_id": conversation.lead_id},
         )
     return conversation
+
+
+def create_inbound_message_notifications(conversation, message):
+    recipients = _chat_notification_recipients(conversation)
+    if not recipients:
+        return []
+
+    title = conversation.client.full_name if conversation.client_id else conversation.external_user_id or "Новый клиент"
+    channel = conversation.get_channel_display() if hasattr(conversation, "get_channel_display") else conversation.channel
+    text = message.text.strip() or "Новое входящее сообщение"
+    preview = text[:140]
+    now = timezone.now()
+    notifications = [
+        Notification(
+            business=conversation.business,
+            recipient=user,
+            client=conversation.client,
+            channel=Notification.Channels.SYSTEM,
+            category=Notification.Categories.SALES,
+            priority=Notification.Priorities.HIGH if conversation.handoff_required else Notification.Priorities.NORMAL,
+            text=f"Новое сообщение в {channel}: {title} — {preview}",
+            send_at=now,
+            status=Notification.Statuses.PENDING,
+            action_url=f"/dashboard/conversations?conversation={conversation.id}",
+            action_label="Открыть чат",
+        )
+        for user in recipients
+    ]
+    return Notification.objects.bulk_create(notifications)
+
+
+def _chat_notification_recipients(conversation):
+    if conversation.assigned_to_id:
+        membership = BusinessMember.objects.filter(
+            business=conversation.business,
+            user=conversation.assigned_to,
+            is_active=True,
+            role__in=CHAT_NOTIFICATION_ROLES,
+        ).select_related("user").first()
+        return [membership.user] if membership else []
+
+    memberships = (
+        BusinessMember.objects.select_related("user")
+        .filter(business=conversation.business, is_active=True, role__in=CHAT_NOTIFICATION_ROLES)
+        .exclude(user_id=conversation.business.owner_id)
+    )
+    return [membership.user for membership in memberships]
 
 
 def mark_conversation_read(conversation):
@@ -67,13 +127,26 @@ def handoff_conversation(conversation, reason=""):
 def send_outbound_message(conversation, text, user, sender_type=BotMessage.SenderTypes.MANAGER):
     assert_entitlement_allows(conversation.business, EntitlementMetrics.BOT_MESSAGES)
     status = BotMessage.Statuses.QUEUED
+    error_text = ""
     delivery_payload = {"delivery_mode": "provider_not_connected"}
     channel = BotChannel.objects.filter(bot=conversation.bot, channel=conversation.channel).first()
     if channel and conversation.external_user_id:
-        result = send_message(channel, conversation.external_user_id, text)
+        try:
+            result = send_message(channel, conversation.external_user_id, text)
+        except Exception as exc:
+            result = {"ok": False, "mock": False, "reason": str(exc)}
         delivery_payload = {"delivery_mode": "provider", "provider_result": result}
         if result.get("ok") and not result.get("mock"):
             status = BotMessage.Statuses.SENT
+        elif result.get("mock"):
+            error_text = result.get("reason") or "Provider is running in mock mode."
+        else:
+            status = BotMessage.Statuses.FAILED
+            error_text = result.get("reason") or "Provider delivery failed."
+    elif not channel:
+        error_text = "Channel provider is not connected."
+    elif not conversation.external_user_id:
+        error_text = "Conversation does not have an external recipient id."
 
     message = BotMessage.objects.create(
         conversation=conversation,
@@ -81,6 +154,7 @@ def send_outbound_message(conversation, text, user, sender_type=BotMessage.Sende
         sender_type=sender_type,
         text=text,
         status=status,
+        error_text=error_text,
         payload_json={
             "sent_by_user_id": user.id if user and user.is_authenticated else None,
             **delivery_payload,

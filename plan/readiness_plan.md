@@ -1,6 +1,6 @@
 # ZANI Production Readiness Plan
 
-Last updated: 2026-05-27
+Last updated: 2026-05-28
 
 ## Purpose
 
@@ -76,7 +76,7 @@ Implemented:
 
 Remaining weaknesses:
 
-- The dynamic business workflow is not complete yet. The system can receive messages, create conversations, and now run an AI-qualified manual inbox pipeline that guarantees `conversation -> client -> lead -> deal -> next task` when qualification says a commercial CRM flow is appropriate. It still does not run the full automatic chain: channel message -> bot qualification -> client/lead creation -> service/time extraction -> appointment booking -> calendar visit state.
+- The dynamic business workflow now has a working first production slice: inbound Telegram/WhatsApp/Website messages can create conversations, run AI qualification, create/reuse client/lead/deal/task, propose available appointment slots, book a selected slot, notify responsible roles, and schedule client follow-ups. Remaining production work is around risk controls, duplicate/merge policy, provider hardening, richer scripts per business, and full E2E coverage.
 - Several pages still exist as functional surfaces, but not yet as strong business tools: tasks, calendar, analytics, automations, settings, bots/AI agents, AI assistant.
 - Production business logic is incomplete in several core flows:
   - assignment to a specific teammate;
@@ -100,7 +100,7 @@ Remaining weaknesses:
 
 Before calling ZANI production-ready, the product must satisfy these minimum conditions:
 
-- An inbound message from a connected channel can be processed as a full business event: conversation is created, client is identified or created, lead is created/updated, intent/service/time is extracted, appointment is booked when confidence and availability allow, and every automated decision is logged.
+- An inbound message from a connected channel can be processed as a full business event: conversation is created, client is identified or created, lead/deal/task are created or reused, intent/service/time is extracted, appointment slots are offered/booked when confidence and availability allow, client follow-ups are scheduled, and every automated decision is logged.
 - A manager can process a new lead from source to client/deal/appointment without leaving the main workflow.
 - An operator can process inbox conversations, use AI drafts, hand off, and run a one-click CRM pipeline that AI-qualifies intent/confidence/next action before creating or reusing client, lead, deal, and next task. Message delivery/error UX still needs production hardening.
 - An owner can inspect leads, deals, conversations, integration health, and AI analyst risks from reliable data.
@@ -114,8 +114,8 @@ Before calling ZANI production-ready, the product must satisfy these minimum con
 
 Priority 1 - close the core CRM loop:
 
-- Build the automatic inbound business workflow: channel webhook -> conversation -> AI qualification -> client/lead -> appointment proposal/booking -> calendar event -> audit log.
-- Extend the new manual inbox pipeline into webhook-driven auto mode with confidence thresholds, duplicate policy, and manager approval for risky actions.
+- Harden the automatic inbound business workflow: channel webhook -> conversation -> AI qualification -> client/lead/deal/task -> appointment proposal/booking -> calendar event -> notifications -> audit log.
+- Extend webhook-driven auto mode with configurable confidence thresholds, duplicate policy, manager approval for risky actions, and E2E tests.
 - Finish Leads production gaps: teammate assignment, duplicate/merge, next action, SLA/no-response, bulk actions, E2E tests.
 - Finish Conversations production gaps: teammate assignment, attachments, real error states, CRM side drawer, realtime updates, E2E tests.
 - Finish Deals production gaps: enforce required next action, add stale deal rules, replace prompt-based task creation with a structured modal, and add conversion tests from lead.
@@ -291,6 +291,12 @@ Implemented:
   - operator/close controls;
   - hover tooltips for each mechanical and AI action;
   - inline AI/pipeline insight from conversation metadata.
+- Desktop inbox visual structure was realigned to the `main_references/inbox_desktop.jpeg` reference:
+  - top KPI cards for dialogue workload;
+  - messenger-style conversation rows with channel color marker and unread badge;
+  - selected chat header keeps only compact operational actions;
+  - permanent CRM action noise was moved out of the chat header;
+  - compact right-side context column shows client, channel, next task, and AI hint on wide desktop only.
 - Legacy `create-deal` now uses the shared pipeline service, so a deal created from conversation no longer skips lead creation.
 - Targeted backend tests cover idempotent pipeline creation and legacy deal creation.
 - First auto CRM pipeline slice is implemented:
@@ -298,22 +304,208 @@ Implemented:
   - settings are read from `Bot.settings_json.auto_crm_pipeline` and `BotChannel.config_json.auto_crm_pipeline`;
   - Telegram, WhatsApp, and Website Chat inbound messages call the guarded runner after message registration;
   - `lead_task` mode can auto-create/reuse client, lead, and task;
+  - `draft_deal` mode can auto-create/reuse client, lead, draft deal, and next task when AI detects high-confidence commercial intent;
+  - `auto_send_reply=true` now sends a guarded bot reply after a successful auto pipeline decision; it is blocked for closed/handoff/disabled/risky/low-confidence conversations;
+  - auto sales replies now receive a business-type playbook for beauty, dentistry, medical, sauna, autoservice, education, and fallback businesses;
+  - auto sales replies now receive scheduling context: service catalog, `price_from`, active resources/masters, matched service/resource, required questions, and real available slots from the calendar;
   - auto decisions are saved to `conversation.metadata_json.auto_crm_pipeline`;
-  - website `lead_task` mode has an idempotency backend test.
+  - website `lead_task` mode has an idempotency backend test;
+  - website sales-mode has a backend test for inbound message -> AI qualification -> client/lead/deal/task -> bot outbound reply.
+- Backend test covers the smart sales-agent context: dentistry playbook, service price, selected master/resource, and real free slots are passed into the bot AI request.
+- Structured booking is implemented:
+  - auto sales replies store offered `next_available_slots` in conversation metadata;
+  - if the client selects a stored slot by number or exact time, backend revalidates availability before creating an appointment;
+  - booking requires an existing client and lead from the CRM pipeline;
+  - appointment is linked to client/lead, service, resource, source channel, activity timeline, reminders, and conversation metadata;
+  - bot sends a final booking confirmation message through the same conversation;
+  - manager-role notification is created when AI books the appointment or when booking is blocked;
+  - backend test covers offer -> client selects slot -> appointment created -> reminder scheduled -> confirmation message sent.
+- Appointment follow-up foundation is implemented:
+  - creating an appointment schedules two pending client notifications: confirmation 24 hours before and reminder 2 hours before;
+  - the notification channel is selected from the client profile: Telegram, WhatsApp, email, SMS, or system fallback;
+  - cancelling an appointment cancels pending confirmation/reminder notifications;
+  - rescheduling/service/resource changes recreate future follow-ups;
+  - when an appointment is marked `completed`, pending pre-visit follow-ups are cancelled and a post-service thank-you notification is scheduled for the client;
+  - backend tests cover creation, channel selection, cancellation, and post-service thank-you scheduling.
+- Appointment auto-message settings are implemented:
+  - `AppointmentMessageSetting` stores business-level scenarios for confirmation, reminder, and post-service thank-you;
+  - each scenario can be enabled/paused, shifted by minutes, forced to a channel, or left on automatic best-channel delivery;
+  - templates support CRM variables like `{client_name}`, `{service_name}`, `{resource_text}`, `{date}`, `{time}`, and `{address_text}`;
+  - scheduling services now use these settings instead of hardcoded texts/timings;
+  - `/api/appointment-message-settings/` exposes defaults and updates for the active business;
+  - `/dashboard/settings` includes a production settings block for appointment auto-messages;
+  - backend tests cover defaults, disabled reminder, custom templates/channel policy, and disabled thank-you scenario.
+- End-to-end appointment sales flow has a production regression test:
+  - public website chat receives an inbound booking request;
+  - AI CRM pipeline qualifies it, creates CRM entities, offers real calendar slots, and books the selected slot;
+  - the appointment uses business-level auto-message settings for confirmation/reminder notifications;
+  - due notification delivery marks the confirmation as sent;
+  - client confirmation reply changes appointment status to `confirmed`.
+- Local runtime check for the CRM sales pipeline is implemented:
+  - `python manage.py crm_pipeline_runtime_check --json` runs a safe website-chat scenario with mock AI and system notifications;
+  - `--allow-live-ai` uses the configured AI provider for the same scenario;
+  - the command reports whether live external mode is ready based on AI keys and Telegram/WhatsApp provider flags;
+  - the command reports actual `AIRequestLog` entries with provider, model, tokens, and mock/live status;
+  - the check creates a real local business/client/lead/conversation/appointment and archives the generated conversation unless `--keep-data` is passed.
+- Telegram local real-test gate is implemented:
+  - `python manage.py telegram_local_real_test_check --channel-id <id> --public-url https://... --fail-on-missing`;
+  - wrapper script: `CHANNEL_ID=<id> PUBLIC_URL=https://... ./scripts/telegram_local_real_test.sh`;
+  - validates `TELEGRAM_ENABLED`, merchant Telegram channel, BotFather token, webhook secret, active bot/channel, and Telegram `getMe`;
+  - optional `SET_WEBHOOK=1` calls Telegram `setWebhook` with the public HTTPS webhook URL;
+  - documents that inbound Telegram cannot reach localhost without a public HTTPS tunnel/domain.
+- Telegram local webhook smoke is implemented:
+  - `python manage.py telegram_webhook_smoke --channel-id <id> --fail-on-error`;
+  - posts a synthetic Telegram update to `/api/integrations/telegram/webhook/` using the merchant channel secret;
+  - verifies that `BotConversation`, `BotMessage`, and processed inbound `IntegrationEventLog` are created;
+  - separates backend webhook correctness from the public HTTPS tunnel requirement.
+- Telegram integration UI now separates readiness states:
+  - backend inbound readiness from the latest processed Telegram inbound event;
+  - public HTTPS readiness from the current webhook URL;
+  - combined `inbound_ready` only when webhook is configured, public HTTPS is available, and backend has accepted inbound traffic;
+  - `/dashboard/integrations` shows Token, Secret, Webhook, Backend, and Public HTTPS status cards.
+- Appointment follow-up delivery worker is implemented:
+  - `process_due_notifications` delivers due pending notifications;
+  - management command `python manage.py process_due_notifications --limit 100` runs delivery manually or from cron/worker;
+  - Telegram/WhatsApp notifications are sent through the active bot channel provider;
+  - email notifications use Django mail;
+  - unsupported SMS fails explicitly until an SMS provider is connected;
+  - delivery writes activity events and marks notifications as `sent` or `failed`.
+- Appointment reply handling is implemented for Telegram/WhatsApp inbound:
+  - `Да` / `подтверждаю` confirms the future appointment;
+  - `Отменить` cancels it;
+  - `Перенести` creates a high-priority manager task and notification;
+  - unclear replies create a manager review notification;
+  - backend tests cover delivery, SMS failure, confirmation replies, and reschedule replies.
+- Role-aware notification routing is implemented:
+  - shared router resolves recipients by responsibility first, then by allowed roles, with owner/director excluded from routine operational noise;
+  - chat notifications go to assigned user, otherwise active sales/support/staff roles, not marketer/accountant/owner by default;
+  - auto CRM pipeline notifications go to assigned/responsible manager roles when AI creates client/lead/deal/task;
+  - appointment confirmation/cancellation replies notify manager roles;
+  - failed appointment notification delivery alerts admin/manager roles;
+  - `NotificationPreference` allows per-user, per-category in-app notification suppression for normal/low priority alerts;
+  - high/urgent notifications bypass preferences so delivery failures and critical actions are not lost;
+  - `/api/notification-preferences/` exposes preference management with business membership validation;
+  - `/dashboard/settings` includes a personal notification preferences block for sales, tasks, outreach, AI alerts, system, and finance categories;
+  - tests cover preferred manager routing, owner exclusion, delivery failure notification, confirmation reply notification, reschedule notification, assigned chat routing, preference suppression, and critical-priority bypass.
+- Outreach / broadcast foundation is implemented:
+  - new `apps.outreach` module separates campaign business logic from low-level `Notification` delivery;
+  - `OutreachTemplate`, `OutreachCampaign`, and `OutreachRecipient` models exist for Telegram/WhatsApp campaigns;
+  - campaigns can preview channel-ready audience, prepare recipient queues, launch notifications, cancel, and refresh recipient statuses;
+  - delivery reuses the existing due-notification worker, so Telegram/WhatsApp provider behavior stays centralized;
+  - `/dashboard/outreach` provides the first working UI for creating a campaign, preparing recipients, launching, refreshing status, and viewing recent recipients.
+- Outreach production safety layer is implemented:
+  - `OutreachConsent` tracks per-client, per-channel opt-in / opt-out / unknown state;
+  - campaign preparation suppresses clients without opt-in when `require_opt_in=true`;
+  - opted-out clients are always skipped and the recipient stores a skipped reason;
+  - WhatsApp campaigns require an approved template status before launch;
+  - campaigns have `campaign_type`, `rate_limit_per_minute`, and `batch_size`;
+  - launch staggers notification `send_at` by rate limit and sends only one batch per launch;
+  - `/dashboard/outreach` shows opt-in requirement, WhatsApp template status, rate settings, skipped recipients, and audience suppression summary.
+- Outreach WhatsApp/template and inbound consent layer is implemented:
+  - outbound outreach notifications pass campaign/template metadata into the channel provider;
+  - WhatsApp provider now builds Meta Cloud `type=template` payloads when `whatsapp_template_name` is present;
+  - template body parameters currently include the client display name for simple approved templates;
+  - Telegram/WhatsApp inbound handlers record outreach consent after pipeline processing;
+  - inbound `стоп` / `stop` / `unsubscribe` / `отписаться` marks the client opted-out for that channel;
+  - explicit re-subscribe keywords can move a client back to opt-in;
+  - tests cover opt-in suppression, WhatsApp approved-template blocking, inbound stop, and template payload generation.
+- Outreach business notifications and recovery are implemented:
+  - preparing, launching, finishing, blocking, and retrying campaigns writes activity events and creates role-aware system notifications;
+  - outreach lifecycle notifications go to admin/manager/marketer roles with owner fallback when no working role exists;
+  - blocked WhatsApp launches also create an AI assistant recommendation for owner/admin roles with action `Подключить услугу`;
+  - website chat and lead forms can capture explicit marketing/WhatsApp consent from fields such as `marketing_consent`, `outreach_consent`, or `whatsapp_consent`;
+  - inbound opt-out creates a high-priority manager/admin notification;
+  - failed outreach recipients can be returned to queue through `POST /api/outreach/campaigns/{id}/retry-failed/`;
+  - `/dashboard/outreach` exposes `Повторить ошибки` for failed recipients;
+  - backend tests cover lifecycle notification, AI assistant service recommendation, opt-out notification, retry failed, consent payload detection, and WhatsApp template payload.
+- Outreach analytics, error taxonomy, and consent audit are implemented:
+  - `OutreachRecipient` stores `error_code` and sanitized `provider_result` after delivery status refresh;
+  - failed delivery reasons are classified into operational buckets such as `channel_not_connected`, `provider_credentials`, `template_required`, `opt_in_required`, and `opted_out`;
+  - `GET /api/outreach/campaigns/{id}/stats/` returns delivery rate, failure rate, suppression rate, pending count, and error buckets;
+  - `OutreachConsent` stores `evidence_json` for inbound keywords, website chat, lead forms, and manual imports;
+  - `POST /api/outreach/consents/bulk-import/` imports opt-in/opt-out/unknown consent for existing clients by phone/email/client id and skips missing clients without creating new CRM records;
+  - `POST /api/outreach/consents/bulk-import-file/` imports consent from CSV/XLSX files with columns such as `phone`, `email`, `client_id`, `channel`, `status`, `source`, and `note`;
+  - failed recipients can be retried as all errors or retryable-only errors, with optional retry delay minutes;
+  - campaign stats include `retryable_failed` so UI can avoid retrying opt-out/suppressed recipients;
+  - `/dashboard/outreach` shows campaign delivery/failure/suppression rates, error buckets, recipient error codes, CSV/XLSX consent upload, and `Retry 15 мин` for retryable errors;
+  - backend tests cover provider-error classification, stats, textarea/file consent import, retryable retry windows, and cross-tenant outreach isolation.
+- Outreach audience targeting is implemented:
+  - campaign creation supports `all_clients`, `segment`, and `manual` audience modes in `/dashboard/outreach`;
+  - segment campaigns store the selected `Segment` and use existing segment filters when preparing recipients;
+  - manual campaigns expose a client picker with channel readiness checks and pass selected `client_ids` into `prepare`;
+  - manual campaign preview uses already prepared recipients instead of showing all channel-ready clients;
+  - backend test covers manual preparation using selected clients only.
+- Outreach role boundaries are implemented:
+  - owner/admin/marketer roles can create, prepare, launch, retry, cancel campaigns, and import consent bases;
+  - manager can view operational outreach data but cannot launch mass campaigns;
+  - template, campaign, and consent create/update operations are guarded by the same outreach role policy, so non-outreach roles cannot bypass the UI through direct API calls;
+  - backend tests cover marketer template/campaign permissions and manager/operator/accountant mutation denial.
+- Outreach template and pre-launch control layer is implemented:
+  - campaign and template bodies support validated variables: `{client_name}`, `{phone}`, `{email}`, `{business_name}`, and `{channel}`;
+  - unsupported template variables are blocked at API validation before a campaign/template can be saved;
+  - `/dashboard/outreach` can save reusable Telegram/WhatsApp templates and apply them when creating a campaign;
+  - `GET /api/outreach/campaigns/{id}/launch-checklist/` returns a production checklist with message, audience, prepared recipients, eligible recipients, rate limit, opt-in, and WhatsApp approved-template checks;
+  - `/dashboard/outreach` shows the pre-launch checklist and disables launch until required checks pass;
+  - backend tests cover template validation/rendering and checklist blocking for unprepared campaigns.
+- Outreach page production UI pass is implemented:
+  - the page now shows role state for the current user and explains who can launch mass campaigns;
+  - create/import/prepare/launch/retry/cancel actions are disabled in the UI for roles that cannot manage outreach;
+  - page-level readiness cards explain automatic appointment messages, role boundaries, and launch protection;
+  - `/api/outreach/campaigns/appointment-automation-status/` exposes real status for appointment confirmation, reminder, and post-service thank-you automation;
+  - the appointment automation status payload includes recent failed service notifications for operator recovery;
+  - failed notifications can be retried through `POST /api/notifications/{id}/retry/`, which reuses the existing delivery pipeline and permission checks;
+  - `/dashboard/outreach` shows appointment automation scenarios with pending/sent/failed counters and a retry surface when failed service notifications exist, making service messages visible without turning them into manual campaigns;
+  - campaign cards show channel, campaign type, status, audience, delivery/suppression stats, and checklist state in one work surface;
+  - browser smoke check on `http://127.0.0.1:5173/dashboard/outreach` confirmed the updated layout and automation block render after login.
+- Outreach gaps before production:
+  - add advanced variable mapping for appointment/service/order-specific fields beyond the safe base variables;
+  - add deeper provider-specific error mapping for Meta/TG response codes;
+  - add support-role outreach access tests if support users should receive a read-only campaign diagnostics surface.
+- Local smoke on 2026-05-27 confirmed website channel sales-mode creates:
+  - client `Smoke Sales Client 2`;
+  - lead from website inbound;
+  - open draft deal `Сделка: Консультация стоматолога`;
+  - next-action task from AI qualification;
+  - bot outbound reply stored on the conversation. Website delivery remains mock-mode by design.
+- Unread chat counters now appear on desktop sidebar and mobile bottom navigation for the `Conversations` entry.
+- Inbound chat messages create targeted system notifications for working roles while excluding the owner/director role from chat notifications.
+- Header shows an in-app toast when unread chat messages increase for non-owner roles.
+- Inbox summary now exposes both unread conversation count and total unread message count.
+- Outbound provider/mock/error reason is shown under the message when delivery cannot complete, so local Telegram/mock mode is visible to the manager.
+- Backend retry support for unsent outbound messages was added:
+  - `POST /api/inbox/conversations/{id}/retry-message/`;
+  - retry creates a new outbound attempt and records `retry_of_message_id` in payload metadata;
+  - targeted backend test covers retry from inbox.
 
 Production gaps:
 
 - Add assignment to a specific teammate, not only `assign to me`.
 - Add attachments: files, images, voice notes, and previews.
-- Add robust error tracking:
-  - failed outbound messages;
-  - failed AI responses;
-  - failed webhook events;
-  - integration event errors linked to the conversation.
+- Add quick replies in a compact MoonAI-style pattern that does not reduce the main chat width.
+- Add manual retry UI for failed/queued outbound messages without cluttering every bubble.
+- Add deeper error tracking for failed AI responses, failed webhook events, and integration event errors linked to the conversation.
+- Add a production UI switch for auto CRM pipeline mode per bot/channel with clear risk labels and audit trail.
+- Add calendar booking automation only after structured availability, exact service, exact time, and manager-safe confirmation rules exist.
+- Add structured appointment confirmation:
+  - improve slot matching for natural language such as `завтра после обеда`, `к Айгерим в 16`, or `самое ближайшее`;
+  - add explicit duplicate guard when an identical future appointment already exists;
+  - update deal/lead next-action status after appointment creation;
+  - expose booking status and selected slot in the Conversations UI.
+- Add production worker schedule for `process_due_notifications` and provider-aware retry policy for failed notification deliveries.
+- Add real SMS provider integration before enabling SMS appointment reminders.
+- Add richer natural-language reply parsing for appointment confirmations, including time proposals like `можно в 16:00?`.
+- Add notification preferences per role/user:
+  - owner can opt into digest instead of realtime operational alerts;
+  - manager/operator can choose chat, appointment, CRM pipeline, and delivery failure alerts;
+  - quiet hours and per-channel mute rules.
 - Improve `Errors` tab semantics. Current implementation uses `handoff_required`; production should distinguish handoff, failed messages, provider errors, and AI uncertainty.
 - Add bulk selection across pagination, not only visible conversations.
 - Add pagination/infinite scroll handling for high-volume inboxes.
-- Add CRM side drawer for client, lead, deal, tasks, and history without leaving the inbox.
+- Add CRM context as a collapsible drawer/side sheet, not a permanent third column:
+  - editable client fields;
+  - lead/deal stage controls;
+  - linked tasks and appointments;
+  - full customer timeline.
 - Add pipeline preview/confirmation before creation when duplicate client candidates, low AI confidence, or missing identity are detected.
 - Expand auto CRM pipeline coverage:
   - add duplicate-conflict blocking;
@@ -335,6 +527,7 @@ Production gaps:
   - reject;
   - log source context used by AI.
 - Add WebSocket or server-sent realtime updates. Current flow relies on polling.
+- Add browser push / native notification permission flow if the product needs OS-level notifications outside the open tab.
 - Add role/permission checks for bulk actions and handoff.
 - Add E2E tests for:
   - selecting a bot;

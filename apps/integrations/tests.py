@@ -1,8 +1,10 @@
 import json
 import hashlib
 import hmac
+from io import StringIO
 from unittest.mock import patch
 
+from django.core.management import call_command
 from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
@@ -11,6 +13,7 @@ from apps.businesses.models import Business, BusinessMember
 from apps.accounts.models import User
 from apps.integrations.models import BusinessConnector, IntegrationEventLog
 from apps.integrations.providers import get_provider, send_message
+from apps.integrations.instagram import send_instagram_message
 from apps.integrations.telegram import send_telegram_message, set_telegram_webhook
 from apps.integrations.whatsapp import send_whatsapp_message
 
@@ -40,11 +43,13 @@ class TelegramIntegrationSkeletonTests(TestCase):
             "/api/integrations/telegram/webhook/",
             {
                 "update_id": 1000,
+                "api_key": "raw-api-key",
                 "message": {
                     "message_id": 5,
                     "from": {"id": 42, "username": "client"},
                     "chat": {"id": 777},
                     "text": "Здравствуйте",
+                    "nested": {"access_token": "raw-access-token"},
                 },
             },
             format="json",
@@ -62,6 +67,10 @@ class TelegramIntegrationSkeletonTests(TestCase):
         self.assertEqual(message.text, "Здравствуйте")
         self.assertEqual(message.external_message_id, "5")
         self.assertEqual(message.payload_json["telegram_username"], "client")
+        self.assertEqual(message.payload_json["telegram_update"]["api_key"], "configured")
+        self.assertEqual(message.payload_json["telegram_update"]["message"]["nested"]["access_token"], "configured")
+        self.assertNotIn("raw-api-key", str(message.payload_json))
+        self.assertNotIn("raw-access-token", str(message.payload_json))
         self.assertTrue(
             IntegrationEventLog.objects.filter(
                 business=self.business,
@@ -102,6 +111,15 @@ class TelegramIntegrationSkeletonTests(TestCase):
         self.assertEqual(BotMessage.objects.count(), 1)
         self.assertTrue(IntegrationEventLog.objects.filter(provider="telegram", payload_json__duplicate=True).exists())
 
+    def test_telegram_webhook_smoke_command_posts_local_payload(self):
+        output = StringIO()
+
+        call_command("telegram_webhook_smoke", "--channel-id", str(self.channel.id), "--fail-on-error", stdout=output)
+
+        self.assertIn("Telegram webhook smoke: True", output.getvalue())
+        self.assertEqual(BotConversation.objects.count(), 1)
+        self.assertEqual(BotMessage.objects.count(), 1)
+
     @override_settings(TELEGRAM_WEBHOOK_SECRET="telegram-secret")
     def test_telegram_webhook_rejects_wrong_secret(self):
         response = self.api.post(
@@ -109,6 +127,17 @@ class TelegramIntegrationSkeletonTests(TestCase):
             {"message": {"chat": {"id": 777}, "text": "Hidden"}},
             format="json",
             HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN="wrong-secret",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(BotMessage.objects.count(), 0)
+
+    @override_settings(TELEGRAM_WEBHOOK_SECRET="")
+    def test_telegram_webhook_rejects_missing_secret_without_single_channel_fallback(self):
+        response = self.api.post(
+            "/api/integrations/telegram/webhook/",
+            {"message": {"chat": {"id": 777}, "text": "Hidden"}},
+            format="json",
         )
 
         self.assertEqual(response.status_code, 403)
@@ -203,6 +232,32 @@ class TelegramIntegrationSkeletonTests(TestCase):
         self.assertEqual(connector.config_json["bot_channel_id"], self.channel.id)
         self.assertNotIn("secret-token", str(connector.config_json))
         self.assertNotIn("merchant-secret", str(connector.config_json))
+
+    @override_settings(ALLOWED_HOSTS=["testserver"])
+    def test_telegram_status_reports_public_and_backend_readiness(self):
+        self.api.force_authenticate(self.owner)
+        self.api.post(
+            "/api/integrations/telegram/webhook/",
+            {
+                "update_id": 1001,
+                "message": {
+                    "message_id": 6,
+                    "from": {"id": 42, "username": "client"},
+                    "chat": {"id": 777},
+                    "text": "Проверка статуса",
+                },
+            },
+            format="json",
+            HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN="telegram-secret",
+        )
+
+        response = self.api.get(f"/api/bot-channels/{self.channel.id}/telegram-status/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.data["webhook_public_ready"])
+        self.assertTrue(response.data["inbound_backend_ready"])
+        self.assertFalse(response.data["inbound_ready"])
+        self.assertEqual(response.data["last_inbound_status"], IntegrationEventLog.Statuses.PROCESSED)
 
     @override_settings(TELEGRAM_ENABLED=False)
     def test_telegram_test_connection_uses_controlled_mock_without_leaking_token(self):
@@ -358,6 +413,21 @@ class WhatsAppIntegrationFoundationTests(TestCase):
             ).exists()
         )
 
+    @override_settings(WHATSAPP_WEBHOOK_SECRET="", WHATSAPP_APP_SECRET="")
+    def test_whatsapp_webhook_rejects_missing_route_without_single_channel_fallback(self):
+        response = self.api.post(
+            "/api/integrations/whatsapp/webhook/",
+            {
+                "message_id": "wamid.hidden",
+                "from": {"phone": "+77015550101", "name": "Client"},
+                "text": "Hidden",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(BotMessage.objects.count(), 0)
+
     @override_settings(WHATSAPP_VERIFY_TOKEN="verify-token")
     def test_whatsapp_webhook_get_verification_returns_challenge(self):
         response = self.api.get(
@@ -378,14 +448,16 @@ class WhatsAppIntegrationFoundationTests(TestCase):
         self.channel.save(update_fields=["config_json", "external_id", "updated_at"])
         payload = {
             "object": "whatsapp_business_account",
+            "api_key": "raw-api-key",
             "entry": [
                 {
                     "changes": [
                         {
-                            "value": {
-                                "metadata": {"phone_number_id": "phone-123", "display_phone_number": "77015550101"},
-                                "contacts": [{"profile": {"name": "Meta Client"}, "wa_id": "77015550102"}],
-                                "messages": [
+	                            "value": {
+	                                "metadata": {"phone_number_id": "phone-123", "display_phone_number": "77015550101"},
+	                                "contacts": [{"profile": {"name": "Meta Client"}, "wa_id": "77015550102"}],
+	                                "metadata_secret": {"access_token": "raw-access-token"},
+	                                "messages": [
                                     {
                                         "from": "77015550102",
                                         "id": "wamid.1",
@@ -418,6 +490,10 @@ class WhatsAppIntegrationFoundationTests(TestCase):
         self.assertEqual(message.text, "Meta Cloud hello")
         self.assertEqual(message.external_message_id, "wamid.1")
         self.assertEqual(message.payload_json["whatsapp_phone_number_id"], "phone-123")
+        self.assertEqual(message.payload_json["whatsapp_payload"]["api_key"], "configured")
+        self.assertEqual(message.payload_json["whatsapp_payload"]["entry"][0]["changes"][0]["value"]["metadata_secret"], "configured")
+        self.assertNotIn("raw-api-key", str(message.payload_json))
+        self.assertNotIn("raw-access-token", str(message.payload_json))
 
     def test_whatsapp_outbound_uses_provider_layer(self):
         result = send_whatsapp_message(self.channel, recipient_id="+77015550101", text="Здравствуйте")
@@ -481,7 +557,13 @@ class WhatsAppIntegrationFoundationTests(TestCase):
         self.assertTrue(connector.config_json["access_token_configured"])
         self.assertNotIn("meta-access-token", str(connector.config_json))
 
-    @override_settings(META_APP_ID="app-id", META_APP_SECRET="app-secret", WHATSAPP_EMBEDDED_SIGNUP_CONFIG_ID="config-id")
+    @override_settings(
+        META_APP_ID="app-id",
+        META_APP_SECRET="app-secret",
+        WHATSAPP_EMBEDDED_SIGNUP_CONFIG_ID="config-id",
+        CORS_ALLOWED_ORIGINS=["https://app.zani.kz"],
+        CSRF_TRUSTED_ORIGINS=["https://app.zani.kz"],
+    )
     def test_whatsapp_embedded_signup_start_returns_authorization_url(self):
         self.api.force_authenticate(self.owner)
 
@@ -496,8 +578,33 @@ class WhatsAppIntegrationFoundationTests(TestCase):
         self.assertIn("state=", response.data["authorization_url"])
         self.assertTrue(response.data["app_configured"])
         self.assertTrue(response.data["config_id_configured"])
+        self.assertEqual(response.data["app_id"], "app-id")
+        self.assertEqual(response.data["config_id"], "config-id")
+        self.assertTrue(response.data["graph_api_version"].startswith("v"))
 
-    @override_settings(META_APP_ID="app-id", META_APP_SECRET="app-secret")
+    @override_settings(
+        META_APP_ID="app-id",
+        META_APP_SECRET="app-secret",
+        CORS_ALLOWED_ORIGINS=["https://app.zani.kz"],
+        CSRF_TRUSTED_ORIGINS=["https://app.zani.kz"],
+    )
+    def test_whatsapp_embedded_signup_rejects_untrusted_redirect_uri(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            "/api/business-connectors/whatsapp-embedded-signup/start/",
+            {"business": self.business.id, "redirect_uri": "https://evil.example/dashboard/integrations"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+    @override_settings(
+        META_APP_ID="app-id",
+        META_APP_SECRET="app-secret",
+        CORS_ALLOWED_ORIGINS=["https://app.zani.kz"],
+        CSRF_TRUSTED_ORIGINS=["https://app.zani.kz"],
+    )
     def test_whatsapp_embedded_signup_complete_saves_channel_and_connector(self):
         self.api.force_authenticate(self.owner)
         start_response = self.api.post(
@@ -533,6 +640,35 @@ class WhatsAppIntegrationFoundationTests(TestCase):
         self.assertTrue(connector.config_json["embedded_signup"])
         self.assertNotIn("embedded-access-token", str(connector.config_json))
 
+    @override_settings(
+        META_APP_ID="app-id",
+        META_APP_SECRET="app-secret",
+        CORS_ALLOWED_ORIGINS=["https://app.zani.kz"],
+        CSRF_TRUSTED_ORIGINS=["https://app.zani.kz"],
+    )
+    def test_whatsapp_embedded_signup_complete_rejects_redirect_uri_mismatch(self):
+        self.api.force_authenticate(self.owner)
+        start_response = self.api.post(
+            "/api/business-connectors/whatsapp-embedded-signup/start/",
+            {"business": self.business.id, "redirect_uri": "https://app.zani.kz/dashboard/integrations"},
+            format="json",
+        )
+
+        complete_response = self.api.post(
+            "/api/business-connectors/whatsapp-embedded-signup/complete/",
+            {
+                "business": self.business.id,
+                "code": "embedded-code",
+                "state": start_response.data["state"],
+                "redirect_uri": "https://app.zani.kz/dashboard/integrations/other",
+                "phone_number_id": "phone-embedded",
+            },
+            format="json",
+        )
+
+        self.assertEqual(complete_response.status_code, 400)
+        self.assertFalse(BotChannel.objects.filter(channel=BotChannel.Channels.WHATSAPP, external_id="phone-embedded").exists())
+
     def test_integration_logs_are_tenant_scoped(self):
         IntegrationEventLog.objects.create(
             business=self.business,
@@ -557,3 +693,214 @@ class WhatsAppIntegrationFoundationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data["results"]), 1)
         self.assertEqual(response.data["results"][0]["business"], self.business.id)
+
+
+class InstagramIntegrationFoundationTests(TestCase):
+    def setUp(self):
+        self.api = APIClient()
+        self.owner = User.objects.create_user(
+            username="instagram-owner",
+            email="instagram-owner@example.com",
+            password="pass",
+            role=User.Roles.BUSINESS_OWNER,
+        )
+        self.business = Business.objects.create(owner=self.owner, name="Instagram Clinic", slug="instagram-clinic")
+        BusinessMember.objects.create(business=self.business, user=self.owner, role=BusinessMember.Roles.OWNER)
+        self.bot = Bot.objects.create(business=self.business, name="Instagram bot", status=Bot.Statuses.ACTIVE)
+        self.channel = BotChannel.objects.create(
+            bot=self.bot,
+            channel=BotChannel.Channels.INSTAGRAM,
+            status=BotChannel.Statuses.ACTIVE,
+            external_id="ig-123",
+            config_json={"provider_mode": "mock", "instagram_user_id": "ig-123"},
+        )
+
+    @override_settings(INSTAGRAM_VERIFY_TOKEN="verify-token")
+    def test_instagram_webhook_get_verification_returns_challenge(self):
+        response = self.api.get(
+            "/api/integrations/instagram/webhook/?hub.mode=subscribe&hub.verify_token=verify-token&hub.challenge=challenge-ig"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content.decode("utf-8"), "challenge-ig")
+
+    @override_settings(INSTAGRAM_APP_SECRET="app-secret")
+    def test_instagram_webhook_routes_by_instagram_user_id_and_signature(self):
+        payload = {
+            "object": "instagram",
+            "api_key": "raw-api-key",
+            "entry": [
+                {
+                    "id": "ig-123",
+                    "time": 1710000000,
+                    "messaging": [
+                        {
+                            "sender": {"id": "client-ig-1"},
+                            "recipient": {"id": "ig-123"},
+                            "timestamp": 1710000000,
+                            "message": {"mid": "mid.1", "text": "Хочу записаться из Instagram", "access_token": "raw-access-token"},
+                        }
+                    ],
+                }
+            ],
+        }
+        raw_payload = json.dumps(payload).encode("utf-8")
+        signature = "sha256=" + hmac.new(b"app-secret", raw_payload, hashlib.sha256).hexdigest()
+
+        response = self.api.generic(
+            "POST",
+            "/api/integrations/instagram/webhook/",
+            raw_payload,
+            content_type="application/json",
+            HTTP_X_HUB_SIGNATURE_256=signature,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        conversation = BotConversation.objects.get(channel=BotConversation.Channels.INSTAGRAM)
+        message = BotMessage.objects.get(conversation=conversation)
+        self.assertEqual(conversation.external_user_id, "client-ig-1")
+        self.assertEqual(message.text, "Хочу записаться из Instagram")
+        self.assertEqual(message.external_message_id, "mid.1")
+        self.assertEqual(message.payload_json["instagram_user_id"], "ig-123")
+        self.assertEqual(message.payload_json["instagram_payload"]["api_key"], "configured")
+        self.assertEqual(message.payload_json["instagram_payload"]["entry"][0]["messaging"][0]["message"]["access_token"], "configured")
+        self.assertNotIn("raw-api-key", str(message.payload_json))
+        self.assertNotIn("raw-access-token", str(message.payload_json))
+
+    @override_settings(INSTAGRAM_APP_SECRET="", META_APP_SECRET="")
+    def test_instagram_webhook_rejects_missing_account_id_without_single_channel_fallback(self):
+        response = self.api.post(
+            "/api/integrations/instagram/webhook/",
+            {
+                "from": {"id": "client-ig-1"},
+                "message": "Hidden",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(BotMessage.objects.count(), 0)
+
+    def test_instagram_outbound_uses_provider_layer(self):
+        result = send_instagram_message(self.channel, recipient_id="client-ig-1", text="Здравствуйте")
+
+        self.assertTrue(result["ok"])
+        self.assertTrue(result["mock"])
+        self.assertTrue(
+            IntegrationEventLog.objects.filter(
+                business=self.business,
+                provider="instagram",
+                direction=IntegrationEventLog.Directions.OUTBOUND,
+                status=IntegrationEventLog.Statuses.MOCKED,
+            ).exists()
+        )
+
+    @override_settings(INSTAGRAM_ENABLED=False)
+    def test_merchant_can_configure_instagram_credentials_and_test_mock(self):
+        self.api.force_authenticate(self.owner)
+
+        config_response = self.api.post(
+            f"/api/bot-channels/{self.channel.id}/instagram-config/",
+            {
+                "provider_mode": "meta_graph",
+                "instagram_user_id": "ig-456",
+                "access_token": "instagram-access-token",
+                "page_id": "page-123",
+                "username": "zani_test",
+            },
+            format="json",
+        )
+        test_response = self.api.post(f"/api/bot-channels/{self.channel.id}/instagram-test-connection/")
+        status_response = self.api.get(f"/api/bot-channels/{self.channel.id}/instagram-status/")
+
+        self.assertEqual(config_response.status_code, 200)
+        self.assertTrue(config_response.data["instagram_user_id_configured"])
+        self.assertTrue(config_response.data["access_token_configured"])
+        self.assertEqual(test_response.status_code, 200)
+        self.assertTrue(test_response.data["ok"])
+        self.assertTrue(test_response.data["mock"])
+        self.assertIn("/api/integrations/instagram/webhook/", status_response.data["webhook_url"])
+        channel_response = self.api.get(f"/api/bot-channels/{self.channel.id}/")
+        self.assertEqual(channel_response.data["config_json"]["access_token"], "configured")
+        self.assertNotIn("instagram-access-token", str(channel_response.data))
+        connector = BusinessConnector.objects.get(business=self.business, provider=BusinessConnector.Providers.INSTAGRAM, name="Instagram")
+        self.assertEqual(connector.status, BusinessConnector.Statuses.CONNECTED)
+        self.assertTrue(connector.config_json["access_token_configured"])
+        self.assertTrue(connector.config_json["instagram_user_id_configured"])
+        self.assertNotIn("instagram-access-token", str(connector.config_json))
+
+    @override_settings(META_APP_ID="meta-app", META_APP_SECRET="meta-secret", DEBUG=True)
+    def test_instagram_oauth_start_returns_authorization_url(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            "/api/business-connectors/instagram-oauth/start/",
+            {"business": self.business.id, "redirect_uri": "http://localhost:5174/dashboard/integrations?zani_provider=instagram"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data["app_configured"])
+        self.assertIn("dialog/oauth", response.data["authorization_url"])
+        self.assertIn("instagram_manage_messages", response.data["authorization_url"])
+
+    @override_settings(
+        META_APP_ID="meta-app",
+        META_APP_SECRET="meta-secret",
+        CORS_ALLOWED_ORIGINS=["https://app.zani.kz"],
+        CSRF_TRUSTED_ORIGINS=["https://app.zani.kz"],
+    )
+    def test_instagram_oauth_rejects_untrusted_redirect_uri(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            "/api/business-connectors/instagram-oauth/start/",
+            {"business": self.business.id, "redirect_uri": "https://evil.example/dashboard/integrations"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+    @override_settings(META_APP_ID="meta-app", META_APP_SECRET="meta-secret", DEBUG=True)
+    @patch("apps.integrations.instagram_oauth.exchange_code_for_instagram_access_token", return_value={"access_token": "user-token"})
+    @patch("apps.integrations.instagram_oauth.exchange_for_long_lived_user_token", return_value="long-token")
+    @patch(
+        "apps.integrations.instagram_oauth.fetch_instagram_pages",
+        return_value={
+            "data": [
+                {
+                    "id": "page-1",
+                    "name": "Page",
+                    "access_token": "page-token",
+                    "instagram_business_account": {"id": "ig-oauth-1", "username": "zani"},
+                }
+            ]
+        },
+    )
+    def test_instagram_oauth_complete_saves_channel_and_connector(self, *_mocks):
+        self.api.force_authenticate(self.owner)
+        start = self.api.post(
+            "/api/business-connectors/instagram-oauth/start/",
+            {"business": self.business.id, "redirect_uri": "http://localhost:5174/dashboard/integrations?zani_provider=instagram"},
+            format="json",
+        )
+
+        response = self.api.post(
+            "/api/business-connectors/instagram-oauth/complete/",
+            {
+                "business": self.business.id,
+                "code": "oauth-code",
+                "state": start.data["state"],
+                "redirect_uri": "http://localhost:5174/dashboard/integrations?zani_provider=instagram",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        channel = BotChannel.objects.get(id=response.data["channel_id"])
+        self.assertEqual(channel.external_id, "ig-oauth-1")
+        self.assertEqual(channel.config_json["access_token"], "page-token")
+        connector = BusinessConnector.objects.get(business=self.business, provider=BusinessConnector.Providers.INSTAGRAM, name="Instagram")
+        self.assertEqual(connector.status, BusinessConnector.Statuses.CONNECTED)
+        self.assertTrue(connector.config_json["access_token_configured"])
+        self.assertNotIn("page-token", str(response.data["connector"]["config_json"]))

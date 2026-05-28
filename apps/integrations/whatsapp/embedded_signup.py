@@ -62,6 +62,8 @@ def complete_embedded_signup(*, business, user, code, state, redirect_uri, phone
     state_payload = load_embedded_signup_state(state)
     if state_payload["business_id"] != business.id or state_payload["user_id"] != user.id:
         raise ValueError("WhatsApp embedded signup state does not match the current user or business.")
+    if state_payload.get("redirect_uri") != redirect_uri:
+        raise ValueError("WhatsApp embedded signup redirect_uri mismatch.")
     token_payload = exchange_code_for_access_token(code=code, redirect_uri=redirect_uri)
     access_token = token_payload.get("access_token", "")
     if not access_token:

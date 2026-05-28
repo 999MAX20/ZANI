@@ -6,9 +6,14 @@ from typing import Any
 from django.utils import timezone
 
 from apps.activities.services import create_activity_event
+from apps.bots.ai import suggest_bot_reply
+from apps.bots.inbox_service import send_outbound_message
 from apps.bots.models import BotChannel, BotConversation, BotMessage
 from apps.conversations.ai_qualification import ConversationQualification, qualify_conversation
+from apps.conversations.booking import BookingResult, maybe_create_appointment_from_reply, store_offered_slots
 from apps.conversations.pipeline import PIPELINE_META_KEY, run_conversation_pipeline
+from apps.notifications.models import Notification
+from apps.notifications.routing import MANAGER_ROLES, create_role_notification
 
 
 AUTO_PIPELINE_META_KEY = "auto_crm_pipeline"
@@ -24,6 +29,7 @@ class AutoPipelineConfig:
     require_review_on_fallback: bool = True
     create_appointment: bool = False
     auto_send_reply: bool = False
+    max_auto_reply_chars: int = 900
 
 
 @dataclass
@@ -33,6 +39,9 @@ class AutoPipelineDecision:
     qualification: ConversationQualification | None = None
     ai_log_id: int | None = None
     result: Any = None
+    reply_message: BotMessage | None = None
+    reply_error: str = ""
+    booking: BookingResult | None = None
 
 
 def maybe_run_auto_pipeline(*, conversation: BotConversation, message: BotMessage, channel: BotChannel | None = None) -> AutoPipelineDecision:
@@ -61,6 +70,12 @@ def maybe_run_auto_pipeline(*, conversation: BotConversation, message: BotMessag
         source="auto_pipeline",
     )
     decision.result = result
+    if config.create_appointment:
+        decision.booking = maybe_create_appointment_from_reply(conversation=result.conversation, message=message)
+    if decision.booking is None or decision.booking.status != "booked":
+        if _can_auto_reply(config=config, conversation=result.conversation, decision=decision):
+            _send_auto_reply(conversation=result.conversation, config=config, decision=decision)
+    _notify_pipeline_result(result=result, decision=decision)
     _save_auto_pipeline_decision(result.conversation, message, config, decision)
     _write_decision_event(result.conversation, decision)
     return decision
@@ -84,6 +99,7 @@ def resolve_auto_pipeline_config(*, conversation: BotConversation, channel: BotC
         require_review_on_fallback=bool(raw.get("require_review_on_fallback", True)),
         create_appointment=bool(raw.get("create_appointment", False)),
         auto_send_reply=bool(raw.get("auto_send_reply", False)),
+        max_auto_reply_chars=max(120, min(_int(raw.get("max_auto_reply_chars"), 900), 2000)),
     )
 
 
@@ -104,7 +120,7 @@ def _guard_auto_pipeline(
     if qualification.intent in {"spam", "support", "complaint"}:
         return AutoPipelineDecision(status="blocked_risky_intent", reason=f"Risky/non-sales intent: {qualification.intent}.", qualification=qualification, ai_log_id=ai_log_id)
 
-    if qualification.requires_human_review and not (_is_fallback(qualification) and not config.require_review_on_fallback):
+    if qualification.requires_human_review and not _can_continue_with_review_flag(config, qualification):
         return AutoPipelineDecision(status="needs_review", reason="AI marked the conversation for human review.", qualification=qualification, ai_log_id=ai_log_id)
 
     if qualification.confidence < config.min_lead_confidence:
@@ -130,6 +146,8 @@ def _save_auto_pipeline_decision(conversation: BotConversation, message: BotMess
         "ai_log_id": decision.ai_log_id,
         "qualification": decision.qualification.to_dict() if decision.qualification else None,
         "pipeline": metadata.get(PIPELINE_META_KEY),
+        "auto_reply": _auto_reply_meta(decision),
+        "booking": _booking_meta(decision),
         "decided_at": timezone.now().isoformat(),
     }
     conversation.metadata_json = metadata
@@ -150,7 +168,88 @@ def _write_decision_event(conversation: BotConversation, decision: AutoPipelineD
             "reason": decision.reason,
             "qualification": decision.qualification.to_dict() if decision.qualification else None,
             "ai_log_id": decision.ai_log_id,
+            "auto_reply_message_id": decision.reply_message.id if decision.reply_message else None,
+            "auto_reply_error": decision.reply_error,
         },
+    )
+
+
+def _can_auto_reply(*, config: AutoPipelineConfig, conversation: BotConversation, decision: AutoPipelineDecision) -> bool:
+    if not config.auto_send_reply:
+        return False
+    if not conversation.bot_enabled or conversation.handoff_required or conversation.status != BotConversation.Statuses.OPEN:
+        return False
+    if decision.status not in {"created_lead_task", "created_draft_deal", "qualified_only"}:
+        return False
+    return True
+
+
+def _send_auto_reply(*, conversation: BotConversation, config: AutoPipelineConfig, decision: AutoPipelineDecision) -> None:
+    try:
+        result, log, _message_context = suggest_bot_reply(conversation=conversation, user=None, auto_mode=True, qualification=decision.qualification)
+        text = (result.output_text or "").strip()
+        if not text:
+            decision.reply_error = "AI returned an empty auto reply."
+            return
+        if len(text) > config.max_auto_reply_chars:
+            text = text[: config.max_auto_reply_chars].rstrip()
+        message = send_outbound_message(conversation, text, user=None, sender_type=BotMessage.SenderTypes.BOT)
+        payload = dict(message.payload_json or {})
+        payload.update(
+            {
+                "auto_crm_pipeline": True,
+                "auto_reply_ai_log_id": log.id if log else None,
+                "auto_pipeline_status": decision.status,
+            }
+        )
+        message.payload_json = payload
+        message.save(update_fields=["payload_json"])
+        decision.reply_message = message
+        scheduling_context = (log.input_json or {}).get("scheduling_context") if log else {}
+        if scheduling_context:
+            store_offered_slots(conversation=conversation, scheduling_context=scheduling_context, ai_log_id=log.id if log else None)
+    except Exception as exc:
+        decision.reply_error = str(exc)
+
+
+def _auto_reply_meta(decision: AutoPipelineDecision) -> dict[str, Any] | None:
+    if not decision.reply_message and not decision.reply_error:
+        return None
+    return {
+        "message_id": decision.reply_message.id if decision.reply_message else None,
+        "status": decision.reply_message.status if decision.reply_message else "failed",
+        "error": decision.reply_error or decision.reply_message.error_text,
+    }
+
+
+def _booking_meta(decision: AutoPipelineDecision) -> dict[str, Any] | None:
+    if decision.booking is None:
+        return None
+    return {
+        "status": decision.booking.status,
+        "reason": decision.booking.reason,
+        "appointment_id": decision.booking.appointment.id if decision.booking.appointment else None,
+        "confirmation_message_id": decision.booking.confirmation_message.id if decision.booking.confirmation_message else None,
+    }
+
+
+def _notify_pipeline_result(*, result, decision: AutoPipelineDecision) -> None:
+    if not any(result.created.values()):
+        return
+    created = [label for label, was_created in result.created.items() if was_created]
+    if not created:
+        return
+    text = f"AI CRM pipeline создал: {', '.join(created)}. Следующий шаг: {decision.qualification.next_action if decision.qualification else 'проверить диалог'}"
+    create_role_notification(
+        business=result.conversation.business,
+        preferred_user=result.conversation.assigned_to or (result.lead.responsible_user if result.lead and result.lead.responsible_user_id else None),
+        roles=MANAGER_ROLES,
+        client=result.client,
+        category=Notification.Categories.SALES,
+        priority=Notification.Priorities.HIGH if result.deal else Notification.Priorities.NORMAL,
+        text=text,
+        action_url=f"/dashboard/conversations?conversation={result.conversation.id}",
+        action_label="Открыть чат",
     )
 
 
@@ -158,8 +257,25 @@ def _is_fallback(qualification: ConversationQualification) -> bool:
     return "Fallback qualification used" in (qualification.reason or "")
 
 
+def _can_continue_with_review_flag(config: AutoPipelineConfig, qualification: ConversationQualification) -> bool:
+    if _is_fallback(qualification) and not config.require_review_on_fallback:
+        return True
+    if qualification.intent not in config.allow_deal_intents:
+        return False
+    if qualification.confidence < config.min_lead_confidence:
+        return False
+    return True
+
+
 def _float(value, default: float) -> float:
     try:
         return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _int(value, default: int) -> int:
+    try:
+        return int(value)
     except (TypeError, ValueError):
         return default

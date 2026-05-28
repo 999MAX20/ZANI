@@ -10,7 +10,7 @@ from apps.businesses.access import ensure_default_roles
 from apps.businesses.models import Business, BusinessMember, BusinessRole
 from apps.clients.models import Client
 from apps.core.models import AuditLog, ImportJob
-from apps.integrations.models import BusinessEvent
+from apps.integrations.models import BusinessConnector, BusinessEvent, ConnectorSyncRun
 from apps.leads.models import Lead
 from apps.services.models import Service
 
@@ -138,6 +138,11 @@ class ImportExportTests(TestCase):
         self.assertEqual(confirm_response.status_code, 200)
         self.assertEqual(confirm_response.data["imported_count"], 1)
         self.assertTrue(BusinessEvent.objects.filter(business=self.business, event_type="sale.recorded", payload_json__amount="15000").exists())
+        connector = BusinessConnector.objects.get(business=self.business, provider=BusinessConnector.Providers.EXCEL_CSV)
+        self.assertEqual(connector.status, BusinessConnector.Statuses.CONNECTED)
+        self.assertEqual(connector.config_json["last_entity_type"], ImportJob.EntityTypes.SALES)
+        self.assertTrue(BusinessEvent.objects.filter(business=self.business, event_type="sale.recorded", connector=connector).exists())
+        self.assertTrue(ConnectorSyncRun.objects.filter(connector=connector, status=ConnectorSyncRun.Statuses.SUCCEEDED, events_processed=1).exists())
 
         dashboard = self.api.get("/api/analytics/owner-dashboard/", {"business": self.business.id})
 
@@ -274,6 +279,32 @@ class ImportExportTests(TestCase):
         confirm_response = self.api.post(f"/api/import-jobs/{response.data['id']}/confirm/")
 
         self.assertEqual(confirm_response.status_code, 400)
+
+    def test_empty_import_file_is_rejected_with_clear_error(self):
+        upload = SimpleUploadedFile("clients.csv", "full_name,phone\n".encode(), content_type="text/csv")
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            "/api/import-jobs/",
+            {"business": self.business.id, "entity_type": ImportJob.EntityTypes.CLIENTS, "source_file": upload},
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("import file is empty", str(response.data).lower())
+
+    def test_invalid_import_extension_is_rejected_before_preview(self):
+        upload = SimpleUploadedFile("clients.txt", "full_name,phone\nClient,+77010000002\n".encode(), content_type="text/plain")
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            "/api/import-jobs/",
+            {"business": self.business.id, "entity_type": ImportJob.EntityTypes.CLIENTS, "source_file": upload},
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Unsupported file extension", str(response.data))
 
     def test_manual_sale_and_catalog_endpoints_create_business_events(self):
         self.api.force_authenticate(self.owner)

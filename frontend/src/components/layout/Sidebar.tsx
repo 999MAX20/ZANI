@@ -10,20 +10,24 @@ import {
   ListChecks,
   MessageSquareText,
   PlugZap,
+  BadgeDollarSign,
   Settings,
   Sparkles,
   Stethoscope,
   Users,
   UsersRound,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 
 import { useAuth } from "../../features/auth/AuthProvider";
+import { inboxApi } from "../../api/inbox";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { cn } from "../../lib/cn";
 import { useI18n } from "../../lib/i18n";
 import { hasPermission } from "../../lib/permissions";
+import { realtimeIntervals, realtimeQueryOptions } from "../../lib/realtime";
 import { Button } from "../ui/Button";
 
 type SidebarItem = {
@@ -64,6 +68,7 @@ const desktopSections = [
     titleKey: "nav.intelligence",
     items: [
       { to: "/dashboard/integrations", label: "nav.integrations", icon: PlugZap, resource: "integrations" },
+      { to: "/dashboard/pricing", label: "nav.pricing", icon: BadgeDollarSign, resource: "integrations" },
       { to: "/dashboard/ai-assistant", label: "nav.aiAssistant", icon: Sparkles, resource: "conversations" },
     ],
   },
@@ -93,6 +98,7 @@ const mobileDrawerSections = [
     titleKey: "nav.intelligence",
     items: [
       { to: "/dashboard/integrations", label: "nav.integrations", icon: PlugZap, resource: "integrations" },
+      { to: "/dashboard/pricing", label: "nav.pricing", icon: BadgeDollarSign, resource: "integrations" },
       { to: "/dashboard/ai-assistant", label: "nav.aiAssistant", icon: Sparkles, resource: "conversations" },
     ],
   },
@@ -137,6 +143,14 @@ export function Sidebar({
     }
   });
   const isExpanded = forceVisible || !collapsed || hovered;
+  const inboxSummary = useQuery({
+    queryKey: ["inbox-summary", business?.id],
+    queryFn: inboxApi.getSummary,
+    enabled: Boolean(user) && Boolean(business?.id) && hasPermission(user, business?.id, "conversations"),
+    refetchInterval: realtimeIntervals.inboxConversationsMs,
+    ...realtimeQueryOptions,
+  });
+  const unreadMessages = inboxSummary.data?.unread_messages ?? inboxSummary.data?.unread ?? 0;
 
   const visibleGroups = useMemo(
     () =>
@@ -200,13 +214,18 @@ export function Sidebar({
                     onClick={onNavigate}
                     title={t(item.label)}
                     className={cn(
-                      "mx-auto grid h-12 w-12 place-items-center rounded-2xl text-slate-500 transition-all duration-200",
+                      "relative mx-auto grid h-12 w-12 place-items-center rounded-2xl text-slate-500 transition-all duration-200",
                       "hover:-translate-y-0.5 hover:bg-white hover:text-brand-700 hover:shadow-soft",
                       active && "bg-ai-gradient text-white shadow-glow",
                     )}
-                  >
-                    <Icon size={20} strokeWidth={2.25} />
-                  </NavLink>
+                    >
+                      <Icon size={20} strokeWidth={2.25} />
+                      {item.to === "/dashboard/conversations" && unreadMessages ? (
+                        <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-black leading-none text-white ring-2 ring-white">
+                          {unreadMessages > 99 ? "99+" : unreadMessages}
+                        </span>
+                      ) : null}
+                    </NavLink>
                 );
               })}
             </nav>
@@ -253,7 +272,11 @@ export function Sidebar({
                         <Icon size={20} strokeWidth={2.25} />
                       </span>
                       <span className="min-w-0 truncate">{t(item.label)}</span>
-                      {active ? <span className="ml-auto h-2 w-2 rounded-full bg-brand-500 shadow-glow" /> : null}
+                      {item.to === "/dashboard/conversations" && unreadMessages ? (
+                        <span className="ml-auto min-w-6 rounded-full bg-red-500 px-2 py-1 text-center text-[11px] font-black leading-none text-white shadow-sm">
+                          {unreadMessages > 99 ? "99+" : unreadMessages}
+                        </span>
+                      ) : active ? <span className="ml-auto h-2 w-2 rounded-full bg-brand-500 shadow-glow" /> : null}
                     </NavLink>
                   );
                 })}

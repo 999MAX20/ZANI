@@ -185,17 +185,11 @@ class WhatsAppProvider(BaseWhatsAppAdapter):
             )
             return {"ok": False, "mock": False, "provider": self.provider, "reason": "WhatsApp Meta Cloud credentials are missing."}
 
+        message_payload = self._meta_cloud_message_payload(recipient_id, text, payload=payload)
         url = self._graph_url(phone_number_id, "messages")
         request = urllib_request.Request(
             url,
-            data=json.dumps(
-                {
-                    "messaging_product": "whatsapp",
-                    "to": recipient_id,
-                    "type": "text",
-                    "text": {"body": text},
-                }
-            ).encode("utf-8"),
+            data=json.dumps(message_payload).encode("utf-8"),
             headers={
                 "Authorization": f"Bearer {access_token}",
                 "Content-Type": "application/json",
@@ -223,6 +217,36 @@ class WhatsAppProvider(BaseWhatsAppAdapter):
                 error=str(exc),
             )
             return {"ok": False, "mock": False, "provider": self.provider, "reason": str(exc)}
+
+    def _meta_cloud_message_payload(self, recipient_id, text, payload=None):
+        payload = payload or {}
+        template_name = payload.get("whatsapp_template_name")
+        if template_name:
+            language_code = payload.get("whatsapp_template_language") or "ru"
+            template = {
+                "name": template_name,
+                "language": {"code": language_code},
+            }
+            parameters = [value for value in (payload.get("template_parameters") or []) if value]
+            if parameters:
+                template["components"] = [
+                    {
+                        "type": "body",
+                        "parameters": [{"type": "text", "text": str(value)} for value in parameters],
+                    }
+                ]
+            return {
+                "messaging_product": "whatsapp",
+                "to": recipient_id,
+                "type": "template",
+                "template": template,
+            }
+        return {
+            "messaging_product": "whatsapp",
+            "to": recipient_id,
+            "type": "text",
+            "text": {"body": text},
+        }
 
     def validate_credentials(self, channel):
         business = channel.bot.business

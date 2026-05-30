@@ -1,16 +1,14 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, Link2, RefreshCw, Send, ShieldCheck } from "lucide-react";
-import { Link } from "react-router-dom";
+import { CheckCircle2, RefreshCw, Send, ShieldCheck } from "lucide-react";
 
 import { botChannelsApi, botsApi, telegramChannelApi } from "../../../../api/bots";
 import { getApiErrorMessage } from "../../../../api/client";
 import { Button } from "../../../../components/ui/Button";
 import { ErrorState } from "../../../../components/ui/StateViews";
 import { Input } from "../../../../components/ui/Input";
-import { cn } from "../../../../lib/cn";
 import type { Bot, BotChannel, Id } from "../../../../types";
-import { LogoMark, ToggleSwitch } from "./IntegrationSetupUi";
+import { MessengerSetupShell } from "./IntegrationSetupUi";
 
 export function TelegramInlineSetup({
   businessId,
@@ -51,7 +49,7 @@ export function TelegramInlineSetup({
       });
     },
     onSuccess: () => {
-      setNotice("Telegram channel создан. Теперь вставьте BotFather token.");
+      setNotice("Канал создан. Теперь вставьте token бота.");
       queryClient.invalidateQueries({ queryKey: ["bots"] });
       queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
     },
@@ -61,7 +59,7 @@ export function TelegramInlineSetup({
     mutationFn: () => telegramChannelApi.configure({ channelId: Number(channel?.id), botToken }),
     onSuccess: () => {
       setBotToken("");
-      setNotice("Token сохранен. Проверьте token и подключите webhook.");
+      setNotice("Token сохранен. Проверьте подключение и включите входящие сообщения.");
       queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
       queryClient.invalidateQueries({ queryKey: ["telegram-status", channel?.id] });
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
@@ -71,7 +69,7 @@ export function TelegramInlineSetup({
   const testConnection = useMutation({
     mutationFn: () => telegramChannelApi.testConnection(Number(channel?.id)),
     onSuccess: (data) => {
-      setNotice(data.ok ? "Token проверен." : data.reason || "Token не прошел проверку.");
+      setNotice(data.ok ? "Подключение проверено." : data.reason || "Не удалось проверить подключение.");
       queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
       queryClient.invalidateQueries({ queryKey: ["telegram-status", channel?.id] });
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
@@ -84,7 +82,7 @@ export function TelegramInlineSetup({
       return telegramChannelApi.setWebhook({ channelId: Number(channel?.id), webhookUrl: current.webhook_url });
     },
     onSuccess: (data) => {
-      setNotice(data.ok ? "Webhook подключен. Напишите сообщение боту и проверьте Inbox." : data.reason || "Webhook не подключен.");
+      setNotice(data.ok ? "Входящие сообщения подключены." : data.reason || "Не удалось подключить входящие сообщения.");
       queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
       queryClient.invalidateQueries({ queryKey: ["telegram-status", channel?.id] });
       queryClient.invalidateQueries({ queryKey: ["integration-event-logs"] });
@@ -106,9 +104,10 @@ export function TelegramInlineSetup({
   const tokenConfigured = Boolean(status.data?.token_configured);
   const tokenVerified = Boolean(status.data?.token_verified);
   const webhookConfigured = Boolean(status.data?.webhook_configured);
-  const webhookPublicReady = Boolean(status.data?.webhook_public_ready);
   const inboundReady = Boolean(status.data?.inbound_ready);
   const canSaveToken = botToken.trim().length >= 9;
+  const connectionStatus = inboundReady || webhookConfigured ? "Подключено" : tokenConfigured ? "Настройка" : "Не подключено";
+  const connectionTone = inboundReady ? "success" : tokenVerified || tokenConfigured ? "progress" : "neutral";
 
   if (!channel) {
     return (
@@ -123,94 +122,56 @@ export function TelegramInlineSetup({
   }
 
   return (
-    <div className="w-full space-y-4">
-      {error ? <ErrorState message={getApiErrorMessage(error)} /> : null}
-      {notice ? <div className="rounded-2xl bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800">{notice}</div> : null}
-
-      <div className="rounded-3xl border border-slate-200 bg-white p-4">
-        <div className="flex items-start gap-3">
-          <LogoMark logo="/integrations_logos/telegram.png" label="Telegram" />
-          <div className="min-w-0 flex-1">
-            <p className="text-base font-black text-midnight">Telegram</p>
-            <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">
-              Вставьте token бота мерчанта из BotFather. ZANI проверит доступ и подключит входящие сообщения.
+    <MessengerSetupShell
+      logo="/integrations_logos/telegram.png"
+      title="Telegram"
+      description="Подключите бота, чтобы ZANI принимал сообщения клиентов и отправлял ответы от имени вашей компании."
+      status={connectionStatus}
+      statusTone={connectionTone}
+      notice={notice}
+      error={error ? <ErrorState message={getApiErrorMessage(error)} /> : null}
+      canManage={canManage}
+      inboxChannel="telegram"
+      channelToggleVisible={webhookConfigured}
+      channelEnabled={channel.status === "active"}
+      channelToggleLoading={toggleChannel.isPending}
+      onToggleChannel={(checked) => toggleChannel.mutate(checked ? "active" : "paused")}
+    >
+      {!webhookConfigured ? (
+        <div className="space-y-4">
+          <div>
+            <p className="text-sm font-black text-midnight">Token бота</p>
+            <p className="mt-1 text-xs font-semibold text-slate-500">
+              {tokenConfigured ? "Token сохранен приватно. Вставьте новый только для замены." : "Вставьте token, который выдал BotFather."}
             </p>
           </div>
-        </div>
-      </div>
-
-      <div className="rounded-3xl border border-slate-200 bg-white p-4">
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-black text-midnight">1. Доступ к боту</p>
-            <p className="mt-1 text-xs font-semibold text-slate-500">{tokenConfigured ? "Token сохранен приватно." : "Нужен token, который выдал BotFather."}</p>
-          </div>
-          <span className={cn("rounded-full px-3 py-1 text-xs font-black", tokenVerified ? "bg-emerald-50 text-emerald-700" : tokenConfigured ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-500")}>
-            {tokenVerified ? "Проверено" : tokenConfigured ? "Сохранено" : "Не подключено"}
-          </span>
-        </div>
-        <Input
-          label={tokenConfigured ? "BotFather token сохранен приватно" : "BotFather token"}
-          value={botToken}
-          onChange={(event) => setBotToken(event.target.value)}
-          placeholder={tokenConfigured ? "Token уже сохранен. Вставьте новый только для замены." : "123456789:AA..."}
-          type="password"
-          autoComplete="off"
-        />
-        <div className="mt-3 flex flex-wrap gap-2">
-          {canSaveToken ? (
-            <Button type="button" disabled={!canManage} isLoading={saveToken.isPending} onClick={() => saveToken.mutate()}>
-              <ShieldCheck size={16} /> {tokenConfigured ? "Заменить token" : "Сохранить token"}
-            </Button>
-          ) : null}
-          {tokenConfigured && !canSaveToken ? (
-            <Button type="button" variant={tokenVerified ? "secondary" : "primary"} disabled={!canManage || tokenVerified} isLoading={testConnection.isPending} onClick={() => testConnection.mutate()}>
-              {tokenVerified ? <CheckCircle2 size={16} /> : <RefreshCw size={16} />} {tokenVerified ? "Проверено" : "Проверить подключение"}
-            </Button>
-          ) : null}
-        </div>
-      </div>
-
-      <div className="rounded-3xl border border-slate-200 bg-white p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-black text-midnight">2. Входящие сообщения</p>
-            <p className="mt-1 text-xs font-semibold leading-5 text-slate-500">
-              {webhookConfigured ? "Входящие сообщения подключены." : "После проверки token подключите прием сообщений в Inbox."}
-            </p>
-          </div>
-          <Button type="button" disabled={!canManage || !tokenVerified || webhookConfigured || setWebhook.isPending || status.isFetching} isLoading={setWebhook.isPending} onClick={() => setWebhook.mutate()}>
-            <CheckCircle2 size={16} /> {webhookConfigured ? "Подключено" : "Подключить входящие"}
-          </Button>
-        </div>
-        {!webhookPublicReady ? (
-          <p className="mt-3 rounded-2xl bg-amber-50 px-3 py-2 text-xs font-semibold leading-5 text-amber-800">
-            Для приема сообщений нужен публичный HTTPS-домен backend. После подключения Telegram будет доставлять сообщения прямо в Inbox.
-          </p>
-        ) : null}
-      </div>
-
-      {webhookConfigured ? (
-        <div className="rounded-3xl border border-slate-200 bg-white p-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-black text-midnight">Канал включен</p>
-              <p className="mt-1 text-xs font-semibold text-slate-500">{channel.status === "active" ? "Бот принимает и отправляет сообщения." : "Канал на паузе. Включите, когда будете готовы."}</p>
-            </div>
-            <ToggleSwitch
-              checked={channel.status === "active"}
-              disabled={!canManage}
-              isLoading={toggleChannel.isPending}
-              label="Включить или выключить Telegram"
-              onChange={(checked) => toggleChannel.mutate(checked ? "active" : "paused")}
-            />
+          <Input
+            label=""
+            value={botToken}
+            onChange={(event) => setBotToken(event.target.value)}
+            placeholder={tokenConfigured ? "Token уже сохранен. Вставьте новый только для замены." : "123456789:AA..."}
+            type="password"
+            autoComplete="off"
+          />
+          <div className="mt-3 flex flex-wrap gap-2">
+            {canSaveToken ? (
+              <Button type="button" disabled={!canManage} isLoading={saveToken.isPending} onClick={() => saveToken.mutate()}>
+                <ShieldCheck size={16} /> Сохранить token
+              </Button>
+            ) : null}
+            {tokenConfigured && !tokenVerified && !canSaveToken ? (
+              <Button type="button" disabled={!canManage} isLoading={testConnection.isPending} onClick={() => testConnection.mutate()}>
+                <RefreshCw size={16} /> Проверить подключение
+              </Button>
+            ) : null}
+            {tokenVerified ? (
+              <Button type="button" disabled={!canManage || setWebhook.isPending || status.isFetching} isLoading={setWebhook.isPending} onClick={() => setWebhook.mutate()}>
+                <CheckCircle2 size={16} /> Подключить входящие
+              </Button>
+            ) : null}
           </div>
         </div>
       ) : null}
-
-      <div className={cn("rounded-2xl px-4 py-3 text-xs font-semibold leading-5", inboundReady ? "bg-emerald-50 text-emerald-800" : "bg-slate-50 text-slate-600")}>
-        {inboundReady ? "Telegram готов принимать реальные входящие сообщения." : "После подключения отправьте сообщение боту и проверьте, что диалог появился в Inbox."}
-      </div>
-    </div>
+    </MessengerSetupShell>
   );
 }

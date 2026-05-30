@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { DatabaseZap, Link2, RefreshCw, Send, ShieldCheck } from "lucide-react";
+import { Link2, RefreshCw, Send, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { botChannelsApi } from "../../../api/bots";
@@ -103,6 +103,13 @@ function deriveProviderStatus({
   if (capability?.launch_status === "soon") return "soon";
   if (capability?.setup_state === "active" || capability?.availability === "included") return "setup_required";
   return "draft";
+}
+
+function readableConnectorError(message: string) {
+  if (message.toLowerCase().includes("credentials are missing or expired")) {
+    return "Доступ не подключен или истек.";
+  }
+  return message;
 }
 
 export function ProviderCard({
@@ -241,7 +248,7 @@ export function ProviderCard({
   const renderPrimaryButton = () => (
     <Button
       type="button"
-      className="h-10 min-w-[128px] rounded-xl px-4 text-sm sm:min-w-[148px] sm:px-5"
+      className="h-9 min-w-[118px] rounded-xl px-4 text-sm"
       disabled={!canManage || isUnavailable}
       onClick={handlePrimaryAction}
     >
@@ -251,9 +258,9 @@ export function ProviderCard({
 
   const frontContent = (
     <>
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-3">
         <LogoMark logo={provider.logo} label={title} />
-        <div className="flex items-center gap-2">
+        <div className="flex max-w-[70%] shrink-0 items-center justify-end gap-2">
           {renderPrimaryButton()}
           {showChannelToggle && channel ? (
             <ToggleSwitch
@@ -267,17 +274,23 @@ export function ProviderCard({
         </div>
       </div>
 
-      <div className="mt-6">
-        <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-xl font-black text-midnight">{title}</h3>
-          <span className={`rounded-full px-2.5 py-1 text-xs font-black ring-1 ${statusClass(status)}`}>{readableStatus(status, "Не подключен")}</span>
+      <div className={cn("min-w-0", isChannelProvider ? "mt-3" : "mt-4")}>
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <h3 className={cn("min-w-0 break-words font-black text-midnight", isChannelProvider ? "text-[17px] leading-6" : "text-lg")}>
+            {title}
+          </h3>
+          <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-black ring-1 ${statusClass(status)}`}>
+            {readableStatus(status, "Не подключен")}
+          </span>
         </div>
-        <p className="mt-3 text-sm font-semibold leading-6 text-slate-500">{provider.primaryUse}</p>
+        <p className={cn("text-sm font-semibold leading-5 text-slate-500", isChannelProvider ? "mt-1" : "mt-2")}>
+          {provider.primaryUse}
+        </p>
       </div>
 
-      {connector?.last_error ? (
-        <div className="mt-3 rounded-2xl border border-red-100 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
-          {connector.last_error}
+      {connector?.last_error && !isChannelProvider ? (
+        <div className="mt-3 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
+          {readableConnectorError(connector.last_error)}
         </div>
       ) : null}
 
@@ -289,24 +302,27 @@ export function ProviderCard({
     <article
       className={cn(
         isWebsiteProvider
-          ? "group min-h-[160px] rounded-2xl [perspective:1200px]"
-          : "min-h-[160px] rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft sm:p-5",
+          ? "group min-h-[128px] rounded-2xl [perspective:1200px]"
+          : cn(
+              "rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft",
+              isChannelProvider ? "min-h-[128px]" : "min-h-[132px]",
+            ),
         isUnavailable && "opacity-60",
       )}
     >
       {isWebsiteProvider ? (
-        <div className="relative min-h-[160px] rounded-2xl transition-transform duration-500 [transform-style:preserve-3d] sm:group-hover:[transform:rotateY(180deg)]">
-          <div className="absolute inset-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm [backface-visibility:hidden] sm:p-5">
+        <div className="relative min-h-[128px] rounded-2xl transition-transform duration-500 [transform-style:preserve-3d] sm:group-hover:[transform:rotateY(180deg)]">
+          <div className="absolute inset-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm [backface-visibility:hidden]">
             {frontContent}
           </div>
-          <div className="absolute inset-0 hidden rounded-2xl border border-brand-100 bg-white p-5 shadow-soft [backface-visibility:hidden] [transform:rotateY(180deg)] sm:flex">
-            <div className="flex min-h-full w-full flex-col justify-between gap-4">
+          <div className="absolute inset-0 hidden rounded-2xl border border-brand-100 bg-white p-4 shadow-soft [backface-visibility:hidden] [transform:rotateY(180deg)] sm:flex">
+            <div className="flex min-h-full w-full flex-col justify-between gap-3">
               <div>
-                <p className="text-sm font-black leading-6 text-midnight">
+                <p className="text-sm font-black leading-5 text-midnight">
                   Не теряйте заявки с сайта после первого клика.
                 </p>
-                <p className="mt-3 text-sm font-semibold leading-6 text-slate-600">
-                  Посетитель пишет в виджет или форму, ZANI сразу создаёт диалог, клиента и заявку в CRM. Менеджер видит источник, историю обращения и следующий шаг без ручного переноса контактов.
+                <p className="mt-2 text-sm font-semibold leading-5 text-slate-600">
+                  ZANI принимает заявки с формы и сразу передает их в Inbox.
                 </p>
               </div>
               <div className="flex flex-wrap items-center justify-between gap-3">

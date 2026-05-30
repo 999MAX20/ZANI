@@ -42,11 +42,11 @@ CONNECTOR_PROVIDER_CAPABILITIES = {
         "capability": BusinessConnector.Capabilities.COMMUNICATIONS,
         "auth_type": BusinessConnector.AuthTypes.TOKEN,
         "label": "Telegram",
-        "description": "Telegram foundation подходит для beta-уведомлений и простого бота.",
-        "launch_status": "beta",
+        "description": "Telegram bot channel for merchant-owned customer conversations, Inbox and AI handoff.",
+        "launch_status": "available",
         "cta_label": "Подключить Telegram",
-        "next_step": "Добавьте bot token или используйте mock/beta режим для тестового контура.",
-        "pilot_note": "Можно показывать как beta/foundation.",
+        "next_step": "Мерчант создает бота в BotFather, вставляет token, ZANI проверяет доступ и подключает webhook.",
+        "pilot_note": "Production requires TELEGRAM_ENABLED=True and a public HTTPS backend URL.",
         "setup_priority": 30,
         "is_pilot_safe": True,
     },
@@ -200,7 +200,7 @@ CONNECTOR_PROVIDER_CAPABILITIES = {
 CONNECTOR_AVAILABILITY_DEFAULTS = {
     BusinessConnector.Providers.WEBSITE: {"availability": "included", "required_plan": "basic", "setup_state": "active", "action_behavior": "self_service", "primary_action_label": "Настроить сайт-чат"},
     BusinessConnector.Providers.EXCEL_CSV: {"availability": "included", "required_plan": "basic", "setup_state": "active", "action_behavior": "self_service", "primary_action_label": "Загрузить файл"},
-    BusinessConnector.Providers.TELEGRAM: {"availability": "included", "required_plan": "business", "setup_state": "setup_required", "action_behavior": "self_service", "primary_action_label": "Открыть beta-настройку"},
+    BusinessConnector.Providers.TELEGRAM: {"availability": "included", "required_plan": "business", "setup_state": "setup_required", "action_behavior": "self_service", "primary_action_label": "Подключить Telegram"},
     BusinessConnector.Providers.WHATSAPP: {"availability": "included", "required_plan": "business", "setup_state": "setup_required", "action_behavior": "self_service", "primary_action_label": "Подключить через Meta"},
     BusinessConnector.Providers.INSTAGRAM: {"availability": "included", "required_plan": "pro", "setup_state": "setup_required", "action_behavior": "self_service", "primary_action_label": "Открыть beta-настройку"},
     BusinessConnector.Providers.GOOGLE_SHEETS: {"availability": "upgrade", "required_plan": "business", "setup_state": "coming_soon", "action_behavior": "disabled", "primary_action_label": "В тарифе выше"},
@@ -415,6 +415,9 @@ def run_connector_healthcheck(connector):
     error = ""
     if connector.status == BusinessConnector.Statuses.DISABLED:
         status = BusinessConnector.Statuses.DISABLED
+    elif connector.provider == BusinessConnector.Providers.TELEGRAM and not settings.TELEGRAM_ENABLED:
+        status = BusinessConnector.Statuses.FAILED
+        error = "Telegram integration is disabled."
     elif connector.auth_type != BusinessConnector.AuthTypes.NONE and not connector_has_active_credentials(connector):
         status = BusinessConnector.Statuses.NEEDS_ATTENTION
         error = "Connector credentials are missing or expired."

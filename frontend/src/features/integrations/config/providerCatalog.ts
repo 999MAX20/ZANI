@@ -12,37 +12,6 @@ export const providerCatalog: Array<{
   requestName: string;
 }> = [
   {
-    provider: "website",
-    fallbackLabel: "Website chat",
-    group: "messages",
-    primaryUse: "Заявки и сообщения с сайта",
-    requestName: "Website chat",
-  },
-  {
-    provider: "telegram",
-    fallbackLabel: "Telegram",
-    group: "messages",
-    logo: "/integrations_logos/telegram.png",
-    primaryUse: "Бот, входящие сообщения и handoff",
-    requestName: "Telegram",
-  },
-  {
-    provider: "whatsapp",
-    fallbackLabel: "WhatsApp",
-    group: "messages",
-    logo: "/integrations_logos/whatsapp.png",
-    primaryUse: "Основной канал общения с клиентами",
-    requestName: "WhatsApp connection request",
-  },
-  {
-    provider: "instagram",
-    fallbackLabel: "Instagram",
-    group: "messages",
-    logo: "/integrations_logos/instagram.png",
-    primaryUse: "Direct, заявки и handoff оператору",
-    requestName: "Instagram connection request",
-  },
-  {
     provider: "excel_csv",
     fallbackLabel: "Excel / CSV",
     group: "data",
@@ -113,8 +82,8 @@ export const providerCatalog: Array<{
 
 export const groupLabels: Record<ProviderGroup, { title: string; text: string }> = {
   messages: {
-    title: "Каналы и боты",
-    text: "Все входящие каналы, которые должны создавать лиды, диалоги и задачи менеджеру.",
+    title: "Каналы",
+    text: "Подключите ИИ-агента к каналам, где клиенты пишут вашей компании.",
   },
   data: {
     title: "Учет и склад",

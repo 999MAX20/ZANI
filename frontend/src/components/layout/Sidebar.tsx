@@ -4,6 +4,7 @@ import {
   ChevronDown,
   ChevronLeft,
   Clock3,
+  Bot,
   Home,
   Inbox,
   KanbanSquare,
@@ -67,6 +68,7 @@ const desktopSections = [
     id: "intelligence",
     titleKey: "nav.intelligence",
     items: [
+      { to: "/dashboard/ai-agents", label: "nav.aiAgents", icon: Bot, resource: "integrations" },
       { to: "/dashboard/integrations", label: "nav.integrations", icon: PlugZap, resource: "integrations" },
       { to: "/dashboard/pricing", label: "nav.pricing", icon: BadgeDollarSign, resource: "integrations" },
       { to: "/dashboard/ai-assistant", label: "nav.aiAssistant", icon: Sparkles, resource: "conversations" },
@@ -97,6 +99,7 @@ const mobileDrawerSections = [
     id: "intelligence",
     titleKey: "nav.intelligence",
     items: [
+      { to: "/dashboard/ai-agents", label: "nav.aiAgents", icon: Bot, resource: "integrations" },
       { to: "/dashboard/integrations", label: "nav.integrations", icon: PlugZap, resource: "integrations" },
       { to: "/dashboard/pricing", label: "nav.pricing", icon: BadgeDollarSign, resource: "integrations" },
       { to: "/dashboard/ai-assistant", label: "nav.aiAssistant", icon: Sparkles, resource: "conversations" },

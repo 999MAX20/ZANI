@@ -20,7 +20,7 @@ AUTOMATIONS_RUN_INLINE=False
 SENTRY_DSN=...
 ```
 
-The API must be available through public HTTPS. Telegram cannot deliver webhooks to localhost.
+The API must be available through public HTTPS. Telegram delivers merchant messages only to the configured webhook URL.
 
 ## Merchant Setup Flow
 
@@ -56,7 +56,7 @@ Disable a merchant Telegram connector:
 2. If global traffic must stop, set `TELEGRAM_ENABLED=False`.
 3. Tell support that inbound Telegram messages will not enter ZANI until the channel is reconnected.
 
-## Smoke Check
+## Production Smoke Check
 
 Expected successful path:
 
@@ -65,20 +65,3 @@ Expected successful path:
 3. A client message creates a Telegram `BotConversation`.
 4. A manager reply from Inbox creates an outbound `BotMessage`.
 5. `IntegrationEventLog` has processed inbound and sent outbound Telegram events.
-
-Local real-test gate:
-
-```bash
-CHANNEL_ID=123 PUBLIC_URL=https://YOUR-TUNNEL-DOMAIN ./scripts/telegram_local_real_test.sh
-CHANNEL_ID=123 PUBLIC_URL=https://YOUR-TUNNEL-DOMAIN SET_WEBHOOK=1 ./scripts/telegram_local_real_test.sh
-```
-
-Without public HTTPS, Telegram can validate the bot token but cannot deliver inbound webhooks to localhost.
-
-Local backend webhook smoke without Telegram network:
-
-```bash
-python manage.py telegram_webhook_smoke --channel-id 123 --fail-on-error
-```
-
-This posts a synthetic Telegram update to `/api/integrations/telegram/webhook/` using the saved merchant channel secret and verifies that Inbox receives the conversation/message. It does not prove that Telegram can reach the machine; the tunnel/domain check above is still required for real inbound traffic.

@@ -380,11 +380,11 @@ export function DealsPage() {
 
   return (
     <>
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-brand-600">Сделки</p>
-          <h1 className="mt-2 text-4xl font-black tracking-tight text-midnight sm:text-5xl">Pipeline продаж</h1>
-          <p className="mt-3 max-w-2xl text-lg text-slate-600">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-brand-600">Сделки</p>
+          <h1 className="mt-1 text-3xl font-black tracking-tight text-midnight sm:text-4xl">Pipeline продаж</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
             Рабочий экран менеджера: воронка, next action, клиент, источник, переписки и закрытие сделки без лишних блоков.
           </p>
         </div>
@@ -404,15 +404,15 @@ export function DealsPage() {
         <div className="mt-6"><ErrorState message={t("deals.noPipeline")} /></div>
       ) : (
         <>
-          <section className="my-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <section className="my-4 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
             <ProductionKpiCard label="Открытая воронка" value={money(pipelineValue)} hint={`${openDeals.length} сделок в работе`} icon={CircleDollarSign} tone="brand" />
             <ProductionKpiCard label="Выиграно" value={wonDeals.length} hint="Успешно закрытые сделки" icon={CheckCircle2} tone="green" />
             <ProductionKpiCard label="Потеряно" value={lostDeals.length} hint="Причины видны в карточке" icon={XCircle} tone="red" />
             <ProductionKpiCard label="Риски" value={staleDeals.length} hint={overdueDeals.length ? "Просрочен SLA" : "Нет next action / close date"} icon={AlertTriangle} tone={staleDeals.length ? "amber" : "green"} />
           </section>
 
-          <section className="mb-5 rounded-3xl border border-white/75 bg-white/82 p-4 shadow-sm">
-            <div className="grid gap-3 xl:grid-cols-[240px_minmax(0,1fr)_200px_220px]">
+          <section className="mb-4 rounded-3xl border border-white/75 bg-white/82 p-3 shadow-sm sm:p-4">
+            <div className="grid gap-2 xl:grid-cols-[220px_minmax(0,1fr)_180px_200px]">
               <Select
                 value={String(activePipeline || "")}
                 onChange={(event) => setPipelineId(event.target.value)}
@@ -438,18 +438,18 @@ export function DealsPage() {
                 ]}
               />
             </div>
-            <div className="mt-3">
+            <div className="mt-2">
               <FilterChips value={stageFilter} options={stageFilterOptions} onChange={setStageFilter} />
             </div>
           </section>
 
-          <section className="grid gap-5 xl:grid-cols-[minmax(360px,0.9fr)_minmax(0,1.35fr)]">
-            <div className="space-y-3">
+          <section className="grid gap-5 xl:grid-cols-[minmax(360px,0.86fr)_minmax(0,1.4fr)]">
+            <div className="space-y-3 xl:sticky xl:top-5">
               <div className="flex items-center justify-between px-1">
                 <h2 className="text-lg font-black text-midnight">Список сделок</h2>
                 <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-500">{rows.length}</span>
               </div>
-              <div className="space-y-3">
+              <div className="max-h-[min(760px,calc(100vh-250px))] space-y-3 overflow-y-auto pr-1">
                 {rows.map((deal) => (
                   <DealListItem
                     key={deal.id}

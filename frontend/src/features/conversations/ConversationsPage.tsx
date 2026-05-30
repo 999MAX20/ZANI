@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
+  ArrowLeft,
   CalendarCheck,
   CheckCheck,
   CheckSquare,
@@ -17,7 +18,7 @@ import {
   UserRound,
   X,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import { getApiErrorMessage } from "../../api/client";
@@ -216,6 +217,7 @@ export function ConversationsPage() {
   const [activeTab, setActiveTab] = useState<InboxTab>("all");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [bulkMode, setBulkMode] = useState(false);
+  const [mobileThreadOpen, setMobileThreadOpen] = useState(() => Boolean(searchParams.get("conversation")));
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [filters, setFilters] = useState<InboxFilters>(() => ({
     status: searchParams.get("status") || "",
@@ -250,6 +252,17 @@ export function ConversationsPage() {
   const items = conversations.data?.results || [];
   const selected = useMemo(() => items.find((item) => item.id === selectedId) || null, [items, selectedId]);
 
+  useEffect(() => {
+    if (selectedId || conversations.isLoading || !items.length) return;
+    const unread = items.find((item) => (item.unread_count || 0) > 0);
+    const priority = unread || items.find((item) => item.handoff_required) || items[0];
+    if (!priority) return;
+    setSelectedId(priority.id);
+    const params = new URLSearchParams(searchParams);
+    params.set("conversation", String(priority.id));
+    setSearchParams(params, { replace: true });
+  }, [conversations.isLoading, items, searchParams, selectedId, setSearchParams]);
+
   const messages = useQuery({
     queryKey: ["inbox-messages", selected?.id],
     queryFn: () => inboxApi.listMessages(selected!.id),
@@ -282,6 +295,7 @@ export function ConversationsPage() {
 
   function selectConversation(id: number) {
     setSelectedId(id);
+    setMobileThreadOpen(true);
     const params = new URLSearchParams(searchParams);
     params.set("conversation", String(id));
     setSearchParams(params, { replace: true });
@@ -513,15 +527,15 @@ export function ConversationsPage() {
       {notice ? <div className="rounded-2xl border border-ai-100 bg-ai-50 px-4 py-3 text-sm font-bold text-ai-800">{notice}</div> : null}
       {actionError ? <ErrorState message={getApiErrorMessage(actionError)} /> : null}
 
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard icon={<MessageSquare size={20} />} label="Всего диалогов" value={summary.data?.total ?? 0} delta="+ за сегодня" tone="brand" />
         <StatCard icon={<AlertTriangle size={20} />} label="Без ответа" value={summary.data?.handoff_required ?? 0} tone="amber" />
         <StatCard icon={<MessageSquare size={20} />} label="В работе" value={summary.data?.assigned_to_me ?? 0} tone="blue" />
         <StatCard icon={<CheckCheck size={20} />} label="Непрочитанные" value={summary.data?.unread_messages ?? 0} tone="violet" />
       </div>
 
-      <section className="grid min-h-[720px] overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-soft lg:h-[calc(100vh-238px)] lg:grid-cols-[340px_minmax(0,1fr)] 2xl:grid-cols-[340px_minmax(560px,1fr)_300px]">
-        <aside className="flex min-h-0 flex-col border-b border-slate-200 bg-white lg:border-b-0 lg:border-r">
+      <section className="grid min-h-[calc(100vh-176px)] overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-soft lg:h-[calc(100vh-176px)] lg:grid-cols-[340px_minmax(0,1fr)] 2xl:grid-cols-[340px_minmax(560px,1fr)_300px]">
+        <aside className={cn("min-h-0 flex-col border-b border-slate-200 bg-white lg:flex lg:border-b-0 lg:border-r", mobileThreadOpen ? "hidden" : "flex")}>
           <div className="space-y-3 p-5">
             <h1 className="text-2xl font-black tracking-tight text-midnight">Диалоги</h1>
             <Select
@@ -675,7 +689,7 @@ export function ConversationsPage() {
           </div>
         </aside>
 
-        <main className="flex min-h-0 flex-col bg-slate-50/40">
+        <main className={cn("min-h-0 flex-col bg-slate-50/40 lg:flex", mobileThreadOpen ? "flex" : "hidden")}>
           {!selected ? (
             <div className="grid flex-1 place-items-center p-8">
               <div className="text-center">
@@ -687,10 +701,20 @@ export function ConversationsPage() {
             </div>
           ) : (
             <>
-              <div className="border-b border-slate-200 bg-white px-5 py-4">
+              <div className="border-b border-slate-200 bg-white px-4 py-3 sm:px-5 sm:py-4">
                 <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
                   <div className="min-w-0">
-                    <h2 className="truncate text-xl font-black text-midnight">{conversationTitle(selected)}</h2>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-600 lg:hidden"
+                        onClick={() => setMobileThreadOpen(false)}
+                        aria-label="Вернуться к списку диалогов"
+                      >
+                        <ArrowLeft size={19} />
+                      </button>
+                      <h2 className="truncate text-lg font-black text-midnight sm:text-xl">{conversationTitle(selected)}</h2>
+                    </div>
                     <div className="mt-2 flex flex-wrap gap-2">
                       <Pill className="bg-blue-50 text-blue-700 ring-blue-200">{channelLabels[selected.channel] || selected.channel}</Pill>
                       {selected.bot_enabled ? <Pill className="bg-emerald-50 text-emerald-700 ring-emerald-200">бот активен</Pill> : <Pill className="bg-slate-100 text-slate-600 ring-slate-200">бот на паузе</Pill>}
@@ -704,7 +728,7 @@ export function ConversationsPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <Tooltip label="Назначить этот диалог на себя, чтобы было понятно, кто отвечает клиенту.">
                       <Button variant="secondary" disabled={!selected} onClick={() => assignMutation.mutate(selected.id)} isLoading={assignMutation.isPending} aria-label="Взять диалог">
-                        <UserCheck size={17} /> Назначить
+                        <UserCheck size={17} /> <span className="hidden sm:inline">Назначить</span>
                       </Button>
                     </Tooltip>
                     <Tooltip label={selected.bot_enabled ? "Поставить бота на паузу в этом диалоге." : "Включить бота обратно для этого диалога."}>
@@ -742,7 +766,7 @@ export function ConversationsPage() {
                           isLoading={closeMutation.isPending}
                           aria-label="Закрыть диалог"
                         >
-                          <CheckCheck size={17} /> Закрыть
+                          <CheckCheck size={17} /> <span className="hidden sm:inline">Закрыть</span>
                         </Button>
                       </Tooltip>
                     )}

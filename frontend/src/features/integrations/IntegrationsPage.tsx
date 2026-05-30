@@ -184,7 +184,6 @@ export function IntegrationsPage() {
             onChange={(event) => setGroup(event.target.value as ProviderGroup | "all")}
             options={[
               { value: "all", label: "Все группы" },
-              { value: "messages", label: groupLabels.messages.title },
               { value: "data", label: groupLabels.data.title },
               { value: "marketplace", label: groupLabels.marketplace.title },
               { value: "system", label: groupLabels.system.title },
@@ -194,14 +193,13 @@ export function IntegrationsPage() {
       </section>
 
       <section className="mb-6 space-y-5">
-        {(["messages", "data", "marketplace", "system"] as ProviderGroup[]).map((groupKey) => {
+        {(["data", "marketplace", "system"] as ProviderGroup[]).map((groupKey) => {
           const items = data.filter((item) => item.group === groupKey);
           if (!items.length) return null;
           return (
             <div key={groupKey}>
-              <div className="mb-3">
+              <div className="mb-3 flex items-center justify-between">
                 <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">{groupLabels[groupKey].title}</p>
-                <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">{groupLabels[groupKey].text}</p>
               </div>
               <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
                 {items.map((item) => (

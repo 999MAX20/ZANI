@@ -44,7 +44,7 @@ export const telegramChannelApi = {
     return data;
   },
   setWebhook: async ({ channelId, webhookUrl }: { channelId: number; webhookUrl: string }) => {
-    const { data } = await apiClient.post<{ ok: boolean; mock?: boolean; reason?: string }>(
+    const { data } = await apiClient.post<{ ok: boolean; reason?: string; mock?: boolean; webhook_url?: string }>(
       `/api/bot-channels/${channelId}/set-telegram-webhook/`,
       { webhook_url: webhookUrl },
     );
@@ -54,6 +54,8 @@ export const telegramChannelApi = {
     const { data } = await apiClient.get<{
       status: string;
       token_configured: boolean;
+      token_verified: boolean;
+      bot_username: string;
       webhook_secret_configured: boolean;
       webhook_configured: boolean;
       webhook_url: string;
@@ -71,7 +73,6 @@ export const telegramChannelApi = {
   testConnection: async (channelId: number) => {
     const { data } = await apiClient.post<{
       ok: boolean;
-      mock: boolean;
       reason: string;
       status: string;
       token_configured: boolean;

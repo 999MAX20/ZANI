@@ -9,7 +9,8 @@ Read these files before non-trivial work:
 1. `plan/ZANI_MASTER_TECH_PLAN.md`
 2. `plan/clean_code_rules/zani_required_clean_code_rules.md`
 3. `README.md`
-4. Relevant app/frontend files for the task
+4. `docs/CODEX_TASK_TEMPLATE.md`
+5. Relevant app/frontend files for the task
 
 For UI work, also read:
 
@@ -23,20 +24,34 @@ For integrations/onboarding work, also read:
 
 ```text
 plan/plan_20_05/zani_integration_onboarding_master_plan_20_05.md
+docs/CONNECTOR_BLUEPRINT.md
+```
+
+For AI assistant, AI analyst, CRM pipeline or automation work, also read:
+
+```text
+docs/AI_ASSISTANT_RULES.md
+```
+
+For role-sensitive work, also read:
+
+```text
+docs/PERMISSION_MATRIX.md
 ```
 
 ## Core Product Direction
 
-Zani is an AI-first CRM / Business OS for SMB.
+Zani is an AI-first CRM foundation and business control layer for SMB.
 
 Do not turn it into:
 
 - a heavy ERP;
+- a full-sync data warehouse;
 - a Bitrix-style admin maze;
 - a developer console for merchants;
 - a mock-only demo product.
 
-Daily merchant workflows must stay simple, fast and role-aware.
+Daily merchant workflows must stay simple, fast, role-aware and action-oriented.
 
 ## Non-Negotiable Engineering Rules
 
@@ -68,24 +83,24 @@ Daily merchant workflows must stay simple, fast and role-aware.
 10. Keep AI optional and controlled.
     AI may summarize, suggest and assist. Critical changes need explicit user confirmation.
 
+11. Integrations must stay lightweight.
+    Do not build full ERP/full-sync integrations by default. Normalize only business-critical signals into CRM entities and `BusinessEvent`.
+
+12. AI must be source-grounded.
+    AI analyst and assistant output must cite real entities/events or clearly say that data is missing.
+
+13. Merchant setup must hide technical complexity.
+    Connector keys, webhook details and provider errors should live in setup/help flows, not dominate daily UI.
+
 ## Required Checks
 
 Run after meaningful backend/frontend changes:
 
 ```bash
-DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py makemigrations --check --dry-run
-DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
-DATABASE_URL=sqlite:///db.sqlite3 \
-SECURE_SSL_REDIRECT=False \
-SESSION_COOKIE_SECURE=False \
-CSRF_COOKIE_SECURE=False \
-REDIS_URL=memory:// \
-CELERY_TASK_ALWAYS_EAGER=True \
-CELERY_TASK_STORE_EAGER_RESULT=False \
-AUTOMATIONS_RUN_INLINE=True \
-.venv/bin/python manage.py test
-cd frontend && npm run build
+scripts/codex_verify.sh
 ```
+
+For narrow changes, scoped checks are acceptable, but the final response or PR summary must list exactly what was run and what was skipped.
 
 If migrations are intentionally added:
 
@@ -105,11 +120,31 @@ After each completed phase or meaningful feature:
 ## Work Style
 
 - One bounded task at a time.
+- For substantial work, use one branch per task and open a PR instead of pushing directly to `main`.
 - Inspect before editing.
 - Preserve unrelated user changes.
 - Never revert work you did not make unless explicitly requested.
 - If checks fail, fix the current task before starting another one.
 - Prefer small, composable services/components over large God files.
+- Do not mix unrelated UI, backend, integration and docs changes in the same PR unless the task explicitly requires the full workflow.
+
+## Pull Request Rule
+
+For new feature or production-hardening work:
+
+```text
+one task = one branch = one PR
+```
+
+Every PR summary should include:
+
+- business areas changed;
+- checks run;
+- migration/env changes;
+- permission impact;
+- notification impact;
+- BusinessEvent/AI impact;
+- manual checks and known risks.
 
 ## Immediate Roadmap
 

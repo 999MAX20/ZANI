@@ -568,7 +568,15 @@ export function SettingsPage() {
       {mutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(mutation.error)} /></div> : null}
       <Card className="mb-5">
         <CardBody className="p-3">
-          <div className="no-scrollbar flex gap-2 overflow-x-auto">
+          <Select
+            className="min-h-12 rounded-2xl sm:hidden"
+            value={window.location.hash.replace("#", "") || translatedSettingsSections[0]?.id || ""}
+            onChange={(event) => {
+              window.location.hash = event.target.value;
+            }}
+            options={translatedSettingsSections.map((section) => ({ value: section.id, label: section.label }))}
+          />
+          <div className="no-scrollbar hidden gap-2 overflow-x-auto sm:flex">
             {translatedSettingsSections.map((section) => (
               <a
                 key={section.id}
@@ -588,7 +596,7 @@ export function SettingsPage() {
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Записи</p>
               <h2 className="mt-2 text-2xl font-semibold text-midnight">Авто-сообщения по записям</h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                Настройте боевые сценарии: подтверждение записи, напоминание перед визитом и сообщение после услуги. Переменные: {"{client_name}"}, {"{service_name}"}, {"{resource_text}"}, {"{date}"}, {"{time}"}, {"{address_text}"}.
+                Подтверждение, напоминание и сообщение после визита. Переменные доступны в тексте: {"{client_name}"}, {"{service_name}"}, {"{date}"}, {"{time}"}.
               </p>
             </div>
             <div className="grid h-12 w-12 place-items-center rounded-2xl bg-brand-50 text-brand-700">

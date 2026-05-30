@@ -55,15 +55,26 @@ class TelegramProvider(BaseChannelProvider):
         business = channel.bot.business
         token = channel.config_json.get("bot_token", "")
         event_payload = {"recipient_id": recipient_id, "text": text, **(payload or {})}
-        if not settings.TELEGRAM_ENABLED or not token:
+        if not settings.TELEGRAM_ENABLED:
             self.log_event(
                 business=business,
                 channel=channel.channel,
                 direction=IntegrationEventLog.Directions.OUTBOUND,
                 payload=event_payload,
-                status=IntegrationEventLog.Statuses.MOCKED,
+                status=IntegrationEventLog.Statuses.FAILED,
+                error="Telegram integration is disabled.",
             )
-            return {"ok": True, "mock": True, "reason": "Telegram disabled or bot token missing."}
+            return {"ok": False, "reason": "Telegram integration is disabled."}
+        if not token:
+            self.log_event(
+                business=business,
+                channel=channel.channel,
+                direction=IntegrationEventLog.Directions.OUTBOUND,
+                payload=event_payload,
+                status=IntegrationEventLog.Statuses.FAILED,
+                error="Telegram bot token is missing.",
+            )
+            return {"ok": False, "reason": "Telegram bot token is missing."}
 
         url = f"{settings.TELEGRAM_BASE_API_URL}/bot{token}/sendMessage"
         request = urllib_request.Request(
@@ -101,7 +112,6 @@ class TelegramProvider(BaseChannelProvider):
         if not token:
             return {
                 "ok": False,
-                "mock": not settings.TELEGRAM_ENABLED,
                 "reason": "Telegram bot token is missing.",
                 "token_configured": False,
             }
@@ -111,12 +121,12 @@ class TelegramProvider(BaseChannelProvider):
                 channel=channel.channel,
                 direction=IntegrationEventLog.Directions.OUTBOUND,
                 payload=safe_payload,
-                status=IntegrationEventLog.Statuses.MOCKED,
+                status=IntegrationEventLog.Statuses.FAILED,
+                error="Telegram integration is disabled.",
             )
             return {
-                "ok": True,
-                "mock": True,
-                "reason": "Telegram disabled; token format saved for beta setup.",
+                "ok": False,
+                "reason": "Telegram integration is disabled.",
                 "token_configured": True,
             }
 
@@ -134,7 +144,6 @@ class TelegramProvider(BaseChannelProvider):
             )
             return {
                 "ok": bool(result.get("ok")),
-                "mock": False,
                 "token_configured": True,
                 "bot": result.get("result") or {},
             }
@@ -147,12 +156,22 @@ class TelegramProvider(BaseChannelProvider):
                 status=IntegrationEventLog.Statuses.FAILED,
                 error=str(exc),
             )
-            return {"ok": False, "mock": False, "reason": str(exc), "token_configured": True}
+            return {"ok": False, "reason": str(exc), "token_configured": True}
 
     def get_updates(self, channel, *, offset=None, limit=20):
         business = channel.bot.business
         token = channel.config_json.get("bot_token", "")
         safe_payload = {"token_configured": bool(token), "offset": offset, "limit": limit}
+        if not settings.TELEGRAM_ENABLED:
+            self.log_event(
+                business=business,
+                channel=channel.channel,
+                direction=IntegrationEventLog.Directions.INBOUND,
+                payload=safe_payload,
+                status=IntegrationEventLog.Statuses.FAILED,
+                error="Telegram integration is disabled.",
+            )
+            return {"ok": False, "result": [], "reason": "Telegram integration is disabled."}
         if not token:
             self.log_event(
                 business=business,
@@ -201,15 +220,26 @@ class TelegramProvider(BaseChannelProvider):
             "token_configured": bool(token),
             "webhook_secret_configured": bool(webhook_secret),
         }
-        if not settings.TELEGRAM_ENABLED or not token:
+        if not settings.TELEGRAM_ENABLED:
             self.log_event(
                 business=business,
                 channel=channel.channel,
                 direction=IntegrationEventLog.Directions.OUTBOUND,
                 payload=safe_payload,
-                status=IntegrationEventLog.Statuses.MOCKED,
+                status=IntegrationEventLog.Statuses.FAILED,
+                error="Telegram integration is disabled.",
             )
-            return {"ok": True, "mock": True, "reason": "Telegram disabled or bot token missing."}
+            return {"ok": False, "reason": "Telegram integration is disabled."}
+        if not token:
+            self.log_event(
+                business=business,
+                channel=channel.channel,
+                direction=IntegrationEventLog.Directions.OUTBOUND,
+                payload=safe_payload,
+                status=IntegrationEventLog.Statuses.FAILED,
+                error="Telegram bot token is missing.",
+            )
+            return {"ok": False, "reason": "Telegram bot token is missing."}
         if not webhook_secret:
             self.log_event(
                 business=business,
@@ -219,7 +249,7 @@ class TelegramProvider(BaseChannelProvider):
                 status=IntegrationEventLog.Statuses.FAILED,
                 error="Telegram webhook secret is missing.",
             )
-            return {"ok": False, "mock": False, "reason": "Telegram webhook secret is missing."}
+            return {"ok": False, "reason": "Telegram webhook secret is missing."}
 
         url = f"{settings.TELEGRAM_BASE_API_URL}/bot{token}/setWebhook"
         request = urllib_request.Request(

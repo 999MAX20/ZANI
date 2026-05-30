@@ -375,27 +375,27 @@ export function AIAssistantPage() {
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="space-y-5">
-          <Card className="overflow-hidden border-0 bg-ai-gradient text-white shadow-glow">
-            <CardBody className="p-5 sm:p-7">
-              <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <Card className="overflow-hidden">
+            <CardBody className="p-4 sm:p-5">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="max-w-3xl">
-                  <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-xs font-black uppercase tracking-[0.16em] text-white/80">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-ai-50 px-3 py-1.5 text-xs font-black uppercase tracking-[0.16em] text-ai-700">
                     <Sparkles size={15} />
                     {t("aiNavigator.todayBrief")}
                   </div>
-                  <h2 className="mt-5 text-3xl font-black leading-tight tracking-tight sm:text-4xl">
-                    {t("aiNavigator.businessUnderControl")}
+                  <h2 className="mt-3 text-2xl font-black leading-tight tracking-tight text-midnight sm:text-3xl">
+                    Сигналы по кабинету
                   </h2>
-                  <p className="mt-3 max-w-2xl text-sm leading-6 text-white/75">
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
                     {t("aiNavigator.factBasedNotice")}
                   </p>
                 </div>
-                <div className="rounded-3xl bg-white/15 p-4 text-sm font-bold text-white/85">
+                <div className="rounded-2xl bg-slate-50 p-3 text-sm font-bold text-slate-600">
                   {isDataLoading ? t("common.loading") : t("aiNavigator.generatedFromCabinet")}
                 </div>
               </div>
 
-              <div className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="mt-5 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
                 <MetricTile label={t("aiNavigator.metric.leadsToday")} value={navigatorData.metrics.leadsToday} />
                 <MetricTile label={t("aiNavigator.metric.appointments")} value={navigatorData.metrics.appointmentsToday} />
                 <MetricTile label={t("aiNavigator.metric.overdueTasks")} value={navigatorData.metrics.overdueTasks} />
@@ -654,9 +654,9 @@ export function AIAssistantPage() {
 
 function MetricTile({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-3xl bg-white/15 p-4">
-      <p className="text-xs font-bold uppercase tracking-[0.14em] text-white/65">{label}</p>
-      <p className="mt-3 text-3xl font-black text-white">{value}</p>
+    <div className="rounded-3xl border border-slate-100 bg-slate-50/80 p-4">
+      <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{label}</p>
+      <p className="mt-3 text-3xl font-black text-midnight">{value}</p>
     </div>
   );
 }

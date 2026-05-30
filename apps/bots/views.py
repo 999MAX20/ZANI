@@ -212,6 +212,8 @@ class BotChannelViewSet(TenantModelViewSet):
         config = dict(channel.config_json or {})
         if "bot_token" in serializer.validated_data:
             config["bot_token"] = serializer.validated_data["bot_token"]
+            config["token_verified"] = False
+            config.pop("bot_username", None)
         if "webhook_secret" in serializer.validated_data:
             config["webhook_secret"] = serializer.validated_data["webhook_secret"]
         if config.get("bot_token") and not config.get("webhook_secret"):
@@ -278,6 +280,8 @@ class BotChannelViewSet(TenantModelViewSet):
             {
                 "status": channel.status,
                 "token_configured": bool(config.get("bot_token")),
+                "token_verified": bool(config.get("token_verified")),
+                "bot_username": config.get("bot_username", ""),
                 "webhook_secret_configured": bool(config.get("webhook_secret")),
                 "webhook_configured": bool(config.get("webhook_configured")),
                 "webhook_url": webhook_url,
@@ -297,7 +301,12 @@ class BotChannelViewSet(TenantModelViewSet):
         channel = self._get_telegram_channel()
         result = validate_telegram_token(channel)
         channel.status = BotChannel.Statuses.ACTIVE if result.get("ok") else BotChannel.Statuses.ERROR
-        channel.save(update_fields=["status", "updated_at"])
+        config = dict(channel.config_json or {})
+        config["token_verified"] = bool(result.get("ok"))
+        if result.get("ok") and result.get("bot", {}).get("username"):
+            config["bot_username"] = result["bot"]["username"]
+        channel.config_json = config
+        channel.save(update_fields=["config_json", "status", "updated_at"])
         connector_status = BusinessConnector.Statuses.CONNECTED if result.get("ok") else BusinessConnector.Statuses.FAILED
         sync_telegram_connector(
             channel,
@@ -308,7 +317,6 @@ class BotChannelViewSet(TenantModelViewSet):
         return Response(
             {
                 "ok": result.get("ok", False),
-                "mock": result.get("mock", False),
                 "reason": result.get("reason", ""),
                 "status": channel.status,
                 "token_configured": result.get("token_configured", False),

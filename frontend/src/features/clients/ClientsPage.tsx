@@ -355,11 +355,11 @@ export function ClientsPage() {
 
   return (
     <>
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-brand-600">Клиенты</p>
-          <h1 className="mt-2 text-4xl font-black tracking-tight text-midnight sm:text-5xl">Профиль клиента</h1>
-          <p className="mt-3 max-w-2xl text-lg text-slate-600">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-brand-600">Клиенты</p>
+          <h1 className="mt-1 text-3xl font-black tracking-tight text-midnight sm:text-4xl">Профиль клиента</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
             Список клиентов слева, рабочий профиль справа: история заявок, сделок, записей, сообщений и быстрые действия.
           </p>
         </div>
@@ -373,19 +373,19 @@ export function ClientsPage() {
         <div className="mt-4"><ErrorState message={getApiErrorMessage(mutation.error || mergeMutation.error || archiveMutation.error || addTagMutation.error || createSegmentMutation.error)} /></div>
       ) : null}
 
-      <section className="my-5 rounded-3xl border border-white/75 bg-white/82 p-4 shadow-sm">
-        <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_240px]">
+      <section className="my-4 rounded-3xl border border-white/75 bg-white/82 p-3 shadow-sm sm:p-4">
+        <div className="grid gap-2 xl:grid-cols-[minmax(0,1fr)_220px_220px]">
           <Input placeholder="Поиск по имени, телефону или email" value={search} onChange={(event) => setSearch(event.target.value)} />
           <Select value={selectedTag} onChange={(event) => setSelectedTag(event.target.value)} options={[{ value: "", label: "Все теги" }, ...tagList.map((tag) => ({ value: tag.id, label: tag.name }))]} />
-        </div>
-        <div className="mt-3 grid gap-3 xl:grid-cols-[240px_minmax(0,1fr)]">
           <Select value={selectedSegment} onChange={(event) => setSelectedSegment(event.target.value)} options={[{ value: "", label: "Все сегменты" }, ...segmentList.map((segment) => ({ value: segment.id, label: `${segment.name} (${segment.cached_count})` }))]} />
+        </div>
+        <div className="mt-2 grid gap-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)]">
           <div className="min-w-0 rounded-2xl border border-slate-100 bg-white/55 p-2">
             <FilterChips value={quickFilter} options={quickFilterOptions} onChange={setQuickFilter} />
           </div>
-        </div>
-        <div className="mt-3 rounded-2xl border border-slate-100 bg-white/55 p-2">
+          <div className="min-w-0 rounded-2xl border border-slate-100 bg-white/55 p-2">
             <FilterChips value={source} options={sourceOptions} onChange={setSource} />
+          </div>
         </div>
       </section>
 
@@ -398,7 +398,7 @@ export function ClientsPage() {
             </div>
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-500">{rows.length}</span>
           </div>
-          <div className="mt-2 max-h-[min(760px,calc(100vh-320px))] min-h-[420px] space-y-3 overflow-y-auto pr-1">
+          <div className="mt-2 max-h-[min(760px,calc(100vh-250px))] min-h-[420px] space-y-3 overflow-y-auto pr-1">
             {rows.map((client) => (
               <ClientListItem
                 key={client.id}

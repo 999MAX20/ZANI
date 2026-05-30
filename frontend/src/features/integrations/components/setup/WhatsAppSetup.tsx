@@ -9,6 +9,7 @@ import { Button } from "../../../../components/ui/Button";
 import { ErrorState } from "../../../../components/ui/StateViews";
 import { Input } from "../../../../components/ui/Input";
 import type { Bot, BotChannel, Id } from "../../../../types";
+import { MessengerSetupShell } from "./IntegrationSetupUi";
 import { loadFacebookSdk, parseWhatsAppEmbeddedSignupMessage, type WhatsAppEmbeddedSignupCallback } from "./metaCallbacks";
 
 export function WhatsAppInlineSetup({
@@ -79,7 +80,7 @@ export function WhatsAppInlineSetup({
       });
     },
     onSuccess: () => {
-      setNotice("WhatsApp channel создан. Теперь нажмите «Подключить через Meta».");
+      setNotice("Канал создан. Теперь подключите WhatsApp через Meta.");
       queryClient.invalidateQueries({ queryKey: ["bots"] });
       queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
     },
@@ -125,7 +126,7 @@ export function WhatsAppInlineSetup({
       setSignupState(data.state);
       setSignupRedirectUri(data.redirect_uri);
       if (!data.app_configured || !data.config_id_configured) {
-        setNotice("Meta app env не настроен. Проверьте META_APP_ID/META_APP_SECRET/WHATSAPP_EMBEDDED_SIGNUP_CONFIG_ID.");
+        setNotice("Не удалось открыть подключение через Meta. Обратитесь в поддержку ZANI.");
         return;
       }
 
@@ -135,11 +136,11 @@ export function WhatsAppInlineSetup({
           (response) => {
             const code = response.authResponse?.code;
             if (!code) {
-              setNotice("Meta Embedded Signup не вернул code. Проверьте popup и разрешения Meta app.");
+              setNotice("Meta не подтвердила доступ. Попробуйте подключить WhatsApp еще раз.");
               return;
             }
             setSignupCode(code);
-            setNotice("Meta вернула code. Дождитесь Phone number ID/WABA ID или заполните их вручную из WhatsApp Manager.");
+            setNotice("Meta подтвердила доступ. Завершите подключение.");
           },
           {
             config_id: data.config_id,
@@ -153,7 +154,7 @@ export function WhatsAppInlineSetup({
           },
         );
       } catch {
-        setNotice("Facebook SDK недоступен, открыт OAuth fallback. После завершения popup вернёт code/state.");
+        setNotice("Открылось резервное окно подключения Meta. Завершите вход и вернитесь в ZANI.");
         window.open(data.authorization_url, "zani_whatsapp_meta_signup", "width=720,height=820");
       }
     },
@@ -174,15 +175,28 @@ export function WhatsAppInlineSetup({
       setSignupPhoneNumberId("");
       setSignupWabaId("");
       setSignupDisplayPhone("");
-      setNotice("WhatsApp подключен через Meta Embedded Signup.");
+      setNotice("WhatsApp подключен.");
       queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
       queryClient.invalidateQueries({ queryKey: ["whatsapp-status", channel?.id] });
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
     },
   });
+  const toggleChannel = useMutation({
+    mutationFn: (nextStatus: BotChannel["status"]) => {
+      if (!channel) throw new Error("Channel is required.");
+      return botChannelsApi.update({ id: channel.id, payload: { status: nextStatus } });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
+      queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
+    },
+  });
 
-  const error = ensureChannel.error || saveCredentials.error || testConnection.error || startEmbeddedSignup.error || completeEmbeddedSignup.error || status.error;
+  const error = ensureChannel.error || saveCredentials.error || testConnection.error || startEmbeddedSignup.error || completeEmbeddedSignup.error || toggleChannel.error || status.error;
   const credentialsConfigured = Boolean(status.data?.phone_number_id_configured && status.data?.access_token_configured);
+  const hasSignupResult = Boolean(signupCode || signupPhoneNumberId);
+  const connectionStatus = credentialsConfigured ? "Подключено" : hasSignupResult ? "Завершите подключение" : "Не подключено";
+  const connectionTone = credentialsConfigured ? "success" : hasSignupResult ? "progress" : "neutral";
 
   if (!channel) {
     return (
@@ -197,60 +211,24 @@ export function WhatsAppInlineSetup({
   }
 
   return (
-    <div className="w-full space-y-4 rounded-3xl border border-slate-100 bg-slate-50/70 p-4">
-      {error ? <ErrorState message={getApiErrorMessage(error)} /> : null}
-      {notice ? <div className="rounded-2xl bg-green-50 px-3 py-2 text-sm font-semibold text-green-800">{notice}</div> : null}
-
-      <div className="grid gap-2 sm:grid-cols-3">
-        <div className="rounded-2xl bg-white p-3">
-          <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Номер</p>
-          <p className="mt-1 text-sm font-black text-midnight">{status.data?.phone_number_id_configured ? "Сохранен" : "Нужен"}</p>
-        </div>
-        <div className="rounded-2xl bg-white p-3">
-          <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Доступ</p>
-          <p className="mt-1 text-sm font-black text-midnight">{status.data?.access_token_configured ? "Сохранен" : "Нужен"}</p>
-        </div>
-        <div className="rounded-2xl bg-white p-3">
-          <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Сообщения</p>
-          <p className="mt-1 text-sm font-black text-midnight">{status.data?.verify_token_configured ? "Готов" : "Env"}</p>
-        </div>
-      </div>
-
-      <div className="rounded-3xl border border-green-100 bg-green-50 p-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <p className="text-sm font-black text-green-950">Подключение через Meta</p>
-            <p className="mt-1 text-sm font-semibold leading-6 text-green-800">
-              Мерчант входит в Meta, выбирает бизнес-аккаунт WhatsApp и номер. ZANI сам сохранит доступ и проверит подключение.
-            </p>
-          </div>
-          <Button type="button" disabled={!canManage} isLoading={startEmbeddedSignup.isPending} onClick={() => startEmbeddedSignup.mutate()}>
-            <ExternalLink size={16} /> Подключить через Meta
-          </Button>
-        </div>
-        {signupCode || signupPhoneNumberId ? (
-          <div className="mt-4 rounded-2xl bg-white/70 p-3">
-            <p className="text-sm font-black text-green-950">Meta вернула данные. Завершите подключение.</p>
-          </div>
-        ) : null}
-        <div className="mt-3">
-          <Button
-            type="button"
-            variant="secondary"
-            disabled={!canManage || !signupCode.trim() || !signupState.trim() || !signupPhoneNumberId.trim()}
-            isLoading={completeEmbeddedSignup.isPending}
-            onClick={() => completeEmbeddedSignup.mutate()}
-          >
-            <ShieldCheck size={16} /> Завершить подключение
-          </Button>
-        </div>
-      </div>
-
-      <button type="button" className="text-sm font-black text-brand-700" onClick={() => setShowManualSetup((value) => !value)}>
-        {showManualSetup ? "Скрыть ручное подключение" : "Ручное подключение для поддержки"}
-      </button>
-      {showManualSetup ? (
-        <div className="space-y-3 rounded-3xl border border-slate-100 bg-white p-4">
+    <MessengerSetupShell
+      logo="/integrations_logos/whatsapp.png"
+      title="WhatsApp"
+      description="Подтвердите доступ в Meta, чтобы ZANI принимал и отправлял сообщения через WhatsApp Business."
+      status={connectionStatus}
+      statusTone={connectionTone}
+      notice={notice}
+      error={error ? <ErrorState message={getApiErrorMessage(error)} /> : null}
+      canManage={canManage}
+      inboxChannel="whatsapp"
+      channelToggleVisible={credentialsConfigured}
+      channelEnabled={channel.status === "active"}
+      channelToggleLoading={toggleChannel.isPending}
+      onToggleChannel={(checked) => toggleChannel.mutate(checked ? "active" : "paused")}
+      advancedOpen={showManualSetup}
+      onToggleAdvanced={() => setShowManualSetup((value) => !value)}
+      advanced={
+        <div className="space-y-3">
           <div className="grid gap-3 md:grid-cols-2">
             <Input label="Phone number ID" value={phoneNumberId} onChange={(event) => setPhoneNumberId(event.target.value)} placeholder={status.data?.phone_number_id_configured ? "Phone number ID уже сохранен" : "1234567890"} />
             <Input label="Access token хранится приватно" value={accessToken} onChange={(event) => setAccessToken(event.target.value)} placeholder={status.data?.access_token_configured ? "Token уже сохранен. Вставьте новый только для замены." : "EAAG..."} type="password" autoComplete="off" />
@@ -266,11 +244,38 @@ export function WhatsAppInlineSetup({
             </Button>
           </div>
         </div>
+      }
+    >
+      {!credentialsConfigured ? (
+        <div className="space-y-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="min-w-0">
+              <p className="text-sm font-black text-midnight">Подключение через Meta</p>
+              <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">
+                Войдите в Meta и выберите WhatsApp Business аккаунт вашей компании.
+              </p>
+            </div>
+            <Button type="button" disabled={!canManage} isLoading={startEmbeddedSignup.isPending} onClick={() => startEmbeddedSignup.mutate()}>
+              <ExternalLink size={16} /> Подключить через Meta
+            </Button>
+          </div>
+          {hasSignupResult ? (
+            <div className="rounded-2xl bg-blue-50 p-3">
+              <p className="text-sm font-black text-blue-950">Meta подтвердила доступ. Завершите подключение.</p>
+            </div>
+          ) : null}
+          {hasSignupResult ? (
+            <Button
+              type="button"
+              disabled={!canManage || !signupCode.trim() || !signupState.trim() || !signupPhoneNumberId.trim()}
+              isLoading={completeEmbeddedSignup.isPending}
+              onClick={() => completeEmbeddedSignup.mutate()}
+            >
+              <ShieldCheck size={16} /> Завершить подключение
+            </Button>
+          ) : null}
+        </div>
       ) : null}
-
-      <p className="text-xs font-semibold leading-5 text-slate-500">
-        Webhook URL: {status.data?.webhook_url || "/api/integrations/whatsapp/webhook/"}. Verify token и App Secret задаются в production .env.
-      </p>
-    </div>
+    </MessengerSetupShell>
   );
 }

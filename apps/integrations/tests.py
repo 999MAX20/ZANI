@@ -166,17 +166,17 @@ class TelegramIntegrationSkeletonTests(TestCase):
         self.assertEqual(conversation.external_user_id, "778")
 
     @override_settings(TELEGRAM_ENABLED=False)
-    def test_outbound_send_is_mock_when_disabled(self):
+    def test_outbound_send_fails_closed_when_disabled(self):
         result = send_telegram_message(self.channel, chat_id="777", text="Hello")
 
-        self.assertTrue(result["ok"])
-        self.assertTrue(result["mock"])
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["reason"], "Telegram integration is disabled.")
         self.assertTrue(
             IntegrationEventLog.objects.filter(
                 business=self.business,
                 provider="telegram",
                 direction=IntegrationEventLog.Directions.OUTBOUND,
-                status=IntegrationEventLog.Statuses.MOCKED,
+                status=IntegrationEventLog.Statuses.FAILED,
             ).exists()
         )
 
@@ -190,7 +190,7 @@ class TelegramIntegrationSkeletonTests(TestCase):
         self.assertTrue(IntegrationEventLog.objects.filter(provider="whatsapp", status=IntegrationEventLog.Statuses.MOCKED).exists())
 
     @override_settings(TELEGRAM_ENABLED=False)
-    def test_merchant_can_configure_telegram_and_set_mock_webhook(self):
+    def test_merchant_can_configure_telegram_but_disabled_provider_does_not_connect_webhook(self):
         self.api.force_authenticate(self.owner)
 
         config_response = self.api.post(
@@ -215,18 +215,18 @@ class TelegramIntegrationSkeletonTests(TestCase):
         self.assertEqual(status_response.status_code, 200)
         self.assertTrue(status_response.data["webhook_secret_configured"])
         self.assertEqual(webhook_response.status_code, 200)
-        self.assertTrue(webhook_response.data["mock"])
+        self.assertFalse(webhook_response.data["ok"])
         status_response_after_webhook = self.api.get(f"/api/bot-channels/{self.channel.id}/telegram-status/")
-        self.assertTrue(status_response_after_webhook.data["webhook_configured"])
-        self.assertEqual(status_response_after_webhook.data["last_outbound_status"], IntegrationEventLog.Statuses.MOCKED)
-        log = IntegrationEventLog.objects.filter(provider="telegram", status=IntegrationEventLog.Statuses.MOCKED).latest("created_at")
+        self.assertFalse(status_response_after_webhook.data["webhook_configured"])
+        self.assertEqual(status_response_after_webhook.data["last_outbound_status"], IntegrationEventLog.Statuses.FAILED)
+        log = IntegrationEventLog.objects.filter(provider="telegram", status=IntegrationEventLog.Statuses.FAILED).latest("created_at")
         self.assertNotIn("secret-token", str(log.payload_json))
         connector = BusinessConnector.objects.get(
             business=self.business,
             provider=BusinessConnector.Providers.TELEGRAM,
             name="Telegram",
         )
-        self.assertEqual(connector.status, BusinessConnector.Statuses.CONNECTED)
+        self.assertEqual(connector.status, BusinessConnector.Statuses.FAILED)
         self.assertTrue(connector.config_json["token_configured"])
         self.assertTrue(connector.config_json["webhook_secret_configured"])
         self.assertEqual(connector.config_json["bot_channel_id"], self.channel.id)
@@ -260,26 +260,24 @@ class TelegramIntegrationSkeletonTests(TestCase):
         self.assertEqual(response.data["last_inbound_status"], IntegrationEventLog.Statuses.PROCESSED)
 
     @override_settings(TELEGRAM_ENABLED=False)
-    def test_telegram_test_connection_uses_controlled_mock_without_leaking_token(self):
+    def test_telegram_test_connection_fails_closed_without_leaking_token_when_disabled(self):
         self.api.force_authenticate(self.owner)
 
         response = self.api.post(f"/api/bot-channels/{self.channel.id}/telegram-test-connection/")
 
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.data["ok"])
-        self.assertTrue(response.data["mock"])
+        self.assertFalse(response.data["ok"])
         self.assertTrue(response.data["token_configured"])
         self.assertNotIn("merchant-token", str(response.data))
         self.channel.refresh_from_db()
-        self.assertEqual(self.channel.status, BotChannel.Statuses.ACTIVE)
+        self.assertEqual(self.channel.status, BotChannel.Statuses.ERROR)
         connector = BusinessConnector.objects.get(
             business=self.business,
             provider=BusinessConnector.Providers.TELEGRAM,
             name="Telegram",
         )
-        self.assertEqual(connector.status, BusinessConnector.Statuses.CONNECTED)
-        self.assertEqual(connector.last_error, "")
-        self.assertIsNotNone(connector.connected_at)
+        self.assertEqual(connector.status, BusinessConnector.Statuses.FAILED)
+        self.assertEqual(connector.last_error, "Telegram integration is disabled.")
         self.assertNotIn("merchant-token", str(connector.config_json))
 
     @override_settings(TELEGRAM_ENABLED=False)
@@ -296,9 +294,9 @@ class TelegramIntegrationSkeletonTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         connector.refresh_from_db()
-        self.assertEqual(response.data["status"], "succeeded")
-        self.assertEqual(connector.status, BusinessConnector.Statuses.CONNECTED)
-        self.assertEqual(connector.last_error, "")
+        self.assertEqual(response.data["status"], "failed")
+        self.assertEqual(connector.status, BusinessConnector.Statuses.FAILED)
+        self.assertEqual(connector.last_error, "Telegram integration is disabled.")
 
     @override_settings(TELEGRAM_ENABLED=True, TELEGRAM_BASE_API_URL="https://api.telegram.test")
     def test_set_telegram_webhook_sends_channel_secret_token(self):
@@ -348,13 +346,13 @@ class TelegramIntegrationSkeletonTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 201)
-        self.assertEqual(response.data["status"], BotMessage.Statuses.QUEUED)
+        self.assertEqual(response.data["status"], BotMessage.Statuses.FAILED)
         self.assertTrue(
             IntegrationEventLog.objects.filter(
                 business=self.business,
                 provider="telegram",
                 direction=IntegrationEventLog.Directions.OUTBOUND,
-                status=IntegrationEventLog.Statuses.MOCKED,
+                status=IntegrationEventLog.Statuses.FAILED,
             ).exists()
         )
 

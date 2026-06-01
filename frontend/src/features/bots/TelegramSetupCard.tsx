@@ -10,12 +10,14 @@ import { Card, CardBody } from "../../components/ui/Card";
 import { Input } from "../../components/ui/Input";
 import { ErrorState } from "../../components/ui/StateViews";
 import type { BotChannel } from "../../types";
+import { useI18n } from "../../lib/i18n";
 
 type TelegramSetupCardProps = {
   channel?: BotChannel;
 };
 
 export function TelegramSetupCard({ channel }: TelegramSetupCardProps) {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const [botToken, setBotToken] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
@@ -35,7 +37,7 @@ export function TelegramSetupCard({ channel }: TelegramSetupCardProps) {
     mutationFn: () => telegramChannelApi.configure({ channelId: Number(channel?.id), botToken }),
     onSuccess: (data) => {
       setBotToken("");
-      setNotice(data.token_configured ? "Token сохранен. Теперь проверьте подключение." : "Token очищен.");
+      setNotice(data.token_configured ? t("telegramSetup.tokenSaved") : t("telegramSetup.tokenCleared"));
       queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
       queryClient.invalidateQueries({ queryKey: ["telegram-status", channel?.id] });
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
@@ -45,7 +47,7 @@ export function TelegramSetupCard({ channel }: TelegramSetupCardProps) {
   const testConnection = useMutation({
     mutationFn: () => telegramChannelApi.testConnection(Number(channel?.id)),
     onSuccess: (data) => {
-      setNotice(data.ok ? "Telegram token проверен." : data.reason || "Telegram token не прошел проверку.");
+      setNotice(data.ok ? t("telegramSetup.connectionChecked") : data.reason || t("telegramSetup.connectionFailed"));
       queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
       queryClient.invalidateQueries({ queryKey: ["telegram-status", channel?.id] });
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
@@ -58,7 +60,7 @@ export function TelegramSetupCard({ channel }: TelegramSetupCardProps) {
       return telegramChannelApi.setWebhook({ channelId: Number(channel?.id), webhookUrl: current.webhook_url });
     },
     onSuccess: (data) => {
-      setNotice(data.ok ? "Webhook подключен. Напишите сообщение боту и проверьте Inbox." : data.reason || "Webhook не подключен.");
+      setNotice(data.ok ? t("telegramSetup.inboxConnected") : data.reason || t("telegramSetup.inboxFailed"));
       queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
       queryClient.invalidateQueries({ queryKey: ["telegram-status", channel?.id] });
       queryClient.invalidateQueries({ queryKey: ["integration-event-logs"] });
@@ -79,7 +81,7 @@ export function TelegramSetupCard({ channel }: TelegramSetupCardProps) {
           </div>
           <div>
             <h2 className="text-lg font-bold text-midnight">Telegram</h2>
-            <p className="text-sm text-slate-500">Подключение бота мерчанта к Inbox и AI pipeline.</p>
+            <p className="text-sm text-slate-500">{t("telegramSetup.description")}</p>
           </div>
         </div>
 
@@ -93,55 +95,55 @@ export function TelegramSetupCard({ channel }: TelegramSetupCardProps) {
         {channel ? (
           <div className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-3">
-              <HealthPill label="Token" value={status.data?.token_configured ? "Сохранен" : "Нужен"} good={status.data?.token_configured} />
-              <HealthPill label="Secret" value={status.data?.webhook_secret_configured ? "Готов" : "Создастся"} good={status.data?.webhook_secret_configured} />
-              <HealthPill label="Webhook" value={status.data?.webhook_configured ? "Подключен" : "Не подключен"} good={status.data?.webhook_configured} />
+              <HealthPill label={t("telegramSetup.key")} value={status.data?.token_configured ? t("telegramSetup.saved") : t("telegramSetup.needed")} good={status.data?.token_configured} />
+              <HealthPill label={t("telegramSetup.protection")} value={status.data?.webhook_secret_configured ? t("telegramSetup.ready") : t("telegramSetup.willConfigure")} good={status.data?.webhook_secret_configured} />
+              <HealthPill label={t("telegramSetup.inbox")} value={status.data?.webhook_configured ? t("telegramSetup.connected") : t("telegramSetup.notConnected")} good={status.data?.webhook_configured} />
             </div>
 
             <div className="rounded-3xl border border-blue-100 bg-blue-50 p-4">
-              <p className="text-sm font-bold text-blue-950">BotFather token</p>
+              <p className="text-sm font-bold text-blue-950">{t("telegramSetup.botKey")}</p>
               <p className="mt-1 text-sm leading-6 text-blue-900">
-                Создайте бота в @BotFather, вставьте token сюда и запустите проверку. Token не будет показан повторно.
+                {t("telegramSetup.botKeyText")}
               </p>
               <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_auto]">
                 <Input
                   value={botToken}
                   onChange={(event) => setBotToken(event.target.value)}
-                  placeholder="123456789:AA..."
+                  placeholder={t("telegramSetup.botKeyPlaceholder")}
                   type="password"
                   autoComplete="off"
                 />
                 <Button type="button" disabled={!canSave} isLoading={saveToken.isPending} onClick={() => saveToken.mutate()}>
-                  <ShieldCheck size={16} /> Сохранить
+                  <ShieldCheck size={16} /> {t("common.save")}
                 </Button>
               </div>
             </div>
 
             <div className="flex flex-wrap gap-2">
               <Button type="button" variant="secondary" onClick={() => testConnection.mutate()} isLoading={testConnection.isPending} disabled={!status.data?.token_configured}>
-                <Radio size={16} /> Проверить token
+                <Radio size={16} /> {t("telegramSetup.checkKey")}
               </Button>
               <Button type="button" onClick={() => setWebhook.mutate()} isLoading={setWebhook.isPending || status.isFetching} disabled={!status.data?.token_configured}>
-                <CheckCircle2 size={16} /> Подключить webhook
+                <CheckCircle2 size={16} /> {t("telegramSetup.connectInbox")}
               </Button>
               <Button type="button" variant="ghost" onClick={() => status.refetch()} isLoading={status.isFetching}>
-                <Radio size={16} /> Статус
+                <Radio size={16} /> {t("pricing.status")}
               </Button>
               <Link to="/dashboard/conversations?channel=telegram">
                 <Button type="button" variant="ghost">
-                  <ExternalLink size={16} /> Inbox
+                  <ExternalLink size={16} /> {t("nav.conversations")}
                 </Button>
               </Link>
             </div>
 
             {isReady ? (
               <div className="rounded-3xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">
-                Telegram готов. Отправьте сообщение боту от лица клиента и проверьте входящий диалог в Inbox.
+                {t("telegramSetup.readyNotice")}
               </div>
             ) : null}
 
             <div className="rounded-3xl bg-slate-50 p-4">
-              <p className="mb-3 text-sm font-bold text-midnight">Последние события</p>
+              <p className="mb-3 text-sm font-bold text-midnight">{t("telegramSetup.latestEvents")}</p>
               <div className="space-y-2">
                 {(logs.data || []).slice(0, 5).map((log) => (
                   <div key={log.id} className="rounded-2xl bg-white p-3 text-sm">
@@ -152,13 +154,13 @@ export function TelegramSetupCard({ channel }: TelegramSetupCardProps) {
                     {log.error ? <p className="mt-1 text-xs font-semibold text-red-600">{log.error}</p> : null}
                   </div>
                 ))}
-                {!logs.isLoading && !(logs.data || []).length ? <p className="text-sm text-slate-500">Событий пока нет.</p> : null}
+                {!logs.isLoading && !(logs.data || []).length ? <p className="text-sm text-slate-500">{t("telegramSetup.noEvents")}</p> : null}
               </div>
             </div>
           </div>
         ) : (
           <div className="rounded-3xl border border-dashed border-slate-200 bg-white/70 p-6 text-sm text-slate-500">
-            Сначала добавьте Telegram channel для этого бота.
+            {t("telegramSetup.addChannelFirst")}
           </div>
         )}
       </CardBody>

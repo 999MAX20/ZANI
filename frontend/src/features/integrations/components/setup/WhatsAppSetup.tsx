@@ -8,6 +8,7 @@ import { getApiErrorMessage } from "../../../../api/client";
 import { Button } from "../../../../components/ui/Button";
 import { ErrorState } from "../../../../components/ui/StateViews";
 import { Input } from "../../../../components/ui/Input";
+import { useI18n } from "../../../../lib/i18n";
 import type { Bot, BotChannel, Id } from "../../../../types";
 import { MessengerSetupShell } from "./IntegrationSetupUi";
 import { loadFacebookSdk, parseWhatsAppEmbeddedSignupMessage, type WhatsAppEmbeddedSignupCallback } from "./metaCallbacks";
@@ -23,6 +24,7 @@ export function WhatsAppInlineSetup({
   canManage: boolean;
   channel?: BotChannel;
 }) {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const [phoneNumberId, setPhoneNumberId] = useState("");
   const [accessToken, setAccessToken] = useState("");
@@ -44,7 +46,7 @@ export function WhatsAppInlineSetup({
       if (payload.phone_number_id) setSignupPhoneNumberId(payload.phone_number_id);
       if (payload.waba_id) setSignupWabaId(payload.waba_id);
       if (payload.display_phone_number) setSignupDisplayPhone(payload.display_phone_number);
-      setNotice("Meta вернула данные подключения. Проверьте поля и завершите подключение.");
+      setNotice(t("integrations.whatsapp.metaDataReturned"));
     };
 
     const handleMessage = (event: MessageEvent) => {
@@ -54,7 +56,7 @@ export function WhatsAppInlineSetup({
 
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, []);
+  }, [t]);
 
   const status = useQuery({
     queryKey: ["whatsapp-status", channel?.id],
@@ -80,7 +82,7 @@ export function WhatsAppInlineSetup({
       });
     },
     onSuccess: () => {
-      setNotice("Канал создан. Теперь подключите WhatsApp через Meta.");
+      setNotice(t("integrations.whatsapp.channelCreated"));
       queryClient.invalidateQueries({ queryKey: ["bots"] });
       queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
     },
@@ -100,7 +102,7 @@ export function WhatsAppInlineSetup({
       setAccessToken("");
       setBusinessAccountId("");
       setDisplayPhoneNumber("");
-      setNotice("Доступ WhatsApp сохранен приватно. Теперь проверьте подключение.");
+      setNotice(t("integrations.whatsapp.accessSaved"));
       queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
       queryClient.invalidateQueries({ queryKey: ["whatsapp-status", channel?.id] });
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
@@ -110,7 +112,7 @@ export function WhatsAppInlineSetup({
   const testConnection = useMutation({
     mutationFn: () => whatsappChannelApi.testConnection(Number(channel?.id)),
     onSuccess: (data) => {
-      setNotice(data.ok ? "WhatsApp подключение проверено." : data.reason || "WhatsApp доступ не прошел проверку.");
+      setNotice(data.ok ? t("integrations.whatsapp.connectionChecked") : data.reason || t("integrations.whatsapp.connectionCheckFailed"));
       queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
       queryClient.invalidateQueries({ queryKey: ["whatsapp-status", channel?.id] });
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
@@ -126,7 +128,7 @@ export function WhatsAppInlineSetup({
       setSignupState(data.state);
       setSignupRedirectUri(data.redirect_uri);
       if (!data.app_configured || !data.config_id_configured) {
-        setNotice("Не удалось открыть подключение через Meta. Обратитесь в поддержку ZANI.");
+        setNotice(t("integrations.whatsapp.metaOpenFailed"));
         return;
       }
 
@@ -136,11 +138,11 @@ export function WhatsAppInlineSetup({
           (response) => {
             const code = response.authResponse?.code;
             if (!code) {
-              setNotice("Meta не подтвердила доступ. Попробуйте подключить WhatsApp еще раз.");
+              setNotice(t("integrations.whatsapp.metaAccessDenied"));
               return;
             }
             setSignupCode(code);
-            setNotice("Meta подтвердила доступ. Завершите подключение.");
+            setNotice(t("integrations.whatsapp.metaConfirmed"));
           },
           {
             config_id: data.config_id,
@@ -154,7 +156,7 @@ export function WhatsAppInlineSetup({
           },
         );
       } catch {
-        setNotice("Открылось резервное окно подключения Meta. Завершите вход и вернитесь в ZANI.");
+        setNotice(t("integrations.whatsapp.metaFallbackOpened"));
         window.open(data.authorization_url, "zani_whatsapp_meta_signup", "width=720,height=820");
       }
     },
@@ -175,7 +177,7 @@ export function WhatsAppInlineSetup({
       setSignupPhoneNumberId("");
       setSignupWabaId("");
       setSignupDisplayPhone("");
-      setNotice("WhatsApp подключен.");
+      setNotice(t("integrations.whatsapp.connectedNotice"));
       queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
       queryClient.invalidateQueries({ queryKey: ["whatsapp-status", channel?.id] });
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
@@ -195,7 +197,11 @@ export function WhatsAppInlineSetup({
   const error = ensureChannel.error || saveCredentials.error || testConnection.error || startEmbeddedSignup.error || completeEmbeddedSignup.error || toggleChannel.error || status.error;
   const credentialsConfigured = Boolean(status.data?.phone_number_id_configured && status.data?.access_token_configured);
   const hasSignupResult = Boolean(signupCode || signupPhoneNumberId);
-  const connectionStatus = credentialsConfigured ? "Подключено" : hasSignupResult ? "Завершите подключение" : "Не подключено";
+  const connectionStatus = credentialsConfigured
+    ? t("integrations.status.connected")
+    : hasSignupResult
+      ? t("integrations.whatsapp.finishConnection")
+      : t("integrations.status.notConnected");
   const connectionTone = credentialsConfigured ? "success" : hasSignupResult ? "progress" : "neutral";
 
   if (!channel) {
@@ -204,7 +210,7 @@ export function WhatsAppInlineSetup({
         {error ? <ErrorState message={getApiErrorMessage(error)} /> : null}
         {notice ? <div className="rounded-2xl bg-green-50 px-3 py-2 text-sm font-semibold text-green-800">{notice}</div> : null}
         <Button type="button" disabled={!canManage} isLoading={ensureChannel.isPending} onClick={() => ensureChannel.mutate()}>
-          <Send size={16} /> Создать WhatsApp channel
+          <Send size={16} /> {t("integrations.whatsapp.createChannel")}
         </Button>
       </div>
     );
@@ -214,7 +220,7 @@ export function WhatsAppInlineSetup({
     <MessengerSetupShell
       logo="/integrations_logos/whatsapp.png"
       title="WhatsApp"
-      description="Подтвердите доступ в Meta, чтобы ZANI принимал и отправлял сообщения через WhatsApp Business."
+      description={t("integrations.whatsapp.inlineDescription")}
       status={connectionStatus}
       statusTone={connectionTone}
       notice={notice}
@@ -230,17 +236,17 @@ export function WhatsAppInlineSetup({
       advanced={
         <div className="space-y-3">
           <div className="grid gap-3 md:grid-cols-2">
-            <Input label="Phone number ID" value={phoneNumberId} onChange={(event) => setPhoneNumberId(event.target.value)} placeholder={status.data?.phone_number_id_configured ? "Phone number ID уже сохранен" : "1234567890"} />
-            <Input label="Access token хранится приватно" value={accessToken} onChange={(event) => setAccessToken(event.target.value)} placeholder={status.data?.access_token_configured ? "Token уже сохранен. Вставьте новый только для замены." : "EAAG..."} type="password" autoComplete="off" />
-            <Input label="WABA ID" value={businessAccountId} onChange={(event) => setBusinessAccountId(event.target.value)} placeholder="Опционально" />
-            <Input label="Display phone" value={displayPhoneNumber} onChange={(event) => setDisplayPhoneNumber(event.target.value)} placeholder="+770..." />
+            <Input label={t("integrations.whatsapp.phoneNumberId")} value={phoneNumberId} onChange={(event) => setPhoneNumberId(event.target.value)} placeholder={status.data?.phone_number_id_configured ? t("integrations.whatsapp.phoneNumberIdSaved") : "1234567890"} />
+            <Input label={t("integrations.card.accessKey")} value={accessToken} onChange={(event) => setAccessToken(event.target.value)} placeholder={status.data?.access_token_configured ? t("integrations.card.accessKeyReplacePlaceholder") : t("integrations.card.accessKeyPlaceholder")} type="password" autoComplete="off" />
+            <Input label={t("integrations.whatsapp.businessAccountId")} value={businessAccountId} onChange={(event) => setBusinessAccountId(event.target.value)} placeholder={t("common.optional")} />
+            <Input label={t("integrations.whatsapp.customerPhoneNumber")} value={displayPhoneNumber} onChange={(event) => setDisplayPhoneNumber(event.target.value)} placeholder="+770..." />
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             <Button type="button" disabled={!canManage || (!phoneNumberId.trim() && !accessToken.trim())} isLoading={saveCredentials.isPending} onClick={() => saveCredentials.mutate()}>
-              <ShieldCheck size={16} /> {credentialsConfigured ? "Обновить доступ" : "Сохранить доступ"}
+              <ShieldCheck size={16} /> {credentialsConfigured ? t("integrations.whatsapp.updateAccess") : t("integrations.whatsapp.saveAccess")}
             </Button>
             <Button type="button" variant="secondary" disabled={!canManage || !credentialsConfigured} isLoading={testConnection.isPending} onClick={() => testConnection.mutate()}>
-              <RefreshCw size={16} /> Проверить
+              <RefreshCw size={16} /> {t("integrations.card.check")}
             </Button>
           </div>
         </div>
@@ -250,18 +256,18 @@ export function WhatsAppInlineSetup({
         <div className="space-y-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
-              <p className="text-sm font-black text-midnight">Подключение через Meta</p>
+              <p className="text-sm font-black text-midnight">{t("integrations.whatsapp.metaConnection")}</p>
               <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">
-                Войдите в Meta и выберите WhatsApp Business аккаунт вашей компании.
+                {t("integrations.whatsapp.metaDescription")}
               </p>
             </div>
             <Button type="button" disabled={!canManage} isLoading={startEmbeddedSignup.isPending} onClick={() => startEmbeddedSignup.mutate()}>
-              <ExternalLink size={16} /> Подключить через Meta
+              <ExternalLink size={16} /> {t("integrations.whatsapp.connectWithMeta")}
             </Button>
           </div>
           {hasSignupResult ? (
             <div className="rounded-2xl bg-blue-50 p-3">
-              <p className="text-sm font-black text-blue-950">Meta подтвердила доступ. Завершите подключение.</p>
+              <p className="text-sm font-black text-blue-950">{t("integrations.whatsapp.metaConfirmed")}</p>
             </div>
           ) : null}
           {hasSignupResult ? (
@@ -271,7 +277,7 @@ export function WhatsAppInlineSetup({
               isLoading={completeEmbeddedSignup.isPending}
               onClick={() => completeEmbeddedSignup.mutate()}
             >
-              <ShieldCheck size={16} /> Завершить подключение
+              <ShieldCheck size={16} /> {t("integrations.whatsapp.completeConnection")}
             </Button>
           ) : null}
         </div>

@@ -1,5 +1,5 @@
 from apps.integrations.models import IntegrationEventLog
-from apps.integrations.sanitization import sanitize_config
+from apps.integrations.sanitization import sanitize_config, sanitize_error_text
 
 
 class BaseChannelProvider:
@@ -22,5 +22,5 @@ class BaseChannelProvider:
             direction=direction,
             payload_json=sanitize_config(payload or {}),
             status=status,
-            error=error,
+            error=sanitize_error_text(error),
         )

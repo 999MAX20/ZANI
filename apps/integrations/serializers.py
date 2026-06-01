@@ -1,6 +1,7 @@
 from urllib.parse import urlparse
 
 from django.conf import settings
+from django.utils import timezone
 from rest_framework import serializers
 
 from apps.businesses.models import Business
@@ -15,9 +16,14 @@ from apps.integrations.models import (
     WebhookDeliveryLog,
     WebhookEndpoint,
 )
-from apps.integrations.sanitization import sanitize_config
+from apps.integrations.sanitization import sanitize_config, sanitize_error_text
 from apps.integrations.webhooks import validate_outbound_webhook_url
 from apps.integrations.whatsapp.base import build_whatsapp_provider_decision
+
+
+API_TOKEN_ALLOWED_SCOPES = {"clients:read"}
+API_TOKEN_DEFAULT_LIFETIME_DAYS = 90
+API_TOKEN_MAX_LIFETIME_DAYS = 90
 
 
 def _url_origin(value):
@@ -74,6 +80,7 @@ class IntegrationEventLogSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data["payload_json"] = sanitize_config(data.get("payload_json") or {})
+        data["error"] = sanitize_error_text(data.get("error"))
         return data
 
 
@@ -134,6 +141,7 @@ class BusinessConnectorSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data["config_json"] = sanitize_config(data.get("config_json") or {})
+        data["last_error"] = sanitize_error_text(data.get("last_error"))
         return data
 
     def validate_config_json(self, value):
@@ -403,6 +411,7 @@ class BusinessEventSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data["payload_json"] = sanitize_config(data.get("payload_json") or {})
+        data["error"] = sanitize_error_text(data.get("error"))
         return data
 
 
@@ -426,6 +435,11 @@ class ConnectorSyncRunSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = fields
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["error"] = sanitize_error_text(data.get("error"))
+        return data
 
 
 class ApiTokenSerializer(serializers.ModelSerializer):
@@ -454,7 +468,26 @@ class ApiTokenSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("At least one API token scope is required.")
         if any(not isinstance(scope, str) or not scope.strip() for scope in value):
             raise serializers.ValidationError("API token scopes must be non-empty strings.")
-        return [scope.strip() for scope in value]
+        scopes = sorted({scope.strip() for scope in value})
+        unknown_scopes = [scope for scope in scopes if scope not in API_TOKEN_ALLOWED_SCOPES]
+        if unknown_scopes:
+            raise serializers.ValidationError(f"Unsupported API token scopes: {', '.join(unknown_scopes)}.")
+        return scopes
+
+    def validate_expires_at(self, value):
+        if value is None:
+            return value
+        now = timezone.now()
+        if value <= now:
+            raise serializers.ValidationError("API token expiration must be in the future.")
+        max_expires_at = now + timezone.timedelta(days=API_TOKEN_MAX_LIFETIME_DAYS)
+        if value > max_expires_at:
+            raise serializers.ValidationError(f"API token expiration cannot exceed {API_TOKEN_MAX_LIFETIME_DAYS} days.")
+        return value
+
+    def create(self, validated_data):
+        validated_data.setdefault("expires_at", timezone.now() + timezone.timedelta(days=API_TOKEN_DEFAULT_LIFETIME_DAYS))
+        return super().create(validated_data)
 
 
 class WebhookEndpointSerializer(serializers.ModelSerializer):
@@ -513,4 +546,6 @@ class WebhookDeliveryLogSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data["payload_json"] = sanitize_config(data.get("payload_json") or {})
+        data["response_body"] = sanitize_error_text(data.get("response_body"), max_length=2000)
+        data["error"] = sanitize_error_text(data.get("error"))
         return data

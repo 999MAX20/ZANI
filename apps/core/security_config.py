@@ -30,10 +30,22 @@ def has_strong_secret_key(secret_key: object) -> bool:
     return secret_key_strength(secret_key)["is_strong"]
 
 
+def has_strong_shared_secret(secret: object) -> bool:
+    return secret_key_strength(secret)["is_strong"]
+
+
 def secret_key_strength_detail(secret_key: object) -> str:
     strength = secret_key_strength(secret_key)
     return (
         "SECRET_KEY length={length}; unique_chars={unique_chars}; placeholder={has_placeholder}".format(
             **strength
         )
+    )
+
+
+def shared_secret_strength_detail(secret: object, label: str = "secret") -> str:
+    strength = secret_key_strength(secret)
+    return "{label} length={length}; unique_chars={unique_chars}; placeholder={has_placeholder}".format(
+        label=label,
+        **strength,
     )

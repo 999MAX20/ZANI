@@ -431,7 +431,7 @@ export function AnalyticsPage() {
                           <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-600">{t("analytics.leadsCount", { count: team.assigned_leads })}</span>
                         </div>
                         <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-semibold text-slate-500">
-                          <span>SLA: {team.sla_overdue_deals}</span>
+                          <span>{t("analytics.slaOverdueShort")}: {team.sla_overdue_deals}</span>
                           <span>{t("analytics.handoff")}: {team.overdue_handoffs}</span>
                           <span>{t("nav.tasks")}: {team.tasks_overdue}</span>
                           <span>{t("analytics.noShow")}: {team.no_show_appointments}</span>

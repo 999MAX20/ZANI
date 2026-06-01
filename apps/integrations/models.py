@@ -2,6 +2,7 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 import hashlib
+import hmac
 import secrets
 
 from apps.businesses.models import Business
@@ -234,6 +235,14 @@ class ApiToken(models.Model):
 
     @staticmethod
     def hash_token(raw_token):
+        return hmac.new(
+            str(settings.SECRET_KEY).encode("utf-8"),
+            raw_token.encode("utf-8"),
+            hashlib.sha256,
+        ).hexdigest()
+
+    @staticmethod
+    def legacy_hash_token(raw_token):
         return hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
 
     @classmethod
@@ -245,7 +254,10 @@ class ApiToken(models.Model):
         self.token_hash = self.hash_token(raw_token)
 
     def matches(self, raw_token):
-        return secrets.compare_digest(self.token_hash, self.hash_token(raw_token))
+        return secrets.compare_digest(self.token_hash, self.hash_token(raw_token)) or secrets.compare_digest(
+            self.token_hash,
+            self.legacy_hash_token(raw_token),
+        )
 
     def has_scope(self, scope):
         return scope in (self.scopes_json or [])

@@ -38,6 +38,7 @@ from apps.integrations.models import (
 from apps.integrations.one_c import build_one_c_mock_events
 from apps.integrations.public_api import authenticate_api_token
 from apps.integrations.serializers import (
+    API_TOKEN_DEFAULT_LIFETIME_DAYS,
     ApiTokenSerializer,
     BusinessConnectorSerializer,
     BusinessEventSerializer,
@@ -949,7 +950,8 @@ class ApiTokenViewSet(TenantModelViewSet):
         raw_token = ApiToken.generate_raw_token()
         token.set_raw_token(raw_token)
         token.is_active = True
-        token.save(update_fields=["token_prefix", "token_hash", "is_active", "updated_at"])
+        token.expires_at = timezone.now() + timedelta(days=API_TOKEN_DEFAULT_LIFETIME_DAYS)
+        token.save(update_fields=["token_prefix", "token_hash", "is_active", "expires_at", "updated_at"])
         write_audit_log(request, AuditLog.Actions.UPDATE, token, business=token.business, metadata={"kind": "api_token_rotated"})
         data = self.get_serializer(token).data
         data["token"] = raw_token

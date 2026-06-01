@@ -8,12 +8,15 @@ from apps.core.production_rules import has_https_security as _has_https_security
 from apps.core.production_rules import has_placeholder_host as _has_placeholder_host
 from apps.core.production_rules import has_private_object_storage as _has_private_object_storage
 from apps.core.production_rules import has_required_rate_limit_scopes as _has_required_rate_limit_scopes
+from apps.core.production_rules import has_safe_instagram_runtime as _has_safe_instagram_runtime
 from apps.core.production_rules import has_safe_https_origins as _has_safe_https_origins
+from apps.core.production_rules import has_safe_telegram_runtime as _has_safe_telegram_runtime
+from apps.core.production_rules import has_safe_whatsapp_runtime as _has_safe_whatsapp_runtime
 from apps.core.production_rules import has_sentry_observability as _has_sentry_observability
 from apps.core.production_rules import has_tls_postgres as _has_tls_postgres
 from apps.core.production_rules import has_tls_redis_broker as _has_tls_redis_broker
 from apps.core.production_rules import has_transactional_email as _has_transactional_email
-from apps.core.security_config import has_strong_secret_key, secret_key_strength_detail
+from apps.core.security_config import has_strong_secret_key, secret_key_strength_detail, shared_secret_strength_detail
 
 
 @dataclass(frozen=True)
@@ -167,6 +170,44 @@ def run_production_readiness_audit() -> dict:
             _has_required_rate_limit_scopes(),
             f"THROTTLE_RATES={settings.REST_FRAMEWORK.get('DEFAULT_THROTTLE_RATES')}",
             "Keep auth, public API, public form/widget, integration webhook and AI throttles enabled and bounded.",
+        ),
+        _item(
+            "integrations.telegram",
+            "Telegram production guardrails configured",
+            _has_safe_telegram_runtime(),
+            "TELEGRAM_ENABLED={enabled}; TELEGRAM_BASE_API_URL={base_url}; {secret_detail}".format(
+                enabled=getattr(settings, "TELEGRAM_ENABLED", False),
+                base_url=getattr(settings, "TELEGRAM_BASE_API_URL", ""),
+                secret_detail=shared_secret_strength_detail(getattr(settings, "TELEGRAM_WEBHOOK_SECRET", ""), "TELEGRAM_WEBHOOK_SECRET"),
+            ),
+            "Keep Telegram disabled or set a strong webhook secret and public HTTPS Telegram API base URL before real traffic.",
+        ),
+        _item(
+            "integrations.whatsapp",
+            "WhatsApp production guardrails configured",
+            _has_safe_whatsapp_runtime(),
+            "WHATSAPP_ENABLED={enabled}; WHATSAPP_GRAPH_BASE_URL={graph_url}; {verify_detail}; {secret_detail}".format(
+                enabled=getattr(settings, "WHATSAPP_ENABLED", False),
+                graph_url=getattr(settings, "WHATSAPP_GRAPH_BASE_URL", ""),
+                verify_detail=shared_secret_strength_detail(getattr(settings, "WHATSAPP_VERIFY_TOKEN", ""), "WHATSAPP_VERIFY_TOKEN"),
+                secret_detail=shared_secret_strength_detail(getattr(settings, "WHATSAPP_APP_SECRET", ""), "WHATSAPP_APP_SECRET"),
+            ),
+            "Keep WhatsApp disabled or set strong Meta webhook secrets and public HTTPS Graph API URL before real traffic.",
+        ),
+        _item(
+            "integrations.instagram",
+            "Instagram production guardrails configured",
+            _has_safe_instagram_runtime(),
+            "INSTAGRAM_ENABLED={enabled}; INSTAGRAM_GRAPH_BASE_URL={graph_url}; {verify_detail}; {secret_detail}".format(
+                enabled=getattr(settings, "INSTAGRAM_ENABLED", False),
+                graph_url=getattr(settings, "INSTAGRAM_GRAPH_BASE_URL", ""),
+                verify_detail=shared_secret_strength_detail(getattr(settings, "INSTAGRAM_VERIFY_TOKEN", ""), "INSTAGRAM_VERIFY_TOKEN"),
+                secret_detail=shared_secret_strength_detail(
+                    getattr(settings, "INSTAGRAM_APP_SECRET", "") or getattr(settings, "META_APP_SECRET", ""),
+                    "INSTAGRAM_APP_SECRET/META_APP_SECRET",
+                ),
+            ),
+            "Keep Instagram disabled or set strong Meta webhook secrets and public HTTPS Graph API URL before real traffic.",
         ),
     ]
 

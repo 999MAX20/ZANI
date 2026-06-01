@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
-  ArrowLeft,
   CalendarCheck,
   CheckCheck,
   CheckSquare,
@@ -24,20 +23,34 @@ import { useSearchParams } from "react-router-dom";
 import { getApiErrorMessage } from "../../api/client";
 import { botsApi } from "../../api/bots";
 import { inboxApi, type InboxConversation, type InboxFilters, type InboxMessage } from "../../api/inbox";
+import { WorkQueueDetailPane, WorkQueueLayout, WorkQueueListPane } from "../../components/layout/WorkQueueLayout";
 import { Button } from "../../components/ui/Button";
+import { MetricCard } from "../../components/ui/MetricCard";
 import { Select } from "../../components/ui/Select";
 import { EmptyState, ErrorState, LoadingState } from "../../components/ui/StateViews";
 import { cn } from "../../lib/cn";
+import { useI18n } from "../../lib/i18n";
+import { hasPermission } from "../../lib/permissions";
 import { realtimeIntervals, realtimeQueryOptions } from "../../lib/realtime";
+import { useActiveBusiness } from "../../hooks/useBusiness";
+import { useAuth } from "../auth/AuthProvider";
 
 type InboxTab = "all" | "errors" | "paused";
 
 const channelLabels: Record<string, string> = {
-  website: "Сайт",
+  website: "source.website",
   telegram: "Telegram",
   whatsapp: "WhatsApp",
   instagram: "Instagram",
 };
+
+type Translate = ReturnType<typeof useI18n>["t"];
+
+function channelLabel(channel: string | undefined, t: Translate) {
+  if (!channel) return "";
+  const label = channelLabels[channel];
+  return label ? t(label) : channel;
+}
 
 function formatDateTime(value?: string | null) {
   if (!value) return "";
@@ -47,9 +60,9 @@ function formatDateTime(value?: string | null) {
   }).format(new Date(value));
 }
 
-function conversationTitle(conversation?: InboxConversation | null) {
-  if (!conversation) return "Выберите диалог";
-  return conversation.client_name || conversation.external_user_id || `Клиент из ${channelLabels[conversation.channel] || conversation.channel}`;
+function conversationTitle(conversation: InboxConversation | null | undefined, t: Translate) {
+  if (!conversation) return t("conversations.selectDialog");
+  return conversation.client_name || conversation.external_user_id || t("conversations.clientFromChannel", { channel: channelLabel(conversation.channel, t) });
 }
 
 function tabFilters(filters: InboxFilters, tab: InboxTab): InboxFilters {
@@ -79,27 +92,6 @@ function Tooltip({ label, children }: { label: string; children: React.ReactNode
   );
 }
 
-function StatCard({ icon, label, value, delta, tone = "brand" }: { icon: React.ReactNode; label: string; value: number | string; delta?: string; tone?: "brand" | "amber" | "blue" | "violet" }) {
-  const tones = {
-    brand: "bg-brand-50 text-brand-700",
-    amber: "bg-amber-50 text-amber-700",
-    blue: "bg-blue-50 text-blue-700",
-    violet: "bg-violet-50 text-violet-700",
-  };
-  return (
-    <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-3 shadow-sm">
-      <div className={cn("grid h-11 w-11 shrink-0 place-items-center rounded-2xl", tones[tone])}>{icon}</div>
-      <div className="min-w-0">
-        <p className="truncate text-xs font-bold text-slate-500">{label}</p>
-        <div className="mt-1 flex items-baseline gap-2">
-          <p className="text-2xl font-black text-midnight">{value}</p>
-          {delta ? <span className="text-xs font-black text-emerald-600">{delta}</span> : null}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function getAutoPipelineInsight(conversation: InboxConversation) {
   const metadata = conversation.metadata_json || {};
   const auto = metadata.auto_crm_pipeline;
@@ -122,6 +114,7 @@ function ConversationItem({
   selectedForBulk,
   onToggleSelected,
   onClick,
+  t,
 }: {
   conversation: InboxConversation;
   active: boolean;
@@ -129,9 +122,10 @@ function ConversationItem({
   selectedForBulk: boolean;
   onToggleSelected: () => void;
   onClick: () => void;
+  t: Translate;
 }) {
-  const preview = conversation.last_message?.text || "История пока пустая";
-  const initials = conversationTitle(conversation)
+  const preview = conversation.last_message?.text || t("conversations.emptyHistoryPreview");
+  const initials = conversationTitle(conversation, t)
     .split(" ")
     .map((part) => part[0])
     .join("")
@@ -151,7 +145,7 @@ function ConversationItem({
             type="button"
             className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-slate-500 hover:bg-white"
             onClick={onToggleSelected}
-            aria-label={selectedForBulk ? "Убрать из выбора" : "Выбрать диалог"}
+            aria-label={selectedForBulk ? t("conversations.removeFromSelection") : t("conversations.selectForBulk")}
           >
             {selectedForBulk ? <CheckSquare size={19} /> : <Square size={19} />}
           </button>
@@ -167,14 +161,14 @@ function ConversationItem({
         </div>
         <button type="button" className="min-w-0 flex-1 text-left" onClick={onClick}>
           <div className="flex items-center gap-2">
-            <p className="min-w-0 flex-1 truncate font-black text-midnight">{conversationTitle(conversation)}</p>
+            <p className="min-w-0 flex-1 truncate font-black text-midnight">{conversationTitle(conversation, t)}</p>
             <span className="shrink-0 text-xs font-bold text-slate-400">{formatDateTime(conversation.last_message_at)}</span>
           </div>
           <p className="mt-1 truncate text-sm font-medium text-slate-500">{preview}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-black text-slate-500">{channelLabels[conversation.channel] || conversation.channel}</span>
-            {conversation.handoff_required ? <span className="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-black text-red-600">Без ответа</span> : null}
-            {!conversation.handoff_required && !conversation.bot_enabled ? <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-black text-amber-600">Пауза</span> : null}
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-black text-slate-500">{channelLabel(conversation.channel, t)}</span>
+            {conversation.handoff_required ? <span className="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-black text-red-600">{t("conversations.noReply")}</span> : null}
+            {!conversation.handoff_required && !conversation.bot_enabled ? <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-black text-amber-600">{t("conversations.paused")}</span> : null}
           </div>
         </button>
       </div>
@@ -182,10 +176,10 @@ function ConversationItem({
   );
 }
 
-function MessageBubble({ message }: { message: InboxMessage }) {
+function MessageBubble({ message, t }: { message: InboxMessage; t: Translate }) {
   const inbound = message.direction === "inbound";
   const ai = message.sender_type === "bot" || message.sender_type === "ai";
-  const author = ai ? "AI" : message.sender_type === "manager" ? "Менеджер" : "Клиент";
+  const author = ai ? t("conversations.senderAssistant") : message.sender_type === "manager" ? t("conversations.senderManager") : t("conversations.senderClient");
 
   return (
     <div className={cn("flex", inbound ? "justify-start" : "justify-end")}>
@@ -199,7 +193,7 @@ function MessageBubble({ message }: { message: InboxMessage }) {
           {ai ? <Sparkles size={13} /> : null}
           {author}
         </div>
-        <p className="whitespace-pre-wrap">{message.text || "Пустое сообщение"}</p>
+        <p className="whitespace-pre-wrap">{message.text || t("conversations.emptyMessage")}</p>
         {message.error_text ? (
           <p className={cn("mt-2 text-xs font-bold", message.status === "failed" ? "text-red-500" : "text-amber-500")}>
             {message.error_text}
@@ -211,6 +205,7 @@ function MessageBubble({ message }: { message: InboxMessage }) {
 }
 
 export function ConversationsPage() {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedId, setSelectedId] = useState<number | null>(() => Number(searchParams.get("conversation")) || null);
@@ -229,6 +224,10 @@ export function ConversationsPage() {
   }));
   const [draft, setDraft] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
+  const { user } = useAuth();
+  const { business } = useActiveBusiness();
+  const canSuggestAi = hasPermission(user, business?.id, "ai_assistant", "suggest");
+  const canRunAiPipeline = hasPermission(user, business?.id, "ai_pipeline", "execute");
 
   const summary = useQuery({
     queryKey: ["inbox-summary"],
@@ -274,7 +273,7 @@ export function ConversationsPage() {
   const channelOptions = summary.data?.channels?.length
     ? summary.data.channels
     : [
-        { key: "website", label: "Сайт" },
+        { key: "website", label: t("source.website") },
         { key: "telegram", label: "Telegram" },
         { key: "whatsapp", label: "WhatsApp" },
         { key: "instagram", label: "Instagram" },
@@ -333,7 +332,7 @@ export function ConversationsPage() {
   const assignMutation = useMutation({
     mutationFn: inboxApi.assignToMe,
     onSuccess: async () => {
-      setNotice("Диалог назначен на вас.");
+      setNotice(t("conversations.assignedToMe"));
       await invalidateInbox();
     },
   });
@@ -341,7 +340,7 @@ export function ConversationsPage() {
   const handoffMutation = useMutation({
     mutationFn: inboxApi.handoff,
     onSuccess: async () => {
-      setNotice("Диалог передан оператору.");
+      setNotice(t("conversations.handoffDone"));
       await invalidateInbox();
     },
   });
@@ -356,7 +355,7 @@ export function ConversationsPage() {
   const toggleBotMutation = useMutation({
     mutationFn: inboxApi.toggleBot,
     onSuccess: async () => {
-      setNotice("Режим бота обновлен.");
+      setNotice(t("conversations.botModeUpdated"));
       await invalidateInbox();
     },
   });
@@ -364,7 +363,7 @@ export function ConversationsPage() {
   const closeMutation = useMutation({
     mutationFn: inboxApi.closeConversation,
     onSuccess: async () => {
-      setNotice("Диалог закрыт.");
+      setNotice(t("conversations.closed"));
       await invalidateInbox();
     },
   });
@@ -372,16 +371,19 @@ export function ConversationsPage() {
   const reopenMutation = useMutation({
     mutationFn: inboxApi.reopenConversation,
     onSuccess: async () => {
-      setNotice("Диалог открыт.");
+      setNotice(t("conversations.reopened"));
       await invalidateInbox();
     },
   });
 
   const suggestMutation = useMutation({
-    mutationFn: inboxApi.suggestReply,
+    mutationFn: (conversationId: number) => {
+      if (!canSuggestAi) throw new Error("Your role cannot generate AI replies.");
+      return inboxApi.suggestReply(conversationId);
+    },
     onSuccess: (data) => {
       setDraft(data.suggested_reply);
-      setNotice("AI подготовил черновик ответа.");
+      setNotice(t("conversations.aiDraftReady"));
     },
   });
 
@@ -389,7 +391,7 @@ export function ConversationsPage() {
     mutationFn: inboxApi.sendMessage,
     onSuccess: async () => {
       setDraft("");
-      setNotice("Ответ отправлен.");
+      setNotice(t("conversations.replySent"));
       await invalidateInbox();
     },
   });
@@ -397,7 +399,7 @@ export function ConversationsPage() {
   const retryMessageMutation = useMutation({
     mutationFn: inboxApi.retryMessage,
     onSuccess: async () => {
-      setNotice("Сообщение отправлено повторно.");
+      setNotice(t("conversations.messageRetried"));
       await invalidateInbox();
     },
   });
@@ -406,10 +408,10 @@ export function ConversationsPage() {
     mutationFn: inboxApi.createClient,
     onSuccess: async (result) => {
       if (result.requires_confirmation && result.duplicates.length) {
-        setNotice(`Найден похожий клиент: ${result.duplicates.map((item) => `#${item.id} ${item.full_name}`).join(", ")}`);
+        setNotice(t("conversations.duplicateClientShort", { list: result.duplicates.map((item) => `#${item.id} ${item.full_name}`).join(", ") }));
         return;
       }
-      setNotice(result.created ? "Клиент создан." : "Клиент уже связан.");
+      setNotice(result.created ? t("conversations.clientCreatedShort") : t("conversations.clientAlreadyLinked"));
       await Promise.all([invalidateInbox(), queryClient.invalidateQueries({ queryKey: ["clients"] })]);
     },
   });
@@ -417,7 +419,7 @@ export function ConversationsPage() {
   const createLeadMutation = useMutation({
     mutationFn: inboxApi.createLead,
     onSuccess: async () => {
-      setNotice("Лид создан.");
+      setNotice(t("conversations.leadCreatedShort"));
       await Promise.all([invalidateInbox(), queryClient.invalidateQueries({ queryKey: ["leads"] })]);
     },
   });
@@ -425,7 +427,7 @@ export function ConversationsPage() {
   const createDealMutation = useMutation({
     mutationFn: inboxApi.createDeal,
     onSuccess: async () => {
-      setNotice("Сделка создана.");
+      setNotice(t("conversations.dealCreatedShort"));
       await Promise.all([invalidateInbox(), queryClient.invalidateQueries({ queryKey: ["deals"] })]);
     },
   });
@@ -433,20 +435,23 @@ export function ConversationsPage() {
   const createTaskMutation = useMutation({
     mutationFn: inboxApi.createTask,
     onSuccess: async () => {
-      setNotice("Задача создана.");
+      setNotice(t("conversations.taskCreatedShort"));
       await queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
 
   const runPipelineMutation = useMutation({
-    mutationFn: inboxApi.runPipeline,
+    mutationFn: (payload: { conversationId: number; dealTitle?: string }) => {
+      if (!canRunAiPipeline) throw new Error("Your role cannot execute CRM pipeline actions.");
+      return inboxApi.runPipeline(payload);
+    },
     onSuccess: async (result) => {
       const created = Object.entries(result.created)
         .filter(([, value]) => value)
         .map(([key]) => key)
         .join(", ");
-      const aiSuffix = result.qualification ? ` AI: ${result.qualification.intent}, ${Math.round(result.qualification.confidence * 100)}%.` : "";
-      setNotice(created ? `CRM pipeline создан: ${created}.${aiSuffix}` : `CRM pipeline уже связан с диалогом.${aiSuffix}`);
+      const aiSuffix = result.qualification ? t("conversations.pipelineAiSuffix", { intent: result.qualification.intent, confidence: Math.round(result.qualification.confidence * 100) }) : "";
+      setNotice(created ? t("conversations.pipelineUpdated", { created, ai: aiSuffix }) : t("conversations.pipelineAlreadyLinked", { ai: aiSuffix }));
       await Promise.all([
         invalidateInbox(),
         queryClient.invalidateQueries({ queryKey: ["clients"] }),
@@ -478,7 +483,7 @@ export function ConversationsPage() {
       return { action, count: ids.length };
     },
     onSuccess: async ({ count }) => {
-      setNotice(`Готово: обработано ${count} диалогов.`);
+      setNotice(t("conversations.bulkDone", { count }));
       resetBulkSelection();
       await invalidateInbox();
     },
@@ -512,13 +517,13 @@ export function ConversationsPage() {
 
   function runSelectedPipeline() {
     if (!selected) return;
-    runPipelineMutation.mutate({ conversationId: selected.id, dealTitle: `Сделка: ${conversationTitle(selected)}` });
+    runPipelineMutation.mutate({ conversationId: selected.id, dealTitle: t("conversations.pipelineDealTitle", { title: conversationTitle(selected, t) }) });
   }
 
   const tabs = [
-    { value: "all" as const, label: "Все", count: summary.data?.total ?? 0 },
-    { value: "errors" as const, label: "Ошибки", count: summary.data?.handoff_required ?? 0 },
-    { value: "paused" as const, label: "Пауза", count: summary.data?.bot_paused ?? 0 },
+    { value: "all" as const, label: t("conversations.filterAll"), count: summary.data?.total ?? 0 },
+    { value: "errors" as const, label: t("conversations.attention"), count: summary.data?.handoff_required ?? 0 },
+    { value: "paused" as const, label: t("conversations.paused"), count: summary.data?.bot_paused ?? 0 },
   ];
   const selectedInsight = selected ? getAutoPipelineInsight(selected) : null;
 
@@ -528,22 +533,22 @@ export function ConversationsPage() {
       {actionError ? <ErrorState message={getApiErrorMessage(actionError)} /> : null}
 
       <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard icon={<MessageSquare size={20} />} label="Всего диалогов" value={summary.data?.total ?? 0} delta="+ за сегодня" tone="brand" />
-        <StatCard icon={<AlertTriangle size={20} />} label="Без ответа" value={summary.data?.handoff_required ?? 0} tone="amber" />
-        <StatCard icon={<MessageSquare size={20} />} label="В работе" value={summary.data?.assigned_to_me ?? 0} tone="blue" />
-        <StatCard icon={<CheckCheck size={20} />} label="Непрочитанные" value={summary.data?.unread_messages ?? 0} tone="violet" />
+        <MetricCard compact icon={MessageSquare} label={t("conversations.metricTotal")} value={summary.data?.total ?? 0} hint={t("conversations.metricTodayHint")} />
+        <MetricCard compact icon={AlertTriangle} label={t("conversations.noReply")} value={summary.data?.handoff_required ?? 0} tone="amber" />
+        <MetricCard compact icon={MessageSquare} label={t("conversations.inWork")} value={summary.data?.assigned_to_me ?? 0} tone="slate" />
+        <MetricCard compact icon={CheckCheck} label={t("conversations.unreadMessages")} value={summary.data?.unread_messages ?? 0} />
       </div>
 
-      <section className="grid min-h-[calc(100vh-176px)] overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-soft lg:h-[calc(100vh-176px)] lg:grid-cols-[340px_minmax(0,1fr)] 2xl:grid-cols-[340px_minmax(560px,1fr)_300px]">
-        <aside className={cn("min-h-0 flex-col border-b border-slate-200 bg-white lg:flex lg:border-b-0 lg:border-r", mobileThreadOpen ? "hidden" : "flex")}>
+      <WorkQueueLayout className="lg:min-h-[calc(100vh-176px)] lg:grid-cols-[340px_minmax(0,1fr)] 2xl:grid-cols-[340px_minmax(560px,1fr)_300px]">
+        <WorkQueueListPane mobileDetailOpen={mobileThreadOpen}>
           <div className="space-y-3 p-5">
-            <h1 className="text-2xl font-black tracking-tight text-midnight">Диалоги</h1>
+            <h1 className="text-2xl font-black tracking-tight text-midnight">{t("conversations.dialogsTitle")}</h1>
             <Select
               className="min-h-12 rounded-xl text-midnight"
               value={filters.bot || ""}
               onChange={(event) => updateFilters({ ...filters, bot: event.target.value || undefined })}
               options={[
-                { value: "", label: "Все AI-агенты" },
+                { value: "", label: t("conversations.allAgents") },
                 ...(bots.data || []).map((bot) => ({ value: bot.id, label: bot.name })),
               ]}
             />
@@ -553,7 +558,7 @@ export function ConversationsPage() {
                 <Search size={18} />
                 <input
                   className="min-w-0 flex-1 bg-transparent font-semibold outline-none placeholder:text-slate-400"
-                  placeholder="Поиск по имени или номеру"
+                  placeholder={t("conversations.queueSearch")}
                   value={filters.search || ""}
                   onChange={(event) => updateFilters({ ...filters, search: event.target.value })}
                 />
@@ -561,7 +566,7 @@ export function ConversationsPage() {
               <button
                 className={cn("grid h-12 w-12 place-items-center rounded-xl text-slate-600", filtersOpen ? "bg-midnight text-white" : "bg-slate-100")}
                 type="button"
-                aria-label="Фильтр"
+                aria-label={t("conversations.filterButton")}
                 onClick={() => setFiltersOpen((value) => !value)}
               >
                 <Filter size={19} />
@@ -575,10 +580,10 @@ export function ConversationsPage() {
                   value={filters.channel || ""}
                   onChange={(event) => updateFilters({ ...filters, channel: event.target.value || undefined })}
                   options={[
-                    { value: "", label: "Все каналы" },
+                    { value: "", label: t("conversations.allChannels") },
                     ...channelOptions.map((channel) => ({
                       value: channel.key,
-                      label: channelLabels[channel.key] || channel.label || channel.key,
+                      label: channelLabel(channel.key, t) || channel.label || channel.key,
                     })),
                   ]}
                 />
@@ -588,9 +593,9 @@ export function ConversationsPage() {
                     value={filters.unread || ""}
                     onChange={(event) => updateFilters({ ...filters, unread: event.target.value || undefined })}
                     options={[
-                      { value: "", label: "Все сообщения" },
-                      { value: "true", label: "Непрочитанные" },
-                      { value: "false", label: "Прочитанные" },
+                      { value: "", label: t("conversations.allMessages") },
+                      { value: "true", label: t("conversations.unreadMessages") },
+                      { value: "false", label: t("conversations.read") },
                     ]}
                   />
                   <Select
@@ -598,9 +603,9 @@ export function ConversationsPage() {
                     value={filters.assigned_to || ""}
                     onChange={(event) => updateFilters({ ...filters, assigned_to: event.target.value || undefined })}
                     options={[
-                      { value: "", label: "Все менеджеры" },
-                      { value: "me", label: "Назначены мне" },
-                      { value: "unassigned", label: "Без менеджера" },
+                      { value: "", label: t("conversations.allManagers") },
+                      { value: "me", label: t("conversations.assignedToMeFilter") },
+                      { value: "unassigned", label: t("conversations.unassigned") },
                     ]}
                   />
                 </div>
@@ -609,7 +614,7 @@ export function ConversationsPage() {
                   className="flex h-9 w-full items-center justify-center gap-2 rounded-xl bg-white text-xs font-black text-slate-500 ring-1 ring-slate-200"
                   onClick={() => updateFilters({ status: "", bot: filters.bot })}
                 >
-                  <X size={15} /> Сбросить фильтры
+                  <X size={15} /> {t("conversations.resetFilters")}
                 </button>
               </div>
             ) : null}
@@ -636,31 +641,31 @@ export function ConversationsPage() {
             <div className="border-b border-slate-100 px-5 py-3">
               {!bulkMode ? (
                 <button type="button" className="text-sm font-black text-brand-600" onClick={selectVisibleConversations}>
-                  Массовый выбор
+                  {t("conversations.selectMultiple")}
                 </button>
               ) : (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-black text-midnight">Выбрано: {selectedIds.length}</p>
+                    <p className="text-sm font-black text-midnight">{t("conversations.selectedCount", { count: selectedIds.length })}</p>
                     <button type="button" className="text-sm font-black text-slate-400" onClick={resetBulkSelection}>
-                      Отмена
+                      {t("common.cancel")}
                     </button>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <Button className="h-8 rounded-xl px-3 text-xs" variant="secondary" disabled={!selectedIds.length} onClick={() => bulkMutation.mutate("markRead")} isLoading={bulkMutation.isPending}>
-                      Прочитано
+                      {t("conversations.markRead")}
                     </Button>
                     <Button className="h-8 rounded-xl px-3 text-xs" variant="secondary" disabled={!selectedIds.length} onClick={() => bulkMutation.mutate("assign")} isLoading={bulkMutation.isPending}>
-                      Взять
+                      {t("conversations.take")}
                     </Button>
                     <Button className="h-8 rounded-xl px-3 text-xs" variant="secondary" disabled={!selectedIds.length} onClick={() => bulkMutation.mutate("pauseBot")} isLoading={bulkMutation.isPending}>
-                      Пауза
+                      {t("conversations.pause")}
                     </Button>
                     <Button className="h-8 rounded-xl px-3 text-xs" variant="secondary" disabled={!selectedIds.length} onClick={() => bulkMutation.mutate("handoff")} isLoading={bulkMutation.isPending}>
-                      Оператору
+                      {t("conversations.operator")}
                     </Button>
                     <Button className="h-8 rounded-xl px-3 text-xs" variant="secondary" disabled={!selectedIds.length} onClick={() => bulkMutation.mutate("close")} isLoading={bulkMutation.isPending}>
-                      Закрыть
+                      {t("common.close")}
                     </Button>
                   </div>
                 </div>
@@ -668,11 +673,11 @@ export function ConversationsPage() {
             </div>
           ) : null}
 
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            {conversations.isLoading ? <div className="p-5"><LoadingState label="Загружаю диалоги" /></div> : null}
+          <div className="min-h-0 flex-1 overflow-y-auto pb-28 lg:pb-0">
+            {conversations.isLoading ? <div className="p-5"><LoadingState label={t("conversations.loadingDialogs")} /></div> : null}
             {!conversations.isLoading && !items.length ? (
               <div className="p-5">
-                <EmptyState title="Диалогов нет" description="Входящие из подключенных каналов появятся здесь." />
+                <EmptyState title={t("conversations.emptyTitle")} description={t("conversations.emptyText")} />
               </div>
             ) : null}
             {items.map((conversation) => (
@@ -684,19 +689,20 @@ export function ConversationsPage() {
                 selectedForBulk={selectedIds.includes(conversation.id)}
                 onToggleSelected={() => toggleBulkId(conversation.id)}
                 onClick={() => selectConversation(conversation.id)}
+                t={t}
               />
             ))}
           </div>
-        </aside>
+        </WorkQueueListPane>
 
-        <main className={cn("min-h-0 flex-col bg-slate-50/40 lg:flex", mobileThreadOpen ? "flex" : "hidden")}>
+        <WorkQueueDetailPane mobileDetailOpen={mobileThreadOpen} closeLabel={t("common.close")} onMobileClose={() => setMobileThreadOpen(false)}>
           {!selected ? (
             <div className="grid flex-1 place-items-center p-8">
               <div className="text-center">
                 <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-white text-brand-600 shadow-sm">
-                  <MessageSquare size={26} />
+                  <MessageSquare aria-hidden="true" size={26} />
                 </div>
-                <p className="text-2xl font-black text-slate-400">Выберите диалог</p>
+                <p className="text-2xl font-black text-slate-400">{t("conversations.selectDialog")}</p>
               </div>
             </div>
           ) : (
@@ -705,68 +711,60 @@ export function ConversationsPage() {
                 <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-600 lg:hidden"
-                        onClick={() => setMobileThreadOpen(false)}
-                        aria-label="Вернуться к списку диалогов"
-                      >
-                        <ArrowLeft size={19} />
-                      </button>
-                      <h2 className="truncate text-lg font-black text-midnight sm:text-xl">{conversationTitle(selected)}</h2>
+                      <h2 className="truncate text-lg font-black text-midnight sm:text-xl">{conversationTitle(selected, t)}</h2>
                     </div>
                     <div className="mt-2 flex flex-wrap gap-2">
-                      <Pill className="bg-blue-50 text-blue-700 ring-blue-200">{channelLabels[selected.channel] || selected.channel}</Pill>
-                      {selected.bot_enabled ? <Pill className="bg-emerald-50 text-emerald-700 ring-emerald-200">бот активен</Pill> : <Pill className="bg-slate-100 text-slate-600 ring-slate-200">бот на паузе</Pill>}
-                      {selected.handoff_required ? <Pill className="bg-amber-50 text-amber-700 ring-amber-200">нужен оператор</Pill> : null}
-                      {selected.client ? <Pill className="bg-white text-slate-500 ring-slate-200">client #{selected.client}</Pill> : null}
-                      {selected.lead ? <Pill className="bg-white text-slate-500 ring-slate-200">lead #{selected.lead}</Pill> : null}
-                      {selected.deal ? <Pill className="bg-white text-slate-500 ring-slate-200">deal #{selected.deal}</Pill> : null}
+                      <Pill className="bg-blue-50 text-blue-700 ring-blue-200">{channelLabel(selected.channel, t)}</Pill>
+                      {selected.bot_enabled ? <Pill className="bg-emerald-50 text-emerald-700 ring-emerald-200">{t("conversations.botActive")}</Pill> : <Pill className="bg-slate-100 text-slate-600 ring-slate-200">{t("conversations.botPaused")}</Pill>}
+                      {selected.handoff_required ? <Pill className="bg-amber-50 text-amber-700 ring-amber-200">{t("conversations.needsOperator")}</Pill> : null}
+                      {selected.client ? <Pill className="bg-white text-slate-500 ring-slate-200">{t("conversations.clientId", { id: selected.client })}</Pill> : null}
+                      {selected.lead ? <Pill className="bg-white text-slate-500 ring-slate-200">{t("conversations.leadId", { id: selected.lead })}</Pill> : null}
+                      {selected.deal ? <Pill className="bg-white text-slate-500 ring-slate-200">{t("conversations.dealId", { id: selected.deal })}</Pill> : null}
                     </div>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
-                    <Tooltip label="Назначить этот диалог на себя, чтобы было понятно, кто отвечает клиенту.">
-                      <Button variant="secondary" disabled={!selected} onClick={() => assignMutation.mutate(selected.id)} isLoading={assignMutation.isPending} aria-label="Взять диалог">
-                        <UserCheck size={17} /> <span className="hidden sm:inline">Назначить</span>
+                    <Tooltip label={t("conversations.assignTooltip")}>
+                      <Button variant="secondary" disabled={!selected} onClick={() => assignMutation.mutate(selected.id)} isLoading={assignMutation.isPending} aria-label={t("conversations.takeDialog")}>
+                        <UserCheck size={17} /> <span className="hidden sm:inline">{t("conversations.assign")}</span>
                       </Button>
                     </Tooltip>
-                    <Tooltip label={selected.bot_enabled ? "Поставить бота на паузу в этом диалоге." : "Включить бота обратно для этого диалога."}>
+                    <Tooltip label={selected.bot_enabled ? t("conversations.pauseBotTooltip") : t("conversations.enableBotTooltip")}>
                       <Button
                         variant="secondary"
                         disabled={!selected}
                         onClick={() => toggleBotMutation.mutate({ conversationId: selected.id, botEnabled: !selected.bot_enabled })}
                         isLoading={toggleBotMutation.isPending}
-                        aria-label={selected.bot_enabled ? "Поставить бота на паузу" : "Запустить бота"}
+                        aria-label={selected.bot_enabled ? t("conversations.pauseBot") : t("conversations.enableBot")}
                       >
                         {selected.bot_enabled ? <PauseCircle size={17} /> : <PlayCircle size={17} />}
                       </Button>
                     </Tooltip>
-                    <Tooltip label="Передать диалог человеку и выключить автоматическую обработку ботом.">
+                    <Tooltip label={t("conversations.handoffTooltip")}>
                       <Button
                         variant="secondary"
                         onClick={() => handoffMutation.mutate({ conversationId: selected.id, reason: "manager_requested_from_inbox" })}
                         isLoading={handoffMutation.isPending}
-                        aria-label="Передать оператору"
+                        aria-label={t("conversations.handoffToOperator")}
                       >
                         <AlertTriangle size={17} />
                       </Button>
                     </Tooltip>
                     {selected.status === "closed" ? (
-                      <Tooltip label="Вернуть закрытый диалог в работу и снова разрешить ответ менеджера.">
-                        <Button variant="secondary" onClick={() => reopenMutation.mutate(selected.id)} isLoading={reopenMutation.isPending} aria-label="Открыть диалог">
-                          <PlayCircle size={17} /> Открыть
+                      <Tooltip label={t("conversations.reopenTooltip")}>
+                        <Button variant="secondary" onClick={() => reopenMutation.mutate(selected.id)} isLoading={reopenMutation.isPending} aria-label={t("conversations.openDialog")}>
+                          <PlayCircle size={17} /> {t("common.open")}
                         </Button>
                       </Tooltip>
                     ) : (
-                      <Tooltip label="Закрыть диалог после обработки. История останется доступной в карточке клиента и inbox.">
+                    <Tooltip label={t("conversations.closeTooltip")}>
                         <Button
                           variant="secondary"
                           onClick={() => closeMutation.mutate({ conversationId: selected.id, reason: "closed_from_inbox" })}
                           isLoading={closeMutation.isPending}
-                          aria-label="Закрыть диалог"
+                          aria-label={t("conversations.closeDialog")}
                         >
-                          <CheckCheck size={17} /> <span className="hidden sm:inline">Закрыть</span>
+                          <CheckCheck size={17} /> <span className="hidden sm:inline">{t("common.close")}</span>
                         </Button>
                       </Tooltip>
                     )}
@@ -774,20 +772,20 @@ export function ConversationsPage() {
                 </div>
               </div>
 
-              <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
-                {messages.isLoading ? <LoadingState label="Загружаю историю" /> : null}
+              <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5 pb-28 lg:pb-5">
+                {messages.isLoading ? <LoadingState label={t("conversations.loadingHistory")} /> : null}
                 {!messages.isLoading && !(messages.data || []).length ? (
-                  <EmptyState title="Сообщений пока нет" description="История появится после первого входящего сообщения." />
+                  <EmptyState title={t("conversations.noMessagesTitle")} description={t("conversations.noMessagesText")} />
                 ) : null}
                 {(messages.data || []).map((message) => (
-                  <MessageBubble key={message.id} message={message} />
+                  <MessageBubble key={message.id} message={message} t={t} />
                 ))}
               </div>
 
               <div className="border-t border-slate-200 bg-white p-4">
                 {selected.status === "closed" ? (
                   <div className="mb-3 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">
-                    Диалог закрыт. Откройте его, чтобы ответить.
+                    {t("conversations.closedReplyNotice")}
                   </div>
                 ) : null}
                 <div className="flex items-end gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
@@ -795,7 +793,7 @@ export function ConversationsPage() {
                     rows={2}
                     className="max-h-32 min-h-11 min-w-0 flex-1 resize-none bg-transparent py-2 text-sm outline-none placeholder:text-slate-400"
                     disabled={selected.status === "closed" || sendMutation.isPending}
-                    placeholder="Напишите ответ клиенту"
+                    placeholder={t("conversations.replyPlaceholder")}
                     value={draft}
                     onChange={(event) => setDraft(event.target.value)}
                     onKeyDown={(event) => {
@@ -808,7 +806,7 @@ export function ConversationsPage() {
                     disabled={selected.status === "closed" || !draft.trim()}
                     isLoading={sendMutation.isPending}
                     onClick={sendReply}
-                    title="Отправить"
+                    title={t("conversations.send")}
                   >
                     <Send size={18} />
                   </Button>
@@ -816,7 +814,7 @@ export function ConversationsPage() {
               </div>
             </>
           )}
-        </main>
+        </WorkQueueDetailPane>
 
         <aside className="hidden min-h-0 flex-col gap-3 overflow-y-auto border-l border-slate-200 bg-white p-4 2xl:flex">
           {selected ? (
@@ -827,37 +825,43 @@ export function ConversationsPage() {
                     <UserRound size={22} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-black text-midnight">{selected.client_name || conversationTitle(selected)}</p>
-                    <p className="mt-1 truncate text-sm font-bold text-slate-500">{selected.client_phone || selected.external_user_id || "Контакт не указан"}</p>
+                    <p className="truncate font-black text-midnight">{selected.client_name || conversationTitle(selected, t)}</p>
+                    <p className="mt-1 truncate text-sm font-bold text-slate-500">{selected.client_phone || selected.external_user_id || t("conversations.noContact")}</p>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <Pill className="bg-emerald-50 text-emerald-700 ring-emerald-100">{selected.client ? "Клиент" : "Новый"}</Pill>
-                      <Pill className="bg-slate-50 text-slate-600 ring-slate-200">{channelLabels[selected.channel] || selected.channel}</Pill>
+                      <Pill className="bg-emerald-50 text-emerald-700 ring-emerald-100">{selected.client ? t("common.client") : t("conversations.newContact")}</Pill>
+                      <Pill className="bg-slate-50 text-slate-600 ring-slate-200">{channelLabel(selected.channel, t)}</Pill>
                     </div>
                   </div>
                 </div>
               </div>
 
               <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-                <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Канал</p>
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{t("conversations.channel")}</p>
                 <div className="mt-3 flex items-center justify-between gap-3">
                   <div>
-                    <p className="font-black text-midnight">{channelLabels[selected.channel] || selected.channel}</p>
-                    <p className="mt-1 text-sm font-bold text-slate-500">{selected.bot_enabled ? "Бот активен" : "Бот на паузе"}</p>
+                    <p className="font-black text-midnight">{channelLabel(selected.channel, t)}</p>
+                    <p className="mt-1 text-sm font-bold text-slate-500">{selected.bot_enabled ? t("conversations.botActive") : t("conversations.botPaused")}</p>
                   </div>
                   {selected.bot_enabled ? <PlayCircle className="text-emerald-500" size={22} /> : <PauseCircle className="text-amber-500" size={22} />}
                 </div>
               </div>
 
               <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-                <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Следующая задача</p>
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{t("conversations.nextTask")}</p>
                 <div className="mt-3 flex items-start gap-3">
                   <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-violet-50 text-violet-700">
                     <CalendarCheck size={18} />
                   </div>
                   <div className="min-w-0">
-                    <p className="font-black text-midnight">{selectedInsight?.nextAction || (selected.handoff_required ? "Ответить клиенту" : "Проверить CRM-цепочку")}</p>
-                    <button type="button" className="mt-2 inline-flex items-center gap-1 text-xs font-black text-brand-600" onClick={runSelectedPipeline}>
-                      Открыть в CRM <ExternalLink size={13} />
+                    <p className="font-black text-midnight">{selectedInsight?.nextAction || (selected.handoff_required ? t("conversations.replyToClient") : t("conversations.checkLinkedLeads"))}</p>
+                    <button
+                      type="button"
+                      className="mt-2 inline-flex items-center gap-1 text-xs font-black text-brand-600 disabled:cursor-not-allowed disabled:text-slate-400"
+                      onClick={runSelectedPipeline}
+                      disabled={!canRunAiPipeline}
+                      title={!canRunAiPipeline ? t("permissions.hiddenTitle") : undefined}
+                    >
+                      {t("conversations.updateLinks")} <ExternalLink size={13} />
                     </button>
                   </div>
                 </div>
@@ -865,26 +869,25 @@ export function ConversationsPage() {
 
               <div className="rounded-2xl border border-ai-100 bg-ai-50 p-4 shadow-sm">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="flex items-center gap-2 font-black text-ai-900"><Sparkles size={18} /> AI-подсказка</p>
-                  <span className="rounded-full bg-white px-2 py-1 text-[10px] font-black text-ai-700">BETA</span>
+                  <p className="flex items-center gap-2 font-black text-ai-900"><Sparkles size={18} /> {t("conversations.replyHint")}</p>
                 </div>
                 <p className="mt-3 text-sm font-bold leading-6 text-ai-800">
-                  {selectedInsight?.intent ? `Намерение: ${selectedInsight.intent}.` : "AI может подготовить черновик ответа и собрать CRM-цепочку."}
-                  {selectedInsight?.confidence !== null && selectedInsight?.confidence !== undefined ? ` Уверенность ${selectedInsight.confidence}%.` : ""}
+                  {selectedInsight?.intent ? t("conversations.intentLine", { intent: selectedInsight.intent }) : t("conversations.assistantDraftHelp")}
+                  {selectedInsight?.confidence !== null && selectedInsight?.confidence !== undefined ? ` ${t("conversations.confidenceLine", { confidence: selectedInsight.confidence })}` : ""}
                 </p>
                 <div className="mt-3 rounded-2xl bg-white p-3 text-sm font-semibold leading-6 text-slate-700">
-                  {draft || selectedInsight?.nextAction || "Нажмите AI-ответ, чтобы подготовить текст для клиента."}
+                  {draft || selectedInsight?.nextAction || t("conversations.prepareDraftFallback")}
                 </div>
-                <Button className="mt-3 w-full rounded-xl" variant="ai" onClick={() => suggestMutation.mutate(selected.id)} isLoading={suggestMutation.isPending}>
-                  <Sparkles size={16} /> AI-ответ
+                <Button className="mt-3 w-full rounded-xl" variant="ai" onClick={() => suggestMutation.mutate(selected.id)} isLoading={suggestMutation.isPending} disabled={!canSuggestAi}>
+                  <Sparkles size={16} /> {t("conversations.prepareReply")}
                 </Button>
               </div>
             </>
           ) : (
-            <div className="grid flex-1 place-items-center text-center text-sm font-bold text-slate-400">Выберите диалог, чтобы увидеть клиента и подсказки.</div>
+            <div className="grid flex-1 place-items-center text-center text-sm font-bold text-slate-400">{t("conversations.selectContext")}</div>
           )}
         </aside>
-      </section>
+      </WorkQueueLayout>
     </div>
   );
 }

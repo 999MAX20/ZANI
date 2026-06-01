@@ -1,12 +1,14 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Clock3, Plus, Scissors, WalletCards } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 import { getApiErrorMessage } from "../../api/client";
 import { servicesApi } from "../../api/services";
 import { ServiceForm } from "../../components/forms/ServiceForm";
 import { DataTable } from "../../components/tables/DataTable";
 import { Button } from "../../components/ui/Button";
+import { MetricCard } from "../../components/ui/MetricCard";
 import { Modal } from "../../components/ui/Modal";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { StatusBadge } from "../../components/ui/StatusBadge";
@@ -15,23 +17,6 @@ import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useEntityData } from "../../hooks/useEntityData";
 import { useI18n } from "../../lib/i18n";
 import type { Service } from "../../types";
-
-function StatCard({ label, value, hint, icon: Icon }: { label: string; value: number | string; hint: string; icon: typeof Scissors }) {
-  return (
-    <div className="rounded-3xl border border-white/80 bg-white/85 p-5 shadow-soft">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-bold text-slate-500">{label}</p>
-          <p className="mt-2 text-3xl font-black text-midnight">{value}</p>
-        </div>
-        <div className="grid h-12 w-12 place-items-center rounded-2xl bg-brand-50 text-brand-600">
-          <Icon size={22} />
-        </div>
-      </div>
-      <p className="mt-3 text-sm font-semibold text-slate-500">{hint}</p>
-    </div>
-  );
-}
 
 export function ServicesPage() {
   const { t } = useI18n();
@@ -61,11 +46,22 @@ export function ServicesPage() {
 
   return (
     <>
-      <PageHeader title={t("services.title")} description={t("services.description")} actions={<Button onClick={() => setOpen(true)}><Plus size={18} />{t("services.add")}</Button>} />
+      <PageHeader
+        title={t("services.title")}
+        description={t("services.description")}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Link to="/dashboard/settings#operations-setup">
+              <Button type="button" variant="secondary">{t("settings.schedulingCenter")}</Button>
+            </Link>
+            <Button onClick={() => setOpen(true)}><Plus size={18} />{t("services.add")}</Button>
+          </div>
+        }
+      />
       <section className="mb-5 grid gap-3 lg:grid-cols-3">
-        <StatCard label={t("services.active")} value={activeServices.length} hint={t("services.activeHint")} icon={Scissors} />
-        <StatCard label={t("services.avgDuration")} value={avgDuration ? `${avgDuration} ${t("appointment.minutes")}` : "-"} hint={t("services.avgDurationHint")} icon={Clock3} />
-        <StatCard label={t("services.usedInBookings")} value={usedServiceIds.size} hint={t("services.usedInBookingsHint")} icon={WalletCards} />
+        <MetricCard label={t("services.active")} value={activeServices.length} hint={t("services.activeHint")} icon={Scissors} />
+        <MetricCard label={t("services.avgDuration")} value={avgDuration ? `${avgDuration} ${t("appointment.minutes")}` : "-"} hint={t("services.avgDurationHint")} icon={Clock3} />
+        <MetricCard label={t("services.usedInBookings")} value={usedServiceIds.size} hint={t("services.usedInBookingsHint")} icon={WalletCards} />
       </section>
       <div className="mb-5 rounded-3xl border border-brand-100 bg-white/80 p-4 text-sm leading-6 text-slate-600 shadow-sm">
         <span className="font-black text-midnight">{t("services.logicTitle")}</span> {t("services.logicText")}

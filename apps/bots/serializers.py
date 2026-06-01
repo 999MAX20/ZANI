@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from apps.core.security_config import has_strong_shared_secret
 from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
 from apps.bots.inbox_service import register_bot_message
 from apps.billing.models import UsageCounter
@@ -36,6 +37,11 @@ class BotChannelSerializer(serializers.ModelSerializer):
 class TelegramChannelConfigSerializer(serializers.Serializer):
     bot_token = serializers.CharField(required=False, allow_blank=True, trim_whitespace=True)
     webhook_secret = serializers.CharField(required=False, allow_blank=True, trim_whitespace=True)
+
+    def validate_webhook_secret(self, value):
+        if value and not has_strong_shared_secret(value):
+            raise serializers.ValidationError("Telegram webhook secret must be a unique high-entropy 32+ character value.")
+        return value
 
 
 class TelegramSetWebhookSerializer(serializers.Serializer):
@@ -82,6 +88,11 @@ class BotConversationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Assigned user must be an active member of the selected business.")
         return attrs
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["metadata_json"] = sanitize_config(data.get("metadata_json") or {})
+        return data
+
     def create(self, validated_data):
         business = validated_data["business"]
         assert_entitlement_allows(business, EntitlementMetrics.CONVERSATIONS)
@@ -100,6 +111,11 @@ class BotMessageSerializer(serializers.ModelSerializer):
         message = super().create(validated_data)
         register_bot_message(message)
         return message
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["payload_json"] = sanitize_config(data.get("payload_json") or {})
+        return data
 
 
 class PublicWebsiteChatChannelSerializer(serializers.Serializer):

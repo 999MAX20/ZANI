@@ -8,6 +8,7 @@ from django.utils import timezone
 
 from apps.analytics.models import ReportWidget
 from apps.clients.models import Client
+from apps.core.csv_safety import safe_csv_cell
 from apps.crm.models import Deal
 from apps.leads.models import Lead
 from apps.scheduling.models import Appointment
@@ -160,7 +161,7 @@ def export_report_csv(business, report_key, *, start_date=None, end_date=None):
     writer = csv.DictWriter(buffer, fieldnames=fields)
     writer.writeheader()
     for row in rows:
-        writer.writerow({field: row.get(field, "") for field in fields})
+        writer.writerow({field: safe_csv_cell(row.get(field, "")) for field in fields})
     response = HttpResponse(buffer.getvalue(), content_type="text/csv; charset=utf-8")
     response["Content-Disposition"] = f'attachment; filename="{report_key}.csv"'
     return response

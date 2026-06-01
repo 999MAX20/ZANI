@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from django.utils import timezone
 
+from apps.integrations.sanitization import sanitize_error_payload, sanitize_error_text
 from apps.outreach.models import OutreachCampaign, OutreachConsent, OutreachRecipient, OutreachTemplate
 from apps.outreach.services import preview_campaign_audience, unsupported_template_variables
 
@@ -77,6 +78,12 @@ class OutreachRecipientSerializer(serializers.ModelSerializer):
         model = OutreachRecipient
         fields = "__all__"
         read_only_fields = ["created_at", "updated_at"]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["error"] = sanitize_error_text(data.get("error"))
+        data["provider_result"] = sanitize_error_payload(data.get("provider_result") or {})
+        return data
 
 
 class OutreachConsentSerializer(serializers.ModelSerializer):

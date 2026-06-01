@@ -5,6 +5,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.integrations.models import BusinessEvent
+from apps.integrations.sanitization import sanitize_error_text
 from apps.notifications.models import Notification
 from apps.pricing.models import KaspiCompetitorOffer, KaspiPriceChangeLog, KaspiPricingAlert, KaspiPricingControl, KaspiPricingRecommendation, KaspiPricingRule, PricingCatalogItem
 from apps.pricing.providers import get_competitor_price_provider
@@ -235,9 +236,9 @@ def collect_kaspi_competitor_offers(rule, provider_key=None):
     try:
         offers = provider.fetch_offers(rule)
     except Exception as exc:
-        rule.last_error = str(exc)
+        rule.last_error = sanitize_error_text(exc)
         rule.save(update_fields=["last_error", "updated_at"])
-        return {"ok": False, "provider": provider.key, "offers_created": 0, "error": str(exc)}
+        return {"ok": False, "provider": provider.key, "offers_created": 0, "error": rule.last_error}
 
     created = 0
     for offer in offers:

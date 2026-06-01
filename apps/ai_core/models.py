@@ -116,3 +116,77 @@ class AIToolCallLog(models.Model):
 
     def __str__(self):
         return f"{self.tool_name} ({self.status}) for {self.business}"
+
+
+class ApprovalRequest(TimeStampedModel):
+    class Statuses(models.TextChoices):
+        PENDING = "pending", "Pending"
+        APPROVED = "approved", "Approved"
+        REJECTED = "rejected", "Rejected"
+        EXPIRED = "expired", "Expired"
+        EXECUTED = "executed", "Executed"
+
+    class ActionTypes(models.TextChoices):
+        AI_PIPELINE = "ai_pipeline", "AI pipeline"
+        AI_OUTREACH = "ai_outreach", "AI outreach"
+        AI_AUTOMATION = "ai_automation", "AI automation"
+        CAMPAIGN_LAUNCH = "campaign_launch", "Campaign launch"
+        APPOINTMENT_CHANGE = "appointment_change", "Appointment change"
+        EXPORT = "export", "Export"
+
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name="approval_requests")
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="approval_requests",
+    )
+    required_role = models.CharField(max_length=32, blank=True)
+    action_type = models.CharField(max_length=64, choices=ActionTypes.choices)
+    payload = models.JSONField(default=dict, blank=True)
+    source_object_type = models.CharField(max_length=64, blank=True)
+    source_object_id = models.CharField(max_length=64, blank=True)
+    ai_request_log = models.ForeignKey(
+        AIRequestLog,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="approval_requests",
+    )
+    ai_tool_call_log = models.ForeignKey(
+        AIToolCallLog,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="approval_requests",
+    )
+    status = models.CharField(max_length=32, choices=Statuses.choices, default=Statuses.PENDING)
+    approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="approved_ai_requests",
+    )
+    approved_at = models.DateTimeField(null=True, blank=True)
+    rejected_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="rejected_ai_requests",
+    )
+    rejected_at = models.DateTimeField(null=True, blank=True)
+    reason = models.TextField(blank=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["business", "status", "action_type"]),
+            models.Index(fields=["requested_by", "status"]),
+        ]
+
+    def __str__(self):
+        return f"{self.action_type} approval ({self.status}) for {self.business}"

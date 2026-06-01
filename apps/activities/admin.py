@@ -1,13 +1,26 @@
 from django.contrib import admin
 
 from apps.activities.models import ActivityEvent, Note, Segment, SegmentFilter, Tag, TaggedObject
+from apps.integrations.sanitization import sanitize_error_payload
+
+
+class ReadOnlyLogAdminMixin:
+    def has_add_permission(self, request):
+        return False
 
 
 @admin.register(ActivityEvent)
-class ActivityEventAdmin(admin.ModelAdmin):
+class ActivityEventAdmin(ReadOnlyLogAdminMixin, admin.ModelAdmin):
     list_display = ("event_type", "business", "client", "category", "source", "created_at")
     list_filter = ("category", "source", "event_type")
     search_fields = ("text", "event_type", "client__full_name", "business__name")
+    exclude = ("metadata",)
+    readonly_fields = ("safe_metadata",)
+
+    def safe_metadata(self, obj):
+        return sanitize_error_payload(getattr(obj, "metadata", {}))
+
+    safe_metadata.short_description = "Metadata (safe)"
 
 
 @admin.register(Note)

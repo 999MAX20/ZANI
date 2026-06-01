@@ -7,6 +7,7 @@ import { getApiErrorMessage } from "../../../../api/client";
 import { Button } from "../../../../components/ui/Button";
 import { ErrorState } from "../../../../components/ui/StateViews";
 import { Input } from "../../../../components/ui/Input";
+import { useI18n } from "../../../../lib/i18n";
 import type { BusinessConnector, Id } from "../../../../types";
 
 export function MoySkladInlineSetup({
@@ -18,6 +19,7 @@ export function MoySkladInlineSetup({
   canManage: boolean;
   connector?: BusinessConnector;
 }) {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const [accessToken, setAccessToken] = useState("");
   const [entities, setEntities] = useState<string[]>(Array.isArray(connector?.config_json?.entities) ? connector?.config_json?.entities as string[] : ["products", "stock", "sales", "clients"]);
@@ -41,7 +43,7 @@ export function MoySkladInlineSetup({
     }),
     onSuccess: () => {
       setAccessToken("");
-      setNotice("МойСклад подключен. Доступ сохранен приватно, можно проверить подключение.");
+      setNotice(t("integrations.moysklad.accessSaved"));
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
       queryClient.invalidateQueries({ queryKey: ["moysklad-status"] });
     },
@@ -50,7 +52,7 @@ export function MoySkladInlineSetup({
   const testConnection = useMutation({
     mutationFn: () => businessConnectorsApi.moyskladTestConnection(Number(connector?.id)),
     onSuccess: (data) => {
-      setNotice(data.ok ? "Подключение к МойСклад проверено." : data.reason || "Не удалось проверить доступ МойСклад.");
+      setNotice(data.ok ? t("integrations.moysklad.connectionChecked") : data.reason || t("integrations.moysklad.connectionCheckFailed"));
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
       queryClient.invalidateQueries({ queryKey: ["moysklad-status", connector?.id] });
     },
@@ -59,7 +61,7 @@ export function MoySkladInlineSetup({
   const syncData = useMutation({
     mutationFn: () => businessConnectorsApi.moyskladSync(Number(connector?.id)),
     onSuccess: (data) => {
-      setNotice(data.ok ? `Данные загружены: ${data.events.length} событий.` : data.reason || "Не удалось загрузить данные МойСклад.");
+      setNotice(data.ok ? t("integrations.moysklad.dataLoaded", { count: data.events.length }) : data.reason || t("integrations.moysklad.dataLoadFailed"));
       queryClient.invalidateQueries({ queryKey: ["business-events"] });
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
       queryClient.invalidateQueries({ queryKey: ["connector-sync-runs"] });
@@ -81,51 +83,51 @@ export function MoySkladInlineSetup({
 
       <div className="grid gap-2 sm:grid-cols-3">
         <div className="rounded-2xl bg-white p-3">
-          <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Доступ</p>
-          <p className="mt-1 text-sm font-black text-midnight">{tokenConfigured ? "Сохранен" : "Нужен"}</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">{t("integrations.setupMetric.access")}</p>
+          <p className="mt-1 text-sm font-black text-midnight">{tokenConfigured ? t("integrations.setupMetric.saved") : t("integrations.setupMetric.required")}</p>
         </div>
         <div className="rounded-2xl bg-white p-3">
-          <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Режим</p>
-          <p className="mt-1 text-sm font-black text-midnight">Только чтение</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">{t("integrations.setupMetric.mode")}</p>
+          <p className="mt-1 text-sm font-black text-midnight">{t("integrations.setupMetric.readOnly")}</p>
         </div>
         <div className="rounded-2xl bg-white p-3">
-          <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Склад</p>
-          <p className="mt-1 text-sm font-black text-midnight">{status.data?.last_sync_at ? "Загружался" : "Еще нет"}</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">{t("integrations.moysklad.inventory")}</p>
+          <p className="mt-1 text-sm font-black text-midnight">{status.data?.last_sync_at ? t("integrations.moysklad.loadedBefore") : t("integrations.setupMetric.notYet")}</p>
         </div>
       </div>
 
       {!showAccessSetup ? (
         <div className="rounded-3xl border border-blue-100 bg-blue-50 p-4">
-          <p className="text-sm font-black text-blue-950">Подключение МойСклад</p>
+          <p className="text-sm font-black text-blue-950">{t("integrations.moysklad.connectionTitle")}</p>
           <p className="mt-1 text-sm font-semibold leading-6 text-blue-800">
-            Сейчас МойСклад подключается через ключ доступа. Следующий production-шаг — авторизация через приложение МойСклад без копирования ключа.
+            {t("integrations.moysklad.connectionDescription")}
           </p>
           <Button type="button" className="mt-3" disabled={!canManage} onClick={() => setShowAccessSetup(true)}>
-            <ShieldCheck size={16} /> Ввести ключ доступа
+            <ShieldCheck size={16} /> {t("integrations.setupAction.enterAccessKey")}
           </Button>
         </div>
       ) : (
         <Input
-          label="Ключ доступа МойСклад"
+          label={t("integrations.moysklad.accessKey")}
           value={accessToken}
           onChange={(event) => setAccessToken(event.target.value)}
-          placeholder={tokenConfigured ? "Доступ уже сохранен. Вставьте новый ключ только для замены." : "Вставьте ключ доступа из МойСклад"}
+          placeholder={tokenConfigured ? t("integrations.setupAction.accessKeyReplacePlaceholder") : t("integrations.moysklad.accessKeyPlaceholder")}
           type="password"
           autoComplete="off"
         />
       )}
 
       <button type="button" className="text-sm font-black text-brand-700" onClick={() => setShowAdvanced((value) => !value)}>
-        {showAdvanced ? "Скрыть дополнительные настройки" : "Дополнительные настройки"}
+        {showAdvanced ? t("integrations.setupAction.hideAdvanced") : t("integrations.setupAction.showAdvanced")}
       </button>
       {showAdvanced ? (
         <div className="space-y-3 rounded-2xl bg-white p-3">
           <div className="grid gap-2 sm:grid-cols-2">
             {[
-              ["products", "Товары"],
-              ["stock", "Остатки"],
-              ["sales", "Продажи"],
-              ["clients", "Контрагенты"],
+              ["products", t("integrations.moysklad.entity.products")],
+              ["stock", t("integrations.moysklad.entity.stock")],
+              ["sales", t("integrations.moysklad.entity.sales")],
+              ["clients", t("integrations.moysklad.entity.clients")],
             ].map(([value, label]) => (
               <label key={value} className="flex items-center gap-2 rounded-xl border border-slate-100 px-3 py-2 text-sm font-bold text-slate-700">
                 <input type="checkbox" className="h-4 w-4 rounded border-slate-300" checked={entities.includes(value)} onChange={() => toggleEntity(value)} />
@@ -133,24 +135,24 @@ export function MoySkladInlineSetup({
               </label>
             ))}
           </div>
-          <Input label="Лимит строк за раз" value={pageSize} onChange={(event) => setPageSize(event.target.value)} placeholder="50" type="number" />
+          <Input label={t("integrations.moysklad.pageSize")} value={pageSize} onChange={(event) => setPageSize(event.target.value)} placeholder="50" type="number" />
         </div>
       ) : null}
 
       <div className="grid gap-3 md:grid-cols-3">
         <Button type="button" disabled={!canManage || (!accessToken.trim() && !connector)} isLoading={saveConfig.isPending} onClick={() => saveConfig.mutate()}>
-          <ShieldCheck size={16} /> {connector ? "Сохранить доступ" : "Подключить МойСклад"}
+          <ShieldCheck size={16} /> {connector ? t("integrations.setupAction.saveAccess") : t("integrations.moysklad.connect")}
         </Button>
         <Button type="button" variant="secondary" disabled={!canManage || !connector || !tokenConfigured} isLoading={testConnection.isPending} onClick={() => testConnection.mutate()}>
-          <RefreshCw size={16} /> Проверить
+          <RefreshCw size={16} /> {t("integrations.card.check")}
         </Button>
         <Button type="button" variant="secondary" disabled={!canManage || !connector || !tokenConfigured || !entities.length} isLoading={syncData.isPending} onClick={() => syncData.mutate()}>
-          <DatabaseZap size={16} /> Загрузить данные
+          <DatabaseZap size={16} /> {t("integrations.moysklad.loadData")}
         </Button>
       </div>
 
       <p className="text-xs font-semibold leading-5 text-slate-500">
-        ZANI только читает товары, остатки, продажи и контрагентов. Изменение документов, цен и остатков в МойСклад здесь отключено.
+        {t("integrations.moysklad.readOnlyNotice")}
       </p>
     </div>
   );

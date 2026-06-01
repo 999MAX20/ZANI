@@ -1,6 +1,12 @@
 from django.contrib import admin
 
+from apps.integrations.sanitization import sanitize_error_payload, sanitize_error_text
 from apps.leads.models import Lead, LeadForm, LeadFormField, LeadFormSubmission, LeadFormSubmissionError
+
+
+class ReadOnlyLogAdminMixin:
+    def has_add_permission(self, request):
+        return False
 
 
 @admin.register(Lead)
@@ -31,8 +37,19 @@ class LeadFormSubmissionAdmin(admin.ModelAdmin):
 
 
 @admin.register(LeadFormSubmissionError)
-class LeadFormSubmissionErrorAdmin(admin.ModelAdmin):
-    list_display = ("id", "form", "business", "landing_id", "page_domain", "error_message", "created_at")
+class LeadFormSubmissionErrorAdmin(ReadOnlyLogAdminMixin, admin.ModelAdmin):
+    list_display = ("id", "form", "business", "landing_id", "page_domain", "safe_error_message", "created_at")
     list_filter = ("business", "form", "page_domain")
-    search_fields = ("public_id", "landing_id", "page_domain", "error_message")
-    readonly_fields = ("created_at",)
+    search_fields = ("public_id", "landing_id", "page_domain")
+    exclude = ("payload_json", "error_message")
+    readonly_fields = ("safe_payload_json", "safe_error_message", "created_at")
+
+    def safe_payload_json(self, obj):
+        return sanitize_error_payload(getattr(obj, "payload_json", {}))
+
+    safe_payload_json.short_description = "Payload (safe)"
+
+    def safe_error_message(self, obj):
+        return sanitize_error_text(getattr(obj, "error_message", ""))
+
+    safe_error_message.short_description = "Error message (safe)"

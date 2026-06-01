@@ -363,6 +363,7 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
     def suggest_reply(self, request, pk=None):
         conversation = self.get_object()
         assert_can(request.user, conversation.business, Resources.CONVERSATIONS, Actions.UPDATE, obj=conversation)
+        assert_can(request.user, conversation.business, Resources.AI_ASSISTANT, Actions.SUGGEST, obj=conversation)
         result, log, message_context = suggest_bot_reply(conversation=conversation, user=request.user)
         return Response(
             {
@@ -402,6 +403,7 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
     def run_pipeline(self, request, pk=None):
         conversation = self.get_object()
         assert_can(request.user, conversation.business, Resources.CONVERSATIONS, Actions.UPDATE, obj=conversation)
+        assert_can(request.user, conversation.business, Resources.AI_PIPELINE, Actions.EXECUTE, obj=conversation)
         assert_can(request.user, conversation.business, Resources.CLIENTS, Actions.CREATE)
         serializer = InboxRunPipelineSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

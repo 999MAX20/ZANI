@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CalendarDays, Clock3, Plus, UsersRound } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 import { getApiErrorMessage } from "../../api/client";
 import { workingHoursApi, type WorkingHoursPreset } from "../../api/workingHours";
@@ -90,7 +91,18 @@ export function WorkingHoursPage() {
 
   return (
     <>
-      <PageHeader title={t("workingHours.title")} description={t("workingHours.description")} actions={<Button onClick={() => setOpen(true)}><Plus size={18} />{t("workingHours.setupWeek")}</Button>} />
+      <PageHeader
+        title={t("workingHours.title")}
+        description={t("workingHours.description")}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Link to="/dashboard/settings#operations-setup">
+              <Button type="button" variant="secondary">{t("settings.schedulingCenter")}</Button>
+            </Link>
+            <Button onClick={() => setOpen(true)}><Plus size={18} />{t("workingHours.setupWeek")}</Button>
+          </div>
+        }
+      />
       <section className="mb-5 grid gap-3 lg:grid-cols-3">
         <div className="rounded-3xl border border-white/80 bg-white/85 p-5 shadow-soft">
           <CalendarDays className="text-brand-600" size={24} />

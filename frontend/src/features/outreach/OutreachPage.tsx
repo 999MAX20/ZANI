@@ -35,50 +35,15 @@ import { formatDateTime } from "../../lib/format";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useAuth } from "../auth/AuthProvider";
 import type { Client, Id, OutreachCampaign, OutreachTemplate } from "../../types";
-
-const defaultMessage = "Здравствуйте, {client_name}! Напоминаем, что у нас можно записаться на ближайшее свободное время. Ответьте на это сообщение, и менеджер подберет удобный слот.";
-
-const statusLabels: Record<OutreachCampaign["status"], string> = {
-  draft: "Черновик",
-  ready: "Готова",
-  scheduled: "Запланирована",
-  running: "В отправке",
-  sent: "Отправлена",
-  cancelled: "Отменена",
-};
+import { useI18n } from "../../lib/i18n";
 
 const channelLabels = {
   telegram: "Telegram",
   whatsapp: "WhatsApp",
 };
 
-const campaignTypeLabels: Record<OutreachCampaign["campaign_type"], string> = {
-  service: "Сервисная",
-  marketing: "Маркетинговая",
-  transactional: "Транзакционная",
-};
-
-const audienceLabels: Record<OutreachCampaign["audience_type"], string> = {
-  all_clients: "Все клиенты",
-  segment: "Сегмент",
-  manual: "Ручной список",
-};
-
-const roleLabels: Record<string, string> = {
-  owner: "Владелец",
-  admin: "Администратор",
-  marketer: "Маркетолог",
-  manager: "Менеджер",
-  operator: "Оператор",
-  support: "Поддержка",
-  accountant: "Бухгалтер",
-  staff: "Сотрудник",
-  business_owner: "Владелец",
-  business_manager: "Менеджер",
-  business_operator: "Оператор",
-};
-
-const emptyForm = {
+function createEmptyForm(defaultMessage: string) {
+  return {
   name: "",
   channel: "telegram",
   campaign_type: "service",
@@ -94,8 +59,10 @@ const emptyForm = {
   batch_size: "100",
   scheduled_at: "",
 };
+}
 
 export function OutreachPage() {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { business, isLoading: businessLoading } = useActiveBusiness();
@@ -104,7 +71,7 @@ export function OutreachPage() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [manualSearch, setManualSearch] = useState("");
   const [manualClientIds, setManualClientIds] = useState<number[]>([]);
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(() => createEmptyForm(t("outreach.defaultMessage")));
   const [consentForm, setConsentForm] = useState({
     channel: "whatsapp" as "telegram" | "whatsapp",
     status: "opted_in" as "opted_in" | "opted_out" | "unknown",
@@ -179,10 +146,10 @@ export function OutreachPage() {
 
   const createCampaign = useMutation({
     mutationFn: () => {
-      if (!business) throw new Error("Бизнес не выбран.");
+      if (!business) throw new Error("Business is not selected.");
       return outreachCampaignsApi.create({
         business: business.id,
-        name: form.name.trim() || "Новая рассылка",
+        name: form.name.trim() || t("outreach.defaultCampaignName"),
         channel: form.channel,
         campaign_type: form.campaign_type,
         audience_type: form.audience_type,
@@ -200,17 +167,17 @@ export function OutreachPage() {
     },
     onSuccess: async (campaign) => {
       setOpen(false);
-      setForm(emptyForm);
+      setForm(createEmptyForm(t("outreach.defaultMessage")));
       setSelectedId(campaign.id);
       await invalidateCampaigns();
     },
   });
   const createTemplate = useMutation({
     mutationFn: () => {
-      if (!business) throw new Error("Бизнес не выбран.");
+      if (!business) throw new Error("Business is not selected.");
       return outreachTemplatesApi.create({
         business: business.id,
-        name: templateName.trim() || form.name.trim() || "Новый шаблон",
+        name: templateName.trim() || form.name.trim() || t("outreach.defaultTemplateName"),
         channel: form.channel,
         body: form.message_text,
         external_template_name: form.whatsapp_template_name,
@@ -252,7 +219,7 @@ export function OutreachPage() {
   });
   const importConsents = useMutation({
     mutationFn: () => {
-      if (!business) throw new Error("Бизнес не выбран.");
+      if (!business) throw new Error("Business is not selected.");
       const rows = consentForm.rows
         .split("\n")
         .map((line) => line.trim())
@@ -278,8 +245,8 @@ export function OutreachPage() {
   });
   const importConsentFile = useMutation({
     mutationFn: () => {
-      if (!business) throw new Error("Бизнес не выбран.");
-      if (!consentFile) throw new Error("Файл не выбран.");
+      if (!business) throw new Error("Business is not selected.");
+      if (!consentFile) throw new Error("File is not selected.");
       return outreachConsentsApi.bulkImportFile({
         business: business.id,
         channel: consentForm.channel,
@@ -296,8 +263,8 @@ export function OutreachPage() {
     },
   });
 
-  if (businessLoading || campaigns.isLoading) return <LoadingState label="Загружаем рассылки..." />;
-  if (!business) return <ErrorState message="Бизнес не выбран." />;
+  if (businessLoading || campaigns.isLoading) return <LoadingState label={t("outreach.loading")} />;
+  if (!business) return <ErrorState message={t("outreach.noBusiness")} />;
 
   const campaignList = campaigns.data || [];
   const totalRecipients = campaignList.reduce((sum, campaign) => sum + (campaign.recipients_total || 0), 0);
@@ -313,21 +280,22 @@ export function OutreachPage() {
   const currentMembership = user?.memberships?.find((membership) => String(membership.business) === String(business.id) && membership.is_active);
   const currentRole = currentMembership?.role || user?.role || "staff";
   const canManageOutreach = ["owner", "admin", "marketer", "business_owner"].includes(currentRole);
+  const currentRoleLabel = t(`settings.role.${currentRole.replace("business_", "")}`);
   const launchBlockedReason = canManageOutreach
     ? launchChecklist.data?.can_launch
       ? ""
-      : "Сначала подготовьте аудиторию и пройдите checklist."
-    : "Запуск доступен владельцу, администратору или маркетологу.";
+      : t("outreach.launchBlockedChecklist")
+    : t("outreach.launchBlockedRole");
 
   return (
     <div>
       <PageHeader
-        title="Рассылки"
-        description="Рабочий центр для Telegram и WhatsApp кампаний: аудитория, очередь получателей, запуск и статусы доставки."
+        title={t("outreach.title")}
+        description={t("outreach.description")}
         actions={
           <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" disabled={!canManageOutreach} title={!canManageOutreach ? "Импорт согласий доступен владельцу, администратору или маркетологу." : undefined} onClick={() => setConsentOpen(true)}><Upload size={18} /> Импорт согласий</Button>
-            <Button disabled={!canManageOutreach} title={!canManageOutreach ? "Создание рассылок доступно владельцу, администратору или маркетологу." : undefined} onClick={() => setOpen(true)}><Plus size={18} /> Создать рассылку</Button>
+            <Button variant="secondary" disabled={!canManageOutreach} title={!canManageOutreach ? t("outreach.importConsentRoleTitle") : undefined} onClick={() => setConsentOpen(true)}><Upload size={18} /> {t("outreach.importConsents")}</Button>
+            <Button disabled={!canManageOutreach} title={!canManageOutreach ? t("outreach.createRoleTitle") : undefined} onClick={() => setOpen(true)}><Plus size={18} /> {t("outreach.createCampaign")}</Button>
           </div>
         }
       />
@@ -335,32 +303,32 @@ export function OutreachPage() {
       {pageError ? <div className="mb-4"><ErrorState message={getApiErrorMessage(pageError)} /></div> : null}
 
       <div className="mb-5 grid gap-4 md:grid-cols-3">
-        <MetricTile icon={BarChart3} tone="brand" label="Кампаний" value={campaignList.length} hint={`${activeCampaigns} активных`} />
-        <MetricTile icon={Users} tone="ai" label="В очередях" value={totalRecipients} hint="получателей в кампаниях" />
-        <MetricTile icon={CheckCircle2} tone="green" label="Отправлено" value={sentRecipients} hint="по обновленным статусам" />
+        <MetricTile icon={BarChart3} tone="brand" label={t("outreach.metric.campaigns")} value={campaignList.length} hint={t("outreach.metric.active", { count: activeCampaigns })} />
+        <MetricTile icon={Users} tone="ai" label={t("outreach.metric.queued")} value={totalRecipients} hint={t("outreach.metric.recipientsHint")} />
+        <MetricTile icon={CheckCircle2} tone="green" label={t("outreach.metric.sent")} value={sentRecipients} hint={t("outreach.metric.sentHint")} />
       </div>
 
       <div className="mb-5 grid gap-3 xl:grid-cols-3">
         <ReadinessCard
           icon={Lock}
-          title="Роли и запуск"
+          title={t("outreach.readiness.rolesTitle")}
           tone={canManageOutreach ? "green" : "amber"}
-          value={canManageOutreach ? `${roleLabels[currentRole] || currentRole}: можно запускать` : `${roleLabels[currentRole] || currentRole}: только просмотр`}
-          description="Боевые массовые рассылки запускают owner/admin/marketer. Preferences могут скрыть обычный шум, но high/urgent уведомления всегда доходят."
+          value={canManageOutreach ? t("outreach.readiness.roleCanLaunch", { role: currentRoleLabel }) : t("outreach.readiness.roleReadOnly", { role: currentRoleLabel })}
+          description={t("outreach.readiness.rolesText")}
         />
         <ReadinessCard
           icon={CalendarCheck2}
-          title="Автосообщения записей"
+          title={t("outreach.readiness.appointmentTitle")}
           tone={appointmentAutomation.data?.total_failed ? "amber" : "green"}
-          value={`${appointmentAutomation.data?.total_pending ?? 0} в очереди · ${appointmentAutomation.data?.total_failed ?? 0} ошибок`}
-          description="Подтверждение за 24 часа, напоминание за 2 часа и спасибо после завершенного визита создаются автоматически."
+          value={t("outreach.readiness.appointmentValue", { pending: appointmentAutomation.data?.total_pending ?? 0, failed: appointmentAutomation.data?.total_failed ?? 0 })}
+          description={t("outreach.readiness.appointmentText")}
         />
         <ReadinessCard
           icon={ShieldCheck}
-          title="Защита запуска"
+          title={t("outreach.readiness.safetyTitle")}
           tone={launchChecklist.data?.can_launch ? "green" : "slate"}
-          value={selectedCampaign ? (launchChecklist.data?.can_launch ? "Checklist пройден" : "Checklist обязателен") : "Выберите кампанию"}
-          description="Перед запуском проверяются текст, аудитория, opt-in, подготовленная очередь, лимиты и WhatsApp template."
+          value={selectedCampaign ? (launchChecklist.data?.can_launch ? t("outreach.checklistPassed") : t("outreach.checklistRequired")) : t("outreach.selectCampaign")}
+          description={t("outreach.readiness.safetyText")}
         />
       </div>
 
@@ -368,11 +336,11 @@ export function OutreachPage() {
         <section className="mb-5 rounded-3xl border border-slate-100 bg-white/95 p-4 shadow-soft">
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-xs font-black uppercase text-brand-700">Автоматические сообщения по записям</p>
-              <h2 className="mt-1 text-lg font-black text-midnight">Сервисные сценарии работают без ручного запуска рассылки</h2>
+              <p className="text-xs font-black uppercase text-brand-700">{t("outreach.appointmentAutoEyebrow")}</p>
+              <h2 className="mt-1 text-lg font-black text-midnight">{t("outreach.appointmentAutoTitle")}</h2>
             </div>
             <span className={`w-fit rounded-full px-3 py-1 text-xs font-black ${appointmentAutomation.data.enabled ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
-              {appointmentAutomation.data.enabled ? "включено" : "выключено"}
+              {appointmentAutomation.data.enabled ? t("settings.enabled") : t("settings.disabled")}
             </span>
           </div>
           <div className="mt-4 grid gap-3 lg:grid-cols-3">
@@ -387,9 +355,9 @@ export function OutreachPage() {
                 </div>
                 <p className="mt-3 text-sm font-semibold leading-5 text-slate-600">{scenario.description}</p>
                 <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-                  <MiniCount label="Очередь" value={scenario.counts.pending} />
-                  <MiniCount label="Ушло" value={scenario.counts.sent} />
-                  <MiniCount label="Ошибки" value={scenario.counts.failed} tone={scenario.counts.failed ? "amber" : "slate"} />
+                  <MiniCount label={t("outreach.count.pending")} value={scenario.counts.pending} />
+                  <MiniCount label={t("outreach.count.sent")} value={scenario.counts.sent} />
+                  <MiniCount label={t("outreach.count.failed")} value={scenario.counts.failed} tone={scenario.counts.failed ? "amber" : "slate"} />
                 </div>
               </div>
             ))}
@@ -398,8 +366,8 @@ export function OutreachPage() {
             <div className="mt-4 rounded-2xl border border-amber-100 bg-amber-50/70 p-4">
               <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <p className="text-sm font-black text-amber-950">Ошибки отправки</p>
-                  <p className="text-sm font-semibold text-amber-900">Проверьте подключение канала или повторите отправку после исправления.</p>
+                  <p className="text-sm font-black text-amber-950">{t("outreach.deliveryErrorsTitle")}</p>
+                  <p className="text-sm font-semibold text-amber-900">{t("outreach.deliveryErrorsText")}</p>
                 </div>
                 <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-amber-900">{appointmentAutomation.data.total_failed} failed</span>
               </div>
@@ -407,11 +375,11 @@ export function OutreachPage() {
                 {appointmentAutomation.data.failed_notifications.map((notification) => (
                   <div key={notification.id} className="flex flex-col gap-3 rounded-2xl bg-white px-3 py-3 md:flex-row md:items-center md:justify-between">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-black text-midnight">{notification.label} · {notification.client_name || notification.client_phone || "Клиент"}</p>
+                      <p className="truncate text-sm font-black text-midnight">{notification.label} · {notification.client_name || notification.client_phone || t("common.client")}</p>
                       <p className="mt-0.5 text-xs font-semibold uppercase text-slate-400">{notification.channel} · {formatDateTime(notification.send_at)}</p>
                     </div>
                     <Button type="button" variant="secondary" disabled={!canManageOutreach} isLoading={retryNotification.isPending} onClick={() => retryNotification.mutate(Number(notification.id))}>
-                      <RefreshCw size={15} /> Повторить
+                      <RefreshCw size={15} /> {t("common.retry")}
                     </Button>
                   </div>
                 ))}
@@ -424,7 +392,7 @@ export function OutreachPage() {
       <section className="grid gap-5 xl:grid-cols-[420px_1fr]">
         <div className="rounded-3xl border border-slate-100 bg-white/95 p-3 shadow-soft">
           <div className="flex items-center justify-between px-2 py-2">
-            <h2 className="text-lg font-black text-midnight">Кампании</h2>
+            <h2 className="text-lg font-black text-midnight">{t("outreach.campaigns")}</h2>
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-500">{campaignList.length}</span>
           </div>
           <div className="mt-2 space-y-2">
@@ -440,14 +408,14 @@ export function OutreachPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="truncate text-base font-black text-midnight">{campaign.name}</p>
-                      <p className="mt-1 text-sm font-semibold text-slate-500">{channelLabels[campaign.channel]} · {campaignTypeLabels[campaign.campaign_type]} · {statusLabels[campaign.status]}</p>
+                      <p className="mt-1 text-sm font-semibold text-slate-500">{channelLabels[campaign.channel]} · {t(`outreach.campaignType.${campaign.campaign_type}`)} · {t(`outreach.status.${campaign.status}`)}</p>
                     </div>
                     <span className="rounded-full bg-white px-2.5 py-1 text-xs font-black text-brand-700">{campaign.recipients_total || 0}</span>
                   </div>
                 </button>
               );
             })}
-            {!campaignList.length ? <EmptyState title="Рассылок пока нет" description="Создайте первую кампанию для Telegram или WhatsApp." /> : null}
+            {!campaignList.length ? <EmptyState title={t("outreach.emptyTitle")} description={t("outreach.emptyDescription")} /> : null}
           </div>
         </div>
 
@@ -456,47 +424,47 @@ export function OutreachPage() {
             <div>
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
-                  <p className="text-xs font-black uppercase text-brand-700">{channelLabels[selectedCampaign.channel]} рассылка</p>
+                  <p className="text-xs font-black uppercase text-brand-700">{t("outreach.channelCampaign", { channel: channelLabels[selectedCampaign.channel] })}</p>
                   <h2 className="mt-1 text-2xl font-black text-midnight">{selectedCampaign.name}</h2>
                   <p className="mt-2 text-sm font-semibold text-slate-500">
-                    Статус: {statusLabels[selectedCampaign.status]}
-                    {selectedCampaign.scheduled_at ? ` · старт ${formatDateTime(selectedCampaign.scheduled_at)}` : ""}
+                    {t("outreach.statusLine", { status: t(`outreach.status.${selectedCampaign.status}`) })}
+                    {selectedCampaign.scheduled_at ? t("outreach.startLine", { date: formatDateTime(selectedCampaign.scheduled_at) }) : ""}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button type="button" variant="secondary" disabled={!canManageOutreach || (selectedCampaign.audience_type === "manual" && !manualSelectedCount)} isLoading={prepare.isPending} onClick={() => prepare.mutate({ id: selectedCampaign.id, clientIds: prepareClientIds })}>
-                    <Users size={16} /> Подготовить
+                    <Users size={16} /> {t("outreach.prepare")}
                   </Button>
                   <Button type="button" disabled={!canManageOutreach || !launchChecklist.data?.can_launch} title={launchBlockedReason || undefined} isLoading={launch.isPending} onClick={() => launch.mutate(selectedCampaign.id)}>
-                    <Play size={16} /> Запустить
+                    <Play size={16} /> {t("outreach.launch")}
                   </Button>
                   <Button type="button" variant="secondary" isLoading={refresh.isPending} onClick={() => refresh.mutate(selectedCampaign.id)}>
-                    <RefreshCw size={16} /> Обновить
+                    <RefreshCw size={16} /> {t("common.refresh")}
                   </Button>
                   <Button type="button" variant="secondary" disabled={!canManageOutreach || !stats.data?.retryable_failed} isLoading={retryFailed.isPending} onClick={() => retryFailed.mutate({ id: selectedCampaign.id, retryableOnly: true, delayMinutes: 15 })}>
-                    <RefreshCw size={16} /> Retry 15 мин
+                    <RefreshCw size={16} /> {t("outreach.retry15")}
                   </Button>
                   <Button type="button" variant="secondary" disabled={!canManageOutreach || !selectedCampaign.recipients_failed} isLoading={retryFailed.isPending} onClick={() => retryFailed.mutate({ id: selectedCampaign.id })}>
-                    <RefreshCw size={16} /> Повторить все
+                    <RefreshCw size={16} /> {t("outreach.retryAll")}
                   </Button>
                   <Button type="button" variant="ghost" disabled={!canManageOutreach || selectedCampaign.status === "cancelled"} isLoading={cancel.isPending} onClick={() => cancel.mutate(selectedCampaign.id)}>
-                    Отменить
+                    {t("common.cancel")}
                   </Button>
                 </div>
               </div>
 
               {!canManageOutreach ? (
                 <div className="mt-4 rounded-3xl border border-amber-100 bg-amber-50/70 p-4 text-sm font-semibold leading-6 text-amber-950">
-                  Ваша роль может контролировать статус рассылок и получателей, но запуск, импорт согласий и повтор ошибок закрыты. Это защищает клиентов от случайных массовых сообщений.
+                  {t("outreach.readOnlyNotice")}
                 </div>
               ) : null}
 
               <div className="mt-5 grid gap-3 md:grid-cols-4">
-                <MiniStat label="Всего" value={selectedCampaign.recipients_total || 0} />
-                <MiniStat label="В ожидании" value={selectedCampaign.recipients_pending || 0} />
-                <MiniStat label="Отправлено" value={selectedCampaign.recipients_sent || 0} />
-                <MiniStat label="Ошибки" value={selectedCampaign.recipients_failed || 0} />
-                <MiniStat label="Пропущено" value={selectedCampaign.recipients_skipped || 0} />
+                <MiniStat label={t("outreach.stat.total")} value={selectedCampaign.recipients_total || 0} />
+                <MiniStat label={t("outreach.stat.pending")} value={selectedCampaign.recipients_pending || 0} />
+                <MiniStat label={t("outreach.stat.sent")} value={selectedCampaign.recipients_sent || 0} />
+                <MiniStat label={t("outreach.stat.failed")} value={selectedCampaign.recipients_failed || 0} />
+                <MiniStat label={t("outreach.stat.skipped")} value={selectedCampaign.recipients_skipped || 0} />
               </div>
 
               <div className="mt-5 grid gap-3 md:grid-cols-3">
@@ -508,8 +476,8 @@ export function OutreachPage() {
               {launchChecklist.data ? (
                 <div className={`mt-4 rounded-3xl border p-4 ${launchChecklist.data.can_launch ? "border-emerald-100 bg-emerald-50/70" : "border-amber-100 bg-amber-50/70"}`}>
                   <div className="flex items-center justify-between gap-3">
-                    <h3 className={`text-sm font-black ${launchChecklist.data.can_launch ? "text-emerald-900" : "text-amber-950"}`}>Проверка перед запуском</h3>
-                    <span className="rounded-full bg-white px-3 py-1 text-xs font-black">{launchChecklist.data.can_launch ? "готово" : "нужно проверить"}</span>
+                    <h3 className={`text-sm font-black ${launchChecklist.data.can_launch ? "text-emerald-900" : "text-amber-950"}`}>{t("outreach.prelaunchCheck")}</h3>
+                    <span className="rounded-full bg-white px-3 py-1 text-xs font-black">{launchChecklist.data.can_launch ? t("outreach.ready") : t("outreach.needsCheck")}</span>
                   </div>
                   <div className="mt-3 grid gap-2 md:grid-cols-2">
                     {launchChecklist.data.checks.map((check) => (
@@ -524,7 +492,7 @@ export function OutreachPage() {
 
               {stats.data?.errors?.length ? (
                 <div className="mt-4 rounded-3xl border border-amber-100 bg-amber-50/70 p-4">
-                  <h3 className="text-sm font-black text-amber-950">Причины ошибок и suppression</h3>
+                  <h3 className="text-sm font-black text-amber-950">{t("outreach.errorReasons")}</h3>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {stats.data.errors.map((error) => (
                       <span key={error.code} className="rounded-full bg-white px-3 py-1 text-xs font-black text-amber-900">
@@ -536,20 +504,20 @@ export function OutreachPage() {
               ) : null}
 
               <div className="mt-5 grid gap-3 lg:grid-cols-3">
-                <SafetyCard icon={ShieldCheck} label="Согласия" value={selectedCampaign.require_opt_in ? "Обязательны" : "Не требуются"} tone={selectedCampaign.require_opt_in ? "green" : "amber"} />
-                <SafetyCard icon={Users} label="Лимит" value={`${selectedCampaign.rate_limit_per_minute}/мин · batch ${selectedCampaign.batch_size}`} />
-                <SafetyCard icon={Clock3} label="Аудитория" value={audienceLabels[selectedCampaign.audience_type]} />
+                <SafetyCard icon={ShieldCheck} label={t("outreach.consents")} value={selectedCampaign.require_opt_in ? t("outreach.required") : t("outreach.notRequired")} tone={selectedCampaign.require_opt_in ? "green" : "amber"} />
+                <SafetyCard icon={Users} label={t("outreach.limit")} value={t("outreach.limitValue", { limit: selectedCampaign.rate_limit_per_minute, batch: selectedCampaign.batch_size })} />
+                <SafetyCard icon={Clock3} label={t("outreach.audience")} value={t(`outreach.audienceType.${selectedCampaign.audience_type}`)} />
                 <SafetyCard
                   icon={AlertTriangle}
                   label="WhatsApp template"
-                  value={selectedCampaign.channel === "whatsapp" ? selectedCampaign.whatsapp_template_status : "Не нужен"}
+                  value={selectedCampaign.channel === "whatsapp" ? selectedCampaign.whatsapp_template_status : t("outreach.notNeeded")}
                   tone={selectedCampaign.channel === "whatsapp" && selectedCampaign.whatsapp_template_status !== "approved" ? "amber" : "green"}
                 />
               </div>
 
               <div className="mt-5 rounded-3xl bg-slate-50 p-4">
                 <div className="flex items-center gap-2 text-sm font-black text-midnight">
-                  <MessageSquareText size={17} /> Текст сообщения
+                  <MessageSquareText size={17} /> {t("outreach.messageText")}
                 </div>
                 <p className="mt-3 whitespace-pre-wrap text-sm font-semibold leading-6 text-slate-600">{selectedCampaign.message_text}</p>
               </div>
@@ -569,9 +537,9 @@ export function OutreachPage() {
 
               <div className="mt-5 grid gap-4 lg:grid-cols-2">
                 <div className="rounded-3xl border border-slate-100 p-4">
-                  <h3 className="font-black text-midnight">Аудитория</h3>
+                  <h3 className="font-black text-midnight">{t("outreach.audience")}</h3>
                   <p className="mt-1 text-sm font-semibold text-slate-500">
-                    Всего: {audiencePreview.data?.count ?? "..."} · можно отправить: {audiencePreview.data?.eligible_count ?? "..."} · suppression: {audiencePreview.data?.suppressed_count ?? "..."}.
+                    {t("outreach.audiencePreview", { total: audiencePreview.data?.count ?? "...", eligible: audiencePreview.data?.eligible_count ?? "...", suppressed: audiencePreview.data?.suppressed_count ?? "..." })}
                   </p>
                   <div className="mt-3 space-y-2">
                     {(audiencePreview.data?.clients || []).map((client) => (
@@ -584,7 +552,7 @@ export function OutreachPage() {
                 </div>
 
                 <div className="rounded-3xl border border-slate-100 p-4">
-                  <h3 className="font-black text-midnight">Последние получатели</h3>
+                  <h3 className="font-black text-midnight">{t("outreach.latestRecipients")}</h3>
                   <div className="mt-3 space-y-2">
                     {(recipients.data || []).slice(0, 6).map((recipient) => (
                       <div key={recipient.id} className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 text-sm">
@@ -594,29 +562,29 @@ export function OutreachPage() {
                         {recipient.error_code ? <span className="text-xs font-semibold text-rose-700">{recipient.error_code}</span> : null}
                       </div>
                     ))}
-                    {!recipients.isLoading && !(recipients.data || []).length ? <p className="text-sm font-semibold text-slate-500">Очередь появится после подготовки кампании.</p> : null}
+                    {!recipients.isLoading && !(recipients.data || []).length ? <p className="text-sm font-semibold text-slate-500">{t("outreach.queueEmpty")}</p> : null}
                   </div>
                 </div>
               </div>
             </div>
           ) : (
-            <EmptyState title="Выберите кампанию" description="После создания рассылки здесь появятся аудитория, очередь и управление запуском." />
+            <EmptyState title={t("outreach.selectCampaign")} description={t("outreach.selectCampaignDescription")} />
           )}
         </div>
       </section>
 
-      <Modal title="Новая рассылка" open={open} onClose={() => setOpen(false)}>
+      <Modal title={t("outreach.newCampaign")} open={open} onClose={() => setOpen(false)}>
         <div className="space-y-4">
           <div className="rounded-3xl border border-brand-100 bg-brand-50/70 p-4">
-            <p className="text-sm font-black text-brand-900">Боевой порядок запуска</p>
+            <p className="text-sm font-black text-brand-900">{t("outreach.launchOrderTitle")}</p>
             <p className="mt-1 text-sm font-semibold leading-6 text-slate-600">
-              Создание кампании не отправляет сообщения. Сначала сохраните рассылку, затем подготовьте аудиторию, проверьте checklist и только после этого запускайте отправку.
+              {t("outreach.launchOrderText")}
             </p>
           </div>
-          <Input label="Название" value={form.name} onChange={(event) => setForm((state) => ({ ...state, name: event.target.value }))} placeholder="Напоминание о свободных окнах" />
+          <Input label={t("outreach.nameLabel")} value={form.name} onChange={(event) => setForm((state) => ({ ...state, name: event.target.value }))} placeholder={t("outreach.namePlaceholder")} />
           <div className="grid gap-3 md:grid-cols-2">
             <Select
-              label="Канал"
+              label={t("settings.channel")}
               value={form.channel}
               onChange={(event) => setForm((state) => ({ ...state, channel: event.target.value }))}
               options={[
@@ -625,19 +593,19 @@ export function OutreachPage() {
               ]}
             />
             <Select
-              label="Тип кампании"
+              label={t("outreach.campaignType")}
               value={form.campaign_type}
               onChange={(event) => setForm((state) => ({ ...state, campaign_type: event.target.value }))}
               options={[
-                { value: "service", label: "Сервисная" },
-                { value: "marketing", label: "Маркетинговая" },
-                { value: "transactional", label: "Транзакционная" },
+                { value: "service", label: t("outreach.campaignType.service") },
+                { value: "marketing", label: t("outreach.campaignType.marketing") },
+                { value: "transactional", label: t("outreach.campaignType.transactional") },
               ]}
             />
           </div>
           <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
             <Select
-              label="Шаблон"
+              label={t("settings.template")}
               value={form.template}
               onChange={(event) => {
                 const template = channelTemplates.find((item) => String(item.id) === event.target.value);
@@ -651,43 +619,43 @@ export function OutreachPage() {
                 }));
               }}
               options={[
-                { value: "", label: "Без шаблона" },
+                { value: "", label: t("outreach.noTemplate") },
                 ...channelTemplates.map((template) => ({ value: String(template.id), label: `${template.name}${template.is_approved ? " · approved" : ""}` })),
               ]}
             />
             <Button type="button" variant="secondary" disabled={!canManageOutreach || !form.message_text.trim()} isLoading={createTemplate.isPending} onClick={() => createTemplate.mutate()}>
-              Сохранить шаблон
+              {t("outreach.saveTemplate")}
             </Button>
           </div>
-          <Input label="Название нового шаблона" value={templateName} onChange={(event) => setTemplateName(event.target.value)} placeholder="Напоминание о записи" />
+          <Input label={t("outreach.newTemplateName")} value={templateName} onChange={(event) => setTemplateName(event.target.value)} placeholder={t("outreach.templateNamePlaceholder")} />
           <div className="grid gap-3 md:grid-cols-2">
             <Select
-              label="Аудитория"
+              label={t("outreach.audience")}
               value={form.audience_type}
               onChange={(event) => setForm((state) => ({ ...state, audience_type: event.target.value }))}
               options={[
-                { value: "all_clients", label: "Все клиенты с этим каналом" },
-                { value: "segment", label: "Сегмент клиентов" },
-                { value: "manual", label: "Ручной список" },
+                { value: "all_clients", label: t("outreach.audienceType.all_clients") },
+                { value: "segment", label: t("outreach.audienceType.segment") },
+                { value: "manual", label: t("outreach.audienceType.manual") },
               ]}
             />
             <Select
-              label="Согласие клиента"
+              label={t("outreach.clientConsent")}
               value={form.require_opt_in ? "required" : "not_required"}
               onChange={(event) => setForm((state) => ({ ...state, require_opt_in: event.target.value === "required" }))}
               options={[
-                { value: "required", label: "Только с opt-in" },
-                { value: "not_required", label: "Без проверки opt-in" },
+                { value: "required", label: t("outreach.optInOnly") },
+                { value: "not_required", label: t("outreach.noOptInCheck") },
               ]}
             />
           </div>
           {form.audience_type === "segment" ? (
             <Select
-              label="Сегмент"
+              label={t("outreach.segment")}
               value={form.segment}
               onChange={(event) => setForm((state) => ({ ...state, segment: event.target.value }))}
               options={[
-                { value: "", label: "Выберите сегмент" },
+                { value: "", label: t("outreach.selectSegment") },
                 ...segmentList.map((segment) => ({ value: String(segment.id), label: `${segment.name} (${segment.cached_count})` })),
               ]}
             />
@@ -695,9 +663,9 @@ export function OutreachPage() {
           {form.channel === "whatsapp" ? (
             <div className="grid gap-3 md:grid-cols-3">
               <Input label="WhatsApp template name" value={form.whatsapp_template_name} onChange={(event) => setForm((state) => ({ ...state, whatsapp_template_name: event.target.value }))} placeholder="appointment_recall_ru" />
-              <Input label="Язык" value={form.whatsapp_template_language} onChange={(event) => setForm((state) => ({ ...state, whatsapp_template_language: event.target.value }))} placeholder="ru" />
+              <Input label={t("common.language")} value={form.whatsapp_template_language} onChange={(event) => setForm((state) => ({ ...state, whatsapp_template_language: event.target.value }))} placeholder="ru" />
               <Select
-                label="Статус template"
+                label={t("outreach.templateStatus")}
                 value={form.whatsapp_template_status}
                 onChange={(event) => setForm((state) => ({ ...state, whatsapp_template_status: event.target.value }))}
                 options={[
@@ -710,28 +678,28 @@ export function OutreachPage() {
             </div>
           ) : null}
           <div className="grid gap-3 md:grid-cols-2">
-            <Input label="Лимит в минуту" type="number" value={form.rate_limit_per_minute} onChange={(event) => setForm((state) => ({ ...state, rate_limit_per_minute: event.target.value }))} />
-            <Input label="Batch за запуск" type="number" value={form.batch_size} onChange={(event) => setForm((state) => ({ ...state, batch_size: event.target.value }))} />
+            <Input label={t("outreach.rateLimit")} type="number" value={form.rate_limit_per_minute} onChange={(event) => setForm((state) => ({ ...state, rate_limit_per_minute: event.target.value }))} />
+            <Input label={t("outreach.batchSize")} type="number" value={form.batch_size} onChange={(event) => setForm((state) => ({ ...state, batch_size: event.target.value }))} />
           </div>
-          <Input label="Когда отправить" type="datetime-local" value={form.scheduled_at} onChange={(event) => setForm((state) => ({ ...state, scheduled_at: event.target.value }))} />
-          <Textarea label="Сообщение" value={form.message_text} onChange={(event) => setForm((state) => ({ ...state, message_text: event.target.value }))} rows={6} />
+          <Input label={t("outreach.scheduledAt")} type="datetime-local" value={form.scheduled_at} onChange={(event) => setForm((state) => ({ ...state, scheduled_at: event.target.value }))} />
+          <Textarea label={t("outreach.message")} value={form.message_text} onChange={(event) => setForm((state) => ({ ...state, message_text: event.target.value }))} rows={6} />
           <div className="rounded-2xl bg-slate-50 px-3 py-2 text-sm font-semibold leading-6 text-slate-600">
-            Переменные шаблона: {"{client_name}"}, {"{phone}"}, {"{email}"}, {"{business_name}"}, {"{channel}"}.
+            {t("outreach.templateVariables")}
           </div>
           <div className="rounded-2xl bg-amber-50 px-3 py-2 text-sm font-semibold leading-6 text-amber-900">
-            Боевой режим: клиенты без opt-in или с opt-out будут пропущены. WhatsApp запуск блокируется, пока template не отмечен как approved.
+            {t("outreach.productionModeNotice")}
           </div>
           <Button type="button" disabled={!canManageOutreach || !form.message_text.trim() || (form.audience_type === "segment" && !form.segment)} isLoading={createCampaign.isPending} onClick={() => createCampaign.mutate()}>
-            <Send size={16} /> Создать
+            <Send size={16} /> {t("outreach.create")}
           </Button>
         </div>
       </Modal>
 
-      <Modal title="Импорт согласий" open={consentOpen} onClose={() => setConsentOpen(false)}>
+      <Modal title={t("outreach.importConsents")} open={consentOpen} onClose={() => setConsentOpen(false)}>
         <div className="space-y-4">
           <div className="grid gap-3 md:grid-cols-2">
             <Select
-              label="Канал"
+              label={t("settings.channel")}
               value={consentForm.channel}
               onChange={(event) => setConsentForm((state) => ({ ...state, channel: event.target.value as "telegram" | "whatsapp" }))}
               options={[
@@ -740,7 +708,7 @@ export function OutreachPage() {
               ]}
             />
             <Select
-              label="Статус"
+              label={t("pricing.status")}
               value={consentForm.status}
               onChange={(event) => setConsentForm((state) => ({ ...state, status: event.target.value as "opted_in" | "opted_out" | "unknown" }))}
               options={[
@@ -750,24 +718,24 @@ export function OutreachPage() {
               ]}
             />
           </div>
-          <Input label="Источник согласия" value={consentForm.source} onChange={(event) => setConsentForm((state) => ({ ...state, source: event.target.value }))} />
+          <Input label={t("outreach.consentSource")} value={consentForm.source} onChange={(event) => setConsentForm((state) => ({ ...state, source: event.target.value }))} />
           <Textarea
-            label="Клиенты"
+            label={t("common.client")}
             value={consentForm.rows}
             onChange={(event) => setConsentForm((state) => ({ ...state, rows: event.target.value }))}
             rows={8}
-            placeholder="+77010001010; согласие из анкеты&#10;client@example.com; согласие из сайта"
+            placeholder={t("outreach.consentRowsPlaceholder")}
           />
           <Input type="file" accept=".csv,.xlsx" onChange={(event) => setConsentFile(event.target.files?.[0] || null)} />
           <div className="rounded-2xl bg-slate-50 px-3 py-2 text-sm font-semibold leading-6 text-slate-600">
-            Импорт обновляет согласия только у уже существующих клиентов по телефону, email или client_id. Файл может содержать колонки phone, email, client_id, channel, status, source, note.
+            {t("outreach.consentImportNotice")}
           </div>
           <div className="flex flex-wrap gap-2">
             <Button type="button" disabled={!consentForm.rows.trim()} isLoading={importConsents.isPending} onClick={() => importConsents.mutate()}>
-              <Upload size={16} /> Импортировать текст
+              <Upload size={16} /> {t("outreach.importText")}
             </Button>
             <Button type="button" variant="secondary" disabled={!consentFile} isLoading={importConsentFile.isPending} onClick={() => importConsentFile.mutate()}>
-              <Upload size={16} /> Импортировать файл
+              <Upload size={16} /> {t("outreach.importFile")}
             </Button>
           </div>
         </div>
@@ -791,14 +759,15 @@ function ManualAudiencePicker({
   onSearch: (value: string) => void;
   onToggle: (clientId: number) => void;
 }) {
+  const { t } = useI18n();
   return (
     <div className="mt-5 rounded-3xl border border-slate-100 bg-white p-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h3 className="font-black text-midnight">Ручная аудитория</h3>
-          <p className="mt-1 text-sm font-semibold text-slate-500">Выбрано: {selectedIds.length}. В очередь попадут только клиенты с ID канала и разрешенным consent.</p>
+          <h3 className="font-black text-midnight">{t("outreach.manualAudience")}</h3>
+          <p className="mt-1 text-sm font-semibold text-slate-500">{t("outreach.manualAudienceText", { count: selectedIds.length })}</p>
         </div>
-        <Input className="md:max-w-xs" placeholder="Поиск клиента" value={search} onChange={(event) => onSearch(event.target.value)} />
+        <Input className="md:max-w-xs" placeholder={t("outreach.clientSearch")} value={search} onChange={(event) => onSearch(event.target.value)} />
       </div>
       <div className="mt-3 grid max-h-72 gap-2 overflow-y-auto pr-1 md:grid-cols-2">
         {clients.slice(0, 80).map((client) => {
@@ -816,15 +785,15 @@ function ManualAudiencePicker({
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-black">{client.full_name}</p>
-                  <p className="mt-0.5 truncate text-xs font-semibold opacity-70">{recipientId || "нет ID канала"}</p>
+                  <p className="mt-0.5 truncate text-xs font-semibold opacity-70">{recipientId || t("outreach.noChannelId")}</p>
                 </div>
-                <span className="rounded-full bg-white px-2 py-0.5 text-xs font-black">{selected ? "выбран" : channelLabels[campaign.channel]}</span>
+                <span className="rounded-full bg-white px-2 py-0.5 text-xs font-black">{selected ? t("outreach.selected") : channelLabels[campaign.channel]}</span>
               </div>
             </button>
           );
         })}
       </div>
-      {!clients.length ? <p className="mt-3 text-sm font-semibold text-slate-500">Клиенты не найдены.</p> : null}
+      {!clients.length ? <p className="mt-3 text-sm font-semibold text-slate-500">{t("outreach.clientsNotFound")}</p> : null}
     </div>
   );
 }

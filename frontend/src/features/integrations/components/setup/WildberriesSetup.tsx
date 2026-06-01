@@ -7,6 +7,7 @@ import { getApiErrorMessage } from "../../../../api/client";
 import { Button } from "../../../../components/ui/Button";
 import { ErrorState } from "../../../../components/ui/StateViews";
 import { Input } from "../../../../components/ui/Input";
+import { useI18n } from "../../../../lib/i18n";
 import type { BusinessConnector, Id } from "../../../../types";
 
 export function WildberriesInlineSetup({
@@ -18,6 +19,7 @@ export function WildberriesInlineSetup({
   canManage: boolean;
   connector?: BusinessConnector;
 }) {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const [apiToken, setApiToken] = useState("");
   const [entities, setEntities] = useState<string[]>(Array.isArray(connector?.config_json?.entities) ? connector?.config_json?.entities as string[] : ["orders", "sales"]);
@@ -41,7 +43,7 @@ export function WildberriesInlineSetup({
     }),
     onSuccess: () => {
       setApiToken("");
-      setNotice("Wildberries подключен. Доступ сохранен приватно, можно проверить подключение.");
+      setNotice(t("integrations.wildberries.accessSaved"));
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
       queryClient.invalidateQueries({ queryKey: ["wildberries-status"] });
     },
@@ -50,7 +52,7 @@ export function WildberriesInlineSetup({
   const testConnection = useMutation({
     mutationFn: () => businessConnectorsApi.wildberriesTestConnection(Number(connector?.id)),
     onSuccess: (data) => {
-      setNotice(data.ok ? "Подключение к Wildberries проверено." : data.reason || "Не удалось проверить доступ Wildberries.");
+      setNotice(data.ok ? t("integrations.wildberries.connectionChecked") : data.reason || t("integrations.wildberries.connectionCheckFailed"));
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
       queryClient.invalidateQueries({ queryKey: ["wildberries-status", connector?.id] });
     },
@@ -59,7 +61,7 @@ export function WildberriesInlineSetup({
   const syncData = useMutation({
     mutationFn: () => businessConnectorsApi.wildberriesSync(Number(connector?.id)),
     onSuccess: (data) => {
-      setNotice(data.ok ? `Данные Wildberries загружены: ${data.events.length} событий.` : data.reason || "Не удалось загрузить данные Wildberries.");
+      setNotice(data.ok ? t("integrations.wildberries.dataLoaded", { count: data.events.length }) : data.reason || t("integrations.wildberries.dataLoadFailed"));
       queryClient.invalidateQueries({ queryKey: ["business-events"] });
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
       queryClient.invalidateQueries({ queryKey: ["connector-sync-runs"] });
@@ -81,50 +83,50 @@ export function WildberriesInlineSetup({
 
       <div className="grid gap-2 sm:grid-cols-3">
         <div className="rounded-2xl bg-white p-3">
-          <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Доступ</p>
-          <p className="mt-1 text-sm font-black text-midnight">{tokenConfigured ? "Сохранен" : "Нужен"}</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">{t("integrations.setupMetric.access")}</p>
+          <p className="mt-1 text-sm font-black text-midnight">{tokenConfigured ? t("integrations.setupMetric.saved") : t("integrations.setupMetric.required")}</p>
         </div>
         <div className="rounded-2xl bg-white p-3">
-          <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Режим</p>
-          <p className="mt-1 text-sm font-black text-midnight">Только чтение</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">{t("integrations.setupMetric.mode")}</p>
+          <p className="mt-1 text-sm font-black text-midnight">{t("integrations.setupMetric.readOnly")}</p>
         </div>
         <div className="rounded-2xl bg-white p-3">
-          <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Обновление WB</p>
-          <p className="mt-1 text-sm font-black text-midnight">~30 минут</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">{t("integrations.wildberries.updateWindow")}</p>
+          <p className="mt-1 text-sm font-black text-midnight">{t("integrations.wildberries.updateWindowValue")}</p>
         </div>
       </div>
 
       {!showAccessSetup ? (
         <div className="rounded-3xl border border-blue-100 bg-blue-50 p-4">
-          <p className="text-sm font-black text-blue-950">Подключение Wildberries</p>
+          <p className="text-sm font-black text-blue-950">{t("integrations.wildberries.connectionTitle")}</p>
           <p className="mt-1 text-sm font-semibold leading-6 text-blue-800">
-            Сейчас Wildberries подключается через токен статистики продавца. ZANI только читает заказы и продажи для аналитики.
+            {t("integrations.wildberries.connectionDescription")}
           </p>
           <Button type="button" className="mt-3" disabled={!canManage} onClick={() => setShowAccessSetup(true)}>
-            <ShieldCheck size={16} /> Ввести ключ доступа
+            <ShieldCheck size={16} /> {t("integrations.setupAction.enterAccessKey")}
           </Button>
         </div>
       ) : (
         <Input
-          label="Ключ доступа Wildberries"
+          label={t("integrations.wildberries.accessKey")}
           value={apiToken}
           onChange={(event) => setApiToken(event.target.value)}
-          placeholder={tokenConfigured ? "Доступ уже сохранен. Вставьте новый ключ только для замены." : "Вставьте токен категории Statistics"}
+          placeholder={tokenConfigured ? t("integrations.setupAction.accessKeyReplacePlaceholder") : t("integrations.wildberries.accessKeyPlaceholder")}
           type="password"
           autoComplete="off"
         />
       )}
 
       <button type="button" className="text-sm font-black text-brand-700" onClick={() => setShowAdvanced((value) => !value)}>
-        {showAdvanced ? "Скрыть дополнительные настройки" : "Дополнительные настройки"}
+        {showAdvanced ? t("integrations.setupAction.hideAdvanced") : t("integrations.setupAction.showAdvanced")}
       </button>
       {showAdvanced ? (
         <div className="space-y-3 rounded-2xl bg-white p-3">
           <div className="grid gap-2 sm:grid-cols-3">
             {[
-              ["orders", "Заказы"],
-              ["sales", "Продажи"],
-              ["stocks", "Остатки"],
+              ["orders", t("integrations.wildberries.entity.orders")],
+              ["sales", t("integrations.wildberries.entity.sales")],
+              ["stocks", t("integrations.wildberries.entity.stocks")],
             ].map(([value, label]) => (
               <label key={value} className="flex items-center gap-2 rounded-xl border border-slate-100 px-3 py-2 text-sm font-bold text-slate-700">
                 <input type="checkbox" className="h-4 w-4 rounded border-slate-300" checked={entities.includes(value)} onChange={() => toggleEntity(value)} />
@@ -132,10 +134,10 @@ export function WildberriesInlineSetup({
               </label>
             ))}
           </div>
-          <Input label="Период загрузки, дней" value={syncDays} onChange={(event) => setSyncDays(event.target.value)} placeholder="7" type="number" />
+          <Input label={t("integrations.setupAction.syncDays")} value={syncDays} onChange={(event) => setSyncDays(event.target.value)} placeholder="7" type="number" />
           {entities.includes("stocks") ? (
             <div className="rounded-2xl bg-amber-50 px-3 py-2 text-xs font-bold leading-5 text-amber-800">
-              Остатки Wildberries оставлены опционально: статистический endpoint остатков у WB помечен как deprecated, поэтому основной боевой контур — заказы и продажи.
+              {t("integrations.wildberries.stocksOptional")}
             </div>
           ) : null}
         </div>
@@ -143,18 +145,18 @@ export function WildberriesInlineSetup({
 
       <div className="grid gap-3 md:grid-cols-3">
         <Button type="button" disabled={!canManage || (!apiToken.trim() && !connector)} isLoading={saveConfig.isPending} onClick={() => saveConfig.mutate()}>
-          <ShieldCheck size={16} /> {connector ? "Сохранить доступ" : "Подключить Wildberries"}
+          <ShieldCheck size={16} /> {connector ? t("integrations.setupAction.saveAccess") : t("integrations.wildberries.connect")}
         </Button>
         <Button type="button" variant="secondary" disabled={!canManage || !connector || !tokenConfigured} isLoading={testConnection.isPending} onClick={() => testConnection.mutate()}>
-          <RefreshCw size={16} /> Проверить
+          <RefreshCw size={16} /> {t("integrations.card.check")}
         </Button>
         <Button type="button" variant="secondary" disabled={!canManage || !connector || !tokenConfigured || !entities.length} isLoading={syncData.isPending} onClick={() => syncData.mutate()}>
-          <DatabaseZap size={16} /> Загрузить данные
+          <DatabaseZap size={16} /> {t("integrations.wildberries.loadData")}
         </Button>
       </div>
 
       <p className="text-xs font-semibold leading-5 text-slate-500">
-        ZANI не меняет цены, карточки, поставки и заказы Wildberries. Для продавца это источник фактов для dashboard и AI-аналитики.
+        {t("integrations.wildberries.readOnlyNotice")}
       </p>
     </div>
   );

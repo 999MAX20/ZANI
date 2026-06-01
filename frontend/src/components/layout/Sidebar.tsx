@@ -3,7 +3,6 @@ import {
   CalendarDays,
   ChevronDown,
   ChevronLeft,
-  Clock3,
   Bot,
   Home,
   Inbox,
@@ -11,12 +10,9 @@ import {
   ListChecks,
   MessageSquareText,
   PlugZap,
-  BadgeDollarSign,
   Settings,
   Sparkles,
-  Stethoscope,
   Users,
-  UsersRound,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -52,26 +48,16 @@ const desktopSections = [
       { to: "/dashboard", label: "nav.dashboard", icon: Home },
       { to: "/dashboard/leads", label: "nav.leads", icon: Inbox, resource: "leads" },
       { to: "/dashboard/deals", label: "nav.deals", icon: KanbanSquare, resource: "deals" },
-      { to: "/dashboard/conversations", label: "nav.conversations", icon: MessageSquareText, resource: "conversations" },
-    ],
-  },
-  {
-    id: "operations",
-    titleKey: "nav.operations",
-    items: [
       { to: "/dashboard/clients", label: "nav.clients", icon: Users, resource: "clients" },
-      { to: "/dashboard/tasks", label: "nav.tasks", icon: ListChecks, resource: "tasks" },
-      { to: "/dashboard/calendar", label: "nav.calendar", icon: CalendarDays, resource: "appointments" },
+      { to: "/dashboard/conversations", label: "nav.conversations", icon: MessageSquareText, resource: "conversations" },
     ],
   },
   {
     id: "intelligence",
     titleKey: "nav.intelligence",
     items: [
-      { to: "/dashboard/ai-agents", label: "nav.aiAgents", icon: Bot, resource: "integrations" },
+      { to: "/dashboard/ai-agents", label: "nav.aiAgents", icon: Bot, resource: "ai_automation" },
       { to: "/dashboard/integrations", label: "nav.integrations", icon: PlugZap, resource: "integrations" },
-      { to: "/dashboard/pricing", label: "nav.pricing", icon: BadgeDollarSign, resource: "integrations" },
-      { to: "/dashboard/ai-assistant", label: "nav.aiAssistant", icon: Sparkles, resource: "conversations" },
     ],
   },
   {
@@ -86,23 +72,27 @@ const desktopSections = [
     titleKey: "nav.system",
     items: [
       { to: "/dashboard/settings", label: "nav.settings", icon: Settings, resource: "settings" },
-      { to: "/dashboard/automations", label: "nav.automations", icon: Settings, resource: "automations" },
-      { to: "/dashboard/services", label: "nav.services", icon: Stethoscope, resource: "settings" },
-      { to: "/dashboard/resources", label: "nav.resources", icon: UsersRound, resource: "settings" },
-      { to: "/dashboard/working-hours", label: "nav.workingHours", icon: Clock3, resource: "settings" },
     ],
   },
 ] satisfies SidebarSection[];
 
 const mobileDrawerSections = [
   {
+    id: "operations",
+    titleKey: "nav.operations",
+    items: [
+      { to: "/dashboard/deals", label: "nav.deals", icon: KanbanSquare, resource: "deals" },
+      { to: "/dashboard/tasks", label: "nav.tasks", icon: ListChecks, resource: "tasks" },
+      { to: "/dashboard/calendar", label: "nav.calendar", icon: CalendarDays, resource: "appointments" },
+    ],
+  },
+  {
     id: "intelligence",
     titleKey: "nav.intelligence",
     items: [
-      { to: "/dashboard/ai-agents", label: "nav.aiAgents", icon: Bot, resource: "integrations" },
+      { to: "/dashboard/ai-agents", label: "nav.aiAgents", icon: Bot, resource: "ai_automation" },
       { to: "/dashboard/integrations", label: "nav.integrations", icon: PlugZap, resource: "integrations" },
-      { to: "/dashboard/pricing", label: "nav.pricing", icon: BadgeDollarSign, resource: "integrations" },
-      { to: "/dashboard/ai-assistant", label: "nav.aiAssistant", icon: Sparkles, resource: "conversations" },
+      { to: "/dashboard/analytics", label: "nav.analytics", icon: BarChart3, resource: "analytics" },
     ],
   },
   {
@@ -180,9 +170,8 @@ export function Sidebar({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       className={cn(
-        "group/sidebar relative z-20 m-3 shrink-0 rounded-[2rem] border border-white/70 bg-white/90 shadow-premium backdrop-blur-2xl transition-all duration-300",
-        "before:pointer-events-none before:absolute before:inset-0 before:rounded-[2rem] before:bg-sidebar-depth before:opacity-80",
-        forceVisible && "m-0 h-dvh max-h-dvh rounded-none rounded-r-[2rem] border-r border-slate-100 bg-white shadow-[0_30px_90px_rgba(15,23,42,0.18)] before:hidden",
+        "group/sidebar relative z-20 m-3 shrink-0 rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300",
+        forceVisible && "m-0 h-dvh max-h-dvh rounded-none border-r border-slate-200 bg-white shadow-premium",
         !forceVisible && "lg:fixed lg:bottom-3 lg:left-0 lg:top-3 lg:m-0 lg:ml-3 lg:h-[calc(100vh-1.5rem)]",
         isExpanded ? "w-[318px]" : "w-[92px]",
         !forceVisible && "hidden lg:block",
@@ -190,9 +179,9 @@ export function Sidebar({
     >
       <div className={cn("relative flex h-full min-h-0 flex-col p-4", forceVisible && "min-h-dvh overflow-y-auto pb-8")}>
         <div className={cn("mb-4 flex items-center gap-3", !isExpanded && "justify-center")}>
-          <div className="relative grid h-12 w-12 shrink-0 place-items-center rounded-3xl bg-ai-gradient text-white shadow-glow">
-            <Sparkles size={23} />
-            <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-white bg-emerald-400" />
+          <div className="relative grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-midnight text-white shadow-sm">
+            <Sparkles size={22} />
+            <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-white bg-emerald-500" />
           </div>
           {isExpanded ? (
             <div className="min-w-0 flex-1">
@@ -217,9 +206,9 @@ export function Sidebar({
                     onClick={onNavigate}
                     title={t(item.label)}
                     className={cn(
-                      "relative mx-auto grid h-12 w-12 place-items-center rounded-2xl text-slate-500 transition-all duration-200",
-                      "hover:-translate-y-0.5 hover:bg-white hover:text-brand-700 hover:shadow-soft",
-                      active && "bg-ai-gradient text-white shadow-glow",
+                      "relative mx-auto grid h-12 w-12 place-items-center rounded-xl text-slate-500 transition-colors duration-150",
+                      "hover:bg-slate-100 hover:text-midnight",
+                      active && "bg-midnight text-white shadow-sm",
                     )}
                     >
                       <Icon size={20} strokeWidth={2.25} />
@@ -238,7 +227,7 @@ export function Sidebar({
             <section key={group.id}>
               <button
                 type="button"
-                className="mb-2 flex min-h-8 w-full items-center justify-between rounded-xl px-2 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 transition hover:bg-white/70 hover:text-slate-600"
+                className="mb-2 flex min-h-8 w-full items-center justify-between rounded-lg px-2 text-left text-[11px] font-black uppercase tracking-[0.16em] text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
                 onClick={() => {
                   if (!mobileDrawer) toggleSection(group.id);
                 }}
@@ -260,16 +249,16 @@ export function Sidebar({
                       onClick={onNavigate}
                       title={t(item.label)}
                       className={cn(
-                        "group relative flex min-h-[50px] items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-black text-slate-700 transition-all duration-200 active:scale-[0.99]",
-                        "hover:-translate-y-0.5 hover:bg-white hover:text-midnight hover:shadow-soft",
-                        active && "bg-white text-midnight shadow-soft ring-1 ring-cyan-100",
+                        "group relative flex min-h-[48px] items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-black text-slate-700 transition-colors duration-150",
+                        "hover:bg-slate-100 hover:text-midnight",
+                        active && "bg-slate-100 text-midnight",
                       )}
                     >
                       <span
                         className={cn(
-                          "grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-slate-100 text-slate-500 transition",
-                          active && "bg-ai-gradient text-white shadow-glow",
-                          !active && "group-hover:bg-cyan-50 group-hover:text-brand-700",
+                          "grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-500 transition",
+                          active && "bg-midnight text-white shadow-sm",
+                          !active && "group-hover:bg-white group-hover:text-brand-700",
                         )}
                       >
                         <Icon size={20} strokeWidth={2.25} />
@@ -279,7 +268,7 @@ export function Sidebar({
                         <span className="ml-auto min-w-6 rounded-full bg-red-500 px-2 py-1 text-center text-[11px] font-black leading-none text-white shadow-sm">
                           {unreadMessages > 99 ? "99+" : unreadMessages}
                         </span>
-                      ) : active ? <span className="ml-auto h-2 w-2 rounded-full bg-brand-500 shadow-glow" /> : null}
+                      ) : active ? <span className="ml-auto h-2 w-2 rounded-full bg-brand-500" /> : null}
                     </NavLink>
                   );
                 })}

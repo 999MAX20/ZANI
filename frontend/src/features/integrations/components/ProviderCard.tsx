@@ -11,6 +11,7 @@ import { ErrorState } from "../../../components/ui/StateViews";
 import { Input } from "../../../components/ui/Input";
 import { Modal } from "../../../components/ui/Modal";
 import { cn } from "../../../lib/cn";
+import { useI18n } from "../../../lib/i18n";
 import type { Bot, BotChannel, BusinessConnector, ConnectorCapability, Id } from "../../../types";
 import { providerCatalog, type ProviderKey } from "../config/providerCatalog";
 import { ImportPanel } from "./ImportPanel";
@@ -46,44 +47,47 @@ const statusTone: Record<string, string> = {
   expired_credentials: "bg-red-50 text-red-700 ring-red-100",
 };
 
-function readableStatus(status?: string, fallback = "Не подключено") {
+type Translate = ReturnType<typeof useI18n>["t"];
+
+function readableStatus(status: string | undefined, t: Translate, fallback = t("integrations.status.notConnected")) {
   if (!status) return fallback;
   const labels: Record<string, string> = {
-    active: "Активно",
-    connected: "Подключено",
-    draft: "Черновик",
-    pending_request: "Запрошено",
-    provider_configuring: "Настраивается",
-    setup_required: "Нужна настройка",
-    needs_attention: "Требует внимания",
-    syncing: "Синхронизация",
-    disabled: "Отключено",
-    disconnected: "Отключено",
-    error: "Ошибка",
-    failed: "Ошибка",
-    expired_credentials: "Доступ истек",
-    roadmap: "Roadmap",
-    soon: "Скоро",
-    request: "По заявке",
-    received: "Получено",
-    processed: "Обработано",
-    simulated: "Симуляция",
-    applied: "Применено",
-    blocked: "Заблокировано",
-    ignored: "Пропущено",
-    succeeded: "Успешно",
-    running: "В процессе",
-    queued: "В очереди",
+    active: "integrations.status.active",
+    connected: "integrations.status.connected",
+    draft: "integrations.status.draft",
+    pending_request: "integrations.status.pendingRequest",
+    provider_configuring: "integrations.status.providerConfiguring",
+    setup_required: "integrations.status.setupRequired",
+    needs_attention: "integrations.status.needsAttention",
+    syncing: "integrations.status.syncing",
+    disabled: "integrations.status.disabled",
+    disconnected: "integrations.status.disconnected",
+    error: "integrations.status.error",
+    failed: "integrations.status.failed",
+    expired_credentials: "integrations.status.expiredCredentials",
+    roadmap: "integrations.status.roadmap",
+    soon: "integrations.status.soon",
+    request: "integrations.status.request",
+    received: "integrations.status.received",
+    processed: "integrations.status.processed",
+    simulated: "integrations.status.simulated",
+    applied: "integrations.status.applied",
+    blocked: "integrations.status.blocked",
+    ignored: "integrations.status.ignored",
+    succeeded: "integrations.status.succeeded",
+    running: "integrations.status.running",
+    queued: "integrations.status.queued",
   };
-  return labels[status] || status;
+  return labels[status] ? t(labels[status]) : status;
 }
 
 function statusClass(status?: string) {
   return statusTone[status || ""] || "bg-slate-100 text-slate-700 ring-slate-200";
 }
 
-function providerTitle(provider: ProviderKey, capability?: ConnectorCapability) {
-  return capability?.label || providerCatalog.find((item) => item.provider === provider)?.fallbackLabel || provider;
+function providerTitle(provider: ProviderKey, t: Translate, capability?: ConnectorCapability) {
+  const catalogItem = providerCatalog.find((item) => item.provider === provider);
+  return capability?.label || (catalogItem ? t(catalogItem.fallbackLabelKey) : provider);
 }
 
 function deriveProviderStatus({
@@ -105,9 +109,9 @@ function deriveProviderStatus({
   return "draft";
 }
 
-function readableConnectorError(message: string) {
+function readableConnectorError(message: string, t: Translate) {
   if (message.toLowerCase().includes("credentials are missing or expired")) {
-    return "Доступ не подключен или истек.";
+    return t("integrations.card.credentialsExpired");
   }
   return message;
 }
@@ -129,6 +133,7 @@ export function ProviderCard({
   connector?: BusinessConnector;
   provider: (typeof providerCatalog)[number];
 }) {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const [connectOpen, setConnectOpen] = useState(false);
   const [apiKey, setApiKey] = useState("");
@@ -137,7 +142,8 @@ export function ProviderCard({
   const [notice, setNotice] = useState<string | null>(null);
   const isPricingProvider = provider.provider === "kaspi_pricing";
   const status = isPricingProvider ? "setup_required" : deriveProviderStatus({ capability, channel, connector });
-  const title = providerTitle(provider.provider, capability);
+  const title = providerTitle(provider.provider, t, capability);
+  const primaryUse = t(provider.primaryUseKey);
   const isRequestProvider = ["whatsapp", "1c", "google_sheets", "email"].includes(String(provider.provider));
 
   const requestConnector = useMutation({
@@ -151,11 +157,11 @@ export function ProviderCard({
           preferred_method: "not_sure",
           monthly_messages: 0,
           has_meta_assets: false,
-          comment: "Запрос создан из status center.",
+          comment: "Request created from status center.",
         });
       }
       if (isPricingProvider) {
-        throw new Error("Kaspi Pricing открывается отдельным окном настройки.");
+        throw new Error(t("integrations.card.kaspiPricingSeparateSetup"));
       }
       const payload: BusinessConnectorPayload = {
         business: businessId,
@@ -190,7 +196,7 @@ export function ProviderCard({
   const saveGenericConfig = useMutation({
     mutationFn: () => {
       if (isPricingProvider) {
-        throw new Error("Kaspi Pricing не использует generic connector config.");
+        throw new Error(t("integrations.card.kaspiPricingNoGenericConfig"));
       }
       const payload: BusinessConnectorPayload = {
         business: businessId,
@@ -210,7 +216,7 @@ export function ProviderCard({
       return businessConnectorsApi.create(payload);
     },
     onSuccess: () => {
-      setNotice("Данные подключения сохранены.");
+      setNotice(t("integrations.card.connectionSaved"));
       setApiKey("");
       setWebhookSecret("");
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
@@ -252,7 +258,7 @@ export function ProviderCard({
       disabled={!canManage || isUnavailable}
       onClick={handlePrimaryAction}
     >
-      {isConnected ? "Настроить" : "Подключить"}
+      {isConnected ? t("integrations.card.configure") : t("integrations.card.connect")}
     </Button>
   );
 
@@ -267,7 +273,7 @@ export function ProviderCard({
               checked={channel.status === "active"}
               disabled={!canManage}
               isLoading={toggleChannel.isPending}
-              label={`${title}: ${channel.status === "active" ? "выключить" : "включить"}`}
+              label={t(channel.status === "active" ? "integrations.card.disableChannel" : "integrations.card.enableChannel", { title })}
               onChange={(checked) => toggleChannel.mutate(checked ? "active" : "paused")}
             />
           ) : null}
@@ -280,17 +286,17 @@ export function ProviderCard({
             {title}
           </h3>
           <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-black ring-1 ${statusClass(status)}`}>
-            {readableStatus(status, "Не подключен")}
+            {readableStatus(status, t, t("integrations.status.notConnectedShort"))}
           </span>
         </div>
         <p className={cn("text-sm font-semibold leading-5 text-slate-500", isChannelProvider ? "mt-1" : "mt-2")}>
-          {provider.primaryUse}
+          {primaryUse}
         </p>
       </div>
 
       {connector?.last_error && !isChannelProvider ? (
         <div className="mt-3 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
-          {readableConnectorError(connector.last_error)}
+          {readableConnectorError(connector.last_error, t)}
         </div>
       ) : null}
 
@@ -319,14 +325,14 @@ export function ProviderCard({
             <div className="flex min-h-full w-full flex-col justify-between gap-3">
               <div>
                 <p className="text-sm font-black leading-5 text-midnight">
-                  Не теряйте заявки с сайта после первого клика.
+                  {t("integrations.card.websiteFlipTitle")}
                 </p>
                 <p className="mt-2 text-sm font-semibold leading-5 text-slate-600">
-                  ZANI принимает заявки с формы и сразу передает их в Inbox.
+                  {t("integrations.card.websiteFlipText")}
                 </p>
               </div>
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <span className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-black text-blue-700">Сайт → Inbox → CRM</span>
+                <span className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-black text-blue-700">{t("integrations.card.websiteFlow")}</span>
                 {renderPrimaryButton()}
               </div>
             </div>
@@ -336,7 +342,7 @@ export function ProviderCard({
         frontContent
       )}
 
-      <Modal title={`Подключение: ${title}`} open={connectOpen} onClose={() => setConnectOpen(false)}>
+      <Modal title={t("integrations.card.connectionTitle", { title })} open={connectOpen} onClose={() => setConnectOpen(false)}>
         <div className="space-y-4">
           {notice ? <div className="rounded-2xl bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800">{notice}</div> : null}
           {provider.provider === "telegram" ? (
@@ -361,39 +367,39 @@ export function ProviderCard({
             <div className="space-y-4 rounded-3xl border border-slate-100 bg-white p-4">
               <div>
                 <p className="text-sm font-black text-midnight">{title}</p>
-                <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">{provider.primaryUse}</p>
+                <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">{primaryUse}</p>
               </div>
               {provider.provider === "website" ? (
                 <div className="rounded-2xl bg-slate-50 p-3 text-sm font-semibold text-slate-600">
-                  Website chat работает через публичный widget token канала. Дополнительные keys не требуются.
+                  {t("integrations.card.websiteNoExtraData")}
                 </div>
               ) : (
                 <>
-                  <Input label="Account / Business ID" value={accountId} onChange={(event) => setAccountId(event.target.value)} placeholder="ID аккаунта, магазина или кабинета" />
-                  <Input label="API key / Access token" value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder="Вставьте token" type="password" autoComplete="off" />
-                  <Input label="Webhook secret / Verify token" value={webhookSecret} onChange={(event) => setWebhookSecret(event.target.value)} placeholder="Опционально" type="password" autoComplete="off" />
+                  <Input label={t("integrations.card.accountId")} value={accountId} onChange={(event) => setAccountId(event.target.value)} placeholder={t("integrations.card.accountIdPlaceholder")} />
+                  <Input label={t("integrations.card.accessKey")} value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder={t("integrations.card.accessKeyPlaceholder")} type="password" autoComplete="off" />
+                  <Input label={t("integrations.card.webhookSecret")} value={webhookSecret} onChange={(event) => setWebhookSecret(event.target.value)} placeholder={t("common.optional")} type="password" autoComplete="off" />
                 </>
               )}
               <div className="flex flex-wrap gap-2">
                 {provider.provider !== "website" ? (
                   <Button type="button" disabled={!canManage || (!apiKey.trim() && !accountId.trim())} isLoading={saveGenericConfig.isPending} onClick={() => saveGenericConfig.mutate()}>
-                    <ShieldCheck size={16} /> Сохранить
+                    <ShieldCheck size={16} /> {t("common.save")}
                   </Button>
                 ) : null}
                 {connector ? (
                   <Button type="button" variant="secondary" disabled={!canManage} isLoading={healthCheck.isPending} onClick={() => healthCheck.mutate()}>
-                    <RefreshCw size={16} /> Проверить
+                    <RefreshCw size={16} /> {t("integrations.card.check")}
                   </Button>
                 ) : null}
                 {isRequestProvider && !connector ? (
                   <Button type="button" variant="secondary" disabled={!canManage} isLoading={requestConnector.isPending} onClick={() => requestConnector.mutate()}>
-                    <Send size={16} /> Запросить подключение
+                    <Send size={16} /> {t("integrations.card.requestConnection")}
                   </Button>
                 ) : null}
                 {["telegram", "whatsapp", "instagram", "website"].includes(String(provider.provider)) ? (
                   <Link to={`/dashboard/conversations?channel=${provider.provider}`}>
                     <Button type="button" variant="ghost">
-                      <Link2 size={16} /> Inbox
+                      <Link2 size={16} /> {t("nav.conversations")}
                     </Button>
                   </Link>
                 ) : null}

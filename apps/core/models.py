@@ -1,13 +1,25 @@
+from pathlib import Path
+import uuid
+
 from django.conf import settings
 from django.db import models
+from django.utils.text import get_valid_filename
 from django.utils import timezone
 
 from apps.businesses.models import Business
 
 
+def safe_original_filename(filename):
+    raw_name = str(filename or "file").replace("\\", "/").split("/")[-1].strip()
+    name = get_valid_filename(raw_name) or "file"
+    name = name.lstrip(".") or "file"
+    return name[:255]
+
+
 def attachment_upload_path(instance, filename):
     business_id = instance.business_id or "unknown"
-    return f"private/attachments/business-{business_id}/{filename}"
+    extension = Path(safe_original_filename(filename)).suffix.lower()
+    return f"private/attachments/business-{business_id}/{uuid.uuid4().hex}{extension}"
 
 
 class AuditLog(models.Model):

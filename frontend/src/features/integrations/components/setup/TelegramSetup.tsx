@@ -7,6 +7,7 @@ import { getApiErrorMessage } from "../../../../api/client";
 import { Button } from "../../../../components/ui/Button";
 import { ErrorState } from "../../../../components/ui/StateViews";
 import { Input } from "../../../../components/ui/Input";
+import { useI18n } from "../../../../lib/i18n";
 import type { Bot, BotChannel, Id } from "../../../../types";
 import { MessengerSetupShell } from "./IntegrationSetupUi";
 
@@ -21,6 +22,7 @@ export function TelegramInlineSetup({
   canManage: boolean;
   channel?: BotChannel;
 }) {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const [botToken, setBotToken] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
@@ -49,7 +51,7 @@ export function TelegramInlineSetup({
       });
     },
     onSuccess: () => {
-      setNotice("Канал создан. Теперь вставьте token бота.");
+      setNotice(t("integrations.telegram.channelCreated"));
       queryClient.invalidateQueries({ queryKey: ["bots"] });
       queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
     },
@@ -59,7 +61,7 @@ export function TelegramInlineSetup({
     mutationFn: () => telegramChannelApi.configure({ channelId: Number(channel?.id), botToken }),
     onSuccess: () => {
       setBotToken("");
-      setNotice("Token сохранен. Проверьте подключение и включите входящие сообщения.");
+      setNotice(t("integrations.telegram.tokenSavedNotice"));
       queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
       queryClient.invalidateQueries({ queryKey: ["telegram-status", channel?.id] });
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
@@ -69,7 +71,7 @@ export function TelegramInlineSetup({
   const testConnection = useMutation({
     mutationFn: () => telegramChannelApi.testConnection(Number(channel?.id)),
     onSuccess: (data) => {
-      setNotice(data.ok ? "Подключение проверено." : data.reason || "Не удалось проверить подключение.");
+      setNotice(data.ok ? t("integrations.telegram.connectionChecked") : data.reason || t("integrations.telegram.connectionCheckFailed"));
       queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
       queryClient.invalidateQueries({ queryKey: ["telegram-status", channel?.id] });
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
@@ -82,7 +84,7 @@ export function TelegramInlineSetup({
       return telegramChannelApi.setWebhook({ channelId: Number(channel?.id), webhookUrl: current.webhook_url });
     },
     onSuccess: (data) => {
-      setNotice(data.ok ? "Входящие сообщения подключены." : data.reason || "Не удалось подключить входящие сообщения.");
+      setNotice(data.ok ? t("integrations.telegram.inboundConnected") : data.reason || t("integrations.telegram.inboundConnectFailed"));
       queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
       queryClient.invalidateQueries({ queryKey: ["telegram-status", channel?.id] });
       queryClient.invalidateQueries({ queryKey: ["integration-event-logs"] });
@@ -106,7 +108,11 @@ export function TelegramInlineSetup({
   const webhookConfigured = Boolean(status.data?.webhook_configured);
   const inboundReady = Boolean(status.data?.inbound_ready);
   const canSaveToken = botToken.trim().length >= 9;
-  const connectionStatus = inboundReady || webhookConfigured ? "Подключено" : tokenConfigured ? "Настройка" : "Не подключено";
+  const connectionStatus = inboundReady || webhookConfigured
+    ? t("integrations.status.connected")
+    : tokenConfigured
+      ? t("integrations.status.providerConfiguring")
+      : t("integrations.status.notConnected");
   const connectionTone = inboundReady ? "success" : tokenVerified || tokenConfigured ? "progress" : "neutral";
 
   if (!channel) {
@@ -115,7 +121,7 @@ export function TelegramInlineSetup({
         {error ? <ErrorState message={getApiErrorMessage(error)} /> : null}
         {notice ? <div className="rounded-2xl bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800">{notice}</div> : null}
         <Button type="button" disabled={!canManage} isLoading={ensureChannel.isPending} onClick={() => ensureChannel.mutate()}>
-          <Send size={16} /> Создать Telegram channel
+          <Send size={16} /> {t("integrations.telegram.createChannel")}
         </Button>
       </div>
     );
@@ -125,7 +131,7 @@ export function TelegramInlineSetup({
     <MessengerSetupShell
       logo="/integrations_logos/telegram.png"
       title="Telegram"
-      description="Подключите бота, чтобы ZANI принимал сообщения клиентов и отправлял ответы от имени вашей компании."
+      description={t("integrations.telegram.inlineDescription")}
       status={connectionStatus}
       statusTone={connectionTone}
       notice={notice}
@@ -140,33 +146,33 @@ export function TelegramInlineSetup({
       {!webhookConfigured ? (
         <div className="space-y-4">
           <div>
-            <p className="text-sm font-black text-midnight">Token бота</p>
+            <p className="text-sm font-black text-midnight">{t("integrations.telegram.botKey")}</p>
             <p className="mt-1 text-xs font-semibold text-slate-500">
-              {tokenConfigured ? "Token сохранен приватно. Вставьте новый только для замены." : "Вставьте token, который выдал BotFather."}
+              {tokenConfigured ? t("integrations.telegram.tokenSavedPrivate") : t("integrations.telegram.tokenInstruction")}
             </p>
           </div>
           <Input
             label=""
             value={botToken}
             onChange={(event) => setBotToken(event.target.value)}
-            placeholder={tokenConfigured ? "Token уже сохранен. Вставьте новый только для замены." : "123456789:AA..."}
+            placeholder={tokenConfigured ? t("integrations.telegram.tokenReplacePlaceholder") : t("integrations.telegram.tokenInputPlaceholder")}
             type="password"
             autoComplete="off"
           />
           <div className="mt-3 flex flex-wrap gap-2">
             {canSaveToken ? (
               <Button type="button" disabled={!canManage} isLoading={saveToken.isPending} onClick={() => saveToken.mutate()}>
-                <ShieldCheck size={16} /> Сохранить token
+                <ShieldCheck size={16} /> {t("integrations.telegram.saveKey")}
               </Button>
             ) : null}
             {tokenConfigured && !tokenVerified && !canSaveToken ? (
               <Button type="button" disabled={!canManage} isLoading={testConnection.isPending} onClick={() => testConnection.mutate()}>
-                <RefreshCw size={16} /> Проверить подключение
+                <RefreshCw size={16} /> {t("integrations.telegram.testConnection")}
               </Button>
             ) : null}
             {tokenVerified ? (
               <Button type="button" disabled={!canManage || setWebhook.isPending || status.isFetching} isLoading={setWebhook.isPending} onClick={() => setWebhook.mutate()}>
-                <CheckCircle2 size={16} /> Подключить входящие
+                <CheckCircle2 size={16} /> {t("integrations.telegram.connectInbound")}
               </Button>
             ) : null}
           </div>

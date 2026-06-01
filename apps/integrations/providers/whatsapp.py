@@ -6,6 +6,7 @@ from urllib import request as urllib_request
 from django.conf import settings
 from rest_framework.exceptions import PermissionDenied
 
+from apps.core.production_rules import is_safe_public_https_url
 from apps.integrations.models import IntegrationEventLog
 from apps.integrations.providers.base import BaseChannelProvider
 
@@ -185,18 +186,18 @@ class WhatsAppProvider(BaseWhatsAppAdapter):
             )
             return {"ok": False, "mock": False, "provider": self.provider, "reason": "WhatsApp Meta Cloud credentials are missing."}
 
-        message_payload = self._meta_cloud_message_payload(recipient_id, text, payload=payload)
-        url = self._graph_url(phone_number_id, "messages")
-        request = urllib_request.Request(
-            url,
-            data=json.dumps(message_payload).encode("utf-8"),
-            headers={
-                "Authorization": f"Bearer {access_token}",
-                "Content-Type": "application/json",
-            },
-            method="POST",
-        )
         try:
+            message_payload = self._meta_cloud_message_payload(recipient_id, text, payload=payload)
+            url = self._graph_url(phone_number_id, "messages")
+            request = urllib_request.Request(
+                url,
+                data=json.dumps(message_payload).encode("utf-8"),
+                headers={
+                    "Authorization": f"Bearer {access_token}",
+                    "Content-Type": "application/json",
+                },
+                method="POST",
+            )
             with urllib_request.urlopen(request, timeout=15) as response:
                 result = json.loads(response.read().decode("utf-8"))
             self.log_event(
@@ -270,12 +271,12 @@ class WhatsAppProvider(BaseWhatsAppAdapter):
             )
             return {"ok": True, "mock": True, "reason": "WhatsApp disabled; credentials are stored for production activation."}
 
-        request = urllib_request.Request(
-            self._graph_url(phone_number_id),
-            headers={"Authorization": f"Bearer {access_token}"},
-            method="GET",
-        )
         try:
+            request = urllib_request.Request(
+                self._graph_url(phone_number_id),
+                headers={"Authorization": f"Bearer {access_token}"},
+                method="GET",
+            )
             with urllib_request.urlopen(request, timeout=15) as response:
                 result = json.loads(response.read().decode("utf-8"))
             self.log_event(
@@ -298,7 +299,9 @@ class WhatsAppProvider(BaseWhatsAppAdapter):
             return {"ok": False, "mock": False, "reason": str(exc)}
 
     def _graph_url(self, phone_number_id, edge=""):
-        base = getattr(settings, "WHATSAPP_GRAPH_BASE_URL", "https://graph.facebook.com").rstrip("/")
+        base = str(getattr(settings, "WHATSAPP_GRAPH_BASE_URL", "https://graph.facebook.com") or "").strip().rstrip("/")
+        if not is_safe_public_https_url(base):
+            raise ValueError("WHATSAPP_GRAPH_BASE_URL must be a public HTTPS URL.")
         version = getattr(settings, "WHATSAPP_GRAPH_API_VERSION", "v25.0").strip("/")
         suffix = f"/{edge.strip('/')}" if edge else ""
         return f"{base}/{version}/{phone_number_id}{suffix}"

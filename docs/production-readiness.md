@@ -52,6 +52,8 @@ CELERY_TASK_DEFAULT_QUEUE=default
 CELERY_WORKER_CONCURRENCY=2
 CELERY_TASK_ACKS_LATE=True
 CELERY_WORKER_PREFETCH_MULTIPLIER=1
+CELERY_TASK_ALWAYS_EAGER=False
+AUTOMATIONS_RUN_INLINE=False
 
 AUTH_LOGIN_RATE=10/min
 AUTH_REFRESH_RATE=30/min
@@ -75,6 +77,20 @@ CSRF_COOKIE_SECURE=True
 
 SENTRY_DSN=<sentry-dsn>
 SENTRY_TRACES_SAMPLE_RATE=0.05
+
+TELEGRAM_ENABLED=True
+TELEGRAM_BASE_API_URL=https://api.telegram.org
+TELEGRAM_WEBHOOK_SECRET=<32-plus-random-secret>
+
+# Keep Meta channels disabled until their provider setup is complete.
+WHATSAPP_ENABLED=False
+WHATSAPP_GRAPH_BASE_URL=https://graph.facebook.com
+WHATSAPP_VERIFY_TOKEN=<32-plus-random-secret-if-enabled>
+WHATSAPP_APP_SECRET=<32-plus-random-secret-if-enabled>
+INSTAGRAM_ENABLED=False
+INSTAGRAM_GRAPH_BASE_URL=https://graph.facebook.com
+INSTAGRAM_VERIFY_TOKEN=<32-plus-random-secret-if-enabled>
+INSTAGRAM_APP_SECRET=<32-plus-random-secret-if-enabled>
 
 USE_S3=True
 AWS_ACCESS_KEY_ID=<storage-access-key>
@@ -190,6 +206,17 @@ The app now emits Django system check warnings for unsafe staging/production set
 - `zani.W004` — empty `CORS_ALLOWED_ORIGINS`;
 - `zani.W005` — empty `CSRF_TRUSTED_ORIGINS`;
 - `zani.W006` — missing `SENTRY_DSN`.
+- `zani.W007` — HTTPS flags/proxy header are incomplete.
+- `zani.W008` — support access grants are not required.
+- `zani.W009` — PostgreSQL TLS is missing.
+- `zani.W010` — Redis broker is not TLS-backed.
+- `zani.W011` — automations still run inline.
+- `zani.W012` — private object storage is incomplete.
+- `zani.W013` — production throttle rates are missing or too permissive.
+- `zani.W014` — transactional email is missing or not TLS-backed.
+- `zani.W015` — Telegram real-mode settings are unsafe.
+- `zani.W016` — WhatsApp real-mode settings are unsafe.
+- `zani.W017` — Instagram real-mode settings are unsafe.
 
 Run:
 
@@ -211,6 +238,14 @@ Use the dedicated audit command before staging and production deploys:
 
 The command checks environment, security flags, database, Redis/Celery, object storage, observability, email and required API throttling scopes. CI/staging should use `--fail-on-critical`.
 
+For a production release gate, run:
+
+```bash
+./scripts/production_release_check.sh
+```
+
+This script runs Django system/deploy checks, migration drift checks, production readiness with `--fail-on-critical`, provider rollout with `--fail-on-blockers`, backup readiness with blocker failure, and dependency audit when `pip-audit` is installed.
+
 Rate-limit details:
 
 ```text
@@ -224,7 +259,6 @@ This baseline does not yet implement:
 - storage quotas and antivirus;
 - realtime WebSocket/SSE;
 - queue-backed automation runtime;
-- real provider credentials for WhatsApp/Telegram/Meta;
 - payment provider;
 - full load testing.
 

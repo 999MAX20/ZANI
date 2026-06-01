@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.automations.models import AutomationAction, AutomationCondition, AutomationRule, AutomationRun
+from apps.integrations.sanitization import sanitize_config, sanitize_error_payload, sanitize_error_text
 
 
 class AutomationConditionSerializer(serializers.ModelSerializer):
@@ -30,6 +31,13 @@ class AutomationRunSerializer(serializers.ModelSerializer):
     class Meta:
         model = AutomationRun
         fields = "__all__"
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["payload"] = sanitize_config(data.get("payload") or {})
+        data["action_results"] = sanitize_error_payload(sanitize_config(data.get("action_results") or []))
+        data["error"] = sanitize_error_text(data.get("error"))
+        return data
 
 
 class AutomationTemplateSerializer(serializers.Serializer):

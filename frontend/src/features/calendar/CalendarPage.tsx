@@ -239,25 +239,30 @@ function MiniMonth({
   weekdays,
   appointmentDates,
   onChange,
+  labels,
 }: {
   value: string;
   locale: string;
   weekdays: string[];
   appointmentDates: Map<string, number>;
   onChange: (value: string) => void;
+  labels: {
+    previousMonth: string;
+    nextMonth: string;
+  };
 }) {
   const cells = getMonthDates(value);
 
   return (
     <div className="rounded-[1.75rem] border border-slate-100 bg-white p-4 shadow-sm">
       <div className="mb-4 flex items-center justify-between gap-2">
-        <Button variant="ghost" className="h-9 w-9 rounded-full px-0" onClick={() => onChange(shiftMonthValue(value, -1))}>
+        <Button variant="ghost" className="h-9 w-9 rounded-full px-0" onClick={() => onChange(shiftMonthValue(value, -1))} aria-label={labels.previousMonth}>
           <ChevronLeft size={18} />
         </Button>
         <p className="text-sm font-black text-midnight">
           {new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }).format(parseDate(value))}
         </p>
-        <Button variant="ghost" className="h-9 w-9 rounded-full px-0" onClick={() => onChange(shiftMonthValue(value, 1))}>
+        <Button variant="ghost" className="h-9 w-9 rounded-full px-0" onClick={() => onChange(shiftMonthValue(value, 1))} aria-label={labels.nextMonth}>
           <ChevronRight size={18} />
         </Button>
       </div>
@@ -408,7 +413,7 @@ export function CalendarPage() {
     ? resourceItems
       .filter((resource) => !resourceFilter || resource.id === Number(resourceFilter))
       .map((resource) => ({ id: resource.id, name: resource.name }))
-    : [{ id: null, name: "Общий календарь" }];
+    : [{ id: null, name: t("calendar.businessSchedule") }];
 
   function shiftDate(days: number) {
     setDate(shiftDateValue(date, days));
@@ -455,7 +460,7 @@ export function CalendarPage() {
           </div>
           <StatusBadge status={appointment.status} />
         </div>
-        {!compact ? <p className="mt-2 truncate text-xs font-semibold text-slate-500">{resource?.name || "Без ресурса"} · {appointment.source}</p> : null}
+        {!compact ? <p className="mt-2 truncate text-xs font-semibold text-slate-500">{resource?.name || t("calendar.noResource")} · {appointment.source}</p> : null}
       </button>
     );
   }
@@ -465,10 +470,10 @@ export function CalendarPage() {
       <section className="mb-5 rounded-[2rem] border border-white/80 bg-white/86 p-4 shadow-soft backdrop-blur-xl lg:p-5">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-brand-600">Календарь</p>
-            <h1 className="mt-2 text-3xl font-black tracking-tight text-midnight sm:text-4xl">Расписание записей</h1>
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-brand-600">{t("calendar.title")}</p>
+            <h1 className="mt-2 text-3xl font-black tracking-tight text-midnight sm:text-4xl">{t("calendar.businessSchedule")}</h1>
             <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-slate-500">
-              Рабочий календарь для записей, мастеров, статусов визита и быстрых действий менеджера.
+              {t("calendar.heroText")}
             </p>
           </div>
           <div className="grid gap-2 sm:grid-cols-[44px_minmax(0,1fr)_44px_auto] xl:flex xl:items-center">
@@ -490,13 +495,13 @@ export function CalendarPage() {
               <ChevronRight size={18} />
             </Button>
             <Button variant="secondary" className="h-11 px-4" onClick={() => setDate(todayISO())}>
-              Сегодня
+              {t("calendar.today")}
             </Button>
-            <div className="grid grid-cols-3 rounded-2xl border border-slate-200 bg-white p-1 sm:col-span-4 xl:w-[250px]">
+            <div className="hidden grid-cols-3 rounded-2xl border border-slate-200 bg-white p-1 sm:col-span-4 sm:grid xl:w-[250px]">
               {[
-                { value: "day", label: "День" },
-                { value: "week", label: "Неделя" },
-                { value: "month", label: "Месяц" },
+                { value: "day", label: t("calendar.day") },
+                { value: "week", label: t("calendar.week") },
+                { value: "month", label: t("calendar.month") },
               ].map((item) => (
                 <button
                   key={item.value}
@@ -512,13 +517,12 @@ export function CalendarPage() {
               ))}
             </div>
             <Button
-              variant="ai"
               className="h-11 sm:col-span-4"
               disabled={clients.isLoading || services.isLoading}
               onClick={() => openBookingForDate(date)}
             >
               <Plus size={18} />
-              Новая запись
+              {t("calendar.newBooking")}
             </Button>
           </div>
         </div>
@@ -544,10 +548,10 @@ export function CalendarPage() {
 
       <section className="mb-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
-          { label: "Записи сегодня", value: dayAppointments.length, icon: CalendarDays, tone: "text-brand-600 bg-brand-50" },
-          { label: "Подтверждены", value: confirmedCount, icon: CheckCircle2, tone: "text-emerald-600 bg-emerald-50" },
-          { label: "Свободные окна", value: openSlotsHint, icon: Clock3, tone: "text-sky-600 bg-sky-50" },
-          { label: "Задачи на день", value: dayTasks.length, icon: UserRound, tone: "text-amber-600 bg-amber-50" },
+          { label: t("calendar.bookings"), value: dayAppointments.length, icon: CalendarDays, tone: "text-brand-600 bg-brand-50" },
+          { label: t("calendar.confirmed"), value: confirmedCount, icon: CheckCircle2, tone: "text-emerald-600 bg-emerald-50" },
+          { label: t("calendar.openSlots"), value: openSlotsHint, icon: Clock3, tone: "text-sky-600 bg-sky-50" },
+          { label: t("calendar.tasksToday"), value: dayTasks.length, icon: UserRound, tone: "text-amber-600 bg-amber-50" },
         ].map((item) => {
           const Icon = item.icon;
           return (
@@ -562,7 +566,111 @@ export function CalendarPage() {
         })}
       </section>
 
-      <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <section className="mb-5 space-y-4 lg:hidden">
+        <details className="rounded-[1.75rem] border border-slate-100 bg-white p-4 shadow-sm">
+          <summary className="cursor-pointer list-none text-sm font-black text-midnight">
+            <span className="inline-flex items-center gap-2">
+              <Filter size={18} className="text-brand-600" />
+              {t("calendar.filters")}
+            </span>
+          </summary>
+          <div className="mt-4 space-y-3">
+            <label className="relative block">
+              <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-4 text-sm font-bold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-brand-300 focus:ring-4 focus:ring-brand-100"
+                placeholder={t("calendar.searchPlaceholder")}
+              />
+            </label>
+            <Select
+              value={serviceFilter}
+              onChange={(event) => setServiceFilter(event.target.value)}
+              disabled={services.isLoading}
+              options={[{ value: "", label: t("calendar.allServices") }, ...serviceItems.map((service) => ({ value: String(service.id), label: service.name }))]}
+            />
+            <Select
+              value={resourceFilter}
+              onChange={(event) => setResourceFilter(event.target.value)}
+              disabled={resources.isLoading}
+              options={[{ value: "", label: t("calendar.allResources") }, ...resourceItems.map((resource) => ({ value: String(resource.id), label: resource.name }))]}
+            />
+            <Select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+              options={[
+                { value: "", label: t("calendar.allStatuses") },
+                { value: "created", label: t("status.created") },
+                { value: "confirmed", label: t("status.confirmed") },
+                { value: "completed", label: t("status.completed") },
+                { value: "cancelled", label: t("status.cancelled") },
+                { value: "no_show", label: t("status.no_show") },
+              ]}
+            />
+          </div>
+        </details>
+
+        <div className="rounded-[1.75rem] border border-slate-100 bg-white p-4 shadow-sm">
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">{t("calendar.mobileAgenda")}</p>
+              <h2 className="mt-1 text-xl font-black text-midnight">{formatPickerDate(date, locale)}</h2>
+            </div>
+            <Button type="button" className="shrink-0" onClick={() => openBookingForDate(date)}>
+              <Plus size={16} />
+              {t("calendar.newBooking")}
+            </Button>
+          </div>
+          <div className="space-y-3">
+            {dayAppointments.map((appointment) => renderAppointmentPreview(appointment))}
+            {!dayAppointments.length ? (
+              <button
+                type="button"
+                className="w-full rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-4 text-left text-sm font-bold leading-6 text-slate-500 transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
+                onClick={() => openBookingForDate(date)}
+              >
+                {t("calendar.freeDayHint")}
+              </button>
+            ) : null}
+          </div>
+        </div>
+
+        {selectedAppointment ? (
+          <div className="rounded-[1.75rem] border border-slate-100 bg-white p-4 shadow-sm">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">{t("calendar.selectedAppointment")}</p>
+            <div className="mt-4 flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xl font-black text-midnight">{clientById.get(selectedAppointment.client)?.full_name || t("common.client")}</p>
+                <p className="mt-1 text-sm font-bold text-slate-500">{formatDateTime(selectedAppointment.start_at)}</p>
+              </div>
+              <StatusBadge status={selectedAppointment.status} />
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {appointmentStatusActions.filter((status) => status !== selectedAppointment.status).map((status) => (
+                <button
+                  key={status}
+                  type="button"
+                  className="rounded-full bg-slate-100 px-3 py-2 text-xs font-black text-slate-700 transition hover:bg-brand-50 hover:text-brand-700"
+                  disabled={statusMutation.isPending}
+                  onClick={() => statusMutation.mutate({ id: selectedAppointment.id, status })}
+                >
+                  {getAppointmentActionLabel(status)}
+                </button>
+              ))}
+              <button
+                type="button"
+                className="rounded-full bg-midnight px-3 py-2 text-xs font-black text-white transition hover:bg-slate-800"
+                onClick={() => setDrawerEntity({ type: "appointment", id: selectedAppointment.id })}
+              >
+                {t("calendar.openCard")}
+              </button>
+            </div>
+          </div>
+        ) : null}
+      </section>
+
+      <section className="hidden gap-5 lg:grid xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0 rounded-[2rem] border border-white/80 bg-white/86 shadow-soft backdrop-blur-xl">
           <div className="border-b border-slate-100 p-4 lg:p-5">
             <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px_220px_180px]">
@@ -570,28 +678,28 @@ export function CalendarPage() {
                 <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input
                   value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-4 text-sm font-bold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-brand-300 focus:ring-4 focus:ring-brand-100"
-                  placeholder="Поиск: клиент, услуга, мастер..."
+                onChange={(event) => setSearch(event.target.value)}
+                className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-4 text-sm font-bold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-brand-300 focus:ring-4 focus:ring-brand-100"
+                  placeholder={t("calendar.searchPlaceholder")}
                 />
               </label>
               <Select
                 value={serviceFilter}
                 onChange={(event) => setServiceFilter(event.target.value)}
                 disabled={services.isLoading}
-                options={[{ value: "", label: "Все услуги" }, ...serviceItems.map((service) => ({ value: String(service.id), label: service.name }))]}
+                options={[{ value: "", label: t("calendar.allServices") }, ...serviceItems.map((service) => ({ value: String(service.id), label: service.name }))]}
               />
               <Select
                 value={resourceFilter}
                 onChange={(event) => setResourceFilter(event.target.value)}
                 disabled={resources.isLoading}
-                options={[{ value: "", label: "Все мастера" }, ...resourceItems.map((resource) => ({ value: String(resource.id), label: resource.name }))]}
+                options={[{ value: "", label: t("calendar.allResources") }, ...resourceItems.map((resource) => ({ value: String(resource.id), label: resource.name }))]}
               />
               <Select
                 value={statusFilter}
                 onChange={(event) => setStatusFilter(event.target.value)}
                 options={[
-                  { value: "", label: "Все статусы" },
+                  { value: "", label: t("calendar.allStatuses") },
                   { value: "created", label: t("status.created") },
                   { value: "confirmed", label: t("status.confirmed") },
                   { value: "completed", label: t("status.completed") },
@@ -646,7 +754,7 @@ export function CalendarPage() {
                             className="absolute left-0 right-0 border-t border-slate-100 text-left transition hover:bg-brand-50/45"
                             style={{ top: `${(hour - dayStartHour) * hourHeight}px`, height: `${hourHeight}px` }}
                             onClick={() => openBookingForDate(date, hour, resource.id)}
-                            aria-label={`Создать запись на ${hour}:00`}
+                            aria-label={t("calendar.createAtHour", { hour: String(hour).padStart(2, "0") })}
                           />
                         ))}
                         {columnAppointments.map((appointment, index) => {
@@ -696,7 +804,7 @@ export function CalendarPage() {
                     </button>
                     <div className="space-y-2">
                       {items.map((appointment) => renderAppointmentPreview(appointment, true))}
-                      {!items.length ? <p className="rounded-2xl border border-dashed border-slate-200 p-3 text-xs font-bold text-slate-400">Свободный день</p> : null}
+                      {!items.length ? <p className="rounded-2xl border border-dashed border-slate-200 p-3 text-xs font-bold text-slate-400">{t("calendar.freeDay")}</p> : null}
                     </div>
                   </div>
                 );
@@ -753,35 +861,42 @@ export function CalendarPage() {
         </div>
 
         <aside className="space-y-4 xl:sticky xl:top-24 xl:self-start">
-          <MiniMonth value={date} locale={locale} weekdays={weekDays} appointmentDates={appointmentDates} onChange={setDate} />
+          <MiniMonth
+            value={date}
+            locale={locale}
+            weekdays={weekDays}
+            appointmentDates={appointmentDates}
+            onChange={setDate}
+            labels={{ previousMonth: t("calendar.previousMonth"), nextMonth: t("calendar.nextMonth") }}
+          />
 
           <div className="rounded-[1.75rem] border border-slate-100 bg-white p-4 shadow-sm">
             <div className="mb-4 flex items-center gap-2">
               <Filter size={18} className="text-brand-600" />
-              <p className="font-black text-midnight">Рабочие фильтры</p>
+              <p className="font-black text-midnight">{t("calendar.filters")}</p>
             </div>
             <div className="space-y-3">
               {[
-                { label: "Клиенты", ready: hasClients },
-                { label: "Услуги", ready: hasServices },
-                { label: "Часы работы", ready: hasWorkingHours },
-                { label: "Мастера", ready: hasResources },
+                { label: t("calendar.readyClients"), ready: hasClients },
+                { label: t("calendar.readyServices"), ready: hasServices },
+                { label: t("calendar.readyHours"), ready: hasWorkingHours },
+                { label: t("calendar.readyResources"), ready: hasResources },
               ].map((item) => (
                 <div key={item.label} className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 text-sm font-bold">
                   <span className="text-slate-700">{item.label}</span>
-                  <span className={item.ready ? "text-emerald-600" : "text-amber-600"}>{item.ready ? "Готово" : "Настроить"}</span>
+                  <span className={item.ready ? "text-emerald-600" : "text-amber-600"}>{item.ready ? t("calendar.ready") : t("calendar.needsSetup")}</span>
                 </div>
               ))}
               {!hasWorkingHours ? (
                 <Button type="button" variant="secondary" className="w-full" isLoading={quickHoursMutation.isPending} onClick={() => quickHoursMutation.mutate()}>
-                  Быстро: 9:00-20:00
+                  {t("calendar.applyQuickHours")}
                 </Button>
               ) : null}
             </div>
           </div>
 
           <div className="rounded-[1.75rem] border border-slate-100 bg-white p-4 shadow-sm">
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Выбранная запись</p>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">{t("calendar.selectedAppointment")}</p>
             {selectedAppointment ? (
               <div className="mt-4">
                 <div className="flex items-start justify-between gap-3">
@@ -792,10 +907,10 @@ export function CalendarPage() {
                   <StatusBadge status={selectedAppointment.status} />
                 </div>
                 <div className="mt-4 space-y-2 text-sm font-bold text-slate-600">
-                  <p>Услуга: {serviceById.get(selectedAppointment.service)?.name || t("common.service")}</p>
-                  <p>Мастер: {selectedAppointment.resource ? resourceById.get(selectedAppointment.resource)?.name : "Не назначен"}</p>
-                  <p>Источник: {selectedAppointment.source}</p>
-                  {selectedAppointment.lead ? <p>Заявка: #{leadById.get(selectedAppointment.lead)?.id || selectedAppointment.lead}</p> : null}
+                  <p>{t("appointment.service")}: {serviceById.get(selectedAppointment.service)?.name || t("common.service")}</p>
+                  <p>{t("appointment.resource")}: {selectedAppointment.resource ? resourceById.get(selectedAppointment.resource)?.name : t("appointment.noResource")}</p>
+                  <p>{t("appointment.source")}: {selectedAppointment.source}</p>
+                  {selectedAppointment.lead ? <p>{t("calendar.lead")}: #{leadById.get(selectedAppointment.lead)?.id || selectedAppointment.lead}</p> : null}
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {appointmentStatusActions.filter((status) => status !== selectedAppointment.status).map((status) => (
@@ -814,7 +929,7 @@ export function CalendarPage() {
                     className="rounded-full bg-midnight px-3 py-2 text-xs font-black text-white transition hover:bg-slate-800"
                     onClick={() => setDrawerEntity({ type: "appointment", id: selectedAppointment.id })}
                   >
-                    Открыть карточку
+                    {t("calendar.openCard")}
                   </button>
                 </div>
               </div>
@@ -824,14 +939,14 @@ export function CalendarPage() {
                 className="mt-4 w-full rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-4 text-left text-sm font-bold leading-6 text-slate-500 transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
                 onClick={() => openBookingForDate(date)}
               >
-                На выбранную дату нет записей. Нажмите, чтобы создать первую запись.
+                {t("calendar.freeDayHint")}
               </button>
             )}
           </div>
 
           {dayAppointments.length ? (
             <div className="rounded-[1.75rem] border border-slate-100 bg-white p-4 shadow-sm">
-              <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-slate-400">Повестка дня</p>
+              <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-slate-400">{t("calendar.mobileAgenda")}</p>
               <div className="space-y-2">
                 {dayAppointments.slice(0, 6).map((appointment) => renderAppointmentPreview(appointment))}
               </div>

@@ -85,7 +85,7 @@ export function loadFacebookSdk({ appId, version }: { appId: string; version: st
     script.defer = true;
     script.crossOrigin = "anonymous";
     script.src = facebookSdkUrl;
-    script.onerror = () => reject(new Error("Facebook SDK не загрузился."));
+    script.onerror = () => reject(new Error("Facebook SDK failed to load."));
     document.body.appendChild(script);
   });
 }

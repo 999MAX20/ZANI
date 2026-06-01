@@ -12,21 +12,11 @@ import { Select } from "../../components/ui/Select";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useAuth } from "../auth/AuthProvider";
 import { hasPermission } from "../../lib/permissions";
+import { useI18n } from "../../lib/i18n";
 
 function formatMoney(value: string | number | null | undefined) {
   if (value === null || value === undefined || value === "") return "0 ₸";
   return `${Number(value).toLocaleString("ru-KZ")} ₸`;
-}
-
-function readableChangeStatus(status: KaspiPriceChangeLog["status"]) {
-  const labels: Record<KaspiPriceChangeLog["status"], string> = {
-    simulated: "Симуляция",
-    queued: "В очереди",
-    applied: "Применено",
-    blocked: "Заблокировано",
-    failed: "Ошибка",
-  };
-  return labels[status] || status;
 }
 
 function changeStatusClass(status: KaspiPriceChangeLog["status"]) {
@@ -41,6 +31,7 @@ function changeStatusClass(status: KaspiPriceChangeLog["status"]) {
 }
 
 export function PricingPage() {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { business } = useActiveBusiness();
@@ -187,7 +178,7 @@ export function PricingPage() {
       return kaspiPricingApi.rules.recommend({
         id: rule.id,
         competitorPrice: manualPrice || undefined,
-        competitorName: manualPrice ? "Конкурент" : undefined,
+        competitorName: manualPrice ? "Competitor" : undefined,
       });
     },
     onSuccess: () => {
@@ -249,7 +240,7 @@ export function PricingPage() {
   const emergencyStop = useMutation({
     mutationFn: () => {
       if (!business?.id) throw new Error("Business is required.");
-      return kaspiPricingApi.control.emergencyStop({ business: business.id, reason: "Остановлено из кабинета ZANI." });
+      return kaspiPricingApi.control.emergencyStop({ business: business.id, reason: "Stopped from ZANI workspace." });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["kaspi-pricing-control"] });
@@ -315,7 +306,7 @@ export function PricingPage() {
     <div className="space-y-6">
       <PageHeader
         title="Kaspi Pricing"
-        description="Пороговая цена, рекомендация на 1 ₸ ниже конкурента и безопасное применение через approval."
+        description={t("pricing.description")}
       />
 
       {error ? <ErrorState message={getApiErrorMessage(error)} /> : null}
@@ -325,20 +316,22 @@ export function PricingPage() {
           <div className="flex items-start gap-3">
             <AlertTriangle className={control?.emergency_stop_enabled ? "mt-1 text-red-600" : "mt-1 text-amber-500"} size={22} />
             <div>
-              <h2 className="text-lg font-black text-midnight">Безопасность ценового агента</h2>
+              <h2 className="text-lg font-black text-midnight">{t("pricing.safetyTitle")}</h2>
               <p className="mt-1 text-sm font-semibold text-slate-600">
-                {control?.emergency_stop_enabled ? `Остановлен: ${control.emergency_stop_reason || "без причины"}` : "Агент активен. Emergency stop мгновенно блокирует применение цен."}
+                {control?.emergency_stop_enabled
+                  ? t("pricing.agentStopped", { reason: control.emergency_stop_reason || t("pricing.noReason") })
+                  : t("pricing.agentActive")}
               </p>
-              {alerts.length ? <p className="mt-1 text-sm font-bold text-amber-700">Открытые сигналы: {alerts.length}</p> : null}
+              {alerts.length ? <p className="mt-1 text-sm font-bold text-amber-700">{t("pricing.openSignals", { count: alerts.length })}</p> : null}
             </div>
           </div>
           {control?.emergency_stop_enabled ? (
             <Button disabled={!canManage} isLoading={resumePricing.isPending} onClick={() => resumePricing.mutate()}>
-              Возобновить
+              {t("pricing.resume")}
             </Button>
           ) : (
             <Button variant="danger" disabled={!canManage} isLoading={emergencyStop.isPending} onClick={() => emergencyStop.mutate()}>
-              Остановить агента
+              {t("pricing.stopAgent")}
             </Button>
           )}
         </div>
@@ -347,43 +340,43 @@ export function PricingPage() {
       <section className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-soft">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-black text-midnight">Товары из интеграций</h2>
-            <p className="mt-1 text-sm font-semibold text-slate-500">ZANI собирает товары из Kaspi, МойСклад, 1C, Excel/CSV, Ozon и Wildberries.</p>
+            <h2 className="text-lg font-black text-midnight">{t("pricing.catalogTitle")}</h2>
+            <p className="mt-1 text-sm font-semibold text-slate-500">{t("pricing.catalogText")}</p>
           </div>
           <Button variant="secondary" disabled={!canManage || !business?.id} isLoading={syncCatalog.isPending} onClick={() => syncCatalog.mutate()}>
-            Обновить товары
+            {t("pricing.refreshCatalog")}
           </Button>
         </div>
         <div className="mt-4 rounded-2xl border border-slate-100 bg-slate-50 p-4">
           <div className="grid gap-3 md:grid-cols-[1fr_1fr_1fr_auto]">
-            <Input label="Общий порог" value={bulkMinPrice} onChange={(event) => setBulkMinPrice(event.target.value)} type="number" />
-            <Input label="Шаг" value={bulkStepAmount} onChange={(event) => setBulkStepAmount(event.target.value)} type="number" />
-            <Input label="Лимит в день" value={bulkMaxChanges} onChange={(event) => setBulkMaxChanges(event.target.value)} type="number" />
+            <Input label={t("pricing.bulkMinPrice")} value={bulkMinPrice} onChange={(event) => setBulkMinPrice(event.target.value)} type="number" />
+            <Input label={t("pricing.step")} value={bulkStepAmount} onChange={(event) => setBulkStepAmount(event.target.value)} type="number" />
+            <Input label={t("pricing.dailyLimit")} value={bulkMaxChanges} onChange={(event) => setBulkMaxChanges(event.target.value)} type="number" />
             <Button className="self-end" disabled={!canManage || !selectedCatalogIds.length || !bulkMinPrice} isLoading={bulkCreateRules.isPending} onClick={() => bulkCreateRules.mutate()}>
-              Создать для выбранных ({selectedCatalogIds.length})
+              {t("pricing.createForSelected", { count: selectedCatalogIds.length })}
             </Button>
           </div>
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-3">
-          <Input label="Поиск" value={catalogSearch} onChange={(event) => setCatalogSearch(event.target.value)} placeholder="Название, SKU..." />
+          <Input label={t("common.search")} value={catalogSearch} onChange={(event) => setCatalogSearch(event.target.value)} placeholder={t("pricing.searchPlaceholder")} />
           <Select
-            label="Источник"
+            label={t("pricing.source")}
             value={catalogSource}
             onChange={(event) => setCatalogSource(event.target.value)}
-            options={[{ value: "", label: "Все источники" }, ...catalogSources.map((source) => ({ value: source, label: source }))]}
+            options={[{ value: "", label: t("pricing.allSources") }, ...catalogSources.map((source) => ({ value: source, label: source }))]}
           />
           <Select
-            label="Статус"
+            label={t("pricing.status")}
             value={catalogRuleState}
             onChange={(event) => setCatalogRuleState(event.target.value)}
             options={[
-              { value: "", label: "Все товары" },
-              { value: "missing", label: "Без правила" },
-              { value: "connected", label: "Уже подключены" },
+              { value: "", label: t("pricing.allProducts") },
+              { value: "missing", label: t("pricing.withoutRule") },
+              { value: "connected", label: t("pricing.connectedProducts") },
             ]}
           />
         </div>
-        {catalogQuery.isLoading ? <LoadingState label="Собираем товары" /> : null}
+        {catalogQuery.isLoading ? <LoadingState label={t("pricing.loadingCatalog")} /> : null}
         <div className="mt-4 grid gap-3">
           {catalogItems.map((item) => (
             <article key={item.id} className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
@@ -398,20 +391,27 @@ export function PricingPage() {
                       const id = String(item.id);
                       setSelectedCatalogIds(event.target.checked ? [...selectedCatalogIds, id] : selectedCatalogIds.filter((value) => value !== id));
                     }}
-                    aria-label={`Выбрать ${item.name || item.sku}`}
+                    aria-label={t("pricing.selectItem", { name: item.name || item.sku })}
                   />
                   <div>
                   <p className="text-base font-black text-midnight">{item.name || item.sku}</p>
                   <p className="mt-1 text-sm font-semibold text-slate-500">
-                    {item.source} · SKU {item.sku} · цена {formatMoney(item.current_price)} · остаток {item.stock_quantity || "нет данных"}
+                    {t("pricing.catalogItemMeta", {
+                      source: item.source,
+                      sku: item.sku,
+                      price: formatMoney(item.current_price),
+                      stock: item.stock_quantity || t("pricing.noData"),
+                    })}
                   </p>
                   </div>
                 </div>
-                <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-slate-600">{item.rule_id ? `правило: ${item.rule_mode}` : "не подключен"}</span>
+                <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-slate-600">
+                  {item.rule_id ? t("pricing.ruleMode", { mode: item.rule_mode || "" }) : t("pricing.notConnected")}
+                </span>
               </div>
               <div className="mt-3 grid gap-3 md:grid-cols-[1fr_auto]">
                 <Input
-                  label="Не снижать ниже"
+                  label={t("pricing.minPrice")}
                   value={catalogMinPrices[String(item.id)] || ""}
                   onChange={(event) => setCatalogMinPrices({ ...catalogMinPrices, [String(item.id)]: event.target.value })}
                   type="number"
@@ -423,61 +423,61 @@ export function PricingPage() {
                   isLoading={createRuleFromCatalog.isPending}
                   onClick={() => createRuleFromCatalog.mutate(item)}
                 >
-                  Создать правило
+                  {t("pricing.createRule")}
                 </Button>
               </div>
             </article>
           ))}
         </div>
         {!catalogQuery.isLoading && catalogItems.length === 0 ? (
-          <div className="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">Подключите или синхронизируйте источник товаров, затем нажмите “Обновить товары”.</div>
+          <div className="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">{t("pricing.emptyCatalog")}</div>
         ) : null}
       </section>
 
       <section className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-soft">
         <div className="flex items-center gap-2">
           <ShieldCheck className="text-brand-700" size={20} />
-          <h2 className="text-lg font-black text-midnight">Новое правило</h2>
+          <h2 className="text-lg font-black text-midnight">{t("pricing.newRule")}</h2>
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-3">
           <Input label="SKU" value={form.product_sku} onChange={(event) => setForm({ ...form, product_sku: event.target.value })} />
-          <Input label="Название" value={form.product_name} onChange={(event) => setForm({ ...form, product_name: event.target.value })} />
-          <Input label="Текущая цена" value={form.current_price} onChange={(event) => setForm({ ...form, current_price: event.target.value })} type="number" />
-          <Input label="Не снижать ниже" value={form.min_price} onChange={(event) => setForm({ ...form, min_price: event.target.value })} type="number" />
-          <Input label="Шаг ниже конкурента" value={form.step_amount} onChange={(event) => setForm({ ...form, step_amount: event.target.value })} type="number" />
-          <Input label="Лимит изменений в день" value={form.max_changes_per_day} onChange={(event) => setForm({ ...form, max_changes_per_day: event.target.value })} type="number" />
+          <Input label={t("pricing.name")} value={form.product_name} onChange={(event) => setForm({ ...form, product_name: event.target.value })} />
+          <Input label={t("pricing.currentPrice")} value={form.current_price} onChange={(event) => setForm({ ...form, current_price: event.target.value })} type="number" />
+          <Input label={t("pricing.minPrice")} value={form.min_price} onChange={(event) => setForm({ ...form, min_price: event.target.value })} type="number" />
+          <Input label={t("pricing.stepBelowCompetitor")} value={form.step_amount} onChange={(event) => setForm({ ...form, step_amount: event.target.value })} type="number" />
+          <Input label={t("pricing.dailyChangeLimit")} value={form.max_changes_per_day} onChange={(event) => setForm({ ...form, max_changes_per_day: event.target.value })} type="number" />
           <Select
             value={form.mode}
             onChange={(event) => setForm({ ...form, mode: event.target.value as KaspiPricingRule["mode"] })}
             options={[
-              { value: "recommend", label: "Только рекомендации" },
-              { value: "approval", label: "Подтверждение" },
+              { value: "recommend", label: t("pricing.mode.recommend") },
+              { value: "approval", label: t("pricing.mode.approval") },
             ]}
           />
         </div>
         <Button className="mt-4" disabled={!canManage || !form.product_sku || !form.current_price || !form.min_price} isLoading={createRule.isPending} onClick={() => createRule.mutate()}>
-          <SlidersHorizontal size={16} /> Создать правило
+          <SlidersHorizontal size={16} /> {t("pricing.createRule")}
         </Button>
       </section>
 
       <section className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-soft">
-        <h2 className="text-lg font-black text-midnight">Правила</h2>
+        <h2 className="text-lg font-black text-midnight">{t("pricing.rules")}</h2>
         <div className="mt-4 rounded-2xl border border-slate-100 bg-slate-50 p-4">
           <div className="grid gap-3 md:grid-cols-[1fr_1fr_1fr_1fr_auto]">
             <Select
-              label="Статус"
+              label={t("pricing.status")}
               value={bulkRuleStatus}
               onChange={(event) => setBulkRuleStatus(event.target.value)}
               options={[
-                { value: "", label: "Не менять" },
-                { value: "active", label: "Активные" },
-                { value: "paused", label: "Пауза" },
-                { value: "archived", label: "Архив" },
+                { value: "", label: t("pricing.doNotChange") },
+                { value: "active", label: t("status.active") },
+                { value: "paused", label: t("status.paused") },
+                { value: "archived", label: t("status.archived") },
               ]}
             />
-            <Input label="Новый порог" value={bulkRuleMinPrice} onChange={(event) => setBulkRuleMinPrice(event.target.value)} type="number" />
-            <Input label="Новый шаг" value={bulkRuleStepAmount} onChange={(event) => setBulkRuleStepAmount(event.target.value)} type="number" />
-            <Input label="Новый лимит" value={bulkRuleMaxChanges} onChange={(event) => setBulkRuleMaxChanges(event.target.value)} type="number" />
+            <Input label={t("pricing.newMinPrice")} value={bulkRuleMinPrice} onChange={(event) => setBulkRuleMinPrice(event.target.value)} type="number" />
+            <Input label={t("pricing.newStep")} value={bulkRuleStepAmount} onChange={(event) => setBulkRuleStepAmount(event.target.value)} type="number" />
+            <Input label={t("pricing.newLimit")} value={bulkRuleMaxChanges} onChange={(event) => setBulkRuleMaxChanges(event.target.value)} type="number" />
             <Button
               className="self-end"
               variant="secondary"
@@ -489,15 +489,15 @@ export function PricingPage() {
               isLoading={bulkUpdateRules.isPending}
               onClick={() => bulkUpdateRules.mutate()}
             >
-              Обновить ({selectedRuleIds.length})
+              {t("pricing.updateSelected", { count: selectedRuleIds.length })}
             </Button>
           </div>
           <label className="mt-3 flex items-center gap-2 text-sm font-bold text-slate-600">
             <input className="h-4 w-4 rounded border-slate-300" type="checkbox" checked={bulkRuleDisableAutopilot} onChange={(event) => setBulkRuleDisableAutopilot(event.target.checked)} />
-            Выключить автопилот у выбранных
+            {t("pricing.disableAutopilotSelected")}
           </label>
         </div>
-        {rulesQuery.isLoading ? <LoadingState label="Загружаем правила" /> : null}
+        {rulesQuery.isLoading ? <LoadingState label={t("pricing.loadingRules")} /> : null}
         <div className="mt-4 grid gap-3">
           {rules.map((rule) => {
             const latest = latestRecommendations.get(String(rule.id));
@@ -514,70 +514,76 @@ export function PricingPage() {
                         const id = String(rule.id);
                         setSelectedRuleIds(event.target.checked ? [...selectedRuleIds, id] : selectedRuleIds.filter((value) => value !== id));
                       }}
-                      aria-label={`Выбрать ${rule.product_name || rule.product_sku}`}
+                      aria-label={t("pricing.selectRule", { name: rule.product_name || rule.product_sku })}
                     />
                     <div>
                       <p className="text-base font-black text-midnight">{rule.product_name || rule.product_sku}</p>
-                      <p className="mt-1 text-sm font-semibold text-slate-500">SKU {rule.product_sku} · текущая {formatMoney(rule.current_price)} · порог {formatMoney(rule.min_price)}</p>
+                      <p className="mt-1 text-sm font-semibold text-slate-500">
+                        {t("pricing.ruleMeta", { sku: rule.product_sku, current: formatMoney(rule.current_price), min: formatMoney(rule.min_price) })}
+                      </p>
                     </div>
                   </div>
                   <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">{rule.mode} · {rule.status}</span>
                 </div>
                 <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto_auto_auto]">
                   <Input
-                    label="Цена конкурента, если нужно вручную"
+                    label={t("pricing.manualCompetitorPrice")}
                     value={competitorPrices[String(rule.id)] || ""}
                     onChange={(event) => setCompetitorPrices({ ...competitorPrices, [String(rule.id)]: event.target.value })}
                     type="number"
                   />
                   <Button className="self-end" variant="secondary" disabled={!canManage} isLoading={collectOffers.isPending} onClick={() => collectOffers.mutate(rule)}>
-                    Собрать цены
+                    {t("pricing.collectPrices")}
                   </Button>
                   <Button className="self-end" variant="secondary" disabled={!canManage} isLoading={recommend.isPending} onClick={() => recommend.mutate(rule)}>
-                    <TrendingDown size={16} /> Рассчитать
+                    <TrendingDown size={16} /> {t("pricing.calculate")}
                   </Button>
                   <Button className="self-end" disabled={!canManage || !latest || latest.status !== "proposed"} isLoading={apply.isPending} onClick={() => latest && apply.mutate(latest)}>
-                    Применить
+                    {t("pricing.apply")}
                   </Button>
                 </div>
                 {latestOffer ? (
                   <div className="mt-3 rounded-2xl bg-white px-3 py-2 text-sm font-semibold text-slate-600">
-                    Найдена цена: {formatMoney(latestOffer.price)} · {latestOffer.competitor_name || "конкурент"} · позиция {latestOffer.position || 1}
+                    {t("pricing.foundPrice", {
+                      price: formatMoney(latestOffer.price),
+                      competitor: latestOffer.competitor_name || t("pricing.competitor"),
+                      position: latestOffer.position || 1,
+                    })}
                   </div>
                 ) : null}
                 {latest ? (
                   <div className="mt-3 rounded-2xl bg-white px-3 py-2 text-sm font-semibold text-slate-600">
-                    Рекомендация: {formatMoney(latest.target_price)} · {latest.reason} · статус {latest.status}
+                    {t("pricing.recommendationLine", { price: formatMoney(latest.target_price), reason: latest.reason, status: latest.status })}
                   </div>
                 ) : null}
                 <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-3">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <p className="text-sm font-black text-midnight">Автопилот</p>
+                      <p className="text-sm font-black text-midnight">{t("pricing.autopilot")}</p>
                       <p className="mt-1 text-sm font-semibold text-slate-500">
                         {rule.mode === "autopilot"
-                          ? "Включен. ZANI может применять безопасные рекомендации в плановом цикле."
-                          : "Перед включением ZANI проверяет порог, дневной лимит и наличие мониторинга."}
+                          ? t("pricing.autopilotEnabledText")
+                          : t("pricing.autopilotCheckText")}
                       </p>
                     </div>
                     {rule.mode === "autopilot" ? (
                       <Button variant="secondary" disabled={!canManage} isLoading={disableAutopilot.isPending} onClick={() => disableAutopilot.mutate(rule)}>
-                        <PauseCircle size={16} /> Остановить
+                        <PauseCircle size={16} /> {t("pricing.stop")}
                       </Button>
                     ) : (
                       <Button disabled={!canManage || !latestOffer || Number(rule.min_price) <= 0 || rule.max_changes_per_day <= 0} isLoading={enableAutopilot.isPending} onClick={() => enableAutopilot.mutate(rule)}>
-                        <PlayCircle size={16} /> Включить автопилот
+                        <PlayCircle size={16} /> {t("pricing.enableAutopilot")}
                       </Button>
                     )}
                   </div>
                   <div className="mt-3 grid gap-2 text-sm font-semibold text-slate-600 md:grid-cols-4">
-                    <span className="rounded-xl bg-slate-50 px-3 py-2">Порог: {formatMoney(rule.min_price)}</span>
-                    <span className="rounded-xl bg-slate-50 px-3 py-2">Лимит: {rule.max_changes_per_day}/день</span>
-                    <span className="rounded-xl bg-slate-50 px-3 py-2">Мониторинг: {latestOffer ? "цена найдена" : "сначала собрать цены"}</span>
-                    <span className="rounded-xl bg-slate-50 px-3 py-2">Запись в Kaspi: через флаг</span>
+                    <span className="rounded-xl bg-slate-50 px-3 py-2">{t("pricing.minPriceValue", { price: formatMoney(rule.min_price) })}</span>
+                    <span className="rounded-xl bg-slate-50 px-3 py-2">{t("pricing.limitValue", { count: rule.max_changes_per_day })}</span>
+                    <span className="rounded-xl bg-slate-50 px-3 py-2">{t("pricing.monitoringValue", { status: latestOffer ? t("pricing.priceFound") : t("pricing.collectPricesFirst") })}</span>
+                    <span className="rounded-xl bg-slate-50 px-3 py-2">{t("pricing.kaspiWriteFlag")}</span>
                   </div>
                   {rule.autopilot_confirmed_at ? (
-                    <p className="mt-2 text-xs font-bold text-emerald-700">Подтверждено: {new Date(rule.autopilot_confirmed_at).toLocaleString("ru-KZ")}</p>
+                    <p className="mt-2 text-xs font-bold text-emerald-700">{t("pricing.confirmedAt", { date: new Date(rule.autopilot_confirmed_at).toLocaleString("ru-KZ") })}</p>
                   ) : null}
                 </div>
               </article>
@@ -589,28 +595,28 @@ export function PricingPage() {
       <section className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-soft">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-black text-midnight">История цен</h2>
-            <p className="mt-1 text-sm font-semibold text-slate-500">Все попытки изменения цен: симуляции, очереди, блокировки и ошибки.</p>
+            <h2 className="text-lg font-black text-midnight">{t("pricing.historyTitle")}</h2>
+            <p className="mt-1 text-sm font-semibold text-slate-500">{t("pricing.historyText")}</p>
           </div>
-          <span className="rounded-full bg-slate-50 px-3 py-1 text-xs font-black text-slate-500">{changeLogs.length} записей</span>
+          <span className="rounded-full bg-slate-50 px-3 py-1 text-xs font-black text-slate-500">{t("pricing.recordsCount", { count: changeLogs.length })}</span>
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
-          <Input label="Поиск" value={changeSearch} onChange={(event) => setChangeSearch(event.target.value)} placeholder="Название или SKU" />
+          <Input label={t("common.search")} value={changeSearch} onChange={(event) => setChangeSearch(event.target.value)} placeholder={t("pricing.historySearchPlaceholder")} />
           <Select
-            label="Статус"
+            label={t("pricing.status")}
             value={changeStatus}
             onChange={(event) => setChangeStatus(event.target.value)}
             options={[
-              { value: "", label: "Все статусы" },
-              { value: "simulated", label: "Симуляция" },
-              { value: "queued", label: "В очереди" },
-              { value: "applied", label: "Применено" },
-              { value: "blocked", label: "Заблокировано" },
-              { value: "failed", label: "Ошибка" },
+              { value: "", label: t("pricing.allStatuses") },
+              { value: "simulated", label: t("pricing.changeStatus.simulated") },
+              { value: "queued", label: t("pricing.changeStatus.queued") },
+              { value: "applied", label: t("pricing.changeStatus.applied") },
+              { value: "blocked", label: t("pricing.changeStatus.blocked") },
+              { value: "failed", label: t("pricing.changeStatus.failed") },
             ]}
           />
         </div>
-        {changeLogsQuery.isLoading ? <LoadingState label="Загружаем историю цен" /> : null}
+        {changeLogsQuery.isLoading ? <LoadingState label={t("pricing.loadingHistory")} /> : null}
         <div className="mt-4 overflow-hidden rounded-2xl border border-slate-100">
           {changeLogs.map((log) => (
             <article key={log.id} className="grid gap-3 border-b border-slate-100 bg-slate-50 px-4 py-3 last:border-b-0 md:grid-cols-[1.2fr_1fr_auto] md:items-center">
@@ -623,13 +629,13 @@ export function PricingPage() {
                 {log.error ? <p className="mt-1 text-xs font-semibold text-red-600">{log.error}</p> : null}
               </div>
               <div className="flex flex-wrap items-center gap-2 md:justify-end">
-                <span className={`rounded-full px-3 py-1 text-xs font-black ${changeStatusClass(log.status)}`}>{readableChangeStatus(log.status)}</span>
+                <span className={`rounded-full px-3 py-1 text-xs font-black ${changeStatusClass(log.status)}`}>{t(`pricing.changeStatus.${log.status}`)}</span>
                 <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-slate-500">{log.mode || "approval"}</span>
               </div>
             </article>
           ))}
           {!changeLogsQuery.isLoading && changeLogs.length === 0 ? (
-            <div className="bg-slate-50 px-4 py-5 text-sm font-semibold text-slate-500">Истории пока нет. Рассчитайте и примените рекомендацию, чтобы увидеть запись.</div>
+            <div className="bg-slate-50 px-4 py-5 text-sm font-semibold text-slate-500">{t("pricing.emptyHistory")}</div>
           ) : null}
         </div>
       </section>

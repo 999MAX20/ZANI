@@ -1,3 +1,7 @@
+import json
+from unittest.mock import patch
+
+from django.test import override_settings
 from django.utils import timezone
 from rest_framework.test import APITestCase
 
@@ -77,6 +81,28 @@ class NotificationCenterTests(APITestCase):
         self.assertEqual(unread.data["count"], 1)
         self.assertEqual(unread.data["results"][0]["id"], self.notification.id)
         self.assertEqual(unread.data["results"][0]["action_url"], "/leads")
+
+    def test_delivery_failure_masks_secret_reason(self):
+        notification = Notification.objects.create(
+            business=self.business,
+            client=self.client_obj,
+            channel=Notification.Channels.EMAIL,
+            category=Notification.Categories.SYSTEM,
+            text="Email reminder",
+            send_at=timezone.now() - timezone.timedelta(minutes=1),
+        )
+
+        self.client_obj.email = "notify@example.com"
+        self.client_obj.save(update_fields=["email", "updated_at"])
+
+        with patch("apps.notifications.delivery.send_mail", side_effect=RuntimeError("Provider failed with token=raw-delivery-token")):
+            result = process_due_notifications()
+
+        notification.refresh_from_db()
+        delivery_result = next(item for item in result if item["notification_id"] == notification.id)
+        self.assertEqual(notification.status, Notification.Statuses.FAILED)
+        self.assertEqual(delivery_result["status"], "failed")
+        self.assertNotIn("raw-delivery-token", str(result))
 
     def test_mark_read_and_mark_all_read(self):
         mark_response = self.client.post(f"/api/notifications/{self.notification.id}/mark-read/")
@@ -249,6 +275,7 @@ class NotificationCenterTests(APITestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(invalid_response.status_code, 400)
 
+    @override_settings(TELEGRAM_ENABLED=True, TELEGRAM_BASE_API_URL="https://api.telegram.test")
     def test_due_telegram_appointment_notification_is_delivered_through_bot_channel(self):
         bot = Bot.objects.create(business=self.business, name="Notify bot", status=Bot.Statuses.ACTIVE)
         BotChannel.objects.create(
@@ -279,7 +306,18 @@ class NotificationCenterTests(APITestCase):
             action_label="Подтвердить запись",
         )
 
-        results = process_due_notifications()
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, traceback):
+                return False
+
+            def read(self):
+                return json.dumps({"ok": True, "result": {"message_id": 10}}).encode("utf-8")
+
+        with patch("apps.integrations.providers.telegram.urllib_request.urlopen", return_value=FakeResponse()):
+            results = process_due_notifications()
 
         notification.refresh_from_db()
         self.assertEqual(results[0]["status"], "sent")

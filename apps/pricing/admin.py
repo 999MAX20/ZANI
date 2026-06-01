@@ -1,6 +1,12 @@
 from django.contrib import admin
 
+from apps.integrations.sanitization import sanitize_error_payload, sanitize_error_text
 from apps.pricing.models import KaspiCompetitorOffer, KaspiPriceChangeLog, KaspiPricingAlert, KaspiPricingControl, KaspiPricingRecommendation, KaspiPricingRule, PricingCatalogItem
+
+
+class ReadOnlyLogAdminMixin:
+    def has_add_permission(self, request):
+        return False
 
 
 @admin.register(PricingCatalogItem)
@@ -43,11 +49,22 @@ class KaspiPricingRecommendationAdmin(admin.ModelAdmin):
 
 
 @admin.register(KaspiPriceChangeLog)
-class KaspiPriceChangeLogAdmin(admin.ModelAdmin):
+class KaspiPriceChangeLogAdmin(ReadOnlyLogAdminMixin, admin.ModelAdmin):
     list_display = ("business", "rule", "old_price", "new_price", "status", "mode", "created_at")
     list_filter = ("business", "status", "mode", "created_at")
-    search_fields = ("business__name", "rule__product_sku", "error")
-    readonly_fields = ("created_at",)
+    search_fields = ("business__name", "rule__product_sku")
+    exclude = ("provider_response_json", "error")
+    readonly_fields = ("safe_provider_response_json", "safe_error", "created_at")
+
+    def safe_provider_response_json(self, obj):
+        return sanitize_error_payload(getattr(obj, "provider_response_json", {}))
+
+    safe_provider_response_json.short_description = "Provider response (safe)"
+
+    def safe_error(self, obj):
+        return sanitize_error_text(getattr(obj, "error", ""))
+
+    safe_error.short_description = "Error (safe)"
 
 
 @admin.register(KaspiPricingAlert)

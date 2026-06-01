@@ -3,6 +3,7 @@ import json
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
+from apps.core.production_rules import is_safe_public_https_url
 from apps.integrations.kaspi import validate_kaspi_credentials
 from apps.integrations.models import BusinessConnector
 
@@ -44,9 +45,9 @@ class Command(BaseCommand):
             },
             {
                 "key": "kaspi_api_base_url",
-                "status": "pass" if settings.KASPI_API_BASE_URL.startswith("https://") else "fail",
+                "status": "pass" if is_safe_public_https_url(settings.KASPI_API_BASE_URL) else "fail",
                 "detail": settings.KASPI_API_BASE_URL,
-                "action": "Set KASPI_API_BASE_URL to the Kaspi Shop API base URL.",
+                "action": "Set KASPI_API_BASE_URL to the public HTTPS Kaspi Shop API base URL.",
             },
             {
                 "key": "connector",

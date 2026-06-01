@@ -1,6 +1,7 @@
 import { providerCatalog } from "../../config/providerCatalog";
 import { Button } from "../../../../components/ui/Button";
 import { cn } from "../../../../lib/cn";
+import { useI18n } from "../../../../lib/i18n";
 import { Link } from "react-router-dom";
 import { Link2 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -73,7 +74,7 @@ export function MessengerSetupShell({
   children,
   advanced,
   advancedOpen,
-  advancedLabel = "Нужна помощь с подключением?",
+  advancedLabel,
   onToggleAdvanced,
   channelEnabled,
   channelToggleVisible,
@@ -101,6 +102,8 @@ export function MessengerSetupShell({
   inboxChannel: string;
   onToggleChannel?: (checked: boolean) => void;
 }) {
+  const { t } = useI18n();
+  const resolvedAdvancedLabel = advancedLabel || t("integrations.setup.needHelp");
   const statusClass = {
     neutral: "bg-slate-100 text-slate-600",
     progress: "bg-blue-50 text-blue-700",
@@ -129,7 +132,7 @@ export function MessengerSetupShell({
       {advanced ? (
         <div>
           <button type="button" className="text-sm font-black text-brand-700" onClick={onToggleAdvanced}>
-            {advancedOpen ? "Скрыть ручную настройку" : advancedLabel}
+            {advancedOpen ? t("integrations.setup.hideManualSetup") : resolvedAdvancedLabel}
           </button>
           {advancedOpen ? <div className="mt-3 rounded-2xl border border-slate-200 bg-white p-4">{advanced}</div> : null}
         </div>
@@ -138,17 +141,17 @@ export function MessengerSetupShell({
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-slate-50 px-4 py-3">
         <Link to={`/dashboard/conversations?channel=${inboxChannel}`}>
           <Button type="button" variant="ghost">
-            <Link2 size={16} /> Открыть Inbox
+            <Link2 size={16} /> {t("integrations.setup.openMessages")}
           </Button>
         </Link>
         {channelToggleVisible && onToggleChannel ? (
           <div className="flex items-center gap-3">
-            <span className="text-sm font-black text-slate-700">Канал включен</span>
+            <span className="text-sm font-black text-slate-700">{t("integrations.setup.channelEnabled")}</span>
             <ToggleSwitch
               checked={Boolean(channelEnabled)}
               disabled={!canManage}
               isLoading={channelToggleLoading}
-              label={`Включить или выключить ${title}`}
+              label={t("integrations.setup.toggleChannel", { title })}
               onChange={onToggleChannel}
             />
           </div>

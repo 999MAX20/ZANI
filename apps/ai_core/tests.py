@@ -4,7 +4,7 @@ from rest_framework.test import APIClient
 
 from apps.accounts.models import User
 from apps.ai_core.ai_client import AIClientError, generate_text, resolve_model
-from apps.ai_core.models import AIToolCallLog, AIRequestLog, AgentProfile, BusinessKnowledgeItem
+from apps.ai_core.models import AIToolCallLog, AIRequestLog, AgentProfile, ApprovalRequest, BusinessKnowledgeItem
 from apps.bots.models import Bot, BotConversation, BotMessage
 from apps.ai_core.services import run_ai_request
 from apps.businesses.models import Business, BusinessMember
@@ -326,3 +326,49 @@ class AICoreFoundationTests(TestCase):
 
         self.assertEqual(response.status_code, 403)
         self.assertEqual(Task.objects.count(), 0)
+
+    def test_ai_tool_response_masks_secret_input_output_and_error(self):
+        log = AIToolCallLog.objects.create(
+            business=self.business,
+            user=self.owner,
+            tool_name="create_task",
+            status=AIToolCallLog.Statuses.FAILED,
+            input_json={"api_key": "raw-input-key"},
+            output_json={"access_token": "raw-output-token"},
+            error="Provider failed with token=raw-error-token",
+        )
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(f"/api/ai/tools/{log.id}/execute/")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertNotIn("raw-input-key", str(response.data))
+        self.assertNotIn("raw-output-token", str(response.data))
+        self.assertNotIn("raw-error-token", str(response.data))
+
+    def test_approval_request_can_be_created_and_approved_by_owner(self):
+        self.api.force_authenticate(self.owner)
+
+        create_response = self.api.post(
+            "/api/ai/approval-requests/",
+            {
+                "business": self.business.id,
+                "action_type": ApprovalRequest.ActionTypes.CAMPAIGN_LAUNCH,
+                "payload": {"campaign_id": 123, "api_key": "secret"},
+                "source_object_type": "OutreachCampaign",
+                "source_object_id": "123",
+            },
+            format="json",
+        )
+
+        self.assertEqual(create_response.status_code, 201)
+        self.assertEqual(create_response.data["requested_by"], self.owner.id)
+        self.assertEqual(create_response.data["payload"]["api_key"], "configured")
+        approval = ApprovalRequest.objects.get()
+        approve_response = self.api.post(f"/api/ai/approval-requests/{approval.id}/approve/", {"reason": "Looks safe"}, format="json")
+
+        self.assertEqual(approve_response.status_code, 200)
+        approval.refresh_from_db()
+        self.assertEqual(approval.status, ApprovalRequest.Statuses.APPROVED)
+        self.assertEqual(approval.approved_by, self.owner)
+        self.assertEqual(approval.reason, "Looks safe")

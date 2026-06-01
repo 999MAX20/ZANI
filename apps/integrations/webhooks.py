@@ -11,7 +11,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from apps.integrations.models import WebhookDeliveryLog, WebhookEndpoint
-from apps.integrations.sanitization import sanitize_config
+from apps.integrations.sanitization import sanitize_config, sanitize_error_text
 
 
 LOCAL_HOSTNAMES = {"localhost", "localhost.localdomain"}
@@ -41,6 +41,8 @@ def validate_outbound_webhook_url(url, *, allow_mock=None):
         return str(url).strip()
     if parsed.scheme not in {"http", "https"}:
         raise ValueError("Webhook URL must use http or https.")
+    if parsed.scheme != "https" and (not settings.DEBUG or not allow_mock):
+        raise ValueError("Webhook URL must use https.")
     if not parsed.hostname:
         raise ValueError("Webhook URL must include a hostname.")
     if parsed.username or parsed.password:
@@ -113,13 +115,13 @@ def deliver_webhook_event(endpoint: WebhookEndpoint, event_type, payload, idempo
         )
         with urllib_request.urlopen(request, timeout=8) as response:
             log.response_status = response.status
-            log.response_body = response.read().decode("utf-8")[:2000]
+            log.response_body = sanitize_error_text(response.read().decode("utf-8"), max_length=2000)
         log.status = WebhookDeliveryLog.Statuses.SENT if 200 <= (log.response_status or 0) < 300 else WebhookDeliveryLog.Statuses.FAILED
         log.error = "" if log.status == WebhookDeliveryLog.Statuses.SENT else f"Unexpected status {log.response_status}"
         log.delivered_at = timezone.now() if log.status == WebhookDeliveryLog.Statuses.SENT else None
     except (HTTPError, URLError, TimeoutError, Exception) as exc:
         log.status = WebhookDeliveryLog.Statuses.FAILED
-        log.error = str(exc)
+        log.error = sanitize_error_text(exc)
         log.next_retry_at = timezone.now()
     log.save()
     return log

@@ -5,17 +5,147 @@ from io import StringIO
 from unittest.mock import patch
 
 from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
 from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
 from apps.businesses.models import Business, BusinessMember
 from apps.accounts.models import User
+from apps.integrations.connectors import create_or_update_credential
 from apps.integrations.models import BusinessConnector, IntegrationEventLog
+from apps.integrations.kaspi.base import fetch_kaspi_orders
+from apps.integrations.instagram_oauth import fetch_meta_json as fetch_instagram_meta_json
+from apps.integrations.moysklad.base import fetch_moysklad_json
+from apps.integrations.ozon.base import fetch_ozon_json
 from apps.integrations.providers import get_provider, send_message
+from apps.integrations.providers.instagram import InstagramProvider
+from apps.integrations.providers.whatsapp import WhatsAppProvider
 from apps.integrations.instagram import send_instagram_message
 from apps.integrations.telegram import send_telegram_message, set_telegram_webhook
 from apps.integrations.whatsapp import send_whatsapp_message
+from apps.integrations.whatsapp.embedded_signup import exchange_code_for_access_token as exchange_whatsapp_code_for_access_token
+from apps.integrations.wildberries.base import fetch_wildberries_json
+
+
+class MarketplaceLocalRealTestGuardrailTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(
+            username="marketplace-owner",
+            email="marketplace-owner@example.com",
+            password="pass",
+            role=User.Roles.BUSINESS_OWNER,
+        )
+        self.business = Business.objects.create(owner=self.owner, name="Marketplace Clinic", slug="marketplace-clinic")
+
+    @override_settings(KASPI_ENABLED=True, KASPI_API_BASE_URL="https://127.0.0.1")
+    def test_kaspi_local_real_test_rejects_private_api_base_url(self):
+        output = StringIO()
+
+        with self.assertRaises(CommandError):
+            call_command("kaspi_local_real_test_check", "--fail-on-missing", stdout=output)
+
+        self.assertIn("FAIL kaspi_api_base_url", output.getvalue())
+
+    @override_settings(KASPI_ENABLED=True, KASPI_API_BASE_URL="https://kaspi.example.test")
+    def test_kaspi_local_real_test_accepts_public_https_api_base_url(self):
+        output = StringIO()
+
+        call_command("kaspi_local_real_test_check", stdout=output)
+
+        self.assertIn("PASS kaspi_api_base_url", output.getvalue())
+
+    @override_settings(KASPI_API_BASE_URL="https://127.0.0.1")
+    def test_kaspi_fetch_rejects_private_api_base_url_without_network_call(self):
+        connector = BusinessConnector.objects.create(
+            business=self.business,
+            provider=BusinessConnector.Providers.KASPI,
+            capability=BusinessConnector.Capabilities.FINANCE,
+            name="Kaspi",
+            auth_type=BusinessConnector.AuthTypes.TOKEN,
+        )
+        create_or_update_credential(connector, "api_token", "kaspi-token")
+
+        with patch("apps.integrations.kaspi.base.urllib_request.urlopen") as urlopen:
+            with self.assertRaisesMessage(ValueError, "KASPI_API_BASE_URL must be a public HTTPS URL."):
+                fetch_kaspi_orders(connector, page_size=1)
+
+        urlopen.assert_not_called()
+
+    @override_settings(OZON_ENABLED=True, OZON_SELLER_API_BASE_URL="https://127.0.0.1")
+    def test_ozon_local_real_test_rejects_private_api_base_url(self):
+        output = StringIO()
+
+        with self.assertRaises(CommandError):
+            call_command("ozon_local_real_test_check", "--fail-on-missing", stdout=output)
+
+        self.assertIn("FAIL ozon_seller_api_base_url", output.getvalue())
+
+    @override_settings(OZON_ENABLED=True, OZON_SELLER_API_BASE_URL="https://api-seller.ozon.example.test")
+    def test_ozon_local_real_test_accepts_public_https_api_base_url(self):
+        output = StringIO()
+
+        call_command("ozon_local_real_test_check", stdout=output)
+
+        self.assertIn("PASS ozon_seller_api_base_url", output.getvalue())
+
+    @override_settings(OZON_SELLER_API_BASE_URL="https://127.0.0.1")
+    def test_ozon_fetch_rejects_private_api_base_url_without_network_call(self):
+        with patch("apps.integrations.ozon.base.urllib_request.urlopen") as urlopen:
+            with self.assertRaisesMessage(ValueError, "OZON_SELLER_API_BASE_URL must be a public HTTPS URL."):
+                fetch_ozon_json("v1/warehouse/list", {"client_id": "client", "api_key": "key"}, {})
+
+        urlopen.assert_not_called()
+
+    @override_settings(WILDBERRIES_ENABLED=True, WILDBERRIES_STATISTICS_API_BASE_URL="https://127.0.0.1")
+    def test_wildberries_local_real_test_rejects_private_api_base_url(self):
+        output = StringIO()
+
+        with self.assertRaises(CommandError):
+            call_command("wildberries_local_real_test_check", "--fail-on-missing", stdout=output)
+
+        self.assertIn("FAIL wildberries_statistics_api_base_url", output.getvalue())
+
+    @override_settings(WILDBERRIES_ENABLED=True, WILDBERRIES_STATISTICS_API_BASE_URL="https://statistics-api.wildberries.example.test")
+    def test_wildberries_local_real_test_accepts_public_https_api_base_url(self):
+        output = StringIO()
+
+        call_command("wildberries_local_real_test_check", stdout=output)
+
+        self.assertIn("PASS wildberries_statistics_api_base_url", output.getvalue())
+
+    @override_settings(WILDBERRIES_STATISTICS_API_BASE_URL="https://127.0.0.1")
+    def test_wildberries_fetch_rejects_private_api_base_url_without_network_call(self):
+        with patch("apps.integrations.wildberries.base.urllib_request.urlopen") as urlopen:
+            with self.assertRaisesMessage(ValueError, "WILDBERRIES_STATISTICS_API_BASE_URL must be a public HTTPS URL."):
+                fetch_wildberries_json("api/v1/supplier/orders", "token", {"dateFrom": "2026-05-30"})
+
+        urlopen.assert_not_called()
+
+    @override_settings(MOYSKLAD_ENABLED=True, MOYSKLAD_API_BASE_URL="https://127.0.0.1")
+    def test_moysklad_local_real_test_rejects_private_api_base_url(self):
+        output = StringIO()
+
+        with self.assertRaises(CommandError):
+            call_command("moysklad_local_real_test_check", "--fail-on-missing", stdout=output)
+
+        self.assertIn("FAIL moysklad_api_base_url", output.getvalue())
+
+    @override_settings(MOYSKLAD_ENABLED=True, MOYSKLAD_API_BASE_URL="https://api.moysklad.example.test")
+    def test_moysklad_local_real_test_accepts_public_https_api_base_url(self):
+        output = StringIO()
+
+        call_command("moysklad_local_real_test_check", stdout=output)
+
+        self.assertIn("PASS moysklad_api_base_url", output.getvalue())
+
+    @override_settings(MOYSKLAD_API_BASE_URL="https://127.0.0.1")
+    def test_moysklad_fetch_rejects_private_api_base_url_without_network_call(self):
+        with patch("apps.integrations.moysklad.base.urllib_request.urlopen") as urlopen:
+            with self.assertRaisesMessage(ValueError, "MOYSKLAD_API_BASE_URL must be a public HTTPS URL."):
+                fetch_moysklad_json("entity/organization", "token", {"limit": "1"})
+
+        urlopen.assert_not_called()
 
 
 class TelegramIntegrationSkeletonTests(TestCase):
@@ -34,10 +164,10 @@ class TelegramIntegrationSkeletonTests(TestCase):
             bot=self.bot,
             channel=BotChannel.Channels.TELEGRAM,
             status=BotChannel.Statuses.ACTIVE,
-            config_json={"webhook_secret": "telegram-secret", "bot_token": "merchant-token"},
+            config_json={"webhook_secret": "telegram-secret-A8v_qR7m-L2p_N9x-T5s_K3u-Y6b_C4d", "bot_token": "merchant-token"},
         )
 
-    @override_settings(TELEGRAM_WEBHOOK_SECRET="telegram-secret")
+    @override_settings(TELEGRAM_WEBHOOK_SECRET="telegram-secret-A8v_qR7m-L2p_N9x-T5s_K3u-Y6b_C4d")
     def test_telegram_webhook_saves_inbound_message(self):
         response = self.api.post(
             "/api/integrations/telegram/webhook/",
@@ -53,7 +183,7 @@ class TelegramIntegrationSkeletonTests(TestCase):
                 },
             },
             format="json",
-            HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN="telegram-secret",
+            HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN="telegram-secret-A8v_qR7m-L2p_N9x-T5s_K3u-Y6b_C4d",
         )
 
         self.assertEqual(response.status_code, 200)
@@ -80,7 +210,7 @@ class TelegramIntegrationSkeletonTests(TestCase):
             ).exists()
         )
 
-    @override_settings(TELEGRAM_WEBHOOK_SECRET="telegram-secret")
+    @override_settings(TELEGRAM_WEBHOOK_SECRET="telegram-secret-A8v_qR7m-L2p_N9x-T5s_K3u-Y6b_C4d")
     def test_telegram_webhook_is_idempotent_for_repeated_message(self):
         payload = {
             "update_id": 1000,
@@ -96,13 +226,13 @@ class TelegramIntegrationSkeletonTests(TestCase):
             "/api/integrations/telegram/webhook/",
             payload,
             format="json",
-            HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN="telegram-secret",
+            HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN="telegram-secret-A8v_qR7m-L2p_N9x-T5s_K3u-Y6b_C4d",
         )
         second_response = self.api.post(
             "/api/integrations/telegram/webhook/",
             payload,
             format="json",
-            HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN="telegram-secret",
+            HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN="telegram-secret-A8v_qR7m-L2p_N9x-T5s_K3u-Y6b_C4d",
         )
 
         self.assertEqual(first_response.status_code, 200)
@@ -120,13 +250,81 @@ class TelegramIntegrationSkeletonTests(TestCase):
         self.assertEqual(BotConversation.objects.count(), 1)
         self.assertEqual(BotMessage.objects.count(), 1)
 
-    @override_settings(TELEGRAM_WEBHOOK_SECRET="telegram-secret")
+    @override_settings(TELEGRAM_ENABLED=True, TELEGRAM_BASE_API_URL="https://api.telegram.test")
+    def test_telegram_local_real_test_rejects_private_public_url(self):
+        output = StringIO()
+
+        with patch("apps.integrations.providers.telegram.TelegramProvider.validate_token", return_value={"ok": True, "bot": {"username": "zani_test_bot"}}):
+            with self.assertRaises(CommandError):
+                call_command(
+                    "telegram_local_real_test_check",
+                    "--channel-id",
+                    str(self.channel.id),
+                    "--public-url",
+                    "https://127.0.0.1",
+                    "--fail-on-missing",
+                    stdout=output,
+                )
+
+        self.assertIn("FAIL: public_url_https", output.getvalue())
+
+    @override_settings(TELEGRAM_ENABLED=True, TELEGRAM_BASE_API_URL="https://api.telegram.test")
+    def test_telegram_local_real_test_accepts_public_https_url(self):
+        output = StringIO()
+
+        with patch("apps.integrations.providers.telegram.TelegramProvider.validate_token", return_value={"ok": True, "bot": {"username": "zani_test_bot"}}):
+            call_command(
+                "telegram_local_real_test_check",
+                "--channel-id",
+                str(self.channel.id),
+                "--public-url",
+                "https://api.zani.kz",
+                "--fail-on-missing",
+                stdout=output,
+            )
+
+        self.assertIn("PASS: public_url_https", output.getvalue())
+
+    @override_settings(TELEGRAM_ENABLED=True, TELEGRAM_BASE_API_URL="https://api.telegram.test")
+    def test_telegram_local_real_test_rejects_and_redacts_public_url_query(self):
+        output = StringIO()
+
+        with patch("apps.integrations.providers.telegram.TelegramProvider.validate_token", return_value={"ok": True, "bot": {"username": "zani_test_bot"}}):
+            with self.assertRaises(CommandError):
+                call_command(
+                    "telegram_local_real_test_check",
+                    "--channel-id",
+                    str(self.channel.id),
+                    "--public-url",
+                    "https://api.zani.kz?token=raw-secret-token",
+                    "--fail-on-missing",
+                    stdout=output,
+                )
+
+        text = output.getvalue()
+        self.assertIn("FAIL: public_url_https", text)
+        self.assertIn("Webhook URL: https://api.zani.kz/api/integrations/telegram/webhook/", text)
+        self.assertNotIn("raw-secret-token", text)
+
+    @override_settings(TELEGRAM_WEBHOOK_SECRET="telegram-secret-A8v_qR7m-L2p_N9x-T5s_K3u-Y6b_C4d")
     def test_telegram_webhook_rejects_wrong_secret(self):
         response = self.api.post(
             "/api/integrations/telegram/webhook/",
             {"message": {"chat": {"id": 777}, "text": "Hidden"}},
             format="json",
             HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN="wrong-secret",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(BotMessage.objects.count(), 0)
+
+    @override_settings(TELEGRAM_WEBHOOK_SECRET="secret")
+    def test_telegram_webhook_rejects_weak_global_secret(self):
+        response = self.api.post(
+            "/api/integrations/telegram/webhook/",
+            {"message": {"chat": {"id": 777}, "text": "Hidden"}},
+            format="json",
+            HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN="secret",
         )
 
         self.assertEqual(response.status_code, 403)
@@ -157,7 +355,7 @@ class TelegramIntegrationSkeletonTests(TestCase):
                 },
             },
             format="json",
-            HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN="telegram-secret",
+            HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN="telegram-secret-A8v_qR7m-L2p_N9x-T5s_K3u-Y6b_C4d",
         )
 
         self.assertEqual(response.status_code, 200)
@@ -195,7 +393,7 @@ class TelegramIntegrationSkeletonTests(TestCase):
 
         config_response = self.api.post(
             f"/api/bot-channels/{self.channel.id}/telegram-config/",
-            {"bot_token": "123456:secret-token", "webhook_secret": "merchant-secret"},
+            {"bot_token": "123456:secret-token", "webhook_secret": "merchant-secret-P9k_L4m-Q8r_T2v-W6x_Y3z-A7b_C5d"},
             format="json",
         )
         status_response = self.api.get(f"/api/bot-channels/{self.channel.id}/telegram-status/")
@@ -231,7 +429,19 @@ class TelegramIntegrationSkeletonTests(TestCase):
         self.assertTrue(connector.config_json["webhook_secret_configured"])
         self.assertEqual(connector.config_json["bot_channel_id"], self.channel.id)
         self.assertNotIn("secret-token", str(connector.config_json))
-        self.assertNotIn("merchant-secret", str(connector.config_json))
+        self.assertNotIn("merchant-secret-P9k_L4m-Q8r_T2v-W6x_Y3z-A7b_C5d", str(connector.config_json))
+
+    def test_merchant_cannot_configure_weak_telegram_webhook_secret(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            f"/api/bot-channels/{self.channel.id}/telegram-config/",
+            {"bot_token": "123456:secret-token", "webhook_secret": "secret"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("webhook_secret", response.data)
 
     @override_settings(ALLOWED_HOSTS=["testserver"])
     def test_telegram_status_reports_public_and_backend_readiness(self):
@@ -248,7 +458,7 @@ class TelegramIntegrationSkeletonTests(TestCase):
                 },
             },
             format="json",
-            HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN="telegram-secret",
+            HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN="telegram-secret-A8v_qR7m-L2p_N9x-T5s_K3u-Y6b_C4d",
         )
 
         response = self.api.get(f"/api/bot-channels/{self.channel.id}/telegram-status/")
@@ -324,10 +534,30 @@ class TelegramIntegrationSkeletonTests(TestCase):
         self.assertTrue(result["ok"])
         self.assertEqual(captured["url"], "https://api.telegram.test/botmerchant-token/setWebhook")
         self.assertEqual(captured["payload"]["url"], "https://api.zani.kz/api/integrations/telegram/webhook/")
-        self.assertEqual(captured["payload"]["secret_token"], "telegram-secret")
+        self.assertEqual(captured["payload"]["secret_token"], "telegram-secret-A8v_qR7m-L2p_N9x-T5s_K3u-Y6b_C4d")
         log = IntegrationEventLog.objects.filter(provider="telegram", status=IntegrationEventLog.Statuses.SENT).latest("created_at")
         self.assertTrue(log.payload_json["webhook_secret_configured"])
-        self.assertNotIn("telegram-secret", str(log.payload_json))
+        self.assertNotIn("telegram-secret-A8v_qR7m-L2p_N9x-T5s_K3u-Y6b_C4d", str(log.payload_json))
+
+    @override_settings(TELEGRAM_ENABLED=True, TELEGRAM_BASE_API_URL="http://api.telegram.test")
+    def test_telegram_provider_rejects_non_https_base_api_url(self):
+        with patch("apps.integrations.providers.telegram.urllib_request.urlopen") as urlopen:
+            result = set_telegram_webhook(self.channel, "https://api.zani.kz/api/integrations/telegram/webhook/")
+
+        self.assertFalse(result["ok"])
+        self.assertIn("HTTPS", result["reason"])
+        urlopen.assert_not_called()
+        log = IntegrationEventLog.objects.filter(provider="telegram", status=IntegrationEventLog.Statuses.FAILED).latest("created_at")
+        self.assertNotIn("merchant-token", str(log.payload_json))
+
+    @override_settings(TELEGRAM_ENABLED=True, TELEGRAM_BASE_API_URL="https://api.telegram.test")
+    def test_telegram_provider_rejects_private_webhook_url(self):
+        with patch("apps.integrations.providers.telegram.urllib_request.urlopen") as urlopen:
+            result = set_telegram_webhook(self.channel, "https://127.0.0.1/api/integrations/telegram/webhook/")
+
+        self.assertFalse(result["ok"])
+        self.assertIn("public hostname", result["reason"])
+        urlopen.assert_not_called()
 
     @override_settings(TELEGRAM_ENABLED=False)
     def test_inbox_outbound_telegram_reply_uses_provider_layer(self):
@@ -434,6 +664,74 @@ class WhatsAppIntegrationFoundationTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content.decode("utf-8"), "challenge-123")
+
+    @override_settings(
+        WHATSAPP_ENABLED=True,
+        WHATSAPP_VERIFY_TOKEN="verify-token",
+        WHATSAPP_APP_SECRET="app-secret",
+        META_APP_ID="meta-app",
+        META_APP_SECRET="meta-secret",
+        WHATSAPP_EMBEDDED_SIGNUP_CONFIG_ID="signup-config",
+    )
+    def test_whatsapp_local_real_test_rejects_private_public_url(self):
+        output = StringIO()
+
+        with self.assertRaises(CommandError):
+            call_command(
+                "whatsapp_local_real_test_check",
+                "--public-url",
+                "https://127.0.0.1",
+                "--fail-on-missing",
+                stdout=output,
+            )
+
+        self.assertIn("FAIL public_https_url", output.getvalue())
+
+    @override_settings(
+        WHATSAPP_ENABLED=True,
+        WHATSAPP_VERIFY_TOKEN="verify-token",
+        WHATSAPP_APP_SECRET="app-secret",
+        META_APP_ID="meta-app",
+        META_APP_SECRET="meta-secret",
+        WHATSAPP_EMBEDDED_SIGNUP_CONFIG_ID="signup-config",
+    )
+    def test_whatsapp_local_real_test_accepts_public_https_url(self):
+        output = StringIO()
+
+        call_command(
+            "whatsapp_local_real_test_check",
+            "--public-url",
+            "https://api.zani.kz",
+            "--fail-on-missing",
+            stdout=output,
+        )
+
+        self.assertIn("PASS public_https_url", output.getvalue())
+
+    @override_settings(
+        WHATSAPP_ENABLED=True,
+        WHATSAPP_VERIFY_TOKEN="verify-token",
+        WHATSAPP_APP_SECRET="app-secret",
+        META_APP_ID="meta-app",
+        META_APP_SECRET="meta-secret",
+        WHATSAPP_EMBEDDED_SIGNUP_CONFIG_ID="signup-config",
+    )
+    def test_whatsapp_local_real_test_rejects_and_redacts_public_url_query(self):
+        output = StringIO()
+
+        with self.assertRaises(CommandError):
+            call_command(
+                "whatsapp_local_real_test_check",
+                "--public-url",
+                "https://api.zani.kz?token=raw-secret-token",
+                "--fail-on-missing",
+                stdout=output,
+            )
+
+        text = output.getvalue()
+        self.assertIn("FAIL public_https_url", text)
+        self.assertIn("Webhook callback URL: https://api.zani.kz/api/integrations/whatsapp/webhook/", text)
+        self.assertNotIn("raw-secret-token", text)
 
     @override_settings(WHATSAPP_APP_SECRET="app-secret")
     def test_meta_whatsapp_webhook_routes_by_phone_number_id_and_signature(self):
@@ -555,6 +853,25 @@ class WhatsAppIntegrationFoundationTests(TestCase):
         self.assertTrue(connector.config_json["access_token_configured"])
         self.assertNotIn("meta-access-token", str(connector.config_json))
 
+    @override_settings(WHATSAPP_ENABLED=True, WHATSAPP_GRAPH_BASE_URL="https://127.0.0.1")
+    def test_whatsapp_provider_rejects_private_graph_base_url_without_network_call(self):
+        self.channel.config_json = {
+            "provider_mode": "meta_cloud",
+            "phone_number_id": "phone-123",
+            "access_token": "meta-token",
+        }
+        self.channel.external_id = "phone-123"
+        self.channel.save(update_fields=["config_json", "external_id", "updated_at"])
+
+        with patch("apps.integrations.providers.whatsapp.urllib_request.urlopen") as urlopen:
+            result = WhatsAppProvider().validate_credentials(self.channel)
+
+        self.assertFalse(result["ok"])
+        self.assertIn("WHATSAPP_GRAPH_BASE_URL must be a public HTTPS URL.", result["reason"])
+        urlopen.assert_not_called()
+        log = IntegrationEventLog.objects.filter(provider="whatsapp", status=IntegrationEventLog.Statuses.FAILED).latest("created_at")
+        self.assertNotIn("meta-token", str(log.payload_json))
+
     @override_settings(
         META_APP_ID="app-id",
         META_APP_SECRET="app-secret",
@@ -579,6 +896,18 @@ class WhatsAppIntegrationFoundationTests(TestCase):
         self.assertEqual(response.data["app_id"], "app-id")
         self.assertEqual(response.data["config_id"], "config-id")
         self.assertTrue(response.data["graph_api_version"].startswith("v"))
+
+    @override_settings(
+        META_APP_ID="meta-app",
+        META_APP_SECRET="meta-secret",
+        WHATSAPP_GRAPH_BASE_URL="https://127.0.0.1",
+    )
+    def test_whatsapp_embedded_signup_rejects_private_graph_base_url_without_network_call(self):
+        with patch("apps.integrations.whatsapp.embedded_signup.urllib_request.urlopen") as urlopen:
+            with self.assertRaisesMessage(ValueError, "WHATSAPP_GRAPH_BASE_URL must be a public HTTPS URL."):
+                exchange_whatsapp_code_for_access_token(code="oauth-code", redirect_uri="https://app.zani.kz/integrations")
+
+        urlopen.assert_not_called()
 
     @override_settings(
         META_APP_ID="app-id",
@@ -722,6 +1051,71 @@ class InstagramIntegrationFoundationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content.decode("utf-8"), "challenge-ig")
 
+    @override_settings(
+        INSTAGRAM_ENABLED=True,
+        INSTAGRAM_VERIFY_TOKEN="verify-token",
+        META_APP_ID="meta-app",
+        META_APP_SECRET="meta-secret",
+        INSTAGRAM_APP_SECRET="instagram-secret",
+    )
+    def test_instagram_local_real_test_rejects_private_public_url(self):
+        output = StringIO()
+
+        with self.assertRaises(CommandError):
+            call_command(
+                "instagram_local_real_test_check",
+                "--public-url",
+                "https://127.0.0.1",
+                "--fail-on-missing",
+                stdout=output,
+            )
+
+        self.assertIn("FAIL public_https_url", output.getvalue())
+
+    @override_settings(
+        INSTAGRAM_ENABLED=True,
+        INSTAGRAM_VERIFY_TOKEN="verify-token",
+        META_APP_ID="meta-app",
+        META_APP_SECRET="meta-secret",
+        INSTAGRAM_APP_SECRET="instagram-secret",
+    )
+    def test_instagram_local_real_test_accepts_public_https_url(self):
+        output = StringIO()
+
+        call_command(
+            "instagram_local_real_test_check",
+            "--public-url",
+            "https://api.zani.kz",
+            "--fail-on-missing",
+            stdout=output,
+        )
+
+        self.assertIn("PASS public_https_url", output.getvalue())
+
+    @override_settings(
+        INSTAGRAM_ENABLED=True,
+        INSTAGRAM_VERIFY_TOKEN="verify-token",
+        META_APP_ID="meta-app",
+        META_APP_SECRET="meta-secret",
+        INSTAGRAM_APP_SECRET="instagram-secret",
+    )
+    def test_instagram_local_real_test_rejects_and_redacts_public_url_query(self):
+        output = StringIO()
+
+        with self.assertRaises(CommandError):
+            call_command(
+                "instagram_local_real_test_check",
+                "--public-url",
+                "https://api.zani.kz?token=raw-secret-token",
+                "--fail-on-missing",
+                stdout=output,
+            )
+
+        text = output.getvalue()
+        self.assertIn("FAIL public_https_url", text)
+        self.assertIn("Webhook callback URL: https://api.zani.kz/api/integrations/instagram/webhook/", text)
+        self.assertNotIn("raw-secret-token", text)
+
     @override_settings(INSTAGRAM_APP_SECRET="app-secret")
     def test_instagram_webhook_routes_by_instagram_user_id_and_signature(self):
         payload = {
@@ -827,6 +1221,25 @@ class InstagramIntegrationFoundationTests(TestCase):
         self.assertTrue(connector.config_json["instagram_user_id_configured"])
         self.assertNotIn("instagram-access-token", str(connector.config_json))
 
+    @override_settings(INSTAGRAM_ENABLED=True, INSTAGRAM_GRAPH_BASE_URL="https://127.0.0.1")
+    def test_instagram_provider_rejects_private_graph_base_url_without_network_call(self):
+        self.channel.config_json = {
+            "provider_mode": "meta_graph",
+            "instagram_user_id": "ig-456",
+            "access_token": "instagram-access-token",
+        }
+        self.channel.external_id = "ig-456"
+        self.channel.save(update_fields=["config_json", "external_id", "updated_at"])
+
+        with patch("apps.integrations.providers.instagram.urllib_request.urlopen") as urlopen:
+            result = InstagramProvider().validate_credentials(self.channel)
+
+        self.assertFalse(result["ok"])
+        self.assertIn("INSTAGRAM_GRAPH_BASE_URL must be a public HTTPS URL.", result["reason"])
+        urlopen.assert_not_called()
+        log = IntegrationEventLog.objects.filter(provider="instagram", status=IntegrationEventLog.Statuses.FAILED).latest("created_at")
+        self.assertNotIn("instagram-access-token", str(log.payload_json))
+
     @override_settings(META_APP_ID="meta-app", META_APP_SECRET="meta-secret", DEBUG=True)
     def test_instagram_oauth_start_returns_authorization_url(self):
         self.api.force_authenticate(self.owner)
@@ -841,6 +1254,14 @@ class InstagramIntegrationFoundationTests(TestCase):
         self.assertTrue(response.data["app_configured"])
         self.assertIn("dialog/oauth", response.data["authorization_url"])
         self.assertIn("instagram_manage_messages", response.data["authorization_url"])
+
+    @override_settings(INSTAGRAM_GRAPH_BASE_URL="https://127.0.0.1")
+    def test_instagram_oauth_rejects_private_graph_base_url_without_network_call(self):
+        with patch("apps.integrations.instagram_oauth.urllib_request.urlopen") as urlopen:
+            with self.assertRaisesMessage(ValueError, "INSTAGRAM_GRAPH_BASE_URL must be a public HTTPS URL."):
+                fetch_instagram_meta_json("oauth/access_token", {"access_token": "instagram-access-token"})
+
+        urlopen.assert_not_called()
 
     @override_settings(
         META_APP_ID="meta-app",

@@ -27,9 +27,17 @@ class SecurityCenterTests(APITestCase):
             risk_level=AuditLog.RiskLevels.HIGH,
             entity_type="Client",
             entity_id=str(self.client_obj.id),
-            metadata={"kind": "export"},
+            metadata={"kind": "export", "api_key": "raw-audit-key"},
+            user_agent="Mozilla Authorization: Bearer raw-audit-agent-token",
         )
-        LoginHistory.objects.create(business=self.business, user=self.owner, email=self.owner.email, status=LoginHistory.Statuses.SUCCESS)
+        LoginHistory.objects.create(
+            business=self.business,
+            user=self.owner,
+            email=self.owner.email,
+            status=LoginHistory.Statuses.SUCCESS,
+            metadata={"token": "raw-login-token"},
+            user_agent="Login client access_token=raw-login-agent-token",
+        )
 
     def test_owner_sees_security_stream_and_staff_is_forbidden(self):
         self.client.force_authenticate(self.owner)
@@ -39,10 +47,25 @@ class SecurityCenterTests(APITestCase):
         self.assertEqual(audit_response.status_code, 200)
         self.assertEqual(audit_response.data[0]["id"], self.audit.id)
         self.assertEqual(risk_response.data["risk_counts"]["high"], 1)
+        serialized = str(audit_response.data)
+        self.assertNotIn("raw-audit-key", serialized)
+        self.assertNotIn("raw-audit-agent-token", serialized)
+        self.assertIn("[redacted]", serialized)
 
         self.client.force_authenticate(self.staff)
         forbidden = self.client.get("/api/security/audit/", {"business": self.business.id})
         self.assertEqual(forbidden.status_code, 403)
+
+    def test_login_history_response_masks_secret_metadata_and_user_agent(self):
+        self.client.force_authenticate(self.owner)
+
+        response = self.client.get("/api/security/login-history/", {"business": self.business.id})
+
+        self.assertEqual(response.status_code, 200)
+        serialized = str(response.data)
+        self.assertNotIn("raw-login-token", serialized)
+        self.assertNotIn("raw-login-agent-token", serialized)
+        self.assertIn("[redacted]", serialized)
 
     def test_custom_role_with_audit_logs_view_can_read_security_center(self):
         role = BusinessRole.objects.create(business=self.business, name="Auditor", preset_key="auditor")
@@ -69,7 +92,7 @@ class SecurityCenterTests(APITestCase):
             {
                 "business": self.business.id,
                 "user": self.support.id,
-                "reason": "Support ticket #1",
+                "reason": "Support ticket #1 token=raw-support-grant-token",
                 "is_active": True,
                 "expires_at": (timezone.now() + timezone.timedelta(hours=2)).isoformat(),
             },
@@ -77,7 +100,9 @@ class SecurityCenterTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, 201)
+        self.assertNotIn("raw-support-grant-token", str(response.data))
         self.assertTrue(SupportAccessGrant.objects.filter(business=self.business, user=self.support).exists())
+        self.assertNotIn("raw-support-grant-token", SupportAccessGrant.objects.get(business=self.business, user=self.support).reason)
         self.assertTrue(AuditLog.objects.filter(business=self.business, action=AuditLog.Actions.SUPPORT_ACCESS, risk_level=AuditLog.RiskLevels.HIGH).exists())
 
     @override_settings(SUPPORT_REQUIRES_GRANT=True)

@@ -21,6 +21,7 @@ from apps.bots.serializers import (
 from apps.automations.engine import run_automations_for_event
 from apps.automations.models import AutomationRule
 from apps.billing.entitlements import EntitlementMetrics, assert_entitlement_allows
+from apps.businesses.access import Actions, Resources, assert_can
 from apps.core.viewsets import TenantModelViewSet
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
@@ -515,6 +516,7 @@ class BotConversationViewSet(TenantModelViewSet):
     @action(detail=True, methods=["post"], url_path="suggest-reply")
     def suggest_reply(self, request, pk=None):
         conversation = self.get_object()
+        assert_can(request.user, conversation.business, Resources.AI_ASSISTANT, Actions.SUGGEST, obj=conversation)
         result, log, message_context = suggest_bot_reply(conversation=conversation, user=request.user)
         return Response(
             {

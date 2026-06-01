@@ -2,6 +2,7 @@ import json
 from urllib import request as urllib_request
 
 from django.conf import settings
+from apps.integrations.sanitization import sanitize_error_text
 
 
 class KaspiPriceWriteResult:
@@ -61,7 +62,7 @@ class ExternalKaspiPriceWriteAdapter(KaspiPriceWriteAdapter):
                 data = json.loads(raw) if raw else {}
                 return KaspiPriceWriteResult(True, "queued", {"provider": self.key, "response": data})
         except Exception as exc:
-            return KaspiPriceWriteResult(False, "failed", error=str(exc))
+            return KaspiPriceWriteResult(False, "failed", error=sanitize_error_text(exc))
 
 
 def get_kaspi_price_write_adapter(provider_key=None):

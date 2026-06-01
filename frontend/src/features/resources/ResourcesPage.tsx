@@ -1,12 +1,14 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { BriefcaseBusiness, CalendarClock, Plus, UsersRound } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 import { getApiErrorMessage } from "../../api/client";
 import { resourcesApi } from "../../api/resources";
 import { ResourceForm } from "../../components/forms/ResourceForm";
 import { DataTable } from "../../components/tables/DataTable";
 import { Button } from "../../components/ui/Button";
+import { MetricCard } from "../../components/ui/MetricCard";
 import { Modal } from "../../components/ui/Modal";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { StatusBadge } from "../../components/ui/StatusBadge";
@@ -24,23 +26,6 @@ const resourceTypeLabelKeys: Record<Resource["resource_type"], string> = {
   equipment: "resources.typeEquipment",
   other: "resources.typeOther",
 };
-
-function StatCard({ label, value, hint, icon: Icon }: { label: string; value: number | string; hint: string; icon: typeof UsersRound }) {
-  return (
-    <div className="rounded-3xl border border-white/80 bg-white/85 p-5 shadow-soft">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-bold text-slate-500">{label}</p>
-          <p className="mt-2 text-3xl font-black text-midnight">{value}</p>
-        </div>
-        <div className="grid h-12 w-12 place-items-center rounded-2xl bg-brand-50 text-brand-600">
-          <Icon size={22} />
-        </div>
-      </div>
-      <p className="mt-3 text-sm font-semibold text-slate-500">{hint}</p>
-    </div>
-  );
-}
 
 export function ResourcesPage() {
   const { t } = useI18n();
@@ -84,11 +69,22 @@ export function ResourcesPage() {
 
   return (
     <>
-      <PageHeader title={t("resources.title")} description={t("resources.description")} actions={<Button onClick={() => openCreate()}><Plus size={18} />{t("resources.add")}</Button>} />
+      <PageHeader
+        title={t("resources.title")}
+        description={t("resources.description")}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Link to="/dashboard/settings#operations-setup">
+              <Button type="button" variant="secondary">{t("settings.schedulingCenter")}</Button>
+            </Link>
+            <Button onClick={() => openCreate()}><Plus size={18} />{t("resources.add")}</Button>
+          </div>
+        }
+      />
       <section className="mb-5 grid gap-3 lg:grid-cols-3">
-        <StatCard label={t("resources.active")} value={activeResources.length} hint={t("resources.activeHint")} icon={UsersRound} />
-        <StatCard label={t("resources.staff")} value={staffCount} hint={t("resources.staffHint")} icon={BriefcaseBusiness} />
-        <StatCard label={t("resources.withSchedule")} value={`${scheduledResources}/${activeResources.length}`} hint={t("resources.withScheduleHint")} icon={CalendarClock} />
+        <MetricCard label={t("resources.active")} value={activeResources.length} hint={t("resources.activeHint")} icon={UsersRound} />
+        <MetricCard label={t("resources.staff")} value={staffCount} hint={t("resources.staffHint")} icon={BriefcaseBusiness} />
+        <MetricCard label={t("resources.withSchedule")} value={`${scheduledResources}/${activeResources.length}`} hint={t("resources.withScheduleHint")} icon={CalendarClock} />
       </section>
       {mutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(mutation.error)} /></div> : null}
       <div className="mb-5 rounded-3xl border border-white/80 bg-white/75 p-4 text-sm text-slate-600 shadow-sm">

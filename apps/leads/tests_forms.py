@@ -104,6 +104,34 @@ class LeadFormCaptureTests(TestCase):
         self.assertNotIn("raw-api-key", str(submission.payload_json))
         self.assertNotIn("raw-access-token", str(submission.payload_json))
 
+    def test_lead_form_submission_api_masks_legacy_secret_payloads(self):
+        form = LeadForm.objects.create(business=self.business, name="Legacy secure form", title="Lead")
+        submission = LeadFormSubmission.objects.create(
+            form=form,
+            business=self.business,
+            payload_json={"api_key": "raw-api-key", "nested": {"access_token": "raw-access-token"}, "visible": "ok"},
+        )
+        LeadFormSubmissionError.objects.create(
+            form=form,
+            business=self.business,
+            public_id=str(form.public_id),
+            payload_json={"client_secret": "raw-client-secret", "visible": "error"},
+            error_message="Legacy error",
+        )
+        self.api.force_authenticate(self.owner)
+
+        submission_response = self.api.get(f"/api/lead-form-submissions/{submission.id}/")
+        error_response = self.api.get("/api/lead-form-submission-errors/")
+
+        self.assertEqual(submission_response.status_code, 200)
+        self.assertEqual(error_response.status_code, 200)
+        self.assertEqual(submission_response.data["payload_json"]["api_key"], "configured")
+        self.assertEqual(submission_response.data["payload_json"]["nested"]["access_token"], "configured")
+        self.assertEqual(error_response.data["results"][0]["payload_json"]["client_secret"], "configured")
+        self.assertEqual(submission_response.data["payload_json"]["visible"], "ok")
+        self.assertNotIn("raw-api-key", str(submission_response.data))
+        self.assertNotIn("raw-client-secret", str(error_response.data))
+
     def test_public_landing_form_preserves_source_context_and_is_tenant_scoped(self):
         other_owner = User.objects.create_user(username="other-owner", email="other-owner@example.com", password="pass12345")
         other_business = Business.objects.create(owner=other_owner, name="Other Clinic", slug="other-clinic")
@@ -178,6 +206,23 @@ class LeadFormCaptureTests(TestCase):
         self.assertEqual(error.business, self.business)
         self.assertIn("Required fields missing", error.error_message)
         self.assertEqual(error.page_domain, "demo.example")
+
+    def test_public_form_rejects_oversized_payload_without_storing_raw_body(self):
+        form = LeadForm.objects.create(business=self.business, name="Sized form", title="Lead")
+        form.fields.create(key="phone", label="Phone", field_type="phone", is_required=True)
+
+        response = self.api.post(
+            f"/api/public/forms/{form.public_id}/submit/",
+            {"phone": "+77010000001", "message": "x" * 2001},
+            format="json",
+            HTTP_USER_AGENT="A" * 3000,
+        )
+
+        self.assertEqual(response.status_code, 400)
+        error = LeadFormSubmissionError.objects.get()
+        self.assertEqual(error.payload_json, {})
+        self.assertLessEqual(len(error.user_agent), 1000)
+        self.assertIn("too long", error.error_message)
 
     def test_public_form_has_throttle_and_honeypot_spam_guard(self):
         self.assertIn("public_form", settings.REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"])

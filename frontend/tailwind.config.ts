@@ -8,9 +8,9 @@ export default {
         brand: {
           50: "#eff6ff",
           100: "#dbeafe",
-          500: "#3b82f6",
-          600: "#2563eb",
-          700: "#1d4ed8",
+          500: "#1E6BFF",
+          600: "#0052D2",
+          700: "#003FA5",
         },
         ai: {
           50: "#f5f3ff",
@@ -19,24 +19,29 @@ export default {
           600: "#6d28d9",
           700: "#5b21b6",
         },
-        ink: "#111827",
-        midnight: "#0f172a",
+        surface: {
+          DEFAULT: "#f8f9fb",
+          muted: "#f2f4f7",
+          card: "#ffffff",
+        },
+        ink: "#191c1e",
+        midnight: "#001b44",
       },
       boxShadow: {
-        soft: "0 16px 42px rgba(15, 23, 42, 0.07)",
-        glow: "0 18px 54px rgba(124, 58, 237, 0.18)",
-        premium: "0 22px 64px rgba(15, 23, 42, 0.11)",
+        soft: "0 4px 20px rgba(0, 47, 108, 0.04)",
+        glow: "0 12px 32px rgba(30, 107, 255, 0.14)",
+        premium: "0 12px 34px rgba(0, 27, 68, 0.08)",
       },
       borderRadius: {
-        "2xl": "1rem",
-        "3xl": "1.5rem",
+        "2xl": "0.75rem",
+        "3xl": "1rem",
       },
       backgroundImage: {
-        "ai-gradient": "linear-gradient(135deg, #2563eb 0%, #6d28d9 100%)",
+        "ai-gradient": "linear-gradient(135deg, #7C3AED 0%, #1E6BFF 100%)",
         "sidebar-depth":
-          "linear-gradient(140deg, rgba(255,255,255,.96), rgba(248,250,252,.9) 48%, rgba(239,246,255,.82)), linear-gradient(180deg, rgba(255,255,255,.3), rgba(37,99,235,.06))",
+          "linear-gradient(180deg, #ffffff 0%, #f8f9fb 100%)",
         "soft-mesh":
-          "linear-gradient(180deg, #f8fafc 0%, #eef4ff 100%)",
+          "linear-gradient(180deg, #f8f9fb 0%, #f2f4f7 100%)",
       },
       keyframes: {
         float: {

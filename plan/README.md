@@ -35,6 +35,20 @@ Use this before frontend work. It defines:
 - page layout principles;
 - CRM vs AI visual hierarchy.
 
+Primary UI/UX implementation roadmap:
+
+```text
+plan/ui_ux_unification_tech_plan.md
+```
+
+Use this before large frontend UI work. It defines:
+
+- target CRM information architecture;
+- shared component and page-template plan;
+- sidebar/mobile navigation reform;
+- phase-by-phase production-ready implementation tasks;
+- frontend verification and definition of done.
+
 ## Active Documents In This Folder
 
 ### Business Logic
@@ -42,6 +56,7 @@ Use this before frontend work. It defines:
 ```text
 plan/business_logic_implementation_plan.md
 plan/auto_crm_pipeline_plan.md
+plan/role_permissions_production_plan.md
 ```
 
 Use for core CRM workflow work:
@@ -50,6 +65,7 @@ Use for core CRM workflow work:
 - AI qualification guard rules;
 - conversation to client/lead/deal/task logic;
 - production-safe automation boundaries.
+- merchant employee roles, permissions, visibility scopes, AI permissions, approval flows, and audit rules.
 
 ### Production Hardening
 
@@ -105,6 +121,7 @@ For product work, read in this order:
 
 1. `readiness_plan.md`
 2. `docs/design-system.md`
-3. `plan/business_logic_implementation_plan.md` or `plan/auto_crm_pipeline_plan.md` if the task touches CRM workflows.
-4. `plan/clean_code_rules/zani_required_clean_code_rules.md`
-5. `plan/ZANI_PRODUCTION_HARDENING_ROADMAP.md` only if the task touches production infrastructure.
+3. `plan/ui_ux_unification_tech_plan.md` if the task touches frontend UI/UX.
+4. `plan/business_logic_implementation_plan.md` or `plan/auto_crm_pipeline_plan.md` if the task touches CRM workflows.
+5. `plan/clean_code_rules/zani_required_clean_code_rules.md`
+6. `plan/ZANI_PRODUCTION_HARDENING_ROADMAP.md` only if the task touches production infrastructure.

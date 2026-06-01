@@ -191,7 +191,7 @@ export const inboxApi = {
       use_ai_qualification: true,
       apply_ai_decisions: true,
       deal_title: dealTitle,
-      task_title: dealTitle ? `Следующий шаг: ${dealTitle}` : undefined,
+      task_title: dealTitle ? `Next step: ${dealTitle}` : undefined,
       task_priority: "normal",
     });
     return data;

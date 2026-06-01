@@ -5,6 +5,8 @@ from urllib import request as urllib_request
 from django.conf import settings
 from rest_framework.exceptions import PermissionDenied
 
+from apps.core.production_rules import is_local_or_private_hostname
+from apps.core.security_config import has_strong_shared_secret
 from apps.integrations.models import IntegrationEventLog
 from apps.integrations.providers.base import BaseChannelProvider
 
@@ -15,10 +17,43 @@ TELEGRAM_SECRET_HEADER = "HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN"
 class TelegramProvider(BaseChannelProvider):
     provider = "telegram"
 
+    def _safe_base_api_url(self):
+        base_url = str(settings.TELEGRAM_BASE_API_URL or "").strip().rstrip("/")
+        parsed = urllib_parse.urlparse(base_url)
+        if parsed.scheme != "https" or not parsed.hostname:
+            return "", "Telegram base API URL must be an absolute HTTPS URL."
+        if parsed.username or parsed.password or parsed.fragment:
+            return "", "Telegram base API URL must not include credentials or a fragment."
+        if is_local_or_private_hostname(parsed.hostname):
+            return "", "Telegram base API URL must use a public hostname."
+        return base_url, ""
+
+    def _unsafe_base_api_result(self, business, channel, direction, payload):
+        _, reason = self._safe_base_api_url()
+        self.log_event(
+            business=business,
+            channel=channel.channel,
+            direction=direction,
+            payload=payload,
+            status=IntegrationEventLog.Statuses.FAILED,
+            error=reason,
+        )
+        return {"ok": False, "reason": reason}
+
+    def _safe_webhook_url(self, webhook_url):
+        parsed = urllib_parse.urlparse(str(webhook_url or "").strip())
+        if parsed.scheme != "https" or not parsed.hostname:
+            return False, "Telegram webhook URL must be an absolute HTTPS URL."
+        if parsed.username or parsed.password or parsed.fragment:
+            return False, "Telegram webhook URL must not include credentials or a fragment."
+        if is_local_or_private_hostname(parsed.hostname):
+            return False, "Telegram webhook URL must use a public hostname."
+        return True, ""
+
     def verify_webhook(self, request):
         expected_secret = settings.TELEGRAM_WEBHOOK_SECRET
         provided_secret = request.META.get(TELEGRAM_SECRET_HEADER, "")
-        if expected_secret and provided_secret == expected_secret:
+        if expected_secret and has_strong_shared_secret(expected_secret) and provided_secret == expected_secret:
             return provided_secret
         if provided_secret and self._is_channel_secret(provided_secret):
             return provided_secret
@@ -76,7 +111,11 @@ class TelegramProvider(BaseChannelProvider):
             )
             return {"ok": False, "reason": "Telegram bot token is missing."}
 
-        url = f"{settings.TELEGRAM_BASE_API_URL}/bot{token}/sendMessage"
+        base_url, _ = self._safe_base_api_url()
+        if not base_url:
+            return self._unsafe_base_api_result(business, channel, IntegrationEventLog.Directions.OUTBOUND, event_payload)
+
+        url = f"{base_url}/bot{token}/sendMessage"
         request = urllib_request.Request(
             url,
             data=json.dumps({"chat_id": recipient_id, "text": text}).encode("utf-8"),
@@ -130,7 +169,13 @@ class TelegramProvider(BaseChannelProvider):
                 "token_configured": True,
             }
 
-        url = f"{settings.TELEGRAM_BASE_API_URL}/bot{token}/getMe"
+        base_url, _ = self._safe_base_api_url()
+        if not base_url:
+            result = self._unsafe_base_api_result(business, channel, IntegrationEventLog.Directions.OUTBOUND, safe_payload)
+            result["token_configured"] = True
+            return result
+
+        url = f"{base_url}/bot{token}/getMe"
         request = urllib_request.Request(url, method="GET")
         try:
             with urllib_request.urlopen(request, timeout=10) as response:
@@ -183,10 +228,16 @@ class TelegramProvider(BaseChannelProvider):
             )
             return {"ok": False, "result": [], "reason": "Telegram bot token is missing."}
 
+        base_url, _ = self._safe_base_api_url()
+        if not base_url:
+            result = self._unsafe_base_api_result(business, channel, IntegrationEventLog.Directions.INBOUND, safe_payload)
+            result["result"] = []
+            return result
+
         params = {"limit": max(1, min(int(limit or 20), 100))}
         if offset is not None:
             params["offset"] = int(offset)
-        url = f"{settings.TELEGRAM_BASE_API_URL}/bot{token}/getUpdates?{urllib_parse.urlencode(params)}"
+        url = f"{base_url}/bot{token}/getUpdates?{urllib_parse.urlencode(params)}"
         request = urllib_request.Request(url, method="GET")
         try:
             with urllib_request.urlopen(request, timeout=10) as response:
@@ -250,8 +301,33 @@ class TelegramProvider(BaseChannelProvider):
                 error="Telegram webhook secret is missing.",
             )
             return {"ok": False, "reason": "Telegram webhook secret is missing."}
+        if not has_strong_shared_secret(webhook_secret):
+            self.log_event(
+                business=business,
+                channel=channel.channel,
+                direction=IntegrationEventLog.Directions.OUTBOUND,
+                payload=safe_payload,
+                status=IntegrationEventLog.Statuses.FAILED,
+                error="Telegram webhook secret is too weak.",
+            )
+            return {"ok": False, "reason": "Telegram webhook secret is too weak."}
 
-        url = f"{settings.TELEGRAM_BASE_API_URL}/bot{token}/setWebhook"
+        base_url, _ = self._safe_base_api_url()
+        if not base_url:
+            return self._unsafe_base_api_result(business, channel, IntegrationEventLog.Directions.OUTBOUND, safe_payload)
+        webhook_url_safe, reason = self._safe_webhook_url(webhook_url)
+        if not webhook_url_safe:
+            self.log_event(
+                business=business,
+                channel=channel.channel,
+                direction=IntegrationEventLog.Directions.OUTBOUND,
+                payload=safe_payload,
+                status=IntegrationEventLog.Statuses.FAILED,
+                error=reason,
+            )
+            return {"ok": False, "reason": reason}
+
+        url = f"{base_url}/bot{token}/setWebhook"
         request = urllib_request.Request(
             url,
             data=json.dumps({"url": webhook_url, "secret_token": webhook_secret}).encode("utf-8"),

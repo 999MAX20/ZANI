@@ -37,6 +37,7 @@ class Command(BaseCommand):
         parser.add_argument("--manager-email", default="demo-manager@zani.local")
         parser.add_argument("--manager-password", default="DemoManager123!")
         parser.add_argument("--reset", action="store_true", help="Delete existing demo business for this landing id before seeding.")
+        parser.add_argument("--show-passwords", action="store_true", help="Print demo passwords in command output.")
 
     @transaction.atomic
     def handle(self, *args, **options):
@@ -70,12 +71,16 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS("ZANI pilot demo seeded."))
         self.stdout.write(f"Business: {business.id} / {business.name} / {business.slug}")
-        self.stdout.write(f"Owner login: {options['owner_email']} / {options['owner_password']}")
-        self.stdout.write(f"Manager login: {options['manager_email']} / {options['manager_password']}")
+        self.stdout.write(f"Owner login: {options['owner_email']} / {self._display_password(options['owner_password'], options['show_passwords'])}")
+        self.stdout.write(f"Manager login: {options['manager_email']} / {self._display_password(options['manager_password'], options['show_passwords'])}")
         self.stdout.write(f"Landing form public_id: {result.lead_form.public_id}")
         self.stdout.write(f"Services: {len(services)}")
         self.stdout.write("Smoke path: login as owner → dashboard → leads → inbox → AI action task.")
 
+    def _display_password(self, password: str, show_passwords: bool) -> str:
+        if show_passwords:
+            return password
+        return "[hidden; pass --show-passwords to print]"
 
     def _reset_demo_businesses(self, landing_id: str) -> None:
         """Delete an existing demo merchant safely before reseeding.

@@ -133,6 +133,46 @@ class PilotDemoSeedCommandTests(TestCase):
         self.assertEqual(managers.count(), 2)
         self.assertEqual(len({manager.username for manager in managers}), 2)
 
+    def test_seed_pilot_demo_hides_passwords_in_output_by_default(self):
+        output = StringIO()
+        call_command(
+            "seed_pilot_demo",
+            "--reset",
+            "--landing-id=demo-output-safe-001",
+            "--owner-email=demo-output-owner@test.local",
+            "--owner-password=DemoOwner123!",
+            "--manager-email=demo-output-manager@test.local",
+            "--manager-password=DemoManager123!",
+            stdout=output,
+            verbosity=0,
+        )
+
+        text = output.getvalue()
+        self.assertIn("Owner login: demo-output-owner@test.local / [hidden; pass --show-passwords to print]", text)
+        self.assertIn("Manager login: demo-output-manager@test.local / [hidden; pass --show-passwords to print]", text)
+        self.assertNotIn("DemoOwner123!", text)
+        self.assertNotIn("DemoManager123!", text)
+
+    def test_seed_pilot_demo_can_explicitly_print_passwords(self):
+        output = StringIO()
+        call_command(
+            "seed_pilot_demo",
+            "--reset",
+            "--landing-id=demo-output-unsafe-001",
+            "--owner-email=demo-show-owner@test.local",
+            "--owner-password=DemoOwner123!",
+            "--manager-email=demo-show-manager@test.local",
+            "--manager-password=DemoManager123!",
+            "--show-passwords",
+            stdout=output,
+            verbosity=0,
+        )
+
+        text = output.getvalue()
+        self.assertIn("Owner login: demo-show-owner@test.local / DemoOwner123!", text)
+        self.assertIn("Manager login: demo-show-manager@test.local / DemoManager123!", text)
+
+
 class PilotDemoLaunchCommandTests(TestCase):
     def test_prepare_pilot_demo_creates_platform_admin_and_demo_launch_pack(self):
         call_command(
@@ -206,6 +246,34 @@ class PilotDemoLaunchCommandTests(TestCase):
         self.assertIn("PILOT SAFE PROMISES — CAN SHOW", text)
         self.assertIn("PILOT SAFE PROMISES — DO NOT PROMISE", text)
         self.assertIn("python manage.py pilot_launch_quality_gate", text)
+        self.assertIn("Platform admin: platform-output@test.local / [hidden; pass --show-passwords to print]", text)
+        self.assertIn("Demo owner:     output-owner@test.local / [hidden; pass --show-passwords to print]", text)
+        self.assertIn("Demo manager:   output-manager@test.local / [hidden; pass --show-passwords to print]", text)
+        self.assertNotIn("Platform123!", text)
+        self.assertNotIn("DemoOwner123!", text)
+        self.assertNotIn("DemoManager123!", text)
+
+    def test_prepare_pilot_demo_can_explicitly_print_passwords(self):
+        output = StringIO()
+        call_command(
+            "prepare_pilot_demo",
+            "--reset",
+            "--landing-id=launch-output-show-001",
+            "--platform-email=platform-show@test.local",
+            "--platform-password=Platform123!",
+            "--owner-email=show-owner@test.local",
+            "--owner-password=DemoOwner123!",
+            "--manager-email=show-manager@test.local",
+            "--manager-password=DemoManager123!",
+            "--show-passwords",
+            stdout=output,
+            verbosity=0,
+        )
+
+        text = output.getvalue()
+        self.assertIn("Platform admin: platform-show@test.local / Platform123!", text)
+        self.assertIn("Demo owner:     show-owner@test.local / DemoOwner123!", text)
+        self.assertIn("Demo manager:   show-manager@test.local / DemoManager123!", text)
 
     def test_pilot_launch_quality_gate_checks_prepared_demo(self):
         call_command(

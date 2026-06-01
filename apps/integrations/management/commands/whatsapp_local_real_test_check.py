@@ -5,6 +5,8 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.test import Client
 
+from apps.core.production_rules import is_safe_public_https_url, redact_url_for_display
+
 
 REQUIRED_SETTINGS = [
     "WHATSAPP_VERIFY_TOKEN",
@@ -37,12 +39,13 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        public_url = options["public_url"].rstrip("/")
-        checks = self._build_checks(public_url)
+        raw_public_url = options["public_url"].rstrip("/")
+        display_public_url = redact_url_for_display(raw_public_url)
+        checks = self._build_checks(raw_public_url, display_public_url)
         result = {
             "ready_for_local_real_test": all(check["status"] == "pass" for check in checks),
-            "webhook_callback_url": urljoin(f"{public_url}/", "api/integrations/whatsapp/webhook/") if public_url else "",
-            "embedded_signup_redirect_uri": urljoin(f"{public_url}/", "dashboard/integrations") if public_url else "",
+            "webhook_callback_url": urljoin(f"{display_public_url}/", "api/integrations/whatsapp/webhook/") if display_public_url else "",
+            "embedded_signup_redirect_uri": urljoin(f"{display_public_url}/", "dashboard/integrations") if display_public_url else "",
             "checks": checks,
         }
 
@@ -54,13 +57,13 @@ class Command(BaseCommand):
         if options["fail_on_missing"] and not result["ready_for_local_real_test"]:
             raise CommandError("WhatsApp local real-test prerequisites are missing.")
 
-    def _build_checks(self, public_url):
+    def _build_checks(self, public_url, display_public_url):
         checks = [
             {
                 "key": "public_https_url",
-                "status": "pass" if public_url.startswith("https://") else "fail",
-                "detail": public_url or "not provided",
-                "action": "Start a public HTTPS tunnel to Django and pass it as --public-url.",
+                "status": "pass" if is_safe_public_https_url(public_url) else "fail",
+                "detail": display_public_url or "not provided",
+                "action": "Start a public HTTPS tunnel to Django and pass it as --public-url; localhost and private network URLs are not valid.",
             },
             {
                 "key": "whatsapp_enabled",

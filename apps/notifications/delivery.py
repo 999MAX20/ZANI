@@ -4,6 +4,7 @@ from django.utils import timezone
 from apps.activities.services import create_activity_event
 from apps.bots.models import BotChannel
 from apps.integrations.providers import send_message
+from apps.integrations.sanitization import sanitize_error_payload, sanitize_error_text
 from apps.notifications.models import Notification
 from apps.notifications.routing import MANAGER_ROLES, TECHNICAL_ROLES, create_role_notification
 from apps.scheduling.models import Appointment
@@ -33,8 +34,9 @@ def deliver_notification(notification):
     except Exception as exc:
         notification.status = Notification.Statuses.FAILED
         notification.save(update_fields=["status", "updated_at"])
-        _write_delivery_activity(notification, status="failed", result={"reason": str(exc)})
-        return {"notification_id": notification.id, "status": "failed", "reason": str(exc)}
+        reason = sanitize_error_text(exc)
+        _write_delivery_activity(notification, status="failed", result={"reason": reason})
+        return {"notification_id": notification.id, "status": "failed", "reason": reason}
 
     if result.get("ok"):
         notification.status = Notification.Statuses.SENT
@@ -44,9 +46,10 @@ def deliver_notification(notification):
 
     notification.status = Notification.Statuses.FAILED
     notification.save(update_fields=["status", "updated_at"])
-    _notify_delivery_failure(notification, result)
-    _write_delivery_activity(notification, status="failed", result=result)
-    return {"notification_id": notification.id, "status": "failed", "result": result}
+    safe_result = sanitize_error_payload(result)
+    _notify_delivery_failure(notification, safe_result)
+    _write_delivery_activity(notification, status="failed", result=safe_result)
+    return {"notification_id": notification.id, "status": "failed", "result": safe_result}
 
 
 def handle_appointment_followup_reply(*, business, channel, external_user_id, text):

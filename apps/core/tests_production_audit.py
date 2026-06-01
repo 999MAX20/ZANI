@@ -4,7 +4,19 @@ from io import StringIO
 from django.core.management import call_command, CommandError
 from django.test import TestCase, override_settings
 
+from apps.core.production_rules import is_safe_public_https_url, redact_url_for_display
 from apps.core.production_audit import run_production_readiness_audit
+
+
+class ProductionRuleTests(TestCase):
+    def test_public_https_url_rejects_query_values(self):
+        self.assertFalse(is_safe_public_https_url("https://api.zani.kz?token=raw-secret-token"))
+
+    def test_redact_url_for_display_strips_credentials_query_and_fragment(self):
+        self.assertEqual(
+            redact_url_for_display("https://user:raw-secret@example.com:8443/path?token=raw-secret-token#frag"),
+            "https://example.com:8443/path",
+        )
 
 
 class ProductionReadinessAuditTests(TestCase):
@@ -71,6 +83,86 @@ class ProductionReadinessAuditTests(TestCase):
 
         secret_item = next(item for item in audit["items"] if item["key"] == "environment.secret_key")
         self.assertEqual(secret_item["status"], "pass")
+
+    @override_settings(TELEGRAM_ENABLED=True, TELEGRAM_WEBHOOK_SECRET="secret", TELEGRAM_BASE_API_URL="http://api.telegram.org")
+    def test_audit_rejects_unsafe_telegram_runtime(self):
+        audit = run_production_readiness_audit()
+
+        telegram_item = next(item for item in audit["items"] if item["key"] == "integrations.telegram")
+        self.assertEqual(telegram_item["status"], "fail")
+
+    @override_settings(
+        TELEGRAM_ENABLED=True,
+        TELEGRAM_WEBHOOK_SECRET="telegram-global-A8v_qR7m-L2p_N9x-T5s_K3u-Y6b_C4d",
+        TELEGRAM_BASE_API_URL="https://api.telegram.org",
+    )
+    def test_audit_accepts_safe_telegram_runtime(self):
+        audit = run_production_readiness_audit()
+
+        telegram_item = next(item for item in audit["items"] if item["key"] == "integrations.telegram")
+        self.assertEqual(telegram_item["status"], "pass")
+
+    @override_settings(
+        WHATSAPP_ENABLED=True,
+        WHATSAPP_VERIFY_TOKEN="verify",
+        WHATSAPP_APP_SECRET="app-secret",
+        WHATSAPP_GRAPH_BASE_URL="https://graph.facebook.com",
+    )
+    def test_audit_rejects_unsafe_whatsapp_runtime(self):
+        audit = run_production_readiness_audit()
+
+        whatsapp_item = next(item for item in audit["items"] if item["key"] == "integrations.whatsapp")
+        self.assertEqual(whatsapp_item["status"], "fail")
+
+    @override_settings(
+        WHATSAPP_ENABLED=True,
+        WHATSAPP_VERIFY_TOKEN="whatsapp-verify-A8v_qR7m-L2p_N9x-T5s_K3u-Y6b_C4d",
+        WHATSAPP_APP_SECRET="whatsapp-app-A8v_qR7m-L2p_N9x-T5s_K3u-Y6b_C4d",
+        WHATSAPP_GRAPH_BASE_URL="https://127.0.0.1",
+    )
+    def test_audit_rejects_private_whatsapp_graph_url(self):
+        audit = run_production_readiness_audit()
+
+        whatsapp_item = next(item for item in audit["items"] if item["key"] == "integrations.whatsapp")
+        self.assertEqual(whatsapp_item["status"], "fail")
+
+    @override_settings(
+        WHATSAPP_ENABLED=True,
+        WHATSAPP_VERIFY_TOKEN="whatsapp-verify-A8v_qR7m-L2p_N9x-T5s_K3u-Y6b_C4d",
+        WHATSAPP_APP_SECRET="whatsapp-app-A8v_qR7m-L2p_N9x-T5s_K3u-Y6b_C4d",
+        WHATSAPP_GRAPH_BASE_URL="https://graph.facebook.com",
+    )
+    def test_audit_accepts_safe_whatsapp_runtime(self):
+        audit = run_production_readiness_audit()
+
+        whatsapp_item = next(item for item in audit["items"] if item["key"] == "integrations.whatsapp")
+        self.assertEqual(whatsapp_item["status"], "pass")
+
+    @override_settings(
+        INSTAGRAM_ENABLED=True,
+        INSTAGRAM_VERIFY_TOKEN="verify",
+        INSTAGRAM_APP_SECRET="app-secret",
+        META_APP_SECRET="",
+        INSTAGRAM_GRAPH_BASE_URL="https://graph.facebook.com",
+    )
+    def test_audit_rejects_unsafe_instagram_runtime(self):
+        audit = run_production_readiness_audit()
+
+        instagram_item = next(item for item in audit["items"] if item["key"] == "integrations.instagram")
+        self.assertEqual(instagram_item["status"], "fail")
+
+    @override_settings(
+        INSTAGRAM_ENABLED=True,
+        INSTAGRAM_VERIFY_TOKEN="instagram-verify-A8v_qR7m-L2p_N9x-T5s_K3u-Y6b_C4d",
+        INSTAGRAM_APP_SECRET="instagram-app-A8v_qR7m-L2p_N9x-T5s_K3u-Y6b_C4d",
+        META_APP_SECRET="",
+        INSTAGRAM_GRAPH_BASE_URL="https://graph.facebook.com",
+    )
+    def test_audit_accepts_safe_instagram_runtime(self):
+        audit = run_production_readiness_audit()
+
+        instagram_item = next(item for item in audit["items"] if item["key"] == "integrations.instagram")
+        self.assertEqual(instagram_item["status"], "pass")
 
     @override_settings(CELERY_BROKER_URL="rediss://default:password@redis.example.com:6379/0")
     def test_audit_accepts_tls_redis_urls(self):

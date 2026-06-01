@@ -30,9 +30,11 @@ import { Select } from "../../components/ui/Select";
 import { Textarea } from "../../components/ui/Textarea";
 import { ErrorState, LoadingState } from "../../components/ui/StateViews";
 import { AiInsightCard, aiInsightDotClass, type AiInsightSeverity } from "../../components/ai/AiInsightCard";
+import { useAuth } from "../auth/AuthProvider";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useEntityData } from "../../hooks/useEntityData";
 import { useI18n } from "../../lib/i18n";
+import { hasPermission } from "../../lib/permissions";
 
 type NavigatorInsight = {
   id: string;
@@ -97,7 +99,11 @@ function hoursSince(dateValue: string | null | undefined, now: Date) {
 export function AIAssistantPage() {
   const { t } = useI18n();
   const { business, isLoading } = useActiveBusiness();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
+  const canUseAssistant = hasPermission(user, business?.id, "ai_assistant", "suggest");
+  const canViewAnalyst = hasPermission(user, business?.id, "ai_analyst", "view");
+  const canManageMemory = hasPermission(user, business?.id, "ai_automation", "manage");
   const [aiBrief, setAiBrief] = useState("");
   const [memoryOpen, setMemoryOpen] = useState(false);
   const [editingMemory, setEditingMemory] = useState<BusinessKnowledgeItem | undefined>();
@@ -117,24 +123,25 @@ export function AIAssistantPage() {
   const memory = useQuery({
     queryKey: ["ai-knowledge-items", business?.id],
     queryFn: businessKnowledgeApi.list,
-    enabled: Boolean(business),
+    enabled: Boolean(business && canManageMemory),
   });
 
   const aiStatus = useQuery({
     queryKey: ["ai-assistant-status", business?.id],
     queryFn: () => aiApi.assistantStatus(business!.id),
-    enabled: Boolean(business),
+    enabled: Boolean(business && canUseAssistant),
   });
 
   const analystBrief = useQuery({
     queryKey: ["ai-analyst-brief", business?.id],
     queryFn: () => aiApi.analystBrief({ business: business!.id, limit: 24 }),
-    enabled: Boolean(business),
+    enabled: Boolean(business && canViewAnalyst),
   });
 
   const memoryMutation = useMutation({
     mutationFn: () => {
       if (!business) throw new Error("Business is not selected.");
+      if (!canManageMemory) throw new Error("Your role cannot manage AI memory.");
       const payload = { ...memoryDraft, business: business.id };
       return editingMemory
         ? businessKnowledgeApi.update({ id: editingMemory.id, payload })
@@ -323,14 +330,15 @@ export function AIAssistantPage() {
   const briefMutation = useMutation({
     mutationFn: () => {
       if (!business) throw new Error("Business is not selected.");
+      if (!canUseAssistant) throw new Error("Your role cannot run AI assistant actions.");
       return aiApi.assistantChat({
         business: business.id,
         prompt_type: "daily_summary",
         message: [
-          "Сформируй короткую бизнес-сводку ZANI.",
-          "Используй только факты ниже. Не добавляй внешние данные, рынок, конкурентов или неподтвержденные причины.",
-          "Если фактов недостаточно, прямо напиши: недостаточно данных для вывода.",
-          `Факты кабинета: ${JSON.stringify(navigatorData.factsForAi)}`,
+          t("aiNavigator.prompt.dailySummary"),
+          t("aiNavigator.prompt.factOnly"),
+          t("aiNavigator.prompt.insufficientData"),
+          t("aiNavigator.prompt.workspaceFacts", { facts: JSON.stringify(navigatorData.factsForAi) }),
         ].join("\n"),
       });
     },
@@ -359,10 +367,10 @@ export function AIAssistantPage() {
         description={t("aiNavigator.description")}
         actions={(
           <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" onClick={() => { setEditingMemory(undefined); setMemoryDraft(emptyMemoryDraft); setMemoryOpen(true); }}>
+            {canManageMemory ? <Button variant="secondary" onClick={() => { setEditingMemory(undefined); setMemoryDraft(emptyMemoryDraft); setMemoryOpen(true); }}>
               <Plus size={18} />{t("aiAssistant.addMemoryFact")}
-            </Button>
-            <Button variant="ai" onClick={() => briefMutation.mutate()} isLoading={briefMutation.isPending}>
+            </Button> : null}
+            <Button variant="ai" onClick={() => briefMutation.mutate()} isLoading={briefMutation.isPending} disabled={!canUseAssistant}>
               <RefreshCw size={18} />{t("aiNavigator.refreshBrief")}
             </Button>
           </div>
@@ -384,7 +392,7 @@ export function AIAssistantPage() {
                     {t("aiNavigator.todayBrief")}
                   </div>
                   <h2 className="mt-3 text-2xl font-black leading-tight tracking-tight text-midnight sm:text-3xl">
-                    Сигналы по кабинету
+                    {t("aiNavigator.workspaceSignals")}
                   </h2>
                   <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
                     {t("aiNavigator.factBasedNotice")}
@@ -437,13 +445,13 @@ export function AIAssistantPage() {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-700">BusinessEvent AI</p>
-                  <h2 className="mt-2 text-2xl font-black text-midnight">Инсайты по интеграциям</h2>
+                  <h2 className="mt-2 text-2xl font-black text-midnight">{t("aiNavigator.integrationInsightsTitle")}</h2>
                   <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">
-                    AI Analyst читает последние события интеграций, цитирует источники и предлагает только подтверждаемые действия.
+                    {t("aiNavigator.integrationInsightsText")}
                   </p>
                 </div>
                 <Button variant="secondary" size="sm" onClick={() => analystBrief.refetch()} isLoading={analystBrief.isFetching}>
-                  <RefreshCw size={15} />Обновить
+                  <RefreshCw size={15} />{t("common.refresh")}
                 </Button>
               </div>
 
@@ -462,14 +470,14 @@ export function AIAssistantPage() {
                 ))}
                 {!analystBrief.isLoading && !(analystBrief.data?.insights || []).length ? (
                   <p className="rounded-3xl bg-slate-50 p-4 text-sm font-semibold leading-6 text-slate-500">
-                    Пока нет BusinessEvent для анализа. Подключите канал или загрузите данные на странице подключений.
+                    {t("aiNavigator.emptyIntegrationInsights")}
                   </p>
                 ) : null}
               </div>
 
               {(analystBrief.data?.actions || []).length ? (
                 <div className="mt-5">
-                  <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Предлагаемые действия</p>
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{t("aiNavigator.suggestedActions")}</p>
                   <div className="mt-3 grid gap-3">
                     {(analystBrief.data?.actions || []).map((action) => (
                       <div key={action.id} className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
@@ -483,7 +491,7 @@ export function AIAssistantPage() {
                             <SourceChips sourceIds={action.source_ids} sourcesById={analystSourcesById} />
                           </div>
                           <Link to={action.href} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2 text-sm font-black text-midnight transition hover:bg-white hover:shadow-soft">
-                            Открыть <ExternalLink size={15} />
+                            {t("common.open")} <ExternalLink size={15} />
                           </Link>
                         </div>
                       </div>
@@ -523,7 +531,7 @@ export function AIAssistantPage() {
         </div>
 
         <aside className="space-y-4 xl:sticky xl:top-24 xl:max-h-[calc(100vh-7rem)] xl:overflow-y-auto xl:pr-1">
-          <Card>
+          {canManageMemory ? <Card>
             <CardBody>
               <div className="flex items-start gap-3">
                 <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-slate-50 text-brand-700">
@@ -538,7 +546,7 @@ export function AIAssistantPage() {
                 {providerLabel}
               </div>
             </CardBody>
-          </Card>
+          </Card> : null}
 
           <Card>
             <CardBody>

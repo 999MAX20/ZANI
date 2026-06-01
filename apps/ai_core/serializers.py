@@ -1,8 +1,9 @@
 from rest_framework import serializers
 
-from apps.ai_core.models import AIToolCallLog, AIRequestLog, AgentProfile, BusinessKnowledgeItem
+from apps.ai_core.models import AIToolCallLog, AIRequestLog, AgentProfile, ApprovalRequest, BusinessKnowledgeItem
 from apps.businesses.models import Business
 from apps.bots.models import BotConversation
+from apps.integrations.sanitization import sanitize_config, sanitize_error_text
 
 
 class AIRequestLogSerializer(serializers.ModelSerializer):
@@ -55,6 +56,36 @@ class AIToolCallLogSerializer(serializers.ModelSerializer):
         model = AIToolCallLog
         fields = "__all__"
         read_only_fields = ["created_at"]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["input_json"] = sanitize_config(data.get("input_json") or {})
+        data["output_json"] = sanitize_config(data.get("output_json") or {})
+        data["error"] = sanitize_error_text(data.get("error"))
+        return data
+
+
+class ApprovalRequestSerializer(serializers.ModelSerializer):
+    requested_by_email = serializers.EmailField(source="requested_by.email", read_only=True)
+    approved_by_email = serializers.EmailField(source="approved_by.email", read_only=True)
+    rejected_by_email = serializers.EmailField(source="rejected_by.email", read_only=True)
+
+    class Meta:
+        model = ApprovalRequest
+        fields = "__all__"
+        read_only_fields = [
+            "created_at",
+            "updated_at",
+            "approved_by",
+            "approved_at",
+            "rejected_by",
+            "rejected_at",
+        ]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["payload"] = sanitize_config(data.get("payload") or {})
+        return data
 
 
 class AIToolSuggestSerializer(serializers.Serializer):

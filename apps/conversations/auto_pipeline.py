@@ -12,6 +12,7 @@ from apps.bots.models import BotChannel, BotConversation, BotMessage
 from apps.conversations.ai_qualification import ConversationQualification, qualify_conversation
 from apps.conversations.booking import BookingResult, maybe_create_appointment_from_reply, store_offered_slots
 from apps.conversations.pipeline import PIPELINE_META_KEY, run_conversation_pipeline
+from apps.integrations.sanitization import sanitize_error_text
 from apps.notifications.models import Notification
 from apps.notifications.routing import MANAGER_ROLES, create_role_notification
 
@@ -209,7 +210,7 @@ def _send_auto_reply(*, conversation: BotConversation, config: AutoPipelineConfi
         if scheduling_context:
             store_offered_slots(conversation=conversation, scheduling_context=scheduling_context, ai_log_id=log.id if log else None)
     except Exception as exc:
-        decision.reply_error = str(exc)
+        decision.reply_error = sanitize_error_text(exc)
 
 
 def _auto_reply_meta(decision: AutoPipelineDecision) -> dict[str, Any] | None:

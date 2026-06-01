@@ -1,9 +1,11 @@
 from email.utils import parseaddr
 import ipaddress
 from typing import Iterable
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunparse
 
 from django.conf import settings
+
+from apps.core.security_config import has_strong_shared_secret
 
 
 MAX_PRODUCTION_RATE_PER_MINUTE = {
@@ -66,9 +68,27 @@ def is_safe_https_origin(origin: str) -> bool:
     parsed = urlparse(str(origin or "").strip())
     if parsed.scheme != "https" or not parsed.hostname:
         return False
-    if parsed.username or parsed.password or parsed.fragment:
+    if parsed.username or parsed.password or parsed.query or parsed.fragment:
         return False
     return not is_local_or_private_hostname(parsed.hostname)
+
+
+def is_safe_public_https_url(value: str) -> bool:
+    return is_safe_https_origin(value)
+
+
+def redact_url_for_display(value: str) -> str:
+    parsed = urlparse(str(value or "").strip())
+    if not parsed.scheme or not parsed.netloc:
+        return str(value or "").strip()
+    try:
+        port = parsed.port
+    except ValueError:
+        port = None
+    netloc = parsed.hostname or ""
+    if port:
+        netloc = f"{netloc}:{port}"
+    return urlunparse((parsed.scheme, netloc, parsed.path, "", "", ""))
 
 
 def has_safe_https_origins(origins: Iterable[str]) -> bool:
@@ -123,6 +143,39 @@ def has_sentry_observability() -> bool:
             bool(parsed.hostname),
             release not in {"", "local", "test", "development"},
             0 <= sample_rate <= 0.2,
+        ]
+    )
+
+
+def has_safe_telegram_runtime() -> bool:
+    if not getattr(settings, "TELEGRAM_ENABLED", False):
+        return True
+    return has_strong_shared_secret(getattr(settings, "TELEGRAM_WEBHOOK_SECRET", "")) and is_safe_public_https_url(
+        getattr(settings, "TELEGRAM_BASE_API_URL", "")
+    )
+
+
+def has_safe_whatsapp_runtime() -> bool:
+    if not getattr(settings, "WHATSAPP_ENABLED", False):
+        return True
+    return all(
+        [
+            has_strong_shared_secret(getattr(settings, "WHATSAPP_VERIFY_TOKEN", "")),
+            has_strong_shared_secret(getattr(settings, "WHATSAPP_APP_SECRET", "")),
+            is_safe_public_https_url(getattr(settings, "WHATSAPP_GRAPH_BASE_URL", "")),
+        ]
+    )
+
+
+def has_safe_instagram_runtime() -> bool:
+    if not getattr(settings, "INSTAGRAM_ENABLED", False):
+        return True
+    app_secret = getattr(settings, "INSTAGRAM_APP_SECRET", "") or getattr(settings, "META_APP_SECRET", "")
+    return all(
+        [
+            has_strong_shared_secret(getattr(settings, "INSTAGRAM_VERIFY_TOKEN", "")),
+            has_strong_shared_secret(app_secret),
+            is_safe_public_https_url(getattr(settings, "INSTAGRAM_GRAPH_BASE_URL", "")),
         ]
     )
 

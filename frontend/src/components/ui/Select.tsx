@@ -2,6 +2,7 @@ import { ChevronDown, Check } from "lucide-react";
 import { SelectHTMLAttributes, forwardRef, useEffect, useMemo, useRef, useState } from "react";
 
 import { cn } from "../../lib/cn";
+import { useI18n } from "../../lib/i18n";
 
 type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
   label?: string;
@@ -11,6 +12,7 @@ type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
   ({ label, error, options, className, value, defaultValue, onChange, onBlur, disabled, name, ...props }, ref) => {
+    const { t } = useI18n();
     const wrapperRef = useRef<HTMLLabelElement | null>(null);
     const initialValue = value ?? defaultValue ?? options[0]?.value ?? "";
     const [internalValue, setInternalValue] = useState(String(initialValue));
@@ -74,7 +76,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           )}
           onClick={() => setOpen((state) => !state)}
         >
-          <span className="min-w-0 truncate">{selectedOption?.label || "Выберите"}</span>
+          <span className="min-w-0 truncate">{selectedOption?.label || t("common.select")}</span>
           <ChevronDown size={17} className={cn("shrink-0 text-slate-400 transition", open && "rotate-180 text-brand-600")} />
         </button>
         {open ? (

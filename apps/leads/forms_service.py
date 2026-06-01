@@ -17,10 +17,16 @@ from apps.outreach.services import record_explicit_consent
 
 
 HONEYPOT_FIELDS = {"website_url", "company_website", "homepage"}
+MAX_PUBLIC_FORM_FIELDS = 50
+MAX_PUBLIC_FORM_STRING_LENGTH = 2000
+MAX_PUBLIC_FORM_TOTAL_CHARS = 20000
+MAX_STORED_URL_LENGTH = 200
+MAX_STORED_DOMAIN_LENGTH = 255
+MAX_STORED_USER_AGENT_LENGTH = 1000
 
 
 def submit_lead_form(*, lead_form, payload, request=None):
-    payload = dict(payload)
+    payload = normalize_public_form_payload(payload)
     safe_payload = sanitize_config(payload)
     spam_fields = [field for field in HONEYPOT_FIELDS if str(payload.get(field, "")).strip()]
     if spam_fields:
@@ -39,8 +45,8 @@ def submit_lead_form(*, lead_form, payload, request=None):
     message = payload.get("message") or payload.get("notes") or ""
     source = payload.get("source") or lead_form.source or Lead.Sources.WEBSITE
     landing_id = str(payload.get("landing_id") or lead_form.landing_id or "").strip()
-    page_url = str(payload.get("page_url") or payload.get("url") or "").strip()
-    page_domain = _page_domain(page_url) or str(payload.get("domain") or lead_form.landing_domain or "").strip()
+    page_url = _truncate(str(payload.get("page_url") or payload.get("url") or "").strip(), MAX_STORED_URL_LENGTH)
+    page_domain = _truncate(_page_domain(page_url) or str(payload.get("domain") or lead_form.landing_domain or "").strip(), MAX_STORED_DOMAIN_LENGTH)
     utm = {key: payload.get(key, "") for key in ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"] if payload.get(key)}
     source_context = {
         "source": source,
@@ -48,7 +54,7 @@ def submit_lead_form(*, lead_form, payload, request=None):
         "landing_id": landing_id,
         "page_url": page_url,
         "page_domain": page_domain,
-        "referrer": request.META.get("HTTP_REFERER", "") if request else "",
+        "referrer": _truncate(request.META.get("HTTP_REFERER", "") if request else "", MAX_STORED_URL_LENGTH),
     }
     duplicates = find_duplicate_clients(lead_form.business, phone=phone, email=email)
     duplicate_rows = duplicate_payload(duplicates, phone=phone, email=email)
@@ -93,7 +99,7 @@ def submit_lead_form(*, lead_form, payload, request=None):
             page_url=page_url,
             page_domain=page_domain,
             ip_address=_client_ip(request),
-            user_agent=request.META.get("HTTP_USER_AGENT", "") if request else "",
+            user_agent=_truncate(request.META.get("HTTP_USER_AGENT", "") if request else "", MAX_STORED_USER_AGENT_LENGTH),
         )
         AnalyticsEvent.objects.create(
             business=lead_form.business,
@@ -133,10 +139,13 @@ def submit_lead_form(*, lead_form, payload, request=None):
 
 
 def log_lead_form_submission_error(*, form=None, public_id="", payload=None, error_message="", request=None):
-    payload = dict(payload or {})
+    try:
+        payload = normalize_public_form_payload(payload or {})
+    except ValueError:
+        payload = {}
     safe_payload = sanitize_config(payload)
-    page_url = str(payload.get("page_url") or payload.get("url") or "").strip()
-    page_domain = _page_domain(page_url) or str(payload.get("domain") or getattr(form, "landing_domain", "") or "").strip()
+    page_url = _truncate(str(payload.get("page_url") or payload.get("url") or "").strip(), MAX_STORED_URL_LENGTH)
+    page_domain = _truncate(_page_domain(page_url) or str(payload.get("domain") or getattr(form, "landing_domain", "") or "").strip(), MAX_STORED_DOMAIN_LENGTH)
     return LeadFormSubmissionError.objects.create(
         form=form,
         business=getattr(form, "business", None),
@@ -147,8 +156,54 @@ def log_lead_form_submission_error(*, form=None, public_id="", payload=None, err
         payload_json=safe_payload,
         error_message=str(error_message),
         ip_address=_client_ip(request),
-        user_agent=request.META.get("HTTP_USER_AGENT", "") if request else "",
+        user_agent=_truncate(request.META.get("HTTP_USER_AGENT", "") if request else "", MAX_STORED_USER_AGENT_LENGTH),
     )
+
+
+def normalize_public_form_payload(payload):
+    payload = dict(payload or {})
+    if len(payload) > MAX_PUBLIC_FORM_FIELDS:
+        raise ValueError("Submission has too many fields.")
+    total = 0
+    normalized = {}
+    for key, value in payload.items():
+        key_text = str(key or "").strip()
+        if not key_text:
+            continue
+        normalized_value, value_size = _normalize_public_form_value(value)
+        total += len(key_text) + value_size
+        if total > MAX_PUBLIC_FORM_TOTAL_CHARS:
+            raise ValueError("Submission is too large.")
+        normalized[key_text[:128]] = normalized_value
+    return normalized
+
+
+def _normalize_public_form_value(value):
+    if isinstance(value, dict):
+        normalized = {}
+        total = 0
+        for key, item in list(value.items())[:MAX_PUBLIC_FORM_FIELDS]:
+            normalized_item, item_size = _normalize_public_form_value(item)
+            key_text = str(key or "").strip()[:128]
+            normalized[key_text] = normalized_item
+            total += len(key_text) + item_size
+        return normalized, total
+    if isinstance(value, list):
+        normalized_items = []
+        total = 0
+        for item in value[:MAX_PUBLIC_FORM_FIELDS]:
+            normalized_item, item_size = _normalize_public_form_value(item)
+            normalized_items.append(normalized_item)
+            total += item_size
+        return normalized_items, total
+    text = str(value or "").strip()
+    if len(text) > MAX_PUBLIC_FORM_STRING_LENGTH:
+        raise ValueError("Submission field is too long.")
+    return text, len(text)
+
+
+def _truncate(value, max_length):
+    return str(value or "")[:max_length]
 
 
 def _client_source(source):

@@ -3,7 +3,7 @@ from rest_framework.test import APIClient
 
 from apps.accounts.models import User
 from apps.businesses.models import Business, BusinessMember
-from apps.integrations.connectors import decrypt_credential_value, normalize_business_event
+from apps.integrations.connectors import decrypt_credential_value, normalize_business_event, update_connector_health
 from apps.integrations.kaspi import KASPI_EVENT_TYPES, build_kaspi_events_from_orders, build_kaspi_mock_events
 from apps.integrations.moysklad import (
     MOYSKLAD_EVENT_TYPES,
@@ -13,7 +13,7 @@ from apps.integrations.moysklad import (
     build_moysklad_stock_events,
     moysklad_entity_to_import_type,
 )
-from apps.integrations.models import BusinessConnector, BusinessEvent, ConnectorCredential, IntegrationEventLog
+from apps.integrations.models import BusinessConnector, BusinessEvent, ConnectorCredential, ConnectorSyncRun, IntegrationEventLog
 from apps.integrations.one_c import ONE_C_EVENT_TYPES, build_one_c_mock_events, one_c_entity_to_import_type
 from apps.integrations.ozon import (
     OZON_EVENT_TYPES,
@@ -125,6 +125,31 @@ class BusinessConnectorFoundationTests(TestCase):
         self.assertNotIn("raw-api-key", str(response.data))
         self.assertNotIn("raw-client-secret", str(response.data))
 
+    def test_connector_last_error_is_sanitized_on_write_and_api_response(self):
+        connector = BusinessConnector.objects.create(
+            business=self.business,
+            provider=BusinessConnector.Providers.CUSTOM,
+            name="Custom failing",
+            created_by=self.owner,
+        )
+
+        update_connector_health(
+            connector,
+            status=BusinessConnector.Statuses.FAILED,
+            error="Provider failed url=https://api.example.com/hook?access_token=raw-access-token Authorization: Bearer raw-bearer-token",
+        )
+        connector.refresh_from_db()
+
+        self.assertNotIn("raw-access-token", connector.last_error)
+        self.assertNotIn("raw-bearer-token", connector.last_error)
+
+        self.api.force_authenticate(self.owner)
+        response = self.api.get(f"/api/business-connectors/{connector.id}/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("raw-access-token", str(response.data))
+        self.assertNotIn("raw-bearer-token", str(response.data))
+
     def test_event_payload_secrets_are_masked_in_api_responses(self):
         connector = BusinessConnector.objects.create(
             business=self.business,
@@ -162,6 +187,52 @@ class BusinessConnectorFoundationTests(TestCase):
         self.assertNotIn("raw-api-key", str(event_response.data))
         self.assertNotIn("raw-access-token", str(event_response.data))
         self.assertNotIn("raw-client-secret", str(log_response.data))
+
+    def test_event_and_sync_errors_are_masked_in_api_responses(self):
+        connector = BusinessConnector.objects.create(
+            business=self.business,
+            provider=BusinessConnector.Providers.CUSTOM,
+            name="Custom errors",
+            created_by=self.owner,
+        )
+        BusinessEvent.objects.create(
+            business=self.business,
+            connector=connector,
+            source=BusinessConnector.Providers.CUSTOM,
+            event_type="custom.failed",
+            external_id="event-error-1",
+            deduplication_key="event-error-1",
+            status=BusinessEvent.Statuses.FAILED,
+            error="Failed with token=raw-event-token",
+        )
+        IntegrationEventLog.objects.create(
+            business=self.business,
+            provider=BusinessConnector.Providers.CUSTOM,
+            channel="custom",
+            direction=IntegrationEventLog.Directions.OUTBOUND,
+            status=IntegrationEventLog.Statuses.FAILED,
+            payload_json={},
+            error='Provider returned {"client_secret":"raw-client-secret"}',
+        )
+        ConnectorSyncRun.objects.create(
+            business=self.business,
+            connector=connector,
+            mode=ConnectorSyncRun.Modes.MANUAL,
+            status=ConnectorSyncRun.Statuses.FAILED,
+            error="Sync failed https://api.example.com/orders?api_key=raw-sync-key",
+        )
+        self.api.force_authenticate(self.owner)
+
+        event_response = self.api.get("/api/business-events/")
+        log_response = self.api.get("/api/integration-event-logs/")
+        run_response = self.api.get("/api/connector-sync-runs/")
+
+        self.assertEqual(event_response.status_code, 200)
+        self.assertEqual(log_response.status_code, 200)
+        self.assertEqual(run_response.status_code, 200)
+        self.assertNotIn("raw-event-token", str(event_response.data))
+        self.assertNotIn("raw-client-secret", str(log_response.data))
+        self.assertNotIn("raw-sync-key", str(run_response.data))
 
     def test_operator_cannot_manage_connectors(self):
         self.api.force_authenticate(self.operator)

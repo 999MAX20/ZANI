@@ -6,6 +6,7 @@ from urllib import parse, request as urllib_request
 from django.conf import settings
 from django.utils import timezone
 
+from apps.core.production_rules import is_safe_public_https_url
 from apps.integrations.connectors import decrypt_credential_value
 from apps.integrations.models import ConnectorSyncRun
 
@@ -114,7 +115,10 @@ def fetch_moysklad_events(connector):
 
 
 def fetch_moysklad_json(path, token, params=None):
-    url = f"{settings.MOYSKLAD_API_BASE_URL.rstrip('/')}/{path.lstrip('/')}"
+    base_url = str(settings.MOYSKLAD_API_BASE_URL or "").strip().rstrip("/")
+    if not is_safe_public_https_url(base_url):
+        raise ValueError("MOYSKLAD_API_BASE_URL must be a public HTTPS URL.")
+    url = f"{base_url}/{path.lstrip('/')}"
     if params:
         url = f"{url}?{parse.urlencode(params)}"
     request = urllib_request.Request(

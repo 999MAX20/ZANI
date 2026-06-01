@@ -34,6 +34,37 @@ class ProviderRolloutReadinessTests(SimpleTestCase):
     @override_settings(
         TELEGRAM_ENABLED=True,
         TELEGRAM_WEBHOOK_SECRET="secret",
+        TELEGRAM_BASE_API_URL="https://api.telegram.org",
+        CELERY_BROKER_URL="rediss://redis.example.com:6379/0",
+        AUTOMATIONS_RUN_INLINE=False,
+        SENTRY_DSN="https://example@sentry.invalid/1",
+    )
+    def test_telegram_real_mode_rejects_weak_webhook_secret(self):
+        result = run_provider_rollout_readiness_check(provider="telegram")
+
+        telegram = result["providers"][0]
+        self.assertEqual(telegram["status"], "blocked")
+        self.assertIn("telegram.webhook_secret", {gate["key"] for gate in telegram["gates"] if gate["status"] == "fail"})
+
+    @override_settings(
+        TELEGRAM_ENABLED=True,
+        TELEGRAM_WEBHOOK_SECRET="telegram-global-A8v_qR7m-L2p_N9x-T5s_K3u-Y6b_C4d",
+        TELEGRAM_BASE_API_URL="http://api.telegram.org",
+        CELERY_BROKER_URL="rediss://redis.example.com:6379/0",
+        AUTOMATIONS_RUN_INLINE=False,
+        SENTRY_DSN="https://example@sentry.invalid/1",
+    )
+    def test_telegram_real_mode_requires_https_base_api_url(self):
+        result = run_provider_rollout_readiness_check(provider="telegram")
+
+        telegram = result["providers"][0]
+        self.assertEqual(telegram["status"], "blocked")
+        self.assertIn("telegram.base_api_url", {gate["key"] for gate in telegram["gates"] if gate["status"] == "fail"})
+
+    @override_settings(
+        TELEGRAM_ENABLED=True,
+        TELEGRAM_WEBHOOK_SECRET="telegram-global-A8v_qR7m-L2p_N9x-T5s_K3u-Y6b_C4d",
+        TELEGRAM_BASE_API_URL="https://api.telegram.org",
         CELERY_BROKER_URL="rediss://redis.example.com:6379/0",
         AUTOMATIONS_RUN_INLINE=False,
         SENTRY_DSN="https://example@sentry.invalid/1",

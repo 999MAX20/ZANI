@@ -1,3 +1,4 @@
+from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
@@ -6,10 +7,12 @@ from rest_framework.views import APIView
 from apps.ai_core.analyst import build_event_analyst_brief
 from apps.ai_core.assistant import assert_business_access, build_crm_context
 from apps.ai_core.models import AIToolCallLog, AIRequestLog, AgentProfile, BusinessKnowledgeItem
+from apps.ai_core.models import ApprovalRequest
 from apps.ai_core.serializers import (
     AIAnalystBriefSerializer,
     AIAssistantChatSerializer,
     AIAssistantStatusSerializer,
+    ApprovalRequestSerializer,
     AIToolCallLogSerializer,
     AIToolSuggestSerializer,
     AIRequestLogSerializer,
@@ -18,13 +21,23 @@ from apps.ai_core.serializers import (
 )
 from apps.ai_core.services import run_ai_request
 from apps.ai_core.tool_registry import execute_tool_call, registered_tools, suggest_tool_calls
+from apps.businesses.access import Actions, Resources, assert_can
 from apps.core.permissions import user_can_access_business
 from apps.core.viewsets import TenantModelViewSet
+
+
+def _resource_for_approval_action(action_type):
+    if action_type == ApprovalRequest.ActionTypes.AI_OUTREACH or action_type == ApprovalRequest.ActionTypes.CAMPAIGN_LAUNCH:
+        return Resources.AI_OUTREACH
+    if action_type == ApprovalRequest.ActionTypes.AI_PIPELINE:
+        return Resources.AI_PIPELINE
+    return Resources.AI_AUTOMATION
 
 
 class AIRequestLogViewSet(TenantModelViewSet):
     queryset = AIRequestLog.objects.select_related("business", "user")
     serializer_class = AIRequestLogSerializer
+    access_resource = Resources.AI_ANALYST
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user if self.request.user.is_authenticated else None)
@@ -33,11 +46,68 @@ class AIRequestLogViewSet(TenantModelViewSet):
 class BusinessKnowledgeItemViewSet(TenantModelViewSet):
     queryset = BusinessKnowledgeItem.objects.select_related("business")
     serializer_class = BusinessKnowledgeItemSerializer
+    access_resource = Resources.AI_AUTOMATION
 
 
 class AgentProfileViewSet(TenantModelViewSet):
     queryset = AgentProfile.objects.select_related("business", "bot")
     serializer_class = AgentProfileSerializer
+    access_resource = Resources.AI_AUTOMATION
+
+
+class ApprovalRequestViewSet(TenantModelViewSet):
+    queryset = ApprovalRequest.objects.select_related(
+        "business",
+        "requested_by",
+        "approved_by",
+        "rejected_by",
+        "ai_request_log",
+        "ai_tool_call_log",
+    )
+    serializer_class = ApprovalRequestSerializer
+    access_resource = Resources.AI_AUTOMATION
+    action_permission_map = {
+        **TenantModelViewSet.action_permission_map,
+        "approve": Actions.APPROVE,
+        "reject": Actions.APPROVE,
+    }
+
+    def perform_create(self, serializer):
+        business = serializer.validated_data.get("business")
+        action_type = serializer.validated_data.get("action_type")
+        resource = _resource_for_approval_action(action_type)
+        assert_can(self.request.user, business, resource, Actions.SUGGEST)
+        serializer.save(requested_by=self.request.user if self.request.user.is_authenticated else None)
+
+    @action(detail=True, methods=["post"])
+    def approve(self, request, pk=None):
+        from django.utils import timezone
+
+        approval = self.get_object()
+        assert_can(request.user, approval.business, _resource_for_approval_action(approval.action_type), Actions.APPROVE, obj=approval)
+        if approval.status != ApprovalRequest.Statuses.PENDING:
+            return Response(ApprovalRequestSerializer(approval).data, status=400)
+        approval.status = ApprovalRequest.Statuses.APPROVED
+        approval.approved_by = request.user
+        approval.approved_at = timezone.now()
+        approval.reason = request.data.get("reason", approval.reason)
+        approval.save(update_fields=["status", "approved_by", "approved_at", "reason", "updated_at"])
+        return Response(ApprovalRequestSerializer(approval).data)
+
+    @action(detail=True, methods=["post"])
+    def reject(self, request, pk=None):
+        from django.utils import timezone
+
+        approval = self.get_object()
+        assert_can(request.user, approval.business, _resource_for_approval_action(approval.action_type), Actions.APPROVE, obj=approval)
+        if approval.status != ApprovalRequest.Statuses.PENDING:
+            return Response(ApprovalRequestSerializer(approval).data, status=400)
+        approval.status = ApprovalRequest.Statuses.REJECTED
+        approval.rejected_by = request.user
+        approval.rejected_at = timezone.now()
+        approval.reason = request.data.get("reason", approval.reason)
+        approval.save(update_fields=["status", "rejected_by", "rejected_at", "reason", "updated_at"])
+        return Response(ApprovalRequestSerializer(approval).data)
 
 
 class AIAssistantChatView(APIView):
@@ -52,6 +122,7 @@ class AIAssistantChatView(APIView):
             assert_business_access(request.user, business)
         except PermissionError as exc:
             raise PermissionDenied(str(exc)) from exc
+        assert_can(request.user, business, Resources.AI_ASSISTANT, Actions.SUGGEST)
 
         crm_context = build_crm_context(business)
         result, log = run_ai_request(
@@ -85,6 +156,7 @@ class AIAssistantStatusView(APIView):
             assert_business_access(request.user, business)
         except PermissionError as exc:
             raise PermissionDenied(str(exc)) from exc
+        assert_can(request.user, business, Resources.AI_ASSISTANT, Actions.VIEW)
 
         from django.conf import settings
 
@@ -122,6 +194,7 @@ class AIAnalystBriefView(APIView):
             assert_business_access(request.user, business)
         except PermissionError as exc:
             raise PermissionDenied(str(exc)) from exc
+        assert_can(request.user, business, Resources.AI_ANALYST, Actions.VIEW)
 
         brief = build_event_analyst_brief(
             business=business,
@@ -138,6 +211,7 @@ class AIToolSuggestView(APIView):
         business = serializer.validated_data["business"]
         if not user_can_access_business(request.user, business):
             raise PermissionDenied("You do not have access to this business.")
+        assert_can(request.user, business, Resources.AI_PIPELINE, Actions.SUGGEST)
 
         logs = suggest_tool_calls(
             business=business,
@@ -168,6 +242,7 @@ class AIToolExecuteView(APIView):
             raise PermissionDenied("Tool call was not found.")
         if not user_can_access_business(request.user, log.business):
             raise PermissionDenied("You do not have access to this business.")
+        assert_can(request.user, log.business, Resources.AI_PIPELINE, Actions.EXECUTE, obj=log)
         if log.status != AIToolCallLog.Statuses.SUGGESTED:
             log.status = AIToolCallLog.Statuses.REJECTED
             log.error = "Only suggested tool calls can be executed."

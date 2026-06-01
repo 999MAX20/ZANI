@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ru"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ZANI Control - Настройки</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error": "#ba1a1a",
+                        "primary-fixed": "#d8e2ff",
+                        "tertiary": "#26005c",
+                        "on-tertiary": "#ffffff",
+                        "background": "#f8f9fb",
+                        "outline": "#747781",
+                        "on-primary-fixed": "#001a42",
+                        "inverse-surface": "#2e3132",
+                        "surface-tint": "#3c5d9c",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#5a00c6",
+                        "surface-container-lowest": "#ffffff",
+                        "ai-gradient-end": "#1E6BFF",
+                        "on-primary-container": "#7999dc",
+                        "outline-variant": "#c4c6d2",
+                        "surface-muted": "#F2F4F7",
+                        "surface-container-high": "#e7e8ea",
+                        "inverse-on-surface": "#f0f1f3",
+                        "on-secondary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-secondary-container": "#fefcff",
+                        "surface-container-low": "#f2f4f6",
+                        "on-error": "#ffffff",
+                        "on-surface": "#191c1e",
+                        "surface-bright": "#f8f9fb",
+                        "on-primary-fixed-variant": "#224583",
+                        "secondary-fixed-dim": "#b3c5ff",
+                        "ai-gradient-start": "#7C3AED",
+                        "on-tertiary-container": "#ab82ff",
+                        "primary-fixed-dim": "#aec6ff",
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed": "#eaddff",
+                        "on-surface-variant": "#434750",
+                        "ai-glow": "rgba(124, 58, 237, 0.15)",
+                        "secondary-container": "#1b6afe",
+                        "success-vibrant": "#28C76F",
+                        "danger-soft": "#EA5455",
+                        "secondary-fixed": "#dbe1ff",
+                        "on-background": "#191c1e",
+                        "primary-container": "#002f6c",
+                        "inverse-primary": "#aec6ff",
+                        "on-secondary-fixed-variant": "#003fa5",
+                        "surface-container": "#edeef0",
+                        "surface-card": "#FFFFFF",
+                        "surface-variant": "#e1e2e4",
+                        "warning-soft": "#FF9F43",
+                        "surface-dim": "#d9dadc",
+                        "surface": "#f8f9fb",
+                        "tertiary-fixed-dim": "#d2bbff",
+                        "tertiary-container": "#400090",
+                        "primary": "#001b44",
+                        "on-secondary-fixed": "#001849",
+                        "surface-container-highest": "#e1e2e4",
+                        "secondary": "#0052d2",
+                        "on-tertiary-fixed": "#25005a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container-padding-mobile": "16px",
+                        "card-gap": "20px",
+                        "container-padding-desktop": "24px",
+                        "gutter-md": "16px",
+                        "sidebar-width": "260px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "kpi-display-mobile": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "kpi-display": ["Inter"],
+                        "headline-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "kpi-display-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                        "label-sm": ["11px", {"lineHeight": "14px", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "headline-sm": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "kpi-display": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-ai {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid transparent;
+            background-clip: padding-box;
+            position: relative;
+        }
+        .glass-ai::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(to bottom right, #7C3AED, #1E6BFF);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+        .custom-shadow {
+            box-shadow: 0 4px 20px rgba(0, 47, 108, 0.04);
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #0052d2;
+        }
+        .toggle-checkbox:checked + .toggle-label::before {
+            transform: translateX(20px);
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fb;
+        }
+    </style>
+</head>
+<body class="text-on-surface">
+<!-- Sidebar Shell (Desktop) -->
+<aside class="hidden md:flex flex-col fixed left-0 top-0 h-full w-sidebar-width bg-surface-muted dark:bg-inverse-surface border-r border-outline-variant dark:border-outline z-50">
+<div class="p-6">
+<span class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">ZANI Control</span>
+<p class="font-label-md text-label-md text-on-surface-variant mt-1">Режим владельца</p>
+</div>
+<nav class="flex-1 mt-4 overflow-y-auto">
+<a class="flex items-center gap-3 text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-container-high dark:hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-body-md text-body-md">Панель</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-container-high dark:hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="person_search">person_search</span>
+<span class="font-body-md text-body-md">Лиды</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-container-high dark:hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="handshake">handshake</span>
+<span class="font-body-md text-body-md">Сделки</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-container-high dark:hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-body-md text-body-md">Клиенты</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-container-high dark:hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="chat">chat</span>
+<span class="font-body-md text-body-md">Диалоги</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-container-high dark:hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="monitoring">monitoring</span>
+<span class="font-body-md text-body-md">Аналитика</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-container-high dark:hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="extension">extension</span>
+<span class="font-body-md text-body-md">Интеграции</span>
+</a>
+<a class="flex items-center gap-3 border-l-4 border-primary dark:border-primary-fixed bg-surface-container dark:bg-surface-container-high text-primary dark:text-primary-fixed px-4 py-3 font-bold transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body-md text-body-md">Настройки</span>
+</a>
+</nav>
+<div class="p-4 border-t border-outline-variant">
+<div class="flex items-center gap-3">
+<img alt="Профиль владельца бизнеса" class="w-10 h-10 rounded-full object-cover border-2 border-surface-container-highest" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB6cHltvB9qVtrK3QnlVsdkC6flSnqebATf3U4hl_QYoDLgErpPnM7r5tTHiO3WBbj3t86Cua-9SpU20k66hYH9LK1gNbk-1EzskL0dKRj8bbI7JUbOOWn1w0DDJhbXTbw5Xl-SSVKHlwOUCkHw8KvEgSBI_iMf-6YPVcXlXaZUGIsz8DAM_rzY6z5U2se5wjv31pJr26tSueDfdQ5B8CQVZB-J2MLpAkPgradYGUlt-zl7vtb2jjn4z2u2nFuH2DByyGrY4vZAYnQ"/>
+<div class="overflow-hidden">
+<p class="font-label-md text-label-md font-bold truncate">Алекс Стерлинг</p>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-wider">Управляющий директор</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Shell -->
+<main class="md:ml-sidebar-width min-h-screen pb-24 md:pb-12">
+<!-- Top Navigation -->
+<header class="sticky top-0 w-full h-16 bg-surface dark:bg-surface-dim border-b border-outline-variant dark:border-outline flex justify-between items-center px-container-padding-mobile md:px-container-padding-desktop z-40">
+<div class="flex items-center gap-4">
+<span class="md:hidden font-headline-md text-headline-md font-black text-primary">ZANI</span>
+<h1 class="font-headline-sm text-headline-sm text-primary font-bold">Настройки</h1>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden sm:flex items-center gap-4 text-on-surface-variant font-label-md">
+<span class="px-3 py-1 rounded-full bg-surface-container-low">Режим владельца</span>
+<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-success-vibrant"></span> Статус: Активен</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 hover:bg-surface-container-low rounded-lg transition-all duration-300">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 hover:bg-surface-container-low rounded-lg transition-all duration-300">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Settings Content Grid -->
+<div class="max-w-6xl mx-auto p-container-padding-mobile md:p-container-padding-desktop space-y-card-gap">
+<!-- Section 1: Business Profile -->
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-card-gap">
+<div class="lg:col-span-2 bg-surface-card rounded-xl p-6 custom-shadow">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-secondary" data-icon="store">store</span>
+<h2 class="font-headline-sm text-headline-sm">Профиль бизнеса</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-2">
+<label class="font-label-md text-label-md text-on-surface-variant px-1">Название бизнеса</label>
+<input class="w-full bg-surface-muted rounded-lg border-none focus:ring-2 focus:ring-secondary focus:bg-white transition-all font-body-md p-3" type="text" value="Sterling Digital Solutions"/>
+</div>
+<div class="space-y-2">
+<label class="font-label-md text-label-md text-on-surface-variant px-1">Отрасль</label>
+<input class="w-full bg-surface-muted rounded-lg border-none focus:ring-2 focus:ring-secondary focus:bg-white transition-all font-body-md p-3" type="text" value="Финансовые технологии"/>
+</div>
+<div class="space-y-2 md:col-span-2">
+<label class="font-label-md text-label-md text-on-surface-variant px-1">Штаб-квартира</label>
+<input class="w-full bg-surface-muted rounded-lg border-none focus:ring-2 focus:ring-secondary focus:bg-white transition-all font-body-md p-3" type="text" value="1200 Avenue of the Americas, New York, NY"/>
+</div>
+</div>
+<div class="mt-8 pt-6 border-t border-outline-variant flex justify-end">
+<button class="bg-primary text-on-primary px-6 py-2.5 rounded-lg font-label-md hover:opacity-90 transition-opacity">Сохранить изменения</button>
+</div>
+</div>
+<!-- AI Preferences -->
+<div class="glass-ai rounded-xl p-6 overflow-hidden">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-ai-gradient-start" data-icon="auto_awesome">auto_awesome</span>
+<h2 class="font-headline-sm text-headline-sm">AI Копилот</h2>
+</div>
+<span class="bg-ai-gradient-start/10 text-ai-gradient-start px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tighter">SMART LAYER</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6">Настройте, как интеллект ZANI взаимодействует с данными вашего бизнеса.</p>
+<div class="space-y-4">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md">Прогнозная аналитика</span>
+<div class="relative inline-block w-11 h-6 transition duration-200 ease-in-out align-middle select-none">
+<input checked="" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer outline-none transition-transform duration-200 ease-in" id="ai-predictive" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-surface-container-highest cursor-pointer" for="ai-predictive"></label>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md">Авто-тегирование диалогов</span>
+<div class="relative inline-block w-11 h-6 transition duration-200 ease-in-out align-middle select-none">
+<input checked="" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer outline-none transition-transform duration-200 ease-in" id="ai-tag" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-surface-container-highest cursor-pointer" for="ai-tag"></label>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md">Уведомления о настроении</span>
+<div class="relative inline-block w-11 h-6 transition duration-200 ease-in-out align-middle select-none">
+<input class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer outline-none transition-transform duration-200 ease-in" id="ai-sentiment" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-surface-container-highest cursor-pointer" for="ai-sentiment"></label>
+</div>
+</div>
+</div>
+<button class="w-full mt-6 py-3 bg-secondary-container text-white rounded-lg font-label-md shadow-lg shadow-ai-glow hover:scale-[1.02] transition-transform">
+                    Обучить модель на новых данных
+                </button>
+</div>
+</section>
+<!-- Employees & Roles -->
+<section class="bg-surface-card rounded-xl p-6 custom-shadow">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+<div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary" data-icon="badge">badge</span>
+<h2 class="font-headline-sm text-headline-sm">Сотрудники и роли</h2>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Управление доступом команды и уровнями прав.</p>
+</div>
+<button class="flex items-center justify-center gap-2 px-4 py-2 bg-surface-container-low hover:bg-surface-container-high rounded-lg font-label-md transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span> Пригласить сотрудника
+                </button>
+</div>
+<div class="overflow-x-auto -mx-6">
+<table class="w-full text-left">
+<thead>
+<tr class="bg-surface-container-low border-y border-outline-variant">
+<th class="px-6 py-4 font-label-md text-on-surface-variant uppercase tracking-wider">ИМЯ</th>
+<th class="px-6 py-4 font-label-md text-on-surface-variant uppercase tracking-wider">РОЛЬ</th>
+<th class="px-6 py-4 font-label-md text-on-surface-variant uppercase tracking-wider">СТАТУС</th>
+<th class="px-6 py-4 font-label-md text-on-surface-variant uppercase tracking-wider text-right">ДЕЙСТВИЕ</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<tr class="hover:bg-surface-muted transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-primary-fixed-dim flex items-center justify-center text-primary font-bold text-xs">SM</div>
+<span class="font-body-md font-semibold">Сара Миллер</span>
+</div>
+</td>
+<td class="px-6 py-4 font-body-md">Глава продаж</td>
+<td class="px-6 py-4">
+<span class="px-2.5 py-0.5 rounded-full bg-success-vibrant/10 text-success-vibrant text-[11px] font-bold">Активен</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined">edit</span></button>
+</td>
+</tr>
+<tr class="hover:bg-surface-muted transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-secondary-fixed-dim flex items-center justify-center text-secondary font-bold text-xs">JR</div>
+<span class="font-body-md font-semibold">Джейсон Ривера</span>
+</div>
+</td>
+<td class="px-6 py-4 font-body-md">Аккаунт-менеджер</td>
+<td class="px-6 py-4">
+<span class="px-2.5 py-0.5 rounded-full bg-success-vibrant/10 text-success-vibrant text-[11px] font-bold">Активен</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined">edit</span></button>
+</td>
+</tr>
+<tr class="hover:bg-surface-muted transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center text-on-surface-variant font-bold text-xs">ED</div>
+<span class="font-body-md font-semibold">Елена Дюбуа</span>
+</div>
+</td>
+<td class="px-6 py-4 font-body-md">Младший аналитик</td>
+<td class="px-6 py-4">
+<span class="px-2.5 py-0.5 rounded-full bg-warning-soft/10 text-warning-soft text-[11px] font-bold">Ожидание</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined">edit</span></button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- Notifications & Security -->
+<section class="grid grid-cols-1 md:grid-cols-2 gap-card-gap">
+<!-- Notifications -->
+<div class="bg-surface-card rounded-xl p-6 custom-shadow">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-secondary" data-icon="notifications_active">notifications_active</span>
+<h2 class="font-headline-sm text-headline-sm">Уведомления</h2>
+</div>
+<div class="space-y-6">
+<div class="flex items-start justify-between">
+<div>
+<h4 class="font-body-md font-bold">Системные алерты</h4>
+<p class="font-label-md text-on-surface-variant">Критические оповещения о безопасности и обновлениях.</p>
+</div>
+<div class="relative inline-block w-11 h-6">
+<input checked="" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer outline-none transition-transform duration-200" id="notif-sys" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-surface-container-highest cursor-pointer" for="notif-sys"></label>
+</div>
+</div>
+<div class="flex items-start justify-between">
+<div>
+<h4 class="font-body-md font-bold">Маркетинг и рост</h4>
+<p class="font-label-md text-on-surface-variant">Советы по развитию бизнеса с ZANI.</p>
+</div>
+<div class="relative inline-block w-11 h-6">
+<input class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer outline-none transition-transform duration-200" id="notif-mark" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-surface-container-highest cursor-pointer" for="notif-mark"></label>
+</div>
+</div>
+<div class="flex items-start justify-between">
+<div>
+<h4 class="font-body-md font-bold">Активность клиентов</h4>
+<p class="font-label-md text-on-surface-variant">Уведомления о новых взаимодействиях по сделкам.</p>
+</div>
+<div class="relative inline-block w-11 h-6">
+<input checked="" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer outline-none transition-transform duration-200" id="notif-client" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-surface-container-highest cursor-pointer" for="notif-client"></label>
+</div>
+</div>
+</div>
+</div>
+<!-- Security -->
+<div class="bg-surface-card rounded-xl p-6 custom-shadow">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-secondary" data-icon="security">security</span>
+<h2 class="font-headline-sm text-headline-sm">Безопасность</h2>
+</div>
+<div class="space-y-4">
+<div class="p-4 rounded-lg bg-surface-container-low border border-outline-variant flex items-center justify-between group cursor-pointer hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="lock">lock</span>
+<div>
+<h4 class="font-body-md font-bold">Сменить пароль</h4>
+<p class="font-label-md text-on-surface-variant">Обновите пароль аккаунта</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform" data-icon="chevron_right">chevron_right</span>
+</div>
+<div class="p-4 rounded-lg bg-surface-container-low border border-outline-variant flex items-center justify-between group cursor-pointer hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="vibration">vibration</span>
+<div>
+<h4 class="font-body-md font-bold">Двухфакторная (2FA)</h4>
+<p class="font-label-md text-success-vibrant">Включено и защищено</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform" data-icon="chevron_right">chevron_right</span>
+</div>
+<div class="p-4 rounded-lg bg-error-container/20 border border-error/20 flex items-center justify-between group cursor-pointer hover:bg-error-container/30 transition-colors">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-error" data-icon="logout">logout</span>
+<div>
+<h4 class="font-body-md font-bold text-error">Выйти из всех сессий</h4>
+<p class="font-label-md text-on-surface-variant">Принудительный выход на всех устройствах</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Bottom Navigation Shell (Mobile) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-16 px-4 pb-safe bg-surface/80 dark:bg-inverse-surface/80 backdrop-blur-xl border-t border-outline-variant/30 shadow-lg">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-sm text-[11px]">Главная</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="person_search">person_search</span>
+<span class="font-label-sm text-[11px]">Лиды</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-label-sm text-[11px]">Клиенты</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="chat">chat</span>
+<span class="font-label-sm text-[11px]">Сообщения</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed bg-secondary-fixed/20 dark:bg-secondary-container rounded-full px-4 py-1 active:scale-95 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-sm text-[11px]">Настройки</span>
+</a>
+</nav>
+<script>
+    // Micro-interactions for toggle switches
+    document.querySelectorAll('.toggle-checkbox').forEach(toggle => {
+        toggle.addEventListener('change', function() {
+            if(this.checked) {
+                console.log(`Setting ${this.id} enabled`);
+            } else {
+                console.log(`Setting ${this.id} disabled`);
+            }
+        });
+    });
+
+    // Hover effect for AI glass card
+    const glassCard = document.querySelector('.glass-ai');
+    if (glassCard) {
+        glassCard.addEventListener('mousemove', (e) => {
+            const { left, top, width, height } = glassCard.getBoundingClientRect();
+            const x = (e.clientX - left) / width;
+            const y = (e.clientY - top) / height;
+            glassCard.style.setProperty('--x', x);
+            glassCard.style.setProperty('--y', y);
+        });
+    }
+</script>
+</body></html>

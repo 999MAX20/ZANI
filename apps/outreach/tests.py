@@ -419,6 +419,30 @@ class OutreachCampaignTests(APITestCase):
         self.assertEqual(non_retryable.status, OutreachRecipient.Statuses.FAILED)
         self.assertIsNotNone(campaign.scheduled_at)
 
+    def test_outreach_recipient_response_masks_error_and_provider_result(self):
+        campaign = OutreachCampaign.objects.create(
+            business=self.business,
+            name="Masked errors",
+            channel=OutreachCampaign.Channels.TELEGRAM,
+            audience_type=OutreachCampaign.AudienceTypes.ALL_CLIENTS,
+            message_text="Здравствуйте, {client_name}!",
+        )
+        OutreachRecipient.objects.create(
+            business=self.business,
+            campaign=campaign,
+            client=self.telegram_client,
+            recipient_id="1001",
+            status=OutreachRecipient.Statuses.FAILED,
+            error="Provider failed with access_token=raw-recipient-token",
+            provider_result={"reason": "Authorization: Bearer raw-provider-token"},
+        )
+
+        response = self.client.get("/api/outreach/recipients/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("raw-recipient-token", str(response.data))
+        self.assertNotIn("raw-provider-token", str(response.data))
+
     def test_payload_explicit_consent_detects_common_fields(self):
         self.assertTrue(payload_has_explicit_consent({"whatsapp_consent": "on"}, channel=OutreachCampaign.Channels.WHATSAPP))
         self.assertTrue(payload_has_explicit_consent({"marketing_consent": True}))

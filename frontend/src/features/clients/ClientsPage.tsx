@@ -21,8 +21,10 @@ import { clientsApi } from "../../api/clients";
 import { getApiErrorMessage, unwrapList } from "../../api/client";
 import { CrmEntityDrawer, type CrmDrawerEntity } from "../../components/crm/CrmEntityDrawer";
 import { ClientForm } from "../../components/forms/ClientForm";
+import { WorkQueueDetailPane, WorkQueueLayout, WorkQueueListPane } from "../../components/layout/WorkQueueLayout";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
+import { MetricCard } from "../../components/ui/MetricCard";
 import { Modal } from "../../components/ui/Modal";
 import { FilterChips, IconBubble } from "../../components/ui/Primitives";
 import { Select } from "../../components/ui/Select";
@@ -50,21 +52,24 @@ function initials(name: string) {
     .slice(0, 2)
     .map((part) => part[0])
     .join("")
-    .toUpperCase() || "К";
+    .toUpperCase() || "C";
 }
 
-function sourceLabel(source?: string) {
+type Translate = ReturnType<typeof useI18n>["t"];
+
+function sourceLabel(source: string | undefined, t: Translate) {
   const labels: Record<string, string> = {
-    website: "Сайт",
-    landing: "Лендинг",
+    website: "clients.sourceWebsite",
+    landing: "clients.sourceLanding",
     telegram: "Telegram",
     whatsapp: "WhatsApp",
     instagram: "Instagram",
-    manual: "Вручную",
-    parser: "Парсер",
-    other: "Другое",
+    manual: "clients.sourceManual",
+    parser: "clients.sourceParser",
+    other: "clients.sourceOther",
   };
-  return labels[source || ""] || source || "Другое";
+  const label = labels[source || ""];
+  return label ? t(label) : source || t("clients.sourceOther");
 }
 
 function money(value: string | number, currency = "KZT") {
@@ -79,6 +84,7 @@ function ClientListItem({
   tags,
   selected,
   onSelect,
+  t,
 }: {
   client: Client;
   leadCount: number;
@@ -87,8 +93,9 @@ function ClientListItem({
   tags: Array<{ id: Id; tag_name?: string; tag_color?: string }>;
   selected: boolean;
   onSelect: () => void;
+  t: Translate;
 }) {
-  const status = bookingCount ? "Записи" : dealCount ? "Сделки" : leadCount ? "Заявки" : "Новый";
+  const status = bookingCount ? t("clients.statusBookings") : dealCount ? t("clients.statusDeals") : leadCount ? t("clients.statusLeads") : t("clients.statusNew");
   const statusClass = bookingCount
     ? "bg-emerald-50 text-emerald-700"
     : dealCount
@@ -113,12 +120,12 @@ function ClientListItem({
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="truncate font-black text-midnight">{client.full_name}</p>
-              <p className="mt-1 truncate text-sm font-semibold text-slate-500">{client.phone || client.email || "Контактов нет"}</p>
+              <p className="mt-1 truncate text-sm font-semibold text-slate-500">{client.phone || client.email || t("clients.noContacts")}</p>
             </div>
             <span className={`rounded-full px-2.5 py-1 text-xs font-black ${statusClass}`}>{status}</span>
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-bold text-slate-500">
-            <span>{sourceLabel(client.source)}</span>
+            <span>{sourceLabel(client.source, t)}</span>
             <span>·</span>
             <span>{formatDate(client.created_at)}</span>
             {tags.slice(0, 2).map((tag) => (
@@ -131,7 +138,7 @@ function ClientListItem({
   );
 }
 
-function EmptyState({ title, text }: { title: string; text: string }) {
+function ClientEmptyState({ title, text }: { title: string; text: string }) {
   return (
     <div className="rounded-3xl border border-dashed border-slate-200 bg-white/65 p-8 text-center">
       <IconBubble icon={UsersRound} tone="slate" className="mx-auto" />
@@ -187,6 +194,8 @@ export function ClientsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [open, setOpen] = useState(false);
   const [segmentOpen, setSegmentOpen] = useState(false);
+  const [tagOpen, setTagOpen] = useState(false);
+  const [archiveOpen, setArchiveOpen] = useState(false);
   const [editing, setEditing] = useState<Client | undefined>();
   const [drawerEntity, setDrawerEntity] = useState<CrmDrawerEntity | null>(null);
   const [selectedClientId, setSelectedClientId] = useState<Id | null>(null);
@@ -195,6 +204,9 @@ export function ClientsPage() {
   const [selectedTag, setSelectedTag] = useState("");
   const [selectedSegment, setSelectedSegment] = useState("");
   const [quickFilter, setQuickFilter] = useState<ClientQuickFilter>("all");
+  const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
+  const [tagDraft, setTagDraft] = useState("");
+  const [archiveReason, setArchiveReason] = useState("");
   const [segmentDraft, setSegmentDraft] = useState<SegmentDraft>({ name: "", field: "source", operator: "equals", value: "" });
 
   const filteredClients = useQuery({
@@ -224,7 +236,11 @@ export function ClientsPage() {
 
   const archiveMutation = useMutation({
     mutationFn: clientsApi.archive,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["clients"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
+      setArchiveOpen(false);
+      setArchiveReason("");
+    },
   });
 
   const tagList = unwrapList(tags.data);
@@ -238,6 +254,8 @@ export function ClientsPage() {
       queryClient.invalidateQueries({ queryKey: ["tags"] });
       queryClient.invalidateQueries({ queryKey: ["tagged-objects"] });
       queryClient.invalidateQueries({ queryKey: ["crm-card"] });
+      setTagOpen(false);
+      setTagDraft("");
     },
   });
 
@@ -323,6 +341,11 @@ export function ClientsPage() {
     setSelectedClientId(rows[0]?.id || null);
   }, [rows, selectedClientId]);
 
+  function openClient(clientId: Id) {
+    setSelectedClientId(clientId);
+    setMobileDetailOpen(true);
+  }
+
   const selectedClient = clientList.find((client) => client.id === selectedClientId) || rows[0] || null;
   const selectedLeads = selectedClient ? leadList.filter((lead) => lead.client === selectedClient.id).sort((a, b) => b.created_at.localeCompare(a.created_at)) : [];
   const selectedDeals = selectedClient ? dealList.filter((deal) => deal.client === selectedClient.id).sort((a, b) => b.updated_at.localeCompare(a.updated_at)) : [];
@@ -333,21 +356,21 @@ export function ClientsPage() {
   const clientsWithoutActivity = clientList.filter((client) => !leadClientIds.has(client.id) && !dealClientIds.has(client.id) && !appointmentClientIds.has(client.id)).length;
 
   const quickFilterOptions = [
-    { value: "all" as const, label: `Все ${clientList.length}` },
-    { value: "new" as const, label: `Новые ${clientsWithoutActivity}` },
-    { value: "with_leads" as const, label: `С заявками ${leadClientIds.size}` },
-    { value: "with_deals" as const, label: `Со сделками ${dealClientIds.size}` },
-    { value: "with_bookings" as const, label: `С записями ${appointmentClientIds.size}` },
-    { value: "tagged" as const, label: `С тегами ${taggedClientIds.size}` },
+    { value: "all" as const, label: t("clients.filterAllWithCount", { count: clientList.length }) },
+    { value: "new" as const, label: t("clients.filterNewWithCount", { count: clientsWithoutActivity }) },
+    { value: "with_leads" as const, label: t("clients.filterWithLeadsCount", { count: leadClientIds.size }) },
+    { value: "with_deals" as const, label: t("clients.filterWithDealsCount", { count: dealClientIds.size }) },
+    { value: "with_bookings" as const, label: t("clients.filterWithBookingsCount", { count: appointmentClientIds.size }) },
+    { value: "tagged" as const, label: t("clients.filterTaggedCount", { count: taggedClientIds.size }) },
   ];
 
   const sourceOptions = [
-    { value: "", label: "Все источники" },
+    { value: "", label: t("clients.allSources") },
     { value: "whatsapp", label: "WhatsApp" },
     { value: "telegram", label: "Telegram" },
     { value: "instagram", label: "Instagram" },
-    { value: "website", label: "Сайт" },
-    { value: "manual", label: "Вручную" },
+    { value: "website", label: t("clients.sourceWebsite") },
+    { value: "manual", label: t("clients.sourceManual") },
   ];
 
   if (!business) return <ErrorState message={t("clients.noBusiness")} />;
@@ -357,15 +380,15 @@ export function ClientsPage() {
     <>
       <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-brand-600">Клиенты</p>
-          <h1 className="mt-1 text-3xl font-black tracking-tight text-midnight sm:text-4xl">Профиль клиента</h1>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-brand-600">{t("clients.title")}</p>
+          <h1 className="mt-1 text-3xl font-black tracking-tight text-midnight sm:text-4xl">{t("clients.profileTitle")}</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
-            Список клиентов слева, рабочий профиль справа: история заявок, сделок, записей, сообщений и быстрые действия.
+            {t("clients.profileDescription")}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" onClick={() => setSegmentOpen(true)}><Tags size={18} /> Сегмент</Button>
-          <Button onClick={() => setOpen(true)}><Plus size={18} /> Создать клиента</Button>
+          <Button variant="secondary" onClick={() => setSegmentOpen(true)}><Tags size={18} /> {t("clients.segment")}</Button>
+          <Button onClick={() => setOpen(true)}><Plus size={18} /> {t("clients.create")}</Button>
         </div>
       </div>
 
@@ -375,9 +398,9 @@ export function ClientsPage() {
 
       <section className="my-4 rounded-3xl border border-white/75 bg-white/82 p-3 shadow-sm sm:p-4">
         <div className="grid gap-2 xl:grid-cols-[minmax(0,1fr)_220px_220px]">
-          <Input placeholder="Поиск по имени, телефону или email" value={search} onChange={(event) => setSearch(event.target.value)} />
-          <Select value={selectedTag} onChange={(event) => setSelectedTag(event.target.value)} options={[{ value: "", label: "Все теги" }, ...tagList.map((tag) => ({ value: tag.id, label: tag.name }))]} />
-          <Select value={selectedSegment} onChange={(event) => setSelectedSegment(event.target.value)} options={[{ value: "", label: "Все сегменты" }, ...segmentList.map((segment) => ({ value: segment.id, label: `${segment.name} (${segment.cached_count})` }))]} />
+          <Input placeholder={t("clients.search")} value={search} onChange={(event) => setSearch(event.target.value)} />
+          <Select value={selectedTag} onChange={(event) => setSelectedTag(event.target.value)} options={[{ value: "", label: t("clients.allTags") }, ...tagList.map((tag) => ({ value: tag.id, label: tag.name }))]} />
+          <Select value={selectedSegment} onChange={(event) => setSelectedSegment(event.target.value)} options={[{ value: "", label: t("clients.allSegments") }, ...segmentList.map((segment) => ({ value: segment.id, label: `${segment.name} (${segment.cached_count})` }))]} />
         </div>
         <div className="mt-2 grid gap-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)]">
           <div className="min-w-0 rounded-2xl border border-slate-100 bg-white/55 p-2">
@@ -389,16 +412,16 @@ export function ClientsPage() {
         </div>
       </section>
 
-      <section className="grid items-start gap-5 xl:grid-cols-[minmax(360px,0.9fr)_minmax(0,1.35fr)]">
-        <div className="rounded-[2rem] border border-white/75 bg-white/72 p-3 shadow-sm xl:sticky xl:top-5">
+      <WorkQueueLayout className="lg:grid-cols-[430px_minmax(0,1fr)]">
+        <WorkQueueListPane mobileDetailOpen={mobileDetailOpen}>
           <div className="flex items-center justify-between px-2 py-2">
             <div>
-              <h2 className="text-lg font-black text-midnight">Клиентская база</h2>
-              <p className="mt-1 text-xs font-bold text-slate-400">Прокрутка списка внутри панели</p>
+              <h2 className="text-lg font-black text-midnight">{t("clients.baseTitle")}</h2>
+              <p className="mt-1 text-xs font-bold text-slate-400">{t("clients.baseHint")}</p>
             </div>
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-500">{rows.length}</span>
           </div>
-          <div className="mt-2 max-h-[min(760px,calc(100vh-250px))] min-h-[420px] space-y-3 overflow-y-auto pr-1">
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 pb-28 lg:pb-3">
             {rows.map((client) => (
               <ClientListItem
                 key={client.id}
@@ -408,15 +431,17 @@ export function ClientsPage() {
                 bookingCount={appointmentList.filter((appointment) => appointment.client === client.id).length}
                 tags={clientTags[String(client.id)] || []}
                 selected={selectedClient?.id === client.id}
-                onSelect={() => setSelectedClientId(client.id)}
+                onSelect={() => openClient(client.id)}
+                t={t}
               />
             ))}
-            {!rows.length ? <EmptyState title="Клиенты не найдены" text="Измените фильтры или создайте клиента вручную." /> : null}
+            {!rows.length ? <ClientEmptyState title={t("clients.notFoundTitle")} text={t("clients.notFoundText")} /> : null}
           </div>
-        </div>
+        </WorkQueueListPane>
 
-        {selectedClient ? (
-          <div className="rounded-[2rem] border border-white/75 bg-white/86 p-5 shadow-soft">
+        <WorkQueueDetailPane mobileDetailOpen={mobileDetailOpen} closeLabel={t("common.close")} onMobileClose={() => setMobileDetailOpen(false)}>
+          {selectedClient ? (
+          <div className="min-h-0 flex-1 overflow-y-auto p-5 pb-28 lg:pb-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex min-w-0 items-start gap-4">
                 <div className="grid h-16 w-16 shrink-0 place-items-center rounded-3xl bg-ai-50 text-lg font-black text-ai-700 ring-1 ring-ai-100">
@@ -424,11 +449,11 @@ export function ClientsPage() {
                 </div>
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-black text-brand-700">{sourceLabel(selectedClient.source)}</span>
-                    {selectedClient.is_archived ? <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">Архив</span> : null}
+                    <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-black text-brand-700">{sourceLabel(selectedClient.source, t)}</span>
+                    {selectedClient.is_archived ? <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{t("clients.archive")}</span> : null}
                   </div>
                   <h2 className="mt-3 text-2xl font-black tracking-tight text-midnight">{selectedClient.full_name}</h2>
-                  <p className="mt-2 text-sm font-semibold text-slate-500">{selectedClient.phone || selectedClient.email || "Контактов нет"}</p>
+                  <p className="mt-2 text-sm font-semibold text-slate-500">{selectedClient.phone || selectedClient.email || t("clients.noContacts")}</p>
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -438,35 +463,20 @@ export function ClientsPage() {
                   </Button>
                 ) : null}
                 <Button variant="secondary" onClick={() => { setEditing(selectedClient); setOpen(true); }}>
-                  <Edit3 size={16} /> Изменить
+                  <Edit3 size={16} /> {t("clients.edit")}
                 </Button>
                 <Button variant="ghost" onClick={() => setDrawerEntity({ type: "client", id: selectedClient.id })}>
-                  Полная карточка <MoreHorizontal size={16} />
+                  {t("clients.fullCard")} <MoreHorizontal size={16} />
                 </Button>
               </div>
             </div>
 
             <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-              <div className="rounded-3xl bg-slate-50 p-4">
-                <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Заявки</p>
-                <p className="mt-2 text-2xl font-black text-midnight">{selectedLeads.length}</p>
-              </div>
-              <div className="rounded-3xl bg-slate-50 p-4">
-                <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Сделки</p>
-                <p className="mt-2 text-2xl font-black text-midnight">{selectedDeals.length}</p>
-              </div>
-              <div className="rounded-3xl bg-slate-50 p-4">
-                <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Открыто</p>
-                <p className="mt-2 text-2xl font-black text-midnight">{money(openDealValue)}</p>
-              </div>
-              <div className="rounded-3xl bg-slate-50 p-4">
-                <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Записи</p>
-                <p className="mt-2 text-2xl font-black text-midnight">{selectedAppointments.length}</p>
-              </div>
-              <div className="rounded-3xl bg-slate-50 p-4">
-                <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Диалоги</p>
-                <p className="mt-2 text-2xl font-black text-midnight">{selectedConversations.length}</p>
-              </div>
+              <MetricCard compact label={t("clients.metricLeads")} value={selectedLeads.length} />
+              <MetricCard compact label={t("clients.metricDeals")} value={selectedDeals.length} />
+              <MetricCard compact label={t("clients.metricOpen")} value={money(openDealValue)} />
+              <MetricCard compact label={t("clients.metricBookings")} value={selectedAppointments.length} />
+              <MetricCard compact label={t("clients.metricDialogs")} value={selectedConversations.length} />
             </div>
 
             <div className="mt-5 grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
@@ -474,99 +484,96 @@ export function ClientsPage() {
                 <div className="rounded-3xl border border-slate-100 bg-white p-4">
                   <div className="mb-3 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2 font-black text-midnight">
-                      <ClipboardList size={18} className="text-brand-600" /> Быстрые действия
+                      <ClipboardList size={18} className="text-brand-600" /> {t("clients.quickActions")}
                     </div>
                   </div>
                   <div className="grid gap-2 sm:grid-cols-2">
                     <Button variant="secondary" onClick={() => setDrawerEntity({ type: "client", id: selectedClient.id })}>
-                      <UserRound size={16} /> Карточка
+                      <UserRound size={16} /> {t("clients.card")}
                     </Button>
                     <Button
                       variant="secondary"
-                      onClick={() => {
-                        const tagName = window.prompt("Название тега");
-                        if (tagName) addTagMutation.mutate({ clientId: selectedClient.id, tagName });
-                      }}
+                      onClick={() => setTagOpen(true)}
                     >
-                      <Tags size={16} /> Добавить тег
+                      <Tags size={16} /> {t("clients.addTag")}
                     </Button>
                     <Button variant="secondary" onClick={() => setOpen(true)}>
-                      <Plus size={16} /> Новый клиент
+                      <Plus size={16} /> {t("clients.newClient")}
                     </Button>
                     <Button
                       variant="ghost"
-                      onClick={() => {
-                        const reason = window.prompt("Причина архивации");
-                        if (reason !== null) archiveMutation.mutate({ id: selectedClient.id, reason });
-                      }}
+                      onClick={() => setArchiveOpen(true)}
                     >
-                      Архивировать
+                      {t("clients.archiveAction")}
                     </Button>
                   </div>
                 </div>
 
                 <div className="rounded-3xl border border-slate-100 bg-white p-4">
                   <div className="mb-3 flex items-center gap-2 font-black text-midnight">
-                    <Tags size={18} className="text-brand-600" /> Теги и заметки
+                    <Tags size={18} className="text-brand-600" /> {t("clients.tagsAndNotes")}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {(clientTags[String(selectedClient.id)] || []).map((tag) => (
                       <span key={tag.id} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{tag.tag_name}</span>
                     ))}
-                    {!clientTags[String(selectedClient.id)]?.length ? <span className="text-sm font-semibold text-slate-500">Тегов пока нет.</span> : null}
+                    {!clientTags[String(selectedClient.id)]?.length ? <span className="text-sm font-semibold text-slate-500">{t("clients.noTagsYet")}</span> : null}
                   </div>
                   {selectedClient.notes ? <p className="mt-4 rounded-2xl bg-slate-50 p-3 text-sm leading-6 text-slate-600">{selectedClient.notes}</p> : null}
                 </div>
 
                 <div className="rounded-3xl border border-slate-100 bg-white p-4">
                   <div className="mb-3 flex items-center gap-2 font-black text-midnight">
-                    <ClipboardList size={18} className="text-brand-600" /> Активные задачи
+                    <ClipboardList size={18} className="text-brand-600" /> {t("clients.activeTasks")}
                   </div>
                   <div className="space-y-2">
                     {selectedTasks.slice(0, 5).map((task: Task) => (
                       <TimelineRow key={task.id} icon={ClipboardList} title={task.title} meta={`${task.priority} · ${formatDateTime(task.due_at)}`} />
                     ))}
-                    {!selectedTasks.length ? <p className="text-sm font-semibold text-slate-500">Активных задач нет.</p> : null}
+                    {!selectedTasks.length ? <p className="text-sm font-semibold text-slate-500">{t("clients.noActiveTasks")}</p> : null}
                   </div>
                 </div>
               </section>
 
               <section className="rounded-3xl border border-slate-100 bg-white p-4">
                 <div className="mb-4 flex items-center gap-2 font-black text-midnight">
-                  <CalendarCheck size={18} className="text-brand-600" /> История клиента
+                  <CalendarCheck size={18} className="text-brand-600" /> {t("clients.history")}
                 </div>
                 <div className="space-y-3">
                   {selectedLeads.slice(0, 4).map((lead: Lead) => (
-                    <TimelineRow key={`lead-${lead.id}`} icon={Inbox} title={`Заявка #${lead.id}`} meta={`${sourceLabel(lead.source)} · ${formatDateTime(lead.created_at)}`} badge={<StatusBadge status={lead.status} />} />
+                    <TimelineRow key={`lead-${lead.id}`} icon={Inbox} title={t("clients.leadFallback", { id: lead.id })} meta={`${sourceLabel(lead.source, t)} · ${formatDateTime(lead.created_at)}`} badge={<StatusBadge status={lead.status} />} />
                   ))}
                   {selectedDeals.slice(0, 4).map((deal: Deal) => (
                     <TimelineRow key={`deal-${deal.id}`} icon={CircleDollarSign} title={deal.title} meta={`${money(deal.amount, deal.currency)} · ${formatDateTime(deal.updated_at)}`} badge={<StatusBadge status={deal.status} />} />
                   ))}
                   {selectedAppointments.slice(0, 4).map((appointment: Appointment) => (
-                    <TimelineRow key={`appointment-${appointment.id}`} icon={CalendarCheck} title={`Запись #${appointment.id}`} meta={`${formatDateTime(appointment.start_at)} · ${sourceLabel(appointment.source)}`} badge={<StatusBadge status={appointment.status} />} />
+                    <TimelineRow key={`appointment-${appointment.id}`} icon={CalendarCheck} title={t("clients.bookingFallback", { id: appointment.id })} meta={`${formatDateTime(appointment.start_at)} · ${sourceLabel(appointment.source, t)}`} badge={<StatusBadge status={appointment.status} />} />
                   ))}
                   {selectedConversations.slice(0, 4).map((conversation: BotConversation) => (
                     <TimelineRow
                       key={`conversation-${conversation.id}`}
                       icon={MessageCircle}
-                      title={`${sourceLabel(conversation.channel)} · ${conversation.status}`}
+                      title={`${sourceLabel(conversation.channel, t)} · ${conversation.status}`}
                       meta={conversation.last_message?.text || formatDateTime(conversation.last_message_at || conversation.updated_at)}
                       badge={conversation.unread_count ? <span className="rounded-full bg-brand-50 px-2 py-1 text-xs font-black text-brand-700">{conversation.unread_count}</span> : null}
                     />
                   ))}
                   {!selectedLeads.length && !selectedDeals.length && !selectedAppointments.length && !selectedConversations.length ? (
-                    <p className="rounded-2xl bg-slate-50 p-4 text-sm font-semibold text-slate-500">История пока пустая. Клиента можно связать с заявкой, сделкой или записью.</p>
+                    <p className="rounded-2xl bg-slate-50 p-4 text-sm font-semibold text-slate-500">{t("clients.emptyHistory")}</p>
                   ) : null}
                 </div>
               </section>
             </div>
           </div>
-        ) : (
-          <EmptyState title="Выберите клиента" text="Справа появится рабочий профиль с историей и быстрыми действиями." />
-        )}
-      </section>
+          ) : (
+            <div className="grid flex-1 place-items-center p-8">
+              <ClientEmptyState title={t("clients.listHintTitle")} text={t("clients.listHintText")} />
+            </div>
+          )}
+        </WorkQueueDetailPane>
+      </WorkQueueLayout>
 
-      <Modal title={editing ? "Изменить клиента" : "Создать клиента"} open={open} onClose={() => { setOpen(false); setEditing(undefined); clearCreateParam(); }}>
+      <Modal title={editing ? t("clients.editTitle") : t("clients.create")} open={open} onClose={() => { setOpen(false); setEditing(undefined); clearCreateParam(); }}>
         <ClientForm
           businessId={business.id}
           initial={editing}
@@ -583,7 +590,50 @@ export function ClientsPage() {
         />
       </Modal>
 
-      <Modal title="Создать сегмент" open={segmentOpen} onClose={() => setSegmentOpen(false)}>
+      <Modal title={t("clients.addTag")} open={tagOpen} onClose={() => { setTagOpen(false); setTagDraft(""); }}>
+        <form
+          className="space-y-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const tagName = tagDraft.trim();
+            if (!selectedClient || !tagName) return;
+            addTagMutation.mutate({ clientId: selectedClient.id, tagName });
+          }}
+        >
+          <Input label={t("clients.tagPrompt")} value={tagDraft} onChange={(event) => setTagDraft(event.target.value)} required />
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="secondary" onClick={() => { setTagOpen(false); setTagDraft(""); }}>
+              {t("common.cancel")}
+            </Button>
+            <Button type="submit" isLoading={addTagMutation.isPending} disabled={!tagDraft.trim()}>
+              {t("clients.addTag")}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal title={t("clients.archiveClient")} open={archiveOpen} onClose={() => { setArchiveOpen(false); setArchiveReason(""); }}>
+        <form
+          className="space-y-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!selectedClient) return;
+            archiveMutation.mutate({ id: selectedClient.id, reason: archiveReason.trim() });
+          }}
+        >
+          <Input label={t("clients.archiveReason")} value={archiveReason} onChange={(event) => setArchiveReason(event.target.value)} placeholder={t("clients.archiveReasonPlaceholder")} />
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="secondary" onClick={() => { setArchiveOpen(false); setArchiveReason(""); }}>
+              {t("common.cancel")}
+            </Button>
+            <Button type="submit" variant="danger" isLoading={archiveMutation.isPending}>
+              {t("clients.archiveAction")}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal title={t("clients.createSegment")} open={segmentOpen} onClose={() => setSegmentOpen(false)}>
         <form
           className="space-y-4"
           onSubmit={(event) => {
@@ -591,46 +641,46 @@ export function ClientsPage() {
             createSegmentMutation.mutate();
           }}
         >
-          <Input label="Название сегмента" value={segmentDraft.name} onChange={(event) => setSegmentDraft({ ...segmentDraft, name: event.target.value })} required />
+          <Input label={t("clients.segmentName")} value={segmentDraft.name} onChange={(event) => setSegmentDraft({ ...segmentDraft, name: event.target.value })} required />
           <div className="grid gap-3 sm:grid-cols-2">
             <Select
-              label="Поле"
+              label={t("clients.field")}
               value={segmentDraft.field}
               onChange={(event) => setSegmentDraft({ ...segmentDraft, field: event.target.value as SegmentDraft["field"] })}
               options={[
-                { value: "source", label: "Источник" },
-                { value: "tag", label: "Тег" },
-                { value: "full_name", label: "Имя" },
-                { value: "phone", label: "Телефон" },
+                { value: "source", label: t("clients.source") },
+                { value: "tag", label: t("clients.tag") },
+                { value: "full_name", label: t("clients.name") },
+                { value: "phone", label: t("clients.phone") },
                 { value: "email", label: "Email" },
-                { value: "notes", label: "Заметки" },
+                { value: "notes", label: t("clients.notes") },
               ]}
             />
             <Select
-              label="Условие"
+              label={t("clients.condition")}
               value={segmentDraft.operator}
               onChange={(event) => setSegmentDraft({ ...segmentDraft, operator: event.target.value as SegmentDraft["operator"] })}
               options={[
-                { value: "equals", label: "Равно" },
-                { value: "contains", label: "Содержит" },
-                { value: "in", label: "В списке" },
-                { value: "is_empty", label: "Пусто" },
-                { value: "not_empty", label: "Не пусто" },
+                { value: "equals", label: t("clients.equals") },
+                { value: "contains", label: t("clients.contains") },
+                { value: "in", label: t("clients.inList") },
+                { value: "is_empty", label: t("clients.isEmpty") },
+                { value: "not_empty", label: t("clients.notEmpty") },
               ]}
             />
           </div>
           {segmentDraft.field === "tag" ? (
             <Select
-              label="Значение"
+              label={t("clients.value")}
               value={segmentDraft.value}
               onChange={(event) => setSegmentDraft({ ...segmentDraft, value: event.target.value })}
-              options={[{ value: "", label: "Выберите тег" }, ...tagList.map((tag) => ({ value: String(tag.id), label: tag.name }))]}
+              options={[{ value: "", label: t("clients.selectTag") }, ...tagList.map((tag) => ({ value: String(tag.id), label: tag.name }))]}
             />
           ) : (
-            <Input label="Значение" value={segmentDraft.value} onChange={(event) => setSegmentDraft({ ...segmentDraft, value: event.target.value })} />
+            <Input label={t("clients.value")} value={segmentDraft.value} onChange={(event) => setSegmentDraft({ ...segmentDraft, value: event.target.value })} />
           )}
           <Button type="submit" isLoading={createSegmentMutation.isPending} disabled={!segmentDraft.name}>
-            Сохранить сегмент
+            {t("clients.saveSegment")}
           </Button>
         </form>
       </Modal>

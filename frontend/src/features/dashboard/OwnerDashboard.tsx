@@ -6,6 +6,7 @@ import {
   MessageCircle,
   PlugZap,
   Send,
+  Sparkles,
   Users,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -14,6 +15,7 @@ import { Link } from "react-router-dom";
 
 import { EmptyState } from "../../components/ui/StateViews";
 import { StatusBadge } from "../../components/ui/StatusBadge";
+import { AiInsightCard } from "../../components/ai/AiInsightCard";
 import { formatDateTime } from "../../lib/format";
 import { useI18n } from "../../lib/i18n";
 import type { Appointment, Client, Lead, OwnerDashboardMetrics, Service, Task } from "../../types";
@@ -55,7 +57,7 @@ function PeriodSelector({ value, onChange }: { value: DashboardPeriod; onChange:
           <button
             key={option.value}
             type="button"
-            className={`min-h-10 rounded-lg px-3 text-xs font-bold transition sm:px-4 sm:text-sm ${active ? "bg-blue-600 text-white shadow-sm" : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"}`}
+            className={`min-h-10 rounded-lg px-3 text-xs font-bold transition-colors sm:px-4 sm:text-sm ${active ? "bg-brand-600 text-white shadow-sm" : "text-slate-500 hover:bg-slate-50 hover:text-midnight"}`}
             onClick={() => onChange(option.value)}
           >
             {option.label}
@@ -92,14 +94,14 @@ function MetricCard({
   }[tone];
 
   return (
-    <Link to={href} className={`rounded-2xl border border-slate-100 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft ${compact ? "p-2 sm:p-3" : "p-4"}`}>
+    <Link to={href} className={`rounded-xl border border-slate-200 bg-white shadow-soft transition-colors hover:border-brand-200 ${compact ? "p-2 sm:p-3" : "p-4"}`}>
       <div className="flex items-start justify-between gap-3">
         <div className={`grid shrink-0 place-items-center rounded-xl ${toneClass} ${compact ? "h-8 w-8 sm:h-9 sm:w-9" : "h-12 w-12"}`}>
           <Icon size={compact ? 16 : 22} />
         </div>
       </div>
       <p className={`mt-3 font-medium leading-tight text-slate-700 ${compact ? "text-[10px] sm:text-xs" : "text-sm"}`}>{title}</p>
-      <p className={`mt-1 font-black tracking-tight text-slate-950 ${compact ? "text-xl sm:text-2xl" : "text-4xl"}`}>{value}</p>
+      <p className={`mt-1 font-black text-midnight ${compact ? "text-xl sm:text-2xl" : "text-4xl"}`}>{value}</p>
       <p className={`mt-2 text-[10px] font-semibold sm:text-xs ${delta.startsWith("+") || delta.startsWith("-3") ? "text-emerald-600" : "text-red-500"}`}>{delta}</p>
     </Link>
   );
@@ -107,9 +109,9 @@ function MetricCard({
 
 function Panel({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-soft">
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-lg font-black text-slate-950">{title}</h2>
+        <h2 className="text-lg font-black text-midnight">{title}</h2>
         {action}
       </div>
       {children}
@@ -124,11 +126,11 @@ function AttentionRow({ title, text, tone, href }: { title: string; text: string
     blue: "bg-blue-500",
   }[tone];
   return (
-    <Link to={href} className="flex items-center justify-between gap-3 rounded-xl p-2 transition hover:bg-slate-50">
+    <Link to={href} className="flex items-center justify-between gap-3 rounded-lg p-2 transition-colors hover:bg-slate-50">
       <span className="flex min-w-0 items-start gap-3">
         <span className={`mt-1.5 h-3 w-3 shrink-0 rounded-full ${toneClass}`} />
         <span className="min-w-0">
-          <span className="block truncate text-sm font-black text-slate-950">{title}</span>
+          <span className="block truncate text-sm font-black text-midnight">{title}</span>
           <span className="mt-0.5 block truncate text-xs font-semibold text-slate-500">{text}</span>
         </span>
       </span>
@@ -147,15 +149,15 @@ function ConnectStrip({ salesReady, communicationsReady }: { salesReady: boolean
   ];
 
   return (
-    <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-soft">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-base font-black text-slate-950">{t("dashboard.connectMoreData")}</h2>
+          <h2 className="text-base font-black text-midnight">{t("dashboard.connectMoreData")}</h2>
           <div className="mt-3 flex flex-wrap gap-3">
             {items.map((item) => {
               const Icon = item.icon;
               return (
-                <Link key={item.title} to="/dashboard/integrations" className="inline-flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm font-bold text-slate-700">
+                <Link key={item.title} to="/dashboard/integrations" className="inline-flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm font-bold text-slate-700">
                   <span className={`grid h-9 w-9 place-items-center rounded-xl ${item.tone}`}>
                     <Icon size={18} />
                   </span>
@@ -165,7 +167,7 @@ function ConnectStrip({ salesReady, communicationsReady }: { salesReady: boolean
             })}
           </div>
         </div>
-        <Link to="/dashboard/integrations" className="inline-flex h-12 items-center justify-center rounded-xl bg-blue-600 px-6 text-sm font-black text-white shadow-sm transition hover:bg-blue-700">
+        <Link to="/dashboard/integrations" className="inline-flex h-12 items-center justify-center rounded-lg bg-brand-600 px-6 text-sm font-black text-white shadow-sm transition-colors hover:bg-brand-700">
           {t("dashboard.connectionConnect")}
         </Link>
       </div>
@@ -199,7 +201,7 @@ export function OwnerDashboard({
   const noAnswerCount = leads.filter((lead) => ["contacted", "in_progress"].includes(lead.status)).length;
   const unassignedCount = leads.filter((lead) => !lead.responsible_user && ["new", "contacted", "in_progress"].includes(lead.status)).length;
   const staleDealsProxy = leads.filter((lead) => lead.status === "in_progress").length;
-  const averageResponse = noAnswerCount ? "14 мин" : "—";
+  const averageResponse = noAnswerCount ? t("dashboard.avgResponseValue") : "—";
   const communicationsReady = Boolean(dashboard?.setup?.sources?.communications);
   const salesReady = Boolean(dashboard?.setup?.sources?.sales_data || revenueHasData);
 
@@ -207,12 +209,12 @@ export function OwnerDashboard({
     <div className="pb-8">
       <section className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">{t("dashboard.greetingDirector")}</h1>
+          <h1 className="text-2xl font-black text-midnight sm:text-3xl">{t("dashboard.greetingBusiness")}</h1>
           <p className="mt-2 text-base font-medium text-slate-500">{t("dashboard.directorSubtitle", { business: businessName })}</p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <PeriodSelector value={period} onChange={setPeriod} />
-          <Link to="/dashboard/leads" className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 text-sm font-black text-slate-800 shadow-sm">
+          <Link to="/dashboard/leads" className="inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-5 text-sm font-black text-midnight shadow-sm">
             <Filter size={17} />
             {t("dashboard.filters")}
           </Link>
@@ -231,13 +233,29 @@ export function OwnerDashboard({
         </div>
       ) : null}
 
-      <section className="mb-5 rounded-2xl border border-blue-100 bg-blue-50/70 p-4 shadow-sm">
-        <h2 className="mb-4 text-lg font-black text-slate-950">{t("dashboard.underControlToday")}</h2>
-        <div className="grid grid-cols-4 gap-2 sm:gap-3">
-          <MetricCard compact title={t("dashboard.metricNewShort")} value={periodLeads.length || newLeadsCount} delta="+4 к вчера" icon={FileSpreadsheet} tone="blue" href="/dashboard/leads" />
-          <MetricCard compact title={t("dashboard.metricNoAnswerShort")} value={noAnswerCount} delta="+2 к вчера" icon={MessageCircle} tone="amber" href="/dashboard/conversations" />
-          <MetricCard compact title={t("dashboard.metricUnassignedShort")} value={unassignedCount} delta="-1 к вчера" icon={Users} tone="violet" href="/dashboard/leads" />
-          <MetricCard compact title={t("dashboard.metricAvgResponseShort")} value={averageResponse} delta="-3 мин к вчера" icon={Clock3} tone="green" href="/dashboard/analytics" />
+      <section className="mb-5">
+        <AiInsightCard
+          icon={Sparkles}
+          severity={overdueTasks || unassignedCount || noAnswerCount ? "warning" : "good"}
+          title={t("dashboard.aiBrief.title")}
+          description={t("dashboard.ownerSignalText", {
+            setup: setupScore,
+            conversion,
+            leads: unassignedCount,
+            chats: noAnswerCount,
+          })}
+          actionLabel={t("dashboard.aiBrief.openLeads")}
+          href="/dashboard/leads"
+        />
+      </section>
+
+      <section className="mb-5 rounded-xl border border-slate-200 bg-white p-4 shadow-soft">
+        <h2 className="mb-4 text-lg font-black text-midnight">{t("dashboard.underControlToday")}</h2>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+          <MetricCard compact title={t("dashboard.metricNewShort")} value={periodLeads.length || newLeadsCount} delta={t("dashboard.deltaLeads")} icon={FileSpreadsheet} tone="blue" href="/dashboard/leads" />
+          <MetricCard compact title={t("dashboard.metricNoAnswerShort")} value={noAnswerCount} delta={t("dashboard.deltaNoAnswer")} icon={MessageCircle} tone="amber" href="/dashboard/conversations" />
+          <MetricCard compact title={t("dashboard.metricUnassignedShort")} value={unassignedCount} delta={t("dashboard.deltaUnassigned")} icon={Users} tone="violet" href="/dashboard/leads" />
+          <MetricCard compact title={t("dashboard.metricAvgResponseShort")} value={averageResponse} delta={t("dashboard.deltaAvgResponse")} icon={Clock3} tone="green" href="/dashboard/analytics" />
         </div>
       </section>
 
@@ -253,11 +271,10 @@ export function OwnerDashboard({
 
         <Panel title={t("dashboard.aiBrief.eyebrow")} action={<Link to="/dashboard/ai-assistant" className="text-slate-300">›</Link>}>
           <div className="space-y-2 text-sm font-semibold leading-6 text-slate-700">
-            <p>• {t("dashboard.unassignedLeadsText", { count: unassignedCount })}</p>
-            <p>• {t("dashboard.managerNoAnswerText", { count: noAnswerCount })}</p>
-            <p>• {t("dashboard.staleDealsText", { count: staleDealsProxy })}</p>
-            <p>• {t("dashboard.aiBrief.salesText")}</p>
-            <p>• Setup score: {setupScore}%, conversion: {conversion}%</p>
+            <p>{t("dashboard.unassignedLeadsText", { count: unassignedCount })}</p>
+            <p>{t("dashboard.managerNoAnswerText", { count: noAnswerCount })}</p>
+            <p>{t("dashboard.staleDealsText", { count: staleDealsProxy })}</p>
+            <p>{t("dashboard.ownerReadinessLine", { setup: setupScore, conversion })}</p>
           </div>
         </Panel>
       </section>

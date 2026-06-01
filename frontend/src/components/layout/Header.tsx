@@ -10,6 +10,7 @@ import { useAuth } from "../../features/auth/AuthProvider";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useI18n } from "../../lib/i18n";
 import { formatDateTime } from "../../lib/format";
+import { businessRoleLabel, hasPermission } from "../../lib/permissions";
 import { realtimeIntervals, realtimeQueryOptions } from "../../lib/realtime";
 import { Button } from "../ui/Button";
 import { StatusBadge } from "../ui/StatusBadge";
@@ -42,7 +43,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
   const inboxSummary = useQuery({
     queryKey: ["inbox-summary", business?.id],
     queryFn: inboxApi.getSummary,
-    enabled: Boolean(user) && Boolean(business?.id),
+    enabled: Boolean(user) && Boolean(business?.id) && hasPermission(user, business?.id, "conversations"),
     refetchInterval: realtimeIntervals.inboxConversationsMs,
     ...realtimeQueryOptions,
   });
@@ -258,9 +259,9 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
                   <MessageSquareText size={21} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-black text-midnight">Новое сообщение</p>
+                  <p className="font-black text-midnight">{t("header.chatToastTitle")}</p>
                   <p className="mt-1 text-sm font-semibold leading-5 text-slate-500">
-                    В чатах есть непрочитанные сообщения: {unreadChatMessages > 99 ? "99+" : unreadChatMessages}.
+                    {t("header.chatToastText", { count: unreadChatMessages > 99 ? "99+" : unreadChatMessages })}
                   </p>
                   <button
                     type="button"
@@ -270,7 +271,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
                       navigate("/dashboard/conversations?unread=true");
                     }}
                   >
-                    Открыть сообщения
+                    {t("header.openMessages")}
                   </button>
                 </div>
                 <button
@@ -286,7 +287,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
           ) : null}
           <div className="hidden text-right lg:block">
             <p className="text-xs font-semibold text-midnight">{userEmail}</p>
-            <p className="text-[11px] text-slate-400">{user?.role || t("header.role")}</p>
+            <p className="text-[11px] text-slate-400">{activeMembership ? businessRoleLabel(activeMembership.role, t) : user?.role || t("header.role")}</p>
           </div>
           <Button
             variant="secondary"

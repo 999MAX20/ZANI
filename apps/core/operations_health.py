@@ -7,6 +7,7 @@ from apps.core.models import SupportAccessGrant
 from apps.core.production_audit import run_production_readiness_audit
 from apps.integrations.models import BusinessConnector, ConnectorSyncRun, IntegrationEventLog, WebhookDeliveryLog
 from apps.integrations.provider_rollout import run_provider_rollout_readiness_check
+from apps.integrations.sanitization import sanitize_error_text
 
 
 def _status_from_failures(critical_count, warning_count=0):
@@ -33,7 +34,7 @@ def _latest_automation_failures(limit=8):
             "status": run.status,
             "attempts": run.attempts,
             "max_attempts": run.max_attempts,
-            "error": run.error,
+            "error": sanitize_error_text(run.error),
             "created_at": run.created_at,
         }
         for run in AutomationRun.objects.filter(status=AutomationRun.Statuses.FAILED).select_related("business")[:limit]
@@ -50,7 +51,7 @@ def _latest_integration_failures(limit=8):
             "channel": log.channel,
             "direction": log.direction,
             "status": log.status,
-            "error": log.error,
+            "error": sanitize_error_text(log.error),
             "created_at": log.created_at,
         }
         for log in IntegrationEventLog.objects.filter(status=IntegrationEventLog.Statuses.FAILED).select_related("business")[:limit]
@@ -67,7 +68,7 @@ def _latest_failed_webhooks(limit=8):
             "event_type": delivery.event_type,
             "status": delivery.status,
             "attempts": delivery.attempts,
-            "error": delivery.error,
+            "error": sanitize_error_text(delivery.error),
             "created_at": delivery.created_at,
         }
         for delivery in WebhookDeliveryLog.objects.filter(status=WebhookDeliveryLog.Statuses.FAILED).select_related("business", "endpoint")[:limit]
@@ -94,7 +95,7 @@ def _connector_queue(limit=10):
             "provider": connector.provider,
             "name": connector.name,
             "status": connector.status,
-            "last_error": connector.last_error,
+            "last_error": sanitize_error_text(connector.last_error),
             "updated_at": connector.updated_at,
             "created_by_email": connector.created_by.email if connector.created_by else None,
         }

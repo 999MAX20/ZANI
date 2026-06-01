@@ -9,7 +9,7 @@ const iconTone: Record<AiInsightSeverity, string> = {
   critical: "border-red-100 bg-red-50/80 text-red-700",
   warning: "border-amber-100 bg-amber-50/80 text-amber-700",
   good: "border-emerald-100 bg-emerald-50/80 text-emerald-700",
-  info: "border-sky-100 bg-sky-50/80 text-sky-700",
+  info: "border-violet-100 bg-violet-50/80 text-violet-700",
 };
 
 const severityDot: Record<AiInsightSeverity, string> = {
@@ -69,8 +69,8 @@ export function AiInsightCard({
   );
 
   const baseClassName = cn(
-    "group flex flex-col gap-4 rounded-3xl border border-slate-100 bg-white p-4 shadow-sm transition sm:flex-row sm:items-center",
-    href ? "hover:-translate-y-0.5 hover:shadow-soft" : "",
+    "zani-ai-surface group flex flex-col gap-4 rounded-xl p-4 transition-colors sm:flex-row sm:items-center",
+    href ? "hover:border-brand-200" : "",
     className,
   );
 

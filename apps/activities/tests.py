@@ -146,3 +146,19 @@ class ActivityTimelineUnificationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["count"], 1)
         self.assertEqual(response.data["results"][0]["id"], own_event.id)
+
+    def test_activity_event_metadata_masks_secret_error_text(self):
+        ActivityEvent.objects.create(
+            business=self.business,
+            client=self.client,
+            category=ActivityEvent.Categories.SYSTEM,
+            event_type="delivery_failed",
+            text="Delivery failed",
+            metadata={"result": {"reason": "Provider failed with token=raw-activity-token"}},
+        )
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.get("/api/activity-events/", {"event_type": "delivery_failed"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("raw-activity-token", str(response.data))

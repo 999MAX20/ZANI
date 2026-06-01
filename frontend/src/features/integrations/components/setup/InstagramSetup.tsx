@@ -8,6 +8,7 @@ import { getApiErrorMessage } from "../../../../api/client";
 import { Button } from "../../../../components/ui/Button";
 import { ErrorState } from "../../../../components/ui/StateViews";
 import { Input } from "../../../../components/ui/Input";
+import { useI18n } from "../../../../lib/i18n";
 import type { Bot, BotChannel, Id } from "../../../../types";
 import { MessengerSetupShell } from "./IntegrationSetupUi";
 import { instagramOAuthCallbackType, type InstagramOAuthCallback } from "./metaCallbacks";
@@ -23,6 +24,7 @@ export function InstagramInlineSetup({
   canManage: boolean;
   channel?: BotChannel;
 }) {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const [instagramUserId, setInstagramUserId] = useState("");
   const [accessToken, setAccessToken] = useState("");
@@ -40,11 +42,11 @@ export function InstagramInlineSetup({
       const payload = event.data as InstagramOAuthCallback;
       if (payload.code) setOauthCode(payload.code);
       if (payload.state) setOauthState(payload.state);
-      setNotice("Meta вернула доступ Instagram. Завершите подключение.");
+      setNotice(t("integrations.instagram.metaAccessReturned"));
     };
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, []);
+  }, [t]);
 
   const status = useQuery({
     queryKey: ["instagram-status", channel?.id],
@@ -70,7 +72,7 @@ export function InstagramInlineSetup({
       });
     },
     onSuccess: () => {
-      setNotice("Канал создан. Теперь подключите Instagram через Meta.");
+      setNotice(t("integrations.instagram.channelCreated"));
       queryClient.invalidateQueries({ queryKey: ["bots"] });
       queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
     },
@@ -90,7 +92,7 @@ export function InstagramInlineSetup({
       setAccessToken("");
       setPageId("");
       setUsername("");
-      setNotice("Доступ Instagram сохранен приватно. Теперь проверьте подключение.");
+      setNotice(t("integrations.instagram.accessSaved"));
       queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
       queryClient.invalidateQueries({ queryKey: ["instagram-status", channel?.id] });
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
@@ -106,7 +108,7 @@ export function InstagramInlineSetup({
       setOauthState(data.state);
       setOauthRedirectUri(data.redirect_uri);
       if (!data.app_configured) {
-        setNotice("Не удалось открыть подключение через Meta. Обратитесь в поддержку ZANI.");
+        setNotice(t("integrations.instagram.metaOpenFailed"));
         return;
       }
       window.open(data.authorization_url, "zani_instagram_meta_oauth", "width=720,height=820");
@@ -124,7 +126,7 @@ export function InstagramInlineSetup({
     onSuccess: () => {
       setOauthCode("");
       setPageId("");
-      setNotice("Instagram подключен.");
+      setNotice(t("integrations.instagram.connectedNotice"));
       queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
       queryClient.invalidateQueries({ queryKey: ["instagram-status", channel?.id] });
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
@@ -134,7 +136,7 @@ export function InstagramInlineSetup({
   const testConnection = useMutation({
     mutationFn: () => instagramChannelApi.testConnection(Number(channel?.id)),
     onSuccess: (data) => {
-      setNotice(data.ok ? "Instagram подключение проверено." : data.reason || "Instagram доступ не прошел проверку.");
+      setNotice(data.ok ? t("integrations.instagram.connectionChecked") : data.reason || t("integrations.instagram.connectionCheckFailed"));
       queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
       queryClient.invalidateQueries({ queryKey: ["instagram-status", channel?.id] });
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
@@ -154,7 +156,11 @@ export function InstagramInlineSetup({
   const error = ensureChannel.error || saveCredentials.error || testConnection.error || startOAuth.error || completeOAuth.error || toggleChannel.error || status.error;
   const credentialsConfigured = Boolean(status.data?.instagram_user_id_configured && status.data?.access_token_configured);
   const hasOAuthResult = Boolean(oauthCode);
-  const connectionStatus = credentialsConfigured ? "Подключено" : hasOAuthResult ? "Завершите подключение" : "Не подключено";
+  const connectionStatus = credentialsConfigured
+    ? t("integrations.status.connected")
+    : hasOAuthResult
+      ? t("integrations.instagram.finishConnection")
+      : t("integrations.status.notConnected");
   const connectionTone = credentialsConfigured ? "success" : hasOAuthResult ? "progress" : "neutral";
 
   if (!channel) {
@@ -163,7 +169,7 @@ export function InstagramInlineSetup({
         {error ? <ErrorState message={getApiErrorMessage(error)} /> : null}
         {notice ? <div className="rounded-2xl bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800">{notice}</div> : null}
         <Button type="button" disabled={!canManage} isLoading={ensureChannel.isPending} onClick={() => ensureChannel.mutate()}>
-          <Send size={16} /> Создать Instagram channel
+          <Send size={16} /> {t("integrations.instagram.createChannel")}
         </Button>
       </div>
     );
@@ -173,7 +179,7 @@ export function InstagramInlineSetup({
     <MessengerSetupShell
       logo="/integrations_logos/instagram.png"
       title="Instagram"
-      description="Подключите Instagram Direct через Meta, чтобы ZANI принимал сообщения и передавал диалоги в Inbox."
+      description={t("integrations.instagram.inlineDescription")}
       status={connectionStatus}
       statusTone={connectionTone}
       notice={notice}
@@ -189,17 +195,17 @@ export function InstagramInlineSetup({
       advanced={
         <div className="space-y-3">
           <div className="grid gap-3 md:grid-cols-2">
-            <Input label="Instagram Business Account ID" value={instagramUserId} onChange={(event) => setInstagramUserId(event.target.value)} placeholder={status.data?.instagram_user_id_configured ? "ID уже сохранен" : "1784..."} />
-            <Input label="Access token хранится приватно" value={accessToken} onChange={(event) => setAccessToken(event.target.value)} placeholder={status.data?.access_token_configured ? "Token уже сохранен. Вставьте новый только для замены." : "EAAG..."} type="password" autoComplete="off" />
-            <Input label="Facebook Page ID" value={pageId} onChange={(event) => setPageId(event.target.value)} placeholder="Опционально" />
-            <Input label="Instagram username" value={username} onChange={(event) => setUsername(event.target.value)} placeholder="@account" />
+            <Input label={t("integrations.instagram.accountId")} value={instagramUserId} onChange={(event) => setInstagramUserId(event.target.value)} placeholder={status.data?.instagram_user_id_configured ? t("integrations.instagram.idSaved") : "1784..."} />
+            <Input label={t("integrations.card.accessKey")} value={accessToken} onChange={(event) => setAccessToken(event.target.value)} placeholder={status.data?.access_token_configured ? t("integrations.card.accessKeyReplacePlaceholder") : t("integrations.card.accessKeyPlaceholder")} type="password" autoComplete="off" />
+            <Input label={t("integrations.instagram.facebookPageId")} value={pageId} onChange={(event) => setPageId(event.target.value)} placeholder={t("common.optional")} />
+            <Input label={t("integrations.instagram.username")} value={username} onChange={(event) => setUsername(event.target.value)} placeholder="@account" />
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             <Button type="button" disabled={!canManage || (!instagramUserId.trim() && !accessToken.trim())} isLoading={saveCredentials.isPending} onClick={() => saveCredentials.mutate()}>
-              <ShieldCheck size={16} /> {credentialsConfigured ? "Обновить доступ" : "Сохранить доступ"}
+              <ShieldCheck size={16} /> {credentialsConfigured ? t("integrations.instagram.updateAccess") : t("integrations.instagram.saveAccess")}
             </Button>
             <Button type="button" variant="secondary" disabled={!canManage || !credentialsConfigured} isLoading={testConnection.isPending} onClick={() => testConnection.mutate()}>
-              <RefreshCw size={16} /> Проверить
+              <RefreshCw size={16} /> {t("integrations.card.check")}
             </Button>
           </div>
         </div>
@@ -209,19 +215,19 @@ export function InstagramInlineSetup({
         <div className="space-y-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
-              <p className="text-sm font-black text-midnight">Подключение через Meta</p>
+              <p className="text-sm font-black text-midnight">{t("integrations.instagram.metaConnection")}</p>
               <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">
-                Войдите в Meta и выберите страницу, к которой привязан Instagram Business.
+                {t("integrations.instagram.metaDescription")}
               </p>
             </div>
             <Button type="button" disabled={!canManage} isLoading={startOAuth.isPending} onClick={() => startOAuth.mutate()}>
-              <ExternalLink size={16} /> Подключить через Meta
+              <ExternalLink size={16} /> {t("integrations.instagram.connectWithMeta")}
             </Button>
           </div>
-          {hasOAuthResult ? <div className="rounded-2xl bg-blue-50 p-3 text-sm font-black text-blue-950">Meta подтвердила доступ. Завершите подключение.</div> : null}
+          {hasOAuthResult ? <div className="rounded-2xl bg-blue-50 p-3 text-sm font-black text-blue-950">{t("integrations.instagram.metaConfirmed")}</div> : null}
           {hasOAuthResult ? (
             <Button type="button" variant="secondary" disabled={!canManage || !oauthCode.trim() || !oauthState.trim()} isLoading={completeOAuth.isPending} onClick={() => completeOAuth.mutate()}>
-              <ShieldCheck size={16} /> Завершить подключение
+              <ShieldCheck size={16} /> {t("integrations.instagram.completeConnection")}
             </Button>
           ) : null}
         </div>

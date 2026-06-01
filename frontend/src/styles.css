@@ -3,17 +3,27 @@
 @tailwind utilities;
 
 :root {
-  --zani-brand: #2563eb;
-  --zani-brand-strong: #2563eb;
-  --zani-ai: #6d28d9;
-  --zani-ink: #111827;
-  --zani-midnight: #0f172a;
-  --zani-surface: rgba(255, 255, 255, 0.92);
-  --zani-border: rgba(226, 232, 240, 0.86);
-  --zani-shadow-soft: 0 16px 42px rgba(15, 23, 42, 0.07);
-  --zani-shadow-premium: 0 22px 64px rgba(15, 23, 42, 0.11);
-  color: #111827;
-  background: #f8fafc;
+  --zani-bg: #f8f9fb;
+  --zani-surface: #ffffff;
+  --zani-surface-muted: #f2f4f7;
+  --zani-surface-raised: rgba(255, 255, 255, 0.96);
+  --zani-brand: #0052d2;
+  --zani-brand-strong: #001b44;
+  --zani-ai: #7c3aed;
+  --zani-ai-end: #1e6bff;
+  --zani-success: #28c76f;
+  --zani-warning: #ff9f43;
+  --zani-danger: #ba1a1a;
+  --zani-ink: #191c1e;
+  --zani-midnight: #001b44;
+  --zani-muted: #44474f;
+  --zani-border: rgba(196, 198, 210, 0.66);
+  --zani-shadow-soft: 0 4px 20px rgba(0, 47, 108, 0.04);
+  --zani-shadow-premium: 0 12px 34px rgba(0, 27, 68, 0.08);
+  --zani-radius-card: 12px;
+  --zani-radius-control: 8px;
+  color: var(--zani-ink);
+  background: var(--zani-bg);
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI",
     sans-serif;
@@ -25,10 +35,7 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background:
-    linear-gradient(115deg, rgba(37, 99, 235, 0.07), transparent 34%),
-    linear-gradient(245deg, rgba(109, 40, 217, 0.055), transparent 36%),
-    linear-gradient(180deg, #f8fafc 0%, #eef4ff 100%);
+  background: var(--zani-bg);
 }
 
 html,
@@ -56,16 +63,14 @@ select {
 @layer components {
   .zani-surface {
     border: 1px solid var(--zani-border);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), var(--zani-surface));
+    background: var(--zani-surface-raised);
     box-shadow: var(--zani-shadow-soft);
-    backdrop-filter: blur(18px);
   }
 
   .zani-surface-strong {
-    border: 1px solid rgba(255, 255, 255, 0.72);
-    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(196, 198, 210, 0.52);
+    background: rgba(255, 255, 255, 0.96);
     box-shadow: var(--zani-shadow-premium);
-    backdrop-filter: blur(24px);
   }
 
   .zani-touch-target {
@@ -83,58 +88,40 @@ select {
 
   .zani-focus-ring:focus-visible {
     border-color: var(--zani-brand);
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14);
+    box-shadow: 0 0 0 4px rgba(0, 82, 210, 0.14);
+  }
+
+  .zani-ai-surface {
+    position: relative;
+    border: 1px solid rgba(124, 58, 237, 0.28);
+    background:
+      radial-gradient(circle at top right, rgba(124, 58, 237, 0.12), transparent 34%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.9));
+    box-shadow: 0 10px 30px rgba(30, 107, 255, 0.08);
+  }
+
+  .zani-ai-surface::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    border-radius: inherit;
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.82), rgba(30, 107, 255, 0.82));
+    opacity: 0.42;
   }
 }
 
 .glass-panel {
-  border: 1px solid rgba(255, 255, 255, 0.72);
-  background: rgba(255, 255, 255, 0.76);
-  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.08);
-  backdrop-filter: blur(22px);
+  border: 1px solid rgba(196, 198, 210, 0.56);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: var(--zani-shadow-soft);
+  backdrop-filter: blur(10px);
 }
 
 .premium-card {
-  border: 1px solid rgba(226, 232, 240, 0.86);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.82));
-  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
-}
-
-.zani-depth-field {
-  background:
-    linear-gradient(120deg, transparent 0 18%, rgba(37, 99, 235, 0.055) 18% 19%, transparent 19% 100%),
-    linear-gradient(58deg, transparent 0 58%, rgba(109, 40, 217, 0.05) 58% 59%, transparent 59% 100%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent);
-  transform: translateZ(0);
-}
-
-.zani-depth-field::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(37, 99, 235, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(37, 99, 235, 0.035) 1px, transparent 1px);
-  background-size: 56px 56px;
-  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.45), transparent 70%);
-}
-
-.zani-perspective-panel {
-  border: 1px solid rgba(255, 255, 255, 0.74);
-  border-radius: 2rem;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.74), rgba(239, 246, 255, 0.28)),
-    repeating-linear-gradient(90deg, rgba(37, 99, 235, 0.055) 0 1px, transparent 1px 42px);
-  box-shadow: 0 34px 90px rgba(15, 23, 42, 0.11);
-  transform: perspective(900px) rotateX(58deg) rotateZ(-14deg);
-  filter: blur(0.2px);
-}
-
-.zani-perspective-panel-alt {
-  transform: perspective(900px) rotateX(62deg) rotateZ(10deg);
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.64), rgba(245, 243, 255, 0.24)),
-    repeating-linear-gradient(0deg, rgba(124, 58, 237, 0.07) 0 1px, transparent 1px 34px);
+  border: 1px solid var(--zani-border);
+  background: var(--zani-surface-raised);
+  box-shadow: var(--zani-shadow-soft);
 }
 
 .no-scrollbar::-webkit-scrollbar {

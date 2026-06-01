@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.activities.models import ActivityEvent, Note, Segment, SegmentFilter, Tag, TaggedObject
+from apps.integrations.sanitization import sanitize_error_payload
 
 
 class ActivityEventSerializer(serializers.ModelSerializer):
@@ -8,6 +9,11 @@ class ActivityEventSerializer(serializers.ModelSerializer):
         model = ActivityEvent
         fields = "__all__"
         read_only_fields = ("created_at",)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["metadata"] = sanitize_error_payload(data.get("metadata") or {})
+        return data
 
 
 class NoteSerializer(serializers.ModelSerializer):

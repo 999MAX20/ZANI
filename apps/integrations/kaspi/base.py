@@ -7,6 +7,7 @@ from urllib import parse, request as urllib_request
 from django.conf import settings
 from django.utils import timezone
 
+from apps.core.production_rules import is_safe_public_https_url
 from apps.integrations.connectors import decrypt_credential_value
 from apps.integrations.models import ConnectorSyncRun
 
@@ -96,6 +97,9 @@ def fetch_kaspi_orders(connector, page_size=None):
     token = get_kaspi_api_token(connector)
     if not token:
         raise ValueError("Kaspi API token is missing.")
+    base_url = str(settings.KASPI_API_BASE_URL or "").strip().rstrip("/")
+    if not is_safe_public_https_url(base_url):
+        raise ValueError("KASPI_API_BASE_URL must be a public HTTPS URL.")
     config = kaspi_connector_safe_config(connector)
     size = min(int(page_size or config["page_size"]), 100)
     created_after = timezone.now() - timedelta(days=config["sync_days"])
@@ -106,7 +110,7 @@ def fetch_kaspi_orders(connector, page_size=None):
         "filter[orders][creationDate][$ge]": str(int(created_after.timestamp() * 1000)),
         "filter[orders][creationDate][$le]": str(int(timezone.now().timestamp() * 1000)),
     }
-    url = f"{settings.KASPI_API_BASE_URL.rstrip('/')}/orders?{parse.urlencode(params)}"
+    url = f"{base_url}/orders?{parse.urlencode(params)}"
     request = urllib_request.Request(
         url,
         headers={

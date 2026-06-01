@@ -4,7 +4,10 @@ from django.core.checks import Warning, register
 from apps.core.production_rules import has_https_security as _has_https_security
 from apps.core.production_rules import has_placeholder_host as _has_placeholder_host
 from apps.core.production_rules import has_private_object_storage as _has_private_object_storage
+from apps.core.production_rules import has_safe_instagram_runtime as _has_safe_instagram_runtime
 from apps.core.production_rules import has_safe_https_origins as _has_safe_https_origins
+from apps.core.production_rules import has_safe_telegram_runtime as _has_safe_telegram_runtime
+from apps.core.production_rules import has_safe_whatsapp_runtime as _has_safe_whatsapp_runtime
 from apps.core.production_rules import has_sentry_observability as _has_sentry_observability
 from apps.core.production_rules import has_tls_postgres as _has_tls_postgres
 from apps.core.production_rules import has_tls_redis_broker as _has_tls_redis_broker
@@ -144,6 +147,33 @@ def production_settings_check(app_configs, **kwargs):
                 "Secure transactional email is not fully configured.",
                 hint="Configure a real SMTP/transactional provider, TLS/SSL transport and a verified non-local sender domain.",
                 id="zani.W014",
+            )
+        )
+
+    if not _has_safe_telegram_runtime():
+        warnings.append(
+            Warning(
+                "Telegram production configuration is not safe.",
+                hint="Set TELEGRAM_WEBHOOK_SECRET to a unique high-entropy 32+ character value and TELEGRAM_BASE_API_URL to public HTTPS.",
+                id="zani.W015",
+            )
+        )
+
+    if not _has_safe_whatsapp_runtime():
+        warnings.append(
+            Warning(
+                "WhatsApp production configuration is not safe.",
+                hint="Keep WHATSAPP_ENABLED=False or set strong WHATSAPP_VERIFY_TOKEN, strong WHATSAPP_APP_SECRET and public HTTPS WHATSAPP_GRAPH_BASE_URL.",
+                id="zani.W016",
+            )
+        )
+
+    if not _has_safe_instagram_runtime():
+        warnings.append(
+            Warning(
+                "Instagram production configuration is not safe.",
+                hint="Keep INSTAGRAM_ENABLED=False or set strong INSTAGRAM_VERIFY_TOKEN, strong INSTAGRAM_APP_SECRET/META_APP_SECRET and public HTTPS INSTAGRAM_GRAPH_BASE_URL.",
+                id="zani.W017",
             )
         )
 

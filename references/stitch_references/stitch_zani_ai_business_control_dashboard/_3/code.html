@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ru"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ZANI Leads Control</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error": "#ba1a1a",
+                        "primary-fixed": "#d8e2ff",
+                        "tertiary": "#26005c",
+                        "on-tertiary": "#ffffff",
+                        "background": "#f8f9fb",
+                        "outline": "#747781",
+                        "on-primary-fixed": "#001a42",
+                        "inverse-surface": "#2e3132",
+                        "surface-tint": "#3c5d9c",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#5a00c6",
+                        "surface-container-lowest": "#ffffff",
+                        "ai-gradient-end": "#1E6BFF",
+                        "on-primary-container": "#7999dc",
+                        "outline-variant": "#c4c6d2",
+                        "surface-muted": "#F2F4F7",
+                        "surface-container-high": "#e7e8ea",
+                        "inverse-on-surface": "#f0f1f3",
+                        "on-secondary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-secondary-container": "#fefcff",
+                        "surface-container-low": "#f2f4f6",
+                        "on-error": "#ffffff",
+                        "on-surface": "#191c1e",
+                        "surface-bright": "#f8f9fb",
+                        "on-primary-fixed-variant": "#224583",
+                        "secondary-fixed-dim": "#b3c5ff",
+                        "ai-gradient-start": "#7C3AED",
+                        "on-tertiary-container": "#ab82ff",
+                        "primary-fixed-dim": "#aec6ff",
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed": "#eaddff",
+                        "on-surface-variant": "#434750",
+                        "ai-glow": "rgba(124, 58, 237, 0.15)",
+                        "secondary-container": "#1b6afe",
+                        "success-vibrant": "#28C76F",
+                        "danger-soft": "#EA5455",
+                        "secondary-fixed": "#dbe1ff",
+                        "on-background": "#191c1e",
+                        "primary-container": "#002f6c",
+                        "inverse-primary": "#aec6ff",
+                        "on-secondary-fixed-variant": "#003fa5",
+                        "surface-container": "#edeef0",
+                        "surface-card": "#FFFFFF",
+                        "surface-variant": "#e1e2e4",
+                        "warning-soft": "#FF9F43",
+                        "surface-dim": "#d9dadc",
+                        "surface": "#f8f9fb",
+                        "tertiary-fixed-dim": "#d2bbff",
+                        "tertiary-container": "#400090",
+                        "primary": "#001b44",
+                        "on-secondary-fixed": "#001849",
+                        "surface-container-highest": "#e1e2e4",
+                        "secondary": "#0052d2",
+                        "on-tertiary-fixed": "#25005a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container-padding-mobile": "16px",
+                        "card-gap": "20px",
+                        "container-padding-desktop": "24px",
+                        "gutter-md": "16px",
+                        "sidebar-width": "260px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "kpi-display-mobile": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "kpi-display": ["Inter"],
+                        "headline-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "kpi-display-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                        "label-sm": ["11px", {"lineHeight": "14px", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "headline-sm": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "kpi-display": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .ai-glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid transparent;
+            background-clip: padding-box;
+            position: relative;
+        }
+        .ai-glass-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(to right, #7C3AED, #1E6BFF);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+        .custom-shadow {
+            box-shadow: 0 4px 20px rgba(0, 47, 108, 0.04);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen">
+<!-- Sidebar (Desktop) -->
+<aside class="hidden md:flex flex-col fixed left-0 top-0 h-full w-sidebar-width bg-surface-muted border-r border-outline-variant z-40">
+<div class="p-6">
+<h1 class="font-headline-md text-headline-md font-bold text-primary">ZANI Control</h1>
+<p class="font-body-md text-body-md text-on-surface-variant opacity-70">Режим владельца</p>
+</div>
+<nav class="flex-1 mt-4">
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-body-md text-body-md">Панель управления</span>
+</a>
+<a class="flex items-center gap-3 border-l-4 border-primary bg-surface-container text-primary px-4 py-3 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="person_search" style="font-variation-settings: 'FILL' 1;">person_search</span>
+<span class="font-body-md text-body-md font-bold">Лиды</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="handshake">handshake</span>
+<span class="font-body-md text-body-md">Сделки</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-body-md text-body-md">Клиенты</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="chat">chat</span>
+<span class="font-body-md text-body-md">Диалоги</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="monitoring">monitoring</span>
+<span class="font-body-md text-body-md">Аналитика</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="extension">extension</span>
+<span class="font-body-md text-body-md">Интеграции</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-container-high transition-colors mt-auto" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body-md text-body-md">Настройки</span>
+</a>
+</nav>
+<div class="p-6 border-t border-outline-variant flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary font-bold">ИП</div>
+<div>
+<p class="font-label-md text-label-md">Иван Петров</p>
+<p class="text-[10px] uppercase tracking-wider text-on-surface-variant">Администратор</p>
+</div>
+</div>
+</aside>
+<!-- Top AppBar -->
+<header class="flex justify-between items-center px-container-padding-mobile md:px-container-padding-desktop w-full h-16 bg-surface border-b border-outline-variant fixed top-0 left-0 md:left-sidebar-width md:w-[calc(100%-260px)] z-30">
+<div class="flex items-center gap-4">
+<span class="md:hidden font-headline-md text-headline-md font-black text-primary">ZANI</span>
+<div class="hidden md:flex items-center gap-6">
+<span class="text-primary font-bold border-b-2 border-primary py-1">Менеджер лидов</span>
+<span class="text-on-surface-variant font-body-md">Статус: <span class="text-success-vibrant font-bold">Активен</span></span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<input class="bg-surface-muted border-none rounded-full px-10 py-2 text-body-md w-64 focus:ring-2 focus:ring-secondary focus:bg-white transition-all" placeholder="Поиск лидов..." type="text"/>
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-on-surface-variant text-sm" data-icon="search">search</span>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-surface-container-low transition-all">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-surface-container-low transition-all">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="pt-20 pb-24 md:pb-8 px-container-padding-mobile md:px-container-padding-desktop ml-0 md:ml-sidebar-width min-h-screen">
+<!-- Header & AI Insight Section -->
+<div class="max-w-7xl mx-auto space-y-6">
+<section class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+<div>
+<h2 class="font-headline-md text-headline-md text-primary mb-1">Входящие возможности</h2>
+<p class="text-on-surface-variant">Проверьте и назначьте 12 активных лидов на сегодня.</p>
+</div>
+<div class="flex gap-2">
+<button class="flex items-center gap-2 bg-secondary text-white px-5 py-2.5 rounded-xl font-headline-sm hover:opacity-90 transition-all shadow-md">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+                    Создать лид
+                </button>
+</div>
+</section>
+<!-- AI Insight Card -->
+<div class="ai-glass-card rounded-2xl p-6 mb-8 custom-shadow">
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 rounded-xl bg-gradient-to-br from-ai-gradient-start to-ai-gradient-end flex items-center justify-center shadow-lg text-white">
+<span class="material-symbols-outlined" data-icon="smart_toy" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+</div>
+<div class="flex-1">
+<h3 class="font-headline-sm text-headline-sm text-primary mb-1">Приоритет AI Интеллекта</h3>
+<p class="text-body-lg text-on-surface-variant leading-relaxed">
+                        Приоритет: <span class="font-bold text-secondary">Мария С.</span> — высокая вероятность сделки на <span class="font-bold text-success-vibrant">$500</span> на основе прошлых взаимодействий и текущих сигналов.
+                    </p>
+</div>
+<button class="hidden sm:block bg-primary text-white px-4 py-2 rounded-lg text-label-md hover:bg-secondary transition-all">
+                    Принять меры
+                </button>
+</div>
+</div>
+<!-- Filters & Stats Grid -->
+<section class="grid grid-cols-1 lg:grid-cols-4 gap-card-gap mb-8">
+<div class="lg:col-span-3 bg-surface-card rounded-2xl p-4 custom-shadow flex flex-wrap items-center gap-4">
+<div class="flex items-center gap-2 bg-surface-muted px-3 py-2 rounded-lg text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="filter_list">filter_list</span>
+<span class="text-label-md">Фильтры:</span>
+</div>
+<select class="bg-surface-muted border-none rounded-lg text-label-md py-2 pl-3 pr-8 focus:ring-1 focus:ring-secondary">
+<option>Все статусы</option>
+<option>Новые</option>
+<option>Ожидают</option>
+<option>Обработан</option>
+</select>
+<select class="bg-surface-muted border-none rounded-lg text-label-md py-2 pl-3 pr-8 focus:ring-1 focus:ring-secondary">
+<option>Все источники</option>
+<option>WhatsApp</option>
+<option>Instagram</option>
+<option>Веб</option>
+</select>
+<div class="ml-auto flex gap-2">
+<button class="p-2 rounded-lg bg-surface-container text-primary">
+<span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+</button>
+<button class="p-2 rounded-lg hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined" data-icon="format_list_bulleted">format_list_bulleted</span>
+</button>
+</div>
+</div>
+<div class="bg-primary text-white rounded-2xl p-4 flex justify-around items-center custom-shadow">
+<div class="text-center">
+<p class="text-[10px] uppercase opacity-70 mb-1">НОВЫЕ</p>
+<p class="font-headline-md text-headline-md">08</p>
+</div>
+<div class="h-8 w-px bg-white/20"></div>
+<div class="text-center">
+<p class="text-[10px] uppercase opacity-70 mb-1">ОЖИДАЮТ</p>
+<p class="font-headline-md text-headline-md text-warning-soft">04</p>
+</div>
+</div>
+</section>
+<!-- Leads Bento Grid -->
+<section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-card-gap">
+<!-- Lead Card 1 (Maria S - Priority) -->
+<div class="bg-surface-card rounded-2xl border-2 border-secondary/20 p-5 custom-shadow relative group hover:border-secondary transition-all">
+<div class="absolute -top-3 -right-3 bg-error text-white text-[10px] font-bold px-3 py-1 rounded-full flex items-center gap-1 shadow-lg">
+<span class="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                    ПРОСРОЧЕНО
+                </div>
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center">
+<img alt="Мария С." class="w-full h-full object-cover rounded-xl" data-alt="A professional headshot of a smiling woman with medium-length dark hair. She is wearing a soft blue corporate blazer and standing against a minimalist, brightly lit office background. The lighting is soft and high-key, reflecting a modern, approachable business aesthetic with a palette of soft blues and whites." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAanxYeGMkDcqr5ai8oh0cHDVQU-9sEmONyDLtKXeHznUv8sxRWGyKkoVs-zB9Kw3MNO_HZHLFX9IUmEZsFVZRanerjPWf9IXU8TyARATfu6VegxPtoqYhOwExA5duMq3khpbTHBGudHs-vyhrvvimI2MkNigjxl5y_sqQhjG05h-EJui2XxR_aQ5RLeKb7rD9gRCl1Ci22ZdNhhUI3p5-mK9hdwuPlWYIDxcYC8T-vtFzi0oOHUUi1VJPc4b60sFlTqbObwDLzE48"/>
+</div>
+<div>
+<h4 class="font-headline-sm text-headline-sm text-primary">Мария С.</h4>
+<div class="flex items-center gap-1 text-on-surface-variant text-label-md">
+<span class="material-symbols-outlined text-xs text-[#25D366]" data-icon="chat" style="font-variation-settings: 'FILL' 1;">chat</span>
+                                Лид из WhatsApp
+                            </div>
+</div>
+</div>
+<span class="text-label-sm text-on-surface-variant bg-surface-muted px-2 py-1 rounded-md">12м назад</span>
+</div>
+<div class="flex gap-2 mb-6">
+<span class="px-3 py-1 rounded-full bg-error-container text-on-error-container text-label-md font-bold">Новый</span>
+<span class="px-3 py-1 rounded-full bg-surface-container text-on-surface-variant text-label-md">Не назначен</span>
+</div>
+<div class="flex items-center justify-between pt-4 border-t border-outline-variant/30">
+<div class="flex -space-x-2">
+<button class="w-10 h-10 rounded-full bg-secondary text-white flex items-center justify-center hover:scale-110 transition-transform shadow-md" title="Назначить">
+<span class="material-symbols-outlined text-sm" data-icon="person_add">person_add</span>
+</button>
+<button class="w-10 h-10 rounded-full bg-success-vibrant text-white flex items-center justify-center hover:scale-110 transition-transform shadow-md" title="Позвонить">
+<span class="material-symbols-outlined text-sm" data-icon="call">call</span>
+</button>
+<button class="w-10 h-10 rounded-full bg-surface-container text-on-surface-variant flex items-center justify-center hover:scale-110 transition-transform shadow-md" title="Архив">
+<span class="material-symbols-outlined text-sm" data-icon="archive">archive</span>
+</button>
+</div>
+<button class="text-secondary font-bold text-label-md flex items-center gap-1">
+                        Детали
+                        <span class="material-symbols-outlined text-sm" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Lead Card 2 -->
+<div class="bg-surface-card rounded-2xl p-5 custom-shadow group hover:bg-surface-container-low transition-all">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-xl bg-surface-muted flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="person">person</span>
+</div>
+<div>
+<h4 class="font-headline-sm text-headline-sm text-primary">Джеймс Уилсон</h4>
+<div class="flex items-center gap-1 text-on-surface-variant text-label-md">
+<span class="material-symbols-outlined text-xs text-[#E1306C]" data-icon="camera" style="font-variation-settings: 'FILL' 1;">camera</span>
+                                Instagram
+                            </div>
+</div>
+</div>
+<span class="text-label-sm text-on-surface-variant bg-surface-muted px-2 py-1 rounded-md">45м назад</span>
+</div>
+<div class="flex gap-2 mb-6">
+<span class="px-3 py-1 rounded-full bg-warning-soft/20 text-warning-soft text-label-md font-bold">Ожидает</span>
+<div class="flex items-center gap-2 px-3 py-1 rounded-full bg-surface-muted">
+<div class="w-4 h-4 rounded-full bg-primary-fixed-dim flex items-center justify-center text-[8px] font-bold">СР</div>
+<span class="text-on-surface-variant text-label-md">Сара Р.</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-4 border-t border-outline-variant/30">
+<div class="flex gap-3">
+<button class="bg-surface-container text-primary text-label-md px-4 py-2 rounded-lg font-bold">Управлять</button>
+<button class="text-on-surface-variant p-2 hover:bg-surface-muted rounded-lg"><span class="material-symbols-outlined" data-icon="more_horiz">more_horiz</span></button>
+</div>
+<div class="flex items-center text-success-vibrant">
+<span class="material-symbols-outlined text-sm" data-icon="trending_up">trending_up</span>
+<span class="text-label-sm ml-1">Высокий интерес</span>
+</div>
+</div>
+</div>
+<!-- Lead Card 3 -->
+<div class="bg-surface-card rounded-2xl p-5 custom-shadow group hover:bg-surface-container-low transition-all">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-xl bg-surface-muted flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="person">person</span>
+</div>
+<div>
+<h4 class="font-headline-sm text-headline-sm text-primary">TechCorp Inc.</h4>
+<div class="flex items-center gap-1 text-on-surface-variant text-label-md">
+<span class="material-symbols-outlined text-xs text-primary" data-icon="language">language</span>
+                                Веб-форма
+                            </div>
+</div>
+</div>
+<span class="text-label-sm text-on-surface-variant bg-surface-muted px-2 py-1 rounded-md">2ч назад</span>
+</div>
+<div class="flex gap-2 mb-6">
+<span class="px-3 py-1 rounded-full bg-success-vibrant/20 text-success-vibrant text-label-md font-bold">Обработан</span>
+<div class="flex items-center gap-2 px-3 py-1 rounded-full bg-surface-muted">
+<div class="w-4 h-4 rounded-full bg-secondary-fixed flex items-center justify-center text-[8px] font-bold">МК</div>
+<span class="text-on-surface-variant text-label-md">Майк К.</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-4 border-t border-outline-variant/30">
+<button class="bg-surface-container-high text-on-surface-variant text-label-md px-4 py-2 rounded-lg font-bold">История</button>
+<div class="flex items-center text-on-surface-variant opacity-60">
+<span class="material-symbols-outlined text-sm" data-icon="history">history</span>
+<span class="text-label-sm ml-1">Успешно закрыто</span>
+</div>
+</div>
+</div>
+<!-- Empty State / Placeholder Card for New Leads -->
+<div class="border-2 border-dashed border-outline-variant rounded-2xl flex flex-col items-center justify-center p-8 opacity-60 hover:opacity-100 transition-all cursor-pointer">
+<span class="material-symbols-outlined text-4xl mb-3" data-icon="contact_page">contact_page</span>
+<p class="font-headline-sm">Ожидание новых...</p>
+<p class="text-label-md text-center mt-1">Новые лиды из подключенных каналов появятся здесь автоматически.</p>
+</div>
+</section>
+</div>
+</main>
+<!-- Bottom Navigation (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-16 px-4 pb-safe bg-surface/80 backdrop-blur-xl border-t border-outline-variant/30 shadow-lg">
+<a class="flex flex-col items-center justify-center text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-sm text-label-sm">Главная</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary bg-secondary-fixed/20 rounded-full px-4 py-1" href="#">
+<span class="material-symbols-outlined" data-icon="person_search" style="font-variation-settings: 'FILL' 1;">person_search</span>
+<span class="font-label-sm text-label-sm">Лиды</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-label-sm text-label-sm">Клиенты</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="chat">chat</span>
+<span class="font-label-sm text-label-sm">Диалоги</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="more_horiz">more_horiz</span>
+<span class="font-label-sm text-label-sm">Меню</span>
+</a>
+</nav>
+<!-- Floating Action Button (Mobile) -->
+<button class="md:hidden fixed bottom-20 right-4 w-14 h-14 bg-secondary text-white rounded-full shadow-2xl flex items-center justify-center z-40">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+</button>
+<script>
+    // Simple Micro-interactions
+    document.querySelectorAll('.group').forEach(card => {
+        card.addEventListener('mouseenter', () => {
+            card.classList.add('scale-[1.01]');
+        });
+        card.addEventListener('mouseleave', () => {
+            card.classList.remove('scale-[1.01]');
+        });
+    });
+</script>
+</body></html>

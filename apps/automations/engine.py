@@ -8,6 +8,7 @@ from django.utils import timezone
 from apps.activities.models import ActivityEvent
 from apps.activities.services import create_activity_event
 from apps.automations.models import AutomationAction, AutomationRule, AutomationRun
+from apps.integrations.sanitization import sanitize_error_text
 from apps.notifications.models import Notification
 from apps.tasks.models import Task
 
@@ -127,7 +128,7 @@ def process_automation_run(run_id):
                 run.status = AutomationRun.Statuses.SUCCESS
     except Exception as exc:
         run.status = AutomationRun.Statuses.FAILED
-        run.error = str(exc)
+        run.error = sanitize_error_text(exc)
         if run.attempts < run.max_attempts:
             delay_seconds = min(3600, 60 * (2 ** (run.attempts - 1)))
             run.next_retry_at = timezone.now() + timezone.timedelta(seconds=delay_seconds)

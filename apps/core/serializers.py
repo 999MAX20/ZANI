@@ -1,7 +1,17 @@
 from rest_framework import serializers
 
 from apps.core.file_validation import validate_file_upload
-from apps.core.models import AuditLog, CustomFieldDefinition, CustomFieldValue, FileAttachment, ImportJob, LoginHistory, SupportAccessGrant
+from apps.core.models import (
+    AuditLog,
+    CustomFieldDefinition,
+    CustomFieldValue,
+    FileAttachment,
+    ImportJob,
+    LoginHistory,
+    SupportAccessGrant,
+    safe_original_filename,
+)
+from apps.integrations.sanitization import sanitize_error_payload, sanitize_error_text
 
 
 class CustomFieldDefinitionSerializer(serializers.ModelSerializer):
@@ -90,6 +100,12 @@ class AuditLogSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ["created_at"]
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["metadata"] = sanitize_error_payload(data.get("metadata") or {})
+        data["user_agent"] = sanitize_error_text(data.get("user_agent") or "")
+        return data
+
 
 class LoginHistorySerializer(serializers.ModelSerializer):
     user_email = serializers.EmailField(source="user.email", read_only=True)
@@ -99,6 +115,12 @@ class LoginHistorySerializer(serializers.ModelSerializer):
         model = LoginHistory
         fields = "__all__"
         read_only_fields = ["created_at"]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["metadata"] = sanitize_error_payload(data.get("metadata") or {})
+        data["user_agent"] = sanitize_error_text(data.get("user_agent") or "")
+        return data
 
 
 class SupportAccessGrantSerializer(serializers.ModelSerializer):
@@ -113,6 +135,14 @@ class SupportAccessGrantSerializer(serializers.ModelSerializer):
 
     def get_is_valid_now(self, obj):
         return obj.is_valid()
+
+    def validate_reason(self, value):
+        return sanitize_error_text(value, max_length=1000)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["reason"] = sanitize_error_text(data.get("reason") or "")
+        return data
 
 
 class FileAttachmentSerializer(serializers.ModelSerializer):
@@ -144,7 +174,7 @@ class FileAttachmentSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         uploaded_file = validated_data["file"]
-        validated_data["original_name"] = getattr(uploaded_file, "name", "")
+        validated_data["original_name"] = safe_original_filename(getattr(uploaded_file, "name", ""))
         validated_data["content_type"] = getattr(uploaded_file, "content_type", "")
         validated_data["size"] = getattr(uploaded_file, "size", 0) or 0
         validated_data["visibility"] = FileAttachment.Visibility.PRIVATE

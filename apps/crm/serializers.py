@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.utils import timezone
 
+from apps.businesses.access import Resources, can_view_sensitive_field
 from apps.crm.models import Deal, Pipeline, PipelineStage, StageTransition
 
 
@@ -30,6 +31,18 @@ class DealSerializer(serializers.ModelSerializer):
         if not obj.stage or not obj.stage.sla_minutes or not obj.stage_entered_at:
             return False
         return timezone.now() > obj.stage_entered_at + timezone.timedelta(minutes=obj.stage.sla_minutes)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        if user and not can_view_sensitive_field(user, instance.business, Resources.DEALS, "amount"):
+            data["amount"] = None
+            data["currency"] = ""
+        if user and not can_view_sensitive_field(user, instance.business, Resources.DEALS, "notes"):
+            data["notes"] = ""
+            data["lost_reason"] = ""
+        return data
 
     def validate(self, attrs):
         pipeline = attrs.get("pipeline") or getattr(self.instance, "pipeline", None)

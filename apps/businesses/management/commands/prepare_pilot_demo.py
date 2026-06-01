@@ -69,6 +69,7 @@ class Command(BaseCommand):
         parser.add_argument("--backend-url", default="http://127.0.0.1:8000")
         parser.add_argument("--reset", action="store_true", help="Reset and reseed the demo merchant before printing launch credentials.")
         parser.add_argument("--run-seed-output", action="store_true", help="Print the underlying seed_pilot_demo command output.")
+        parser.add_argument("--show-passwords", action="store_true", help="Print demo passwords in command output.")
 
     @transaction.atomic
     def handle(self, *args, **options):
@@ -93,6 +94,7 @@ class Command(BaseCommand):
             "--manager-password",
             options["manager_password"],
             *(["--reset"] if options["reset"] else []),
+            *(["--show-passwords"] if options["show_passwords"] else []),
             stdout=seed_stdout,
         )
         if options["run_seed_output"]:
@@ -110,9 +112,9 @@ class Command(BaseCommand):
         self.stdout.write(f"Owner dashboard: {options['frontend_url']}/dashboard")
         self.stdout.write("-" * 72)
         self.stdout.write("LOGINS")
-        self.stdout.write(f"Platform admin: {options['platform_email']} / {options['platform_password']}")
-        self.stdout.write(f"Demo owner:     {options['owner_email']} / {options['owner_password']}")
-        self.stdout.write(f"Demo manager:   {options['manager_email']} / {options['manager_password']}")
+        self.stdout.write(f"Platform admin: {options['platform_email']} / {self._display_password(options['platform_password'], options['show_passwords'])}")
+        self.stdout.write(f"Demo owner:     {options['owner_email']} / {self._display_password(options['owner_password'], options['show_passwords'])}")
+        self.stdout.write(f"Demo manager:   {options['manager_email']} / {self._display_password(options['manager_password'], options['show_passwords'])}")
         self.stdout.write("-" * 72)
         self.stdout.write("DEMO MERCHANT")
         self.stdout.write(f"Business: {business.id} / {business.name} / {business.slug}")
@@ -165,6 +167,11 @@ class Command(BaseCommand):
         self.stdout.write("=" * 72)
         self.stdout.write(f"Platform admin created: {platform_created}")
         self.stdout.write(f"Platform admin id: {platform_user.id}")
+
+    def _display_password(self, password: str, show_passwords: bool) -> str:
+        if show_passwords:
+            return password
+        return "[hidden; pass --show-passwords to print]"
 
     def _ensure_platform_admin(self, *, email: str, password: str):
         username = email.split("@")[0].replace(".", "_").replace("+", "_") or "platform"

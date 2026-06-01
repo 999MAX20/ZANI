@@ -13,6 +13,7 @@ from apps.ai_core.views import (
     AIToolSuggestView,
     AIRequestLogViewSet,
     AgentProfileViewSet,
+    ApprovalRequestViewSet,
     BusinessKnowledgeItemViewSet,
 )
 from apps.analytics.views import AnalyticsEventViewSet, ReportWidgetViewSet, ScheduledReportViewSet, owner_dashboard, report_export, report_summary
@@ -154,6 +155,7 @@ router.register("inbox/conversations", InboxConversationViewSet, basename="inbox
 router.register("ai/request-logs", AIRequestLogViewSet, basename="ai-request-log")
 router.register("ai/knowledge-items", BusinessKnowledgeItemViewSet, basename="ai-knowledge-item")
 router.register("ai/agent-profiles", AgentProfileViewSet, basename="ai-agent-profile")
+router.register("ai/approval-requests", ApprovalRequestViewSet, basename="ai-approval-request")
 router.register("integration-event-logs", IntegrationEventLogViewSet, basename="integration-event-log")
 router.register("business-connectors", BusinessConnectorViewSet, basename="business-connector")
 router.register("connector-credentials", ConnectorCredentialViewSet, basename="connector-credential")

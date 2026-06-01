@@ -95,5 +95,5 @@ export function getApiErrorMessage(error: unknown) {
         .join("; ");
     }
   }
-  return "Что-то пошло не так. Попробуйте ещё раз.";
+  return "Something went wrong. Please try again.";
 }

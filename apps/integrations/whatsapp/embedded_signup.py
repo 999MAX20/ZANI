@@ -6,6 +6,7 @@ from django.core import signing
 from django.utils import timezone
 
 from apps.bots.models import Bot, BotChannel
+from apps.core.production_rules import is_safe_public_https_url
 from apps.integrations.models import BusinessConnector
 
 
@@ -128,6 +129,8 @@ def complete_embedded_signup(*, business, user, code, state, redirect_uri, phone
 
 
 def _graph_url(edge, params):
-    base = settings.WHATSAPP_GRAPH_BASE_URL.rstrip("/")
+    base = str(settings.WHATSAPP_GRAPH_BASE_URL or "").strip().rstrip("/")
+    if not is_safe_public_https_url(base):
+        raise ValueError("WHATSAPP_GRAPH_BASE_URL must be a public HTTPS URL.")
     version = settings.WHATSAPP_GRAPH_API_VERSION.strip("/")
     return f"{base}/{version}/{edge}?{parse.urlencode(params)}"

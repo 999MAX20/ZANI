@@ -850,6 +850,27 @@ class InboxBackendTests(TestCase):
         self.assertEqual(mark_read_response.status_code, 200)
         self.assertEqual(mark_read_response.data["unread_count"], 0)
 
+    def test_bot_message_payload_secrets_are_masked_in_api_responses(self):
+        message = BotMessage.objects.create(
+            conversation=self.conversation,
+            direction=BotMessage.Directions.INBOUND,
+            sender_type=BotMessage.SenderTypes.CLIENT,
+            text="secret payload",
+            payload_json={"api_key": "raw-api-key", "nested": {"access_token": "raw-access-token"}, "visible": "ok"},
+        )
+        self.api.force_authenticate(self.owner)
+
+        bot_message_response = self.api.get(f"/api/bot-messages/{message.id}/")
+        inbox_response = self.api.get(f"/api/inbox/conversations/{self.conversation.id}/messages/")
+
+        self.assertEqual(bot_message_response.status_code, 200)
+        self.assertEqual(inbox_response.status_code, 200)
+        self.assertEqual(bot_message_response.data["payload_json"]["api_key"], "configured")
+        self.assertEqual(inbox_response.data[0]["payload_json"]["nested"]["access_token"], "configured")
+        self.assertEqual(bot_message_response.data["payload_json"]["visible"], "ok")
+        self.assertNotIn("raw-api-key", str(bot_message_response.data))
+        self.assertNotIn("raw-access-token", str(inbox_response.data))
+
     def test_manager_can_send_outbound_message_from_inbox(self):
         self.api.force_authenticate(self.owner)
 

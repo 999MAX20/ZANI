@@ -12,7 +12,8 @@ from apps.billing.models import Subscription, SubscriptionPlan
 from apps.bots.models import Bot, BotConversation
 from apps.businesses.models import Business, BusinessMember
 from apps.clients.models import Client
-from apps.integrations.models import BusinessConnector, BusinessEvent, IntegrationEventLog
+from apps.core.models import AuditLog
+from apps.integrations.models import BusinessConnector, BusinessEvent, IntegrationEventLog, WebhookDeliveryLog, WebhookEndpoint
 from apps.leads.models import Lead, LeadForm, LeadFormSubmissionError
 from apps.tasks.models import Task
 
@@ -91,7 +92,7 @@ class PlatformOperationsDashboardTests(TestCase):
             name="WhatsApp beta",
             status=BusinessConnector.Statuses.FAILED,
             auth_type=BusinessConnector.AuthTypes.QR,
-            last_error="QR expired",
+            last_error="access_token=raw-connector-token expired",
         )
         BusinessEvent.objects.create(
             business=self.business,
@@ -108,7 +109,7 @@ class PlatformOperationsDashboardTests(TestCase):
             entity_type="lead",
             entity_id="1",
             status=AutomationRun.Statuses.FAILED,
-            error="Task template is missing",
+            error="Task template is missing token=raw-auto-token",
             attempts=3,
         )
         IntegrationEventLog.objects.create(
@@ -117,7 +118,22 @@ class PlatformOperationsDashboardTests(TestCase):
             channel="whatsapp",
             direction=IntegrationEventLog.Directions.OUTBOUND,
             status=IntegrationEventLog.Statuses.FAILED,
-            error="Provider unavailable",
+            error="Provider unavailable api_key=raw-log-key",
+        )
+        webhook_endpoint = WebhookEndpoint.objects.create(
+            business=self.business,
+            name="CRM webhook",
+            url="https://example.com/webhook",
+            secret="raw-webhook-secret",
+        )
+        WebhookDeliveryLog.objects.create(
+            business=self.business,
+            endpoint=webhook_endpoint,
+            event_type="lead.created",
+            idempotency_key="lead-created-ops-1",
+            status=WebhookDeliveryLog.Statuses.FAILED,
+            attempts=2,
+            error="Authorization: Bearer raw-webhook-token",
         )
         bot = Bot.objects.create(business=self.business, name="Pilot bot", status=Bot.Statuses.ACTIVE)
         BotConversation.objects.create(
@@ -201,6 +217,24 @@ class PlatformOperationsDashboardTests(TestCase):
         self.assertEqual(actions[0]["note"], "Asked owner to reconnect WhatsApp QR")
         self.assertEqual(actions[0]["actor_email"], self.platform.email)
 
+    def test_platform_support_action_masks_secret_note(self):
+        self.api.force_authenticate(self.platform)
+
+        response = self.api.post(
+            f"/api/platform/merchants/{self.business.id}/support-actions/",
+            {"action_type": "support_note", "note": "Owner sent api_key=raw-support-action-key", "status": "logged"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertNotIn("raw-support-action-key", str(response.data))
+        detail = self.api.get(f"/api/platform/merchants/{self.business.id}/")
+        self.assertNotIn("raw-support-action-key", str(detail.data["support_workflow"]["recent_actions"]))
+        self.assertNotIn(
+            "raw-support-action-key",
+            AuditLog.objects.filter(business=self.business, entity_type="platform_support_action").first().metadata["note"],
+        )
+
     def test_support_action_requires_note_and_platform_user(self):
         self.api.force_authenticate(self.platform)
         bad = self.api.post(f"/api/platform/merchants/{self.business.id}/support-actions/", {"action_type": "note"}, format="json")
@@ -230,6 +264,19 @@ class PlatformOperationsDashboardTests(TestCase):
         self.assertEqual(len(response.data["work_queue"]["failed_integration_events"]), 1)
         self.assertEqual(response.data["work_queue"]["connector_requests"][0]["business_name"], self.business.name)
 
+    def test_platform_operations_health_redacts_secret_values(self):
+        self.api.force_authenticate(self.platform)
+
+        response = self.api.get("/api/platform/operations-health/")
+
+        self.assertEqual(response.status_code, 200)
+        serialized = json.dumps(response.data, default=str)
+        self.assertNotIn("raw-auto-token", serialized)
+        self.assertNotIn("raw-log-key", serialized)
+        self.assertNotIn("raw-connector-token", serialized)
+        self.assertNotIn("raw-webhook-token", serialized)
+        self.assertIn("[redacted]", serialized)
+
     def test_merchant_user_cannot_access_platform_operations_health(self):
         self.api.force_authenticate(self.owner)
 
@@ -246,6 +293,11 @@ class PlatformOperationsDashboardTests(TestCase):
         self.assertIn("summary", payload)
         self.assertIn("runtime", payload)
         self.assertIn("work_queue", payload)
+        serialized = json.dumps(payload, default=str)
+        self.assertNotIn("raw-auto-token", serialized)
+        self.assertNotIn("raw-log-key", serialized)
+        self.assertNotIn("raw-connector-token", serialized)
+        self.assertNotIn("raw-webhook-token", serialized)
 
     def test_platform_operations_health_command_can_fail_on_critical(self):
         with self.assertRaises(CommandError):

@@ -3,6 +3,7 @@ import json
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
+from apps.core.production_rules import is_safe_public_https_url
 from apps.integrations.models import BusinessConnector
 from apps.integrations.wildberries import validate_wildberries_credentials
 
@@ -44,9 +45,9 @@ class Command(BaseCommand):
             },
             {
                 "key": "wildberries_statistics_api_base_url",
-                "status": "pass" if settings.WILDBERRIES_STATISTICS_API_BASE_URL.startswith("https://") else "fail",
+                "status": "pass" if is_safe_public_https_url(settings.WILDBERRIES_STATISTICS_API_BASE_URL) else "fail",
                 "detail": settings.WILDBERRIES_STATISTICS_API_BASE_URL,
-                "action": "Set WILDBERRIES_STATISTICS_API_BASE_URL to the Wildberries Statistics API base URL.",
+                "action": "Set WILDBERRIES_STATISTICS_API_BASE_URL to the public HTTPS Wildberries Statistics API base URL.",
             },
             {
                 "key": "connector",

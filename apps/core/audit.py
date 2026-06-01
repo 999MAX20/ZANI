@@ -1,4 +1,5 @@
 from apps.core.models import AuditLog
+from apps.integrations.sanitization import sanitize_error_payload, sanitize_error_text
 
 
 def get_client_ip(request):
@@ -18,7 +19,7 @@ def write_audit_log(request, action, instance, business=None, metadata=None):
     if resolved_business is None and hasattr(instance, "conversation"):
         resolved_business = instance.conversation.business
 
-    metadata = metadata or {}
+    metadata = sanitize_audit_metadata(metadata or {})
     AuditLog.objects.create(
         business=resolved_business,
         actor=request.user,
@@ -29,8 +30,12 @@ def write_audit_log(request, action, instance, business=None, metadata=None):
         entity_id=str(getattr(instance, "pk", "")),
         metadata=metadata,
         ip_address=get_client_ip(request),
-        user_agent=request.META.get("HTTP_USER_AGENT", ""),
+        user_agent=sanitize_error_text(request.META.get("HTTP_USER_AGENT", "")),
     )
+
+
+def sanitize_audit_metadata(metadata):
+    return sanitize_error_payload(metadata or {})
 
 
 def infer_audit_category(action, instance, metadata):

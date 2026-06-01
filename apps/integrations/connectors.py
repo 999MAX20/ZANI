@@ -10,7 +10,7 @@ from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from apps.integrations.models import BusinessConnector, BusinessEvent, ConnectorCredential, ConnectorSyncRun
-from apps.integrations.sanitization import sanitize_config
+from apps.integrations.sanitization import sanitize_config, sanitize_error_text
 
 
 CONNECTOR_PROVIDER_CAPABILITIES = {
@@ -356,7 +356,7 @@ def update_connector_health(connector, status=None, error="", save=True):
     if status is None:
         status = BusinessConnector.Statuses.CONNECTED if connector_has_active_credentials(connector) or connector.auth_type == BusinessConnector.AuthTypes.NONE else BusinessConnector.Statuses.NEEDS_ATTENTION
     connector.status = status
-    connector.last_error = error
+    connector.last_error = sanitize_error_text(error)
     if status == BusinessConnector.Statuses.CONNECTED and connector.connected_at is None:
         connector.connected_at = timezone.now()
     if save:
@@ -423,7 +423,7 @@ def run_connector_healthcheck(connector):
         error = "Connector credentials are missing or expired."
     update_connector_health(connector, status=status, error=error)
     run.status = ConnectorSyncRun.Statuses.SUCCEEDED if not error else ConnectorSyncRun.Statuses.FAILED
-    run.error = error
+    run.error = sanitize_error_text(error)
     run.finished_at = timezone.now()
     run.events_received = 0
     run.events_processed = 0

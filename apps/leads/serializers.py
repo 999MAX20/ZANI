@@ -3,6 +3,7 @@ from rest_framework import serializers
 from apps.clients.models import Client
 from apps.clients.services import duplicate_payload, find_duplicate_clients
 from apps.core.permissions import accessible_businesses
+from apps.integrations.sanitization import sanitize_config
 from apps.leads.models import Lead, LeadForm, LeadFormField, LeadFormSubmission, LeadFormSubmissionError
 from apps.scheduling.models import Resource
 from apps.services.models import Service
@@ -105,6 +106,11 @@ class LeadFormSubmissionSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ["created_at"]
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["payload_json"] = sanitize_config(data.get("payload_json") or {})
+        return data
+
 
 class LeadFormSubmissionErrorSerializer(serializers.ModelSerializer):
     form_name = serializers.CharField(source="form.name", read_only=True)
@@ -113,6 +119,11 @@ class LeadFormSubmissionErrorSerializer(serializers.ModelSerializer):
         model = LeadFormSubmissionError
         fields = "__all__"
         read_only_fields = ["created_at"]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["payload_json"] = sanitize_config(data.get("payload_json") or {})
+        return data
 
 
 class PublicLeadFormSerializer(serializers.ModelSerializer):

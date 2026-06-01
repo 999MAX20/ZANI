@@ -441,6 +441,132 @@ class TeamAccessTests(TestCase):
         rows = response.data.get("results", response.data)
         self.assertEqual([item["id"] for item in rows], [own_deal.id])
 
+    def test_own_deal_scope_still_exposes_shared_pipeline_configuration(self):
+        own_role = BusinessRole.objects.create(business=self.business, name="Own deals", preset_key="own-deals")
+        RolePermission.objects.create(
+            business_role=own_role,
+            resource=Resources.DEALS,
+            action=Actions.VIEW,
+            scope=RolePermission.Scopes.OWN,
+        )
+        self.manager_member.business_role = own_role
+        self.manager_member.save(update_fields=["business_role"])
+        pipeline = Pipeline.objects.create(business=self.business, name="Sales", slug="sales", is_default=True)
+        stage = PipelineStage.objects.create(business=self.business, pipeline=pipeline, name="New", order=1)
+        self.api.force_authenticate(self.manager)
+
+        pipeline_response = self.api.get("/api/pipelines/")
+        stage_response = self.api.get("/api/pipeline-stages/")
+
+        self.assertEqual(pipeline_response.status_code, 200)
+        self.assertEqual(stage_response.status_code, 200)
+        pipeline_rows = pipeline_response.data.get("results", pipeline_response.data)
+        stage_rows = stage_response.data.get("results", stage_response.data)
+        self.assertEqual([item["id"] for item in pipeline_rows], [pipeline.id])
+        self.assertEqual([item["id"] for item in stage_rows], [stage.id])
+
+    def test_team_scope_filters_deals_queryset_to_team_members(self):
+        staff_member = BusinessMember.objects.create(
+            business=self.business,
+            user=self.staff_user,
+            role=BusinessMember.Roles.STAFF,
+            business_role=BusinessRole.objects.get(business=self.business, preset_key=BusinessMember.Roles.STAFF),
+        )
+        team = Team.objects.create(business=self.business, name="Sales")
+        TeamMember.objects.create(team=team, member=self.manager_member, is_lead=True)
+        TeamMember.objects.create(team=team, member=staff_member)
+        team_role = BusinessRole.objects.create(business=self.business, name="Team deals", preset_key="team-deals")
+        RolePermission.objects.create(
+            business_role=team_role,
+            resource=Resources.DEALS,
+            action=Actions.VIEW,
+            scope=RolePermission.Scopes.TEAM,
+        )
+        self.manager_member.business_role = team_role
+        self.manager_member.save(update_fields=["business_role"])
+        client = Client.objects.create(business=self.business, full_name="Team Client", phone="+77010000001")
+        pipeline = Pipeline.objects.create(business=self.business, name="Team Sales", slug="team-sales", is_default=True)
+        stage = PipelineStage.objects.create(business=self.business, pipeline=pipeline, name="New", order=1)
+        team_deal = Deal.objects.create(
+            business=self.business,
+            client=client,
+            pipeline=pipeline,
+            stage=stage,
+            title="Team deal",
+            owner=self.staff_user,
+        )
+        Deal.objects.create(
+            business=self.business,
+            client=client,
+            pipeline=pipeline,
+            stage=stage,
+            title="Outside team deal",
+            owner=self.owner,
+        )
+        self.api.force_authenticate(self.manager)
+
+        response = self.api.get("/api/deals/")
+
+        self.assertEqual(response.status_code, 200)
+        rows = response.data.get("results", response.data)
+        self.assertEqual([item["id"] for item in rows], [team_deal.id])
+
+    def test_default_roles_include_ai_permissions(self):
+        manager_permissions = list(
+            RolePermission.objects.filter(
+                business_role__business=self.business,
+                business_role__preset_key=BusinessMember.Roles.MANAGER,
+                resource=Resources.AI_PIPELINE,
+            ).values_list("action", "scope")
+        )
+        operator_permissions = list(
+            RolePermission.objects.filter(
+                business_role__business=self.business,
+                business_role__preset_key=BusinessMember.Roles.OPERATOR,
+                resource=Resources.AI_ASSISTANT,
+            ).values_list("action", "scope")
+        )
+
+        self.assertIn((Actions.EXECUTE, RolePermission.Scopes.OWN), manager_permissions)
+        self.assertIn((Actions.SUGGEST, RolePermission.Scopes.OWN), operator_permissions)
+
+    def test_support_role_sees_deal_but_sensitive_fields_are_masked(self):
+        support_user = User.objects.create_user(
+            username="support-user",
+            email="support-user@example.com",
+            password="pass12345",
+            role=User.Roles.STAFF,
+        )
+        BusinessMember.objects.create(
+            business=self.business,
+            user=support_user,
+            role=BusinessMember.Roles.SUPPORT,
+            business_role=BusinessRole.objects.get(business=self.business, preset_key=BusinessMember.Roles.SUPPORT),
+        )
+        client = Client.objects.create(business=self.business, full_name="Sensitive Client", phone="+77010000002")
+        pipeline = Pipeline.objects.create(business=self.business, name="Sensitive Sales", slug="sensitive-sales", is_default=True)
+        stage = PipelineStage.objects.create(business=self.business, pipeline=pipeline, name="New", order=1)
+        deal = Deal.objects.create(
+            business=self.business,
+            client=client,
+            pipeline=pipeline,
+            stage=stage,
+            title="Sensitive deal",
+            amount=250000,
+            currency="KZT",
+            notes="Internal margin note",
+            lost_reason="Private reason",
+        )
+        self.api.force_authenticate(support_user)
+
+        response = self.api.get(f"/api/deals/{deal.id}/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.data["amount"])
+        self.assertEqual(response.data["currency"], "")
+        self.assertEqual(response.data["notes"], "")
+        self.assertEqual(response.data["lost_reason"], "")
+
     def test_operator_cannot_open_owner_analytics(self):
         operator = User.objects.create_user(
             username="operator",

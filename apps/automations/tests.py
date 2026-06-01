@@ -232,6 +232,26 @@ class AutomationFoundationTests(TestCase):
         self.assertIn("requires entity.client", runs[0].error)
         self.assertFalse(Notification.objects.filter(text="Needs client").exists())
 
+    def test_automation_run_api_masks_secret_payload_results_and_error(self):
+        rule = self._rule(AutomationRule.TriggerTypes.LEAD_CREATED, [])
+        AutomationRun.objects.create(
+            business=self.business,
+            rule=rule,
+            trigger_type=AutomationRule.TriggerTypes.LEAD_CREATED,
+            status=AutomationRun.Statuses.FAILED,
+            payload={"api_key": "raw-payload-key"},
+            action_results=[{"reason": "Failed with token=raw-action-token"}],
+            error="Failed with access_token=raw-error-token",
+        )
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.get("/api/automation-runs/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("raw-payload-key", str(response.data))
+        self.assertNotIn("raw-action-token", str(response.data))
+        self.assertNotIn("raw-error-token", str(response.data))
+
     def test_templates_can_be_listed_and_applied(self):
         self.api.force_authenticate(self.owner)
 

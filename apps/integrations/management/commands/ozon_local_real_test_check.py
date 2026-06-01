@@ -3,6 +3,7 @@ import json
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
+from apps.core.production_rules import is_safe_public_https_url
 from apps.integrations.models import BusinessConnector
 from apps.integrations.ozon import validate_ozon_credentials
 
@@ -44,9 +45,9 @@ class Command(BaseCommand):
             },
             {
                 "key": "ozon_seller_api_base_url",
-                "status": "pass" if settings.OZON_SELLER_API_BASE_URL.startswith("https://") else "fail",
+                "status": "pass" if is_safe_public_https_url(settings.OZON_SELLER_API_BASE_URL) else "fail",
                 "detail": settings.OZON_SELLER_API_BASE_URL,
-                "action": "Set OZON_SELLER_API_BASE_URL to the Ozon Seller API base URL.",
+                "action": "Set OZON_SELLER_API_BASE_URL to the public HTTPS Ozon Seller API base URL.",
             },
             {
                 "key": "connector",

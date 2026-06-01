@@ -258,6 +258,78 @@ class ProductionReadinessTests(TestCase):
         self.assertIn("zani.W013", warning_ids)
         self.assertIn("zani.W014", warning_ids)
 
+    @override_settings(
+        ENVIRONMENT="production",
+        TELEGRAM_ENABLED=True,
+        TELEGRAM_WEBHOOK_SECRET="secret",
+        TELEGRAM_BASE_API_URL="http://api.telegram.org",
+    )
+    def test_production_settings_check_warns_about_unsafe_telegram_config(self):
+        warning_ids = {warning.id for warning in run_checks()}
+
+        self.assertIn("zani.W015", warning_ids)
+
+    @override_settings(
+        ENVIRONMENT="production",
+        TELEGRAM_ENABLED=True,
+        TELEGRAM_WEBHOOK_SECRET="telegram-global-A8v_qR7m-L2p_N9x-T5s_K3u-Y6b_C4d",
+        TELEGRAM_BASE_API_URL="https://api.telegram.org",
+    )
+    def test_production_settings_check_accepts_safe_telegram_config(self):
+        warning_ids = {warning.id for warning in run_checks()}
+
+        self.assertNotIn("zani.W015", warning_ids)
+
+    @override_settings(
+        ENVIRONMENT="production",
+        WHATSAPP_ENABLED=True,
+        WHATSAPP_VERIFY_TOKEN="verify",
+        WHATSAPP_APP_SECRET="app-secret",
+        WHATSAPP_GRAPH_BASE_URL="https://graph.facebook.com",
+    )
+    def test_production_settings_check_warns_about_unsafe_whatsapp_config(self):
+        warning_ids = {warning.id for warning in run_checks()}
+
+        self.assertIn("zani.W016", warning_ids)
+
+    @override_settings(
+        ENVIRONMENT="production",
+        WHATSAPP_ENABLED=True,
+        WHATSAPP_VERIFY_TOKEN="whatsapp-verify-A8v_qR7m-L2p_N9x-T5s_K3u-Y6b_C4d",
+        WHATSAPP_APP_SECRET="whatsapp-app-A8v_qR7m-L2p_N9x-T5s_K3u-Y6b_C4d",
+        WHATSAPP_GRAPH_BASE_URL="https://graph.facebook.com",
+    )
+    def test_production_settings_check_accepts_safe_whatsapp_config(self):
+        warning_ids = {warning.id for warning in run_checks()}
+
+        self.assertNotIn("zani.W016", warning_ids)
+
+    @override_settings(
+        ENVIRONMENT="production",
+        INSTAGRAM_ENABLED=True,
+        INSTAGRAM_VERIFY_TOKEN="instagram-verify-A8v_qR7m-L2p_N9x-T5s_K3u-Y6b_C4d",
+        INSTAGRAM_APP_SECRET="instagram-app-A8v_qR7m-L2p_N9x-T5s_K3u-Y6b_C4d",
+        META_APP_SECRET="",
+        INSTAGRAM_GRAPH_BASE_URL="https://127.0.0.1",
+    )
+    def test_production_settings_check_warns_about_private_instagram_graph_url(self):
+        warning_ids = {warning.id for warning in run_checks()}
+
+        self.assertIn("zani.W017", warning_ids)
+
+    @override_settings(
+        ENVIRONMENT="production",
+        INSTAGRAM_ENABLED=True,
+        INSTAGRAM_VERIFY_TOKEN="instagram-verify-A8v_qR7m-L2p_N9x-T5s_K3u-Y6b_C4d",
+        INSTAGRAM_APP_SECRET="instagram-app-A8v_qR7m-L2p_N9x-T5s_K3u-Y6b_C4d",
+        META_APP_SECRET="",
+        INSTAGRAM_GRAPH_BASE_URL="https://graph.facebook.com",
+    )
+    def test_production_settings_check_accepts_safe_instagram_config(self):
+        warning_ids = {warning.id for warning in run_checks()}
+
+        self.assertNotIn("zani.W017", warning_ids)
+
     @override_settings(ENVIRONMENT="production", SECRET_KEY="x" * 64)
     def test_production_settings_check_warns_about_low_entropy_secret_key(self):
         warning_ids = {warning.id for warning in run_checks()}

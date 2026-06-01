@@ -3,6 +3,7 @@ import { Navigate, RouterProvider, createBrowserRouter } from "react-router-dom"
 
 import { AppLayout } from "../components/layout/AppLayout";
 import { PlatformLayout } from "../components/layout/PlatformLayout";
+import { PermissionGate } from "../components/auth/PermissionGate";
 import { RouteErrorBoundary } from "../components/ui/RouteErrorBoundary";
 import { ForbiddenState, LoadingState } from "../components/ui/StateViews";
 import { useAuth } from "../features/auth/AuthProvider";
@@ -13,7 +14,7 @@ import { PublicLayout } from "../features/public/PublicLayout";
 import { PublicBotsPage, PublicContactsPage, PublicCrmPage, PublicHomePage, PublicPricingPage } from "../features/public/PublicPages";
 import { useActiveBusiness } from "../hooks/useBusiness";
 import { useI18n } from "../lib/i18n";
-import { hasPermission, permissionForbiddenMessage } from "../lib/permissions";
+import { permissionForbiddenMessage } from "../lib/permissions";
 
 const InviteAcceptPage = lazy(() => import("../features/auth/InviteAcceptPage").then((module) => ({ default: module.InviteAcceptPage })));
 const SignupPage = lazy(() => import("../features/auth/SignupPage").then((module) => ({ default: module.SignupPage })));
@@ -92,8 +93,12 @@ function PermissionRoute({
   const { business, isLoading } = useActiveBusiness();
   if (!resource) return children;
   if (isLoading) return <LoadingState label={t("common.checkingAccess")} />;
-  if (hasPermission(user, business?.id, resource, action)) return children;
-  return <ForbiddenState message={permissionForbiddenMessage(resource, action, t)} />;
+  if (!user || !business?.id) return <ForbiddenState message={permissionForbiddenMessage(resource, action, t)} />;
+  return (
+    <PermissionGate resource={resource} action={action} mode="forbidden">
+      {children}
+    </PermissionGate>
+  );
 }
 
 const merchantChildren = [
@@ -110,13 +115,13 @@ const merchantChildren = [
   { path: "bots/:id", resource: "integrations", element: <PageLoader><BotDetailPage /></PageLoader> },
   { path: "integrations", resource: "integrations", element: <PageLoader><IntegrationsPage /></PageLoader> },
   { path: "pricing", resource: "integrations", element: <PageLoader><PricingPage /></PageLoader> },
-  { path: "ai-assistant", resource: "conversations", element: <PageLoader><AIAssistantPage /></PageLoader> },
-  { path: "ai", resource: "conversations", element: <Navigate to="/dashboard/ai-assistant" replace /> },
-  { path: "assistant", resource: "conversations", element: <PageLoader><AIAssistantPage /></PageLoader> },
+  { path: "ai-assistant", resource: "ai_assistant", element: <PageLoader><AIAssistantPage /></PageLoader> },
+  { path: "ai", resource: "ai_assistant", element: <Navigate to="/dashboard/ai-assistant" replace /> },
+  { path: "assistant", resource: "ai_assistant", element: <PageLoader><AIAssistantPage /></PageLoader> },
   { path: "inbox", resource: "conversations", element: <PageLoader><ConversationsPage /></PageLoader> },
-  { path: "ai-agents", resource: "integrations", element: <PageLoader><AIAgentsPage /></PageLoader> },
-  { path: "ai-agents/:id", resource: "integrations", element: <PageLoader><AIAgentsPage /></PageLoader> },
-  { path: "ai-agents/:id/:section", resource: "integrations", element: <PageLoader><AIAgentsPage /></PageLoader> },
+  { path: "ai-agents", resource: "ai_automation", element: <PageLoader><AIAgentsPage /></PageLoader> },
+  { path: "ai-agents/:id", resource: "ai_automation", element: <PageLoader><AIAgentsPage /></PageLoader> },
+  { path: "ai-agents/:id/:section", resource: "ai_automation", element: <PageLoader><AIAgentsPage /></PageLoader> },
   { path: "automations", resource: "automations", element: <PageLoader><AutomationsPage /></PageLoader> },
   { path: "outreach", resource: "notifications", element: <PageLoader><OutreachPage /></PageLoader> },
   { path: "services", resource: "settings", element: <PageLoader><ServicesPage /></PageLoader> },
@@ -140,7 +145,6 @@ const legacyMerchantRoutes = [
   { path: "/timeline", resource: "analytics", element: <PageLoader><TimelinePage /></PageLoader> },
   { path: "/crm-bots", resource: "integrations", element: <PageLoader><BotsPage /></PageLoader> },
   { path: "/integrations", resource: "integrations", element: <PageLoader><IntegrationsPage /></PageLoader> },
-  { path: "/pricing", resource: "integrations", element: <PageLoader><PricingPage /></PageLoader> },
   { path: "/ai-assistant", resource: "conversations", element: <PageLoader><AIAssistantPage /></PageLoader> },
   { path: "/ai", resource: "conversations", element: <Navigate to="/dashboard/ai-assistant" replace /> },
   { path: "/assistant", resource: "conversations", element: <PageLoader><AIAssistantPage /></PageLoader> },

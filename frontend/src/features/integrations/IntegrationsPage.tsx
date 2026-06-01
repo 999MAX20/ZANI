@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { DatabaseZap, Search } from "lucide-react";
+import { DatabaseZap, Search, SlidersHorizontal } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { botChannelsApi, botsApi } from "../../api/bots";
@@ -11,6 +11,7 @@ import { EmptyState, ErrorState, LoadingState } from "../../components/ui/StateV
 import { PageHeader } from "../../components/ui/PageHeader";
 import { Select } from "../../components/ui/Select";
 import { useActiveBusiness } from "../../hooks/useBusiness";
+import { useI18n } from "../../lib/i18n";
 import { hasPermission } from "../../lib/permissions";
 import type { BotChannel, BusinessConnector, ConnectorCapability } from "../../types";
 import { useAuth } from "../auth/AuthProvider";
@@ -23,8 +24,14 @@ import {
 } from "./components/setup/metaCallbacks";
 import { groupLabels, providerCatalog, type ProviderGroup, type ProviderKey } from "./config/providerCatalog";
 
-function providerTitle(provider: ProviderKey, capability?: ConnectorCapability) {
-  return capability?.label || providerCatalog.find((item) => item.provider === provider)?.fallbackLabel || provider;
+type StatusFilter = "all" | "connected" | "setup" | "request" | "planned" | "error";
+type Translate = ReturnType<typeof useI18n>["t"];
+
+const providerGroups: ProviderGroup[] = ["messages", "data", "marketplace", "system"];
+
+function providerTitle(provider: ProviderKey, t: Translate, capability?: ConnectorCapability) {
+  const catalogItem = providerCatalog.find((item) => item.provider === provider);
+  return capability?.label || (catalogItem ? t(catalogItem.fallbackLabelKey) : provider);
 }
 
 function providerCapability(provider: ProviderKey, capabilities: ConnectorCapability[]) {
@@ -60,11 +67,21 @@ function deriveProviderStatus({
 }
 
 export function IntegrationsPage() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const { business, isLoading: isBusinessLoading } = useActiveBusiness();
   const canManage = hasPermission(user, business?.id, "integrations", "manage");
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState<ProviderGroup | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const statusFilterOptions: Array<{ value: StatusFilter; label: string }> = [
+    { value: "all", label: t("integrations.overview.status.all") },
+    { value: "connected", label: t("integrations.overview.status.connected") },
+    { value: "setup", label: t("integrations.overview.status.setup") },
+    { value: "request", label: t("integrations.overview.status.request") },
+    { value: "planned", label: t("integrations.overview.status.planned") },
+    { value: "error", label: t("integrations.overview.status.error") },
+  ];
 
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -128,22 +145,33 @@ export function IntegrationsPage() {
         const connector = providerConnector(item.provider, connectorList);
         const channel = providerChannel(item.provider, channelList);
         const status = item.provider === "kaspi_pricing" ? "setup_required" : deriveProviderStatus({ capability, channel, connector });
-        const label = providerTitle(item.provider, capability);
-        return { ...item, capability, channel, connector, label, status };
+        const label = providerTitle(item.provider, t, capability);
+        const primaryUse = t(item.primaryUseKey);
+        return { ...item, capability, channel, connector, label, primaryUse, status };
       })
       .filter((item) => {
         const matchesGroup = group === "all" || item.group === group;
         const matchesQuery = !normalizedQuery || [item.label, item.provider, item.primaryUse].join(" ").toLowerCase().includes(normalizedQuery);
-        return matchesGroup && matchesQuery;
+        const matchesStatus =
+          statusFilter === "all" ||
+          (statusFilter === "connected" && ["active", "connected"].includes(item.status)) ||
+          (statusFilter === "setup" && ["draft", "setup_required", "provider_configuring", "syncing"].includes(item.status)) ||
+          (statusFilter === "request" && ["request", "pending_request"].includes(item.status)) ||
+          (statusFilter === "planned" && ["roadmap", "soon"].includes(item.status)) ||
+          (statusFilter === "error" && ["error", "failed", "needs_attention", "expired_credentials"].includes(item.status));
+        return matchesGroup && matchesQuery && matchesStatus;
       });
-  }, [capabilities.data, channels.data, connectors.data, group, query]);
+  }, [capabilities.data, channels.data, connectors.data, group, query, statusFilter, t]);
+
+  const connectedCount = data.filter((item) => ["active", "connected"].includes(item.status)).length;
+  const setupCount = data.filter((item) => ["draft", "setup_required", "provider_configuring"].includes(item.status)).length;
 
   if (isBusinessLoading || capabilities.isLoading || connectors.isLoading || channels.isLoading || bots.isLoading) {
-    return <LoadingState label="Загружаем статус интеграций..." />;
+    return <LoadingState label={t("integrations.page.loading")} />;
   }
 
   if (!business) {
-    return <EmptyState title="Нет бизнеса" description="Создайте бизнес, чтобы подключать каналы, склад, 1C и Kaspi." />;
+    return <EmptyState title={t("integrations.page.noBusinessTitle")} description={t("integrations.page.noBusinessDescription")} />;
   }
 
   const pageError = capabilities.error || connectors.error || channels.error || bots.error;
@@ -151,12 +179,12 @@ export function IntegrationsPage() {
   return (
     <div>
       <PageHeader
-        title="Подключения"
-        description="Подключайте каналы и источники данных. Все настройки находятся внутри карточки нужного сервиса."
+        title={t("integrations.overview.title")}
+        description={t("integrations.overview.description")}
         actions={
           <Link to="/dashboard/ai-assistant">
             <Button type="button" variant="secondary">
-              <DatabaseZap size={16} /> Открыть AI-анализ
+              <DatabaseZap size={16} /> {t("integrations.overview.openAnalysis")}
             </Button>
           </Link>
         }
@@ -168,57 +196,94 @@ export function IntegrationsPage() {
         </div>
       ) : null}
 
-      <section className="mb-5 rounded-3xl border border-white/80 bg-white/92 p-4 shadow-soft">
-        <div className="grid gap-3 lg:grid-cols-[1fr_220px]">
+      <section className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="grid gap-3 lg:grid-cols-[1fr_220px_220px]">
           <label className="flex min-h-12 items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 text-sm font-semibold text-slate-500">
             <Search size={18} />
             <input
               className="min-w-0 flex-1 bg-transparent outline-none"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Поиск: Kaspi, Telegram, 1C..."
+              placeholder={t("integrations.overview.searchPlaceholder")}
             />
           </label>
           <Select
             value={group}
             onChange={(event) => setGroup(event.target.value as ProviderGroup | "all")}
             options={[
-              { value: "all", label: "Все группы" },
-              { value: "data", label: groupLabels.data.title },
-              { value: "marketplace", label: groupLabels.marketplace.title },
-              { value: "system", label: groupLabels.system.title },
+              { value: "all", label: t("integrations.overview.allGroups") },
+              { value: "messages", label: t(groupLabels.messages.titleKey) },
+              { value: "data", label: t(groupLabels.data.titleKey) },
+              { value: "marketplace", label: t(groupLabels.marketplace.titleKey) },
+              { value: "system", label: t(groupLabels.system.titleKey) },
             ]}
+          />
+          <Select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
+            options={statusFilterOptions}
           />
         </div>
       </section>
 
-      <section className="mb-6 space-y-5">
-        {(["data", "marketplace", "system"] as ProviderGroup[]).map((groupKey) => {
-          const items = data.filter((item) => item.group === groupKey);
-          if (!items.length) return null;
-          return (
-            <div key={groupKey}>
-              <div className="mb-3 flex items-center justify-between">
-                <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">{groupLabels[groupKey].title}</p>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <section className="mb-6 space-y-5">
+          {providerGroups.map((groupKey) => {
+            const items = data.filter((item) => item.group === groupKey);
+            if (!items.length) return null;
+            return (
+              <div key={groupKey}>
+                <div className="mb-3">
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">{t(groupLabels[groupKey].titleKey)}</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-500">{t(groupLabels[groupKey].textKey)}</p>
+                </div>
+                <div className="grid gap-4 lg:grid-cols-2">
+                  {items.map((item) => (
+                    <ProviderCard
+                      key={item.provider}
+                      businessId={business.id}
+                      bots={bots.data || []}
+                      canManage={canManage}
+                      capability={item.capability}
+                      channel={item.channel}
+                      connector={item.connector}
+                      provider={item}
+                    />
+                  ))}
+                </div>
               </div>
-              <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
-                {items.map((item) => (
-                  <ProviderCard
-                    key={item.provider}
-                    businessId={business.id}
-                    bots={bots.data || []}
-                    canManage={canManage}
-                    capability={item.capability}
-                    channel={item.channel}
-                    connector={item.connector}
-                    provider={item}
-                  />
-                ))}
+            );
+          })}
+          {!data.length ? (
+            <EmptyState title={t("integrations.overview.emptyTitle")} description={t("integrations.overview.emptyText")} />
+          ) : null}
+        </section>
+
+        <aside className="space-y-4 xl:sticky xl:top-24 xl:self-start">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-blue-700">
+                <SlidersHorizontal size={18} />
+              </div>
+              <div>
+                <p className="font-black text-midnight">{t("integrations.overview.guideTitle")}</p>
+                <p className="text-xs font-bold text-slate-500">{t("integrations.overview.guideMeta", { connected: connectedCount, setup: setupCount })}</p>
               </div>
             </div>
-          );
-        })}
-      </section>
+            <div className="mt-4 space-y-3 text-sm font-semibold leading-6 text-slate-600">
+              <p>{t("integrations.overview.guideStep1")}</p>
+              <p>{t("integrations.overview.guideStep2")}</p>
+              <p>{t("integrations.overview.guideStep3")}</p>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <p className="font-black text-midnight">{t("integrations.overview.simpleTitle")}</p>
+            <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">
+              {t("integrations.overview.simpleText")}
+            </p>
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }

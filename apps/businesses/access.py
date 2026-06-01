@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from django.db.models import Q
 from rest_framework.exceptions import PermissionDenied
 
 from apps.businesses.models import Business, BusinessMember, BusinessRole, RolePermission
@@ -21,6 +22,11 @@ class Resources:
     AUTOMATIONS = "automations"
     AUDIT_LOGS = "audit_logs"
     NOTIFICATIONS = "notifications"
+    AI_ASSISTANT = "ai_assistant"
+    AI_ANALYST = "ai_analyst"
+    AI_PIPELINE = "ai_pipeline"
+    AI_OUTREACH = "ai_outreach"
+    AI_AUTOMATION = "ai_automation"
 
 
 class Actions:
@@ -29,6 +35,9 @@ class Actions:
     UPDATE = "update"
     DELETE = "delete"
     MANAGE = "manage"
+    SUGGEST = "suggest"
+    EXECUTE = "execute"
+    APPROVE = "approve"
 
 
 PERMISSION_CATALOG = {
@@ -46,6 +55,11 @@ PERMISSION_CATALOG = {
     Resources.AUTOMATIONS: [Actions.VIEW, Actions.CREATE, Actions.UPDATE, Actions.DELETE, Actions.MANAGE],
     Resources.AUDIT_LOGS: [Actions.VIEW, Actions.MANAGE],
     Resources.NOTIFICATIONS: [Actions.VIEW, Actions.UPDATE, Actions.MANAGE],
+    Resources.AI_ASSISTANT: [Actions.VIEW, Actions.SUGGEST, Actions.EXECUTE, Actions.MANAGE],
+    Resources.AI_ANALYST: [Actions.VIEW, Actions.SUGGEST, Actions.MANAGE],
+    Resources.AI_PIPELINE: [Actions.VIEW, Actions.SUGGEST, Actions.EXECUTE, Actions.APPROVE, Actions.MANAGE],
+    Resources.AI_OUTREACH: [Actions.VIEW, Actions.SUGGEST, Actions.EXECUTE, Actions.APPROVE, Actions.MANAGE],
+    Resources.AI_AUTOMATION: [Actions.VIEW, Actions.SUGGEST, Actions.EXECUTE, Actions.APPROVE, Actions.MANAGE],
 }
 
 ROLE_PRESETS = {
@@ -65,6 +79,9 @@ ROLE_PRESETS = {
         Resources.ANALYTICS: {Actions.VIEW: RolePermission.Scopes.BUSINESS},
         Resources.NOTIFICATIONS: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.BUSINESS},
         Resources.SETTINGS: {Actions.VIEW: RolePermission.Scopes.BUSINESS},
+        Resources.AI_ASSISTANT: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.SUGGEST: RolePermission.Scopes.BUSINESS, Actions.EXECUTE: RolePermission.Scopes.BUSINESS},
+        Resources.AI_ANALYST: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.SUGGEST: RolePermission.Scopes.BUSINESS},
+        Resources.AI_PIPELINE: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.SUGGEST: RolePermission.Scopes.BUSINESS, Actions.EXECUTE: RolePermission.Scopes.OWN},
     },
     BusinessMember.Roles.OPERATOR: {
         Resources.CLIENTS: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.OWN},
@@ -72,19 +89,25 @@ ROLE_PRESETS = {
         Resources.CONVERSATIONS: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.CREATE: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.OWN},
         Resources.TASKS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.UPDATE: RolePermission.Scopes.OWN},
         Resources.NOTIFICATIONS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.UPDATE: RolePermission.Scopes.OWN},
+        Resources.AI_ASSISTANT: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.SUGGEST: RolePermission.Scopes.OWN},
+        Resources.AI_PIPELINE: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.SUGGEST: RolePermission.Scopes.OWN},
     },
     BusinessMember.Roles.MARKETER: {
         Resources.CLIENTS: {Actions.VIEW: RolePermission.Scopes.BUSINESS},
         Resources.LEADS: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.CREATE: RolePermission.Scopes.BUSINESS},
         Resources.ANALYTICS: {Actions.VIEW: RolePermission.Scopes.BUSINESS},
         Resources.AUTOMATIONS: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.CREATE: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.BUSINESS},
-        Resources.NOTIFICATIONS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.UPDATE: RolePermission.Scopes.OWN},
+        Resources.NOTIFICATIONS: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.OWN, Actions.MANAGE: RolePermission.Scopes.BUSINESS},
+        Resources.AI_ASSISTANT: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.SUGGEST: RolePermission.Scopes.BUSINESS},
+        Resources.AI_ANALYST: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.SUGGEST: RolePermission.Scopes.BUSINESS},
+        Resources.AI_OUTREACH: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.SUGGEST: RolePermission.Scopes.BUSINESS, Actions.EXECUTE: RolePermission.Scopes.BUSINESS},
     },
     BusinessMember.Roles.ACCOUNTANT: {
         Resources.CLIENTS: {Actions.VIEW: RolePermission.Scopes.BUSINESS},
         Resources.ANALYTICS: {Actions.VIEW: RolePermission.Scopes.BUSINESS},
         Resources.BILLING: {Actions.VIEW: RolePermission.Scopes.BUSINESS},
         Resources.NOTIFICATIONS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.UPDATE: RolePermission.Scopes.OWN},
+        Resources.AI_ANALYST: {Actions.VIEW: RolePermission.Scopes.BUSINESS},
     },
     BusinessMember.Roles.SUPPORT: {
         Resources.CLIENTS: {Actions.VIEW: RolePermission.Scopes.BUSINESS},
@@ -93,6 +116,7 @@ ROLE_PRESETS = {
         Resources.APPOINTMENTS: {Actions.VIEW: RolePermission.Scopes.BUSINESS},
         Resources.CONVERSATIONS: {Actions.VIEW: RolePermission.Scopes.BUSINESS},
         Resources.NOTIFICATIONS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.UPDATE: RolePermission.Scopes.OWN},
+        Resources.AI_ASSISTANT: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.SUGGEST: RolePermission.Scopes.OWN},
     },
     BusinessMember.Roles.STAFF: {
         Resources.CLIENTS: {Actions.VIEW: RolePermission.Scopes.BUSINESS},
@@ -100,7 +124,20 @@ ROLE_PRESETS = {
         Resources.APPOINTMENTS: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.OWN},
         Resources.TASKS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.UPDATE: RolePermission.Scopes.OWN},
         Resources.NOTIFICATIONS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.UPDATE: RolePermission.Scopes.OWN},
+        Resources.AI_ASSISTANT: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.SUGGEST: RolePermission.Scopes.OWN},
     },
+}
+
+
+ROLE_DISPLAY_NAMES = {
+    BusinessMember.Roles.OWNER: "Владелец",
+    BusinessMember.Roles.ADMIN: "Директор",
+    BusinessMember.Roles.MANAGER: "Менеджер",
+    BusinessMember.Roles.OPERATOR: "Оператор чатов",
+    BusinessMember.Roles.MARKETER: "Маркетолог",
+    BusinessMember.Roles.ACCOUNTANT: "Бухгалтер",
+    BusinessMember.Roles.SUPPORT: "Поддержка",
+    BusinessMember.Roles.STAFF: "Сотрудник",
 }
 
 
@@ -227,29 +264,88 @@ def user_scope_for(user, business: Business | None, resource: str, action: str):
     return can(user, business, resource, action).scope
 
 
+def can_view_sensitive_field(user, business: Business | None, resource: str, field: str) -> bool:
+    if platform_admin_has_global_access(user) or is_platform_admin(user):
+        return True
+    if user_is_business_owner(user, business):
+        return True
+    membership = get_membership(user, business)
+    if membership is None:
+        return False
+    if membership.role in {BusinessMember.Roles.ADMIN, BusinessMember.Roles.MANAGER, BusinessMember.Roles.ACCOUNTANT}:
+        return True
+    if field in {"amount", "revenue", "margin", "payment_status", "discount"}:
+        return can(user, business, Resources.BILLING, Actions.VIEW).allowed
+    if field in {"internal_notes", "notes", "lost_reason"}:
+        return membership.role not in {BusinessMember.Roles.OPERATOR, BusinessMember.Roles.SUPPORT, BusinessMember.Roles.STAFF}
+    return False
+
+
 def scope_queryset(queryset, user, business: Business | None, resource: str, action: str = Actions.VIEW):
     result = can(user, business, resource, action)
     if not result.allowed:
         return queryset.none()
-    if result.scope in {RolePermission.Scopes.BUSINESS, RolePermission.Scopes.TEAM}:
+    if _is_business_shared_configuration_queryset(queryset):
         return queryset
+    if result.scope == RolePermission.Scopes.BUSINESS:
+        return queryset
+    if result.scope == RolePermission.Scopes.TEAM:
+        team_user_ids = _team_user_ids_for(user, business)
+        if not team_user_ids:
+            team_user_ids = [user.id]
+        return _filter_queryset_by_users(queryset, team_user_ids, include_business_wide_notifications=False)
     if result.scope == RolePermission.Scopes.OWN:
-        model_fields = {field.name for field in queryset.model._meta.get_fields()}
-        if "responsible_user" in model_fields:
-            return queryset.filter(responsible_user=user)
-        if "assigned_to" in model_fields:
-            return queryset.filter(assigned_to=user)
-        if "owner" in model_fields:
-            return queryset.filter(owner=user)
-        if "assignee" in model_fields:
-            return queryset.filter(assignee=user)
-        if "created_by" in model_fields:
-            return queryset.filter(created_by=user)
-        if "recipient" in model_fields:
-            return queryset.filter(recipient=user) | queryset.filter(recipient__isnull=True)
-        if "user" in model_fields:
-            return queryset.filter(user=user)
+        return _filter_queryset_by_users(queryset, [user.id], include_business_wide_notifications=True)
     return queryset
+
+
+def _is_business_shared_configuration_queryset(queryset):
+    return queryset.model.__name__ in {"Pipeline", "PipelineStage", "StageTransition"}
+
+
+def _team_user_ids_for(user, business: Business | None):
+    if not user or not user.is_authenticated or business is None:
+        return []
+    membership = get_membership(user, business)
+    if membership is None:
+        return [user.id]
+    team_ids = list(membership.team_memberships.filter(team__is_active=True).values_list("team_id", flat=True))
+    if not team_ids:
+        return [user.id]
+    return list(
+        BusinessMember.objects.filter(
+            business=business,
+            is_active=True,
+            team_memberships__team_id__in=team_ids,
+        )
+        .values_list("user_id", flat=True)
+        .distinct()
+    )
+
+
+def _filter_queryset_by_users(queryset, user_ids, *, include_business_wide_notifications: bool):
+    model_fields = {field.name for field in queryset.model._meta.get_fields()}
+    ownership_fields = [
+        "responsible_user",
+        "assigned_to",
+        "owner",
+        "assignee",
+        "created_by",
+        "manager",
+        "operator",
+        "user",
+    ]
+    query = Q()
+    for field in ownership_fields:
+        if field in model_fields:
+            query |= Q(**{f"{field}_id__in": user_ids})
+    if "recipient" in model_fields:
+        query |= Q(recipient_id__in=user_ids)
+        if include_business_wide_notifications:
+            query |= Q(recipient__isnull=True)
+    if not query:
+        return queryset.none()
+    return queryset.filter(query).distinct()
 
 
 def effective_permissions_for(user, business: Business | None):
@@ -276,7 +372,7 @@ def ensure_default_roles(business: Business):
             business=business,
             preset_key=role,
             defaults={
-                "name": role.replace("_", " ").title(),
+                "name": ROLE_DISPLAY_NAMES.get(role, role.replace("_", " ").title()),
                 "description": "Default access preset.",
                 "permissions_json": permissions,
                 "is_system": True,

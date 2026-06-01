@@ -21,6 +21,7 @@ except ImportError:  # pragma: no cover - local env may install requirements aft
 from apps.clients.models import Client
 from apps.clients.services import duplicate_payload, find_duplicate_clients
 from apps.core.audit import write_audit_log
+from apps.core.csv_safety import safe_csv_cell
 from apps.core.models import AuditLog, ImportJob
 from apps.crm.models import Deal
 from apps.integrations.connectors import normalize_business_event
@@ -675,7 +676,7 @@ def export_csv_response(queryset, fields, filename):
     writer = csv.writer(buffer)
     writer.writerow(fields)
     for instance in queryset:
-        writer.writerow([getattr(instance, field, "") for field in fields])
+        writer.writerow([safe_csv_cell(getattr(instance, field, "")) for field in fields])
     response = HttpResponse(buffer.getvalue(), content_type="text/csv; charset=utf-8")
     response["Content-Disposition"] = f'attachment; filename="{filename}"'
     return response
@@ -720,7 +721,7 @@ def export_business_events(business, event_type_prefix, filename):
     writer.writerow(fields)
     queryset = BusinessEvent.objects.filter(business=business, event_type__startswith=event_type_prefix).order_by("id")
     for event in queryset:
-        writer.writerow([event.id, event.event_type, event.source, event.external_id, event.occurred_at.isoformat(), event.payload_json])
+        writer.writerow([safe_csv_cell(value) for value in [event.id, event.event_type, event.source, event.external_id, event.occurred_at.isoformat(), event.payload_json]])
     response = HttpResponse(buffer.getvalue(), content_type="text/csv; charset=utf-8")
     response["Content-Disposition"] = f'attachment; filename="{filename}"'
     return response

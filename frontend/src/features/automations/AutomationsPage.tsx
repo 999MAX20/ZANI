@@ -1,6 +1,7 @@
 import { ClipboardCheck, Play, Plus, RotateCcw, Settings2, Trash2, Workflow } from "lucide-react";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 
 import { automationRulesApi, automationRunsApi } from "../../api/automations";
 import { Button } from "../../components/ui/Button";
@@ -172,7 +173,9 @@ export function AutomationsPage() {
         description={t("automations.description")}
         actions={
           <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" onClick={() => setAdvancedOpen(true)}><Settings2 size={18} />{t("automations.advancedBuilder")}</Button>
+            <Link to="/dashboard/settings#automations">
+              <Button type="button" variant="secondary">{t("automations.backToSettings")}</Button>
+            </Link>
             <Button onClick={() => setCreateOpen(true)}><Plus size={18} />{t("automations.createRule")}</Button>
           </div>
         }
@@ -180,6 +183,19 @@ export function AutomationsPage() {
       {applyTemplateMutation.error || toggleMutation.error || mutation.error || createManualMutation.error ? (
         <div className="mb-4"><ErrorState message={t("automations.saveError")} /></div>
       ) : null}
+
+      <details className="mb-6 rounded-3xl border border-slate-100 bg-white/80 p-4 shadow-soft">
+        <summary className="cursor-pointer text-sm font-black uppercase tracking-[0.16em] text-slate-500">
+          {t("automations.advancedTitle")}
+        </summary>
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="max-w-2xl text-sm leading-6 text-slate-500">{t("automations.advancedText")}</p>
+          <Button type="button" variant="secondary" onClick={() => setAdvancedOpen(true)}>
+            <Settings2 size={18} />
+            {t("automations.advancedBuilder")}
+          </Button>
+        </div>
+      </details>
 
       <div className="mb-6">
         <div className="mb-3 flex items-center gap-2">
@@ -371,7 +387,7 @@ export function AutomationsPage() {
                     value={condition.rawValue}
                     onChange={(event) => setConditions(conditions.map((item, itemIndex) => itemIndex === index ? { ...item, rawValue: event.target.value } : item))}
                   />
-                  <Button type="button" variant="ghost" className="px-3" onClick={() => setConditions(conditions.filter((_, itemIndex) => itemIndex !== index))}>
+                  <Button type="button" variant="ghost" className="px-3" aria-label={t("automations.removeCondition")} onClick={() => setConditions(conditions.filter((_, itemIndex) => itemIndex !== index))}>
                     <Trash2 size={16} />
                   </Button>
                 </div>
@@ -406,7 +422,7 @@ export function AutomationsPage() {
                       value={action.delay_seconds}
                       onChange={(event) => setActions(actions.map((item, itemIndex) => itemIndex === index ? { ...item, delay_seconds: Number(event.target.value) } : item))}
                     />
-                    <Button type="button" variant="ghost" className="px-3" onClick={() => setActions(actions.filter((_, itemIndex) => itemIndex !== index))}>
+                    <Button type="button" variant="ghost" className="px-3" aria-label={t("automations.removeAction")} onClick={() => setActions(actions.filter((_, itemIndex) => itemIndex !== index))}>
                       <Trash2 size={16} />
                     </Button>
                   </div>
@@ -428,7 +444,7 @@ export function AutomationsPage() {
             <div className="rounded-3xl border border-emerald-100 bg-emerald-50 p-4 text-sm text-emerald-800">
               <p className="font-bold">{t("automations.previewOk", { name: preview.name })}</p>
               <p className="mt-1">{preview.will_run_when}</p>
-              <p className="mt-2 font-semibold">{preview.conditions_count} conditions · {preview.actions_count} actions</p>
+              <p className="mt-2 font-semibold">{t("automations.previewMeta", { conditions: preview.conditions_count, actions: preview.actions_count })}</p>
             </div>
           ) : null}
 

@@ -58,8 +58,12 @@ async function login(page: Page, email: string, target: RegExp) {
 }
 
 async function navigateInsideApp(page: Page, path: string) {
-  await page.locator(`a[href="${path}"]`).first().click({ force: true });
+  await page.locator(`a[href="${path}"]:visible`).first().click();
   await expect(page).toHaveURL(new RegExp(path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+}
+
+function routePattern(route: string) {
+  return new RegExp(route === "/dashboard" ? "/dashboard/?$" : route.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
 }
 
 async function apiLogin(page: Page, email: string) {
@@ -116,11 +120,11 @@ test("business owner can use core merchant CRM pages", async ({ page, isMobile }
   await login(page, users.owner, /\/dashboard/);
 
   await expect(page).toHaveURL(/\/dashboard/);
-  await expect(page.getByRole("heading", { name: /Рабочий стол бизнеса|Business dashboard|Бизнес басқару панелі/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Доброе утро|Business dashboard|Бизнес басқару панелі|Good morning/ })).toBeVisible();
 
   await navigateInsideApp(page, "/dashboard/leads");
-  await expect(page.getByRole("heading", { name: "Sales pipeline" })).toBeVisible();
-  await page.getByRole("button", { name: /Открыть|Open/ }).first().click();
+  await expect(page.getByRole("heading", { name: /Заявки|Leads/ })).toBeVisible();
+  await page.getByRole("button", { name: /Полная карточка|Full card/ }).first().click();
   await expect(page.getByRole("button", { name: "История" })).toBeVisible();
   await page.getByRole("button", { name: "Заметки" }).click();
   await page.getByPlaceholder("Например: клиент просит перезвонить вечером").fill("E2E CRM Light comment");
@@ -133,13 +137,14 @@ test("business owner can use core merchant CRM pages", async ({ page, isMobile }
   await page.getByRole("button", { name: "Закрыть карточку" }).click();
 
   await navigateInsideApp(page, "/dashboard/conversations");
-  await expect(page.getByRole("heading", { name: "Conversations" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Диалоги|Conversations/ })).toBeVisible();
 
   await navigateInsideApp(page, "/dashboard/settings");
   await expect(page.getByRole("heading", { name: /Настройки|Settings/ })).toBeVisible();
 });
 
 test("business owner core routes render without 404", async ({ page, isMobile }) => {
+  test.setTimeout(120_000);
   test.skip(isMobile, "Full route audit uses desktop sidebar routes; mobile has a separate reachability smoke.");
 
   await login(page, users.owner, /\/dashboard/);
@@ -157,6 +162,11 @@ test("business owner core routes render without 404", async ({ page, isMobile })
     "/dashboard/conversations",
     "/dashboard/bots",
     "/dashboard/integrations",
+    "/dashboard/pricing",
+    "/dashboard/ai-assistant",
+    "/dashboard/ai-agents",
+    "/dashboard/automations",
+    "/dashboard/working-hours",
     "/dashboard/analytics",
     "/dashboard/settings",
     "/dashboard/ai",
@@ -164,10 +174,43 @@ test("business owner core routes render without 404", async ({ page, isMobile })
 
   for (const route of routes) {
     await page.goto(route);
-    await expect(page).toHaveURL(new RegExp(route.replace(/[.*+?^${}()|[\]\\]/g, "\\&").replace(/\\&/g, "\\$&")));
+    await expect(page).toHaveURL(routePattern(route));
     await expect(page.getByText("Страница не найдена")).toHaveCount(0);
     await expect(page.getByText("Unexpected Application Error")).toHaveCount(0);
   }
+});
+
+test("desktop sidebar links render without 404", async ({ page, isMobile }) => {
+  test.setTimeout(90_000);
+  test.skip(isMobile, "Desktop sidebar route audit runs in the desktop project.");
+
+  await login(page, users.owner, /\/dashboard/);
+
+  const sidebarRoutes = [
+    "/dashboard",
+    "/dashboard/leads",
+    "/dashboard/deals",
+    "/dashboard/clients",
+    "/dashboard/conversations",
+    "/dashboard/ai-agents",
+    "/dashboard/integrations",
+    "/dashboard/analytics",
+    "/dashboard/settings",
+  ];
+
+  for (const route of sidebarRoutes) {
+    const sidebarLink = page.locator(`aside a[href="${route}"]`).first();
+    await expect(sidebarLink).toBeVisible();
+    await sidebarLink.click({ force: true });
+    await expect(page).toHaveURL(routePattern(route));
+    await expect(page.getByText("Страница не найдена")).toHaveCount(0);
+    await expect(page.getByText("Unexpected Application Error")).toHaveCount(0);
+  }
+
+  await page.goto("/dashboard/ai-agents/999999/not-a-section");
+  await expect(page).toHaveURL(/\/dashboard\/ai-agents\/\d+\/overview/);
+  await expect(page.getByText("Страница не найдена")).toHaveCount(0);
+  await expect(page.getByText("Unexpected Application Error")).toHaveCount(0);
 });
 
 test("header notifications popover opens and closes safely", async ({ page, isMobile }) => {
@@ -533,22 +576,23 @@ test("operator sees restricted sections as forbidden", async ({ page }) => {
   await expect(page.getByText(/роль|access/i)).toBeVisible();
 });
 
-test("mobile owner smoke: dashboard and calendar are reachable", async ({ page, isMobile }) => {
+test("mobile owner smoke: dashboard, bottom nav and more drawer are reachable", async ({ page, isMobile }) => {
   test.skip(!isMobile, "Mobile viewport smoke runs only in the mobile project.");
 
   await login(page, users.owner, /\/dashboard/);
-  await expect(page.getByRole("heading", { name: /Рабочий стол бизнеса|Business dashboard|Бизнес басқару панелі/ })).toBeVisible();
+  await expect(page).toHaveURL(/\/dashboard/);
+  await expect(page.getByText("Unexpected Application Error")).toHaveCount(0);
 
-  await page.locator('nav a[href="/dashboard/leads"]').click();
+  await page.locator('nav a[href="/dashboard/leads"]').last().click();
   await expect(page).toHaveURL(/\/dashboard\/leads/);
   await expect(page.getByText("Unexpected Application Error")).toHaveCount(0);
 
-  await page.locator('nav a[href="/dashboard/conversations"]').click();
+  await page.locator('nav a[href="/dashboard/conversations"]').last().click();
   await expect(page).toHaveURL(/\/dashboard\/conversations/);
   await expect(page.getByText("Unexpected Application Error")).toHaveCount(0);
 
-  await page.locator('nav a[href="/dashboard/tasks"]').click();
-  await expect(page).toHaveURL(/\/dashboard\/tasks/);
+  await page.locator('nav a[href="/dashboard/clients"]').last().click();
+  await expect(page).toHaveURL(/\/dashboard\/clients/);
   await expect(page.getByText("Unexpected Application Error")).toHaveCount(0);
 
   await page.getByRole("button", { name: /Развернуть меню|Expand menu/ }).click();
@@ -556,8 +600,22 @@ test("mobile owner smoke: dashboard and calendar are reachable", async ({ page, 
   await expect(closeSidebarButton).toBeVisible();
   await closeSidebarButton.click();
 
-  await page.getByRole("button", { name: /Ещё|More/ }).click();
-  await page.locator('a[href="/dashboard/calendar"]').first().click();
-  await expect(page).toHaveURL(/\/dashboard\/calendar/);
-  await expect(page.getByRole("heading", { name: /Календарь бизнеса|Business calendar|Бизнес күнтізбесі/ })).toBeVisible();
+  const drawerRoutes = [
+    "/dashboard/deals",
+    "/dashboard/tasks",
+    "/dashboard/calendar",
+    "/dashboard/ai-agents",
+    "/dashboard/integrations",
+    "/dashboard/analytics",
+    "/dashboard/settings",
+  ];
+
+  for (const route of drawerRoutes) {
+    await page.getByRole("button", { name: /Ещё|More/ }).click();
+    await page.locator(`a[href="${route}"]`).last().click();
+    await expect(page).toHaveURL(routePattern(route));
+    await expect(page.getByText("Unexpected Application Error")).toHaveCount(0);
+  }
+
+  await expect(page.getByRole("heading", { name: /Настройки|Settings|Баптаулар/ })).toBeVisible();
 });

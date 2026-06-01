@@ -244,6 +244,27 @@ class KaspiPricingApiTests(TestCase):
         self.assertEqual(apply_response.data["status"], KaspiPriceChangeLog.Statuses.SIMULATED)
         self.assertEqual(apply_response.data["new_price"], "10399.00")
 
+    def test_pricing_rule_response_masks_config_and_last_error_secrets(self):
+        rule = KaspiPricingRule.objects.create(
+            business=self.business,
+            product_sku="SKU-SECRET",
+            product_name="Secret product",
+            current_price=Decimal("10500"),
+            min_price=Decimal("10000"),
+            step_amount=Decimal("1"),
+            mode=KaspiPricingRule.Modes.APPROVAL,
+            config_json={"api_key": "raw-config-key"},
+            last_error="Provider failed with token=raw-pricing-token",
+            created_by=self.owner,
+        )
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.get(f"/api/pricing/kaspi/rules/{rule.id}/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("raw-config-key", str(response.data))
+        self.assertNotIn("raw-pricing-token", str(response.data))
+
     def test_autopilot_requires_safety_confirmation_action(self):
         self.api.force_authenticate(self.owner)
 

@@ -2,6 +2,8 @@ from dataclasses import asdict, dataclass
 
 from django.conf import settings
 
+from apps.core.production_rules import is_local_or_private_hostname
+from apps.core.security_config import has_strong_shared_secret, shared_secret_strength_detail
 from apps.core.models import ImportJob
 from apps.integrations.connectors import CONNECTOR_PROVIDER_CAPABILITIES
 from apps.integrations.models import BusinessConnector
@@ -156,6 +158,17 @@ def _credential_gate(provider):
     )
 
 
+def _safe_https_url(value):
+    from urllib.parse import urlparse
+
+    parsed = urlparse(str(value or "").strip())
+    if parsed.scheme != "https" or not parsed.hostname:
+        return False
+    if parsed.username or parsed.password or parsed.fragment:
+        return False
+    return not is_local_or_private_hostname(parsed.hostname)
+
+
 def _telegram_check(order):
     enabled = bool(getattr(settings, "TELEGRAM_ENABLED", False))
     gates = [
@@ -167,10 +180,20 @@ def _telegram_check(order):
         _connector_health_gate("telegram"),
         _gate(
             "telegram.webhook_secret",
-            "Webhook secret configured before real mode",
-            (not enabled) or _configured(getattr(settings, "TELEGRAM_WEBHOOK_SECRET", "")),
-            f"TELEGRAM_ENABLED={enabled}; TELEGRAM_WEBHOOK_SECRET configured={bool(getattr(settings, 'TELEGRAM_WEBHOOK_SECRET', ''))}",
-            "Set TELEGRAM_WEBHOOK_SECRET and configure Telegram webhook with the same secret header.",
+            "Strong webhook secret configured before real mode",
+            (not enabled) or has_strong_shared_secret(getattr(settings, "TELEGRAM_WEBHOOK_SECRET", "")),
+            "TELEGRAM_ENABLED={enabled}; {detail}".format(
+                enabled=enabled,
+                detail=shared_secret_strength_detail(getattr(settings, "TELEGRAM_WEBHOOK_SECRET", ""), "TELEGRAM_WEBHOOK_SECRET"),
+            ),
+            "Set TELEGRAM_WEBHOOK_SECRET to a unique high-entropy 32+ character value and configure Telegram webhook with the same secret header.",
+        ),
+        _gate(
+            "telegram.base_api_url",
+            "Telegram API base URL is public HTTPS",
+            (not enabled) or _safe_https_url(getattr(settings, "TELEGRAM_BASE_API_URL", "")),
+            f"TELEGRAM_ENABLED={enabled}; TELEGRAM_BASE_API_URL={getattr(settings, 'TELEGRAM_BASE_API_URL', '')}",
+            "Set TELEGRAM_BASE_API_URL=https://api.telegram.org before real Telegram traffic.",
         ),
         _queue_gate("telegram", enabled),
         _observability_gate("telegram", enabled),

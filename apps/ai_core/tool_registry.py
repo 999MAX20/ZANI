@@ -9,6 +9,7 @@ from apps.crm.models import Deal, PipelineStage
 from apps.leads.models import Lead
 from apps.tasks.models import Task
 from apps.notifications.models import Notification
+from apps.integrations.sanitization import sanitize_error_text
 
 
 @dataclass(frozen=True)
@@ -80,7 +81,7 @@ def execute_tool_call(log, user):
         return log
     except Exception as exc:  # Keep tool execution controlled and logged.
         log.status = AIToolCallLog.Statuses.FAILED
-        log.error = str(exc)
+        log.error = sanitize_error_text(exc)
         log.save(update_fields=["status", "error"])
         return log
 

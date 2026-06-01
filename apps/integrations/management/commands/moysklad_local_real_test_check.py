@@ -3,6 +3,7 @@ import json
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
+from apps.core.production_rules import is_safe_public_https_url
 from apps.integrations.models import BusinessConnector
 from apps.integrations.moysklad import validate_moysklad_credentials
 
@@ -48,9 +49,9 @@ class Command(BaseCommand):
             },
             {
                 "key": "moysklad_api_base_url",
-                "status": "pass" if settings.MOYSKLAD_API_BASE_URL.startswith("https://") else "fail",
+                "status": "pass" if is_safe_public_https_url(settings.MOYSKLAD_API_BASE_URL) else "fail",
                 "detail": settings.MOYSKLAD_API_BASE_URL,
-                "action": "Set MOYSKLAD_API_BASE_URL to the MoySklad JSON API base URL.",
+                "action": "Set MOYSKLAD_API_BASE_URL to the public HTTPS MoySklad JSON API base URL.",
             },
             {
                 "key": "connector",

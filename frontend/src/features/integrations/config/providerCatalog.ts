@@ -5,96 +5,127 @@ export type ProviderGroup = "messages" | "data" | "marketplace" | "system";
 
 export const providerCatalog: Array<{
   provider: ProviderKey;
-  fallbackLabel: string;
+  fallbackLabelKey: string;
   group: ProviderGroup;
   logo?: string;
-  primaryUse: string;
+  primaryUseKey: string;
   requestName: string;
 }> = [
   {
+    provider: "website",
+    fallbackLabelKey: "integrations.provider.website",
+    group: "messages",
+    primaryUseKey: "integrations.provider.websiteUse",
+    requestName: "Website",
+  },
+  {
+    provider: "telegram",
+    fallbackLabelKey: "integrations.provider.telegram",
+    group: "messages",
+    logo: "/integrations_logos/telegram.png",
+    primaryUseKey: "integrations.provider.telegramUse",
+    requestName: "Telegram",
+  },
+  {
+    provider: "whatsapp",
+    fallbackLabelKey: "integrations.provider.whatsapp",
+    group: "messages",
+    logo: "/integrations_logos/whatsapp.png",
+    primaryUseKey: "integrations.provider.whatsappUse",
+    requestName: "WhatsApp",
+  },
+  {
+    provider: "instagram",
+    fallbackLabelKey: "integrations.provider.instagram",
+    group: "messages",
+    logo: "/integrations_logos/instagram.png",
+    primaryUseKey: "integrations.provider.instagramUse",
+    requestName: "Instagram",
+  },
+  {
     provider: "excel_csv",
-    fallbackLabel: "Excel / CSV",
+    fallbackLabelKey: "integrations.provider.excelCsv",
     group: "data",
-    primaryUse: "Быстрая загрузка клиентов, продаж и каталога",
+    primaryUseKey: "integrations.provider.excelCsvUse",
     requestName: "Excel / CSV",
   },
   {
     provider: "1c",
-    fallbackLabel: "1C",
+    fallbackLabelKey: "integrations.provider.oneC",
     group: "data",
     logo: "/integrations_logos/1c.png",
-    primaryUse: "Продажи, счета, остатки и справочники",
+    primaryUseKey: "integrations.provider.oneCUse",
     requestName: "1C export/import",
   },
   {
     provider: "moysklad",
-    fallbackLabel: "МойСклад",
+    fallbackLabelKey: "integrations.provider.moysklad",
     group: "data",
-    primaryUse: "Склад, остатки и каталог товаров",
-    requestName: "МойСклад",
+    primaryUseKey: "integrations.provider.moyskladUse",
+    requestName: "MoySklad",
   },
   {
     provider: "kaspi",
-    fallbackLabel: "Kaspi",
+    fallbackLabelKey: "integrations.provider.kaspi",
     group: "marketplace",
     logo: "/integrations_logos/kaspi.png",
-    primaryUse: "Заказы, оплаты и бизнес-данные",
+    primaryUseKey: "integrations.provider.kaspiUse",
     requestName: "Kaspi",
   },
   {
     provider: "kaspi_pricing",
-    fallbackLabel: "Kaspi Pricing",
+    fallbackLabelKey: "integrations.provider.kaspiPricing",
     group: "marketplace",
     logo: "/integrations_logos/kaspi.png",
-    primaryUse: "Ценовой агент: мониторинг конкурентов, пороги и автопилот",
+    primaryUseKey: "integrations.provider.kaspiPricingUse",
     requestName: "Kaspi Pricing",
   },
   {
     provider: "wildberries",
-    fallbackLabel: "Wildberries",
+    fallbackLabelKey: "integrations.provider.wildberries",
     group: "marketplace",
     logo: "/integrations_logos/wildberries.png",
-    primaryUse: "Заказы, SKU, остатки и возвраты",
+    primaryUseKey: "integrations.provider.wildberriesUse",
     requestName: "Wildberries",
   },
   {
     provider: "ozon",
-    fallbackLabel: "Ozon",
+    fallbackLabelKey: "integrations.provider.ozon",
     group: "marketplace",
-    primaryUse: "FBS/FBO отправления, остатки и отмены",
+    primaryUseKey: "integrations.provider.ozonUse",
     requestName: "Ozon",
   },
   {
     provider: "google_sheets",
-    fallbackLabel: "Google Sheets",
+    fallbackLabelKey: "integrations.provider.googleSheets",
     group: "system",
-    primaryUse: "Регулярный импорт таблиц без разработки",
+    primaryUseKey: "integrations.provider.googleSheetsUse",
     requestName: "Google Sheets",
   },
   {
     provider: "email",
-    fallbackLabel: "Email",
+    fallbackLabelKey: "integrations.provider.email",
     group: "system",
-    primaryUse: "Уведомления, входящие письма и fallback",
+    primaryUseKey: "integrations.provider.emailUse",
     requestName: "Email",
   },
 ];
 
-export const groupLabels: Record<ProviderGroup, { title: string; text: string }> = {
+export const groupLabels: Record<ProviderGroup, { titleKey: string; textKey: string }> = {
   messages: {
-    title: "Каналы",
-    text: "Подключите ИИ-агента к каналам, где клиенты пишут вашей компании.",
+    titleKey: "integrations.group.messages",
+    textKey: "integrations.group.messagesText",
   },
   data: {
-    title: "Учет и склад",
-    text: "Источники фактов для AI-аналитика: продажи, остатки, каталог и документы.",
+    titleKey: "integrations.group.data",
+    textKey: "integrations.group.dataText",
   },
   marketplace: {
-    title: "Маркетплейсы",
-    text: "Заказы, оплаты, остатки и ценовые риски по внешним площадкам.",
+    titleKey: "integrations.group.marketplace",
+    textKey: "integrations.group.marketplaceText",
   },
   system: {
-    title: "Системные источники",
-    text: "Дополнительные способы загрузки данных и служебные каналы.",
+    titleKey: "integrations.group.system",
+    textKey: "integrations.group.systemText",
   },
 };

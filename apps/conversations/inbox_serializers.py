@@ -3,6 +3,7 @@ from rest_framework import serializers
 from apps.bots.models import BotConversation, BotMessage
 from apps.core.models import FileAttachment
 from apps.core.serializers import FileAttachmentSerializer
+from apps.integrations.sanitization import sanitize_config
 
 
 class InboxMessageSerializer(serializers.ModelSerializer):
@@ -35,6 +36,11 @@ class InboxMessageSerializer(serializers.ModelSerializer):
             entity_id=str(obj.id),
         )
         return FileAttachmentSerializer(attachments, many=True, context=self.context).data
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["payload_json"] = sanitize_config(data.get("payload_json") or {})
+        return data
 
 
 class InboxConversationSerializer(serializers.ModelSerializer):
@@ -102,6 +108,11 @@ class InboxConversationSerializer(serializers.ModelSerializer):
             entity_id=str(obj.id),
         )
         return FileAttachmentSerializer(attachments, many=True, context=self.context).data
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["metadata_json"] = sanitize_config(data.get("metadata_json") or {})
+        return data
 
 
 class InboxAssignSerializer(serializers.Serializer):

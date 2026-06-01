@@ -7,6 +7,7 @@ from urllib import request as urllib_request
 from django.conf import settings
 from django.utils import timezone
 
+from apps.core.production_rules import is_safe_public_https_url
 from apps.integrations.connectors import decrypt_credential_value
 from apps.integrations.models import ConnectorSyncRun
 
@@ -135,7 +136,10 @@ def fetch_ozon_events(connector):
 
 
 def fetch_ozon_json(path, credentials, payload):
-    url = f"{settings.OZON_SELLER_API_BASE_URL.rstrip('/')}/{path.lstrip('/')}"
+    base_url = str(settings.OZON_SELLER_API_BASE_URL or "").strip().rstrip("/")
+    if not is_safe_public_https_url(base_url):
+        raise ValueError("OZON_SELLER_API_BASE_URL must be a public HTTPS URL.")
+    url = f"{base_url}/{path.lstrip('/')}"
     request = urllib_request.Request(
         url,
         data=json.dumps(payload or {}).encode("utf-8"),

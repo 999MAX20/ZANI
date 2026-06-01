@@ -920,6 +920,17 @@ Before production:
 
 ### Security and Permissions
 
+Status update 2026-06-01:
+
+- Added active-membership based frontend permission checks.
+- Added shared `PermissionGate` for protected UI surfaces.
+- Added true backend `TEAM` visibility scope.
+- Added AI permission resources and backend enforcement for assistant, analyst, AI tools, inbox AI reply, and CRM pipeline.
+- Added approval request foundation for risky AI/automation actions.
+- Added sensitive deal field masking for low-access roles.
+- Added targeted tests for role matrix, team scope, AI permissions, approval requests, and field masking.
+- Remaining: approval inbox UI, full field-level policy across all sensitive models, manual record sharing, full audit UI, and role E2E tests.
+
 Before production:
 
 - Audit every API endpoint for tenant isolation.

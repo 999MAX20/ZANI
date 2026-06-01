@@ -6,6 +6,7 @@ from django.core import signing
 from django.utils import timezone
 
 from apps.bots.models import Bot, BotChannel
+from apps.core.production_rules import is_safe_public_https_url
 from apps.integrations.models import BusinessConnector
 
 
@@ -163,7 +164,9 @@ def choose_instagram_page(payload, page_id=""):
 
 
 def fetch_meta_json(path, params):
-    base = settings.INSTAGRAM_GRAPH_BASE_URL.rstrip("/")
+    base = str(settings.INSTAGRAM_GRAPH_BASE_URL or "").strip().rstrip("/")
+    if not is_safe_public_https_url(base):
+        raise ValueError("INSTAGRAM_GRAPH_BASE_URL must be a public HTTPS URL.")
     version = settings.INSTAGRAM_GRAPH_API_VERSION
     url = f"{base}/{version}/{path.lstrip('/')}?{parse.urlencode(params)}"
     request = urllib_request.Request(url, headers={"Accept": "application/json"}, method="GET")

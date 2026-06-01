@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ru"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ZANI Conversations</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .ai-glass {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid transparent;
+            background-clip: padding-box;
+            position: relative;
+        }
+        .ai-glass::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(to right, #7C3AED, #1E6BFF);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+        .ai-glow-subtle {
+            box-shadow: 0 0 15px rgba(124, 58, 237, 0.1);
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error": "#ba1a1a",
+                        "primary-fixed": "#d8e2ff",
+                        "tertiary": "#26005c",
+                        "on-tertiary": "#ffffff",
+                        "background": "#f8f9fb",
+                        "outline": "#747781",
+                        "on-primary-fixed": "#001a42",
+                        "inverse-surface": "#2e3132",
+                        "surface-tint": "#3c5d9c",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#5a00c6",
+                        "surface-container-lowest": "#ffffff",
+                        "ai-gradient-end": "#1E6BFF",
+                        "on-primary-container": "#7999dc",
+                        "outline-variant": "#c4c6d2",
+                        "surface-muted": "#F2F4F7",
+                        "surface-container-high": "#e7e8ea",
+                        "inverse-on-surface": "#f0f1f3",
+                        "on-secondary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-secondary-container": "#fefcff",
+                        "surface-container-low": "#f2f4f6",
+                        "on-error": "#ffffff",
+                        "on-surface": "#191c1e",
+                        "surface-bright": "#f8f9fb",
+                        "on-primary-fixed-variant": "#224583",
+                        "secondary-fixed-dim": "#b3c5ff",
+                        "ai-gradient-start": "#7C3AED",
+                        "on-tertiary-container": "#ab82ff",
+                        "primary-fixed-dim": "#aec6ff",
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed": "#eaddff",
+                        "on-surface-variant": "#434750",
+                        "ai-glow": "rgba(124, 58, 237, 0.15)",
+                        "secondary-container": "#1b6afe",
+                        "success-vibrant": "#28C76F",
+                        "danger-soft": "#EA5455",
+                        "secondary-fixed": "#dbe1ff",
+                        "on-background": "#191c1e",
+                        "primary-container": "#002f6c",
+                        "inverse-primary": "#aec6ff",
+                        "on-secondary-fixed-variant": "#003fa5",
+                        "surface-container": "#edeef0",
+                        "surface-card": "#FFFFFF",
+                        "surface-variant": "#e1e2e4",
+                        "warning-soft": "#FF9F43",
+                        "surface-dim": "#d9dadc",
+                        "surface": "#f8f9fb",
+                        "tertiary-fixed-dim": "#d2bbff",
+                        "tertiary-container": "#400090",
+                        "primary": "#001b44",
+                        "on-secondary-fixed": "#001849",
+                        "surface-container-highest": "#e1e2e4",
+                        "secondary": "#0052d2",
+                        "on-tertiary-fixed": "#25005a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container-padding-mobile": "16px",
+                        "card-gap": "20px",
+                        "container-padding-desktop": "24px",
+                        "gutter-md": "16px",
+                        "sidebar-width": "260px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "kpi-display-mobile": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "kpi-display": ["Inter"],
+                        "headline-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "kpi-display-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                        "label-sm": ["11px", {"lineHeight": "14px", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "headline-sm": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "kpi-display": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}]
+                    }
+                },
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body-md overflow-hidden">
+<!-- Desktop Sidebar Shell -->
+<aside class="hidden md:flex flex-col fixed left-0 top-0 h-full bg-surface-muted dark:bg-inverse-surface border-r border-outline-variant dark:border-outline w-[260px] z-30">
+<div class="p-6">
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">ZANI Control</h1>
+<p class="text-label-md font-label-md text-on-surface-variant opacity-70">Режим владельца</p>
+</div>
+<nav class="flex-1 px-2 space-y-1">
+<a class="flex items-center gap-3 text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-body-md">Панель</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="person_search">person_search</span>
+<span class="font-body-md">Лиды</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="handshake">handshake</span>
+<span class="font-body-md">Сделки</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-body-md">Клиенты</span>
+</a>
+<a class="flex items-center gap-3 border-l-4 border-primary dark:border-primary-fixed bg-surface-container dark:bg-surface-container-high text-primary dark:text-primary-fixed px-4 py-3 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="chat" style="font-variation-settings: 'FILL' 1;">chat</span>
+<span class="font-body-md">Диалоги</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="monitoring">monitoring</span>
+<span class="font-body-md">Аналитика</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="extension">extension</span>
+<span class="font-body-md">Интеграции</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body-md">Настройки</span>
+</a>
+</nav>
+<div class="p-4 border-t border-outline-variant">
+<div class="flex items-center gap-3">
+<img alt="Business Owner Profile" class="w-10 h-10 rounded-full bg-primary-fixed" data-alt="A professional headshot of a smiling, confident female tech entrepreneur in her mid-30s. She is wearing a modern charcoal blazer. The background is a brightly lit, minimalist office with clean lines and soft blue and white tones. The lighting is soft and even, highlighting a polished and authoritative business persona." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDrXFg_uKPn80X_3C_53HP6RPZSkJB4URqmtle4_8FimeDXCWgjGcW94aJjToeMlFCSFqiSEqbZZ2Vro35sxEkoy1jBIpvg8PF9Xx-zwnFQSMMLDtrRiI_3GhKk0hgA75VE7z49b40D--_OWgZSGhmo7A1HP2TgXakgTC1bf46ikgBDxC2d5h6nzUbYS0fSSKy1eyAU_k3RktQgGbDpcPgDvxbPN67NNijO1QQerh9gIavZaJeIlBTEWJUfbUyyxbatT63s1T5grcI"/>
+<div>
+<p class="text-label-md font-label-md font-bold">Алекс Ривера</p>
+<p class="text-label-sm font-label-sm text-on-surface-variant">Владелец</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Viewport -->
+<main class="flex flex-col h-screen ml-0 md:ml-[260px] relative">
+<!-- Top Nav Bar -->
+<header class="flex justify-between items-center px-container-padding-mobile md:px-container-padding-desktop w-full h-16 bg-surface dark:bg-surface-dim border-b border-outline-variant dark:border-outline sticky top-0 z-20">
+<div class="flex items-center gap-4">
+<span class="md:hidden material-symbols-outlined text-primary" data-icon="menu">menu</span>
+<span class="font-headline-md text-headline-md font-black text-primary dark:text-primary-fixed">ZANI</span>
+<div class="hidden md:flex gap-6 ml-8">
+<span class="font-headline-sm text-headline-sm text-primary font-bold border-b-2 border-primary cursor-pointer">Режим владельца</span>
+<span class="font-headline-sm text-headline-sm text-on-surface-variant flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-success-vibrant"></span>
+                        Статус: Активен
+                    </span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden md:flex relative group">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline" data-icon="search">search</span>
+<input class="pl-10 pr-4 py-2 bg-surface-muted rounded-xl border-none focus:ring-2 focus:ring-secondary w-64 text-body-md transition-all" placeholder="Поиск диалогов..." type="text"/>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 hover:bg-surface-container-low rounded-lg transition-colors relative">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="p-2 hover:bg-surface-container-low rounded-lg transition-colors">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Messaging Layout Grid -->
+<div class="flex-1 flex overflow-hidden">
+<!-- Inbox List (Asymmetric Layout) -->
+<section class="w-full md:w-[380px] border-r border-outline-variant bg-surface-card flex flex-col overflow-hidden">
+<div class="p-4 flex gap-2 overflow-x-auto hide-scrollbar border-b border-outline-variant">
+<button class="px-4 py-2 bg-primary text-on-primary rounded-full text-label-md font-label-md whitespace-nowrap">Все чаты</button>
+<button class="px-4 py-2 bg-surface-muted text-on-surface-variant rounded-full text-label-md font-label-md whitespace-nowrap">WhatsApp</button>
+<button class="px-4 py-2 bg-surface-muted text-on-surface-variant rounded-full text-label-md font-label-md whitespace-nowrap">Instagram</button>
+<button class="px-4 py-2 bg-surface-muted text-on-surface-variant rounded-full text-label-md font-label-md whitespace-nowrap">Telegram</button>
+</div>
+<div class="flex-1 overflow-y-auto">
+<!-- Chat Item (AI Active) -->
+<div class="p-4 border-b border-outline-variant bg-surface-container-low cursor-pointer hover:bg-surface-container transition-colors relative">
+<div class="flex gap-4">
+<div class="relative">
+<img alt="Marco Silva" class="w-12 h-12 rounded-full" data-alt="A close-up portrait of a friendly man in his late 20s with short dark hair and a neat beard. He is outdoors with soft natural lighting and a slightly blurred urban background. The aesthetic is clean, professional, and accessible, matching a high-end service platform's user profile." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBnSLlXIJdBs2XKjCKqboXiEtNBMlfs6AYkWBJBEyz2M9dgqwX_tjhkKncWKD1UaX3gCuCQePGhFDlqOQ16RFJLbOgAWAlmHoRrk26SyfIPXHOeizH6Dg_HgkIMh1qJ6LCJ4yxFXLFvBmllUdUMIuKIC4MI5NfJK57UHLqr6ADcJfcGfxwUnROxqxBOUHNF8hoYAbwPdNe0Qn2X38Lwh3Xmdpq8eVTKhhfUUTUI3mOoC6XgevDSx1vnSkeVb6ZaOuTUvuKblzV_xBQ"/>
+<div class="absolute -bottom-1 -right-1 w-5 h-5 bg-[#25D366] rounded-full flex items-center justify-center border-2 border-surface-card">
+<span class="material-symbols-outlined text-[12px] text-white" data-icon="chat">chat</span>
+</div>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="font-headline-sm text-headline-sm truncate">Марко Сильва</h3>
+<span class="text-label-sm font-label-sm text-on-surface-variant">2 мин назад</span>
+</div>
+<p class="text-body-md text-on-surface-variant truncate mt-1">Годовая подписка еще со скидкой?</p>
+<div class="flex items-center gap-2 mt-2">
+<span class="px-2 py-0.5 bg-tertiary-fixed text-on-tertiary-fixed-variant rounded-full text-[10px] font-bold uppercase tracking-wider">Нужен человек</span>
+<span class="text-[10px] text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="person">person</span>
+                                        Менеджер: Сара
+                                    </span>
+</div>
+</div>
+<div class="flex flex-col items-end gap-1">
+<span class="w-5 h-5 bg-secondary text-on-secondary rounded-full flex items-center justify-center text-[10px] font-bold">2</span>
+</div>
+</div>
+</div>
+<!-- Chat Item (Bot Handled) -->
+<div class="p-4 border-b border-outline-variant hover:bg-surface-container-low transition-colors cursor-pointer">
+<div class="flex gap-4">
+<div class="relative">
+<img alt="Lucia Aris" class="w-12 h-12 rounded-full" data-alt="A vibrant portrait of a young woman with curly hair and stylish glasses. She is in a creative studio environment with soft, warm interior lighting. The overall visual style is modern, professional, and trustworthy, with a bright and airy composition." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-BVXmVboOzX9OgKHWRPSqSl-eJzqtFvLCeFSinlTU1w0a0mAvhFmHFUZQQc1mos7qa_p9Cg0Rw3gCqeMBDT_xJTGoU_JlsChVxZoVRkiT28MlpWbiN701NwoghXehmUBtmMTvAz1OmsyI_iMICA61hvgIhWbOJwVBVHTKE-5HZqUfBXvawr72DV-gq7nv6JAO3DofY6WAZlPfkajbB6sLCvuKLm1yNVZD3e20R5EV9DYmdMPYHM6TCmlgjccTeVzfw-lta2cViLs"/>
+<div class="absolute -bottom-1 -right-1 w-5 h-5 bg-[#E1306C] rounded-full flex items-center justify-center border-2 border-surface-card">
+<span class="material-symbols-outlined text-[12px] text-white" data-icon="photo_camera">photo_camera</span>
+</div>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="font-headline-sm text-headline-sm truncate">Лусия Арис</h3>
+<span class="text-label-sm font-label-sm text-on-surface-variant">15 мин назад</span>
+</div>
+<p class="text-body-md text-on-surface-variant truncate mt-1">Спасибо за помощь!</p>
+<div class="flex items-center gap-2 mt-2">
+<span class="px-2 py-0.5 bg-surface-container-highest text-on-surface-variant rounded-full text-[10px] font-bold uppercase tracking-wider">Ответил бот</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Chat Item -->
+<div class="p-4 border-b border-outline-variant hover:bg-surface-container-low transition-colors cursor-pointer">
+<div class="flex gap-4">
+<div class="relative">
+<img alt="James K." class="w-12 h-12 rounded-full" data-alt="A portrait of a mature man with graying hair and a professional demeanor, wearing a light blue oxford shirt. He is in a modern office with glass walls and soft natural light. The lighting is crisp and clear, conveying authority and calmness." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBrpVDJTFfiJGSN3waVXtW1HgPO9Vhjadm60bZGEnJH3p2u_jF_Y93KZ7N9XJY1RCubnLhI7FJPwgAE46nWmU0-LJ6GbjGF8_-GVg33g_N3hCvF2wOSyYkUC5_8evk2gDjSh1NMJ2tZ2PVhA3WzsAlYW3A68GZRcK5PsACuouLgtEnXYWUg5uCX6GpqDai9Dpt_S0jNue-dWICCzM3YOPdA4GlWlWQA8J2dBhiegi355jTwzUHotcMStRQEVqwxOmqKt5xSU3tnf-w"/>
+<div class="absolute -bottom-1 -right-1 w-5 h-5 bg-[#0088cc] rounded-full flex items-center justify-center border-2 border-surface-card">
+<span class="material-symbols-outlined text-[12px] text-white" data-icon="send">send</span>
+</div>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="font-headline-sm text-headline-sm truncate">Джеймс К.</h3>
+<span class="text-label-sm font-label-sm text-on-surface-variant">1 ч назад</span>
+</div>
+<p class="text-body-md text-on-surface-variant truncate mt-1">Где найти документацию API?</p>
+<div class="flex items-center gap-2 mt-2">
+<span class="px-2 py-0.5 bg-tertiary-fixed text-on-tertiary-fixed-variant rounded-full text-[10px] font-bold uppercase tracking-wider">Нужен человек</span>
+<span class="text-[10px] text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="person">person</span>
+                                        Менеджер: Алекс
+                                    </span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Active Conversation Area -->
+<section class="hidden md:flex flex-1 flex-col bg-surface-container-lowest overflow-hidden">
+<!-- Conversation Header -->
+<div class="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-card">
+<div class="flex items-center gap-3">
+<img alt="Marco Silva" class="w-10 h-10 rounded-full" data-alt="Close up portrait of a male user for a profile icon. Clean, high-quality lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDxuvWmOmAfQ5mddh7D4yINrCSdskuaGHDokS4Elgqm7qfa_bTDtcFQRc6sVwSIS0LDABowhHB4uRWietUaBx5sNPMz-C4Mc8zQZ-BgUNDU8xJXcnOJDEq6s4HtOBtifLm2v6veui6w-TJAXVZi2pWs1XS-fM6WAMBbbCEvxLsnvaBDbknQm2dXyDMpO-4jBJv25nIhjKZpZYS6zIPtNqgDSqsVEsoaRMIq8qn3XKwAtDZ80K7mZfpTBAM8P8oNGXE1s4Jujz5sfWc"/>
+<div>
+<h2 class="font-headline-sm text-headline-sm">Марко Сильва</h2>
+<p class="text-label-sm font-label-sm text-success-vibrant">В сети через WhatsApp</p>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="px-4 py-2 border border-outline-variant rounded-xl text-label-md font-label-md hover:bg-surface-container transition-colors">Передать</button>
+<button class="px-4 py-2 bg-secondary text-on-secondary rounded-xl text-label-md font-label-md hover:opacity-90 transition-opacity">Решить</button>
+</div>
+</div>
+<!-- Chat History -->
+<div class="flex-1 overflow-y-auto p-6 space-y-6 bg-background/50">
+<!-- Date Separator -->
+<div class="flex justify-center">
+<span class="px-3 py-1 bg-surface-container rounded-full text-[10px] font-bold text-on-surface-variant uppercase">СЕГОДНЯ</span>
+</div>
+<!-- Bot Message -->
+<div class="flex gap-3 max-w-[80%]">
+<div class="w-8 h-8 rounded-lg bg-primary-fixed flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="smart_toy">smart_toy</span>
+</div>
+<div class="bg-surface-card p-4 rounded-2xl rounded-tl-none shadow-sm border border-outline-variant/30">
+<p class="text-body-md">Привет, Марко! Я AI-ассистент ZANI. Чем могу помочь?</p>
+<span class="text-[10px] text-on-surface-variant mt-2 block">10:02 AM</span>
+</div>
+</div>
+<!-- User Message -->
+<div class="flex gap-3 max-w-[80%] ml-auto flex-row-reverse">
+<div class="w-8 h-8 rounded-full bg-secondary-fixed flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-secondary text-[18px]" data-icon="person">person</span>
+</div>
+<div class="bg-secondary text-on-secondary p-4 rounded-2xl rounded-tr-none shadow-md">
+<p class="text-body-md">Годовая подписка еще со скидкой? Видел вчера рекламу, но ссылка не работает.</p>
+<span class="text-[10px] text-secondary-fixed/80 mt-2 block text-right">10:05 AM</span>
+</div>
+</div>
+<!-- AI Suggested Reply (Glassmorphism) -->
+<div class="ai-glass ai-glow-subtle p-6 rounded-3xl mx-4 mt-8 animate-pulse-slow">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-ai-gradient-start" data-icon="auto_awesome" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+<span class="text-label-md font-bold bg-gradient-to-r from-ai-gradient-start to-ai-gradient-end bg-clip-text text-transparent uppercase tracking-wider">AI вариант ответа</span>
+</div>
+<p class="text-body-lg font-body-lg text-primary italic mb-6">"Да, Марко! Скидка 20% на годовой план действует до пятницы. Вы можете использовать код ZANI20 при оплате. Вот прямая ссылка: zani.ai/promo/annual"</p>
+<div class="flex gap-3">
+<button class="flex-1 py-3 bg-primary text-on-primary rounded-xl font-label-md hover:opacity-95 transition-all shadow-lg flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]" data-icon="send">send</span>
+                                Использовать ответ
+                            </button>
+<button class="px-4 py-3 border border-outline-variant rounded-xl text-on-surface-variant hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Input Area -->
+<div class="p-4 bg-surface-card border-t border-outline-variant">
+<div class="bg-surface-muted rounded-2xl p-2 flex items-end gap-2 focus-within:bg-white focus-within:ring-2 focus-within:ring-secondary/20 transition-all">
+<button class="p-2 text-on-surface-variant hover:text-secondary transition-colors">
+<span class="material-symbols-outlined" data-icon="add_circle">add_circle</span>
+</button>
+<textarea class="flex-1 bg-transparent border-none focus:ring-0 text-body-md resize-none py-2 max-h-32" placeholder="Введите сообщение..." rows="1"></textarea>
+<button class="p-3 bg-secondary text-on-secondary rounded-xl hover:scale-105 active:scale-95 transition-all shadow-md">
+<span class="material-symbols-outlined" data-icon="send" style="font-variation-settings: 'FILL' 1;">send</span>
+</button>
+</div>
+</div>
+</section>
+</div>
+<!-- Mobile Bottom Nav Shell -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-16 px-4 pb-safe bg-surface/80 dark:bg-inverse-surface/80 backdrop-blur-xl border-t border-outline-variant/30 shadow-lg">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-sm text-[11px]">Главная</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="person_search">person_search</span>
+<span class="font-label-sm text-[11px]">Лиды</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-label-sm text-[11px]">Клиенты</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed bg-secondary-fixed/20 dark:bg-secondary-container rounded-full px-4 py-1 active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="chat" style="font-variation-settings: 'FILL' 1;">chat</span>
+<span class="font-label-sm text-[11px]">Диалоги</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="more_horiz">more_horiz</span>
+<span class="font-label-sm text-[11px]">Еще</span>
+</a>
+</nav>
+</main>
+<script>
+        // Simple micro-interactions
+        document.querySelectorAll('textarea').forEach(el => {
+            el.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+        });
+
+        // Toggle Active Chat (Visual Only)
+        const chatItems = document.querySelectorAll('section:first-of-type > div:last-child > div');
+        chatItems.forEach(item => {
+            item.addEventListener('click', () => {
+                chatItems.forEach(i => i.classList.remove('bg-surface-container-low'));
+                item.classList.add('bg-surface-container-low');
+            });
+        });
+    </script>
+</body></html>

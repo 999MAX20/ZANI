@@ -18,6 +18,7 @@ from apps.core.models import AuditLog
 from apps.core.operations_health import platform_operations_health
 from apps.core.permissions import IsPlatformUser
 from apps.integrations.models import BusinessConnector, BusinessEvent
+from apps.integrations.sanitization import sanitize_error_text
 from apps.leads.models import Lead, LeadForm, LeadFormSubmissionError
 from apps.notifications.models import Notification
 from apps.tasks.models import Task
@@ -160,7 +161,7 @@ def _merchant_support_workflow(business, counts, health):
         {
             "id": log.id,
             "action_type": log.metadata.get("action_type", "support_note"),
-            "note": log.metadata.get("note", ""),
+            "note": sanitize_error_text(log.metadata.get("note", "")),
             "status": log.metadata.get("status", "logged"),
             "created_at": log.created_at,
             "actor_email": log.actor.email if log.actor else None,
@@ -320,7 +321,7 @@ def platform_merchant_support_action(request, business_id):
         return Response({"detail": "Merchant not found."}, status=404)
 
     action_type = (request.data.get("action_type") or "support_note").strip()[:64]
-    note = (request.data.get("note") or "").strip()
+    note = sanitize_error_text((request.data.get("note") or "").strip())
     status = (request.data.get("status") or "logged").strip()[:32]
     if not note:
         return Response({"note": ["This field is required."]}, status=400)

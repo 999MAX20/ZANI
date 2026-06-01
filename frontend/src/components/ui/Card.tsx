@@ -2,10 +2,18 @@ import { cn } from "../../lib/cn";
 
 type CardProps = React.HTMLAttributes<HTMLElement> & {
   children: React.ReactNode;
+  variant?: "default" | "muted" | "ai" | "danger";
 };
 
-export function Card({ className, children, ...props }: CardProps) {
-  return <section className={cn("zani-surface rounded-3xl", className)} {...props}>{children}</section>;
+export function Card({ className, children, variant = "default", ...props }: CardProps) {
+  const variants = {
+    default: "zani-surface rounded-xl",
+    muted: "rounded-xl border border-slate-200 bg-slate-50/80",
+    ai: "zani-ai-surface rounded-xl",
+    danger: "rounded-xl border border-red-100 bg-red-50/80 shadow-sm",
+  };
+
+  return <section className={cn(variants[variant], className)} {...props}>{children}</section>;
 }
 
 export function CardHeader({ className, children }: { className?: string; children: React.ReactNode }) {

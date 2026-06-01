@@ -1,4 +1,4 @@
-import { Home, Inbox, KanbanSquare, MessageSquareText, MoreHorizontal, X } from "lucide-react";
+import { Home, Inbox, MessageSquareText, MoreHorizontal, Users, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { NavLink } from "react-router-dom";
@@ -16,7 +16,7 @@ import { Sidebar } from "./Sidebar";
 const bottomItems = [
   { to: "/dashboard", label: "mobile.home", icon: Home },
   { to: "/dashboard/leads", label: "nav.leads", icon: Inbox, resource: "leads" },
-  { to: "/dashboard/deals", label: "nav.deals", icon: KanbanSquare, resource: "deals" },
+  { to: "/dashboard/clients", label: "nav.clients", icon: Users, resource: "clients" },
   { to: "/dashboard/conversations", label: "nav.conversations", icon: MessageSquareText, resource: "conversations" },
 ];
 
@@ -78,7 +78,7 @@ export function MobileNav({ open, onOpen, onClose }: { open: boolean; onOpen: ()
               end={item.to === "/dashboard"}
               className={({ isActive }) =>
                 cn(
-                  "flex min-h-[70px] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-center text-[11px] font-black leading-tight text-slate-500 transition active:scale-[0.98]",
+                  "flex min-h-[70px] flex-col items-center justify-center gap-1 rounded-2xl px-0.5 py-2 text-center text-[10px] font-black leading-none text-slate-500 transition active:scale-[0.98]",
                   isActive && "bg-ai-gradient text-white shadow-glow",
                 )
               }
@@ -91,20 +91,21 @@ export function MobileNav({ open, onOpen, onClose }: { open: boolean; onOpen: ()
                   </span>
                 ) : null}
               </span>
-              <span className="line-clamp-1 max-w-full">{t(item.label)}</span>
+              <span className="max-w-full break-words">{t(item.label)}</span>
             </NavLink>
           );
         })}
         <button
           type="button"
           onClick={onOpen}
+          aria-label={t("mobile.more")}
           className={cn(
-            "flex min-h-[70px] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-center text-[11px] font-black leading-tight text-slate-500 transition hover:bg-slate-50 hover:text-midnight active:scale-[0.98]",
+            "flex min-h-[70px] flex-col items-center justify-center gap-1 rounded-2xl px-0.5 py-2 text-center text-[10px] font-black leading-none text-slate-500 transition hover:bg-slate-50 hover:text-midnight active:scale-[0.98]",
             open && "bg-ai-gradient text-white shadow-glow",
           )}
         >
           <MoreHorizontal size={26} strokeWidth={2.35} />
-          <span className="line-clamp-1 max-w-full">{t("mobile.more")}</span>
+          <span className="max-w-full break-words">{t("mobile.more")}</span>
         </button>
       </nav>
     </>

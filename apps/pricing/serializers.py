@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.businesses.models import Business
+from apps.integrations.sanitization import sanitize_config, sanitize_error_text
 from apps.pricing.models import KaspiCompetitorOffer, KaspiPriceChangeLog, KaspiPricingAlert, KaspiPricingControl, KaspiPricingRecommendation, KaspiPricingRule, PricingCatalogItem
 
 
@@ -81,6 +82,12 @@ class KaspiPricingRuleSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["config_json"] = sanitize_config(data.get("config_json") or {})
+        data["last_error"] = sanitize_error_text(data.get("last_error"))
+        return data
 
     def validate(self, attrs):
         min_price = attrs.get("min_price", getattr(self.instance, "min_price", None))

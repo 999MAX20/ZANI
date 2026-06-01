@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { CalendarCheck2, CalendarClock, Copy, Send, ShieldAlert, ShieldCheck, SlidersHorizontal, Stethoscope, UsersRound } from "lucide-react";
+import { CalendarCheck2, CalendarClock, Copy, Send, ShieldAlert, ShieldCheck, SlidersHorizontal, Stethoscope, UsersRound, Workflow } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { billingApi } from "../../api/billing";
@@ -23,7 +23,7 @@ import { Select } from "../../components/ui/Select";
 import { ErrorState, LoadingState } from "../../components/ui/StateViews";
 import { Textarea } from "../../components/ui/Textarea";
 import { useActiveBusiness } from "../../hooks/useBusiness";
-import { permissionResourceLabel } from "../../lib/permissions";
+import { hasPermission, permissionResourceLabel } from "../../lib/permissions";
 import { useI18n } from "../../lib/i18n";
 import { useAuth } from "../auth/AuthProvider";
 import { DevelopersSection } from "./DevelopersSection";
@@ -59,51 +59,62 @@ const visibilityOptions = [
 ];
 
 const roleGuideKeys = ["manager", "operator", "staff", "accountant"] as const;
-const notificationCategories: Array<{ category: Notification["category"]; title: string; description: string }> = [
-  { category: "sales", title: "Продажи и записи", description: "Заявки, сделки, подтверждения и ответы клиентов по записям." },
-  { category: "tasks", title: "Задачи", description: "Назначения, просрочки и действия, которые требуют ручной работы." },
-  { category: "outreach", title: "Рассылки", description: "Подготовка кампаний, запуск, завершение, opt-out и ошибки кампаний." },
-  { category: "ai_alerts", title: "ИИ-рекомендации", description: "Рекомендации AI Analyst и подсказки по подключению сервисов." },
-  { category: "system", title: "Системные", description: "Технические события, ошибки доставки и состояние интеграций." },
-  { category: "finance", title: "Финансы", description: "Оплаты, счета, тарифы и финансовые события." },
+const notificationCategories: Array<{ category: Notification["category"]; titleKey: string; descriptionKey: string }> = [
+  { category: "sales", titleKey: "settings.notifications.category.sales", descriptionKey: "settings.notifications.category.sales.text" },
+  { category: "tasks", titleKey: "settings.notifications.category.tasks", descriptionKey: "settings.notifications.category.tasks.text" },
+  { category: "outreach", titleKey: "settings.notifications.category.outreach", descriptionKey: "settings.notifications.category.outreach.text" },
+  { category: "ai_alerts", titleKey: "settings.notifications.category.aiAlerts", descriptionKey: "settings.notifications.category.aiAlerts.text" },
+  { category: "system", titleKey: "settings.notifications.category.system", descriptionKey: "settings.notifications.category.system.text" },
+  { category: "finance", titleKey: "settings.notifications.category.finance", descriptionKey: "settings.notifications.category.finance.text" },
 ];
 
-const settingsSections = [
+const settingsGroupOrder = ["business", "team", "communication", "setup", "advanced"] as const;
+
+type SettingsGroupKey = (typeof settingsGroupOrder)[number];
+
+const settingsSections: Array<{ id: string; group?: SettingsGroupKey }> = [
+  { id: "business-profile", group: "business" },
+  { id: "team-access", group: "team" },
+  { id: "roles", group: "team" },
+  { id: "security-center", group: "team" },
   { id: "appointment-messages" },
-  { id: "team-access" },
-  { id: "security-center" },
-  { id: "quick-replies" },
-  { id: "roles" },
-  { id: "operations-setup" },
-  { id: "data-tools" },
-  { id: "lead-forms" },
-  { id: "billing" },
-  { id: "custom-fields" },
-  { id: "business-profile" },
+  { id: "notification-preferences", group: "communication" },
+  { id: "quick-replies", group: "communication" },
+  { id: "operations-setup", group: "setup" },
+  { id: "data-tools", group: "setup" },
+  { id: "lead-forms", group: "setup" },
+  { id: "billing", group: "setup" },
+  { id: "custom-fields", group: "advanced" },
+  { id: "automations", group: "advanced" },
+  { id: "developer", group: "advanced" },
 ];
 
-const appointmentScenarioLabels: Record<AppointmentMessageSetting["scenario"], { title: string; description: string }> = {
+const settingsSectionGroupFallback: Record<string, SettingsGroupKey> = {
+  "appointment-messages": "communication",
+};
+
+const appointmentScenarioLabels: Record<AppointmentMessageSetting["scenario"], { titleKey: string; descriptionKey: string }> = {
   confirmation: {
-    title: "Подтверждение записи",
-    description: "Сообщение клиенту до визита, чтобы снизить неявки и сразу поймать отмену или перенос.",
+    titleKey: "settings.appointmentMessages.scenario.confirmation",
+    descriptionKey: "settings.appointmentMessages.scenario.confirmation.text",
   },
   reminder: {
-    title: "Напоминание перед визитом",
-    description: "Короткое сообщение за несколько часов до записи с услугой, временем, мастером и адресом.",
+    titleKey: "settings.appointmentMessages.scenario.reminder",
+    descriptionKey: "settings.appointmentMessages.scenario.reminder.text",
   },
   thank_you: {
-    title: "После оказания услуги",
-    description: "Спасибо после завершённого визита, повторная запись или мягкий запрос обратной связи.",
+    titleKey: "settings.appointmentMessages.scenario.thankYou",
+    descriptionKey: "settings.appointmentMessages.scenario.thankYou.text",
   },
 };
 
 const appointmentChannelOptions = [
-  { value: "auto", label: "Авто: лучший канал клиента" },
-  { value: "telegram", label: "Telegram" },
-  { value: "whatsapp", label: "WhatsApp" },
-  { value: "email", label: "Email" },
-  { value: "sms", label: "SMS" },
-  { value: "system", label: "Внутри CRM" },
+  { value: "auto", labelKey: "settings.appointmentMessages.channel.auto" },
+  { value: "telegram", labelKey: "settings.appointmentMessages.channel.telegram" },
+  { value: "whatsapp", labelKey: "settings.appointmentMessages.channel.whatsapp" },
+  { value: "email", labelKey: "settings.appointmentMessages.channel.email" },
+  { value: "sms", labelKey: "settings.appointmentMessages.channel.sms" },
+  { value: "system", labelKey: "settings.appointmentMessages.channel.system" },
 ];
 
 export function SettingsPage() {
@@ -111,17 +122,26 @@ export function SettingsPage() {
   const queryClient = useQueryClient();
   const { business, isLoading } = useActiveBusiness();
   const { user } = useAuth();
+  const canViewBilling = hasPermission(user, business?.id, "billing", "view");
+  const canViewTeam = hasPermission(user, business?.id, "team", "view");
+  const canManageTeam = hasPermission(user, business?.id, "team", "manage");
+  const canViewAudit = hasPermission(user, business?.id, "audit_logs", "view");
+  const canViewSettings = hasPermission(user, business?.id, "settings", "view");
+  const canViewNotifications = hasPermission(user, business?.id, "notifications", "view");
   const subscription = useQuery({
     queryKey: ["current-subscription"],
     queryFn: billingApi.currentSubscription,
+    enabled: Boolean(canViewBilling),
   });
   const usage = useQuery({
     queryKey: ["billing-usage-summary"],
     queryFn: billingApi.usageSummary,
+    enabled: Boolean(canViewBilling),
   });
   const entitlements = useQuery({
     queryKey: ["billing-entitlements"],
     queryFn: billingApi.entitlements,
+    enabled: Boolean(canViewBilling),
   });
   const [fieldForm, setFieldForm] = useState({
     entity_type: "client" as CrmEntityType,
@@ -133,22 +153,22 @@ export function SettingsPage() {
   const customFields = useQuery({
     queryKey: ["custom-fields", business?.id],
     queryFn: () => customFieldsApi.list(),
-    enabled: Boolean(business),
+    enabled: Boolean(business && canViewSettings),
   });
   const teamMembers = useQuery({
     queryKey: ["team-members", business?.id],
     queryFn: teamApi.members,
-    enabled: Boolean(business),
+    enabled: Boolean(business && canViewTeam),
   });
   const teamRoles = useQuery({
     queryKey: ["team-roles", business?.id],
     queryFn: teamApi.roles,
-    enabled: Boolean(business),
+    enabled: Boolean(business && canViewTeam),
   });
   const invitations = useQuery({
     queryKey: ["team-invitations", business?.id],
     queryFn: teamApi.invitations,
-    enabled: Boolean(business),
+    enabled: Boolean(business && canManageTeam),
   });
   const [inviteForm, setInviteForm] = useState({
     email: "",
@@ -166,7 +186,7 @@ export function SettingsPage() {
   const departments = useQuery({
     queryKey: ["team-departments", business?.id],
     queryFn: teamApi.departments,
-    enabled: Boolean(business),
+    enabled: Boolean(business && canViewTeam),
   });
   const [departmentName, setDepartmentName] = useState("");
   const [quickReplyForm, setQuickReplyForm] = useState({
@@ -184,51 +204,51 @@ export function SettingsPage() {
   const importJobs = useQuery({
     queryKey: ["import-jobs", business?.id],
     queryFn: () => importExportApi.importJobs(business?.id),
-    enabled: Boolean(business),
+    enabled: Boolean(business && canViewSettings),
   });
   const leadForms = useQuery({
     queryKey: ["lead-forms", business?.id],
     queryFn: leadFormsApi.list,
-    enabled: Boolean(business),
+    enabled: Boolean(business && canViewSettings),
   });
   const leadFormSubmissions = useQuery({
     queryKey: ["lead-form-submissions", business?.id],
     queryFn: leadFormSubmissionsApi.list,
-    enabled: Boolean(business),
+    enabled: Boolean(business && canViewSettings),
   });
   const securityRisk = useQuery({
     queryKey: ["security-risk", business?.id],
     queryFn: () => securityApi.riskSummary(business?.id),
-    enabled: Boolean(business),
+    enabled: Boolean(business && canViewAudit),
     retry: false,
   });
   const auditLogs = useQuery({
     queryKey: ["security-audit", business?.id],
     queryFn: () => securityApi.audit({ business: business?.id }),
-    enabled: Boolean(business),
+    enabled: Boolean(business && canViewAudit),
     retry: false,
   });
   const loginHistory = useQuery({
     queryKey: ["security-login-history", business?.id],
     queryFn: () => securityApi.loginHistory({ business: business?.id }),
-    enabled: Boolean(business),
+    enabled: Boolean(business && canViewAudit),
     retry: false,
   });
   const supportGrants = useQuery({
     queryKey: ["security-support-grants", business?.id],
     queryFn: securityApi.supportGrants.list,
-    enabled: Boolean(business),
+    enabled: Boolean(business && canViewAudit),
     retry: false,
   });
   const notificationPreferences = useQuery({
     queryKey: ["notification-preferences", business?.id, user?.id],
     queryFn: () => notificationsApi.preferences.list({ user: "me" }),
-    enabled: Boolean(business?.id && user?.id),
+    enabled: Boolean(business?.id && user?.id && canViewNotifications),
   });
   const appointmentMessageSettings = useQuery({
     queryKey: ["appointment-message-settings", business?.id],
     queryFn: () => appointmentMessageSettingsApi.list({ business: business?.id }),
-    enabled: Boolean(business?.id),
+    enabled: Boolean(business?.id && canViewSettings),
   });
   const [editingQuickReplyId, setEditingQuickReplyId] = useState<number | null>(null);
   const [quickReplyEditForm, setQuickReplyEditForm] = useState({
@@ -241,7 +261,7 @@ export function SettingsPage() {
   const quickReplies = useQuery({
     queryKey: ["quick-replies", business?.id],
     queryFn: quickRepliesApi.list,
-    enabled: Boolean(business),
+    enabled: Boolean(business && canViewNotifications),
   });
   const mutation = useMutation({
     mutationFn: (payload: Partial<Business>) =>
@@ -480,7 +500,13 @@ export function SettingsPage() {
   const translatedSettingsSections = settingsSections.map((section) => ({
     ...section,
     label: t(`settings.section.${section.id}`),
+    group: section.group || settingsSectionGroupFallback[section.id] || "advanced",
   }));
+  const translatedSettingsGroups = settingsGroupOrder.map((groupKey) => ({
+    key: groupKey,
+    label: t(`settings.group.${groupKey}`),
+    sections: translatedSettingsSections.filter((section) => section.group === groupKey),
+  })).filter((item) => item.sections.length);
   const quickReplyChannelOptions = [
     { value: "all", label: t("settings.channel.all") },
     { value: "website", label: t("settings.channel.website") },
@@ -576,15 +602,22 @@ export function SettingsPage() {
             }}
             options={translatedSettingsSections.map((section) => ({ value: section.id, label: section.label }))}
           />
-          <div className="no-scrollbar hidden gap-2 overflow-x-auto sm:flex">
-            {translatedSettingsSections.map((section) => (
-              <a
-                key={section.id}
-                href={`#${section.id}`}
-                className="shrink-0 rounded-2xl bg-slate-50 px-4 py-2 text-sm font-bold text-slate-600 transition hover:bg-white hover:text-midnight hover:shadow-soft"
-              >
-                {section.label}
-              </a>
+          <div className="hidden gap-4 overflow-x-auto sm:flex">
+            {translatedSettingsGroups.map((groupItem) => (
+              <div key={groupItem.key} className="min-w-max">
+                <p className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">{groupItem.label}</p>
+                <div className="flex gap-2">
+                  {groupItem.sections.map((section) => (
+                    <a
+                      key={section.id}
+                      href={`#${section.id}`}
+                      className="shrink-0 rounded-xl bg-slate-50 px-3 py-2 text-sm font-bold text-slate-600 transition hover:bg-white hover:text-midnight hover:shadow-sm"
+                    >
+                      {section.label}
+                    </a>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         </CardBody>
@@ -593,10 +626,10 @@ export function SettingsPage() {
         <CardBody>
           <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Записи</p>
-              <h2 className="mt-2 text-2xl font-semibold text-midnight">Авто-сообщения по записям</h2>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">{t("settings.appointmentMessagesEyebrow")}</p>
+              <h2 className="mt-2 text-2xl font-semibold text-midnight">{t("settings.appointmentMessagesTitle")}</h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                Подтверждение, напоминание и сообщение после визита. Переменные доступны в тексте: {"{client_name}"}, {"{service_name}"}, {"{date}"}, {"{time}"}.
+                {t("settings.appointmentMessagesText")}
               </p>
             </div>
             <div className="grid h-12 w-12 place-items-center rounded-2xl bg-brand-50 text-brand-700">
@@ -605,7 +638,7 @@ export function SettingsPage() {
           </div>
           {appointmentMessageMutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(appointmentMessageMutation.error)} /></div> : null}
           {appointmentMessageSettings.isLoading ? (
-            <div className="rounded-3xl border border-slate-100 bg-slate-50 p-5 text-sm font-bold text-slate-500">Загружаем сценарии сообщений...</div>
+            <div className="rounded-3xl border border-slate-100 bg-slate-50 p-5 text-sm font-bold text-slate-500">{t("settings.appointmentMessagesLoading")}</div>
           ) : (
             <div className="grid gap-4 xl:grid-cols-3">
               {appointmentMessages.map((setting) => {
@@ -617,8 +650,8 @@ export function SettingsPage() {
                   <div key={setting.id} className="flex flex-col rounded-3xl border border-slate-100 bg-slate-50/70 p-4">
                     <div className="mb-4 flex items-start justify-between gap-3">
                       <div>
-                        <p className="font-black text-midnight">{meta.title}</p>
-                        <p className="mt-1 text-sm font-semibold leading-5 text-slate-500">{meta.description}</p>
+                        <p className="font-black text-midnight">{t(meta.titleKey)}</p>
+                        <p className="mt-1 text-sm font-semibold leading-5 text-slate-500">{t(meta.descriptionKey)}</p>
                       </div>
                       <button
                         type="button"
@@ -633,12 +666,12 @@ export function SettingsPage() {
                           enabled ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100" : "bg-slate-200 text-slate-600 hover:bg-slate-300"
                         }`}
                       >
-                        {enabled ? "Включено" : "Пауза"}
+                        {enabled ? t("settings.enabled") : t("settings.paused")}
                       </button>
                     </div>
                     <div className="grid gap-3">
                       <Input
-                        label={setting.scenario === "thank_you" ? "Через минут после визита" : "За минут до записи"}
+                        label={setting.scenario === "thank_you" ? t("settings.appointmentMessages.offsetAfter") : t("settings.appointmentMessages.offsetBefore")}
                         type="number"
                         value={Math.abs(offsetValue)}
                         onChange={(event) => {
@@ -651,7 +684,7 @@ export function SettingsPage() {
                         }}
                       />
                       <Select
-                        label="Канал доставки"
+                        label={t("settings.appointmentMessages.deliveryChannel")}
                         value={String(appointmentMessageValue(setting, "channel_policy"))}
                         onChange={(event) =>
                           setAppointmentMessageDrafts((current) => ({
@@ -659,10 +692,10 @@ export function SettingsPage() {
                             [Number(setting.id)]: { ...current[Number(setting.id)], channel_policy: event.target.value as AppointmentMessageSetting["channel_policy"] },
                           }))
                         }
-                        options={appointmentChannelOptions}
+                        options={appointmentChannelOptions.map((option) => ({ value: option.value, label: t(option.labelKey) }))}
                       />
                       <Textarea
-                        label="Текст сообщения"
+                        label={t("settings.appointmentMessages.templateText")}
                         rows={6}
                         value={String(appointmentMessageValue(setting, "template_text"))}
                         onChange={(event) =>
@@ -685,7 +718,7 @@ export function SettingsPage() {
                           })
                         }
                       >
-                        Сохранить сценарий
+                        {t("settings.appointmentMessages.saveScenario")}
                       </Button>
                     </div>
                   </div>
@@ -699,14 +732,14 @@ export function SettingsPage() {
         <CardBody>
           <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Уведомления</p>
-              <h2 className="mt-2 text-2xl font-semibold text-midnight">Личные настройки шума</h2>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">{t("settings.notificationsEyebrow")}</p>
+              <h2 className="mt-2 text-2xl font-semibold text-midnight">{t("settings.notificationsTitle")}</h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                Отключайте обычные in-app уведомления по категориям. Критичные high/urgent события, ошибки доставки и важные действия всё равно будут показаны.
+                {t("settings.notificationsText")}
               </p>
             </div>
             <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
-              {notificationPreferences.data?.filter((item) => item.in_app_enabled === false).length || 0} отключено
+              {t("settings.notificationsDisabledCount", { count: notificationPreferences.data?.filter((item) => item.in_app_enabled === false).length || 0 })}
             </div>
           </div>
           {notificationPreferenceMutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(notificationPreferenceMutation.error)} /></div> : null}
@@ -718,8 +751,8 @@ export function SettingsPage() {
                 <div key={item.category} className="rounded-3xl border border-slate-100 bg-slate-50/70 p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
-                      <p className="font-black text-midnight">{item.title}</p>
-                      <p className="mt-1 text-sm font-semibold leading-5 text-slate-500">{item.description}</p>
+                      <p className="font-black text-midnight">{t(item.titleKey)}</p>
+                      <p className="mt-1 text-sm font-semibold leading-5 text-slate-500">{t(item.descriptionKey)}</p>
                     </div>
                     <button
                       type="button"
@@ -729,7 +762,7 @@ export function SettingsPage() {
                         enabled ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100" : "bg-slate-200 text-slate-600 hover:bg-slate-300"
                       }`}
                     >
-                      {enabled ? "Включено" : "Выключено"}
+                      {enabled ? t("settings.enabled") : t("settings.disabled")}
                     </button>
                   </div>
                 </div>
@@ -989,14 +1022,6 @@ export function SettingsPage() {
           </div>
         </CardBody>
       </Card>
-      <details className="mb-5 rounded-3xl border border-slate-100 bg-white/80 p-4 shadow-soft">
-        <summary className="cursor-pointer text-sm font-black uppercase tracking-[0.16em] text-slate-500">
-          {t("settings.developerConnections")}
-        </summary>
-        <div className="mt-4">
-          <DevelopersSection />
-        </div>
-      </details>
       <Card id="security-center" className="mb-5 scroll-mt-24">
         <CardBody>
           <div className="mb-4">
@@ -1317,24 +1342,37 @@ export function SettingsPage() {
             <h2 className="mt-2 text-2xl font-semibold text-midnight">{t("settings.operationsTitle")}</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">{t("settings.operationsText")}</p>
           </div>
-          <div className="grid gap-3 md:grid-cols-3">
-            {operationsSetup.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.key}
-                  to={item.href}
-                  className="group rounded-3xl border border-slate-100 bg-white/80 p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft"
-                >
-                  <div className="grid h-11 w-11 place-items-center rounded-2xl bg-brand-50 text-brand-700">
-                    <Icon size={20} />
-                  </div>
-                  <p className="mt-4 font-black text-midnight">{t(`settings.operations.${item.key}.title`)}</p>
-                  <p className="mt-1 text-sm leading-6 text-slate-500">{t(`settings.operations.${item.key}.text`)}</p>
-                  <span className="mt-4 inline-flex text-sm font-black text-brand-700">{t("settings.openSection")}</span>
-                </Link>
-              );
-            })}
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="grid gap-3 md:grid-cols-3">
+              {operationsSetup.map((item, index) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.key}
+                    to={item.href}
+                    className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-brand-200 hover:shadow-sm"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="grid h-11 w-11 place-items-center rounded-xl bg-brand-50 text-brand-700">
+                        <Icon size={20} />
+                      </div>
+                      <span className="rounded-full bg-slate-50 px-2.5 py-1 text-xs font-black text-slate-500">{index + 1}</span>
+                    </div>
+                    <p className="mt-4 font-black text-midnight">{t(`settings.operations.${item.key}.title`)}</p>
+                    <p className="mt-1 text-sm leading-6 text-slate-500">{t(`settings.operations.${item.key}.text`)}</p>
+                    <span className="mt-4 inline-flex text-sm font-black text-brand-700">{t("settings.openSection")}</span>
+                  </Link>
+                );
+              })}
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p className="font-black text-midnight">{t("settings.operations.orderTitle")}</p>
+              <div className="mt-3 space-y-2 text-sm font-semibold leading-6 text-slate-600">
+                <p>{t("settings.operations.orderStep1")}</p>
+                <p>{t("settings.operations.orderStep2")}</p>
+                <p>{t("settings.operations.orderStep3")}</p>
+              </div>
+            </div>
           </div>
         </CardBody>
       </Card>
@@ -1730,6 +1768,33 @@ export function SettingsPage() {
           </div>
         </CardBody>
       </Card>
+      <Card id="automations" className="mb-5 scroll-mt-24">
+        <CardBody>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-brand-50 text-brand-700">
+                <Workflow size={20} />
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">{t("settings.automationsEyebrow")}</p>
+                <h2 className="mt-1 text-2xl font-semibold text-midnight">{t("settings.automationsTitle")}</h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">{t("settings.automationsText")}</p>
+              </div>
+            </div>
+            <Link to="/dashboard/automations">
+              <Button type="button" variant="secondary">{t("settings.openSection")}</Button>
+            </Link>
+          </div>
+        </CardBody>
+      </Card>
+      <details id="developer" className="mb-5 scroll-mt-24 rounded-3xl border border-slate-100 bg-white/80 p-4 shadow-soft">
+        <summary className="cursor-pointer text-sm font-black uppercase tracking-[0.16em] text-slate-500">
+          {t("settings.developerConnections")}
+        </summary>
+        <div className="mt-4">
+          <DevelopersSection />
+        </div>
+      </details>
       <Card id="business-profile" className="scroll-mt-24">
         <CardBody>
           <BusinessSettingsForm initial={business} onSubmit={(payload) => mutation.mutateAsync(payload)} />

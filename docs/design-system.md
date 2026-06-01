@@ -50,8 +50,16 @@ Status colors should communicate state, not decorate layout.
 ## Filters
 
 - Primary filters should be segmented buttons or custom `Select`.
+- Use `frontend/src/components/ui/FilterBar.tsx` for horizontal status/category filters.
 - Avoid native browser dropdown visuals.
 - Advanced filters should be hidden behind a compact control unless they are part of the core workflow.
+
+## Metrics
+
+- Use `frontend/src/components/ui/MetricCard.tsx` for compact KPI/status summaries.
+- Metric cards should be neutral white surfaces with subtle slate borders.
+- Use colored icon wells to communicate category or state, not to decorate the whole card.
+- Use `compact` only inside dense dashboards or narrow side panels.
 
 ## Global Navigation
 

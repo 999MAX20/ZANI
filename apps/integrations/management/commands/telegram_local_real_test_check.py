@@ -2,6 +2,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
 from apps.bots.models import BotChannel
+from apps.core.production_rules import is_safe_public_https_url, redact_url_for_display
 from apps.integrations.providers.telegram import TelegramProvider
 
 
@@ -39,13 +40,20 @@ class Command(BaseCommand):
 
         public_url = (options.get("public_url") or "").strip()
         webhook_url = self._webhook_url(public_url) if public_url else ""
+        public_url_safe = bool(public_url and is_safe_public_https_url(public_url) and is_safe_public_https_url(webhook_url))
         if public_url:
-            checks.append(self._check("public_url_https", webhook_url.startswith("https://"), "Telegram requires a public HTTPS webhook URL."))
+            checks.append(
+                self._check(
+                    "public_url_https",
+                    public_url_safe,
+                    "Telegram requires a public HTTPS webhook URL, not localhost or a private network address.",
+                )
+            )
         else:
             checks.append(self._check("public_url_https", False, "Pass --public-url=https://your-tunnel-domain to test webhook setup."))
 
         webhook_result = None
-        if options["set_webhook"] and webhook_url and webhook_url.startswith("https://"):
+        if options["set_webhook"] and public_url_safe:
             webhook_result = provider.set_webhook(channel, webhook_url)
             checks.append(self._check("telegram_set_webhook", bool(webhook_result.get("ok") and not webhook_result.get("mock")), webhook_result.get("description") or webhook_result.get("reason") or "Telegram setWebhook must return ok=true."))
         elif options["set_webhook"]:
@@ -80,7 +88,7 @@ class Command(BaseCommand):
         return queryset.exclude(config_json__bot_token="").order_by("-updated_at", "-id").first()
 
     def _webhook_url(self, public_url):
-        value = public_url.rstrip("/")
+        value = redact_url_for_display(public_url).rstrip("/")
         if value.endswith("/api/integrations/telegram/webhook"):
             return f"{value}/"
         if value.endswith("/api/integrations/telegram/webhook/"):

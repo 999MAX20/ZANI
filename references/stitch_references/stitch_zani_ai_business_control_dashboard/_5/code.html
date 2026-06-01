@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ru"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .ai-glass {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid transparent;
+            background-clip: padding-box;
+            position: relative;
+        }
+        .ai-glass::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(to right, #7C3AED, #1E6BFF);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+        .ai-glow-subtle {
+            box-shadow: 0 0 20px rgba(124, 58, 237, 0.08);
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fb;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error": "#ba1a1a",
+                        "primary-fixed": "#d8e2ff",
+                        "tertiary": "#26005c",
+                        "on-tertiary": "#ffffff",
+                        "background": "#f8f9fb",
+                        "outline": "#747781",
+                        "on-primary-fixed": "#001a42",
+                        "inverse-surface": "#2e3132",
+                        "surface-tint": "#3c5d9c",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#5a00c6",
+                        "surface-container-lowest": "#ffffff",
+                        "ai-gradient-end": "#1E6BFF",
+                        "on-primary-container": "#7999dc",
+                        "outline-variant": "#c4c6d2",
+                        "surface-muted": "#F2F4F7",
+                        "surface-container-high": "#e7e8ea",
+                        "inverse-on-surface": "#f0f1f3",
+                        "on-secondary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-secondary-container": "#fefcff",
+                        "surface-container-low": "#f2f4f6",
+                        "on-error": "#ffffff",
+                        "on-surface": "#191c1e",
+                        "surface-bright": "#f8f9fb",
+                        "on-primary-fixed-variant": "#224583",
+                        "secondary-fixed-dim": "#b3c5ff",
+                        "ai-gradient-start": "#7C3AED",
+                        "on-tertiary-container": "#ab82ff",
+                        "primary-fixed-dim": "#aec6ff",
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed": "#eaddff",
+                        "on-surface-variant": "#434750",
+                        "ai-glow": "rgba(124, 58, 237, 0.15)",
+                        "secondary-container": "#1b6afe",
+                        "success-vibrant": "#28C76F",
+                        "danger-soft": "#EA5455",
+                        "secondary-fixed": "#dbe1ff",
+                        "on-background": "#191c1e",
+                        "primary-container": "#002f6c",
+                        "inverse-primary": "#aec6ff",
+                        "on-secondary-fixed-variant": "#003fa5",
+                        "surface-container": "#edeef0",
+                        "surface-card": "#FFFFFF",
+                        "surface-variant": "#e1e2e4",
+                        "warning-soft": "#FF9F43",
+                        "surface-dim": "#d9dadc",
+                        "surface": "#f8f9fb",
+                        "tertiary-fixed-dim": "#d2bbff",
+                        "tertiary-container": "#400090",
+                        "primary": "#001b44",
+                        "on-secondary-fixed": "#001849",
+                        "surface-container-highest": "#e1e2e4",
+                        "secondary": "#0052d2",
+                        "on-tertiary-fixed": "#25005a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container-padding-mobile": "16px",
+                        "card-gap": "20px",
+                        "container-padding-desktop": "24px",
+                        "gutter-md": "16px",
+                        "sidebar-width": "260px",
+                        "base": "8px"
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface">
+<!-- Desktop Side Navigation -->
+<aside class="hidden md:flex flex-col fixed left-0 top-0 h-full w-[260px] bg-surface-muted border-r border-outline-variant z-50">
+<div class="px-6 py-8">
+<h1 class="font-headline-md text-headline-md font-bold text-primary">ZANI Control</h1>
+<p class="font-body-md text-body-md text-on-surface-variant opacity-70">Режим владельца</p>
+</div>
+<nav class="flex-1 mt-4">
+<a class="flex items-center gap-3 text-on-surface-variant px-6 py-3 hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-body-md text-body-md">Дашборд</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-6 py-3 hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="person_search">person_search</span>
+<span class="font-body-md text-body-md">Лиды</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-6 py-3 hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="handshake">handshake</span>
+<span class="font-body-md text-body-md">Сделки</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-6 py-3 hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-body-md text-body-md">Клиенты</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-6 py-3 hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="chat">chat</span>
+<span class="font-body-md text-body-md">Диалоги</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-6 py-3 hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="monitoring">monitoring</span>
+<span class="font-body-md text-body-md">Аналитика</span>
+</a>
+<!-- Active State -->
+<a class="flex items-center gap-3 border-l-4 border-primary bg-surface-container text-primary px-6 py-3" href="#">
+<span class="material-symbols-outlined" data-icon="extension">extension</span>
+<span class="font-body-md text-body-md">Интеграции</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-6 py-3 hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body-md text-body-md">Настройки</span>
+</a>
+</nav>
+<div class="p-6 mt-auto">
+<div class="flex items-center gap-3 p-3 rounded-xl bg-surface-container-low">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-on-primary-fixed font-bold">JD</div>
+<div>
+<p class="font-label-md text-label-md">Джон Доу</p>
+<p class="text-[10px] uppercase tracking-wider text-on-surface-variant">Доступ админа</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Top Navigation Bar (Mobile & Desktop Header) -->
+<header class="flex justify-between items-center px-container-padding-mobile md:px-container-padding-desktop w-full h-16 bg-surface ml-0 md:ml-sidebar-width fixed top-0 z-40 border-b border-outline-variant md:border-none">
+<div class="flex items-center gap-4">
+<h2 class="font-headline-md text-headline-md font-black text-primary md:hidden">ZANI</h2>
+<div class="hidden md:flex items-center gap-6">
+<span class="font-label-md text-label-md text-on-surface-variant">Режим владельца</span>
+<div class="flex items-center gap-2 px-3 py-1 bg-success-vibrant/10 text-success-vibrant rounded-full">
+<span class="w-2 h-2 rounded-full bg-success-vibrant animate-pulse"></span>
+<span class="font-label-sm text-label-sm">Статус: Активен</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<div class="hidden md:flex relative mr-4">
+<input class="bg-surface-container-low border-none rounded-lg pl-10 pr-4 py-2 text-body-md w-64 focus:ring-2 focus:ring-secondary/20" placeholder="Поиск инструментов..." type="text"/>
+<span class="material-symbols-outlined absolute left-3 top-2 text-on-surface-variant" data-icon="search">search</span>
+</div>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-highest rounded-lg transition-all">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-highest rounded-lg transition-all">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-0 md:ml-sidebar-width pt-20 pb-24 md:pb-8 px-container-padding-mobile md:px-container-padding-desktop">
+<!-- Hero Section / Header -->
+<section class="mb-10">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<h1 class="font-kpi-display text-kpi-display text-primary mb-2">Интеграции</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">Усильте работу ZANI, подключив инструменты, которые вы уже используете. Бесшовная синхронизация данных, сложная настройка не требуется.</p>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center gap-2 px-4 py-2 rounded-xl bg-surface-container-highest font-label-md text-label-md text-on-surface hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined" data-icon="filter_list">filter_list</span>
+                    Фильтр
+                </button>
+</div>
+</div>
+</section>
+<!-- AI Insight Card -->
+<section class="mb-10">
+<div class="ai-glass ai-glow-subtle rounded-2xl p-6 flex flex-col md:flex-row gap-6 items-center">
+<div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-ai-gradient-start to-ai-gradient-end flex items-center justify-center text-white shadow-lg">
+<span class="material-symbols-outlined !text-3xl" data-icon="auto_awesome">auto_awesome</span>
+</div>
+<div class="flex-1 text-center md:text-left">
+<h3 class="font-headline-sm text-headline-sm text-primary mb-1">Рекомендуемая интеграция</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Подключение WhatsApp может сократить время ответа на лиды вручную до 45% на основе вашего текущего объема.</p>
+</div>
+<button class="px-6 py-3 bg-secondary text-white rounded-xl font-label-md text-label-md hover:opacity-90 active:scale-95 transition-all shadow-md whitespace-nowrap">
+                Подключить сейчас
+            </button>
+</div>
+</section>
+<!-- Integration Categories Grid -->
+<div class="space-y-12">
+<!-- Messengers Category -->
+<section>
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-secondary" data-icon="forum">forum</span>
+<h2 class="font-headline-sm text-headline-sm text-primary">Мессенджеры</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-card-gap">
+<!-- WhatsApp Card -->
+<div class="bg-surface-card rounded-2xl p-6 border border-outline-variant shadow-[0_4px_20px_rgba(0,47,108,0.04)] hover:shadow-md transition-shadow group">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-xl bg-[#25D366]/10 flex items-center justify-center">
+<img alt="WhatsApp" class="w-7 h-7" data-alt="Official WhatsApp logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBSihSuMUyzgev3VVlVdBf89j1O-LKnLK4PD3HSoT8EaXp0_AtPuCO2YQuFYTXcPW6TYd_NCXltWtyZ5GNtpNMYpYBBVipcclmI37v4Vk_FuFJDxZDXgoY4tbsBTAYuWVqwPIUcf40-zpbH2BdSeOFDBDqPmWkyUpDPZ36RBKpZqaWD8CENHH_vfemNkXc71_XR7FSTJwwcCUSFNChsizRSu8fNlcWRyyQfqOb-rdsKaPX9og5z4JToo-PWdM-65uA-BGx2NcbIPkM"/>
+</div>
+<span class="px-2 py-1 bg-surface-container-low text-on-surface-variant rounded font-label-sm text-label-sm">Популярно</span>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-primary mb-2">WhatsApp</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 min-h-[40px]">Подключите WhatsApp, чтобы получать сообщения прямо в ZANI и автоматизировать ответы.</p>
+<button class="w-full py-3 border-2 border-secondary text-secondary font-label-md text-label-md rounded-xl hover:bg-secondary/5 transition-colors active:scale-[0.98]">Подключить</button>
+</div>
+<!-- Instagram Card -->
+<div class="bg-surface-card rounded-2xl p-6 border border-outline-variant shadow-[0_4px_20px_rgba(0,47,108,0.04)] hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] flex items-center justify-center">
+<img alt="Instagram" class="w-7 h-7 invert brightness-0" data-alt="Instagram logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDy333mgJ8IR5BdfM435dahXGzn4ksKh9xTBfHxuzGfHoxGbYksIJ9Jw1RFPA142o17G__-rMDdO5UAjBrMH7pxYXWNpfXwXd3wbvzCzkcb2sGvNXF86rGE3A5c27Xbyqdu_YQHDhiWCruWBxrhvTIV_voK3QAV6hfuxQ6gym5zM5nRTXZmi1jjrpmxGqQqP-jRK60DUyk19gw82xOUqjci0FuP_EACH_eqPy62qv84UCv7YuGztfTRt73Qcw35rKvEZSZ_m56Fkzw"/>
+</div>
+<div class="flex items-center gap-1 px-2 py-1 bg-success-vibrant/10 text-success-vibrant rounded">
+<span class="w-1.5 h-1.5 rounded-full bg-success-vibrant"></span>
+<span class="font-label-sm text-label-sm">Подключено</span>
+</div>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-primary mb-2">Instagram</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 min-h-[40px]">Управляйте директом и комментариями. Синхронизируйте лиды из профиля бизнеса.</p>
+<button class="w-full py-3 bg-surface-container-high text-on-surface-variant font-label-md text-label-md rounded-xl hover:bg-surface-container transition-colors">Настройки</button>
+</div>
+<!-- Telegram Card -->
+<div class="bg-surface-card rounded-2xl p-6 border border-outline-variant shadow-[0_4px_20px_rgba(0,47,108,0.04)] hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-xl bg-[#0088cc]/10 flex items-center justify-center">
+<img alt="Telegram" class="w-7 h-7" data-alt="Telegram logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBrXIYeKfAOQ2DC8GKGKUrAC8FPspu9kNJnvuho6s4k4ZuWxOxYRE6NzWSnwhJjokyCXw79jM37FyqJwooLzXYi0CIs80ecT_Y0uJYgmg196HgvOSb-EX0MiggtyeyYP1SZhvDBoVfBWVsNO0o_IAg3L1QvzuMBWxfTC7DjrQ12Dtk78AMlWloV7b-tf9O3GcyjwlXN8tfF1x59EgwwbDAUTgRN-x0vv4y6EkPmrXrEZStw9mA-L4vFHxGjOsZSRNCrV9NrPtDnL34"/>
+</div>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-primary mb-2">Telegram</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 min-h-[40px]">Синхронизируйте чаты Telegram-бота и управляйте каналами поддержки.</p>
+<button class="w-full py-3 border-2 border-secondary text-secondary font-label-md text-label-md rounded-xl hover:bg-secondary/5 transition-colors active:scale-[0.98]">Подключить</button>
+</div>
+</div>
+</section>
+<!-- Marketplace Category -->
+<section>
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-secondary" data-icon="storefront">storefront</span>
+<h2 class="font-headline-sm text-headline-sm text-primary">Маркетплейс</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-card-gap">
+<!-- Kaspi Card -->
+<div class="bg-surface-card rounded-2xl p-6 border border-outline-variant shadow-[0_4px_20px_rgba(0,47,108,0.04)] hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-xl bg-[#f01414]/10 flex items-center justify-center">
+<span class="text-[#f01414] font-black text-xl">K</span>
+</div>
+<span class="px-2 py-1 bg-surface-container-low text-on-surface-variant rounded font-label-sm text-label-sm">Важно</span>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-primary mb-2">Kaspi</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 min-h-[40px]">Подключите Kaspi, чтобы видеть заказы, отслеживать остатки и синхронизировать статусы оплат.</p>
+<button class="w-full py-3 border-2 border-secondary text-secondary font-label-md text-label-md rounded-xl hover:bg-secondary/5 transition-colors active:scale-[0.98]">Подключить</button>
+</div>
+</div>
+</section>
+<!-- Finance Category -->
+<section>
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-secondary" data-icon="payments">payments</span>
+<h2 class="font-headline-sm text-headline-sm text-primary">Финансы</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-card-gap">
+<!-- Excel Card -->
+<div class="bg-surface-card rounded-2xl p-6 border border-outline-variant shadow-[0_4px_20px_rgba(0,47,108,0.04)] hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-xl bg-[#1D6F42]/10 flex items-center justify-center">
+<img alt="Excel" class="w-7 h-7" data-alt="Microsoft Excel logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9PFtisnDofC2oWeCe84C63eDNMifNifoqhP3l9-kvqQ2AeeDDh7gSXTn37H4hje612rDZOwAgrSWAQos4dQo9iMskJlLIrXEvys7exnxTtMBcn3vEtSZr2nAxYZ2Nq2kcG7kovuNQbkTeoe2_3SaZcay_9KcdAk_9p0I1PKK8MPhg_WPdPF4Mo0DLDBdzqrjUPViyybrEzle4K_SCD3cbRV9giqbevBiVoGDDRM9mEHJBzYsxaHfQADgzQj0AKP42rQgQ7y1Amh4"/>
+</div>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-primary mb-2">Excel / CSV</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 min-h-[40px]">Импортируйте и экспортируйте наборы данных для отчетов или массового обновления лидов.</p>
+<button class="w-full py-3 border-2 border-secondary text-secondary font-label-md text-label-md rounded-xl hover:bg-secondary/5 transition-colors active:scale-[0.98]">Настроить импорт</button>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Mobile Bottom Navigation -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-16 px-4 pb-safe bg-surface/80 backdrop-blur-xl border-t border-outline-variant/30 shadow-lg">
+<a class="flex flex-col items-center justify-center text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-sm text-[10px]">Главная</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="person_search">person_search</span>
+<span class="font-label-sm text-[10px]">Лиды</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-label-sm text-[10px]">Клиенты</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="chat">chat</span>
+<span class="font-label-sm text-[10px]">Сообщения</span>
+</a>
+<!-- Active -->
+<a class="flex flex-col items-center justify-center text-secondary bg-secondary-fixed/20 rounded-full px-4 py-1" href="#">
+<span class="material-symbols-outlined" data-icon="extension">extension</span>
+<span class="font-label-sm text-[10px]">Ещё</span>
+</a>
+</nav>
+<script>
+    // Micro-interaction for buttons
+    document.querySelectorAll('button').forEach(button => {
+        button.addEventListener('mousedown', () => {
+            button.style.transform = 'scale(0.97)';
+        });
+        button.addEventListener('mouseup', () => {
+            button.style.transform = 'scale(1)';
+        });
+        button.addEventListener('mouseleave', () => {
+            button.style.transform = 'scale(1)';
+        });
+    });
+
+    // Search bar interaction
+    const searchInput = document.querySelector('input[type="text"]');
+    if (searchInput) {
+        searchInput.addEventListener('focus', () => {
+            searchInput.parentElement.classList.add('ring-2', 'ring-secondary/30');
+        });
+        searchInput.addEventListener('blur', () => {
+            searchInput.parentElement.classList.remove('ring-2', 'ring-secondary/30');
+        });
+    }
+</script>
+</body></html>

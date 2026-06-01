@@ -52,6 +52,8 @@ class FileAttachmentTests(TestCase):
         self.assertEqual(attachment.original_name, "contract.pdf")
         self.assertEqual(attachment.business, self.business)
         self.assertEqual(attachment.uploaded_by, self.owner)
+        self.assertTrue(attachment.file.name.startswith(f"private/attachments/business-{self.business.id}/"))
+        self.assertNotIn("contract.pdf", attachment.file.name)
 
         download_response = self.api.get(f"/api/file-attachments/{attachment.id}/download/")
         self.assertEqual(download_response.status_code, 200)
@@ -65,6 +67,29 @@ class FileAttachmentTests(TestCase):
                 metadata__kind="file_download",
             ).exists()
         )
+
+    def test_attachment_upload_sanitizes_path_like_filename(self):
+        self.api.force_authenticate(self.owner)
+        upload = SimpleUploadedFile("../nested\\evil contract.pdf", b"%PDF-1.4\ncontract", content_type="application/pdf")
+
+        response = self.api.post(
+            "/api/file-attachments/",
+            {
+                "business": self.business.id,
+                "entity_type": "client",
+                "entity_id": str(self.client.id),
+                "file": upload,
+            },
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        attachment = FileAttachment.objects.get()
+        self.assertEqual(attachment.original_name, "evil_contract.pdf")
+        self.assertTrue(attachment.file.name.startswith(f"private/attachments/business-{self.business.id}/"))
+        self.assertNotIn("..", attachment.file.name)
+        self.assertNotIn("\\", attachment.file.name)
+        self.assertNotIn("evil", attachment.file.name)
 
     def test_forbidden_extension_rejected(self):
         self.api.force_authenticate(self.owner)

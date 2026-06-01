@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.analytics.models import AnalyticsEvent, ReportWidget, ScheduledReport
+from apps.integrations.sanitization import sanitize_config
 
 
 class AnalyticsEventSerializer(serializers.ModelSerializer):
@@ -16,12 +17,22 @@ class AnalyticsEventSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Client must belong to the selected business.")
         return attrs
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["metadata"] = sanitize_config(data.get("metadata") or {})
+        return data
+
 
 class ReportWidgetSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReportWidget
         fields = "__all__"
         read_only_fields = ["created_at", "updated_at"]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["config_json"] = sanitize_config(data.get("config_json") or {})
+        return data
 
 
 class ScheduledReportSerializer(serializers.ModelSerializer):

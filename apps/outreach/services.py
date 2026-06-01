@@ -10,6 +10,7 @@ from apps.activities.segments import evaluate_segment_queryset
 from apps.activities.services import create_activity_event
 from apps.businesses.models import BusinessMember
 from apps.clients.models import Client
+from apps.integrations.sanitization import sanitize_error_payload, sanitize_error_text
 from apps.notifications.models import Notification
 from apps.notifications.routing import create_role_notification
 from apps.outreach.models import OutreachCampaign, OutreachConsent, OutreachRecipient
@@ -264,7 +265,7 @@ def launch_campaign(campaign):
     try:
         validate_campaign_launch(campaign)
     except ValueError as exc:
-        _notify_outreach_blocked(campaign, str(exc))
+        _notify_outreach_blocked(campaign, sanitize_error_text(exc))
         raise
 
     with transaction.atomic():
@@ -508,8 +509,8 @@ def refresh_campaign_status(campaign):
             recipient.provider_result = _notification_delivery_result(recipient.notification)
         elif notification_status == Notification.Statuses.FAILED:
             recipient.status = OutreachRecipient.Statuses.FAILED
-            result = _notification_delivery_result(recipient.notification)
-            reason = _delivery_reason(result) or "Notification delivery failed."
+            result = sanitize_error_payload(_notification_delivery_result(recipient.notification))
+            reason = sanitize_error_text(_delivery_reason(result) or "Notification delivery failed.")
             recipient.error = reason
             recipient.error_code = classify_delivery_error(reason)
             recipient.provider_result = result

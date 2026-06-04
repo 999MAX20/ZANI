@@ -1,4 +1,4 @@
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
 from apps.accounts.models import User
@@ -410,6 +410,7 @@ class BusinessConnectorFoundationTests(TestCase):
         self.assertNotIn("raw-api-key", str(event.payload_json))
         self.assertNotIn("raw-access-token", str(event.payload_json))
 
+    @override_settings(SUPPORT_REQUIRES_GRANT=False)
     def test_whatsapp_and_instagram_connection_requests_are_platform_visible_without_secrets(self):
         self.api.force_authenticate(self.owner)
 

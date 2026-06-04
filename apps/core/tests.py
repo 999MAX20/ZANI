@@ -239,6 +239,20 @@ class ProductionReadinessTests(TestCase):
         AUTOMATIONS_RUN_INLINE=True,
         USE_S3=False,
         SENTRY_DSN="",
+        REST_FRAMEWORK={
+            "DEFAULT_THROTTLE_RATES": {
+                "auth_login": "100/min",
+                "auth_refresh": "100/min",
+                "auth_social": "100/min",
+                "auth_signup": "100/min",
+                "auth_password_reset": "100/min",
+                "public_api": "1000/min",
+                "public_form": "1000/min",
+                "public_widget": "1000/min",
+                "integration_webhook": "1000/min",
+                "ai_assistant": "100/min",
+            }
+        },
     )
     def test_production_settings_check_warns_about_unsafe_baseline(self):
         warning_ids = {warning.id for warning in run_checks()}

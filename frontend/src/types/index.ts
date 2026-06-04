@@ -564,9 +564,27 @@ export type CurrentUser = User & {
   businesses: Business[];
   memberships?: BusinessMembershipSummary[];
   effective_permissions?: Record<string, EffectivePermission[]>;
+  preferences?: UserPreference;
+  social_identities?: SocialIdentitySummary[];
   is_platform_user: boolean;
   is_merchant_user: boolean;
   is_business_manager: boolean;
+};
+
+export type UserPreference = {
+  language: "ru" | "kk" | "en";
+  timezone: string;
+  start_page: "dashboard" | "conversations" | "tasks" | "calendar" | "leads";
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type SocialIdentitySummary = {
+  provider: "google" | "apple";
+  email: string;
+  email_verified: boolean;
+  created_at: string;
+  updated_at: string;
 };
 
 export type EffectivePermission = {

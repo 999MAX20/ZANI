@@ -189,6 +189,72 @@ class AuthSecurityBaselineTests(TestCase):
         self.assertEqual(business.name, "Fresh Salon")
         self.assertTrue(BusinessMember.objects.filter(business=business, user=user, role=BusinessMember.Roles.OWNER, is_active=True).exists())
 
+    def test_current_user_can_update_personal_profile(self):
+        self.api.force_authenticate(self.user)
+
+        response = self.api.patch(
+            "/api/auth/me/",
+            {
+                "full_name": "Updated User",
+                "phone": "+77015550999",
+                "role": User.Roles.PLATFORM_ADMIN,
+                "preferences": {"language": "en", "timezone": "Europe/London", "start_page": "conversations"},
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.full_name, "Updated User")
+        self.assertEqual(self.user.phone, "+77015550999")
+        self.assertEqual(self.user.role, User.Roles.BUSINESS_OWNER)
+        self.assertEqual(response.data["preferences"]["language"], "en")
+        self.assertEqual(response.data["preferences"]["timezone"], "Europe/London")
+        self.assertEqual(response.data["preferences"]["start_page"], "conversations")
+
+    def test_current_user_can_change_password(self):
+        self.api.force_authenticate(self.user)
+
+        response = self.api.post(
+            "/api/auth/change-password/",
+            {"current_password": "StrongPass123", "new_password": "NewStrongPass123"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("NewStrongPass123"))
+
+    def test_change_password_rejects_wrong_current_password(self):
+        self.api.force_authenticate(self.user)
+
+        response = self.api.post(
+            "/api/auth/change-password/",
+            {"current_password": "wrong-password", "new_password": "NewStrongPass123"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("StrongPass123"))
+
+    def test_current_user_login_history_returns_only_own_entries(self):
+        other_user = User.objects.create_user(
+            username="other-user",
+            email="other-user@example.com",
+            password="StrongPass123",
+            role=User.Roles.BUSINESS_OPERATOR,
+        )
+        LoginHistory.objects.create(user=self.user, email=self.user.email, status=LoginHistory.Statuses.SUCCESS)
+        LoginHistory.objects.create(user=other_user, email=other_user.email, status=LoginHistory.Statuses.SUCCESS)
+        self.api.force_authenticate(self.user)
+
+        response = self.api.get("/api/auth/login-history/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["email"], self.user.email)
+
     def test_password_reset_request_and_confirm_flow(self):
         request_response = self.api.post(
             "/api/auth/password-reset/request/",

@@ -3,7 +3,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from apps.accounts.auth_views import ThrottledTokenObtainPairView, ThrottledTokenRefreshView
-from apps.accounts.views import CurrentUserView, OwnerSignupView, PasswordResetConfirmView, PasswordResetRequestView, SocialAuthView
+from apps.accounts.views import ChangePasswordView, CurrentUserLoginHistoryView, CurrentUserView, OwnerSignupView, PasswordResetConfirmView, PasswordResetRequestView, SocialAuthView
 from apps.activities.views import ActivityEventViewSet, NoteViewSet, SegmentFilterViewSet, SegmentViewSet, TaggedObjectViewSet, TagViewSet
 from apps.ai_core.views import (
     AIAnalystBriefView,
@@ -184,6 +184,8 @@ urlpatterns = [
     path("api/auth/password-reset/request/", PasswordResetRequestView.as_view(), name="auth_password_reset_request"),
     path("api/auth/password-reset/confirm/", PasswordResetConfirmView.as_view(), name="auth_password_reset_confirm"),
     path("api/auth/me/", CurrentUserView.as_view(), name="auth_me"),
+    path("api/auth/change-password/", ChangePasswordView.as_view(), name="auth_change_password"),
+    path("api/auth/login-history/", CurrentUserLoginHistoryView.as_view(), name="auth_login_history"),
     path("api/team/permissions/catalog/", team_permissions_catalog, name="team_permissions_catalog"),
     path("api/team/performance/", team_performance, name="team_performance"),
     path("api/export/<str:entity_type>/", export_entity, name="export_entity"),

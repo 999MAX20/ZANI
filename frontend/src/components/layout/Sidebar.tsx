@@ -1,8 +1,6 @@
 import {
   BarChart3,
   CalendarDays,
-  ChevronDown,
-  ChevronLeft,
   Bot,
   Home,
   Inbox,
@@ -15,7 +13,7 @@ import {
   Users,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 
 import { useAuth } from "../../features/auth/AuthProvider";
@@ -25,7 +23,6 @@ import { cn } from "../../lib/cn";
 import { useI18n } from "../../lib/i18n";
 import { hasPermission } from "../../lib/permissions";
 import { realtimeIntervals, realtimeQueryOptions } from "../../lib/realtime";
-import { Button } from "../ui/Button";
 
 type SidebarItem = {
   to: string;
@@ -102,40 +99,29 @@ const mobileDrawerSections = [
   },
 ] satisfies SidebarSection[];
 
-const collapsedSectionStorageKey = "zani_sidebar_collapsed_sections";
-
 function isItemActive(pathname: string, to: string) {
   return pathname === to || (to !== "/dashboard" && pathname.startsWith(to));
 }
 
 export function Sidebar({
+  expanded = false,
   forceVisible = false,
-  collapsed = false,
   mobileDrawer = false,
-  onToggle,
+  onDesktopMouseEnter,
+  onDesktopMouseLeave,
   onNavigate,
 }: {
+  expanded?: boolean;
   forceVisible?: boolean;
-  collapsed?: boolean;
   mobileDrawer?: boolean;
-  onToggle?: () => void;
+  onDesktopMouseEnter?: () => void;
+  onDesktopMouseLeave?: () => void;
   onNavigate?: () => void;
 }) {
   const { t } = useI18n();
   const location = useLocation();
   const { user } = useAuth();
   const { business } = useActiveBusiness();
-  const [hovered, setHovered] = useState(false);
-  const [collapsedSections, setCollapsedSections] = useState<string[]>(() => {
-    if (typeof window === "undefined") return [];
-    try {
-      const stored = window.localStorage.getItem(collapsedSectionStorageKey);
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
-  const isExpanded = forceVisible || !collapsed || hovered;
   const inboxSummary = useQuery({
     queryKey: ["inbox-summary", business?.id],
     queryFn: inboxApi.getSummary,
@@ -144,6 +130,7 @@ export function Sidebar({
     ...realtimeQueryOptions,
   });
   const unreadMessages = inboxSummary.data?.unread_messages ?? inboxSummary.data?.unread ?? 0;
+  const isExpanded = forceVisible || expanded;
 
   const visibleGroups = useMemo(
     () =>
@@ -155,88 +142,45 @@ export function Sidebar({
         .filter((group) => group.items.length),
     [business?.id, mobileDrawer, user],
   );
-  const visibleItems = useMemo(() => visibleGroups.flatMap((group) => group.items), [visibleGroups]);
-
-  function toggleSection(sectionId: string) {
-    setCollapsedSections((current) => {
-      const next = current.includes(sectionId) ? current.filter((id) => id !== sectionId) : [...current, sectionId];
-      window.localStorage.setItem(collapsedSectionStorageKey, JSON.stringify(next));
-      return next;
-    });
-  }
-
   return (
     <aside
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={forceVisible ? undefined : onDesktopMouseEnter}
+      onMouseLeave={forceVisible ? undefined : onDesktopMouseLeave}
       className={cn(
-        "group/sidebar relative z-20 m-3 shrink-0 rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300",
-        forceVisible && "m-0 h-dvh max-h-dvh rounded-none border-r border-slate-200 bg-white shadow-premium",
-        !forceVisible && "lg:fixed lg:bottom-3 lg:left-0 lg:top-3 lg:m-0 lg:ml-3 lg:h-[calc(100vh-1.5rem)]",
-        isExpanded ? "w-[318px]" : "w-[92px]",
+        "relative z-[60] shrink-0 border-r border-slate-200/90 transition-[width,box-shadow,background-color,backdrop-filter] duration-200 ease-out",
+        forceVisible && "h-dvh max-h-dvh w-[min(390px,94vw)] bg-white/[0.97] shadow-premium backdrop-blur-2xl",
+        !forceVisible && cn(
+          "hidden bg-slate-100/[0.92] backdrop-blur-xl lg:fixed lg:inset-y-0 lg:left-0 lg:block",
+          isExpanded ? "lg:w-[260px] lg:bg-white/[0.97] lg:shadow-[18px_0_45px_rgba(15,23,42,0.14)] lg:backdrop-blur-2xl" : "lg:w-[72px]",
+        ),
         !forceVisible && "hidden lg:block",
       )}
     >
-      <div className={cn("relative flex h-full min-h-0 flex-col p-4", forceVisible && "min-h-dvh overflow-y-auto pb-8")}>
-        <div className={cn("mb-4 flex items-center gap-3", !isExpanded && "justify-center")}>
-          <div className="relative grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-midnight text-white shadow-sm">
-            <Sparkles size={22} />
-            <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-white bg-emerald-500" />
-          </div>
-          {isExpanded ? (
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-lg font-black tracking-tight text-midnight">{t("sidebar.product")}</p>
-              <p className="truncate text-xs font-bold text-slate-500">{t("sidebar.subtitle")}</p>
+      <div className={cn("flex h-full min-h-0 flex-col", forceVisible && "min-h-dvh overflow-y-auto pb-8")}>
+        <div className={cn("py-8", isExpanded ? "px-6" : "px-3")}>
+          <div className="flex items-center gap-3">
+            <div className="relative grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-midnight text-white shadow-sm">
+              <Sparkles size={20} />
+              <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-slate-100 bg-emerald-500" />
             </div>
-          ) : null}
+            <div className={cn("min-w-0 transition-opacity duration-150", isExpanded ? "opacity-100" : "pointer-events-none hidden opacity-0")}>
+              <p className="truncate text-xl font-bold leading-6 text-midnight">{t("sidebar.product")}</p>
+              <p className="truncate text-sm text-slate-500">{t("sidebar.subtitle")}</p>
+            </div>
+          </div>
         </div>
 
-        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto pr-1 no-scrollbar">
-          {!isExpanded ? (
-            <nav className="space-y-2">
-              {visibleItems.map((item) => {
-                const Icon = item.icon;
-                const active = isItemActive(location.pathname, item.to);
-
-                return (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    end={item.to === "/dashboard"}
-                    onClick={onNavigate}
-                    title={t(item.label)}
-                    className={cn(
-                      "relative mx-auto grid h-12 w-12 place-items-center rounded-xl text-slate-500 transition-colors duration-150",
-                      "hover:bg-slate-100 hover:text-midnight",
-                      active && "bg-midnight text-white shadow-sm",
-                    )}
-                    >
-                      <Icon size={20} strokeWidth={2.25} />
-                      {item.to === "/dashboard/conversations" && unreadMessages ? (
-                        <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-black leading-none text-white ring-2 ring-white">
-                          {unreadMessages > 99 ? "99+" : unreadMessages}
-                        </span>
-                      ) : null}
-                    </NavLink>
-                );
-              })}
-            </nav>
-          ) : visibleGroups.map((group) => {
-            const sectionCollapsed = !mobileDrawer && collapsedSections.includes(group.id);
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-2 no-scrollbar">
+          {visibleGroups.map((group) => {
             return (
             <section key={group.id}>
-              <button
-                type="button"
-                className="mb-2 flex min-h-8 w-full items-center justify-between rounded-lg px-2 text-left text-[11px] font-black uppercase tracking-[0.16em] text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
-                onClick={() => {
-                  if (!mobileDrawer) toggleSection(group.id);
-                }}
+              {mobileDrawer ? <div
+                className="mb-1 flex min-h-7 w-full items-center justify-between rounded-lg px-4 text-left text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 transition-colors hover:bg-slate-200/70 hover:text-slate-600"
               >
                 <span>{t(group.titleKey)}</span>
-                {!mobileDrawer ? <ChevronDown className={cn("transition", sectionCollapsed && "-rotate-90")} size={15} /> : null}
-              </button>
+              </div> : null}
 
-              {!sectionCollapsed ? <nav className="space-y-1">
+              <nav className="space-y-1">
                 {group.items.map((item) => {
                   const Icon = item.icon;
                   const active = isItemActive(location.pathname, item.to);
@@ -249,46 +193,57 @@ export function Sidebar({
                       onClick={onNavigate}
                       title={t(item.label)}
                       className={cn(
-                        "group relative flex min-h-[48px] items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-black text-slate-700 transition-colors duration-150",
-                        "hover:bg-slate-100 hover:text-midnight",
-                        active && "bg-slate-100 text-midnight",
+                        "group relative flex min-h-[48px] items-center gap-3 border-l-4 border-transparent px-4 py-3 text-sm font-medium text-slate-700 transition-colors duration-150",
+                        !isExpanded && "justify-center px-0",
+                        "hover:bg-slate-200/70 hover:text-midnight",
+                        active && "border-midnight bg-slate-200/80 font-semibold text-midnight",
                       )}
                     >
                       <span
                         className={cn(
-                          "grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-500 transition",
-                          active && "bg-midnight text-white shadow-sm",
-                          !active && "group-hover:bg-white group-hover:text-brand-700",
+                          "grid h-6 w-6 shrink-0 place-items-center text-slate-500 transition-colors",
+                          active && "text-midnight",
+                          !active && "group-hover:text-midnight",
                         )}
                       >
-                        <Icon size={20} strokeWidth={2.25} />
+                        <Icon size={21} strokeWidth={2.15} />
                       </span>
-                      <span className="min-w-0 truncate">{t(item.label)}</span>
+                      <span className={cn("min-w-0 truncate transition-opacity duration-150", isExpanded ? "opacity-100" : "hidden opacity-0")}>{t(item.label)}</span>
                       {item.to === "/dashboard/conversations" && unreadMessages ? (
-                        <span className="ml-auto min-w-6 rounded-full bg-red-500 px-2 py-1 text-center text-[11px] font-black leading-none text-white shadow-sm">
+                        <span className={cn("min-w-6 rounded-full bg-red-500 px-2 py-1 text-center text-[11px] font-black leading-none text-white shadow-sm", isExpanded ? "ml-auto" : "absolute right-1 top-1 px-1.5")}>
                           {unreadMessages > 99 ? "99+" : unreadMessages}
                         </span>
-                      ) : active ? <span className="ml-auto h-2 w-2 rounded-full bg-brand-500" /> : null}
+                      ) : active && isExpanded ? <span className="ml-auto h-2 w-2 rounded-full bg-brand-500" /> : null}
                     </NavLink>
                   );
                 })}
-              </nav> : null}
+              </nav>
             </section>
             );
           })}
 
         </div>
 
-        {onToggle ? (
-          <Button
-            variant="secondary"
-            className="absolute -right-4 top-8 hidden h-9 w-9 rounded-full px-0 lg:inline-flex"
-            onClick={onToggle}
-            aria-label={collapsed ? t("sidebar.expand") : t("sidebar.collapse")}
+        <div className={cn("border-t border-slate-200", isExpanded ? "p-4" : "p-3")}>
+          <NavLink
+            to="/dashboard/account"
+            onClick={onNavigate}
+            title={t("account.menuProfile")}
+            className={({ isActive }) => cn(
+              "flex items-center gap-3 rounded-xl transition hover:bg-slate-200/70",
+              isExpanded ? "p-2" : "justify-center p-0",
+              isActive && "bg-slate-200/80",
+            )}
           >
-            <ChevronLeft className={cn("transition", collapsed && "rotate-180")} size={16} />
-          </Button>
-        ) : null}
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-blue-100 text-sm font-bold text-midnight">
+              {(user?.full_name || user?.email || "Z").slice(0, 2).toUpperCase()}
+            </div>
+            <div className={cn("min-w-0 transition-opacity duration-150", isExpanded ? "opacity-100" : "hidden opacity-0")}>
+              <p className="truncate text-sm font-bold text-midnight">{user?.full_name || user?.email || t("sidebar.product")}</p>
+              <p className="truncate text-xs text-slate-500">{t("account.menuProfile")}</p>
+            </div>
+          </NavLink>
+        </div>
       </div>
     </aside>
   );

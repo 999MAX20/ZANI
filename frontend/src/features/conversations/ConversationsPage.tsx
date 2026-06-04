@@ -25,7 +25,6 @@ import { botsApi } from "../../api/bots";
 import { inboxApi, type InboxConversation, type InboxFilters, type InboxMessage } from "../../api/inbox";
 import { WorkQueueDetailPane, WorkQueueLayout, WorkQueueListPane } from "../../components/layout/WorkQueueLayout";
 import { Button } from "../../components/ui/Button";
-import { MetricCard } from "../../components/ui/MetricCard";
 import { Select } from "../../components/ui/Select";
 import { EmptyState, ErrorState, LoadingState } from "../../components/ui/StateViews";
 import { cn } from "../../lib/cn";
@@ -89,6 +88,29 @@ function Tooltip({ label, children }: { label: string; children: React.ReactNode
         {label}
       </span>
     </span>
+  );
+}
+
+function InboxMetricChip({
+  label,
+  value,
+  tone = "slate",
+}: {
+  label: string;
+  value: number;
+  tone?: "blue" | "amber" | "slate";
+}) {
+  const toneClass = {
+    blue: "bg-blue-50 text-blue-700 ring-blue-100",
+    amber: "bg-amber-50 text-amber-700 ring-amber-100",
+    slate: "bg-slate-100 text-slate-700 ring-slate-200",
+  }[tone];
+
+  return (
+    <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-bold ring-1 ${toneClass}`}>
+      <span>{label}</span>
+      <span className="text-midnight">{value}</span>
+    </div>
   );
 }
 
@@ -532,14 +554,20 @@ export function ConversationsPage() {
       {notice ? <div className="rounded-2xl border border-ai-100 bg-ai-50 px-4 py-3 text-sm font-bold text-ai-800">{notice}</div> : null}
       {actionError ? <ErrorState message={getApiErrorMessage(actionError)} /> : null}
 
-      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard compact icon={MessageSquare} label={t("conversations.metricTotal")} value={summary.data?.total ?? 0} hint={t("conversations.metricTodayHint")} />
-        <MetricCard compact icon={AlertTriangle} label={t("conversations.noReply")} value={summary.data?.handoff_required ?? 0} tone="amber" />
-        <MetricCard compact icon={MessageSquare} label={t("conversations.inWork")} value={summary.data?.assigned_to_me ?? 0} tone="slate" />
-        <MetricCard compact icon={CheckCheck} label={t("conversations.unreadMessages")} value={summary.data?.unread_messages ?? 0} />
-      </div>
+      <section className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-midnight md:text-3xl">{t("conversations.title")}</h1>
+          <p className="mt-1 max-w-2xl text-base leading-6 text-slate-600">{t("conversations.description")}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <InboxMetricChip label={t("conversations.metricTotal")} value={summary.data?.total ?? 0} />
+          <InboxMetricChip label={t("conversations.noReply")} value={summary.data?.handoff_required ?? 0} tone="amber" />
+          <InboxMetricChip label={t("conversations.inWork")} value={summary.data?.assigned_to_me ?? 0} />
+          <InboxMetricChip label={t("conversations.unreadMessages")} value={summary.data?.unread_messages ?? 0} tone="blue" />
+        </div>
+      </section>
 
-      <WorkQueueLayout className="lg:min-h-[calc(100vh-176px)] lg:grid-cols-[340px_minmax(0,1fr)] 2xl:grid-cols-[340px_minmax(560px,1fr)_300px]">
+      <WorkQueueLayout className="overflow-hidden border border-slate-200 shadow-[0_4px_20px_rgba(0,47,108,0.04)] lg:min-h-[calc(100vh-190px)] lg:grid-cols-[380px_minmax(0,1fr)] 2xl:grid-cols-[380px_minmax(560px,1fr)_300px]">
         <WorkQueueListPane mobileDetailOpen={mobileThreadOpen}>
           <div className="space-y-3 p-5">
             <h1 className="text-2xl font-black tracking-tight text-midnight">{t("conversations.dialogsTitle")}</h1>

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { CalendarCheck2, CalendarClock, Copy, Send, ShieldAlert, ShieldCheck, SlidersHorizontal, Stethoscope, UsersRound, Workflow } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Bell, CalendarCheck2, CalendarClock, ChevronDown, Copy, Send, ShieldAlert, ShieldCheck, SlidersHorizontal, Stethoscope, UsersRound, Workflow } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { billingApi } from "../../api/billing";
@@ -18,7 +18,6 @@ import { BusinessSettingsForm } from "../../components/forms/BusinessSettingsFor
 import { Button } from "../../components/ui/Button";
 import { Card, CardBody } from "../../components/ui/Card";
 import { Input } from "../../components/ui/Input";
-import { PageHeader } from "../../components/ui/PageHeader";
 import { Select } from "../../components/ui/Select";
 import { ErrorState, LoadingState } from "../../components/ui/StateViews";
 import { Textarea } from "../../components/ui/Textarea";
@@ -59,15 +58,6 @@ const visibilityOptions = [
 ];
 
 const roleGuideKeys = ["manager", "operator", "staff", "accountant"] as const;
-const notificationCategories: Array<{ category: Notification["category"]; titleKey: string; descriptionKey: string }> = [
-  { category: "sales", titleKey: "settings.notifications.category.sales", descriptionKey: "settings.notifications.category.sales.text" },
-  { category: "tasks", titleKey: "settings.notifications.category.tasks", descriptionKey: "settings.notifications.category.tasks.text" },
-  { category: "outreach", titleKey: "settings.notifications.category.outreach", descriptionKey: "settings.notifications.category.outreach.text" },
-  { category: "ai_alerts", titleKey: "settings.notifications.category.aiAlerts", descriptionKey: "settings.notifications.category.aiAlerts.text" },
-  { category: "system", titleKey: "settings.notifications.category.system", descriptionKey: "settings.notifications.category.system.text" },
-  { category: "finance", titleKey: "settings.notifications.category.finance", descriptionKey: "settings.notifications.category.finance.text" },
-];
-
 const settingsGroupOrder = ["business", "team", "communication", "setup", "advanced"] as const;
 
 type SettingsGroupKey = (typeof settingsGroupOrder)[number];
@@ -84,6 +74,7 @@ const settingsSections: Array<{ id: string; group?: SettingsGroupKey }> = [
   { id: "data-tools", group: "setup" },
   { id: "lead-forms", group: "setup" },
   { id: "billing", group: "setup" },
+  { id: "usage", group: "setup" },
   { id: "custom-fields", group: "advanced" },
   { id: "automations", group: "advanced" },
   { id: "developer", group: "advanced" },
@@ -117,11 +108,28 @@ const appointmentChannelOptions = [
   { value: "system", labelKey: "settings.appointmentMessages.channel.system" },
 ];
 
+const notificationCategories: Array<{ category: Notification["category"]; titleKey: string; descriptionKey: string }> = [
+  { category: "sales", titleKey: "settings.notifications.category.sales", descriptionKey: "settings.notifications.category.sales.text" },
+  { category: "tasks", titleKey: "settings.notifications.category.tasks", descriptionKey: "settings.notifications.category.tasks.text" },
+  { category: "outreach", titleKey: "settings.notifications.category.outreach", descriptionKey: "settings.notifications.category.outreach.text" },
+  { category: "ai_alerts", titleKey: "settings.notifications.category.aiAlerts", descriptionKey: "settings.notifications.category.aiAlerts.text" },
+  { category: "system", titleKey: "settings.notifications.category.system", descriptionKey: "settings.notifications.category.system.text" },
+  { category: "finance", titleKey: "settings.notifications.category.finance", descriptionKey: "settings.notifications.category.finance.text" },
+];
+
 export function SettingsPage() {
   const { t, language } = useI18n();
   const queryClient = useQueryClient();
   const { business, isLoading } = useActiveBusiness();
   const { user } = useAuth();
+  const [activeSettingsSection, setActiveSettingsSection] = useState(() => window.location.hash.replace("#", "") || "business-profile");
+  const [openSettingsGroups, setOpenSettingsGroups] = useState<Record<SettingsGroupKey, boolean>>({
+    business: true,
+    team: true,
+    communication: true,
+    setup: true,
+    advanced: false,
+  });
   const canViewBilling = hasPermission(user, business?.id, "billing", "view");
   const canViewTeam = hasPermission(user, business?.id, "team", "view");
   const canManageTeam = hasPermission(user, business?.id, "team", "manage");
@@ -200,6 +208,7 @@ export function SettingsPage() {
   const [activeImportId, setActiveImportId] = useState<number | null>(null);
   const [manualSaleForm, setManualSaleForm] = useState({ external_id: "", client_name: "", item_name: "", amount: "", source: "manual" });
   const [manualCatalogForm, setManualCatalogForm] = useState({ item_type: "service", sku: "", name: "", duration_minutes: "30", price_from: "", stock_quantity: "", source: "manual" });
+  const [activeDataTool, setActiveDataTool] = useState<"import" | "export" | "manual">("import");
   const [appointmentMessageDrafts, setAppointmentMessageDrafts] = useState<Record<number, Partial<AppointmentMessageSetting>>>({});
   const importJobs = useQuery({
     queryKey: ["import-jobs", business?.id],
@@ -240,16 +249,31 @@ export function SettingsPage() {
     enabled: Boolean(business && canViewAudit),
     retry: false,
   });
-  const notificationPreferences = useQuery({
-    queryKey: ["notification-preferences", business?.id, user?.id],
-    queryFn: () => notificationsApi.preferences.list({ user: "me" }),
-    enabled: Boolean(business?.id && user?.id && canViewNotifications),
-  });
   const appointmentMessageSettings = useQuery({
     queryKey: ["appointment-message-settings", business?.id],
     queryFn: () => appointmentMessageSettingsApi.list({ business: business?.id }),
     enabled: Boolean(business?.id && canViewSettings),
   });
+  const notificationPreferences = useQuery({
+    queryKey: ["notification-preferences", business?.id, user?.id],
+    queryFn: () => notificationsApi.preferences.list({ user: "me" }),
+    enabled: Boolean(business?.id && user?.id),
+  });
+  const preferenceByCategory = useMemo(
+    () => new Map((notificationPreferences.data || []).map((preference) => [preference.category, preference])),
+    [notificationPreferences.data],
+  );
+
+  useEffect(() => {
+    function handleHashChange() {
+      setActiveSettingsSection(window.location.hash.replace("#", "") || "business-profile");
+      window.setTimeout(() => window.scrollTo({ top: 0, behavior: "instant" }), 0);
+    }
+
+    handleHashChange();
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
   const [editingQuickReplyId, setEditingQuickReplyId] = useState<number | null>(null);
   const [quickReplyEditForm, setQuickReplyEditForm] = useState({
     title: "",
@@ -262,6 +286,25 @@ export function SettingsPage() {
     queryKey: ["quick-replies", business?.id],
     queryFn: quickRepliesApi.list,
     enabled: Boolean(business && canViewNotifications),
+  });
+  const notificationPreferenceMutation = useMutation({
+    mutationFn: ({ category, enabled }: { category: Notification["category"]; enabled: boolean }) => {
+      if (!business || !user) throw new Error(t("account.businessRequired"));
+      const existing = (notificationPreferences.data || []).find((preference) => preference.category === category);
+      const payload: Partial<NotificationPreference> = {
+        business: business.id,
+        user: user.id,
+        category,
+        in_app_enabled: enabled,
+      };
+      if (existing) return notificationsApi.preferences.update({ id: existing.id, payload });
+      return notificationsApi.preferences.create(payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notification-preferences"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications-summary"] });
+    },
   });
   const mutation = useMutation({
     mutationFn: (payload: Partial<Business>) =>
@@ -431,24 +474,6 @@ export function SettingsPage() {
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["lead-forms"] }),
   });
-  const notificationPreferenceMutation = useMutation({
-    mutationFn: ({ category, enabled }: { category: Notification["category"]; enabled: boolean }) => {
-      if (!business || !user) throw new Error("Business and user are required.");
-      const existing = (notificationPreferences.data || []).find((preference) => preference.category === category);
-      const payload: Partial<NotificationPreference> = {
-        business: business.id,
-        user: user.id,
-        category,
-        in_app_enabled: enabled,
-      };
-      if (existing) return notificationsApi.preferences.update({ id: existing.id, payload });
-      return notificationsApi.preferences.create(payload);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notification-preferences"] });
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
-    },
-  });
   const appointmentMessageMutation = useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: Partial<AppointmentMessageSetting> }) => appointmentMessageSettingsApi.update({ id, payload }),
     onSuccess: () => {
@@ -526,11 +551,12 @@ export function SettingsPage() {
     { key: "resources", href: "/dashboard/resources", icon: UsersRound },
     { key: "working-hours", href: "/dashboard/working-hours", icon: CalendarClock },
   ];
-  const preferenceByCategory = new Map((notificationPreferences.data || []).map((preference) => [preference.category, preference]));
   const appointmentMessages = appointmentMessageSettings.data || [];
   const appointmentMessageValue = <K extends keyof AppointmentMessageSetting>(setting: AppointmentMessageSetting, key: K): AppointmentMessageSetting[K] => {
     return (appointmentMessageDrafts[Number(setting.id)]?.[key] as AppointmentMessageSetting[K] | undefined) ?? setting[key];
   };
+  const settingsSectionClass = (id: string, className = "mb-5 scroll-mt-24") => `${className} ${activeSettingsSection === id ? "" : "hidden"}`;
+  const dataToolPanelClass = (id: typeof activeDataTool) => (activeDataTool === id ? "" : "hidden");
 
   function updateMemberRole(memberId: number, roleKey: BusinessMembershipSummary["role"]) {
     if (roleKey === "owner") return;
@@ -590,39 +616,83 @@ export function SettingsPage() {
 
   return (
     <>
-      <PageHeader title={t("settings.title")} description={t("settings.description")} />
+      <section className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-midnight md:text-3xl">{t("settings.title")}</h1>
+          <p className="mt-1 max-w-2xl text-base leading-6 text-slate-600">{t("settings.description")}</p>
+        </div>
+        <div className="grid h-12 w-12 place-items-center rounded-2xl bg-slate-100 text-midnight">
+          <SlidersHorizontal size={22} />
+        </div>
+      </section>
       {mutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(mutation.error)} /></div> : null}
-      <Card className="mb-5">
-        <CardBody className="p-3">
-          <Select
-            className="min-h-12 rounded-2xl sm:hidden"
-            value={window.location.hash.replace("#", "") || translatedSettingsSections[0]?.id || ""}
-            onChange={(event) => {
-              window.location.hash = event.target.value;
-            }}
-            options={translatedSettingsSections.map((section) => ({ value: section.id, label: section.label }))}
-          />
-          <div className="hidden gap-4 overflow-x-auto sm:flex">
-            {translatedSettingsGroups.map((groupItem) => (
-              <div key={groupItem.key} className="min-w-max">
-                <p className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">{groupItem.label}</p>
-                <div className="flex gap-2">
-                  {groupItem.sections.map((section) => (
-                    <a
-                      key={section.id}
-                      href={`#${section.id}`}
-                      className="shrink-0 rounded-xl bg-slate-50 px-3 py-2 text-sm font-bold text-slate-600 transition hover:bg-white hover:text-midnight hover:shadow-sm"
-                    >
-                      {section.label}
-                    </a>
-                  ))}
+      <div className="grid gap-5 xl:grid-cols-[300px_minmax(0,1fr)]">
+        <aside className="xl:sticky xl:top-20 xl:self-start">
+          <Card className="border-slate-200 shadow-[0_4px_20px_rgba(0,47,108,0.04)]">
+            <CardBody className="p-3">
+              <Select
+                className="min-h-12 rounded-2xl xl:hidden"
+                value={activeSettingsSection}
+                onChange={(event) => {
+                  setActiveSettingsSection(event.target.value);
+                  window.location.hash = event.target.value;
+                }}
+                options={translatedSettingsSections.map((section) => ({ value: section.id, label: section.label }))}
+              />
+              <div className="hidden xl:block">
+                <div className="mb-3 px-2">
+                  <p className="text-sm font-black text-midnight">{t("settings.navigationTitle")}</p>
+                  <p className="mt-1 text-xs font-semibold leading-5 text-slate-500">{t("settings.navigationText")}</p>
                 </div>
+                <nav className="space-y-2">
+                  {translatedSettingsGroups.map((groupItem) => {
+                    const groupOpen = openSettingsGroups[groupItem.key];
+                    const hasActiveSection = groupItem.sections.some((section) => section.id === activeSettingsSection);
+                    return (
+                      <div key={groupItem.key} className="rounded-2xl border border-slate-100 bg-slate-50/70 p-2">
+                        <button
+                          type="button"
+                          className="flex min-h-10 w-full items-center justify-between gap-3 rounded-xl px-3 text-left text-xs font-black uppercase tracking-[0.14em] text-slate-500 transition hover:bg-white hover:text-midnight"
+                          onClick={() => setOpenSettingsGroups((current) => ({ ...current, [groupItem.key]: !current[groupItem.key] }))}
+                          aria-expanded={groupOpen}
+                        >
+                          <span>{groupItem.label}</span>
+                          <ChevronDown size={16} className={`transition-transform ${groupOpen ? "rotate-180" : ""}`} />
+                        </button>
+                        {groupOpen || hasActiveSection ? (
+                          <div className="mt-1 space-y-1">
+                            {groupItem.sections.map((section) => {
+                              const active = section.id === activeSettingsSection;
+                              return (
+                                <a
+                                  key={section.id}
+                                  href={`#${section.id}`}
+                                  className={`block rounded-xl px-3 py-2 text-sm font-bold transition ${
+                                    active ? "bg-white text-midnight shadow-sm ring-1 ring-slate-200" : "text-slate-600 hover:bg-white hover:text-midnight"
+                                  }`}
+                                  onClick={() => setActiveSettingsSection(section.id)}
+                                >
+                                  {section.label}
+                                </a>
+                              );
+                            })}
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </nav>
               </div>
-            ))}
-          </div>
+            </CardBody>
+          </Card>
+        </aside>
+        <div className="min-w-0">
+      <Card id="business-profile" className={settingsSectionClass("business-profile")}>
+        <CardBody>
+          <BusinessSettingsForm initial={business} onSubmit={(payload) => mutation.mutateAsync(payload)} />
         </CardBody>
       </Card>
-      <Card id="appointment-messages" className="mb-5 scroll-mt-24">
+      <Card id="appointment-messages" className={settingsSectionClass("appointment-messages")}>
         <CardBody>
           <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>
@@ -728,50 +798,7 @@ export function SettingsPage() {
           )}
         </CardBody>
       </Card>
-      <Card id="notification-preferences" className="mb-5 scroll-mt-24">
-        <CardBody>
-          <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">{t("settings.notificationsEyebrow")}</p>
-              <h2 className="mt-2 text-2xl font-semibold text-midnight">{t("settings.notificationsTitle")}</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                {t("settings.notificationsText")}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
-              {t("settings.notificationsDisabledCount", { count: notificationPreferences.data?.filter((item) => item.in_app_enabled === false).length || 0 })}
-            </div>
-          </div>
-          {notificationPreferenceMutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(notificationPreferenceMutation.error)} /></div> : null}
-          <div className="grid gap-3 lg:grid-cols-2">
-            {notificationCategories.map((item) => {
-              const preference = preferenceByCategory.get(item.category);
-              const enabled = preference?.in_app_enabled !== false;
-              return (
-                <div key={item.category} className="rounded-3xl border border-slate-100 bg-slate-50/70 p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <p className="font-black text-midnight">{t(item.titleKey)}</p>
-                      <p className="mt-1 text-sm font-semibold leading-5 text-slate-500">{t(item.descriptionKey)}</p>
-                    </div>
-                    <button
-                      type="button"
-                      disabled={notificationPreferenceMutation.isPending}
-                      onClick={() => notificationPreferenceMutation.mutate({ category: item.category, enabled: !enabled })}
-                      className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-black transition ${
-                        enabled ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100" : "bg-slate-200 text-slate-600 hover:bg-slate-300"
-                      }`}
-                    >
-                      {enabled ? t("settings.enabled") : t("settings.disabled")}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </CardBody>
-      </Card>
-      <Card id="team-access" className="mb-5 scroll-mt-24">
+      <Card id="team-access" className={settingsSectionClass("team-access")}>
         <CardBody>
           <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -1022,7 +1049,7 @@ export function SettingsPage() {
           </div>
         </CardBody>
       </Card>
-      <Card id="security-center" className="mb-5 scroll-mt-24">
+      <Card id="security-center" className={settingsSectionClass("security-center")}>
         <CardBody>
           <div className="mb-4">
             <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -1070,10 +1097,10 @@ export function SettingsPage() {
                     <div key={log.id} className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="font-bold text-midnight">{log.action} · {log.entity_type} #{log.entity_id}</p>
+                          <p className="font-bold text-midnight">{auditEventTitle(log.action, log.entity_type, t)}</p>
                           <p className="mt-1 text-xs text-slate-500">{log.actor_email || "system"} · {new Date(log.created_at).toLocaleString(locale)}</p>
                         </div>
-                        <span className={riskClass(log.risk_level)}>{log.risk_level}</span>
+                        <span className={riskClass(log.risk_level)}>{riskLabel(log.risk_level, t)}</span>
                       </div>
                     </div>
                   ))}
@@ -1088,9 +1115,9 @@ export function SettingsPage() {
                       <div key={item.id} className="flex items-center justify-between rounded-2xl bg-slate-50 px-3 py-2">
                         <div>
                           <p className="text-sm font-bold text-midnight">{item.email || item.user_email}</p>
-                          <p className="text-xs text-slate-500">{item.ip_address || "no ip"} · {new Date(item.created_at).toLocaleString(locale)}</p>
+                          <p className="text-xs text-slate-500">{item.ip_address || t("settings.noIp")} · {new Date(item.created_at).toLocaleString(locale)}</p>
                         </div>
-                        <span className={item.status === "success" ? "text-xs font-bold text-green-700" : "text-xs font-bold text-red-700"}>{item.status}</span>
+                        <span className={item.status === "success" ? "text-xs font-bold text-green-700" : "text-xs font-bold text-red-700"}>{loginStatusLabel(item.status, t)}</span>
                       </div>
                     ))}
                     {!loginHistory.isLoading && !loginHistory.data?.length ? <p className="text-sm text-slate-500">{t("settings.noLoginHistory")}</p> : null}
@@ -1113,7 +1140,56 @@ export function SettingsPage() {
           </div>
         </CardBody>
       </Card>
-      <Card id="quick-replies" className="mb-5 scroll-mt-24">
+      <Card id="notification-preferences" className={settingsSectionClass("notification-preferences")}>
+        <CardBody>
+          <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">{t("settings.notificationsEyebrow")}</p>
+              <h2 className="mt-2 text-2xl font-semibold text-midnight">{t("settings.notificationsTitle")}</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">{t("settings.notificationsText")}</p>
+            </div>
+            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-brand-50 text-brand-700">
+              <Bell size={22} />
+            </div>
+          </div>
+          {notificationPreferenceMutation.error ? (
+            <div className="mb-4">
+              <ErrorState message={getApiErrorMessage(notificationPreferenceMutation.error)} />
+            </div>
+          ) : null}
+          {!business?.id ? (
+            <p className="rounded-2xl bg-slate-50 p-4 text-sm font-semibold text-slate-500">{t("account.notificationsNoBusiness")}</p>
+          ) : (
+            <div className="grid gap-3 lg:grid-cols-2">
+              {notificationCategories.map((item) => {
+                const preference = preferenceByCategory.get(item.category);
+                const enabled = preference?.in_app_enabled !== false;
+                return (
+                  <div key={item.category} className="rounded-3xl border border-slate-100 bg-slate-50/70 p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="font-black text-midnight">{t(item.titleKey)}</p>
+                        <p className="mt-1 text-sm font-semibold leading-5 text-slate-500">{t(item.descriptionKey)}</p>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={notificationPreferenceMutation.isPending}
+                        onClick={() => notificationPreferenceMutation.mutate({ category: item.category, enabled: !enabled })}
+                        className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-black transition ${
+                          enabled ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100" : "bg-slate-200 text-slate-600 hover:bg-slate-300"
+                        }`}
+                      >
+                        {enabled ? t("settings.enabled") : t("settings.disabled")}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardBody>
+      </Card>
+      <Card id="quick-replies" className={settingsSectionClass("quick-replies")}>
         <CardBody>
           <div className="mb-4">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">{t("settings.quickRepliesEyebrow")}</p>
@@ -1255,7 +1331,7 @@ export function SettingsPage() {
           </div>
         </CardBody>
       </Card>
-      <Card id="roles" className="mb-5 scroll-mt-24">
+      <Card id="roles" className={settingsSectionClass("roles")}>
         <CardBody>
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -1335,7 +1411,7 @@ export function SettingsPage() {
           ) : null}
         </CardBody>
       </Card>
-      <Card id="operations-setup" className="mb-5 scroll-mt-24">
+      <Card id="operations-setup" className={settingsSectionClass("operations-setup")}>
         <CardBody>
           <div className="mb-5">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">{t("settings.operationsEyebrow")}</p>
@@ -1376,7 +1452,7 @@ export function SettingsPage() {
           </div>
         </CardBody>
       </Card>
-      <Card id="data-tools" className="mb-5 scroll-mt-24">
+      <Card id="data-tools" className={settingsSectionClass("data-tools")}>
         <CardBody>
           <div className="mb-4">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">{t("settings.dataToolsEyebrow")}</p>
@@ -1390,8 +1466,27 @@ export function SettingsPage() {
               <ErrorState message={getApiErrorMessage(uploadImportMutation.error || confirmImportMutation.error || exportMutation.error || templateMutation.error || manualSaleMutation.error || manualCatalogMutation.error)} />
             </div>
           ) : null}
+          <div className="mb-4 grid gap-2 rounded-3xl border border-slate-100 bg-slate-50 p-2 md:grid-cols-3">
+            {[
+              { id: "import" as const, title: t("settings.dataTool.import"), text: t("settings.dataTool.importText") },
+              { id: "export" as const, title: t("settings.dataTool.export"), text: t("settings.dataTool.exportText") },
+              { id: "manual" as const, title: t("settings.dataTool.manual"), text: t("settings.dataTool.manualText") },
+            ].map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setActiveDataTool(item.id)}
+                className={`rounded-2xl px-4 py-3 text-left transition ${
+                  activeDataTool === item.id ? "bg-white text-midnight shadow-sm ring-1 ring-slate-200" : "text-slate-500 hover:bg-white/70 hover:text-midnight"
+                }`}
+              >
+                <span className="block text-sm font-black">{item.title}</span>
+                <span className="mt-1 block text-xs font-semibold leading-5">{item.text}</span>
+              </button>
+            ))}
+          </div>
           <div className="grid gap-4 xl:grid-cols-[1fr_0.9fr]">
-            <div className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
+            <div className={`rounded-3xl border border-slate-100 bg-slate-50 p-4 xl:col-span-2 ${dataToolPanelClass("import")}`}>
               <h3 className="font-bold text-midnight">{t("settings.importTitle")}</h3>
               <p className="mt-1 text-sm leading-6 text-slate-500">
                 {t("settings.importText")}
@@ -1499,7 +1594,7 @@ export function SettingsPage() {
                 <p className="mt-4 rounded-2xl bg-white p-4 text-sm text-slate-500">{t("settings.importHistoryEmpty")}</p>
               )}
             </div>
-            <div className="rounded-3xl border border-slate-100 p-4">
+            <div className={`rounded-3xl border border-slate-100 p-4 xl:col-span-2 ${dataToolPanelClass("export")}`}>
               <h3 className="font-bold text-midnight">{t("settings.exportTitle")}</h3>
               <p className="mt-1 text-sm leading-6 text-slate-500">{t("settings.exportText")}</p>
               <div className="mt-4 grid gap-2 sm:grid-cols-3 xl:grid-cols-1">
@@ -1530,7 +1625,7 @@ export function SettingsPage() {
               </div>
             </div>
           </div>
-          <div className="mt-4 grid gap-4 xl:grid-cols-2">
+          <div className={`mt-4 grid gap-4 xl:grid-cols-2 ${dataToolPanelClass("manual")}`}>
             <form
               className="rounded-3xl border border-slate-100 bg-white p-4"
               onSubmit={(event) => {
@@ -1582,7 +1677,7 @@ export function SettingsPage() {
           </div>
         </CardBody>
       </Card>
-      <Card id="lead-forms" className="mb-5 scroll-mt-24">
+      <Card id="lead-forms" className={settingsSectionClass("lead-forms")}>
         <CardBody>
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -1621,14 +1716,47 @@ export function SettingsPage() {
                       ))}
                     </div>
                     <div className="mt-4 rounded-2xl bg-white p-3">
-                      <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{t("settings.embedCode")}</p>
-                      <code className="mt-2 block break-all text-xs leading-5 text-slate-600">{embedCode}</code>
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{t("settings.formInstallTitle")}</p>
+                          <p className="mt-1 text-sm font-semibold leading-5 text-slate-500">{t("settings.formInstallText")}</p>
+                        </div>
+                        <Button type="button" variant="secondary" onClick={() => navigator.clipboard?.writeText(embedCode)}>
+                          <Copy size={14} />
+                          {t("settings.copyEmbed")}
+                        </Button>
+                      </div>
+                      <div className="mt-3 rounded-2xl border border-slate-100 bg-slate-50 p-3">
+                        <p className="text-sm font-black text-midnight">{form.title}</p>
+                        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                          {form.fields.slice(0, 4).map((field) => (
+                            <div key={field.id} className="rounded-xl border border-slate-100 bg-white px-3 py-2 text-xs font-bold text-slate-500">
+                              {field.label}{field.is_required ? " *" : ""}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-3 inline-flex rounded-full bg-brand-600 px-4 py-2 text-sm font-bold text-white">{t("settings.send")}</div>
+                      </div>
+                      <details className="mt-3">
+                        <summary className="cursor-pointer text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{t("settings.embedCode")}</summary>
+                        <code className="mt-2 block break-all rounded-2xl bg-slate-950 p-3 text-xs leading-5 text-white">{embedCode}</code>
+                      </details>
                     </div>
                   </div>
                 );
               })}
               {!leadForms.isLoading && !leadForms.data?.length ? (
-                <p className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">{t("settings.noLeadForms")}</p>
+                <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-5">
+                  <p className="font-black text-midnight">{t("settings.noLeadFormsTitle")}</p>
+                  <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">{t("settings.noLeadForms")}</p>
+                  <div className="mt-4 rounded-2xl bg-white p-4">
+                    <p className="text-sm font-black text-midnight">{t("settings.formPreviewTitle")}</p>
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                      <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500">{t("settings.fullName")}</div>
+                      <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500">{t("settings.phone")}</div>
+                    </div>
+                  </div>
+                </div>
               ) : null}
             </div>
             <div className="rounded-3xl border border-slate-100 p-4">
@@ -1650,7 +1778,7 @@ export function SettingsPage() {
           </div>
         </CardBody>
       </Card>
-      <Card id="billing" className="mb-5 scroll-mt-24">
+      <Card id="billing" className={settingsSectionClass("billing")}>
         <CardBody>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -1664,13 +1792,17 @@ export function SettingsPage() {
                   : t("settings.billingNoSubscription")}
               </p>
             </div>
-            <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600">
-              {t("settings.paymentsNotConnected")}
+            <div className="rounded-2xl border border-brand-100 bg-brand-50 px-4 py-3 text-sm font-semibold text-brand-800">
+              {t("settings.billingReadOnlyTitle")}
             </div>
+          </div>
+          <div className="mt-5 rounded-3xl border border-slate-100 bg-slate-50 p-4">
+            <p className="font-black text-midnight">{t("settings.billingReadOnlyTitle")}</p>
+            <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-slate-500">{t("settings.billingReadOnlyText")}</p>
           </div>
         </CardBody>
       </Card>
-      <Card className="mb-5">
+      <Card id="usage" className={settingsSectionClass("usage")}>
         <CardBody>
           <div className="mb-4">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">{t("settings.usageEyebrow")}</p>
@@ -1703,7 +1835,7 @@ export function SettingsPage() {
           </div>
         </CardBody>
       </Card>
-      <Card id="custom-fields" className="mb-5 scroll-mt-24">
+      <Card id="custom-fields" className={settingsSectionClass("custom-fields")}>
         <CardBody>
           <div className="mb-4">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">{t("settings.customFieldsEyebrow")}</p>
@@ -1713,6 +1845,10 @@ export function SettingsPage() {
             </p>
           </div>
           {customFieldMutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(customFieldMutation.error)} /></div> : null}
+          <div className="mb-4 rounded-3xl border border-amber-100 bg-amber-50 p-4">
+            <p className="font-black text-amber-950">{t("settings.customFieldsGuardTitle")}</p>
+            <p className="mt-1 text-sm font-semibold leading-6 text-amber-800">{t("settings.customFieldsGuardText")}</p>
+          </div>
           <form
             className="grid gap-3 lg:grid-cols-[160px_1fr_180px_1fr_auto]"
             onSubmit={(event) => {
@@ -1737,15 +1873,15 @@ export function SettingsPage() {
               value={fieldForm.field_type}
               onChange={(event) => setFieldForm({ ...fieldForm, field_type: event.target.value as CustomFieldDefinition["field_type"] })}
               options={[
-                { value: "text", label: "Text" },
-                { value: "textarea", label: "Textarea" },
-                { value: "number", label: "Number" },
-                { value: "date", label: "Date" },
-                { value: "select", label: "Select" },
-                { value: "boolean", label: "Boolean" },
-                { value: "phone", label: "Phone" },
+                { value: "text", label: t("settings.customFieldType.text") },
+                { value: "textarea", label: t("settings.customFieldType.textarea") },
+                { value: "number", label: t("settings.customFieldType.number") },
+                { value: "date", label: t("settings.customFieldType.date") },
+                { value: "select", label: t("settings.customFieldType.select") },
+                { value: "boolean", label: t("settings.customFieldType.boolean") },
+                { value: "phone", label: t("settings.customFieldType.phone") },
                 { value: "email", label: "Email" },
-                { value: "url", label: "URL" },
+                { value: "url", label: t("settings.customFieldType.url") },
               ]}
             />
             <Input label={t("settings.options")} placeholder="A, B, C" value={fieldForm.options} onChange={(event) => setFieldForm({ ...fieldForm, options: event.target.value })} />
@@ -1757,9 +1893,11 @@ export function SettingsPage() {
             {(customFields.data || []).map((field) => (
               <div key={field.id} className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
                 <p className="font-bold text-midnight">{field.label}</p>
-                <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
-                  {field.entity_type} · {field.field_type} · {field.key}
-                </p>
+                <p className="mt-1 text-sm font-semibold text-slate-500">{customFieldSummary(field, t)}</p>
+                <details className="mt-3">
+                  <summary className="cursor-pointer text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{t("settings.technicalDetails")}</summary>
+                  <p className="mt-2 rounded-2xl bg-white px-3 py-2 text-xs font-semibold text-slate-500">{field.entity_type} · {field.field_type} · {field.key}</p>
+                </details>
               </div>
             ))}
             {!customFields.isLoading && !customFields.data?.length ? (
@@ -1768,7 +1906,7 @@ export function SettingsPage() {
           </div>
         </CardBody>
       </Card>
-      <Card id="automations" className="mb-5 scroll-mt-24">
+      <Card id="automations" className={settingsSectionClass("automations")}>
         <CardBody>
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-start gap-3">
@@ -1787,19 +1925,18 @@ export function SettingsPage() {
           </div>
         </CardBody>
       </Card>
-      <details id="developer" className="mb-5 scroll-mt-24 rounded-3xl border border-slate-100 bg-white/80 p-4 shadow-soft">
-        <summary className="cursor-pointer text-sm font-black uppercase tracking-[0.16em] text-slate-500">
-          {t("settings.developerConnections")}
+      <details id="developer" className={settingsSectionClass("developer", "mb-5 scroll-mt-24 rounded-3xl border border-slate-100 bg-white/80 p-4 shadow-soft")}>
+        <summary className="cursor-pointer list-none">
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">{t("settings.developerConnections")}</p>
+          <h2 className="mt-2 text-2xl font-semibold text-midnight">{t("settings.developerTitle")}</h2>
+          <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-slate-500">{t("settings.developerText")}</p>
         </summary>
         <div className="mt-4">
           <DevelopersSection />
         </div>
       </details>
-      <Card id="business-profile" className="scroll-mt-24">
-        <CardBody>
-          <BusinessSettingsForm initial={business} onSubmit={(payload) => mutation.mutateAsync(payload)} />
-        </CardBody>
-      </Card>
+        </div>
+      </div>
     </>
   );
 }
@@ -1873,6 +2010,33 @@ function entityLabel(entity: string, t: Translate) {
   if (entity === "sales") return t("settings.entity.sales");
   if (entity === "catalog") return t("settings.entity.catalog");
   return entity;
+}
+
+function auditEventTitle(action: string, entityType: string, t: Translate) {
+  const actionKey = action === "create" || action === "update" || action === "delete" || action === "export" || action === "login" ? action : "change";
+  const entityKey = entityType === "BusinessRole" || entityType === "BusinessMembership" || entityType === "ImportJob" || entityType === "LeadForm" ? entityType : "record";
+  return t("settings.auditEventTitle", {
+    action: t(`settings.auditAction.${actionKey}`),
+    entity: t(`settings.auditEntity.${entityKey}`),
+  });
+}
+
+function riskLabel(risk: string, t: Translate) {
+  if (risk === "low" || risk === "medium" || risk === "high" || risk === "critical") return t(`settings.risk.${risk}`);
+  return t("settings.risk.low");
+}
+
+function loginStatusLabel(status: string, t: Translate) {
+  if (status === "success") return t("settings.loginStatus.success");
+  if (status === "failed") return t("settings.loginStatus.failed");
+  return status;
+}
+
+function customFieldSummary(field: CustomFieldDefinition, t: Translate) {
+  return t("settings.customFieldSummary", {
+    entity: t(`settings.customFieldEntity.${field.entity_type}`),
+    type: t(`settings.customFieldType.${field.field_type}`),
+  });
 }
 
 function groupLevel(role: BusinessRole, resources: string[]) {

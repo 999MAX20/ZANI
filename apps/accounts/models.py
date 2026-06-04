@@ -70,3 +70,27 @@ class SocialIdentity(models.Model):
 
     def __str__(self):
         return f"{self.provider}:{self.email}"
+
+
+class UserPreference(models.Model):
+    class Languages(models.TextChoices):
+        RU = "ru", "Russian"
+        KK = "kk", "Kazakh"
+        EN = "en", "English"
+
+    class StartPages(models.TextChoices):
+        DASHBOARD = "dashboard", "Dashboard"
+        CONVERSATIONS = "conversations", "Conversations"
+        TASKS = "tasks", "Tasks"
+        CALENDAR = "calendar", "Calendar"
+        LEADS = "leads", "Leads"
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="preferences")
+    language = models.CharField(max_length=8, choices=Languages.choices, default=Languages.RU)
+    timezone = models.CharField(max_length=64, default="Asia/Almaty")
+    start_page = models.CharField(max_length=32, choices=StartPages.choices, default=StartPages.DASHBOARD)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user} preferences"

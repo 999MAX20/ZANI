@@ -1,7 +1,7 @@
 from django.db.models import Prefetch
 from rest_framework import serializers
 
-from apps.accounts.models import User
+from apps.accounts.models import SocialIdentity, User, UserPreference
 from apps.businesses.access import effective_permissions_for, owner_business_role, user_is_business_owner
 from apps.businesses.models import BusinessMember
 from apps.businesses.serializers import BusinessSerializer
@@ -15,6 +15,8 @@ class CurrentUserSerializer(serializers.ModelSerializer):
     businesses = serializers.SerializerMethodField()
     memberships = serializers.SerializerMethodField()
     effective_permissions = serializers.SerializerMethodField()
+    preferences = serializers.SerializerMethodField()
+    social_identities = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -30,6 +32,8 @@ class CurrentUserSerializer(serializers.ModelSerializer):
             "businesses",
             "memberships",
             "effective_permissions",
+            "preferences",
+            "social_identities",
         ]
 
     def get_businesses(self, obj):
@@ -71,6 +75,13 @@ class CurrentUserSerializer(serializers.ModelSerializer):
         businesses = self._get_businesses(obj)
         return {str(business.id): effective_permissions_for(obj, business) for business in businesses}
 
+    def get_preferences(self, obj):
+        preferences, _ = UserPreference.objects.get_or_create(user=obj)
+        return UserPreferenceSerializer(preferences).data
+
+    def get_social_identities(self, obj):
+        return SocialIdentitySummarySerializer(obj.social_identities.all(), many=True).data
+
     def _get_businesses(self, obj):
         if hasattr(self, "_cached_businesses"):
             return self._cached_businesses
@@ -93,6 +104,48 @@ class CurrentUserSerializer(serializers.ModelSerializer):
             .filter(business=business, user=self.instance, is_active=True)
             .first()
         )
+
+
+class UserPreferenceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserPreference
+        fields = ["language", "timezone", "start_page", "created_at", "updated_at"]
+        read_only_fields = ["created_at", "updated_at"]
+
+
+class SocialIdentitySummarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SocialIdentity
+        fields = ["provider", "email", "email_verified", "created_at", "updated_at"]
+
+
+class CurrentUserUpdateSerializer(serializers.ModelSerializer):
+    preferences = UserPreferenceSerializer(required=False)
+
+    class Meta:
+        model = User
+        fields = ["full_name", "phone", "preferences"]
+
+    def update(self, instance, validated_data):
+        preferences_data = validated_data.pop("preferences", None)
+        instance = super().update(instance, validated_data)
+        if preferences_data is not None:
+            preferences, _ = UserPreference.objects.get_or_create(user=instance)
+            for field, value in preferences_data.items():
+                setattr(preferences, field, value)
+            preferences.save()
+        return instance
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    current_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(min_length=8, write_only=True)
+
+    def validate_current_password(self, value):
+        user = self.context["request"].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("Current password is incorrect.")
+        return value
 
 
 class SocialAuthSerializer(serializers.Serializer):

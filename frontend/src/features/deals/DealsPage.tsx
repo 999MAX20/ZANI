@@ -1,15 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  AlertTriangle,
   ArrowRight,
+  Bot,
   CalendarClock,
   CheckCircle2,
-  CircleDollarSign,
   ClipboardList,
   MessageSquareText,
   Phone,
   Plus,
   RotateCcw,
+  TrendingUp,
   UserRound,
   XCircle,
 } from "lucide-react";
@@ -24,7 +24,6 @@ import { WorkQueueDetailPane, WorkQueueLayout, WorkQueueListPane } from "../../c
 import { Button } from "../../components/ui/Button";
 import { FilterBar } from "../../components/ui/FilterBar";
 import { Input } from "../../components/ui/Input";
-import { MetricCard } from "../../components/ui/MetricCard";
 import { Modal } from "../../components/ui/Modal";
 import { IconBubble } from "../../components/ui/Primitives";
 import { Select } from "../../components/ui/Select";
@@ -153,6 +152,47 @@ function EmptyPanel({ title, text }: { title: string; text: string }) {
   );
 }
 
+function DealKpiCard({
+  label,
+  value,
+  hint,
+  tone = "blue",
+}: {
+  label: string;
+  value: string | number;
+  hint: string;
+  tone?: "blue" | "green" | "red" | "amber";
+}) {
+  const toneClass = {
+    blue: "bg-blue-50 text-blue-700",
+    green: "bg-emerald-50 text-emerald-700",
+    red: "bg-red-50 text-red-700",
+    amber: "bg-amber-50 text-amber-700",
+  }[tone];
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_4px_20px_rgba(0,47,108,0.04)]">
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-sm font-semibold uppercase text-slate-700">{label}</p>
+        <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${toneClass}`}>{hint}</span>
+      </div>
+      <p className="mt-7 text-3xl font-bold tracking-tight text-midnight">{value}</p>
+      <div className="mt-8 h-8 w-full overflow-hidden">
+        <svg viewBox="0 0 120 32" className="h-full w-full" aria-hidden="true">
+          <path
+            d={tone === "red" ? "M6 8 C28 10 42 14 58 18 C78 23 92 25 114 30" : "M6 25 C28 22 42 15 58 13 C78 11 92 16 114 5"}
+            fill="none"
+            stroke={tone === "red" ? "#ef4444" : tone === "green" ? "#22c55e" : tone === "amber" ? "#f59e0b" : "#3b82f6"}
+            strokeLinecap="round"
+            strokeWidth="3"
+            opacity="0.35"
+          />
+        </svg>
+      </div>
+    </div>
+  );
+}
+
 export function DealsPage() {
   const { t } = useI18n();
   const queryClient = useQueryClient();
@@ -263,6 +303,9 @@ export function DealsPage() {
     const dealTasks = tasksByDeal.get(deal.id) || [];
     return deal.sla_overdue || isPastDate(deal.expected_close_at) || (!nextOpenTask(dealTasks) && !deal.next_action_at);
   });
+  const priorityDeal = staleDeals[0] || openDeals[0] || pipelineRows[0] || null;
+  const priorityClient = priorityDeal ? clientMap.get(priorityDeal.client) : undefined;
+  const priorityAmount = priorityDeal ? money(priorityDeal.amount, priorityDeal.currency) : money(0);
 
   const pipelineOptions = pipelines.data || [];
   const defaultPipeline = pipelineOptions.find((pipeline) => pipeline.id === activePipeline) || pipelineOptions[0];
@@ -394,18 +437,15 @@ export function DealsPage() {
 
   return (
     <>
-      <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+      <section className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-brand-600">{t("deals.title")}</p>
-          <h1 className="mt-1 text-3xl font-black tracking-tight text-midnight sm:text-4xl">{t("deals.salesTitle")}</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
-            {t("deals.salesDescription")}
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight text-midnight md:text-3xl">{t("deals.salesTitle")}</h1>
+          <p className="mt-1 max-w-2xl text-base leading-6 text-slate-600">{t("deals.salesDescription")}</p>
         </div>
-        <Button onClick={() => setCreateOpen(true)}>
+        <Button className="w-full sm:w-auto" onClick={() => setCreateOpen(true)}>
           <Plus size={18} /> {t("deals.create")}
         </Button>
-      </div>
+      </section>
 
       {createMutation.error || moveMutation.error || quickActionMutation.error || createTaskMutation.error || updateDealMutation.error ? (
         <div className="mt-4"><ErrorState message={t("deals.saveChangeError")} /></div>
@@ -418,15 +458,55 @@ export function DealsPage() {
         <div className="mt-6"><ErrorState message={t("deals.noPipeline")} /></div>
       ) : (
         <>
-          <section className="my-4 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
-            <MetricCard label={t("deals.metricOpenPipeline")} value={money(pipelineValue)} hint={t("deals.metricOpenPipelineHint", { count: openDeals.length })} icon={CircleDollarSign} />
-            <MetricCard label={t("deals.metricWon")} value={wonDeals.length} hint={t("deals.metricWonHint")} icon={CheckCircle2} tone="emerald" />
-            <MetricCard label={t("deals.metricLost")} value={lostDeals.length} hint={t("deals.metricLostHint")} icon={XCircle} tone="red" />
-            <MetricCard label={t("deals.metricControl")} value={staleDeals.length} hint={overdueDeals.length ? t("deals.metricControlOverdue") : t("deals.metricControlNoNext")} icon={AlertTriangle} tone={staleDeals.length ? "amber" : "emerald"} />
+          <section className="mb-8 rounded-2xl border border-blue-200 bg-white p-6 shadow-[0_4px_20px_rgba(0,47,108,0.04)] [background:linear-gradient(120deg,#fff_0%,#fff_54%,#eef2ff_100%)]">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex gap-4">
+                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-violet-600 to-blue-600 text-white shadow-lg">
+                  <Bot size={22} />
+                </div>
+                <div className="min-w-0">
+                  <h2 className="text-lg font-bold text-midnight">{t("deals.aiPriorityTitle")}</h2>
+                  <p className="mt-2 max-w-4xl text-base leading-7 text-slate-700">
+                    {priorityDeal
+                      ? t("deals.aiPriorityText", {
+                          deal: priorityDeal.title,
+                          client: priorityClient?.full_name || t("deals.clientMissing"),
+                          amount: priorityAmount,
+                        })
+                      : t("deals.aiPriorityEmpty")}
+                  </p>
+                </div>
+              </div>
+              {priorityDeal ? (
+                <Button className="shrink-0" onClick={() => openDeal(priorityDeal.id)}>
+                  {t("deals.takeAction")}
+                </Button>
+              ) : null}
+            </div>
           </section>
 
-          <section className="mb-4 rounded-3xl border border-white/75 bg-white/82 p-3 shadow-sm sm:p-4">
-            <div className="grid gap-2 xl:grid-cols-[220px_minmax(0,1fr)_180px_200px]">
+          <section className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <DealKpiCard
+              label={t("deals.metricOpenPipeline")}
+              value={money(pipelineValue)}
+              hint={t("deals.metricOpenPipelineHint", { count: openDeals.length })}
+            />
+            <DealKpiCard label={t("deals.metricWon")} value={wonDeals.length} hint={t("deals.metricWonHint")} tone="green" />
+            <DealKpiCard label={t("deals.metricLost")} value={lostDeals.length} hint={t("deals.metricLostHint")} tone="red" />
+            <DealKpiCard
+              label={t("deals.metricControl")}
+              value={staleDeals.length}
+              hint={overdueDeals.length ? t("deals.metricControlOverdue") : t("deals.metricControlNoNext")}
+              tone={staleDeals.length ? "amber" : "green"}
+            />
+          </section>
+
+          <section className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_4px_20px_rgba(0,47,108,0.04)]">
+            <div className="mb-3 flex items-center gap-2 text-sm font-bold text-midnight">
+              <TrendingUp size={18} className="text-blue-600" />
+              {t("deals.filters")}
+            </div>
+            <div className="grid gap-3 xl:grid-cols-[220px_minmax(0,1fr)_180px_200px]">
               <Select
                 value={String(activePipeline || "")}
                 onChange={(event) => setPipelineId(event.target.value)}
@@ -452,7 +532,7 @@ export function DealsPage() {
                 ]}
               />
             </div>
-            <div className="mt-2">
+            <div className="mt-3">
               <FilterBar value={stageFilter} options={stageFilterOptions} onChange={setStageFilter} ariaLabel={t("deals.stageFilterLabel")} />
             </div>
           </section>

@@ -1,25 +1,26 @@
 import {
+  ArrowRight,
+  Bolt,
+  Bot,
   CalendarCheck,
-  Clock3,
-  FileSpreadsheet,
-  Filter,
-  MessageCircle,
+  ChartNoAxesColumnIncreasing,
+  CircleDollarSign,
+  MessageSquareText,
+  Phone,
   PlugZap,
   Send,
   Sparkles,
+  Star,
+  UserPlus,
   Users,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { EmptyState } from "../../components/ui/StateViews";
-import { StatusBadge } from "../../components/ui/StatusBadge";
-import { AiInsightCard } from "../../components/ai/AiInsightCard";
 import { formatDateTime } from "../../lib/format";
 import { useI18n } from "../../lib/i18n";
 import type { Appointment, Client, Lead, OwnerDashboardMetrics, Service, Task } from "../../types";
-import { isTodayDate, isWithinPeriod, type DashboardPeriod } from "./dashboardUtils";
+import { formatMoney } from "./dashboardUtils";
 
 type OwnerDashboardProps = {
   businessName: string;
@@ -41,137 +42,109 @@ type OwnerDashboardProps = {
   tasks: Task[];
 };
 
-function PeriodSelector({ value, onChange }: { value: DashboardPeriod; onChange: (period: DashboardPeriod) => void }) {
-  const { t } = useI18n();
-  const options: Array<{ value: DashboardPeriod; label: string }> = [
-    { value: "today", label: t("dashboard.periodToday") },
-    { value: "week", label: t("dashboard.periodWeek") },
-    { value: "month", label: t("dashboard.periodMonth") },
-  ];
+type KpiTone = "blue" | "green" | "red";
 
+const sparkPaths: Record<KpiTone, string> = {
+  blue: "M8 54 C28 50 45 44 64 36 C83 28 102 26 122 30",
+  green: "M8 54 C30 54 48 50 70 44 C92 38 108 36 122 36",
+  red: "M8 30 C34 34 56 38 78 46 C98 53 113 59 122 64",
+};
+
+function trendColor(tone: KpiTone) {
+  if (tone === "red") return "text-red-600 bg-red-50";
+  return "text-emerald-600 bg-emerald-50";
+}
+
+function initials(value?: string | null) {
+  const source = (value || "ZANI").trim();
+  return source
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+}
+
+function KpiCard({ label, value, trend, tone = "blue" }: { label: string; value: string | number; trend: string; tone?: KpiTone }) {
+  const stroke = tone === "red" ? "#EFB8B8" : "#A9C7F8";
   return (
-    <div className="flex rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
-      {options.map((option) => {
-        const active = option.value === value;
-        return (
-          <button
-            key={option.value}
-            type="button"
-            className={`min-h-10 rounded-lg px-3 text-xs font-bold transition-colors sm:px-4 sm:text-sm ${active ? "bg-brand-600 text-white shadow-sm" : "text-slate-500 hover:bg-slate-50 hover:text-midnight"}`}
-            onClick={() => onChange(option.value)}
-          >
-            {option.label}
-          </button>
-        );
-      })}
+    <section className="min-h-[188px] rounded-xl border border-slate-200 bg-white p-5 shadow-soft">
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-xs font-medium uppercase tracking-[0.14em] text-slate-700">{label}</p>
+        <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${trendColor(tone)}`}>{trend}</span>
+      </div>
+      <p className="mt-6 text-4xl font-bold leading-none text-midnight">{value}</p>
+      <svg className="mt-8 h-12 w-full" viewBox="0 0 130 72" fill="none" aria-hidden="true">
+        <path d={sparkPaths[tone]} stroke={stroke} strokeWidth="3" strokeLinecap="round" />
+      </svg>
+    </section>
+  );
+}
+
+function IntegrationRow({ name, ready, icon: Icon, tone }: { name: string; ready: boolean; icon: LucideIcon; tone: string }) {
+  const { t } = useI18n();
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <div className="flex min-w-0 items-center gap-3">
+        <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ${tone}`}>
+          <Icon size={18} />
+        </span>
+        <span className="truncate text-sm font-medium text-slate-900">{name}</span>
+      </div>
+      <span className={`inline-flex items-center gap-1 text-[11px] font-bold uppercase ${ready ? "text-emerald-600" : "text-amber-600"}`}>
+        <span className={`h-2 w-2 rounded-full ${ready ? "bg-emerald-500" : "bg-amber-400"}`} />
+        {ready ? t("dashboard.connectionActive") : t("dashboard.statusConnect")}
+      </span>
     </div>
   );
 }
 
-function MetricCard({
-  title,
-  value,
-  delta,
+function UrgentAction({
   icon: Icon,
-  tone,
+  title,
+  action,
   href,
-  compact = false,
+  tone,
 }: {
-  title: string;
-  value: string | number;
-  delta: string;
   icon: LucideIcon;
-  tone: "blue" | "amber" | "violet" | "green" | "red";
+  title: string;
+  action: string;
   href: string;
-  compact?: boolean;
+  tone: "blue" | "amber" | "violet";
 }) {
-  const toneClass = {
-    blue: "bg-blue-50 text-blue-600",
-    amber: "bg-amber-50 text-amber-600",
-    violet: "bg-violet-50 text-violet-600",
-    green: "bg-emerald-50 text-emerald-600",
-    red: "bg-red-50 text-red-600",
+  const accent = {
+    blue: "border-brand-600 text-brand-700",
+    amber: "border-amber-400 text-amber-700",
+    violet: "border-violet-900 text-violet-900",
+  }[tone];
+  const button = {
+    blue: "bg-brand-50 text-brand-700",
+    amber: "bg-slate-200 text-slate-800",
+    violet: "bg-violet-900 text-white",
   }[tone];
 
   return (
-    <Link to={href} className={`rounded-xl border border-slate-200 bg-white shadow-soft transition-colors hover:border-brand-200 ${compact ? "p-2 sm:p-3" : "p-4"}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div className={`grid shrink-0 place-items-center rounded-xl ${toneClass} ${compact ? "h-8 w-8 sm:h-9 sm:w-9" : "h-12 w-12"}`}>
-          <Icon size={compact ? 16 : 22} />
-        </div>
-      </div>
-      <p className={`mt-3 font-medium leading-tight text-slate-700 ${compact ? "text-[10px] sm:text-xs" : "text-sm"}`}>{title}</p>
-      <p className={`mt-1 font-black text-midnight ${compact ? "text-xl sm:text-2xl" : "text-4xl"}`}>{value}</p>
-      <p className={`mt-2 text-[10px] font-semibold sm:text-xs ${delta.startsWith("+") || delta.startsWith("-3") ? "text-emerald-600" : "text-red-500"}`}>{delta}</p>
+    <Link to={href} className={`flex min-h-[58px] items-center gap-4 rounded-xl border-l-4 bg-slate-100/80 px-4 py-3 transition-colors hover:bg-slate-100 ${accent}`}>
+      <Icon className="shrink-0" size={22} />
+      <span className="min-w-0 flex-1 truncate text-base font-medium text-midnight">{title}</span>
+      <span className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${button}`}>{action}</span>
     </Link>
   );
 }
 
-function Panel({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
+function ChatPreview({ name, text, time, tone }: { name: string; text: string; time: string; tone: "green" | "pink" }) {
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-soft">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-lg font-black text-midnight">{title}</h2>
-        {action}
+    <div className="flex items-center gap-4 border-b border-slate-100 py-4 last:border-b-0">
+      <div className="relative grid h-12 w-12 shrink-0 place-items-center rounded-full bg-slate-100 text-sm font-bold text-midnight">
+        {initials(name)}
+        <span className={`absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full border-2 border-white ${tone === "green" ? "bg-emerald-500" : "bg-pink-500"}`} />
       </div>
-      {children}
-    </section>
-  );
-}
-
-function AttentionRow({ title, text, tone, href }: { title: string; text: string; tone: "red" | "amber" | "blue"; href: string }) {
-  const toneClass = {
-    red: "bg-red-500",
-    amber: "bg-amber-400",
-    blue: "bg-blue-500",
-  }[tone];
-  return (
-    <Link to={href} className="flex items-center justify-between gap-3 rounded-lg p-2 transition-colors hover:bg-slate-50">
-      <span className="flex min-w-0 items-start gap-3">
-        <span className={`mt-1.5 h-3 w-3 shrink-0 rounded-full ${toneClass}`} />
-        <span className="min-w-0">
-          <span className="block truncate text-sm font-black text-midnight">{title}</span>
-          <span className="mt-0.5 block truncate text-xs font-semibold text-slate-500">{text}</span>
-        </span>
-      </span>
-      <span className="text-slate-300">›</span>
-    </Link>
-  );
-}
-
-function ConnectStrip({ salesReady, communicationsReady }: { salesReady: boolean; communicationsReady: boolean }) {
-  const { t } = useI18n();
-  const items = [
-    { title: "WhatsApp", icon: MessageCircle, ready: communicationsReady, tone: "text-emerald-600 bg-emerald-50" },
-    { title: "Telegram", icon: Send, ready: communicationsReady, tone: "text-sky-600 bg-sky-50" },
-    { title: "1C", icon: FileSpreadsheet, ready: salesReady, tone: "text-amber-600 bg-amber-50" },
-    { title: t("dashboard.moduleWarehouse"), icon: PlugZap, ready: false, tone: "text-blue-600 bg-blue-50" },
-  ];
-
-  return (
-    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-soft">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="text-base font-black text-midnight">{t("dashboard.connectMoreData")}</h2>
-          <div className="mt-3 flex flex-wrap gap-3">
-            {items.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link key={item.title} to="/dashboard/integrations" className="inline-flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm font-bold text-slate-700">
-                  <span className={`grid h-9 w-9 place-items-center rounded-xl ${item.tone}`}>
-                    <Icon size={18} />
-                  </span>
-                  {item.title}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-        <Link to="/dashboard/integrations" className="inline-flex h-12 items-center justify-center rounded-lg bg-brand-600 px-6 text-sm font-black text-white shadow-sm transition-colors hover:bg-brand-700">
-          {t("dashboard.connectionConnect")}
-        </Link>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-base font-bold text-midnight">{name}</p>
+        <p className="mt-0.5 truncate text-sm text-slate-600">{text}</p>
       </div>
-    </section>
+      <span className="shrink-0 text-xs font-bold text-red-600">{time}</span>
+    </div>
   );
 }
 
@@ -180,6 +153,7 @@ export function OwnerDashboard({
   dashboard,
   metricsError,
   isCoreDataLoading,
+  revenue,
   revenueHasData,
   newLeadsCount,
   todayAppointmentsCount,
@@ -191,139 +165,155 @@ export function OwnerDashboard({
   clients,
   appointments,
   services,
+  tasks,
 }: OwnerDashboardProps) {
   const { t } = useI18n();
-  const [period, setPeriod] = useState<DashboardPeriod>("today");
-  const periodLeads = useMemo(() => leads.filter((lead) => isWithinPeriod(lead.created_at, period)), [leads, period]);
-  const periodAppointments = useMemo(() => appointments.filter((appointment) => isWithinPeriod(appointment.start_at, period)), [appointments, period]);
-  const todayBookings = appointments.filter((appointment) => isTodayDate(appointment.start_at)).slice(0, 3);
-  const latestLeads = periodLeads.slice(0, 3);
-  const noAnswerCount = leads.filter((lead) => ["contacted", "in_progress"].includes(lead.status)).length;
-  const unassignedCount = leads.filter((lead) => !lead.responsible_user && ["new", "contacted", "in_progress"].includes(lead.status)).length;
+  const activeLeads = leads.filter((lead) => ["new", "contacted", "in_progress"].includes(lead.status));
+  const unassignedCount = activeLeads.filter((lead) => !lead.responsible_user).length;
+  const noAnswerLeads = leads.filter((lead) => ["contacted", "in_progress"].includes(lead.status));
   const staleDealsProxy = leads.filter((lead) => lead.status === "in_progress").length;
-  const averageResponse = noAnswerCount ? t("dashboard.avgResponseValue") : "—";
   const communicationsReady = Boolean(dashboard?.setup?.sources?.communications);
   const salesReady = Boolean(dashboard?.setup?.sources?.sales_data || revenueHasData);
+  const clientCount = clients.length;
+  const salesCount = todayAppointmentsCount || appointments.filter((appointment) => appointment.status === "completed").length;
+  const visibleChats = noAnswerLeads.slice(0, 2);
 
   return (
     <div className="pb-8">
-      <section className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h1 className="text-2xl font-black text-midnight sm:text-3xl">{t("dashboard.greetingBusiness")}</h1>
-          <p className="mt-2 text-base font-medium text-slate-500">{t("dashboard.directorSubtitle", { business: businessName })}</p>
-        </div>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <PeriodSelector value={period} onChange={setPeriod} />
-          <Link to="/dashboard/leads" className="inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-5 text-sm font-black text-midnight shadow-sm">
-            <Filter size={17} />
-            {t("dashboard.filters")}
-          </Link>
-        </div>
+      <section className="mb-8">
+        <h1 className="text-[28px] font-extrabold leading-tight text-midnight">{t("dashboard.greetingBusiness")}, {businessName}.</h1>
+        <p className="mt-1 text-lg leading-7 text-slate-700">{t("dashboard.stitchSubtitle")}</p>
       </section>
 
       {isCoreDataLoading ? (
-        <div className="mb-5 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700">
+        <div className="mb-5 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700">
           {t("dashboard.loadingCoreData")}
         </div>
       ) : null}
 
       {metricsError ? (
-        <div className="mb-5 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+        <div className="mb-5 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
           {t("dashboard.ownerAnalyticsError")}
         </div>
       ) : null}
 
-      <section className="mb-5">
-        <AiInsightCard
-          icon={Sparkles}
-          severity={overdueTasks || unassignedCount || noAnswerCount ? "warning" : "good"}
-          title={t("dashboard.aiBrief.title")}
-          description={t("dashboard.ownerSignalText", {
-            setup: setupScore,
-            conversion,
-            leads: unassignedCount,
-            chats: noAnswerCount,
-          })}
-          actionLabel={t("dashboard.aiBrief.openLeads")}
-          href="/dashboard/leads"
-        />
-      </section>
-
-      <section className="mb-5 rounded-xl border border-slate-200 bg-white p-4 shadow-soft">
-        <h2 className="mb-4 text-lg font-black text-midnight">{t("dashboard.underControlToday")}</h2>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-          <MetricCard compact title={t("dashboard.metricNewShort")} value={periodLeads.length || newLeadsCount} delta={t("dashboard.deltaLeads")} icon={FileSpreadsheet} tone="blue" href="/dashboard/leads" />
-          <MetricCard compact title={t("dashboard.metricNoAnswerShort")} value={noAnswerCount} delta={t("dashboard.deltaNoAnswer")} icon={MessageCircle} tone="amber" href="/dashboard/conversations" />
-          <MetricCard compact title={t("dashboard.metricUnassignedShort")} value={unassignedCount} delta={t("dashboard.deltaUnassigned")} icon={Users} tone="violet" href="/dashboard/leads" />
-          <MetricCard compact title={t("dashboard.metricAvgResponseShort")} value={averageResponse} delta={t("dashboard.deltaAvgResponse")} icon={Clock3} tone="green" href="/dashboard/analytics" />
+      <section className="mb-8 grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <div className="zani-ai-surface relative overflow-hidden rounded-xl p-7 shadow-soft lg:col-span-2">
+          <div className="mb-5 flex items-center gap-3">
+            <Sparkles className="text-violet-600" size={26} />
+            <h2 className="text-sm font-extrabold uppercase tracking-[0.16em] text-midnight">{t("dashboard.smartTitle")}</h2>
+          </div>
+          <p className="max-w-3xl text-xl leading-9 text-slate-900">{t("dashboard.smartSummary")}</p>
+          <div className="mt-7 flex flex-wrap gap-3">
+            <Link to="/dashboard/conversations" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand-600 px-5 py-2 text-sm font-bold text-white shadow-sm transition-colors hover:bg-brand-700">
+              {t("dashboard.smartPrimaryAction")}
+              <Bolt size={18} />
+            </Link>
+            <Link to="/dashboard/deals" className="inline-flex min-h-11 items-center justify-center rounded-lg bg-slate-200 px-5 py-2 text-sm font-bold text-midnight transition-colors hover:bg-slate-300">
+              {t("dashboard.smartSecondaryAction")}
+            </Link>
+          </div>
         </div>
+
+        <section className="rounded-xl border border-slate-200 bg-white p-7 shadow-soft">
+          <h2 className="mb-6 text-xl font-bold text-midnight">{t("dashboard.integrationStatus")}</h2>
+          <div className="space-y-5">
+            <IntegrationRow name="WhatsApp" ready={communicationsReady} icon={MessageSquareText} tone="bg-emerald-50 text-emerald-700" />
+            <IntegrationRow name="Kaspi" ready={salesReady} icon={CircleDollarSign} tone="bg-slate-100 text-midnight" />
+            <IntegrationRow name="Instagram" ready={communicationsReady} icon={Send} tone="bg-pink-50 text-pink-600" />
+          </div>
+          <Link to="/dashboard/integrations" className="mt-7 inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-slate-100 px-4 text-sm font-bold text-midnight transition-colors hover:bg-slate-200">
+            {t("dashboard.manageAll")}
+          </Link>
+        </section>
       </section>
 
-      <section className="mb-5 grid gap-4 lg:grid-cols-[1fr_1fr]">
-        <Panel title={t("dashboard.requiresAttention")} action={<Link to="/dashboard/tasks" className="text-sm font-black text-blue-600">{t("common.all")}</Link>}>
-          <div className="space-y-2">
-            <AttentionRow title={t("dashboard.unassignedLeads")} text={t("dashboard.unassignedLeadsText", { count: unassignedCount })} tone="red" href="/dashboard/leads" />
-            <AttentionRow title={t("dashboard.managerNoAnswer")} text={t("dashboard.managerNoAnswerText", { count: noAnswerCount })} tone="amber" href="/dashboard/conversations" />
-            <AttentionRow title={t("dashboard.staleDeals")} text={t("dashboard.staleDealsText", { count: staleDealsProxy })} tone="amber" href="/dashboard/deals" />
-            <AttentionRow title={t("dashboard.overdueTasks")} text={`${overdueTasks}`} tone="blue" href="/dashboard/tasks" />
-          </div>
-        </Panel>
-
-        <Panel title={t("dashboard.aiBrief.eyebrow")} action={<Link to="/dashboard/ai-assistant" className="text-slate-300">›</Link>}>
-          <div className="space-y-2 text-sm font-semibold leading-6 text-slate-700">
-            <p>{t("dashboard.unassignedLeadsText", { count: unassignedCount })}</p>
-            <p>{t("dashboard.managerNoAnswerText", { count: noAnswerCount })}</p>
-            <p>{t("dashboard.staleDealsText", { count: staleDealsProxy })}</p>
-            <p>{t("dashboard.ownerReadinessLine", { setup: setupScore, conversion })}</p>
-          </div>
-        </Panel>
+      <section className="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        <KpiCard label={t("dashboard.kpiRevenue")} value={revenueHasData ? formatMoney(revenue) : t("dashboard.revenueMissingValue")} trend="+5%" tone="green" />
+        <KpiCard label={t("dashboard.kpiLeads")} value={newLeadsCount || activeLeads.length} trend="+12%" tone="blue" />
+        <KpiCard label={t("dashboard.kpiSales")} value={salesCount} trend="-2%" tone="red" />
+        <KpiCard label={t("dashboard.kpiClients")} value={clientCount} trend="+3%" tone="blue" />
       </section>
 
-      <section className="mb-5 grid gap-4 lg:grid-cols-2">
-        <Panel title={t("dashboard.latestLeads")} action={<Link to="/dashboard/leads" className="text-sm font-black text-blue-600">{t("common.all")}</Link>}>
+      <section className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+        <section className="rounded-xl border border-slate-200 bg-white p-7 shadow-soft">
+          <div className="mb-6 flex items-center gap-3">
+            <span className="text-3xl font-bold text-amber-500">!</span>
+            <h2 className="text-2xl font-bold text-midnight">{t("dashboard.urgentActions")}</h2>
+          </div>
           <div className="space-y-3">
-            {latestLeads.map((lead) => {
+            <UrgentAction icon={UserPlus} title={t("dashboard.assignNewLeads", { count: unassignedCount || newLeadsCount })} action={t("dashboard.assign")} href="/dashboard/leads" tone="blue" />
+            <UrgentAction icon={CircleDollarSign} title={t("dashboard.approveMarketingBudget")} action={t("dashboard.check")} href="/dashboard/deals" tone="amber" />
+            <UrgentAction icon={Star} title={t("dashboard.contactVipClient")} action={t("dashboard.call")} href="/dashboard/clients" tone="violet" />
+          </div>
+          <div className="mt-5 grid grid-cols-2 gap-3 text-xs font-semibold text-slate-500">
+            <span>{t("dashboard.overdueTasks")}: {overdueTasks}</span>
+            <span>{t("dashboard.openTasks")}: {openTasks}</span>
+            <span>{t("dashboard.conversion")}: {conversion}%</span>
+            <span>{t("dashboard.setupScore")}: {setupScore}%</span>
+          </div>
+        </section>
+
+        <section className="rounded-xl border border-slate-200 bg-white p-7 shadow-soft">
+          <div className="mb-6 flex items-center gap-3">
+            <MessageSquareText className="text-brand-600" size={27} />
+            <h2 className="text-2xl font-bold text-midnight">{t("dashboard.unansweredChats")}</h2>
+          </div>
+          <div className="min-h-[180px]">
+            {visibleChats.length ? visibleChats.map((lead, index) => {
               const client = clients.find((item) => item.id === lead.client);
               const service = services.find((item) => item.id === lead.service);
               return (
-                <Link key={lead.id} to="/dashboard/leads" className="block rounded-xl border border-slate-100 p-3 transition hover:bg-slate-50">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate font-black text-slate-950">{client?.full_name || t("dashboard.leadNumber", { id: lead.id })}</p>
-                      <p className="mt-1 truncate text-xs font-semibold text-slate-500">{service?.name || lead.source} · {formatDateTime(lead.created_at)}</p>
-                    </div>
-                    <StatusBadge status={lead.status} />
-                  </div>
-                </Link>
+                <ChatPreview
+                  key={lead.id}
+                  name={client?.full_name || t("dashboard.leadNumber", { id: lead.id })}
+                  text={service?.name || lead.source || t("dashboard.noMessage")}
+                  time={formatDateTime(lead.updated_at || lead.created_at)}
+                  tone={index === 0 ? "green" : "pink"}
+                />
               );
-            })}
-            {!latestLeads.length ? <EmptyState title={t("dashboard.noLeads")} description={t("dashboard.noLeadsText")} /> : null}
+            }) : (
+              <div className="flex h-[180px] items-center justify-center rounded-xl bg-slate-50 text-center text-sm font-semibold leading-6 text-slate-500">
+                {t("dashboard.noUrgentLeadsText")}
+              </div>
+            )}
           </div>
-        </Panel>
-
-        <Panel title={t("dashboard.upcomingBookings")} action={<Link to="/dashboard/calendar" className="text-sm font-black text-blue-600">{t("nav.calendar")}</Link>}>
-          <div className="space-y-3">
-            {todayBookings.map((appointment) => {
-              const client = clients.find((item) => item.id === appointment.client);
-              const service = services.find((item) => item.id === appointment.service);
-              return (
-                <Link key={appointment.id} to="/dashboard/calendar" className="flex items-start gap-3 rounded-xl border border-slate-100 p-3 transition hover:bg-slate-50">
-                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-blue-600">
-                    <CalendarCheck size={17} />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block truncate font-black text-slate-950">{client?.full_name || t("common.client")}</span>
-                    <span className="mt-1 block text-xs font-semibold text-slate-500">{service?.name || t("common.service")} · {formatDateTime(appointment.start_at)}</span>
-                  </span>
-                </Link>
-              );
-            })}
-            {!todayBookings.length ? <EmptyState title={t("dashboard.noBookingsToday")} description={t("dashboard.noBookingsTodayText")} /> : null}
-          </div>
-        </Panel>
+          <Link to="/dashboard/conversations" className="mt-6 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-brand-600 px-4 text-sm font-bold text-brand-700 transition-colors hover:bg-brand-50">
+            {t("dashboard.openMessageCenter")}
+            <ArrowRight size={17} />
+          </Link>
+        </section>
       </section>
 
-      <ConnectStrip salesReady={salesReady} communicationsReady={communicationsReady} />
+      <section className="mt-8 grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-soft">
+          <div className="flex items-center gap-3">
+            <Bot className="text-violet-600" size={22} />
+            <div>
+              <p className="font-bold text-midnight">{t("dashboard.aiNavigator")}</p>
+              <p className="text-sm text-slate-500">{t("dashboard.ownerReadinessLine", { setup: setupScore, conversion })}</p>
+            </div>
+          </div>
+        </section>
+        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-soft">
+          <div className="flex items-center gap-3">
+            <CalendarCheck className="text-brand-600" size={22} />
+            <div>
+              <p className="font-bold text-midnight">{t("dashboard.upcomingBookings")}</p>
+              <p className="text-sm text-slate-500">{todayAppointmentsCount} · {appointments[0] ? formatDateTime(appointments[0].start_at) : t("dashboard.noBookingsToday")}</p>
+            </div>
+          </div>
+        </section>
+        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-soft">
+          <div className="flex items-center gap-3">
+            <ChartNoAxesColumnIncreasing className="text-emerald-600" size={22} />
+            <div>
+              <p className="font-bold text-midnight">{t("dashboard.connectMoreData")}</p>
+              <p className="text-sm text-slate-500">{tasks.length + services.length} · {t("dashboard.connectionReadiness", { score: setupScore })}</p>
+            </div>
+          </div>
+        </section>
+      </section>
     </div>
   );
 }

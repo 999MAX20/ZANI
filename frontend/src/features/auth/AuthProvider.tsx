@@ -14,6 +14,7 @@ type AuthContextValue = {
   businesses: Business[];
   isPlatformUser: boolean;
   isMerchantUser: boolean;
+  refreshUser: () => Promise<CurrentUser | null>;
   login: (email: string, password: string) => Promise<CurrentUser>;
   loginWithSocial: (provider: SocialProvider, idToken: string) => Promise<CurrentUser>;
   logout: () => void;
@@ -78,6 +79,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       businesses: user?.businesses ?? [],
       isPlatformUser: Boolean(user?.is_platform_user),
       isMerchantUser: Boolean(user?.is_merchant_user),
+      refreshUser: async () => {
+        if (!tokenStorage.getAccess()) return null;
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
+        setAuthenticated(true);
+        tokenStorage.setEmail(currentUser.email);
+        return currentUser;
+      },
       login: async (email: string, password: string) => {
         await apiLogin({ email, password });
         const currentUser = await getCurrentUser();

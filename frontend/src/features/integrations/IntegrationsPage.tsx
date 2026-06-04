@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { DatabaseZap, Search, SlidersHorizontal } from "lucide-react";
+import { DatabaseZap, Search, SlidersHorizontal, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { botChannelsApi, botsApi } from "../../api/bots";
@@ -8,7 +8,6 @@ import { businessConnectorsApi } from "../../api/connectors";
 import { getApiErrorMessage } from "../../api/client";
 import { Button } from "../../components/ui/Button";
 import { EmptyState, ErrorState, LoadingState } from "../../components/ui/StateViews";
-import { PageHeader } from "../../components/ui/PageHeader";
 import { Select } from "../../components/ui/Select";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useI18n } from "../../lib/i18n";
@@ -165,6 +164,7 @@ export function IntegrationsPage() {
 
   const connectedCount = data.filter((item) => ["active", "connected"].includes(item.status)).length;
   const setupCount = data.filter((item) => ["draft", "setup_required", "provider_configuring"].includes(item.status)).length;
+  const recommended = data.find((item) => item.provider === "whatsapp") || data.find((item) => !["active", "connected"].includes(item.status)) || data[0];
 
   if (isBusinessLoading || capabilities.isLoading || connectors.isLoading || channels.isLoading || bots.isLoading) {
     return <LoadingState label={t("integrations.page.loading")} />;
@@ -178,17 +178,17 @@ export function IntegrationsPage() {
 
   return (
     <div>
-      <PageHeader
-        title={t("integrations.overview.title")}
-        description={t("integrations.overview.description")}
-        actions={
-          <Link to="/dashboard/ai-assistant">
-            <Button type="button" variant="secondary">
-              <DatabaseZap size={16} /> {t("integrations.overview.openAnalysis")}
-            </Button>
-          </Link>
-        }
-      />
+      <section className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-midnight md:text-3xl">{t("integrations.overview.title")}</h1>
+          <p className="mt-1 max-w-2xl text-base leading-6 text-slate-600">{t("integrations.overview.description")}</p>
+        </div>
+        <Link to="/dashboard/ai-assistant">
+          <Button type="button" variant="secondary">
+            <DatabaseZap size={16} /> {t("integrations.overview.openAnalysis")}
+          </Button>
+        </Link>
+      </section>
 
       {pageError ? (
         <div className="mb-4">
@@ -196,7 +196,36 @@ export function IntegrationsPage() {
         </div>
       ) : null}
 
-      <section className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      {recommended ? (
+        <section className="mb-8 rounded-2xl border border-blue-200 bg-white p-6 shadow-[0_4px_20px_rgba(0,47,108,0.04)] [background:linear-gradient(120deg,#fff_0%,#fff_55%,#eef2ff_100%)]">
+          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-start gap-4">
+              <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-violet-600 to-blue-600 text-white shadow-lg">
+                <Sparkles size={24} />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-midnight">{t("integrations.overview.recommendedTitle")}</h2>
+                <p className="mt-1 max-w-3xl text-base leading-6 text-slate-600">
+                  {t("integrations.overview.recommendedText", { provider: recommended.label })}
+                </p>
+              </div>
+            </div>
+            <Button
+              className="shrink-0"
+              disabled={!canManage}
+              onClick={() => {
+                setQuery(recommended.label);
+                setGroup(recommended.group);
+                setStatusFilter("all");
+              }}
+            >
+              {t("integrations.overview.connectNow")}
+            </Button>
+          </div>
+        </section>
+      ) : null}
+
+      <section className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_4px_20px_rgba(0,47,108,0.04)]">
         <div className="grid gap-3 lg:grid-cols-[1fr_220px_220px]">
           <label className="flex min-h-12 items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 text-sm font-semibold text-slate-500">
             <Search size={18} />

@@ -11,7 +11,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.accounts.auth_views import record_login
 from apps.accounts.serializers import (
+    ChangePasswordSerializer,
     CurrentUserSerializer,
+    CurrentUserUpdateSerializer,
     OwnerSignupSerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
@@ -32,6 +34,48 @@ class CurrentUserView(APIView):
         ensure_owner_memberships_for_user(request.user)
         serializer = CurrentUserSerializer(request.user)
         return Response(serializer.data)
+
+    def patch(self, request):
+        serializer = CurrentUserUpdateSerializer(request.user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(CurrentUserSerializer(request.user).data)
+
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        request.user.set_password(serializer.validated_data["new_password"])
+        request.user.save(update_fields=["password"])
+        return Response({"ok": True})
+
+
+class CurrentUserLoginHistoryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        items = LoginHistory.objects.filter(user=request.user).order_by("-created_at")[:10]
+        return Response(
+            [
+                {
+                    "id": item.id,
+                    "business": item.business_id,
+                    "business_name": item.business.name if item.business else "",
+                    "user": item.user_id,
+                    "user_email": item.user.email if item.user else "",
+                    "email": item.email,
+                    "status": item.status,
+                    "ip_address": item.ip_address,
+                    "user_agent": item.user_agent,
+                    "metadata": item.metadata,
+                    "created_at": item.created_at,
+                }
+                for item in items
+            ]
+        )
 
 
 class SocialAuthView(APIView):

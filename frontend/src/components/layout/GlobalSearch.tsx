@@ -149,7 +149,7 @@ export function GlobalSearch() {
       <div
         className={cn(
           "hidden h-11 items-center gap-3 rounded-2xl border border-slate-200/70 bg-white/90 px-3 text-sm shadow-sm",
-          "lg:flex lg:min-w-[340px]",
+          "lg:flex lg:min-w-[260px] xl:min-w-[320px]",
           mobileExpanded && "flex h-[52px] min-w-0 rounded-full",
         )}
       >

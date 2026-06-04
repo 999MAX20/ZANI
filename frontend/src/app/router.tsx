@@ -21,6 +21,7 @@ const SignupPage = lazy(() => import("../features/auth/SignupPage").then((module
 const ForgotPasswordPage = lazy(() => import("../features/auth/ForgotPasswordPage").then((module) => ({ default: module.ForgotPasswordPage })));
 const ResetPasswordPage = lazy(() => import("../features/auth/ResetPasswordPage").then((module) => ({ default: module.ResetPasswordPage })));
 const DashboardPage = lazy(() => import("../features/dashboard/DashboardPage").then((module) => ({ default: module.DashboardPage })));
+const AccountPage = lazy(() => import("../features/account/AccountPage").then((module) => ({ default: module.AccountPage })));
 const LeadsPage = lazy(() => import("../features/leads/LeadsPage").then((module) => ({ default: module.LeadsPage })));
 const DealsPage = lazy(() => import("../features/deals/DealsPage").then((module) => ({ default: module.DealsPage })));
 const ClientsPage = lazy(() => import("../features/clients/ClientsPage").then((module) => ({ default: module.ClientsPage })));
@@ -103,6 +104,7 @@ function PermissionRoute({
 
 const merchantChildren = [
   { index: true, element: <PageLoader><DashboardPage /></PageLoader> },
+  { path: "account", element: <PageLoader><AccountPage /></PageLoader> },
   { path: "leads", resource: "leads", element: <PageLoader><LeadsPage /></PageLoader> },
   { path: "deals", resource: "deals", element: <PageLoader><DealsPage /></PageLoader> },
   { path: "clients", resource: "clients", element: <PageLoader><ClientsPage /></PageLoader> },
@@ -136,6 +138,7 @@ const merchantChildren = [
 
 const legacyMerchantRoutes = [
   { path: "/leads", resource: "leads", element: <PageLoader><LeadsPage /></PageLoader> },
+  { path: "/account", element: <PageLoader><AccountPage /></PageLoader> },
   { path: "/deals", resource: "deals", element: <PageLoader><DealsPage /></PageLoader> },
   { path: "/clients", resource: "clients", element: <PageLoader><ClientsPage /></PageLoader> },
   { path: "/tasks", resource: "tasks", element: <PageLoader><TasksPage /></PageLoader> },

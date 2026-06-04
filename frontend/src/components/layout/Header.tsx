@@ -1,4 +1,4 @@
-import { Bell, Check, LogOut, Menu, MessageSquareText, Sparkles, X } from "lucide-react";
+import { Bell, Check, KeyRound, LogOut, Menu, MessageSquareText, Settings, Sparkles, UserRound, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
@@ -24,9 +24,13 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
   const { business } = useActiveBusiness();
   const { t } = useI18n();
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showAccountMenu, setShowAccountMenu] = useState(false);
   const [chatToastOpen, setChatToastOpen] = useState(false);
+  const [headerVisible, setHeaderVisible] = useState(true);
   const notificationsRef = useRef<HTMLDivElement | null>(null);
+  const accountMenuRef = useRef<HTMLDivElement | null>(null);
   const previousUnreadMessagesRef = useRef<number | null>(null);
+  const lastScrollYRef = useRef(0);
   const notifications = useQuery({
     queryKey: ["notifications"],
     queryFn: notificationsApi.list,
@@ -65,6 +69,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
   const unreadCount = notificationSummary.data?.unread ?? 0;
   const unreadChatMessages = inboxSummary.data?.unread_messages ?? inboxSummary.data?.unread ?? 0;
   const activeMembership = user?.memberships?.find((membership) => String(membership.business) === String(business?.id) && membership.is_active);
+  const canViewBusinessSettings = hasPermission(user, business?.id, "settings");
   const receivesChatToasts = Boolean(user && activeMembership?.role !== "owner" && user.role !== "business_owner");
   const latestNotifications = [...(notifications.data || [])].sort((a, b) => Number(!b.read_at) - Number(!a.read_at) || new Date(b.send_at).getTime() - new Date(a.send_at).getTime()).slice(0, 7);
   const groupedNotifications = latestNotifications.reduce<Record<string, typeof latestNotifications>>((acc, notification) => {
@@ -122,13 +127,18 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
   useEffect(() => {
     function handlePointerDown(event: PointerEvent) {
       if (notificationsRef.current?.contains(event.target as Node)) return;
+      if (accountMenuRef.current?.contains(event.target as Node)) return;
       setShowNotifications(false);
+      setShowAccountMenu(false);
     }
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") setShowNotifications(false);
+      if (event.key === "Escape") {
+        setShowNotifications(false);
+        setShowAccountMenu(false);
+      }
     }
 
-    if (showNotifications) {
+    if (showNotifications || showAccountMenu) {
       document.addEventListener("pointerdown", handlePointerDown);
       document.addEventListener("keydown", handleKeyDown);
     }
@@ -136,7 +146,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [showNotifications]);
+  }, [showNotifications, showAccountMenu]);
 
   useEffect(() => {
     const previous = previousUnreadMessagesRef.current;
@@ -147,26 +157,60 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
     return () => window.clearTimeout(timer);
   }, [receivesChatToasts, unreadChatMessages]);
 
+  useEffect(() => {
+    lastScrollYRef.current = window.scrollY;
+
+    function handleScroll() {
+      const currentY = window.scrollY;
+      const delta = currentY - lastScrollYRef.current;
+
+      if (currentY < 24 || showNotifications) {
+        setHeaderVisible(true);
+        lastScrollYRef.current = currentY;
+        return;
+      }
+
+      if (Math.abs(delta) < 8) return;
+      setHeaderVisible(delta < 0 || currentY < 80);
+      lastScrollYRef.current = currentY;
+    }
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [showNotifications]);
+
   return (
-    <header className="sticky top-0 z-50 px-2 pt-2 sm:px-3 sm:pt-3 lg:px-6">
-      <div className="glass-panel flex h-[4.45rem] items-center justify-between rounded-[1.6rem] bg-white/88 px-2.5 sm:h-16 sm:rounded-3xl sm:px-5">
+    <header className={`fixed left-0 right-0 top-0 z-50 border-b border-slate-200 bg-[#f8f9fb] transition-transform duration-200 ease-out lg:left-[72px] ${headerVisible ? "translate-y-0" : "-translate-y-full"}`}>
+      <div className="flex h-16 items-center justify-between px-4 sm:px-6">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-          <Button className="h-[52px] w-[52px] min-h-[52px] min-w-[52px] rounded-full px-0 lg:hidden" variant="ghost" onClick={onMenuClick} aria-label={t("sidebar.expand")}>
-            <Menu size={28} strokeWidth={2.35} />
+          <Button className="h-10 w-10 min-h-10 min-w-10 px-0 text-midnight lg:hidden" variant="ghost" onClick={onMenuClick} aria-label={t("sidebar.expand")}>
+            <Menu size={22} strokeWidth={2.2} />
           </Button>
-          <GlobalSearch />
+          <div className="hidden items-center gap-6 lg:flex">
+            <span className="whitespace-nowrap border-b-2 border-midnight py-1 text-base font-bold text-midnight">{activeMembership ? businessRoleLabel(activeMembership.role, t) : t("header.role")}</span>
+            <span className="hidden items-center gap-2 whitespace-nowrap text-base font-medium text-slate-700 2xl:inline-flex">
+              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+              {t("header.statusActive")}
+            </span>
+          </div>
+          <div className="lg:hidden">
+            <GlobalSearch />
+          </div>
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="hidden lg:block">
+            <GlobalSearch />
+          </div>
           <LanguageSelector className="hidden md:inline-flex" />
           <div className="relative" ref={notificationsRef}>
             <Button
               variant="ghost"
-              className="relative h-[52px] w-[52px] min-h-[52px] min-w-[52px] rounded-full px-0"
+              className="relative h-12 w-12 min-h-12 min-w-12 rounded-xl px-0"
               aria-label={t("header.notifications")}
               onClick={() => setShowNotifications((current) => !current)}
             >
-              <Bell size={30} strokeWidth={2.35} />
+              <Bell size={32} strokeWidth={2.4} />
               {unreadCount ? (
                 <span className="absolute -right-1 -top-1 min-w-6 rounded-full bg-brand-600 px-1.5 py-0.5 text-[11px] font-bold text-white ring-2 ring-white">
                   {unreadCount > 9 ? "9+" : unreadCount}
@@ -174,7 +218,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
               ) : null}
             </Button>
             {showNotifications ? (
-              <div className="fixed inset-x-3 top-20 max-h-[76vh] overflow-y-auto rounded-3xl border border-white/70 bg-white/95 p-4 text-sm shadow-premium backdrop-blur-xl sm:absolute sm:inset-auto sm:right-0 sm:top-12 sm:w-[26rem]">
+              <div className="fixed inset-x-3 top-20 max-h-[76vh] overflow-y-auto rounded-xl border border-slate-200 bg-white p-4 text-sm shadow-premium sm:absolute sm:inset-auto sm:right-0 sm:top-12 sm:w-[26rem]">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-semibold text-midnight">{t("header.notifications")}</p>
@@ -285,19 +329,81 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
               </div>
             </div>
           ) : null}
-          <div className="hidden text-right lg:block">
-            <p className="text-xs font-semibold text-midnight">{userEmail}</p>
-            <p className="text-[11px] text-slate-400">{activeMembership ? businessRoleLabel(activeMembership.role, t) : user?.role || t("header.role")}</p>
+          <div className="relative" ref={accountMenuRef}>
+            <button
+              type="button"
+              className="hidden rounded-xl px-3 py-2 text-right transition hover:bg-slate-100 lg:block"
+              onClick={() => {
+                setShowAccountMenu((current) => !current);
+                setShowNotifications(false);
+              }}
+            >
+              <p className="text-xs font-semibold text-midnight">{userEmail}</p>
+              <p className="text-[11px] text-slate-400">{activeMembership ? businessRoleLabel(activeMembership.role, t) : user?.role || t("header.role")}</p>
+            </button>
+            <button
+              type="button"
+              className="grid h-10 w-10 place-items-center rounded-lg bg-slate-100 text-sm font-black text-midnight transition hover:bg-slate-200 lg:hidden"
+              onClick={() => {
+                setShowAccountMenu((current) => !current);
+                setShowNotifications(false);
+              }}
+              aria-label={t("account.openMenu")}
+            >
+              {(user?.full_name || user?.email || "ZA").slice(0, 2).toUpperCase()}
+            </button>
+            {showAccountMenu ? (
+              <div className="fixed inset-x-3 top-20 z-[90] rounded-xl border border-slate-200 bg-white p-2 text-sm shadow-premium sm:absolute sm:inset-auto sm:right-0 sm:top-12 sm:w-72">
+                <div className="border-b border-slate-100 px-3 py-3">
+                  <p className="truncate font-black text-midnight">{user?.full_name || userEmail}</p>
+                  <p className="mt-0.5 truncate text-xs font-semibold text-slate-500">{userEmail}</p>
+                </div>
+                <Link
+                  to="/dashboard/account"
+                  onClick={() => setShowAccountMenu(false)}
+                  className="mt-2 flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-midnight"
+                >
+                  <UserRound size={18} />
+                  {t("account.menuProfile")}
+                </Link>
+                <Link
+                  to="/dashboard/account#notifications"
+                  onClick={() => setShowAccountMenu(false)}
+                  className="flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-midnight"
+                >
+                  <Bell size={18} />
+                  {t("account.menuNotifications")}
+                </Link>
+                <Link
+                  to="/dashboard/account"
+                  onClick={() => setShowAccountMenu(false)}
+                  className="flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-midnight"
+                >
+                  <KeyRound size={18} />
+                  {t("account.menuSecurity")}
+                </Link>
+                {canViewBusinessSettings ? (
+                  <Link
+                    to="/dashboard/settings"
+                    onClick={() => setShowAccountMenu(false)}
+                    className="flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-midnight"
+                  >
+                    <Settings size={18} />
+                    {t("account.menuBusinessSettings")}
+                  </Link>
+                ) : null}
+              </div>
+            ) : null}
           </div>
           <Button
             variant="secondary"
-            className="h-[52px] min-h-[52px] rounded-full px-3 sm:h-10 sm:min-h-10"
+            className="h-10 min-h-10 rounded-lg px-3"
             onClick={() => {
               logout();
               navigate("/login");
             }}
           >
-            <LogOut size={26} className="sm:h-4 sm:w-4" />
+            <LogOut size={18} />
             <span className="hidden sm:inline">{t("header.logout")}</span>
           </Button>
         </div>

@@ -18,7 +18,7 @@ import {
   type TokenPair,
 } from "./token";
 import { tokenStorage } from "../lib/storage";
-import type { CurrentUser } from "../types";
+import type { CurrentUser, LoginHistory } from "../types";
 
 export { refreshToken };
 export type { LoginPayload, SocialLoginPayload, SocialLoginResponse, SocialProvider, TokenPair };
@@ -52,6 +52,21 @@ export async function confirmPasswordReset(payload: PasswordResetConfirmPayload)
 
 export async function getCurrentUser() {
   const { data } = await apiClient.get<CurrentUser>("/api/auth/me/");
+  return data;
+}
+
+export async function updateCurrentUser(payload: Partial<Pick<CurrentUser, "full_name" | "phone" | "preferences">>) {
+  const { data } = await apiClient.patch<CurrentUser>("/api/auth/me/", payload);
+  return data;
+}
+
+export async function changePassword(payload: { current_password: string; new_password: string }) {
+  const { data } = await apiClient.post<{ ok: boolean }>("/api/auth/change-password/", payload);
+  return data;
+}
+
+export async function getCurrentUserLoginHistory() {
+  const { data } = await apiClient.get<LoginHistory[]>("/api/auth/login-history/");
   return data;
 }
 

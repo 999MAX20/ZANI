@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
+  Bot,
   CalendarPlus,
   ClipboardList,
   CheckCheck,
@@ -368,25 +369,82 @@ export function LeadsPage() {
     { value: "active" as const, label: t("leads.filterActive"), count: allLeads.filter((lead) => ["contacted", "in_progress", "appointment_created"].includes(lead.status)).length },
     { value: "closed" as const, label: t("leads.filterClosed"), count: allLeads.filter((lead) => ["closed", "lost"].includes(lead.status)).length },
   ];
+  const newLeadCount = allLeads.filter((lead) => lead.status === "new").length;
+  const waitingLeadCount = allLeads.filter((lead) => ["contacted", "in_progress"].includes(lead.status)).length;
+  const priorityLead = allLeads.find((lead) => !lead.responsible_user && lead.status === "new") || allLeads[0] || null;
+  const priorityLeadClient = priorityLead ? getClient(priorityLead, clientList) : undefined;
+  const priorityLeadName = priorityLeadClient?.full_name || (priorityLead ? t("leads.leadFallback", { id: priorityLead.id }) : t("leads.emptyTitle"));
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-6">
       {notice ? <div className="rounded-2xl border border-ai-100 bg-ai-50 px-4 py-3 text-sm font-bold text-ai-800">{notice}</div> : null}
       {actionError ? <ErrorState message={getApiErrorMessage(actionError)} /> : null}
+
+      <section className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h1 className="text-[28px] font-extrabold leading-tight text-midnight">{t("leads.incomingTitle")}</h1>
+          <p className="mt-1 text-lg leading-7 text-slate-700">{t("leads.incomingDescription", { count: allLeads.length })}</p>
+        </div>
+        <Button className="min-h-11 rounded-lg px-5" onClick={() => setCreateOpen(true)}>
+          <Plus size={18} />
+          {t("leads.create")}
+        </Button>
+      </section>
+
+      <section className="zani-ai-surface rounded-xl p-6 shadow-soft">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex min-w-0 gap-4">
+            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-ai-gradient text-white shadow-glow">
+              <Bot size={22} />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-lg font-bold text-midnight">{t("leads.aiPriorityTitle")}</h2>
+              <p className="mt-1 max-w-3xl text-base leading-7 text-slate-700">
+                {t("leads.aiPriorityText", { name: priorityLeadName })}
+              </p>
+            </div>
+          </div>
+          <Button className="shrink-0 rounded-lg bg-midnight px-5 hover:bg-slate-800" onClick={() => priorityLead && openLead(priorityLead)} disabled={!priorityLead}>
+            {t("leads.takeAction")}
+          </Button>
+        </div>
+      </section>
+
+      <section className="grid grid-cols-1 gap-5 lg:grid-cols-4">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-soft lg:col-span-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-slate-100 px-3 text-sm font-semibold text-slate-700">
+              <Search size={17} />
+              {t("leads.filters")}
+            </div>
+            <FilterBar className="flex-1 rounded-lg bg-slate-100" options={filters} value={filter} onChange={setFilter} ariaLabel={t("leads.filtersLabel")} />
+            <Select
+              className="min-w-[180px] rounded-lg"
+              value={source}
+              onChange={(event) => setSource(event.target.value)}
+              options={[
+                { value: "", label: t("leads.allSources") },
+                ...Object.keys(sourceLabels).map((value) => ({ value, label: getSourceLabel(value, t) })),
+              ]}
+            />
+          </div>
+        </div>
+        <div className="flex items-center justify-around rounded-xl bg-midnight p-4 text-white shadow-soft">
+          <div className="text-center">
+            <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-white/70">{t("leads.statNew")}</p>
+            <p className="mt-1 text-3xl font-bold">{newLeadCount}</p>
+          </div>
+          <div className="h-10 w-px bg-white/20" />
+          <div className="text-center">
+            <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-white/70">{t("leads.statWaiting")}</p>
+            <p className="mt-1 text-3xl font-bold text-amber-400">{waitingLeadCount}</p>
+          </div>
+        </div>
+      </section>
 
       <WorkQueueLayout className="lg:grid-cols-[430px_minmax(0,1fr)]">
         <WorkQueueListPane mobileDetailOpen={mobileDetailOpen}>
           <div className="space-y-4 p-5">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h1 className="text-2xl font-black tracking-tight text-midnight">{t("leads.queueTitle")}</h1>
-                <p className="mt-1 text-sm font-semibold text-slate-500">{t("leads.currentQueueCount", { count: rows.length })}</p>
-              </div>
-              <Button className="h-11 rounded-xl px-4" onClick={() => setCreateOpen(true)}>
-                <Plus size={17} /> {t("leads.newShort")}
-              </Button>
-            </div>
-
             <label className="flex h-12 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-500">
               <Search size={18} />
               <input
@@ -396,18 +454,6 @@ export function LeadsPage() {
                 onChange={(event) => setSearch(event.target.value)}
               />
             </label>
-
-            <FilterBar options={filters} value={filter} onChange={setFilter} ariaLabel={t("leads.filtersLabel")} />
-
-            <Select
-              className="rounded-xl"
-              value={source}
-              onChange={(event) => setSource(event.target.value)}
-              options={[
-                { value: "", label: t("leads.allSources") },
-                ...Object.keys(sourceLabels).map((value) => ({ value, label: getSourceLabel(value, t) })),
-              ]}
-            />
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto pb-28 lg:pb-0">

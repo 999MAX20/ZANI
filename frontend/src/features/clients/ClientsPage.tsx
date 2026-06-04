@@ -9,6 +9,8 @@ import {
   MoreHorizontal,
   Phone,
   Plus,
+  Send,
+  Sparkles,
   Tags,
   UserRound,
   UsersRound,
@@ -378,41 +380,61 @@ export function ClientsPage() {
 
   return (
     <>
-      <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+      <section className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-brand-600">{t("clients.title")}</p>
-          <h1 className="mt-1 text-3xl font-black tracking-tight text-midnight sm:text-4xl">{t("clients.profileTitle")}</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
-            {t("clients.profileDescription")}
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight text-midnight md:text-3xl">{t("clients.profileTitle")}</h1>
+          <p className="mt-1 max-w-2xl text-base leading-6 text-slate-600">{t("clients.profileDescription")}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary" onClick={() => setSegmentOpen(true)}><Tags size={18} /> {t("clients.segment")}</Button>
           <Button onClick={() => setOpen(true)}><Plus size={18} /> {t("clients.create")}</Button>
         </div>
-      </div>
+      </section>
 
       {mutation.error || mergeMutation.error || archiveMutation.error || addTagMutation.error || createSegmentMutation.error ? (
         <div className="mt-4"><ErrorState message={getApiErrorMessage(mutation.error || mergeMutation.error || archiveMutation.error || addTagMutation.error || createSegmentMutation.error)} /></div>
       ) : null}
 
-      <section className="my-4 rounded-3xl border border-white/75 bg-white/82 p-3 shadow-sm sm:p-4">
-        <div className="grid gap-2 xl:grid-cols-[minmax(0,1fr)_220px_220px]">
+      <section className="mb-6 overflow-hidden rounded-2xl border border-blue-200 bg-white p-6 shadow-[0_4px_20px_rgba(0,47,108,0.04)] [background:linear-gradient(120deg,#fff_0%,#fff_56%,#eef2ff_100%)]">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-start gap-4">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-violet-50 text-violet-700 shadow-[0_0_18px_rgba(124,58,237,0.12)]">
+              <Sparkles size={21} />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-midnight">{t("clients.retentionTitle")}</h2>
+              <p className="mt-1 max-w-3xl text-base leading-6 text-slate-600">
+                {t("clients.retentionText", { count: clientsWithoutActivity })}
+              </p>
+            </div>
+          </div>
+          <Button
+            className="shrink-0"
+            onClick={() => setQuickFilter("new")}
+            disabled={!clientsWithoutActivity}
+          >
+            {t("clients.retentionAction")} <Send size={16} />
+          </Button>
+        </div>
+      </section>
+
+      <section className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_4px_20px_rgba(0,47,108,0.04)]">
+        <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_220px_220px]">
           <Input placeholder={t("clients.search")} value={search} onChange={(event) => setSearch(event.target.value)} />
           <Select value={selectedTag} onChange={(event) => setSelectedTag(event.target.value)} options={[{ value: "", label: t("clients.allTags") }, ...tagList.map((tag) => ({ value: tag.id, label: tag.name }))]} />
           <Select value={selectedSegment} onChange={(event) => setSelectedSegment(event.target.value)} options={[{ value: "", label: t("clients.allSegments") }, ...segmentList.map((segment) => ({ value: segment.id, label: `${segment.name} (${segment.cached_count})` }))]} />
         </div>
-        <div className="mt-2 grid gap-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)]">
-          <div className="min-w-0 rounded-2xl border border-slate-100 bg-white/55 p-2">
+        <div className="mt-3 grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)]">
+          <div className="min-w-0 rounded-2xl border border-slate-100 bg-slate-50 p-2">
             <FilterChips value={quickFilter} options={quickFilterOptions} onChange={setQuickFilter} />
           </div>
-          <div className="min-w-0 rounded-2xl border border-slate-100 bg-white/55 p-2">
+          <div className="min-w-0 rounded-2xl border border-slate-100 bg-slate-50 p-2">
             <FilterChips value={source} options={sourceOptions} onChange={setSource} />
           </div>
         </div>
       </section>
 
-      <WorkQueueLayout className="lg:grid-cols-[430px_minmax(0,1fr)]">
+      <WorkQueueLayout className="overflow-hidden border border-slate-200 shadow-[0_4px_20px_rgba(0,47,108,0.04)] lg:grid-cols-[430px_minmax(0,1fr)]">
         <WorkQueueListPane mobileDetailOpen={mobileDetailOpen}>
           <div className="flex items-center justify-between px-2 py-2">
             <div>
@@ -471,7 +493,7 @@ export function ClientsPage() {
               </div>
             </div>
 
-            <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+            <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
               <MetricCard compact label={t("clients.metricLeads")} value={selectedLeads.length} />
               <MetricCard compact label={t("clients.metricDeals")} value={selectedDeals.length} />
               <MetricCard compact label={t("clients.metricOpen")} value={money(openDealValue)} />

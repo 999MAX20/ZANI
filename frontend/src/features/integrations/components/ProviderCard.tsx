@@ -225,7 +225,6 @@ export function ProviderCard({
 
   const isConnected = ["connected", "active"].includes(status);
   const isUnavailable = ["roadmap", "soon"].includes(status);
-  const isWebsiteProvider = provider.provider === "website";
   const isChannelProvider = ["website", "telegram", "whatsapp", "instagram"].includes(String(provider.provider));
   const showChannelToggle = Boolean(
     isChannelProvider &&
@@ -307,40 +306,12 @@ export function ProviderCard({
   return (
     <article
       className={cn(
-        isWebsiteProvider
-          ? "group min-h-[128px] rounded-2xl [perspective:1200px]"
-          : cn(
-              "rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft",
-              isChannelProvider ? "min-h-[128px]" : "min-h-[132px]",
-            ),
+        "rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft",
+        isChannelProvider ? "min-h-[128px]" : "min-h-[132px]",
         isUnavailable && "opacity-60",
       )}
     >
-      {isWebsiteProvider ? (
-        <div className="relative min-h-[128px] rounded-2xl transition-transform duration-500 [transform-style:preserve-3d] sm:group-hover:[transform:rotateY(180deg)]">
-          <div className="absolute inset-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm [backface-visibility:hidden]">
-            {frontContent}
-          </div>
-          <div className="absolute inset-0 hidden rounded-2xl border border-brand-100 bg-white p-4 shadow-soft [backface-visibility:hidden] [transform:rotateY(180deg)] sm:flex">
-            <div className="flex min-h-full w-full flex-col justify-between gap-3">
-              <div>
-                <p className="text-sm font-black leading-5 text-midnight">
-                  {t("integrations.card.websiteFlipTitle")}
-                </p>
-                <p className="mt-2 text-sm font-semibold leading-5 text-slate-600">
-                  {t("integrations.card.websiteFlipText")}
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <span className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-black text-blue-700">{t("integrations.card.websiteFlow")}</span>
-                {renderPrimaryButton()}
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
-        frontContent
-      )}
+      {frontContent}
 
       <Modal title={t("integrations.card.connectionTitle", { title })} open={connectOpen} onClose={() => setConnectOpen(false)}>
         <div className="space-y-4">

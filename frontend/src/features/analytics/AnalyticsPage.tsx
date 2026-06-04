@@ -7,7 +7,6 @@ import { asArray, getApiErrorMessage } from "../../api/client";
 import { PageAiHints, type PageAiHint } from "../../components/ai/PageAiHints";
 import { Card, CardBody } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
-import { PageHeader } from "../../components/ui/PageHeader";
 import { ErrorState, LoadingState } from "../../components/ui/StateViews";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { useActiveBusiness } from "../../hooks/useBusiness";
@@ -17,16 +16,14 @@ import type { TeamPerformanceActionItem, TeamPerformanceMember, TeamPerformanceT
 
 function Stat({ label, value, hint, icon: Icon }: { label: string; value: number | string; hint?: string; icon: typeof Flame }) {
   return (
-    <Card>
-      <CardBody>
-        <div className="mb-4 grid h-10 w-10 place-items-center rounded-2xl bg-slate-100 text-midnight">
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_4px_20px_rgba(0,47,108,0.04)]">
+        <div className="mb-7 grid h-10 w-10 place-items-center rounded-xl bg-slate-100 text-midnight">
           <Icon size={18} />
         </div>
-        <p className="text-sm font-medium text-slate-500">{label}</p>
-        <p className="mt-2 text-3xl font-semibold tracking-tight text-midnight">{value}</p>
-        {hint ? <p className="mt-1 text-xs text-slate-400">{hint}</p> : null}
-      </CardBody>
-    </Card>
+        <p className="text-sm font-semibold uppercase text-slate-700">{label}</p>
+        <p className="mt-4 text-3xl font-bold tracking-tight text-midnight">{value}</p>
+        {hint ? <p className="mt-2 text-sm font-semibold text-slate-500">{hint}</p> : null}
+    </div>
   );
 }
 
@@ -126,7 +123,42 @@ export function AnalyticsPage() {
 
   return (
     <>
-      <PageHeader title={t("analytics.title")} description={t("analytics.description")} />
+      <section className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-midnight md:text-3xl">{t("analytics.title")}</h1>
+          <p className="mt-1 max-w-2xl text-base leading-6 text-slate-600">{t("analytics.description")}</p>
+        </div>
+        <Button
+          variant="secondary"
+          onClick={() => exportMutation.mutate({ business: business.id, report: "manager_performance" })}
+          isLoading={exportMutation.isPending}
+        >
+          <Download size={16} />
+          {t("analytics.teamCsv")}
+        </Button>
+      </section>
+
+      <section className="mb-8 rounded-2xl border border-blue-200 bg-white p-6 shadow-[0_4px_20px_rgba(0,47,108,0.04)] [background:linear-gradient(120deg,#fff_0%,#fff_55%,#eef2ff_100%)]">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-start gap-4">
+            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-violet-50 text-violet-700 shadow-[0_0_18px_rgba(124,58,237,0.12)]">
+              <TrendingUp size={22} />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-midnight">{t("analytics.smartReportTitle")}</h2>
+              <p className="mt-1 max-w-4xl text-base leading-7 text-slate-700">
+                {topSource
+                  ? t("analytics.smartReportText", { source: topSource.source, conversion })
+                  : t("analytics.smartReportNoSource")}
+              </p>
+            </div>
+          </div>
+          <Link to="/dashboard/integrations" className="shrink-0">
+            <Button>{t("analytics.smartReportAction")} <TrendingUp size={16} /></Button>
+          </Link>
+        </div>
+      </section>
+
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <Stat label={t("dashboard.newLeads")} value={dashboard?.new_leads || 0} hint={t("analytics.needProcessing")} icon={Flame} />
         <Stat label={t("common.today")} value={dashboard?.appointments_today || 0} hint={t("analytics.bookingsForDay")} icon={CalendarCheck} />

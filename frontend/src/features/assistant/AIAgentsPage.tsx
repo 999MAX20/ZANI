@@ -280,12 +280,23 @@ export function AIAgentsPage() {
     .filter((group) => group.sections.length);
 
   return (
+    <div className="space-y-8">
+      <section className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-midnight md:text-3xl">{t("aiAgents.title")}</h1>
+          <p className="mt-1 max-w-2xl text-base leading-6 text-slate-600">{t("aiAgents.description")}</p>
+        </div>
+        <Button type="button" onClick={() => setCreateOpen(true)} disabled={!canManage}>
+          <Plus size={16} /> {t("aiAgents.createAgent")}
+        </Button>
+      </section>
+
     <div className="mx-auto grid w-full max-w-[1320px] gap-6 xl:grid-cols-[300px_minmax(0,1fr)]">
       <aside className="rounded-[28px] border border-slate-200 bg-white/92 p-4 shadow-soft">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-600">{t("aiAgents.eyebrow")}</p>
-            <h1 className="mt-1 text-2xl font-black text-midnight">{t("aiAgents.title")}</h1>
+            <h2 className="mt-1 text-2xl font-black text-midnight">{t("aiAgents.title")}</h2>
           </div>
           <Button type="button" className="h-9 w-9 rounded-xl px-0" variant="secondary" onClick={() => setCreateOpen(true)} aria-label={t("aiAgents.createAgent")}>
             <Plus size={16} />
@@ -360,7 +371,7 @@ export function AIAgentsPage() {
       <main className="min-w-0">
         <div className="mb-5 flex flex-col gap-4 border-b border-slate-200 pb-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h2 className="text-4xl font-black tracking-tight text-midnight">{t(activeSectionMeta.titleKey)}</h2>
+            <h2 className="text-2xl font-bold tracking-tight text-midnight md:text-3xl">{t(activeSectionMeta.titleKey)}</h2>
             <div className="mt-3 flex flex-wrap items-center gap-2 text-sm font-bold text-slate-500">
               <Link to="/dashboard/ai-agents" className="hover:text-brand-700">{t("aiAgents.title")}</Link>
               {selectedBot ? (
@@ -436,6 +447,7 @@ export function AIAgentsPage() {
           </Button>
         </form>
       </Modal>
+    </div>
     </div>
   );
 }

@@ -2,18 +2,27 @@ import { cn } from "../../lib/cn";
 
 type CardProps = React.HTMLAttributes<HTMLElement> & {
   children: React.ReactNode;
-  variant?: "default" | "muted" | "ai" | "danger";
+  variant?: "default" | "elevated" | "outlined" | "muted" | "ai" | "danger";
+  padding?: "none" | "sm" | "md" | "lg";
 };
 
-export function Card({ className, children, variant = "default", ...props }: CardProps) {
+export function Card({ className, children, variant = "default", padding = "none", ...props }: CardProps) {
   const variants = {
-    default: "zani-surface rounded-xl",
+    default: "rounded-card border border-slate-200 bg-white shadow-soft",
+    elevated: "rounded-card border border-slate-200 bg-white shadow-card",
+    outlined: "rounded-card border border-slate-200 bg-white",
     muted: "rounded-xl border border-slate-200 bg-slate-50/80",
     ai: "zani-ai-surface rounded-xl",
     danger: "rounded-xl border border-red-100 bg-red-50/80 shadow-sm",
   };
+  const paddings = {
+    none: "",
+    sm: "p-3",
+    md: "p-4",
+    lg: "p-5",
+  };
 
-  return <section className={cn(variants[variant], className)} {...props}>{children}</section>;
+  return <section className={cn(variants[variant], paddings[padding], className)} {...props}>{children}</section>;
 }
 
 export function CardHeader({ className, children }: { className?: string; children: React.ReactNode }) {

@@ -3,23 +3,28 @@
 @tailwind utilities;
 
 :root {
-  --zani-bg: #f8f9fb;
+  --zani-bg: #f9fafb;
   --zani-surface: #ffffff;
-  --zani-surface-muted: #f2f4f7;
+  --zani-surface-muted: #f3f4f6;
   --zani-surface-raised: rgba(255, 255, 255, 0.96);
-  --zani-brand: #0052d2;
-  --zani-brand-strong: #001b44;
+  --zani-brand: #4f46e5;
+  --zani-brand-strong: #3730a3;
   --zani-ai: #7c3aed;
-  --zani-ai-end: #1e6bff;
-  --zani-success: #28c76f;
-  --zani-warning: #ff9f43;
-  --zani-danger: #ba1a1a;
-  --zani-ink: #191c1e;
-  --zani-midnight: #001b44;
-  --zani-muted: #44474f;
-  --zani-border: rgba(196, 198, 210, 0.66);
-  --zani-shadow-soft: 0 4px 20px rgba(0, 47, 108, 0.04);
-  --zani-shadow-premium: 0 12px 34px rgba(0, 27, 68, 0.08);
+  --zani-ai-end: #4f46e5;
+  --zani-success: #10b981;
+  --zani-warning: #f59e0b;
+  --zani-danger: #ef4444;
+  --zani-info: #3b82f6;
+  --zani-ink: #111827;
+  --zani-midnight: #111827;
+  --zani-muted: #6b7280;
+  --zani-muted-soft: #9ca3af;
+  --zani-border: #e5e7eb;
+  --zani-shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --zani-shadow-elevated: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --zani-shadow-card: 0 4px 12px rgba(17, 24, 39, 0.06);
+  --zani-shadow-panel: 0 12px 28px rgba(17, 24, 39, 0.1);
+  --zani-shadow-premium: 0 10px 15px rgba(0, 0, 0, 0.1);
   --zani-radius-card: 12px;
   --zani-radius-control: 8px;
   color: var(--zani-ink);
@@ -57,7 +62,7 @@ select {
 }
 
 ::selection {
-  background: rgba(37, 99, 235, 0.18);
+  background: rgba(79, 70, 229, 0.18);
 }
 
 @layer components {
@@ -65,12 +70,33 @@ select {
     border: 1px solid var(--zani-border);
     background: var(--zani-surface-raised);
     box-shadow: var(--zani-shadow-soft);
+    border-radius: var(--zani-radius-card);
   }
 
   .zani-surface-strong {
-    border: 1px solid rgba(196, 198, 210, 0.52);
+    border: 1px solid var(--zani-border);
     background: rgba(255, 255, 255, 0.96);
-    box-shadow: var(--zani-shadow-premium);
+    box-shadow: var(--zani-shadow-elevated);
+    border-radius: var(--zani-radius-card);
+  }
+
+  .zani-card {
+    border: 1px solid var(--zani-border);
+    background: var(--zani-surface);
+    box-shadow: var(--zani-shadow-card);
+    border-radius: var(--zani-radius-card);
+  }
+
+  .zani-panel {
+    border: 1px solid var(--zani-border);
+    background: var(--zani-surface);
+    box-shadow: var(--zani-shadow-panel);
+    border-radius: var(--zani-radius-card);
+  }
+
+  .zani-control {
+    min-height: 40px;
+    border-radius: var(--zani-radius-control);
   }
 
   .zani-touch-target {
@@ -88,7 +114,7 @@ select {
 
   .zani-focus-ring:focus-visible {
     border-color: var(--zani-brand);
-    box-shadow: 0 0 0 4px rgba(0, 82, 210, 0.14);
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.14);
   }
 
   .zani-ai-surface {
@@ -97,7 +123,7 @@ select {
     background:
       radial-gradient(circle at top right, rgba(124, 58, 237, 0.12), transparent 34%),
       linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.9));
-    box-shadow: 0 10px 30px rgba(30, 107, 255, 0.08);
+    box-shadow: 0 10px 30px rgba(79, 70, 229, 0.08);
   }
 
   .zani-ai-surface::before {
@@ -106,22 +132,24 @@ select {
     inset: -1px;
     z-index: -1;
     border-radius: inherit;
-    background: linear-gradient(135deg, rgba(124, 58, 237, 0.82), rgba(30, 107, 255, 0.82));
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.82), rgba(124, 58, 237, 0.82));
     opacity: 0.42;
   }
 }
 
 .glass-panel {
-  border: 1px solid rgba(196, 198, 210, 0.56);
+  border: 1px solid var(--zani-border);
   background: rgba(255, 255, 255, 0.94);
   box-shadow: var(--zani-shadow-soft);
   backdrop-filter: blur(10px);
+  border-radius: var(--zani-radius-card);
 }
 
 .premium-card {
   border: 1px solid var(--zani-border);
   background: var(--zani-surface-raised);
   box-shadow: var(--zani-shadow-soft);
+  border-radius: var(--zani-radius-card);
 }
 
 .no-scrollbar::-webkit-scrollbar {

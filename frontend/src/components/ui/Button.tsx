@@ -17,7 +17,7 @@ export function Button({ className, variant = "primary", size = "md", isLoading,
     ghost: "text-slate-600 hover:bg-slate-100 hover:text-midnight",
     outline: "border border-brand-600 bg-white text-brand-700 shadow-sm hover:bg-brand-50",
     danger: "bg-red-600 text-white shadow-sm hover:bg-red-700",
-    ai: "bg-ai-gradient text-white shadow-glow hover:brightness-105",
+    ai: "bg-primary-gradient text-white shadow-glow hover:brightness-105",
   };
   const sizes = {
     sm: "min-h-9 rounded-lg px-3 py-1.5 text-xs",
@@ -29,13 +29,14 @@ export function Button({ className, variant = "primary", size = "md", isLoading,
   return (
     <button
       className={cn(
-        "inline-flex items-center justify-center gap-2 font-semibold transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-60",
-        "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-600/15",
+        "inline-flex items-center justify-center gap-2 font-semibold transition duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2",
         variants[variant],
         sizes[size],
         className,
       )}
       disabled={disabled || isLoading}
+      aria-busy={isLoading || undefined}
       {...props}
     >
       {isLoading ? t("common.loading") : children}

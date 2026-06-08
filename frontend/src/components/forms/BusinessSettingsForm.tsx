@@ -7,6 +7,7 @@ import type { Business } from "../../types";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { Select } from "../ui/Select";
+import { Textarea } from "../ui/Textarea";
 
 function createSchema(t: (key: string) => string) {
   return z.object({
@@ -20,6 +21,17 @@ function createSchema(t: (key: string) => string) {
     telegram: z.string().optional(),
     instagram: z.string().optional(),
     timezone: z.string().min(1),
+    language: z.string().min(1),
+    currency: z.string().min(1),
+    legal_name: z.string().optional(),
+    tax_id: z.string().optional(),
+    invoice_email: z.string().email().or(z.literal("")).optional(),
+    brand_color: z.string().optional(),
+    brand_logo_url: z.string().url().or(z.literal("")).optional(),
+    cancellation_policy: z.string().optional(),
+    prepayment_policy: z.string().optional(),
+    sla_minutes: z.coerce.number().int().min(0),
+    booking_buffer_minutes: z.coerce.number().int().min(0),
     status: z.string(),
   });
 }
@@ -47,6 +59,17 @@ export function BusinessSettingsForm({
       telegram: initial?.telegram || "",
       instagram: initial?.instagram || "",
       timezone: initial?.timezone || "Asia/Almaty",
+      language: initial?.language || "ru",
+      currency: initial?.currency || "KZT",
+      legal_name: initial?.legal_name || "",
+      tax_id: initial?.tax_id || "",
+      invoice_email: initial?.invoice_email || "",
+      brand_color: initial?.brand_color || "",
+      brand_logo_url: initial?.brand_logo_url || "",
+      cancellation_policy: initial?.cancellation_policy || "",
+      prepayment_policy: initial?.prepayment_policy || "",
+      sla_minutes: initial?.sla_minutes ?? 120,
+      booking_buffer_minutes: initial?.booking_buffer_minutes ?? 0,
       status: initial?.status || "trial",
     },
   });
@@ -86,6 +109,36 @@ export function BusinessSettingsForm({
         <Input label="WhatsApp" {...form.register("whatsapp")} />
         <Input label="Telegram" {...form.register("telegram")} />
         <Input label="Instagram" {...form.register("instagram")} />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Select label="Язык бизнеса" options={[
+          { value: "ru", label: "Русский" },
+          { value: "kk", label: "Қазақша" },
+          { value: "en", label: "English" },
+        ]} {...form.register("language")} />
+        <Select label="Валюта" options={[
+          { value: "KZT", label: "KZT" },
+          { value: "USD", label: "USD" },
+          { value: "EUR", label: "EUR" },
+          { value: "RUB", label: "RUB" },
+        ]} {...form.register("currency")} />
+        <Input label="SLA ответа, минут" type="number" error={form.formState.errors.sla_minutes?.message} {...form.register("sla_minutes")} />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Input label="Юридическое название" {...form.register("legal_name")} />
+        <Input label="БИН / ИИН" {...form.register("tax_id")} />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Input label="Email для счетов" error={form.formState.errors.invoice_email?.message} {...form.register("invoice_email")} />
+        <Input label="Буфер между записями, минут" type="number" error={form.formState.errors.booking_buffer_minutes?.message} {...form.register("booking_buffer_minutes")} />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Input label="Цвет бренда" placeholder="#1D4ED8" {...form.register("brand_color")} />
+        <Input label="URL логотипа" error={form.formState.errors.brand_logo_url?.message} {...form.register("brand_logo_url")} />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Textarea label="Политика отмены" rows={4} {...form.register("cancellation_policy")} />
+        <Textarea label="Предоплата и оплата" rows={4} {...form.register("prepayment_policy")} />
       </div>
       <Button type="submit" isLoading={form.formState.isSubmitting}>{t("businessForm.save")}</Button>
     </form>

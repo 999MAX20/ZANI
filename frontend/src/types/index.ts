@@ -24,6 +24,17 @@ export type Business = {
   telegram: string;
   instagram: string;
   timezone: string;
+  language: "ru" | "kk" | "en" | string;
+  currency: "KZT" | "USD" | "EUR" | "RUB" | string;
+  legal_name: string;
+  tax_id: string;
+  invoice_email: string;
+  brand_color: string;
+  brand_logo_url: string;
+  cancellation_policy: string;
+  prepayment_policy: string;
+  sla_minutes: number;
+  booking_buffer_minutes: number;
   landing_id?: string;
   landing_domain?: string;
   landing_preview_url?: string;
@@ -84,6 +95,12 @@ export type Subscription = {
   business: Id;
   plan?: SubscriptionPlan | null;
   status: "trial" | "active" | "overdue" | "cancelled" | "paused";
+  billing_email: string;
+  payment_method: string;
+  invoice_details_json: Record<string, unknown>;
+  requested_plan?: Id | null;
+  requested_plan_name?: string | null;
+  plan_change_requested_at?: string | null;
   started_at: string | null;
   next_payment_at: string | null;
   cancelled_at: string | null;
@@ -1262,6 +1279,7 @@ export type CustomFieldDefinition = {
     | "email"
     | "url";
   options_json: { options?: string[] } & Record<string, unknown>;
+  permissions_json: { view_roles?: string[]; edit_roles?: string[] } & Record<string, unknown>;
   is_required: boolean;
   is_active: boolean;
   sort_order: number;

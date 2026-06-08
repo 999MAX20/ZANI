@@ -9,7 +9,7 @@ import { businessesApi } from "../../api/businesses";
 import { getApiErrorMessage } from "../../api/client";
 import { customFieldsApi } from "../../api/customFields";
 import { importExportApi, type ImportEntity } from "../../api/importExport";
-import { leadFormsApi, leadFormSubmissionsApi } from "../../api/leadForms";
+import { leadFormFieldsApi, leadFormsApi, leadFormSubmissionsApi } from "../../api/leadForms";
 import { notificationsApi } from "../../api/notifications";
 import { quickRepliesApi } from "../../api/quickReplies";
 import { securityApi } from "../../api/security";
@@ -26,7 +26,7 @@ import { hasPermission, permissionResourceLabel } from "../../lib/permissions";
 import { useI18n } from "../../lib/i18n";
 import { useAuth } from "../auth/AuthProvider";
 import { DevelopersSection } from "./DevelopersSection";
-import type { AppointmentMessageSetting, Business, BusinessInvitation, BusinessMembershipSummary, BusinessRole, CrmEntityType, CustomFieldDefinition, Notification, NotificationPreference, QuickReplyTemplate, RolePermission } from "../../types";
+import type { AppointmentMessageSetting, Business, BusinessInvitation, BusinessMembershipSummary, BusinessRole, CrmEntityType, CustomFieldDefinition, Id, LeadCaptureForm, LeadFormField, Notification, NotificationPreference, QuickReplyTemplate, RolePermission } from "../../types";
 
 const teamRoleOptions = [
   { value: "owner" },
@@ -62,22 +62,24 @@ const settingsGroupOrder = ["business", "team", "communication", "setup", "advan
 
 type SettingsGroupKey = (typeof settingsGroupOrder)[number];
 
-const settingsSections: Array<{ id: string; group?: SettingsGroupKey }> = [
-  { id: "business-profile", group: "business" },
-  { id: "team-access", group: "team" },
-  { id: "roles", group: "team" },
-  { id: "security-center", group: "team" },
-  { id: "appointment-messages" },
-  { id: "notification-preferences", group: "communication" },
-  { id: "quick-replies", group: "communication" },
-  { id: "operations-setup", group: "setup" },
-  { id: "data-tools", group: "setup" },
-  { id: "lead-forms", group: "setup" },
-  { id: "billing", group: "setup" },
-  { id: "usage", group: "setup" },
-  { id: "custom-fields", group: "advanced" },
-  { id: "automations", group: "advanced" },
-  { id: "developer", group: "advanced" },
+type SettingsSectionConfig = { id: string; group?: SettingsGroupKey; resource: string; action?: string };
+
+const settingsSections: SettingsSectionConfig[] = [
+  { id: "business-profile", group: "business", resource: "settings", action: "update" },
+  { id: "team-access", group: "team", resource: "team", action: "view" },
+  { id: "roles", group: "team", resource: "team", action: "manage" },
+  { id: "security-center", group: "team", resource: "audit_logs", action: "view" },
+  { id: "appointment-messages", resource: "settings", action: "update" },
+  { id: "notification-preferences", group: "communication", resource: "notifications", action: "view" },
+  { id: "quick-replies", group: "communication", resource: "conversations", action: "view" },
+  { id: "operations-setup", group: "setup", resource: "settings", action: "update" },
+  { id: "data-tools", group: "setup", resource: "settings", action: "update" },
+  { id: "lead-forms", group: "setup", resource: "leads", action: "create" },
+  { id: "billing", group: "setup", resource: "billing", action: "view" },
+  { id: "usage", group: "setup", resource: "billing", action: "view" },
+  { id: "custom-fields", group: "advanced", resource: "settings", action: "update" },
+  { id: "automations", group: "advanced", resource: "automations", action: "view" },
+  { id: "developer", group: "advanced", resource: "integrations", action: "manage" },
 ];
 
 const settingsSectionGroupFallback: Record<string, SettingsGroupKey> = {
@@ -131,14 +133,42 @@ export function SettingsPage() {
     advanced: false,
   });
   const canViewBilling = hasPermission(user, business?.id, "billing", "view");
+  const canManageBilling = hasPermission(user, business?.id, "billing", "manage");
   const canViewTeam = hasPermission(user, business?.id, "team", "view");
   const canManageTeam = hasPermission(user, business?.id, "team", "manage");
   const canViewAudit = hasPermission(user, business?.id, "audit_logs", "view");
-  const canViewSettings = hasPermission(user, business?.id, "settings", "view");
+  const canManageSettings = hasPermission(user, business?.id, "settings", "update");
   const canViewNotifications = hasPermission(user, business?.id, "notifications", "view");
+  const canViewConversations = hasPermission(user, business?.id, "conversations", "view");
+  const canCreateLeads = hasPermission(user, business?.id, "leads", "create");
+  const canViewAutomations = hasPermission(user, business?.id, "automations", "view");
+  const canManageIntegrations = hasPermission(user, business?.id, "integrations", "manage");
+  const allowedSettingsSections = useMemo(
+    () =>
+      settingsSections.filter((section) => {
+        if (section.id === "business-profile" || section.id === "appointment-messages" || section.id === "operations-setup" || section.id === "data-tools" || section.id === "custom-fields") return canManageSettings;
+        if (section.id === "team-access") return canViewTeam;
+        if (section.id === "roles") return canManageTeam;
+        if (section.id === "security-center") return canViewAudit;
+        if (section.id === "notification-preferences") return canViewNotifications;
+        if (section.id === "quick-replies") return canViewConversations;
+        if (section.id === "lead-forms") return canCreateLeads;
+        if (section.id === "billing" || section.id === "usage") return canViewBilling;
+        if (section.id === "automations") return canViewAutomations;
+        if (section.id === "developer") return canManageIntegrations;
+        return hasPermission(user, business?.id, section.resource, section.action || "view");
+      }),
+    [business?.id, canCreateLeads, canManageIntegrations, canManageSettings, canManageTeam, canViewAudit, canViewAutomations, canViewBilling, canViewConversations, canViewNotifications, canViewTeam, user],
+  );
+  const allowedSettingsSectionIds = useMemo(() => new Set(allowedSettingsSections.map((section) => section.id)), [allowedSettingsSections]);
   const subscription = useQuery({
     queryKey: ["current-subscription"],
     queryFn: billingApi.currentSubscription,
+    enabled: Boolean(canViewBilling),
+  });
+  const plans = useQuery({
+    queryKey: ["billing-plans"],
+    queryFn: billingApi.plans,
     enabled: Boolean(canViewBilling),
   });
   const usage = useQuery({
@@ -157,11 +187,26 @@ export function SettingsPage() {
     key: "",
     field_type: "text" as CustomFieldDefinition["field_type"],
     options: "",
+    view_roles: "",
+    edit_roles: "",
+  });
+  const [editingCustomFieldId, setEditingCustomFieldId] = useState<number | null>(null);
+  const [customFieldEditForm, setCustomFieldEditForm] = useState({
+    entity_type: "client" as CrmEntityType,
+    label: "",
+    key: "",
+    field_type: "text" as CustomFieldDefinition["field_type"],
+    options: "",
+    view_roles: "",
+    edit_roles: "",
+    is_required: false,
+    is_active: true,
+    sort_order: 0,
   });
   const customFields = useQuery({
     queryKey: ["custom-fields", business?.id],
     queryFn: () => customFieldsApi.list(),
-    enabled: Boolean(business && canViewSettings),
+    enabled: Boolean(business && canManageSettings),
   });
   const teamMembers = useQuery({
     queryKey: ["team-members", business?.id],
@@ -203,6 +248,28 @@ export function SettingsPage() {
     category: "",
     channel: "all",
   });
+  const [editingLeadFormId, setEditingLeadFormId] = useState<number | null>(null);
+  const [leadFormEditForm, setLeadFormEditForm] = useState({
+    name: "",
+    title: "",
+    description: "",
+    source: "website" as LeadCaptureForm["source"],
+    success_message: "",
+    landing_id: "",
+    landing_domain: "",
+    preview_url: "",
+    default_responsible_user: "" as string,
+    is_active: true,
+  });
+  const [leadFieldForm, setLeadFieldForm] = useState({
+    label: "",
+    key: "",
+    field_type: "text" as LeadFormField["field_type"],
+    placeholder: "",
+    options: "",
+    is_required: false,
+    sort_order: 0,
+  });
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importEntity, setImportEntity] = useState<ImportEntity>("clients");
   const [activeImportId, setActiveImportId] = useState<number | null>(null);
@@ -210,20 +277,28 @@ export function SettingsPage() {
   const [manualCatalogForm, setManualCatalogForm] = useState({ item_type: "service", sku: "", name: "", duration_minutes: "30", price_from: "", stock_quantity: "", source: "manual" });
   const [activeDataTool, setActiveDataTool] = useState<"import" | "export" | "manual">("import");
   const [appointmentMessageDrafts, setAppointmentMessageDrafts] = useState<Record<number, Partial<AppointmentMessageSetting>>>({});
+  const [billingSettingsForm, setBillingSettingsForm] = useState({
+    billing_email: "",
+    payment_method: "",
+    invoice_name: "",
+    invoice_tax_id: "",
+    invoice_address: "",
+  });
+  const [selectedPlanId, setSelectedPlanId] = useState("");
   const importJobs = useQuery({
     queryKey: ["import-jobs", business?.id],
     queryFn: () => importExportApi.importJobs(business?.id),
-    enabled: Boolean(business && canViewSettings),
+    enabled: Boolean(business && canManageSettings),
   });
   const leadForms = useQuery({
     queryKey: ["lead-forms", business?.id],
     queryFn: leadFormsApi.list,
-    enabled: Boolean(business && canViewSettings),
+    enabled: Boolean(business && canCreateLeads),
   });
   const leadFormSubmissions = useQuery({
     queryKey: ["lead-form-submissions", business?.id],
     queryFn: leadFormSubmissionsApi.list,
-    enabled: Boolean(business && canViewSettings),
+    enabled: Boolean(business && canCreateLeads),
   });
   const securityRisk = useQuery({
     queryKey: ["security-risk", business?.id],
@@ -252,7 +327,7 @@ export function SettingsPage() {
   const appointmentMessageSettings = useQuery({
     queryKey: ["appointment-message-settings", business?.id],
     queryFn: () => appointmentMessageSettingsApi.list({ business: business?.id }),
-    enabled: Boolean(business?.id && canViewSettings),
+    enabled: Boolean(business?.id && canManageSettings),
   });
   const notificationPreferences = useQuery({
     queryKey: ["notification-preferences", business?.id, user?.id],
@@ -263,6 +338,19 @@ export function SettingsPage() {
     () => new Map((notificationPreferences.data || []).map((preference) => [preference.category, preference])),
     [notificationPreferences.data],
   );
+  useEffect(() => {
+    const current = subscription.data;
+    if (!current) return;
+    const details = current.invoice_details_json || {};
+    setBillingSettingsForm({
+      billing_email: current.billing_email || business?.invoice_email || "",
+      payment_method: current.payment_method || "",
+      invoice_name: String(details.name || business?.legal_name || ""),
+      invoice_tax_id: String(details.tax_id || business?.tax_id || ""),
+      invoice_address: String(details.address || business?.address || ""),
+    });
+    setSelectedPlanId(current.requested_plan ? String(current.requested_plan) : current.plan?.id ? String(current.plan.id) : "");
+  }, [business?.address, business?.invoice_email, business?.legal_name, business?.tax_id, subscription.data]);
 
   useEffect(() => {
     function handleHashChange() {
@@ -274,6 +362,15 @@ export function SettingsPage() {
     window.addEventListener("hashchange", handleHashChange);
     return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
+  useEffect(() => {
+    if (!allowedSettingsSections.length) return;
+    if (allowedSettingsSectionIds.has(activeSettingsSection)) return;
+    const nextSection = allowedSettingsSections[0].id;
+    setActiveSettingsSection(nextSection);
+    if (window.location.hash.replace("#", "") !== nextSection) {
+      window.location.hash = nextSection;
+    }
+  }, [activeSettingsSection, allowedSettingsSectionIds, allowedSettingsSections]);
   const [editingQuickReplyId, setEditingQuickReplyId] = useState<number | null>(null);
   const [quickReplyEditForm, setQuickReplyEditForm] = useState({
     title: "",
@@ -285,7 +382,7 @@ export function SettingsPage() {
   const quickReplies = useQuery({
     queryKey: ["quick-replies", business?.id],
     queryFn: quickRepliesApi.list,
-    enabled: Boolean(business && canViewNotifications),
+    enabled: Boolean(business && canViewConversations),
   });
   const notificationPreferenceMutation = useMutation({
     mutationFn: ({ category, enabled }: { category: Notification["category"]; enabled: boolean }) => {
@@ -326,6 +423,10 @@ export function SettingsPage() {
             .map((item) => item.trim())
             .filter(Boolean),
         },
+        permissions_json: {
+          view_roles: parseRoleList(fieldForm.view_roles),
+          edit_roles: parseRoleList(fieldForm.edit_roles),
+        },
         is_required: false,
         is_active: true,
         sort_order: 0,
@@ -333,7 +434,21 @@ export function SettingsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["custom-fields"] });
-      setFieldForm({ entity_type: "client", label: "", key: "", field_type: "text", options: "" });
+      setFieldForm({ entity_type: "client", label: "", key: "", field_type: "text", options: "", view_roles: "", edit_roles: "" });
+    },
+  });
+  const updateCustomFieldMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: Id; payload: Partial<CustomFieldDefinition> }) => customFieldsApi.update({ id, payload }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["custom-fields"] });
+      setEditingCustomFieldId(null);
+    },
+  });
+  const removeCustomFieldMutation = useMutation({
+    mutationFn: (id: Id) => customFieldsApi.remove(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["custom-fields"] });
+      setEditingCustomFieldId(null);
     },
   });
   const updateMemberMutation = useMutation({
@@ -474,12 +589,76 @@ export function SettingsPage() {
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["lead-forms"] }),
   });
+  const updateLeadFormMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: Id; payload: Partial<LeadCaptureForm> }) => leadFormsApi.update({ id, payload }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["lead-forms"] }),
+  });
+  const removeLeadFormMutation = useMutation({
+    mutationFn: (id: Id) => leadFormsApi.remove(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["lead-forms"] });
+      setEditingLeadFormId(null);
+    },
+  });
+  const createLeadFieldMutation = useMutation({
+    mutationFn: () => {
+      if (!editingLeadFormId) throw new Error("Lead form is required.");
+      return leadFormFieldsApi.create({
+        form: editingLeadFormId,
+        label: leadFieldForm.label,
+        key: leadFieldForm.key || slugify(leadFieldForm.label),
+        field_type: leadFieldForm.field_type,
+        placeholder: leadFieldForm.placeholder,
+        options_json: {
+          options: leadFieldForm.options
+            .split(",")
+            .map((item) => item.trim())
+            .filter(Boolean),
+        },
+        is_required: leadFieldForm.is_required,
+        sort_order: Number(leadFieldForm.sort_order || 0),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["lead-forms"] });
+      setLeadFieldForm({ label: "", key: "", field_type: "text", placeholder: "", options: "", is_required: false, sort_order: 0 });
+    },
+  });
+  const updateLeadFieldMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: Id; payload: Partial<LeadFormField> }) => leadFormFieldsApi.update({ id, payload }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["lead-forms"] }),
+  });
+  const removeLeadFieldMutation = useMutation({
+    mutationFn: (id: Id) => leadFormFieldsApi.remove(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["lead-forms"] }),
+  });
   const appointmentMessageMutation = useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: Partial<AppointmentMessageSetting> }) => appointmentMessageSettingsApi.update({ id, payload }),
     onSuccess: () => {
       setAppointmentMessageDrafts({});
       queryClient.invalidateQueries({ queryKey: ["appointment-message-settings"] });
     },
+  });
+  const billingSettingsMutation = useMutation({
+    mutationFn: () =>
+      billingApi.updateSettings({
+        billing_email: billingSettingsForm.billing_email,
+        payment_method: billingSettingsForm.payment_method,
+        invoice_details_json: {
+          name: billingSettingsForm.invoice_name,
+          tax_id: billingSettingsForm.invoice_tax_id,
+          address: billingSettingsForm.invoice_address,
+        },
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["current-subscription"] }),
+  });
+  const planChangeMutation = useMutation({
+    mutationFn: (plan: Id) => billingApi.requestPlanChange(plan),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["current-subscription"] }),
+  });
+  const billingStatusMutation = useMutation({
+    mutationFn: (action: "pause" | "resume" | "cancel") => billingApi[action](),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["current-subscription"] }),
   });
 
   function startEditingQuickReply(template: QuickReplyTemplate) {
@@ -491,6 +670,75 @@ export function SettingsPage() {
       channel: template.channel,
       is_active: template.is_active,
     });
+  }
+
+  function startEditingCustomField(field: CustomFieldDefinition) {
+    setEditingCustomFieldId(Number(field.id));
+    setCustomFieldEditForm({
+      entity_type: field.entity_type,
+      label: field.label,
+      key: field.key,
+      field_type: field.field_type,
+      options: Array.isArray(field.options_json?.options) ? (field.options_json.options as string[]).join(", ") : "",
+      view_roles: Array.isArray(field.permissions_json?.view_roles) ? field.permissions_json.view_roles.join(", ") : "",
+      edit_roles: Array.isArray(field.permissions_json?.edit_roles) ? field.permissions_json.edit_roles.join(", ") : "",
+      is_required: field.is_required,
+      is_active: field.is_active,
+      sort_order: field.sort_order,
+    });
+  }
+
+  function customFieldPayloadFromEdit(): Partial<CustomFieldDefinition> {
+    return {
+      entity_type: customFieldEditForm.entity_type,
+      label: customFieldEditForm.label,
+      key: customFieldEditForm.key || slugify(customFieldEditForm.label),
+      field_type: customFieldEditForm.field_type,
+      options_json: {
+        options: customFieldEditForm.options
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean),
+      },
+      permissions_json: {
+        view_roles: parseRoleList(customFieldEditForm.view_roles),
+        edit_roles: parseRoleList(customFieldEditForm.edit_roles),
+      },
+      is_required: customFieldEditForm.is_required,
+      is_active: customFieldEditForm.is_active,
+      sort_order: Number(customFieldEditForm.sort_order || 0),
+    };
+  }
+
+  function startEditingLeadForm(form: LeadCaptureForm) {
+    setEditingLeadFormId(Number(form.id));
+    setLeadFormEditForm({
+      name: form.name,
+      title: form.title,
+      description: form.description || "",
+      source: form.source,
+      success_message: form.success_message || "",
+      landing_id: form.landing_id || "",
+      landing_domain: form.landing_domain || "",
+      preview_url: form.preview_url || "",
+      default_responsible_user: form.default_responsible_user ? String(form.default_responsible_user) : "",
+      is_active: form.is_active,
+    });
+  }
+
+  function leadFormPayloadFromEdit(): Partial<LeadCaptureForm> {
+    return {
+      name: leadFormEditForm.name,
+      title: leadFormEditForm.title,
+      description: leadFormEditForm.description,
+      source: leadFormEditForm.source,
+      success_message: leadFormEditForm.success_message,
+      landing_id: leadFormEditForm.landing_id,
+      landing_domain: leadFormEditForm.landing_domain,
+      preview_url: leadFormEditForm.preview_url,
+      default_responsible_user: leadFormEditForm.default_responsible_user ? Number(leadFormEditForm.default_responsible_user) : null,
+      is_active: leadFormEditForm.is_active,
+    };
   }
 
   if (isLoading) return <LoadingState />;
@@ -522,7 +770,7 @@ export function SettingsPage() {
     label: t(`settings.visibility.${option.value}`),
     description: t(`settings.visibility.${option.value}.text`),
   }));
-  const translatedSettingsSections = settingsSections.map((section) => ({
+  const translatedSettingsSections = allowedSettingsSections.map((section) => ({
     ...section,
     label: t(`settings.section.${section.id}`),
     group: section.group || settingsSectionGroupFallback[section.id] || "advanced",
@@ -555,7 +803,7 @@ export function SettingsPage() {
   const appointmentMessageValue = <K extends keyof AppointmentMessageSetting>(setting: AppointmentMessageSetting, key: K): AppointmentMessageSetting[K] => {
     return (appointmentMessageDrafts[Number(setting.id)]?.[key] as AppointmentMessageSetting[K] | undefined) ?? setting[key];
   };
-  const settingsSectionClass = (id: string, className = "mb-5 scroll-mt-24") => `${className} ${activeSettingsSection === id ? "" : "hidden"}`;
+  const settingsSectionClass = (id: string, className = "mb-5 scroll-mt-24") => `${className} ${activeSettingsSection === id && allowedSettingsSectionIds.has(id) ? "" : "hidden"}`;
   const dataToolPanelClass = (id: typeof activeDataTool) => (activeDataTool === id ? "" : "hidden");
 
   function updateMemberRole(memberId: number, roleKey: BusinessMembershipSummary["role"]) {
@@ -1691,7 +1939,9 @@ export function SettingsPage() {
               {t("settings.createForm")}
             </Button>
           </div>
-          {createLeadFormMutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(createLeadFormMutation.error)} /></div> : null}
+          {createLeadFormMutation.error || updateLeadFormMutation.error || removeLeadFormMutation.error || createLeadFieldMutation.error || updateLeadFieldMutation.error || removeLeadFieldMutation.error ? (
+            <div className="mb-4"><ErrorState message={getApiErrorMessage(createLeadFormMutation.error || updateLeadFormMutation.error || removeLeadFormMutation.error || createLeadFieldMutation.error || updateLeadFieldMutation.error || removeLeadFieldMutation.error)} /></div>
+          ) : null}
           <div className="grid gap-4 xl:grid-cols-[1fr_0.8fr]">
             <div className="space-y-3">
               {(leadForms.data || []).map((form) => {
@@ -1704,9 +1954,16 @@ export function SettingsPage() {
                         <p className="font-bold text-midnight">{form.name}</p>
                         <p className="mt-1 text-sm text-slate-500">{form.title} · {form.source} · {form.submissions_count || 0} {t("settings.submissions")}</p>
                       </div>
-                      <span className={form.is_active ? "rounded-full bg-green-50 px-3 py-1 text-xs font-bold text-green-700" : "rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500"}>
-                        {form.is_active ? t("settings.active") : t("settings.paused")}
-                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        <span className={form.is_active ? "rounded-full bg-green-50 px-3 py-1 text-xs font-bold text-green-700" : "rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500"}>
+                          {form.is_active ? t("settings.active") : t("settings.paused")}
+                        </span>
+                        <Button type="button" variant="secondary" className="min-h-8 px-3 text-xs" onClick={() => startEditingLeadForm(form)}>{t("settings.edit")}</Button>
+                        <Button type="button" variant="secondary" className="min-h-8 px-3 text-xs" onClick={() => updateLeadFormMutation.mutate({ id: Number(form.id), payload: { is_active: !form.is_active } })} isLoading={updateLeadFormMutation.isPending}>
+                          {form.is_active ? t("settings.disable") : t("settings.enable")}
+                        </Button>
+                        <Button type="button" variant="danger" className="min-h-8 px-3 text-xs" onClick={() => removeLeadFormMutation.mutate(Number(form.id))} isLoading={removeLeadFormMutation.isPending}>{t("settings.delete")}</Button>
+                      </div>
                     </div>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {form.fields.map((field) => (
@@ -1715,6 +1972,109 @@ export function SettingsPage() {
                         </span>
                       ))}
                     </div>
+                    {editingLeadFormId === Number(form.id) ? (
+                      <div className="mt-4 rounded-3xl border border-brand-100 bg-white p-4">
+                        <form
+                          className="grid gap-3"
+                          onSubmit={(event) => {
+                            event.preventDefault();
+                            updateLeadFormMutation.mutate({ id: Number(form.id), payload: leadFormPayloadFromEdit() });
+                          }}
+                        >
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <Input label="Название" value={leadFormEditForm.name} onChange={(event) => setLeadFormEditForm({ ...leadFormEditForm, name: event.target.value })} required />
+                            <Input label="Заголовок формы" value={leadFormEditForm.title} onChange={(event) => setLeadFormEditForm({ ...leadFormEditForm, title: event.target.value })} required />
+                            <Select
+                              label="Источник"
+                              value={leadFormEditForm.source}
+                              onChange={(event) => setLeadFormEditForm({ ...leadFormEditForm, source: event.target.value as LeadCaptureForm["source"] })}
+                              options={[
+                                { value: "website", label: "Website" },
+                                { value: "landing", label: "Landing" },
+                                { value: "telegram", label: "Telegram" },
+                                { value: "whatsapp", label: "WhatsApp" },
+                                { value: "instagram", label: "Instagram" },
+                                { value: "manual", label: "Manual" },
+                                { value: "other", label: "Other" },
+                              ]}
+                            />
+                            <Select
+                              label="Ответственный"
+                              value={leadFormEditForm.default_responsible_user}
+                              onChange={(event) => setLeadFormEditForm({ ...leadFormEditForm, default_responsible_user: event.target.value })}
+                              options={[
+                                { value: "", label: "Владелец бизнеса" },
+                                ...members.map((member) => ({ value: String(member.user.id), label: member.user.full_name || member.user.email })),
+                              ]}
+                            />
+                            <Input label="Landing ID" value={leadFormEditForm.landing_id} onChange={(event) => setLeadFormEditForm({ ...leadFormEditForm, landing_id: event.target.value })} />
+                            <Input label="Домен" value={leadFormEditForm.landing_domain} onChange={(event) => setLeadFormEditForm({ ...leadFormEditForm, landing_domain: event.target.value })} />
+                            <Input label="Preview URL" value={leadFormEditForm.preview_url} onChange={(event) => setLeadFormEditForm({ ...leadFormEditForm, preview_url: event.target.value })} />
+                            <Input label="Сообщение успеха" value={leadFormEditForm.success_message} onChange={(event) => setLeadFormEditForm({ ...leadFormEditForm, success_message: event.target.value })} />
+                          </div>
+                          <Textarea label="Описание" rows={3} value={leadFormEditForm.description} onChange={(event) => setLeadFormEditForm({ ...leadFormEditForm, description: event.target.value })} />
+                          <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                            <input type="checkbox" checked={leadFormEditForm.is_active} onChange={(event) => setLeadFormEditForm({ ...leadFormEditForm, is_active: event.target.checked })} />
+                            {t("settings.active")}
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            <Button type="submit" isLoading={updateLeadFormMutation.isPending}>{t("settings.save")}</Button>
+                            <Button type="button" variant="secondary" onClick={() => setEditingLeadFormId(null)}>{t("settings.cancel")}</Button>
+                          </div>
+                        </form>
+                        <div className="mt-5 rounded-2xl bg-slate-50 p-3">
+                          <p className="font-black text-midnight">Поля формы</p>
+                          <div className="mt-3 space-y-2">
+                            {form.fields.map((field) => (
+                              <div key={field.id} className="flex flex-col gap-2 rounded-2xl bg-white px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                  <p className="text-sm font-bold text-midnight">{field.label}{field.is_required ? " *" : ""}</p>
+                                  <p className="text-xs text-slate-500">{field.key} · {field.field_type} · #{field.sort_order}</p>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                  <Button type="button" variant="secondary" className="min-h-8 px-3 text-xs" onClick={() => updateLeadFieldMutation.mutate({ id: Number(field.id), payload: { is_required: !field.is_required } })} isLoading={updateLeadFieldMutation.isPending}>
+                                    {field.is_required ? "Необязательное" : "Обязательное"}
+                                  </Button>
+                                  <Button type="button" variant="danger" className="min-h-8 px-3 text-xs" onClick={() => removeLeadFieldMutation.mutate(Number(field.id))} isLoading={removeLeadFieldMutation.isPending}>{t("settings.delete")}</Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          <form
+                            className="mt-3 grid gap-2 lg:grid-cols-[1fr_140px_140px_1fr_90px_auto]"
+                            onSubmit={(event) => {
+                              event.preventDefault();
+                              createLeadFieldMutation.mutate();
+                            }}
+                          >
+                            <Input label="Label" value={leadFieldForm.label} onChange={(event) => setLeadFieldForm({ ...leadFieldForm, label: event.target.value })} required />
+                            <Input label="Key" value={leadFieldForm.key} onChange={(event) => setLeadFieldForm({ ...leadFieldForm, key: event.target.value })} />
+                            <Select
+                              label="Type"
+                              value={leadFieldForm.field_type}
+                              onChange={(event) => setLeadFieldForm({ ...leadFieldForm, field_type: event.target.value as LeadFormField["field_type"] })}
+                              options={[
+                                { value: "text", label: "Text" },
+                                { value: "textarea", label: "Textarea" },
+                                { value: "phone", label: "Phone" },
+                                { value: "email", label: "Email" },
+                                { value: "select", label: "Select" },
+                              ]}
+                            />
+                            <Input label="Options" placeholder="A, B, C" value={leadFieldForm.options} onChange={(event) => setLeadFieldForm({ ...leadFieldForm, options: event.target.value })} />
+                            <Input label="Order" type="number" value={leadFieldForm.sort_order} onChange={(event) => setLeadFieldForm({ ...leadFieldForm, sort_order: Number(event.target.value || 0) })} />
+                            <div className="flex items-end">
+                              <Button type="submit" isLoading={createLeadFieldMutation.isPending}>{t("settings.add")}</Button>
+                            </div>
+                            <Input className="lg:col-span-3" label="Placeholder" value={leadFieldForm.placeholder} onChange={(event) => setLeadFieldForm({ ...leadFieldForm, placeholder: event.target.value })} />
+                            <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 lg:col-span-3 lg:self-end">
+                              <input type="checkbox" checked={leadFieldForm.is_required} onChange={(event) => setLeadFieldForm({ ...leadFieldForm, is_required: event.target.checked })} />
+                              Обязательное поле
+                            </label>
+                          </form>
+                        </div>
+                      </div>
+                    ) : null}
                     <div className="mt-4 rounded-2xl bg-white p-3">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div>
@@ -1780,7 +2140,7 @@ export function SettingsPage() {
       </Card>
       <Card id="billing" className={settingsSectionClass("billing")}>
         <CardBody>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">{t("settings.currentPlan")}</p>
               <h2 className="mt-2 text-2xl font-semibold text-midnight">
@@ -1791,14 +2151,70 @@ export function SettingsPage() {
                   ? `${formatPrice(currentPlan?.monthly_price, t, locale)} · ${t("settings.status")}: ${subscription.data?.status}`
                   : t("settings.billingNoSubscription")}
               </p>
+              {subscription.data?.requested_plan ? (
+                <p className="mt-2 text-sm font-bold text-amber-700">Запрошена смена тарифа #{subscription.data.requested_plan}</p>
+              ) : null}
             </div>
-            <div className="rounded-2xl border border-brand-100 bg-brand-50 px-4 py-3 text-sm font-semibold text-brand-800">
-              {t("settings.billingReadOnlyTitle")}
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="secondary" disabled={!canManageBilling || !subscription.data || subscription.data.status === "paused"} onClick={() => billingStatusMutation.mutate("pause")} isLoading={billingStatusMutation.isPending}>
+                Пауза
+              </Button>
+              <Button type="button" variant="secondary" disabled={!canManageBilling || !subscription.data || subscription.data.status === "active"} onClick={() => billingStatusMutation.mutate("resume")} isLoading={billingStatusMutation.isPending}>
+                Возобновить
+              </Button>
+              <Button type="button" variant="danger" disabled={!canManageBilling || !subscription.data || subscription.data.status === "cancelled"} onClick={() => billingStatusMutation.mutate("cancel")} isLoading={billingStatusMutation.isPending}>
+                Отменить
+              </Button>
             </div>
           </div>
-          <div className="mt-5 rounded-3xl border border-slate-100 bg-slate-50 p-4">
-            <p className="font-black text-midnight">{t("settings.billingReadOnlyTitle")}</p>
-            <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-slate-500">{t("settings.billingReadOnlyText")}</p>
+          {billingSettingsMutation.error || planChangeMutation.error || billingStatusMutation.error ? (
+            <div className="mt-4"><ErrorState message={getApiErrorMessage(billingSettingsMutation.error || planChangeMutation.error || billingStatusMutation.error)} /></div>
+          ) : null}
+          <div className="mt-5 grid gap-4 xl:grid-cols-[1fr_0.8fr]">
+            <form
+              className="rounded-3xl border border-slate-100 bg-slate-50 p-4"
+              onSubmit={(event) => {
+                event.preventDefault();
+                billingSettingsMutation.mutate();
+              }}
+            >
+              <h3 className="font-black text-midnight">Счета и оплата</h3>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <Input label="Email для счетов" value={billingSettingsForm.billing_email} onChange={(event) => setBillingSettingsForm({ ...billingSettingsForm, billing_email: event.target.value })} />
+                <Select
+                  label="Способ оплаты"
+                  value={billingSettingsForm.payment_method}
+                  onChange={(event) => setBillingSettingsForm({ ...billingSettingsForm, payment_method: event.target.value })}
+                  options={[
+                    { value: "", label: "Не выбран" },
+                    { value: "invoice", label: "Счёт на оплату" },
+                    { value: "card", label: "Банковская карта" },
+                    { value: "bank_transfer", label: "Банковский перевод" },
+                  ]}
+                />
+                <Input label="Получатель счёта" value={billingSettingsForm.invoice_name} onChange={(event) => setBillingSettingsForm({ ...billingSettingsForm, invoice_name: event.target.value })} />
+                <Input label="БИН / ИИН" value={billingSettingsForm.invoice_tax_id} onChange={(event) => setBillingSettingsForm({ ...billingSettingsForm, invoice_tax_id: event.target.value })} />
+                <Input className="sm:col-span-2" label="Юридический адрес" value={billingSettingsForm.invoice_address} onChange={(event) => setBillingSettingsForm({ ...billingSettingsForm, invoice_address: event.target.value })} />
+              </div>
+              <div className="mt-4">
+                <Button type="submit" disabled={!canManageBilling || !subscription.data} isLoading={billingSettingsMutation.isPending}>Сохранить биллинг</Button>
+              </div>
+            </form>
+            <div className="rounded-3xl border border-slate-100 p-4">
+              <h3 className="font-black text-midnight">Тариф</h3>
+              <p className="mt-1 text-sm leading-6 text-slate-500">Смена тарифа фиксируется как запрос, чтобы поддержка могла проверить оплату и лимиты.</p>
+              <div className="mt-4 grid gap-3">
+                <Select
+                  label="Новый тариф"
+                  value={selectedPlanId}
+                  onChange={(event) => setSelectedPlanId(event.target.value)}
+                  options={(plans.data || []).map((plan) => ({ value: String(plan.id), label: `${plan.name} · ${formatPrice(plan.monthly_price, t, locale)}` }))}
+                />
+                <Button type="button" disabled={!canManageBilling || !selectedPlanId || selectedPlanId === String(currentPlan?.id || "")} onClick={() => planChangeMutation.mutate(Number(selectedPlanId))} isLoading={planChangeMutation.isPending}>
+                  Запросить смену тарифа
+                </Button>
+              </div>
+            </div>
           </div>
         </CardBody>
       </Card>
@@ -1844,13 +2260,15 @@ export function SettingsPage() {
               {t("settings.customFieldsText")}
             </p>
           </div>
-          {customFieldMutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(customFieldMutation.error)} /></div> : null}
+          {customFieldMutation.error || updateCustomFieldMutation.error || removeCustomFieldMutation.error ? (
+            <div className="mb-4"><ErrorState message={getApiErrorMessage(customFieldMutation.error || updateCustomFieldMutation.error || removeCustomFieldMutation.error)} /></div>
+          ) : null}
           <div className="mb-4 rounded-3xl border border-amber-100 bg-amber-50 p-4">
             <p className="font-black text-amber-950">{t("settings.customFieldsGuardTitle")}</p>
             <p className="mt-1 text-sm font-semibold leading-6 text-amber-800">{t("settings.customFieldsGuardText")}</p>
           </div>
           <form
-            className="grid gap-3 lg:grid-cols-[160px_1fr_180px_1fr_auto]"
+            className="grid gap-3 lg:grid-cols-3"
             onSubmit={(event) => {
               event.preventDefault();
               customFieldMutation.mutate();
@@ -1885,6 +2303,8 @@ export function SettingsPage() {
               ]}
             />
             <Input label={t("settings.options")} placeholder="A, B, C" value={fieldForm.options} onChange={(event) => setFieldForm({ ...fieldForm, options: event.target.value })} />
+            <Input label="View roles" placeholder="owner, admin, manager" value={fieldForm.view_roles} onChange={(event) => setFieldForm({ ...fieldForm, view_roles: event.target.value })} />
+            <Input label="Edit roles" placeholder="owner, admin" value={fieldForm.edit_roles} onChange={(event) => setFieldForm({ ...fieldForm, edit_roles: event.target.value })} />
             <div className="flex items-end">
               <Button type="submit" isLoading={customFieldMutation.isPending}>{t("settings.add")}</Button>
             </div>
@@ -1892,12 +2312,96 @@ export function SettingsPage() {
           <div className="mt-5 grid gap-3 md:grid-cols-2">
             {(customFields.data || []).map((field) => (
               <div key={field.id} className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
-                <p className="font-bold text-midnight">{field.label}</p>
-                <p className="mt-1 text-sm font-semibold text-slate-500">{customFieldSummary(field, t)}</p>
-                <details className="mt-3">
-                  <summary className="cursor-pointer text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{t("settings.technicalDetails")}</summary>
-                  <p className="mt-2 rounded-2xl bg-white px-3 py-2 text-xs font-semibold text-slate-500">{field.entity_type} · {field.field_type} · {field.key}</p>
-                </details>
+                {editingCustomFieldId === Number(field.id) ? (
+                  <form
+                    className="grid gap-3"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      updateCustomFieldMutation.mutate({ id: Number(field.id), payload: customFieldPayloadFromEdit() });
+                    }}
+                  >
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Select
+                        label={t("settings.entity")}
+                        value={customFieldEditForm.entity_type}
+                        onChange={(event) => setCustomFieldEditForm({ ...customFieldEditForm, entity_type: event.target.value as CrmEntityType })}
+                        options={[
+                          { value: "client", label: t("settings.client") },
+                          { value: "lead", label: t("settings.lead") },
+                          { value: "deal", label: t("settings.deal") },
+                          { value: "appointment", label: t("settings.appointment") },
+                        ]}
+                      />
+                      <Select
+                        label={t("settings.type")}
+                        value={customFieldEditForm.field_type}
+                        onChange={(event) => setCustomFieldEditForm({ ...customFieldEditForm, field_type: event.target.value as CustomFieldDefinition["field_type"] })}
+                        options={[
+                          { value: "text", label: t("settings.customFieldType.text") },
+                          { value: "textarea", label: t("settings.customFieldType.textarea") },
+                          { value: "number", label: t("settings.customFieldType.number") },
+                          { value: "money", label: "Money" },
+                          { value: "date", label: t("settings.customFieldType.date") },
+                          { value: "datetime", label: "Datetime" },
+                          { value: "select", label: t("settings.customFieldType.select") },
+                          { value: "multiselect", label: "Multiselect" },
+                          { value: "boolean", label: t("settings.customFieldType.boolean") },
+                          { value: "phone", label: t("settings.customFieldType.phone") },
+                          { value: "email", label: "Email" },
+                          { value: "url", label: t("settings.customFieldType.url") },
+                        ]}
+                      />
+                    </div>
+                    <Input label={t("settings.templateTitle")} value={customFieldEditForm.label} onChange={(event) => setCustomFieldEditForm({ ...customFieldEditForm, label: event.target.value })} required />
+                    <Input label="Key" value={customFieldEditForm.key} onChange={(event) => setCustomFieldEditForm({ ...customFieldEditForm, key: event.target.value })} />
+                    <Input label={t("settings.options")} placeholder="A, B, C" value={customFieldEditForm.options} onChange={(event) => setCustomFieldEditForm({ ...customFieldEditForm, options: event.target.value })} />
+                    <Input label="View roles" placeholder="owner, admin, manager" value={customFieldEditForm.view_roles} onChange={(event) => setCustomFieldEditForm({ ...customFieldEditForm, view_roles: event.target.value })} />
+                    <Input label="Edit roles" placeholder="owner, admin" value={customFieldEditForm.edit_roles} onChange={(event) => setCustomFieldEditForm({ ...customFieldEditForm, edit_roles: event.target.value })} />
+                    <Input label="Sort order" type="number" value={customFieldEditForm.sort_order} onChange={(event) => setCustomFieldEditForm({ ...customFieldEditForm, sort_order: Number(event.target.value || 0) })} />
+                    <div className="flex flex-wrap gap-4 text-sm font-semibold text-slate-700">
+                      <label className="flex items-center gap-2">
+                        <input type="checkbox" checked={customFieldEditForm.is_required} onChange={(event) => setCustomFieldEditForm({ ...customFieldEditForm, is_required: event.target.checked })} />
+                        Обязательное
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input type="checkbox" checked={customFieldEditForm.is_active} onChange={(event) => setCustomFieldEditForm({ ...customFieldEditForm, is_active: event.target.checked })} />
+                        Активное
+                      </label>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button type="submit" isLoading={updateCustomFieldMutation.isPending}>{t("settings.save")}</Button>
+                      <Button type="button" variant="secondary" onClick={() => setEditingCustomFieldId(null)}>{t("settings.cancel")}</Button>
+                    </div>
+                  </form>
+                ) : (
+                  <>
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-bold text-midnight">{field.label}</p>
+                        <p className="mt-1 text-sm font-semibold text-slate-500">{customFieldSummary(field, t)}</p>
+                      </div>
+                      <span className={field.is_active ? "rounded-full bg-green-50 px-2.5 py-1 text-xs font-bold text-green-700" : "rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-500"}>
+                        {field.is_active ? t("settings.active") : t("settings.inactive")}
+                      </span>
+                    </div>
+                    <details className="mt-3">
+                      <summary className="cursor-pointer text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{t("settings.technicalDetails")}</summary>
+                      <p className="mt-2 rounded-2xl bg-white px-3 py-2 text-xs font-semibold text-slate-500">{field.entity_type} · {field.field_type} · {field.key} · #{field.sort_order}</p>
+                      <p className="mt-2 text-xs font-semibold text-slate-500">
+                        View: {Array.isArray(field.permissions_json?.view_roles) && field.permissions_json.view_roles.length ? field.permissions_json.view_roles.join(", ") : "all"} · Edit: {Array.isArray(field.permissions_json?.edit_roles) && field.permissions_json.edit_roles.length ? field.permissions_json.edit_roles.join(", ") : "all"}
+                      </p>
+                    </details>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Button type="button" variant="secondary" onClick={() => startEditingCustomField(field)}>{t("settings.edit")}</Button>
+                      <Button type="button" variant="secondary" onClick={() => updateCustomFieldMutation.mutate({ id: Number(field.id), payload: { is_active: !field.is_active } })} isLoading={updateCustomFieldMutation.isPending && editingCustomFieldId === Number(field.id)}>
+                        {field.is_active ? t("settings.disable") : t("settings.enable")}
+                      </Button>
+                      <Button type="button" variant="danger" onClick={() => removeCustomFieldMutation.mutate(Number(field.id))} isLoading={removeCustomFieldMutation.isPending}>
+                        {t("settings.delete")}
+                      </Button>
+                    </div>
+                  </>
+                )}
               </div>
             ))}
             {!customFields.isLoading && !customFields.data?.length ? (
@@ -1948,6 +2452,13 @@ function slugify(value: string) {
     .replace(/[^a-z0-9а-яё]+/gi, "_")
     .replace(/^_+|_+$/g, "")
     .slice(0, 64);
+}
+
+function parseRoleList(value: string) {
+  return value
+    .split(",")
+    .map((role) => role.trim())
+    .filter(Boolean);
 }
 
 function formatMetric(metric: string, t: Translate) {

@@ -265,6 +265,49 @@ class BotsFoundationTests(TestCase):
         self.assertEqual(auto_meta["auto_reply"]["message_id"], auto_reply.id)
 
     @override_settings(AI_PROVIDER="mock", OPENAI_API_KEY="", OPENROUTER_API_KEY="")
+    def test_auto_pipeline_respects_agent_allowed_tools_for_deals(self):
+        bot = Bot.objects.create(business=self.business, name="Website guarded bot", status=Bot.Statuses.ACTIVE)
+        AgentProfile.objects.create(
+            business=self.business,
+            bot=bot,
+            name="Lead only profile",
+            allowed_tools_json={"tools": ["create_lead", "create_task", "handoff_to_manager"]},
+        )
+        channel = BotChannel.objects.create(
+            bot=bot,
+            channel=BotChannel.Channels.WEBSITE,
+            status=BotChannel.Statuses.ACTIVE,
+            config_json={
+                "auto_crm_pipeline": {
+                    "enabled": True,
+                    "mode": "draft_deal",
+                    "require_review_on_fallback": False,
+                    "min_deal_confidence": 0.7,
+                }
+            },
+        )
+
+        response = self.api.post(
+            f"/api/public/website-chat/{channel.public_token}/conversations/",
+            {
+                "full_name": "Guarded Visitor",
+                "phone": "+77015550112",
+                "message": "Здравствуйте, хочу записаться на консультацию и узнать цену",
+                "external_user_id": "guarded-visitor-100",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        conversation = BotConversation.objects.get(public_id=response.data["conversation_id"])
+        self.assertIsNotNone(conversation.client_id)
+        self.assertIsNotNone(conversation.lead_id)
+        self.assertIsNone(conversation.deal_id)
+        self.assertFalse(Deal.objects.filter(business=self.business, client=conversation.client).exists())
+        self.assertEqual(conversation.metadata_json["auto_crm_pipeline"]["status"], "created_lead_task")
+        self.assertEqual(conversation.metadata_json["auto_crm_pipeline"]["reason"], "Deal creation is disabled by the active agent profile.")
+
+    @override_settings(AI_PROVIDER="mock", OPENAI_API_KEY="", OPENROUTER_API_KEY="")
     def test_auto_sales_reply_receives_playbook_prices_resources_and_slots(self):
         self.business.business_type = Business.BusinessTypes.DENTISTRY
         self.business.save(update_fields=["business_type", "updated_at"])
@@ -575,6 +618,39 @@ class BotsFoundationTests(TestCase):
         log = AIRequestLog.objects.get(prompt_type="bot_suggest_reply")
         self.assertEqual(log.input_json["agent_profile"]["name"], "Clinic sales agent")
         self.assertIn("Clinic sales agent", log.input_json["user_input"])
+
+    @override_settings(AI_PROVIDER="mock", OPENAI_API_KEY="", OPENROUTER_API_KEY="")
+    def test_suggest_reply_uses_bot_model_settings_and_allowed_tools(self):
+        bot = Bot.objects.create(
+            business=self.business,
+            name="Configured bot",
+            status=Bot.Statuses.ACTIVE,
+            settings_json={"model": "merchant-model", "temperature": 0.2},
+        )
+        AgentProfile.objects.create(
+            business=self.business,
+            bot=bot,
+            name="Configured profile",
+            allowed_tools_json={"tools": ["create_lead", "handoff_to_manager"]},
+        )
+        conversation = BotConversation.objects.create(
+            business=self.business,
+            bot=bot,
+            channel=BotConversation.Channels.WEBSITE,
+            external_user_id="configured-visitor",
+        )
+        BotMessage.objects.create(conversation=conversation, direction=BotMessage.Directions.INBOUND, text="Хочу записаться")
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(f"/api/bot-conversations/{conversation.id}/suggest-reply/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["model"], "merchant-model")
+        log = AIRequestLog.objects.get(prompt_type="bot_suggest_reply")
+        self.assertEqual(log.model, "merchant-model")
+        self.assertEqual(log.input_json["ai_temperature"], 0.2)
+        self.assertEqual(log.input_json["agent_profile"]["allowed_tools_json"]["tools"], ["create_lead", "handoff_to_manager"])
+        self.assertEqual(log.input_json["bot_settings"]["model"], "merchant-model")
 
     @override_settings(OPENAI_API_KEY="")
     def test_suggest_reply_rejects_foreign_conversation(self):

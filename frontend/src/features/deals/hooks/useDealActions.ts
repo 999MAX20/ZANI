@@ -1,0 +1,172 @@
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+import { dealsApi } from "../../../api/deals";
+import { tasksApi } from "../../../api/tasks";
+import type { Deal, Id, PipelineStage, Task } from "../../../types";
+import type { DealActionFlow, DealCreateForm, Translate } from "../types";
+import { nextOpenTask, toDateTimeLocal } from "../utils/dealHelpers";
+
+export function useDealActions({
+  businessId,
+  activeStages,
+  tasksByDeal,
+  onSelect,
+  t,
+}: {
+  businessId?: Id;
+  activeStages: PipelineStage[];
+  tasksByDeal: Map<Id, Task[]>;
+  onSelect: (dealId: Id) => void;
+  t: Translate;
+}) {
+  const queryClient = useQueryClient();
+  const [createOpen, setCreateOpen] = useState(false);
+  const [actionFlow, setActionFlow] = useState<DealActionFlow>(null);
+  const [actionDraft, setActionDraft] = useState({ amount: "", lost_reason: "" });
+  const [stageGuard, setStageGuard] = useState("");
+  const [nextActionDeal, setNextActionDeal] = useState<Deal | null>(null);
+  const [nextActionDraft, setNextActionDraft] = useState({
+    title: t("deals.defaultNextAction"),
+    due_at: toDateTimeLocal(new Date(Date.now() + 24 * 60 * 60 * 1000)),
+    assignee: "",
+    priority: "normal" as Task["priority"],
+  });
+  const [form, setForm] = useState<DealCreateForm>({ title: "", client: "", pipeline: "", stage: "", amount: "0", source: "manual" });
+
+  const createMutation = useMutation({
+    mutationFn: (payload: Partial<Deal>) => dealsApi.create(payload),
+    onSuccess: (deal) => {
+      queryClient.invalidateQueries({ queryKey: ["deals"] });
+      setCreateOpen(false);
+      onSelect(deal.id);
+      setForm({ title: "", client: "", pipeline: "", stage: "", amount: "0", source: "manual" });
+    },
+  });
+
+  const moveMutation = useMutation({
+    mutationFn: ({ id, stage, lost_reason }: { id: Id; stage: Id; lost_reason?: string }) => dealsApi.moveStage({ id, stage, lost_reason }),
+    onSuccess: (deal) => {
+      queryClient.invalidateQueries({ queryKey: ["deals"] });
+      onSelect(deal.id);
+    },
+  });
+
+  const quickActionMutation = useMutation({
+    mutationFn: ({ id, action, lost_reason, amount }: { id: Id; action: "won" | "lost" | "reopen"; lost_reason?: string; amount?: string | number }) => {
+      if (action === "won") return dealsApi.markWon({ id, amount });
+      if (action === "lost") return dealsApi.markLost({ id, lost_reason: lost_reason || "" });
+      return dealsApi.reopen({ id });
+    },
+    onSuccess: (deal) => {
+      queryClient.invalidateQueries({ queryKey: ["deals"] });
+      queryClient.invalidateQueries({ queryKey: ["activity-events"] });
+      onSelect(deal.id);
+      setActionFlow(null);
+      setActionDraft({ amount: "", lost_reason: "" });
+    },
+  });
+
+  const createTaskMutation = useMutation({
+    mutationFn: (payload: Partial<Task>) => tasksApi.create(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["deals"] });
+      setNextActionDeal(null);
+      setStageGuard("");
+    },
+  });
+
+  const updateDealMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: Id; payload: Partial<Deal> }) => dealsApi.update({ id, payload }),
+    onSuccess: (deal) => {
+      queryClient.invalidateQueries({ queryKey: ["deals"] });
+      onSelect(deal.id);
+    },
+  });
+
+  function openNextActionModal(deal: Deal) {
+    setNextActionDeal(deal);
+    setNextActionDraft({
+      title: t("deals.defaultNextAction"),
+      due_at: toDateTimeLocal(new Date(Date.now() + 24 * 60 * 60 * 1000)),
+      assignee: deal.owner ? String(deal.owner) : "",
+      priority: "normal",
+    });
+  }
+
+  function createNextAction(deal: Deal) {
+    if (!businessId) return;
+    createTaskMutation.mutate({
+      business: businessId,
+      title: nextActionDraft.title,
+      description: "",
+      client: deal.client,
+      lead: deal.lead,
+      deal: deal.id,
+      appointment: null,
+      parent_task: null,
+      assignee: nextActionDraft.assignee ? Number(nextActionDraft.assignee) : deal.owner || null,
+      created_by: null,
+      watchers: [],
+      due_at: new Date(nextActionDraft.due_at).toISOString(),
+      reminder_at: null,
+      snoozed_until: null,
+      priority: nextActionDraft.priority,
+      status: "open",
+      recurrence_rule: "",
+    });
+  }
+
+  function handleStageChange(deal: Deal, stageId: Id) {
+    const targetStage = activeStages.find((stage) => stage.id === stageId);
+    const currentStage = activeStages.find((stage) => stage.id === deal.stage);
+    if (!targetStage) return;
+    if (targetStage.is_won) {
+      setActionFlow({ type: "won", deal });
+      setActionDraft({ amount: deal.amount || "0", lost_reason: "" });
+      return;
+    }
+    if (targetStage.is_lost) {
+      setActionFlow({ type: "lost", deal });
+      setActionDraft({ amount: "", lost_reason: deal.lost_reason || "" });
+      return;
+    }
+    const isAdvancing = currentStage ? targetStage.order > currentStage.order : true;
+    const hasNextAction = Boolean(nextOpenTask(tasksByDeal.get(deal.id) || []) || deal.next_action_at);
+    if (deal.status === "open" && isAdvancing && !hasNextAction) {
+      setStageGuard(t("deals.stageGuard"));
+      openNextActionModal(deal);
+      return;
+    }
+    setStageGuard("");
+    moveMutation.mutate({ id: deal.id, stage: stageId });
+  }
+
+  const hasError = Boolean(createMutation.error || moveMutation.error || quickActionMutation.error || createTaskMutation.error || updateDealMutation.error);
+
+  return {
+    createOpen,
+    setCreateOpen,
+    form,
+    setForm,
+    actionFlow,
+    setActionFlow,
+    actionDraft,
+    setActionDraft,
+    stageGuard,
+    nextActionDeal,
+    setNextActionDeal,
+    nextActionDraft,
+    setNextActionDraft,
+    createMutation,
+    moveMutation,
+    quickActionMutation,
+    createTaskMutation,
+    updateDealMutation,
+    createNextAction,
+    openNextActionModal,
+    handleStageChange,
+    hasError,
+  };
+}

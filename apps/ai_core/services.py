@@ -18,6 +18,7 @@ def run_ai_request(
     allow_mock=True,
     model=None,
     model_tier=None,
+    temperature=None,
 ):
     assert_entitlement_allows(business, EntitlementMetrics.AI_REQUESTS)
     context = get_business_knowledge_context(business)
@@ -27,6 +28,7 @@ def run_ai_request(
         prompt_type=prompt_type,
         model=model,
         model_tier=model_tier,
+        temperature=temperature,
         allow_mock=allow_mock,
     )
     log = AIRequestLog.objects.create(
@@ -39,6 +41,7 @@ def run_ai_request(
             "context": context,
             "ai_provider": result.provider,
             "ai_model_tier": model_tier,
+            "ai_temperature": temperature,
             **(input_json or {}),
         },
         output_text=result.output_text,

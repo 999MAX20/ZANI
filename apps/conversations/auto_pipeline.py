@@ -6,6 +6,7 @@ from typing import Any
 from django.utils import timezone
 
 from apps.activities.services import create_activity_event
+from apps.ai_core.models import AgentProfile
 from apps.bots.ai import suggest_bot_reply
 from apps.bots.inbox_service import send_outbound_message
 from apps.bots.models import BotChannel, BotConversation, BotMessage
@@ -59,12 +60,18 @@ def maybe_run_auto_pipeline(*, conversation: BotConversation, message: BotMessag
         _write_decision_event(conversation, decision)
         return decision
 
-    create_deal = decision.status == "created_draft_deal"
+    allowed_tools = _resolve_allowed_tools(conversation)
+    create_lead = "create_lead" in allowed_tools
+    create_task = "create_task" in allowed_tools
+    create_deal = decision.status == "created_draft_deal" and "create_deal" in allowed_tools
+    if decision.status == "created_draft_deal" and not create_deal:
+        decision.status = "created_lead_task"
+        decision.reason = "Deal creation is disabled by the active agent profile."
     result = run_conversation_pipeline(
         conversation=conversation,
-        create_lead=True,
+        create_lead=create_lead,
         create_deal=create_deal,
-        create_task=True,
+        create_task=create_task,
         use_ai_qualification=False,
         qualification_override=qualification,
         ai_log_id_override=ai_log.id if ai_log else None,
@@ -280,3 +287,16 @@ def _int(value, default: int) -> int:
         return int(value)
     except (TypeError, ValueError):
         return default
+
+
+def _resolve_allowed_tools(conversation: BotConversation) -> set[str]:
+    profile = (
+        AgentProfile.objects.filter(business=conversation.business, bot=conversation.bot, is_active=True).order_by("-updated_at").first()
+        or AgentProfile.objects.filter(business=conversation.business, bot__isnull=True, is_active=True).order_by("-updated_at").first()
+    )
+    if profile is None:
+        return {"create_lead", "create_task", "create_deal", "handoff_to_manager"}
+    raw_tools = (profile.allowed_tools_json or {}).get("tools")
+    if not isinstance(raw_tools, list):
+        return {"create_lead", "create_task", "create_deal", "handoff_to_manager"}
+    return {str(tool) for tool in raw_tools}

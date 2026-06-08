@@ -22,6 +22,10 @@ def suggest_bot_reply(*, conversation, user=None, auto_mode=False, qualification
     message_context = build_bot_conversation_context(conversation)
     scheduling_context = build_bot_scheduling_context(conversation, qualification=qualification) if auto_mode else {}
     sales_playbook = build_sales_playbook_context(conversation.business) if auto_mode else {}
+    bot_settings = conversation.bot.settings_json if isinstance(conversation.bot.settings_json, dict) else {}
+    model = bot_settings.get("model") if isinstance(bot_settings.get("model"), str) else None
+    model_tier = bot_settings.get("model_tier") if isinstance(bot_settings.get("model_tier"), str) else None
+    temperature = _float_or_none(bot_settings.get("temperature"))
     agent_profile = (
         AgentProfile.objects.filter(business=conversation.business, bot=conversation.bot, is_active=True).order_by("-updated_at").first()
         or AgentProfile.objects.filter(business=conversation.business, bot__isnull=True, is_active=True).order_by("-updated_at").first()
@@ -40,6 +44,7 @@ def suggest_bot_reply(*, conversation, user=None, auto_mode=False, qualification
             "language": agent_profile.language,
             "role_description": agent_profile.role_description,
             "rules_json": agent_profile.rules_json,
+            "allowed_tools_json": agent_profile.allowed_tools_json,
             "escalation_rules_json": agent_profile.escalation_rules_json,
         }
         agent_instruction = (
@@ -47,6 +52,8 @@ def suggest_bot_reply(*, conversation, user=None, auto_mode=False, qualification
             f"Role: {agent_profile.role_description or 'CRM assistant'}. "
             f"Tone: {agent_profile.tone}. Language: {agent_profile.language}. "
             f"System prompt: {agent_profile.system_prompt or 'Use concise helpful replies.'} "
+            f"Allowed tools: {agent_profile.allowed_tools_json or {}}. "
+            f"Escalation rules: {agent_profile.escalation_rules_json or {}}. "
         )
     if auto_mode:
         reply_instruction = (
@@ -100,7 +107,24 @@ def suggest_bot_reply(*, conversation, user=None, auto_mode=False, qualification
             "crm_context": crm_context,
             "scheduling_context": scheduling_context,
             "sales_playbook": sales_playbook,
+            "bot_settings": {
+                "model": model,
+                "model_tier": model_tier,
+                "temperature": temperature,
+            },
         },
         allow_mock=True,
+        model=model,
+        model_tier=model_tier,
+        temperature=temperature,
     )
     return result, log, message_context
+
+
+def _float_or_none(value):
+    try:
+        if value is None:
+            return None
+        return float(value)
+    except (TypeError, ValueError):
+        return None

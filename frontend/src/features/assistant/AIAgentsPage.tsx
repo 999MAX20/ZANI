@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BookOpen,
   Bot,
-  BrainCircuit,
   CheckCircle2,
   ChevronRight,
   ExternalLink,
@@ -14,14 +14,11 @@ import {
   Radio,
   Save,
   Settings,
-  Shield,
-  SlidersHorizontal,
   Sparkles,
-  Zap,
 } from "lucide-react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 
-import { agentProfilesApi } from "../../api/ai";
+import { agentProfilesApi, businessKnowledgeApi } from "../../api/ai";
 import { botAiApi, botChannelsApi, botsApi, type BotSuggestedReplyResponse } from "../../api/bots";
 import { getApiErrorMessage } from "../../api/client";
 import { Button } from "../../components/ui/Button";
@@ -31,7 +28,6 @@ import { Input } from "../../components/ui/Input";
 import { MetricCard } from "../../components/ui/MetricCard";
 import { Modal } from "../../components/ui/Modal";
 import { Select } from "../../components/ui/Select";
-import { StatusBadge } from "../../components/ui/StatusBadge";
 import { Textarea } from "../../components/ui/Textarea";
 import { useAuth } from "../auth/AuthProvider";
 import { useActiveBusiness } from "../../hooks/useBusiness";
@@ -39,14 +35,13 @@ import { useEntityData } from "../../hooks/useEntityData";
 import { cn } from "../../lib/cn";
 import { useI18n } from "../../lib/i18n";
 import { hasPermission } from "../../lib/permissions";
-import type { AgentProfile, Bot as BotType, BotChannel, Id } from "../../types";
+import type { AgentProfile, Bot as BotType, BotChannel, BusinessKnowledgeItem, Id } from "../../types";
 import { InstagramInlineSetup } from "../integrations/components/setup/InstagramSetup";
 import { LogoMark, ToggleSwitch } from "../integrations/components/setup/IntegrationSetupUi";
 import { TelegramInlineSetup } from "../integrations/components/setup/TelegramSetup";
 import { WhatsAppInlineSetup } from "../integrations/components/setup/WhatsAppSetup";
 
-type AgentSection = "overview" | "settings" | "channels" | "messages" | "prompting" | "control" | "knowledge" | "integrations" | "models" | "functions";
-type AgentSectionGroup = "basic" | "behavior" | "data" | "advanced";
+type AgentSection = "profile" | "channels" | "knowledge" | "actions" | "test";
 
 type AgentFormState = {
   id: Id | null;
@@ -59,22 +54,31 @@ type AgentFormState = {
   system_prompt: string;
   rules_text: string;
   escalation_text: string;
+  allowed_tools: string[];
 };
 
-const sections: Array<{ id: AgentSection; labelKey: string; titleKey: string; group: AgentSectionGroup; icon: typeof Settings }> = [
-  { id: "overview", labelKey: "aiAgents.section.overview", titleKey: "aiAgents.overviewTitle", group: "basic", icon: Sparkles },
-  { id: "settings", labelKey: "aiAgents.section.settings", titleKey: "aiAgents.settingsTitle", group: "basic", icon: Settings },
-  { id: "channels", labelKey: "aiAgents.section.channels", titleKey: "aiAgents.channelsTitle", group: "basic", icon: Radio },
-  { id: "messages", labelKey: "aiAgents.section.messages", titleKey: "aiAgents.messagesTitle", group: "basic", icon: MessageSquareText },
-  { id: "prompting", labelKey: "aiAgents.section.prompting", titleKey: "aiAgents.promptingTitle", group: "behavior", icon: FileText },
-  { id: "control", labelKey: "aiAgents.section.control", titleKey: "aiAgents.controlTitle", group: "behavior", icon: Shield },
-  { id: "knowledge", labelKey: "aiAgents.section.knowledge", titleKey: "aiAgents.knowledgeTitle", group: "data", icon: BookOpen },
-  { id: "integrations", labelKey: "aiAgents.section.integrations", titleKey: "aiAgents.integrationsTitle", group: "data", icon: Zap },
-  { id: "models", labelKey: "aiAgents.section.models", titleKey: "aiAgents.modelsTitle", group: "advanced", icon: BrainCircuit },
-  { id: "functions", labelKey: "aiAgents.section.functions", titleKey: "aiAgents.functionsTitle", group: "advanced", icon: FunctionSquare },
+type AutoPipelineMode = "off" | "triage" | "lead_task" | "draft_deal";
+
+const defaultAllowedTools = ["create_lead", "create_task", "create_deal", "handoff_to_manager"];
+
+const sections: Array<{ id: AgentSection; labelKey: string; titleKey: string; icon: typeof Settings }> = [
+  { id: "profile", labelKey: "aiAgents.section.profile", titleKey: "aiAgents.profileTitle", icon: Bot },
+  { id: "channels", labelKey: "aiAgents.section.channels", titleKey: "aiAgents.channelsTitle", icon: Radio },
+  { id: "knowledge", labelKey: "aiAgents.section.knowledgeSimple", titleKey: "aiAgents.knowledgeTitle", icon: BookOpen },
+  { id: "actions", labelKey: "aiAgents.section.actions", titleKey: "aiAgents.actionsTitle", icon: FunctionSquare },
+  { id: "test", labelKey: "aiAgents.section.test", titleKey: "aiAgents.testTitle", icon: MessageSquareText },
 ];
 
-const sectionGroups: AgentSectionGroup[] = ["basic", "behavior", "data", "advanced"];
+const legacySectionMap: Record<string, AgentSection> = {
+  overview: "test",
+  settings: "profile",
+  prompting: "profile",
+  models: "profile",
+  integrations: "knowledge",
+  control: "actions",
+  functions: "actions",
+  messages: "test",
+};
 
 function jsonFromLines(text: string) {
   return {
@@ -86,6 +90,9 @@ function jsonFromLines(text: string) {
 }
 
 function formFromProfile(profile: AgentProfile): AgentFormState {
+  const tools = Array.isArray(profile.allowed_tools_json?.tools)
+    ? (profile.allowed_tools_json.tools as unknown[]).map(String)
+    : defaultAllowedTools;
   return {
     id: profile.id,
     name: profile.name,
@@ -97,6 +104,7 @@ function formFromProfile(profile: AgentProfile): AgentFormState {
     system_prompt: profile.system_prompt,
     rules_text: Array.isArray(profile.rules_json?.items) ? (profile.rules_json.items as string[]).join("\n") : "",
     escalation_text: Array.isArray(profile.escalation_rules_json?.items) ? (profile.escalation_rules_json.items as string[]).join("\n") : "",
+    allowed_tools: tools,
   };
 }
 
@@ -112,11 +120,33 @@ function createDefaultProfile(bot: BotType | null | undefined, t: (key: string) 
     system_prompt: t("aiAgents.defaultSystemPrompt"),
     rules_text: t("aiAgents.defaultRules"),
     escalation_text: t("aiAgents.defaultEscalation"),
+    allowed_tools: defaultAllowedTools,
   };
 }
 
-function normalizeSection(value?: string): AgentSection {
-  return sections.some((item) => item.id === value) ? (value as AgentSection) : "overview";
+function autoPipelineFromSettings(settings: Record<string, unknown>) {
+  const raw = settings.auto_crm_pipeline && typeof settings.auto_crm_pipeline === "object"
+    ? settings.auto_crm_pipeline as Record<string, unknown>
+    : {};
+  const mode = typeof raw.mode === "string" && ["off", "triage", "lead_task", "draft_deal"].includes(raw.mode)
+    ? raw.mode as AutoPipelineMode
+    : "off";
+  return {
+    enabled: Boolean(raw.enabled ?? mode !== "off"),
+    mode,
+    min_lead_confidence: Number(raw.min_lead_confidence ?? 0.7),
+    min_deal_confidence: Number(raw.min_deal_confidence ?? 0.8),
+    require_review_on_fallback: raw.require_review_on_fallback !== false,
+    create_appointment: Boolean(raw.create_appointment),
+    auto_send_reply: Boolean(raw.auto_send_reply),
+    max_auto_reply_chars: Number(raw.max_auto_reply_chars ?? 900),
+  };
+}
+
+function canonicalSection(value?: string): AgentSection {
+  if (!value) return "profile";
+  if (sections.some((item) => item.id === value)) return value as AgentSection;
+  return legacySectionMap[value] || "profile";
 }
 
 function channelStatus(channel: BotChannel | undefined, t: (key: string) => string) {
@@ -138,7 +168,7 @@ export function AIAgentsPage() {
   const navigate = useNavigate();
   const selectedBotId = params.id ? Number(params.id) : null;
   const requestedSection = params.section;
-  const activeSection = normalizeSection(params.section);
+  const activeSection = canonicalSection(params.section);
   const hasInvalidSection = Boolean(requestedSection && requestedSection !== activeSection);
   const { t } = useI18n();
   const { user } = useAuth();
@@ -152,10 +182,14 @@ export function AIAgentsPage() {
     botMessages: true,
   });
   const profiles = useQuery({ queryKey: ["ai-agent-profiles"], queryFn: agentProfilesApi.list });
+  const knowledge = useQuery({
+    queryKey: ["ai-knowledge-items", business?.id],
+    queryFn: businessKnowledgeApi.list,
+    enabled: Boolean(business),
+  });
   const [createOpen, setCreateOpen] = useState(false);
   const [newAgentName, setNewAgentName] = useState(() => t("aiAgents.defaultNewAgentName"));
   const [suggestedReply, setSuggestedReply] = useState<BotSuggestedReplyResponse | null>(null);
-  const [showAdvancedSections, setShowAdvancedSections] = useState(false);
 
   const botList = bots.data || [];
   const matchedBot = selectedBotId ? botList.find((bot) => bot.id === selectedBotId) || null : null;
@@ -187,7 +221,7 @@ export function AIAgentsPage() {
       await queryClient.invalidateQueries({ queryKey: ["bots"] });
       setCreateOpen(false);
       setNewAgentName(t("aiAgents.defaultNewAgentName"));
-      navigate(`/dashboard/ai-agents/${bot.id}/overview`);
+      navigate(`/dashboard/ai-agents/${bot.id}/profile`);
     },
   });
 
@@ -212,7 +246,7 @@ export function AIAgentsPage() {
         is_active: profileForm.is_active,
         system_prompt: profileForm.system_prompt,
         rules_json: jsonFromLines(profileForm.rules_text),
-        allowed_tools_json: { tools: ["create_lead", "create_task", "handoff_to_manager", "update_deal"] },
+        allowed_tools_json: { tools: profileForm.allowed_tools },
         escalation_rules_json: jsonFromLines(profileForm.escalation_text),
       };
       return profileForm.id ? agentProfilesApi.update({ id: profileForm.id, payload }) : agentProfilesApi.create(payload);
@@ -248,7 +282,7 @@ export function AIAgentsPage() {
     onSuccess: (data) => setSuggestedReply(data),
   });
 
-  if (isBusinessLoading || bots.isLoading || botChannels.isLoading || botConversations.isLoading || botMessages.isLoading || profiles.isLoading) {
+  if (isBusinessLoading || bots.isLoading || botChannels.isLoading || botConversations.isLoading || botMessages.isLoading || profiles.isLoading || knowledge.isLoading) {
     return <LoadingState label={t("aiAgents.loading")} />;
   }
 
@@ -269,15 +303,9 @@ export function AIAgentsPage() {
   const messages = (botMessages.data || []).filter((message) => conversationIds.has(message.conversation));
   const latestMessages = latestConversation ? messages.filter((message) => message.conversation === latestConversation.id).slice(-6) : [];
   const selectedBotsOnly = selectedBot ? [selectedBot] : [];
-  const pageError = bots.error || botChannels.error || botConversations.error || botMessages.error || profiles.error;
+  const pageError = bots.error || botChannels.error || botConversations.error || botMessages.error || profiles.error || knowledge.error;
   const mutationError = createBot.error || updateBot.error || saveProfile.error || addChannel.error || toggleChannel.error || suggestReply.error;
   const activeSectionMeta = sections.find((section) => section.id === activeSection) || sections[0];
-  const groupedSections = sectionGroups
-    .map((group) => ({
-      key: group,
-      sections: sections.filter((section) => section.group === group && (group !== "advanced" || showAdvancedSections || activeSection === section.id)),
-    }))
-    .filter((group) => group.sections.length);
 
   return (
     <div className="space-y-8">
@@ -324,36 +352,23 @@ export function AIAgentsPage() {
 
                 {active ? (
                   <nav className="ml-4 mt-2 space-y-1 border-l border-slate-100 pl-3">
-                    {groupedSections.map((group) => (
-                      <div key={group.key} className="space-y-1">
-                        <p className="px-3 pt-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">{t(`aiAgents.group.${group.key}`)}</p>
-                        {group.sections.map((section) => {
-                          const Icon = section.icon;
-                          const sectionActive = activeSection === section.id;
-                          return (
-                            <Link
-                              key={section.id}
-                              to={`/dashboard/ai-agents/${bot.id}/${section.id}`}
-                              className={cn(
-                                "flex min-h-9 items-center gap-2 rounded-xl px-3 text-sm font-bold transition",
-                                sectionActive ? "bg-slate-100 text-brand-700" : "text-slate-600 hover:bg-slate-50 hover:text-midnight",
-                              )}
-                            >
-                              <Icon size={16} />
-                              <span className="truncate">{t(section.labelKey)}</span>
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    ))}
-                    <button
-                      type="button"
-                      className="mt-2 flex min-h-9 w-full items-center gap-2 rounded-xl px-3 text-left text-sm font-bold text-slate-600 transition hover:bg-slate-50 hover:text-midnight"
-                      onClick={() => setShowAdvancedSections((value) => !value)}
-                    >
-                      <SlidersHorizontal size={16} />
-                      <span>{showAdvancedSections ? t("aiAgents.hideAdvanced") : t("aiAgents.showAdvanced")}</span>
-                    </button>
+                    {sections.map((section) => {
+                      const Icon = section.icon;
+                      const sectionActive = activeSection === section.id;
+                      return (
+                        <Link
+                          key={section.id}
+                          to={`/dashboard/ai-agents/${bot.id}/${section.id}`}
+                          className={cn(
+                            "flex min-h-10 items-center gap-2 rounded-xl px-3 text-sm font-bold transition",
+                            sectionActive ? "bg-slate-100 text-brand-700" : "text-slate-600 hover:bg-slate-50 hover:text-midnight",
+                          )}
+                        >
+                          <Icon size={16} />
+                          <span className="truncate">{t(section.labelKey)}</span>
+                        </Link>
+                      );
+                    })}
                   </nav>
                 ) : null}
               </div>
@@ -396,32 +411,45 @@ export function AIAgentsPage() {
 
         {!selectedBot ? (
           <EmptyAgentsState onCreate={() => setCreateOpen(true)} />
-        ) : activeSection === "overview" ? (
-          <OverviewSection bot={selectedBot} channelsCount={channels.length} activeChannelsCount={channels.filter((channel) => channel.status === "active").length} messagesCount={messages.length} latestConversation={latestConversation} />
-        ) : activeSection === "settings" ? (
-          <SettingsSection bot={selectedBot} channelsCount={channels.length} messagesCount={messages.length} updateBot={updateBot} canManage={canManage} />
-        ) : activeSection === "prompting" ? (
-          <PromptingSection form={profileForm} setForm={setProfileForm} saveProfile={saveProfile} canManage={canManage} />
-        ) : activeSection === "messages" ? (
-          <MessagesSection
+        ) : activeSection === "profile" ? (
+          <ProfileManagerSection
+            bot={selectedBot}
+            channelsCount={channels.length}
+            messagesCount={messages.length}
+            form={profileForm}
+            setForm={setProfileForm}
+            updateBot={updateBot}
+            saveProfile={saveProfile}
+            canManage={canManage}
+          />
+        ) : activeSection === "test" ? (
+          <TestAndLaunchSection
+            bot={selectedBot}
+            profile={selectedProfile}
+            channelsCount={channels.length}
+            activeChannelsCount={channels.filter((channel) => channel.status === "active").length}
+            knowledgeCount={(knowledge.data || []).filter((item) => item.is_active).length}
             latestConversation={latestConversation}
             latestMessages={latestMessages}
             suggestedReply={suggestedReply}
             isSuggesting={suggestReply.isPending}
             onSuggest={() => latestConversation && suggestReply.mutate(latestConversation.id)}
+            updateBot={updateBot}
+            canManage={canManage}
           />
-        ) : activeSection === "models" ? (
-          <ModelsSection bot={selectedBot} updateBot={updateBot} canManage={canManage} />
-        ) : activeSection === "control" ? (
-          <ControlSection bot={selectedBot} updateBot={updateBot} canManage={canManage} />
-        ) : activeSection === "functions" ? (
-          <FunctionsSection />
+        ) : activeSection === "actions" ? (
+          <AgentActionsSection
+            bot={selectedBot}
+            form={profileForm}
+            setForm={setProfileForm}
+            updateBot={updateBot}
+            saveProfile={saveProfile}
+            canManage={canManage}
+          />
         ) : activeSection === "knowledge" ? (
-          <KnowledgeSection />
-        ) : activeSection === "integrations" ? (
-          <AgentIntegrationsSection />
+          <KnowledgeSection businessId={business.id} items={knowledge.data || []} canManage={canManage} />
         ) : (
-          <ChannelsSection
+          <ChannelManagerSection
             businessId={business.id}
             bot={selectedBot}
             bots={selectedBotsOnly}
@@ -472,6 +500,189 @@ function EmptyAgentsState({ onCreate }: { onCreate: () => void }) {
   );
 }
 
+function HelpCard({ title, text, recommendation }: { title: string; text: string; recommendation: string }) {
+  return (
+    <div className="rounded-2xl border border-brand-100 bg-brand-50 p-4">
+      <div className="flex items-start gap-3">
+        <div className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-brand-700">
+          <Sparkles size={18} />
+        </div>
+        <div>
+          <h3 className="font-black text-midnight">{title}</h3>
+          <p className="mt-1 text-sm font-semibold leading-6 text-slate-600">{text}</p>
+          <p className="mt-2 text-sm font-black leading-6 text-brand-800">{recommendation}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FieldHint({ children }: { children: ReactNode }) {
+  return <p className="mt-2 text-xs font-semibold leading-5 text-slate-500">{children}</p>;
+}
+
+function ProfileManagerSection({
+  bot,
+  channelsCount,
+  messagesCount,
+  form,
+  setForm,
+  updateBot,
+  saveProfile,
+  canManage,
+}: {
+  bot: BotType;
+  channelsCount: number;
+  messagesCount: number;
+  form: AgentFormState;
+  setForm: React.Dispatch<React.SetStateAction<AgentFormState>>;
+  updateBot: ReturnType<typeof useMutation<BotType, Error, Partial<BotType>>>;
+  saveProfile: ReturnType<typeof useMutation<AgentProfile, Error, void>>;
+  canManage: boolean;
+}) {
+  const { t } = useI18n();
+  const [showQuality, setShowQuality] = useState(false);
+
+  return (
+    <div className="space-y-5">
+      <HelpCard
+        title={t("aiAgents.onboarding.profile.helpTitle")}
+        text={t("aiAgents.onboarding.profile.helpText")}
+        recommendation={t("aiAgents.onboarding.profile.recommendation")}
+      />
+      <SettingsSection bot={bot} channelsCount={channelsCount} messagesCount={messagesCount} updateBot={updateBot} canManage={canManage} />
+      <PromptingSection form={form} setForm={setForm} saveProfile={saveProfile} canManage={canManage} />
+      <Card>
+        <CardBody>
+          <button
+            type="button"
+            className="flex w-full items-center justify-between gap-3 text-left"
+            onClick={() => setShowQuality((value) => !value)}
+          >
+            <div>
+              <h3 className="text-lg font-black text-midnight">{t("aiAgents.qualityAdvanced")}</h3>
+              <p className="mt-1 text-sm font-semibold text-slate-500">{t("aiAgents.qualityAdvancedText")}</p>
+            </div>
+            <ChevronRight size={18} className={cn("shrink-0 text-slate-400 transition", showQuality && "rotate-90 text-brand-700")} />
+          </button>
+        </CardBody>
+      </Card>
+      {showQuality ? <ModelsSection bot={bot} updateBot={updateBot} canManage={canManage} /> : null}
+    </div>
+  );
+}
+
+function AgentActionsSection({
+  bot,
+  form,
+  setForm,
+  updateBot,
+  saveProfile,
+  canManage,
+}: {
+  bot: BotType;
+  form: AgentFormState;
+  setForm: React.Dispatch<React.SetStateAction<AgentFormState>>;
+  updateBot: ReturnType<typeof useMutation<BotType, Error, Partial<BotType>>>;
+  saveProfile: ReturnType<typeof useMutation<AgentProfile, Error, void>>;
+  canManage: boolean;
+}) {
+  const { t } = useI18n();
+  return (
+    <div className="space-y-5">
+      <HelpCard
+        title={t("aiAgents.onboarding.actions.helpTitle")}
+        text={t("aiAgents.onboarding.actions.helpText")}
+        recommendation={t("aiAgents.onboarding.actions.recommendation")}
+      />
+      <ControlSection bot={bot} updateBot={updateBot} canManage={canManage} />
+      <FunctionsSection form={form} setForm={setForm} saveProfile={saveProfile} canManage={canManage} />
+    </div>
+  );
+}
+
+function TestAndLaunchSection({
+  bot,
+  profile,
+  channelsCount,
+  activeChannelsCount,
+  knowledgeCount,
+  latestConversation,
+  latestMessages,
+  suggestedReply,
+  isSuggesting,
+  onSuggest,
+  updateBot,
+  canManage,
+}: {
+  bot: BotType;
+  profile: AgentProfile | null;
+  channelsCount: number;
+  activeChannelsCount: number;
+  knowledgeCount: number;
+  latestConversation?: { id: Id } | null;
+  latestMessages: Array<{ id: Id; direction: string; text: string }>;
+  suggestedReply: BotSuggestedReplyResponse | null;
+  isSuggesting: boolean;
+  onSuggest: () => void;
+  updateBot: ReturnType<typeof useMutation<BotType, Error, Partial<BotType>>>;
+  canManage: boolean;
+}) {
+  const { t } = useI18n();
+  const checklist = [
+    { done: Boolean(profile?.is_active), title: t("aiAgents.checklist.profile"), text: t("aiAgents.checklist.profileText") },
+    { done: activeChannelsCount > 0, title: t("aiAgents.checklist.channel"), text: t("aiAgents.checklist.channelText") },
+    { done: knowledgeCount > 0, title: t("aiAgents.checklist.knowledge"), text: t("aiAgents.checklist.knowledgeText") },
+    { done: Boolean(latestConversation), title: t("aiAgents.checklist.test"), text: t("aiAgents.checklist.testText") },
+  ];
+
+  return (
+    <div className="space-y-5">
+      <HelpCard
+        title={t("aiAgents.onboarding.test.helpTitle")}
+        text={t("aiAgents.onboarding.test.helpText")}
+        recommendation={t("aiAgents.onboarding.test.recommendation")}
+      />
+
+      <Card>
+        <CardBody>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <h3 className="text-xl font-black text-midnight">{t("aiAgents.launchChecklist")}</h3>
+              <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">{t("aiAgents.launchChecklistText")}</p>
+            </div>
+            <Button
+              type="button"
+              variant={bot.status === "active" ? "secondary" : "ai"}
+              disabled={!canManage}
+              isLoading={updateBot.isPending}
+              onClick={() => updateBot.mutate({ status: bot.status === "active" ? "paused" : "active" })}
+            >
+              <CheckCircle2 size={16} /> {bot.status === "active" ? t("aiAgents.pauseAgent") : t("aiAgents.activateAgent")}
+            </Button>
+          </div>
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            {checklist.map((item) => (
+              <div key={item.title} className="flex gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                <span className={cn("mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full text-white", item.done ? "bg-emerald-500" : "bg-slate-300")}>
+                  <CheckCircle2 size={15} />
+                </span>
+                <div>
+                  <h4 className="font-black text-midnight">{item.title}</h4>
+                  <p className="mt-1 text-sm font-semibold leading-5 text-slate-500">{item.text}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardBody>
+      </Card>
+
+      <OverviewSection bot={bot} channelsCount={channelsCount} activeChannelsCount={activeChannelsCount} messagesCount={latestMessages.length} latestConversation={latestConversation} />
+      <MessagesSection latestConversation={latestConversation} latestMessages={latestMessages} suggestedReply={suggestedReply} isSuggesting={isSuggesting} onSuggest={onSuggest} />
+    </div>
+  );
+}
+
 function OverviewSection({
   bot,
   channelsCount,
@@ -508,7 +719,7 @@ function OverviewSection({
               <Link to={`/dashboard/ai-agents/${bot.id}/channels`}>
                 <Button type="button" variant="secondary"><Radio size={16} />{t("aiAgents.openChannels")}</Button>
               </Link>
-              <Link to={latestConversation ? `/dashboard/ai-agents/${bot.id}/messages` : "/dashboard/conversations"}>
+              <Link to={latestConversation ? `/dashboard/ai-agents/${bot.id}/test` : "/dashboard/conversations"}>
                 <Button type="button"><MessageSquareText size={16} />{t("aiAgents.testMessages")}</Button>
               </Link>
             </div>
@@ -556,8 +767,14 @@ function SettingsSection({
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <Input label={t("aiAgents.name")} value={name} onChange={(event) => setName(event.target.value)} />
-            <Input label={t("aiAgents.language")} value={language} onChange={(event) => setLanguage(event.target.value)} />
+            <div>
+              <Input label={t("aiAgents.name")} value={name} onChange={(event) => setName(event.target.value)} />
+              <FieldHint>{t("aiAgents.hint.agentName")}</FieldHint>
+            </div>
+            <div>
+              <Input label={t("aiAgents.language")} value={language} onChange={(event) => setLanguage(event.target.value)} />
+              <FieldHint>{t("aiAgents.hint.agentLanguage")}</FieldHint>
+            </div>
           </div>
 
           <div className="mt-4 grid gap-3 md:grid-cols-3">
@@ -565,6 +782,7 @@ function SettingsSection({
             <MetricCard label={t("aiAgents.channelsMetric")} value={String(channelsCount)} compact />
             <MetricCard label={t("aiAgents.messagesMetric")} value={String(messagesCount)} compact />
           </div>
+          <FieldHint>{t("aiAgents.hint.agentStatus")}</FieldHint>
 
           <div className="mt-5 flex flex-wrap gap-2">
             <Button
@@ -617,26 +835,44 @@ function PromptingSection({
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <Input label={t("aiAgents.profileName")} value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
-          <Select
-            label={t("aiAgents.tone")}
-            value={form.tone}
-            onChange={(event) => setForm((current) => ({ ...current, tone: event.target.value as AgentProfile["tone"] }))}
-            options={[
-              { value: "friendly", label: t("aiAgents.tone.friendly") },
-              { value: "expert", label: t("aiAgents.tone.expert") },
-              { value: "formal", label: t("aiAgents.tone.formal") },
-              { value: "sales", label: t("aiAgents.tone.sales") },
-              { value: "support", label: t("aiAgents.tone.support") },
-            ]}
-          />
+          <div>
+            <Input label={t("aiAgents.profileName")} value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
+            <FieldHint>{t("aiAgents.hint.profileName")}</FieldHint>
+          </div>
+          <div>
+            <Select
+              label={t("aiAgents.tone")}
+              value={form.tone}
+              onChange={(event) => setForm((current) => ({ ...current, tone: event.target.value as AgentProfile["tone"] }))}
+              options={[
+                { value: "friendly", label: t("aiAgents.tone.friendly") },
+                { value: "expert", label: t("aiAgents.tone.expert") },
+                { value: "formal", label: t("aiAgents.tone.formal") },
+                { value: "sales", label: t("aiAgents.tone.sales") },
+                { value: "support", label: t("aiAgents.tone.support") },
+              ]}
+            />
+            <FieldHint>{t("aiAgents.hint.tone")}</FieldHint>
+          </div>
         </div>
 
         <div className="mt-4 grid gap-4">
-          <Textarea label={t("aiAgents.roleDescription")} value={form.role_description} onChange={(event) => setForm((current) => ({ ...current, role_description: event.target.value }))} />
-          <Textarea label={t("aiAgents.systemPrompt")} value={form.system_prompt} onChange={(event) => setForm((current) => ({ ...current, system_prompt: event.target.value }))} />
-          <Textarea label={t("aiAgents.rules")} value={form.rules_text} onChange={(event) => setForm((current) => ({ ...current, rules_text: event.target.value }))} />
-          <Textarea label={t("aiAgents.escalationRules")} value={form.escalation_text} onChange={(event) => setForm((current) => ({ ...current, escalation_text: event.target.value }))} />
+          <div>
+            <Textarea label={t("aiAgents.roleDescription")} value={form.role_description} onChange={(event) => setForm((current) => ({ ...current, role_description: event.target.value }))} />
+            <FieldHint>{t("aiAgents.hint.role")}</FieldHint>
+          </div>
+          <div>
+            <Textarea label={t("aiAgents.systemPrompt")} value={form.system_prompt} onChange={(event) => setForm((current) => ({ ...current, system_prompt: event.target.value }))} />
+            <FieldHint>{t("aiAgents.hint.systemPrompt")}</FieldHint>
+          </div>
+          <div>
+            <Textarea label={t("aiAgents.rules")} value={form.rules_text} onChange={(event) => setForm((current) => ({ ...current, rules_text: event.target.value }))} />
+            <FieldHint>{t("aiAgents.hint.rules")}</FieldHint>
+          </div>
+          <div>
+            <Textarea label={t("aiAgents.escalationRules")} value={form.escalation_text} onChange={(event) => setForm((current) => ({ ...current, escalation_text: event.target.value }))} />
+            <FieldHint>{t("aiAgents.hint.escalation")}</FieldHint>
+          </div>
         </div>
 
         <div className="mt-5 flex flex-wrap items-center gap-3">
@@ -737,9 +973,11 @@ function ModelsSection({ bot, updateBot, canManage }: { bot: BotType; updateBot:
               { value: "gpt-4o-mini", label: t("aiAgents.responseMode.economy") },
             ]}
           />
+          <FieldHint>{t("aiAgents.hint.responseMode")}</FieldHint>
           <label className="block">
             <span className="mb-2 block text-sm font-bold text-slate-700">{t("aiAgents.responseFreedom", { value: temperature.toFixed(1) })}</span>
             <input className="w-full accent-brand-600" type="range" min="0" max="1" step="0.1" value={temperature} onChange={(event) => setTemperature(Number(event.target.value))} />
+            <FieldHint>{t("aiAgents.hint.temperature")}</FieldHint>
           </label>
           <Button
             type="button"
@@ -757,86 +995,270 @@ function ModelsSection({ bot, updateBot, canManage }: { bot: BotType; updateBot:
 
 function ControlSection({ bot, updateBot, canManage }: { bot: BotType; updateBot: ReturnType<typeof useMutation<BotType, Error, Partial<BotType>>>; canManage: boolean }) {
   const { t } = useI18n();
-  const settings = bot.settings_json || {};
-  const toggles = [
-    { key: "auto_handoff", title: t("aiAgents.control.handoffTitle"), text: t("aiAgents.control.handoffText") },
-    { key: "require_confirmation", title: t("aiAgents.control.confirmTitle"), text: t("aiAgents.control.confirmText") },
-    { key: "hide_internal_data", title: t("aiAgents.control.privacyTitle"), text: t("aiAgents.control.privacyText") },
-  ];
+  const [config, setConfig] = useState(() => autoPipelineFromSettings(bot.settings_json || {}));
+
+  useEffect(() => {
+    setConfig(autoPipelineFromSettings(bot.settings_json || {}));
+  }, [bot.id, bot.settings_json]);
+
+  const saveConfig = () => {
+    const nextConfig = {
+      ...config,
+      enabled: config.mode !== "off" && config.enabled,
+      min_lead_confidence: Math.max(0.1, Math.min(config.min_lead_confidence, 1)),
+      min_deal_confidence: Math.max(0.1, Math.min(config.min_deal_confidence, 1)),
+      max_auto_reply_chars: Math.max(120, Math.min(config.max_auto_reply_chars, 2000)),
+    };
+    updateBot.mutate({
+      settings_json: {
+        ...bot.settings_json,
+        auto_crm_pipeline: nextConfig,
+      },
+    });
+  };
 
   return (
-    <div className="space-y-3">
-      {toggles.map((item) => {
-        const checked = settings[item.key] !== false;
-        return (
-          <Card key={item.key}>
-            <CardBody className="flex items-center justify-between gap-4">
+    <Card>
+      <CardBody>
+        <div className="mb-5">
+          <h3 className="text-xl font-black text-midnight">{t("aiAgents.control.pipelineTitle")}</h3>
+          <p className="mt-1 text-sm font-semibold text-slate-500">{t("aiAgents.control.pipelineText")}</p>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <Select
+            label={t("aiAgents.control.mode")}
+            value={config.mode}
+            onChange={(event) => {
+              const mode = event.target.value as AutoPipelineMode;
+              setConfig((current) => ({ ...current, mode, enabled: mode !== "off" }));
+            }}
+            options={[
+              { value: "off", label: t("aiAgents.control.mode.off") },
+              { value: "triage", label: t("aiAgents.control.mode.triage") },
+              { value: "lead_task", label: t("aiAgents.control.mode.leadTask") },
+              { value: "draft_deal", label: t("aiAgents.control.mode.draftDeal") },
+            ]}
+          />
+          <div>
+            <Input
+              label={t("aiAgents.control.maxReplyChars")}
+              type="number"
+              min={120}
+              max={2000}
+              value={config.max_auto_reply_chars}
+              onChange={(event) => setConfig((current) => ({ ...current, max_auto_reply_chars: Number(event.target.value) }))}
+            />
+            <FieldHint>{t("aiAgents.hint.maxReplyChars")}</FieldHint>
+          </div>
+        </div>
+        <FieldHint>{t("aiAgents.hint.pipelineMode")}</FieldHint>
+
+        <div className="mt-5 grid gap-4 md:grid-cols-2">
+          <label className="block">
+            <span className="mb-2 block text-sm font-bold text-slate-700">{t("aiAgents.control.leadConfidence", { value: config.min_lead_confidence.toFixed(1) })}</span>
+            <input className="w-full accent-brand-600" type="range" min="0.1" max="1" step="0.1" value={config.min_lead_confidence} onChange={(event) => setConfig((current) => ({ ...current, min_lead_confidence: Number(event.target.value) }))} />
+            <FieldHint>{t("aiAgents.hint.leadConfidence")}</FieldHint>
+          </label>
+          <label className="block">
+            <span className="mb-2 block text-sm font-bold text-slate-700">{t("aiAgents.control.dealConfidence", { value: config.min_deal_confidence.toFixed(1) })}</span>
+            <input className="w-full accent-brand-600" type="range" min="0.1" max="1" step="0.1" value={config.min_deal_confidence} onChange={(event) => setConfig((current) => ({ ...current, min_deal_confidence: Number(event.target.value) }))} />
+            <FieldHint>{t("aiAgents.hint.dealConfidence")}</FieldHint>
+          </label>
+        </div>
+
+        <div className="mt-5 grid gap-3">
+          {[
+            ["require_review_on_fallback", t("aiAgents.control.reviewFallbackTitle"), t("aiAgents.control.reviewFallbackText")],
+            ["create_appointment", t("aiAgents.control.appointmentTitle"), t("aiAgents.control.appointmentText")],
+            ["auto_send_reply", t("aiAgents.control.autoReplyTitle"), t("aiAgents.control.autoReplyText")],
+          ].map(([key, title, text]) => (
+            <div key={key} className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-slate-50 p-4">
               <div>
-                <h3 className="font-black text-midnight">{item.title}</h3>
-                <p className="mt-1 text-sm font-semibold text-slate-500">{item.text}</p>
+                <h4 className="font-black text-midnight">{title}</h4>
+                <p className="mt-1 text-sm font-semibold text-slate-500">{text}</p>
               </div>
               <ToggleSwitch
-                checked={checked}
-                disabled={!canManage}
-                isLoading={updateBot.isPending}
-                label={item.title}
-                onChange={(next) => updateBot.mutate({ settings_json: { ...bot.settings_json, [item.key]: next } })}
+                checked={Boolean(config[key as keyof typeof config])}
+                disabled={!canManage || config.mode === "off"}
+                label={title}
+                onChange={(next) => setConfig((current) => ({ ...current, [key]: next }))}
               />
-            </CardBody>
-          </Card>
-        );
-      })}
-    </div>
+            </div>
+          ))}
+        </div>
+
+        <Button className="mt-5" type="button" disabled={!canManage} isLoading={updateBot.isPending} onClick={saveConfig}>
+          <Save size={16} /> {t("common.save")}
+        </Button>
+      </CardBody>
+    </Card>
   );
 }
 
-function FunctionsSection() {
+function FunctionsSection({
+  form,
+  setForm,
+  saveProfile,
+  canManage,
+}: {
+  form: AgentFormState;
+  setForm: React.Dispatch<React.SetStateAction<AgentFormState>>;
+  saveProfile: ReturnType<typeof useMutation<AgentProfile, Error, void>>;
+  canManage: boolean;
+}) {
   const { t } = useI18n();
   const tools = [
-    [t("aiAgents.functions.leadTitle"), t("aiAgents.functions.leadText")],
-    [t("aiAgents.functions.taskTitle"), t("aiAgents.functions.taskText")],
-    [t("aiAgents.functions.dealTitle"), t("aiAgents.functions.dealText")],
-    [t("aiAgents.functions.managerTitle"), t("aiAgents.functions.managerText")],
+    ["create_lead", t("aiAgents.functions.leadTitle"), t("aiAgents.functions.leadText")],
+    ["create_task", t("aiAgents.functions.taskTitle"), t("aiAgents.functions.taskText")],
+    ["create_deal", t("aiAgents.functions.dealTitle"), t("aiAgents.functions.dealText")],
+    ["handoff_to_manager", t("aiAgents.functions.managerTitle"), t("aiAgents.functions.managerText")],
   ];
+  const toggleTool = (tool: string, enabled: boolean) => {
+    setForm((current) => ({
+      ...current,
+      allowed_tools: enabled
+        ? Array.from(new Set([...current.allowed_tools, tool]))
+        : current.allowed_tools.filter((item) => item !== tool),
+    }));
+  };
+
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      {tools.map(([title, text]) => (
-        <Card key={title}>
-          <CardBody>
+    <div className="space-y-4">
+      <div className="grid gap-4 md:grid-cols-2">
+        {tools.map(([key, title, text]) => {
+          const enabled = form.allowed_tools.includes(key);
+          return (
+        <Card key={key}>
+          <CardBody className="flex min-h-[170px] flex-col">
             <div className="grid h-11 w-11 place-items-center rounded-2xl bg-brand-50 text-brand-700">
               <FunctionSquare size={20} />
             </div>
             <h3 className="mt-4 text-lg font-black text-midnight">{title}</h3>
-            <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">{text}</p>
+            <p className="mt-2 flex-1 text-sm font-semibold leading-6 text-slate-500">{text}</p>
+            <FieldHint>{t(`aiAgents.hint.tool.${key}`)}</FieldHint>
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <span className="text-sm font-black text-slate-600">{enabled ? t("aiAgents.functions.enabled") : t("aiAgents.functions.disabled")}</span>
+              <ToggleSwitch checked={enabled} disabled={!canManage} label={title} onChange={(next) => toggleTool(key, next)} />
+            </div>
           </CardBody>
         </Card>
-      ))}
+          );
+        })}
+      </div>
+      <Button type="button" disabled={!canManage} isLoading={saveProfile.isPending} onClick={() => saveProfile.mutate()}>
+        <Save size={16} /> {t("aiAgents.functions.save")}
+      </Button>
     </div>
   );
 }
 
-function KnowledgeSection() {
+function KnowledgeSection({ businessId, items, canManage }: { businessId: Id; items: BusinessKnowledgeItem[]; canManage: boolean }) {
   const { t } = useI18n();
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<BusinessKnowledgeItem | null>(null);
+  const [draft, setDraft] = useState({ title: "", category: "business", content: "", is_active: true });
+  const saveKnowledge = useMutation({
+    mutationFn: () => {
+      const payload = { ...draft, business: businessId };
+      return editing ? businessKnowledgeApi.update({ id: editing.id, payload }) : businessKnowledgeApi.create(payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ai-knowledge-items"] });
+      setOpen(false);
+      setEditing(null);
+      setDraft({ title: "", category: "business", content: "", is_active: true });
+    },
+  });
+
+  const openEditor = (item?: BusinessKnowledgeItem) => {
+    if (item) {
+      setEditing(item);
+      setDraft({ title: item.title, category: item.category || "business", content: item.content, is_active: item.is_active });
+    } else {
+      setEditing(null);
+      setDraft({ title: "", category: "business", content: "", is_active: true });
+    }
+    setOpen(true);
+  };
+
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      <Card>
-        <CardBody>
-          <BookOpen className="text-brand-600" size={26} />
-          <h3 className="mt-4 text-lg font-black text-midnight">{t("aiAgents.knowledgeCompany")}</h3>
-          <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">{t("aiAgents.knowledgeCompanyText")}</p>
-          <Link className="mt-4 inline-flex" to="/dashboard/resources">
-            <Button type="button" variant="secondary"><ExternalLink size={16} /> {t("aiAgents.openKnowledge")}</Button>
-          </Link>
-        </CardBody>
-      </Card>
-      <Card>
-        <CardBody>
-          <SlidersHorizontal className="text-brand-600" size={26} />
-          <h3 className="mt-4 text-lg font-black text-midnight">{t("aiAgents.knowledgeAccess")}</h3>
-          <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">{t("aiAgents.knowledgeAccessText")}</p>
-        </CardBody>
-      </Card>
-    </div>
+    <>
+      <div className="space-y-4">
+        <HelpCard
+          title={t("aiAgents.onboarding.knowledge.helpTitle")}
+          text={t("aiAgents.onboarding.knowledge.helpText")}
+          recommendation={t("aiAgents.onboarding.knowledge.recommendation")}
+        />
+        <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-xl font-black text-midnight">{t("aiAgents.knowledgeCompany")}</h3>
+              <p className="mt-1 text-sm font-semibold text-slate-500">{t("aiAgents.knowledgeCompanyText")}</p>
+            </div>
+            <Button type="button" disabled={!canManage} onClick={() => openEditor()}>
+              <Plus size={16} /> {t("aiAgents.knowledge.add")}
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          {items.length ? items.map((item) => (
+            <Card key={item.id}>
+              <CardBody>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">{item.category || t("aiAgents.knowledge.category")}</p>
+                    <h3 className="mt-2 text-lg font-black text-midnight">{item.title}</h3>
+                  </div>
+                  <span className={cn("rounded-full px-2.5 py-1 text-xs font-black", item.is_active ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500")}>
+                    {item.is_active ? t("aiAgents.knowledge.active") : t("aiAgents.knowledge.off")}
+                  </span>
+                </div>
+                <p className="mt-3 line-clamp-4 text-sm font-semibold leading-6 text-slate-500">{item.content}</p>
+                <Button className="mt-4" type="button" variant="secondary" disabled={!canManage} onClick={() => openEditor(item)}>
+                  <Settings size={16} /> {t("aiAgents.configure")}
+                </Button>
+              </CardBody>
+            </Card>
+          )) : (
+            <Card>
+              <CardBody>
+                <BookOpen className="text-brand-600" size={26} />
+                <h3 className="mt-4 text-lg font-black text-midnight">{t("aiAgents.knowledge.emptyTitle")}</h3>
+                <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">{t("aiAgents.knowledge.emptyText")}</p>
+              </CardBody>
+            </Card>
+          )}
+        </div>
+      </div>
+
+      <Modal title={editing ? t("aiAgents.knowledge.editTitle") : t("aiAgents.knowledge.newTitle")} open={open} onClose={() => setOpen(false)}>
+        <form
+          className="space-y-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            saveKnowledge.mutate();
+          }}
+        >
+          <Input label={t("aiAgents.knowledge.title")} value={draft.title} onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))} />
+          <FieldHint>{t("aiAgents.hint.knowledgeTitle")}</FieldHint>
+          <Input label={t("aiAgents.knowledge.category")} value={draft.category} onChange={(event) => setDraft((current) => ({ ...current, category: event.target.value }))} />
+          <FieldHint>{t("aiAgents.hint.knowledgeCategory")}</FieldHint>
+          <Textarea label={t("aiAgents.knowledge.content")} value={draft.content} onChange={(event) => setDraft((current) => ({ ...current, content: event.target.value }))} />
+          <FieldHint>{t("aiAgents.hint.knowledgeContent")}</FieldHint>
+          <label className="inline-flex items-center gap-2 text-sm font-bold text-slate-600">
+            <input type="checkbox" checked={draft.is_active} onChange={(event) => setDraft((current) => ({ ...current, is_active: event.target.checked }))} />
+            {t("aiAgents.knowledge.useInContext")}
+          </label>
+          <FieldHint>{t("aiAgents.hint.knowledgeActive")}</FieldHint>
+          <Button type="submit" disabled={!canManage || !draft.title.trim() || !draft.content.trim()} isLoading={saveKnowledge.isPending}>
+            <Save size={16} /> {t("common.save")}
+          </Button>
+        </form>
+      </Modal>
+    </>
   );
 }
 
@@ -871,6 +1293,28 @@ function AgentIntegrationsSection() {
           </Card>
         ))}
       </div>
+    </div>
+  );
+}
+
+function ChannelManagerSection(props: {
+  businessId: Id;
+  bot: BotType;
+  bots: BotType[];
+  canManage: boolean;
+  channelByName: (name: BotChannel["channel"]) => BotChannel | undefined;
+  addChannel: ReturnType<typeof useMutation<BotChannel, Error, BotChannel["channel"]>>;
+  toggleChannel: ReturnType<typeof useMutation<BotChannel, Error, { channel: BotChannel; status: BotChannel["status"] }>>;
+}) {
+  const { t } = useI18n();
+  return (
+    <div className="space-y-5">
+      <HelpCard
+        title={t("aiAgents.onboarding.channels.helpTitle")}
+        text={t("aiAgents.onboarding.channels.helpText")}
+        recommendation={t("aiAgents.onboarding.channels.recommendation")}
+      />
+      <ChannelsSection {...props} />
     </div>
   );
 }
@@ -947,6 +1391,7 @@ function ChannelsSection({
                   </span>
                 </div>
                 <p className="mt-2 text-sm font-semibold leading-5 text-slate-500">{item.description}</p>
+                <FieldHint>{t(`aiAgents.hint.channel.${item.key}`)}</FieldHint>
               </div>
             </article>
           );

@@ -133,6 +133,72 @@ select {
   scrollbar-width: none;
 }
 
+@keyframes zani-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes zani-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes zani-pulse-slow {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.animate-slide-down {
+  animation: zani-slide-down 0.3s ease-out;
+}
+
+.animate-fade-in {
+  animation: zani-fade-in 0.2s ease-out;
+}
+
+.animate-pulse-slow {
+  animation: zani-pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  border-radius: 4px;
+  background: #f1f1f1;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background: #c1c1c1;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+.focus-visible-ring:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
 @media (max-width: 640px) {
   .premium-card {
     border-radius: 1.35rem;

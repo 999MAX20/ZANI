@@ -52,6 +52,67 @@ class BillingFoundationTests(TestCase):
         self.assertEqual(response.data["business"], self.business.id)
         self.assertEqual(response.data["plan"]["code"], "start")
 
+    def test_owner_can_manage_subscription_controls(self):
+        start_plan = SubscriptionPlan.objects.get(code="start")
+        growth_plan = SubscriptionPlan.objects.get(code="growth")
+        subscription = Subscription.objects.create(business=self.business, plan=start_plan)
+        self.api.force_authenticate(self.owner)
+
+        settings_response = self.api.patch(
+            "/api/billing/current-subscription/settings/",
+            {
+                "billing_email": "billing@example.com",
+                "payment_method": "invoice",
+                "invoice_details_json": {"bin": "123456789012", "company": "Billing Clinic LLP"},
+            },
+            format="json",
+        )
+        change_plan_response = self.api.post("/api/billing/current-subscription/change-plan/", {"plan": growth_plan.id}, format="json")
+        pause_response = self.api.post("/api/billing/current-subscription/pause/")
+        resume_response = self.api.post("/api/billing/current-subscription/resume/")
+        cancel_response = self.api.post("/api/billing/current-subscription/cancel/")
+
+        self.assertEqual(settings_response.status_code, 200)
+        self.assertEqual(settings_response.data["billing_email"], "billing@example.com")
+        self.assertEqual(settings_response.data["payment_method"], "invoice")
+        self.assertEqual(settings_response.data["invoice_details_json"]["bin"], "123456789012")
+        self.assertEqual(change_plan_response.status_code, 200)
+        self.assertEqual(change_plan_response.data["requested_plan"], growth_plan.id)
+        self.assertEqual(pause_response.status_code, 200)
+        self.assertEqual(pause_response.data["status"], Subscription.Statuses.PAUSED)
+        self.assertEqual(resume_response.status_code, 200)
+        self.assertEqual(resume_response.data["status"], Subscription.Statuses.ACTIVE)
+        self.assertEqual(cancel_response.status_code, 200)
+        self.assertEqual(cancel_response.data["status"], Subscription.Statuses.CANCELLED)
+        subscription.refresh_from_db()
+        self.assertEqual(subscription.billing_email, "billing@example.com")
+        self.assertEqual(subscription.requested_plan_id, growth_plan.id)
+        self.assertIsNotNone(subscription.cancelled_at)
+
+    def test_accountant_can_view_but_cannot_manage_subscription_controls(self):
+        accountant = User.objects.create_user(
+            username="billing-accountant",
+            email="billing-accountant@example.com",
+            password="pass",
+            role=User.Roles.STAFF,
+        )
+        BusinessMember.objects.create(business=self.business, user=accountant, role=BusinessMember.Roles.ACCOUNTANT)
+        plan = SubscriptionPlan.objects.get(code="start")
+        Subscription.objects.create(business=self.business, plan=plan)
+        self.api.force_authenticate(accountant)
+
+        view_response = self.api.get("/api/billing/current-subscription/")
+        settings_response = self.api.patch(
+            "/api/billing/current-subscription/settings/",
+            {"billing_email": "accountant@example.com"},
+            format="json",
+        )
+        pause_response = self.api.post("/api/billing/current-subscription/pause/")
+
+        self.assertEqual(view_response.status_code, 200)
+        self.assertEqual(settings_response.status_code, 403)
+        self.assertEqual(pause_response.status_code, 403)
+
     def test_current_subscription_requires_auth(self):
         response = self.api.get("/api/billing/current-subscription/")
 

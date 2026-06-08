@@ -22,9 +22,16 @@ class CustomFieldsFoundationTests(TestCase):
             password="pass",
             role=User.Roles.BUSINESS_OWNER,
         )
+        self.manager = User.objects.create_user(
+            username="custom-fields-manager",
+            email="custom-fields-manager@example.com",
+            password="pass",
+            role=User.Roles.BUSINESS_MANAGER,
+        )
         self.business = Business.objects.create(owner=self.owner, name="Fields Clinic", slug="fields-clinic")
         self.other_business = Business.objects.create(owner=self.other_owner, name="Other Fields", slug="other-fields")
         BusinessMember.objects.create(business=self.business, user=self.owner, role=BusinessMember.Roles.OWNER)
+        BusinessMember.objects.create(business=self.business, user=self.manager, role=BusinessMember.Roles.MANAGER)
         BusinessMember.objects.create(business=self.other_business, user=self.other_owner, role=BusinessMember.Roles.OWNER)
         self.client = Client.objects.create(business=self.business, full_name="Custom Client")
         self.api.force_authenticate(self.owner)
@@ -113,3 +120,69 @@ class CustomFieldsFoundationTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 400)
+
+    def test_custom_field_view_roles_hide_definition_and_value(self):
+        owner_only = CustomFieldDefinition.objects.create(
+            business=self.business,
+            entity_type=CustomFieldDefinition.EntityTypes.CLIENT,
+            key="owner_private",
+            label="Owner private",
+            permissions_json={"view_roles": [BusinessMember.Roles.OWNER], "edit_roles": [BusinessMember.Roles.OWNER]},
+        )
+        manager_visible = CustomFieldDefinition.objects.create(
+            business=self.business,
+            entity_type=CustomFieldDefinition.EntityTypes.CLIENT,
+            key="manager_visible",
+            label="Manager visible",
+            permissions_json={"view_roles": [BusinessMember.Roles.MANAGER], "edit_roles": [BusinessMember.Roles.OWNER]},
+        )
+        CustomFieldValue.objects.create(
+            business=self.business,
+            definition=owner_only,
+            entity_type=CustomFieldDefinition.EntityTypes.CLIENT,
+            entity_id=str(self.client.id),
+            value_json={"value": "secret"},
+        )
+        CustomFieldValue.objects.create(
+            business=self.business,
+            definition=manager_visible,
+            entity_type=CustomFieldDefinition.EntityTypes.CLIENT,
+            entity_id=str(self.client.id),
+            value_json={"value": "visible"},
+        )
+        self.api.force_authenticate(self.manager)
+
+        definitions_response = self.api.get("/api/custom-fields/", {"entity_type": "client"})
+        values_response = self.api.get(
+            "/api/custom-field-values/",
+            {"entity_type": "client", "entity_id": str(self.client.id)},
+        )
+
+        self.assertEqual(definitions_response.status_code, 200)
+        self.assertEqual([item["key"] for item in definitions_response.data["results"]], ["manager_visible"])
+        self.assertEqual(values_response.status_code, 200)
+        self.assertEqual([item["definition"] for item in values_response.data["results"]], [manager_visible.id])
+
+    def test_custom_field_edit_roles_block_bulk_upsert(self):
+        definition = CustomFieldDefinition.objects.create(
+            business=self.business,
+            entity_type=CustomFieldDefinition.EntityTypes.CLIENT,
+            key="owner_edit_only",
+            label="Owner edit only",
+            permissions_json={"view_roles": [BusinessMember.Roles.MANAGER], "edit_roles": [BusinessMember.Roles.OWNER]},
+        )
+        self.api.force_authenticate(self.manager)
+
+        response = self.api.post(
+            "/api/custom-field-values/bulk-upsert/",
+            {
+                "business": self.business.id,
+                "entity_type": "client",
+                "entity_id": str(self.client.id),
+                "values": [{"definition": definition.id, "value_json": {"value": "blocked"}}],
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(CustomFieldValue.objects.filter(definition=definition, entity_id=str(self.client.id)).exists())

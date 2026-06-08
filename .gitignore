@@ -1,48 +1,84 @@
-# Python
-.venv/
-venv/
-__pycache__/
-*.py[cod]
-*$py.class
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.coverage
-htmlcov/
-
-# Django/local generated
-.env
-.env.*
-!.env.example
-!.env.local.example
-!.env.render.example
-!.env.staging.example
-!.env.production.example
-!frontend/.env.staging.example
-!frontend/.env.production.example
-db.sqlite3
-media/
-staticfiles/
-*.log
-
-# Node/frontend
+```
+# Dependencies
 node_modules/
-frontend/node_modules/
+
+# Build artifacts
 dist/
 build/
-frontend/dist/
-*.tsbuildinfo
-frontend/vite.config.js
-frontend/vite.config.d.ts
-coverage/
-playwright-report/
-test-results/
+target/
 
-# OS/editor
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.eggs/
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Logs
+*.log
+
+# OS generated files
 .DS_Store
-__MACOSX/
+Thumbs.db
+
+# Editor files
 .vscode/
 .idea/
+*.swp
+*.swo
 
-# Archives
+# Environment variables
+.env
+.env.local
+*.env.*
+
+# Coverage reports
+coverage/
+htmlcov/
+.coverage
+
+# Temporary files
+*.tmp
+*.temp
+
+# Compressed files
 *.zip
+*.gz
+*.tar
+*.tgz
+*.bz2
+*.xz
+*.7z
+*.rar
+*.zst
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
+
+# MyPy cache
+.mypy_cache/
+
+# Pytest cache
+.pytest_cache/
+
+# Gradle
+.gradle/
+
+# Compiled files
+*.class
+*.o
+*.obj
+*.out
+*.dll
+*.exe
+*.a
+```

@@ -24,13 +24,13 @@ export function DealsAIPriority({ deal, onAction, t }: { deal: DealRow | null; o
   }
 
   return (
-    <section className="mb-4 flex min-h-14 animate-[slideDown_180ms_ease-out] items-center gap-3 rounded-xl border border-violet-200 bg-gradient-to-r from-violet-50 to-blue-50 px-3 py-2 shadow-[0_8px_24px_rgba(79,70,229,0.10)]">
-      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-violet-600 to-blue-600 text-white">
+    <section className="mb-4 flex min-h-16 animate-[slideDown_180ms_ease-out] items-center gap-3 rounded-xl border border-violet-100 bg-gradient-to-r from-violet-50 via-white to-primary-50 px-4 py-3 shadow-soft">
+      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary-gradient text-white shadow-glow">
         <Bot size={19} />
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="font-black text-midnight">Приоритет</p>
+          <p className="font-black text-midnight">{t("deals.priority")}</p>
           <p className="min-w-0 truncate text-sm font-bold text-slate-700">{deal.title}</p>
           <DealRiskIndicator deal={deal} compact />
         </div>
@@ -41,7 +41,7 @@ export function DealsAIPriority({ deal, onAction, t }: { deal: DealRow | null; o
       <Button className="hidden shrink-0 sm:inline-flex" size="sm" onClick={() => onAction(deal)}>
         {t("deals.takeAction")}
       </Button>
-      <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0" aria-label="Скрыть приоритет" onClick={dismiss}>
+      <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0" aria-label={t("deals.hidePriority")} onClick={dismiss}>
         <X size={16} />
       </Button>
     </section>

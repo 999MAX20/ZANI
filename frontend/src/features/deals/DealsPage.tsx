@@ -6,6 +6,7 @@ import { dealsApi } from "../../api/deals";
 import { CrmEntityDrawer, type CrmDrawerEntity } from "../../components/crm/CrmEntityDrawer";
 import { WorkQueueDetailPane, WorkQueueLayout, WorkQueueListPane } from "../../components/layout/WorkQueueLayout";
 import { ErrorState, LoadingState } from "../../components/ui/StateViews";
+import { featureFlags } from "../../config/featureFlags";
 import { useI18n } from "../../lib/i18n";
 import type { Deal, Id } from "../../types";
 import { DealsAIPriority } from "./components/DealsAIPriority";
@@ -29,7 +30,7 @@ export function DealsPage() {
   const { business, data, isLoading } = useDeals();
   const { filters, updateFilters, resetFilters, activeFilterCount } = useDealFilters();
   const { activePipeline, activeStages, rows, metrics } = useDealMetrics(data, filters);
-  const [viewMode, setViewMode] = useState<DealViewMode>("list");
+  const [viewMode, setViewMode] = useState<DealViewMode>(() => (featureFlags.crmKanbanDefault ? "kanban" : "list"));
   const [sortKey, setSortKey] = useState<DealSortKey>("priority");
   const [sortAsc, setSortAsc] = useState(false);
   const sortedRows = useMemo(() => {
@@ -73,7 +74,7 @@ export function DealsPage() {
       if (event.key === "Enter" && selection.selectedDealId) selection.setMobileDetailOpen(true);
       if (event.key === "ArrowDown" && sortedRows[index + 1]) selection.openDeal(sortedRows[index + 1].id);
       if (event.key === "ArrowUp" && sortedRows[index - 1]) selection.openDeal(sortedRows[index - 1].id);
-      if (event.key === "Delete" && selection.selectedIds.length && window.confirm("Удалить выбранные сделки?")) deleteMutation.mutate(selection.selectedIds);
+      if (event.key === "Delete" && selection.selectedIds.length && window.confirm(t("deals.confirmDeleteSelected"))) deleteMutation.mutate(selection.selectedIds);
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -106,7 +107,7 @@ export function DealsPage() {
           <DealsFilters filters={filters} metrics={metrics} pipelines={data.pipelines} teamMembers={data.teamMembers} activePipeline={activePipeline} activeFilterCount={activeFilterCount} onChange={updateFilters} onReset={resetFilters} onSave={() => localStorage.setItem("zani.deals.savedFilter", JSON.stringify(filters))} onExport={exportExcel} t={t} />
           <WorkQueueLayout className="lg:grid-cols-[minmax(0,1fr)_440px]">
             <WorkQueueListPane mobileDetailOpen={selection.mobileDetailOpen}>
-              <DealsToolbar viewMode={viewMode} sortKey={sortKey} sortAsc={sortAsc} selectedCount={selection.selectedIds.length} onViewModeChange={setViewMode} onSortKeyChange={setSortKey} onSortDirectionToggle={() => setSortAsc((value) => !value)} onBulkClear={() => window.confirm("Удалить выбранные сделки?") && deleteMutation.mutate(selection.selectedIds)} />
+              <DealsToolbar viewMode={viewMode} sortKey={sortKey} sortAsc={sortAsc} selectedCount={selection.selectedIds.length} onViewModeChange={setViewMode} onSortKeyChange={setSortKey} onSortDirectionToggle={() => setSortAsc((value) => !value)} onBulkClear={() => window.confirm(t("deals.confirmDeleteSelected")) && deleteMutation.mutate(selection.selectedIds)} t={t} />
               <DealsList rows={sortedRows} viewMode={viewMode} stages={activeStages} selectedDealId={selection.selectedDealId} selectedIds={selection.selectedIds} onOpen={(deal) => selection.openDeal(deal.id)} onCheck={(deal) => selection.toggleSelected(deal.id)} onSelectAll={selection.selectAll} onCreate={() => actions.setCreateOpen(true)} onTask={actions.openNextActionModal} onMore={(deal) => setDrawerEntity({ type: "deal", id: deal.id })} onStageChange={actions.handleStageChange} t={t} />
             </WorkQueueListPane>
             <WorkQueueDetailPane mobileDetailOpen={selection.mobileDetailOpen} closeLabel={t("common.close")} onMobileClose={() => selection.setMobileDetailOpen(false)}>

@@ -24,13 +24,13 @@ export function MetricTile({
     pink: "bg-rose-50 text-rose-700",
   }[tone];
   return (
-    <div className="rounded-xl border border-slate-200 bg-white px-3 py-3 shadow-[0_4px_18px_rgba(15,23,42,0.035)]">
+    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-soft transition duration-150 hover:-translate-y-0.5 hover:shadow-md">
       <div className="flex items-center gap-2.5">
         <span className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-xl", toneClass)}>
           <Icon size={18} />
         </span>
         <div className="min-w-0">
-          <p className="truncate text-xs font-semibold text-slate-500">{label}</p>
+          <p className="truncate text-xs font-semibold uppercase tracking-[0.04em] text-slate-500">{label}</p>
           <div className="mt-1 flex items-end gap-1.5">
             <p className="text-xl font-bold leading-none text-midnight">{value}</p>
             {delta ? <span className="text-xs font-bold text-emerald-600">{delta}</span> : null}

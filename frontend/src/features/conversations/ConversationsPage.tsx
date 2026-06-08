@@ -207,8 +207,8 @@ function MessageBubble({ message, t }: { message: InboxMessage; t: Translate }) 
     <div className={cn("flex", inbound ? "justify-start" : "justify-end")}>
       <div
         className={cn(
-          "max-w-[74%] rounded-2xl px-4 py-3 text-sm leading-6 shadow-sm",
-          inbound ? "border border-slate-100 bg-white text-slate-700" : ai ? "bg-ai-50 text-ai-800 ring-1 ring-ai-100" : "bg-brand-50 text-slate-800 ring-1 ring-brand-100",
+          "max-w-[74%] rounded-xl px-4 py-3 text-sm leading-6 shadow-sm",
+          inbound ? "border border-slate-100 bg-white text-slate-700" : ai ? "bg-ai-50 text-ai-800 ring-1 ring-ai-100" : "bg-primary-gradient text-white",
         )}
       >
         <div className="mb-1 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] opacity-60">
@@ -551,13 +551,13 @@ export function ConversationsPage() {
 
   return (
     <div className="space-y-4">
-      {notice ? <div className="rounded-2xl border border-ai-100 bg-ai-50 px-4 py-3 text-sm font-bold text-ai-800">{notice}</div> : null}
+      {notice ? <div className="rounded-xl border border-ai-100 bg-ai-50 px-4 py-3 text-sm font-bold text-ai-800">{notice}</div> : null}
       {actionError ? <ErrorState message={getApiErrorMessage(actionError)} /> : null}
 
       <section className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-midnight md:text-3xl">{t("conversations.title")}</h1>
-          <p className="mt-1 max-w-2xl text-base leading-6 text-slate-600">{t("conversations.description")}</p>
+          <h1 className="text-2xl font-bold tracking-tight text-midnight">{t("conversations.title")}</h1>
+          <p className="mt-1 max-w-2xl text-sm font-medium leading-6 text-slate-600">{t("conversations.description")}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <InboxMetricChip label={t("conversations.metricTotal")} value={summary.data?.total ?? 0} />
@@ -567,10 +567,10 @@ export function ConversationsPage() {
         </div>
       </section>
 
-      <WorkQueueLayout className="overflow-hidden border border-slate-200 shadow-[0_4px_20px_rgba(0,47,108,0.04)] lg:min-h-[calc(100vh-190px)] lg:grid-cols-[380px_minmax(0,1fr)] 2xl:grid-cols-[380px_minmax(560px,1fr)_300px]">
+      <WorkQueueLayout className="overflow-hidden border border-slate-200 shadow-soft lg:min-h-[calc(100vh-190px)] lg:grid-cols-[380px_minmax(0,1fr)] 2xl:grid-cols-[380px_minmax(560px,1fr)_320px]">
         <WorkQueueListPane mobileDetailOpen={mobileThreadOpen}>
           <div className="space-y-3 p-5">
-            <h1 className="text-2xl font-black tracking-tight text-midnight">{t("conversations.dialogsTitle")}</h1>
+            <h1 className="text-xl font-bold tracking-tight text-midnight">{t("conversations.dialogsTitle")}</h1>
             <Select
               className="min-h-12 rounded-xl text-midnight"
               value={filters.bot || ""}
@@ -592,7 +592,7 @@ export function ConversationsPage() {
                 />
               </label>
               <button
-                className={cn("grid h-12 w-12 place-items-center rounded-xl text-slate-600", filtersOpen ? "bg-midnight text-white" : "bg-slate-100")}
+                className={cn("grid h-12 w-12 place-items-center rounded-xl text-slate-600", filtersOpen ? "bg-brand-600 text-white" : "bg-slate-100")}
                 type="button"
                 aria-label={t("conversations.filterButton")}
                 onClick={() => setFiltersOpen((value) => !value)}
@@ -602,7 +602,7 @@ export function ConversationsPage() {
             </div>
 
             {filtersOpen ? (
-              <div className="space-y-2 rounded-2xl border border-slate-100 bg-slate-50 p-3">
+              <div className="space-y-2 rounded-xl border border-slate-100 bg-slate-50 p-3">
                 <Select
                   className="min-h-10 rounded-xl"
                   value={filters.channel || ""}
@@ -649,13 +649,13 @@ export function ConversationsPage() {
           </div>
 
           <div className="border-y border-slate-100 p-5">
-            <div className="grid grid-cols-3 rounded-2xl bg-slate-100 p-1">
+            <div className="grid grid-cols-3 rounded-xl bg-slate-100 p-1">
               {tabs.map((tab) => (
                 <button
                   key={tab.value}
                   className={cn(
-                    "rounded-xl px-2 py-2 text-sm font-black transition",
-                    activeTab === tab.value ? "bg-white text-midnight shadow-sm" : "text-slate-400 hover:text-slate-600",
+                    "rounded-lg px-2 py-2 text-sm font-black transition",
+                    activeTab === tab.value ? "bg-white text-brand-700 shadow-sm" : "text-slate-400 hover:text-slate-600",
                   )}
                   onClick={() => updateFilters(tabFilters(filters, tab.value), tab.value)}
                 >
@@ -680,19 +680,19 @@ export function ConversationsPage() {
                     </button>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <Button className="h-8 rounded-xl px-3 text-xs" variant="secondary" disabled={!selectedIds.length} onClick={() => bulkMutation.mutate("markRead")} isLoading={bulkMutation.isPending}>
+                    <Button className="h-8 rounded-lg px-3 text-xs" variant="secondary" disabled={!selectedIds.length} onClick={() => bulkMutation.mutate("markRead")} isLoading={bulkMutation.isPending}>
                       {t("conversations.markRead")}
                     </Button>
-                    <Button className="h-8 rounded-xl px-3 text-xs" variant="secondary" disabled={!selectedIds.length} onClick={() => bulkMutation.mutate("assign")} isLoading={bulkMutation.isPending}>
+                    <Button className="h-8 rounded-lg px-3 text-xs" variant="secondary" disabled={!selectedIds.length} onClick={() => bulkMutation.mutate("assign")} isLoading={bulkMutation.isPending}>
                       {t("conversations.take")}
                     </Button>
-                    <Button className="h-8 rounded-xl px-3 text-xs" variant="secondary" disabled={!selectedIds.length} onClick={() => bulkMutation.mutate("pauseBot")} isLoading={bulkMutation.isPending}>
+                    <Button className="h-8 rounded-lg px-3 text-xs" variant="secondary" disabled={!selectedIds.length} onClick={() => bulkMutation.mutate("pauseBot")} isLoading={bulkMutation.isPending}>
                       {t("conversations.pause")}
                     </Button>
-                    <Button className="h-8 rounded-xl px-3 text-xs" variant="secondary" disabled={!selectedIds.length} onClick={() => bulkMutation.mutate("handoff")} isLoading={bulkMutation.isPending}>
+                    <Button className="h-8 rounded-lg px-3 text-xs" variant="secondary" disabled={!selectedIds.length} onClick={() => bulkMutation.mutate("handoff")} isLoading={bulkMutation.isPending}>
                       {t("conversations.operator")}
                     </Button>
-                    <Button className="h-8 rounded-xl px-3 text-xs" variant="secondary" disabled={!selectedIds.length} onClick={() => bulkMutation.mutate("close")} isLoading={bulkMutation.isPending}>
+                    <Button className="h-8 rounded-lg px-3 text-xs" variant="secondary" disabled={!selectedIds.length} onClick={() => bulkMutation.mutate("close")} isLoading={bulkMutation.isPending}>
                       {t("common.close")}
                     </Button>
                   </div>
@@ -727,7 +727,7 @@ export function ConversationsPage() {
           {!selected ? (
             <div className="grid flex-1 place-items-center p-8">
               <div className="text-center">
-                <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-white text-brand-600 shadow-sm">
+                <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-xl bg-white text-brand-600 shadow-sm">
                   <MessageSquare aria-hidden="true" size={26} />
                 </div>
                 <p className="text-2xl font-black text-slate-400">{t("conversations.selectDialog")}</p>
@@ -816,7 +816,7 @@ export function ConversationsPage() {
                     {t("conversations.closedReplyNotice")}
                   </div>
                 ) : null}
-                <div className="flex items-end gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+                <div className="flex items-end gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
                   <textarea
                     rows={2}
                     className="max-h-32 min-h-11 min-w-0 flex-1 resize-none bg-transparent py-2 text-sm outline-none placeholder:text-slate-400"
@@ -830,7 +830,7 @@ export function ConversationsPage() {
                   />
                   <Button
                     variant="ai"
-                    className="h-11 w-11 rounded-2xl px-0"
+                    className="h-11 w-11 rounded-lg px-0"
                     disabled={selected.status === "closed" || !draft.trim()}
                     isLoading={sendMutation.isPending}
                     onClick={sendReply}
@@ -847,7 +847,7 @@ export function ConversationsPage() {
         <aside className="hidden min-h-0 flex-col gap-3 overflow-y-auto border-l border-slate-200 bg-white p-4 2xl:flex">
           {selected ? (
             <>
-              <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-soft">
                 <div className="flex items-start gap-3">
                   <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-brand-50 text-brand-700">
                     <UserRound size={22} />
@@ -863,7 +863,7 @@ export function ConversationsPage() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-soft">
                 <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{t("conversations.channel")}</p>
                 <div className="mt-3 flex items-center justify-between gap-3">
                   <div>
@@ -874,10 +874,10 @@ export function ConversationsPage() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-soft">
                 <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{t("conversations.nextTask")}</p>
                 <div className="mt-3 flex items-start gap-3">
-                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-violet-50 text-violet-700">
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-violet-50 text-violet-700">
                     <CalendarCheck size={18} />
                   </div>
                   <div className="min-w-0">
@@ -895,7 +895,7 @@ export function ConversationsPage() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-ai-100 bg-ai-50 p-4 shadow-sm">
+              <div className="rounded-xl border border-ai-100 bg-ai-50 p-4 shadow-soft">
                 <div className="flex items-center justify-between gap-3">
                   <p className="flex items-center gap-2 font-black text-ai-900"><Sparkles size={18} /> {t("conversations.replyHint")}</p>
                 </div>
@@ -903,7 +903,7 @@ export function ConversationsPage() {
                   {selectedInsight?.intent ? t("conversations.intentLine", { intent: selectedInsight.intent }) : t("conversations.assistantDraftHelp")}
                   {selectedInsight?.confidence !== null && selectedInsight?.confidence !== undefined ? ` ${t("conversations.confidenceLine", { confidence: selectedInsight.confidence })}` : ""}
                 </p>
-                <div className="mt-3 rounded-2xl bg-white p-3 text-sm font-semibold leading-6 text-slate-700">
+                <div className="mt-3 rounded-xl bg-white p-3 text-sm font-semibold leading-6 text-slate-700">
                   {draft || selectedInsight?.nextAction || t("conversations.prepareDraftFallback")}
                 </div>
                 <Button className="mt-3 w-full rounded-xl" variant="ai" onClick={() => suggestMutation.mutate(selected.id)} isLoading={suggestMutation.isPending} disabled={!canSuggestAi}>

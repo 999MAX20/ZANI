@@ -6,11 +6,11 @@ import { cn } from "../../../../lib/cn";
 type MetricVariant = "default" | "success" | "info" | "danger" | "warning";
 
 const variantClass: Record<MetricVariant, string> = {
-  default: "border-gray-200 bg-gray-50 text-gray-700 ring-gray-500",
-  success: "border-green-200 bg-green-50 text-green-700 ring-green-500",
-  info: "border-blue-200 bg-blue-50 text-blue-700 ring-blue-500",
-  danger: "border-red-200 bg-red-50 text-red-700 ring-red-500",
-  warning: "border-yellow-200 bg-yellow-50 text-yellow-700 ring-yellow-500",
+  default: "bg-slate-100 text-slate-600 ring-slate-500",
+  success: "bg-emerald-50 text-emerald-700 ring-emerald-500",
+  info: "bg-blue-50 text-blue-700 ring-blue-500",
+  danger: "bg-red-50 text-red-700 ring-red-500",
+  warning: "bg-amber-50 text-amber-700 ring-amber-500",
 };
 
 export const MetricCard = memo(function MetricCard({
@@ -31,16 +31,17 @@ export const MetricCard = memo(function MetricCard({
   return (
     <div
       className={cn(
-        "rounded-lg border p-3 transition-all duration-200 hover:shadow-md",
-        variantClass[variant],
-        shouldHighlight && "ring-2 ring-offset-2 animate-pulse-slow",
+        "rounded-xl border border-slate-200 bg-white p-4 shadow-soft transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md",
+        shouldHighlight && "ring-2 ring-offset-2 ring-brand-500/20",
       )}
     >
       <div className="flex items-start gap-2">
-        <Icon size={24} className="mt-0.5 shrink-0" />
+        <span className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-xl", variantClass[variant])}>
+          <Icon size={20} />
+        </span>
         <div className="min-w-0">
-          <p className="text-xs font-medium text-gray-600">{label}</p>
-          <p className="mt-1 text-xl font-bold leading-none text-gray-900">{value}</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.04em] text-slate-500">{label}</p>
+          <p className="mt-1 text-xl font-bold leading-none text-midnight">{value}</p>
           {delta ? <p className="mt-1 text-xs font-semibold text-emerald-700">{delta}</p> : null}
         </div>
       </div>

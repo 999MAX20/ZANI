@@ -75,12 +75,12 @@ export function DealsList({
           <thead className="sticky top-0 z-10 bg-slate-50 text-xs uppercase text-slate-500">
             <tr>
               <th className="w-12 border-b border-slate-200 p-3"><input type="checkbox" checked={selectedIds.length === rows.length} onChange={onSelectAll} /></th>
-              <th className="border-b border-slate-200 p-3">Сделка</th>
-              <th className="border-b border-slate-200 p-3">Клиент</th>
-              <th className="border-b border-slate-200 p-3">Сумма</th>
-              <th className="border-b border-slate-200 p-3">Стадия</th>
-              <th className="border-b border-slate-200 p-3">Риск</th>
-              <th className="border-b border-slate-200 p-3">Дата</th>
+              <th className="border-b border-slate-200 p-3">{t("deals.deal")}</th>
+              <th className="border-b border-slate-200 p-3">{t("deals.client")}</th>
+              <th className="border-b border-slate-200 p-3">{t("deals.amount")}</th>
+              <th className="border-b border-slate-200 p-3">{t("deals.stage")}</th>
+              <th className="border-b border-slate-200 p-3">{t("deals.risk")}</th>
+              <th className="border-b border-slate-200 p-3">{t("deals.date")}</th>
             </tr>
           </thead>
           <tbody>
@@ -103,22 +103,25 @@ export function DealsList({
 
   if (viewMode === "kanban") {
     return (
-      <div className="grid min-h-0 auto-cols-[300px] grid-flow-col gap-3 overflow-x-auto p-3">
+      <div className="grid min-h-0 auto-cols-[320px] grid-flow-col gap-4 overflow-x-auto p-4">
         {groups.map((group) => (
           <section
             key={group.id}
-            className="flex max-h-[calc(100vh-320px)] min-h-[420px] flex-col rounded-xl border border-slate-200 bg-slate-50"
+            className="flex max-h-[calc(100vh-320px)] min-h-[460px] flex-col rounded-xl border border-slate-200 bg-white shadow-soft"
             onDragOver={(event) => event.preventDefault()}
             onDrop={(event) => {
               const deal = dealMap.get(Number(event.dataTransfer.getData("text/plain")));
               if (deal && group.id !== "none") onStageChange(deal, Number(group.id));
             }}
           >
-            <header className="flex items-center justify-between border-b border-slate-200 p-3">
-              <h3 className="font-black text-midnight">{group.name}</h3>
+            <header className="border-b border-slate-200 p-4">
+              <div className="flex items-center justify-between gap-3">
+              <h3 className="font-bold text-midnight">{group.name}</h3>
               <span className="rounded-full bg-white px-2.5 py-1 text-xs font-black text-slate-500">{group.rows.length}</span>
+              </div>
+              <div className="mt-3 h-1 rounded-full bg-primary-gradient" />
             </header>
-            <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-2">
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto bg-slate-50/70 p-3">
               {group.rows.map((deal) => (
                 <DealListItem key={deal.id} deal={deal} selected={selectedDealId === deal.id} checked={selectedIds.includes(deal.id)} onOpen={onOpen} onCheck={onCheck} onTask={onTask} onMore={onMore} t={t} />
               ))}
@@ -134,7 +137,7 @@ export function DealsList({
       {groups.map((group) => (
         <section
           key={group.id}
-          className="mb-3 rounded-xl border border-slate-200 bg-slate-50"
+          className="mb-3 rounded-xl border border-slate-200 bg-white shadow-soft"
           onDragOver={(event) => event.preventDefault()}
           onDrop={(event) => {
             const deal = dealMap.get(Number(event.dataTransfer.getData("text/plain")));

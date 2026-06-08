@@ -33,8 +33,8 @@ export const DealListItem = memo(function DealListItem({
       draggable
       onDragStart={(event) => event.dataTransfer.setData("text/plain", String(deal.id))}
       className={cn(
-        "group rounded-xl border bg-white p-3 shadow-sm transition hover:bg-blue-50/30 hover:shadow-md",
-        selected && "border-blue-500 shadow-md ring-2 ring-blue-100",
+        "group rounded-xl border bg-white p-4 shadow-soft transition duration-150 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md",
+        selected && "border-brand-500 shadow-md ring-2 ring-brand-100",
         !selected && "border-slate-200",
       )}
     >

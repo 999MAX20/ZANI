@@ -1,4 +1,5 @@
 import React from "react";
+import { captureFrontendError } from "../../lib/monitoring";
 import { translate, type Language } from "../../lib/i18n";
 
 type AppErrorBoundaryState = {
@@ -25,7 +26,7 @@ export class AppErrorBoundary extends React.Component<React.PropsWithChildren, A
   }
 
   componentDidCatch(error: unknown, errorInfo: React.ErrorInfo) {
-    console.error("Zani frontend error", error, errorInfo);
+    captureFrontendError(error, { componentStack: errorInfo.componentStack });
   }
 
   render() {

@@ -1,15 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
 
-const i18nPath = path.resolve("src/lib/i18n.tsx");
-const source = fs.readFileSync(i18nPath, "utf8");
-
-function dictionaryBlock(name, nextName) {
-  const start = source.indexOf(`const ${name}: Dictionary = {`);
+function dictionaryBlock(name) {
+  const source = fs.readFileSync(path.resolve(`src/lib/i18n/${name}.ts`), "utf8");
+  const start = source.indexOf(`export const ${name}: Record<string, string> = {`);
   if (start === -1) throw new Error(`Dictionary ${name} not found.`);
-  const end = nextName
-    ? source.indexOf(`const ${nextName}: Dictionary = {`, start)
-    : source.indexOf("const dictionaries", start);
+  const end = source.lastIndexOf("};");
   if (end === -1) throw new Error(`Dictionary ${name} end not found.`);
   return source.slice(start, end);
 }
@@ -21,8 +17,8 @@ function parseDictionary(block) {
 }
 
 const dictionaries = {
-  ru: parseDictionary(dictionaryBlock("ru", "kk")),
-  kk: parseDictionary(dictionaryBlock("kk", "en")),
+  ru: parseDictionary(dictionaryBlock("ru")),
+  kk: parseDictionary(dictionaryBlock("kk")),
   en: parseDictionary(dictionaryBlock("en")),
 };
 

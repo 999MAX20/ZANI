@@ -12,7 +12,7 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 
@@ -22,6 +22,7 @@ import { useActiveBusiness } from "../../hooks/useBusiness";
 import { cn } from "../../lib/cn";
 import { useI18n } from "../../lib/i18n";
 import { hasPermission } from "../../lib/permissions";
+import { prefetchRouteData } from "../../lib/prefetch";
 import { realtimeIntervals, realtimeQueryOptions } from "../../lib/realtime";
 
 type SidebarItem = {
@@ -119,6 +120,7 @@ export function Sidebar({
   onNavigate?: () => void;
 }) {
   const { t } = useI18n();
+  const queryClient = useQueryClient();
   const location = useLocation();
   const { user } = useAuth();
   const { business } = useActiveBusiness();
@@ -191,6 +193,8 @@ export function Sidebar({
                       to={item.to}
                       end={item.to === "/dashboard"}
                       onClick={onNavigate}
+                      onMouseEnter={() => prefetchRouteData(item.to, queryClient)}
+                      onFocus={() => prefetchRouteData(item.to, queryClient)}
                       title={t(item.label)}
                       className={cn(
                         "group relative flex min-h-[48px] items-center gap-3 border-l-4 border-transparent px-4 py-3 text-sm font-medium text-slate-700 transition-colors duration-150",

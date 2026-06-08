@@ -1,14 +1,29 @@
 import { motion } from "framer-motion";
-import { useState } from "react";
-import { Outlet } from "react-router-dom";
+import { lazy, Suspense, useEffect, useState } from "react";
+import { Outlet, useLocation } from "react-router-dom";
 
 import { Header } from "./Header";
 import { MobileNav } from "./MobileNav";
 import { Sidebar } from "./Sidebar";
 
+const CommandPalette = lazy(() => import("./CommandPalette").then((module) => ({ default: module.CommandPalette })));
+
 export function AppLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const [commandOpen, setCommandOpen] = useState(false);
+  const location = useLocation();
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setCommandOpen((value) => !value);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   return (
     <div className="min-h-screen bg-soft-mesh text-ink">
@@ -33,6 +48,11 @@ export function AppLayout() {
           </motion.main>
         </div>
       </div>
+      {commandOpen ? (
+        <Suspense fallback={null}>
+          <CommandPalette onClose={() => setCommandOpen(false)} />
+        </Suspense>
+      ) : null}
     </div>
   );
 }

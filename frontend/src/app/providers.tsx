@@ -14,6 +14,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
             staleTime: 5 * 60_000,
             gcTime: 30 * 60_000,
             refetchOnWindowFocus: false,
+            refetchOnReconnect: true,
             retry: (failureCount, error) => {
               if (axios.isAxiosError(error) && error.response?.status && error.response.status < 500) {
                 return false;

@@ -20,6 +20,17 @@ class CustomFieldDefinitionSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ["created_at", "updated_at"]
 
+    def validate_permissions_json(self, value):
+        if not isinstance(value, dict):
+            raise serializers.ValidationError("permissions_json must be an object.")
+        normalized = {}
+        for key in ("view_roles", "edit_roles"):
+            roles = value.get(key) or []
+            if not isinstance(roles, list):
+                raise serializers.ValidationError(f"{key} must be a list.")
+            normalized[key] = [str(role).strip() for role in roles if str(role).strip()]
+        return normalized
+
 
 class CustomFieldValueSerializer(serializers.ModelSerializer):
     class Meta:

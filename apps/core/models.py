@@ -176,6 +176,7 @@ class CustomFieldDefinition(models.Model):
     label = models.CharField(max_length=128)
     field_type = models.CharField(max_length=32, choices=FieldTypes.choices, default=FieldTypes.TEXT)
     options_json = models.JSONField(default=dict, blank=True)
+    permissions_json = models.JSONField(default=dict, blank=True)
     is_required = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     sort_order = models.PositiveIntegerField(default=0)

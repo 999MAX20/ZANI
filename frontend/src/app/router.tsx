@@ -132,8 +132,8 @@ const merchantChildren = [
   { path: "analytics", resource: "analytics", element: <PageLoader><AnalyticsPage /></PageLoader> },
   { path: "onboarding", resource: "settings", element: <PageLoader><OnboardingPage /></PageLoader> },
   { path: "pilot-readiness", resource: "settings", element: <PageLoader><PilotReadinessPage /></PageLoader> },
-  { path: "settings", resource: "settings", element: <PageLoader><SettingsPage /></PageLoader> },
-  { path: "billing", resource: "settings", element: <Navigate to="/dashboard/settings#billing" replace /> },
+  { path: "settings", resource: "settings", permissionAction: "update", element: <PageLoader><SettingsPage /></PageLoader> },
+  { path: "billing", resource: "settings", permissionAction: "update", element: <Navigate to="/dashboard/settings#billing" replace /> },
 ];
 
 const legacyMerchantRoutes = [
@@ -161,8 +161,8 @@ const legacyMerchantRoutes = [
   { path: "/analytics", resource: "analytics", element: <PageLoader><AnalyticsPage /></PageLoader> },
   { path: "/onboarding", resource: "settings", element: <PageLoader><OnboardingPage /></PageLoader> },
   { path: "/pilot-readiness", resource: "settings", element: <PageLoader><PilotReadinessPage /></PageLoader> },
-  { path: "/settings", resource: "settings", element: <PageLoader><SettingsPage /></PageLoader> },
-  { path: "/billing", resource: "settings", element: <Navigate to="/dashboard/settings#billing" replace /> },
+  { path: "/settings", resource: "settings", permissionAction: "update", element: <PageLoader><SettingsPage /></PageLoader> },
+  { path: "/billing", resource: "settings", permissionAction: "update", element: <Navigate to="/dashboard/settings#billing" replace /> },
 ];
 
 const router = createBrowserRouter([
@@ -252,11 +252,11 @@ const router = createBrowserRouter([
         <AppLayout />
       </MerchantRoute>
     ),
-    children: merchantChildren.map((route) => ({
+    children: merchantChildren.map(({ resource, permissionAction, element, ...route }) => ({
       ...route,
       element: (
-        <PermissionRoute resource={"resource" in route ? route.resource : undefined}>
-          {route.element}
+        <PermissionRoute resource={resource} action={permissionAction}>
+          {element}
         </PermissionRoute>
       ),
     })),
@@ -273,7 +273,7 @@ const router = createBrowserRouter([
       {
         index: true,
         element: (
-          <PermissionRoute resource={route.resource}>
+          <PermissionRoute resource={route.resource} action={"permissionAction" in route ? route.permissionAction : undefined}>
             {route.element}
           </PermissionRoute>
         ),

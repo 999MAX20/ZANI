@@ -180,14 +180,14 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
   }, [showNotifications]);
 
   return (
-    <header className={`fixed left-0 right-0 top-0 z-50 border-b border-slate-200 bg-[#f8f9fb] transition-transform duration-200 ease-out lg:left-[72px] ${headerVisible ? "translate-y-0" : "-translate-y-full"}`}>
+    <header className={`fixed left-0 right-0 top-0 z-50 border-b border-slate-200 bg-white/95 shadow-[0_1px_3px_rgba(0,0,0,0.06)] backdrop-blur-xl transition-transform duration-200 ease-out lg:left-[72px] ${headerVisible ? "translate-y-0" : "-translate-y-full"}`}>
       <div className="flex h-16 items-center justify-between px-4 sm:px-6">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <Button className="h-10 w-10 min-h-10 min-w-10 px-0 text-midnight lg:hidden" variant="ghost" onClick={onMenuClick} aria-label={t("sidebar.expand")}>
             <Menu size={22} strokeWidth={2.2} />
           </Button>
           <div className="hidden items-center gap-6 lg:flex">
-            <span className="whitespace-nowrap border-b-2 border-midnight py-1 text-base font-bold text-midnight">{activeMembership ? businessRoleLabel(activeMembership.role, t) : t("header.role")}</span>
+            <span className="whitespace-nowrap border-b-2 border-brand-600 py-1 text-base font-bold text-midnight">{activeMembership ? businessRoleLabel(activeMembership.role, t) : t("header.role")}</span>
             <span className="hidden items-center gap-2 whitespace-nowrap text-base font-medium text-slate-700 2xl:inline-flex">
               <span className="h-2 w-2 rounded-full bg-emerald-500" />
               {t("header.statusActive")}

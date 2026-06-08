@@ -78,7 +78,7 @@ export function ManagerDashboard({
       </section>
 
       {isCoreDataLoading ? (
-        <div className="mb-5 rounded-3xl border border-cyan-100 bg-white/82 px-5 py-4 text-sm font-semibold text-slate-600 shadow-soft">
+        <div className="mb-5 rounded-xl border border-cyan-100 bg-white px-5 py-4 text-sm font-semibold text-slate-600 shadow-soft">
           {t("dashboard.loadingCoreData")}
         </div>
       ) : null}
@@ -90,22 +90,22 @@ export function ManagerDashboard({
         <MetricTile label={t("nav.tasks")} value={openTasks} hint={overdueTasks ? `${t("dashboard.overdueCount")}: ${overdueTasks}` : t("dashboard.openFollowups")} icon={ListChecks} />
       </section>
 
-      <section className="mt-5 rounded-[1.5rem] border border-white/78 bg-white/90 p-5 shadow-soft">
+      <section className="mt-5 rounded-xl border border-slate-200 bg-white p-5 shadow-soft">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">{t("dashboard.operatorWorkspace")}</p>
             <h2 className="mt-1 text-xl font-black text-midnight">{t("dashboard.operatorFocus")}</h2>
           </div>
           <div className="grid grid-cols-3 gap-2 text-center">
-            <Link to="/dashboard/leads" className="rounded-2xl bg-slate-50 px-4 py-3 transition hover:bg-white hover:shadow-soft">
+            <Link to="/dashboard/leads" className="rounded-xl bg-slate-50 px-4 py-3 transition hover:bg-white hover:shadow-soft">
               <p className="text-2xl font-black text-midnight">{urgentLeads.length}</p>
               <p className="text-xs font-bold text-slate-500">{t("dashboard.leadsLabel")}</p>
             </Link>
-            <Link to="/dashboard/conversations" className="rounded-2xl bg-slate-50 px-4 py-3 transition hover:bg-white hover:shadow-soft">
+            <Link to="/dashboard/conversations" className="rounded-xl bg-slate-50 px-4 py-3 transition hover:bg-white hover:shadow-soft">
               <MessageSquareText className="mx-auto text-brand-600" size={22} />
               <p className="mt-1 text-xs font-bold text-slate-500">{t("dashboard.chatsLabel")}</p>
             </Link>
-            <Link to="/dashboard/deals" className="rounded-2xl bg-slate-50 px-4 py-3 transition hover:bg-white hover:shadow-soft">
+            <Link to="/dashboard/deals" className="rounded-xl bg-slate-50 px-4 py-3 transition hover:bg-white hover:shadow-soft">
               <Target className="mx-auto text-ai-600" size={22} />
               <p className="mt-1 text-xs font-bold text-slate-500">{t("nav.deals")}</p>
             </Link>
@@ -119,7 +119,7 @@ export function ManagerDashboard({
             const client = clients.find((item) => item.id === lead.client);
             const service = services.find((item) => item.id === lead.service);
             return (
-              <Link key={lead.id} to="/dashboard/leads" className="block rounded-2xl border border-slate-100 bg-white/75 p-3 transition hover:bg-white hover:shadow-soft">
+              <Link key={lead.id} to="/dashboard/leads" className="block rounded-xl border border-slate-200 bg-white p-3 transition hover:border-brand-200 hover:shadow-soft">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="truncate font-bold text-midnight">{client?.full_name || t("dashboard.leadNumber", { id: lead.id })}</p>
@@ -138,8 +138,8 @@ export function ManagerDashboard({
             const client = clients.find((item) => item.id === appointment.client);
             const service = services.find((item) => item.id === appointment.service);
             return (
-              <Link key={appointment.id} to="/dashboard/calendar" className="flex items-start gap-3 rounded-2xl border border-slate-100 bg-white/75 p-3 transition hover:bg-white hover:shadow-soft">
-                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-brand-50 text-brand-700">
+              <Link key={appointment.id} to="/dashboard/calendar" className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 transition hover:border-brand-200 hover:shadow-soft">
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700">
                   <CalendarCheck size={17} />
                 </div>
                 <div className="min-w-0">
@@ -154,7 +154,7 @@ export function ManagerDashboard({
 
         <WorkListCard eyebrow={t("dashboard.followUp")} title={t("dashboard.myTasks")} href="/dashboard/tasks">
           {openTaskItems.map((task) => (
-            <Link key={task.id} to="/dashboard/tasks" className="block rounded-2xl border border-slate-100 bg-white/75 p-3 transition hover:bg-white hover:shadow-soft">
+            <Link key={task.id} to="/dashboard/tasks" className="block rounded-xl border border-slate-200 bg-white p-3 transition hover:border-brand-200 hover:shadow-soft">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="truncate font-bold text-midnight">{task.title}</p>

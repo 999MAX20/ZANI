@@ -6,7 +6,6 @@ import {
   Bot,
   CheckCircle2,
   ChevronRight,
-  ExternalLink,
   FileText,
   FunctionSquare,
   MessageSquareText,
@@ -303,9 +302,21 @@ export function AIAgentsPage() {
   const messages = (botMessages.data || []).filter((message) => conversationIds.has(message.conversation));
   const latestMessages = latestConversation ? messages.filter((message) => message.conversation === latestConversation.id).slice(-6) : [];
   const selectedBotsOnly = selectedBot ? [selectedBot] : [];
+  const activeChannelsCount = channels.filter((channel) => channel.status === "active").length;
+  const activeKnowledgeCount = (knowledge.data || []).filter((item) => item.is_active).length;
   const pageError = bots.error || botChannels.error || botConversations.error || botMessages.error || profiles.error || knowledge.error;
   const mutationError = createBot.error || updateBot.error || saveProfile.error || addChannel.error || toggleChannel.error || suggestReply.error;
   const activeSectionMeta = sections.find((section) => section.id === activeSection) || sections[0];
+  const onboardingSteps = selectedBot
+    ? getOnboardingSteps({
+        botId: selectedBot.id,
+        profileReady: Boolean(selectedProfile?.is_active),
+        hasActiveChannel: activeChannelsCount > 0,
+        hasKnowledge: activeKnowledgeCount > 0,
+        hasTestDialog: Boolean(latestConversation),
+        t,
+      })
+    : [];
 
   return (
     <div className="space-y-8">
@@ -381,6 +392,8 @@ export function AIAgentsPage() {
             {t("aiAgents.sidebarEmpty")}
           </div>
         ) : null}
+
+        {selectedBot ? <OnboardingProgress steps={onboardingSteps} compact /> : null}
       </aside>
 
       <main className="min-w-0">
@@ -425,10 +438,10 @@ export function AIAgentsPage() {
         ) : activeSection === "test" ? (
           <TestAndLaunchSection
             bot={selectedBot}
-            profile={selectedProfile}
             channelsCount={channels.length}
-            activeChannelsCount={channels.filter((channel) => channel.status === "active").length}
-            knowledgeCount={(knowledge.data || []).filter((item) => item.is_active).length}
+            activeChannelsCount={activeChannelsCount}
+            knowledgeCount={activeKnowledgeCount}
+            onboardingSteps={onboardingSteps}
             latestConversation={latestConversation}
             latestMessages={latestMessages}
             suggestedReply={suggestedReply}
@@ -521,6 +534,72 @@ function FieldHint({ children }: { children: ReactNode }) {
   return <p className="mt-2 text-xs font-semibold leading-5 text-slate-500">{children}</p>;
 }
 
+function getOnboardingSteps({
+  botId,
+  profileReady,
+  hasActiveChannel,
+  hasKnowledge,
+  hasTestDialog,
+  t,
+}: {
+  botId: Id;
+  profileReady: boolean;
+  hasActiveChannel: boolean;
+  hasKnowledge: boolean;
+  hasTestDialog: boolean;
+  t: (key: string) => string;
+}) {
+  return [
+    { done: profileReady, title: t("aiAgents.checklist.profile"), text: t("aiAgents.checklist.profileText"), href: `/dashboard/ai-agents/${botId}/profile` },
+    { done: hasKnowledge, title: t("aiAgents.checklist.knowledge"), text: t("aiAgents.checklist.knowledgeText"), href: `/dashboard/ai-agents/${botId}/knowledge` },
+    { done: hasActiveChannel, title: t("aiAgents.checklist.channel"), text: t("aiAgents.checklist.channelText"), href: `/dashboard/ai-agents/${botId}/channels` },
+    { done: hasTestDialog, title: t("aiAgents.checklist.test"), text: t("aiAgents.checklist.testText"), href: `/dashboard/ai-agents/${botId}/test` },
+  ];
+}
+
+function OnboardingProgress({
+  steps,
+  compact = false,
+}: {
+  steps: Array<{ done: boolean; title: string; text: string; href: string }>;
+  compact?: boolean;
+}) {
+  const { t } = useI18n();
+  const doneCount = steps.filter((step) => step.done).length;
+  const progress = steps.length ? Math.round((doneCount / steps.length) * 100) : 0;
+  return (
+    <div className={cn("rounded-2xl border border-slate-200 bg-white p-4", compact ? "mt-5" : "shadow-sm")}>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">{t("aiAgents.firstLaunch")}</p>
+          <h3 className="mt-1 font-black text-midnight">{t("aiAgents.firstLaunchTitle")}</h3>
+        </div>
+        <span className="rounded-full bg-brand-50 px-3 py-1 text-sm font-black text-brand-700">{doneCount}/{steps.length}</span>
+      </div>
+      <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
+        <div className="h-full rounded-full bg-brand-600 transition-all" style={{ width: `${progress}%` }} />
+      </div>
+      <div className="mt-4 space-y-2">
+        {steps.map((step) => (
+          <Link
+            key={step.title}
+            to={step.href}
+            className="flex gap-3 rounded-xl p-2 transition hover:bg-slate-50"
+          >
+            <span className={cn("mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full text-white", step.done ? "bg-emerald-500" : "bg-slate-300")}>
+              <CheckCircle2 size={14} />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-black text-midnight">{step.title}</span>
+              {!compact ? <span className="mt-1 block text-xs font-semibold leading-5 text-slate-500">{step.text}</span> : null}
+            </span>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ProfileManagerSection({
   bot,
   channelsCount,
@@ -603,10 +682,10 @@ function AgentActionsSection({
 
 function TestAndLaunchSection({
   bot,
-  profile,
   channelsCount,
   activeChannelsCount,
   knowledgeCount,
+  onboardingSteps,
   latestConversation,
   latestMessages,
   suggestedReply,
@@ -616,10 +695,10 @@ function TestAndLaunchSection({
   canManage,
 }: {
   bot: BotType;
-  profile: AgentProfile | null;
   channelsCount: number;
   activeChannelsCount: number;
   knowledgeCount: number;
+  onboardingSteps: Array<{ done: boolean; title: string; text: string; href: string }>;
   latestConversation?: { id: Id } | null;
   latestMessages: Array<{ id: Id; direction: string; text: string }>;
   suggestedReply: BotSuggestedReplyResponse | null;
@@ -629,13 +708,6 @@ function TestAndLaunchSection({
   canManage: boolean;
 }) {
   const { t } = useI18n();
-  const checklist = [
-    { done: Boolean(profile?.is_active), title: t("aiAgents.checklist.profile"), text: t("aiAgents.checklist.profileText") },
-    { done: activeChannelsCount > 0, title: t("aiAgents.checklist.channel"), text: t("aiAgents.checklist.channelText") },
-    { done: knowledgeCount > 0, title: t("aiAgents.checklist.knowledge"), text: t("aiAgents.checklist.knowledgeText") },
-    { done: Boolean(latestConversation), title: t("aiAgents.checklist.test"), text: t("aiAgents.checklist.testText") },
-  ];
-
   return (
     <div className="space-y-5">
       <HelpCard
@@ -644,12 +716,14 @@ function TestAndLaunchSection({
         recommendation={t("aiAgents.onboarding.test.recommendation")}
       />
 
-      <Card>
-        <CardBody>
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_280px]">
+        <OnboardingProgress steps={onboardingSteps} />
+        <Card>
+          <CardBody className="flex h-full flex-col justify-between gap-5">
             <div>
-              <h3 className="text-xl font-black text-midnight">{t("aiAgents.launchChecklist")}</h3>
-              <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">{t("aiAgents.launchChecklistText")}</p>
+              <h3 className="text-xl font-black text-midnight">{t("aiAgents.launchControlTitle")}</h3>
+              <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">{t("aiAgents.launchControlText")}</p>
+              <FieldHint>{knowledgeCount > 0 && activeChannelsCount > 0 ? t("aiAgents.hint.launchReady") : t("aiAgents.hint.launchNotReady")}</FieldHint>
             </div>
             <Button
               type="button"
@@ -660,22 +734,9 @@ function TestAndLaunchSection({
             >
               <CheckCircle2 size={16} /> {bot.status === "active" ? t("aiAgents.pauseAgent") : t("aiAgents.activateAgent")}
             </Button>
-          </div>
-          <div className="mt-5 grid gap-3 md:grid-cols-2">
-            {checklist.map((item) => (
-              <div key={item.title} className="flex gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                <span className={cn("mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full text-white", item.done ? "bg-emerald-500" : "bg-slate-300")}>
-                  <CheckCircle2 size={15} />
-                </span>
-                <div>
-                  <h4 className="font-black text-midnight">{item.title}</h4>
-                  <p className="mt-1 text-sm font-semibold leading-5 text-slate-500">{item.text}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardBody>
-      </Card>
+          </CardBody>
+        </Card>
+      </div>
 
       <OverviewSection bot={bot} channelsCount={channelsCount} activeChannelsCount={activeChannelsCount} messagesCount={latestMessages.length} latestConversation={latestConversation} />
       <MessagesSection latestConversation={latestConversation} latestMessages={latestMessages} suggestedReply={suggestedReply} isSuggesting={isSuggesting} onSuggest={onSuggest} />
@@ -996,6 +1057,7 @@ function ModelsSection({ bot, updateBot, canManage }: { bot: BotType; updateBot:
 function ControlSection({ bot, updateBot, canManage }: { bot: BotType; updateBot: ReturnType<typeof useMutation<BotType, Error, Partial<BotType>>>; canManage: boolean }) {
   const { t } = useI18n();
   const [config, setConfig] = useState(() => autoPipelineFromSettings(bot.settings_json || {}));
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   useEffect(() => {
     setConfig(autoPipelineFromSettings(bot.settings_json || {}));
@@ -1025,47 +1087,21 @@ function ControlSection({ bot, updateBot, canManage }: { bot: BotType; updateBot
           <p className="mt-1 text-sm font-semibold text-slate-500">{t("aiAgents.control.pipelineText")}</p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <Select
-            label={t("aiAgents.control.mode")}
-            value={config.mode}
-            onChange={(event) => {
-              const mode = event.target.value as AutoPipelineMode;
-              setConfig((current) => ({ ...current, mode, enabled: mode !== "off" }));
-            }}
-            options={[
-              { value: "off", label: t("aiAgents.control.mode.off") },
-              { value: "triage", label: t("aiAgents.control.mode.triage") },
-              { value: "lead_task", label: t("aiAgents.control.mode.leadTask") },
-              { value: "draft_deal", label: t("aiAgents.control.mode.draftDeal") },
-            ]}
-          />
-          <div>
-            <Input
-              label={t("aiAgents.control.maxReplyChars")}
-              type="number"
-              min={120}
-              max={2000}
-              value={config.max_auto_reply_chars}
-              onChange={(event) => setConfig((current) => ({ ...current, max_auto_reply_chars: Number(event.target.value) }))}
-            />
-            <FieldHint>{t("aiAgents.hint.maxReplyChars")}</FieldHint>
-          </div>
-        </div>
+        <Select
+          label={t("aiAgents.control.mode")}
+          value={config.mode}
+          onChange={(event) => {
+            const mode = event.target.value as AutoPipelineMode;
+            setConfig((current) => ({ ...current, mode, enabled: mode !== "off" }));
+          }}
+          options={[
+            { value: "off", label: t("aiAgents.control.mode.off") },
+            { value: "triage", label: t("aiAgents.control.mode.triage") },
+            { value: "lead_task", label: t("aiAgents.control.mode.leadTask") },
+            { value: "draft_deal", label: t("aiAgents.control.mode.draftDeal") },
+          ]}
+        />
         <FieldHint>{t("aiAgents.hint.pipelineMode")}</FieldHint>
-
-        <div className="mt-5 grid gap-4 md:grid-cols-2">
-          <label className="block">
-            <span className="mb-2 block text-sm font-bold text-slate-700">{t("aiAgents.control.leadConfidence", { value: config.min_lead_confidence.toFixed(1) })}</span>
-            <input className="w-full accent-brand-600" type="range" min="0.1" max="1" step="0.1" value={config.min_lead_confidence} onChange={(event) => setConfig((current) => ({ ...current, min_lead_confidence: Number(event.target.value) }))} />
-            <FieldHint>{t("aiAgents.hint.leadConfidence")}</FieldHint>
-          </label>
-          <label className="block">
-            <span className="mb-2 block text-sm font-bold text-slate-700">{t("aiAgents.control.dealConfidence", { value: config.min_deal_confidence.toFixed(1) })}</span>
-            <input className="w-full accent-brand-600" type="range" min="0.1" max="1" step="0.1" value={config.min_deal_confidence} onChange={(event) => setConfig((current) => ({ ...current, min_deal_confidence: Number(event.target.value) }))} />
-            <FieldHint>{t("aiAgents.hint.dealConfidence")}</FieldHint>
-          </label>
-        </div>
 
         <div className="mt-5 grid gap-3">
           {[
@@ -1086,6 +1122,46 @@ function ControlSection({ bot, updateBot, canManage }: { bot: BotType; updateBot
               />
             </div>
           ))}
+        </div>
+
+        <div className="mt-5 rounded-2xl border border-slate-100 bg-slate-50 p-4">
+          <button
+            type="button"
+            className="flex w-full items-center justify-between gap-3 text-left"
+            onClick={() => setShowAdvanced((value) => !value)}
+          >
+            <div>
+              <h4 className="font-black text-midnight">{t("aiAgents.control.advancedTitle")}</h4>
+              <p className="mt-1 text-sm font-semibold leading-5 text-slate-500">{t("aiAgents.control.advancedText")}</p>
+            </div>
+            <ChevronRight size={18} className={cn("shrink-0 text-slate-400 transition", showAdvanced && "rotate-90 text-brand-700")} />
+          </button>
+
+          {showAdvanced ? (
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              <div>
+                <Input
+                  label={t("aiAgents.control.maxReplyChars")}
+                  type="number"
+                  min={120}
+                  max={2000}
+                  value={config.max_auto_reply_chars}
+                  onChange={(event) => setConfig((current) => ({ ...current, max_auto_reply_chars: Number(event.target.value) }))}
+                />
+                <FieldHint>{t("aiAgents.hint.maxReplyChars")}</FieldHint>
+              </div>
+              <label className="block">
+                <span className="mb-2 block text-sm font-bold text-slate-700">{t("aiAgents.control.leadConfidence", { value: config.min_lead_confidence.toFixed(1) })}</span>
+                <input className="w-full accent-brand-600" type="range" min="0.1" max="1" step="0.1" value={config.min_lead_confidence} onChange={(event) => setConfig((current) => ({ ...current, min_lead_confidence: Number(event.target.value) }))} />
+                <FieldHint>{t("aiAgents.hint.leadConfidence")}</FieldHint>
+              </label>
+              <label className="block md:col-span-2">
+                <span className="mb-2 block text-sm font-bold text-slate-700">{t("aiAgents.control.dealConfidence", { value: config.min_deal_confidence.toFixed(1) })}</span>
+                <input className="w-full accent-brand-600" type="range" min="0.1" max="1" step="0.1" value={config.min_deal_confidence} onChange={(event) => setConfig((current) => ({ ...current, min_deal_confidence: Number(event.target.value) }))} />
+                <FieldHint>{t("aiAgents.hint.dealConfidence")}</FieldHint>
+              </label>
+            </div>
+          ) : null}
         </div>
 
         <Button className="mt-5" type="button" disabled={!canManage} isLoading={updateBot.isPending} onClick={saveConfig}>
@@ -1183,6 +1259,19 @@ function KnowledgeSection({ businessId, items, canManage }: { businessId: Id; it
     setOpen(true);
   };
 
+  const knowledgeTemplates = [
+    { title: t("aiAgents.knowledge.template.prices"), category: "sales", content: t("aiAgents.knowledge.template.pricesContent") },
+    { title: t("aiAgents.knowledge.template.schedule"), category: "business", content: t("aiAgents.knowledge.template.scheduleContent") },
+    { title: t("aiAgents.knowledge.template.booking"), category: "policy", content: t("aiAgents.knowledge.template.bookingContent") },
+    { title: t("aiAgents.knowledge.template.faq"), category: "faq", content: t("aiAgents.knowledge.template.faqContent") },
+  ];
+
+  const openTemplate = (template: { title: string; category: string; content: string }) => {
+    setEditing(null);
+    setDraft({ ...template, is_active: true });
+    setOpen(true);
+  };
+
   return (
     <>
       <div className="space-y-4">
@@ -1223,11 +1312,25 @@ function KnowledgeSection({ businessId, items, canManage }: { businessId: Id; it
               </CardBody>
             </Card>
           )) : (
-            <Card>
+            <Card className="md:col-span-2">
               <CardBody>
                 <BookOpen className="text-brand-600" size={26} />
                 <h3 className="mt-4 text-lg font-black text-midnight">{t("aiAgents.knowledge.emptyTitle")}</h3>
                 <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">{t("aiAgents.knowledge.emptyText")}</p>
+                <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  {knowledgeTemplates.map((template) => (
+                    <button
+                      key={template.title}
+                      type="button"
+                      disabled={!canManage}
+                      className="rounded-2xl border border-slate-200 bg-white p-3 text-left transition hover:border-brand-200 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-60"
+                      onClick={() => openTemplate(template)}
+                    >
+                      <span className="text-sm font-black text-midnight">{template.title}</span>
+                      <span className="mt-1 block text-xs font-semibold leading-5 text-slate-500">{template.category}</span>
+                    </button>
+                  ))}
+                </div>
               </CardBody>
             </Card>
           )}
@@ -1259,41 +1362,6 @@ function KnowledgeSection({ businessId, items, canManage }: { businessId: Id; it
         </form>
       </Modal>
     </>
-  );
-}
-
-function AgentIntegrationsSection() {
-  const { t } = useI18n();
-  const items = [
-    [t("aiAgents.integrations.crmTitle"), t("aiAgents.integrations.crmText")],
-    [t("aiAgents.integrations.stockTitle"), t("aiAgents.integrations.stockText")],
-    [t("aiAgents.integrations.marketplacesTitle"), t("aiAgents.integrations.marketplacesText")],
-    [t("aiAgents.integrations.calendarTitle"), t("aiAgents.integrations.calendarText")],
-  ];
-  return (
-    <div className="space-y-4">
-      <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h3 className="text-xl font-black text-midnight">{t("aiAgents.dataSources")}</h3>
-            <p className="mt-1 text-sm font-semibold text-slate-500">{t("aiAgents.dataSourcesText")}</p>
-          </div>
-          <Link to="/dashboard/integrations">
-            <Button type="button" variant="secondary"><ExternalLink size={16} /> {t("aiAgents.openIntegrations")}</Button>
-          </Link>
-        </div>
-      </div>
-      <div className="grid gap-4 md:grid-cols-2">
-        {items.map(([title, text]) => (
-          <Card key={title}>
-            <CardBody>
-              <h3 className="font-black text-midnight">{title}</h3>
-              <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">{text}</p>
-            </CardBody>
-          </Card>
-        ))}
-      </div>
-    </div>
   );
 }
 

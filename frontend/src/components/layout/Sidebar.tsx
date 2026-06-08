@@ -149,11 +149,11 @@ export function Sidebar({
       onMouseEnter={forceVisible ? undefined : onDesktopMouseEnter}
       onMouseLeave={forceVisible ? undefined : onDesktopMouseLeave}
       className={cn(
-        "relative z-[60] shrink-0 border-r border-slate-200/90 transition-[width,box-shadow,background-color,backdrop-filter] duration-200 ease-out",
+        "relative z-[60] shrink-0 border-r border-slate-200 bg-white transition-[width,box-shadow,background-color,backdrop-filter] duration-200 ease-out",
         forceVisible && "h-dvh max-h-dvh w-[min(390px,94vw)] bg-white/[0.97] shadow-premium backdrop-blur-2xl",
         !forceVisible && cn(
-          "hidden bg-slate-100/[0.92] backdrop-blur-xl lg:fixed lg:inset-y-0 lg:left-0 lg:block",
-          isExpanded ? "lg:w-[260px] lg:bg-white/[0.97] lg:shadow-[18px_0_45px_rgba(15,23,42,0.14)] lg:backdrop-blur-2xl" : "lg:w-[72px]",
+          "hidden bg-white/[0.88] backdrop-blur-2xl lg:fixed lg:inset-y-0 lg:left-0 lg:block",
+          isExpanded ? "lg:w-[260px] lg:bg-white/[0.97] lg:shadow-[18px_0_45px_rgba(17,24,39,0.12)] lg:backdrop-blur-2xl" : "lg:w-[72px]",
         ),
         !forceVisible && "hidden lg:block",
       )}
@@ -161,7 +161,7 @@ export function Sidebar({
       <div className={cn("flex h-full min-h-0 flex-col", forceVisible && "min-h-dvh overflow-y-auto pb-8")}>
         <div className={cn("py-8", isExpanded ? "px-6" : "px-3")}>
           <div className="flex items-center gap-3">
-            <div className="relative grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-midnight text-white shadow-sm">
+            <div className="relative grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary-gradient text-white shadow-glow">
               <Sparkles size={20} />
               <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-slate-100 bg-emerald-500" />
             </div>
@@ -199,14 +199,14 @@ export function Sidebar({
                       className={cn(
                         "group relative flex min-h-[48px] items-center gap-3 border-l-4 border-transparent px-4 py-3 text-sm font-medium text-slate-700 transition-colors duration-150",
                         !isExpanded && "justify-center px-0",
-                        "hover:bg-slate-200/70 hover:text-midnight",
-                        active && "border-midnight bg-slate-200/80 font-semibold text-midnight",
+                        "hover:bg-primary-50 hover:text-midnight",
+                        active && "border-brand-600 bg-primary-50 font-semibold text-midnight",
                       )}
                     >
                       <span
                         className={cn(
                           "grid h-6 w-6 shrink-0 place-items-center text-slate-500 transition-colors",
-                          active && "text-midnight",
+                          active && "text-brand-600",
                           !active && "group-hover:text-midnight",
                         )}
                       >
@@ -239,7 +239,7 @@ export function Sidebar({
               isActive && "bg-slate-200/80",
             )}
           >
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-blue-100 text-sm font-bold text-midnight">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary-100 text-sm font-bold text-brand-700">
               {(user?.full_name || user?.email || "Z").slice(0, 2).toUpperCase()}
             </div>
             <div className={cn("min-w-0 transition-opacity duration-150", isExpanded ? "opacity-100" : "hidden opacity-0")}>

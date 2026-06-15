@@ -4,7 +4,6 @@ export { LeadDetailPanel } from "./components/LeadDetailPanel";
 export { LeadKpiGrid } from "./components/LeadKpiGrid";
 export { LeadQueueItem } from "./components/LeadQueueItem";
 export { LeadsFilters } from "./components/LeadsFilters";
-export { LeadsHeader } from "./components/LeadsHeader";
 export { LeadsMetrics } from "./components/LeadsMetrics";
 export { LeadsToolbar } from "./components/LeadsToolbar";
 export { VirtualizedLeadTableRows } from "./components/LeadsTable";

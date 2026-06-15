@@ -6,12 +6,13 @@ import { dealsApi, pipelineStagesApi, pipelinesApi } from "../api/deals";
 import { leadsApi } from "../api/leads";
 import { notificationsApi } from "../api/notifications";
 import { tasksApi } from "../api/tasks";
+import { inboxApi, inboxQueryKeys, normalizeFilters } from "../api/inbox";
 
 const prefetchOptions = {
   staleTime: 5 * 60_000,
 };
 
-export function prefetchRouteData(path: string, queryClient: QueryClient) {
+export function prefetchRouteData(path: string, queryClient: QueryClient, businessId?: number | null | string) {
   if (path === "/dashboard") {
     void Promise.allSettled([
       queryClient.prefetchQuery({ queryKey: ["leads"], queryFn: leadsApi.list, ...prefetchOptions }),
@@ -50,7 +51,12 @@ export function prefetchRouteData(path: string, queryClient: QueryClient) {
   }
 
   if (path.startsWith("/dashboard/conversations")) {
-    void queryClient.prefetchQuery({ queryKey: ["bot-conversations"], queryFn: botConversationsApi.list, ...prefetchOptions });
+    const summaryKey = ["inbox-summary", businessId];
+    const conversationFilters = normalizeFilters({});
+    void Promise.allSettled([
+      queryClient.prefetchQuery({ queryKey: inboxQueryKeys.conversations(conversationFilters), queryFn: () => inboxApi.listConversations(conversationFilters), ...prefetchOptions }),
+      queryClient.prefetchQuery({ queryKey: summaryKey, queryFn: inboxApi.getSummary, ...prefetchOptions }),
+    ]);
     return;
   }
 

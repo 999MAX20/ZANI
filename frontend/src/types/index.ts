@@ -702,6 +702,10 @@ export type Client = {
   instagram_id: string;
   source: "website" | "telegram" | "whatsapp" | "instagram" | "manual" | "parser" | "other";
   notes: string;
+  manager_user_id?: number | null;
+  is_active?: boolean;
+  has_no_reply?: boolean;
+  is_vip?: boolean;
   is_archived?: boolean;
   archived_at?: string | null;
   archived_by?: Id | null;

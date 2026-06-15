@@ -37,9 +37,12 @@ import { Textarea } from "../ui/Textarea";
 export type CrmDrawerEntity = {
   type: CrmEntityType;
   id: Id;
+  initialTab?: CrmCardTab;
 };
 
-type TabId = "overview" | "timeline" | "tasks" | "messages" | "notes";
+export type CrmCardTab = "overview" | "timeline" | "tasks" | "messages" | "notes" | "deals" | "files";
+
+type TabId = CrmCardTab;
 
 const tabs: { id: TabId; labelKey: string }[] = [
   { id: "overview", labelKey: "crmCard.overview" },
@@ -47,10 +50,13 @@ const tabs: { id: TabId; labelKey: string }[] = [
   { id: "tasks", labelKey: "crmCard.tasks" },
   { id: "messages", labelKey: "crmCard.messages" },
   { id: "notes", labelKey: "crmCard.notes" },
+  { id: "deals", labelKey: "nav.deals" },
+  { id: "files", labelKey: "crmCard.attachments" },
 ];
 
-function getTitle(data: CrmCardPayload | undefined, t: (key: string, vars?: Record<string, string | number>) => string) {
+function getTitle(data: CrmCardPayload | undefined, t: (key: string, vars?: Record<string, string | number>) => string, entity?: CrmDrawerEntity | null) {
   if (!data) return t("crmCard.title");
+  if (entity?.type === "client") return data.client?.full_name || t("crmCard.title");
   if (data.deal) return data.deal.title;
   if (data.appointment) return t("crmCard.appointmentNumber", { id: data.appointment.id });
   if (data.lead) return t("crmCard.leadNumber", { id: data.lead.id });
@@ -86,9 +92,9 @@ function SummaryItem({ icon: Icon, label, value }: { icon: typeof UserRound; lab
   );
 }
 
-export function CrmEntityHeader({ data, onClose }: { data?: CrmCardPayload; onClose: () => void }) {
+export function CrmEntityHeader({ data, entity, titleId, onClose }: { data?: CrmCardPayload; entity: CrmDrawerEntity; titleId: string; onClose: () => void }) {
   const { t } = useI18n();
-  const activeStatus = data?.deal?.status || data?.appointment?.status || data?.lead?.status;
+  const activeStatus = entity.type === "client" ? undefined : data?.deal?.status || data?.appointment?.status || data?.lead?.status;
 
   return (
     <div className="sticky top-0 z-10 border-b border-slate-100 bg-white/88 px-5 py-4 backdrop-blur-xl sm:px-7">
@@ -100,7 +106,7 @@ export function CrmEntityHeader({ data, onClose }: { data?: CrmCardPayload; onCl
             </span>
             {activeStatus ? <StatusBadge status={activeStatus} /> : null}
           </div>
-          <h2 className="truncate text-2xl font-black tracking-tight text-midnight">{getTitle(data, t)}</h2>
+          <h2 id={titleId} className="truncate text-2xl font-black tracking-tight text-midnight">{getTitle(data, t, entity)}</h2>
           <p className="mt-1 text-sm text-slate-500">{getSubtitle(data, t)}</p>
         </div>
         <Button type="button" variant="ghost" className="h-12 w-12 shrink-0 rounded-full px-0" onClick={onClose} aria-label={t("crmCard.close")}>
@@ -420,6 +426,27 @@ function EntityInlineEditPanel({ data, entity }: { data: CrmCardPayload; entity:
   );
 }
 
+function EntityDealsPanel({ data }: { data: CrmCardPayload }) {
+  return (
+    <div className="space-y-3">
+      {data.deals.length ? (
+        data.deals.map((deal) => (
+          <div key={deal.id} className="rounded-3xl border border-slate-100 bg-white/80 p-4 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <p className="font-bold text-midnight">{deal.title}</p>
+              <StatusBadge status={deal.status} />
+            </div>
+            <p className="mt-1 text-sm text-slate-500">#{deal.id} · {deal.amount || 0} {deal.currency}</p>
+            {deal.notes ? <p className="mt-3 text-sm leading-6 text-slate-600">{deal.notes}</p> : null}
+          </div>
+        ))
+      ) : (
+        <EmptyBlock title="Сделок пока нет" text="Сделок пока нет." />
+      )}
+    </div>
+  );
+}
+
 export function EntityTimeline({ data }: { data: CrmCardPayload }) {
   const { language, t } = useI18n();
   const grouped = data.timeline.reduce<Record<string, typeof data.timeline>>((acc, event) => {
@@ -679,17 +706,36 @@ function EmptyBlock({ title, text }: { title: string; text: string }) {
 
 export function CrmEntityDrawer({ entity, onClose }: { entity: CrmDrawerEntity | null; onClose: () => void }) {
   const { t } = useI18n();
-  const [activeTab, setActiveTab] = useState<TabId>("overview");
+  const [activeTab, setActiveTab] = useState<TabId>(entity?.initialTab || "overview");
+  const [isOpen, setIsOpen] = useState(false);
+  const titleId = "crm-entity-drawer-title";
   const query = useQuery({
     queryKey: ["crm-card", entity?.type, entity?.id],
     queryFn: () => crmCardsApi.get({ type: entity!.type, id: entity!.id }),
     enabled: Boolean(entity),
   });
   const data = query.data;
+  useEffect(() => {
+    setActiveTab(entity?.initialTab || "overview");
+  }, [entity?.id, entity?.initialTab, entity?.type]);
+  useEffect(() => {
+    if (!entity) {
+      setIsOpen(false);
+      return;
+    }
+    setIsOpen(false);
+    const frame = requestAnimationFrame(() => setIsOpen(true));
+    return () => {
+      cancelAnimationFrame(frame);
+      setIsOpen(false);
+    };
+  }, [entity?.id, entity?.type]);
   const tabContent = useMemo(() => {
     if (!data) return null;
     if (activeTab === "timeline") return <EntityTimeline data={data} />;
     if (activeTab === "tasks") return <EntityTasksPanel data={data} />;
+    if (activeTab === "deals") return <EntityDealsPanel data={data} />;
+    if (activeTab === "files") return <EntityAttachmentsPanel data={data} />;
     if (activeTab === "messages") return <EntityConversationsPanel data={data} />;
     if (activeTab === "notes") return <EntityNotesPanel data={data} entity={entity!} />;
     return (
@@ -707,12 +753,24 @@ export function CrmEntityDrawer({ entity, onClose }: { entity: CrmDrawerEntity |
   if (!entity) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/35 backdrop-blur-sm" onMouseDown={onClose}>
+    <div
+      className={cn(
+        "fixed inset-0 z-50 bg-slate-950/35 backdrop-blur-sm transition-opacity duration-[520ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
+        isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
+      )}
+      onMouseDown={onClose}
+    >
       <aside
-        className="ml-auto flex h-full w-full max-w-3xl flex-col overflow-hidden bg-slate-50 shadow-premium sm:rounded-l-[2rem]"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className={cn(
+          "ml-auto flex h-full w-full max-w-3xl flex-col overflow-hidden bg-slate-50 shadow-premium transition-transform duration-[620ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform sm:rounded-l-[2rem]",
+          isOpen ? "translate-x-0" : "translate-x-full",
+        )}
         onMouseDown={(event) => event.stopPropagation()}
       >
-        <CrmEntityHeader data={data} onClose={onClose} />
+        <CrmEntityHeader data={data} entity={entity} titleId={titleId} onClose={onClose} />
         <CrmEntityTabs active={activeTab} onChange={setActiveTab} />
         <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-8 sm:px-7">
           {query.isLoading ? <LoadingState /> : null}

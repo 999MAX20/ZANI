@@ -76,7 +76,6 @@ export function DashboardPage() {
   if (isOwnerView) {
     return (
       <OwnerDashboard
-        businessName={business.name}
         dashboard={dashboard}
         metricsError={metrics.error}
         isCoreDataLoading={isCoreDataLoading}
@@ -99,7 +98,6 @@ export function DashboardPage() {
 
   return (
     <ManagerDashboard
-      businessName={business.name}
       leads={leadList}
       appointments={appointmentList}
       tasks={taskList}

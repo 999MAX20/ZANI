@@ -34,6 +34,7 @@ export type ClientTableRow = {
     priority?: Task["priority"];
   };
   manager: string;
+  managerUserId: Id | null;
 };
 
 export type ClientKpi = {

@@ -11,6 +11,42 @@ from apps.core.models import AuditLog
 from apps.core.permissions import IsTenantMember, accessible_businesses, platform_admin_has_global_access, user_can_access_business
 
 
+def _parse_query_id_list(query_params, key: str) -> list[int]:
+    raw_values = list(query_params.getlist(key)) if hasattr(query_params, "getlist") else []
+    if not raw_values:
+        value = query_params.get(key)
+        if value:
+            raw_values = [value]
+
+    values = []
+    for item in raw_values:
+        for chunk in str(item).split(","):
+            value = chunk.strip()
+            if not value:
+                continue
+            try:
+                values.append(int(value))
+            except (TypeError, ValueError):
+                continue
+    return values
+
+
+def _parse_query_list(query_params, key: str) -> list[str]:
+    raw_values = list(query_params.getlist(key)) if hasattr(query_params, "getlist") else []
+    if not raw_values:
+        value = query_params.get(key)
+        if value:
+            raw_values = [value]
+
+    values = []
+    for item in raw_values:
+        for chunk in str(item).split(","):
+            value = chunk.strip()
+            if value:
+                values.append(value)
+    return values
+
+
 class TenantModelViewSet(ModelViewSet):
     permission_classes = [IsTenantMember]
     business_lookup = "business"
@@ -81,6 +117,12 @@ class TenantModelViewSet(ModelViewSet):
 
     def get_access_action(self):
         return self.action_permission_map.get(getattr(self, "action", ""), Actions.VIEW)
+
+    def parse_query_id_list(self, key: str) -> list[int]:
+        return _parse_query_id_list(self.request.query_params, key)
+
+    def parse_query_list(self, key: str) -> list[str]:
+        return _parse_query_list(self.request.query_params, key)
 
     def get_queryset(self):
         queryset = super().get_queryset()

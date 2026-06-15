@@ -48,6 +48,9 @@ class IsMerchantInboxUser(BasePermission):
 
 
 class InboxConversationViewSet(ReadOnlyModelViewSet):
+    DEFAULT_MESSAGE_PAGE_SIZE = 200
+    MAX_MESSAGE_PAGE_SIZE = 300
+
     serializer_class = InboxConversationSerializer
     permission_classes = [IsMerchantInboxUser]
 
@@ -232,9 +235,43 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
             )
             return Response(InboxMessageSerializer(message).data, status=status.HTTP_201_CREATED)
 
-        messages = conversation.messages.order_by("created_at")
+        limit_param = request.query_params.get("limit", self.DEFAULT_MESSAGE_PAGE_SIZE)
+        try:
+            limit = int(limit_param)
+        except (TypeError, ValueError):
+            return Response({"detail": "Invalid limit parameter. Expected integer."}, status=status.HTTP_400_BAD_REQUEST)
+        if limit < 1 or limit > self.MAX_MESSAGE_PAGE_SIZE:
+            return Response({"detail": f"Invalid limit parameter. Must be between 1 and {self.MAX_MESSAGE_PAGE_SIZE}."}, status=status.HTTP_400_BAD_REQUEST)
+
+        before_id_param = request.query_params.get("before_id")
+        if before_id_param is not None:
+            try:
+                before_id = int(before_id_param)
+            except (TypeError, ValueError):
+                return Response({"detail": "Invalid before_id parameter. Expected integer."}, status=status.HTTP_400_BAD_REQUEST)
+            if before_id < 1:
+                return Response({"detail": "Invalid before_id parameter. Must be greater than 0."}, status=status.HTTP_400_BAD_REQUEST)
+            message_query = conversation.messages.filter(id__lt=before_id)
+        else:
+            message_query = conversation.messages.all()
+
+        message_window = list(message_query.order_by("-created_at", "-id")[: limit + 1])
+        has_more = len(message_window) > limit
+        page_messages = message_window[:limit]
+        next_before_id = None
+        if has_more:
+            next_before_id = message_window[limit].id
+
+        messages = list(reversed(page_messages))
         serializer = InboxMessageSerializer(messages, many=True)
-        return Response(serializer.data)
+        return Response({
+            "count": conversation.messages.count(),
+            "next": str(next_before_id) if next_before_id else None,
+            "previous": None,
+            "results": serializer.data,
+            "next_before_id": next_before_id,
+            "has_more": has_more,
+        })
 
     @action(detail=True, methods=["post"], url_path="retry-message")
     def retry_message(self, request, pk=None):

@@ -1,6 +1,6 @@
-import { Bell, Check, KeyRound, LogOut, Menu, MessageSquareText, Settings, Sparkles, UserRound, X } from "lucide-react";
+import { Bell, Check, Menu, MessageSquareText, Sparkles, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -10,36 +10,35 @@ import { useAuth } from "../../features/auth/AuthProvider";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useI18n } from "../../lib/i18n";
 import { formatDateTime } from "../../lib/format";
-import { businessRoleLabel, hasPermission } from "../../lib/permissions";
+import { hasPermission } from "../../lib/permissions";
 import { realtimeIntervals, realtimeQueryOptions } from "../../lib/realtime";
 import { Button } from "../ui/Button";
 import { StatusBadge } from "../ui/StatusBadge";
 import { GlobalSearch } from "./GlobalSearch";
-import { LanguageSelector } from "./LanguageSelector";
+import type { PageHeaderConfig } from "./PageHeaderContext";
 
-export function Header({ onMenuClick }: { onMenuClick: () => void }) {
+export function Header({ onMenuClick, pageHeader }: { onMenuClick: () => void; pageHeader: PageHeaderConfig | null }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
-  const { user, userEmail, logout } = useAuth();
+  const { user } = useAuth();
   const { business } = useActiveBusiness();
   const { t } = useI18n();
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showAccountMenu, setShowAccountMenu] = useState(false);
   const [chatToastOpen, setChatToastOpen] = useState(false);
   const [headerVisible, setHeaderVisible] = useState(true);
   const notificationsRef = useRef<HTMLDivElement | null>(null);
-  const accountMenuRef = useRef<HTMLDivElement | null>(null);
   const previousUnreadMessagesRef = useRef<number | null>(null);
   const lastScrollYRef = useRef(0);
   const notifications = useQuery({
     queryKey: ["notifications"],
-    queryFn: notificationsApi.list,
+    queryFn: () => notificationsApi.list(),
     enabled: Boolean(user) && showNotifications,
     ...realtimeQueryOptions,
   });
   const notificationSummary = useQuery({
     queryKey: ["notifications-summary"],
-    queryFn: notificationsApi.summary,
+    queryFn: () => notificationsApi.summary(),
     enabled: Boolean(user),
     refetchInterval: realtimeIntervals.notificationsMs,
     ...realtimeQueryOptions,
@@ -69,8 +68,8 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
   const unreadCount = notificationSummary.data?.unread ?? 0;
   const unreadChatMessages = inboxSummary.data?.unread_messages ?? inboxSummary.data?.unread ?? 0;
   const activeMembership = user?.memberships?.find((membership) => String(membership.business) === String(business?.id) && membership.is_active);
-  const canViewBusinessSettings = hasPermission(user, business?.id, "settings");
   const receivesChatToasts = Boolean(user && activeMembership?.role !== "owner" && user.role !== "business_owner");
+  const currentPageTitle = pageHeader?.title || getPageTitle(location.pathname, t);
   const latestNotifications = [...(notifications.data || [])].sort((a, b) => Number(!b.read_at) - Number(!a.read_at) || new Date(b.send_at).getTime() - new Date(a.send_at).getTime()).slice(0, 7);
   const groupedNotifications = latestNotifications.reduce<Record<string, typeof latestNotifications>>((acc, notification) => {
     const key = notification.category || "system";
@@ -127,18 +126,15 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
   useEffect(() => {
     function handlePointerDown(event: PointerEvent) {
       if (notificationsRef.current?.contains(event.target as Node)) return;
-      if (accountMenuRef.current?.contains(event.target as Node)) return;
       setShowNotifications(false);
-      setShowAccountMenu(false);
     }
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setShowNotifications(false);
-        setShowAccountMenu(false);
       }
     }
 
-    if (showNotifications || showAccountMenu) {
+    if (showNotifications) {
       document.addEventListener("pointerdown", handlePointerDown);
       document.addEventListener("keydown", handleKeyDown);
     }
@@ -146,7 +142,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [showNotifications, showAccountMenu]);
+  }, [showNotifications]);
 
   useEffect(() => {
     const previous = previousUnreadMessagesRef.current;
@@ -181,28 +177,37 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
 
   return (
     <header className={`fixed left-0 right-0 top-0 z-50 border-b border-slate-200 bg-white/95 shadow-[0_1px_3px_rgba(0,0,0,0.06)] backdrop-blur-xl transition-transform duration-200 ease-out lg:left-[72px] ${headerVisible ? "translate-y-0" : "-translate-y-full"}`}>
-      <div className="flex h-16 items-center justify-between px-4 sm:px-6">
+      <div className="grid h-16 grid-cols-[auto_1fr_auto] items-center gap-3 px-4 sm:px-6 lg:grid-cols-[260px_minmax(320px,560px)_auto]">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <Button className="h-10 w-10 min-h-10 min-w-10 px-0 text-midnight lg:hidden" variant="ghost" onClick={onMenuClick} aria-label={t("sidebar.expand")}>
             <Menu size={22} strokeWidth={2.2} />
           </Button>
-          <div className="hidden items-center gap-6 lg:flex">
-            <span className="whitespace-nowrap border-b-2 border-brand-600 py-1 text-base font-bold text-midnight">{activeMembership ? businessRoleLabel(activeMembership.role, t) : t("header.role")}</span>
-            <span className="hidden items-center gap-2 whitespace-nowrap text-base font-medium text-slate-700 2xl:inline-flex">
-              <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              {t("header.statusActive")}
-            </span>
+          <div className="hidden min-w-0 items-center gap-4 lg:flex">
+            <span className="whitespace-nowrap border-b-2 border-brand-600 py-1 text-base font-bold text-midnight">{currentPageTitle}</span>
           </div>
-          <div className="lg:hidden">
+          <div className={pageHeader ? "min-w-0 flex-1 lg:hidden" : "lg:hidden"}>
             <GlobalSearch />
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <div className="hidden lg:block">
-            <GlobalSearch />
-          </div>
-          <LanguageSelector className="hidden md:inline-flex" />
+        <div className="hidden min-w-0 justify-self-center lg:block lg:w-full">
+          <GlobalSearch />
+        </div>
+
+        <div className="flex min-w-0 items-center justify-end gap-1.5 sm:gap-2">
+          {pageHeader ? (
+            <div className="hidden min-w-0 items-center justify-end gap-2 lg:flex">
+              {pageHeader.secondaryActions?.map((action) => {
+                const Icon = action.icon;
+                return (
+                  <Button key={action.label} variant="secondary" size="icon" className="h-10 w-10 shrink-0" onClick={action.onClick} aria-label={action.label}>
+                    {Icon ? <Icon size={17} /> : null}
+                  </Button>
+                );
+              })}
+              <PrimaryPageAction action={pageHeader.primaryAction} />
+            </div>
+          ) : null}
           <div className="relative" ref={notificationsRef}>
             <Button
               variant="ghost"
@@ -329,85 +334,38 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
               </div>
             </div>
           ) : null}
-          <div className="relative" ref={accountMenuRef}>
-            <button
-              type="button"
-              className="hidden rounded-xl px-3 py-2 text-right transition hover:bg-slate-100 lg:block"
-              onClick={() => {
-                setShowAccountMenu((current) => !current);
-                setShowNotifications(false);
-              }}
-            >
-              <p className="text-xs font-semibold text-midnight">{userEmail}</p>
-              <p className="text-[11px] text-slate-400">{activeMembership ? businessRoleLabel(activeMembership.role, t) : user?.role || t("header.role")}</p>
-            </button>
-            <button
-              type="button"
-              className="grid h-10 w-10 place-items-center rounded-lg bg-slate-100 text-sm font-black text-midnight transition hover:bg-slate-200 lg:hidden"
-              onClick={() => {
-                setShowAccountMenu((current) => !current);
-                setShowNotifications(false);
-              }}
-              aria-label={t("account.openMenu")}
-            >
-              {(user?.full_name || user?.email || "ZA").slice(0, 2).toUpperCase()}
-            </button>
-            {showAccountMenu ? (
-              <div className="fixed inset-x-3 top-20 z-[90] rounded-xl border border-slate-200 bg-white p-2 text-sm shadow-premium sm:absolute sm:inset-auto sm:right-0 sm:top-12 sm:w-72">
-                <div className="border-b border-slate-100 px-3 py-3">
-                  <p className="truncate font-black text-midnight">{user?.full_name || userEmail}</p>
-                  <p className="mt-0.5 truncate text-xs font-semibold text-slate-500">{userEmail}</p>
-                </div>
-                <Link
-                  to="/dashboard/account"
-                  onClick={() => setShowAccountMenu(false)}
-                  className="mt-2 flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-midnight"
-                >
-                  <UserRound size={18} />
-                  {t("account.menuProfile")}
-                </Link>
-                <Link
-                  to="/dashboard/account#notifications"
-                  onClick={() => setShowAccountMenu(false)}
-                  className="flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-midnight"
-                >
-                  <Bell size={18} />
-                  {t("account.menuNotifications")}
-                </Link>
-                <Link
-                  to="/dashboard/account"
-                  onClick={() => setShowAccountMenu(false)}
-                  className="flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-midnight"
-                >
-                  <KeyRound size={18} />
-                  {t("account.menuSecurity")}
-                </Link>
-                {canViewBusinessSettings ? (
-                  <Link
-                    to="/dashboard/settings"
-                    onClick={() => setShowAccountMenu(false)}
-                    className="flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-midnight"
-                  >
-                    <Settings size={18} />
-                    {t("account.menuBusinessSettings")}
-                  </Link>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-          <Button
-            variant="secondary"
-            className="h-10 min-h-10 rounded-lg px-3"
-            onClick={() => {
-              logout();
-              navigate("/login");
-            }}
-          >
-            <LogOut size={18} />
-            <span className="hidden sm:inline">{t("header.logout")}</span>
-          </Button>
         </div>
       </div>
     </header>
   );
+}
+
+function PrimaryPageAction({ action }: { action?: PageHeaderConfig["primaryAction"] }) {
+  if (!action) return null;
+  const Icon = action.icon;
+  return (
+    <Button className="h-10 shrink-0 bg-blue-600 px-4 hover:bg-blue-700" onClick={action.onClick}>
+      {Icon ? <Icon size={17} /> : null}
+      {action.label}
+    </Button>
+  );
+}
+
+function getPageTitle(pathname: string, t: (key: string) => string) {
+  const routes: Array<[string, string]> = [
+    ["/dashboard/clients", "nav.clients"],
+    ["/dashboard/deals", "nav.deals"],
+    ["/dashboard/leads", "nav.leads"],
+    ["/dashboard/tasks", "nav.tasks"],
+    ["/dashboard/calendar", "nav.calendar"],
+    ["/dashboard/appointments", "nav.appointments"],
+    ["/dashboard/conversations", "nav.conversations"],
+    ["/dashboard/analytics", "nav.analytics"],
+    ["/dashboard/ai-agents", "nav.aiAgents"],
+    ["/dashboard/integrations", "nav.integrations"],
+    ["/dashboard/settings", "nav.settings"],
+    ["/dashboard/account", "account.title"],
+  ];
+  const match = routes.find(([route]) => pathname === route || pathname.startsWith(`${route}/`));
+  return match ? t(match[1]) : t("nav.dashboard");
 }

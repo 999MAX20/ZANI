@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { X } from "lucide-react";
 
 import { cn } from "../../lib/cn";
@@ -7,6 +7,7 @@ import { Button } from "../ui/Button";
 type WorkQueueLayoutProps = {
   children: ReactNode;
   className?: string;
+  style?: CSSProperties;
 };
 
 type WorkQueuePaneProps = {
@@ -20,9 +21,10 @@ type WorkQueueDetailPaneProps = WorkQueuePaneProps & {
   onMobileClose?: () => void;
 };
 
-export function WorkQueueLayout({ children, className }: WorkQueueLayoutProps) {
+export function WorkQueueLayout({ children, className, style }: WorkQueueLayoutProps) {
   return (
     <section
+      style={style}
       className={cn(
         "grid min-h-[calc(100dvh-176px)] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft lg:h-[calc(100vh-132px)] lg:min-h-[720px]",
         className,

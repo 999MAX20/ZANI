@@ -11,7 +11,6 @@ import type { Appointment, Client, Lead, Service, Task } from "../../types";
 import { isTodayDate } from "./dashboardUtils";
 
 type ManagerDashboardProps = {
-  businessName: string;
   leads: Lead[];
   appointments: Appointment[];
   tasks: Task[];
@@ -53,7 +52,6 @@ function WorkListCard({
 }
 
 export function ManagerDashboard({
-  businessName,
   leads,
   appointments,
   tasks,
@@ -72,11 +70,6 @@ export function ManagerDashboard({
 
   return (
     <div className="pb-6">
-      <section className="mb-5 flex flex-col gap-2">
-        <h1 className="text-3xl font-black tracking-tight text-midnight">{t("dashboard.managerTitle")}</h1>
-        <p className="text-sm font-semibold text-slate-500">{businessName}</p>
-      </section>
-
       {isCoreDataLoading ? (
         <div className="mb-5 rounded-xl border border-cyan-100 bg-white px-5 py-4 text-sm font-semibold text-slate-600 shadow-soft">
           {t("dashboard.loadingCoreData")}

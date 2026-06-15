@@ -898,8 +898,9 @@ class InboxBackendTests(TestCase):
 
         messages_response = self.api.get(f"/api/inbox/conversations/{self.conversation.id}/messages/")
         self.assertEqual(messages_response.status_code, 200)
-        self.assertEqual(len(messages_response.data), 1)
-        self.assertEqual(messages_response.data[0]["text"], "Hello inbox")
+        self.assertEqual(messages_response.data["count"], 1)
+        self.assertEqual(len(messages_response.data["results"]), 1)
+        self.assertEqual(messages_response.data["results"][0]["text"], "Hello inbox")
 
         assign_response = self.api.post(
             f"/api/inbox/conversations/{self.conversation.id}/assign/",
@@ -942,7 +943,7 @@ class InboxBackendTests(TestCase):
         self.assertEqual(bot_message_response.status_code, 200)
         self.assertEqual(inbox_response.status_code, 200)
         self.assertEqual(bot_message_response.data["payload_json"]["api_key"], "configured")
-        self.assertEqual(inbox_response.data[0]["payload_json"]["nested"]["access_token"], "configured")
+        self.assertEqual(inbox_response.data["results"][0]["payload_json"]["nested"]["access_token"], "configured")
         self.assertEqual(bot_message_response.data["payload_json"]["visible"], "ok")
         self.assertNotIn("raw-api-key", str(bot_message_response.data))
         self.assertNotIn("raw-access-token", str(inbox_response.data))

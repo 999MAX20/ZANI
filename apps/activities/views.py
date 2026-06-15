@@ -70,10 +70,13 @@ class TaggedObjectViewSet(TenantModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         entity_type = self.request.query_params.get("entity_type")
+        entity_id_list = self.parse_query_list("entity_id__in")
         entity_id = self.request.query_params.get("entity_id")
         tag_id = self.request.query_params.get("tag")
         if entity_type:
             queryset = queryset.filter(entity_type=entity_type)
+        if entity_id_list:
+            queryset = queryset.filter(entity_id__in=entity_id_list)
         if entity_id:
             queryset = queryset.filter(entity_id=str(entity_id))
         if tag_id:

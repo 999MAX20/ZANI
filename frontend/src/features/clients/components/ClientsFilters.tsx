@@ -1,9 +1,8 @@
 import { ChevronDown, MoreHorizontal, X } from "lucide-react";
-
 import { Button } from "../../../components/ui/Button";
 import { Select } from "../../../components/ui/Select";
 import { cn } from "../../../lib/cn";
-import type { ClientQuickFilter, Translate } from "../types";
+import type { ClientKpi, ClientQuickFilter, Translate } from "../types";
 
 type FilterChip = {
   key: "search" | "source" | "tag" | "segment";
@@ -14,16 +13,19 @@ type FilterChip = {
 export function ClientsFilters({
   quickFilter,
   onQuickFilterChange,
+  search,
   source,
   onSourceChange,
   selectedTag,
   onSelectedTagChange,
   selectedSegment,
   onSelectedSegmentChange,
-  search,
   tagOptions,
   segmentOptions,
   sourceOptions,
+  kpi,
+  advancedFiltersOpen,
+  onAdvancedFiltersOpenChange,
   onOpenSegment,
   onClearSearch,
   onClearAll,
@@ -31,26 +33,29 @@ export function ClientsFilters({
 }: {
   quickFilter: ClientQuickFilter;
   onQuickFilterChange: (value: ClientQuickFilter) => void;
+  search: string;
   source: string;
   onSourceChange: (value: string) => void;
   selectedTag: string;
   onSelectedTagChange: (value: string) => void;
   selectedSegment: string;
   onSelectedSegmentChange: (value: string) => void;
-  search: string;
   tagOptions: Array<{ value: string | number; label: string }>;
   segmentOptions: Array<{ value: string | number; label: string }>;
   sourceOptions: Array<{ value: string | number; label: string }>;
+  kpi: ClientKpi;
+  advancedFiltersOpen: boolean;
+  onAdvancedFiltersOpenChange: (value: boolean) => void;
   onOpenSegment: () => void;
   onClearSearch: () => void;
   onClearAll: () => void;
   t: Translate;
 }) {
   const quickFilterOptions: Array<{ value: ClientQuickFilter; label: string }> = [
-    { value: "all", label: "Все" },
+    { value: "all", label: `Все ${kpi.total}` },
     { value: "new", label: "Новые" },
     { value: "vip", label: "VIP" },
-    { value: "no_reply", label: "Без ответа" },
+    { value: "no_reply", label: `Без ответа ${kpi.noReply}` },
     { value: "mine", label: "Мои клиенты" },
   ];
   const activeFilters: FilterChip[] = [
@@ -68,8 +73,8 @@ export function ClientsFilters({
   }
 
   return (
-    <div className="flex flex-col gap-4 border-b border-slate-200 px-4 py-4">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3">
+      <div className="flex min-h-9 flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex min-w-0 flex-wrap items-center gap-1" role="tablist" aria-label="Фильтр клиентов">
           {quickFilterOptions.map((option) => (
             <button
@@ -79,8 +84,8 @@ export function ClientsFilters({
               aria-selected={quickFilter === option.value}
               onClick={() => onQuickFilterChange(option.value)}
               className={cn(
-                "h-9 rounded-lg px-3 text-sm font-semibold transition",
-                quickFilter === option.value ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+                "h-9 rounded-lg px-3 text-sm font-medium transition",
+                quickFilter === option.value ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
               )}
             >
               {option.label}
@@ -88,17 +93,25 @@ export function ClientsFilters({
           ))}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Select value={source} onChange={(event) => onSourceChange(event.target.value)} options={sourceOptions} className="h-9 min-h-9 w-[170px] text-xs" aria-label="Источник" />
-          <Select value={selectedTag} onChange={(event) => onSelectedTagChange(event.target.value)} options={tagOptions} className="h-9 min-h-9 w-[160px] text-xs" aria-label="Тег" />
-          <Button variant="secondary" size="sm" onClick={onOpenSegment}>
-            {t("clients.segment")} <ChevronDown size={14} />
+          <Button variant="ghost" size="sm" className="h-9 gap-2 text-xs font-semibold text-slate-600 hover:bg-slate-50" onClick={() => onAdvancedFiltersOpenChange(!advancedFiltersOpen)}>
+            Ещё фильтры <ChevronDown size={14} className={cn("transition", advancedFiltersOpen && "rotate-180")} />
           </Button>
-          <Select value={selectedSegment} onChange={(event) => onSelectedSegmentChange(event.target.value)} options={segmentOptions} className="h-9 min-h-9 w-[170px] text-xs" aria-label="Сегмент" />
           <Button variant="secondary" size="icon" className="h-9 w-9 min-h-9 min-w-9" aria-label="Еще">
             <MoreHorizontal size={17} />
           </Button>
         </div>
       </div>
+
+      {advancedFiltersOpen ? (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg bg-slate-50 p-2">
+          <Select value={source} onChange={(event) => onSourceChange(event.target.value)} options={sourceOptions} className="h-9 min-h-9 w-[158px] text-xs" aria-label="Источник" />
+          <Select value={selectedTag} onChange={(event) => onSelectedTagChange(event.target.value)} options={tagOptions} className="h-9 min-h-9 w-[145px] text-xs" aria-label="Тег" />
+          <Button variant="secondary" size="sm" onClick={onOpenSegment}>
+            {t("clients.segment")} <ChevronDown size={14} />
+          </Button>
+          <Select value={selectedSegment} onChange={(event) => onSelectedSegmentChange(event.target.value)} options={segmentOptions} className="h-9 min-h-9 w-[160px] text-xs" aria-label="Сегмент" />
+        </div>
+      ) : null}
 
       {activeFilters.length ? (
         <div className="flex flex-wrap items-center gap-2">
@@ -111,7 +124,7 @@ export function ClientsFilters({
               </button>
             </span>
           ))}
-          <button type="button" onClick={onClearAll} className="h-8 rounded-full px-3 text-xs font-semibold text-blue-700 hover:bg-blue-50">
+          <button type="button" onClick={onClearAll} className="h-8 rounded-full px-3 text-xs font-semibold text-indigo-700 hover:bg-indigo-50">
             Очистить все
           </button>
         </div>

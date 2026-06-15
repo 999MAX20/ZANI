@@ -41,6 +41,13 @@ class LeadViewSet(TenantModelViewSet):
     queryset = Lead.objects.select_related("business", "client", "service", "responsible_user")
     serializer_class = LeadSerializer
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        client_ids = self.parse_query_id_list("client_ids")
+        if client_ids:
+            queryset = queryset.filter(client_id__in=client_ids)
+        return queryset
+
     def perform_create(self, serializer):
         if serializer.validated_data.get("responsible_user") is None:
             serializer.validated_data["responsible_user"] = self.request.user

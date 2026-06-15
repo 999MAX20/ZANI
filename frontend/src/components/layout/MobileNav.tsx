@@ -58,7 +58,7 @@ export function MobileNav({ open, onOpen, onClose }: { open: boolean; onOpen: ()
             onClick={onClose}
           />
           <div className="relative h-full w-[min(390px,94vw)]">
-            <div className="absolute right-3 top-3 z-50">
+            <div className="absolute right-3 top-3 z-[90]">
               <Button variant="secondary" className="h-[52px] w-[52px] rounded-full border border-slate-100 bg-white px-0 shadow-premium" onClick={onClose} aria-label={t("sidebar.collapse")}>
                 <X size={30} strokeWidth={2.4} />
               </Button>

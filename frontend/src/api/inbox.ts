@@ -1,4 +1,4 @@
-import { apiClient, unwrapList } from "./client";
+import { apiClient } from "./client";
 import type { PaginatedResponse } from "./client";
 import type { BotSuggestedReplyResponse } from "./bots";
 import type { BotConversation, BotMessage, Client, Deal, DuplicateClient, Id, Lead, Task } from "../types";
@@ -35,6 +35,27 @@ export type InboxSummary = {
   pilot_positioning: string;
 };
 
+export type InboxMessageListParams = {
+  limit?: number;
+  beforeId?: number;
+};
+
+export const INBOX_MESSAGES_PAGE_SIZE = 200;
+export const INBOX_MESSAGES_MAX_PAGE_SIZE = 300;
+
+export function normalizeFilters(filters: InboxFilters) {
+  return Object.entries(filters).reduce<InboxFilters>((acc, [key, value]) => {
+    if (value === undefined || value === "") return acc;
+    const typedKey = key as keyof InboxFilters;
+    return { ...acc, [typedKey]: value } as InboxFilters;
+  }, {});
+}
+
+export const inboxQueryKeys = {
+  conversations: (filters: InboxFilters = {}) => ["inbox-conversations", normalizeFilters(filters)] as const,
+  messages: (conversationId?: number | null | string) => ["inbox-messages", conversationId] as const,
+};
+
 export type InboxFilters = {
   channel?: string;
   bot?: string;
@@ -46,6 +67,11 @@ export type InboxFilters = {
   handoff_required?: string;
   search?: string;
   q?: string;
+};
+
+export type PaginatedInboxMessageResponse = PaginatedResponse<InboxMessage> & {
+  next_before_id?: number | null;
+  has_more?: boolean;
 };
 
 export type InboxPipelineResult = {
@@ -97,9 +123,12 @@ export const inboxApi = {
     const { data } = await apiClient.get<InboxConversation>(`/api/inbox/conversations/${id}/`);
     return data;
   },
-  listMessages: async (conversationId: Id) => {
-    const { data } = await apiClient.get<InboxMessage[] | { results: InboxMessage[] }>(`/api/inbox/conversations/${conversationId}/messages/`);
-    return unwrapList(data);
+  listMessages: async (conversationId: Id, params: InboxMessageListParams = {}) => {
+    const payload = params.beforeId !== undefined ? { ...params, before_id: params.beforeId } : params;
+    const { data } = await apiClient.get<PaginatedInboxMessageResponse>(`/api/inbox/conversations/${conversationId}/messages/`, {
+      params: { limit: INBOX_MESSAGES_PAGE_SIZE, ...payload },
+    });
+    return data;
   },
   assignToMe: async (conversationId: Id) => {
     const { data } = await apiClient.post<InboxConversation>(`/api/inbox/conversations/${conversationId}/assign/`, {});

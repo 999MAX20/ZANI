@@ -7,10 +7,10 @@ import {
   Filter,
   MoreHorizontal,
   Plus,
-  Search,
   UserRound,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { appointmentsApi } from "../../api/appointments";
@@ -312,6 +312,7 @@ export function CalendarPage() {
     tasks: true,
   });
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
   const [date, setDate] = useState(todayISO());
   const [viewMode, setViewMode] = useState<"day" | "week" | "month">("day");
   const [bookingOpen, setBookingOpen] = useState(false);
@@ -323,6 +324,10 @@ export function CalendarPage() {
   const [search, setSearch] = useState("");
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<number | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSearch(searchParams.get("search") || "");
+  }, [searchParams]);
 
   const mutation = useMutation({
     mutationFn: (payload: Partial<Appointment>) => appointmentsApi.create(payload),
@@ -575,15 +580,6 @@ export function CalendarPage() {
             </span>
           </summary>
           <div className="mt-4 space-y-3">
-            <label className="relative block">
-              <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-              <input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-4 text-sm font-bold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-brand-300 focus:ring-4 focus:ring-brand-100"
-                placeholder={t("calendar.searchPlaceholder")}
-              />
-            </label>
             <Select
               value={serviceFilter}
               onChange={(event) => setServiceFilter(event.target.value)}
@@ -673,16 +669,7 @@ export function CalendarPage() {
       <section className="hidden gap-5 lg:grid xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0 rounded-[2rem] border border-white/80 bg-white/86 shadow-soft backdrop-blur-xl">
           <div className="border-b border-slate-100 p-4 lg:p-5">
-            <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px_220px_180px]">
-              <label className="relative block">
-                <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                <input
-                  value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-4 text-sm font-bold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-brand-300 focus:ring-4 focus:ring-brand-100"
-                  placeholder={t("calendar.searchPlaceholder")}
-                />
-              </label>
+            <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_180px]">
               <Select
                 value={serviceFilter}
                 onChange={(event) => setServiceFilter(event.target.value)}

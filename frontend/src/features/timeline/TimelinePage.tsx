@@ -1,8 +1,8 @@
-import { Bot, CalendarClock, CheckCircle2, ClipboardList, MessageCircle, Search } from "lucide-react";
-import { useState } from "react";
+import { Bot, CalendarClock, CheckCircle2, ClipboardList, MessageCircle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import { Card, CardBody } from "../../components/ui/Card";
-import { Input } from "../../components/ui/Input";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { ErrorState, LoadingState } from "../../components/ui/StateViews";
 import { unwrapList } from "../../api/client";
@@ -15,7 +15,12 @@ export function TimelinePage() {
   const { language, t } = useI18n();
   const { business } = useActiveBusiness();
   const { activityEvents, clients } = useEntityData({ activityEvents: true, clients: true });
+  const [searchParams] = useSearchParams();
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    setSearch(searchParams.get("search") || "");
+  }, [searchParams]);
 
   if (!business) return <ErrorState message={t("timeline.noBusiness")} />;
   if (activityEvents.isLoading || clients.isLoading) return <LoadingState />;
@@ -47,10 +52,6 @@ export function TimelinePage() {
   return (
     <>
       <PageHeader title={t("timeline.title")} description={t("timeline.description")} />
-      <div className="mb-5 flex items-center gap-3 rounded-3xl border border-slate-200 bg-white px-4 py-2">
-        <Search size={17} className="text-slate-400" />
-        <Input className="border-0 shadow-none" placeholder={t("timeline.search")} value={search} onChange={(event) => setSearch(event.target.value)} />
-      </div>
       <Card>
         <CardBody>
           <div className="space-y-6">

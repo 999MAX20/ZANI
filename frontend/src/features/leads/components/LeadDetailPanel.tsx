@@ -111,36 +111,70 @@ export function LeadDetailPanel({
       setNoteDraft((value) => `${value}${value ? "\n" : ""}${t("leads.voiceUnsupported")}`);
       return;
     }
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const recorder = new MediaRecorder(stream);
-    voiceChunksRef.current = [];
-    recorder.ondataavailable = (event) => {
-      if (event.data.size) voiceChunksRef.current.push(event.data);
-    };
-    recorder.onstop = () => {
-      const blob = new Blob(voiceChunksRef.current, { type: recorder.mimeType || "audio/webm" });
-      const file = new File([blob], `lead-${selected.id}-voice-${Date.now()}.webm`, { type: blob.type });
-      setAttachedFiles((value) => [...value, file].slice(0, 6));
-      setNoteDraft((value) => value || t("leads.voiceNoteAttached"));
-      stream.getTracks().forEach((track) => track.stop());
-    };
-    const SpeechRecognition = (window as unknown as { SpeechRecognition?: new () => { continuous: boolean; interimResults: boolean; lang: string; onresult: ((event: { results: ArrayLike<{ 0: { transcript: string }; isFinal: boolean }> }) => void) | null; start: () => void; stop: () => void }; webkitSpeechRecognition?: new () => { continuous: boolean; interimResults: boolean; lang: string; onresult: ((event: { results: ArrayLike<{ 0: { transcript: string }; isFinal: boolean }> }) => void) | null; start: () => void; stop: () => void } }).SpeechRecognition ||
-      (window as unknown as { webkitSpeechRecognition?: new () => { continuous: boolean; interimResults: boolean; lang: string; onresult: ((event: { results: ArrayLike<{ 0: { transcript: string }; isFinal: boolean }> }) => void) | null; start: () => void; stop: () => void } }).webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = navigator.language || "ru-RU";
-      recognition.onresult = (event) => {
-        const text = Array.from(event.results).map((result) => result[0].transcript).join(" ").trim();
-        if (text) setNoteDraft(text);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      voiceChunksRef.current = [];
+      recorder.ondataavailable = (event) => {
+        if (event.data.size) voiceChunksRef.current.push(event.data);
       };
-      recognition.start();
-      speechRecognitionRef.current = recognition;
+      recorder.onstop = () => {
+        const blob = new Blob(voiceChunksRef.current, { type: recorder.mimeType || "audio/webm" });
+        const file = new File([blob], `lead-${selected.id}-voice-${Date.now()}.webm`, { type: blob.type });
+        setAttachedFiles((value) => [...value, file].slice(0, 6));
+        setNoteDraft((value) => value || t("leads.voiceNoteAttached"));
+        stream.getTracks().forEach((track) => track.stop());
+      };
+      const SpeechRecognition =
+        (window as unknown as {
+          SpeechRecognition?: new () => {
+            continuous: boolean;
+            interimResults: boolean;
+            lang: string;
+            onresult: ((event: { results: ArrayLike<{ 0: { transcript: string }; isFinal: boolean }> }) => void) | null;
+            start: () => void;
+            stop: () => void;
+          };
+          webkitSpeechRecognition?: new () => {
+            continuous: boolean;
+            interimResults: boolean;
+            lang: string;
+            onresult: ((event: { results: ArrayLike<{ 0: { transcript: string }; isFinal: boolean }> }) => void) | null;
+            start: () => void;
+            stop: () => void;
+          };
+        }).SpeechRecognition ||
+        (window as unknown as {
+          webkitSpeechRecognition?: new () => {
+            continuous: boolean;
+            interimResults: boolean;
+            lang: string;
+            onresult: ((event: { results: ArrayLike<{ 0: { transcript: string }; isFinal: boolean }> }) => void) | null;
+            start: () => void;
+            stop: () => void;
+          };
+        }).webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = navigator.language || "ru-RU";
+        recognition.onresult = (event) => {
+          const text = Array.from(event.results).map((result) => result[0].transcript).join(" ").trim();
+          if (text) setNoteDraft(text);
+        };
+        recognition.start();
+        speechRecognitionRef.current = recognition;
+      }
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setRecording(true);
+    } catch (error) {
+      setNoteDraft((value) => `${value}${value ? "\n" : ""}${t("leads.voiceUnsupported")}`);
+      setRecording(false);
+      speechRecognitionRef.current = null;
+      mediaRecorderRef.current = null;
     }
-    mediaRecorderRef.current = recorder;
-    recorder.start();
-    setRecording(true);
   }
 
   function stopVoiceNote() {

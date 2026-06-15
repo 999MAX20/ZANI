@@ -102,6 +102,13 @@ class AppointmentViewSet(TenantModelViewSet):
     queryset = Appointment.objects.select_related("business", "client", "lead", "service", "resource")
     serializer_class = AppointmentSerializer
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        client_ids = self.parse_query_id_list("client_ids")
+        if client_ids:
+            queryset = queryset.filter(client_id__in=client_ids)
+        return queryset
+
     def perform_create(self, serializer):
         super().perform_create(serializer)
         appointment = serializer.instance

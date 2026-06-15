@@ -193,8 +193,8 @@ export function Sidebar({
                       to={item.to}
                       end={item.to === "/dashboard"}
                       onClick={onNavigate}
-                      onMouseEnter={() => prefetchRouteData(item.to, queryClient)}
-                      onFocus={() => prefetchRouteData(item.to, queryClient)}
+                      onMouseEnter={() => prefetchRouteData(item.to, queryClient, business?.id)}
+                      onFocus={() => prefetchRouteData(item.to, queryClient, business?.id)}
                       title={t(item.label)}
                       className={cn(
                         "group relative flex min-h-[48px] items-center gap-3 border-l-4 border-transparent px-4 py-3 text-sm font-medium text-slate-700 transition-colors duration-150",

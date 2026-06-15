@@ -43,6 +43,7 @@ import { teamApi } from "../../api/team";
 import { CrmEntityDrawer, type CrmDrawerEntity } from "../../components/crm/CrmEntityDrawer";
 import { AppointmentForm } from "../../components/forms/AppointmentForm";
 import { LeadForm } from "../../components/forms/LeadForm";
+import { usePageHeader } from "../../components/layout/PageHeaderContext";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { Modal } from "../../components/ui/Modal";
@@ -95,6 +96,7 @@ import { loadJson, saveJson, toDateTimeLocal } from "./utils/leadStorage";
 
 export function LeadsPage() {
   const { t } = useI18n();
+  const { setPageHeader } = usePageHeader();
   const queryClient = useQueryClient();
   const { business } = useActiveBusiness();
   const { user } = useAuth();
@@ -187,6 +189,25 @@ export function LeadsPage() {
     allLeads.forEach((lead) => result.set(lead.id, leadAiInsight(lead, clientList, serviceList, allLeads, t)));
     return result;
   }, [allLeads, clientList, serviceList, t]);
+
+  useEffect(() => {
+    setPageHeader({
+      title: t("nav.leads"),
+      secondaryActions: [
+        {
+          label: t("leads.filters"),
+          icon: SlidersHorizontal,
+          onClick: () => setSavedFiltersOpen((value) => !value),
+        },
+      ],
+      primaryAction: {
+        label: t("leads.create"),
+        icon: Plus,
+        onClick: () => setCreateOpen(true),
+      },
+    });
+    return () => setPageHeader(null);
+  }, [setPageHeader, t]);
 
   const rows = useMemo(() => {
     const value = search.trim().toLowerCase();
@@ -1208,7 +1229,7 @@ export function LeadsPage() {
               </div>
             ) : null}
           </div>
-          <Button className="min-h-11 shrink-0 rounded-xl px-5" onClick={() => setCreateOpen(true)}>
+          <Button className="min-h-11 shrink-0 rounded-xl px-5 lg:hidden" onClick={() => setCreateOpen(true)}>
             <Plus size={18} />
             {t("leads.create")}
           </Button>

@@ -274,7 +274,7 @@ export function OutreachPage() {
   const segmentList = (segments.data || []).filter((segment) => segment.is_active);
   const templateList = (templates.data || []).filter((template) => template.is_active);
   const channelTemplates = templateList.filter((template) => template.channel === form.channel);
-  const clientList = clients.data || [];
+  const clientList = clients.data?.clients || [];
   const manualSelectedCount = manualClientIds.length;
   const prepareClientIds = selectedCampaign?.audience_type === "manual" ? manualClientIds : undefined;
   const currentMembership = user?.memberships?.find((membership) => String(membership.business) === String(business.id) && membership.is_active);

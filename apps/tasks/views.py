@@ -59,6 +59,9 @@ class TaskViewSet(TenantModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset().annotate(comments_count=Count("comments", distinct=True), watchers_count=Count("watchers", distinct=True))
+        client_ids = self.parse_query_id_list("client_ids")
+        if client_ids:
+            queryset = queryset.filter(client_id__in=client_ids)
         status_filter = self.request.query_params.get("status")
         priority_filter = self.request.query_params.get("priority")
         tab = self.request.query_params.get("tab")

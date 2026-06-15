@@ -12,6 +12,28 @@ import { resourcesApi } from "../api/resources";
 import { servicesApi } from "../api/services";
 import { tasksApi } from "../api/tasks";
 import { workingHoursApi } from "../api/workingHours";
+import type {
+  ActivityEvent,
+  Appointment,
+  AutomationRule,
+  Bot,
+  BotChannel,
+  BotConversation,
+  BotMessage,
+  Client,
+  Deal,
+  Lead,
+  Notification,
+  Pipeline,
+  PipelineStage,
+  Resource,
+  Segment,
+  Service,
+  TaggedObject,
+  Tag,
+  Task,
+  WorkingHours,
+} from "../types";
 
 type EntityDataOptions = {
   enabled?: boolean;
@@ -42,26 +64,26 @@ export function useEntityData(options?: EntityDataOptions) {
   const globalEnabled = options?.enabled ?? true;
   const shouldLoad = (key: keyof EntityDataOptions) => globalEnabled && (defaultEnabled || options?.[key] === true);
 
-  const clients = useQuery({ queryKey: ["clients"], queryFn: clientsApi.list, enabled: shouldLoad("clients") });
-  const services = useQuery({ queryKey: ["services"], queryFn: servicesApi.list, enabled: shouldLoad("services") });
-  const resources = useQuery({ queryKey: ["resources"], queryFn: resourcesApi.list, enabled: shouldLoad("resources") });
-  const leads = useQuery({ queryKey: ["leads"], queryFn: leadsApi.list, enabled: shouldLoad("leads") });
-  const appointments = useQuery({ queryKey: ["appointments"], queryFn: appointmentsApi.list, enabled: shouldLoad("appointments") });
-  const workingHours = useQuery({ queryKey: ["working-hours"], queryFn: workingHoursApi.list, enabled: shouldLoad("workingHours") });
-  const pipelines = useQuery({ queryKey: ["pipelines"], queryFn: pipelinesApi.list, enabled: shouldLoad("pipelines") });
-  const pipelineStages = useQuery({ queryKey: ["pipeline-stages"], queryFn: pipelineStagesApi.list, enabled: shouldLoad("pipelineStages") });
-  const deals = useQuery({ queryKey: ["deals"], queryFn: dealsApi.list, enabled: shouldLoad("deals") });
-  const tasks = useQuery({ queryKey: ["tasks"], queryFn: tasksApi.list, enabled: shouldLoad("tasks") });
-  const notifications = useQuery({ queryKey: ["notifications"], queryFn: notificationsApi.list, enabled: shouldLoad("notifications") });
-  const activityEvents = useQuery({ queryKey: ["activity-events"], queryFn: activityEventsApi.list, enabled: shouldLoad("activityEvents") });
-  const tags = useQuery({ queryKey: ["tags"], queryFn: tagsApi.list, enabled: shouldLoad("tags") });
-  const taggedObjects = useQuery({ queryKey: ["tagged-objects"], queryFn: taggedObjectsApi.list, enabled: shouldLoad("taggedObjects") });
-  const segments = useQuery({ queryKey: ["segments"], queryFn: segmentsApi.list, enabled: shouldLoad("segments") });
-  const automationRules = useQuery({ queryKey: ["automation-rules"], queryFn: automationRulesApi.list, enabled: shouldLoad("automationRules") });
-  const bots = useQuery({ queryKey: ["bots"], queryFn: botsApi.list, enabled: shouldLoad("bots") });
-  const botChannels = useQuery({ queryKey: ["bot-channels"], queryFn: botChannelsApi.list, enabled: shouldLoad("botChannels") });
-  const botConversations = useQuery({ queryKey: ["bot-conversations"], queryFn: botConversationsApi.list, enabled: shouldLoad("botConversations") });
-  const botMessages = useQuery({ queryKey: ["bot-messages"], queryFn: botMessagesApi.list, enabled: shouldLoad("botMessages") });
+  const clients = useQuery<Client[]>({ queryKey: ["clients"], queryFn: () => clientsApi.list(), enabled: shouldLoad("clients") });
+  const services = useQuery<Service[]>({ queryKey: ["services"], queryFn: () => servicesApi.list(), enabled: shouldLoad("services") });
+  const resources = useQuery<Resource[]>({ queryKey: ["resources"], queryFn: () => resourcesApi.list(), enabled: shouldLoad("resources") });
+  const leads = useQuery<Lead[]>({ queryKey: ["leads"], queryFn: () => leadsApi.list(), enabled: shouldLoad("leads") });
+  const appointments = useQuery<Appointment[]>({ queryKey: ["appointments"], queryFn: () => appointmentsApi.list(), enabled: shouldLoad("appointments") });
+  const workingHours = useQuery<WorkingHours[]>({ queryKey: ["working-hours"], queryFn: () => workingHoursApi.list(), enabled: shouldLoad("workingHours") });
+  const pipelines = useQuery<Pipeline[]>({ queryKey: ["pipelines"], queryFn: () => pipelinesApi.list(), enabled: shouldLoad("pipelines") });
+  const pipelineStages = useQuery<PipelineStage[]>({ queryKey: ["pipeline-stages"], queryFn: () => pipelineStagesApi.list(), enabled: shouldLoad("pipelineStages") });
+  const deals = useQuery<Deal[]>({ queryKey: ["deals"], queryFn: () => dealsApi.list(), enabled: shouldLoad("deals") });
+  const tasks = useQuery<Task[]>({ queryKey: ["tasks"], queryFn: () => tasksApi.list(), enabled: shouldLoad("tasks") });
+  const notifications = useQuery<Notification[]>({ queryKey: ["notifications"], queryFn: () => notificationsApi.list(), enabled: shouldLoad("notifications") });
+  const activityEvents = useQuery<ActivityEvent[]>({ queryKey: ["activity-events"], queryFn: () => activityEventsApi.list(), enabled: shouldLoad("activityEvents") });
+  const tags = useQuery<Tag[]>({ queryKey: ["tags"], queryFn: () => tagsApi.list(), enabled: shouldLoad("tags") });
+  const taggedObjects = useQuery<TaggedObject[]>({ queryKey: ["tagged-objects"], queryFn: () => taggedObjectsApi.list(), enabled: shouldLoad("taggedObjects") });
+  const segments = useQuery<Segment[]>({ queryKey: ["segments"], queryFn: () => segmentsApi.list(), enabled: shouldLoad("segments") });
+  const automationRules = useQuery<AutomationRule[]>({ queryKey: ["automation-rules"], queryFn: () => automationRulesApi.list(), enabled: shouldLoad("automationRules") });
+  const bots = useQuery<Bot[]>({ queryKey: ["bots"], queryFn: () => botsApi.list(), enabled: shouldLoad("bots") });
+  const botChannels = useQuery<BotChannel[]>({ queryKey: ["bot-channels"], queryFn: () => botChannelsApi.list(), enabled: shouldLoad("botChannels") });
+  const botConversations = useQuery<BotConversation[]>({ queryKey: ["bot-conversations"], queryFn: () => botConversationsApi.list(), enabled: shouldLoad("botConversations") });
+  const botMessages = useQuery<BotMessage[]>({ queryKey: ["bot-messages"], queryFn: () => botMessagesApi.list(), enabled: shouldLoad("botMessages") });
 
   return {
     clients,

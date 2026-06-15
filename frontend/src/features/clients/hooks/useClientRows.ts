@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 
-import type { Appointment, BotConversation, Client, Deal, Lead, Task } from "../../../types";
+import type { Appointment, BotConversation, Client, Deal, Id, Lead, Task } from "../../../types";
 import type { ClientKpi, ClientQuickFilter, ClientTableRow, ClientTag } from "../types";
-import { latestDate } from "../utils";
+import { compareDescDate, latestDate } from "../utils";
 
 function groupByClient<T extends { client: number | null }>(items: T[]) {
   const map = new Map<number, T[]>();
@@ -24,6 +24,9 @@ export function useClientRows({
   conversations,
   tagsByClient,
   quickFilter,
+  currentUserId,
+  totalOverride,
+  serverSummary,
 }: {
   clients: Client[];
   leads: Lead[];
@@ -33,7 +36,23 @@ export function useClientRows({
   conversations: BotConversation[];
   tagsByClient: Record<string, ClientTag[]>;
   quickFilter: ClientQuickFilter;
+  currentUserId?: Id | null;
+  totalOverride?: number;
+  serverSummary?: {
+    total: number;
+    active: number;
+    no_reply: number;
+    repeat: number;
+  };
 }) {
+  function sortByDateDesc<T>(items: T[], getDate: (item: T) => string | null | undefined) {
+    return [...items].sort((a, b) => {
+      const byDate = compareDescDate(getDate(a), getDate(b));
+      if (byDate !== 0) return byDate;
+      return 0;
+    });
+  }
+
   const tableRows = useMemo<ClientTableRow[]>(() => {
     const leadsByClient = groupByClient(leads);
     const dealsByClient = groupByClient(deals);
@@ -42,25 +61,50 @@ export function useClientRows({
     const conversationsByClient = groupByClient(conversations);
 
     return clients.map((client) => {
-      const clientLeads = [...(leadsByClient.get(client.id) || [])].sort((a, b) => b.created_at.localeCompare(a.created_at));
-      const clientDeals = [...(dealsByClient.get(client.id) || [])].sort((a, b) => b.updated_at.localeCompare(a.updated_at));
-      const clientAppointments = [...(appointmentsByClient.get(client.id) || [])].sort((a, b) => b.start_at.localeCompare(a.start_at));
-      const clientTasks = [...(tasksByClient.get(client.id) || [])]
-        .filter((task) => !["done", "cancelled"].includes(task.status))
-        .sort((a, b) => String(a.due_at || "9999").localeCompare(String(b.due_at || "9999")));
-      const clientConversations = [...(conversationsByClient.get(client.id) || [])].sort((a, b) =>
-        String(b.last_message_at || b.updated_at).localeCompare(String(a.last_message_at || a.updated_at)),
+      const clientLeads = sortByDateDesc([...(leadsByClient.get(client.id) || [])], (lead) => lead.created_at);
+      const clientDeals = sortByDateDesc([...(dealsByClient.get(client.id) || [])], (deal) => deal.updated_at);
+      const clientAppointments = sortByDateDesc([...(appointmentsByClient.get(client.id) || [])], (appointment) => appointment.start_at);
+      const clientTasks = sortByDateDesc(
+        [...(tasksByClient.get(client.id) || [])].filter((task) => !["done", "cancelled"].includes(task.status)),
+        (task) => task.due_at,
+      );
+      const clientConversations = sortByDateDesc(
+        [...(conversationsByClient.get(client.id) || [])],
+        (conversation) => conversation.last_message_at || conversation.updated_at,
       );
       const tagsForClient = tagsByClient[String(client.id)] || [];
       const isVip = tagsForClient.some((tag) => String(tag.tag_name || "").toLowerCase().includes("vip"));
-      const hasNoReply = clientConversations.some((conversation) => conversation.unread_count || conversation.handoff_required) || clientLeads.some((lead) => lead.status === "new");
-      const isActive = Boolean(clientDeals.some((deal) => deal.status === "open") || clientAppointments.length || clientConversations.length || clientLeads.length);
-      const status: ClientTableRow["status"] = client.is_archived ? "archived" : isVip ? "vip" : hasNoReply ? "no_reply" : isActive ? "active" : "new";
+      const serverIsVip = client.is_vip;
+      const serverActive = client.is_active;
+      const serverNoReply = client.has_no_reply;
+      const serverManager = client.manager_user_id;
+      const latestConversation = clientConversations[0];
+      const hasNoReply =
+        typeof serverNoReply === "boolean"
+          ? serverNoReply
+          : Boolean(latestConversation && (latestConversation.unread_count || latestConversation.handoff_required)) ||
+            clientLeads.some((lead) => lead.status === "new");
+      const isActive =
+        typeof client.is_active === "boolean"
+          ? client.is_active
+          : Boolean(clientDeals.some((deal) => deal.status === "open") || clientAppointments.length || clientConversations.length || clientLeads.length);
+      const status: ClientTableRow["status"] = client.is_archived
+        ? "archived"
+        : serverIsVip
+          ? "vip"
+          : hasNoReply
+            ? "no_reply"
+            : isActive
+              ? "active"
+              : "new";
       const latestDeal = clientDeals[0];
       const latestTask = clientTasks[0];
       const latestLead = clientLeads[0];
       const latestAppointment = clientAppointments[0];
-      const managerId = latestDeal?.owner || latestTask?.assignee || latestLead?.responsible_user;
+      const latestManagerId =
+        serverManager ?? [latestTask?.assignee, latestDeal?.owner, latestLead?.responsible_user, latestConversation?.assigned_to].find((candidate) => Boolean(candidate));
+      const managerIdNumber = latestManagerId ? Number(latestManagerId) : null;
+      const isMine = currentUserId ? managerIdNumber !== null && Number(currentUserId) === managerIdNumber : false;
       const lastContactAt = latestDate([
         clientConversations[0]?.last_message_at || clientConversations[0]?.updated_at,
         latestAppointment?.start_at,
@@ -72,9 +116,9 @@ export function useClientRows({
         ? { title: latestTask.title, date: latestTask.due_at, priority: latestTask.priority }
         : latestDeal?.next_action_at
           ? { title: "Связаться по сделке", date: latestDeal.next_action_at }
-          : hasNoReply
-            ? { title: "Ответить клиенту", date: null }
-            : { title: latestAppointment ? "Подтвердить запись" : "Позвонить", date: latestAppointment?.start_at || null };
+        : hasNoReply
+          ? { title: "Ответить клиенту", date: null }
+          : { title: latestAppointment ? "Подтвердить запись" : "Позвонить", date: latestAppointment?.start_at || null };
 
       return {
         client,
@@ -87,29 +131,30 @@ export function useClientRows({
         status,
         lastContactAt,
         nextStep,
-        manager: managerId ? `Менеджер ${managerId}` : "Не назначен",
+        manager: latestManagerId ? `Менеджер ${latestManagerId}` : "Не назначен",
+        managerUserId: isMine ? currentUserId || null : (latestManagerId ? Number(latestManagerId) : null),
       };
     });
-  }, [appointments, clients, conversations, deals, leads, tagsByClient, tasks]);
+  }, [appointments, clients, conversations, currentUserId, deals, leads, tagsByClient, tasks]);
 
   const rows = useMemo(() => {
     return tableRows.filter((row) => {
       if (quickFilter === "new") return row.status === "new";
       if (quickFilter === "vip") return row.status === "vip";
       if (quickFilter === "no_reply") return row.status === "no_reply";
-      if (quickFilter === "mine") return row.manager !== "Не назначен";
+      if (quickFilter === "mine") return Boolean(currentUserId && row.managerUserId === currentUserId);
       return true;
     });
-  }, [quickFilter, tableRows]);
+  }, [currentUserId, quickFilter, tableRows]);
 
   const kpi = useMemo<ClientKpi>(
     () => ({
-      total: tableRows.length,
-      active: tableRows.filter((row) => row.status === "active" || row.status === "vip").length,
-      noReply: tableRows.filter((row) => row.status === "no_reply").length,
-      repeat: tableRows.filter((row) => row.appointments.length > 1 || row.deals.length > 1).length,
+      total: serverSummary?.total ?? (typeof totalOverride === "number" ? totalOverride : tableRows.length),
+      active: serverSummary?.active ?? tableRows.filter((row) => row.status === "active" || row.status === "vip").length,
+      noReply: serverSummary?.no_reply ?? tableRows.filter((row) => row.status === "no_reply").length,
+      repeat: serverSummary?.repeat ?? tableRows.filter((row) => row.appointments.length > 1 || row.deals.length > 1).length,
     }),
-    [tableRows],
+    [serverSummary, tableRows, totalOverride],
   );
 
   return { rows, tableRows, kpi };

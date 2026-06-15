@@ -20,6 +20,7 @@ import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { agentProfilesApi, businessKnowledgeApi } from "../../api/ai";
 import { botAiApi, botChannelsApi, botsApi, type BotSuggestedReplyResponse } from "../../api/bots";
 import { getApiErrorMessage } from "../../api/client";
+import { usePageHeader } from "../../components/layout/PageHeaderContext";
 import { Button } from "../../components/ui/Button";
 import { Card, CardBody } from "../../components/ui/Card";
 import { ErrorState, LoadingState } from "../../components/ui/StateViews";
@@ -170,6 +171,7 @@ export function AIAgentsPage() {
   const activeSection = canonicalSection(params.section);
   const hasInvalidSection = Boolean(requestedSection && requestedSection !== activeSection);
   const { t } = useI18n();
+  const { setPageHeader } = usePageHeader();
   const { user } = useAuth();
   const { business, isLoading: isBusinessLoading } = useActiveBusiness();
   const canManage = hasPermission(user, business?.id, "ai_automation", "manage");
@@ -180,10 +182,10 @@ export function AIAgentsPage() {
     botConversations: true,
     botMessages: true,
   });
-  const profiles = useQuery({ queryKey: ["ai-agent-profiles"], queryFn: agentProfilesApi.list });
-  const knowledge = useQuery({
+  const profiles = useQuery<AgentProfile[]>({ queryKey: ["ai-agent-profiles"], queryFn: () => agentProfilesApi.list() });
+  const knowledge = useQuery<BusinessKnowledgeItem[]>({
     queryKey: ["ai-knowledge-items", business?.id],
-    queryFn: businessKnowledgeApi.list,
+    queryFn: () => businessKnowledgeApi.list(),
     enabled: Boolean(business),
   });
   const [createOpen, setCreateOpen] = useState(false);
@@ -281,6 +283,20 @@ export function AIAgentsPage() {
     onSuccess: (data) => setSuggestedReply(data),
   });
 
+  useEffect(() => {
+    setPageHeader({
+      title: t("nav.aiAgents"),
+      primaryAction: canManage
+        ? {
+            label: t("aiAgents.createAgent"),
+            icon: Plus,
+            onClick: () => setCreateOpen(true),
+          }
+        : undefined,
+    });
+    return () => setPageHeader(null);
+  }, [canManage, setPageHeader, t]);
+
   if (isBusinessLoading || bots.isLoading || botChannels.isLoading || botConversations.isLoading || botMessages.isLoading || profiles.isLoading || knowledge.isLoading) {
     return <LoadingState label={t("aiAgents.loading")} />;
   }
@@ -325,7 +341,7 @@ export function AIAgentsPage() {
           <h1 className="text-2xl font-bold tracking-tight text-midnight md:text-3xl">{t("aiAgents.title")}</h1>
           <p className="mt-1 max-w-2xl text-base leading-6 text-slate-600">{t("aiAgents.description")}</p>
         </div>
-        <Button type="button" onClick={() => setCreateOpen(true)} disabled={!canManage}>
+        <Button type="button" className="lg:hidden" onClick={() => setCreateOpen(true)} disabled={!canManage}>
           <Plus size={16} /> {t("aiAgents.createAgent")}
         </Button>
       </section>

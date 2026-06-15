@@ -513,6 +513,13 @@ class BotConversationViewSet(TenantModelViewSet):
     queryset = BotConversation.objects.select_related("business", "bot", "client", "lead")
     serializer_class = BotConversationSerializer
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        client_ids = self.parse_query_id_list("client_ids")
+        if client_ids:
+            queryset = queryset.filter(client_id__in=client_ids)
+        return queryset
+
     @action(detail=True, methods=["post"], url_path="suggest-reply")
     def suggest_reply(self, request, pk=None):
         conversation = self.get_object()

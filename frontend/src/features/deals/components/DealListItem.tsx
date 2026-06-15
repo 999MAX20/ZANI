@@ -1,12 +1,10 @@
 import { memo } from "react";
-import { CalendarClock, UserRound } from "lucide-react";
+import { CalendarClock, MessageCircle } from "lucide-react";
 
 import { cn } from "../../../lib/cn";
 import { formatDate, formatDateTime } from "../../../lib/format";
 import type { DealRow, Translate } from "../types";
 import { DealAmount } from "./common/DealAmount";
-import { DealRiskIndicator } from "./common/DealRiskIndicator";
-import { DealStageBadge, StatusPill } from "./common/DealStageBadge";
 import { QuickActions } from "./common/QuickActions";
 
 export const DealListItem = memo(function DealListItem({
@@ -33,44 +31,50 @@ export const DealListItem = memo(function DealListItem({
       draggable
       onDragStart={(event) => event.dataTransfer.setData("text/plain", String(deal.id))}
       className={cn(
-        "group rounded-xl border bg-white p-4 shadow-soft transition duration-150 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md",
-        selected && "border-brand-500 shadow-md ring-2 ring-brand-100",
+        "group relative rounded-lg border bg-white p-3 shadow-[0_6px_18px_rgba(15,23,42,0.035)] transition duration-150 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_10px_24px_rgba(15,23,42,0.06)]",
+        selected && "border-blue-500 shadow-md ring-2 ring-blue-100",
         !selected && "border-slate-200",
       )}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-start">
         <input
           type="checkbox"
-          className="mt-1 h-4 w-4 rounded border-slate-300"
+          className="absolute left-2 top-2 h-3.5 w-3.5 rounded border-slate-300 opacity-0 transition group-hover:opacity-100"
           checked={checked}
           aria-label={`Выбрать ${deal.title}`}
           onChange={() => onCheck(deal)}
           onClick={(event) => event.stopPropagation()}
         />
         <button type="button" className="min-w-0 flex-1 text-left" onClick={() => onOpen(deal)} onDoubleClick={() => onMore(deal)}>
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h3 className="truncate text-base font-black text-midnight">{deal.title}</h3>
-              <p className="mt-1 truncate text-sm font-semibold text-slate-500">{deal.clientEntity?.full_name || t("deals.clientMissing")}</p>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: deal.stageEntity?.color || "#2563eb" }} />
+                <h3 className="min-w-0 truncate text-[13px] font-black leading-5 text-slate-950">{deal.title}</h3>
+              </div>
+              <p className="mt-0.5 truncate pl-3 text-[11px] font-semibold text-slate-500">{deal.clientEntity?.full_name || t("deals.clientMissing")}</p>
             </div>
-            <DealAmount value={deal.amount} currency={deal.currency} className="text-base font-black text-midnight" />
-          </div>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <DealStageBadge stage={deal.stageEntity} fallback={t("deals.noStage")} />
-            <StatusPill status={deal.status} />
-            <DealRiskIndicator deal={deal} compact />
-          </div>
-          <div className="mt-3 grid gap-2 text-xs font-semibold text-slate-500 md:grid-cols-3">
-            <span className="inline-flex min-w-0 items-center gap-1.5">
-              <UserRound size={14} /> <span className="truncate">{deal.ownerEntity?.user.full_name || deal.ownerEntity?.user.email || t("deals.unassigned")}</span>
+            <span className="h-6 w-6 shrink-0 rounded-full bg-blue-50 text-center text-[11px] font-black leading-6 text-blue-700">
+              {(deal.ownerEntity?.user.full_name || deal.ownerEntity?.user.email || "Z").slice(0, 1).toUpperCase()}
             </span>
+          </div>
+          <div className="mt-2 flex items-center gap-1.5 pl-3">
+            <DealAmount value={deal.amount} currency={deal.currency} className="text-[12px] font-black text-slate-950" />
+            <span className="text-slate-300">·</span>
+            <span className="truncate text-[11px] font-semibold text-slate-500">{deal.status}</span>
+          </div>
+          <div className="mt-2 flex items-center justify-between gap-2 pl-3 text-[11px] font-semibold text-slate-500">
             <span className="inline-flex min-w-0 items-center gap-1.5">
-              <CalendarClock size={14} /> <span className="truncate">{formatDate(deal.created_at)}</span>
+              <CalendarClock size={13} /> <span className="truncate">{deal.nextTask ? formatDateTime(deal.nextTask.due_at) : formatDate(deal.created_at)}</span>
             </span>
-            <span className="truncate">{deal.nextTask ? `${deal.nextTask.title} · ${formatDateTime(deal.nextTask.due_at)}` : t("deals.noPlan")}</span>
+            <span className="inline-flex items-center gap-1 text-blue-700">
+              <MessageCircle size={13} /> {deal.nextTask ? 1 : 0}
+            </span>
           </div>
         </button>
-        <QuickActions deal={deal} client={deal.clientEntity} onTask={onTask} onMore={onMore} />
+        <div className="absolute right-2 top-2 opacity-0 transition group-hover:opacity-100">
+          <QuickActions deal={deal} client={deal.clientEntity} onTask={onTask} onMore={onMore} />
+        </div>
       </div>
     </article>
   );

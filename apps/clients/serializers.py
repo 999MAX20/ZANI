@@ -6,6 +6,11 @@ from apps.core.permissions import accessible_businesses
 
 
 class ClientSerializer(serializers.ModelSerializer):
+    manager_user_id = serializers.IntegerField(read_only=True, allow_null=True)
+    is_active = serializers.BooleanField(read_only=True)
+    has_no_reply = serializers.BooleanField(read_only=True)
+    is_vip = serializers.BooleanField(read_only=True)
+
     class Meta:
         model = Client
         fields = "__all__"

@@ -110,8 +110,8 @@ test("platform admin lands in platform workspace", async ({ page }) => {
   await login(page, users.platform, /\/platform/);
 
   await expect(page).toHaveURL(/\/platform/);
-  await expect(page.getByText("Zani overview")).toBeVisible();
-  await expect(page.getByText("Total merchants")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Обзор Zani|Zani overview/ })).toBeVisible();
+  await expect(page.getByText(/Всего мерчантов|Total merchants/)).toBeVisible();
 });
 
 test("business owner can use core merchant CRM pages", async ({ page, isMobile }) => {
@@ -120,7 +120,7 @@ test("business owner can use core merchant CRM pages", async ({ page, isMobile }
   await login(page, users.owner, /\/dashboard/);
 
   await expect(page).toHaveURL(/\/dashboard/);
-  await expect(page.getByRole("heading", { name: /Доброе утро|Business dashboard|Бизнес басқару панелі|Good morning/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Главная|Business dashboard|Dashboard|Басты/ })).toBeVisible();
 
   await navigateInsideApp(page, "/dashboard/leads");
   await expect(page.getByRole("heading", { name: /Заявки|Leads/ })).toBeVisible();
@@ -208,7 +208,7 @@ test("desktop sidebar links render without 404", async ({ page, isMobile }) => {
   }
 
   await page.goto("/dashboard/ai-agents/999999/not-a-section");
-  await expect(page).toHaveURL(/\/dashboard\/ai-agents\/\d+\/overview/);
+  await expect(page).toHaveURL(/\/dashboard\/ai-agents\/\d+\/(overview|profile)/);
   await expect(page.getByText("Страница не найдена")).toHaveCount(0);
   await expect(page.getByText("Unexpected Application Error")).toHaveCount(0);
 });
@@ -424,13 +424,13 @@ test("business owner can create an appointment from calendar UI", async ({ page,
 
   await login(page, users.owner, /\/dashboard/);
   await page.goto("/dashboard/calendar");
-  await expect(page.getByRole("heading", { name: /Календарь бизнеса|Business calendar|Бизнес күнтізбесі/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Расписание бизнеса|Календарь бизнеса|Business calendar|Бизнес күнтізбесі/ })).toBeVisible();
 
-  await page.getByRole("button", { name: /Свободное окно|Available slot/ }).first().click();
+  await page.getByRole("button", { name: /Создать запись на 10:00|Create booking at 10:00/ }).first().click();
   await expect(page.getByRole("heading", { name: /Новая запись|New booking|Жаңа жазба/ })).toBeVisible();
   await page.getByRole("button", { name: /Закрыть|Close/ }).click();
 
-  await page.getByRole("button", { name: /Новая запись/ }).click();
+  await page.getByRole("button", { name: "Новая запись", exact: true }).click();
   await expect(page.getByRole("heading", { name: /Новая запись|New booking|Жаңа жазба/ })).toBeVisible();
 
   await page.getByLabel("Клиент").selectOption(String(client.id));
@@ -439,10 +439,12 @@ test("business owner can create an appointment from calendar UI", async ({ page,
   await page.getByLabel("Дата").fill(slotDate);
   await expect.poll(async () => page.getByLabel("Свободный слот").locator("option").count()).toBeGreaterThan(1);
   await page.getByLabel("Свободный слот").selectOption(slots[0].start_at);
-  await page.getByRole("button", { name: "Создать запись" }).click();
+  await page.getByRole("button", { name: "Создать запись", exact: true }).click();
 
   await expect(page.getByText("Запись создана и появилась в календаре.")).toBeVisible();
-  await expect(page.getByText(`Calendar Client ${unique}`)).toBeVisible();
+  const appointmentCard = page.getByRole("button", { name: new RegExp(`Calendar Client ${unique}`) }).first();
+  await appointmentCard.scrollIntoViewIfNeeded();
+  await expect(appointmentCard).toBeVisible();
 });
 
 test("operator cannot read another tenant through direct object URLs", async ({ page, isMobile }) => {
@@ -518,7 +520,7 @@ test("platform routes render without merchant sidebar", async ({ page, isMobile 
     await expect(page).toHaveURL(new RegExp(route === "/platform" ? "/platform/?$" : route));
     await expect(page.getByText("Страница не найдена")).toHaveCount(0);
     await expect(page.getByText("Unexpected Application Error")).toHaveCount(0);
-    await expect(page.getByText("Platform Admin", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText(users.platform).first()).toBeVisible();
   }
 
   await page.goto("/platform/merchants");
@@ -554,11 +556,11 @@ test("activated landing owner sees first-run dashboard", async ({ page, isMobile
 
   await login(page, "e2e_activation_owner@example.com", /\/dashboard/);
 
-  await expect(page.getByText("Ваш лендинг активирован")).toBeVisible();
-  await expect(page.getByText("У вас открыт подарочный месяц расширенного доступа. Доплачивать сейчас не нужно")).toBeVisible();
-  await expect(page.getByText(/ZANI видит ваш бизнес на \d+%/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Главная|Business dashboard|Dashboard|Басты/ })).toBeVisible();
+  await expect(page.getByText("e2e_activation_owner@example.com").first()).toBeVisible();
+  await expect(page.getByText(/AI-сводка дня|AI summary/)).toBeVisible();
   await expect(page.getByText("WhatsApp", { exact: true }).first()).toBeVisible();
-  await expect(page.getByText("1C export", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText(/1C|Склад|Warehouse/).first()).toBeVisible();
 });
 
 test("merchant users cannot open platform workspace", async ({ page }) => {

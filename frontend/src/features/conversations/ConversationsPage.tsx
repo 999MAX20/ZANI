@@ -1,28 +1,37 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { InfiniteData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  AlertTriangle,
   CalendarCheck,
   CheckCheck,
   CheckSquare,
+  ChevronDown,
   ExternalLink,
-  Filter,
   MessageSquare,
+  MoreHorizontal,
+  Paperclip,
   PauseCircle,
   PlayCircle,
-  Search,
   Send,
   Sparkles,
   Square,
   UserCheck,
   UserRound,
-  X,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import { getApiErrorMessage } from "../../api/client";
 import { botsApi } from "../../api/bots";
-import { inboxApi, type InboxConversation, type InboxFilters, type InboxMessage } from "../../api/inbox";
+import {
+  INBOX_MESSAGES_PAGE_SIZE,
+  inboxApi,
+  inboxQueryKeys,
+  normalizeFilters,
+  type InboxConversation,
+  type InboxFilters,
+  type InboxMessage,
+  type PaginatedInboxMessageResponse,
+} from "../../api/inbox";
+import { usePageHeader } from "../../components/layout/PageHeaderContext";
 import { WorkQueueDetailPane, WorkQueueLayout, WorkQueueListPane } from "../../components/layout/WorkQueueLayout";
 import { Button } from "../../components/ui/Button";
 import { Select } from "../../components/ui/Select";
@@ -34,7 +43,10 @@ import { realtimeIntervals, realtimeQueryOptions } from "../../lib/realtime";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useAuth } from "../auth/AuthProvider";
 
-type InboxTab = "all" | "errors" | "paused";
+type InboxPreset = "all" | "mine" | "new" | "attention" | "custom";
+type InboxSort = "latest" | "unread" | "first_response";
+
+const CONVERSATIONS_SHELL_OFFSET = 104;
 
 const channelLabels: Record<string, string> = {
   website: "source.website",
@@ -44,6 +56,90 @@ const channelLabels: Record<string, string> = {
 };
 
 type Translate = ReturnType<typeof useI18n>["t"];
+
+const CONVERSATIONS_PRESET_STORAGE_KEY = "zani_conversations_filters_v1";
+
+const presetOptions: Array<{ value: InboxPreset; label: string }> = [
+  { value: "all", label: "Все" },
+  { value: "mine", label: "Я (ответственный)" },
+  { value: "new", label: "Новые" },
+  { value: "attention", label: "Требуют внимания" },
+  { value: "custom", label: "Пользовательские" },
+];
+
+const sortOptions = [
+  { value: "latest", label: "По последнему сообщению" },
+  { value: "unread", label: "По непрочитанным сверху" },
+  { value: "first_response", label: "По сроку первого ответа" },
+] as const;
+
+const priorityOptions = [
+  { value: "", label: "Все приоритеты" },
+  { value: "urgent", label: "Срочный" },
+  { value: "high", label: "Высокий" },
+  { value: "normal", label: "Обычный" },
+  { value: "low", label: "Низкий" },
+];
+
+const channelOptions = [
+  { value: "", label: "Все каналы" },
+  { value: "website", label: "Website" },
+  { value: "telegram", label: "Telegram" },
+  { value: "whatsapp", label: "WhatsApp" },
+  { value: "instagram", label: "Instagram" },
+];
+
+const boolAllOption = { value: "all", label: "Без фильтра" };
+
+function getSavedConversationsFilterState() {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(CONVERSATIONS_PRESET_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as {
+      preset?: InboxPreset;
+      sortBy?: InboxSort;
+      filters?: InboxFilters;
+    };
+    return {
+      preset: parsed.preset,
+      sortBy: parsed.sortBy,
+      filters: parsed.filters,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function getPresetFilters(preset: InboxPreset, existing: InboxFilters): InboxFilters {
+  const presetFilters: InboxFilters = { ...existing };
+  if (preset === "mine") {
+    presetFilters.assigned_to = "me";
+  } else if (preset === "new") {
+    presetFilters.unread = "true";
+  } else if (preset === "attention") {
+    presetFilters.handoff_required = "true";
+  } else {
+    presetFilters.assigned_to = undefined;
+    presetFilters.unread = undefined;
+    presetFilters.handoff_required = undefined;
+  }
+  if (preset === "all") {
+    presetFilters.status = "";
+    presetFilters.bot_enabled = undefined;
+  }
+  return presetFilters;
+}
+
+function isValidPreset(value: string | null): value is InboxPreset {
+  return value === "all" || value === "mine" || value === "new" || value === "attention" || value === "custom";
+}
+
+function getConversationTimestamp(value?: string | null): number {
+  if (!value) return Number.MAX_SAFE_INTEGER;
+  const parsed = new Date(value).getTime();
+  return Number.isNaN(parsed) ? Number.MAX_SAFE_INTEGER : parsed;
+}
 
 function channelLabel(channel: string | undefined, t: Translate) {
   if (!channel) return "";
@@ -59,25 +155,21 @@ function formatDateTime(value?: string | null) {
   }).format(new Date(value));
 }
 
+function formatMessageTime(value?: string | null) {
+  if (!value) return "";
+  return new Intl.DateTimeFormat("ru-RU", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
 function conversationTitle(conversation: InboxConversation | null | undefined, t: Translate) {
   if (!conversation) return t("conversations.selectDialog");
   return conversation.client_name || conversation.external_user_id || t("conversations.clientFromChannel", { channel: channelLabel(conversation.channel, t) });
 }
 
-function tabFilters(filters: InboxFilters, tab: InboxTab): InboxFilters {
-  const base: InboxFilters = {
-    ...filters,
-    status: "",
-    handoff_required: undefined,
-    bot_enabled: undefined,
-  };
-  if (tab === "errors") return { ...base, handoff_required: "true" };
-  if (tab === "paused") return { ...base, bot_enabled: "false" };
-  return base;
-}
-
 function Pill({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <span className={cn("inline-flex rounded-full px-2.5 py-1 text-xs font-bold ring-1", className)}>{children}</span>;
+  return <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ring-1", className)}>{children}</span>;
 }
 
 function Tooltip({ label, children }: { label: string; children: React.ReactNode }) {
@@ -88,29 +180,6 @@ function Tooltip({ label, children }: { label: string; children: React.ReactNode
         {label}
       </span>
     </span>
-  );
-}
-
-function InboxMetricChip({
-  label,
-  value,
-  tone = "slate",
-}: {
-  label: string;
-  value: number;
-  tone?: "blue" | "amber" | "slate";
-}) {
-  const toneClass = {
-    blue: "bg-blue-50 text-blue-700 ring-blue-100",
-    amber: "bg-amber-50 text-amber-700 ring-amber-100",
-    slate: "bg-slate-100 text-slate-700 ring-slate-200",
-  }[tone];
-
-  return (
-    <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-bold ring-1 ${toneClass}`}>
-      <span>{label}</span>
-      <span className="text-midnight">{value}</span>
-    </div>
   );
 }
 
@@ -147,6 +216,7 @@ function ConversationItem({
   t: Translate;
 }) {
   const preview = conversation.last_message?.text || t("conversations.emptyHistoryPreview");
+  const unread = conversation.unread_count || 0;
   const initials = conversationTitle(conversation, t)
     .split(" ")
     .map((part) => part[0])
@@ -156,59 +226,82 @@ function ConversationItem({
 
   return (
     <div
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") onClick();
+      }}
       className={cn(
-        "w-full border-b border-slate-100 px-4 py-3 text-left transition hover:bg-slate-50",
-        active ? "bg-brand-50/80" : "bg-white",
+        "group relative w-full border-b border-slate-100 px-3 py-2.5 text-left transition hover:bg-slate-50",
+        active ? "bg-brand-50/80 before:absolute before:bottom-0 before:left-0 before:top-0 before:w-1 before:bg-brand-600" : "bg-white",
       )}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5">
         {selectable ? (
           <button
             type="button"
             className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-slate-500 hover:bg-white"
-            onClick={onToggleSelected}
+            onClick={(event) => {
+              event.stopPropagation();
+              onToggleSelected();
+            }}
             aria-label={selectedForBulk ? t("conversations.removeFromSelection") : t("conversations.selectForBulk")}
           >
             {selectedForBulk ? <CheckSquare size={19} /> : <Square size={19} />}
           </button>
         ) : null}
-        <div className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full border border-slate-200 bg-white text-sm font-black text-brand-700 shadow-sm">
-          {initials || <MessageSquare size={18} />}
+        <div className="relative grid h-10 w-10 shrink-0 place-items-center rounded-full border border-slate-200 bg-white text-xs font-black text-brand-700 shadow-sm">
+          {initials || <MessageSquare size={16} />}
           <span className={cn("absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full border-2 border-white", conversation.channel === "telegram" ? "bg-blue-500" : conversation.channel === "whatsapp" ? "bg-emerald-500" : conversation.channel === "instagram" ? "bg-pink-500" : "bg-slate-400")} />
-          {(conversation.unread_count || 0) > 0 ? (
+          {unread > 0 ? (
             <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-midnight px-1 text-[10px] font-black text-white">
-              {conversation.unread_count}
+              {unread}
             </span>
           ) : null}
         </div>
-        <button type="button" className="min-w-0 flex-1 text-left" onClick={onClick}>
+        <div className="min-w-0 flex-1 text-left">
           <div className="flex items-center gap-2">
-            <p className="min-w-0 flex-1 truncate font-black text-midnight">{conversationTitle(conversation, t)}</p>
-            <span className="shrink-0 text-xs font-bold text-slate-400">{formatDateTime(conversation.last_message_at)}</span>
+            <p className="min-w-0 flex-1 truncate text-sm font-black text-midnight">{conversationTitle(conversation, t)}</p>
+            <span className="shrink-0 text-[11px] font-bold text-slate-400">{formatDateTime(conversation.last_message_at)}</span>
           </div>
-          <p className="mt-1 truncate text-sm font-medium text-slate-500">{preview}</p>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-black text-slate-500">{channelLabel(conversation.channel, t)}</span>
-            {conversation.handoff_required ? <span className="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-black text-red-600">{t("conversations.noReply")}</span> : null}
-            {!conversation.handoff_required && !conversation.bot_enabled ? <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-black text-amber-600">{t("conversations.paused")}</span> : null}
+          <p className="mt-0.5 truncate text-xs font-semibold leading-5 text-slate-500">{preview}</p>
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-black text-slate-500">{channelLabel(conversation.channel, t)}</span>
+            {conversation.handoff_required ? <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-black text-red-600">{t("conversations.noReply")}</span> : null}
+            {!conversation.handoff_required && !conversation.bot_enabled ? <span className="rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-black text-amber-600">{t("conversations.paused")}</span> : null}
+            {conversation.status === "closed" ? <span className="rounded-full bg-slate-50 px-1.5 py-0.5 text-[10px] font-black text-slate-500">{t("status.closed")}</span> : null}
           </div>
-        </button>
+        </div>
       </div>
     </div>
   );
 }
 
 function MessageBubble({ message, t }: { message: InboxMessage; t: Translate }) {
+  const system = message.sender_type === "system";
   const inbound = message.direction === "inbound";
   const ai = message.sender_type === "bot" || message.sender_type === "ai";
   const author = ai ? t("conversations.senderAssistant") : message.sender_type === "manager" ? t("conversations.senderManager") : t("conversations.senderClient");
+  const time = formatMessageTime(message.created_at || message.sent_at);
+
+  if (system) {
+    return (
+      <div className="flex justify-center">
+        <div className="max-w-[80%] rounded-full bg-slate-100 px-3 py-1.5 text-center text-xs font-bold text-slate-500">
+          {message.text || t("conversations.emptyMessage")}
+          {time ? <span className="ml-2 text-slate-400">{time}</span> : null}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={cn("flex", inbound ? "justify-start" : "justify-end")}>
       <div
         className={cn(
-          "max-w-[74%] rounded-xl px-4 py-3 text-sm leading-6 shadow-sm",
-          inbound ? "border border-slate-100 bg-white text-slate-700" : ai ? "bg-ai-50 text-ai-800 ring-1 ring-ai-100" : "bg-primary-gradient text-white",
+          "max-w-[78%] rounded-2xl px-4 py-3 text-sm leading-6 shadow-sm",
+          inbound ? "rounded-tl-md border border-slate-100 bg-white text-slate-700" : ai ? "rounded-tr-md bg-ai-50 text-ai-800 ring-1 ring-ai-100" : "rounded-tr-md bg-brand-600 text-white",
         )}
       >
         <div className="mb-1 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] opacity-60">
@@ -216,11 +309,31 @@ function MessageBubble({ message, t }: { message: InboxMessage; t: Translate }) 
           {author}
         </div>
         <p className="whitespace-pre-wrap">{message.text || t("conversations.emptyMessage")}</p>
+        {message.attachments?.length ? (
+          <div className={cn("mt-3 space-y-2", inbound ? "text-slate-700" : "text-white")}>
+            {message.attachments.map((attachment) => (
+              <a
+                key={attachment.id}
+                href={attachment.download_url}
+                target="_blank"
+                rel="noreferrer"
+                className={cn("flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold ring-1", inbound ? "bg-slate-50 ring-slate-200" : "bg-white/15 ring-white/20")}
+              >
+                <Paperclip size={14} />
+                <span className="min-w-0 flex-1 truncate">{attachment.original_name}</span>
+              </a>
+            ))}
+          </div>
+        ) : null}
         {message.error_text ? (
           <p className={cn("mt-2 text-xs font-bold", message.status === "failed" ? "text-red-500" : "text-amber-500")}>
             {message.error_text}
           </p>
         ) : null}
+        <div className={cn("mt-2 flex items-center justify-end gap-1 text-[11px] font-bold", inbound ? "text-slate-400" : "text-white/70")}>
+          {time ? <span>{time}</span> : null}
+          {!inbound ? <span>{message.read_at ? "✓✓" : message.delivered_at || message.status === "sent" ? "✓✓" : "✓"}</span> : null}
+        </div>
       </div>
     </div>
   );
@@ -228,39 +341,157 @@ function MessageBubble({ message, t }: { message: InboxMessage; t: Translate }) 
 
 export function ConversationsPage() {
   const { t } = useI18n();
+  const { setPageHeader } = usePageHeader();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedId, setSelectedId] = useState<number | null>(() => Number(searchParams.get("conversation")) || null);
-  const [activeTab, setActiveTab] = useState<InboxTab>("all");
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const savedState = getSavedConversationsFilterState();
+  const isFilterUrlPresent = !![
+    "status",
+    "bot",
+    "channel",
+    "assigned_to",
+    "priority",
+    "unread",
+    "handoff_required",
+    "bot_enabled",
+    "search",
+    "preset",
+    "sort",
+  ].find((key) => searchParams.get(key));
+  const [activePreset, setActivePreset] = useState<InboxPreset>(() => {
+    const presetFromUrl = searchParams.get("preset");
+    if (isValidPreset(presetFromUrl)) return presetFromUrl;
+    if (!isFilterUrlPresent && savedState?.preset) return savedState.preset;
+    return "all";
+  });
+  const [sortBy, setSortBy] = useState<InboxSort>(() => {
+    const sortFromUrl = searchParams.get("sort");
+    if (sortFromUrl === "latest" || sortFromUrl === "unread" || sortFromUrl === "first_response") return sortFromUrl;
+    if (savedState?.sortBy) return savedState.sortBy;
+    return "latest";
+  });
   const [bulkMode, setBulkMode] = useState(false);
   const [mobileThreadOpen, setMobileThreadOpen] = useState(() => Boolean(searchParams.get("conversation")));
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [filters, setFilters] = useState<InboxFilters>(() => ({
-    status: searchParams.get("status") || "",
-    bot: searchParams.get("bot") || undefined,
-    channel: searchParams.get("channel") || undefined,
-    assigned_to: searchParams.get("assigned_to") || undefined,
-    unread: searchParams.get("unread") || undefined,
-    search: searchParams.get("search") || undefined,
-  }));
+  const [isFiltersPanelOpen, setIsFiltersPanelOpen] = useState(false);
+  const [filters, setFilters] = useState<InboxFilters>(() => {
+    const base: InboxFilters = {
+      status: searchParams.get("status") || "",
+      bot: searchParams.get("bot") || savedState?.filters?.bot || undefined,
+      channel: searchParams.get("channel") || savedState?.filters?.channel || undefined,
+      assigned_to: searchParams.get("assigned_to") || savedState?.filters?.assigned_to || undefined,
+      priority: searchParams.get("priority") || savedState?.filters?.priority || undefined,
+      unread: searchParams.get("unread") || undefined,
+      handoff_required: searchParams.get("handoff_required") || undefined,
+      bot_enabled: searchParams.get("bot_enabled") || undefined,
+      search: searchParams.get("search") || undefined,
+    };
+    const presetFromUrl = searchParams.get("preset");
+    if (!isFilterUrlPresent && isValidPreset(presetFromUrl) && presetFromUrl !== "custom") {
+      return getPresetFilters(presetFromUrl, base);
+    }
+    if (!isFilterUrlPresent && savedState?.preset) {
+      return getPresetFilters(savedState.preset, base);
+    }
+    return base;
+  });
   const [draft, setDraft] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
+  const composerRef = useRef<HTMLTextAreaElement | null>(null);
+  const messageScrollRef = useRef<HTMLDivElement | null>(null);
+  const messageEndRef = useRef<HTMLDivElement | null>(null);
   const { user } = useAuth();
   const { business } = useActiveBusiness();
+  const businessId = business?.id;
   const canSuggestAi = hasPermission(user, business?.id, "ai_assistant", "suggest");
   const canRunAiPipeline = hasPermission(user, business?.id, "ai_pipeline", "execute");
 
+  function persistFilterState(nextFilters: InboxFilters, preset: InboxPreset, nextSort?: InboxSort) {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(
+      CONVERSATIONS_PRESET_STORAGE_KEY,
+      JSON.stringify({
+        preset,
+        sortBy: nextSort || sortBy,
+        filters: nextFilters,
+      }),
+    );
+  }
+
+  function applyFilters(nextFilters: InboxFilters, preset: InboxPreset = activePreset, nextSortBy?: InboxSort, replaceHistory = true) {
+    setFilters(nextFilters);
+    setActivePreset(preset);
+    if (nextSortBy) {
+      setSortBy(nextSortBy);
+    }
+    persistFilterState(nextFilters, preset, nextSortBy);
+
+    const params = new URLSearchParams();
+    if (selectedId) params.set("conversation", String(selectedId));
+    if (searchParams.get("page") && searchParams.get("page") !== "1") {
+      params.set("page", searchParams.get("page") || "");
+    }
+
+    Object.entries(nextFilters).forEach(([key, value]) => {
+      if (value) params.set(key, String(value));
+    });
+    params.set("sort", nextSortBy || sortBy);
+    if (preset !== "custom") params.set("preset", preset);
+
+    setSearchParams(params, { replace: replaceHistory });
+  }
+
+  useEffect(() => {
+    const hasFilterQuery = !![
+      "status",
+      "bot",
+      "channel",
+      "assigned_to",
+      "priority",
+      "unread",
+      "handoff_required",
+      "bot_enabled",
+      "search",
+      "sort",
+      "preset",
+    ].find((key) => searchParams.get(key));
+    if (!hasFilterQuery) return;
+
+    const nextFilters: InboxFilters = {
+      status: searchParams.get("status") || "",
+      bot: searchParams.get("bot") || undefined,
+      channel: searchParams.get("channel") || undefined,
+      assigned_to: searchParams.get("assigned_to") || undefined,
+      priority: searchParams.get("priority") || undefined,
+      unread: searchParams.get("unread") || undefined,
+      handoff_required: searchParams.get("handoff_required") || undefined,
+      bot_enabled: searchParams.get("bot_enabled") || undefined,
+      search: searchParams.get("search") || undefined,
+    };
+
+    const nextSort: InboxSort = (searchParams.get("sort") as InboxSort) || "latest";
+    const presetFromUrl = searchParams.get("preset");
+
+    if (presetFromUrl && isValidPreset(presetFromUrl)) {
+      setActivePreset(presetFromUrl);
+    }
+    setSortBy((prev) => (nextSort === "latest" || nextSort === "unread" || nextSort === "first_response" ? nextSort : prev));
+    setFilters(nextFilters);
+  }, [searchParams]);
+
+  const normalizedFilters = useMemo(() => normalizeFilters(filters), [filters]);
+
   const summary = useQuery({
-    queryKey: ["inbox-summary"],
+    queryKey: ["inbox-summary", businessId],
     queryFn: inboxApi.getSummary,
     refetchInterval: realtimeIntervals.inboxConversationsMs,
     ...realtimeQueryOptions,
   });
 
   const conversations = useQuery({
-    queryKey: ["inbox-conversations", filters],
-    queryFn: () => inboxApi.listConversations(filters),
+    queryKey: inboxQueryKeys.conversations(normalizedFilters),
+    queryFn: () => inboxApi.listConversations(normalizedFilters),
     refetchInterval: realtimeIntervals.inboxConversationsMs,
     ...realtimeQueryOptions,
   });
@@ -271,47 +502,144 @@ export function ConversationsPage() {
   });
 
   const items = conversations.data?.results || [];
-  const selected = useMemo(() => items.find((item) => item.id === selectedId) || null, [items, selectedId]);
+
+  const sortedItems = useMemo(() => {
+    const source = [...items];
+    if (sortBy === "unread") {
+      source.sort((left, right) => {
+        const unreadDiff = (right.unread_count || 0) - (left.unread_count || 0);
+        if (unreadDiff !== 0) return unreadDiff;
+        const leftDate = getConversationTimestamp(left.last_message_at);
+        const rightDate = getConversationTimestamp(right.last_message_at);
+        return rightDate - leftDate;
+      });
+      return source;
+    }
+
+    if (sortBy === "first_response") {
+      source.sort((left, right) => {
+        const leftDate = getConversationTimestamp(left.last_inbound_at);
+        const rightDate = getConversationTimestamp(right.last_inbound_at);
+        return leftDate - rightDate;
+      });
+      return source;
+    }
+
+    source.sort((left, right) => getConversationTimestamp(right.last_message_at) - getConversationTimestamp(left.last_message_at));
+    return source;
+  }, [items, sortBy]);
+
+  const selected = useMemo(() => sortedItems.find((item) => item.id === selectedId) || null, [sortedItems, selectedId]);
+
+  useEffect(() => {
+    const openNextUnreadConversation = () => {
+      const target = sortedItems.find((item) => (item.unread_count || 0) > 0) || sortedItems[0];
+      if (!target) return;
+      selectConversation(target.id);
+    };
+
+    setPageHeader({
+      title: t("nav.conversations"),
+      primaryAction: {
+        label: selected ? t("conversations.replyToClient") : "Перейти к следующему непрочитанному",
+        icon: Send,
+        onClick: () => {
+          if (selected) {
+            composerRef.current?.focus();
+            return;
+          }
+          openNextUnreadConversation();
+        },
+      },
+    });
+    return () => setPageHeader(null);
+  }, [setPageHeader, t, selected, sortedItems, composerRef]);
 
   useEffect(() => {
     if (selectedId || conversations.isLoading || !items.length) return;
-    const unread = items.find((item) => (item.unread_count || 0) > 0);
-    const priority = unread || items.find((item) => item.handoff_required) || items[0];
+    const unread = sortedItems.find((item) => (item.unread_count || 0) > 0);
+    const priority = unread || sortedItems.find((item) => item.handoff_required) || sortedItems[0];
     if (!priority) return;
     setSelectedId(priority.id);
     const params = new URLSearchParams(searchParams);
     params.set("conversation", String(priority.id));
     setSearchParams(params, { replace: true });
-  }, [conversations.isLoading, items, searchParams, selectedId, setSearchParams]);
+  }, [conversations.isLoading, sortedItems, searchParams, selectedId, setSearchParams]);
 
-  const messages = useQuery({
-    queryKey: ["inbox-messages", selected?.id],
-    queryFn: () => inboxApi.listMessages(selected!.id),
+  const messages = useInfiniteQuery<PaginatedInboxMessageResponse, Error, PaginatedInboxMessageResponse, ReturnType<typeof inboxQueryKeys.messages>, number | null>({
+    queryKey: inboxQueryKeys.messages(selected?.id),
+    queryFn: ({ pageParam }) => inboxApi.listMessages(selected!.id, {
+      limit: INBOX_MESSAGES_PAGE_SIZE,
+      beforeId: pageParam ?? undefined,
+    }),
+    initialPageParam: null,
+    getNextPageParam: (lastPage) => lastPage.next_before_id || undefined,
     enabled: Boolean(selected?.id),
     refetchInterval: selected?.id ? realtimeIntervals.inboxMessagesMs : false,
     ...realtimeQueryOptions,
   });
 
-  const channelOptions = summary.data?.channels?.length
-    ? summary.data.channels
-    : [
-        { key: "website", label: t("source.website") },
-        { key: "telegram", label: "Telegram" },
-        { key: "whatsapp", label: "WhatsApp" },
-        { key: "instagram", label: "Instagram" },
-      ];
+  const conversationCounts = useMemo(() => {
+    const myTurn = items.filter((item) => item.assigned_to !== null).length;
+    return {
+      all: conversations.data?.count ?? summary.data?.total ?? items.length,
+      unread: items.filter((item) => (item.unread_count || 0) > 0).length,
+      attention: items.filter((item) => item.handoff_required).length,
+      botDisabled: items.filter((item) => !item.bot_enabled).length,
+      myTurn,
+      unassigned: items.filter((item) => !item.assigned_to).length,
+      closed: items.filter((item) => item.status === "closed").length,
+      active: items.filter((item) => item.status !== "closed").length,
+    };
+  }, [items, conversations.data?.count, summary.data?.total]);
 
-  function updateFilters(next: InboxFilters, tab = activeTab) {
-    setFilters(next);
-    setActiveTab(tab);
+  const hasActiveFilters = useMemo(() => Boolean(
+    filters.bot ||
+    filters.channel ||
+    filters.priority ||
+    filters.assigned_to ||
+    filters.status ||
+    filters.unread ||
+    filters.handoff_required ||
+    filters.bot_enabled,
+  ), [filters]);
+
+  const activeFilterSummary = useMemo(() => {
+    const parts: string[] = [];
+    if (filters.bot) parts.push("Агент");
+    if (filters.channel) parts.push(channelLabel(filters.channel, t));
+    if (filters.priority) parts.push(`Приоритет: ${filters.priority}`);
+    if (filters.unread === "true") parts.push("Непрочитанные");
+    if (filters.handoff_required === "true") parts.push("Требуют оператора");
+    if (filters.bot_enabled === "false") parts.push("Бот отключен");
+    if (filters.bot_enabled === "true") parts.push("Бот включен");
+    if (filters.assigned_to === "me") parts.push("Назначен мне");
+    if (filters.assigned_to === "unassigned") parts.push("Без ответственного");
+    if (filters.status === "open") parts.push("Активные");
+    if (filters.status === "closed") parts.push("Закрытые");
+    return parts;
+  }, [filters, t]);
+
+  useEffect(() => {
+    if (hasActiveFilters || activePreset !== "all") {
+      setIsFiltersPanelOpen(true);
+    }
+  }, [hasActiveFilters, activePreset]);
+
+  function handleSortChange(sort: string) {
+    const nextSort = sort === "latest" ? "latest" : sort === "unread" ? "unread" : "first_response";
+    applyFilters(filters, activePreset, nextSort);
+  }
+
+  function setPresetFilters(preset: InboxPreset) {
+    const next = getPresetFilters(preset, filters);
+    applyFilters(next, preset);
+  }
+
+  function updateFilters(next: InboxFilters) {
+    applyFilters(next, "custom");
     setSelectedIds([]);
     setBulkMode(false);
-    const params = new URLSearchParams();
-    Object.entries(next).forEach(([key, value]) => {
-      if (value) params.set(key, String(value));
-    });
-    if (selectedId) params.set("conversation", String(selectedId));
-    setSearchParams(params, { replace: true });
   }
 
   function selectConversation(id: number) {
@@ -331,7 +659,8 @@ export function ConversationsPage() {
       queryClient.invalidateQueries({ queryKey: ["inbox-summary"] }),
       queryClient.invalidateQueries({ queryKey: ["inbox-summary"], exact: false }),
       queryClient.invalidateQueries({ queryKey: ["inbox-conversations"] }),
-      queryClient.invalidateQueries({ queryKey: ["inbox-messages", selected?.id] }),
+      queryClient.invalidateQueries({ queryKey: inboxQueryKeys.messages(selected?.id) }),
+      queryClient.invalidateQueries({ queryKey: ["inbox-summary", businessId] }),
       queryClient.invalidateQueries({ queryKey: ["notifications-summary"] }),
       queryClient.invalidateQueries({ queryKey: ["notifications"] }),
     ]);
@@ -343,7 +672,7 @@ export function ConversationsPage() {
 
   function selectVisibleConversations() {
     setBulkMode(true);
-    setSelectedIds(items.map((item) => item.id));
+    setSelectedIds(sortedItems.map((item) => item.id));
   }
 
   function resetBulkSelection() {
@@ -351,19 +680,68 @@ export function ConversationsPage() {
     setSelectedIds([]);
   }
 
+  function appendSystemEvent(conversationId: number, text: string) {
+    const now = new Date().toISOString();
+    const eventMessage: InboxMessage = {
+      id: -Date.now(),
+      conversation: conversationId,
+      direction: "outbound",
+      sender_type: "system",
+      text,
+      payload_json: { source: "local_status_event" },
+      status: "sent",
+      sent_at: now,
+      delivered_at: null,
+      read_at: null,
+      created_at: now,
+      attachments: [],
+    };
+
+    queryClient.setQueryData<InfiniteData<PaginatedInboxMessageResponse>>(inboxQueryKeys.messages(conversationId), (current) => {
+      if (!current || !current.pages.length) {
+        return current;
+      }
+
+      const eventTime = new Date(now).getTime();
+      const hasRecentDuplicate = current.pages.some((page) => page.results.some((message) => {
+        if (message.sender_type !== "system" || message.text !== text) return false;
+        const messageTime = new Date(message.created_at || message.sent_at || 0).getTime();
+        return Number.isFinite(messageTime) && Math.abs(eventTime - messageTime) < 10_000;
+      }));
+
+      if (hasRecentDuplicate) {
+        return current;
+      }
+
+      const nextPages = [...current.pages];
+      const latestPage = nextPages[0];
+      nextPages[0] = {
+        ...latestPage,
+        results: [...latestPage.results, eventMessage],
+      };
+
+      return {
+        ...current,
+        pages: nextPages,
+      };
+    });
+  }
+
   const assignMutation = useMutation({
     mutationFn: inboxApi.assignToMe,
-    onSuccess: async () => {
-      setNotice(t("conversations.assignedToMe"));
+    onSuccess: async (_data, conversationId) => {
+      setNotice(null);
       await invalidateInbox();
+      appendSystemEvent(Number(conversationId), t("conversations.systemAssignedToMe"));
     },
   });
 
   const handoffMutation = useMutation({
     mutationFn: inboxApi.handoff,
-    onSuccess: async () => {
-      setNotice(t("conversations.handoffDone"));
+    onSuccess: async (_data, variables) => {
+      setNotice(null);
       await invalidateInbox();
+      appendSystemEvent(Number(variables.conversationId), t("conversations.systemHandoff"));
     },
   });
 
@@ -376,25 +754,28 @@ export function ConversationsPage() {
 
   const toggleBotMutation = useMutation({
     mutationFn: inboxApi.toggleBot,
-    onSuccess: async () => {
-      setNotice(t("conversations.botModeUpdated"));
+    onSuccess: async (_data, variables) => {
+      setNotice(null);
       await invalidateInbox();
+      appendSystemEvent(Number(variables.conversationId), variables.botEnabled ? t("conversations.systemBotEnabled") : t("conversations.systemBotPaused"));
     },
   });
 
   const closeMutation = useMutation({
     mutationFn: inboxApi.closeConversation,
-    onSuccess: async () => {
-      setNotice(t("conversations.closed"));
+    onSuccess: async (_data, variables) => {
+      setNotice(null);
       await invalidateInbox();
+      appendSystemEvent(Number(variables.conversationId), t("conversations.systemClosed"));
     },
   });
 
   const reopenMutation = useMutation({
     mutationFn: inboxApi.reopenConversation,
-    onSuccess: async () => {
-      setNotice(t("conversations.reopened"));
+    onSuccess: async (_data, conversationId) => {
+      setNotice(null);
       await invalidateInbox();
+      appendSystemEvent(Number(conversationId), t("conversations.systemReopened"));
     },
   });
 
@@ -542,133 +923,189 @@ export function ConversationsPage() {
     runPipelineMutation.mutate({ conversationId: selected.id, dealTitle: t("conversations.pipelineDealTitle", { title: conversationTitle(selected, t) }) });
   }
 
-  const tabs = [
-    { value: "all" as const, label: t("conversations.filterAll"), count: summary.data?.total ?? 0 },
-    { value: "errors" as const, label: t("conversations.attention"), count: summary.data?.handoff_required ?? 0 },
-    { value: "paused" as const, label: t("conversations.paused"), count: summary.data?.bot_paused ?? 0 },
-  ];
   const selectedInsight = selected ? getAutoPipelineInsight(selected) : null;
+  const messageList = useMemo(() => {
+    if (!messages.data) return [];
+    return [...messages.data.pages].reverse().flatMap((page) => page.results);
+  }, [messages.data]);
+  const canLoadMoreMessages = Boolean(messages.hasNextPage);
+  const lastMessage = messageList[messageList.length - 1];
+  const lastMessageSignature = lastMessage ? `${lastMessage.id}:${lastMessage.created_at || lastMessage.sent_at || ""}:${lastMessage.text || ""}` : "";
+
+  useEffect(() => {
+    if (!selected?.id) return;
+    const frame = window.requestAnimationFrame(() => {
+      if (messageEndRef.current) {
+        messageEndRef.current.scrollIntoView({ block: "end", behavior: "smooth" });
+        return;
+      }
+      messageScrollRef.current?.scrollTo({ top: messageScrollRef.current.scrollHeight, behavior: "smooth" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [lastMessageSignature, messageList.length, selected?.id]);
 
   return (
-    <div className="space-y-4">
+    <div className="-mx-2 overflow-hidden sm:-mx-3 lg:-mx-4" style={{ height: `calc(100dvh - ${CONVERSATIONS_SHELL_OFFSET}px)` }}>
       {notice ? <div className="rounded-xl border border-ai-100 bg-ai-50 px-4 py-3 text-sm font-bold text-ai-800">{notice}</div> : null}
       {actionError ? <ErrorState message={getApiErrorMessage(actionError)} /> : null}
 
-      <section className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-midnight">{t("conversations.title")}</h1>
-          <p className="mt-1 max-w-2xl text-sm font-medium leading-6 text-slate-600">{t("conversations.description")}</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <InboxMetricChip label={t("conversations.metricTotal")} value={summary.data?.total ?? 0} />
-          <InboxMetricChip label={t("conversations.noReply")} value={summary.data?.handoff_required ?? 0} tone="amber" />
-          <InboxMetricChip label={t("conversations.inWork")} value={summary.data?.assigned_to_me ?? 0} />
-          <InboxMetricChip label={t("conversations.unreadMessages")} value={summary.data?.unread_messages ?? 0} tone="blue" />
-        </div>
-      </section>
-
-      <WorkQueueLayout className="overflow-hidden border border-slate-200 shadow-soft lg:min-h-[calc(100vh-190px)] lg:grid-cols-[380px_minmax(0,1fr)] 2xl:grid-cols-[380px_minmax(560px,1fr)_320px]">
+      <WorkQueueLayout
+        style={{ height: "100%", minHeight: 0 }}
+        className="overflow-hidden border border-slate-200 shadow-soft lg:grid-cols-[310px_minmax(0,1fr)] 2xl:grid-cols-[310px_minmax(720px,1fr)_280px]"
+      >
         <WorkQueueListPane mobileDetailOpen={mobileThreadOpen}>
-          <div className="space-y-3 p-5">
-            <h1 className="text-xl font-bold tracking-tight text-midnight">{t("conversations.dialogsTitle")}</h1>
-            <Select
-              className="min-h-12 rounded-xl text-midnight"
-              value={filters.bot || ""}
-              onChange={(event) => updateFilters({ ...filters, bot: event.target.value || undefined })}
-              options={[
-                { value: "", label: t("conversations.allAgents") },
-                ...(bots.data || []).map((bot) => ({ value: bot.id, label: bot.name })),
-              ]}
-            />
-
-            <div className="flex gap-2">
-              <label className="flex h-12 min-w-0 flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-500">
-                <Search size={18} />
-                <input
-                  className="min-w-0 flex-1 bg-transparent font-semibold outline-none placeholder:text-slate-400"
-                  placeholder={t("conversations.queueSearch")}
-                  value={filters.search || ""}
-                  onChange={(event) => updateFilters({ ...filters, search: event.target.value })}
-                />
-              </label>
-              <button
-                className={cn("grid h-12 w-12 place-items-center rounded-xl text-slate-600", filtersOpen ? "bg-brand-600 text-white" : "bg-slate-100")}
-                type="button"
-                aria-label={t("conversations.filterButton")}
-                onClick={() => setFiltersOpen((value) => !value)}
-              >
-                <Filter size={19} />
-              </button>
-            </div>
-
-            {filtersOpen ? (
-              <div className="space-y-2 rounded-xl border border-slate-100 bg-slate-50 p-3">
+          <div className="border-b border-slate-100 p-3">
+            <button
+              type="button"
+              className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left text-xs font-black"
+              onClick={() => setIsFiltersPanelOpen((state) => !state)}
+              aria-expanded={isFiltersPanelOpen}
+            >
+              <div className="flex min-w-0 flex-col">
+                <span className="text-midnight">Фильтры</span>
+                <span className="truncate text-[11px] font-semibold text-slate-500">
+                  {activeFilterSummary.length ? activeFilterSummary.join(" · ") : "Нажмите, чтобы показать настройки"}
+                </span>
+              </div>
+              <ChevronDown
+                size={16}
+                className={cn("h-4 w-4 shrink-0 text-slate-400 transition-transform", isFiltersPanelOpen ? "rotate-180" : "rotate-0")}
+              />
+            </button>
+            {isFiltersPanelOpen ? (
+              <div className="mt-3 grid gap-2">
                 <Select
-                  className="min-h-10 rounded-xl"
-                  value={filters.channel || ""}
-                  onChange={(event) => updateFilters({ ...filters, channel: event.target.value || undefined })}
+                  className="min-h-10 rounded-lg text-xs font-bold text-midnight"
+                  value={filters.bot || ""}
+                  onChange={(event) => updateFilters({ ...filters, bot: event.target.value || undefined })}
                   options={[
-                    { value: "", label: t("conversations.allChannels") },
-                    ...channelOptions.map((channel) => ({
-                      value: channel.key,
-                      label: channelLabel(channel.key, t) || channel.label || channel.key,
-                    })),
+                    { value: "", label: t("conversations.allAgents") },
+                    ...(bots.data || []).map((bot) => ({ value: bot.id, label: bot.name })),
                   ]}
                 />
                 <div className="grid grid-cols-2 gap-2">
                   <Select
-                    className="min-h-10 rounded-xl"
-                    value={filters.unread || ""}
-                    onChange={(event) => updateFilters({ ...filters, unread: event.target.value || undefined })}
-                    options={[
-                      { value: "", label: t("conversations.allMessages") },
-                      { value: "true", label: t("conversations.unreadMessages") },
-                      { value: "false", label: t("conversations.read") },
-                    ]}
+                    className="min-h-10 rounded-lg text-xs font-bold text-midnight"
+                    value={filters.channel || ""}
+                    onChange={(event) => updateFilters({ ...filters, channel: event.target.value || undefined })}
+                    options={channelOptions}
                   />
                   <Select
-                    className="min-h-10 rounded-xl"
-                    value={filters.assigned_to || ""}
-                    onChange={(event) => updateFilters({ ...filters, assigned_to: event.target.value || undefined })}
+                    className="min-h-10 rounded-lg text-xs font-bold text-midnight"
+                    value={filters.priority || ""}
+                    onChange={(event) => updateFilters({ ...filters, priority: event.target.value || undefined })}
+                    options={priorityOptions}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="text-xs text-slate-700 font-black">Режимы</div>
+                  <Select
+                    className="min-h-10 rounded-lg text-xs font-bold text-midnight"
+                    value={sortBy}
+                    onChange={(event) => handleSortChange(event.target.value)}
+                    options={sortOptions.map((sort) => ({ value: sort.value, label: sort.label }))}
+                  />
+                </div>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <div className="text-xs text-slate-700 font-black">Непрочитанные</div>
+                  <Select
+                    className="min-h-10 rounded-lg text-xs font-bold text-midnight"
+                    value={filters.unread === "true" ? "true" : "all"}
+                    onChange={(event) => {
+                      const value = event.target.value === "true" ? "true" : undefined;
+                      applyFilters({ ...filters, unread: value }, "custom");
+                    }}
                     options={[
-                      { value: "", label: t("conversations.allManagers") },
-                      { value: "me", label: t("conversations.assignedToMeFilter") },
-                      { value: "unassigned", label: t("conversations.unassigned") },
+                      { ...boolAllOption, label: `Без фильтра (${conversationCounts.all})`, value: "all" },
+                      { value: "true", label: `Только непрочитанные (${conversationCounts.unread})` },
+                    ]}
+                  />
+                  <div className="text-xs text-slate-700 font-black">Требуют оператора</div>
+                  <Select
+                    className="min-h-10 rounded-lg text-xs font-bold text-midnight"
+                    value={filters.handoff_required === "true" ? "true" : "all"}
+                    onChange={(event) => {
+                      const value = event.target.value === "true" ? "true" : undefined;
+                      applyFilters({ ...filters, handoff_required: value }, "custom");
+                    }}
+                    options={[
+                      { ...boolAllOption, label: `Без фильтра (${conversationCounts.all})`, value: "all" },
+                      { value: "true", label: `Только требуют оператора (${conversationCounts.attention})` },
+                    ]}
+                  />
+                  <div className="text-xs text-slate-700 font-black">Бот</div>
+                  <Select
+                    className="min-h-10 rounded-lg text-xs font-bold text-midnight"
+                    value={filters.bot_enabled === "false" ? "false" : filters.bot_enabled === "true" ? "true" : "all"}
+                    onChange={(event) => {
+                      const raw = event.target.value;
+                      const value = raw === "all" ? undefined : raw;
+                      applyFilters({ ...filters, bot_enabled: value }, "custom");
+                    }}
+                    options={[
+                      { ...boolAllOption, label: `Без фильтра (${conversationCounts.all})`, value: "all" },
+                      { value: "false", label: `Только бот выключен (${conversationCounts.botDisabled})` },
+                      { value: "true", label: "Только бот включен" },
+                    ]}
+                  />
+                  <div className="text-xs text-slate-700 font-black">Ответственный</div>
+                  <Select
+                    className="min-h-10 rounded-lg text-xs font-bold text-midnight"
+                    value={filters.assigned_to || "all"}
+                    onChange={(event) => {
+                      const raw = event.target.value;
+                      const value = raw === "all" ? undefined : raw;
+                      applyFilters({ ...filters, assigned_to: value }, "custom");
+                    }}
+                    options={[
+                      { ...boolAllOption, value: "all", label: `Без фильтра (${conversationCounts.all})` },
+                      { value: "me", label: `Назначен мне (${conversationCounts.myTurn})` },
+                      { value: "unassigned", label: `Без ответственного (${conversationCounts.unassigned})` },
+                    ]}
+                  />
+                  <div className="text-xs text-slate-700 font-black">Статус</div>
+                  <Select
+                    className="min-h-10 rounded-lg text-xs font-bold text-midnight"
+                    value={filters.status || "all"}
+                    onChange={(event) => {
+                      const raw = event.target.value;
+                      const value = raw === "all" ? "" : raw;
+                      applyFilters({ ...filters, status: value }, "custom");
+                    }}
+                    options={[
+                      { ...boolAllOption, label: `Без фильтра (${conversationCounts.all})`, value: "all" },
+                      { value: "open", label: `Активные (${conversationCounts.active})` },
+                      { value: "closed", label: `Закрытые (${conversationCounts.closed})` },
                     ]}
                   />
                 </div>
-                <button
-                  type="button"
-                  className="flex h-9 w-full items-center justify-center gap-2 rounded-xl bg-white text-xs font-black text-slate-500 ring-1 ring-slate-200"
-                  onClick={() => updateFilters({ status: "", bot: filters.bot })}
-                >
-                  <X size={15} /> {t("conversations.resetFilters")}
-                </button>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {[
+                    { value: "all", label: `${presetOptions[0].label} (${summary.data?.total ?? conversationCounts.all})`, count: summary.data?.total ?? conversationCounts.all },
+                    { value: "mine", label: `${presetOptions[1].label} (${summary.data?.assigned_to_me ?? 0})`, count: summary.data?.assigned_to_me ?? 0 },
+                    { value: "new", label: `${presetOptions[2].label} (${summary.data?.unread ?? 0})`, count: summary.data?.unread ?? 0 },
+                    { value: "attention", label: `${presetOptions[3].label} (${summary.data?.handoff_required ?? 0})`, count: summary.data?.handoff_required ?? 0 },
+                  ].map((item) => (
+                    <Button
+                      key={item.value}
+                      type="button"
+                      className="h-8 rounded-full px-3 text-[11px]"
+                      variant={activePreset === item.value ? "ai" : "secondary"}
+                      onClick={() => setPresetFilters(item.value as InboxPreset)}
+                      title={item.label}
+                    >
+                      {item.label}
+                    </Button>
+                  ))}
+                </div>
               </div>
             ) : null}
           </div>
 
-          <div className="border-y border-slate-100 p-5">
-            <div className="grid grid-cols-3 rounded-xl bg-slate-100 p-1">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.value}
-                  className={cn(
-                    "rounded-lg px-2 py-2 text-sm font-black transition",
-                    activeTab === tab.value ? "bg-white text-brand-700 shadow-sm" : "text-slate-400 hover:text-slate-600",
-                  )}
-                  onClick={() => updateFilters(tabFilters(filters, tab.value), tab.value)}
-                >
-                  {tab.label} <span className="ml-1 rounded-md bg-slate-200 px-1.5 text-xs text-slate-600">{tab.count}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
           {items.length ? (
-            <div className="border-b border-slate-100 px-5 py-3">
+            <div className="border-b border-slate-100 px-3 py-2">
               {!bulkMode ? (
-                <button type="button" className="text-sm font-black text-brand-600" onClick={selectVisibleConversations}>
+                <button type="button" className="text-xs font-black text-brand-600" onClick={selectVisibleConversations}>
                   {t("conversations.selectMultiple")}
                 </button>
               ) : (
@@ -708,7 +1145,7 @@ export function ConversationsPage() {
                 <EmptyState title={t("conversations.emptyTitle")} description={t("conversations.emptyText")} />
               </div>
             ) : null}
-            {items.map((conversation) => (
+            {sortedItems.map((conversation) => (
               <ConversationItem
                 key={conversation.id}
                 conversation={conversation}
@@ -735,64 +1172,54 @@ export function ConversationsPage() {
             </div>
           ) : (
             <>
-              <div className="border-b border-slate-200 bg-white px-4 py-3 sm:px-5 sm:py-4">
+              <div className="border-b border-slate-200 bg-white px-4 py-3">
                 <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <h2 className="truncate text-lg font-black text-midnight sm:text-xl">{conversationTitle(selected, t)}</h2>
+                      <h2 className="truncate text-lg font-black text-midnight">{conversationTitle(selected, t)}</h2>
                     </div>
-                    <div className="mt-2 flex flex-wrap gap-2">
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
                       <Pill className="bg-blue-50 text-blue-700 ring-blue-200">{channelLabel(selected.channel, t)}</Pill>
                       {selected.bot_enabled ? <Pill className="bg-emerald-50 text-emerald-700 ring-emerald-200">{t("conversations.botActive")}</Pill> : <Pill className="bg-slate-100 text-slate-600 ring-slate-200">{t("conversations.botPaused")}</Pill>}
                       {selected.handoff_required ? <Pill className="bg-amber-50 text-amber-700 ring-amber-200">{t("conversations.needsOperator")}</Pill> : null}
-                      {selected.client ? <Pill className="bg-white text-slate-500 ring-slate-200">{t("conversations.clientId", { id: selected.client })}</Pill> : null}
-                      {selected.lead ? <Pill className="bg-white text-slate-500 ring-slate-200">{t("conversations.leadId", { id: selected.lead })}</Pill> : null}
-                      {selected.deal ? <Pill className="bg-white text-slate-500 ring-slate-200">{t("conversations.dealId", { id: selected.deal })}</Pill> : null}
                     </div>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
                     <Tooltip label={t("conversations.assignTooltip")}>
-                      <Button variant="secondary" disabled={!selected} onClick={() => assignMutation.mutate(selected.id)} isLoading={assignMutation.isPending} aria-label={t("conversations.takeDialog")}>
-                        <UserCheck size={17} /> <span className="hidden sm:inline">{t("conversations.assign")}</span>
+                      <Button className="h-9 rounded-lg px-3 text-xs" variant="secondary" disabled={!selected} onClick={() => assignMutation.mutate(selected.id)} isLoading={assignMutation.isPending} aria-label={t("conversations.takeDialog")}>
+                        <UserCheck size={16} /> {t("conversations.takeDialog")}
                       </Button>
                     </Tooltip>
                     <Tooltip label={selected.bot_enabled ? t("conversations.pauseBotTooltip") : t("conversations.enableBotTooltip")}>
                       <Button
+                        className="h-9 rounded-lg px-3 text-xs"
                         variant="secondary"
                         disabled={!selected}
                         onClick={() => toggleBotMutation.mutate({ conversationId: selected.id, botEnabled: !selected.bot_enabled })}
                         isLoading={toggleBotMutation.isPending}
                         aria-label={selected.bot_enabled ? t("conversations.pauseBot") : t("conversations.enableBot")}
                       >
-                        {selected.bot_enabled ? <PauseCircle size={17} /> : <PlayCircle size={17} />}
-                      </Button>
-                    </Tooltip>
-                    <Tooltip label={t("conversations.handoffTooltip")}>
-                      <Button
-                        variant="secondary"
-                        onClick={() => handoffMutation.mutate({ conversationId: selected.id, reason: "manager_requested_from_inbox" })}
-                        isLoading={handoffMutation.isPending}
-                        aria-label={t("conversations.handoffToOperator")}
-                      >
-                        <AlertTriangle size={17} />
+                        {selected.bot_enabled ? <PauseCircle size={16} /> : <PlayCircle size={16} />}
+                        {selected.bot_enabled ? t("conversations.pauseBot") : t("conversations.enableBot")}
                       </Button>
                     </Tooltip>
                     {selected.status === "closed" ? (
                       <Tooltip label={t("conversations.reopenTooltip")}>
-                        <Button variant="secondary" onClick={() => reopenMutation.mutate(selected.id)} isLoading={reopenMutation.isPending} aria-label={t("conversations.openDialog")}>
-                          <PlayCircle size={17} /> {t("common.open")}
+                        <Button className="h-9 rounded-lg px-3 text-xs" variant="secondary" onClick={() => reopenMutation.mutate(selected.id)} isLoading={reopenMutation.isPending} aria-label={t("conversations.openDialog")}>
+                          <PlayCircle size={16} /> {t("common.open")}
                         </Button>
                       </Tooltip>
                     ) : (
-                    <Tooltip label={t("conversations.closeTooltip")}>
+                      <Tooltip label={t("conversations.closeTooltip")}>
                         <Button
+                          className="h-9 rounded-lg px-3 text-xs"
                           variant="secondary"
                           onClick={() => closeMutation.mutate({ conversationId: selected.id, reason: "closed_from_inbox" })}
                           isLoading={closeMutation.isPending}
                           aria-label={t("conversations.closeDialog")}
                         >
-                          <CheckCheck size={17} /> <span className="hidden sm:inline">{t("common.close")}</span>
+                          <CheckCheck size={16} /> {t("common.close")}
                         </Button>
                       </Tooltip>
                     )}
@@ -800,26 +1227,45 @@ export function ConversationsPage() {
                 </div>
               </div>
 
-              <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5 pb-28 lg:pb-5">
+              <div ref={messageScrollRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-[linear-gradient(180deg,#fbfcff_0%,#fff7f2_100%)] p-5 pb-28 lg:pb-5">
                 {messages.isLoading ? <LoadingState label={t("conversations.loadingHistory")} /> : null}
-                {!messages.isLoading && !(messages.data || []).length ? (
+                {canLoadMoreMessages ? (
+                  <Button
+                    type="button"
+                    className="h-8 min-h-8 rounded-lg px-3 text-xs"
+                    variant="secondary"
+                    onClick={() => messages.fetchNextPage()}
+                    isLoading={messages.isFetchingNextPage}
+                  >
+                    Загрузить ранее
+                  </Button>
+                ) : null}
+                {!messages.isLoading && !messageList.length ? (
                   <EmptyState title={t("conversations.noMessagesTitle")} description={t("conversations.noMessagesText")} />
                 ) : null}
-                {(messages.data || []).map((message) => (
-                  <MessageBubble key={message.id} message={message} t={t} />
-                ))}
+                {messageList.length ? (
+                  <div className="sticky top-0 z-10 flex justify-center">
+                    <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-black text-slate-500 shadow-sm ring-1 ring-slate-200">{t("common.today")}</span>
+                  </div>
+                ) : null}
+                {messageList.map((message) => <MessageBubble key={message.id} message={message} t={t} />)}
+                <div ref={messageEndRef} aria-hidden="true" />
               </div>
 
-              <div className="border-t border-slate-200 bg-white p-4">
+              <div className="border-t border-slate-200 bg-white p-3">
                 {selected.status === "closed" ? (
                   <div className="mb-3 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">
                     {t("conversations.closedReplyNotice")}
                   </div>
                 ) : null}
                 <div className="flex items-end gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+                  <button type="button" className="mb-1 grid h-8 w-8 shrink-0 place-items-center rounded-lg text-slate-400 hover:bg-slate-50 hover:text-midnight" title={t("conversations.attachFile")}>
+                    <Paperclip size={16} />
+                  </button>
                   <textarea
-                    rows={2}
-                    className="max-h-32 min-h-11 min-w-0 flex-1 resize-none bg-transparent py-2 text-sm outline-none placeholder:text-slate-400"
+                    ref={composerRef}
+                    rows={1}
+                    className="max-h-28 min-h-10 min-w-0 flex-1 resize-none bg-transparent py-2 text-sm outline-none placeholder:text-slate-400"
                     disabled={selected.status === "closed" || sendMutation.isPending}
                     placeholder={t("conversations.replyPlaceholder")}
                     value={draft}
@@ -830,7 +1276,7 @@ export function ConversationsPage() {
                   />
                   <Button
                     variant="ai"
-                    className="h-11 w-11 rounded-lg px-0"
+                    className="h-10 w-10 shrink-0 rounded-lg px-0"
                     disabled={selected.status === "closed" || !draft.trim()}
                     isLoading={sendMutation.isPending}
                     onClick={sendReply}
@@ -844,17 +1290,23 @@ export function ConversationsPage() {
           )}
         </WorkQueueDetailPane>
 
-        <aside className="hidden min-h-0 flex-col gap-3 overflow-y-auto border-l border-slate-200 bg-white p-4 2xl:flex">
+        <aside className="hidden min-h-0 flex-col gap-3 overflow-y-auto border-l border-slate-200 bg-white p-3 2xl:flex">
           {selected ? (
             <>
-              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-soft">
+              <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-soft">
                 <div className="flex items-start gap-3">
-                  <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-brand-50 text-brand-700">
-                    <UserRound size={22} />
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-50 text-brand-700">
+                    <UserRound size={20} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-black text-midnight">{selected.client_name || conversationTitle(selected, t)}</p>
-                    <p className="mt-1 truncate text-sm font-bold text-slate-500">{selected.client_phone || selected.external_user_id || t("conversations.noContact")}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="min-w-0 flex-1 truncate font-black text-midnight">{selected.client_name || conversationTitle(selected, t)}</p>
+                      <button type="button" className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-slate-400 hover:bg-slate-50 hover:text-midnight" aria-label={t("common.open")}>
+                        <ExternalLink size={14} />
+                      </button>
+                    </div>
+                    <p className="mt-1 truncate text-xs font-bold text-slate-500">{selected.client_phone || selected.external_user_id || t("conversations.noContact")}</p>
+                    <p className="mt-1 truncate text-xs font-bold text-slate-400">{selected.assigned_to_email || t("conversations.unassigned")}</p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <Pill className="bg-emerald-50 text-emerald-700 ring-emerald-100">{selected.client ? t("common.client") : t("conversations.newContact")}</Pill>
                       <Pill className="bg-slate-50 text-slate-600 ring-slate-200">{channelLabel(selected.channel, t)}</Pill>
@@ -863,18 +1315,34 @@ export function ConversationsPage() {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-soft">
+              <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-soft">
                 <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{t("conversations.channel")}</p>
                 <div className="mt-3 flex items-center justify-between gap-3">
                   <div>
                     <p className="font-black text-midnight">{channelLabel(selected.channel, t)}</p>
-                    <p className="mt-1 text-sm font-bold text-slate-500">{selected.bot_enabled ? t("conversations.botActive") : t("conversations.botPaused")}</p>
+                    <p className="mt-1 text-xs font-bold text-slate-500">{selected.bot_enabled ? t("conversations.channelConnected") : t("conversations.botPaused")}</p>
                   </div>
                   {selected.bot_enabled ? <PlayCircle className="text-emerald-500" size={22} /> : <PauseCircle className="text-amber-500" size={22} />}
                 </div>
               </div>
 
-              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-soft">
+              <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-soft">
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{t("conversations.responsible")}</p>
+                <div className="mt-3 flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-slate-100 text-sm font-black text-midnight">
+                      {(selected.assigned_to_email || "ZA").slice(0, 2).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate font-black text-midnight">{selected.assigned_to_email || t("conversations.unassigned")}</p>
+                      <p className="text-xs font-bold text-slate-400">{t("conversations.owner")}</p>
+                    </div>
+                  </div>
+                  <ChevronDown size={16} className="text-slate-400" />
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-soft">
                 <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{t("conversations.nextTask")}</p>
                 <div className="mt-3 flex items-start gap-3">
                   <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-violet-50 text-violet-700">
@@ -895,20 +1363,27 @@ export function ConversationsPage() {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-ai-100 bg-ai-50 p-4 shadow-soft">
+              <div className="rounded-xl border border-ai-100 bg-ai-50 p-3 shadow-soft">
                 <div className="flex items-center justify-between gap-3">
                   <p className="flex items-center gap-2 font-black text-ai-900"><Sparkles size={18} /> {t("conversations.replyHint")}</p>
+                  <span className="rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-black text-ai-700 ring-1 ring-ai-100">BETA</span>
                 </div>
-                <p className="mt-3 text-sm font-bold leading-6 text-ai-800">
+                <p className="mt-3 text-xs font-bold leading-5 text-ai-800">
                   {selectedInsight?.intent ? t("conversations.intentLine", { intent: selectedInsight.intent }) : t("conversations.assistantDraftHelp")}
                   {selectedInsight?.confidence !== null && selectedInsight?.confidence !== undefined ? ` ${t("conversations.confidenceLine", { confidence: selectedInsight.confidence })}` : ""}
                 </p>
-                <div className="mt-3 rounded-xl bg-white p-3 text-sm font-semibold leading-6 text-slate-700">
+                <p className="mt-3 text-xs font-black uppercase tracking-[0.14em] text-ai-700">{t("conversations.recommendedReply")}</p>
+                <div className="mt-3 rounded-xl bg-white p-3 text-xs font-semibold leading-5 text-slate-700">
                   {draft || selectedInsight?.nextAction || t("conversations.prepareDraftFallback")}
                 </div>
-                <Button className="mt-3 w-full rounded-xl" variant="ai" onClick={() => suggestMutation.mutate(selected.id)} isLoading={suggestMutation.isPending} disabled={!canSuggestAi}>
-                  <Sparkles size={16} /> {t("conversations.prepareReply")}
-                </Button>
+                <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
+                  <Button className="h-10 rounded-xl px-3 text-xs" variant="ai" onClick={() => suggestMutation.mutate(selected.id)} isLoading={suggestMutation.isPending} disabled={!canSuggestAi}>
+                    <Sparkles size={16} /> {t("conversations.prepareReply")}
+                  </Button>
+                  <Button className="h-10 w-10 rounded-xl px-0" variant="secondary" type="button" aria-label={t("common.copy")}>
+                    <MoreHorizontal size={16} />
+                  </Button>
+                </div>
               </div>
             </>
           ) : (

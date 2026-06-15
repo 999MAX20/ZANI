@@ -38,6 +38,11 @@ export function useDealFilters() {
   });
 
   useEffect(() => {
+    const nextSearch = searchParams.get("search") || "";
+    setFilters((current) => (current.search === nextSearch ? current : { ...current, search: nextSearch }));
+  }, [searchParams]);
+
+  useEffect(() => {
     const handle = window.setTimeout(() => {
       localStorage.setItem(DEAL_FILTERS_KEY, JSON.stringify(filters));
       const next = new URLSearchParams(searchParams);

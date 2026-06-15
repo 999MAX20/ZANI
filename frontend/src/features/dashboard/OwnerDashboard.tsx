@@ -23,7 +23,6 @@ import type { Appointment, Client, Lead, OwnerDashboardMetrics, Service, Task } 
 import { formatMoney } from "./dashboardUtils";
 
 type OwnerDashboardProps = {
-  businessName: string;
   dashboard?: OwnerDashboardMetrics;
   metricsError: unknown;
   isCoreDataLoading: boolean;
@@ -359,7 +358,6 @@ function NewLeadsCard({ leads, clients, services }: { leads: Lead[]; clients: Cl
 }
 
 export function OwnerDashboard({
-  businessName,
   dashboard,
   metricsError,
   isCoreDataLoading,
@@ -413,11 +411,6 @@ export function OwnerDashboard({
 
   return (
     <div className="pb-8">
-      <section className="mb-6">
-        <h1 className="text-2xl font-bold leading-tight text-midnight">{t("nav.dashboard")}</h1>
-        <p className="mt-1 text-sm font-medium leading-6 text-slate-600">{t("dashboard.description")}</p>
-      </section>
-
       {isCoreDataLoading ? (
         <div className="mb-5 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700">
           {t("dashboard.loadingCoreData")}

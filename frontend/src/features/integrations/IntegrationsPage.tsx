@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { DatabaseZap, Search, SlidersHorizontal, Sparkles } from "lucide-react";
-import { Link } from "react-router-dom";
+import { DatabaseZap, SlidersHorizontal, Sparkles } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
 
 import { botChannelsApi, botsApi } from "../../api/bots";
 import { businessConnectorsApi } from "../../api/connectors";
@@ -70,6 +70,7 @@ export function IntegrationsPage() {
   const { user } = useAuth();
   const { business, isLoading: isBusinessLoading } = useActiveBusiness();
   const canManage = hasPermission(user, business?.id, "integrations", "manage");
+  const [searchParams] = useSearchParams();
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState<ProviderGroup | "all">("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -81,6 +82,10 @@ export function IntegrationsPage() {
     { value: "planned", label: t("integrations.overview.status.planned") },
     { value: "error", label: t("integrations.overview.status.error") },
   ];
+
+  useEffect(() => {
+    setQuery(searchParams.get("search") || "");
+  }, [searchParams]);
 
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -226,16 +231,7 @@ export function IntegrationsPage() {
       ) : null}
 
       <section className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_4px_20px_rgba(0,47,108,0.04)]">
-        <div className="grid gap-3 lg:grid-cols-[1fr_220px_220px]">
-          <label className="flex min-h-12 items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 text-sm font-semibold text-slate-500">
-            <Search size={18} />
-            <input
-              className="min-w-0 flex-1 bg-transparent outline-none"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder={t("integrations.overview.searchPlaceholder")}
-            />
-          </label>
+        <div className="grid gap-3 lg:grid-cols-[1fr_1fr]">
           <Select
             value={group}
             onChange={(event) => setGroup(event.target.value as ProviderGroup | "all")}

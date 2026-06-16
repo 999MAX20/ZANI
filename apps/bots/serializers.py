@@ -56,6 +56,11 @@ class WhatsAppChannelConfigSerializer(serializers.Serializer):
     business_account_id = serializers.CharField(required=False, allow_blank=True, trim_whitespace=True)
     display_phone_number = serializers.CharField(required=False, allow_blank=True, trim_whitespace=True)
 
+    def validate_webhook_secret(self, value):
+        if value and not has_strong_shared_secret(value):
+            raise serializers.ValidationError("WhatsApp webhook secret must be a unique high-entropy 32+ character value.")
+        return value
+
 
 class InstagramChannelConfigSerializer(serializers.Serializer):
     provider_mode = serializers.ChoiceField(choices=["mock", "meta_graph", "disabled"], required=False)

@@ -8,6 +8,7 @@ from django.utils import timezone
 from apps.bots.models import Bot, BotChannel
 from apps.core.production_rules import is_safe_public_https_url
 from apps.integrations.models import BusinessConnector
+from apps.integrations.whatsapp_credentials import store_whatsapp_access_token
 
 
 SIGNING_SALT = "zani.whatsapp.embedded-signup"
@@ -90,13 +91,14 @@ def complete_embedded_signup(*, business, user, code, state, redirect_uri, phone
             "config_json": {
                 "provider_mode": "meta_cloud",
                 "phone_number_id": phone_number_id,
-                "access_token": access_token,
+                "access_token_configured": True,
                 "business_account_id": waba_id,
                 "display_phone_number": display_phone_number,
                 "embedded_signup": True,
             },
         },
     )
+    store_whatsapp_access_token(channel, access_token)
     connector, _ = BusinessConnector.objects.get_or_create(
         business=business,
         provider=BusinessConnector.Providers.WHATSAPP,

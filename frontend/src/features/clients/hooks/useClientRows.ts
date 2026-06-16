@@ -110,10 +110,13 @@ export function useClientRows({
         latestAppointment?.start_at,
         latestLead?.updated_at,
         latestDeal?.updated_at,
+        client.last_activity_at,
         client.updated_at,
       ]);
       const nextStep = latestTask
         ? { title: latestTask.title, date: latestTask.due_at, priority: latestTask.priority }
+        : client.next_step_title
+          ? { title: client.next_step_title, date: client.next_step_date || null, priority: client.next_step_priority || "normal" }
         : latestDeal?.next_action_at
           ? { title: "Связаться по сделке", date: latestDeal.next_action_at }
         : hasNoReply

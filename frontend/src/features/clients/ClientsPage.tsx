@@ -33,7 +33,7 @@ import { useDebouncedValue } from "./hooks/useDebouncedValue";
 import type { ClientQuickFilter, ClientTag, SegmentDraft } from "./types";
 import { clientSourceOptions } from "./utils";
 
-const CLIENTS_PAGE_SIZE = 20;
+const DEFAULT_CLIENTS_PAGE_SIZE = 20;
 const RELATED_PAGE_SIZE = 100;
 
 export function ClientsPage() {
@@ -57,6 +57,7 @@ export function ClientsPage() {
   const [selectedTag, setSelectedTag] = useState("");
   const [selectedSegment, setSelectedSegment] = useState("");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_CLIENTS_PAGE_SIZE);
   const [inspectorTab, setInspectorTab] = useState<"overview" | "deals" | "tasks" | "files">("overview");
   const [quickFilter, setQuickFilter] = useState<ClientQuickFilter>("all");
   const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
@@ -65,15 +66,16 @@ export function ClientsPage() {
   const [segmentDraft, setSegmentDraft] = useState<SegmentDraft>({ name: "", field: "source", operator: "equals", value: "" });
 
   const filteredClients = useQuery({
-    queryKey: ["clients", "filtered", business?.id, debouncedSearch, source, selectedTag, selectedSegment, page, CLIENTS_PAGE_SIZE],
+    queryKey: ["clients", "filtered", business?.id, debouncedSearch, source, selectedTag, selectedSegment, quickFilter, page, pageSize],
     queryFn: () =>
       clientsApi.listFiltered({
         q: debouncedSearch || undefined,
         source: source || undefined,
         tag: selectedTag || undefined,
         segment: selectedSegment || undefined,
+        quick_filter: quickFilter === "all" ? undefined : quickFilter,
         page,
-        page_size: CLIENTS_PAGE_SIZE,
+        page_size: pageSize,
       }),
     enabled: Boolean(business),
   });
@@ -83,7 +85,7 @@ export function ClientsPage() {
   const clientIdList = clientIds.join(",");
   const totalClients = filteredClients.data?.count || 0;
   const serverSummary = filteredClients.data?.summary;
-  const totalPages = Math.max(1, Math.ceil(totalClients / CLIENTS_PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(totalClients / pageSize));
 
   const leads = useQuery({
     queryKey: ["leads", "for-clients", business?.id, clientIdList, RELATED_PAGE_SIZE],
@@ -319,7 +321,7 @@ export function ClientsPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, source, selectedTag, selectedSegment]);
+  }, [debouncedSearch, source, selectedTag, selectedSegment, quickFilter]);
 
   useEffect(() => {
     const safePage = Math.min(page, totalPages);
@@ -399,7 +401,7 @@ export function ClientsPage() {
           </div>
         ) : null}
 
-        <div className={selectedRow ? "grid min-h-0 xl:grid-cols-[minmax(0,996px)_330px]" : "grid min-h-0 xl:grid-cols-1"}>
+        <div className={selectedRow ? "grid min-h-0 xl:grid-cols-[minmax(0,1fr)_clamp(360px,26vw,420px)]" : "grid min-h-0 xl:grid-cols-1"}>
           <main className="min-w-0 px-4 py-4 sm:px-6">
             <ClientsKpi kpi={kpi} />
 
@@ -432,8 +434,13 @@ export function ClientsPage() {
                 onSelectClient={selectClient}
                 totalClients={totalClients}
                 page={page}
-                pageSize={CLIENTS_PAGE_SIZE}
+                pageSize={pageSize}
                 onPageChange={goToPage}
+                onPageSizeChange={(nextPageSize) => {
+                  setPageSize(nextPageSize);
+                  setPage(1);
+                }}
+                inspectorOpen={Boolean(selectedRow)}
                 t={t}
               />
             </div>

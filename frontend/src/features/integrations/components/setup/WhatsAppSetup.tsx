@@ -38,6 +38,7 @@ export function WhatsAppInlineSetup({
   const [signupWabaId, setSignupWabaId] = useState("");
   const [signupDisplayPhone, setSignupDisplayPhone] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
+  const metaRedirectUri = `${window.location.origin}${window.location.pathname}?zani_provider=whatsapp`;
 
   useEffect(() => {
     const applyCallback = (payload: WhatsAppEmbeddedSignupCallback) => {
@@ -119,11 +120,11 @@ export function WhatsAppInlineSetup({
     },
   });
 
-  const startEmbeddedSignup = useMutation({
-    mutationFn: () => businessConnectorsApi.startWhatsAppEmbeddedSignup({
-      business: businessId,
-      redirectUri: window.location.origin + "/dashboard/integrations?zani_provider=whatsapp",
-    }),
+	  const startEmbeddedSignup = useMutation({
+	    mutationFn: () => businessConnectorsApi.startWhatsAppEmbeddedSignup({
+	      business: businessId,
+	      redirectUri: metaRedirectUri,
+	    }),
     onSuccess: async (data) => {
       setSignupState(data.state);
       setSignupRedirectUri(data.redirect_uri);
@@ -162,13 +163,13 @@ export function WhatsAppInlineSetup({
     },
   });
 
-  const completeEmbeddedSignup = useMutation({
-    mutationFn: () => businessConnectorsApi.completeWhatsAppEmbeddedSignup({
-      business: businessId,
-      code: signupCode,
-      state: signupState,
-      redirect_uri: signupRedirectUri || window.location.origin + "/dashboard/integrations?zani_provider=whatsapp",
-      phone_number_id: signupPhoneNumberId,
+	  const completeEmbeddedSignup = useMutation({
+	    mutationFn: () => businessConnectorsApi.completeWhatsAppEmbeddedSignup({
+	      business: businessId,
+	      code: signupCode,
+	      state: signupState,
+	      redirect_uri: signupRedirectUri || metaRedirectUri,
+	      phone_number_id: signupPhoneNumberId,
       waba_id: signupWabaId,
       display_phone_number: signupDisplayPhone,
     }),

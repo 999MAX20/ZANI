@@ -1,11 +1,13 @@
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 from django.utils import timezone
 from django.contrib.auth import get_user_model
+from django.db.models import Count, Q
 
 from apps.crm.models import Deal, Pipeline, PipelineStage
 from apps.crm.serializers import DealSerializer
@@ -31,22 +33,133 @@ from apps.leads.serializers import (
     LeadFormSubmissionErrorSerializer,
     LeadFormSubmissionSerializer,
     LeadSerializer,
+    LeadListSerializer,
     PublicLeadFormSerializer,
 )
 from apps.scheduling.serializers import AppointmentSerializer
 from apps.scheduling.services import create_appointment_from_lead
 
 
+class LeadPagination(PageNumberPagination):
+    page_size = 50
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
+
 class LeadViewSet(TenantModelViewSet):
     queryset = Lead.objects.select_related("business", "client", "service", "responsible_user")
     serializer_class = LeadSerializer
+    pagination_class = LeadPagination
+
+    def get_serializer_class(self):
+        if getattr(self, "action", "") == "list":
+            return LeadListSerializer
+        return super().get_serializer_class()
+
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        if isinstance(response.data, dict):
+            base_queryset = self.filter_queryset(self.get_queryset())
+            response.data["facets"] = self._build_facets(base_queryset)
+        return response
 
     def get_queryset(self):
         queryset = super().get_queryset()
         client_ids = self.parse_query_id_list("client_ids")
         if client_ids:
             queryset = queryset.filter(client_id__in=client_ids)
+        return self._apply_list_filters(queryset)
+
+    def _apply_list_filters(self, queryset):
+        params = self.request.query_params
+        search = (params.get("search") or "").strip()
+        if search:
+            queryset = queryset.filter(
+                Q(client__full_name__icontains=search)
+                | Q(client__phone__icontains=search)
+                | Q(client__email__icontains=search)
+                | Q(message__icontains=search)
+                | Q(service__name__icontains=search)
+            )
+
+        statuses = self.parse_query_list("status") or self.parse_query_list("statuses")
+        if statuses:
+            queryset = queryset.filter(status__in=[status for status in statuses if status in Lead.Statuses.values])
+
+        source = (params.get("source") or "").strip()
+        if source == "website":
+            queryset = queryset.filter(source__in=[Lead.Sources.WEBSITE, Lead.Sources.LANDING])
+        elif source:
+            queryset = queryset.filter(source=source)
+
+        responsible_user = params.get("responsible_user")
+        if responsible_user:
+            try:
+                queryset = queryset.filter(responsible_user_id=int(responsible_user))
+            except (TypeError, ValueError):
+                queryset = queryset.none()
+
+        if params.get("unassigned") == "true":
+            queryset = queryset.filter(responsible_user__isnull=True)
+        if params.get("mine") == "true":
+            queryset = queryset.filter(responsible_user=self.request.user)
+        if params.get("attention") == "true":
+            stale_before = timezone.now() - timezone.timedelta(days=3)
+            queryset = queryset.filter(Q(responsible_user__isnull=True) | Q(updated_at__lte=stale_before), status__in=[Lead.Statuses.NEW, Lead.Statuses.CONTACTED, Lead.Statuses.IN_PROGRESS])
+
+        created_from = params.get("created_from")
+        if created_from:
+            queryset = queryset.filter(created_at__gte=created_from)
+        created_to = params.get("created_to")
+        if created_to:
+            queryset = queryset.filter(created_at__lte=created_to)
+
+        ordering = params.get("ordering")
+        allowed_ordering = {
+            "created_at",
+            "-created_at",
+            "updated_at",
+            "-updated_at",
+            "status",
+            "-status",
+            "source",
+            "-source",
+        }
+        if ordering in allowed_ordering:
+            queryset = queryset.order_by(ordering, "-id")
         return queryset
+
+    def _build_facets(self, queryset):
+        return {
+            "status": dict(queryset.values_list("status").annotate(count=Count("id"))),
+            "source": dict(queryset.values_list("source").annotate(count=Count("id"))),
+        }
+
+    @action(detail=False, methods=["get"], url_path="summary")
+    def summary(self, request):
+        queryset = super().get_queryset()
+        now = timezone.now()
+        week_ago = now - timezone.timedelta(days=7)
+        stale_before = now - timezone.timedelta(days=3)
+        by_status = dict(queryset.values_list("status").annotate(count=Count("id")))
+        by_source = dict(queryset.values_list("source").annotate(count=Count("id")))
+        return Response(
+            {
+                "total": queryset.count(),
+                "new": queryset.filter(status=Lead.Statuses.NEW).count(),
+                "new_this_week": queryset.filter(created_at__gte=week_ago).count(),
+                "unanswered": queryset.filter(responsible_user__isnull=True).count(),
+                "unanswered_this_week": queryset.filter(responsible_user__isnull=True, created_at__gte=week_ago).count(),
+                "in_progress": queryset.filter(status__in=[Lead.Statuses.CONTACTED, Lead.Statuses.IN_PROGRESS]).count(),
+                "in_progress_this_week": queryset.filter(status__in=[Lead.Statuses.CONTACTED, Lead.Statuses.IN_PROGRESS], created_at__gte=week_ago).count(),
+                "hot": queryset.filter(status=Lead.Statuses.NEW, responsible_user__isnull=True).count(),
+                "hot_this_week": queryset.filter(status=Lead.Statuses.NEW, responsible_user__isnull=True, created_at__gte=week_ago).count(),
+                "attention": queryset.filter(Q(responsible_user__isnull=True) | Q(updated_at__lte=stale_before), status__in=[Lead.Statuses.NEW, Lead.Statuses.CONTACTED, Lead.Statuses.IN_PROGRESS]).count(),
+                "mine": queryset.filter(responsible_user=request.user).count(),
+                "by_status": by_status,
+                "by_source": by_source,
+            }
+        )
 
     def perform_create(self, serializer):
         if serializer.validated_data.get("responsible_user") is None:

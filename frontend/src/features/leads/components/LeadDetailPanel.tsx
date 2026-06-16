@@ -1,4 +1,4 @@
-import { AlertTriangle, Archive, Bot, CalendarPlus, CheckCheck, ChevronLeft, ChevronRight, CircleDollarSign, CircleDot, ClipboardList, Mail, MessageCircle, Mic, MoreHorizontal, Phone, Tag, UserCheck, XCircle } from "lucide-react";
+import { AlertTriangle, CalendarPlus, CheckCheck, CircleDollarSign, CircleDot, ClipboardList, MessageCircle, Mic, Phone, UserCheck, XCircle } from "lucide-react";
 import { useRef, useState } from "react";
 
 import type { CrmDrawerEntity } from "../../../components/crm/CrmEntityDrawer";
@@ -7,10 +7,10 @@ import { Select } from "../../../components/ui/Select";
 import { cn } from "../../../lib/cn";
 import { formatDateTime } from "../../../lib/format";
 import type { Client, Id, Lead, Service, Task } from "../../../types";
-import { statusClass, type LeadAction, type LeadAiInsight, type Translate } from "../types";
+import { type LeadAction, type LeadAiInsight, type Translate } from "../types";
 import { fuzzyIncludes } from "../utils/leadFilters";
-import { formatFileSize, getSourceLabel, getStatusLabel, initials, leadTitle, nextAction, Pill, TruncatedText } from "../utils/leadFormat";
-import { SourceBadge } from "./common/SourceBadge";
+import { formatFileSize, TruncatedText } from "../utils/leadFormat";
+import { CollapsedLeadDetailPanel, LeadAiInsightCard, LeadContactSummary } from "./LeadDetailSections";
 
 export function LeadDetailPanel({
   selected,
@@ -187,85 +187,16 @@ export function LeadDetailPanel({
 
   if (collapsed) {
     return (
-      <div className="flex h-full w-16 flex-col items-center gap-3 rounded-xl border border-slate-200 bg-white py-3 shadow-[0_4px_18px_rgba(15,23,42,0.04)] transition-all duration-200">
-        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg px-0" onClick={onToggleCollapsed} aria-label={t("leads.expandPanel")}>
-          <ChevronLeft size={18} />
-        </Button>
-        <span className="grid h-9 w-9 place-items-center rounded-full bg-brand-50 text-xs font-black text-brand-700">{initials(leadTitle(selected, clientList, t))}</span>
-        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg px-0" disabled={!selectedClient?.phone} onClick={() => selectedClient?.phone && (window.location.href = `tel:${selectedClient.phone}`)}>
-          <Phone size={17} />
-        </Button>
-        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg px-0" onClick={() => setNextActionOpen(true)}>
-          <ClipboardList size={17} />
-        </Button>
-        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg px-0" onClick={() => setDrawerEntity({ type: "lead", id: selected.id })}>
-          <MoreHorizontal size={17} />
-        </Button>
-      </div>
+      <CollapsedLeadDetailPanel selected={selected} selectedClient={selectedClient} clientList={clientList} onToggleCollapsed={onToggleCollapsed} setNextActionOpen={setNextActionOpen} setDrawerEntity={setDrawerEntity} t={t} />
     );
   }
 
   return (
     <div className="flex h-full min-h-0 w-96 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_4px_18px_rgba(15,23,42,0.04)] transition-all duration-200">
-      <div className="shrink-0 border-b border-slate-100 p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h2 className="truncate text-lg font-black text-midnight" title={leadTitle(selected, clientList, t)}>{leadTitle(selected, clientList, t)}</h2>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <Pill className={statusClass[selected.status]}>{getStatusLabel(selected.status, t)}</Pill>
-              <SourceBadge source={selected.source} t={t} />
-            </div>
-          </div>
-          <div className="flex shrink-0 items-center gap-1">
-            {onToggleCollapsed ? (
-              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg px-0" onClick={onToggleCollapsed} aria-label={t("leads.collapsePanel")}>
-                <ChevronRight size={18} />
-              </Button>
-            ) : null}
-            {onClose ? (
-              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg px-0" onClick={onClose}>
-                <XCircle size={18} />
-              </Button>
-            ) : null}
-          </div>
-        </div>
-        <div className="mt-3 grid gap-2 text-sm font-semibold text-slate-600">
-          <div className="flex min-w-0 items-center gap-2"><Phone size={16} /> <span className="truncate">{selectedClient?.phone || t("leads.phoneMissing")}</span></div>
-          <div className="flex min-w-0 items-center gap-2"><Mail size={16} /> <span className="truncate">{selectedClient?.email || t("leads.emailMissing")}</span></div>
-          <div className="flex min-w-0 items-center gap-2"><Tag size={16} /> <span className="truncate">{selectedService?.name || getSourceLabel(selected.source, t)}</span></div>
-        </div>
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          <Button variant="secondary" className="rounded-lg px-2 text-xs" disabled={!selectedClient?.phone} onClick={() => selectedClient?.phone && (window.location.href = `tel:${selectedClient.phone}`)}>
-            <Phone size={15} /> {t("leads.call")}
-          </Button>
-          <Button
-            variant="secondary"
-            className="rounded-lg px-2 text-xs"
-            disabled={!selectedClient?.phone}
-            onClick={() => onWhatsAppTemplate(selected)}
-          >
-            <MessageCircle size={15} /> WhatsApp
-          </Button>
-        </div>
-        <div className="mt-3 rounded-xl bg-slate-50 p-3">
-          <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">{t("leads.nextStep")}</p>
-          <TruncatedText className="mt-1 text-sm font-bold text-midnight">{nextAction(selected, t)}</TruncatedText>
-          <p className="mt-1 text-xs text-slate-500">{formatDateTime(selected.updated_at)}</p>
-        </div>
-      </div>
+      <LeadContactSummary selected={selected} selectedClient={selectedClient} selectedService={selectedService} clientList={clientList} onWhatsAppTemplate={onWhatsAppTemplate} onToggleCollapsed={onToggleCollapsed} onClose={onClose} t={t} />
 
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 pr-2">
-        <section className="rounded-xl border border-violet-100 bg-gradient-to-br from-violet-50 via-white to-brand-50 p-3">
-          <div className="flex items-start justify-between gap-3">
-            <p className="flex items-center gap-2 text-sm font-black text-midnight"><Bot size={16} /> {t("leads.aiPriorityTitle")}</p>
-            <span className="rounded-full bg-white px-2 py-1 text-xs font-black text-brand-700">{aiInsight.score}/100</span>
-          </div>
-          <div className="mt-3 h-2 overflow-hidden rounded-full bg-white">
-            <span className={cn("block h-full rounded-full", aiInsight.score >= 75 ? "bg-emerald-500" : aiInsight.score >= 50 ? "bg-amber-500" : "bg-red-500")} style={{ width: `${aiInsight.score}%` }} />
-          </div>
-          <p className="mt-2 text-xs font-semibold leading-5 text-slate-600">{aiInsight.recommendation}</p>
-          <p className="mt-2 text-xs font-black text-red-700">{t("leads.aiLossRisk", { value: aiInsight.lossRisk })}</p>
-        </section>
+        <LeadAiInsightCard aiInsight={aiInsight} t={t} />
 
         <section className="rounded-xl border border-slate-200 bg-white p-3">
           <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">{t("leads.aiConversationSummary")}</p>

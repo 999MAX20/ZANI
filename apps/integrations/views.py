@@ -12,6 +12,7 @@ from django.conf import settings
 from django.db.models import Count
 from django.http import HttpResponse
 from django.utils import timezone
+from apps.core.security_config import has_strong_shared_secret
 
 from apps.businesses.access import Actions, Resources, assert_can, can
 from apps.clients.models import Client
@@ -62,7 +63,7 @@ from apps.integrations.telegram import save_telegram_inbound_message, verify_tel
 from apps.integrations.webhooks import deliver_webhook_event
 from apps.integrations.instagram import save_instagram_inbound_message, verify_instagram_secret
 from apps.integrations.instagram_oauth import build_instagram_oauth_url, complete_instagram_oauth
-from apps.integrations.whatsapp import save_whatsapp_inbound_message, verify_whatsapp_secret
+from apps.integrations.whatsapp import process_whatsapp_statuses, save_whatsapp_inbound_message, verify_whatsapp_secret
 from apps.integrations.whatsapp.embedded_signup import build_embedded_signup_url, complete_embedded_signup
 
 
@@ -1064,12 +1065,17 @@ class WhatsAppWebhookView(APIView):
         mode = request.query_params.get("hub.mode")
         token = request.query_params.get("hub.verify_token")
         challenge = request.query_params.get("hub.challenge")
+        if settings.WHATSAPP_ENABLED and not has_strong_shared_secret(settings.WHATSAPP_VERIFY_TOKEN):
+            return Response({"detail": "WhatsApp verify token is not production-ready."}, status=status.HTTP_403_FORBIDDEN)
         if mode == "subscribe" and token and token == settings.WHATSAPP_VERIFY_TOKEN and challenge:
             return HttpResponse(challenge, status=200, content_type="text/plain")
         return Response({"detail": "Invalid WhatsApp verification token."}, status=status.HTTP_403_FORBIDDEN)
 
     def post(self, request):
         provided_secret = verify_whatsapp_secret(request)
+        status_result = process_whatsapp_statuses(request.data, provided_secret=provided_secret)
+        if status_result is not None:
+            return Response({"ok": True, **status_result}, status=200)
         conversation, message = save_whatsapp_inbound_message(
             request.data,
             provided_secret,

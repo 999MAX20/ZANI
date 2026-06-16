@@ -1,9 +1,35 @@
 import { createCrudApi } from "./crud";
 import { apiClient } from "./client";
-import type { Appointment, Deal, Id, Lead, LeadDuplicateCheckResponse, Note } from "../types";
+import type { PaginatedResponse } from "./client";
+import type { Appointment, Deal, Id, Lead, LeadDuplicateCheckResponse, LeadSummary, Note } from "../types";
+
+export type LeadListParams = {
+  page?: number;
+  page_size?: number;
+  search?: string;
+  status?: Lead["status"] | Lead["status"][];
+  statuses?: Lead["status"] | Lead["status"][];
+  source?: string;
+  responsible_user?: Id;
+  unassigned?: boolean;
+  mine?: boolean;
+  attention?: boolean;
+  created_from?: string;
+  created_to?: string;
+  ordering?: string;
+  client_ids?: Id[] | string;
+};
 
 export const leadsApi = {
   ...createCrudApi<Lead>("/api/leads/"),
+  listPaginated: async (params?: LeadListParams) => {
+    const { data } = await apiClient.get<PaginatedResponse<Lead>>("/api/leads/", { params });
+    return data;
+  },
+  summary: async () => {
+    const { data } = await apiClient.get<LeadSummary>("/api/leads/summary/");
+    return data;
+  },
   createAppointment: async ({
     leadId,
     payload,

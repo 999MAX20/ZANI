@@ -9,6 +9,7 @@ export type SegmentDraft = {
 };
 
 export type ClientQuickFilter = "all" | "new" | "vip" | "no_reply" | "mine";
+export type ClientTableColumn = "source" | "manager";
 
 export type Translate = ReturnType<typeof useI18n>["t"];
 

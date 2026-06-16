@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models import BooleanField, Case, Count, Exists, F, IntegerField, OuterRef, Q, Subquery, Value, When
+from django.db.models import BooleanField, Case, CharField, Count, DateTimeField, Exists, F, IntegerField, OuterRef, Q, Subquery, Value, When
 from django.db.models.functions import Cast
 
 from rest_framework.decorators import action
@@ -33,7 +33,7 @@ class ClientViewSet(TenantModelViewSet):
         )
 
     def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
+        queryset = self.filter_queryset(self.get_queryset(apply_quick_filter=False))
         summary = self._build_client_summary(queryset)
         response = super().list(request, *args, **kwargs)
         if isinstance(response.data, dict):
@@ -43,17 +43,34 @@ class ClientViewSet(TenantModelViewSet):
                 "no_reply": summary["no_reply"],
                 "repeat": summary["repeat"],
             }
+            response.data["facets"] = self._build_facets(queryset)
         return response
 
-    def get_queryset(self):
+    def _build_facets(self, queryset):
+        return {
+            "source": {item["source"] or "manual": item["count"] for item in queryset.values("source").annotate(count=Count("id", distinct=True))},
+            "activity": {
+                "active": queryset.filter(is_active=True).count(),
+                "vip": queryset.filter(is_vip=True).count(),
+                "no_reply": queryset.filter(has_no_reply=True).count(),
+                "repeat": queryset.filter(Q(has_multiple_deals=True) | Q(has_multiple_appointments=True)).count(),
+            },
+        }
+
+    def get_queryset(self, apply_quick_filter=True):
         queryset = super().get_queryset()
         search = self.request.query_params.get("q") or self.request.query_params.get("search")
         source = self.request.query_params.get("source")
         tag_id = self.request.query_params.get("tag")
         segment_id = self.request.query_params.get("segment")
+        quick_filter = self.request.query_params.get("quick_filter")
         client_ids = self.parse_query_id_list("client_ids")
         if search:
-            queryset = queryset.filter(full_name__icontains=search) | queryset.filter(phone__icontains=search) | queryset.filter(email__icontains=search)
+            normalized_phone = "".join(character for character in search if character.isdigit())
+            search_query = Q(full_name__icontains=search) | Q(phone__icontains=search) | Q(email__icontains=search)
+            if normalized_phone:
+                search_query |= Q(phone__icontains=normalized_phone)
+            queryset = queryset.filter(search_query)
         if client_ids:
             queryset = queryset.filter(id__in=client_ids)
         if source:
@@ -132,6 +149,18 @@ class ClientViewSet(TenantModelViewSet):
             latest_deal_owner_id=Subquery(latest_deal.values("owner_id")[:1]),
             latest_task_manager_id=Subquery(latest_task.values("assignee_id")[:1]),
             latest_conversation_manager_id=Subquery(latest_conversation.values("assigned_to_id")[:1]),
+            latest_lead_at=Subquery(latest_lead.values("updated_at")[:1], output_field=DateTimeField()),
+            latest_deal_at=Subquery(latest_deal.values("updated_at")[:1], output_field=DateTimeField()),
+            latest_task_at=Subquery(latest_task.values("due_at")[:1], output_field=DateTimeField()),
+            latest_conversation_at=Subquery(latest_conversation.values("updated_at")[:1], output_field=DateTimeField()),
+            latest_task_title=Subquery(latest_task.values("title")[:1]),
+            latest_task_due_at=Subquery(latest_task.values("due_at")[:1], output_field=DateTimeField()),
+            latest_task_priority=Subquery(latest_task.values("priority")[:1]),
+            leads_count=Count("leads", filter=Q(leads__is_archived=False), distinct=True),
+            deals_count=Count("deals", filter=Q(deals__is_archived=False), distinct=True),
+            appointments_count=Count("appointments", filter=Q(appointments__is_archived=False), distinct=True),
+            tasks_count=Count("tasks", filter=Q(tasks__is_archived=False), distinct=True),
+            conversations_count=Count("bot_conversations", filter=Q(bot_conversations__is_archived=False), distinct=True),
             is_vip=Exists(
                 TaggedObject.objects.filter(
                     business_id=OuterRef("business_id"),
@@ -169,7 +198,41 @@ class ClientViewSet(TenantModelViewSet):
                 default=Value(None),
                 output_field=IntegerField(),
             ),
+            last_activity_at=Case(
+                When(latest_conversation_at__isnull=False, then=F("latest_conversation_at")),
+                When(latest_task_at__isnull=False, then=F("latest_task_at")),
+                When(latest_deal_at__isnull=False, then=F("latest_deal_at")),
+                When(latest_lead_at__isnull=False, then=F("latest_lead_at")),
+                default=F("updated_at"),
+                output_field=DateTimeField(),
+            ),
+            next_step_title=Case(
+                When(latest_task_title__isnull=False, then=F("latest_task_title")),
+                When(has_no_reply=True, then=Value("Ответить клиенту")),
+                When(has_appointment=True, then=Value("Подтвердить запись")),
+                default=Value("Связаться с клиентом"),
+                output_field=CharField(),
+            ),
+            next_step_date=Case(
+                When(latest_task_due_at__isnull=False, then=F("latest_task_due_at")),
+                default=Value(None),
+                output_field=DateTimeField(),
+            ),
+            next_step_priority=Case(
+                When(latest_task_priority__isnull=False, then=F("latest_task_priority")),
+                default=Value("normal"),
+                output_field=CharField(),
+            ),
         )
+        if apply_quick_filter:
+            if quick_filter == "new":
+                queryset = queryset.filter(is_archived=False, is_vip=False, has_no_reply=False, is_active=False)
+            elif quick_filter == "vip":
+                queryset = queryset.filter(is_vip=True)
+            elif quick_filter == "no_reply":
+                queryset = queryset.filter(has_no_reply=True)
+            elif quick_filter == "mine":
+                queryset = queryset.filter(manager_user_id=self.request.user.id)
         return queryset.distinct()
 
     @action(detail=True, methods=["get"], url_path="crm-card")

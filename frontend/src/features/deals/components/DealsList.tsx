@@ -61,6 +61,7 @@ export function DealsList({
   t: Translate;
 }) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [visibleByStage, setVisibleByStage] = useState<Record<string, number>>({});
   const dealMap = useMemo(() => new Map(rows.map((deal) => [deal.id, deal])), [rows]);
   const groups = useMemo<StageGroup[]>(() => {
     const active = stages.map((stage, index) => ({ id: String(stage.id), name: stage.name, color: "color" in stage && stage.color ? String(stage.color) : stageFallbackColors[index % stageFallbackColors.length], rows: rows.filter((deal) => deal.stage === stage.id) }));
@@ -105,11 +106,11 @@ export function DealsList({
 
   if (viewMode === "kanban") {
     return (
-      <div className="grid min-h-[390px] auto-cols-[244px] grid-flow-col gap-3 overflow-x-auto p-3 lg:auto-cols-[264px] lg:gap-3 lg:p-3 xl:auto-cols-[272px]">
+      <div className="grid min-h-[560px] auto-cols-[244px] grid-flow-col gap-3 overflow-x-auto p-3 lg:auto-cols-[264px] lg:gap-3 lg:p-3 xl:auto-cols-[272px]">
         {groups.map((group) => (
           <section
             key={group.id}
-            className="flex min-h-[390px] flex-col overflow-hidden rounded-lg border border-slate-100 bg-[#fbfcff] shadow-[0_8px_22px_rgba(15,23,42,0.035)]"
+            className="flex min-h-[560px] flex-col overflow-hidden rounded-lg border border-slate-100 bg-[#fbfcff] shadow-[0_8px_22px_rgba(15,23,42,0.035)]"
             onDragOver={(event) => event.preventDefault()}
             onDrop={(event) => {
               const deal = dealMap.get(Number(event.dataTransfer.getData("text/plain")));
@@ -129,12 +130,16 @@ export function DealsList({
               </div>
             </header>
             <div className="min-h-0 flex-1 space-y-2 overflow-y-auto bg-[#fbfcff] p-2.5">
-              {group.rows.slice(0, 3).map((deal) => (
+              {group.rows.slice(0, visibleByStage[group.id] || 10).map((deal) => (
                 <DealListItem key={deal.id} deal={deal} selected={selectedDealId === deal.id} checked={selectedIds.includes(deal.id)} onOpen={onOpen} onCheck={onCheck} onTask={onTask} onMore={onMore} t={t} />
               ))}
-              {group.rows.length > 3 ? (
-                <button type="button" className="w-full rounded-md px-2 py-2 text-left text-xs font-bold text-[#4f46e5] hover:bg-indigo-50">
-                  + {t("deals.moreDeals", { count: Math.max(group.rows.length - 3, 0) })}
+              {group.rows.length > (visibleByStage[group.id] || 10) ? (
+                <button
+                  type="button"
+                  className="w-full rounded-md px-2 py-2 text-left text-xs font-bold text-[#4f46e5] hover:bg-indigo-50"
+                  onClick={() => setVisibleByStage((state) => ({ ...state, [group.id]: (state[group.id] || 10) + 10 }))}
+                >
+                  + {t("deals.moreDeals", { count: Math.min(10, Math.max(group.rows.length - (visibleByStage[group.id] || 10), 0)) })}
                 </button>
               ) : null}
             </div>

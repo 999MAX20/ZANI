@@ -109,3 +109,25 @@ class DuplicateDetectionFoundationTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 400)
+
+    def test_client_list_returns_summary_facets_and_enriched_row_fields(self):
+        lead = Lead.objects.create(business=self.business, client=self.target, service=self.service, message="Need details")
+        due_at = datetime(2026, 6, 20, 10, 0, tzinfo=ZoneInfo("Asia/Almaty"))
+        Task.objects.create(business=self.business, client=self.target, lead=lead, title="Call client", due_at=due_at)
+        bot = Bot.objects.create(business=self.business, name="Client list bot")
+        BotConversation.objects.create(business=self.business, bot=bot, channel=BotConversation.Channels.WEBSITE, client=self.target)
+
+        response = self.api.get("/api/clients/", {"q": "7015550101", "page_size": 10})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["summary"]["total"], 1)
+        self.assertEqual(response.data["facets"]["source"][Client.Sources.MANUAL], 1)
+        row = response.data["results"][0]
+        self.assertEqual(row["id"], self.target.id)
+        self.assertEqual(row["leads_count"], 1)
+        self.assertEqual(row["tasks_count"], 1)
+        self.assertEqual(row["conversations_count"], 1)
+        self.assertEqual(row["next_step_title"], "Call client")
+        self.assertIsNotNone(row["next_step_date"])
+        self.assertIsNotNone(row["last_activity_at"])

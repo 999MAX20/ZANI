@@ -100,11 +100,10 @@ export function LeadsPage() {
   const queryClient = useQueryClient();
   const { business } = useActiveBusiness();
   const { user } = useAuth();
-  const { clients, services, resources, leads, tasks, deals, appointments, botConversations } = useEntityData({
+  const { clients, services, resources, tasks, deals, appointments, botConversations } = useEntityData({
     clients: true,
     services: true,
     resources: true,
-    leads: true,
     tasks: true,
     deals: true,
     appointments: true,
@@ -134,6 +133,14 @@ export function LeadsPage() {
   const [pageDraft, setPageDraft] = useState("1");
   const [detailCollapsed, setDetailCollapsed] = useState(false);
   const [kanbanDetailOpen, setKanbanDetailOpen] = useState(false);
+  const [kanbanVisibleCounts, setKanbanVisibleCounts] = useState<Record<Lead["status"], number>>(() => ({
+    new: 10,
+    contacted: 10,
+    in_progress: 10,
+    appointment_created: 10,
+    closed: 10,
+    lost: 10,
+  }));
   const [selectedLeadIds, setSelectedLeadIds] = useState<Id[]>([]);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; lead: Lead } | null>(null);
   const [filterPresets, setFilterPresets] = useState<FilterPreset[]>(() => loadJson<FilterPreset[]>(LEAD_PRESETS_KEY, []));
@@ -141,10 +148,12 @@ export function LeadsPage() {
   const [columnMenuOpen, setColumnMenuOpen] = useState(false);
   const [savedFiltersOpen, setSavedFiltersOpen] = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
-  const [visibleColumns, setVisibleColumns] = useState<Record<LeadColumnKey, boolean>>(() => ({
-    ...defaultVisibleColumns,
-    ...loadJson<Partial<Record<LeadColumnKey, boolean>>>(LEAD_COLUMNS_KEY, {}),
-  }));
+  const [visibleColumns, setVisibleColumns] = useState<Record<LeadColumnKey, boolean>>(() => {
+    const saved = loadJson<Partial<Record<LeadColumnKey, boolean>>>(LEAD_COLUMNS_KEY, {});
+    const next = { ...defaultVisibleColumns, ...saved };
+    const visibleCount = leadColumnOrder.filter((column) => next[column]).length;
+    return visibleCount > 5 ? defaultVisibleColumns : next;
+  });
   const [columnOrder, setColumnOrder] = useState<LeadColumnKey[]>(() => {
     const saved = loadJson<LeadColumnKey[]>(LEAD_COLUMN_ORDER_KEY, leadColumnOrder);
     return [...saved.filter((column): column is LeadColumnKey => leadColumnOrder.includes(column)), ...leadColumnOrder.filter((column) => !saved.includes(column))];
@@ -175,8 +184,39 @@ export function LeadsPage() {
     enabled: Boolean(business),
     retry: false,
   });
+  const leadListParams = useMemo(() => {
+    const params: NonNullable<Parameters<typeof leadsApi.listPaginated>[0]> = {
+      page,
+      page_size: pageSize,
+      ordering: sortByAi ? "-updated_at" : "-created_at",
+    };
+    const trimmedSearch = search.trim();
+    if (trimmedSearch) params.search = trimmedSearch;
+    if (source) params.source = source;
+    if (filter === "new") params.status = "new";
+    if (filter === "hot") {
+      params.status = "new";
+      params.unassigned = true;
+    }
+    if (filter === "unanswered") params.unassigned = true;
+    if (filter === "attention") params.attention = true;
+    if (filter === "mine") params.mine = true;
+    return params;
+  }, [filter, page, pageSize, search, sortByAi, source]);
+  const leads = useQuery({
+    queryKey: ["leads", "paginated", business?.id, leadListParams],
+    queryFn: () => leadsApi.listPaginated(leadListParams),
+    enabled: Boolean(business),
+    retry: false,
+  });
+  const leadSummary = useQuery({
+    queryKey: ["leads", "summary", business?.id],
+    queryFn: leadsApi.summary,
+    enabled: Boolean(business),
+    retry: false,
+  });
 
-  const allLeads = leads.data?.length ? leads.data : (!isOnline ? cachedLeads : leads.data || []);
+  const allLeads = leads.data?.results?.length ? leads.data.results : (!isOnline ? cachedLeads : leads.data?.results || []);
   const clientList = clients.data || [];
   const serviceList = services.data || [];
   const taskList = tasks.data || [];
@@ -186,7 +226,15 @@ export function LeadsPage() {
   const teamList = Array.isArray(teamMembers.data) ? teamMembers.data : [];
   const aiInsights = useMemo(() => {
     const result = new Map<Id, LeadAiInsight>();
-    allLeads.forEach((lead) => result.set(lead.id, leadAiInsight(lead, clientList, serviceList, allLeads, t)));
+    allLeads.forEach((lead) => {
+      const insight = leadAiInsight(lead, clientList, serviceList, allLeads, t);
+      result.set(lead.id, {
+        ...insight,
+        score: typeof lead.ai_score === "number" ? lead.ai_score : insight.score,
+        lossRisk: typeof lead.loss_risk === "number" ? lead.loss_risk : insight.lossRisk,
+        recommendation: lead.recommended_action || insight.recommendation,
+      });
+    });
     return result;
   }, [allLeads, clientList, serviceList, t]);
 
@@ -235,9 +283,10 @@ export function LeadsPage() {
       .map(({ lead }) => lead);
   }, [aiInsights, allLeads, clientList, filter, search, serviceList, sortByAi, source, user?.id]);
 
-  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
+  const totalLeadCount = leads.data?.count ?? rows.length;
+  const pageCount = Math.max(1, Math.ceil(totalLeadCount / pageSize));
   const safePage = Math.min(page, pageCount);
-  const pageRows = useMemo(() => rows.slice((safePage - 1) * pageSize, safePage * pageSize), [pageSize, rows, safePage]);
+  const pageRows = rows;
   const selected = useMemo(() => rows.find((lead) => lead.id === selectedId) || pageRows[0] || null, [pageRows, rows, selectedId]);
   const selectedClient = selected ? getClient(selected, clientList) : undefined;
   const selectedService = selected ? getService(selected, serviceList) : undefined;
@@ -329,12 +378,6 @@ export function LeadsPage() {
   }, [searchParams]);
 
   useEffect(() => {
-    if (!selectedId) return;
-    const index = rows.findIndex((lead) => lead.id === selectedId);
-    if (index >= 0) setPage(Math.floor(index / pageSize) + 1);
-  }, [pageSize, rows, selectedId]);
-
-  useEffect(() => {
     if (page > pageCount) setPage(pageCount);
   }, [page, pageCount]);
 
@@ -373,9 +416,9 @@ export function LeadsPage() {
   }, []);
 
   useEffect(() => {
-    if (leads.data?.length) {
-      setCachedLeads(leads.data);
-      saveJson(LEAD_CACHE_KEY, leads.data.slice(0, 50));
+    if (leads.data?.results?.length) {
+      setCachedLeads(leads.data.results);
+      saveJson(LEAD_CACHE_KEY, leads.data.results.slice(0, 50));
     }
   }, [leads.data]);
 
@@ -446,11 +489,11 @@ export function LeadsPage() {
   }, [business, isOnline, leads]);
 
   useEffect(() => {
-    if (!leads.data) return;
-    const currentIds = new Set(leads.data.map((lead) => lead.id));
+    if (!leads.data?.results) return;
+    const currentIds = new Set(leads.data.results.map((lead) => lead.id));
     const knownIds = knownLeadIdsRef.current;
     if (knownIds) {
-      const added = leads.data.filter((lead) => !knownIds.has(lead.id));
+      const added = leads.data.results.filter((lead) => !knownIds.has(lead.id));
       if (added.length) {
         setNotice(t("leads.realtimeNewLeads", { count: added.length }));
         trackFrontendEvent("leads_realtime_added", { count: added.length });
@@ -836,6 +879,10 @@ export function LeadsPage() {
     setSelectedLeadIds((value) => (allSelected ? value.filter((id) => !pageIds.includes(id)) : Array.from(new Set([...value, ...pageIds]))));
   }
 
+  function showMoreKanban(status: Lead["status"]) {
+    setKanbanVisibleCounts((value) => ({ ...value, [status]: (value[status] || 10) + 10 }));
+  }
+
   function savePreset() {
     const name = presetName.trim() || t("leads.defaultPresetName");
     setFilterPresets((value) => [{ id: String(Date.now()), name, filter, source, search }, ...value].slice(0, 8));
@@ -1004,31 +1051,34 @@ export function LeadsPage() {
     services.error ||
     leads.error;
   const filters = [
-    { value: "all" as const, label: t("leads.filterAll"), count: allLeads.length },
-    { value: "new" as const, label: t("leads.filterNew"), count: allLeads.filter((lead) => lead.status === "new").length },
-    { value: "hot" as const, label: t("leads.filterHot"), count: allLeads.filter((lead) => lead.status === "new" && !lead.responsible_user).length },
-    { value: "unanswered" as const, label: t("leads.filterUnanswered"), count: allLeads.filter((lead) => !lead.responsible_user).length },
-    { value: "attention" as const, label: t("leads.filterAttention"), count: allLeads.filter((lead) => {
+    { value: "all" as const, label: t("leads.filterAll"), count: leadSummary.data?.total ?? totalLeadCount },
+    { value: "new" as const, label: t("leads.filterNew"), count: leadSummary.data?.new ?? allLeads.filter((lead) => lead.status === "new").length },
+    { value: "hot" as const, label: t("leads.filterHot"), count: leadSummary.data?.hot ?? allLeads.filter((lead) => lead.status === "new" && !lead.responsible_user).length },
+    { value: "unanswered" as const, label: t("leads.filterUnanswered"), count: leadSummary.data?.unanswered ?? allLeads.filter((lead) => !lead.responsible_user).length },
+    { value: "attention" as const, label: t("leads.filterAttention"), count: leadSummary.data?.attention ?? allLeads.filter((lead) => {
       const insight = aiInsights.get(lead.id);
       return insight?.stale || (insight?.lossRisk || 0) >= 70;
     }).length },
-    { value: "mine" as const, label: t("leads.filterMine"), count: allLeads.filter((lead) => user?.id && lead.responsible_user === user.id).length },
+    { value: "mine" as const, label: t("leads.filterMine"), count: leadSummary.data?.mine ?? allLeads.filter((lead) => user?.id && lead.responsible_user === user.id).length },
   ];
-  const newLeadCount = allLeads.filter((lead) => isToday(lead.created_at)).length;
-  const weekLeadCount = allLeads.filter((lead) => isWithinLastDays(lead.created_at, 7)).length;
-  const unansweredLeadCount = allLeads.filter((lead) => !lead.responsible_user).length;
-  const unansweredWeekCount = allLeads.filter((lead) => !lead.responsible_user && isWithinLastDays(lead.created_at, 7)).length;
-  const waitingLeadCount = allLeads.filter((lead) => ["contacted", "in_progress"].includes(lead.status)).length;
-  const waitingWeekCount = allLeads.filter((lead) => ["contacted", "in_progress"].includes(lead.status) && isWithinLastDays(lead.created_at, 7)).length;
-  const hotLeadCount = allLeads.filter((lead) => lead.status === "new" && !lead.responsible_user).length;
-  const hotWeekCount = allLeads.filter((lead) => lead.status === "new" && !lead.responsible_user && isWithinLastDays(lead.created_at, 7)).length;
+  const newLeadCount = leadSummary.data?.new ?? allLeads.filter((lead) => isToday(lead.created_at)).length;
+  const weekLeadCount = leadSummary.data?.new_this_week ?? allLeads.filter((lead) => isWithinLastDays(lead.created_at, 7)).length;
+  const unansweredLeadCount = leadSummary.data?.unanswered ?? allLeads.filter((lead) => !lead.responsible_user).length;
+  const unansweredWeekCount = leadSummary.data?.unanswered_this_week ?? allLeads.filter((lead) => !lead.responsible_user && isWithinLastDays(lead.created_at, 7)).length;
+  const waitingLeadCount = leadSummary.data?.in_progress ?? allLeads.filter((lead) => ["contacted", "in_progress"].includes(lead.status)).length;
+  const waitingWeekCount = leadSummary.data?.in_progress_this_week ?? allLeads.filter((lead) => ["contacted", "in_progress"].includes(lead.status) && isWithinLastDays(lead.created_at, 7)).length;
+  const hotLeadCount = leadSummary.data?.hot ?? allLeads.filter((lead) => lead.status === "new" && !lead.responsible_user).length;
+  const hotWeekCount = leadSummary.data?.hot_this_week ?? allLeads.filter((lead) => lead.status === "new" && !lead.responsible_user && isWithinLastDays(lead.created_at, 7)).length;
   const priorityLead = allLeads.find((lead) => !lead.responsible_user && lead.status === "new") || allLeads[0] || null;
   const priorityLeadClient = priorityLead ? getClient(priorityLead, clientList) : undefined;
   const priorityLeadName = priorityLeadClient?.full_name || (priorityLead ? t("leads.leadFallback", { id: priorityLead.id }) : t("leads.emptyTitle"));
-  const pageStart = rows.length ? (safePage - 1) * pageSize + 1 : 0;
-  const pageEnd = Math.min(safePage * pageSize, rows.length);
+  const pageStart = pageRows.length ? (safePage - 1) * pageSize + 1 : 0;
+  const pageEnd = pageRows.length ? pageStart + pageRows.length - 1 : 0;
   const tableVisibleRowCount = Math.max(1, pageRows.length || Math.min(pageSize, rows.length || pageSize));
-  const tablePanelHeight = Math.max(420, tableVisibleRowCount * 66 + 112);
+  const tablePanelHeight = Math.max(700, tableVisibleRowCount * 66 + 250);
+  const activeTableColumns = columnOrder.filter((column) => visibleColumns[column]);
+  const tableGridTemplateColumns = `32px ${activeTableColumns.map((column) => leadColumnWidths[column]).join(" ")} 72px`;
+  const tableGridMinWidth = activeTableColumns.length > 5 ? 1120 : undefined;
   const weeklyDelta = (count: number) => t("leads.weeklyDelta", { count });
   const visiblePages = Array.from({ length: pageCount })
     .map((_, index) => index + 1)
@@ -1054,7 +1104,7 @@ export function LeadsPage() {
       ) : null}
       {actionError ? <ErrorState message={getApiErrorMessage(actionError)} /> : null}
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
+      <section className="hidden">
         <div className="min-w-0">
           <h1 className="text-2xl font-bold leading-tight text-midnight">{t("nav.leads")}</h1>
           <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">{t("leads.incomingDescription", { count: allLeads.length })}</p>
@@ -1269,7 +1319,7 @@ export function LeadsPage() {
         </div>
       </section>
 
-      <section className="-mx-1 overflow-x-auto px-1 xl:hidden">
+      <section className="hidden">
         <div className="flex w-max items-center gap-2 pb-1">
         {filters.map((item) => (
           <button
@@ -1308,7 +1358,7 @@ export function LeadsPage() {
 
       <section className={cn(
         "grid gap-4",
-        viewMode === "kanban" ? "xl:h-[calc(100vh-190px)] xl:min-h-[680px]" : "xl:items-start",
+        viewMode === "kanban" ? "xl:min-h-[1320px]" : "xl:items-start",
         viewMode === "kanban" ? "xl:grid-cols-1" : detailCollapsed ? "xl:grid-cols-[minmax(0,1fr)_64px]" : "xl:grid-cols-[minmax(0,1fr)_384px]",
       )}>
         <div className="flex min-h-0 flex-col gap-4">
@@ -1345,7 +1395,7 @@ export function LeadsPage() {
             </div>
           </section>
 
-          <section className="hidden shrink-0 overflow-x-auto xl:block">
+          <section className="hidden">
             <div className="flex w-max items-center gap-2 pb-1">
             {filters.map((item) => (
               <button
@@ -1384,13 +1434,175 @@ export function LeadsPage() {
 
           <div
             className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_4px_18px_rgba(15,23,42,0.04)]"
-            style={viewMode === "table" ? { height: tablePanelHeight } : undefined}
+            style={viewMode === "table" ? { height: tablePanelHeight } : { minHeight: 1280 }}
           >
+          <div className="shrink-0 border-b border-slate-100 px-4 py-3">
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+              <label className="relative flex h-10 min-w-0 flex-1 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-500 shadow-sm">
+                <Search size={17} />
+                <input
+                  ref={searchInputRef}
+                  className="min-w-0 flex-1 bg-transparent font-semibold outline-none placeholder:text-slate-400"
+                  placeholder={t("leads.search")}
+                  value={search}
+                  onChange={(event) => setSearch(normalizePhoneSearchInput(event.target.value))}
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => window.setTimeout(() => setSearchFocused(false), 140)}
+                />
+                {searchFocused && search.trim().length >= 2 ? (
+                  <div className="absolute left-0 right-0 top-11 z-30 rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
+                    <p className="px-2 py-1 text-xs font-black uppercase tracking-[0.12em] text-slate-400">{t("leads.searchSuggestions")}</p>
+                    {searchSuggestions.length ? searchSuggestions.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className="flex w-full items-center justify-between gap-3 rounded-lg px-2 py-2 text-left hover:bg-slate-50"
+                        onMouseDown={(event) => {
+                          event.preventDefault();
+                          setSearch(item.label);
+                          if (item.lead) openLead(item.lead);
+                        }}
+                      >
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-bold text-midnight">{item.label}</span>
+                          <span className="block truncate text-xs font-semibold text-slate-500">{item.meta}</span>
+                        </span>
+                        <span className="shrink-0 rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-black text-slate-500">{item.type}</span>
+                      </button>
+                    )) : (
+                      <p className="px-2 py-3 text-sm font-semibold text-slate-500">{t("leads.noSuggestions")}</p>
+                    )}
+                  </div>
+                ) : null}
+              </label>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex h-10 shrink-0 rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
+                  <button
+                    type="button"
+                    className={cn("grid h-8 w-8 place-items-center rounded-md", viewMode === "table" ? "bg-brand-600 text-white" : "text-slate-500 hover:bg-slate-50")}
+                    onClick={() => {
+                      setViewMode("table");
+                      setKanbanDetailOpen(false);
+                    }}
+                    aria-label={t("leads.viewTable")}
+                  >
+                    <Table2 size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    className={cn("grid h-8 w-8 place-items-center rounded-md", viewMode === "kanban" ? "bg-brand-600 text-white" : "text-slate-500 hover:bg-slate-50")}
+                    onClick={() => {
+                      setViewMode("kanban");
+                      if (selectedId) setKanbanDetailOpen(true);
+                    }}
+                    aria-label={t("leads.viewKanban")}
+                  >
+                    <KanbanSquare size={16} />
+                  </button>
+                </div>
+                <Button variant="secondary" className="h-10 rounded-lg px-3" onClick={() => setSavedFiltersOpen((value) => !value)}>
+                  <SlidersHorizontal size={16} />
+                  {t("leads.filters")}
+                  {filterPresets.length ? <span className="rounded-lg bg-slate-100 px-1.5 py-0.5 text-xs font-black text-slate-500">{filterPresets.length}</span> : null}
+                </Button>
+                <Button variant="secondary" size="icon" className="h-10 w-10 rounded-lg px-0" aria-label={t("leads.moreActions")} onClick={() => setMoreMenuOpen((value) => !value)}>
+                  <MoreHorizontal size={17} />
+                </Button>
+              </div>
+            </div>
+            <div className="mt-3 flex min-w-0 flex-wrap items-center gap-2">
+              {filters.map((item) => (
+                <button
+                  key={item.value}
+                  type="button"
+                  onClick={() => setFilter(item.value)}
+                  className={cn(
+                    "inline-flex min-h-8 shrink-0 items-center gap-2 rounded-lg border px-3 text-sm font-bold transition",
+                    filter === item.value ? "border-brand-200 bg-brand-50 text-brand-700" : "border-slate-200 bg-white text-slate-600 hover:border-brand-100 hover:text-midnight",
+                  )}
+                >
+                  {item.label}
+                  <span className={cn("rounded-md px-1.5 py-0.5 text-xs", filter === item.value ? "bg-white text-brand-700" : "bg-slate-100 text-slate-500")}>{item.count}</span>
+                </button>
+              ))}
+              <span className="h-7 w-px shrink-0 bg-slate-200" />
+              {["whatsapp", "telegram", "instagram", "website"].map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => setSource(source === item ? "" : item)}
+                  className={cn(
+                    "inline-flex min-h-8 shrink-0 items-center gap-2 rounded-lg border px-3 text-sm font-bold transition",
+                    source === item ? "border-brand-200 bg-brand-50 text-brand-800" : "border-slate-200 bg-white text-slate-600 hover:border-brand-100 hover:text-midnight",
+                  )}
+                >
+                  <SourceBadge source={item} t={t} />
+                </button>
+              ))}
+            </div>
+            {savedFiltersOpen ? (
+              <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <div className="flex min-w-0 items-center gap-2 overflow-x-auto pb-2">
+                  {filterPresets.length ? filterPresets.map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      className="shrink-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
+                      onClick={() => {
+                        applyPreset(preset);
+                        setSavedFiltersOpen(false);
+                      }}
+                    >
+                      {preset.name}
+                    </button>
+                  )) : (
+                    <span className="py-2 text-xs font-semibold text-slate-400">{t("leads.noSavedFilters")}</span>
+                  )}
+                </div>
+                <div className="mt-2 flex gap-2 border-t border-slate-200 pt-3">
+                  <input
+                    className="h-9 min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold outline-none focus:border-brand-300"
+                    placeholder={t("leads.filterPresetName")}
+                    value={presetName}
+                    onChange={(event) => setPresetName(event.target.value)}
+                  />
+                  <Button variant="secondary" size="sm" className="shrink-0 rounded-lg" onClick={savePreset}>{t("leads.saveFilter")}</Button>
+                </div>
+              </div>
+            ) : null}
+            {moreMenuOpen ? (
+              <div className="mt-3 grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 lg:grid-cols-[minmax(0,1fr)_auto]">
+                <div className="min-w-0">
+                  <div className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700">
+                    <Columns3 size={16} /> {t("leads.columns")}
+                  </div>
+                  <div className="flex min-w-0 flex-wrap gap-2">
+                    {columnOrder.map((column) => (
+                      <label key={column} className="inline-flex h-8 cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 hover:border-brand-200">
+                        <input
+                          type="checkbox"
+                          checked={visibleColumns[column]}
+                          onChange={() => setVisibleColumns((value) => ({ ...value, [column]: !value[column] }))}
+                        />
+                        <span className="truncate">{t(`leads.column.${column}`)}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-start gap-2">
+                  <Button variant="secondary" size="sm" className="rounded-lg" onClick={() => setSortByAi((value) => !value)}><Flame size={15} /> {t("leads.sortByHeat")}</Button>
+                  <Button variant="secondary" size="sm" className="rounded-lg" onClick={() => exportRows("csv")}><Download size={15} /> CSV</Button>
+                  <Button variant="secondary" size="sm" className="rounded-lg" onClick={() => exportRows("excel")}>{t("leads.exportExcel")}</Button>
+                  <Button variant="secondary" size="sm" className="rounded-lg" onClick={shareView}><Share2 size={15} /> {t("leads.shareView")}</Button>
+                </div>
+              </div>
+            ) : null}
+          </div>
           {viewMode === "table" ? (
             <div className="hidden shrink-0 overflow-x-auto lg:block">
               <div
-                className="sticky top-0 z-10 grid min-w-[1180px] border-b border-slate-100 bg-slate-50/95 px-4 py-3 text-xs font-bold text-slate-500 backdrop-blur"
-                style={{ gridTemplateColumns: `36px ${columnOrder.filter((column) => visibleColumns[column]).map((column) => leadColumnWidths[column]).join(" ")} 112px` }}
+                className="sticky top-0 z-10 grid min-w-0 border-b border-slate-100 bg-slate-50/95 px-4 py-3 text-xs font-bold text-slate-500 backdrop-blur"
+                style={{ gridTemplateColumns: tableGridTemplateColumns, minWidth: tableGridMinWidth }}
               >
                 <label className="flex h-5 w-5 items-center justify-center">
                   <input className="sr-only" type="checkbox" checked={pageRows.length > 0 && pageRows.every((lead) => selectedLeadIds.includes(lead.id))} onChange={toggleAllPageRows} aria-label={t("leads.selectAll")} />
@@ -1398,14 +1610,14 @@ export function LeadsPage() {
                     {pageRows.length > 0 && pageRows.every((lead) => selectedLeadIds.includes(lead.id)) ? <CheckCheck size={13} /> : null}
                   </span>
                 </label>
-                {columnOrder.filter((column) => visibleColumns[column]).map((column) => (
+                {activeTableColumns.map((column) => (
                   <span key={column}>{t(`leads.column.${column}`)}</span>
                 ))}
                 <span />
               </div>
             </div>
           ) : null}
-          <div className="min-h-0 flex-1 overflow-hidden">
+          <div className={cn("min-h-0 flex-1", viewMode === "table" ? "overflow-hidden lg:min-h-[430px]" : "overflow-visible")}>
             {!rows.length ? (
               <div className="grid h-full min-h-[320px] place-items-center p-5">
                 <div className="max-w-sm text-center">
@@ -1426,13 +1638,16 @@ export function LeadsPage() {
               </div>
             ) : (
               viewMode === "kanban" ? (
-                <div className="flex h-full min-h-[520px] gap-3 overflow-x-auto overflow-y-hidden p-4">
+                <div className="flex min-h-[1060px] gap-3 overflow-x-auto overflow-y-visible p-4">
                   {kanbanStatuses.map((status) => {
                     const columnRows = rows.filter((lead) => lead.status === status);
+                    const visibleCount = kanbanVisibleCounts[status] || 10;
+                    const visibleColumnRows = columnRows.slice(0, visibleCount);
+                    const hiddenCount = Math.max(0, columnRows.length - visibleColumnRows.length);
                     return (
                       <section
                         key={status}
-                        className="flex h-full min-h-0 w-[300px] shrink-0 flex-col rounded-xl border border-slate-200 bg-slate-50 p-3"
+                        className="flex min-h-[1020px] w-[320px] shrink-0 flex-col rounded-xl border border-slate-200 bg-slate-50 p-3"
                         onDragOver={(event) => event.preventDefault()}
                         onDrop={(event) => {
                           const leadId = Number(event.dataTransfer.getData("text/plain"));
@@ -1447,8 +1662,8 @@ export function LeadsPage() {
                           </div>
                           <span className="rounded-lg bg-white px-2 py-1 text-xs font-black text-slate-500">{columnRows.length}</span>
                         </div>
-                        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
-                          {columnRows.map((lead) => {
+                        <div className="space-y-2 pr-1">
+                          {visibleColumnRows.map((lead) => {
                             const client = getClient(lead, clientList);
                             const service = getService(lead, serviceList);
                             const insight = aiInsights.get(lead.id) || leadAiInsight(lead, clientList, serviceList, allLeads, t);
@@ -1485,6 +1700,15 @@ export function LeadsPage() {
                             <div className="rounded-xl border border-dashed border-slate-200 bg-white/70 p-4 text-center text-xs font-bold text-slate-400">
                               {t("leads.dropHere")}
                             </div>
+                          ) : null}
+                          {hiddenCount > 0 ? (
+                            <button
+                              type="button"
+                              className="mt-1 flex w-full items-center justify-center rounded-xl border border-dashed border-brand-200 bg-white px-3 py-3 text-sm font-black text-brand-700 transition hover:border-brand-300 hover:bg-brand-50"
+                              onClick={() => showMoreKanban(status)}
+                            >
+                              {t("leads.showMoreInColumn", { count: Math.min(10, hiddenCount) })}
+                            </button>
                           ) : null}
                         </div>
                       </section>
@@ -1542,7 +1766,7 @@ export function LeadsPage() {
           </div>
           {viewMode === "table" ? (
           <div className="flex shrink-0 flex-col gap-3 border-t border-slate-100 px-4 py-3 text-xs font-semibold text-slate-500 lg:flex-row lg:items-center lg:justify-between">
-            <span>{t("leads.tableShowingRange", { start: pageStart, end: pageEnd, total: rows.length })}</span>
+            <span>{t("leads.tableShowingRange", { start: pageStart, end: pageEnd, total: totalLeadCount })}</span>
             <div className="flex flex-wrap items-center gap-2">
               <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-bold text-slate-500">
                 <span>{t("leads.pageSize")}</span>

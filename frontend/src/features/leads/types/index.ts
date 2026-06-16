@@ -63,26 +63,26 @@ export const leadViewModes: LeadViewMode[] = ["table", "kanban"];
 export const leadColumnOrder: LeadColumnKey[] = ["lead", "phone", "source", "ai", "status", "priority", "manager", "activity", "next"];
 
 export const leadColumnWidths: Record<LeadColumnKey, string> = {
-  lead: "minmax(220px,1.55fr)",
+  lead: "minmax(220px,1.7fr)",
   phone: "minmax(130px,0.8fr)",
-  source: "minmax(115px,0.75fr)",
-  ai: "minmax(120px,0.7fr)",
-  status: "minmax(120px,0.75fr)",
-  priority: "minmax(110px,0.7fr)",
-  manager: "minmax(140px,0.75fr)",
-  activity: "minmax(130px,0.75fr)",
-  next: "minmax(220px,1.2fr)",
+  source: "minmax(110px,0.7fr)",
+  ai: "minmax(82px,0.45fr)",
+  status: "minmax(112px,0.7fr)",
+  priority: "minmax(96px,0.55fr)",
+  manager: "minmax(128px,0.75fr)",
+  activity: "minmax(118px,0.65fr)",
+  next: "minmax(220px,1.45fr)",
 };
 
 export const defaultVisibleColumns: Record<LeadColumnKey, boolean> = {
   lead: true,
-  phone: true,
+  phone: false,
   source: true,
   ai: true,
   status: true,
-  priority: true,
-  manager: true,
-  activity: true,
+  priority: false,
+  manager: false,
+  activity: false,
   next: true,
 };
 

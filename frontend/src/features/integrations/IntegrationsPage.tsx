@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { DatabaseZap, SlidersHorizontal, Sparkles } from "lucide-react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Bot, DatabaseZap, SlidersHorizontal, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
 
-import { botChannelsApi, botsApi } from "../../api/bots";
+import { botsApi } from "../../api/bots";
 import { businessConnectorsApi } from "../../api/connectors";
 import { getApiErrorMessage } from "../../api/client";
 import { Button } from "../../components/ui/Button";
@@ -12,21 +12,16 @@ import { Select } from "../../components/ui/Select";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useI18n } from "../../lib/i18n";
 import { hasPermission } from "../../lib/permissions";
-import type { BotChannel, BusinessConnector, ConnectorCapability } from "../../types";
+import type { BusinessConnector, ConnectorCapability } from "../../types";
 import { useAuth } from "../auth/AuthProvider";
 import { ProviderCard } from "./components/ProviderCard";
-import {
-  instagramOAuthCallbackType,
-  whatsappEmbeddedSignupCallbackType,
-  type InstagramOAuthCallback,
-  type WhatsAppEmbeddedSignupCallback,
-} from "./components/setup/metaCallbacks";
 import { groupLabels, providerCatalog, type ProviderGroup, type ProviderKey } from "./config/providerCatalog";
 
 type StatusFilter = "all" | "connected" | "setup" | "request" | "planned" | "error";
 type Translate = ReturnType<typeof useI18n>["t"];
 
-const providerGroups: ProviderGroup[] = ["messages", "data", "marketplace", "system"];
+const agentChannelProviders = new Set<ProviderKey>(["website", "telegram", "whatsapp", "instagram"]);
+const providerGroups: ProviderGroup[] = ["data", "marketplace", "system"];
 
 function providerTitle(provider: ProviderKey, t: Translate, capability?: ConnectorCapability) {
   const catalogItem = providerCatalog.find((item) => item.provider === provider);
@@ -41,23 +36,14 @@ function providerConnector(provider: ProviderKey, connectors: BusinessConnector[
   return connectors.find((item) => item.provider === provider);
 }
 
-function providerChannel(provider: ProviderKey, channels: BotChannel[]) {
-  if (!["website", "telegram", "whatsapp", "instagram"].includes(String(provider))) return undefined;
-  return channels.find((item) => item.channel === provider);
-}
-
 function deriveProviderStatus({
   capability,
-  channel,
   connector,
 }: {
   capability?: ConnectorCapability;
-  channel?: BotChannel;
   connector?: BusinessConnector;
 }) {
   if (connector?.status) return connector.status;
-  if (channel?.status === "active") return "active";
-  if (channel?.status) return channel.status;
   if (capability?.availability === "roadmap" || capability?.launch_status === "roadmap") return "roadmap";
   if (capability?.availability === "request" || capability?.launch_status === "request") return "request";
   if (capability?.launch_status === "soon") return "soon";
@@ -70,7 +56,6 @@ export function IntegrationsPage() {
   const { user } = useAuth();
   const { business, isLoading: isBusinessLoading } = useActiveBusiness();
   const canManage = hasPermission(user, business?.id, "integrations", "manage");
-  const [searchParams] = useSearchParams();
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState<ProviderGroup | "all">("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -83,41 +68,6 @@ export function IntegrationsPage() {
     { value: "error", label: t("integrations.overview.status.error") },
   ];
 
-  useEffect(() => {
-    setQuery(searchParams.get("search") || "");
-  }, [searchParams]);
-
-  useEffect(() => {
-    const url = new URL(window.location.href);
-    const code = url.searchParams.get("code");
-    const state = url.searchParams.get("state");
-    if (!code || !state) return;
-    const provider = url.searchParams.get("zani_provider");
-
-    const payload = provider === "instagram"
-      ? {
-          type: instagramOAuthCallbackType,
-          code,
-          state,
-        } satisfies InstagramOAuthCallback
-      : {
-          type: whatsappEmbeddedSignupCallbackType,
-          code,
-          state,
-          phone_number_id: url.searchParams.get("phone_number_id") || undefined,
-          waba_id: url.searchParams.get("waba_id") || undefined,
-          display_phone_number: url.searchParams.get("display_phone_number") || undefined,
-        } satisfies WhatsAppEmbeddedSignupCallback;
-
-    if (window.opener && !window.opener.closed) {
-      window.opener.postMessage(payload, window.location.origin);
-      window.close();
-      return;
-    }
-
-    window.history.replaceState({}, document.title, `${url.pathname}${url.hash}`);
-  }, []);
-
   const capabilities = useQuery({
     queryKey: ["connector-capabilities"],
     queryFn: businessConnectorsApi.capabilities,
@@ -125,11 +75,6 @@ export function IntegrationsPage() {
   const connectors = useQuery({
     queryKey: ["business-connectors", business?.id],
     queryFn: businessConnectorsApi.list,
-    enabled: Boolean(business?.id),
-  });
-  const channels = useQuery({
-    queryKey: ["bot-channels", business?.id],
-    queryFn: botChannelsApi.list,
     enabled: Boolean(business?.id),
   });
   const bots = useQuery({
@@ -141,17 +86,16 @@ export function IntegrationsPage() {
   const data = useMemo(() => {
     const capabilityList = capabilities.data || [];
     const connectorList = connectors.data || [];
-    const channelList = channels.data || [];
     const normalizedQuery = query.trim().toLowerCase();
     return providerCatalog
+      .filter((item) => !agentChannelProviders.has(item.provider))
       .map((item) => {
         const capability = providerCapability(item.provider, capabilityList);
         const connector = providerConnector(item.provider, connectorList);
-        const channel = providerChannel(item.provider, channelList);
-        const status = item.provider === "kaspi_pricing" ? "setup_required" : deriveProviderStatus({ capability, channel, connector });
+        const status = item.provider === "kaspi_pricing" ? "setup_required" : deriveProviderStatus({ capability, connector });
         const label = providerTitle(item.provider, t, capability);
         const primaryUse = t(item.primaryUseKey);
-        return { ...item, capability, channel, connector, label, primaryUse, status };
+        return { ...item, capability, connector, label, primaryUse, status };
       })
       .filter((item) => {
         const matchesGroup = group === "all" || item.group === group;
@@ -165,13 +109,15 @@ export function IntegrationsPage() {
           (statusFilter === "error" && ["error", "failed", "needs_attention", "expired_credentials"].includes(item.status));
         return matchesGroup && matchesQuery && matchesStatus;
       });
-  }, [capabilities.data, channels.data, connectors.data, group, query, statusFilter, t]);
+  }, [capabilities.data, connectors.data, group, query, statusFilter, t]);
 
   const connectedCount = data.filter((item) => ["active", "connected"].includes(item.status)).length;
   const setupCount = data.filter((item) => ["draft", "setup_required", "provider_configuring"].includes(item.status)).length;
-  const recommended = data.find((item) => item.provider === "whatsapp") || data.find((item) => !["active", "connected"].includes(item.status)) || data[0];
+  const recommended = data.find((item) => !["active", "connected"].includes(item.status)) || data[0];
+  const firstBot = (bots.data || [])[0];
+  const agentChannelsPath = firstBot ? `/dashboard/ai-agents/${firstBot.id}/channels` : "/dashboard/ai-agents";
 
-  if (isBusinessLoading || capabilities.isLoading || connectors.isLoading || channels.isLoading || bots.isLoading) {
+  if (isBusinessLoading || capabilities.isLoading || connectors.isLoading || bots.isLoading) {
     return <LoadingState label={t("integrations.page.loading")} />;
   }
 
@@ -179,7 +125,7 @@ export function IntegrationsPage() {
     return <EmptyState title={t("integrations.page.noBusinessTitle")} description={t("integrations.page.noBusinessDescription")} />;
   }
 
-  const pageError = capabilities.error || connectors.error || channels.error || bots.error;
+  const pageError = capabilities.error || connectors.error || bots.error;
 
   return (
     <div>
@@ -193,6 +139,27 @@ export function IntegrationsPage() {
             <DatabaseZap size={16} /> {t("integrations.overview.openAnalysis")}
           </Button>
         </Link>
+      </section>
+
+      <section className="mb-8 rounded-2xl border border-brand-100 bg-white p-5 shadow-[0_4px_20px_rgba(0,47,108,0.04)]">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-start gap-4">
+            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-brand-50 text-brand-700">
+              <Bot size={22} />
+            </div>
+            <div>
+              <h2 className="text-lg font-black text-midnight">{t("integrations.overview.agentChannelsTitle")}</h2>
+              <p className="mt-1 max-w-3xl text-sm font-semibold leading-6 text-slate-500">
+                {t("integrations.overview.agentChannelsText")}
+              </p>
+            </div>
+          </div>
+          <Link to={agentChannelsPath} className="shrink-0">
+            <Button type="button">
+              <Bot size={16} /> {t("integrations.overview.openAgentChannels")}
+            </Button>
+          </Link>
+        </div>
       </section>
 
       {pageError ? (
@@ -236,11 +203,10 @@ export function IntegrationsPage() {
             value={group}
             onChange={(event) => setGroup(event.target.value as ProviderGroup | "all")}
             options={[
-              { value: "all", label: t("integrations.overview.allGroups") },
-              { value: "messages", label: t(groupLabels.messages.titleKey) },
-              { value: "data", label: t(groupLabels.data.titleKey) },
-              { value: "marketplace", label: t(groupLabels.marketplace.titleKey) },
-              { value: "system", label: t(groupLabels.system.titleKey) },
+	              { value: "all", label: t("integrations.overview.allGroups") },
+	              { value: "data", label: t(groupLabels.data.titleKey) },
+	              { value: "marketplace", label: t(groupLabels.marketplace.titleKey) },
+	              { value: "system", label: t(groupLabels.system.titleKey) },
             ]}
           />
           <Select
@@ -268,12 +234,11 @@ export function IntegrationsPage() {
                       key={item.provider}
                       businessId={business.id}
                       bots={bots.data || []}
-                      canManage={canManage}
-                      capability={item.capability}
-                      channel={item.channel}
-                      connector={item.connector}
-                      provider={item}
-                    />
+	                      canManage={canManage}
+	                      capability={item.capability}
+	                      connector={item.connector}
+	                      provider={item}
+	                    />
                   ))}
                 </div>
               </div>

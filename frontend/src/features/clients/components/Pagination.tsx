@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type PaginationProps = {
   shown: number;
@@ -6,9 +6,10 @@ type PaginationProps = {
   page: number;
   pageSize: number;
   onPageChange: (page: number) => void;
+  onPageSizeChange: (pageSize: number) => void;
 }; 
 
-export function Pagination({ shown, total, page, pageSize, onPageChange }: PaginationProps) {
+export function Pagination({ shown, total, page, pageSize, onPageChange, onPageSizeChange }: PaginationProps) {
   const pageCount = Math.max(1, Math.ceil((total || 0) / pageSize));
   const clampedPage = Math.min(Math.max(page, 1), pageCount);
   const from = total ? (clampedPage - 1) * pageSize + 1 : 0;
@@ -39,9 +40,19 @@ export function Pagination({ shown, total, page, pageSize, onPageChange }: Pagin
           <ChevronRight size={14} />
         </button>
       </div>
-      <button type="button" className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:bg-slate-50">
-        20 на странице <ChevronDown size={14} />
-      </button>
+      <label className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600">
+        <span>На странице</span>
+        <select
+          value={pageSize}
+          onChange={(event) => onPageSizeChange(Number(event.target.value))}
+          className="bg-transparent text-xs font-semibold text-slate-700 outline-none"
+          aria-label="Количество клиентов на странице"
+        >
+          {[20, 50, 100].map((value) => (
+            <option key={value} value={value}>{value}</option>
+          ))}
+        </select>
+      </label>
     </div>
   );
 }

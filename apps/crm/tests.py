@@ -6,6 +6,7 @@ from apps.activities.models import ActivityEvent
 from apps.businesses.models import Business, BusinessMember
 from apps.clients.models import Client
 from apps.crm.models import Deal, Pipeline, PipelineStage
+from apps.tasks.models import Task
 
 
 class PipelineStageEngineUpgradeTests(TestCase):
@@ -140,3 +141,73 @@ class PipelineStageEngineUpgradeTests(TestCase):
         self.assertEqual(response.status_code, 201)
         pipeline = Pipeline.objects.get(id=response.data["id"])
         self.assertEqual(pipeline.stages.count(), 5)
+
+    def test_deal_list_supports_filters_pagination_and_enriched_fields(self):
+        other_client = Client.objects.create(business=self.business, full_name="Other Client", phone="+77010000000")
+        Deal.objects.create(
+            business=self.business,
+            client=other_client,
+            pipeline=self.pipeline,
+            stage=self.offer_stage,
+            title="Hidden offer",
+            amount=25000,
+            source="website",
+            owner=self.owner,
+        )
+        Task.objects.create(
+            business=self.business,
+            client=self.client,
+            deal=self.deal,
+            title="Call client",
+            due_at="2026-06-20T09:00:00Z",
+            status=Task.Statuses.OPEN,
+        )
+
+        response = self.api.get(
+            "/api/deals/",
+            {
+                "pipeline": self.pipeline.id,
+                "search": "Pipeline",
+                "status": "open",
+                "page_size": 1,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["count"], 1)
+        deal = response.data["results"][0]
+        self.assertEqual(deal["id"], self.deal.id)
+        self.assertEqual(deal["client_name"], "Pipeline Client")
+        self.assertEqual(deal["stage_name"], "New")
+        self.assertEqual(deal["owner_name"], "")
+        self.assertEqual(deal["next_task_title"], "Call client")
+        self.assertIn(deal["risk_level"], ["low", "medium", "high"])
+        self.assertEqual(response.data["facets"]["status"][Deal.Statuses.OPEN], 1)
+        self.assertEqual(response.data["facets"]["stage"][str(self.new_stage.id)], 1)
+
+    def test_deal_summary_and_board_return_server_driven_counts(self):
+        for index in range(12):
+            Deal.objects.create(
+                business=self.business,
+                client=self.client,
+                pipeline=self.pipeline,
+                stage=self.offer_stage,
+                title=f"Offer {index}",
+                amount=1000,
+                status=Deal.Statuses.OPEN,
+                source="manual",
+            )
+
+        summary = self.api.get("/api/deals/summary/", {"pipeline": self.pipeline.id})
+        board = self.api.get("/api/deals/board/", {"pipeline": self.pipeline.id, "limit_per_stage": 10})
+
+        self.assertEqual(summary.status_code, 200)
+        self.assertEqual(summary.data["total"], 13)
+        self.assertEqual(summary.data["open"], 13)
+        self.assertIn(str(self.offer_stage.id), summary.data["by_stage"])
+
+        self.assertEqual(board.status_code, 200)
+        offer_column = next(stage for stage in board.data["stages"] if stage["id"] == self.offer_stage.id)
+        self.assertEqual(offer_column["count"], 12)
+        self.assertEqual(len(offer_column["deals"]), 10)
+        self.assertTrue(offer_column["has_more"])

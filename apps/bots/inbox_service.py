@@ -129,6 +129,8 @@ def send_outbound_message(conversation, text, user, sender_type=BotMessage.Sende
     status = BotMessage.Statuses.QUEUED
     error_text = ""
     delivery_payload = {"delivery_mode": "provider_not_connected"}
+    external_message_id = ""
+    sent_at = None
     channel = BotChannel.objects.filter(bot=conversation.bot, channel=conversation.channel).first()
     if channel and conversation.external_user_id:
         try:
@@ -138,6 +140,8 @@ def send_outbound_message(conversation, text, user, sender_type=BotMessage.Sende
         delivery_payload = {"delivery_mode": "provider", "provider_result": result}
         if result.get("ok") and not result.get("mock"):
             status = BotMessage.Statuses.SENT
+            external_message_id = result.get("provider_message_id") or ""
+            sent_at = timezone.now()
         elif result.get("mock"):
             error_text = result.get("reason") or "Provider is running in mock mode."
         else:
@@ -154,6 +158,8 @@ def send_outbound_message(conversation, text, user, sender_type=BotMessage.Sende
         sender_type=sender_type,
         text=text,
         status=status,
+        external_message_id=external_message_id,
+        sent_at=sent_at,
         error_text=error_text,
         payload_json={
             "sent_by_user_id": user.id if user and user.is_authenticated else None,

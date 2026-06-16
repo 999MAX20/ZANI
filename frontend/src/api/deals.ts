@@ -1,12 +1,53 @@
 import { apiClient } from "./client";
 import { createCrudApi } from "./crud";
-import type { Deal, Id, Pipeline, PipelineStage } from "../types";
+import type { PaginatedResponse } from "./client";
+import type { Deal, DealBoard, DealSummary, Id, Pipeline, PipelineStage } from "../types";
+
+export type DealListParams = {
+  page?: number;
+  page_size?: number;
+  pipeline?: Id | string;
+  stage?: Id | string;
+  status?: Deal["status"] | Deal["status"][] | "all";
+  statuses?: Deal["status"] | Deal["status"][];
+  owner?: Id | string;
+  source?: string;
+  search?: string;
+  amount_min?: string | number;
+  amount_max?: string | number;
+  created_from?: string;
+  created_to?: string;
+  expected_close_from?: string;
+  expected_close_to?: string;
+  quick?: "mine" | "hot" | "overdue" | "no_tasks" | "all";
+  mine?: boolean;
+  unassigned?: boolean;
+  ordering?: string;
+  client_ids?: Id[] | string;
+};
+
+export type DealBoardParams = DealListParams & {
+  limit_per_stage?: number;
+  offset?: number;
+};
 
 export const pipelinesApi = createCrudApi<Pipeline>("/api/pipelines/");
 export const pipelineStagesApi = createCrudApi<PipelineStage>("/api/pipeline-stages/");
 
 export const dealsApi = {
   ...createCrudApi<Deal>("/api/deals/"),
+  listPaginated: async (params?: DealListParams) => {
+    const { data } = await apiClient.get<PaginatedResponse<Deal>>("/api/deals/", { params });
+    return data;
+  },
+  summary: async (params?: DealListParams) => {
+    const { data } = await apiClient.get<DealSummary>("/api/deals/summary/", { params });
+    return data;
+  },
+  board: async (params?: DealBoardParams) => {
+    const { data } = await apiClient.get<DealBoard>("/api/deals/board/", { params });
+    return data;
+  },
   moveStage: async ({ id, stage, lost_reason }: { id: Id; stage: Id; lost_reason?: string }) => {
     const { data } = await apiClient.post<Deal>(`/api/deals/${id}/move-stage/`, { stage, lost_reason });
     return data;

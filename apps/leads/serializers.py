@@ -29,6 +29,83 @@ class LeadSerializer(serializers.ModelSerializer):
         return attrs
 
 
+class LeadListSerializer(serializers.ModelSerializer):
+    client_name = serializers.CharField(source="client.full_name", read_only=True)
+    client_phone = serializers.CharField(source="client.phone", read_only=True)
+    client_email = serializers.CharField(source="client.email", read_only=True)
+    service_name = serializers.CharField(source="service.name", read_only=True)
+    responsible_name = serializers.CharField(source="responsible_user.full_name", read_only=True)
+    responsible_email = serializers.CharField(source="responsible_user.email", read_only=True)
+    ai_score = serializers.SerializerMethodField()
+    loss_risk = serializers.SerializerMethodField()
+    recommended_action = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Lead
+        fields = [
+            "id",
+            "business",
+            "client",
+            "client_name",
+            "client_phone",
+            "client_email",
+            "service",
+            "service_name",
+            "source",
+            "message",
+            "status",
+            "responsible_user",
+            "responsible_name",
+            "responsible_email",
+            "ai_score",
+            "loss_risk",
+            "recommended_action",
+            "created_at",
+            "updated_at",
+        ]
+
+    def _score(self, obj):
+        score = 45
+        if obj.source in {Lead.Sources.WEBSITE, Lead.Sources.LANDING, Lead.Sources.WHATSAPP}:
+            score += 12
+        if obj.service_id:
+            score += 10
+        if obj.responsible_user_id:
+            score += 8
+        if obj.status in {Lead.Statuses.IN_PROGRESS, Lead.Statuses.APPOINTMENT_CREATED, Lead.Statuses.CLOSED}:
+            score += 15
+        if obj.status == Lead.Statuses.LOST:
+            score -= 25
+        if obj.status == Lead.Statuses.NEW and not obj.responsible_user_id:
+            score -= 8
+        return max(0, min(100, score))
+
+    def get_ai_score(self, obj):
+        return self._score(obj)
+
+    def get_loss_risk(self, obj):
+        score = self._score(obj)
+        risk = 100 - score
+        if obj.status == Lead.Statuses.NEW and not obj.responsible_user_id:
+            risk += 15
+        if obj.status == Lead.Statuses.LOST:
+            risk = 100
+        return max(0, min(100, risk))
+
+    def get_recommended_action(self, obj):
+        if obj.status == Lead.Statuses.NEW:
+            return "Связаться с клиентом"
+        if obj.status == Lead.Statuses.CONTACTED:
+            return "Назначить ответственного"
+        if obj.status == Lead.Statuses.IN_PROGRESS:
+            return "Создать сделку или запись"
+        if obj.status == Lead.Statuses.APPOINTMENT_CREATED:
+            return "Подтвердить запись"
+        if obj.status == Lead.Statuses.LOST:
+            return "Проверить причину потери"
+        return "Проверить заявку"
+
+
 class CreateAppointmentFromLeadSerializer(serializers.Serializer):
     service = serializers.PrimaryKeyRelatedField(queryset=Service.objects.all())
     resource = serializers.PrimaryKeyRelatedField(queryset=Resource.objects.all(), required=False, allow_null=True)

@@ -706,6 +706,15 @@ export type Client = {
   is_active?: boolean;
   has_no_reply?: boolean;
   is_vip?: boolean;
+  leads_count?: number;
+  deals_count?: number;
+  appointments_count?: number;
+  tasks_count?: number;
+  conversations_count?: number;
+  last_activity_at?: string | null;
+  next_step_title?: string;
+  next_step_date?: string | null;
+  next_step_priority?: Task["priority"] | "";
   is_archived?: boolean;
   archived_at?: string | null;
   archived_by?: Id | null;
@@ -730,7 +739,11 @@ export type Lead = {
   id: Id;
   business: Id;
   client: Id;
+  client_name?: string;
+  client_phone?: string;
+  client_email?: string;
   service: Id | null;
+  service_name?: string;
   source: Client["source"] | "landing";
   message: string;
   status: "new" | "in_progress" | "appointment_created" | "contacted" | "closed" | "lost";
@@ -739,12 +752,33 @@ export type Lead = {
   lost_at?: string | null;
   lost_by?: Id | null;
   responsible_user: Id | null;
+  responsible_name?: string;
+  responsible_email?: string;
+  ai_score?: number;
+  loss_risk?: number;
+  recommended_action?: string;
   is_archived?: boolean;
   archived_at?: string | null;
   archived_by?: Id | null;
   archive_reason?: string;
   created_at: string;
   updated_at: string;
+};
+
+export type LeadSummary = {
+  total: number;
+  new: number;
+  new_this_week: number;
+  unanswered: number;
+  unanswered_this_week: number;
+  in_progress: number;
+  in_progress_this_week: number;
+  hot: number;
+  hot_this_week: number;
+  attention: number;
+  mine: number;
+  by_status: Partial<Record<Lead["status"], number>>;
+  by_source: Partial<Record<Lead["source"], number>>;
 };
 
 export type Pipeline = {
@@ -781,15 +815,26 @@ export type Deal = {
   id: Id;
   business: Id;
   client: Id;
+  client_name?: string;
+  client_phone?: string;
+  client_email?: string;
   lead: Id | null;
   pipeline: Id;
   stage: Id;
+  stage_name?: string;
+  stage_color?: string;
+  stage_order?: number;
+  stage_probability?: number;
+  stage_is_won?: boolean;
+  stage_is_lost?: boolean;
   title: string;
   amount: string;
   currency: string;
   probability: number;
   expected_close_at: string | null;
   owner: Id | null;
+  owner_name?: string;
+  owner_email?: string;
   status: "open" | "won" | "lost";
   source: string;
   lost_reason?: string;
@@ -805,9 +850,43 @@ export type Deal = {
   stage_entered_at?: string | null;
   next_action_at?: string | null;
   sla_overdue?: boolean;
+  next_task_id?: Id | null;
+  next_task_title?: string;
+  next_task_due_at?: string | null;
+  next_task_priority?: Task["priority"] | "";
+  risk_level?: "low" | "medium" | "high";
+  risk_percent?: number;
   notes: string;
   created_at: string;
   updated_at: string;
+};
+
+export type DealSummary = {
+  total: number;
+  open: number;
+  won: number;
+  lost: number;
+  pipeline_value: string;
+  expected_revenue: string;
+  overdue: number;
+  no_tasks: number;
+  hot: number;
+  mine: number;
+  by_status: Partial<Record<Deal["status"], number>>;
+  by_source: Record<string, number>;
+  by_stage: Record<string, number>;
+};
+
+export type DealBoardStage = PipelineStage & {
+  count: number;
+  offset: number;
+  limit: number;
+  has_more: boolean;
+  deals: Deal[];
+};
+
+export type DealBoard = {
+  stages: DealBoardStage[];
 };
 
 export type Resource = {

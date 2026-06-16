@@ -29,6 +29,8 @@ export type PaginatedResponse<T> = {
   next: string | null;
   previous: string | null;
   results: T[];
+  summary?: unknown;
+  facets?: unknown;
 };
 
 export function asArray<T>(value: unknown): T[] {

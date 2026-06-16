@@ -12,8 +12,8 @@ from rest_framework.test import APIClient
 from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
 from apps.businesses.models import Business, BusinessMember
 from apps.accounts.models import User
-from apps.integrations.connectors import create_or_update_credential
-from apps.integrations.models import BusinessConnector, IntegrationEventLog
+from apps.integrations.connectors import create_or_update_credential, decrypt_credential_value
+from apps.integrations.models import BusinessConnector, ConnectorCredential, IntegrationEventLog
 from apps.integrations.kaspi.base import fetch_kaspi_orders
 from apps.integrations.instagram_oauth import fetch_meta_json as fetch_instagram_meta_json
 from apps.integrations.moysklad.base import fetch_moysklad_json
@@ -667,8 +667,8 @@ class WhatsAppIntegrationFoundationTests(TestCase):
 
     @override_settings(
         WHATSAPP_ENABLED=True,
-        WHATSAPP_VERIFY_TOKEN="verify-token",
-        WHATSAPP_APP_SECRET="app-secret",
+        WHATSAPP_VERIFY_TOKEN="strong-whatsapp-verify-token-32-chars-2026",
+        WHATSAPP_APP_SECRET="strong-whatsapp-app-secret-32-chars-2026",
         META_APP_ID="meta-app",
         META_APP_SECRET="meta-secret",
         WHATSAPP_EMBEDDED_SIGNUP_CONFIG_ID="signup-config",
@@ -689,8 +689,8 @@ class WhatsAppIntegrationFoundationTests(TestCase):
 
     @override_settings(
         WHATSAPP_ENABLED=True,
-        WHATSAPP_VERIFY_TOKEN="verify-token",
-        WHATSAPP_APP_SECRET="app-secret",
+        WHATSAPP_VERIFY_TOKEN="strong-whatsapp-verify-token-32-chars-2026",
+        WHATSAPP_APP_SECRET="strong-whatsapp-app-secret-32-chars-2026",
         META_APP_ID="meta-app",
         META_APP_SECRET="meta-secret",
         WHATSAPP_EMBEDDED_SIGNUP_CONFIG_ID="signup-config",
@@ -710,8 +710,8 @@ class WhatsAppIntegrationFoundationTests(TestCase):
 
     @override_settings(
         WHATSAPP_ENABLED=True,
-        WHATSAPP_VERIFY_TOKEN="verify-token",
-        WHATSAPP_APP_SECRET="app-secret",
+        WHATSAPP_VERIFY_TOKEN="strong-whatsapp-verify-token-32-chars-2026",
+        WHATSAPP_APP_SECRET="strong-whatsapp-app-secret-32-chars-2026",
         META_APP_ID="meta-app",
         META_APP_SECRET="meta-secret",
         WHATSAPP_EMBEDDED_SIGNUP_CONFIG_ID="signup-config",
@@ -810,7 +810,7 @@ class WhatsAppIntegrationFoundationTests(TestCase):
 
         config_response = self.api.post(
             f"/api/bot-channels/{self.channel.id}/whatsapp-config/",
-            {"provider_mode": "mock", "webhook_secret": "new-secret", "phone_number_id": "phone-2"},
+            {"provider_mode": "mock", "webhook_secret": "strong-whatsapp-secret-32-chars-2026", "phone_number_id": "phone-2"},
             format="json",
         )
         status_response = self.api.get(f"/api/bot-channels/{self.channel.id}/whatsapp-status/")
@@ -846,12 +846,122 @@ class WhatsAppIntegrationFoundationTests(TestCase):
         self.assertTrue(test_response.data["ok"])
         self.assertTrue(test_response.data["mock"])
         channel_response = self.api.get(f"/api/bot-channels/{self.channel.id}/")
-        self.assertEqual(channel_response.data["config_json"]["access_token"], "configured")
+        self.assertNotIn("access_token", channel_response.data["config_json"])
+        self.assertTrue(channel_response.data["config_json"]["access_token_configured"])
         self.assertNotIn("meta-access-token", str(channel_response.data))
         connector = BusinessConnector.objects.get(business=self.business, provider=BusinessConnector.Providers.WHATSAPP, name="WhatsApp")
         self.assertEqual(connector.status, BusinessConnector.Statuses.CONNECTED)
         self.assertTrue(connector.config_json["access_token_configured"])
         self.assertNotIn("meta-access-token", str(connector.config_json))
+        credential = ConnectorCredential.objects.get(connector=connector, key="access_token")
+        self.assertEqual(decrypt_credential_value(credential.encrypted_value), "meta-access-token")
+
+    def test_whatsapp_status_webhook_updates_outbound_message(self):
+        self.channel.config_json = {
+            "provider_mode": "meta_cloud",
+            "phone_number_id": "phone-123",
+        }
+        self.channel.external_id = "phone-123"
+        self.channel.save(update_fields=["config_json", "external_id", "updated_at"])
+        conversation = BotConversation.objects.create(
+            business=self.business,
+            bot=self.bot,
+            channel=BotConversation.Channels.WHATSAPP,
+            external_user_id="77015550102",
+        )
+        message = BotMessage.objects.create(
+            conversation=conversation,
+            direction=BotMessage.Directions.OUTBOUND,
+            sender_type=BotMessage.SenderTypes.MANAGER,
+            text="Здравствуйте",
+            external_message_id="wamid.outbound.1",
+            status=BotMessage.Statuses.SENT,
+        )
+
+        response = self.api.post(
+            "/api/integrations/whatsapp/webhook/",
+            {
+                "entry": [
+                    {
+                        "changes": [
+                            {
+                                "value": {
+                                    "metadata": {"phone_number_id": "phone-123"},
+                                    "statuses": [{"id": "wamid.outbound.1", "status": "read", "timestamp": "1710000000"}],
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        message.refresh_from_db()
+        self.assertIsNotNone(message.delivered_at)
+        self.assertIsNotNone(message.read_at)
+        self.assertEqual(message.payload_json["whatsapp_status"]["status"], "read")
+
+    @override_settings(WHATSAPP_ENABLED=True, WHATSAPP_GRAPH_BASE_URL="https://graph.facebook.com")
+    def test_whatsapp_free_form_outbound_requires_recent_inbound_message(self):
+        self.channel.config_json = {
+            "provider_mode": "meta_cloud",
+            "phone_number_id": "phone-123",
+        }
+        self.channel.external_id = "phone-123"
+        self.channel.save(update_fields=["config_json", "external_id", "updated_at"])
+        connector = BusinessConnector.objects.create(
+            business=self.business,
+            provider=BusinessConnector.Providers.WHATSAPP,
+            name="WhatsApp",
+            capability=BusinessConnector.Capabilities.COMMUNICATIONS,
+            auth_type=BusinessConnector.AuthTypes.OAUTH,
+        )
+        create_or_update_credential(connector, "access_token", "meta-token")
+
+        result = WhatsAppProvider().send_message(self.channel, "77015550102", "Здравствуйте")
+
+        self.assertFalse(result["ok"])
+        self.assertTrue(result["requires_template"])
+
+    @override_settings(WHATSAPP_ENABLED=True, WHATSAPP_GRAPH_BASE_URL="https://graph.facebook.com")
+    def test_whatsapp_template_outbound_bypasses_service_window_and_returns_provider_id(self):
+        self.channel.config_json = {
+            "provider_mode": "meta_cloud",
+            "phone_number_id": "phone-123",
+        }
+        self.channel.external_id = "phone-123"
+        self.channel.save(update_fields=["config_json", "external_id", "updated_at"])
+        connector = BusinessConnector.objects.create(
+            business=self.business,
+            provider=BusinessConnector.Providers.WHATSAPP,
+            name="WhatsApp",
+            capability=BusinessConnector.Capabilities.COMMUNICATIONS,
+            auth_type=BusinessConnector.AuthTypes.OAUTH,
+        )
+        create_or_update_credential(connector, "access_token", "meta-token")
+
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+            def read(self):
+                return json.dumps({"messages": [{"id": "wamid.provider.1"}]}).encode("utf-8")
+
+        with patch("apps.integrations.providers.whatsapp.urllib_request.urlopen", return_value=FakeResponse()):
+            result = WhatsAppProvider().send_message(
+                self.channel,
+                "77015550102",
+                "Template text",
+                payload={"whatsapp_template_name": "appointment_recall_ru", "whatsapp_template_language": "ru"},
+            )
+
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["provider_message_id"], "wamid.provider.1")
 
     @override_settings(WHATSAPP_ENABLED=True, WHATSAPP_GRAPH_BASE_URL="https://127.0.0.1")
     def test_whatsapp_provider_rejects_private_graph_base_url_without_network_call(self):
@@ -961,11 +1071,14 @@ class WhatsAppIntegrationFoundationTests(TestCase):
         self.assertEqual(complete_response.status_code, 200)
         channel = BotChannel.objects.get(channel=BotChannel.Channels.WHATSAPP, external_id="phone-embedded")
         self.assertEqual(channel.config_json["provider_mode"], "meta_cloud")
-        self.assertEqual(channel.config_json["access_token"], "embedded-access-token")
+        self.assertNotIn("access_token", channel.config_json)
+        self.assertTrue(channel.config_json["access_token_configured"])
         connector = BusinessConnector.objects.get(business=self.business, provider=BusinessConnector.Providers.WHATSAPP, name="WhatsApp")
         self.assertEqual(connector.status, BusinessConnector.Statuses.CONNECTED)
         self.assertTrue(connector.config_json["embedded_signup"])
         self.assertNotIn("embedded-access-token", str(connector.config_json))
+        credential = ConnectorCredential.objects.get(connector=connector, key="access_token")
+        self.assertEqual(decrypt_credential_value(credential.encrypted_value), "embedded-access-token")
 
     @override_settings(
         META_APP_ID="app-id",

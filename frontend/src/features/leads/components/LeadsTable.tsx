@@ -1,6 +1,4 @@
-import { useVirtualizer } from "@tanstack/react-virtual";
 import { CheckCheck, ClipboardList, MessageCircle, MoreHorizontal, Phone } from "lucide-react";
-import { useRef } from "react";
 
 import { cn } from "../../../lib/cn";
 import { formatDateTime } from "../../../lib/format";
@@ -62,7 +60,8 @@ function LeadTableRow({
   const title = client?.full_name || t("leads.leadFallback", { id: lead.id });
   const isHot = lead.status === "new" && !lead.responsible_user;
   const activeColumns = columnOrder.filter((column) => visibleColumns[column]);
-  const gridTemplateColumns = `36px ${activeColumns.map((column) => leadColumnWidths[column]).join(" ")} 112px`;
+  const needsWideTable = activeColumns.length > 5;
+  const gridTemplateColumns = `32px ${activeColumns.map((column) => leadColumnWidths[column]).join(" ")} 72px`;
   const cells: Record<LeadColumnKey, React.ReactNode> = {
     lead: (
       <span className="flex min-w-0 items-center gap-3">
@@ -76,14 +75,11 @@ function LeadTableRow({
       </span>
     ),
     phone: <span className="truncate font-semibold text-slate-700">{client?.phone || t("leads.noPhoneLower")}</span>,
-    source: <span><SourceBadge source={lead.source} t={t} /></span>,
+    source: <span className="flex min-w-0"><SourceBadge source={lead.source} t={t} /></span>,
     ai: (
       <span className="min-w-0">
-        <span className="flex items-center justify-between gap-2 text-xs font-black text-midnight">
-          <span>{aiInsight.score}</span>
-          <span className={cn("rounded-full px-1.5 py-0.5 text-[10px]", aiInsight.lossRisk >= 70 ? "bg-red-50 text-red-700" : aiInsight.score >= 75 ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700")}>
-            {aiInsight.lossRisk >= 70 ? t("leads.aiRiskShort") : t("leads.aiScoreShort")}
-          </span>
+        <span className="flex items-center justify-between gap-2 text-xs font-black">
+          <span className={cn(aiInsight.lossRisk >= 70 ? "text-red-700" : aiInsight.score >= 75 ? "text-emerald-700" : "text-amber-700")}>{aiInsight.score}</span>
         </span>
         <span className="mt-1 block h-1.5 overflow-hidden rounded-full bg-slate-100">
           <span className={cn("block h-full rounded-full", aiInsight.score >= 75 ? "bg-emerald-500" : aiInsight.score >= 50 ? "bg-amber-500" : "bg-red-500")} style={{ width: `${aiInsight.score}%` }} />
@@ -139,7 +135,8 @@ function LeadTableRow({
       role="button"
       tabIndex={0}
       className={cn(
-        "group grid min-w-[1180px] items-center border-b border-slate-100 px-4 py-3 text-left text-sm transition hover:bg-slate-50",
+        "group grid min-w-0 items-center border-b border-slate-100 px-4 py-3.5 text-left text-sm transition hover:bg-slate-50",
+        needsWideTable && "min-w-[1120px]",
         selected && "bg-brand-50/70 shadow-[inset_3px_0_0_#2563eb]",
         bulkSelected && "bg-slate-50",
         aiInsight.stale && !selected && "bg-amber-50/35",
@@ -158,7 +155,7 @@ function LeadTableRow({
         </span>
       </label>
       {activeColumns.map((column) => <span key={column} className="min-w-0">{cells[column]}</span>)}
-      <span className="flex w-[112px] items-center justify-end gap-1" onClick={(event) => event.stopPropagation()}>
+      <span className="flex w-[72px] items-center justify-end gap-1" onClick={(event) => event.stopPropagation()}>
         <button type="button" className="hidden h-7 w-7 place-items-center rounded-lg text-slate-500 hover:bg-white hover:text-brand-700 group-hover:grid" onClick={onCall} aria-label={t("leads.call")}>
           <Phone size={16} />
         </button>
@@ -217,29 +214,19 @@ export function VirtualizedLeadTableRows({
   openContextMenu: (event: React.MouseEvent, lead: Lead) => void;
   t: Translate;
 }) {
-  const parentRef = useRef<HTMLDivElement | null>(null);
-  const rowVirtualizer = useVirtualizer({
-    count: rows.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 66,
-    overscan: 6,
-  });
-  const virtualItems = rowVirtualizer.getVirtualItems();
+  const activeColumns = columnOrder.filter((column) => visibleColumns[column]);
+  const needsWideTable = activeColumns.length > 5;
+  const gridTemplateColumns = `32px ${activeColumns.map((column) => leadColumnWidths[column]).join(" ")} 72px`;
 
   return (
-    <div ref={parentRef} className="hidden h-full overflow-auto lg:block">
-      <div className="relative min-w-[1180px]" style={{ height: rowVirtualizer.getTotalSize() }}>
-        {virtualItems.map((virtualRow) => {
-          const lead = rows[virtualRow.index];
-          if (!lead) return null;
+    <div className="hidden h-full overflow-auto lg:block">
+      <div className={cn("min-w-0", needsWideTable && "min-w-[1120px]")}>
+        {rows.map((lead, index) => {
           const responsible = teamList.find((member) => member.user.id === lead.responsible_user);
           return (
             <div
               key={lead.id}
-              className="absolute left-0 right-0 top-0"
-              style={{ transform: `translateY(${virtualRow.start}px)` }}
-              data-index={virtualRow.index}
-              ref={rowVirtualizer.measureElement}
+              data-index={index}
             >
               <LeadTableRow
                 lead={lead}
@@ -265,6 +252,9 @@ export function VirtualizedLeadTableRows({
             </div>
           );
         })}
+        {!rows.length ? null : (
+          <div className={cn("grid h-0 min-w-0", needsWideTable && "min-w-[1120px]")} style={{ gridTemplateColumns }} aria-hidden="true" />
+        )}
       </div>
     </div>
   );

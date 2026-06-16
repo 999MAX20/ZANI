@@ -10,12 +10,18 @@ import { ClientAvatar, ClientStatusBadge, SourceIcon } from "./ClientPrimitives"
 export const ClientRow = memo(function ClientRow({
   row,
   selected,
+  checked,
+  visibleColumns,
   onSelect,
+  onToggleCheck,
   t,
 }: {
   row: ClientTableRow;
   selected: boolean;
+  checked: boolean;
+  visibleColumns: Set<"source" | "manager">;
   onSelect: () => void;
+  onToggleCheck: () => void;
   t: Translate;
 }) {
   function handleKeyDown(event: React.KeyboardEvent<HTMLTableRowElement>) {
@@ -31,21 +37,25 @@ export const ClientRow = memo(function ClientRow({
       tabIndex={0}
       className={cn(
         "group cursor-pointer border-b border-slate-100 bg-white transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset",
-        selected && "bg-blue-50 outline outline-1 -outline-offset-1 outline-blue-400 hover:bg-blue-50",
+        selected && "bg-blue-50/70 shadow-[inset_3px_0_0_#2563eb] hover:bg-blue-50/70",
       )}
       onClick={onSelect}
       onKeyDown={handleKeyDown}
     >
-      <td role="gridcell" className="w-10 px-4 py-3 align-middle">
+      <td role="gridcell" className="w-10 px-3 py-3 align-middle">
         <input
           type="checkbox"
-          checked={selected}
+          checked={checked}
           readOnly
-          aria-label={row.client.full_name}
+          aria-label={`Выбрать ${row.client.full_name}`}
           className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+          onClick={(event) => {
+            event.stopPropagation();
+            onToggleCheck();
+          }}
         />
       </td>
-      <td role="gridcell" className="min-w-[220px] px-2 py-3">
+      <td role="gridcell" className="overflow-hidden px-2 py-3">
         <div className="flex items-center gap-3">
           <ClientAvatar name={row.client.full_name} />
           <div className="min-w-0">
@@ -54,38 +64,42 @@ export const ClientRow = memo(function ClientRow({
           </div>
         </div>
       </td>
-      <td role="gridcell" className="min-w-[120px] px-3 py-3">
-        <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
-          <SourceIcon source={row.client.source} />
-          <span>{sourceLabel(row.client.source, t)}</span>
-        </div>
-      </td>
-      <td role="gridcell" className="min-w-[118px] px-3 py-3">
+      {visibleColumns.has("source") ? (
+        <td role="gridcell" className="overflow-hidden px-2 py-3">
+          <div className="flex min-w-0 items-center gap-2 text-sm font-medium text-slate-600">
+            <SourceIcon source={row.client.source} />
+            <span className="truncate">{sourceLabel(row.client.source, t)}</span>
+          </div>
+        </td>
+      ) : null}
+      <td role="gridcell" className="overflow-hidden px-2 py-3">
         <ClientStatusBadge status={row.status} />
       </td>
-      <td role="gridcell" className="hidden min-w-[138px] px-3 py-3 xl:table-cell">
+      {visibleColumns.has("manager") ? (
+      <td role="gridcell" className="overflow-hidden px-2 py-3">
         {row.manager === "Не назначен" ? (
-          <div className="flex items-center gap-2 text-slate-400">
-            <UserX size={16} />
+          <div className="flex min-w-0 items-center gap-2 text-slate-400">
+            <UserX size={16} className="shrink-0" />
             <span className="truncate text-sm font-medium">Не назначен</span>
           </div>
         ) : (
-          <div className="flex items-center gap-2">
-            <div className="grid h-7 w-7 place-items-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-600">
+          <div className="flex min-w-0 items-center gap-2">
+            <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-600">
               {initials(row.manager)}
             </div>
             <span className="truncate text-sm font-medium text-slate-600">{row.manager}</span>
           </div>
         )}
       </td>
-      <td role="gridcell" className="min-w-[138px] px-3 py-3">
-        <p className="text-sm font-medium text-slate-700">{row.lastContactAt ? formatDateTime(row.lastContactAt) : "Нет контакта"}</p>
+      ) : null}
+      <td role="gridcell" className="overflow-hidden px-2 py-3">
+        <p className="truncate text-sm font-medium text-slate-700">{row.lastContactAt ? formatDateTime(row.lastContactAt) : "Нет контакта"}</p>
       </td>
-      <td role="gridcell" className="min-w-[150px] px-3 py-3">
+      <td role="gridcell" className="overflow-hidden px-2 py-3">
         <p className="truncate text-sm font-medium text-slate-700">{row.nextStep.title}</p>
         <p className="mt-0.5 text-xs font-medium text-slate-500">{row.nextStep.date ? formatDate(row.nextStep.date) : "Сегодня"}</p>
       </td>
-      <td role="gridcell" className="w-12 px-3 py-3 text-right">
+      <td role="gridcell" className="w-10 px-2 py-3 text-right">
         <button
           type="button"
           className="inline-grid h-8 w-8 place-items-center rounded-lg text-slate-500 opacity-100 transition hover:bg-slate-100 hover:text-slate-700 md:opacity-0 md:group-hover:opacity-100"

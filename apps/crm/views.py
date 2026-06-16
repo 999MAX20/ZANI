@@ -1,6 +1,8 @@
 from django.utils import timezone
+from django.db.models import Count, Prefetch, Q, Sum
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
 from apps.activities.services import write_activity_event
@@ -9,7 +11,8 @@ from apps.core.crm_cards import deal_crm_card
 from apps.core.permissions import user_can_access_business
 from apps.core.viewsets import TenantModelViewSet
 from apps.crm.models import Deal, Pipeline, PipelineStage, StageTransition
-from apps.crm.serializers import DealSerializer, PipelineSerializer, PipelineStageSerializer, StageTransitionSerializer
+from apps.crm.serializers import DealListSerializer, DealSerializer, PipelineSerializer, PipelineStageSerializer, StageTransitionSerializer
+from apps.tasks.models import Task
 
 
 class PipelineViewSet(TenantModelViewSet):
@@ -77,16 +80,124 @@ class PipelineStageViewSet(TenantModelViewSet):
     serializer_class = PipelineStageSerializer
 
 
+class DealPagination(PageNumberPagination):
+    page_size = 25
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
+
 class DealViewSet(TenantModelViewSet):
     queryset = Deal.objects.select_related("business", "client", "lead", "pipeline", "stage", "owner")
     serializer_class = DealSerializer
+    pagination_class = DealPagination
+
+    def get_serializer_class(self):
+        if self.action in {"list", "board"}:
+            return DealListSerializer
+        return DealSerializer
+
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        if isinstance(response.data, dict):
+            base_queryset = self.filter_queryset(self.get_queryset())
+            response.data["facets"] = self._build_facets(base_queryset)
+        return response
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = super().get_queryset().prefetch_related(
+            Prefetch(
+                "tasks",
+                queryset=Task.objects.exclude(status__in=[Task.Statuses.DONE, Task.Statuses.CANCELLED]).order_by("due_at", "-created_at"),
+                to_attr="open_tasks_for_list",
+            )
+        )
+        params = self.request.query_params
         client_ids = self.parse_query_id_list("client_ids")
         if client_ids:
             queryset = queryset.filter(client_id__in=client_ids)
+        pipeline = params.get("pipeline")
+        if pipeline:
+            queryset = queryset.filter(pipeline_id=pipeline)
+        stage = params.get("stage")
+        if stage:
+            queryset = queryset.filter(stage_id=stage)
+        statuses = self.parse_query_list("statuses") or self.parse_query_list("status")
+        if statuses:
+            queryset = queryset.filter(status__in=statuses)
+        owner = params.get("owner")
+        if owner:
+            queryset = queryset.filter(owner_id=owner)
+        if params.get("unassigned") == "true":
+            queryset = queryset.filter(owner__isnull=True)
+        if params.get("mine") == "true":
+            queryset = queryset.filter(owner=self.request.user)
+        source = params.get("source")
+        if source:
+            queryset = queryset.filter(source=source)
+        search = (params.get("search") or "").strip()
+        if search:
+            queryset = queryset.filter(
+                Q(title__icontains=search)
+                | Q(source__icontains=search)
+                | Q(client__full_name__icontains=search)
+                | Q(client__phone__icontains=search)
+                | Q(client__email__icontains=search)
+            )
+        amount_min = params.get("amount_min") or params.get("min")
+        if amount_min not in (None, ""):
+            queryset = queryset.filter(amount__gte=amount_min)
+        amount_max = params.get("amount_max") or params.get("max")
+        if amount_max not in (None, ""):
+            queryset = queryset.filter(amount__lte=amount_max)
+        created_from = params.get("created_from") or params.get("from")
+        if created_from:
+            queryset = queryset.filter(created_at__date__gte=created_from)
+        created_to = params.get("created_to") or params.get("to")
+        if created_to:
+            queryset = queryset.filter(created_at__date__lte=created_to)
+        expected_close_from = params.get("expected_close_from")
+        if expected_close_from:
+            queryset = queryset.filter(expected_close_at__gte=expected_close_from)
+        expected_close_to = params.get("expected_close_to")
+        if expected_close_to:
+            queryset = queryset.filter(expected_close_at__lte=expected_close_to)
+        quick = params.get("quick")
+        if quick == "overdue":
+            now = timezone.now()
+            queryset = queryset.filter(stage__sla_minutes__isnull=False, stage_entered_at__lt=now - timezone.timedelta(minutes=1))
+        elif quick == "no_tasks":
+            queryset = queryset.filter(status=Deal.Statuses.OPEN, next_action_at__isnull=True).exclude(
+                tasks__status__in=[Task.Statuses.OPEN, Task.Statuses.IN_PROGRESS]
+            )
+        elif quick == "hot":
+            queryset = queryset.filter(
+                Q(expected_close_at__lt=timezone.now().date())
+                | (Q(status=Deal.Statuses.OPEN) & Q(next_action_at__isnull=True) & ~Q(tasks__status__in=[Task.Statuses.OPEN, Task.Statuses.IN_PROGRESS]))
+            )
+
+        ordering = params.get("ordering")
+        allowed_ordering = {
+            "updated_at",
+            "-updated_at",
+            "created_at",
+            "-created_at",
+            "amount",
+            "-amount",
+            "expected_close_at",
+            "-expected_close_at",
+            "stage__order",
+            "-stage__order",
+        }
+        if ordering in allowed_ordering:
+            queryset = queryset.order_by(ordering, "-updated_at")
         return queryset
+
+    def _build_facets(self, queryset):
+        return {
+            "status": {item["status"]: item["count"] for item in queryset.values("status").annotate(count=Count("id", distinct=True))},
+            "source": {item["source"] or "manual": item["count"] for item in queryset.values("source").annotate(count=Count("id", distinct=True))},
+            "stage": {str(item["stage"]): item["count"] for item in queryset.values("stage").annotate(count=Count("id", distinct=True))},
+        }
 
     def perform_create(self, serializer):
         serializer.validated_data.setdefault("stage_entered_at", timezone.now())
@@ -232,6 +343,90 @@ class DealViewSet(TenantModelViewSet):
     def crm_card(self, request, pk=None):
         deal = self.get_object()
         return Response(deal_crm_card(deal))
+
+    @action(detail=False, methods=["get"])
+    def summary(self, request):
+        queryset = self._filtered_for_analytics()
+        open_deals = queryset.filter(status=Deal.Statuses.OPEN)
+        won_deals = queryset.filter(status=Deal.Statuses.WON)
+        lost_deals = queryset.filter(status=Deal.Statuses.LOST)
+        no_task_deals = open_deals.filter(next_action_at__isnull=True).exclude(tasks__status__in=[Task.Statuses.OPEN, Task.Statuses.IN_PROGRESS])
+        hot_deals = open_deals.filter(
+            Q(expected_close_at__lt=timezone.now().date())
+            | (Q(next_action_at__isnull=True) & ~Q(tasks__status__in=[Task.Statuses.OPEN, Task.Statuses.IN_PROGRESS]))
+        )
+        by_status = {item["status"]: item["count"] for item in queryset.values("status").annotate(count=Count("id", distinct=True))}
+        by_source = {item["source"] or "manual": item["count"] for item in queryset.values("source").annotate(count=Count("id", distinct=True))}
+        by_stage = {str(item["stage"]): item["count"] for item in queryset.values("stage").annotate(count=Count("id", distinct=True))}
+        return Response(
+            {
+                "total": queryset.count(),
+                "open": open_deals.count(),
+                "won": won_deals.count(),
+                "lost": lost_deals.count(),
+                "pipeline_value": str(open_deals.aggregate(value=Sum("amount"))["value"] or 0),
+                "expected_revenue": str(sum(float(deal.amount or 0) * ((deal.probability or getattr(deal.stage, "probability", 0) or 0) / 100) for deal in open_deals)),
+                "overdue": self._overdue_queryset(open_deals).count(),
+                "no_tasks": no_task_deals.distinct().count(),
+                "hot": hot_deals.distinct().count(),
+                "mine": queryset.filter(owner=request.user).count(),
+                "by_status": by_status,
+                "by_source": by_source,
+                "by_stage": by_stage,
+            }
+        )
+
+    @action(detail=False, methods=["get"])
+    def board(self, request):
+        queryset = self.get_queryset()
+        pipeline_id = request.query_params.get("pipeline")
+        if pipeline_id:
+            stages = PipelineStage.objects.filter(pipeline_id=pipeline_id, business__in=queryset.values("business")).order_by("order", "name")
+        else:
+            first_pipeline = queryset.values_list("pipeline_id", flat=True).first()
+            stages = PipelineStage.objects.filter(pipeline_id=first_pipeline).order_by("order", "name") if first_pipeline else PipelineStage.objects.none()
+        try:
+            limit = min(max(int(request.query_params.get("limit_per_stage", 10)), 1), 50)
+            offset = max(int(request.query_params.get("offset", 0)), 0)
+        except ValueError:
+            limit = 10
+            offset = 0
+
+        serializer_class = self.get_serializer_class()
+        payload = []
+        for stage in stages:
+            stage_queryset = queryset.filter(stage=stage).order_by("-updated_at", "-id")
+            total = stage_queryset.count()
+            deals = stage_queryset[offset : offset + limit]
+            payload.append(
+                {
+                    **PipelineStageSerializer(stage).data,
+                    "count": total,
+                    "offset": offset,
+                    "limit": limit,
+                    "has_more": total > offset + limit,
+                    "deals": serializer_class(deals, many=True, context={"request": request}).data,
+                }
+            )
+        return Response({"stages": payload})
+
+    def _filtered_for_analytics(self):
+        params = self.request.query_params.copy()
+        params.pop("quick", None)
+        original = self.request._request.GET
+        self.request._request.GET = params
+        try:
+            return self.get_queryset()
+        finally:
+            self.request._request.GET = original
+
+    def _overdue_queryset(self, queryset):
+        overdue_ids = []
+        now = timezone.now()
+        for deal in queryset.filter(stage__sla_minutes__isnull=False, stage_entered_at__isnull=False).select_related("stage"):
+            if deal.stage_entered_at and deal.stage and deal.stage.sla_minutes and now > deal.stage_entered_at + timezone.timedelta(minutes=deal.stage.sla_minutes):
+                overdue_ids.append(deal.id)
+        return queryset.filter(id__in=overdue_ids)
 
 
 class StageTransitionViewSet(TenantModelViewSet):

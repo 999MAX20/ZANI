@@ -34,11 +34,39 @@ export function initials(name: string) {
 }
 
 export function getClient(lead: Lead, clients: Client[]) {
-  return clients.find((client) => client.id === lead.client);
+  const client = clients.find((client) => client.id === lead.client);
+  if (client) return client;
+  if (!lead.client_name && !lead.client_phone && !lead.client_email) return undefined;
+  return {
+    id: lead.client,
+    business: lead.business,
+    full_name: lead.client_name || "",
+    phone: lead.client_phone || "",
+    email: lead.client_email || "",
+    whatsapp_id: "",
+    telegram_id: "",
+    instagram_id: "",
+    source: "manual" as const,
+    notes: "",
+    created_at: lead.created_at,
+    updated_at: lead.updated_at,
+  };
 }
 
 export function getService(lead: Lead, services: Service[]) {
-  return services.find((service) => service.id === lead.service);
+  const service = services.find((service) => service.id === lead.service);
+  if (service || !lead.service || !lead.service_name) return service;
+  return {
+    id: lead.service,
+    business: lead.business,
+    name: lead.service_name,
+    description: "",
+    duration_minutes: 0,
+    price_from: null,
+    is_active: true,
+    created_at: lead.created_at,
+    updated_at: lead.updated_at,
+  };
 }
 
 export function getStatusLabel(status: Lead["status"], t: Translate) {

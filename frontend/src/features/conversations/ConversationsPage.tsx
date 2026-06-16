@@ -42,6 +42,7 @@ import { hasPermission } from "../../lib/permissions";
 import { realtimeIntervals, realtimeQueryOptions } from "../../lib/realtime";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useAuth } from "../auth/AuthProvider";
+import { ConversationQueueFilters } from "./components/ConversationQueueFilters";
 
 type InboxPreset = "all" | "mine" | "new" | "attention" | "custom";
 type InboxSort = "latest" | "unread" | "first_response";
@@ -59,26 +60,12 @@ type Translate = ReturnType<typeof useI18n>["t"];
 
 const CONVERSATIONS_PRESET_STORAGE_KEY = "zani_conversations_filters_v1";
 
-const presetOptions: Array<{ value: InboxPreset; label: string }> = [
-  { value: "all", label: "Все" },
-  { value: "mine", label: "Я (ответственный)" },
-  { value: "new", label: "Новые" },
-  { value: "attention", label: "Требуют внимания" },
-  { value: "custom", label: "Пользовательские" },
-];
-
-const sortOptions = [
-  { value: "latest", label: "По последнему сообщению" },
-  { value: "unread", label: "По непрочитанным сверху" },
-  { value: "first_response", label: "По сроку первого ответа" },
-] as const;
-
 const priorityOptions = [
-  { value: "", label: "Все приоритеты" },
-  { value: "urgent", label: "Срочный" },
-  { value: "high", label: "Высокий" },
-  { value: "normal", label: "Обычный" },
-  { value: "low", label: "Низкий" },
+  { value: "", labelKey: "conversations.anyPriority" },
+  { value: "urgent", labelKey: "notification.priority.urgent" },
+  { value: "high", labelKey: "notification.priority.high" },
+  { value: "normal", labelKey: "notification.priority.normal" },
+  { value: "low", labelKey: "notification.priority.low" },
 ];
 
 const channelOptions = [
@@ -88,8 +75,6 @@ const channelOptions = [
   { value: "whatsapp", label: "WhatsApp" },
   { value: "instagram", label: "Instagram" },
 ];
-
-const boolAllOption = { value: "all", label: "Без фильтра" };
 
 function getSavedConversationsFilterState() {
   if (typeof window === "undefined") return null;
@@ -374,7 +359,6 @@ export function ConversationsPage() {
   const [bulkMode, setBulkMode] = useState(false);
   const [mobileThreadOpen, setMobileThreadOpen] = useState(() => Boolean(searchParams.get("conversation")));
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [isFiltersPanelOpen, setIsFiltersPanelOpen] = useState(false);
   const [filters, setFilters] = useState<InboxFilters>(() => {
     const base: InboxFilters = {
       status: searchParams.get("status") || "",
@@ -566,7 +550,7 @@ export function ConversationsPage() {
     setSearchParams(params, { replace: true });
   }, [conversations.isLoading, sortedItems, searchParams, selectedId, setSearchParams]);
 
-  const messages = useInfiniteQuery<PaginatedInboxMessageResponse, Error, PaginatedInboxMessageResponse, ReturnType<typeof inboxQueryKeys.messages>, number | null>({
+  const messages = useInfiniteQuery<PaginatedInboxMessageResponse, Error, InfiniteData<PaginatedInboxMessageResponse>, ReturnType<typeof inboxQueryKeys.messages>, number | null>({
     queryKey: inboxQueryKeys.messages(selected?.id),
     queryFn: ({ pageParam }) => inboxApi.listMessages(selected!.id, {
       limit: INBOX_MESSAGES_PAGE_SIZE,
@@ -606,38 +590,102 @@ export function ConversationsPage() {
 
   const activeFilterSummary = useMemo(() => {
     const parts: string[] = [];
-    if (filters.bot) parts.push("Агент");
+    if (filters.bot) parts.push(t("conversations.agent"));
     if (filters.channel) parts.push(channelLabel(filters.channel, t));
-    if (filters.priority) parts.push(`Приоритет: ${filters.priority}`);
-    if (filters.unread === "true") parts.push("Непрочитанные");
-    if (filters.handoff_required === "true") parts.push("Требуют оператора");
-    if (filters.bot_enabled === "false") parts.push("Бот отключен");
-    if (filters.bot_enabled === "true") parts.push("Бот включен");
-    if (filters.assigned_to === "me") parts.push("Назначен мне");
-    if (filters.assigned_to === "unassigned") parts.push("Без ответственного");
-    if (filters.status === "open") parts.push("Активные");
-    if (filters.status === "closed") parts.push("Закрытые");
+    if (filters.priority) parts.push(`${t("conversations.priority")}: ${filters.priority}`);
+    if (filters.unread === "true") parts.push(t("conversations.unreadMessages"));
+    if (filters.handoff_required === "true") parts.push(t("conversations.needsOperator"));
+    if (filters.bot_enabled === "false") parts.push(t("conversations.botPaused"));
+    if (filters.bot_enabled === "true") parts.push(t("conversations.botActive"));
+    if (filters.assigned_to === "me") parts.push(t("conversations.assignedToMeFilter"));
+    if (filters.assigned_to === "unassigned") parts.push(t("conversations.unassigned"));
+    if (filters.status === "open") parts.push(t("conversations.active"));
+    if (filters.status === "closed") parts.push(t("status.closed"));
     return parts;
   }, [filters, t]);
 
-  useEffect(() => {
-    if (hasActiveFilters || activePreset !== "all") {
-      setIsFiltersPanelOpen(true);
-    }
-  }, [hasActiveFilters, activePreset]);
+  const queueFilterOptions = useMemo(() => [
+    { value: "all", label: `${t("conversations.queueAll")} (${conversationCounts.all})` },
+    { value: "new", label: `${t("conversations.unreadMessages")} (${summary.data?.unread ?? conversationCounts.unread})` },
+    { value: "attention", label: `${t("conversations.attention")} (${summary.data?.handoff_required ?? conversationCounts.attention})` },
+    { value: "paused", label: `${t("conversations.botPaused")} (${summary.data?.bot_paused ?? conversationCounts.botDisabled})` },
+    { value: "closed", label: `${t("status.closed")} (${conversationCounts.closed})` },
+  ], [conversationCounts.all, conversationCounts.attention, conversationCounts.botDisabled, conversationCounts.closed, conversationCounts.unread, summary.data?.bot_paused, summary.data?.handoff_required, summary.data?.unread, t]);
+
+  const ownerFilterOptions = useMemo(() => [
+    { value: "all", label: `${t("conversations.allManagers")} (${conversationCounts.all})` },
+    { value: "me", label: `${t("conversations.assignedToMeFilter")} (${summary.data?.assigned_to_me ?? 0})` },
+    { value: "unassigned", label: `${t("conversations.unassigned")} (${summary.data?.unassigned ?? conversationCounts.unassigned})` },
+  ], [conversationCounts.all, conversationCounts.unassigned, summary.data?.assigned_to_me, summary.data?.unassigned, t]);
+
+  const agentFilterOptions = useMemo(() => [
+    { value: "", label: t("conversations.allAgents") },
+    ...(bots.data || []).map((bot) => ({ value: bot.id, label: bot.name })),
+  ], [bots.data, t]);
+
+  const localizedChannelOptions = useMemo(() => channelOptions.map((option) => ({
+    ...option,
+    label: option.value ? option.label : t("conversations.allChannels"),
+  })), [t]);
+
+  const localizedPriorityOptions = useMemo(() => priorityOptions.map((option) => ({
+    value: option.value,
+    label: t(option.labelKey),
+  })), [t]);
+
+  const localizedSortOptions = useMemo(() => [
+    { value: "latest", label: t("conversations.sortLatest") },
+    { value: "unread", label: t("conversations.sortUnread") },
+    { value: "first_response", label: t("conversations.sortFirstResponse") },
+  ], [t]);
+
+  const localizedStatusOptions = useMemo(() => [
+    { value: "all", label: `${t("conversations.noFilter")} (${conversationCounts.all})` },
+    { value: "open", label: `${t("conversations.active")} (${conversationCounts.active})` },
+    { value: "closed", label: `${t("status.closed")} (${conversationCounts.closed})` },
+  ], [conversationCounts.active, conversationCounts.all, conversationCounts.closed, t]);
 
   function handleSortChange(sort: string) {
     const nextSort = sort === "latest" ? "latest" : sort === "unread" ? "unread" : "first_response";
     applyFilters(filters, activePreset, nextSort);
   }
 
-  function setPresetFilters(preset: InboxPreset) {
-    const next = getPresetFilters(preset, filters);
-    applyFilters(next, preset);
+  function handleQueueChange(value: string) {
+    const next: InboxFilters = {
+      ...filters,
+      unread: undefined,
+      handoff_required: undefined,
+      bot_enabled: undefined,
+      status: "",
+    };
+    if (value === "new") next.unread = "true";
+    if (value === "attention") next.handoff_required = "true";
+    if (value === "paused") next.bot_enabled = "false";
+    if (value === "closed") next.status = "closed";
+    applyFilters(next, value === "all" && !next.assigned_to && !next.bot && !next.channel && !next.priority ? "all" : "custom");
+    setSelectedIds([]);
+    setBulkMode(false);
+  }
+
+  function handleOwnerChange(value: string) {
+    const next: InboxFilters = {
+      ...filters,
+      assigned_to: value === "all" ? undefined : value,
+    };
+    applyFilters(next, value === "all" && !next.unread && !next.handoff_required && !next.bot_enabled && !next.status && !next.bot && !next.channel && !next.priority ? "all" : "custom");
+    setSelectedIds([]);
+    setBulkMode(false);
   }
 
   function updateFilters(next: InboxFilters) {
     applyFilters(next, "custom");
+    setSelectedIds([]);
+    setBulkMode(false);
+  }
+
+  function resetConversationFilters() {
+    const next: InboxFilters = { search: filters.search };
+    applyFilters(next, "all", "latest");
     setSelectedIds([]);
     setBulkMode(false);
   }
@@ -954,153 +1002,38 @@ export function ConversationsPage() {
         className="overflow-hidden border border-slate-200 shadow-soft lg:grid-cols-[310px_minmax(0,1fr)] 2xl:grid-cols-[310px_minmax(720px,1fr)_280px]"
       >
         <WorkQueueListPane mobileDetailOpen={mobileThreadOpen}>
-          <div className="border-b border-slate-100 p-3">
-            <button
-              type="button"
-              className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left text-xs font-black"
-              onClick={() => setIsFiltersPanelOpen((state) => !state)}
-              aria-expanded={isFiltersPanelOpen}
-            >
-              <div className="flex min-w-0 flex-col">
-                <span className="text-midnight">Фильтры</span>
-                <span className="truncate text-[11px] font-semibold text-slate-500">
-                  {activeFilterSummary.length ? activeFilterSummary.join(" · ") : "Нажмите, чтобы показать настройки"}
-                </span>
-              </div>
-              <ChevronDown
-                size={16}
-                className={cn("h-4 w-4 shrink-0 text-slate-400 transition-transform", isFiltersPanelOpen ? "rotate-180" : "rotate-0")}
-              />
-            </button>
-            {isFiltersPanelOpen ? (
-              <div className="mt-3 grid gap-2">
-                <Select
-                  className="min-h-10 rounded-lg text-xs font-bold text-midnight"
-                  value={filters.bot || ""}
-                  onChange={(event) => updateFilters({ ...filters, bot: event.target.value || undefined })}
-                  options={[
-                    { value: "", label: t("conversations.allAgents") },
-                    ...(bots.data || []).map((bot) => ({ value: bot.id, label: bot.name })),
-                  ]}
-                />
-                <div className="grid grid-cols-2 gap-2">
-                  <Select
-                    className="min-h-10 rounded-lg text-xs font-bold text-midnight"
-                    value={filters.channel || ""}
-                    onChange={(event) => updateFilters({ ...filters, channel: event.target.value || undefined })}
-                    options={channelOptions}
-                  />
-                  <Select
-                    className="min-h-10 rounded-lg text-xs font-bold text-midnight"
-                    value={filters.priority || ""}
-                    onChange={(event) => updateFilters({ ...filters, priority: event.target.value || undefined })}
-                    options={priorityOptions}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="text-xs text-slate-700 font-black">Режимы</div>
-                  <Select
-                    className="min-h-10 rounded-lg text-xs font-bold text-midnight"
-                    value={sortBy}
-                    onChange={(event) => handleSortChange(event.target.value)}
-                    options={sortOptions.map((sort) => ({ value: sort.value, label: sort.label }))}
-                  />
-                </div>
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                  <div className="text-xs text-slate-700 font-black">Непрочитанные</div>
-                  <Select
-                    className="min-h-10 rounded-lg text-xs font-bold text-midnight"
-                    value={filters.unread === "true" ? "true" : "all"}
-                    onChange={(event) => {
-                      const value = event.target.value === "true" ? "true" : undefined;
-                      applyFilters({ ...filters, unread: value }, "custom");
-                    }}
-                    options={[
-                      { ...boolAllOption, label: `Без фильтра (${conversationCounts.all})`, value: "all" },
-                      { value: "true", label: `Только непрочитанные (${conversationCounts.unread})` },
-                    ]}
-                  />
-                  <div className="text-xs text-slate-700 font-black">Требуют оператора</div>
-                  <Select
-                    className="min-h-10 rounded-lg text-xs font-bold text-midnight"
-                    value={filters.handoff_required === "true" ? "true" : "all"}
-                    onChange={(event) => {
-                      const value = event.target.value === "true" ? "true" : undefined;
-                      applyFilters({ ...filters, handoff_required: value }, "custom");
-                    }}
-                    options={[
-                      { ...boolAllOption, label: `Без фильтра (${conversationCounts.all})`, value: "all" },
-                      { value: "true", label: `Только требуют оператора (${conversationCounts.attention})` },
-                    ]}
-                  />
-                  <div className="text-xs text-slate-700 font-black">Бот</div>
-                  <Select
-                    className="min-h-10 rounded-lg text-xs font-bold text-midnight"
-                    value={filters.bot_enabled === "false" ? "false" : filters.bot_enabled === "true" ? "true" : "all"}
-                    onChange={(event) => {
-                      const raw = event.target.value;
-                      const value = raw === "all" ? undefined : raw;
-                      applyFilters({ ...filters, bot_enabled: value }, "custom");
-                    }}
-                    options={[
-                      { ...boolAllOption, label: `Без фильтра (${conversationCounts.all})`, value: "all" },
-                      { value: "false", label: `Только бот выключен (${conversationCounts.botDisabled})` },
-                      { value: "true", label: "Только бот включен" },
-                    ]}
-                  />
-                  <div className="text-xs text-slate-700 font-black">Ответственный</div>
-                  <Select
-                    className="min-h-10 rounded-lg text-xs font-bold text-midnight"
-                    value={filters.assigned_to || "all"}
-                    onChange={(event) => {
-                      const raw = event.target.value;
-                      const value = raw === "all" ? undefined : raw;
-                      applyFilters({ ...filters, assigned_to: value }, "custom");
-                    }}
-                    options={[
-                      { ...boolAllOption, value: "all", label: `Без фильтра (${conversationCounts.all})` },
-                      { value: "me", label: `Назначен мне (${conversationCounts.myTurn})` },
-                      { value: "unassigned", label: `Без ответственного (${conversationCounts.unassigned})` },
-                    ]}
-                  />
-                  <div className="text-xs text-slate-700 font-black">Статус</div>
-                  <Select
-                    className="min-h-10 rounded-lg text-xs font-bold text-midnight"
-                    value={filters.status || "all"}
-                    onChange={(event) => {
-                      const raw = event.target.value;
-                      const value = raw === "all" ? "" : raw;
-                      applyFilters({ ...filters, status: value }, "custom");
-                    }}
-                    options={[
-                      { ...boolAllOption, label: `Без фильтра (${conversationCounts.all})`, value: "all" },
-                      { value: "open", label: `Активные (${conversationCounts.active})` },
-                      { value: "closed", label: `Закрытые (${conversationCounts.closed})` },
-                    ]}
-                  />
-                </div>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {[
-                    { value: "all", label: `${presetOptions[0].label} (${summary.data?.total ?? conversationCounts.all})`, count: summary.data?.total ?? conversationCounts.all },
-                    { value: "mine", label: `${presetOptions[1].label} (${summary.data?.assigned_to_me ?? 0})`, count: summary.data?.assigned_to_me ?? 0 },
-                    { value: "new", label: `${presetOptions[2].label} (${summary.data?.unread ?? 0})`, count: summary.data?.unread ?? 0 },
-                    { value: "attention", label: `${presetOptions[3].label} (${summary.data?.handoff_required ?? 0})`, count: summary.data?.handoff_required ?? 0 },
-                  ].map((item) => (
-                    <Button
-                      key={item.value}
-                      type="button"
-                      className="h-8 rounded-full px-3 text-[11px]"
-                      variant={activePreset === item.value ? "ai" : "secondary"}
-                      onClick={() => setPresetFilters(item.value as InboxPreset)}
-                      title={item.label}
-                    >
-                      {item.label}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-          </div>
+          <ConversationQueueFilters
+            filters={filters}
+            sortBy={sortBy}
+            hasActiveFilters={hasActiveFilters}
+            activeFilterSummary={activeFilterSummary}
+            queueOptions={queueFilterOptions}
+            ownerOptions={ownerFilterOptions}
+            agentOptions={agentFilterOptions}
+            channelOptions={localizedChannelOptions}
+            priorityOptions={localizedPriorityOptions}
+            statusOptions={localizedStatusOptions}
+            sortOptions={localizedSortOptions}
+            labels={{
+              filters: t("conversations.filters"),
+              advancedFilters: t("conversations.advancedFilters"),
+              resetFilters: t("conversations.resetFilters"),
+              agent: t("conversations.agent"),
+              channel: t("conversations.channel"),
+              priority: t("conversations.priority"),
+              status: t("conversations.status"),
+              bot: t("conversations.bot"),
+              sort: t("conversations.sort"),
+              noFilter: t("conversations.noFilter"),
+              botEnabled: t("conversations.botActive"),
+              botPaused: t("conversations.botPaused"),
+            }}
+            onQueueChange={handleQueueChange}
+            onOwnerChange={handleOwnerChange}
+            onFilterChange={updateFilters}
+            onSortChange={handleSortChange}
+            onReset={resetConversationFilters}
+          />
 
           {items.length ? (
             <div className="border-b border-slate-100 px-3 py-2">

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
@@ -5,18 +7,24 @@ from apps.automations.engine import run_automations_for_event
 from apps.automations.models import AutomationRule
 from apps.billing.models import UsageCounter
 from apps.billing.usage import increment_usage
-from apps.bots.inbox_service import register_bot_message
 from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
 from apps.conversations.auto_pipeline import maybe_run_auto_pipeline
 from apps.integrations.models import IntegrationEventLog
-from apps.integrations.providers import parse_webhook, send_message, verify_webhook
 from apps.integrations.sanitization import sanitize_config
+from apps.integrations.whatsapp_credentials import (
+    get_whatsapp_access_token,
+    get_whatsapp_connector,
+    has_whatsapp_access_token,
+    store_whatsapp_access_token,
+)
 from apps.notifications.delivery import handle_appointment_followup_reply
 from apps.outreach.consent import record_inbound_consent
 
 
 def verify_whatsapp_secret(request):
-    return verify_webhook(BotChannel.Channels.WHATSAPP, request)
+    from apps.integrations.providers.whatsapp import WhatsAppProvider
+
+    return WhatsAppProvider().verify_webhook(request)
 
 
 def resolve_whatsapp_channel(provided_secret="", phone_number_id=""):
@@ -42,12 +50,96 @@ def resolve_whatsapp_channel(provided_secret="", phone_number_id=""):
 
 
 def parse_inbound_message(payload, headers=None):
-    parsed = parse_webhook(BotChannel.Channels.WHATSAPP, payload, headers=headers or {})
+    from apps.integrations.providers.whatsapp import WhatsAppProvider
+
+    parsed = WhatsAppProvider().parse_webhook(payload, headers=headers or {})
     if not parsed.get("sender_id"):
         raise ValidationError("WhatsApp sender id is missing.")
     if not parsed.get("text"):
         raise ValidationError("WhatsApp message text is missing.")
     return parsed
+
+
+def process_whatsapp_statuses(payload, provided_secret=""):
+    statuses = []
+    phone_number_id = ""
+    for entry in payload.get("entry") or []:
+        for change in entry.get("changes") or []:
+            value = change.get("value") or {}
+            metadata = value.get("metadata") or {}
+            phone_number_id = phone_number_id or str(metadata.get("phone_number_id") or "")
+            statuses.extend(value.get("statuses") or [])
+    if not statuses:
+        return None
+
+    channel = resolve_whatsapp_channel(provided_secret, phone_number_id=phone_number_id)
+    business = channel.bot.business
+    safe_payload = sanitize_config(payload)
+    processed = 0
+    for item in statuses:
+        message_id = str(item.get("id") or "")
+        status = str(item.get("status") or "")
+        if not message_id:
+            continue
+        message = BotMessage.objects.filter(
+            conversation__business=business,
+            conversation__channel=BotConversation.Channels.WHATSAPP,
+            direction=BotMessage.Directions.OUTBOUND,
+            external_message_id=message_id,
+        ).first()
+        if not message:
+            continue
+        timestamp = _whatsapp_timestamp(item.get("timestamp"))
+        update_fields = ["payload_json"]
+        payload_json = dict(message.payload_json or {})
+        payload_json["whatsapp_status"] = sanitize_config(item)
+        message.payload_json = payload_json
+        if status == "sent":
+            message.status = BotMessage.Statuses.SENT
+            message.sent_at = message.sent_at or timestamp
+            update_fields.extend(["status", "sent_at"])
+        elif status == "delivered":
+            message.status = BotMessage.Statuses.SENT
+            message.delivered_at = message.delivered_at or timestamp
+            update_fields.extend(["status", "delivered_at"])
+        elif status == "read":
+            message.status = BotMessage.Statuses.SENT
+            message.read_at = message.read_at or timestamp
+            message.delivered_at = message.delivered_at or timestamp
+            update_fields.extend(["status", "read_at", "delivered_at"])
+        elif status == "failed":
+            message.status = BotMessage.Statuses.FAILED
+            message.error_text = _whatsapp_status_error(item)
+            update_fields.extend(["status", "error_text"])
+        message.save(update_fields=list(dict.fromkeys(update_fields)))
+        processed += 1
+
+    IntegrationEventLog.objects.create(
+        business=business,
+        provider=BotChannel.Channels.WHATSAPP,
+        channel=BotChannel.Channels.WHATSAPP,
+        direction=IntegrationEventLog.Directions.INBOUND,
+        payload_json={"payload": safe_payload, "statuses": len(statuses), "processed": processed},
+        status=IntegrationEventLog.Statuses.PROCESSED,
+    )
+    return {"processed": processed, "statuses": len(statuses)}
+
+
+def _whatsapp_timestamp(value):
+    try:
+        if value:
+            return datetime.fromtimestamp(int(value), tz=timezone.get_current_timezone())
+    except (TypeError, ValueError, OSError):
+        pass
+    return timezone.now()
+
+
+def _whatsapp_status_error(item):
+    errors = item.get("errors") or []
+    if not errors:
+        return "WhatsApp delivery failed."
+    error = errors[0]
+    return str(error.get("title") or error.get("message") or error.get("code") or "WhatsApp delivery failed.")
 
 
 def save_whatsapp_inbound_message(payload, provided_secret="", headers=None):
@@ -106,6 +198,8 @@ def save_whatsapp_inbound_message(payload, provided_secret="", headers=None):
         },
         status=BotMessage.Statuses.RECEIVED,
     )
+    from apps.bots.inbox_service import register_bot_message
+
     register_bot_message(message)
     handle_appointment_followup_reply(
         business=conversation.business,
@@ -144,4 +238,6 @@ def save_whatsapp_inbound_message(payload, provided_secret="", headers=None):
 
 
 def send_whatsapp_message(channel, recipient_id, text):
-    return send_message(channel, recipient_id, text)
+    from apps.integrations.providers.whatsapp import WhatsAppProvider
+
+    return WhatsAppProvider().send_message(channel, recipient_id, text)

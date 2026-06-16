@@ -9,11 +9,22 @@ export type ClientListSummary = {
   repeat: number;
 };
 
+export type ClientListFacets = {
+  source?: Record<string, number>;
+  activity?: {
+    active: number;
+    vip: number;
+    no_reply: number;
+    repeat: number;
+  };
+};
+
 type ClientListFilterParams = {
   q?: string;
   source?: string;
   tag?: Id | string;
   segment?: Id | string;
+  quick_filter?: "all" | "new" | "vip" | "no_reply" | "mine";
   page?: number;
   page_size?: number;
   client_ids?: string | number[];
@@ -25,6 +36,7 @@ export type ClientListResult = {
   next: string | null;
   previous: string | null;
   summary?: ClientListSummary;
+  facets?: ClientListFacets;
 };
 
 export const clientsApi = {
@@ -37,11 +49,17 @@ export const clientsApi = {
         }
       : params;
 
-    const { data } = await apiClient.get<Client[] | { results: Client[]; count?: number; next?: string | null; previous?: string | null }>("/api/clients/", {
+    const { data } = await apiClient.get<Client[] | { results: Client[]; count?: number; next?: string | null; previous?: string | null; summary?: ClientListSummary; facets?: ClientListFacets }>("/api/clients/", {
       params: payload,
     });
     const clients = unwrapList(data);
-    const metadata = data as { count?: number; next?: string | null; previous?: string | null; summary?: ClientListSummary };
+    const metadata = data as {
+      count?: number;
+      next?: string | null;
+      previous?: string | null;
+      summary?: ClientListSummary;
+      facets?: ClientListFacets;
+    };
 
     return {
       clients,
@@ -49,6 +67,7 @@ export const clientsApi = {
       next: metadata.next ?? null,
       previous: metadata.previous ?? null,
       summary: metadata.summary || undefined,
+      facets: metadata.facets || undefined,
     };
   },
   checkDuplicates: async (payload: {

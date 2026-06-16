@@ -129,6 +129,44 @@ class LeadCrmLightTests(TestCase):
 
         self.assertEqual(response.status_code, 404)
 
+    def test_lead_list_supports_filters_pagination_and_enriched_fields(self):
+        self.api.force_authenticate(self.owner)
+        self.assigned_lead.source = Lead.Sources.WHATSAPP
+        self.assigned_lead.save(update_fields=["source", "updated_at"])
+        self.other_lead.status = Lead.Statuses.IN_PROGRESS
+        self.other_lead.save(update_fields=["status", "updated_at"])
+
+        response = self.api.get(
+            "/api/leads/",
+            {"search": "Assigned", "source": Lead.Sources.WHATSAPP, "page_size": 1},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(len(response.data["results"]), 1)
+        row = response.data["results"][0]
+        self.assertEqual(row["id"], self.assigned_lead.id)
+        self.assertEqual(row["client_name"], "Assigned Client")
+        self.assertEqual(row["client_phone"], "+77010000001")
+        self.assertIn("ai_score", row)
+        self.assertIn("loss_risk", row)
+        self.assertEqual(response.data["facets"]["source"][Lead.Sources.WHATSAPP], 1)
+        self.assertEqual(response.data["facets"]["status"][Lead.Statuses.NEW], 1)
+
+    def test_lead_summary_returns_counts_for_access_scope(self):
+        self.api.force_authenticate(self.owner)
+        self.other_lead.status = Lead.Statuses.IN_PROGRESS
+        self.other_lead.responsible_user = None
+        self.other_lead.save(update_fields=["status", "responsible_user", "updated_at"])
+
+        response = self.api.get("/api/leads/summary/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["total"], 2)
+        self.assertEqual(response.data["unanswered"], 1)
+        self.assertEqual(response.data["in_progress"], 1)
+        self.assertEqual(response.data["by_status"][Lead.Statuses.IN_PROGRESS], 1)
+
 from apps.crm.models import Deal, Pipeline, PipelineStage
 from apps.notifications.models import Notification
 

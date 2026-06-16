@@ -10,6 +10,15 @@ class ClientSerializer(serializers.ModelSerializer):
     is_active = serializers.BooleanField(read_only=True)
     has_no_reply = serializers.BooleanField(read_only=True)
     is_vip = serializers.BooleanField(read_only=True)
+    leads_count = serializers.IntegerField(read_only=True)
+    deals_count = serializers.IntegerField(read_only=True)
+    appointments_count = serializers.IntegerField(read_only=True)
+    tasks_count = serializers.IntegerField(read_only=True)
+    conversations_count = serializers.IntegerField(read_only=True)
+    last_activity_at = serializers.DateTimeField(read_only=True, allow_null=True)
+    next_step_title = serializers.CharField(read_only=True, allow_blank=True)
+    next_step_date = serializers.DateTimeField(read_only=True, allow_null=True)
+    next_step_priority = serializers.CharField(read_only=True, allow_blank=True)
 
     class Meta:
         model = Client

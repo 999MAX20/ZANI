@@ -51,7 +51,7 @@ export function PublicLayout() {
             <Link to="/login">
               <Button variant="secondary" className="rounded-full">
                 <LogIn size={16} />
-                Sign in
+                {t("public.login")}
               </Button>
             </Link>
             <Link to="/contacts">
@@ -62,8 +62,9 @@ export function PublicLayout() {
             </Link>
           </div>
 
-          <Button variant="ghost" className="h-10 w-10 rounded-full px-0 md:hidden" onClick={() => setOpen((value) => !value)} aria-label={t("common.openNavigation")}>
+          <Button variant="secondary" className="h-10 rounded-full px-3 text-slate-700 md:hidden" onClick={() => setOpen((value) => !value)} aria-label={t("common.openNavigation")}>
             {open ? <X size={22} /> : <Menu size={22} />}
+            <span className="text-sm font-semibold">Меню</span>
           </Button>
         </div>
 
@@ -86,7 +87,7 @@ export function PublicLayout() {
                 </NavLink>
               ))}
               <Link to="/login" onClick={() => setOpen(false)} className="rounded-2xl px-4 py-3 text-sm font-semibold text-brand-700">
-                Sign in
+                {t("public.login")}
               </Link>
             </nav>
           </div>

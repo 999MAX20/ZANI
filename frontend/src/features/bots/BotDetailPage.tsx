@@ -15,8 +15,6 @@ import { ErrorState, LoadingState } from "../../components/ui/StateViews";
 import { useEntityData } from "../../hooks/useEntityData";
 import { useI18n } from "../../lib/i18n";
 import type { BotChannel } from "../../types";
-import { TelegramSetupCard } from "./TelegramSetupCard";
-import { WhatsAppSetupCard } from "./WhatsAppSetupCard";
 
 export function BotDetailPage() {
   const { t } = useI18n();
@@ -43,10 +41,6 @@ export function BotDetailPage() {
 
   const addWebsiteChannel = useMutation({
     mutationFn: () => botChannelsApi.create({ bot: botId, channel: "website", status: "draft", external_id: "", config_json: {} }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["bot-channels"] }),
-  });
-  const addTelegramChannel = useMutation({
-    mutationFn: () => botChannelsApi.create({ bot: botId, channel: "telegram", status: "draft", external_id: "", config_json: {} }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["bot-channels"] }),
   });
   const addWhatsAppChannel = useMutation({
@@ -85,7 +79,6 @@ export function BotDetailPage() {
 
   const channels = (botChannels.data || []).filter((channel) => channel.bot === bot.data.id);
   const websiteChannel = channels.find((channel) => channel.channel === "website");
-  const telegramChannel = channels.find((channel) => channel.channel === "telegram");
   const whatsappChannel = channels.find((channel) => channel.channel === "whatsapp");
   const conversations = (botConversations.data || []).filter((conversation) => conversation.bot === bot.data.id);
   const conversationIds = new Set(conversations.map((conversation) => conversation.id));
@@ -117,14 +110,6 @@ export function BotDetailPage() {
             </Button>
             <Button
               variant="secondary"
-              onClick={() => addTelegramChannel.mutate()}
-              isLoading={addTelegramChannel.isPending}
-              disabled={Boolean(telegramChannel)}
-            >
-              <Plus size={16} />{t("botDetail.addTelegramChannel")}
-            </Button>
-            <Button
-              variant="secondary"
               onClick={() => addWhatsAppChannel.mutate()}
               isLoading={addWhatsAppChannel.isPending}
               disabled={Boolean(whatsappChannel)}
@@ -135,9 +120,6 @@ export function BotDetailPage() {
         }
       />
       {addWebsiteChannel.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(addWebsiteChannel.error)} /></div> : null}
-      {addTelegramChannel.error ? (
-        <div className="mb-4"><ErrorState message={getApiErrorMessage(addTelegramChannel.error)} /></div>
-      ) : null}
       {addWhatsAppChannel.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(addWhatsAppChannel.error)} /></div> : null}
       {previewMutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(previewMutation.error)} /></div> : null}
       {followUpMutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(followUpMutation.error)} /></div> : null}
@@ -209,9 +191,24 @@ export function BotDetailPage() {
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_1fr]">
-        <TelegramSetupCard channel={telegramChannel} />
-
-        <WhatsAppSetupCard channel={whatsappChannel} />
+        <Card>
+          <CardBody className="flex h-full flex-col justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="grid h-11 w-11 place-items-center rounded-2xl bg-brand-50 text-brand-700">
+                <Radio size={20} />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-midnight">{t("aiAgents.channelsTitle")}</h2>
+                <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">{t("aiAgents.onboarding.channels.helpText")}</p>
+              </div>
+            </div>
+            <Link to={`/dashboard/ai-agents/${bot.data.id}/channels`}>
+              <Button type="button">
+                <ExternalLink size={16} /> {t("aiAgents.openChannels")}
+              </Button>
+            </Link>
+          </CardBody>
+        </Card>
 
         <Card>
           <CardBody>

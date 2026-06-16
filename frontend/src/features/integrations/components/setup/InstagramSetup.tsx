@@ -35,6 +35,7 @@ export function InstagramInlineSetup({
   const [oauthRedirectUri, setOauthRedirectUri] = useState("");
   const [showManualSetup, setShowManualSetup] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const metaRedirectUri = `${window.location.origin}${window.location.pathname}?zani_provider=instagram`;
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -99,11 +100,11 @@ export function InstagramInlineSetup({
     },
   });
 
-  const startOAuth = useMutation({
-    mutationFn: () => businessConnectorsApi.startInstagramOAuth({
-      business: businessId,
-      redirectUri: window.location.origin + "/dashboard/integrations?zani_provider=instagram",
-    }),
+	  const startOAuth = useMutation({
+	    mutationFn: () => businessConnectorsApi.startInstagramOAuth({
+	      business: businessId,
+	      redirectUri: metaRedirectUri,
+	    }),
     onSuccess: (data) => {
       setOauthState(data.state);
       setOauthRedirectUri(data.redirect_uri);
@@ -115,13 +116,13 @@ export function InstagramInlineSetup({
     },
   });
 
-  const completeOAuth = useMutation({
-    mutationFn: () => businessConnectorsApi.completeInstagramOAuth({
-      business: businessId,
-      code: oauthCode,
-      state: oauthState,
-      redirect_uri: oauthRedirectUri || window.location.origin + "/dashboard/integrations?zani_provider=instagram",
-      page_id: pageId,
+	  const completeOAuth = useMutation({
+	    mutationFn: () => businessConnectorsApi.completeInstagramOAuth({
+	      business: businessId,
+	      code: oauthCode,
+	      state: oauthState,
+	      redirect_uri: oauthRedirectUri || metaRedirectUri,
+	      page_id: pageId,
     }),
     onSuccess: () => {
       setOauthCode("");

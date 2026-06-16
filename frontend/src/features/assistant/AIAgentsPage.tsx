@@ -40,6 +40,12 @@ import { InstagramInlineSetup } from "../integrations/components/setup/Instagram
 import { LogoMark, ToggleSwitch } from "../integrations/components/setup/IntegrationSetupUi";
 import { TelegramInlineSetup } from "../integrations/components/setup/TelegramSetup";
 import { WhatsAppInlineSetup } from "../integrations/components/setup/WhatsAppSetup";
+import {
+  instagramOAuthCallbackType,
+  whatsappEmbeddedSignupCallbackType,
+  type InstagramOAuthCallback,
+  type WhatsAppEmbeddedSignupCallback,
+} from "../integrations/components/setup/metaCallbacks";
 
 type AgentSection = "profile" | "channels" | "knowledge" | "actions" | "test";
 
@@ -191,6 +197,43 @@ export function AIAgentsPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [newAgentName, setNewAgentName] = useState(() => t("aiAgents.defaultNewAgentName"));
   const [suggestedReply, setSuggestedReply] = useState<BotSuggestedReplyResponse | null>(null);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const code = url.searchParams.get("code");
+    const state = url.searchParams.get("state");
+    if (!code || !state) return;
+    const provider = url.searchParams.get("zani_provider");
+
+    const payload = provider === "instagram"
+      ? {
+          type: instagramOAuthCallbackType,
+          code,
+          state,
+        } satisfies InstagramOAuthCallback
+      : {
+          type: whatsappEmbeddedSignupCallbackType,
+          code,
+          state,
+          phone_number_id: url.searchParams.get("phone_number_id") || undefined,
+          waba_id: url.searchParams.get("waba_id") || undefined,
+          display_phone_number: url.searchParams.get("display_phone_number") || undefined,
+        } satisfies WhatsAppEmbeddedSignupCallback;
+
+    if (window.opener && !window.opener.closed) {
+      window.opener.postMessage(payload, window.location.origin);
+      window.close();
+      return;
+    }
+
+    url.searchParams.delete("code");
+    url.searchParams.delete("state");
+    url.searchParams.delete("zani_provider");
+    url.searchParams.delete("phone_number_id");
+    url.searchParams.delete("waba_id");
+    url.searchParams.delete("display_phone_number");
+    window.history.replaceState({}, document.title, `${url.pathname}${url.search}${url.hash}`);
+  }, []);
 
   const botList = bots.data || [];
   const matchedBot = selectedBotId ? botList.find((bot) => bot.id === selectedBotId) || null : null;

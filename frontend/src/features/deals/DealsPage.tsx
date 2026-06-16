@@ -11,7 +11,6 @@ import { useI18n } from "../../lib/i18n";
 import type { Deal, Id } from "../../types";
 import { DealsBusinessWidgets } from "./components/DealsBusinessWidgets";
 import { DealsFilters } from "./components/DealsFilters";
-import { DealsHeader } from "./components/DealsHeader";
 import { DealsList } from "./components/DealsList";
 import { DealActionModal, CreateDealModal, NextActionModal } from "./components/DealModals";
 import { useDealActions } from "./hooks/useDealActions";
@@ -24,8 +23,8 @@ export function DealsPage() {
   const { t } = useI18n();
   const { setPageHeader } = usePageHeader();
   const queryClient = useQueryClient();
-  const { business, data, isLoading } = useDeals();
   const { filters, updateFilters, resetFilters, activeFilterCount } = useDealFilters();
+  const { business, data, isLoading } = useDeals(filters);
   const { activePipeline, activeStages, rows, metrics } = useDealMetrics(data, filters);
   const sortedRows = useMemo(() => {
     return [...rows].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
@@ -107,7 +106,6 @@ export function DealsPage() {
   return (
     <>
       <div className="-mx-4 -mt-4 min-h-[calc(100vh-5rem)] bg-[#fbfcff] px-4 pb-6 pt-4 sm:-mx-6 sm:px-6 lg:-mx-6 lg:px-6">
-      <DealsHeader t={t} />
       {actions.hasError || deleteMutation.error ? <div className="mb-4"><ErrorState message={t("deals.saveChangeError")} /></div> : null}
       {actions.stageGuard ? <div className="mb-4 rounded-lg border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">{actions.stageGuard}</div> : null}
       {!data.pipelines.length ? <ErrorState message={t("deals.noPipeline")} /> : (

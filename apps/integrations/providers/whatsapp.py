@@ -1,14 +1,18 @@
 import hashlib
 import hmac
 import json
+from datetime import timedelta
 from urllib import request as urllib_request
 
 from django.conf import settings
+from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied
 
+from apps.core.security_config import has_strong_shared_secret
 from apps.core.production_rules import is_safe_public_https_url
 from apps.integrations.models import IntegrationEventLog
 from apps.integrations.providers.base import BaseChannelProvider
+from apps.integrations.whatsapp_credentials import get_whatsapp_access_token
 
 
 WHATSAPP_SECRET_HEADER = "HTTP_X_ZANI_WHATSAPP_SECRET"
@@ -26,6 +30,8 @@ class BaseWhatsAppAdapter(BaseChannelProvider):
             raise PermissionDenied("Invalid WhatsApp webhook secret.")
         app_secret = getattr(settings, "WHATSAPP_APP_SECRET", "")
         signature = request.META.get(META_SIGNATURE_HEADER, "")
+        if getattr(settings, "WHATSAPP_ENABLED", False) and not has_strong_shared_secret(app_secret):
+            raise PermissionDenied("WhatsApp app secret is not production-ready.")
         if app_secret and signature:
             expected_signature = "sha256=" + hmac.new(
                 app_secret.encode("utf-8"),
@@ -165,8 +171,9 @@ class WhatsAppProvider(BaseWhatsAppAdapter):
     def _send_meta_cloud_message(self, channel, recipient_id, text, payload=None):
         business = channel.bot.business
         config = channel.config_json or {}
-        access_token = config.get("access_token", "")
+        access_token = get_whatsapp_access_token(channel)
         phone_number_id = config.get("phone_number_id") or channel.external_id
+        template_name = (payload or {}).get("whatsapp_template_name")
         event_payload = {
             "recipient_id": recipient_id,
             "text": text,
@@ -185,6 +192,17 @@ class WhatsAppProvider(BaseWhatsAppAdapter):
                 error="WhatsApp Meta Cloud credentials are missing.",
             )
             return {"ok": False, "mock": False, "provider": self.provider, "reason": "WhatsApp Meta Cloud credentials are missing."}
+        if not template_name and not self._within_customer_service_window(channel, recipient_id):
+            reason = "WhatsApp free-form messages require a recent inbound customer message. Use an approved template outside the 24-hour service window."
+            self.log_event(
+                business=business,
+                channel=channel.channel,
+                direction=IntegrationEventLog.Directions.OUTBOUND,
+                payload=event_payload,
+                status=IntegrationEventLog.Statuses.FAILED,
+                error=reason,
+            )
+            return {"ok": False, "mock": False, "provider": self.provider, "reason": reason, "requires_template": True}
 
         try:
             message_payload = self._meta_cloud_message_payload(recipient_id, text, payload=payload)
@@ -200,6 +218,7 @@ class WhatsAppProvider(BaseWhatsAppAdapter):
             )
             with urllib_request.urlopen(request, timeout=15) as response:
                 result = json.loads(response.read().decode("utf-8"))
+            provider_message_id = self._provider_message_id(result)
             self.log_event(
                 business=business,
                 channel=channel.channel,
@@ -207,7 +226,7 @@ class WhatsAppProvider(BaseWhatsAppAdapter):
                 payload={**event_payload, "provider_response": result},
                 status=IntegrationEventLog.Statuses.SENT,
             )
-            return {"ok": True, "mock": False, "provider": self.provider, "result": result}
+            return {"ok": True, "mock": False, "provider": self.provider, "result": result, "provider_message_id": provider_message_id}
         except Exception as exc:
             self.log_event(
                 business=business,
@@ -252,7 +271,7 @@ class WhatsAppProvider(BaseWhatsAppAdapter):
     def validate_credentials(self, channel):
         business = channel.bot.business
         config = channel.config_json or {}
-        access_token = config.get("access_token", "")
+        access_token = get_whatsapp_access_token(channel)
         phone_number_id = config.get("phone_number_id") or channel.external_id
         safe_payload = {
             "mode": config.get("provider_mode") or "mock",
@@ -305,3 +324,21 @@ class WhatsAppProvider(BaseWhatsAppAdapter):
         version = getattr(settings, "WHATSAPP_GRAPH_API_VERSION", "v25.0").strip("/")
         suffix = f"/{edge.strip('/')}" if edge else ""
         return f"{base}/{version}/{phone_number_id}{suffix}"
+
+    def _provider_message_id(self, result):
+        messages = result.get("messages") if isinstance(result, dict) else []
+        if not messages:
+            return ""
+        return str((messages[0] or {}).get("id") or "")
+
+    def _within_customer_service_window(self, channel, recipient_id):
+        from apps.bots.models import BotConversation
+
+        conversation = BotConversation.objects.filter(
+            bot=channel.bot,
+            channel=BotConversation.Channels.WHATSAPP,
+            external_user_id=recipient_id,
+        ).first()
+        if not conversation or not conversation.last_inbound_at:
+            return False
+        return conversation.last_inbound_at >= timezone.now() - timedelta(hours=24)

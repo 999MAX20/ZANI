@@ -1,4 +1,4 @@
-import { ArrowRight, Bot, CalendarCheck, CheckCircle2, Clock3, MousePointerClick, Send, ShieldCheck, Sparkles, Users, WalletCards } from "lucide-react";
+import { ArrowRight, Bot, CalendarCheck, CheckCircle2, Clock3, MessageSquareText, MousePointerClick, Send, ShieldCheck, Sparkles, Users, WalletCards } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
@@ -12,6 +12,7 @@ import { useI18n } from "../../lib/i18n";
 
 const messengerCases = [
   {
+    role: "AI-администратор",
     channel: "WhatsApp",
     accent: "bg-emerald-500",
     business: "Салон красоты",
@@ -20,6 +21,7 @@ const messengerCases = [
     result: "Заявка создана, клиент квалифицирован, менеджеру поставлена задача подтвердить запись.",
   },
   {
+    role: "AI-продавец",
     channel: "Instagram",
     accent: "bg-fuchsia-500",
     business: "Онлайн-магазин",
@@ -28,6 +30,7 @@ const messengerCases = [
     result: "AI отвечает по каталогу, фиксирует интерес и переводит диалог в сделку.",
   },
   {
+    role: "AI-квалификатор",
     channel: "Telegram",
     accent: "bg-sky-500",
     business: "Образовательный центр",
@@ -36,12 +39,22 @@ const messengerCases = [
     result: "Лид попадает в CRM с возрастом, интересом, уровнем и следующим шагом.",
   },
   {
+    role: "AI-консультант",
     channel: "Чат на сайте",
     accent: "bg-indigo-500",
     business: "B2B-услуги",
     lead: "Нужно внедрить CRM для отдела продаж. Сколько стоит?",
     bot: "Стоимость зависит от числа менеджеров и интеграций. Могу задать 3 вопроса и передать заявку специалисту с готовым брифом.",
     result: "Zani собирает бриф, создает сделку и показывает приоритет менеджеру.",
+  },
+  {
+    role: "AI-контролер",
+    channel: "WhatsApp",
+    accent: "bg-amber-500",
+    business: "Клиника",
+    lead: "Я писала вчера по консультации, мне никто не ответил",
+    bot: "Извините за ожидание. Я вижу ваш запрос и сейчас уточню удобное время консультации, чтобы администратор сразу подтвердил запись.",
+    result: "AI фиксирует просрочку, поднимает приоритет заявки и отправляет владельцу сигнал.",
   },
 ];
 
@@ -125,13 +138,6 @@ const audienceCards = [
   ["Образовательные центры", "Лиды, менеджеры, пробные занятия, оплаты и повторные касания."],
 ];
 
-const aiManagementCards = [
-  ["AI-ответы клиентам", "Быстрые ответы по услугам, ценам, времени и записи."],
-  ["AI-контроль заявок", "Видит, где клиент остался без ответа или сделка зависла."],
-  ["AI-подсказки менеджерам", "Предлагает следующий шаг: написать, позвонить, напомнить, закрыть сделку."],
-  ["AI-сводка для владельца", "Каждый день коротко: что произошло, где проблема, что требует внимания."],
-];
-
 const beforeAfterRows = [
   ["Заявки в разных мессенджерах", "Все заявки в одном кабинете"],
   ["Клиенты ждут ответа", "AI отвечает сразу"],
@@ -154,6 +160,38 @@ const metricCards = [
   ["Контроль", "кто отвечает и где просрочки"],
   ["Скорость", "AI принимает первое сообщение"],
   ["Деньги", "сделки и заявки в работе"],
+];
+
+const impactMetrics = [
+  ["8 сек", "AI принимает первое сообщение быстрее менеджера"],
+  ["24/7", "входящие не остаются без первичного ответа"],
+  ["1 кабинет", "диалоги, заявки, сделки и менеджеры вместе"],
+  ["3 дня", "обычный срок запуска пилота"],
+];
+
+const capabilityCards = [
+  ["Отвечает клиентам 24/7", "WhatsApp, Instagram, Telegram и сайт работают как единая система входящих."],
+  ["Создает заявки автоматически", "Клиент попадает в CRM без ручного копирования сообщений и контактов."],
+  ["Контролирует менеджеров", "ZANI видит задержки, просрочки и забытые follow-up по каждой заявке."],
+  ["Двигает сделки", "Заявки переходят по этапам, а деньги в работе становятся видны владельцу."],
+  ["Дает AI-подсказки", "Следующий шаг: написать, позвонить, напомнить, закрыть сделку."],
+  ["Показывает AI-сигналы", "Коротко подсвечивает, что требует внимания сегодня."],
+];
+
+const trustCards = [
+  ["Работаем на ваших реальных заявках", "Пилот показывает не абстрактную демо-CRM, а входящие из ваших каналов."],
+  ["Показываем реальные просрочки", "Где клиент ждал, кто не ответил и какая сделка зависла."],
+  ["Считаем деньги в вашей воронке", "Смотрим, сколько заявок может быть потеряно из-за скорости и follow-up."],
+  ["Не ломаем текущую систему", "Начинаем с входящих и контроля, без замены всего процесса продаж."],
+];
+
+const faqItems = [
+  ["Нужно ли менять текущую CRM?", "Нет. Пилот можно начать с входящих заявок и контроля менеджеров без полной перестройки процессов."],
+  ["Какие каналы можно подключить?", "WhatsApp, Telegram, Instagram и сайт. Для старта лучше выбрать 1-2 канала, где уже есть входящие заявки."],
+  ["AI заменяет менеджера?", "Нет. Он принимает первые сообщения, помогает менеджеру и подсвечивает владельцу проблемы в заявках и сделках."],
+  ["Сколько времени занимает запуск?", "Обычно пилот можно запустить за 3 дня, если есть доступ к каналам и понятная воронка продаж."],
+  ["Что увидит владелец?", "Заявки, сделки, скорость ответа, просрочки, задачи менеджеров и AI-сигналы по проблемным местам."],
+  ["Что нужно для старта?", "Каналы, список услуг или товаров, этапы воронки и ответственные менеджеры."],
 ];
 
 function Reveal({ children, className = "", delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
@@ -198,10 +236,10 @@ function LandingHero() {
             <span className="truncate">AI-система контроля заявок и продаж</span>
           </div>
           <h1 className="mt-6 max-w-4xl text-4xl font-semibold leading-[0.99] tracking-tight text-midnight sm:text-6xl lg:text-[4rem]">
-            ZANI превращает WhatsApp, Instagram и Telegram в систему продаж
+            ZANI показывает владельцу, где бизнес теряет заявки и деньги
           </h1>
           <p className="mt-6 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">
-            Все заявки, диалоги, менеджеры, сделки и AI-подсказки в одном кабинете. Владелец видит, кто отвечает, где теряются клиенты и сколько денег уже в работе.
+            Все диалоги, заявки, менеджеры, сделки и AI-сигналы в одном кабинете. Владелец видит, кто отвечает, где клиенты ждут и сколько денег уже в работе.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <SignupButton />
@@ -210,6 +248,13 @@ function LandingHero() {
             </a>
           </div>
           <p className="mt-4 text-sm font-semibold text-slate-500">Подключение без сложной внедренческой системы. Первый запуск — за 3 дня.</p>
+          <div className="mt-6 flex flex-wrap gap-2">
+            {["WhatsApp", "Instagram", "Telegram", "Сайт", "CRM"].map((channel) => (
+              <span key={channel} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 shadow-soft">
+                {channel}
+              </span>
+            ))}
+          </div>
           <div className="mt-8 grid max-w-2xl gap-3 sm:grid-cols-3">
             {metricCards.map(([value, label]) => (
               <motion.div key={value} whileHover={{ y: -3 }} className="rounded-card border border-slate-200 bg-white/92 p-4 shadow-soft backdrop-blur">
@@ -384,13 +429,13 @@ function DialogExamples() {
       <div className="mx-auto max-w-7xl">
         <Reveal className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Реальные сценарии общения</p>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Готовые сценарии AI-агентов</p>
             <h2 className="mt-3 max-w-3xl text-3xl font-semibold leading-tight tracking-tight text-midnight sm:text-5xl">
-              ZANI отвечает клиенту быстрее администратора
+              Показываем, как ZANI решает задачи в чате
             </h2>
           </div>
           <p className="text-base leading-7 text-slate-600 sm:text-lg">
-            Пока менеджер занят, AI принимает первое сообщение, уточняет услугу, собирает контакт и создает заявку в CRM.
+            Клиент пишет в мессенджер, AI отвечает, задает уточняющий вопрос, создает заявку, двигает сделку и ставит задачу менеджеру.
           </p>
         </Reveal>
 
@@ -405,9 +450,9 @@ function DialogExamples() {
               >
                 <div className="flex items-center gap-3">
                   <span className={`h-3 w-3 rounded-full ${item.accent} ${active === index ? "animate-pulse" : ""}`} />
-                  <span className="font-semibold text-midnight">{item.channel}</span>
+                  <span className="font-semibold text-midnight">{item.role}</span>
                 </div>
-                <p className="mt-2 text-sm text-slate-500">{item.business}</p>
+                <p className="mt-2 text-sm text-slate-500">{item.channel} · {item.business}</p>
               </motion.button>
             ))}
           </div>
@@ -456,7 +501,7 @@ function DialogExamples() {
             </div>
 
             <div className="rounded-[1.1rem] border border-slate-200 bg-white p-5">
-              <p className="text-sm font-semibold text-slate-500">Что делает Zani в CRM</p>
+              <p className="text-sm font-semibold text-slate-500">Что делает ZANI в CRM</p>
               <h3 className="mt-2 text-2xl font-semibold tracking-tight text-midnight">{current.result}</h3>
               <div className="mt-5 grid gap-3">
                 {animatedSteps.filter((step) => step.kind === "event").map((step, index) => (
@@ -621,6 +666,155 @@ function ProblemSection() {
   );
 }
 
+function BusinessImpactSection() {
+  return (
+    <section className="bg-[#f7f8fc] px-4 py-16 sm:py-24">
+      <div className="mx-auto max-w-7xl">
+        <Reveal className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-end">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">О продукте</p>
+            <h2 className="mt-3 max-w-4xl text-3xl font-semibold leading-tight tracking-tight text-midnight sm:text-5xl">ZANI возвращает владельцу контроль над входящими заявками</h2>
+          </div>
+          <p className="text-base leading-7 text-slate-600 sm:text-lg">
+            Это не просто AI-бот и не просто CRM. ZANI соединяет каналы, диалоги, заявки, сделки и контроль менеджеров в одном рабочем кабинете.
+          </p>
+        </Reveal>
+        <div className="mt-10 grid gap-4 md:grid-cols-4">
+          {impactMetrics.map(([value, label], index) => (
+            <motion.article
+              key={value}
+              className="rounded-[1.35rem] border border-slate-200 bg-white p-6 shadow-soft"
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-80px" }}
+              transition={{ delay: index * 0.06 }}
+            >
+              <p className="text-4xl font-semibold tracking-tight text-midnight">{value}</p>
+              <p className="mt-4 text-sm font-semibold leading-6 text-slate-500">{label}</p>
+            </motion.article>
+          ))}
+        </div>
+        <p className="mt-5 text-sm leading-6 text-slate-500">Показатели зависят от каналов, сценариев и текущего процесса продаж.</p>
+      </div>
+    </section>
+  );
+}
+
+function AutomationRealitySection() {
+  const flowItems = ["WhatsApp", "Instagram", "Telegram", "Сайт"];
+  const outputItems = ["Заявки", "Сделки", "Задачи", "AI-сигналы"];
+
+  return (
+    <section className="overflow-hidden bg-white px-4 py-16 sm:py-24">
+      <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.86fr_1.14fr] lg:items-center">
+        <Reveal>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Автоматизация без тяжелого внедрения</p>
+          <h2 className="mt-3 text-3xl font-semibold leading-tight tracking-tight text-midnight sm:text-5xl">Подключаем входящие каналы и сразу показываем владельцу картину продаж</h2>
+          <p className="mt-5 text-lg leading-8 text-slate-600">Начинаем с того, где уже есть деньги: мессенджеры, заявки, менеджеры и сделки. Сложные интеграции можно добавлять после первых результатов пилота.</p>
+          <div className="mt-8">
+            <SignupButton>Запустить пилот</SignupButton>
+          </div>
+        </Reveal>
+
+        <div className="relative rounded-[1.5rem] border border-slate-200 bg-[#f7f8fc] p-5 shadow-panel">
+          <div className="grid gap-4 md:grid-cols-[1fr_180px_1fr] md:items-center">
+            <div className="grid gap-3">
+              {flowItems.map((item, index) => (
+                <motion.div key={item} animate={{ x: [0, 4, 0] }} transition={{ duration: 2.8, repeat: Infinity, delay: index * 0.18 }} className="rounded-card border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-soft">
+                  {item}
+                </motion.div>
+              ))}
+            </div>
+            <div className="relative mx-auto grid h-36 w-36 place-items-center rounded-full border border-brand-100 bg-white shadow-card">
+              <motion.div className="absolute inset-3 rounded-full border border-brand-200" animate={{ scale: [1, 1.08, 1], opacity: [0.7, 0.35, 0.7] }} transition={{ duration: 2.4, repeat: Infinity }} />
+              <div className="grid h-20 w-20 place-items-center rounded-full bg-primary-gradient text-white shadow-glow">
+                <Sparkles size={28} />
+              </div>
+              <span className="absolute -bottom-2 rounded-full bg-midnight px-3 py-1 text-xs font-bold text-white">ZANI</span>
+            </div>
+            <div className="grid gap-3">
+              {outputItems.map((item, index) => (
+                <motion.div key={item} animate={{ x: [0, -4, 0] }} transition={{ duration: 2.8, repeat: Infinity, delay: index * 0.18 }} className="rounded-card border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-soft">
+                  {item}
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CapabilitiesGridSection() {
+  return (
+    <section id="capabilities" className="bg-[#f7f8fc] px-4 py-16 sm:py-24">
+      <div className="mx-auto max-w-7xl">
+        <Reveal className="max-w-4xl">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Что умеет ZANI</p>
+          <h2 className="mt-3 text-3xl font-semibold leading-tight tracking-tight text-midnight sm:text-5xl">AI-система, которая работает с заявками, менеджерами и продажами</h2>
+        </Reveal>
+        <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {capabilityCards.map(([title, text], index) => (
+            <motion.article key={title} whileHover={{ y: -4 }} className="rounded-[1.35rem] border border-slate-200 bg-white p-6 shadow-soft hover:shadow-card">
+              <div className="grid h-11 w-11 place-items-center rounded-card bg-primary-50 text-brand-700">
+                {index % 3 === 0 ? <Bot size={21} /> : index % 3 === 1 ? <Users size={21} /> : <Sparkles size={21} />}
+              </div>
+              <h3 className="mt-5 text-xl font-semibold tracking-tight text-midnight">{title}</h3>
+              <p className="mt-3 leading-7 text-slate-600">{text}</p>
+            </motion.article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PilotCallSection() {
+  return (
+    <section className="bg-white px-4 py-16 sm:py-24">
+      <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[1.6rem] border border-slate-200 bg-midnight p-6 text-white shadow-panel sm:p-10">
+        <div className="absolute inset-y-0 right-0 hidden w-1/2 bg-[radial-gradient(circle_at_70%_35%,rgba(99,102,241,0.35),transparent_58%)] lg:block" />
+        <div className="relative grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-200">30-минутный разбор</p>
+            <h2 className="mt-3 max-w-4xl text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">Разберем, где ваш бизнес теряет заявки</h2>
+            <p className="mt-5 max-w-3xl text-lg leading-8 text-white/70">Покажем, какие каналы подключить первыми, какие сценарии AI запустить и какие сигналы владелец увидит в пилоте.</p>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
+            <SignupButton>Запустить пилот</SignupButton>
+            <Link to="/contacts" className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/20 bg-white/10 px-6 text-base font-semibold text-white transition hover:bg-white/15">
+              Получить консультацию
+            </Link>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function TrustSection() {
+  return (
+    <section className="bg-[#f7f8fc] px-4 py-16 sm:py-24">
+      <div className="mx-auto max-w-7xl">
+        <Reveal className="max-w-4xl">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Пилот вместо обещаний</p>
+          <h2 className="mt-3 text-3xl font-semibold leading-tight tracking-tight text-midnight sm:text-5xl">Показываем контроль на вашем реальном потоке заявок</h2>
+        </Reveal>
+        <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {trustCards.map(([title, text]) => (
+            <article key={title} className="rounded-[1.35rem] border border-slate-200 bg-white p-6 shadow-soft">
+              <ShieldCheck size={22} className="text-brand-600" />
+              <h3 className="mt-5 text-lg font-semibold text-midnight">{title}</h3>
+              <p className="mt-3 leading-7 text-slate-600">{text}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function OwnerControlSection() {
   return (
     <section className="bg-[#f7f8fc] px-4 py-16 sm:py-24">
@@ -644,29 +838,6 @@ function OwnerControlSection() {
             <p className="text-sm font-semibold text-white/55">AI-сводка сегодня</p>
             <p className="mt-2 text-2xl font-semibold tracking-tight">3 клиента без ответа, 2 сделки зависли, 1 менеджер не закрыл задачу.</p>
           </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function AiManagementSection() {
-  return (
-    <section className="bg-white px-4 py-16 sm:py-24">
-      <div className="mx-auto max-w-7xl">
-        <Reveal className="max-w-4xl">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">AI как операционный контроль</p>
-          <h2 className="mt-3 text-3xl font-semibold leading-tight tracking-tight text-midnight sm:text-5xl">AI не просто отвечает. Он помогает управлять продажами</h2>
-          <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">ZANI говорит языком бизнеса: где клиент ждёт, где менеджер тормозит, где сделка требует следующего шага.</p>
-        </Reveal>
-        <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {aiManagementCards.map(([title, text]) => (
-            <motion.article key={title} whileHover={{ y: -4 }} className="rounded-[1.35rem] border border-slate-200 bg-white p-6 shadow-soft hover:shadow-card">
-              <Sparkles className="text-brand-600" size={22} />
-              <h3 className="mt-5 text-lg font-semibold text-midnight">{title}</h3>
-              <p className="mt-3 leading-7 text-slate-600">{text}</p>
-            </motion.article>
-          ))}
         </div>
       </div>
     </section>
@@ -719,6 +890,11 @@ function BeforeAfterSection() {
 }
 
 function EconomySection() {
+  const [avgCheck, setAvgCheck] = useState(20000);
+  const [lostLeads, setLostLeads] = useState(5);
+  const [conversion, setConversion] = useState(30);
+  const recovered = Math.round(avgCheck * lostLeads * (conversion / 100));
+
   return (
     <section id="pricing-preview" className="bg-[#f7f8fc] px-4 py-16 sm:py-24">
       <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
@@ -728,17 +904,32 @@ function EconomySection() {
           <p className="mt-5 text-lg leading-8 text-slate-600">Если бизнес теряет хотя бы 2-3 заявки в месяц из-за долгого ответа, забытых сообщений или слабого follow-up — ZANI уже начинает возвращать деньги.</p>
         </Reveal>
         <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-panel">
-          <div className="grid gap-4 sm:grid-cols-3">
-            {[["Средний чек", "20 000 ₸"], ["Потерянные заявки", "5 / мес"], ["Конверсия", "30%"]].map(([label, value]) => (
-              <div key={label} className="rounded-[1.1rem] bg-slate-50 p-4">
-                <p className="text-sm font-semibold text-slate-500">{label}</p>
-                <p className="mt-2 text-3xl font-semibold text-midnight">{value}</p>
-              </div>
-            ))}
+          <div className="grid gap-5">
+            <label className="rounded-[1.1rem] bg-slate-50 p-4">
+              <span className="flex items-center justify-between gap-4 text-sm font-semibold text-slate-500">
+                Средний чек
+                <strong className="text-xl text-midnight">{avgCheck.toLocaleString("ru-RU")} ₸</strong>
+              </span>
+              <input className="mt-4 w-full accent-indigo-600" type="range" min={5000} max={200000} step={5000} value={avgCheck} onChange={(event) => setAvgCheck(Number(event.target.value))} />
+            </label>
+            <label className="rounded-[1.1rem] bg-slate-50 p-4">
+              <span className="flex items-center justify-between gap-4 text-sm font-semibold text-slate-500">
+                Потерянные заявки в месяц
+                <strong className="text-xl text-midnight">{lostLeads}</strong>
+              </span>
+              <input className="mt-4 w-full accent-indigo-600" type="range" min={1} max={30} step={1} value={lostLeads} onChange={(event) => setLostLeads(Number(event.target.value))} />
+            </label>
+            <label className="rounded-[1.1rem] bg-slate-50 p-4">
+              <span className="flex items-center justify-between gap-4 text-sm font-semibold text-slate-500">
+                Конверсия в продажу
+                <strong className="text-xl text-midnight">{conversion}%</strong>
+              </span>
+              <input className="mt-4 w-full accent-indigo-600" type="range" min={5} max={80} step={5} value={conversion} onChange={(event) => setConversion(Number(event.target.value))} />
+            </label>
           </div>
           <div className="mt-5 rounded-[1.1rem] bg-midnight p-5 text-white">
             <p className="text-sm font-semibold text-white/55">Потенциально возвращено</p>
-            <p className="mt-2 text-4xl font-semibold">30 000 ₸+</p>
+            <p className="mt-2 text-4xl font-semibold">{recovered.toLocaleString("ru-RU")} ₸+</p>
             <p className="mt-2 text-sm leading-6 text-white/65">Это пример для малого бизнеса. Реальный расчет зависит от среднего чека, каналов и скорости ответа.</p>
           </div>
           <div className="mt-5">
@@ -776,6 +967,8 @@ export function PublicHomePage() {
   return (
     <>
       <LandingHero />
+      <DialogExamples />
+      <BusinessImpactSection />
       <ProblemSection />
       <section id="demo" className="bg-[#f7f8fb] px-4 py-16 sm:py-24">
         <div className="mx-auto max-w-7xl">
@@ -817,12 +1010,10 @@ export function PublicHomePage() {
           </div>
         </div>
       </section>
-      <DialogExamples />
+      <AutomationRealitySection />
+      <CapabilitiesGridSection />
       <OwnerControlSection />
-      <AiManagementSection />
       <CrmScreensShowcase />
-      <AudienceSection />
-      <BeforeAfterSection />
 
       <section id="setup" className="bg-[#f7f8fb] px-4 py-16 sm:py-24">
         <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.82fr_1.18fr]">
@@ -848,7 +1039,11 @@ export function PublicHomePage() {
           </div>
         </div>
       </section>
+      <PilotCallSection />
+      <TrustSection />
       <EconomySection />
+      <AudienceSection />
+      <BeforeAfterSection />
       <PilotSection />
 
       <section id="faq" className="bg-white px-4 py-16 sm:py-24">
@@ -858,13 +1053,8 @@ export function PublicHomePage() {
             <h2 className="mt-3 text-3xl font-semibold leading-tight tracking-tight text-midnight sm:text-5xl">Что важно уточнить перед запуском</h2>
           </Reveal>
           <div className="grid gap-3">
-            {[
-              ["Что будет после заявки на пилот?", "Мы уточним каналы, сферу бизнеса, текущий путь заявки и покажем, с чего лучше начать запуск."],
-              ["Какие каналы подключать первыми?", "Для пилота лучше выбрать 1-2 ключевых канала, где уже есть входящие заявки: WhatsApp, Telegram, Instagram или сайт."],
-              ["Нужно ли менять всю текущую систему?", "Нет. Пилот можно начать с входящих заявок и контроля менеджеров без полной перестройки процессов."],
-              ["Что делает менеджер после подключения AI?", "Берет сложные диалоги, работает со сделками и видит приоритетные действия, которые ZANI подсвечивает в CRM."],
-            ].map(([question, answer]) => (
-              <details key={question} className="group rounded-card border border-slate-200 bg-white p-5 shadow-soft transition hover:border-slate-300 hover:shadow-card" open={question.startsWith("Что будет")}>
+            {faqItems.map(([question, answer]) => (
+              <details key={question} className="group rounded-card border border-slate-200 bg-white p-5 shadow-soft transition hover:border-slate-300 hover:shadow-card" open={question.startsWith("Нужно")}>
                 <summary className="cursor-pointer list-none text-lg font-semibold text-midnight">{question}</summary>
                 <motion.p initial={{ opacity: 0.8 }} animate={{ opacity: 1 }} className="mt-3 leading-7 text-slate-600">{answer}</motion.p>
               </details>

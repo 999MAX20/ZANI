@@ -39,6 +39,29 @@ export type ClientListResult = {
   facets?: ClientListFacets;
 };
 
+export type ClientMergeDryRun = {
+  target_client_id: Id;
+  duplicate: Pick<Client, "id" | "full_name" | "phone" | "email" | "whatsapp_id" | "telegram_id" | "instagram_id">;
+  transferred: Record<
+    | "leads"
+    | "appointments"
+    | "conversations"
+    | "bot_conversations"
+    | "tasks"
+    | "deals"
+    | "notes"
+    | "activity_events"
+    | "analytics_events"
+    | "notifications"
+    | "tags"
+    | "attachments"
+    | "custom_field_values",
+    number
+  >;
+  will_delete_duplicate: boolean;
+  policy: "hard_delete_duplicate_after_transfer" | string;
+};
+
 export const clientsApi = {
   ...createCrudApi<Client>("/api/clients/"),
   listFiltered: async (params: ClientListFilterParams): Promise<ClientListResult> => {
@@ -84,6 +107,10 @@ export const clientsApi = {
   },
   merge: async ({ id, duplicate_client_id }: { id: Id; duplicate_client_id: Id }) => {
     const { data } = await apiClient.post(`/api/clients/${id}/merge/`, { duplicate_client_id });
+    return data;
+  },
+  mergeDryRun: async ({ id, duplicate_client_id }: { id: Id; duplicate_client_id: Id }) => {
+    const { data } = await apiClient.post<ClientMergeDryRun>(`/api/clients/${id}/merge-dry-run/`, { duplicate_client_id });
     return data;
   },
 };

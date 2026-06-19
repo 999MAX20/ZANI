@@ -6,23 +6,21 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 from django.utils import timezone
-from django.contrib.auth import get_user_model
 from django.db.models import Count, Q
 
-from apps.crm.models import Deal, Pipeline, PipelineStage
 from apps.crm.serializers import DealSerializer
-from apps.notifications.models import Notification
 
 from apps.activities.models import Note
 from apps.activities.serializers import NoteSerializer
+from apps.activities.services import create_activity_event
 from apps.automations.engine import run_automations_for_event
 from apps.automations.models import AutomationRule
-from apps.activities.services import create_activity_event
 from apps.businesses.access import Actions, Resources, assert_can
 from apps.core.audit import write_audit_log
 from apps.core.crm_cards import lead_crm_card
 from apps.core.models import AuditLog
 from apps.core.viewsets import TenantModelViewSet
+from apps.core.work_queues import stale_leads_queryset
 from apps.leads.forms_service import log_lead_form_submission_error, submit_lead_form
 from apps.leads.models import Lead, LeadForm, LeadFormField, LeadFormSubmission, LeadFormSubmissionError
 from apps.leads.serializers import (
@@ -35,6 +33,15 @@ from apps.leads.serializers import (
     LeadSerializer,
     LeadListSerializer,
     PublicLeadFormSerializer,
+)
+from apps.leads.services import (
+    assign_lead,
+    create_deal_from_lead,
+    mark_lead_closed,
+    mark_lead_contacted,
+    mark_lead_lost,
+    reopen_lead,
+    take_lead_in_work,
 )
 from apps.scheduling.serializers import AppointmentSerializer
 from apps.scheduling.services import create_appointment_from_lead
@@ -104,8 +111,7 @@ class LeadViewSet(TenantModelViewSet):
         if params.get("mine") == "true":
             queryset = queryset.filter(responsible_user=self.request.user)
         if params.get("attention") == "true":
-            stale_before = timezone.now() - timezone.timedelta(days=3)
-            queryset = queryset.filter(Q(responsible_user__isnull=True) | Q(updated_at__lte=stale_before), status__in=[Lead.Statuses.NEW, Lead.Statuses.CONTACTED, Lead.Statuses.IN_PROGRESS])
+            queryset = stale_leads_queryset(queryset=queryset)
 
         created_from = params.get("created_from")
         if created_from:
@@ -140,7 +146,6 @@ class LeadViewSet(TenantModelViewSet):
         queryset = super().get_queryset()
         now = timezone.now()
         week_ago = now - timezone.timedelta(days=7)
-        stale_before = now - timezone.timedelta(days=3)
         by_status = dict(queryset.values_list("status").annotate(count=Count("id")))
         by_source = dict(queryset.values_list("source").annotate(count=Count("id")))
         return Response(
@@ -154,7 +159,7 @@ class LeadViewSet(TenantModelViewSet):
                 "in_progress_this_week": queryset.filter(status__in=[Lead.Statuses.CONTACTED, Lead.Statuses.IN_PROGRESS], created_at__gte=week_ago).count(),
                 "hot": queryset.filter(status=Lead.Statuses.NEW, responsible_user__isnull=True).count(),
                 "hot_this_week": queryset.filter(status=Lead.Statuses.NEW, responsible_user__isnull=True, created_at__gte=week_ago).count(),
-                "attention": queryset.filter(Q(responsible_user__isnull=True) | Q(updated_at__lte=stale_before), status__in=[Lead.Statuses.NEW, Lead.Statuses.CONTACTED, Lead.Statuses.IN_PROGRESS]).count(),
+                "attention": stale_leads_queryset(queryset=queryset, now=now).count(),
                 "mine": queryset.filter(responsible_user=request.user).count(),
                 "by_status": by_status,
                 "by_source": by_source,
@@ -210,197 +215,56 @@ class LeadViewSet(TenantModelViewSet):
     def assign(self, request, pk=None):
         lead = self.get_object()
         assert_can(request.user, lead.business, Resources.LEADS, Actions.UPDATE, obj=lead)
-        user_id = request.data.get("user_id") or request.user.id
-        responsible_user = get_user_model().objects.filter(id=user_id, is_active=True).first()
-        if responsible_user is None:
-            raise ValidationError({"user_id": "User was not found."})
-        if not lead.business.members.filter(user=responsible_user, is_active=True).exists():
-            raise ValidationError({"user_id": "Responsible user must be an active business member."})
-        previous_responsible_user_id = lead.responsible_user_id
-        lead.responsible_user = responsible_user
-        lead.save(update_fields=["responsible_user", "updated_at"])
-        write_audit_log(request, AuditLog.Actions.UPDATE, lead, metadata={"responsible_user": responsible_user.id})
-        create_activity_event(
-            business=lead.business,
-            client=lead.client,
-            actor=request.user,
-            event_type="lead_assigned",
-            instance=lead,
-            text="Ответственный по заявке обновлён",
-            metadata={"from": previous_responsible_user_id, "to": responsible_user.id},
-        )
+        lead = assign_lead(lead=lead, actor=request.user, user_id=request.data.get("user_id"), request=request)
         return Response(self.get_serializer(lead).data)
 
     @action(detail=True, methods=["post"], url_path="take-in-work")
     def take_in_work(self, request, pk=None):
         lead = self.get_object()
         assert_can(request.user, lead.business, Resources.LEADS, Actions.UPDATE, obj=lead)
-        if lead.status not in {Lead.Statuses.NEW, Lead.Statuses.CONTACTED, Lead.Statuses.LOST}:
-            raise ValidationError({"status": "Only new, contacted or lost leads can be taken into work."})
-        return self._apply_lead_status(
-            lead=lead,
-            request=request,
-            status=Lead.Statuses.IN_PROGRESS,
-            event_type="lead_taken_in_work",
-            text="Заявка взята в работу",
-        )
+        lead = take_lead_in_work(lead=lead, actor=request.user, request=request)
+        return Response(self.get_serializer(lead).data)
 
     @action(detail=True, methods=["post"], url_path="mark-contacted")
     def mark_contacted(self, request, pk=None):
         lead = self.get_object()
         assert_can(request.user, lead.business, Resources.LEADS, Actions.UPDATE, obj=lead)
-        return self._apply_lead_status(
-            lead=lead,
-            request=request,
-            status=Lead.Statuses.CONTACTED,
-            event_type="lead_contacted",
-            text="С клиентом по заявке связались",
-        )
+        lead = mark_lead_contacted(lead=lead, actor=request.user, request=request)
+        return Response(self.get_serializer(lead).data)
 
     @action(detail=True, methods=["post"], url_path="mark-closed")
     def mark_closed(self, request, pk=None):
         lead = self.get_object()
         assert_can(request.user, lead.business, Resources.LEADS, Actions.UPDATE, obj=lead)
-        return self._apply_lead_status(
-            lead=lead,
-            request=request,
-            status=Lead.Statuses.CLOSED,
-            event_type="lead_closed",
-            text="Заявка закрыта успешно",
-        )
+        lead = mark_lead_closed(lead=lead, actor=request.user, request=request)
+        return Response(self.get_serializer(lead).data)
 
     @action(detail=True, methods=["post"], url_path="mark-lost")
     def mark_lost(self, request, pk=None):
         lead = self.get_object()
         assert_can(request.user, lead.business, Resources.LEADS, Actions.UPDATE, obj=lead)
-        lost_reason = (request.data.get("lost_reason") or "").strip()
-        if not lost_reason:
-            raise ValidationError({"lost_reason": "Reason is required when lead is lost."})
-        return self._apply_lead_status(
-            lead=lead,
-            request=request,
-            status=Lead.Statuses.LOST,
-            event_type="lead_marked_lost",
-            text="Заявка закрыта как отказ",
-            lost_reason=lost_reason,
-        )
+        lead = mark_lead_lost(lead=lead, actor=request.user, lost_reason=request.data.get("lost_reason", ""), request=request)
+        return Response(self.get_serializer(lead).data)
 
     @action(detail=True, methods=["post"], url_path="reopen")
     def reopen(self, request, pk=None):
         lead = self.get_object()
         assert_can(request.user, lead.business, Resources.LEADS, Actions.UPDATE, obj=lead)
-        target_status = lead.previous_status if lead.previous_status and lead.previous_status != Lead.Statuses.LOST else Lead.Statuses.IN_PROGRESS
-        return self._apply_lead_status(
-            lead=lead,
-            request=request,
-            status=target_status,
-            event_type="lead_reopened",
-            text="Заявка возвращена в работу",
-            clear_lost=True,
-        )
+        lead = reopen_lead(lead=lead, actor=request.user, request=request)
+        return Response(self.get_serializer(lead).data)
 
     @action(detail=True, methods=["post"], url_path="create-deal")
     def create_deal(self, request, pk=None):
         lead = self.get_object()
         assert_can(request.user, lead.business, Resources.DEALS, Actions.CREATE, obj=lead)
-        existing_deal = lead.deals.filter(is_archived=False).order_by("-updated_at").first()
-        if existing_deal:
-            return Response(DealSerializer(existing_deal).data)
-
-        pipeline = Pipeline.objects.filter(business=lead.business, is_default=True).first() or Pipeline.objects.filter(business=lead.business).order_by("id").first()
-        if pipeline is None:
-            pipeline = Pipeline.objects.create(
-                business=lead.business,
-                name="CRM Light",
-                slug=f"crm-light-{lead.business_id}",
-                is_default=True,
-            )
-        stage = PipelineStage.objects.filter(business=lead.business, pipeline=pipeline, is_won=False, is_lost=False).order_by("order", "id").first()
-        if stage is None:
-            stage = PipelineStage.objects.create(
-                business=lead.business,
-                pipeline=pipeline,
-                name="Новая сделка",
-                order=1,
-                probability=10,
-            )
-
-        title = (request.data.get("title") or f"Сделка по заявке #{lead.id} — {lead.client}").strip()
-        deal = Deal.objects.create(
-            business=lead.business,
-            client=lead.client,
+        result = create_deal_from_lead(
             lead=lead,
-            pipeline=pipeline,
-            stage=stage,
-            title=title,
+            actor=request.user,
             amount=request.data.get("amount") or 0,
-            source=lead.source,
-            owner=lead.responsible_user or request.user,
-            probability=stage.probability,
-            stage_entered_at=timezone.now(),
+            title=request.data.get("title") or "",
+            request=request,
         )
-        previous_status = lead.status
-        lead.status = Lead.Statuses.IN_PROGRESS
-        lead.previous_status = previous_status if previous_status != Lead.Statuses.IN_PROGRESS else lead.previous_status
-        lead.save(update_fields=["status", "previous_status", "updated_at"])
-        write_audit_log(request, AuditLog.Actions.CREATE, deal)
-        create_activity_event(
-            business=lead.business,
-            client=lead.client,
-            actor=request.user,
-            event_type="deal_created_from_lead",
-            instance=deal,
-            text="Сделка создана из заявки",
-            metadata={"lead_id": lead.id},
-        )
-        self._notify_responsible(lead, f"По заявке создана сделка: {deal.title}", action_url=f"/dashboard/deals?deal={deal.id}")
-        return Response(DealSerializer(deal).data, status=201)
-
-    def _apply_lead_status(self, *, lead, request, status, event_type, text, lost_reason=None, clear_lost=False):
-        previous_status = lead.status
-        now = timezone.now()
-        lead.status = status
-        if status == Lead.Statuses.LOST:
-            lead.previous_status = previous_status if previous_status != Lead.Statuses.LOST else ""
-            lead.lost_reason = lost_reason or lead.lost_reason
-            lead.lost_at = now
-            lead.lost_by = request.user
-        elif clear_lost or status != Lead.Statuses.LOST:
-            if previous_status != status:
-                lead.previous_status = previous_status
-            lead.lost_reason = ""
-            lead.lost_at = None
-            lead.lost_by = None
-        lead.save(update_fields=["status", "previous_status", "lost_reason", "lost_at", "lost_by", "updated_at"])
-        write_audit_log(request, AuditLog.Actions.UPDATE, lead, metadata={"from": previous_status, "to": status})
-        create_activity_event(
-            business=lead.business,
-            client=lead.client,
-            actor=request.user,
-            event_type=event_type,
-            instance=lead,
-            text=text,
-            metadata={"from": previous_status, "to": status},
-        )
-        self._notify_responsible(lead, text)
-        return Response(self.get_serializer(lead).data)
-
-    def _notify_responsible(self, lead, text, *, action_url=None):
-        if not lead.responsible_user_id:
-            return None
-        return Notification.objects.create(
-            business=lead.business,
-            recipient=lead.responsible_user,
-            client=lead.client,
-            channel=Notification.Channels.SYSTEM,
-            category=Notification.Categories.SALES,
-            priority=Notification.Priorities.NORMAL,
-            text=text,
-            send_at=timezone.now(),
-            status=Notification.Statuses.PENDING,
-            action_url=action_url or f"/dashboard/leads?lead={lead.id}",
-            action_label="Открыть",
-        )
+        return Response(DealSerializer(result.deal).data, status=201 if result.created else 200)
 
     @action(detail=True, methods=["post"], url_path="add-note")
     def add_note(self, request, pk=None):

@@ -40,7 +40,7 @@ test.beforeAll(() => {
 
 async function login(page: Page, email: string, target: RegExp) {
   const tokens = await apiLogin(page, email);
-  const targetPath = target.source.includes("platform") ? "/platform" : "/dashboard";
+  const targetPath = target.source.includes("platform") ? "/platform" : "/app";
   await page.goto("/");
   await page.evaluate(() => {
     localStorage.clear();
@@ -63,7 +63,7 @@ async function navigateInsideApp(page: Page, path: string) {
 }
 
 function routePattern(route: string) {
-  return new RegExp(route === "/dashboard" ? "/dashboard/?$" : route.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  return new RegExp(route === "/app" ? "/app/?$" : route.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
 }
 
 async function apiLogin(page: Page, email: string) {
@@ -117,14 +117,14 @@ test("platform admin lands in platform workspace", async ({ page }) => {
 test("business owner can use core merchant CRM pages", async ({ page, isMobile }) => {
   test.skip(isMobile, "Desktop navigation smoke is covered separately from mobile bottom navigation.");
 
-  await login(page, users.owner, /\/dashboard/);
+  await login(page, users.owner, /\/app/);
 
-  await expect(page).toHaveURL(/\/dashboard/);
+  await expect(page).toHaveURL(/\/app/);
   await expect(page.getByRole("heading", { name: /Главная|Business dashboard|Dashboard|Басты/ })).toBeVisible();
 
-  await navigateInsideApp(page, "/dashboard/leads");
+  await navigateInsideApp(page, "/app/leads");
   await expect(page.getByRole("heading", { name: /Заявки|Leads/ })).toBeVisible();
-  await page.getByRole("button", { name: /Полная карточка|Full card/ }).first().click();
+  await page.locator('div[role="button"][tabindex="0"]').first().click();
   await expect(page.getByRole("button", { name: "История" })).toBeVisible();
   await page.getByRole("button", { name: "Заметки" }).click();
   await page.getByPlaceholder("Например: клиент просит перезвонить вечером").fill("E2E CRM Light comment");
@@ -136,10 +136,10 @@ test("business owner can use core merchant CRM pages", async ({ page, isMobile }
   await expect(page.getByText("E2E CRM Light follow-up").first()).toBeVisible();
   await page.getByRole("button", { name: "Закрыть карточку" }).click();
 
-  await navigateInsideApp(page, "/dashboard/conversations");
+  await navigateInsideApp(page, "/app/conversations");
   await expect(page.getByRole("heading", { name: /Диалоги|Conversations/ })).toBeVisible();
 
-  await navigateInsideApp(page, "/dashboard/settings");
+  await navigateInsideApp(page, "/app/settings");
   await expect(page.getByRole("heading", { name: /Настройки|Settings/ })).toBeVisible();
 });
 
@@ -147,29 +147,28 @@ test("business owner core routes render without 404", async ({ page, isMobile })
   test.setTimeout(120_000);
   test.skip(isMobile, "Full route audit uses desktop sidebar routes; mobile has a separate reachability smoke.");
 
-  await login(page, users.owner, /\/dashboard/);
+  await login(page, users.owner, /\/app/);
 
   const routes = [
-    "/dashboard",
-    "/dashboard/leads",
-    "/dashboard/deals",
-    "/dashboard/clients",
-    "/dashboard/tasks",
-    "/dashboard/calendar",
-    "/dashboard/appointments",
-    "/dashboard/services",
-    "/dashboard/resources",
-    "/dashboard/conversations",
-    "/dashboard/bots",
-    "/dashboard/integrations",
-    "/dashboard/pricing",
-    "/dashboard/ai-assistant",
-    "/dashboard/ai-agents",
-    "/dashboard/automations",
-    "/dashboard/working-hours",
-    "/dashboard/analytics",
-    "/dashboard/settings",
-    "/dashboard/ai",
+    "/app",
+    "/app/leads",
+    "/app/deals",
+    "/app/clients",
+    "/app/tasks",
+    "/app/calendar",
+    "/app/services",
+    "/app/resources",
+    "/app/conversations",
+    "/app/bots",
+    "/app/integrations",
+    "/app/pricing",
+    "/app/ai-assistant",
+    "/app/ai-agents",
+    "/app/automations",
+    "/app/working-hours",
+    "/app/analytics",
+    "/app/settings",
+    "/app/ai",
   ];
 
   for (const route of routes) {
@@ -184,18 +183,18 @@ test("desktop sidebar links render without 404", async ({ page, isMobile }) => {
   test.setTimeout(90_000);
   test.skip(isMobile, "Desktop sidebar route audit runs in the desktop project.");
 
-  await login(page, users.owner, /\/dashboard/);
+  await login(page, users.owner, /\/app/);
 
   const sidebarRoutes = [
-    "/dashboard",
-    "/dashboard/leads",
-    "/dashboard/deals",
-    "/dashboard/clients",
-    "/dashboard/conversations",
-    "/dashboard/ai-agents",
-    "/dashboard/integrations",
-    "/dashboard/analytics",
-    "/dashboard/settings",
+    "/app",
+    "/app/leads",
+    "/app/deals",
+    "/app/clients",
+    "/app/conversations",
+    "/app/ai-agents",
+    "/app/integrations",
+    "/app/analytics",
+    "/app/settings",
   ];
 
   for (const route of sidebarRoutes) {
@@ -207,8 +206,8 @@ test("desktop sidebar links render without 404", async ({ page, isMobile }) => {
     await expect(page.getByText("Unexpected Application Error")).toHaveCount(0);
   }
 
-  await page.goto("/dashboard/ai-agents/999999/not-a-section");
-  await expect(page).toHaveURL(/\/dashboard\/ai-agents\/\d+\/(overview|profile)/);
+  await page.goto("/app/ai-agents/999999/not-a-section");
+  await expect(page).toHaveURL(/\/app\/ai-agents\/\d+\/(overview|profile)/);
   await expect(page.getByText("Страница не найдена")).toHaveCount(0);
   await expect(page.getByText("Unexpected Application Error")).toHaveCount(0);
 });
@@ -216,7 +215,7 @@ test("desktop sidebar links render without 404", async ({ page, isMobile }) => {
 test("header notifications popover opens and closes safely", async ({ page, isMobile }) => {
   test.skip(isMobile, "Mobile header tap targets are covered by the mobile smoke.");
 
-  await login(page, users.owner, /\/dashboard/);
+  await login(page, users.owner, /\/app/);
 
   await page.getByRole("button", { name: /Уведомления|Notifications/ }).click();
   await expect(page.locator("header").getByText(/Уведомления|Notifications/).first()).toBeVisible();
@@ -422,29 +421,332 @@ test("business owner can create an appointment from calendar UI", async ({ page,
   const slots: Array<{ start_at: string; end_at: string }> = await slotsResponse.json();
   expect(slots.length).toBeGreaterThan(0);
 
-  await login(page, users.owner, /\/dashboard/);
-  await page.goto("/dashboard/calendar");
-  await expect(page.getByRole("heading", { name: /Расписание бизнеса|Календарь бизнеса|Business calendar|Бизнес күнтізбесі/ })).toBeVisible();
+  await login(page, users.owner, /\/app/);
+  await page.goto("/app/calendar");
+  await expect(page).toHaveURL(/\/app\/calendar/);
+  await expect(page.getByRole("button", { name: /Новая запись|New booking|Жаңа жазба/ }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: /День|Day|Күн/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Неделя|Week|Апта/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Месяц|Month|Ай/ })).toBeVisible();
+  await expect(page).toHaveURL(/\/app\/calendar\?date=\d{4}-\d{2}-\d{2}&view=day/);
 
-  await page.getByRole("button", { name: /Создать запись на 10:00|Create booking at 10:00/ }).first().click();
+  await page.getByRole("button", { name: /Неделя|Week|Апта/ }).click();
+  await expect(page).toHaveURL(/view=week/);
+  await expect(page.getByRole("button", { name: /Неделя|Week|Апта/ })).toHaveClass(/bg-midnight/);
+
+  await page.getByRole("button", { name: /Месяц|Month|Ай/ }).click();
+  await expect(page).toHaveURL(/view=month/);
+  await expect(page.getByRole("button", { name: /Месяц|Month|Ай/ })).toHaveClass(/bg-midnight/);
+
+  await page.getByRole("button", { name: /День|Day|Күн/ }).click();
+  await expect(page).toHaveURL(/view=day/);
+  await expect(page.getByRole("button", { name: /День|Day|Күн/ })).toHaveClass(/bg-midnight/);
+
+  await page.getByRole("button", { name: /Новая запись|New booking|Жаңа жазба/ }).first().click();
   await expect(page.getByRole("heading", { name: /Новая запись|New booking|Жаңа жазба/ })).toBeVisible();
-  await page.getByRole("button", { name: /Закрыть|Close/ }).click();
 
-  await page.getByRole("button", { name: "Новая запись", exact: true }).click();
-  await expect(page.getByRole("heading", { name: /Новая запись|New booking|Жаңа жазба/ })).toBeVisible();
-
-  await page.getByLabel("Клиент").selectOption(String(client.id));
-  await page.getByLabel("Услуга").selectOption(String(service.id));
-  await page.getByLabel("Мастер / ресурс").selectOption(String(resource.id));
-  await page.getByLabel("Дата").fill(slotDate);
-  await expect.poll(async () => page.getByLabel("Свободный слот").locator("option").count()).toBeGreaterThan(1);
-  await page.getByLabel("Свободный слот").selectOption(slots[0].start_at);
+  await page.locator('select[name="client"]').selectOption(String(client.id));
+  await page.locator('select[name="service"]').selectOption(String(service.id));
+  await page.locator('select[name="resource"]').selectOption(String(resource.id));
+  await page.locator('input[name="date"]').fill(slotDate);
+  await expect.poll(async () => page.locator('select[name="slot"] option').count()).toBeGreaterThan(1);
+  await page.locator('select[name="slot"]').selectOption(slots[0].start_at);
   await page.getByRole("button", { name: "Создать запись", exact: true }).click();
 
   await expect(page.getByText("Запись создана и появилась в календаре.")).toBeVisible();
-  const appointmentCard = page.getByRole("button", { name: new RegExp(`Calendar Client ${unique}`) }).first();
-  await appointmentCard.scrollIntoViewIfNeeded();
-  await expect(appointmentCard).toBeVisible();
+  await expect(page.locator("aside").getByText(new RegExp(`Calendar Client ${unique}`)).first()).toBeVisible();
+
+  await page.getByRole("button", { name: /Новая запись|New booking|Жаңа жазба/ }).first().click({ force: true });
+  await expect(page.getByRole("heading", { name: /Новая запись|New booking|Жаңа жазба/ })).toBeVisible();
+  await page.locator('select[name="client"]').selectOption(String(client.id));
+  await page.locator('select[name="service"]').selectOption(String(service.id));
+  await page.locator('select[name="resource"]').selectOption(String(resource.id));
+  await page.locator('input[name="date"]').fill(slotDate);
+  await expect
+    .poll(async () => {
+      const values = await page.locator('select[name="slot"] option').evaluateAll((options) =>
+        options.map((option) => (option as HTMLOptionElement).value),
+      );
+      return values.includes(slots[0].start_at);
+    })
+    .toBe(false);
+});
+
+test("calendar deep link selects appointment and lifecycle action works", async ({ page, isMobile }) => {
+  test.skip(isMobile, "Calendar deep-link workflow runs in desktop; mobile reachability is covered separately.");
+
+  const tokens = await apiLogin(page, users.owner);
+  const headers = authHeaders(tokens);
+  const unique = Date.now();
+
+  const meResponse = await page.request.get(`${apiBaseURL}/api/auth/me/`, { headers });
+  expect(meResponse.ok()).toBeTruthy();
+  const me = await meResponse.json();
+  const businessId = me.businesses?.[0]?.id;
+  expect(businessId).toBeTruthy();
+
+  const clientResponse = await page.request.post(`${apiBaseURL}/api/clients/`, {
+    headers,
+    data: {
+      business: businessId,
+      full_name: `Deep Link Client ${unique}`,
+      phone: `+7703${String(unique).slice(-7)}`,
+      source: "manual",
+    },
+  });
+  expect(clientResponse.ok()).toBeTruthy();
+  const client = await clientResponse.json();
+
+  const serviceResponse = await page.request.post(`${apiBaseURL}/api/services/`, {
+    headers,
+    data: {
+      business: businessId,
+      name: `Deep Link Service ${unique}`,
+      duration_minutes: 30,
+      price_from: "6000.00",
+      is_active: true,
+    },
+  });
+  expect(serviceResponse.ok()).toBeTruthy();
+  const service = await serviceResponse.json();
+
+  const resourceResponse = await page.request.post(`${apiBaseURL}/api/resources/`, {
+    headers,
+    data: {
+      business: businessId,
+      name: `Deep Link Master ${unique}`,
+      resource_type: "staff",
+      is_active: true,
+    },
+  });
+  expect(resourceResponse.ok()).toBeTruthy();
+  const resource = await resourceResponse.json();
+
+  const presetResponse = await page.request.post(`${apiBaseURL}/api/working-hours/apply-preset/`, {
+    headers,
+    data: { business: businessId, preset: "daily_9_20", resource: resource.id },
+  });
+  expect(presetResponse.ok()).toBeTruthy();
+
+  const slotDate = addDays(new Date().toISOString().slice(0, 10), 2);
+  const slotsResponse = await page.request.get(
+    `${apiBaseURL}/api/appointments/available-slots/?business_id=${businessId}&service_id=${service.id}&resource_id=${resource.id}&date=${slotDate}`,
+    { headers },
+  );
+  expect(slotsResponse.ok()).toBeTruthy();
+  const slots: Array<{ start_at: string; end_at: string }> = await slotsResponse.json();
+  expect(slots.length).toBeGreaterThan(0);
+
+  const appointmentResponse = await page.request.post(`${apiBaseURL}/api/appointments/`, {
+    headers,
+    data: {
+      business: businessId,
+      client: client.id,
+      service: service.id,
+      resource: resource.id,
+      start_at: slots[0].start_at,
+      end_at: slots[0].end_at,
+      source: "manual",
+      notes: "Calendar deep-link smoke.",
+    },
+  });
+  expect(appointmentResponse.ok()).toBeTruthy();
+  const appointment = await appointmentResponse.json();
+
+  await login(page, users.owner, /\/app/);
+  await page.goto(`/app/calendar?appointment=${appointment.id}`);
+  await expect(page.locator("aside").getByText(`Deep Link Client ${unique}`).first()).toBeVisible();
+
+  await page.evaluate(() => {
+    const button = Array.from(document.querySelectorAll("aside button")).find((item) =>
+      /Подтвердить|Confirm|Растау/.test(item.textContent || ""),
+    ) as HTMLButtonElement | undefined;
+    button?.click();
+  });
+  await expect
+    .poll(async () => {
+      const response = await page.request.get(`${apiBaseURL}/api/appointments/${appointment.id}/`, { headers });
+      expect(response.ok()).toBeTruthy();
+      const updated = await response.json();
+      return updated.status;
+    })
+    .toBe("confirmed");
+});
+
+test("business owner can reschedule appointment from calendar UI", async ({ page, isMobile }) => {
+  test.skip(isMobile, "Calendar reschedule workflow runs in desktop; mobile reachability is covered separately.");
+
+  const tokens = await apiLogin(page, users.owner);
+  const headers = authHeaders(tokens);
+  const unique = Date.now();
+
+  const meResponse = await page.request.get(`${apiBaseURL}/api/auth/me/`, { headers });
+  expect(meResponse.ok()).toBeTruthy();
+  const me = await meResponse.json();
+  const businessId = me.businesses?.[0]?.id;
+  expect(businessId).toBeTruthy();
+
+  const clientResponse = await page.request.post(`${apiBaseURL}/api/clients/`, {
+    headers,
+    data: {
+      business: businessId,
+      full_name: `Reschedule Client ${unique}`,
+      phone: `+7704${String(unique).slice(-7)}`,
+      source: "manual",
+    },
+  });
+  expect(clientResponse.ok()).toBeTruthy();
+  const client = await clientResponse.json();
+
+  const serviceResponse = await page.request.post(`${apiBaseURL}/api/services/`, {
+    headers,
+    data: {
+      business: businessId,
+      name: `Reschedule Service ${unique}`,
+      duration_minutes: 30,
+      price_from: "7000.00",
+      is_active: true,
+    },
+  });
+  expect(serviceResponse.ok()).toBeTruthy();
+  const service = await serviceResponse.json();
+
+  const resourceResponse = await page.request.post(`${apiBaseURL}/api/resources/`, {
+    headers,
+    data: {
+      business: businessId,
+      name: `Reschedule Master ${unique}`,
+      resource_type: "staff",
+      is_active: true,
+    },
+  });
+  expect(resourceResponse.ok()).toBeTruthy();
+  const resource = await resourceResponse.json();
+
+  const presetResponse = await page.request.post(`${apiBaseURL}/api/working-hours/apply-preset/`, {
+    headers,
+    data: { business: businessId, preset: "daily_9_20", resource: resource.id },
+  });
+  expect(presetResponse.ok()).toBeTruthy();
+
+  const oldDate = addDays(new Date().toISOString().slice(0, 10), 3);
+  const newDate = addDays(new Date().toISOString().slice(0, 10), 4);
+  const oldSlotsResponse = await page.request.get(
+    `${apiBaseURL}/api/appointments/available-slots/?business_id=${businessId}&service_id=${service.id}&resource_id=${resource.id}&date=${oldDate}`,
+    { headers },
+  );
+  expect(oldSlotsResponse.ok()).toBeTruthy();
+  const oldSlots: Array<{ start_at: string; end_at: string }> = await oldSlotsResponse.json();
+  expect(oldSlots.length).toBeGreaterThan(0);
+
+  const newSlotsResponse = await page.request.get(
+    `${apiBaseURL}/api/appointments/available-slots/?business_id=${businessId}&service_id=${service.id}&resource_id=${resource.id}&date=${newDate}`,
+    { headers },
+  );
+  expect(newSlotsResponse.ok()).toBeTruthy();
+  const newSlots: Array<{ start_at: string; end_at: string }> = await newSlotsResponse.json();
+  expect(newSlots.length).toBeGreaterThan(0);
+
+  const appointmentResponse = await page.request.post(`${apiBaseURL}/api/appointments/`, {
+    headers,
+    data: {
+      business: businessId,
+      client: client.id,
+      service: service.id,
+      resource: resource.id,
+      start_at: oldSlots[0].start_at,
+      end_at: oldSlots[0].end_at,
+      source: "manual",
+      notes: "Calendar reschedule smoke.",
+    },
+  });
+  expect(appointmentResponse.ok()).toBeTruthy();
+  const appointment = await appointmentResponse.json();
+
+  await login(page, users.owner, /\/app/);
+  await page.goto(`/app/calendar?appointment=${appointment.id}`);
+  await expect(page.locator("aside").getByText(`Reschedule Client ${unique}`).first()).toBeVisible();
+
+  await page.evaluate(() => {
+    const button = Array.from(document.querySelectorAll("aside button")).find((item) =>
+      /Перенести|Reschedule|Ауыстыру/.test(item.textContent || ""),
+    ) as HTMLButtonElement | undefined;
+    button?.click();
+  });
+  await expect(page.getByRole("heading", { name: /Перенести запись|Reschedule appointment|Жазбаны ауыстыру/ })).toBeVisible();
+  await page.locator('input[type="date"]').last().fill(newDate);
+  await page.locator("select").last().selectOption(newSlots[0].start_at);
+  await page.getByRole("button", { name: /Перенести|Reschedule|Ауыстыру/ }).last().click();
+
+  await expect
+    .poll(async () => {
+      const response = await page.request.get(`${apiBaseURL}/api/appointments/${appointment.id}/`, { headers });
+      expect(response.ok()).toBeTruthy();
+      const updated = await response.json();
+      return updated.start_at;
+    })
+    .toBe(newSlots[0].start_at);
+
+  const freedOldSlotsResponse = await page.request.get(
+    `${apiBaseURL}/api/appointments/available-slots/?business_id=${businessId}&service_id=${service.id}&resource_id=${resource.id}&date=${oldDate}`,
+    { headers },
+  );
+  expect(freedOldSlotsResponse.ok()).toBeTruthy();
+  const freedOldSlots: Array<{ start_at: string; end_at: string }> = await freedOldSlotsResponse.json();
+  expect(freedOldSlots.some((slot) => slot.start_at === oldSlots[0].start_at)).toBeTruthy();
+});
+
+test("business owner can configure working hours week", async ({ page, isMobile }) => {
+  test.skip(isMobile, "Working-hours setup smoke runs in desktop; mobile route reachability is covered separately.");
+
+  const tokens = await apiLogin(page, users.owner);
+  const headers = authHeaders(tokens);
+  const unique = Date.now();
+
+  const meResponse = await page.request.get(`${apiBaseURL}/api/auth/me/`, { headers });
+  expect(meResponse.ok()).toBeTruthy();
+  const me = await meResponse.json();
+  const businessId = me.businesses?.[0]?.id;
+  expect(businessId).toBeTruthy();
+
+  const resourceResponse = await page.request.post(`${apiBaseURL}/api/resources/`, {
+    headers,
+    data: {
+      business: businessId,
+      name: `Hours Master ${unique}`,
+      resource_type: "staff",
+      is_active: true,
+    },
+  });
+  expect(resourceResponse.ok()).toBeTruthy();
+  const resource = await resourceResponse.json();
+
+  await login(page, users.owner, /\/app/);
+  await page.goto("/app/working-hours");
+  await expect(page.getByRole("heading", { name: /График работы|Working hours|Жұмыс кестесі/ })).toBeVisible();
+
+  await page.getByRole("button", { name: /Настроить неделю|Set up week|Аптаны баптау/ }).first().click();
+  await expect(page.getByRole("heading", { name: /Недельный график|Weekly schedule|Апталық кесте/ })).toBeVisible();
+
+  await page.locator("select").last().selectOption(String(resource.id));
+  await page.getByRole("button", { name: /Салон 09:00-20:00|Salon 09:00-20:00/ }).click();
+  await page.getByRole("button", { name: /Сохранить недельный график|Save weekly schedule|Апталық кестені сақтау/ }).click();
+  await expect(page.getByText(/Недельный график сохранён|Weekly schedule saved|Апталық кесте сақталды/)).toBeVisible();
+
+  await expect
+    .poll(async () => {
+      const response = await page.request.get(`${apiBaseURL}/api/working-hours/`, { headers });
+      expect(response.ok()).toBeTruthy();
+      const payload = await response.json();
+      const rows = Array.isArray(payload) ? payload : payload.results || [];
+      return rows.filter((row: { resource: number; is_day_off: boolean; start_time: string; end_time: string }) =>
+        row.resource === resource.id &&
+        !row.is_day_off &&
+        row.start_time.startsWith("09:00") &&
+        row.end_time.startsWith("20:00"),
+      ).length;
+    })
+    .toBe(7);
 });
 
 test("operator cannot read another tenant through direct object URLs", async ({ page, isMobile }) => {
@@ -554,7 +856,7 @@ test("activated landing owner sees first-run dashboard", async ({ page, isMobile
   });
   expect(activationResponse.ok()).toBeTruthy();
 
-  await login(page, "e2e_activation_owner@example.com", /\/dashboard/);
+  await login(page, "e2e_activation_owner@example.com", /\/app/);
 
   await expect(page.getByRole("heading", { name: /Главная|Business dashboard|Dashboard|Басты/ })).toBeVisible();
   await expect(page.getByText("e2e_activation_owner@example.com").first()).toBeVisible();
@@ -564,15 +866,15 @@ test("activated landing owner sees first-run dashboard", async ({ page, isMobile
 });
 
 test("merchant users cannot open platform workspace", async ({ page }) => {
-  await login(page, users.owner, /\/dashboard/);
+  await login(page, users.owner, /\/app/);
   await page.goto("/platform");
 
-  await expect(page).toHaveURL(/\/dashboard/);
+  await expect(page).toHaveURL(/\/app/);
 });
 
 test("operator sees restricted sections as forbidden", async ({ page }) => {
-  await login(page, users.operator, /\/dashboard/);
-  await page.goto("/dashboard/settings");
+  await login(page, users.operator, /\/app/);
+  await page.goto("/app/settings");
 
   await expect(page.getByText("Раздел скрыт настройками доступа")).toBeVisible();
   await expect(page.getByText(/роль|access/i)).toBeVisible();
@@ -581,20 +883,20 @@ test("operator sees restricted sections as forbidden", async ({ page }) => {
 test("mobile owner smoke: dashboard, bottom nav and more drawer are reachable", async ({ page, isMobile }) => {
   test.skip(!isMobile, "Mobile viewport smoke runs only in the mobile project.");
 
-  await login(page, users.owner, /\/dashboard/);
-  await expect(page).toHaveURL(/\/dashboard/);
+  await login(page, users.owner, /\/app/);
+  await expect(page).toHaveURL(/\/app/);
   await expect(page.getByText("Unexpected Application Error")).toHaveCount(0);
 
-  await page.locator('nav a[href="/dashboard/leads"]').last().click();
-  await expect(page).toHaveURL(/\/dashboard\/leads/);
+  await page.locator('nav a[href="/app/leads"]').last().click();
+  await expect(page).toHaveURL(/\/app\/leads/);
   await expect(page.getByText("Unexpected Application Error")).toHaveCount(0);
 
-  await page.locator('nav a[href="/dashboard/conversations"]').last().click();
-  await expect(page).toHaveURL(/\/dashboard\/conversations/);
+  await page.locator('nav a[href="/app/conversations"]').last().click();
+  await expect(page).toHaveURL(/\/app\/conversations/);
   await expect(page.getByText("Unexpected Application Error")).toHaveCount(0);
 
-  await page.locator('nav a[href="/dashboard/clients"]').last().click();
-  await expect(page).toHaveURL(/\/dashboard\/clients/);
+  await page.locator('nav a[href="/app/clients"]').last().click();
+  await expect(page).toHaveURL(/\/app\/clients/);
   await expect(page.getByText("Unexpected Application Error")).toHaveCount(0);
 
   await page.getByRole("button", { name: /Развернуть меню|Expand menu/ }).click();
@@ -603,13 +905,13 @@ test("mobile owner smoke: dashboard, bottom nav and more drawer are reachable", 
   await closeSidebarButton.click();
 
   const drawerRoutes = [
-    "/dashboard/deals",
-    "/dashboard/tasks",
-    "/dashboard/calendar",
-    "/dashboard/ai-agents",
-    "/dashboard/integrations",
-    "/dashboard/analytics",
-    "/dashboard/settings",
+    "/app/deals",
+    "/app/tasks",
+    "/app/calendar",
+    "/app/ai-agents",
+    "/app/integrations",
+    "/app/analytics",
+    "/app/settings",
   ];
 
   for (const route of drawerRoutes) {

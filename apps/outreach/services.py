@@ -283,7 +283,7 @@ def launch_campaign(campaign):
                 text=recipient.personalized_text or render_message(campaign.message_text, recipient.client),
                 send_at=send_at + timedelta(seconds=stagger_seconds),
                 status=Notification.Statuses.PENDING,
-                action_url=f"/dashboard/clients?client={recipient.client_id}",
+                action_url=f"/app/clients?client={recipient.client_id}",
                 action_label="Открыть клиента",
             )
             recipient.notification = notification
@@ -562,7 +562,7 @@ def _notify_outreach_team(campaign, *, text, priority):
         category=Notification.Categories.OUTREACH,
         priority=priority,
         text=text,
-        action_url=f"/dashboard/outreach?campaign={campaign.id}",
+        action_url=f"/app/outreach?campaign={campaign.id}",
         action_label="Открыть рассылку",
         roles=OUTREACH_ROLES,
         exclude_owner=False,
@@ -575,7 +575,7 @@ def _notify_owner_admin_service_recommendation(campaign, *, text):
         category=Notification.Categories.AI_ALERTS,
         priority=Notification.Priorities.HIGH,
         text=text,
-        action_url="/dashboard/integrations",
+        action_url="/app/integrations",
         action_label="Подключить услугу",
         roles=OWNER_ADMIN_ROLES,
         exclude_owner=False,

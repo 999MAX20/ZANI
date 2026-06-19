@@ -398,7 +398,7 @@ def create_pricing_alert(business, alert_type, title, message="", severity=Kaspi
             text=f"{title}: {message}" if message else title,
             send_at=timezone.now(),
             status=Notification.Statuses.PENDING,
-            action_url="/dashboard/pricing",
+            action_url="/app/pricing",
             action_label="Открыть цены",
         )
     return alert

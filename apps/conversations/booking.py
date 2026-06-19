@@ -142,7 +142,7 @@ def _booking_blocked(conversation: BotConversation, reason: str) -> BookingResul
         category=Notification.Categories.SALES,
         priority=Notification.Priorities.HIGH,
         text=f"AI не смог создать запись: {reason}",
-        action_url=f"/dashboard/conversations?conversation={conversation.id}",
+        action_url=f"/app/conversations?conversation={conversation.id}",
         action_label="Открыть чат",
     )
     return BookingResult(status="blocked", reason=reason)
@@ -182,7 +182,7 @@ def _notify_booking_created(conversation: BotConversation, appointment: Appointm
         category=Notification.Categories.SALES,
         priority=Notification.Priorities.NORMAL,
         text=f"AI создал запись: {conversation.client.full_name} на {timezone.localtime(appointment.start_at):%d.%m %H:%M}",
-        action_url=f"/dashboard/calendar?appointment={appointment.id}",
+        action_url=f"/app/calendar?appointment={appointment.id}",
         action_label="Открыть запись",
     )
 

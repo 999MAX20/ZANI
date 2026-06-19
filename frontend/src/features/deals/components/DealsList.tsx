@@ -41,7 +41,6 @@ export function DealsList({
   onCheck,
   onSelectAll,
   onCreate,
-  onTask,
   onMore,
   onStageChange,
   t,
@@ -55,7 +54,6 @@ export function DealsList({
   onCheck: (deal: DealRow) => void;
   onSelectAll: () => void;
   onCreate: () => void;
-  onTask: (deal: DealRow) => void;
   onMore: (deal: DealRow) => void;
   onStageChange: (deal: DealRow, stageId: number) => void;
   t: Translate;
@@ -131,7 +129,7 @@ export function DealsList({
             </header>
             <div className="min-h-0 flex-1 space-y-2 overflow-y-auto bg-[#fbfcff] p-2.5">
               {group.rows.slice(0, visibleByStage[group.id] || 10).map((deal) => (
-                <DealListItem key={deal.id} deal={deal} selected={selectedDealId === deal.id} checked={selectedIds.includes(deal.id)} onOpen={onOpen} onCheck={onCheck} onTask={onTask} onMore={onMore} t={t} />
+                <DealListItem key={deal.id} deal={deal} selected={selectedDealId === deal.id} onOpen={onOpen} onMore={onMore} t={t} />
               ))}
               {group.rows.length > (visibleByStage[group.id] || 10) ? (
                 <button
@@ -171,7 +169,7 @@ export function DealsList({
           {!collapsed[group.id] ? (
             <div className="space-y-2 px-2 pb-2">
               {group.rows.map((deal) => (
-                <DealListItem key={deal.id} deal={deal} selected={selectedDealId === deal.id} checked={selectedIds.includes(deal.id)} onOpen={onOpen} onCheck={onCheck} onTask={onTask} onMore={onMore} t={t} />
+                <DealListItem key={deal.id} deal={deal} selected={selectedDealId === deal.id} onOpen={onOpen} onMore={onMore} t={t} />
               ))}
             </div>
           ) : null}

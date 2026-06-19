@@ -2,8 +2,18 @@ import { apiClient } from "./client";
 import { createCrudApi } from "./crud";
 import type { Id, Task, TaskComment } from "../types";
 
+export type TaskCreatePayload = Omit<
+  Partial<Task>,
+  "id" | "status" | "created_by" | "watchers" | "snoozed_until" | "completed_at" | "completed_by" | "is_archived" | "archive_reason" | "archived_at" | "archived_by" | "created_at" | "updated_at"
+>;
+
+export type TaskUpdatePayload = Omit<
+  Partial<Task>,
+  "id" | "business" | "status" | "assignee" | "created_by" | "watchers" | "snoozed_until" | "completed_at" | "completed_by" | "is_archived" | "archive_reason" | "archived_at" | "archived_by" | "created_at" | "updated_at"
+>;
+
 export const tasksApi = {
-  ...createCrudApi<Task>("/api/tasks/"),
+  ...createCrudApi<Task, TaskCreatePayload, TaskUpdatePayload>("/api/tasks/"),
   complete: async (id: Id) => {
     const { data } = await apiClient.post<Task>(`/api/tasks/${id}/complete/`);
     return data;

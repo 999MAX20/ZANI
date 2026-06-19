@@ -1,4 +1,6 @@
 from django.contrib.auth.tokens import default_token_generator
+from django.conf import settings
+from django.core.mail import send_mail
 from django.utils.encoding import force_bytes
 from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
@@ -120,15 +122,26 @@ class PasswordResetRequestView(APIView):
         if user:
             uid = urlsafe_base64_encode(force_bytes(user.pk))
             token = default_token_generator.make_token(user)
-            response.update(
-                {
-                    "uid": uid,
-                    "token": token,
-                    "reset_path": f"/reset-password/{uid}/{token}",
-                    "delivery_channel": serializer.validated_data["delivery_channel"],
-                }
+            reset_path = f"/reset-password/{uid}/{token}"
+            reset_url = self._build_reset_url(request, reset_path)
+            send_mail(
+                subject="Reset your Zani password",
+                message=(
+                    "We received a request to reset your Zani password.\n\n"
+                    f"Open this link to set a new password: {reset_url}\n\n"
+                    "If you did not request this, ignore this email."
+                ),
+                from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
+                recipient_list=[user.email],
+                fail_silently=True,
             )
         return Response(response)
+
+    def _build_reset_url(self, request, reset_path):
+        frontend_url = getattr(settings, "FRONTEND_URL", "").rstrip("/")
+        if frontend_url:
+            return f"{frontend_url}{reset_path}"
+        return request.build_absolute_uri(reset_path)
 
 
 class PasswordResetConfirmView(APIView):

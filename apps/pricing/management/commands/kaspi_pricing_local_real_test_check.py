@@ -61,7 +61,7 @@ class Command(BaseCommand):
                     "key": "active_rules",
                     "status": "pass" if active_rules_count > 0 else "fail",
                     "detail": f"count={active_rules_count}",
-                    "action": "Create at least one active pricing rule in /dashboard/pricing.",
+                    "action": "Create at least one active pricing rule in /app/pricing.",
                 },
                 {
                     "key": "minimum_thresholds",

@@ -80,6 +80,141 @@ class CustomFieldsFoundationTests(TestCase):
         self.assertEqual(card_response.data["custom_fields"][0]["definition"]["key"], "birthday")
         self.assertEqual(card_response.data["custom_fields"][0]["value"]["value_json"]["value"], "2026-05-14")
 
+    def test_bulk_upsert_validates_custom_field_value_type(self):
+        definition = CustomFieldDefinition.objects.create(
+            business=self.business,
+            entity_type=CustomFieldDefinition.EntityTypes.CLIENT,
+            key="birthday",
+            label="Birthday",
+            field_type=CustomFieldDefinition.FieldTypes.DATE,
+        )
+
+        response = self.api.post(
+            "/api/custom-field-values/bulk-upsert/",
+            {
+                "business": self.business.id,
+                "entity_type": "client",
+                "entity_id": str(self.client.id),
+                "values": [{"definition": definition.id, "value_json": {"value": "not-a-date"}}],
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(CustomFieldValue.objects.filter(definition=definition, entity_id=str(self.client.id)).exists())
+
+    def test_bulk_upsert_validates_select_options_and_normalizes_numbers(self):
+        select_definition = CustomFieldDefinition.objects.create(
+            business=self.business,
+            entity_type=CustomFieldDefinition.EntityTypes.CLIENT,
+            key="loyalty",
+            label="Loyalty",
+            field_type=CustomFieldDefinition.FieldTypes.SELECT,
+            options_json={"options": ["A", "B"]},
+        )
+        number_definition = CustomFieldDefinition.objects.create(
+            business=self.business,
+            entity_type=CustomFieldDefinition.EntityTypes.CLIENT,
+            key="score",
+            label="Score",
+            field_type=CustomFieldDefinition.FieldTypes.NUMBER,
+        )
+
+        invalid = self.api.post(
+            "/api/custom-field-values/bulk-upsert/",
+            {
+                "business": self.business.id,
+                "entity_type": "client",
+                "entity_id": str(self.client.id),
+                "values": [{"definition": select_definition.id, "value_json": {"value": "C"}}],
+            },
+            format="json",
+        )
+        valid = self.api.post(
+            "/api/custom-field-values/bulk-upsert/",
+            {
+                "business": self.business.id,
+                "entity_type": "client",
+                "entity_id": str(self.client.id),
+                "values": [
+                    {"definition": select_definition.id, "value_json": {"value": "A"}},
+                    {"definition": number_definition.id, "value_json": {"value": "10,5"}},
+                ],
+            },
+            format="json",
+        )
+
+        self.assertEqual(invalid.status_code, 400)
+        self.assertEqual(valid.status_code, 200)
+        self.assertEqual(CustomFieldValue.objects.get(definition=number_definition).value_json["value"], "10.5")
+
+    def test_bulk_upsert_requires_json_boolean_for_boolean_fields(self):
+        definition = CustomFieldDefinition.objects.create(
+            business=self.business,
+            entity_type=CustomFieldDefinition.EntityTypes.CLIENT,
+            key="consent",
+            label="Consent",
+            field_type=CustomFieldDefinition.FieldTypes.BOOLEAN,
+        )
+
+        invalid = self.api.post(
+            "/api/custom-field-values/bulk-upsert/",
+            {
+                "business": self.business.id,
+                "entity_type": "client",
+                "entity_id": str(self.client.id),
+                "values": [{"definition": definition.id, "value_json": {"value": "true"}}],
+            },
+            format="json",
+        )
+        valid = self.api.post(
+            "/api/custom-field-values/bulk-upsert/",
+            {
+                "business": self.business.id,
+                "entity_type": "client",
+                "entity_id": str(self.client.id),
+                "values": [{"definition": definition.id, "value_json": {"value": True}}],
+            },
+            format="json",
+        )
+
+        self.assertEqual(invalid.status_code, 400)
+        self.assertEqual(valid.status_code, 200)
+        self.assertIs(CustomFieldValue.objects.get(definition=definition).value_json["value"], True)
+
+    def test_bulk_upsert_is_atomic_when_one_value_is_invalid(self):
+        text_definition = CustomFieldDefinition.objects.create(
+            business=self.business,
+            entity_type=CustomFieldDefinition.EntityTypes.CLIENT,
+            key="notes",
+            label="Notes",
+            field_type=CustomFieldDefinition.FieldTypes.TEXT,
+        )
+        date_definition = CustomFieldDefinition.objects.create(
+            business=self.business,
+            entity_type=CustomFieldDefinition.EntityTypes.CLIENT,
+            key="next_date",
+            label="Next date",
+            field_type=CustomFieldDefinition.FieldTypes.DATE,
+        )
+
+        response = self.api.post(
+            "/api/custom-field-values/bulk-upsert/",
+            {
+                "business": self.business.id,
+                "entity_type": "client",
+                "entity_id": str(self.client.id),
+                "values": [
+                    {"definition": text_definition.id, "value_json": {"value": "Saved only if all valid"}},
+                    {"definition": date_definition.id, "value_json": {"value": "tomorrow"}},
+                ],
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(CustomFieldValue.objects.filter(definition=text_definition, entity_id=str(self.client.id)).exists())
+
     def test_custom_fields_are_tenant_filtered(self):
         CustomFieldDefinition.objects.create(
             business=self.business,

@@ -173,7 +173,7 @@ export function AutomationsPage() {
         description={t("automations.description")}
         actions={
           <div className="flex flex-wrap gap-2">
-            <Link to="/dashboard/settings#automations">
+            <Link to="/app/settings#automations">
               <Button type="button" variant="secondary">{t("automations.backToSettings")}</Button>
             </Link>
             <Button onClick={() => setCreateOpen(true)}><Plus size={18} />{t("automations.createRule")}</Button>

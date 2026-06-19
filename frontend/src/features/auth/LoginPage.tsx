@@ -63,7 +63,7 @@ export function LoginPage() {
     setError(null);
     try {
       const user = await login(values.email, values.password);
-      navigate(user.is_platform_user ? "/platform" : "/dashboard");
+      navigate(user.is_platform_user ? "/platform" : "/app");
     } catch (err) {
       setError(getApiErrorMessage(err));
     }
@@ -79,7 +79,7 @@ export function LoginPage() {
     setSocialLoading(provider);
     try {
       const user = await loginWithSocial(provider, idToken);
-      navigate(user.is_platform_user ? "/platform" : "/dashboard");
+      navigate(user.is_platform_user ? "/platform" : "/app");
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {

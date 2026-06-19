@@ -10,24 +10,24 @@
 - `hooks/useDealMetrics.ts` считает KPI, quick filters, risk и priority deal.
 - `hooks/useDealActions.ts` содержит mutations для создания, смены стадии, закрытия и задач.
 - `hooks/useDealSelection.ts` управляет текущей сделкой, мобильной панелью и bulk selection.
-- `components/` содержит header, AI priority, metrics, filters, toolbar, list, detail panel и modals.
+- `components/` содержит filters, kanban/list surface, business widgets, detail panel и modals.
 - `components/common/` содержит малые UI-элементы: amount, stage badge, risk, quick actions, timeline.
 
 ## Main Flows
 
 Создание сделки:
-1. `DealsHeader` открывает `CreateDealModal`.
+1. `DealsPage` регистрирует primary action в `PageHeader`.
 2. `useDealActions.createMutation` вызывает `dealsApi.create`.
 3. После успеха инвалидируется `deals` query и новая сделка выбирается в списке.
 
 Фильтрация:
-1. `DealsFilters` меняет `DealFiltersState`.
-2. `useDealFilters` сохраняет состояние в URL и `localStorage`.
+1. `useDealFilters` читает состояние из URL и `localStorage`.
+2. Глобальный поиск страницы синхронизирует `search` query param.
 3. `useDealMetrics` пересчитывает `rows`, stage chips, quick filters и metrics.
 
 Bulk actions:
 1. `DealsList` отмечает сделки чекбоксами.
-2. `DealsToolbar` показывает selected count и bulk controls.
+2. `useDealSelection` хранит выбранные сделки.
 3. Delete подтверждается через `window.confirm` и вызывает `dealsApi.remove` для выбранных сделок.
 
 Смена стадии:

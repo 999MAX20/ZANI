@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from apps.clients.models import Client
-from apps.clients.services import duplicate_payload, find_duplicate_clients, merge_clients
+from apps.clients.services import duplicate_payload, find_duplicate_clients, merge_clients, merge_clients_dry_run
 from apps.core.permissions import accessible_businesses
 
 
@@ -22,7 +22,37 @@ class ClientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Client
-        fields = "__all__"
+        fields = [
+            "id",
+            "business",
+            "full_name",
+            "phone",
+            "email",
+            "whatsapp_id",
+            "telegram_id",
+            "instagram_id",
+            "source",
+            "notes",
+            "is_archived",
+            "archived_at",
+            "archived_by",
+            "archive_reason",
+            "created_at",
+            "updated_at",
+            "manager_user_id",
+            "is_active",
+            "has_no_reply",
+            "is_vip",
+            "leads_count",
+            "deals_count",
+            "appointments_count",
+            "tasks_count",
+            "conversations_count",
+            "last_activity_at",
+            "next_step_title",
+            "next_step_date",
+            "next_step_priority",
+        ]
         read_only_fields = ["created_at", "updated_at", "archived_at", "archived_by"]
 
 
@@ -84,4 +114,12 @@ class ClientMergeSerializer(serializers.Serializer):
             target_client=self.context["target_client"],
             duplicate_client=self.validated_data["duplicate_client_id"],
             actor=self.context["request"].user,
+        )
+
+
+class ClientMergeDryRunSerializer(ClientMergeSerializer):
+    def save(self, **kwargs):
+        return merge_clients_dry_run(
+            target_client=self.context["target_client"],
+            duplicate_client=self.validated_data["duplicate_client_id"],
         )

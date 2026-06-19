@@ -53,7 +53,7 @@ class Command(BaseCommand):
                 "key": "connector",
                 "status": "pass" if connector else "fail",
                 "detail": f"connector_id={connector.id}" if connector else "not provided or not found",
-                "action": "Create/configure Kaspi connector in /dashboard/integrations and pass --connector-id.",
+                "action": "Create/configure Kaspi connector in /app/integrations and pass --connector-id.",
             },
         ]
         if connector:

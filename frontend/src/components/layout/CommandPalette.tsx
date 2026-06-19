@@ -33,13 +33,13 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
   const { clients, leads, services } = useEntityData({ clients: true, leads: true, services: true });
   const commands = useMemo(() => {
     const staticCommands = [
-      { id: "create-lead", label: t("command.createLead"), hint: t("nav.leads"), to: "/dashboard/leads?create=1", icon: Plus, priority: 20 },
-      { id: "open-leads", label: t("command.openLeads"), hint: t("nav.leads"), to: "/dashboard/leads", icon: Search, priority: 10 },
-      { id: "open-clients", label: t("command.openClients"), hint: t("nav.clients"), to: "/dashboard/clients", icon: Search, priority: 10 },
-      { id: "open-deals", label: t("command.openDeals"), hint: t("nav.deals"), to: "/dashboard/deals", icon: Search, priority: 10 },
-      { id: "open-messages", label: t("command.openMessages"), hint: t("nav.conversations"), to: "/dashboard/conversations", icon: Search, priority: 10 },
-      { id: "open-settings", label: t("command.openSettings"), hint: t("nav.settings"), to: "/dashboard/settings", icon: Settings, priority: 10 },
-      { id: "open-ai-agents", label: t("command.openAiAgents"), hint: t("nav.aiAgents"), to: "/dashboard/ai-agents", icon: Search, priority: 10 },
+      { id: "create-lead", label: t("command.createLead"), hint: t("nav.leads"), to: "/app/leads?create=1", icon: Plus, priority: 20 },
+      { id: "open-leads", label: t("command.openLeads"), hint: t("nav.leads"), to: "/app/leads", icon: Search, priority: 10 },
+      { id: "open-clients", label: t("command.openClients"), hint: t("nav.clients"), to: "/app/clients", icon: Search, priority: 10 },
+      { id: "open-deals", label: t("command.openDeals"), hint: t("nav.deals"), to: "/app/deals", icon: Search, priority: 10 },
+      { id: "open-messages", label: t("command.openMessages"), hint: t("nav.conversations"), to: "/app/conversations", icon: Search, priority: 10 },
+      { id: "open-settings", label: t("command.openSettings"), hint: t("nav.settings"), to: "/app/settings", icon: Settings, priority: 10 },
+      { id: "open-ai-agents", label: t("command.openAiAgents"), hint: t("nav.aiAgents"), to: "/app/ai-agents", icon: Search, priority: 10 },
     ];
     const leadCommands = (leads.data || []).map((lead) => {
       const client = (clients.data || []).find((item) => item.id === lead.client);
@@ -48,7 +48,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
         id: `lead-${lead.id}`,
         label: client?.full_name || t("leads.leadFallback", { id: lead.id }),
         hint: [t("command.typeLead"), client?.phone, service?.name].filter(Boolean).join(" · "),
-        to: `/dashboard/leads?lead=${lead.id}`,
+        to: `/app/leads?lead=${lead.id}`,
         icon: Search,
         priority: 5,
       };
@@ -57,7 +57,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       id: `client-${client.id}`,
       label: client.full_name,
       hint: [t("command.typeClient"), client.phone || client.email].filter(Boolean).join(" · "),
-      to: `/dashboard/clients?client=${client.id}`,
+      to: `/app/clients?client=${client.id}`,
       icon: Search,
       priority: 3,
     }));
@@ -65,7 +65,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       id: `service-${service.id}`,
       label: service.name,
       hint: t("command.typeService"),
-      to: `/dashboard/services?service=${service.id}`,
+      to: `/app/services?service=${service.id}`,
       icon: Search,
       priority: 2,
     }));

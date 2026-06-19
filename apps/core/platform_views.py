@@ -145,15 +145,15 @@ def _merchant_support_workflow(business, counts, health):
     if counts["form_errors"]:
         next_steps.append({"key": "fix_forms", "label": "Проверить ошибки формы", "href": f"/platform/merchants/{business.id}"})
     if counts["handoff_conversations"]:
-        next_steps.append({"key": "answer_inbox", "label": "Помочь с диалогами handoff", "href": "/dashboard/inbox"})
+        next_steps.append({"key": "answer_inbox", "label": "Помочь с диалогами handoff", "href": "/app/inbox"})
     if counts["failed_connectors"]:
-        next_steps.append({"key": "fix_connectors", "label": "Проверить failed connectors", "href": "/dashboard/integrations"})
+        next_steps.append({"key": "fix_connectors", "label": "Проверить failed connectors", "href": "/app/integrations"})
     if counts["pending_connectors"]:
         next_steps.append({"key": "review_connection_requests", "label": "Проверить заявки на подключение", "href": f"/platform/merchants/{business.id}"})
     if not health["checks"].get("has_sales_data"):
-        next_steps.append({"key": "request_sales_upload", "label": "Попросить клиента загрузить Excel/CSV продаж", "href": "/dashboard/settings#data-tools"})
+        next_steps.append({"key": "request_sales_upload", "label": "Попросить клиента загрузить Excel/CSV продаж", "href": "/app/settings#data-tools"})
     if counts["new_leads"]:
-        next_steps.append({"key": "check_new_leads", "label": "Проверить новые заявки", "href": "/dashboard/leads"})
+        next_steps.append({"key": "check_new_leads", "label": "Проверить новые заявки", "href": "/app/leads"})
     if not next_steps:
         next_steps.append({"key": "monitor", "label": "Мониторить пилот и активность", "href": f"/platform/merchants/{business.id}"})
 

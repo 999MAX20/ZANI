@@ -577,7 +577,7 @@ class PilotReadinessChecklistTests(TestCase):
         self.assertIn("needs_attention", statuses)
         self.assertIn("crm_configured", keys)
         self.assertIn("working_hours", keys)
-        self.assertEqual(keys["ai_assistant"]["href"], "/dashboard/ai-assistant")
+        self.assertEqual(keys["ai_assistant"]["href"], "/app/ai-assistant")
         self.assertTrue(all("href" in item for item in response.data["items"]))
 
 

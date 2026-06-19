@@ -913,9 +913,16 @@ export type Appointment = {
   id: Id;
   business: Id;
   client: Id;
+  client_name?: string;
+  client_phone?: string;
   lead: Id | null;
+  lead_title?: string;
   service: Id;
+  service_name?: string;
+  service_duration_minutes?: number;
   resource: Id | null;
+  resource_name?: string | null;
+  resource_type?: string | null;
   start_at: string;
   end_at: string;
   status: "created" | "confirmed" | "cancelled" | "rescheduled" | "completed" | "no_show";
@@ -1207,12 +1214,21 @@ export type Task = {
   title: string;
   description: string;
   client: Id | null;
+  client_name?: string;
   lead: Id | null;
+  lead_title?: string;
   deal: Id | null;
+  deal_title?: string;
   appointment: Id | null;
+  appointment_start_at?: string | null;
+  appointment_service_name?: string;
   parent_task: Id | null;
   assignee: Id | null;
+  assignee_name?: string;
+  assignee_email?: string;
   created_by: Id | null;
+  created_by_name?: string;
+  created_by_email?: string;
   watchers: Id[];
   due_at: string | null;
   reminder_at: string | null;
@@ -1304,6 +1320,36 @@ export type Segment = {
 };
 
 export type CrmCardPayload = {
+  primary_entity?: {
+    type: CrmEntityType;
+    id: Id;
+  } | null;
+  available_actions?: string[];
+  meta?: {
+    related_counts: {
+      leads: number;
+      deals: number;
+      appointments: number;
+      tasks: number;
+      conversations: number;
+      timeline: number;
+      notes: number;
+    };
+    limits: {
+      related: number;
+      timeline: number;
+      notes: number;
+    };
+    has_more: {
+      leads: boolean;
+      deals: boolean;
+      appointments: boolean;
+      tasks: boolean;
+      conversations: boolean;
+      timeline: boolean;
+      notes: boolean;
+    };
+  };
   client: Client | null;
   lead: Lead | null;
   deal: Deal | null;

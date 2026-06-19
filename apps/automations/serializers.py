@@ -7,13 +7,13 @@ from apps.integrations.sanitization import sanitize_config, sanitize_error_paylo
 class AutomationConditionSerializer(serializers.ModelSerializer):
     class Meta:
         model = AutomationCondition
-        fields = "__all__"
+        fields = ["id", "rule", "field", "operator", "value"]
 
 
 class AutomationActionSerializer(serializers.ModelSerializer):
     class Meta:
         model = AutomationAction
-        fields = "__all__"
+        fields = ["id", "rule", "action_type", "config", "order", "delay_seconds"]
 
 
 class AutomationRuleSerializer(serializers.ModelSerializer):
@@ -22,15 +22,73 @@ class AutomationRuleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AutomationRule
-        fields = "__all__"
+        fields = [
+            "id",
+            "business",
+            "name",
+            "trigger_type",
+            "description",
+            "is_active",
+            "priority",
+            "conditions",
+            "actions",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["conditions", "actions", "created_at", "updated_at"]
 
 
 class AutomationRunSerializer(serializers.ModelSerializer):
     rule_name = serializers.CharField(source="rule.name", read_only=True)
+    protected_state_fields = {
+        "status",
+        "payload",
+        "action_results",
+        "error",
+        "attempts",
+        "max_attempts",
+        "next_retry_at",
+        "locked_at",
+        "started_at",
+        "finished_at",
+    }
 
     class Meta:
         model = AutomationRun
-        fields = "__all__"
+        fields = [
+            "id",
+            "business",
+            "rule",
+            "rule_name",
+            "trigger_type",
+            "entity_type",
+            "entity_id",
+            "idempotency_key",
+            "status",
+            "payload",
+            "action_results",
+            "error",
+            "attempts",
+            "max_attempts",
+            "run_after",
+            "next_retry_at",
+            "locked_at",
+            "started_at",
+            "finished_at",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+    def validate(self, attrs):
+        attempted_state_fields = sorted(self.protected_state_fields.intersection((self.initial_data or {}).keys()))
+        if attempted_state_fields:
+            raise serializers.ValidationError(
+                {
+                    "detail": "Use automation runtime services for run state changes.",
+                    "fields": attempted_state_fields,
+                }
+            )
+        return attrs
 
     def to_representation(self, instance):
         data = super().to_representation(instance)

@@ -35,7 +35,7 @@ def build_event_analyst_brief(*, business, user=None, limit=24):
         "Верни только JSON без markdown. Формат: "
         '{"insights":[{"id":"short_id","severity":"critical|warning|info|good","title":"...","summary":"...",'
         '"source_ids":["BE-1"]}],"actions":[{"id":"short_id","priority":"high|medium|low","label":"...",'
-        '"description":"...","href":"/dashboard/...","source_ids":["BE-1"]}]}. '
+        '"description":"...","href":"/app/...","source_ids":["BE-1"]}]}. '
         "Каждый insight и action обязан ссылаться на source_ids из списка. "
         "Не придумывай факты вне источников. Если данных мало, верни insight с severity=info."
     )
@@ -167,9 +167,11 @@ def _normalize_action(item, source_ids, index):
     if not cited:
         return None
     priority = item.get("priority") if item.get("priority") in {"high", "medium", "low"} else "medium"
-    href = str(item.get("href") or "/dashboard/integrations")
-    if not href.startswith("/dashboard"):
-        href = "/dashboard/integrations"
+    href = str(item.get("href") or "/app/integrations")
+    if href.startswith("/dashboard"):
+        href = href.replace("/dashboard", "/app", 1)
+    if not href.startswith("/app"):
+        href = "/app/integrations"
     return {
         "id": str(item.get("id") or f"action_{index}")[:64],
         "priority": priority,
@@ -204,7 +206,7 @@ def _fallback_analyst_output(sources):
                     "priority": "medium",
                     "label": "Подключить источник данных",
                     "description": "Начните с Telegram, сайта, Excel/CSV, Kaspi или 1C, чтобы аналитик получил реальные события.",
-                    "href": "/dashboard/integrations",
+                    "href": "/app/integrations",
                     "source_ids": [],
                 }
             ],
@@ -234,7 +236,7 @@ def _fallback_analyst_output(sources):
                 "priority": "high",
                 "label": "Разобрать ошибки интеграций",
                 "description": "Откройте подключения, проверьте health check и последние sync runs по источникам с failed-событиями.",
-                "href": "/dashboard/integrations",
+                "href": "/app/integrations",
                 "source_ids": cited,
             }
         )
@@ -256,7 +258,7 @@ def _fallback_analyst_output(sources):
                 "priority": "medium",
                 "label": "Проверить обработку событий",
                 "description": "Проверьте, почему received-события не стали processed, и нужен ли retry/reconciliation.",
-                "href": "/dashboard/integrations",
+                "href": "/app/integrations",
                 "source_ids": cited,
             }
         )
@@ -277,7 +279,7 @@ def _fallback_analyst_output(sources):
                 "priority": "low",
                 "label": "Посмотреть последние события",
                 "description": "Проверьте свежие события и убедитесь, что они превращаются в CRM-действия: лиды, сделки, задачи или записи.",
-                "href": "/dashboard/integrations",
+                "href": "/app/integrations",
                 "source_ids": [latest["id"]],
             }
         )

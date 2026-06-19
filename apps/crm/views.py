@@ -5,13 +5,14 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
-from apps.activities.services import write_activity_event
 from apps.businesses.models import Business
 from apps.core.crm_cards import deal_crm_card
 from apps.core.permissions import user_can_access_business
 from apps.core.viewsets import TenantModelViewSet
+from apps.core.work_queues import no_next_action_deals_queryset, sla_overdue_deals_queryset
 from apps.crm.models import Deal, Pipeline, PipelineStage, StageTransition
 from apps.crm.serializers import DealListSerializer, DealSerializer, PipelineSerializer, PipelineStageSerializer, StageTransitionSerializer
+from apps.crm.services import mark_deal_lost, mark_deal_won, move_deal_stage, reopen_deal
 from apps.tasks.models import Task
 
 
@@ -107,7 +108,7 @@ class DealViewSet(TenantModelViewSet):
         queryset = super().get_queryset().prefetch_related(
             Prefetch(
                 "tasks",
-                queryset=Task.objects.exclude(status__in=[Task.Statuses.DONE, Task.Statuses.CANCELLED]).order_by("due_at", "-created_at"),
+                queryset=Task.objects.filter(is_archived=False).exclude(status__in=[Task.Statuses.DONE, Task.Statuses.CANCELLED]).order_by("due_at", "-created_at"),
                 to_attr="open_tasks_for_list",
             )
         )
@@ -163,16 +164,14 @@ class DealViewSet(TenantModelViewSet):
             queryset = queryset.filter(expected_close_at__lte=expected_close_to)
         quick = params.get("quick")
         if quick == "overdue":
-            now = timezone.now()
-            queryset = queryset.filter(stage__sla_minutes__isnull=False, stage_entered_at__lt=now - timezone.timedelta(minutes=1))
+            queryset = self._overdue_queryset(queryset.filter(status=Deal.Statuses.OPEN))
         elif quick == "no_tasks":
-            queryset = queryset.filter(status=Deal.Statuses.OPEN, next_action_at__isnull=True).exclude(
-                tasks__status__in=[Task.Statuses.OPEN, Task.Statuses.IN_PROGRESS]
-            )
+            queryset = no_next_action_deals_queryset(queryset.filter(status=Deal.Statuses.OPEN))
         elif quick == "hot":
+            no_next_ids = no_next_action_deals_queryset(queryset.filter(status=Deal.Statuses.OPEN)).values("id")
             queryset = queryset.filter(
                 Q(expected_close_at__lt=timezone.now().date())
-                | (Q(status=Deal.Statuses.OPEN) & Q(next_action_at__isnull=True) & ~Q(tasks__status__in=[Task.Statuses.OPEN, Task.Statuses.IN_PROGRESS]))
+                | Q(id__in=no_next_ids)
             )
 
         ordering = params.get("ordering")
@@ -226,118 +225,26 @@ class DealViewSet(TenantModelViewSet):
             stage = PipelineStage.objects.get(id=stage_id, business=deal.business, pipeline=deal.pipeline)
         except PipelineStage.DoesNotExist as exc:
             raise ValidationError({"stage": "Stage does not exist in this deal pipeline."}) from exc
-        self._validate_transition(deal, stage, request)
-        return self._apply_stage(deal=deal, stage=stage, request=request)
+        deal = move_deal_stage(deal=deal, stage=stage, actor=request.user, payload=request.data, request=request)
+        return Response(DealSerializer(deal, context={"request": request}).data)
 
     @action(detail=True, methods=["post"], url_path="mark-won")
     def mark_won(self, request, pk=None):
         deal = self.get_object()
-        stage = self._get_terminal_stage(deal, is_won=True)
-        if request.data.get("amount") not in (None, ""):
-            deal.amount = request.data.get("amount")
-        return self._apply_stage(deal=deal, stage=stage, request=request, event_type="deal_marked_won", activity_text="Сделка отмечена как оплаченная/успешная")
+        deal = mark_deal_won(deal=deal, actor=request.user, amount=request.data.get("amount"), request=request)
+        return Response(DealSerializer(deal, context={"request": request}).data)
 
     @action(detail=True, methods=["post"], url_path="mark-lost")
     def mark_lost(self, request, pk=None):
         deal = self.get_object()
-        stage = self._get_terminal_stage(deal, is_lost=True)
-        lost_reason = (request.data.get("lost_reason") or "").strip()
-        if not lost_reason:
-            raise ValidationError({"lost_reason": "Reason is required when deal is lost."})
-        return self._apply_stage(deal=deal, stage=stage, request=request, event_type="deal_marked_lost", activity_text="Сделка закрыта как отказ", lost_reason=lost_reason)
+        deal = mark_deal_lost(deal=deal, actor=request.user, lost_reason=request.data.get("lost_reason", ""), request=request)
+        return Response(DealSerializer(deal, context={"request": request}).data)
 
     @action(detail=True, methods=["post"], url_path="reopen")
     def reopen(self, request, pk=None):
         deal = self.get_object()
-        stage = self._get_reopen_stage(deal)
-        return self._apply_stage(deal=deal, stage=stage, request=request, event_type="deal_reopened", activity_text="Сделка возвращена в работу")
-
-    def _apply_stage(self, *, deal, stage, request, event_type="deal_stage_changed", activity_text=None, lost_reason=None):
-        previous_status = deal.status
-        previous_stage = deal.stage
-        now = timezone.now()
-
-        deal.stage = stage
-        deal.probability = stage.probability
-        deal.stage_entered_at = now
-        if stage.is_won:
-            deal.status = Deal.Statuses.WON
-            deal.won_at = deal.won_at or now
-            deal.lost_at = None
-            deal.lost_by = None
-            deal.previous_status = previous_status if previous_status != Deal.Statuses.WON else ""
-            deal.previous_stage = previous_stage if getattr(previous_stage, "id", None) else None
-            deal.lost_reason = ""
-        elif stage.is_lost:
-            deal.status = Deal.Statuses.LOST
-            deal.lost_at = deal.lost_at or now
-            deal.lost_by = request.user
-            deal.previous_status = previous_status if previous_status != Deal.Statuses.LOST else ""
-            deal.previous_stage = previous_stage if getattr(previous_stage, "id", None) else None
-            deal.won_at = None
-            deal.lost_reason = lost_reason if lost_reason is not None else request.data.get("lost_reason", deal.lost_reason)
-        else:
-            deal.status = Deal.Statuses.OPEN
-            deal.won_at = None
-            deal.lost_at = None
-            deal.lost_by = None
-            deal.previous_status = ""
-            deal.previous_stage = None
-            deal.lost_reason = ""
-        deal.save(update_fields=["stage", "probability", "stage_entered_at", "status", "amount", "won_at", "lost_at", "lost_by", "lost_reason", "previous_status", "previous_stage", "updated_at"])
-        write_activity_event(request, event_type, deal, text=activity_text or f"Сделка перешла на стадию: {stage.name}")
-        return Response(DealSerializer(deal).data)
-
-    def _get_terminal_stage(self, deal, *, is_won=False, is_lost=False):
-        query = PipelineStage.objects.filter(business=deal.business, pipeline=deal.pipeline)
-        if is_won:
-            query = query.filter(is_won=True)
-        if is_lost:
-            query = query.filter(is_lost=True)
-        stage = query.order_by("order", "id").first()
-        if not stage:
-            raise ValidationError({"stage": "Terminal stage is not configured for this pipeline."})
-        return stage
-
-    def _get_reopen_stage(self, deal):
-        if deal.previous_stage_id and not (deal.previous_stage.is_won or deal.previous_stage.is_lost):
-            return deal.previous_stage
-        stage = PipelineStage.objects.filter(
-            business=deal.business,
-            pipeline=deal.pipeline,
-            is_won=False,
-            is_lost=False,
-        ).order_by("order", "id").first()
-        if not stage:
-            raise ValidationError({"stage": "Open stage is not configured for this pipeline."})
-        return stage
-
-    def _validate_transition(self, deal, stage, request):
-        transition = StageTransition.objects.filter(
-            business=deal.business,
-            pipeline=deal.pipeline,
-            from_stage=deal.stage,
-            to_stage=stage,
-            is_active=True,
-        ).first()
-        if transition and transition.required_permission:
-            allowed_roles = set(stage.allowed_roles_json.get("roles", []))
-            if allowed_roles and request.user.role not in allowed_roles:
-                raise ValidationError({"stage": "Your role cannot move deals to this stage."})
-
-        allowed_roles = set(stage.allowed_roles_json.get("roles", []))
-        if allowed_roles and request.user.role not in allowed_roles:
-            raise ValidationError({"stage": "Your role cannot move deals to this stage."})
-
-        missing = []
-        for field in stage.required_fields_json.get("fields", []):
-            value = request.data.get(field, getattr(deal, field, None))
-            if value in (None, "", 0, "0"):
-                missing.append(field)
-        if stage.is_lost and not (request.data.get("lost_reason") or deal.lost_reason):
-            missing.append("lost_reason")
-        if missing:
-            raise ValidationError({"required_fields": missing})
+        deal = reopen_deal(deal=deal, actor=request.user, request=request)
+        return Response(DealSerializer(deal, context={"request": request}).data)
 
     @action(detail=True, methods=["get"], url_path="crm-card")
     def crm_card(self, request, pk=None):
@@ -350,10 +257,10 @@ class DealViewSet(TenantModelViewSet):
         open_deals = queryset.filter(status=Deal.Statuses.OPEN)
         won_deals = queryset.filter(status=Deal.Statuses.WON)
         lost_deals = queryset.filter(status=Deal.Statuses.LOST)
-        no_task_deals = open_deals.filter(next_action_at__isnull=True).exclude(tasks__status__in=[Task.Statuses.OPEN, Task.Statuses.IN_PROGRESS])
+        no_task_deals = no_next_action_deals_queryset(open_deals)
         hot_deals = open_deals.filter(
             Q(expected_close_at__lt=timezone.now().date())
-            | (Q(next_action_at__isnull=True) & ~Q(tasks__status__in=[Task.Statuses.OPEN, Task.Statuses.IN_PROGRESS]))
+            | Q(id__in=no_task_deals.values("id"))
         )
         by_status = {item["status"]: item["count"] for item in queryset.values("status").annotate(count=Count("id", distinct=True))}
         by_source = {item["source"] or "manual": item["count"] for item in queryset.values("source").annotate(count=Count("id", distinct=True))}
@@ -421,12 +328,7 @@ class DealViewSet(TenantModelViewSet):
             self.request._request.GET = original
 
     def _overdue_queryset(self, queryset):
-        overdue_ids = []
-        now = timezone.now()
-        for deal in queryset.filter(stage__sla_minutes__isnull=False, stage_entered_at__isnull=False).select_related("stage"):
-            if deal.stage_entered_at and deal.stage and deal.stage.sla_minutes and now > deal.stage_entered_at + timezone.timedelta(minutes=deal.stage.sla_minutes):
-                overdue_ids.append(deal.id)
-        return queryset.filter(id__in=overdue_ids)
+        return sla_overdue_deals_queryset(queryset)
 
 
 class StageTransitionViewSet(TenantModelViewSet):

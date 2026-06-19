@@ -19,7 +19,7 @@ class Command(BaseCommand):
         channel = self._resolve_channel(options.get("channel_id"))
         checks = []
         checks.append(self._check("TELEGRAM_ENABLED", bool(settings.TELEGRAM_ENABLED), "Set TELEGRAM_ENABLED=True for real Telegram API calls."))
-        checks.append(self._check("telegram_channel_exists", channel is not None, "Create/connect a Telegram channel in /dashboard/integrations."))
+        checks.append(self._check("telegram_channel_exists", channel is not None, "Create/connect a Telegram channel in /app/integrations."))
 
         if channel is None:
             result = self._result(checks)

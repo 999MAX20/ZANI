@@ -155,7 +155,7 @@ def _execute_create_task(log, user):
         priority=Notification.Priorities.HIGH if task.priority in {Task.Priorities.HIGH, Task.Priorities.URGENT} else Notification.Priorities.NORMAL,
         text=f"AI создал задачу: {task.title}",
         send_at=timezone.now(),
-        action_url=f"/dashboard/tasks?task={task.id}",
+        action_url=f"/app/tasks?task={task.id}",
         action_label="Открыть задачу",
     )
     return {

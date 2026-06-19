@@ -10,7 +10,20 @@ from apps.outreach.services import preview_campaign_audience, unsupported_templa
 class OutreachTemplateSerializer(serializers.ModelSerializer):
     class Meta:
         model = OutreachTemplate
-        fields = "__all__"
+        fields = [
+            "id",
+            "business",
+            "name",
+            "channel",
+            "body",
+            "external_template_name",
+            "language_code",
+            "is_approved",
+            "is_active",
+            "created_by",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = ["created_at", "updated_at", "created_by"]
 
     def validate(self, attrs):
@@ -30,11 +43,54 @@ class OutreachCampaignSerializer(serializers.ModelSerializer):
     recipients_failed = serializers.IntegerField(read_only=True)
     recipients_skipped = serializers.IntegerField(read_only=True)
     audience_preview = serializers.SerializerMethodField()
+    protected_state_fields = {"status", "started_at", "finished_at"}
 
     class Meta:
         model = OutreachCampaign
-        fields = "__all__"
-        read_only_fields = ["created_at", "updated_at", "created_by", "started_at", "finished_at"]
+        fields = [
+            "id",
+            "business",
+            "name",
+            "channel",
+            "status",
+            "campaign_type",
+            "audience_type",
+            "segment",
+            "template",
+            "message_text",
+            "require_opt_in",
+            "whatsapp_template_name",
+            "whatsapp_template_language",
+            "whatsapp_template_status",
+            "rate_limit_per_minute",
+            "batch_size",
+            "scheduled_at",
+            "created_by",
+            "started_at",
+            "finished_at",
+            "recipients_total",
+            "recipients_pending",
+            "recipients_sent",
+            "recipients_failed",
+            "recipients_skipped",
+            "audience_preview",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "status",
+            "created_by",
+            "started_at",
+            "finished_at",
+            "recipients_total",
+            "recipients_pending",
+            "recipients_sent",
+            "recipients_failed",
+            "recipients_skipped",
+            "audience_preview",
+            "created_at",
+            "updated_at",
+        ]
 
     def get_audience_preview(self, obj):
         request = self.context.get("request")
@@ -43,6 +99,14 @@ class OutreachCampaignSerializer(serializers.ModelSerializer):
         return preview_campaign_audience(obj)
 
     def validate(self, attrs):
+        attempted_state_fields = sorted(self.protected_state_fields.intersection((self.initial_data or {}).keys()))
+        if attempted_state_fields:
+            raise serializers.ValidationError(
+                {
+                    "detail": "Use outreach campaign action endpoints for campaign state changes.",
+                    "fields": attempted_state_fields,
+                }
+            )
         business = attrs.get("business") or getattr(self.instance, "business", None)
         segment = attrs.get("segment") or getattr(self.instance, "segment", None)
         template = attrs.get("template") or getattr(self.instance, "template", None)
@@ -73,11 +137,64 @@ class OutreachRecipientSerializer(serializers.ModelSerializer):
     client_name = serializers.CharField(source="client.full_name", read_only=True)
     client_phone = serializers.CharField(source="client.phone", read_only=True)
     notification_status = serializers.CharField(source="notification.status", read_only=True)
+    protected_state_fields = {"status", "error", "error_code", "provider_result", "skipped_reason", "sent_at"}
 
     class Meta:
         model = OutreachRecipient
-        fields = "__all__"
-        read_only_fields = ["created_at", "updated_at"]
+        fields = [
+            "id",
+            "campaign",
+            "business",
+            "client",
+            "client_name",
+            "client_phone",
+            "notification",
+            "notification_status",
+            "status",
+            "recipient_id",
+            "personalized_text",
+            "error",
+            "error_code",
+            "provider_result",
+            "skipped_reason",
+            "sent_at",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "status",
+            "error",
+            "error_code",
+            "provider_result",
+            "skipped_reason",
+            "sent_at",
+            "client_name",
+            "client_phone",
+            "notification_status",
+            "created_at",
+            "updated_at",
+        ]
+
+    def validate(self, attrs):
+        attempted_state_fields = sorted(self.protected_state_fields.intersection((self.initial_data or {}).keys()))
+        if attempted_state_fields:
+            raise serializers.ValidationError(
+                {
+                    "detail": "Use outreach delivery services for recipient state changes.",
+                    "fields": attempted_state_fields,
+                }
+            )
+        business = attrs.get("business") or getattr(self.instance, "business", None)
+        campaign = attrs.get("campaign") or getattr(self.instance, "campaign", None)
+        client = attrs.get("client") or getattr(self.instance, "client", None)
+        notification = attrs.get("notification") or getattr(self.instance, "notification", None)
+        if campaign and business and campaign.business_id != business.id:
+            raise serializers.ValidationError("Campaign must belong to the selected business.")
+        if client and business and client.business_id != business.id:
+            raise serializers.ValidationError("Client must belong to the selected business.")
+        if notification and business and notification.business_id != business.id:
+            raise serializers.ValidationError("Notification must belong to the selected business.")
+        return attrs
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -92,7 +209,22 @@ class OutreachConsentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OutreachConsent
-        fields = "__all__"
+        fields = [
+            "id",
+            "business",
+            "client",
+            "client_name",
+            "client_phone",
+            "channel",
+            "status",
+            "source",
+            "note",
+            "evidence_json",
+            "opted_in_at",
+            "opted_out_at",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = ["created_at", "updated_at", "opted_in_at", "opted_out_at"]
 
     def validate(self, attrs):

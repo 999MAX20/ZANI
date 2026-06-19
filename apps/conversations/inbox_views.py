@@ -34,6 +34,7 @@ from apps.conversations.inbox_serializers import (
 )
 from apps.conversations.pipeline import default_pipeline_and_stage, last_message_text, run_conversation_pipeline, source_from_channel
 from apps.core.permissions import accessible_businesses
+from apps.core.work_queues import handoff_conversations_queryset, unread_conversations_queryset
 from apps.crm.models import Deal
 from apps.crm.serializers import DealSerializer
 from apps.leads.models import Lead
@@ -88,9 +89,9 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
         """
         queryset = self.get_queryset()
         total = queryset.count()
-        unread = queryset.filter(unread_count__gt=0).count()
+        unread = unread_conversations_queryset(queryset=queryset).count()
         unread_messages = queryset.aggregate(total=Sum("unread_count"))["total"] or 0
-        handoff_required = queryset.filter(handoff_required=True).count()
+        handoff_required = handoff_conversations_queryset(queryset=queryset).count()
         assigned_to_me = queryset.filter(assigned_to=request.user).count()
         unassigned = queryset.filter(assigned_to__isnull=True).count()
         urgent = queryset.filter(priority=BotConversation.Priorities.URGENT).count()
@@ -146,13 +147,13 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
 
         next_actions = []
         if unread:
-            next_actions.append({"label": "Разобрать непрочитанные", "href": "/dashboard/inbox?unread=true", "priority": "high"})
+            next_actions.append({"label": "Разобрать непрочитанные", "href": "/app/inbox?unread=true", "priority": "high"})
         if handoff_required:
-            next_actions.append({"label": "Забрать диалоги у бота", "href": "/dashboard/inbox?handoff_required=true", "priority": "high"})
+            next_actions.append({"label": "Забрать диалоги у бота", "href": "/app/inbox?handoff_required=true", "priority": "high"})
         if unassigned:
-            next_actions.append({"label": "Назначить ответственных", "href": "/dashboard/inbox?assigned_to=unassigned", "priority": "normal"})
+            next_actions.append({"label": "Назначить ответственных", "href": "/app/inbox?assigned_to=unassigned", "priority": "normal"})
         if total == 0:
-            next_actions.append({"label": "Подключить website chat", "href": "/dashboard/integrations", "priority": "normal"})
+            next_actions.append({"label": "Подключить website chat", "href": "/app/integrations", "priority": "normal"})
 
         return Response(
             {

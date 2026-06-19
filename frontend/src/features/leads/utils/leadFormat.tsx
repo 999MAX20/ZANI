@@ -10,15 +10,9 @@ export function Pill({ children, className }: { children: React.ReactNode; class
 }
 
 export function TruncatedText({ children, className }: { children: React.ReactNode; className?: string }) {
-  const text = typeof children === "string" ? children : undefined;
   return (
-    <span className={cn("group relative min-w-0", className)} title={text}>
+    <span className={cn("min-w-0", className)}>
       <span className="block max-w-[220px] truncate">{children}</span>
-      {text ? (
-        <span className="pointer-events-none absolute left-0 top-full z-30 mt-2 hidden max-w-xs rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold leading-5 text-slate-700 shadow-xl group-hover:block">
-          {text}
-        </span>
-      ) : null}
     </span>
   );
 }

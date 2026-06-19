@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from apps.activities.models import Segment, TaggedObject
 from apps.activities.segments import evaluate_segment_queryset
 from apps.clients.models import Client
-from apps.clients.serializers import ClientMergeSerializer, ClientSerializer, DuplicateCheckSerializer
+from apps.clients.serializers import ClientMergeDryRunSerializer, ClientMergeSerializer, ClientSerializer, DuplicateCheckSerializer
 from apps.core.audit import write_audit_log
 from apps.core.crm_cards import client_crm_card
 from apps.core.models import AuditLog
@@ -252,5 +252,22 @@ class ClientViewSet(TenantModelViewSet):
         serializer = ClientMergeSerializer(data=request.data, context={"request": request, "target_client": target_client})
         serializer.is_valid(raise_exception=True)
         result = serializer.save()
-        write_audit_log(request, AuditLog.Actions.UPDATE, target_client, metadata={"merge": result})
+        write_audit_log(
+            request,
+            AuditLog.Actions.UPDATE,
+            target_client,
+            metadata={
+                "kind": "merge",
+                "merge": result,
+                "merge_log_id": result.get("merge_log_id"),
+                "duplicate_client_id": result.get("deleted_duplicate", {}).get("id"),
+            },
+        )
         return Response(result)
+
+    @action(detail=True, methods=["post"], url_path="merge-dry-run")
+    def merge_dry_run(self, request, pk=None):
+        target_client = self.get_object()
+        serializer = ClientMergeDryRunSerializer(data=request.data, context={"request": request, "target_client": target_client})
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.save())

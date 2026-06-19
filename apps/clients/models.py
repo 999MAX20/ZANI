@@ -43,3 +43,24 @@ class Client(TimeStampedModel):
 
     def __str__(self):
         return self.full_name
+
+
+class ClientMergeLog(models.Model):
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name="client_merge_logs")
+    target_client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name="merge_logs_as_target")
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="client_merge_logs")
+    duplicate_snapshot = models.JSONField(default=dict)
+    transferred_counts = models.JSONField(default=dict)
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["business", "target_client", "created_at"]),
+            models.Index(fields=["business", "created_at"]),
+        ]
+
+    def __str__(self):
+        duplicate_id = self.duplicate_snapshot.get("id", "unknown")
+        return f"Client merge {duplicate_id} -> {self.target_client_id}"

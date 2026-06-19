@@ -305,7 +305,7 @@ class Command(BaseCommand):
             channel="system",
             category="tasks",
             text="AI создал демо-задачу: связаться с необработанными заявками.",
-            defaults={"priority": Notification.Priorities.HIGH, "status": Notification.Statuses.PENDING, "send_at": timezone.now(), "action_url": f"/dashboard/tasks?task={task.id}", "action_label": "Открыть задачу"},
+            defaults={"priority": Notification.Priorities.HIGH, "status": Notification.Statuses.PENDING, "send_at": timezone.now(), "action_url": f"/app/tasks?task={task.id}", "action_label": "Открыть задачу"},
         )
 
     def _ensure_quick_replies(self, business: Business):

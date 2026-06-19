@@ -27,6 +27,12 @@ from apps.core.audit import write_audit_log
 from apps.core.models import AuditLog
 from apps.core.permissions import IsTenantMember, accessible_businesses, is_platform_admin, platform_admin_has_global_access
 from apps.core.viewsets import TenantModelViewSet
+from apps.core.work_queues import (
+    missed_chat_handoffs_queryset,
+    overdue_handoff_conversations_queryset,
+    overdue_tasks_queryset,
+    sla_overdue_deals_queryset,
+)
 from apps.crm.models import Deal
 from apps.leads.models import Lead
 from apps.scheduling.models import Appointment
@@ -360,7 +366,6 @@ def team_performance(request):
     source = request.query_params.get("source")
     pipeline = request.query_params.get("pipeline")
     now = timezone.now()
-    handoff_deadline = now - timezone.timedelta(minutes=15)
 
     leads = Lead.objects.filter(business=business, responsible_user_id__in=visible_user_ids)
     leads = _date_filter(leads, "created_at", start_date, end_date)
@@ -391,16 +396,15 @@ def team_performance(request):
         user_tasks = tasks.filter(Q(assignee=user) | Q(completed_by=user))
         user_conversations = conversations.filter(assigned_to=user)
         user_appointments = appointments.filter(lead__responsible_user=user)
-        active_tasks = user_tasks.exclude(status__in=[Task.Statuses.DONE, Task.Statuses.CANCELLED])
         assigned_leads_count = user_leads.count()
         appointments_created_count = user_appointments.count()
         lost_leads_count = user_leads.filter(status=Lead.Statuses.LOST).count()
         closed_leads_count = user_leads.filter(status=Lead.Statuses.CLOSED).count()
         contacted_leads_count = user_leads.filter(status__in=[Lead.Statuses.CONTACTED, Lead.Statuses.APPOINTMENT_CREATED, Lead.Statuses.CLOSED]).count()
-        overdue_handoffs_count = user_conversations.filter(handoff_required=True, last_inbound_at__lt=handoff_deadline).count()
-        missed_chat_handoffs_count = user_conversations.filter(handoff_required=True, assigned_to__isnull=False, last_outbound_at__isnull=True).count()
-        tasks_overdue_count = active_tasks.filter(due_at__lt=now).count()
-        sla_overdue_deals_count = _sla_overdue_deals_count(user_deals, now)
+        overdue_handoffs_count = overdue_handoff_conversations_queryset(queryset=user_conversations, now=now).count()
+        missed_chat_handoffs_count = missed_chat_handoffs_queryset(queryset=user_conversations).count()
+        tasks_overdue_count = overdue_tasks_queryset(queryset=user_tasks, now=now).count()
+        sla_overdue_deals_count = sla_overdue_deals_queryset(user_deals.filter(status=Deal.Statuses.OPEN), now=now).count()
         lost_reasons = list(
             user_leads.filter(status=Lead.Statuses.LOST)
             .exclude(lost_reason="")
@@ -545,15 +549,6 @@ def _avg_response_minutes(conversations):
     return round(sum(diffs) / len(diffs))
 
 
-def _sla_overdue_deals_count(deals, now):
-    count = 0
-    for deal in deals.select_related("stage").only("stage_entered_at", "stage__sla_minutes"):
-        if deal.stage and deal.stage.sla_minutes and deal.stage_entered_at:
-            if now > deal.stage_entered_at + timezone.timedelta(minutes=deal.stage.sla_minutes):
-                count += 1
-    return count
-
-
 def _member_action_items(user, *, overdue_handoffs_count, missed_chat_handoffs_count, tasks_overdue_count, sla_overdue_deals_count):
     name = user.full_name or user.email
     actions = []
@@ -564,7 +559,7 @@ def _member_action_items(user, *, overdue_handoffs_count, missed_chat_handoffs_c
             "user_id": user.id,
             "title": "Разобрать просроченные handoff",
             "description": f"{name}: {overdue_handoffs_count} чат(ов) ждут подключения менеджера.",
-            "route": "/dashboard/conversations",
+            "route": "/app/conversations",
             "count": overdue_handoffs_count,
         })
     if missed_chat_handoffs_count:
@@ -574,7 +569,7 @@ def _member_action_items(user, *, overdue_handoffs_count, missed_chat_handoffs_c
             "user_id": user.id,
             "title": "Ответить в чатах без исходящего сообщения",
             "description": f"{name}: {missed_chat_handoffs_count} чат(ов) назначены, но не получили ответа.",
-            "route": "/dashboard/conversations",
+            "route": "/app/conversations",
             "count": missed_chat_handoffs_count,
         })
     if sla_overdue_deals_count:
@@ -584,7 +579,7 @@ def _member_action_items(user, *, overdue_handoffs_count, missed_chat_handoffs_c
             "user_id": user.id,
             "title": "Проверить сделки с просроченным SLA",
             "description": f"{name}: {sla_overdue_deals_count} сделк(и) зависли на этапе дольше нормы.",
-            "route": "/dashboard/deals",
+            "route": "/app/deals",
             "count": sla_overdue_deals_count,
         })
     if tasks_overdue_count:
@@ -594,7 +589,7 @@ def _member_action_items(user, *, overdue_handoffs_count, missed_chat_handoffs_c
             "user_id": user.id,
             "title": "Закрыть просроченные задачи",
             "description": f"{name}: {tasks_overdue_count} задач(и) просрочены.",
-            "route": "/dashboard/tasks",
+            "route": "/app/tasks",
             "count": tasks_overdue_count,
         })
     return actions

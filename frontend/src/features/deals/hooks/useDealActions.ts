@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { dealsApi } from "../../../api/deals";
-import { tasksApi } from "../../../api/tasks";
+import { dealsApi, type DealCreatePayload, type DealUpdatePayload } from "../../../api/deals";
+import { tasksApi, type TaskCreatePayload } from "../../../api/tasks";
 import type { Deal, Id, PipelineStage, Task } from "../../../types";
 import type { DealActionFlow, DealCreateForm, Translate } from "../types";
 import { nextOpenTask, toDateTimeLocal } from "../utils/dealHelpers";
@@ -35,7 +35,7 @@ export function useDealActions({
   const [form, setForm] = useState<DealCreateForm>({ title: "", client: "", pipeline: "", stage: "", amount: "0", source: "manual" });
 
   const createMutation = useMutation({
-    mutationFn: (payload: Partial<Deal>) => dealsApi.create(payload),
+    mutationFn: (payload: DealCreatePayload) => dealsApi.create(payload),
     onSuccess: (deal) => {
       queryClient.invalidateQueries({ queryKey: ["deals"] });
       setCreateOpen(false);
@@ -68,7 +68,7 @@ export function useDealActions({
   });
 
   const createTaskMutation = useMutation({
-    mutationFn: (payload: Partial<Task>) => tasksApi.create(payload),
+    mutationFn: (payload: TaskCreatePayload) => tasksApi.create(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["deals"] });
@@ -78,7 +78,7 @@ export function useDealActions({
   });
 
   const updateDealMutation = useMutation({
-    mutationFn: ({ id, payload }: { id: Id; payload: Partial<Deal> }) => dealsApi.update({ id, payload }),
+    mutationFn: ({ id, payload }: { id: Id; payload: DealUpdatePayload }) => dealsApi.update({ id, payload }),
     onSuccess: (deal) => {
       queryClient.invalidateQueries({ queryKey: ["deals"] });
       onSelect(deal.id);
@@ -107,13 +107,9 @@ export function useDealActions({
       appointment: null,
       parent_task: null,
       assignee: nextActionDraft.assignee ? Number(nextActionDraft.assignee) : deal.owner || null,
-      created_by: null,
-      watchers: [],
       due_at: new Date(nextActionDraft.due_at).toISOString(),
       reminder_at: null,
-      snoozed_until: null,
       priority: nextActionDraft.priority,
-      status: "open",
       recurrence_rule: "",
     });
   }

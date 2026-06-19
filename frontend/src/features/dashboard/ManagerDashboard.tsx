@@ -7,6 +7,7 @@ import { EmptyState } from "../../components/ui/StateViews";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { formatDateTime } from "../../lib/format";
 import { useI18n } from "../../lib/i18n";
+import type { WorkQueuesResponse } from "../../api/workQueues";
 import type { Appointment, Client, Lead, Service, Task } from "../../types";
 import { isTodayDate } from "./dashboardUtils";
 
@@ -21,6 +22,7 @@ type ManagerDashboardProps = {
   openTasks: number;
   overdueTasks: number;
   isCoreDataLoading: boolean;
+  workQueues?: WorkQueuesResponse;
 };
 
 function WorkListCard({
@@ -62,11 +64,21 @@ export function ManagerDashboard({
   openTasks,
   overdueTasks,
   isCoreDataLoading,
+  workQueues,
 }: ManagerDashboardProps) {
   const { t } = useI18n();
   const urgentLeads = leads.filter((lead) => ["new", "in_progress", "contacted"].includes(lead.status)).slice(0, 4);
   const todayAppointments = appointments.filter((appointment) => isTodayDate(appointment.start_at)).slice(0, 4);
   const openTaskItems = tasks.filter((task) => task.status !== "done" && task.status !== "cancelled").slice(0, 4);
+  const queueLeads = workQueues?.queues.stale_leads || [];
+  const queueAppointments = [
+    ...(workQueues?.queues.appointment_confirmations || []),
+    ...(workQueues?.queues.upcoming_appointments || []),
+  ].slice(0, 4);
+  const queueTasks = workQueues?.queues.overdue_tasks || [];
+  const leadAttentionCount = workQueues?.summary.stale_leads ?? newLeadsCount;
+  const appointmentAttentionCount = workQueues?.summary.appointment_confirmations ?? todayAppointmentsCount;
+  const taskAttentionCount = workQueues?.summary.overdue_tasks ?? openTasks;
 
   return (
     <div className="pb-6">
@@ -77,10 +89,10 @@ export function ManagerDashboard({
       ) : null}
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricTile label={t("dashboard.newLeads")} value={newLeadsCount} hint={t("dashboard.needProcess")} icon={Flame} tone="amber" />
-        <MetricTile label={t("dashboard.appointments")} value={todayAppointmentsCount} hint={t("common.today")} icon={CalendarCheck} tone="brand" />
+        <MetricTile label={t("dashboard.newLeads")} value={leadAttentionCount} hint={t("dashboard.needProcess")} icon={Flame} tone="amber" />
+        <MetricTile label={t("dashboard.appointments")} value={appointmentAttentionCount} hint={t("common.today")} icon={CalendarCheck} tone="brand" />
         <MetricTile label={t("nav.clients")} value={clients.length} hint={t("dashboard.inCrmBase")} icon={Users} tone="green" />
-        <MetricTile label={t("nav.tasks")} value={openTasks} hint={overdueTasks ? `${t("dashboard.overdueCount")}: ${overdueTasks}` : t("dashboard.openFollowups")} icon={ListChecks} />
+        <MetricTile label={t("nav.tasks")} value={taskAttentionCount} hint={overdueTasks ? `${t("dashboard.overdueCount")}: ${overdueTasks}` : t("dashboard.openFollowups")} icon={ListChecks} />
       </section>
 
       <section className="mt-5 rounded-xl border border-slate-200 bg-white p-5 shadow-soft">
@@ -90,15 +102,15 @@ export function ManagerDashboard({
             <h2 className="mt-1 text-xl font-black text-midnight">{t("dashboard.operatorFocus")}</h2>
           </div>
           <div className="grid grid-cols-3 gap-2 text-center">
-            <Link to="/dashboard/leads" className="rounded-xl bg-slate-50 px-4 py-3 transition hover:bg-white hover:shadow-soft">
-              <p className="text-2xl font-black text-midnight">{urgentLeads.length}</p>
+            <Link to="/app/leads" className="rounded-xl bg-slate-50 px-4 py-3 transition hover:bg-white hover:shadow-soft">
+              <p className="text-2xl font-black text-midnight">{leadAttentionCount}</p>
               <p className="text-xs font-bold text-slate-500">{t("dashboard.leadsLabel")}</p>
             </Link>
-            <Link to="/dashboard/conversations" className="rounded-xl bg-slate-50 px-4 py-3 transition hover:bg-white hover:shadow-soft">
+            <Link to="/app/conversations" className="rounded-xl bg-slate-50 px-4 py-3 transition hover:bg-white hover:shadow-soft">
               <MessageSquareText className="mx-auto text-brand-600" size={22} />
               <p className="mt-1 text-xs font-bold text-slate-500">{t("dashboard.chatsLabel")}</p>
             </Link>
-            <Link to="/dashboard/deals" className="rounded-xl bg-slate-50 px-4 py-3 transition hover:bg-white hover:shadow-soft">
+            <Link to="/app/deals" className="rounded-xl bg-slate-50 px-4 py-3 transition hover:bg-white hover:shadow-soft">
               <Target className="mx-auto text-ai-600" size={22} />
               <p className="mt-1 text-xs font-bold text-slate-500">{t("nav.deals")}</p>
             </Link>
@@ -107,12 +119,22 @@ export function ManagerDashboard({
       </section>
 
       <section className="mt-5 grid gap-4 xl:grid-cols-3">
-        <WorkListCard eyebrow={t("dashboard.queue")} title={t("dashboard.leadsToAnswer")} href="/dashboard/leads">
-          {urgentLeads.map((lead) => {
+        <WorkListCard eyebrow={t("dashboard.queue")} title={t("dashboard.leadsToAnswer")} href="/app/leads">
+          {queueLeads.length ? queueLeads.map((lead) => (
+            <Link key={lead.id} to={`/app/leads?lead=${lead.id}`} className="block rounded-xl border border-slate-200 bg-white p-3 transition hover:border-brand-200 hover:shadow-soft">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate font-bold text-midnight">{lead.title || t("dashboard.leadNumber", { id: lead.id })}</p>
+                  <p className="mt-1 truncate text-xs text-slate-500">{lead.source} · {lead.age_hours ? `${lead.age_hours}h` : t("dashboard.noMessage")}</p>
+                </div>
+                <StatusBadge status={lead.status} />
+              </div>
+            </Link>
+          )) : urgentLeads.map((lead) => {
             const client = clients.find((item) => item.id === lead.client);
             const service = services.find((item) => item.id === lead.service);
             return (
-              <Link key={lead.id} to="/dashboard/leads" className="block rounded-xl border border-slate-200 bg-white p-3 transition hover:border-brand-200 hover:shadow-soft">
+              <Link key={lead.id} to="/app/leads" className="block rounded-xl border border-slate-200 bg-white p-3 transition hover:border-brand-200 hover:shadow-soft">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="truncate font-bold text-midnight">{client?.full_name || t("dashboard.leadNumber", { id: lead.id })}</p>
@@ -126,12 +148,22 @@ export function ManagerDashboard({
           {!urgentLeads.length ? <EmptyState title={t("dashboard.noUrgentLeads")} description={t("dashboard.noUrgentLeadsText")} /> : null}
         </WorkListCard>
 
-        <WorkListCard eyebrow={t("common.today")} title={t("nav.appointments")} href="/dashboard/calendar">
-          {todayAppointments.map((appointment) => {
+        <WorkListCard eyebrow={t("common.today")} title={t("nav.appointments")} href="/app/calendar">
+          {queueAppointments.length ? queueAppointments.map((appointment) => (
+            <Link key={`${appointment.type}-${appointment.id}`} to="/app/calendar" className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 transition hover:border-brand-200 hover:shadow-soft">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700">
+                <CalendarCheck size={17} />
+              </div>
+              <div className="min-w-0">
+                <p className="truncate font-bold text-midnight">{appointment.title || t("common.client")}</p>
+                <p className="mt-1 text-xs text-slate-500">{formatDateTime(appointment.start_at)}</p>
+              </div>
+            </Link>
+          )) : todayAppointments.map((appointment) => {
             const client = clients.find((item) => item.id === appointment.client);
             const service = services.find((item) => item.id === appointment.service);
             return (
-              <Link key={appointment.id} to="/dashboard/calendar" className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 transition hover:border-brand-200 hover:shadow-soft">
+              <Link key={appointment.id} to="/app/calendar" className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 transition hover:border-brand-200 hover:shadow-soft">
                 <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700">
                   <CalendarCheck size={17} />
                 </div>
@@ -145,9 +177,19 @@ export function ManagerDashboard({
           {!todayAppointments.length ? <EmptyState title={t("dashboard.noBookingsToday")} description={t("dashboard.noBookingsTodayText")} /> : null}
         </WorkListCard>
 
-        <WorkListCard eyebrow={t("dashboard.followUp")} title={t("dashboard.myTasks")} href="/dashboard/tasks">
-          {openTaskItems.map((task) => (
-            <Link key={task.id} to="/dashboard/tasks" className="block rounded-xl border border-slate-200 bg-white p-3 transition hover:border-brand-200 hover:shadow-soft">
+        <WorkListCard eyebrow={t("dashboard.followUp")} title={t("dashboard.myTasks")} href="/app/tasks">
+          {queueTasks.length ? queueTasks.map((task) => (
+            <Link key={task.id} to="/app/tasks" className="block rounded-xl border border-slate-200 bg-white p-3 transition hover:border-brand-200 hover:shadow-soft">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate font-bold text-midnight">{task.title}</p>
+                  <p className="mt-1 truncate text-xs text-slate-500">{task.due_at ? formatDateTime(task.due_at) : t("dashboard.noDueDate")}</p>
+                </div>
+                <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-black uppercase text-slate-600">{task.priority}</span>
+              </div>
+            </Link>
+          )) : openTaskItems.map((task) => (
+            <Link key={task.id} to="/app/tasks" className="block rounded-xl border border-slate-200 bg-white p-3 transition hover:border-brand-200 hover:shadow-soft">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="truncate font-bold text-midnight">{task.title}</p>

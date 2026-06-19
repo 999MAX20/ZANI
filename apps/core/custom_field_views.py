@@ -1,8 +1,10 @@
+from django.db import transaction
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 
 from apps.businesses.models import Business, BusinessMember
+from apps.core.custom_fields import validate_custom_field_value
 from apps.core.models import CustomFieldDefinition, CustomFieldValue
 from apps.core.permissions import user_can_access_business
 from apps.core.serializers import BulkCustomFieldValueSerializer, CustomFieldDefinitionSerializer, CustomFieldValueSerializer
@@ -71,6 +73,7 @@ class CustomFieldValueViewSet(TenantModelViewSet):
         return queryset
 
     @action(detail=False, methods=["post"], url_path="bulk-upsert")
+    @transaction.atomic
     def bulk_upsert(self, request):
         serializer = BulkCustomFieldValueSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -88,12 +91,16 @@ class CustomFieldValueViewSet(TenantModelViewSet):
                 raise ValidationError({"definition": "Definition does not belong to this business/entity."})
             if not _role_allowed(definition, request.user, "edit"):
                 raise PermissionDenied(f"You cannot edit custom field '{definition.key}'.")
+            value_json = validate_custom_field_value(
+                definition=definition,
+                value_json=item.get("value_json", {}),
+            )
             value, _ = CustomFieldValue.objects.update_or_create(
                 business=business,
                 definition=definition,
                 entity_type=entity_type,
                 entity_id=str(entity_id),
-                defaults={"value_json": item.get("value_json", {})},
+                defaults={"value_json": value_json},
             )
             saved.append(value)
 

@@ -6,6 +6,7 @@ from apps.activities.models import ActivityEvent, Note
 from apps.businesses.access import ensure_default_roles
 from apps.businesses.models import Business, BusinessMember, BusinessRole
 from apps.clients.models import Client
+from apps.core.models import AuditLog
 from apps.leads.models import Lead
 
 
@@ -129,6 +130,53 @@ class LeadCrmLightTests(TestCase):
 
         self.assertEqual(response.status_code, 404)
 
+    def test_generic_patch_cannot_bypass_lead_lifecycle_actions(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.patch(
+            f"/api/leads/{self.assigned_lead.id}/",
+            {"status": Lead.Statuses.LOST, "lost_reason": "Bypass attempt"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["fields"], ["lost_reason", "status"])
+        self.assigned_lead.refresh_from_db()
+        self.assertEqual(self.assigned_lead.status, Lead.Statuses.NEW)
+        self.assertEqual(self.assigned_lead.lost_reason, "")
+
+    def test_generic_patch_cannot_bypass_lead_archive_action(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.patch(
+            f"/api/leads/{self.assigned_lead.id}/",
+            {"is_archived": True, "archive_reason": "Bypass attempt"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["fields"], ["archive_reason", "is_archived"])
+        self.assigned_lead.refresh_from_db()
+        self.assertFalse(self.assigned_lead.is_archived)
+        self.assertEqual(self.assigned_lead.archive_reason, "")
+
+    def test_create_lead_cannot_seed_archive_state(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            "/api/leads/",
+            {
+                "business": self.business.id,
+                "client": self.client.id,
+                "message": "Archived at birth",
+                "is_archived": True,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["fields"], ["is_archived"])
+
     def test_lead_list_supports_filters_pagination_and_enriched_fields(self):
         self.api.force_authenticate(self.owner)
         self.assigned_lead.source = Lead.Sources.WHATSAPP
@@ -165,6 +213,7 @@ class LeadCrmLightTests(TestCase):
         self.assertEqual(response.data["total"], 2)
         self.assertEqual(response.data["unanswered"], 1)
         self.assertEqual(response.data["in_progress"], 1)
+        self.assertEqual(response.data["attention"], 1)
         self.assertEqual(response.data["by_status"][Lead.Statuses.IN_PROGRESS], 1)
 
 from apps.crm.models import Deal, Pipeline, PipelineStage
@@ -245,6 +294,24 @@ class LeadFlowQuickActionTests(TestCase):
         self.assertEqual(self.lead.status, Lead.Statuses.NEW)
         self.assertEqual(self.lead.lost_reason, "")
         self.assertIsNone(self.lead.lost_at)
+        self.assertTrue(
+            AuditLog.objects.filter(
+                business=self.business,
+                entity_type="Lead",
+                entity_id=str(self.lead.id),
+                metadata__kind="lifecycle",
+                metadata__lifecycle_action="lead_lost",
+            ).exists()
+        )
+        self.assertTrue(
+            AuditLog.objects.filter(
+                business=self.business,
+                entity_type="Lead",
+                entity_id=str(self.lead.id),
+                metadata__kind="lifecycle",
+                metadata__lifecycle_action="lead_reopened",
+            ).exists()
+        )
 
     def test_create_deal_from_lead_creates_single_deal_and_moves_lead_to_work(self):
         created = self.api.post(f"/api/leads/{self.lead.id}/create-deal/", {"amount": "25000"}, format="json")

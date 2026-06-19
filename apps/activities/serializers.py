@@ -7,7 +7,20 @@ from apps.integrations.sanitization import sanitize_error_payload
 class ActivityEventSerializer(serializers.ModelSerializer):
     class Meta:
         model = ActivityEvent
-        fields = "__all__"
+        fields = [
+            "id",
+            "business",
+            "client",
+            "actor",
+            "category",
+            "event_type",
+            "source",
+            "entity_type",
+            "entity_id",
+            "text",
+            "metadata",
+            "created_at",
+        ]
         read_only_fields = ("created_at",)
 
     def to_representation(self, instance):
@@ -19,13 +32,31 @@ class ActivityEventSerializer(serializers.ModelSerializer):
 class NoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Note
-        fields = "__all__"
+        fields = [
+            "id",
+            "business",
+            "client",
+            "author",
+            "entity_type",
+            "entity_id",
+            "text",
+            "created_at",
+            "updated_at",
+        ]
 
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
-        fields = "__all__"
+        fields = [
+            "id",
+            "business",
+            "name",
+            "color",
+            "source",
+            "created_at",
+            "updated_at",
+        ]
 
 
 class TaggedObjectSerializer(serializers.ModelSerializer):
@@ -34,7 +65,16 @@ class TaggedObjectSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TaggedObject
-        fields = "__all__"
+        fields = [
+            "id",
+            "business",
+            "tag",
+            "tag_name",
+            "tag_color",
+            "entity_type",
+            "entity_id",
+            "created_at",
+        ]
         read_only_fields = ("created_at",)
 
     def validate(self, attrs):
@@ -48,7 +88,17 @@ class TaggedObjectSerializer(serializers.ModelSerializer):
 class SegmentFilterSerializer(serializers.ModelSerializer):
     class Meta:
         model = SegmentFilter
-        fields = "__all__"
+        fields = [
+            "id",
+            "business",
+            "segment",
+            "field",
+            "operator",
+            "value_json",
+            "sort_order",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = ["created_at", "updated_at"]
 
     def validate(self, attrs):
@@ -66,5 +116,17 @@ class SegmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Segment
-        fields = "__all__"
+        fields = [
+            "id",
+            "business",
+            "name",
+            "description",
+            "entity_type",
+            "is_active",
+            "cached_count",
+            "last_evaluated_at",
+            "filters",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = ["cached_count", "last_evaluated_at", "created_at", "updated_at"]

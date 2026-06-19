@@ -1,15 +1,17 @@
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
+from django.core.files.base import ContentFile
 from django.test import TestCase
 from rest_framework.test import APIClient
 
 from apps.accounts.models import User
-from apps.activities.models import ActivityEvent
+from apps.activities.models import ActivityEvent, Tag, TaggedObject
 from apps.bots.models import Bot, BotConversation
 from apps.businesses.models import Business, BusinessMember
-from apps.clients.models import Client
+from apps.clients.models import Client, ClientMergeLog
 from apps.conversations.models import Conversation
+from apps.core.models import AuditLog, CustomFieldDefinition, CustomFieldValue, FileAttachment
 from apps.leads.models import Lead
 from apps.scheduling.models import Appointment
 from apps.services.models import Service
@@ -98,6 +100,148 @@ class DuplicateDetectionFoundationTests(TestCase):
         self.assertTrue(Conversation.objects.filter(client=self.target).exists())
         self.assertTrue(BotConversation.objects.filter(client=self.target).exists())
         self.assertTrue(ActivityEvent.objects.filter(business=self.business, client=self.target, event_type="client_merged").exists())
+        merge_log = ClientMergeLog.objects.get(business=self.business, target_client=self.target)
+        self.assertEqual(merge_log.duplicate_snapshot["id"], self.duplicate.id)
+        self.assertEqual(merge_log.transferred_counts["leads"], 1)
+        self.assertTrue(
+            AuditLog.objects.filter(
+                business=self.business,
+                entity_type="Client",
+                entity_id=str(self.target.id),
+                metadata__kind="merge",
+                metadata__merge_log_id=merge_log.id,
+            ).exists()
+        )
+
+    def test_merge_dry_run_reports_transfer_counts_without_mutating_data(self):
+        lead = Lead.objects.create(business=self.business, client=self.duplicate, service=self.service)
+        start_at = datetime(2026, 5, 14, 10, 0, tzinfo=ZoneInfo("Asia/Almaty"))
+        Appointment.objects.create(
+            business=self.business,
+            client=self.duplicate,
+            lead=lead,
+            service=self.service,
+            start_at=start_at,
+            end_at=start_at + timedelta(hours=1),
+        )
+        Task.objects.create(business=self.business, client=self.duplicate, lead=lead, title="Dry run task")
+        tag = Tag.objects.create(business=self.business, name="Dry run tag")
+        TaggedObject.objects.create(business=self.business, tag=tag, entity_type="client", entity_id=str(self.duplicate.id))
+        FileAttachment.objects.create(
+            business=self.business,
+            uploaded_by=self.owner,
+            file=ContentFile(b"dry-run", name="dry-run.txt"),
+            original_name="dry-run.txt",
+            content_type="text/plain",
+            size=7,
+            entity_type="client",
+            entity_id=str(self.duplicate.id),
+        )
+        definition = CustomFieldDefinition.objects.create(
+            business=self.business,
+            entity_type=CustomFieldDefinition.EntityTypes.CLIENT,
+            key="dry_run_field",
+            label="Dry run field",
+        )
+        CustomFieldValue.objects.create(
+            business=self.business,
+            definition=definition,
+            entity_type=CustomFieldDefinition.EntityTypes.CLIENT,
+            entity_id=str(self.duplicate.id),
+            value_json={"value": "x"},
+        )
+
+        response = self.api.post(
+            f"/api/clients/{self.target.id}/merge-dry-run/",
+            {"duplicate_client_id": self.duplicate.id},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["target_client_id"], self.target.id)
+        self.assertEqual(response.data["duplicate"]["id"], self.duplicate.id)
+        self.assertEqual(response.data["transferred"]["leads"], 1)
+        self.assertEqual(response.data["transferred"]["appointments"], 1)
+        self.assertEqual(response.data["transferred"]["tasks"], 1)
+        self.assertEqual(response.data["transferred"]["tags"], 1)
+        self.assertEqual(response.data["transferred"]["attachments"], 1)
+        self.assertEqual(response.data["transferred"]["custom_field_values"], 1)
+        self.assertTrue(response.data["will_delete_duplicate"])
+        self.assertTrue(Client.objects.filter(id=self.duplicate.id).exists())
+        lead.refresh_from_db()
+        self.assertEqual(lead.client, self.duplicate)
+        self.assertFalse(ClientMergeLog.objects.filter(business=self.business).exists())
+
+    def test_merge_transfers_entity_linked_tags_files_and_custom_fields(self):
+        duplicate_only_tag = Tag.objects.create(business=self.business, name="Duplicate only")
+        shared_tag = Tag.objects.create(business=self.business, name="Shared")
+        TaggedObject.objects.create(business=self.business, tag=duplicate_only_tag, entity_type="client", entity_id=str(self.duplicate.id))
+        TaggedObject.objects.create(business=self.business, tag=shared_tag, entity_type="client", entity_id=str(self.target.id))
+        TaggedObject.objects.create(business=self.business, tag=shared_tag, entity_type="client", entity_id=str(self.duplicate.id))
+        attachment = FileAttachment.objects.create(
+            business=self.business,
+            uploaded_by=self.owner,
+            file=ContentFile(b"merge-file", name="merge.txt"),
+            original_name="merge.txt",
+            content_type="text/plain",
+            size=10,
+            entity_type="client",
+            entity_id=str(self.duplicate.id),
+        )
+        moved_definition = CustomFieldDefinition.objects.create(
+            business=self.business,
+            entity_type=CustomFieldDefinition.EntityTypes.CLIENT,
+            key="favorite_service",
+            label="Favorite service",
+        )
+        conflict_definition = CustomFieldDefinition.objects.create(
+            business=self.business,
+            entity_type=CustomFieldDefinition.EntityTypes.CLIENT,
+            key="loyalty_level",
+            label="Loyalty level",
+        )
+        moved_value = CustomFieldValue.objects.create(
+            business=self.business,
+            definition=moved_definition,
+            entity_type=CustomFieldDefinition.EntityTypes.CLIENT,
+            entity_id=str(self.duplicate.id),
+            value_json={"value": "Consultation"},
+        )
+        CustomFieldValue.objects.create(
+            business=self.business,
+            definition=conflict_definition,
+            entity_type=CustomFieldDefinition.EntityTypes.CLIENT,
+            entity_id=str(self.target.id),
+            value_json={"value": "A"},
+        )
+        conflict_value = CustomFieldValue.objects.create(
+            business=self.business,
+            definition=conflict_definition,
+            entity_type=CustomFieldDefinition.EntityTypes.CLIENT,
+            entity_id=str(self.duplicate.id),
+            value_json={"value": "B"},
+        )
+
+        response = self.api.post(
+            f"/api/clients/{self.target.id}/merge/",
+            {"duplicate_client_id": self.duplicate.id},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        attachment.refresh_from_db()
+        moved_value.refresh_from_db()
+        self.assertEqual(attachment.entity_id, str(self.target.id))
+        self.assertEqual(moved_value.entity_id, str(self.target.id))
+        self.assertFalse(CustomFieldValue.objects.filter(id=conflict_value.id).exists())
+        self.assertTrue(TaggedObject.objects.filter(business=self.business, tag=duplicate_only_tag, entity_id=str(self.target.id)).exists())
+        self.assertEqual(TaggedObject.objects.filter(business=self.business, tag=shared_tag, entity_id=str(self.target.id)).count(), 1)
+        merge_log = ClientMergeLog.objects.get(id=response.data["merge_log_id"])
+        self.assertEqual(merge_log.transferred_counts["tags"], 1)
+        self.assertEqual(merge_log.transferred_counts["attachments"], 1)
+        self.assertEqual(merge_log.transferred_counts["custom_field_values"], 1)
+        self.assertEqual(merge_log.metadata["skipped"]["tags"][0]["tag_id"], shared_tag.id)
+        self.assertEqual(merge_log.metadata["skipped"]["custom_field_values"][0]["definition_id"], conflict_definition.id)
 
     def test_merge_rejects_foreign_duplicate(self):
         foreign = Client.objects.create(business=self.other_business, full_name="Foreign")

@@ -6,7 +6,21 @@ from apps.conversations.models import Conversation, Message, QuickReplyTemplate
 class ConversationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Conversation
-        fields = "__all__"
+        fields = [
+            "id",
+            "business",
+            "client",
+            "channel",
+            "external_chat_id",
+            "status",
+            "close_reason",
+            "is_archived",
+            "archived_at",
+            "archived_by",
+            "archive_reason",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = ["created_at", "updated_at", "archived_at", "archived_by"]
 
     def validate(self, attrs):
@@ -20,12 +34,30 @@ class ConversationSerializer(serializers.ModelSerializer):
 class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
-        fields = "__all__"
+        fields = [
+            "id",
+            "conversation",
+            "sender_type",
+            "text",
+            "raw_payload",
+            "created_at",
+        ]
         read_only_fields = ["created_at"]
 
 
 class QuickReplyTemplateSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuickReplyTemplate
-        fields = "__all__"
+        fields = [
+            "id",
+            "business",
+            "title",
+            "text",
+            "category",
+            "channel",
+            "sort_order",
+            "is_active",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = ["created_at", "updated_at"]

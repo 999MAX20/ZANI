@@ -1,4 +1,5 @@
 from apps.activities.models import ActivityEvent
+from apps.activities.taxonomy import canonical_event_type, event_category, event_label
 
 
 def create_activity_event(*, business, event_type, instance=None, client=None, actor=None, category=None, source="api", text="", metadata=None):
@@ -8,16 +9,17 @@ def create_activity_event(*, business, event_type, instance=None, client=None, a
     if instance is not None and client is None:
         client = _client_for(instance)
 
+    normalized_event_type = canonical_event_type(event_type)
     return ActivityEvent.objects.create(
         business=business,
         client=client,
         actor=actor,
-        category=category or _category_for(instance),
-        event_type=event_type,
+        category=category or event_category(normalized_event_type) or _category_for(instance),
+        event_type=normalized_event_type,
         source=source,
         entity_type=instance.__class__.__name__ if instance is not None else "",
         entity_id=str(getattr(instance, "pk", "") or ""),
-        text=text or _human_text(event_type, instance),
+        text=text or _human_text(normalized_event_type, instance),
         metadata=metadata or {},
     )
 
@@ -103,22 +105,7 @@ def _canonical_event_type(event_type, instance):
 
 
 def _human_text(event_type, instance):
-    labels = {
-        "client_created": "Создан клиент",
-        "lead_created": "Создана заявка",
-        "lead_status_changed": "Изменён статус заявки",
-        "deal_created": "Создана сделка",
-        "deal_stage_changed": "Сделка перешла на другую стадию",
-        "task_created": "Создана задача",
-        "task_completed": "Задача закрыта",
-        "appointment_created": "Создана запись",
-        "appointment_cancelled": "Запись отменена",
-        "message_received": "Получено сообщение",
-        "message_sent": "Отправлено сообщение",
-        "note_created": "Добавлена заметка",
-        "automation_run": "Сработала автоматизация",
-    }
-    label = labels.get(event_type)
+    label = event_label(event_type)
     if label:
         return label
     return str(instance) if instance is not None else event_type

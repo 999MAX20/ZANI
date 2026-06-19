@@ -2,46 +2,60 @@
 
 This file defines how Codex/AI agents must work in the Zani repository.
 
-## Source Of Truth
+## Current Source Of Truth
 
-Read these files before non-trivial work:
+Before non-trivial work, read only the documents that are relevant to the task. Do not follow references to missing historical plan files.
 
-1. `plan/ZANI_MASTER_TECH_PLAN.md`
+Required for all work:
+
+1. `AGENTS.md`
 2. `plan/clean_code_rules/zani_required_clean_code_rules.md`
-3. `README.md`
-4. `docs/CODEX_TASK_TEMPLATE.md`
-5. Relevant app/frontend files for the task
+3. Relevant app/frontend files for the task
 
-For UI work, also read:
+For CRM business logic work:
 
 ```text
-plan/ZANI_UI_REFERENCES_DEEP_ANALYSIS_26_05_UPDATED.md
-plan/ZANI_UI_UX_PRODUCTION_MASTER_PLAN_26_05.md
-references/
-```
-
-For integrations/onboarding work, also read:
-
-```text
-plan/plan_20_05/zani_integration_onboarding_master_plan_20_05.md
-docs/CONNECTOR_BLUEPRINT.md
-```
-
-For AI assistant, AI analyst, CRM pipeline or automation work, also read:
-
-```text
-docs/AI_ASSISTANT_RULES.md
-```
-
-For role-sensitive work, also read:
-
-```text
+CRM_PRODUCTION_LAYER_PLAN.md
 docs/PERMISSION_MATRIX.md
+docs/AI_ASSISTANT_RULES.md
+docs/automation-runtime.md
+docs/entitlements.md
 ```
 
-## Core Product Direction
+For frontend UI work:
 
-Zani is an AI-first CRM foundation and business control layer for SMB.
+```text
+docs/design-system.md
+plan/ui_ux_design_system_reform.md
+```
+
+For integrations:
+
+```text
+docs/CONNECTOR_BLUEPRINT.md
+docs/integrations.md
+docs/provider-rollout.md
+```
+
+For production infrastructure:
+
+```text
+docs/production-readiness.md
+docs/production-readiness-10000-audit.md
+docs/deployment.md
+docs/paid-beta-gate.md
+```
+
+For testing and task format:
+
+```text
+docs/testing.md
+docs/CODEX_TASK_TEMPLATE.md
+```
+
+## Product Direction
+
+Zani is an AI-first CRM and business control layer for SMB.
 
 Do not turn it into:
 
@@ -53,6 +67,18 @@ Do not turn it into:
 
 Daily merchant workflows must stay simple, fast, role-aware and action-oriented.
 
+## Current CRM Production Strategy
+
+For CRM production work, use `CRM_PRODUCTION_LAYER_PLAN.md`.
+
+The current implementation strategy is layer-based, not page-based:
+
+```text
+domain invariants -> state machines -> audit/activity -> API contracts -> frontend integration -> E2E flows
+```
+
+Do not make one page perfect while backend business rules remain bypassable.
+
 ## Non-Negotiable Engineering Rules
 
 1. Tenant isolation is mandatory.
@@ -61,36 +87,51 @@ Daily merchant workflows must stay simple, fast, role-aware and action-oriented.
 2. Backend permissions are mandatory.
    Frontend hiding is not security.
 
-3. Do not put business logic in views.
-   Use services/selectors/providers/tasks where the logic belongs.
+3. Business logic must live in services/selectors/state-machine helpers, not in bloated views.
+   Views should accept request, validate serializer, check permissions, call service, return response.
 
-4. Do not put raw API calls in React components.
+4. CRM lifecycle changes must go through domain services.
+   Do not casually mutate `status`, `stage`, `won_at`, `lost_at`, `completed_at`, `archived_at`, `responsible_user`, `owner`, or `assignee` in views or frontend.
+
+5. Do not put raw API calls in React components.
    Use `frontend/src/api/*`.
 
-5. Do not expose provider tokens or secrets.
-   Use env/config and masked serializers.
+6. Do not expose provider tokens or secrets.
+   Use env/config, encrypted credentials and masked serializers.
 
-6. Do not hard-delete critical CRM data by default.
-   Prefer archive/restore with audit.
+7. Do not hard-delete critical CRM data by default.
+   Prefer archive/restore with audit. Merge/delete flows must be traceable.
 
-7. Provider-specific code must stay behind provider/connector layers.
+8. Provider-specific code must stay behind provider/connector layers.
    CRM logic must not depend directly on WhatsApp/Telegram/Meta/OpenAI implementations.
 
-8. Do not create duplicate models/endpoints/components before searching existing layers.
+9. Do not create duplicate models/endpoints/components before searching existing layers.
 
-9. Do not mark foundation work as complete without user-facing flow, permissions and tests where applicable.
+10. Do not mark foundation work as complete without user-facing flow, permissions and tests where applicable.
 
-10. Keep AI optional and controlled.
+11. Keep AI optional and controlled.
     AI may summarize, suggest and assist. Critical changes need explicit user confirmation.
-
-11. Integrations must stay lightweight.
-    Do not build full ERP/full-sync integrations by default. Normalize only business-critical signals into CRM entities and `BusinessEvent`.
 
 12. AI must be source-grounded.
     AI analyst and assistant output must cite real entities/events or clearly say that data is missing.
 
 13. Merchant setup must hide technical complexity.
     Connector keys, webhook details and provider errors should live in setup/help flows, not dominate daily UI.
+
+## CRM Domain Rules
+
+For any CRM business action, preserve these invariants:
+
+- all related entities belong to the same `Business`;
+- assignees, owners, watchers and responsible users are active business members;
+- stage belongs to the deal pipeline and business;
+- terminal deal status changes only through deal service actions;
+- lost lead/deal requires a reason;
+- appointment booking/rescheduling respects working hours and overlap rules;
+- important CRM actions write activity timeline;
+- sensitive/destructive actions write audit logs;
+- role restrictions are enforced on the backend;
+- frontend-only validation is never enough.
 
 ## Required Checks
 
@@ -100,7 +141,18 @@ Run after meaningful backend/frontend changes:
 scripts/codex_verify.sh
 ```
 
-For narrow changes, scoped checks are acceptable, but the final response or PR summary must list exactly what was run and what was skipped.
+For narrow backend CRM changes, scoped checks are acceptable:
+
+```bash
+DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
+.venv/bin/python -m pytest apps.clients.tests apps.leads.tests_forms apps.crm.tests apps.scheduling.tests apps.tasks.tests apps.core.tests_tenant_isolation -q
+```
+
+For frontend changes:
+
+```bash
+cd frontend && npm run build
+```
 
 If migrations are intentionally added:
 
@@ -109,28 +161,30 @@ DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py makemigrations
 DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py migrate
 ```
 
+Final responses and PR summaries must list exactly what was run and what was skipped.
+
 ## Documentation Rule
 
-After each completed phase or meaningful feature:
+After a completed phase or meaningful behavior change:
 
-- update `README.md` when behavior/setup changes;
+- update `CRM_PRODUCTION_LAYER_PLAN.md` if CRM production scope/status changes;
 - update relevant docs in `docs/`;
-- update plan/status notes if the roadmap changes.
+- update `README.md` only when setup, behavior, or public project status changes;
+- do not add new historical roadmap files when one current plan can be updated.
 
 ## Work Style
 
 - One bounded task at a time.
-- For substantial work, use one branch per task and open a PR instead of pushing directly to `main`.
 - Inspect before editing.
 - Preserve unrelated user changes.
 - Never revert work you did not make unless explicitly requested.
 - If checks fail, fix the current task before starting another one.
-- Prefer small, composable services/components over large God files.
+- Prefer small services/selectors/components over large God files.
 - Do not mix unrelated UI, backend, integration and docs changes in the same PR unless the task explicitly requires the full workflow.
 
 ## Pull Request Rule
 
-For new feature or production-hardening work:
+For feature or production-hardening work:
 
 ```text
 one task = one branch = one PR
@@ -146,83 +200,38 @@ Every PR summary should include:
 - BusinessEvent/AI impact;
 - manual checks and known risks.
 
-## Immediate Roadmap
+## UI Content Rule
 
-Follow:
+Codex must not create decorative, marketing, demo, motivational, or explanatory UI blocks unless explicitly required.
 
-```text
-plan/ZANI_MASTER_TECH_PLAN.md
-plan/ZANI_PRODUCTION_HARDENING_ROADMAP.md
-```
+Every visible block on an authenticated Zani page must have a clear product purpose:
 
-Current status:
+1. navigation;
+2. KPI / metric;
+3. real business data;
+4. action button;
+5. form;
+6. table/list/entity card;
+7. chart/analytics;
+8. integration status;
+9. empty state with a real next action;
+10. system notification or alert.
 
-```text
-Core/pilot master-plan scope is complete.
-Production hardening H1-H9 is code/docs ready.
-```
+Do not invent static Russian text for pages. Visible text must come from:
 
-Next work should focus on:
-
-- provisioning and verifying real staging/production dependencies;
-- keeping paid-beta gates red until Redis/Celery, object storage, Sentry, email, backups, support grants and smoke/E2E checks are green;
-- small reliability/security fixes discovered during local or deployed smoke;
-- UI/UX polish only when it reduces merchant/operator confusion.
-
-# ZANI UI CONTENT RULE — NO FILLER / NO FAKE MARKETING BLOCKS
-
-Codex must NOT create decorative, marketing, demo, motivational, or explanatory UI blocks unless they are explicitly required in the task specification.
-
-Forbidden examples:
-- "ZANI E2E DEMO"
-- "Бизнес под контролем"
-- "Все заявки, записи и задачи собраны в одной рабочей панели"
-- "Полный контроль владельца"
-- "Доступны деньги, команда, подключения, аналитика и настройки бизнеса"
-- Any similar generic blocks, banners, cards, slogans, badges, empty promo sections, or artificial explanations.
-
-Every visible block on a ZANI page must have a clear product purpose:
-1. Navigation
-2. KPI / metric
-3. Real business data
-4. Action button
-5. Form
-6. Table/list/entity card
-7. Chart/analytics
-8. Integration status
-9. Empty state with a real next action
-10. System notification or alert
-
-Codex must not invent static Russian text for pages.
-All visible page text must come only from:
-- the current task prompt;
+- the task prompt;
 - existing page structure;
-- approved ZANI copy/content map;
+- approved copy/content map;
 - i18n/constants file;
 - real API/data model fields.
 
-If the task does not provide exact text, Codex must use neutral functional labels only, for example:
-- "Заявки"
-- "Сделки"
-- "Клиенты"
-- "Задачи"
-- "Подключения"
-- "Аналитика"
-- "Настройки"
+Inside the authenticated app, dashboard pages must not explain what Zani is. They must show business state, actions, metrics, tasks, leads, deals, alerts, integrations and AI recommendations.
 
-Inside the authenticated ZANI app, the interface is NOT a marketing landing page.
-Dashboard pages must not explain what ZANI is.
-They must show business state, actions, metrics, tasks, leads, deals, alerts, integrations, and AI recommendations.
+Before finishing any UI task, check:
 
-Before finishing any UI task, Codex must check:
-- Did I add any static headline or paragraph that was not requested?
-- Does every new card/block have a real business function?
+- Did I add static headline or paragraph text that was not requested?
+- Does every new block have a real business function?
 - Is this block connected to data, action, navigation, empty state, or setting?
-- Would this text look like fake demo/landing content inside a real SaaS cabinet?
+- Would this look like fake demo/landing content inside a real SaaS cabinet?
 
-If the answer is no, Codex must remove the block.
-
-IMPORTANT UI RULE:
-Do not add any extra marketing/demo/filler blocks or invented Russian text.
-Only implement the requested functional UI.
-If a block does not display data, action, navigation, setting, status, or a real empty state — do not create it.
+If the answer is no, remove the block.

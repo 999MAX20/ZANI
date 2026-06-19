@@ -3,7 +3,7 @@ module.exports = {
     collect: {
       startServerCommand: "npm run preview -- --port 4173",
       startServerReadyPattern: "Local:",
-      url: ["http://localhost:4173/dashboard/leads"],
+      url: ["http://localhost:4173/app/leads"],
       numberOfRuns: 1,
       settings: {
         preset: "desktop",

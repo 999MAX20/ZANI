@@ -10,12 +10,57 @@ from apps.services.models import Service
 
 
 class LeadSerializer(serializers.ModelSerializer):
+    lifecycle_update_fields = {
+        "status",
+        "previous_status",
+        "lost_reason",
+        "lost_at",
+        "lost_by",
+    }
+    archive_update_fields = {"is_archived", "archive_reason", "archived_at", "archived_by"}
+
     class Meta:
         model = Lead
-        fields = "__all__"
+        fields = [
+            "id",
+            "business",
+            "client",
+            "service",
+            "source",
+            "message",
+            "status",
+            "previous_status",
+            "lost_reason",
+            "lost_at",
+            "lost_by",
+            "responsible_user",
+            "is_archived",
+            "archived_at",
+            "archived_by",
+            "archive_reason",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = ["created_at", "updated_at", "lost_at", "lost_by", "previous_status", "archived_at", "archived_by"]
 
     def validate(self, attrs):
+        attempted_archive_fields = sorted(self.archive_update_fields.intersection((self.initial_data or {}).keys()))
+        if attempted_archive_fields:
+            raise serializers.ValidationError(
+                {
+                    "detail": "Use lead archive action endpoints for archive state changes.",
+                    "fields": attempted_archive_fields,
+                }
+            )
+        if self.instance is not None:
+            attempted_lifecycle_fields = sorted(self.lifecycle_update_fields.intersection((self.initial_data or {}).keys()))
+            if attempted_lifecycle_fields:
+                raise serializers.ValidationError(
+                    {
+                        "detail": "Use lead lifecycle action endpoints for protected state changes.",
+                        "fields": attempted_lifecycle_fields,
+                    }
+                )
         business = attrs.get("business") or getattr(self.instance, "business", None)
         client = attrs.get("client") or getattr(self.instance, "client", None)
         service = attrs.get("service") or getattr(self.instance, "service", None)
@@ -161,7 +206,19 @@ class LeadDuplicateCheckSerializer(serializers.Serializer):
 class LeadFormFieldSerializer(serializers.ModelSerializer):
     class Meta:
         model = LeadFormField
-        fields = "__all__"
+        fields = [
+            "id",
+            "form",
+            "label",
+            "key",
+            "field_type",
+            "placeholder",
+            "options_json",
+            "is_required",
+            "sort_order",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = ["created_at", "updated_at"]
 
 
@@ -171,7 +228,25 @@ class LeadFormSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LeadForm
-        fields = "__all__"
+        fields = [
+            "id",
+            "business",
+            "name",
+            "public_id",
+            "landing_id",
+            "landing_domain",
+            "preview_url",
+            "title",
+            "description",
+            "source",
+            "success_message",
+            "default_responsible_user",
+            "is_active",
+            "fields",
+            "submissions_count",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = ["public_id", "created_at", "updated_at", "submissions_count"]
 
 
@@ -180,8 +255,25 @@ class LeadFormSubmissionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LeadFormSubmission
-        fields = "__all__"
-        read_only_fields = ["created_at"]
+        fields = [
+            "id",
+            "form",
+            "form_name",
+            "business",
+            "client",
+            "lead",
+            "payload_json",
+            "utm_json",
+            "source_context_json",
+            "duplicate_json",
+            "landing_id",
+            "page_url",
+            "page_domain",
+            "ip_address",
+            "user_agent",
+            "created_at",
+        ]
+        read_only_fields = ["form_name", "created_at"]
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -194,8 +286,22 @@ class LeadFormSubmissionErrorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LeadFormSubmissionError
-        fields = "__all__"
-        read_only_fields = ["created_at"]
+        fields = [
+            "id",
+            "form",
+            "form_name",
+            "business",
+            "public_id",
+            "landing_id",
+            "page_url",
+            "page_domain",
+            "payload_json",
+            "error_message",
+            "ip_address",
+            "user_agent",
+            "created_at",
+        ]
+        read_only_fields = ["form_name", "created_at"]
 
     def to_representation(self, instance):
         data = super().to_representation(instance)

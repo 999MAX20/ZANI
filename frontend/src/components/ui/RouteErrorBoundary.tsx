@@ -36,7 +36,7 @@ export function RouteErrorBoundary() {
               <Button type="button" variant="secondary" onClick={() => navigate(-1)}>
                 {t("routeError.back")}
               </Button>
-              <Button type="button" onClick={() => navigate("/dashboard")}>
+              <Button type="button" onClick={() => navigate("/app")}>
                 {t("routeError.home")}
               </Button>
             </div>

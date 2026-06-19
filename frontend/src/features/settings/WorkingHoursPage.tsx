@@ -34,21 +34,17 @@ export function WorkingHoursPage() {
   const [preset, setPreset] = useState<WorkingHoursPreset>("weekdays_9_18");
   const [notice, setNotice] = useState<string | null>(null);
   const mutation = useMutation({
-    mutationFn: async (payloads: Array<Partial<WorkingHours>>) => {
-      const existingRows = workingHours.data || [];
-      const result = [];
-      for (const payload of payloads) {
-        const existing = existingRows.find(
-          (item) => item.weekday === payload.weekday && (item.resource || null) === (payload.resource || null),
-        );
-        if (existing) {
-          result.push(await workingHoursApi.update({ id: existing.id, payload }));
-        } else {
-          result.push(await workingHoursApi.create(payload));
-        }
-      }
-      return result;
-    },
+    mutationFn: async (payloads: Array<Partial<WorkingHours>>) =>
+      workingHoursApi.bulkUpsertWeek({
+        business: business!.id,
+        resource: payloads[0]?.resource || null,
+        days: payloads.map((payload) => ({
+          weekday: Number(payload.weekday),
+          start_time: String(payload.start_time || "09:00"),
+          end_time: String(payload.end_time || "18:00"),
+          is_day_off: Boolean(payload.is_day_off),
+        })),
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["working-hours"] });
       queryClient.invalidateQueries({ queryKey: ["available-slots"] });
@@ -96,7 +92,7 @@ export function WorkingHoursPage() {
         description={t("workingHours.description")}
         actions={
           <div className="flex flex-wrap gap-2">
-            <Link to="/dashboard/settings#operations-setup">
+            <Link to="/app/settings#operations-setup">
               <Button type="button" variant="secondary">{t("settings.schedulingCenter")}</Button>
             </Link>
             <Button onClick={() => setOpen(true)}><Plus size={18} />{t("workingHours.setupWeek")}</Button>

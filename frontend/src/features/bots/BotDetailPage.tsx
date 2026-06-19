@@ -99,7 +99,7 @@ export function BotDetailPage() {
         description={t("botDetail.description")}
         actions={
           <>
-            <Link to="/dashboard/bots"><Button variant="secondary"><ArrowLeft size={16} />{t("common.back")}</Button></Link>
+            <Link to="/app/bots"><Button variant="secondary"><ArrowLeft size={16} />{t("common.back")}</Button></Link>
             <Button
               variant="ai"
               onClick={() => addWebsiteChannel.mutate()}
@@ -202,7 +202,7 @@ export function BotDetailPage() {
                 <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">{t("aiAgents.onboarding.channels.helpText")}</p>
               </div>
             </div>
-            <Link to={`/dashboard/ai-agents/${bot.data.id}/channels`}>
+            <Link to={`/app/ai-agents/${bot.data.id}/channels`}>
               <Button type="button">
                 <ExternalLink size={16} /> {t("aiAgents.openChannels")}
               </Button>
@@ -240,7 +240,7 @@ export function BotDetailPage() {
                     >
                       <Copy size={16} />{t("common.copy")}
                     </Button>
-                    <Link to="/dashboard/conversations"><Button type="button" variant="ghost"><ExternalLink size={16} />{t("botDetail.openInbox")}</Button></Link>
+                    <Link to="/app/conversations"><Button type="button" variant="ghost"><ExternalLink size={16} />{t("botDetail.openInbox")}</Button></Link>
                   </div>
                   {copyNotice ? <p className="mt-2 text-xs font-semibold text-brand-700">{copyNotice}</p> : null}
                 </div>

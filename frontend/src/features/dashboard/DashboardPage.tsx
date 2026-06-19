@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { analyticsApi } from "../../api/analytics";
-import { onboardingApi } from "../../api/onboarding";
+import { workQueuesApi } from "../../api/workQueues";
 import { ErrorState, PageSkeleton } from "../../components/ui/StateViews";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useEntityData } from "../../hooks/useEntityData";
@@ -34,11 +34,10 @@ export function DashboardPage() {
     queryFn: () => analyticsApi.ownerDashboard(business?.id),
     enabled: Boolean(business && isOwnerView),
   });
-  const onboarding = useQuery({
-    queryKey: ["onboarding-status", business?.id],
-    queryFn: () => onboardingApi.status(business!.id),
+  const workQueues = useQuery({
+    queryKey: ["work-queues", business?.id],
+    queryFn: () => workQueuesApi.get({ business: business!.id, limit: 4 }),
     enabled: Boolean(business),
-    retry: false,
   });
 
   if (businessLoading) return <PageSkeleton />;
@@ -59,7 +58,7 @@ export function DashboardPage() {
   const todayAppointmentsCount = isOwnerView ? dashboard?.appointments_today ?? todayAppointments.length : todayAppointments.length;
   const conversion = isOwnerView ? dashboard?.conversion_lead_to_appointment ?? (leadList.length ? Math.round((closedLeadCount / leadList.length) * 100) : 0) : 0;
   const openTasks = isOwnerView ? dashboard?.open_tasks ?? assignedTasks.length : assignedTasks.length;
-  const overdueTasks = dashboard?.overdue_tasks || assignedTasks.filter((task) => task.due_at && new Date(task.due_at) < new Date()).length;
+  const overdueTasks = workQueues.data?.summary.overdue_tasks ?? dashboard?.overdue_tasks ?? assignedTasks.filter((task) => task.due_at && new Date(task.due_at) < new Date()).length;
   const revenue = Number(dashboard?.revenue_estimate || 0);
   const revenueHasData = Boolean(dashboard?.sales_events_count || revenue > 0);
   const setupItems = [
@@ -69,7 +68,6 @@ export function DashboardPage() {
     leadList.length > 0,
     appointmentList.length > 0,
     taskList.length > 0,
-    (onboarding.data?.progress || 0) >= 60,
   ];
   const setupScore = Math.round((setupItems.filter(Boolean).length / setupItems.length) * 100);
 
@@ -92,6 +90,7 @@ export function DashboardPage() {
         appointments={appointmentList}
         services={serviceList}
         tasks={taskList}
+        workQueues={workQueues.data}
       />
     );
   }
@@ -108,6 +107,7 @@ export function DashboardPage() {
       openTasks={openTasks}
       overdueTasks={overdueTasks}
       isCoreDataLoading={isCoreDataLoading}
+      workQueues={workQueues.data}
     />
   );
 }

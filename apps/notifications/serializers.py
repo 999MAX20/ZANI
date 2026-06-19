@@ -8,13 +8,43 @@ class NotificationSerializer(serializers.ModelSerializer):
     recipient_email = serializers.EmailField(source="recipient.email", read_only=True)
     recipient_name = serializers.CharField(source="recipient.full_name", read_only=True)
     is_read = serializers.BooleanField(read_only=True)
+    protected_state_fields = {"status", "read_at"}
 
     class Meta:
         model = Notification
-        fields = "__all__"
-        read_only_fields = ["created_at", "updated_at"]
+        fields = [
+            "id",
+            "business",
+            "recipient",
+            "recipient_email",
+            "recipient_name",
+            "client",
+            "client_name",
+            "appointment",
+            "channel",
+            "category",
+            "priority",
+            "text",
+            "send_at",
+            "status",
+            "action_url",
+            "action_label",
+            "read_at",
+            "is_read",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["status", "read_at", "is_read", "created_at", "updated_at"]
 
     def validate(self, attrs):
+        attempted_state_fields = sorted(self.protected_state_fields.intersection((self.initial_data or {}).keys()))
+        if attempted_state_fields:
+            raise serializers.ValidationError(
+                {
+                    "detail": "Use notification action endpoints for delivery/read state changes.",
+                    "fields": attempted_state_fields,
+                }
+            )
         business = attrs.get("business") or getattr(self.instance, "business", None)
         client = attrs.get("client") or getattr(self.instance, "client", None)
         appointment = attrs.get("appointment") or getattr(self.instance, "appointment", None)
@@ -34,7 +64,17 @@ class NotificationPreferenceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = NotificationPreference
-        fields = "__all__"
+        fields = [
+            "id",
+            "business",
+            "user",
+            "user_email",
+            "user_name",
+            "category",
+            "in_app_enabled",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = ["created_at", "updated_at"]
 
     def validate(self, attrs):

@@ -7,7 +7,7 @@ from apps.integrations.sanitization import sanitize_config
 class AnalyticsEventSerializer(serializers.ModelSerializer):
     class Meta:
         model = AnalyticsEvent
-        fields = "__all__"
+        fields = ["id", "business", "client", "event_type", "source", "metadata", "created_at"]
         read_only_fields = ["created_at"]
 
     def validate(self, attrs):
@@ -26,7 +26,18 @@ class AnalyticsEventSerializer(serializers.ModelSerializer):
 class ReportWidgetSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReportWidget
-        fields = "__all__"
+        fields = [
+            "id",
+            "business",
+            "key",
+            "title",
+            "widget_type",
+            "config_json",
+            "sort_order",
+            "is_active",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = ["created_at", "updated_at"]
 
     def to_representation(self, instance):
@@ -40,7 +51,21 @@ class ScheduledReportSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ScheduledReport
-        fields = "__all__"
+        fields = [
+            "id",
+            "business",
+            "name",
+            "frequency",
+            "recipients_json",
+            "report_config_json",
+            "is_active",
+            "next_run_at",
+            "last_run_at",
+            "created_by",
+            "created_by_email",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = ["created_at", "updated_at", "created_by", "created_by_email", "last_run_at"]
 
     def validate_recipients_json(self, value):

@@ -65,6 +65,13 @@ class OwnerDashboardAnalyticsTests(TestCase):
             status=Appointment.Statuses.NO_SHOW,
         )
         Task.objects.create(business=self.business, client=self.client, title="Overdue", due_at=timezone.now() - timedelta(hours=1))
+        Task.objects.create(
+            business=self.business,
+            client=self.client,
+            title="Snoozed overdue",
+            due_at=timezone.now() - timedelta(hours=1),
+            snoozed_until=timezone.now() + timedelta(hours=2),
+        )
 
         response = self.api.get("/api/analytics/owner-dashboard/", {"business": self.business.id})
 
@@ -74,7 +81,7 @@ class OwnerDashboardAnalyticsTests(TestCase):
         self.assertEqual(response.data["appointments_completed"], 1)
         self.assertEqual(response.data["no_show_count"], 1)
         self.assertEqual(response.data["conversion_lead_to_appointment"], 33)
-        self.assertEqual(response.data["open_tasks"], 1)
+        self.assertEqual(response.data["open_tasks"], 2)
         self.assertEqual(response.data["overdue_tasks"], 1)
         self.assertEqual(response.data["revenue_estimate"], "15000")
         self.assertEqual(response.data["leads_by_source"][0]["source"], Lead.Sources.WEBSITE)

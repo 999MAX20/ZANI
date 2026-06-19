@@ -1,4 +1,4 @@
-import { CheckCheck, ClipboardList, MessageCircle, MoreHorizontal, Phone } from "lucide-react";
+import { CheckCheck } from "lucide-react";
 
 import { cn } from "../../../lib/cn";
 import { formatDateTime } from "../../../lib/format";
@@ -10,7 +10,7 @@ import { SourceBadge } from "./common/SourceBadge";
 function ManagerAvatar({ name }: { name?: string }) {
   if (!name) return <span className="text-xs font-bold text-slate-500">-</span>;
   return (
-    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-100 text-[11px] font-black text-brand-700 ring-1 ring-white" title={name}>
+    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-100 text-[11px] font-black text-brand-700 ring-1 ring-white">
       {initials(name)}
     </span>
   );
@@ -31,9 +31,6 @@ function LeadTableRow({
   onToggleBulk,
   onStatusChange,
   onAssign,
-  onCall,
-  onWhatsApp,
-  onTask,
   onContextMenu,
   t,
 }: {
@@ -51,9 +48,6 @@ function LeadTableRow({
   onToggleBulk: () => void;
   onStatusChange: (status: Lead["status"]) => void;
   onAssign: (userId?: Id) => void;
-  onCall: () => void;
-  onWhatsApp: () => void;
-  onTask: () => void;
   onContextMenu: (event: React.MouseEvent) => void;
   t: Translate;
 }) {
@@ -61,7 +55,7 @@ function LeadTableRow({
   const isHot = lead.status === "new" && !lead.responsible_user;
   const activeColumns = columnOrder.filter((column) => visibleColumns[column]);
   const needsWideTable = activeColumns.length > 5;
-  const gridTemplateColumns = `32px ${activeColumns.map((column) => leadColumnWidths[column]).join(" ")} 72px`;
+  const gridTemplateColumns = `32px ${activeColumns.map((column) => leadColumnWidths[column]).join(" ")}`;
   const cells: Record<LeadColumnKey, React.ReactNode> = {
     lead: (
       <span className="flex min-w-0 items-center gap-3">
@@ -155,20 +149,6 @@ function LeadTableRow({
         </span>
       </label>
       {activeColumns.map((column) => <span key={column} className="min-w-0">{cells[column]}</span>)}
-      <span className="flex w-[72px] items-center justify-end gap-1" onClick={(event) => event.stopPropagation()}>
-        <button type="button" className="hidden h-7 w-7 place-items-center rounded-lg text-slate-500 hover:bg-white hover:text-brand-700 group-hover:grid" onClick={onCall} aria-label={t("leads.call")}>
-          <Phone size={16} />
-        </button>
-        <button type="button" className="hidden h-7 w-7 place-items-center rounded-lg text-slate-500 hover:bg-white hover:text-emerald-700 group-hover:grid" onClick={onWhatsApp} aria-label="WhatsApp">
-          <MessageCircle size={16} />
-        </button>
-        <button type="button" className="hidden h-7 w-7 place-items-center rounded-lg text-slate-500 hover:bg-white hover:text-midnight group-hover:grid" onClick={onTask} aria-label={t("leads.createTask")}>
-          <ClipboardList size={16} />
-        </button>
-        <span className="grid h-7 w-7 place-items-center rounded-lg text-slate-400 group-hover:hidden">
-          <MoreHorizontal size={18} />
-        </span>
-      </span>
     </div>
   );
 }
@@ -188,9 +168,6 @@ export function VirtualizedLeadTableRows({
   toggleBulkLead,
   changeLeadStatus,
   assignLead,
-  callLead,
-  whatsAppLead,
-  createTaskForLead,
   openContextMenu,
   t,
 }: {
@@ -208,15 +185,12 @@ export function VirtualizedLeadTableRows({
   toggleBulkLead: (id: Id) => void;
   changeLeadStatus: (lead: Lead, status: Lead["status"]) => void;
   assignLead: (lead: Lead, userId?: Id) => void;
-  callLead: (lead: Lead) => void;
-  whatsAppLead: (lead: Lead) => void;
-  createTaskForLead: (lead: Lead) => void;
   openContextMenu: (event: React.MouseEvent, lead: Lead) => void;
   t: Translate;
 }) {
   const activeColumns = columnOrder.filter((column) => visibleColumns[column]);
   const needsWideTable = activeColumns.length > 5;
-  const gridTemplateColumns = `32px ${activeColumns.map((column) => leadColumnWidths[column]).join(" ")} 72px`;
+  const gridTemplateColumns = `32px ${activeColumns.map((column) => leadColumnWidths[column]).join(" ")}`;
 
   return (
     <div className="hidden h-full overflow-auto lg:block">
@@ -243,9 +217,6 @@ export function VirtualizedLeadTableRows({
                 onToggleBulk={() => toggleBulkLead(lead.id)}
                 onStatusChange={(status) => changeLeadStatus(lead, status)}
                 onAssign={(userId) => assignLead(lead, userId)}
-                onCall={() => callLead(lead)}
-                onWhatsApp={() => whatsAppLead(lead)}
-                onTask={() => createTaskForLead(lead)}
                 onContextMenu={(event) => openContextMenu(event, lead)}
                 t={t}
               />

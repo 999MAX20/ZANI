@@ -1,5 +1,5 @@
 import { Suspense, lazy } from "react";
-import { Navigate, RouterProvider, createBrowserRouter } from "react-router-dom";
+import { Navigate, RouterProvider, createBrowserRouter, useLocation } from "react-router-dom";
 
 import { AppLayout } from "../components/layout/AppLayout";
 import { PlatformLayout } from "../components/layout/PlatformLayout";
@@ -26,7 +26,6 @@ const LeadsPage = lazy(() => import("../features/leads/LeadsPage").then((module)
 const DealsPage = lazy(() => import("../features/deals/DealsPage").then((module) => ({ default: module.DealsPage })));
 const ClientsPage = lazy(() => import("../features/clients/ClientsPage").then((module) => ({ default: module.ClientsPage })));
 const TasksPage = lazy(() => import("../features/tasks/TasksPage").then((module) => ({ default: module.TasksPage })));
-const AppointmentsPage = lazy(() => import("../features/appointments/AppointmentsPage").then((module) => ({ default: module.AppointmentsPage })));
 const CalendarPage = lazy(() => import("../features/calendar/CalendarPage").then((module) => ({ default: module.CalendarPage })));
 const ConversationsPage = lazy(() => import("../features/conversations/ConversationsPage").then((module) => ({ default: module.ConversationsPage })));
 const TimelinePage = lazy(() => import("../features/timeline/TimelinePage").then((module) => ({ default: module.TimelinePage })));
@@ -43,8 +42,6 @@ const ServicesPage = lazy(() => import("../features/services/ServicesPage").then
 const AnalyticsPage = lazy(() => import("../features/analytics/AnalyticsPage").then((module) => ({ default: module.AnalyticsPage })));
 const SettingsPage = lazy(() => import("../features/settings/SettingsPage").then((module) => ({ default: module.SettingsPage })));
 const WorkingHoursPage = lazy(() => import("../features/settings/WorkingHoursPage").then((module) => ({ default: module.WorkingHoursPage })));
-const OnboardingPage = lazy(() => import("../features/onboarding/OnboardingPage").then((module) => ({ default: module.OnboardingPage })));
-const PilotReadinessPage = lazy(() => import("../features/pilot/PilotReadinessPage").then((module) => ({ default: module.PilotReadinessPage })));
 const PlatformOverviewPage = lazy(() => import("../features/platform/PlatformOverviewPage").then((module) => ({ default: module.PlatformOverviewPage })));
 const PlatformOperationsPage = lazy(() => import("../features/platform/PlatformOperationsPage").then((module) => ({ default: module.PlatformOperationsPage })));
 const PlatformMerchantsPage = lazy(() => import("../features/platform/PlatformMerchantsPage").then((module) => ({ default: module.PlatformMerchantsPage })));
@@ -64,7 +61,7 @@ function PlatformRoute({ children }: { children: React.ReactNode }) {
   const { t } = useI18n();
   if (isLoading) return <LoadingState label={t("common.loadingAccess")} />;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  return isPlatformUser ? children : <Navigate to="/dashboard" replace />;
+  return isPlatformUser ? children : <Navigate to="/app" replace />;
 }
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
@@ -72,7 +69,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   const { t } = useI18n();
   if (isLoading) return <LoadingState label={t("common.loadingAccess")} />;
   if (!isAuthenticated) return children;
-  return <Navigate to={isPlatformUser ? "/platform" : "/dashboard"} replace />;
+  return <Navigate to={isPlatformUser ? "/platform" : "/app"} replace />;
 }
 
 function PageLoader({ children }: { children: React.ReactNode }) {
@@ -102,6 +99,12 @@ function PermissionRoute({
   );
 }
 
+function LegacyDashboardRedirect() {
+  const location = useLocation();
+  const targetPath = location.pathname.replace(/^\/dashboard(?=\/|$)/, "/app");
+  return <Navigate to={`${targetPath}${location.search}${location.hash}`} replace />;
+}
+
 const merchantChildren = [
   { index: true, element: <PageLoader><DashboardPage /></PageLoader> },
   { path: "account", element: <PageLoader><AccountPage /></PageLoader> },
@@ -109,7 +112,6 @@ const merchantChildren = [
   { path: "deals", resource: "deals", element: <PageLoader><DealsPage /></PageLoader> },
   { path: "clients", resource: "clients", element: <PageLoader><ClientsPage /></PageLoader> },
   { path: "tasks", resource: "tasks", element: <PageLoader><TasksPage /></PageLoader> },
-  { path: "appointments", resource: "appointments", element: <PageLoader><AppointmentsPage /></PageLoader> },
   { path: "calendar", resource: "appointments", element: <PageLoader><CalendarPage /></PageLoader> },
   { path: "conversations", resource: "conversations", element: <PageLoader><ConversationsPage /></PageLoader> },
   { path: "timeline", resource: "analytics", element: <PageLoader><TimelinePage /></PageLoader> },
@@ -118,7 +120,7 @@ const merchantChildren = [
   { path: "integrations", resource: "integrations", element: <PageLoader><IntegrationsPage /></PageLoader> },
   { path: "pricing", resource: "integrations", element: <PageLoader><PricingPage /></PageLoader> },
   { path: "ai-assistant", resource: "ai_assistant", element: <PageLoader><AIAssistantPage /></PageLoader> },
-  { path: "ai", resource: "ai_assistant", element: <Navigate to="/dashboard/ai-assistant" replace /> },
+  { path: "ai", resource: "ai_assistant", element: <Navigate to="/app/ai-assistant" replace /> },
   { path: "assistant", resource: "ai_assistant", element: <PageLoader><AIAssistantPage /></PageLoader> },
   { path: "inbox", resource: "conversations", element: <PageLoader><ConversationsPage /></PageLoader> },
   { path: "ai-agents", resource: "ai_automation", element: <PageLoader><AIAgentsPage /></PageLoader> },
@@ -130,10 +132,8 @@ const merchantChildren = [
   { path: "resources", resource: "settings", element: <PageLoader><ResourcesPage /></PageLoader> },
   { path: "working-hours", resource: "settings", element: <PageLoader><WorkingHoursPage /></PageLoader> },
   { path: "analytics", resource: "analytics", element: <PageLoader><AnalyticsPage /></PageLoader> },
-  { path: "onboarding", resource: "settings", element: <PageLoader><OnboardingPage /></PageLoader> },
-  { path: "pilot-readiness", resource: "settings", element: <PageLoader><PilotReadinessPage /></PageLoader> },
   { path: "settings", resource: "settings", permissionAction: "update", element: <PageLoader><SettingsPage /></PageLoader> },
-  { path: "billing", resource: "settings", permissionAction: "update", element: <Navigate to="/dashboard/settings#billing" replace /> },
+  { path: "billing", resource: "settings", permissionAction: "update", element: <Navigate to="/app/settings#billing" replace /> },
 ];
 
 const legacyMerchantRoutes = [
@@ -142,14 +142,13 @@ const legacyMerchantRoutes = [
   { path: "/deals", resource: "deals", element: <PageLoader><DealsPage /></PageLoader> },
   { path: "/clients", resource: "clients", element: <PageLoader><ClientsPage /></PageLoader> },
   { path: "/tasks", resource: "tasks", element: <PageLoader><TasksPage /></PageLoader> },
-  { path: "/appointments", resource: "appointments", element: <PageLoader><AppointmentsPage /></PageLoader> },
   { path: "/calendar", resource: "appointments", element: <PageLoader><CalendarPage /></PageLoader> },
   { path: "/conversations", resource: "conversations", element: <PageLoader><ConversationsPage /></PageLoader> },
   { path: "/timeline", resource: "analytics", element: <PageLoader><TimelinePage /></PageLoader> },
   { path: "/crm-bots", resource: "integrations", element: <PageLoader><BotsPage /></PageLoader> },
   { path: "/integrations", resource: "integrations", element: <PageLoader><IntegrationsPage /></PageLoader> },
   { path: "/ai-assistant", resource: "conversations", element: <PageLoader><AIAssistantPage /></PageLoader> },
-  { path: "/ai", resource: "conversations", element: <Navigate to="/dashboard/ai-assistant" replace /> },
+  { path: "/ai", resource: "conversations", element: <Navigate to="/app/ai-assistant" replace /> },
   { path: "/assistant", resource: "conversations", element: <PageLoader><AIAssistantPage /></PageLoader> },
   { path: "/inbox", resource: "conversations", element: <PageLoader><ConversationsPage /></PageLoader> },
   { path: "/ai-agents", resource: "integrations", element: <PageLoader><AIAgentsPage /></PageLoader> },
@@ -159,10 +158,8 @@ const legacyMerchantRoutes = [
   { path: "/resources", resource: "settings", element: <PageLoader><ResourcesPage /></PageLoader> },
   { path: "/working-hours", resource: "settings", element: <PageLoader><WorkingHoursPage /></PageLoader> },
   { path: "/analytics", resource: "analytics", element: <PageLoader><AnalyticsPage /></PageLoader> },
-  { path: "/onboarding", resource: "settings", element: <PageLoader><OnboardingPage /></PageLoader> },
-  { path: "/pilot-readiness", resource: "settings", element: <PageLoader><PilotReadinessPage /></PageLoader> },
   { path: "/settings", resource: "settings", permissionAction: "update", element: <PageLoader><SettingsPage /></PageLoader> },
-  { path: "/billing", resource: "settings", permissionAction: "update", element: <Navigate to="/dashboard/settings#billing" replace /> },
+  { path: "/billing", resource: "settings", permissionAction: "update", element: <Navigate to="/app/settings#billing" replace /> },
 ];
 
 const router = createBrowserRouter([
@@ -245,7 +242,7 @@ const router = createBrowserRouter([
     ],
   },
   {
-    path: "/dashboard",
+    path: "/app",
     errorElement: <RouteErrorBoundary />,
     element: (
       <MerchantRoute>
@@ -260,6 +257,11 @@ const router = createBrowserRouter([
         </PermissionRoute>
       ),
     })),
+  },
+  {
+    path: "/dashboard/*",
+    errorElement: <RouteErrorBoundary />,
+    element: <LegacyDashboardRedirect />,
   },
   ...legacyMerchantRoutes.map((route) => ({
     path: route.path,

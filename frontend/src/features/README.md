@@ -44,8 +44,8 @@
 
 ## Implemented Bots Foundation
 
-- Merchant bots live at `/dashboard/bots`.
-- Bot detail placeholder lives at `/dashboard/bots/:id`.
+- Merchant bots live at `/app/bots`.
+- Bot detail placeholder lives at `/app/bots/:id`.
 - Public website `/bots` remains separate from Merchant CRM.
 - API clients exist for bots, bot channels, bot conversations and bot messages.
 
@@ -72,7 +72,7 @@
 
 ## Implemented AI Assistant for CRM
 
-- `/dashboard/ai-assistant` calls `/api/ai/assistant/chat/`.
+- `/app/ai-assistant` calls `/api/ai/assistant/chat/`.
 - Assistant answers use tenant-safe CRM context from the active business.
 - Responses show mock/model/log metadata and are saved in `AIRequestLog`.
 

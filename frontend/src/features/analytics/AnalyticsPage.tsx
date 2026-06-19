@@ -114,7 +114,7 @@ export function AnalyticsPage() {
           id: "sales-data",
           title: t("analytics.aiSalesDataTitle"),
           description: t("analytics.aiSalesDataDesc"),
-          href: "/dashboard/integrations",
+          href: "/app/integrations",
           actionLabel: t("analytics.aiConnectData"),
           icon: ShieldAlert,
           severity: "warning",
@@ -153,7 +153,7 @@ export function AnalyticsPage() {
               </p>
             </div>
           </div>
-          <Link to="/dashboard/integrations" className="shrink-0">
+          <Link to="/app/integrations" className="shrink-0">
             <Button>{t("analytics.smartReportAction")} <TrendingUp size={16} /></Button>
           </Link>
         </div>

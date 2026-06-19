@@ -51,7 +51,7 @@ export function ServicesPage() {
         description={t("services.description")}
         actions={
           <div className="flex flex-wrap gap-2">
-            <Link to="/dashboard/settings#operations-setup">
+            <Link to="/app/settings#operations-setup">
               <Button type="button" variant="secondary">{t("settings.schedulingCenter")}</Button>
             </Link>
             <Button onClick={() => setOpen(true)}><Plus size={18} />{t("services.add")}</Button>

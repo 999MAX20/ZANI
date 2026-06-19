@@ -21,21 +21,20 @@ type SearchItem = {
 
 type SearchScope = "page" | "global";
 type SearchContext = {
-  id: "clients" | "leads" | "deals" | "conversations" | "calendar" | "tasks" | "appointments" | "integrations" | "timeline" | "default";
+  id: "clients" | "leads" | "deals" | "conversations" | "calendar" | "tasks" | "integrations" | "timeline" | "default";
   types: string[];
   placeholderKey: string;
 };
 
 const contextByPath: Array<{ match: (path: string) => boolean; context: SearchContext }> = [
-  { match: (path) => path.includes("/dashboard/clients"), context: { id: "clients", types: ["client"], placeholderKey: "search.placeholder.clients" } },
-  { match: (path) => path.includes("/dashboard/leads"), context: { id: "leads", types: ["lead"], placeholderKey: "search.placeholder.leads" } },
-  { match: (path) => path.includes("/dashboard/deals"), context: { id: "deals", types: ["deal"], placeholderKey: "search.placeholder.deals" } },
-  { match: (path) => path.includes("/dashboard/conversations"), context: { id: "conversations", types: ["conversation"], placeholderKey: "search.placeholder.conversations" } },
-  { match: (path) => path.includes("/dashboard/calendar"), context: { id: "calendar", types: ["appointment"], placeholderKey: "search.placeholder.calendar" } },
-  { match: (path) => path.includes("/dashboard/appointments"), context: { id: "appointments", types: ["appointment"], placeholderKey: "search.placeholder.calendar" } },
-  { match: (path) => path.includes("/dashboard/tasks"), context: { id: "tasks", types: ["task"], placeholderKey: "search.placeholder.tasks" } },
-  { match: (path) => path.includes("/dashboard/integrations"), context: { id: "integrations", types: [], placeholderKey: "search.placeholder.integrations" } },
-  { match: (path) => path.includes("/dashboard/timeline"), context: { id: "timeline", types: [], placeholderKey: "search.placeholder.timeline" } },
+  { match: (path) => path.includes("/app/clients"), context: { id: "clients", types: ["client"], placeholderKey: "search.placeholder.clients" } },
+  { match: (path) => path.includes("/app/leads"), context: { id: "leads", types: ["lead"], placeholderKey: "search.placeholder.leads" } },
+  { match: (path) => path.includes("/app/deals"), context: { id: "deals", types: ["deal"], placeholderKey: "search.placeholder.deals" } },
+  { match: (path) => path.includes("/app/conversations"), context: { id: "conversations", types: ["conversation"], placeholderKey: "search.placeholder.conversations" } },
+  { match: (path) => path.includes("/app/calendar"), context: { id: "calendar", types: ["appointment"], placeholderKey: "search.placeholder.calendar" } },
+  { match: (path) => path.includes("/app/tasks"), context: { id: "tasks", types: ["task"], placeholderKey: "search.placeholder.tasks" } },
+  { match: (path) => path.includes("/app/integrations"), context: { id: "integrations", types: [], placeholderKey: "search.placeholder.integrations" } },
+  { match: (path) => path.includes("/app/timeline"), context: { id: "timeline", types: [], placeholderKey: "search.placeholder.timeline" } },
 ];
 
 function getSearchContext(pathname: string): SearchContext {
@@ -85,7 +84,7 @@ export function GlobalSearch() {
         title: client.full_name,
         subtitle: [client.phone, client.email, client.source].filter(Boolean).join(" · "),
         type: "client",
-        to: `/dashboard/clients?client=${client.id}`,
+        to: `/app/clients?client=${client.id}`,
         icon: User,
         haystack: [client.full_name, client.phone, client.email, client.notes, client.source].join(" "),
       })),
@@ -94,7 +93,7 @@ export function GlobalSearch() {
         title: clientName(lead.client) || `Lead #${lead.id}`,
         subtitle: [serviceName(lead.service), lead.status, lead.source, lead.message].filter(Boolean).join(" · "),
         type: "lead",
-        to: `/dashboard/leads?lead=${lead.id}`,
+        to: `/app/leads?lead=${lead.id}`,
         icon: Inbox,
         haystack: [clientName(lead.client), serviceName(lead.service), lead.status, lead.source, lead.message].join(" "),
       })),
@@ -103,7 +102,7 @@ export function GlobalSearch() {
         title: clientName(appointment.client) || `Appointment #${appointment.id}`,
         subtitle: [serviceName(appointment.service), appointment.status, formatDateTime(appointment.start_at), appointment.notes].filter(Boolean).join(" · "),
         type: "appointment",
-        to: `/dashboard/calendar?appointment=${appointment.id}`,
+        to: `/app/calendar?appointment=${appointment.id}`,
         icon: CalendarCheck,
         haystack: [clientName(appointment.client), serviceName(appointment.service), appointment.status, appointment.source, appointment.notes, appointment.start_at].join(" "),
       })),
@@ -112,7 +111,7 @@ export function GlobalSearch() {
         title: deal.title,
         subtitle: [clientName(deal.client), deal.status, `${deal.amount} ${deal.currency}`].filter(Boolean).join(" · "),
         type: "deal",
-        to: `/dashboard/deals?deal=${deal.id}`,
+        to: `/app/deals?deal=${deal.id}`,
         icon: KanbanSquare,
         haystack: [deal.title, clientName(deal.client), deal.status, deal.source, deal.notes, deal.amount].join(" "),
       })),
@@ -121,7 +120,7 @@ export function GlobalSearch() {
         title: conversation.client_name || conversation.external_user_id || `Conversation #${conversation.id}`,
         subtitle: [conversation.channel, conversation.status, conversation.last_message?.text].filter(Boolean).join(" · "),
         type: "conversation",
-        to: `/dashboard/conversations?conversation=${conversation.id}`,
+        to: `/app/conversations?conversation=${conversation.id}`,
         icon: MessageCircle,
         haystack: [conversation.client_name, conversation.client_phone, conversation.external_user_id, conversation.channel, conversation.status, conversation.last_message?.text].join(" "),
       })),
@@ -130,7 +129,7 @@ export function GlobalSearch() {
         title: task.title,
         subtitle: [clientName(task.client), task.status, task.priority, task.due_at ? formatDateTime(task.due_at) : ""].filter(Boolean).join(" · "),
         type: "task",
-        to: `/dashboard/tasks?task=${task.id}`,
+        to: `/app/tasks?task=${task.id}`,
         icon: ListChecks,
         haystack: [task.title, task.description, clientName(task.client), task.status, task.priority].join(" "),
       })),

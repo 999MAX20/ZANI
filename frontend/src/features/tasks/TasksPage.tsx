@@ -1,17 +1,16 @@
 import { BellPlus, CalendarPlus, Check, Clock, MessageSquare, Play, Plus, RotateCcw, UserPlus, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { getApiErrorMessage } from "../../api/client";
-import { tasksApi } from "../../api/tasks";
-import { PageAiHints, type PageAiHint } from "../../components/ai/PageAiHints";
+import { tasksApi, type TaskCreatePayload, type TaskUpdatePayload } from "../../api/tasks";
 import { CrmEntityDrawer, type CrmDrawerEntity } from "../../components/crm/CrmEntityDrawer";
+import { usePageHeader } from "../../components/layout/PageHeaderContext";
 import { Button } from "../../components/ui/Button";
-import { Card, CardBody } from "../../components/ui/Card";
+import { Card } from "../../components/ui/Card";
 import { Input } from "../../components/ui/Input";
 import { Modal } from "../../components/ui/Modal";
-import { PageHeader } from "../../components/ui/PageHeader";
 import { Select } from "../../components/ui/Select";
 import { EmptyState, ErrorState, LoadingState } from "../../components/ui/StateViews";
 import { StatusBadge } from "../../components/ui/StatusBadge";
@@ -20,8 +19,7 @@ import { formatDateTime } from "../../lib/format";
 import { useI18n } from "../../lib/i18n";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useEntityData } from "../../hooks/useEntityData";
-import { useAuth } from "../auth/AuthProvider";
-import type { ReactNode } from "react";
+import type { KeyboardEvent, ReactNode } from "react";
 import type { Task } from "../../types";
 
 const emptyForm = {
@@ -33,28 +31,79 @@ const emptyForm = {
   appointment: "",
   priority: "normal",
   due_at: "",
+  reminder_at: "",
 };
+
+function toDateTimeLocal(value?: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const offsetMs = date.getTimezoneOffset() * 60 * 1000;
+  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
+}
+
+function taskToForm(task: Task) {
+  return {
+    title: task.title,
+    description: task.description || "",
+    client: task.client ? String(task.client) : "",
+    lead: task.lead ? String(task.lead) : "",
+    deal: task.deal ? String(task.deal) : "",
+    appointment: task.appointment ? String(task.appointment) : "",
+    priority: task.priority,
+    due_at: toDateTimeLocal(task.due_at),
+    reminder_at: toDateTimeLocal(task.reminder_at),
+  };
+}
+
+function priorityMarkerClass(priority: Task["priority"]) {
+  if (priority === "urgent") return "bg-red-500";
+  if (priority === "high") return "bg-amber-500";
+  if (priority === "low") return "bg-slate-300";
+  return "bg-cyan-500";
+}
 
 function RelatedAction({ onClick, children }: { onClick: () => void; children: ReactNode }) {
   return (
     <button
       type="button"
-      className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:bg-brand-50 hover:text-brand-700"
-      onClick={onClick}
+      className="max-w-full truncate rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600 transition hover:bg-brand-50 hover:text-brand-700"
+      onClick={(event) => {
+        event.stopPropagation();
+        onClick();
+      }}
     >
       {children}
     </button>
   );
 }
 
+function CompactActionButton({ label, onClick, children, variant = "secondary" }: { label: string; onClick: () => void; children: ReactNode; variant?: "secondary" | "ghost" }) {
+  return (
+    <Button
+      type="button"
+      variant={variant}
+      className="h-8 min-h-8 w-8 min-w-8 rounded-md px-0"
+      aria-label={label}
+      onClick={(event) => {
+        event.stopPropagation();
+        onClick();
+      }}
+    >
+      {children}
+    </Button>
+  );
+}
+
 export function TasksPage() {
   const { t } = useI18n();
+  const { setPageHeader } = usePageHeader();
   const queryClient = useQueryClient();
   const { business } = useActiveBusiness();
-  const { user } = useAuth();
-  const { appointments, clients, deals, leads, services, tasks } = useEntityData({ appointments: true, clients: true, deals: true, leads: true, services: true, tasks: true });
+  const { appointments, clients, deals, leads, services } = useEntityData({ appointments: true, clients: true, deals: true, leads: true, services: true });
   const [searchParams] = useSearchParams();
   const [open, setOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [tabFilter, setTabFilter] = useState<"my" | "today" | "overdue" | "team">("my");
   const [statusFilter, setStatusFilter] = useState("active");
@@ -66,19 +115,55 @@ export function TasksPage() {
     queryFn: () => tasksApi.comments(selectedTask!.id),
     enabled: Boolean(selectedTask?.id),
   });
+  const tasksQuery = useQuery({
+    queryKey: ["tasks", { tab: tabFilter, status: statusFilter }],
+    queryFn: () =>
+      tasksApi.list({
+        tab: tabFilter === "team" ? undefined : tabFilter,
+        status: statusFilter === "all" ? undefined : statusFilter,
+      }),
+  });
+
+  const openQuickTask = useCallback(() => {
+    setEditingTask(null);
+    setForm(emptyForm);
+    setOpen(true);
+  }, []);
 
   useEffect(() => {
     const taskId = Number(searchParams.get("task") || "");
-    if (!taskId || !tasks.data?.length) return;
-    const task = tasks.data.find((item) => item.id === taskId);
+    if (!taskId || !tasksQuery.data?.length) return;
+    const task = tasksQuery.data.find((item) => item.id === taskId);
     if (task) setSelectedTask(task);
-  }, [searchParams, tasks.data]);
+  }, [searchParams, tasksQuery.data]);
+
+  useEffect(() => {
+    setPageHeader({
+      title: t("tasks.title"),
+      primaryAction: {
+        label: t("tasks.quickTask"),
+        icon: Plus,
+        onClick: openQuickTask,
+      },
+    });
+    return () => setPageHeader(null);
+  }, [openQuickTask, setPageHeader, t]);
 
   const createMutation = useMutation({
-    mutationFn: (payload: Partial<Task>) => tasksApi.create(payload),
+    mutationFn: (payload: TaskCreatePayload) => tasksApi.create(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       setOpen(false);
+      setForm(emptyForm);
+    },
+  });
+  const updateMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: Task["id"]; payload: TaskUpdatePayload }) => tasksApi.update({ id, payload }),
+    onSuccess: (task) => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      setOpen(false);
+      setEditingTask(null);
+      setSelectedTask((current) => (current?.id === task.id ? task : current));
       setForm(emptyForm);
     },
   });
@@ -96,10 +181,6 @@ export function TasksPage() {
   });
   const reopenMutation = useMutation({
     mutationFn: tasksApi.reopen,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tasks"] }),
-  });
-  const assignMutation = useMutation({
-    mutationFn: tasksApi.assign,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tasks"] }),
   });
   const assignToMeMutation = useMutation({
@@ -134,99 +215,13 @@ export function TasksPage() {
   });
 
   if (!business) return <ErrorState message={t("tasks.noBusiness")} />;
-  if (tasks.isLoading || clients.isLoading || leads.isLoading || deals.isLoading || appointments.isLoading || services.isLoading) return <LoadingState />;
+  if (tasksQuery.isLoading || clients.isLoading || leads.isLoading || deals.isLoading || appointments.isLoading || services.isLoading) return <LoadingState />;
+  if (tasksQuery.error) return <ErrorState message={getApiErrorMessage(tasksQuery.error)} />;
 
-  const taskList = tasks.data || [];
-  const activeTasks = taskList.filter((task) => !["done", "cancelled"].includes(task.status));
-  const todayKey = new Date().toISOString().slice(0, 10);
-  const currentUserId = user?.id;
-  const visibleTasks = taskList.filter((task) => {
-    if (tabFilter === "my" && currentUserId && task.assignee !== currentUserId && !task.watchers?.includes(currentUserId)) return false;
-    if (tabFilter === "today" && task.due_at?.slice(0, 10) !== todayKey) return false;
-    if (tabFilter === "overdue" && (!task.due_at || new Date(task.due_at) >= new Date() || ["done", "cancelled"].includes(task.status))) return false;
-    if (statusFilter === "active") return !["done", "cancelled"].includes(task.status);
-    if (statusFilter === "all") return true;
-    return task.status === statusFilter;
-  });
-  const overdueTasks = activeTasks.filter((task) => task.due_at && new Date(task.due_at) < new Date()).length;
-  const highPriorityTasks = activeTasks.filter((task) => ["high", "urgent"].includes(task.priority)).length;
-  const taskAiHints: PageAiHint[] = [
-    overdueTasks > 0
-      ? {
-          id: "overdue",
-          title: t("tasks.aiOverdueTitle"),
-          description: t("tasks.aiOverdueDesc", { count: overdueTasks }),
-          actionLabel: t("tasks.aiOpenOverdue"),
-          href: "/dashboard/tasks",
-          icon: Clock,
-          severity: "critical",
-        }
-      : {
-          id: "no-overdue",
-          title: t("tasks.aiNoOverdueTitle"),
-          description: t("tasks.aiNoOverdueDesc"),
-          icon: Check,
-          severity: "good",
-        },
-    highPriorityTasks > 0
-      ? {
-          id: "priority",
-          title: t("tasks.aiPriorityTitle"),
-          description: t("tasks.aiPriorityDesc", { count: highPriorityTasks }),
-          icon: BellPlus,
-          severity: "warning",
-        }
-      : {
-          id: "priority-clear",
-          title: t("tasks.aiPlanTitle"),
-          description: t("tasks.aiPlanDesc"),
-          icon: CalendarPlus,
-          severity: "info",
-        },
-  ];
+  const visibleTasks = tasksQuery.data || [];
 
   return (
     <>
-      <PageHeader title={t("tasks.title")} description={t("tasks.description")} actions={<Button onClick={() => setOpen(true)}><Plus size={18} />{t("tasks.quickTask")}</Button>} />
-
-      <div className="mb-5 grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardBody className="flex items-center gap-4">
-            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-brand-50 text-brand-700">
-              <Check size={20} />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-500">{t("tasks.active")}</p>
-              <p className="text-2xl font-semibold text-midnight">{activeTasks.length}</p>
-            </div>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody className="flex items-center gap-4">
-            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-amber-50 text-amber-700">
-              <Clock size={20} />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-500">{t("tasks.overdue")}</p>
-              <p className="text-2xl font-semibold text-midnight">{overdueTasks}</p>
-            </div>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody className="flex items-center gap-4">
-            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-red-50 text-red-700">
-              <Play size={20} />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-500">{t("tasks.highPriority")}</p>
-              <p className="text-2xl font-semibold text-midnight">{highPriorityTasks}</p>
-            </div>
-          </CardBody>
-        </Card>
-      </div>
-
-      <PageAiHints items={taskAiHints} className="mb-5" />
-
       <div className="mb-4 flex flex-wrap items-center gap-2">
         {[
           { value: "my", label: t("tasks.my") },
@@ -257,92 +252,118 @@ export function TasksPage() {
         />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      <Card variant="outlined" className="overflow-hidden">
         {visibleTasks.map((task) => {
-          const client = clients.data?.find((item) => item.id === task.client);
-          const lead = leads.data?.find((item) => item.id === task.lead);
-          const deal = deals.data?.find((item) => item.id === task.deal);
-          const appointment = appointments.data?.find((item) => item.id === task.appointment);
-          const appointmentService = services.data?.find((item) => item.id === appointment?.service);
+          const openTask = () => setSelectedTask(task);
+          const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              openTask();
+            }
+          };
+
           return (
-            <Card key={task.id}>
-              <CardBody className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="font-semibold text-midnight">{task.title}</h2>
-                    <StatusBadge status={task.priority} />
-                    <StatusBadge status={task.status} />
-                  </div>
-                  {task.description ? <p className="mt-2 text-sm leading-6 text-slate-500">{task.description}</p> : null}
-                  <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-slate-500">
-                    {client ? <RelatedAction onClick={() => setDrawerEntity({ type: "client", id: client.id })}>{client.full_name}</RelatedAction> : <span className="rounded-full bg-slate-100 px-3 py-1">{t("tasks.noClient")}</span>}
-                    {lead ? <RelatedAction onClick={() => setDrawerEntity({ type: "lead", id: lead.id })}>{t("crmCard.leadNumber", { id: lead.id })}</RelatedAction> : null}
-                    {deal ? <RelatedAction onClick={() => setDrawerEntity({ type: "deal", id: deal.id })}>{deal.title}</RelatedAction> : null}
-                    {appointment ? <RelatedAction onClick={() => setDrawerEntity({ type: "appointment", id: appointment.id })}>{appointmentService?.name || t("nav.appointments")} · {formatDateTime(appointment.start_at)}</RelatedAction> : null}
-                    {task.due_at ? <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-700">{t("tasks.due")} {formatDateTime(task.due_at)}</span> : null}
-                    {task.snoozed_until ? <span className="rounded-full bg-purple-50 px-3 py-1 text-purple-700">{t("tasks.snoozed")} {formatDateTime(task.snoozed_until)}</span> : null}
-                    <span className="rounded-full bg-slate-100 px-3 py-1">{t("tasks.commentsCount", { count: task.comments_count || 0 })}</span>
-                    <span className="rounded-full bg-slate-100 px-3 py-1">{t("tasks.watchersCount", { count: task.watchers_count || task.watchers?.length || 0 })}</span>
-                  </div>
+            <div
+              key={task.id}
+              role="button"
+              tabIndex={0}
+              className="grid min-h-[76px] cursor-pointer grid-cols-[10px_minmax(0,1fr)] gap-0 border-b border-slate-100 bg-white transition last:border-b-0 hover:bg-slate-50/80 focus:outline-none focus:ring-2 focus:ring-brand-200 md:grid-cols-[10px_minmax(0,1fr)_auto]"
+              onClick={openTask}
+              onKeyDown={onKeyDown}
+            >
+              <div className={priorityMarkerClass(task.priority)} />
+              <div className="min-w-0 px-4 py-3">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <h2 className="min-w-0 max-w-full truncate text-sm font-black text-midnight">{task.title}</h2>
+                  <StatusBadge status={task.priority} />
+                  <StatusBadge status={task.status} />
+                  {task.due_at ? <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">{t("tasks.due")} {formatDateTime(task.due_at)}</span> : null}
+                  {task.snoozed_until ? <span className="rounded-full bg-purple-50 px-2.5 py-1 text-xs font-bold text-purple-700">{t("tasks.snoozed")} {formatDateTime(task.snoozed_until)}</span> : null}
                 </div>
-                <div className="flex shrink-0 flex-wrap justify-end gap-2">
-                  <Button variant="secondary" className="h-10 rounded-full px-3" onClick={() => setSelectedTask(task)}>
-                    <MessageSquare size={16} /> {t("tasks.details")}
-                  </Button>
-                  {task.status === "open" ? (
-                    <Button variant="secondary" className="h-10 w-10 rounded-full px-0" onClick={() => startMutation.mutate(task.id)} aria-label={t("tasks.start")}>
-                      <Play size={16} />
-                    </Button>
-                  ) : null}
-                  {!["done", "cancelled"].includes(task.status) ? (
-                    <Button variant="secondary" className="h-10 w-10 rounded-full px-0" onClick={() => completeMutation.mutate(task.id)} aria-label={t("tasks.complete")}>
-                      <Check size={16} />
-                    </Button>
-                  ) : null}
-                  {!["done", "cancelled"].includes(task.status) ? (
-                    <Button variant="ghost" className="h-10 w-10 rounded-full px-0" onClick={() => cancelMutation.mutate(task.id)} aria-label={t("tasks.cancel")}>
-                      <X size={16} />
-                    </Button>
-                  ) : null}
-                  {["done", "cancelled"].includes(task.status) ? (
-                    <Button variant="secondary" className="h-10 w-10 rounded-full px-0" onClick={() => reopenMutation.mutate(task.id)} aria-label={t("tasks.reopen")}>
-                      <RotateCcw size={16} />
-                    </Button>
-                  ) : null}
+                <div className="mt-2 flex min-w-0 flex-wrap items-center gap-1.5 text-xs font-semibold text-slate-500">
+                  {task.client ? <RelatedAction onClick={() => setDrawerEntity({ type: "client", id: Number(task.client) })}>{task.client_name || t("common.client")}</RelatedAction> : <span className="rounded-full bg-slate-100 px-2.5 py-1">{t("tasks.noClient")}</span>}
+                  {task.lead ? <RelatedAction onClick={() => setDrawerEntity({ type: "lead", id: Number(task.lead) })}>{task.lead_title || t("crmCard.leadNumber", { id: task.lead })}</RelatedAction> : null}
+                  {task.deal ? <RelatedAction onClick={() => setDrawerEntity({ type: "deal", id: Number(task.deal) })}>{task.deal_title || t("nav.deals")}</RelatedAction> : null}
+                  {task.appointment ? <RelatedAction onClick={() => setDrawerEntity({ type: "appointment", id: Number(task.appointment) })}>{task.appointment_service_name || t("nav.appointments")}{task.appointment_start_at ? ` · ${formatDateTime(task.appointment_start_at)}` : ""}</RelatedAction> : null}
+                  {task.assignee_name || task.assignee_email ? <span className="rounded-full bg-slate-100 px-2.5 py-1">{task.assignee_name || task.assignee_email}</span> : null}
+                  <span className="rounded-full bg-slate-100 px-2.5 py-1">{t("tasks.commentsCount", { count: task.comments_count || 0 })}</span>
+                  <span className="rounded-full bg-slate-100 px-2.5 py-1">{t("tasks.watchersCount", { count: task.watchers_count || task.watchers?.length || 0 })}</span>
                 </div>
-              </CardBody>
-            </Card>
+                {task.description ? <p className="mt-2 truncate text-xs font-medium text-slate-500">{task.description}</p> : null}
+              </div>
+              <div className="col-span-2 flex items-center justify-end gap-1.5 border-t border-slate-50 px-4 py-2 md:col-span-1 md:border-t-0 md:py-3 md:pl-2">
+                <CompactActionButton label={t("tasks.details")} onClick={openTask}>
+                  <MessageSquare size={15} />
+                </CompactActionButton>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="h-8 min-h-8 rounded-md px-2.5 text-xs"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setEditingTask(task);
+                    setForm(taskToForm(task));
+                    setOpen(true);
+                  }}
+                >
+                  {t("tasks.edit")}
+                </Button>
+                {task.status === "open" ? (
+                  <CompactActionButton label={t("tasks.start")} onClick={() => startMutation.mutate(task.id)}>
+                    <Play size={15} />
+                  </CompactActionButton>
+                ) : null}
+                {!["done", "cancelled"].includes(task.status) ? (
+                  <CompactActionButton label={t("tasks.complete")} onClick={() => completeMutation.mutate(task.id)}>
+                    <Check size={15} />
+                  </CompactActionButton>
+                ) : null}
+                {!["done", "cancelled"].includes(task.status) ? (
+                  <CompactActionButton label={t("tasks.cancel")} variant="ghost" onClick={() => cancelMutation.mutate(task.id)}>
+                    <X size={15} />
+                  </CompactActionButton>
+                ) : null}
+                {["done", "cancelled"].includes(task.status) ? (
+                  <CompactActionButton label={t("tasks.reopen")} onClick={() => reopenMutation.mutate(task.id)}>
+                    <RotateCcw size={15} />
+                  </CompactActionButton>
+                ) : null}
+              </div>
+            </div>
           );
         })}
         {!visibleTasks.length ? (
           <EmptyState
             title={t("tasks.emptyTitle")}
             description={t("tasks.emptyText")}
-            action={<Button variant="secondary" onClick={() => setOpen(true)}><Plus size={16} />{t("tasks.create")}</Button>}
+            action={<Button variant="secondary" onClick={() => { setEditingTask(null); setForm(emptyForm); setOpen(true); }}><Plus size={16} />{t("tasks.create")}</Button>}
           />
         ) : null}
-      </div>
+      </Card>
 
-      <Modal title={t("tasks.create")} open={open} onClose={() => setOpen(false)}>
+      <Modal title={editingTask ? t("tasks.editTitle") : t("tasks.create")} open={open} onClose={() => { setOpen(false); setEditingTask(null); setForm(emptyForm); }}>
         <form
           className="space-y-4"
           onSubmit={(event) => {
             event.preventDefault();
-            createMutation.mutate({
+            const payload: TaskCreatePayload | TaskUpdatePayload = {
               business: business.id,
-              title: form.title,
+              title: form.title.trim(),
               description: form.description,
               client: form.client ? Number(form.client) : null,
               lead: form.lead ? Number(form.lead) : null,
               deal: form.deal ? Number(form.deal) : null,
               appointment: form.appointment ? Number(form.appointment) : null,
               priority: form.priority as Task["priority"],
-              due_at: form.due_at || null,
-            });
+              due_at: form.due_at ? new Date(form.due_at).toISOString() : null,
+              reminder_at: form.reminder_at ? new Date(form.reminder_at).toISOString() : null,
+            };
+            if (editingTask) updateMutation.mutate({ id: editingTask.id, payload });
+            else createMutation.mutate(payload);
           }}
         >
-          <Input placeholder={t("tasks.titlePlaceholder")} value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} required />
-          <Input placeholder={t("tasks.descriptionPlaceholder")} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} />
+          <Input label={t("tasks.formTitle")} placeholder={t("tasks.titlePlaceholder")} value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} required />
+          <Input label={t("tasks.formDescription")} placeholder={t("tasks.descriptionPlaceholder")} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} />
           <Select value={form.client} onChange={(event) => setForm({ ...form, client: event.target.value })} options={[{ value: "", label: t("tasks.noClient") }, ...(clients.data || []).map((client) => ({ value: String(client.id), label: client.full_name }))]} />
           <Select
             value={form.lead}
@@ -379,9 +400,10 @@ export function TasksPage() {
             ]}
           />
           <Select value={form.priority} onChange={(event) => setForm({ ...form, priority: event.target.value })} options={[{ value: "normal", label: t("tasks.priorityNormal") }, { value: "high", label: t("tasks.priorityHigh") }, { value: "urgent", label: t("tasks.priorityUrgent") }, { value: "low", label: t("tasks.priorityLow") }]} />
-          <Input type="datetime-local" value={form.due_at} onChange={(event) => setForm({ ...form, due_at: event.target.value })} />
-          {createMutation.error ? <ErrorState message={getApiErrorMessage(createMutation.error)} /> : null}
-          <Button type="submit" isLoading={createMutation.isPending}>{t("clients.save")}</Button>
+          <Input label={t("tasks.dueAt")} type="datetime-local" value={form.due_at} onChange={(event) => setForm({ ...form, due_at: event.target.value })} />
+          <Input label={t("tasks.reminderAt")} type="datetime-local" value={form.reminder_at} onChange={(event) => setForm({ ...form, reminder_at: event.target.value })} />
+          {createMutation.error || updateMutation.error ? <ErrorState message={getApiErrorMessage(createMutation.error || updateMutation.error)} /> : null}
+          <Button type="submit" isLoading={createMutation.isPending || updateMutation.isPending}>{t("clients.save")}</Button>
         </form>
       </Modal>
 
@@ -398,6 +420,9 @@ export function TasksPage() {
             </div>
 
             <div className="grid gap-2 sm:grid-cols-3">
+              <Button variant="secondary" onClick={() => { setEditingTask(selectedTask); setForm(taskToForm(selectedTask)); setOpen(true); }}>
+                {t("tasks.edit")}
+              </Button>
               <Button variant="secondary" onClick={() => assignToMeMutation.mutate(selectedTask.id)} isLoading={assignToMeMutation.isPending}>
                 <UserPlus size={16} /> {t("tasks.assignToMe")}
               </Button>

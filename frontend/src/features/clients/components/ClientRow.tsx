@@ -1,4 +1,4 @@
-import { MoreHorizontal, UserX } from "lucide-react";
+import { MessageCircle, MoreHorizontal, Phone, UserX } from "lucide-react";
 import { memo } from "react";
 
 import { cn } from "../../../lib/cn";
@@ -24,10 +24,18 @@ export const ClientRow = memo(function ClientRow({
   onToggleCheck: () => void;
   t: Translate;
 }) {
+  const phoneDigits = row.client.phone?.replace(/\D/g, "") || "";
+  const hasTelegram = Boolean(row.client.telegram_id || row.client.source === "telegram");
+
   function handleKeyDown(event: React.KeyboardEvent<HTMLTableRowElement>) {
     if (event.key !== "Enter" && event.key !== " ") return;
     event.preventDefault();
     onSelect();
+  }
+
+  function openExternalContact(event: React.MouseEvent<HTMLButtonElement>, href: string) {
+    event.stopPropagation();
+    window.open(href, "_blank", "noopener,noreferrer");
   }
 
   return (
@@ -37,12 +45,12 @@ export const ClientRow = memo(function ClientRow({
       tabIndex={0}
       className={cn(
         "group cursor-pointer border-b border-slate-100 bg-white transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset",
-        selected && "bg-blue-50/70 shadow-[inset_3px_0_0_#2563eb] hover:bg-blue-50/70",
+        selected && "bg-brand-50/80 shadow-[inset_5px_0_0_#2563eb] hover:bg-brand-50/80",
       )}
       onClick={onSelect}
       onKeyDown={handleKeyDown}
     >
-      <td role="gridcell" className="w-10 px-3 py-3 align-middle">
+      <td role="gridcell" className="w-10 px-3 py-2 align-middle">
         <input
           type="checkbox"
           checked={checked}
@@ -55,62 +63,96 @@ export const ClientRow = memo(function ClientRow({
           }}
         />
       </td>
-      <td role="gridcell" className="overflow-hidden px-2 py-3">
+      <td role="gridcell" className="overflow-hidden px-2 py-2">
         <div className="flex items-center gap-3">
           <ClientAvatar name={row.client.full_name} />
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-slate-950">{row.client.full_name}</p>
+            <p className={cn("truncate text-sm font-semibold text-slate-950", selected && "text-brand-950")}>{row.client.full_name}</p>
             <p className="mt-0.5 truncate text-xs font-medium text-slate-500">{row.client.phone || row.client.email || t("clients.noContacts")}</p>
           </div>
         </div>
       </td>
       {visibleColumns.has("source") ? (
-        <td role="gridcell" className="overflow-hidden px-2 py-3">
+        <td role="gridcell" className="overflow-hidden px-2 py-2">
           <div className="flex min-w-0 items-center gap-2 text-sm font-medium text-slate-600">
             <SourceIcon source={row.client.source} />
             <span className="truncate">{sourceLabel(row.client.source, t)}</span>
           </div>
         </td>
       ) : null}
-      <td role="gridcell" className="overflow-hidden px-2 py-3">
+      <td role="gridcell" className="overflow-hidden px-2 py-2">
         <ClientStatusBadge status={row.status} />
       </td>
       {visibleColumns.has("manager") ? (
-      <td role="gridcell" className="overflow-hidden px-2 py-3">
-        {row.manager === "Не назначен" ? (
-          <div className="flex min-w-0 items-center gap-2 text-slate-400">
-            <UserX size={16} className="shrink-0" />
-            <span className="truncate text-sm font-medium">Не назначен</span>
-          </div>
-        ) : (
-          <div className="flex min-w-0 items-center gap-2">
-            <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-600">
-              {initials(row.manager)}
+        <td role="gridcell" className="overflow-hidden px-2 py-2">
+          {row.manager === "Не назначен" ? (
+            <div className="flex min-w-0 items-center gap-2 text-slate-400">
+              <UserX size={16} className="shrink-0" />
+              <span className="truncate text-sm font-medium">Не назначен</span>
             </div>
-            <span className="truncate text-sm font-medium text-slate-600">{row.manager}</span>
-          </div>
-        )}
-      </td>
+          ) : (
+            <div className="flex min-w-0 items-center gap-2">
+              <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-600">
+                {initials(row.manager)}
+              </div>
+              <span className="truncate text-sm font-medium text-slate-600">{row.manager}</span>
+            </div>
+          )}
+        </td>
       ) : null}
-      <td role="gridcell" className="overflow-hidden px-2 py-3">
+      <td role="gridcell" className="overflow-hidden px-2 py-2">
         <p className="truncate text-sm font-medium text-slate-700">{row.lastContactAt ? formatDateTime(row.lastContactAt) : "Нет контакта"}</p>
       </td>
-      <td role="gridcell" className="overflow-hidden px-2 py-3">
+      <td role="gridcell" className="overflow-hidden px-2 py-2">
         <p className="truncate text-sm font-medium text-slate-700">{row.nextStep.title}</p>
         <p className="mt-0.5 text-xs font-medium text-slate-500">{row.nextStep.date ? formatDate(row.nextStep.date) : "Сегодня"}</p>
       </td>
-      <td role="gridcell" className="w-10 px-2 py-3 text-right">
-        <button
-          type="button"
-          className="inline-grid h-8 w-8 place-items-center rounded-lg text-slate-500 opacity-100 transition hover:bg-slate-100 hover:text-slate-700 md:opacity-0 md:group-hover:opacity-100"
-          onClick={(event) => {
-            event.stopPropagation();
-            onSelect();
-          }}
-          aria-label="Действия"
-        >
-          <MoreHorizontal size={18} />
-        </button>
+      <td role="gridcell" className="w-[92px] px-2 py-2 text-right">
+        <div className="flex items-center justify-end gap-1">
+          {phoneDigits ? (
+            <>
+              <button
+                type="button"
+                className="inline-grid h-8 w-8 place-items-center rounded-lg text-slate-500 transition hover:bg-emerald-50 hover:text-emerald-700"
+                onClick={(event) => openExternalContact(event, `tel:${phoneDigits}`)}
+                aria-label={t("clients.call")}
+              >
+                <Phone size={16} />
+              </button>
+              <button
+                type="button"
+                className="inline-grid h-8 w-8 place-items-center rounded-lg text-slate-500 transition hover:bg-emerald-50 hover:text-emerald-700"
+                onClick={(event) => openExternalContact(event, `https://wa.me/${phoneDigits}`)}
+                aria-label={t("clients.openWhatsapp")}
+              >
+                <MessageCircle size={16} />
+              </button>
+            </>
+          ) : hasTelegram ? (
+            <button
+              type="button"
+              className="inline-grid h-8 w-8 place-items-center rounded-lg text-slate-500 transition hover:bg-brand-50 hover:text-brand-700"
+              onClick={(event) => {
+                event.stopPropagation();
+                onSelect();
+              }}
+              aria-label={t("clients.openTelegram")}
+            >
+              <MessageCircle size={16} />
+            </button>
+          ) : null}
+          <button
+            type="button"
+            className="inline-grid h-8 w-8 place-items-center rounded-lg text-slate-500 opacity-100 transition hover:bg-slate-100 hover:text-slate-700 md:opacity-0 md:group-hover:opacity-100"
+            onClick={(event) => {
+              event.stopPropagation();
+              onSelect();
+            }}
+            aria-label="Действия"
+          >
+            <MoreHorizontal size={18} />
+          </button>
+        </div>
       </td>
     </tr>
   );

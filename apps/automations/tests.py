@@ -234,7 +234,7 @@ class AutomationFoundationTests(TestCase):
 
     def test_automation_run_api_masks_secret_payload_results_and_error(self):
         rule = self._rule(AutomationRule.TriggerTypes.LEAD_CREATED, [])
-        AutomationRun.objects.create(
+        run = AutomationRun.objects.create(
             business=self.business,
             rule=rule,
             trigger_type=AutomationRule.TriggerTypes.LEAD_CREATED,
@@ -251,6 +251,18 @@ class AutomationFoundationTests(TestCase):
         self.assertNotIn("raw-payload-key", str(response.data))
         self.assertNotIn("raw-action-token", str(response.data))
         self.assertNotIn("raw-error-token", str(response.data))
+
+        patch_response = self.api.patch(
+            f"/api/automation-runs/{run.id}/",
+            {"status": AutomationRun.Statuses.SUCCESS, "error": ""},
+            format="json",
+        )
+        run.refresh_from_db()
+
+        self.assertEqual(patch_response.status_code, 400)
+        self.assertEqual(patch_response.data["fields"], ["error", "status"])
+        self.assertEqual(run.status, AutomationRun.Statuses.FAILED)
+        self.assertIn("access_token", run.error)
 
     def test_templates_can_be_listed_and_applied(self):
         self.api.force_authenticate(self.owner)

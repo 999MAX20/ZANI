@@ -9,7 +9,7 @@ import { useAuth } from "../auth/AuthProvider";
 export function NotFoundPage() {
   const { isPlatformUser, isMerchantUser, isAuthenticated } = useAuth();
   const { t } = useI18n();
-  const homePath = isPlatformUser ? "/platform" : isMerchantUser ? "/dashboard" : "/";
+  const homePath = isPlatformUser ? "/platform" : isMerchantUser ? "/app" : "/";
 
   return (
     <main className="min-h-screen bg-soft-mesh p-4">

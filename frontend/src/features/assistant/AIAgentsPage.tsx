@@ -265,7 +265,7 @@ export function AIAgentsPage() {
       await queryClient.invalidateQueries({ queryKey: ["bots"] });
       setCreateOpen(false);
       setNewAgentName(t("aiAgents.defaultNewAgentName"));
-      navigate(`/dashboard/ai-agents/${bot.id}/profile`);
+      navigate(`/app/ai-agents/${bot.id}/profile`);
     },
   });
 
@@ -349,7 +349,7 @@ export function AIAgentsPage() {
   if (botList.length && selectedBot) {
     const needsCanonicalRoute = !params.id || !matchedBot || !params.section || hasInvalidSection;
     if (needsCanonicalRoute) {
-      return <Navigate to={`/dashboard/ai-agents/${selectedBot.id}/${activeSection}`} replace />;
+      return <Navigate to={`/app/ai-agents/${selectedBot.id}/${activeSection}`} replace />;
     }
   }
 
@@ -407,7 +407,7 @@ export function AIAgentsPage() {
             return (
               <div key={bot.id} className="rounded-2xl">
                 <Link
-                  to={`/dashboard/ai-agents/${bot.id}/${activeSection}`}
+                  to={`/app/ai-agents/${bot.id}/${activeSection}`}
                   className={cn(
                     "flex min-h-11 items-center gap-3 rounded-2xl px-3 py-2 text-sm font-black transition",
                     active ? "bg-brand-50 text-brand-700" : "text-slate-700 hover:bg-slate-50 hover:text-midnight",
@@ -428,7 +428,7 @@ export function AIAgentsPage() {
                       return (
                         <Link
                           key={section.id}
-                          to={`/dashboard/ai-agents/${bot.id}/${section.id}`}
+                          to={`/app/ai-agents/${bot.id}/${section.id}`}
                           className={cn(
                             "flex min-h-10 items-center gap-2 rounded-xl px-3 text-sm font-bold transition",
                             sectionActive ? "bg-slate-100 text-brand-700" : "text-slate-600 hover:bg-slate-50 hover:text-midnight",
@@ -460,7 +460,7 @@ export function AIAgentsPage() {
           <div>
             <h2 className="text-2xl font-bold tracking-tight text-midnight md:text-3xl">{t(activeSectionMeta.titleKey)}</h2>
             <div className="mt-3 flex flex-wrap items-center gap-2 text-sm font-bold text-slate-500">
-              <Link to="/dashboard/ai-agents" className="hover:text-brand-700">{t("aiAgents.title")}</Link>
+              <Link to="/app/ai-agents" className="hover:text-brand-700">{t("aiAgents.title")}</Link>
               {selectedBot ? (
                 <>
                   <ChevronRight size={15} />
@@ -471,7 +471,7 @@ export function AIAgentsPage() {
               ) : null}
             </div>
           </div>
-          <Link to="/dashboard/conversations">
+          <Link to="/app/conversations">
             <Button type="button" variant="secondary">
               <MessageSquareText size={16} /> {t("aiAgents.openMessages")}
             </Button>
@@ -609,10 +609,10 @@ function getOnboardingSteps({
   t: (key: string) => string;
 }) {
   return [
-    { done: profileReady, title: t("aiAgents.checklist.profile"), text: t("aiAgents.checklist.profileText"), href: `/dashboard/ai-agents/${botId}/profile` },
-    { done: hasKnowledge, title: t("aiAgents.checklist.knowledge"), text: t("aiAgents.checklist.knowledgeText"), href: `/dashboard/ai-agents/${botId}/knowledge` },
-    { done: hasActiveChannel, title: t("aiAgents.checklist.channel"), text: t("aiAgents.checklist.channelText"), href: `/dashboard/ai-agents/${botId}/channels` },
-    { done: hasTestDialog, title: t("aiAgents.checklist.test"), text: t("aiAgents.checklist.testText"), href: `/dashboard/ai-agents/${botId}/test` },
+    { done: profileReady, title: t("aiAgents.checklist.profile"), text: t("aiAgents.checklist.profileText"), href: `/app/ai-agents/${botId}/profile` },
+    { done: hasKnowledge, title: t("aiAgents.checklist.knowledge"), text: t("aiAgents.checklist.knowledgeText"), href: `/app/ai-agents/${botId}/knowledge` },
+    { done: hasActiveChannel, title: t("aiAgents.checklist.channel"), text: t("aiAgents.checklist.channelText"), href: `/app/ai-agents/${botId}/channels` },
+    { done: hasTestDialog, title: t("aiAgents.checklist.test"), text: t("aiAgents.checklist.testText"), href: `/app/ai-agents/${botId}/test` },
   ];
 }
 
@@ -836,10 +836,10 @@ function OverviewSection({
               <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-slate-500">{t("aiAgents.overviewText")}</p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Link to={`/dashboard/ai-agents/${bot.id}/channels`}>
+              <Link to={`/app/ai-agents/${bot.id}/channels`}>
                 <Button type="button" variant="secondary"><Radio size={16} />{t("aiAgents.openChannels")}</Button>
               </Link>
-              <Link to={latestConversation ? `/dashboard/ai-agents/${bot.id}/test` : "/dashboard/conversations"}>
+              <Link to={latestConversation ? `/app/ai-agents/${bot.id}/test` : "/app/conversations"}>
                 <Button type="button"><MessageSquareText size={16} />{t("aiAgents.testMessages")}</Button>
               </Link>
             </div>

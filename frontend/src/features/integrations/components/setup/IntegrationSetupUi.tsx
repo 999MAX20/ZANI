@@ -12,16 +12,19 @@ const providerLogos = new Set(
     .filter(Boolean),
 );
 
-export function LogoMark({ logo, label }: { logo?: string; label: string }) {
+export function LogoMark({ logo, label, compact = false }: { logo?: string; label: string; compact?: boolean }) {
+  const containerClassName = compact ? "h-9 w-9 rounded-xl" : "h-11 w-11 rounded-2xl";
+  const imageClassName = compact ? "h-6 w-6" : "h-7 w-7";
+
   if (logo && providerLogos.has(logo)) {
     return (
-      <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
-        <img src={logo} alt="" className="h-7 w-7 object-contain" />
+      <div className={cn("grid shrink-0 place-items-center overflow-hidden border border-slate-100 bg-white shadow-sm", containerClassName)}>
+        <img src={logo} alt="" className={cn("object-contain", imageClassName)} />
       </div>
     );
   }
   return (
-    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-slate-950 text-sm font-black text-white">
+    <div className={cn("grid shrink-0 place-items-center bg-slate-950 font-black text-white", compact ? "text-xs" : "text-sm", containerClassName)}>
       {label.slice(0, 2).toUpperCase()}
     </div>
   );
@@ -139,7 +142,7 @@ export function MessengerSetupShell({
       ) : null}
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-slate-50 px-4 py-3">
-        <Link to={`/dashboard/conversations?channel=${inboxChannel}`}>
+        <Link to={`/app/conversations?channel=${inboxChannel}`}>
           <Button type="button" variant="ghost">
             <Link2 size={16} /> {t("integrations.setup.openMessages")}
           </Button>

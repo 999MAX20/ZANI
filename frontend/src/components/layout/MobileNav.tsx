@@ -14,10 +14,10 @@ import { Button } from "../ui/Button";
 import { Sidebar } from "./Sidebar";
 
 const bottomItems = [
-  { to: "/dashboard", label: "mobile.home", icon: Home },
-  { to: "/dashboard/leads", label: "nav.leads", icon: Inbox, resource: "leads" },
-  { to: "/dashboard/clients", label: "nav.clients", icon: Users, resource: "clients" },
-  { to: "/dashboard/conversations", label: "nav.conversations", icon: MessageSquareText, resource: "conversations" },
+  { to: "/app", label: "mobile.home", icon: Home },
+  { to: "/app/leads", label: "nav.leads", icon: Inbox, resource: "leads" },
+  { to: "/app/clients", label: "nav.clients", icon: Users, resource: "clients" },
+  { to: "/app/conversations", label: "nav.conversations", icon: MessageSquareText, resource: "conversations" },
 ];
 
 export function MobileNav({ open, onOpen, onClose }: { open: boolean; onOpen: () => void; onClose: () => void }) {
@@ -75,7 +75,7 @@ export function MobileNav({ open, onOpen, onClose }: { open: boolean; onOpen: ()
             <NavLink
               key={item.to}
               to={item.to}
-              end={item.to === "/dashboard"}
+              end={item.to === "/app"}
               className={({ isActive }) =>
                 cn(
                   "flex min-h-[70px] flex-col items-center justify-center gap-1 rounded-2xl px-0.5 py-2 text-center text-[10px] font-black leading-none text-slate-500 transition active:scale-[0.98]",
@@ -85,7 +85,7 @@ export function MobileNav({ open, onOpen, onClose }: { open: boolean; onOpen: ()
             >
               <span className="relative">
                 <Icon size={26} strokeWidth={2.35} />
-                {item.to === "/dashboard/conversations" && unreadMessages ? (
+                {item.to === "/app/conversations" && unreadMessages ? (
                   <span className="absolute -right-3 -top-2 min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-black leading-none text-white ring-2 ring-white">
                     {unreadMessages > 99 ? "99+" : unreadMessages}
                   </span>

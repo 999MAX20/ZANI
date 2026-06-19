@@ -1,10 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Filter, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import { appointmentsApi } from "../../api/appointments";
-import { clientsApi } from "../../api/clients";
+import { clientsApi, type ClientMergeDryRun } from "../../api/clients";
 import { getApiErrorMessage, unwrapList } from "../../api/client";
 import { dealsApi } from "../../api/deals";
 import { leadsApi } from "../../api/leads";
@@ -12,6 +12,7 @@ import { tasksApi } from "../../api/tasks";
 import { segmentFiltersApi, segmentsApi, taggedObjectsApi, tagsApi } from "../../api/activities";
 import { botConversationsApi } from "../../api/bots";
 import { CrmEntityDrawer, type CrmCardTab, type CrmDrawerEntity } from "../../components/crm/CrmEntityDrawer";
+import { CrmWorkspaceGrid, CrmWorkspacePage } from "../../components/crm";
 import { ClientForm } from "../../components/forms/ClientForm";
 import { Button } from "../../components/ui/Button";
 import { ErrorState, LoadingState } from "../../components/ui/StateViews";
@@ -23,14 +24,12 @@ import { useI18n } from "../../lib/i18n";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useAuth } from "../auth/AuthProvider";
 import type { Appointment, BotConversation, Client, Deal, Id, Lead, Segment, Tag, TaggedObject, Task } from "../../types";
-import { ClientInspector } from "./components/ClientInspector";
 import { ClientsFilters } from "./components/ClientsFilters";
-import { ClientsKpi } from "./components/ClientsKpi";
 import { ClientsTable } from "./components/ClientsTable";
 import { MobileClientCards } from "./components/MobileClientCards";
 import { useClientRows } from "./hooks/useClientRows";
 import { useDebouncedValue } from "./hooks/useDebouncedValue";
-import type { ClientQuickFilter, ClientTag, SegmentDraft } from "./types";
+import type { ClientQuickFilter, ClientTableColumn, ClientTag, SegmentDraft } from "./types";
 import { clientSourceOptions } from "./utils";
 
 const DEFAULT_CLIENTS_PAGE_SIZE = 20;
@@ -47,10 +46,10 @@ export function ClientsPage() {
   const [segmentOpen, setSegmentOpen] = useState(false);
   const [tagOpen, setTagOpen] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
+  const [mergePreview, setMergePreview] = useState<ClientMergeDryRun | null>(null);
   const [editing, setEditing] = useState<Client | undefined>();
   const [drawerEntity, setDrawerEntity] = useState<CrmDrawerEntity | null>(null);
   const [selectedClientId, setSelectedClientId] = useState<Id | null>(null);
-  const [inspectorDismissed, setInspectorDismissed] = useState(false);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 350);
   const [source, setSource] = useState("");
@@ -58,9 +57,8 @@ export function ClientsPage() {
   const [selectedSegment, setSelectedSegment] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_CLIENTS_PAGE_SIZE);
-  const [inspectorTab, setInspectorTab] = useState<"overview" | "deals" | "tasks" | "files">("overview");
   const [quickFilter, setQuickFilter] = useState<ClientQuickFilter>("all");
-  const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
+  const [visibleClientColumns, setVisibleClientColumns] = useState<Set<ClientTableColumn>>(() => new Set(["source"]));
   const [tagDraft, setTagDraft] = useState("");
   const [archiveReason, setArchiveReason] = useState("");
   const [segmentDraft, setSegmentDraft] = useState<SegmentDraft>({ name: "", field: "source", operator: "equals", value: "" });
@@ -147,8 +145,7 @@ export function ClientsPage() {
       queryClient.invalidateQueries({ queryKey: ["crm-card", "client", client.id] });
       setCreateOpen(false);
       setEditing(undefined);
-      setInspectorDismissed(false);
-      setSelectedClientId(client.id);
+      openClientCard(client.id);
       clearCreateParam();
     },
   });
@@ -163,7 +160,12 @@ export function ClientsPage() {
       }
       setCreateOpen(false);
       setEditing(undefined);
+      setMergePreview(null);
     },
+  });
+  const mergeDryRunMutation = useMutation({
+    mutationFn: ({ targetId, duplicateId }: { targetId: number; duplicateId: number }) => clientsApi.mergeDryRun({ id: targetId, duplicate_client_id: duplicateId }),
+    onSuccess: (preview) => setMergePreview(preview),
   });
 
   const archiveMutation = useMutation({
@@ -249,20 +251,21 @@ export function ClientsPage() {
   }
 
   function openClientCard(clientId: number, initialTab: CrmCardTab = "overview") {
-    setInspectorDismissed(false);
     setSelectedClientId(clientId);
     setDrawerEntity({ type: "client", id: clientId, initialTab });
   }
 
   function selectClient(clientId: number) {
-    setInspectorDismissed(false);
-    setSelectedClientId(clientId);
+    openClientCard(clientId);
   }
 
-  function closeInspector() {
-    setInspectorDismissed(true);
-    setInspectorTab("overview");
-    setSelectedClientId(null);
+  function toggleClientColumn(column: ClientTableColumn) {
+    setVisibleClientColumns((current) => {
+      const next = new Set(current);
+      if (next.has(column)) next.delete(column);
+      else next.add(column);
+      return next;
+    });
   }
 
   function goToPage(nextPage: number) {
@@ -273,8 +276,8 @@ export function ClientsPage() {
   useEffect(() => {
     const clientId = Number(searchParams.get("client") || "");
     if (clientId) {
-      setInspectorDismissed(false);
       setSelectedClientId(clientId);
+      setDrawerEntity({ type: "client", id: clientId, initialTab: "overview" });
     }
     if (searchParams.get("create") === "1") {
       setEditing(undefined);
@@ -286,13 +289,6 @@ export function ClientsPage() {
   useEffect(() => {
     setPageHeader({
       title: t("clients.title"),
-      secondaryActions: [
-        {
-          label: t("clients.filters"),
-          icon: Filter,
-          onClick: () => setAdvancedFiltersOpen((value) => !value),
-        },
-      ],
       primaryAction: {
         label: t("clients.create"),
         icon: Plus,
@@ -312,7 +308,7 @@ export function ClientsPage() {
         event.preventDefault();
         openCreateClient();
       }
-      if (event.key === "Escape") closeInspector();
+      if (event.key === "Escape") setDrawerEntity(null);
     }
 
     window.addEventListener("keydown", handleHotkeys);
@@ -360,17 +356,7 @@ export function ClientsPage() {
     serverSummary,
   });
 
-  useEffect(() => {
-    if (inspectorDismissed) return;
-    if (selectedClientId && rows.some((row) => row.client.id === selectedClientId)) return;
-    setSelectedClientId(rows[0]?.client.id || null);
-  }, [inspectorDismissed, rows, selectedClientId]);
-
-  useEffect(() => {
-    setInspectorTab("overview");
-  }, [selectedClientId]);
-
-  const selectedRow = inspectorDismissed ? null : rows.find((row) => row.client.id === selectedClientId) || rows[0] || null;
+  const selectedRow = rows.find((row) => row.client.id === selectedClientId) || null;
   const sourceOptions = useMemo(
     () => clientSourceOptions.map((option) => ({ value: option.value, label: option.label.startsWith("clients.") ? t(option.label) : option.label })),
     [t],
@@ -378,7 +364,7 @@ export function ClientsPage() {
   const tagOptions = [{ value: "", label: t("clients.allTags") }, ...tagList.map((tag) => ({ value: tag.id, label: tag.name }))];
   const segmentOptions = [{ value: "", label: t("clients.allSegments") }, ...segmentList.map((segment) => ({ value: segment.id, label: `${segment.name} (${segment.cached_count})` }))];
 
-  const pageError = filteredClients.error || leads.error || deals.error || appointments.error || tasks.error || botConversations.error || tagsQuery.error || segments.error || taggedObjects.error || saveClientMutation.error || mergeMutation.error || archiveMutation.error || addTagMutation.error || createSegmentMutation.error;
+  const pageError = filteredClients.error || leads.error || deals.error || appointments.error || tasks.error || botConversations.error || tagsQuery.error || segments.error || taggedObjects.error || saveClientMutation.error || mergeDryRunMutation.error || mergeMutation.error || archiveMutation.error || addTagMutation.error || createSegmentMutation.error;
   const relatedLoading =
     (clientIds.length > 0 && (leads.isLoading || deals.isLoading || appointments.isLoading || tasks.isLoading || botConversations.isLoading || taggedObjects.isLoading)) ||
     leads.isFetching ||
@@ -394,18 +380,16 @@ export function ClientsPage() {
 
   return (
     <>
-      <section className="ml-auto min-h-[calc(100vh-80px)] w-full max-w-[1420px] overflow-hidden bg-[#f8fafc]">
+      <CrmWorkspacePage>
         {pageError ? (
-          <div className="px-4 pt-4 sm:px-6">
+          <div className="mb-3">
             <ErrorState message={getApiErrorMessage(pageError)} />
           </div>
         ) : null}
 
-        <div className={selectedRow ? "grid min-h-0 xl:grid-cols-[minmax(0,1fr)_clamp(360px,26vw,420px)]" : "grid min-h-0 xl:grid-cols-1"}>
-          <main className="min-w-0 px-4 py-4 sm:px-6">
-            <ClientsKpi kpi={kpi} />
-
-            <div className="mt-4 rounded-lg border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+        <CrmWorkspaceGrid>
+          <main className="min-w-0">
+            <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-card border border-slate-200 bg-white shadow-card">
               <ClientsFilters
                 quickFilter={quickFilter}
                 onQuickFilterChange={setQuickFilter}
@@ -420,8 +404,8 @@ export function ClientsPage() {
                 segmentOptions={segmentOptions}
                 sourceOptions={sourceOptions}
                 kpi={kpi}
-                advancedFiltersOpen={advancedFiltersOpen}
-                onAdvancedFiltersOpenChange={setAdvancedFiltersOpen}
+                visibleColumns={visibleClientColumns}
+                onToggleColumn={toggleClientColumn}
                 onOpenSegment={() => setSegmentOpen(true)}
                 onClearSearch={clearSearchFilter}
                 onClearAll={clearAllFilters}
@@ -440,38 +424,13 @@ export function ClientsPage() {
                   setPageSize(nextPageSize);
                   setPage(1);
                 }}
-                inspectorOpen={Boolean(selectedRow)}
+                visibleColumns={visibleClientColumns}
                 t={t}
               />
-            </div>
+            </section>
           </main>
-
-          {selectedRow ? (
-            <div>
-              <ClientInspector
-                row={selectedRow}
-                onClose={closeInspector}
-                onEdit={() => {
-                  setEditing(selectedRow.client);
-                  setCreateOpen(true);
-                }}
-                activeTab={inspectorTab}
-                onOpenOverview={() => setInspectorTab("overview")}
-                onOpenDeals={() => setInspectorTab("deals")}
-                onOpenTasks={() => setInspectorTab("tasks")}
-                onOpenFiles={() => setInspectorTab("files")}
-                onFullCard={() => {
-                  setInspectorTab("overview");
-                  openClientCard(selectedRow.client.id, "overview");
-                }}
-                onAddTag={() => setTagOpen(true)}
-                onArchive={() => setArchiveOpen(true)}
-                t={t}
-              />
-            </div>
-          ) : null}
-        </div>
-      </section>
+        </CrmWorkspaceGrid>
+      </CrmWorkspacePage>
 
       <Modal title={editing ? t("clients.editTitle") : t("clients.create")} open={createOpen} onClose={() => { setCreateOpen(false); setEditing(undefined); clearCreateParam(); }}>
         <ClientForm
@@ -481,14 +440,49 @@ export function ClientsPage() {
           onOpenClient={(id) => {
             setCreateOpen(false);
             setEditing(undefined);
-            setInspectorDismissed(false);
-            setSelectedClientId(id);
+            openClientCard(id);
           }}
           onMergeDuplicate={(duplicateId) => {
             if (!editing) return Promise.resolve();
-            return mergeMutation.mutateAsync({ targetId: editing.id, duplicateId });
+            return mergeDryRunMutation.mutateAsync({ targetId: editing.id, duplicateId });
           }}
         />
+      </Modal>
+
+      <Modal title={t("clients.mergePreviewTitle")} open={Boolean(mergePreview)} onClose={() => setMergePreview(null)}>
+        {mergePreview ? (
+          <div className="space-y-4">
+            <div className="rounded-3xl border border-amber-100 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+              <p className="font-black">{t("clients.mergePreviewWarning")}</p>
+              <p className="mt-1">{t("clients.mergePreviewPolicy")}: {mergePreview.policy}</p>
+            </div>
+            <div className="rounded-3xl border border-slate-100 bg-white p-4">
+              <p className="font-black text-midnight">{mergePreview.duplicate.full_name || t("common.client")}</p>
+              <p className="mt-1 text-sm text-slate-500">{mergePreview.duplicate.phone || mergePreview.duplicate.email || t("clients.noContact")}</p>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {Object.entries(mergePreview.transferred).map(([key, value]) => (
+                <div key={key} className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 text-sm">
+                  <span className="font-semibold text-slate-600">{key.replace(/_/g, " ")}</span>
+                  <span className="font-black text-midnight">{value}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="secondary" onClick={() => setMergePreview(null)}>
+                {t("common.cancel")}
+              </Button>
+              <Button
+                type="button"
+                variant="danger"
+                isLoading={mergeMutation.isPending}
+                onClick={() => mergeMutation.mutate({ targetId: mergePreview.target_client_id, duplicateId: mergePreview.duplicate.id })}
+              >
+                {t("clients.mergeConfirm")}
+              </Button>
+            </div>
+          </div>
+        ) : null}
       </Modal>
 
       <Modal title={t("clients.addTag")} open={tagOpen} onClose={() => { setTagOpen(false); setTagDraft(""); }}>

@@ -795,9 +795,9 @@ export function SettingsPage() {
   ];
   const locale = language === "kk" ? "kk-KZ" : language === "en" ? "en-US" : "ru-RU";
   const operationsSetup = [
-    { key: "services", href: "/dashboard/services", icon: Stethoscope },
-    { key: "resources", href: "/dashboard/resources", icon: UsersRound },
-    { key: "working-hours", href: "/dashboard/working-hours", icon: CalendarClock },
+    { key: "services", href: "/app/services", icon: Stethoscope },
+    { key: "resources", href: "/app/resources", icon: UsersRound },
+    { key: "working-hours", href: "/app/working-hours", icon: CalendarClock },
   ];
   const appointmentMessages = appointmentMessageSettings.data || [];
   const appointmentMessageValue = <K extends keyof AppointmentMessageSetting>(setting: AppointmentMessageSetting, key: K): AppointmentMessageSetting[K] => {
@@ -2423,7 +2423,7 @@ export function SettingsPage() {
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">{t("settings.automationsText")}</p>
               </div>
             </div>
-            <Link to="/dashboard/automations">
+            <Link to="/app/automations">
               <Button type="button" variant="secondary">{t("settings.openSection")}</Button>
             </Link>
           </div>

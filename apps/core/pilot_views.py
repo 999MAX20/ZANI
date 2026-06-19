@@ -100,7 +100,7 @@ class PilotReadinessView(APIView):
                 "Есть базовая структура CRM: услуги, ресурсы, график и воронка.",
                 business.services.exists() and business.resources.exists() and business.working_hours.exists() and business.pipelines.exists(),
                 status="ready" if business.services.exists() and business.resources.exists() and business.working_hours.exists() and business.pipelines.exists() else "needs_attention",
-                href="/dashboard/onboarding",
+                href="/app/onboarding",
             ),
             self.item(
                 "business_profile",
@@ -108,7 +108,7 @@ class PilotReadinessView(APIView):
                 "Название, город и базовые контакты бизнеса есть в системе.",
                 bool(business.name and business.city),
                 status="ready" if business.name and business.city else "needs_attention",
-                href="/dashboard/settings",
+                href="/app/settings",
             ),
             self.item(
                 "business_owner",
@@ -116,7 +116,7 @@ class PilotReadinessView(APIView):
                 "Есть активный owner, который может управлять кабинетом.",
                 owners.exists(),
                 count=owners.count(),
-                href="/dashboard/settings",
+                href="/app/settings",
             ),
             self.item(
                 "manager",
@@ -124,7 +124,7 @@ class PilotReadinessView(APIView):
                 "Есть минимум один сотрудник для проверки ролей и операционной работы.",
                 managers.exists(),
                 count=managers.count(),
-                href="/dashboard/settings",
+                href="/app/settings",
             ),
             self.item(
                 "clients",
@@ -132,7 +132,7 @@ class PilotReadinessView(APIView):
                 "В CRM есть тестовая клиентская база.",
                 clients.exists(),
                 count=clients.count(),
-                href="/dashboard/clients",
+                href="/app/clients",
             ),
             self.item(
                 "leads",
@@ -140,7 +140,7 @@ class PilotReadinessView(APIView):
                 "В CRM есть тестовая заявка для проверки обработки входящего лида.",
                 leads.exists(),
                 count=leads.count(),
-                href="/dashboard/leads",
+                href="/app/leads",
             ),
             self.item(
                 "deals",
@@ -148,7 +148,7 @@ class PilotReadinessView(APIView):
                 "Воронка продаж содержит тестовую сделку и готова к пилотному сценарию.",
                 deals.exists(),
                 count=deals.count(),
-                href="/dashboard/deals",
+                href="/app/deals",
             ),
             self.item(
                 "tasks",
@@ -156,7 +156,7 @@ class PilotReadinessView(APIView):
                 "Есть follow-up задача для менеджера или оператора.",
                 tasks.exists(),
                 count=tasks.count(),
-                href="/dashboard/tasks",
+                href="/app/tasks",
             ),
             self.item(
                 "appointments",
@@ -164,7 +164,7 @@ class PilotReadinessView(APIView):
                 "Календарь содержит тестовые записи.",
                 appointments.exists(),
                 count=appointments.count(),
-                href="/dashboard/calendar",
+                href="/app/calendar",
             ),
             self.item(
                 "services",
@@ -172,7 +172,7 @@ class PilotReadinessView(APIView):
                 "Добавлены услуги, которые можно использовать в заявках и записях.",
                 services.exists(),
                 count=services.count(),
-                href="/dashboard/services",
+                href="/app/services",
             ),
             self.item(
                 "resources",
@@ -180,7 +180,7 @@ class PilotReadinessView(APIView):
                 "Есть сотрудники/кабинеты/ресурсы для расписания.",
                 resources.exists(),
                 count=resources.count(),
-                href="/dashboard/resources",
+                href="/app/resources",
             ),
             self.item(
                 "working_hours",
@@ -188,7 +188,7 @@ class PilotReadinessView(APIView):
                 "График работы нужен для корректных свободных слотов и записей.",
                 WorkingHours.objects.filter(business=business).exists(),
                 count=WorkingHours.objects.filter(business=business).count(),
-                href="/dashboard/working-hours",
+                href="/app/working-hours",
             ),
             self.item(
                 "bot",
@@ -197,7 +197,7 @@ class PilotReadinessView(APIView):
                 bots.exists(),
                 count=bots.count(),
                 status="ready" if active_bots.exists() else ("needs_attention" if bots.exists() else "missing"),
-                href="/dashboard/bots",
+                href="/app/bots",
             ),
             self.item(
                 "website_channel",
@@ -206,7 +206,7 @@ class PilotReadinessView(APIView):
                 active_website_channels.exists(),
                 count=active_website_channels.count() or website_channels.count(),
                 status="ready" if active_website_channels.exists() else ("needs_attention" if website_channels.exists() else "missing"),
-                href="/dashboard/bots",
+                href="/app/bots",
             ),
             self.item(
                 "lead_form",
@@ -214,7 +214,7 @@ class PilotReadinessView(APIView):
                 "Есть active lead form для лендинга/сайта.",
                 lead_forms.exists(),
                 count=lead_forms.count(),
-                href="/dashboard/settings",
+                href="/app/settings",
             ),
             self.item(
                 "inbox",
@@ -223,7 +223,7 @@ class PilotReadinessView(APIView):
                 inbox_conversations.exists(),
                 count=inbox_conversations.count(),
                 status="ready" if open_inbox.exists() else ("needs_attention" if inbox_conversations.exists() else "missing"),
-                href="/dashboard/inbox",
+                href="/app/inbox",
             ),
             self.item(
                 "billing",
@@ -231,7 +231,7 @@ class PilotReadinessView(APIView):
                 "Бизнес привязан к плану для проверки SaaS-логики.",
                 bool(subscription and subscription.plan_id),
                 status="ready" if subscription and subscription.status in {Subscription.Statuses.TRIAL, Subscription.Statuses.ACTIVE} else ("needs_attention" if subscription else "missing"),
-                href="/dashboard/billing",
+                href="/app/billing",
             ),
             self.item(
                 "ai_assistant",
@@ -239,7 +239,7 @@ class PilotReadinessView(APIView):
                 "Есть knowledge base или профиль агента для контролируемых AI-подсказок.",
                 ai_ready,
                 status="ready" if ai_ready else "needs_attention",
-                href="/dashboard/ai-assistant",
+                href="/app/ai-assistant",
             ),
             self.item(
                 "integrations_catalog",
@@ -248,7 +248,7 @@ class PilotReadinessView(APIView):
                 connectors.exists(),
                 count=connectors.count(),
                 status="ready" if connected_connectors.exists() else ("needs_attention" if connectors.exists() else "missing"),
-                href="/dashboard/integrations",
+                href="/app/integrations",
             ),
             self.item(
                 "import_jobs",
@@ -257,7 +257,7 @@ class PilotReadinessView(APIView):
                 import_jobs.exists(),
                 count=import_jobs.count(),
                 status="ready" if import_jobs.filter(status=ImportJob.Statuses.IMPORTED).exists() else ("needs_attention" if import_jobs.exists() else "missing"),
-                href="/dashboard/settings#data-tools",
+                href="/app/settings#data-tools",
             ),
         ]
 

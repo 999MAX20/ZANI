@@ -1,4 +1,5 @@
 from django.core.cache import cache
+from django.core import mail
 from django.core.management import call_command
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
@@ -6,6 +7,7 @@ from django.utils.http import urlsafe_base64_encode
 from django.test import TestCase
 from rest_framework.throttling import ScopedRateThrottle
 from io import StringIO
+import re
 from unittest.mock import patch
 from rest_framework.test import APIClient
 
@@ -258,19 +260,24 @@ class AuthSecurityBaselineTests(TestCase):
     def test_password_reset_request_and_confirm_flow(self):
         request_response = self.api.post(
             "/api/auth/password-reset/request/",
-            {"email": self.user.email, "delivery_channel": "manual"},
+            {"email": self.user.email, "delivery_channel": "email"},
             format="json",
         )
 
         self.assertEqual(request_response.status_code, 200)
         self.assertTrue(request_response.data["ok"])
-        self.assertIn("reset_path", request_response.data)
+        self.assertNotIn("uid", request_response.data)
+        self.assertNotIn("token", request_response.data)
+        self.assertNotIn("reset_path", request_response.data)
+        self.assertEqual(len(mail.outbox), 1)
+        match = re.search(r"/reset-password/(?P<uid>[^/]+)/(?P<token>[^\s/]+)", mail.outbox[0].body)
+        self.assertIsNotNone(match)
 
         confirm_response = self.api.post(
             "/api/auth/password-reset/confirm/",
             {
-                "uid": request_response.data["uid"],
-                "token": request_response.data["token"],
+                "uid": match.group("uid"),
+                "token": match.group("token"),
                 "password": "NewStrongPass123",
             },
             format="json",
@@ -279,6 +286,25 @@ class AuthSecurityBaselineTests(TestCase):
         self.assertEqual(confirm_response.status_code, 200)
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password("NewStrongPass123"))
+
+    def test_password_reset_request_does_not_leak_account_existence_or_tokens(self):
+        existing_response = self.api.post(
+            "/api/auth/password-reset/request/",
+            {"email": self.user.email, "delivery_channel": "email"},
+            format="json",
+        )
+        missing_response = self.api.post(
+            "/api/auth/password-reset/request/",
+            {"email": "missing@example.com", "delivery_channel": "email"},
+            format="json",
+        )
+
+        self.assertEqual(existing_response.status_code, 200)
+        self.assertEqual(missing_response.status_code, 200)
+        self.assertEqual(existing_response.data, missing_response.data)
+        self.assertNotIn("uid", existing_response.data)
+        self.assertNotIn("token", existing_response.data)
+        self.assertNotIn("reset_path", existing_response.data)
 
     def test_password_reset_rejects_invalid_token(self):
         uid = urlsafe_base64_encode(force_bytes(self.user.pk))

@@ -74,7 +74,7 @@ def record_inbound_consent(*, business, channel, external_user_id, text, convers
             category=Notification.Categories.OUTREACH,
             priority=Notification.Priorities.HIGH,
             text=f"Клиент отписался от {channel}: {client.full_name}",
-            action_url=f"/dashboard/clients?client={client.id}",
+            action_url=f"/app/clients?client={client.id}",
             action_label="Открыть клиента",
             roles=MANAGER_ROLES,
         )

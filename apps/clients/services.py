@@ -3,13 +3,15 @@ import re
 from django.db import transaction
 from django.db.models import Q
 
-from apps.activities.models import ActivityEvent, Note
+from apps.activities.models import ActivityEvent, Note, TaggedObject
 from apps.activities.services import create_activity_event
+from apps.activities.taxonomy import ActivityEvents
 from apps.analytics.models import AnalyticsEvent
 from apps.bots.models import BotConversation
-from apps.clients.models import Client
+from apps.clients.models import Client, ClientMergeLog
 from apps.conversations.models import Conversation
 from apps.crm.models import Deal
+from apps.core.models import CustomFieldValue, FileAttachment
 from apps.leads.models import Lead
 from apps.notifications.models import Notification
 from apps.scheduling.models import Appointment
@@ -104,6 +106,7 @@ def merge_clients(*, target_client, duplicate_client, actor=None):
         raise ValueError("Cannot merge client into itself.")
 
     business = target_client.business
+    duplicate_snapshot = client_snapshot(duplicate_client)
     transferred = {
         "leads": Lead.objects.filter(business=business, client=duplicate_client).update(client=target_client),
         "appointments": Appointment.objects.filter(business=business, client=duplicate_client).update(client=target_client),
@@ -116,24 +119,133 @@ def merge_clients(*, target_client, duplicate_client, actor=None):
         "analytics_events": AnalyticsEvent.objects.filter(business=business, client=duplicate_client).update(client=target_client),
         "notifications": Notification.objects.filter(business=business, client=duplicate_client).update(client=target_client),
     }
-
-    duplicate_snapshot = {
-        "id": duplicate_client.id,
-        "full_name": duplicate_client.full_name,
-        "phone": duplicate_client.phone,
-        "email": duplicate_client.email,
-    }
+    entity_transfer = transfer_client_entity_links(business=business, target_client=target_client, duplicate_client=duplicate_client)
+    transferred.update(entity_transfer["transferred"])
+    merge_log = ClientMergeLog.objects.create(
+        business=business,
+        target_client=target_client,
+        actor=actor,
+        duplicate_snapshot=duplicate_snapshot,
+        transferred_counts=transferred,
+        metadata={"policy": "hard_delete_duplicate_after_transfer", "skipped": entity_transfer["skipped"]},
+    )
     duplicate_client.delete()
 
     create_activity_event(
         business=business,
         client=target_client,
         actor=actor,
-        event_type="client_merged",
+        event_type=ActivityEvents.CLIENT_MERGED,
         instance=target_client,
         category=ActivityEvent.Categories.CRM,
         text=f"Клиент объединён с дублем: {duplicate_snapshot['full_name']}",
-        metadata={"duplicate": duplicate_snapshot, "transferred": transferred},
+        metadata={"duplicate": duplicate_snapshot, "transferred": transferred, "merge_log_id": merge_log.id},
     )
 
-    return {"target_client_id": target_client.id, "deleted_duplicate": duplicate_snapshot, "transferred": transferred}
+    return {
+        "target_client_id": target_client.id,
+        "deleted_duplicate": duplicate_snapshot,
+        "transferred": transferred,
+        "merge_log_id": merge_log.id,
+    }
+
+
+def merge_clients_dry_run(*, target_client, duplicate_client):
+    if target_client.business_id != duplicate_client.business_id:
+        raise ValueError("Clients must belong to the same business.")
+    if target_client.id == duplicate_client.id:
+        raise ValueError("Cannot merge client into itself.")
+
+    business = target_client.business
+    return {
+        "target_client_id": target_client.id,
+        "duplicate": client_snapshot(duplicate_client),
+        "transferred": {
+            "leads": Lead.objects.filter(business=business, client=duplicate_client).count(),
+            "appointments": Appointment.objects.filter(business=business, client=duplicate_client).count(),
+            "conversations": Conversation.objects.filter(business=business, client=duplicate_client).count(),
+            "bot_conversations": BotConversation.objects.filter(business=business, client=duplicate_client).count(),
+            "tasks": Task.objects.filter(business=business, client=duplicate_client).count(),
+            "deals": Deal.objects.filter(business=business, client=duplicate_client).count(),
+            "notes": Note.objects.filter(business=business, client=duplicate_client).count(),
+            "activity_events": ActivityEvent.objects.filter(business=business, client=duplicate_client).count(),
+            "analytics_events": AnalyticsEvent.objects.filter(business=business, client=duplicate_client).count(),
+            "notifications": Notification.objects.filter(business=business, client=duplicate_client).count(),
+            "tags": TaggedObject.objects.filter(business=business, entity_type="client", entity_id=str(duplicate_client.id)).count(),
+            "attachments": FileAttachment.objects.filter(business=business, entity_type="client", entity_id=str(duplicate_client.id)).count(),
+            "custom_field_values": CustomFieldValue.objects.filter(business=business, entity_type="client", entity_id=str(duplicate_client.id)).count(),
+        },
+        "will_delete_duplicate": True,
+        "policy": "hard_delete_duplicate_after_transfer",
+    }
+
+
+def client_snapshot(client):
+    return {
+        "id": client.id,
+        "full_name": client.full_name,
+        "phone": client.phone,
+        "email": client.email,
+        "whatsapp_id": client.whatsapp_id,
+        "telegram_id": client.telegram_id,
+        "instagram_id": client.instagram_id,
+        "source": client.source,
+        "is_archived": client.is_archived,
+    }
+
+
+def transfer_client_entity_links(*, business, target_client, duplicate_client):
+    duplicate_id = str(duplicate_client.id)
+    target_id = str(target_client.id)
+    transferred = {
+        "tags": 0,
+        "attachments": 0,
+        "custom_field_values": 0,
+    }
+    skipped = {
+        "tags": [],
+        "custom_field_values": [],
+    }
+
+    duplicate_tags = TaggedObject.objects.filter(business=business, entity_type="client", entity_id=duplicate_id).select_related("tag")
+    for tagged_object in list(duplicate_tags):
+        target_exists = TaggedObject.objects.filter(
+            business=business,
+            tag=tagged_object.tag,
+            entity_type="client",
+            entity_id=target_id,
+        ).exists()
+        if target_exists:
+            skipped["tags"].append({"tag_id": tagged_object.tag_id, "duplicate_tagged_object_id": tagged_object.id})
+            tagged_object.delete()
+            continue
+        tagged_object.entity_id = target_id
+        tagged_object.save(update_fields=["entity_id"])
+        transferred["tags"] += 1
+
+    transferred["attachments"] = FileAttachment.objects.filter(
+        business=business,
+        entity_type="client",
+        entity_id=duplicate_id,
+    ).update(entity_id=target_id)
+
+    duplicate_values = CustomFieldValue.objects.filter(
+        business=business,
+        entity_type="client",
+        entity_id=duplicate_id,
+    ).select_related("definition")
+    for value in list(duplicate_values):
+        target_exists = CustomFieldValue.objects.filter(
+            definition=value.definition,
+            entity_type="client",
+            entity_id=target_id,
+        ).exists()
+        if target_exists:
+            skipped["custom_field_values"].append({"definition_id": value.definition_id, "duplicate_value_id": value.id})
+            value.delete()
+            continue
+        value.entity_id = target_id
+        value.save(update_fields=["entity_id"])
+        transferred["custom_field_values"] += 1
+
+    return {"transferred": transferred, "skipped": skipped}

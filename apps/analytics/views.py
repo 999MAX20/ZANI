@@ -16,6 +16,7 @@ from apps.core.models import AuditLog
 from apps.businesses.access import Actions, Resources, assert_can, scope_queryset
 from apps.core.permissions import accessible_businesses, user_can_access_business
 from apps.core.viewsets import TenantModelViewSet
+from apps.core.work_queues import overdue_tasks_queryset
 from apps.leads.models import Lead
 from apps.integrations.models import BusinessConnector, BusinessEvent
 from apps.scheduling.models import Appointment
@@ -80,7 +81,7 @@ def owner_dashboard(request):
     now = timezone.now()
     open_tasks = tasks.exclude(status__in=[Task.Statuses.DONE, Task.Statuses.CANCELLED])
     new_leads_count = leads.filter(status=Lead.Statuses.NEW).count()
-    overdue_tasks_count = open_tasks.filter(due_at__lt=now).count()
+    overdue_tasks_count = overdue_tasks_queryset(queryset=open_tasks, now=now).count()
     sales_events_count = sales_events.count()
     today_imported_revenue = sum(
         (_payload_amount(event.payload_json) for event in sales_events.filter(occurred_at__date=today)),
@@ -156,21 +157,21 @@ def owner_dashboard(request):
                 "title": "Подключить WhatsApp",
                 "description": "Чтобы заявки и переписка попадали в ZANI, а владелец видел обработку клиентов.",
                 "status": "connect" if not setup_sources["communications"] else "connected",
-                "href": "/dashboard/integrations",
+                "href": "/app/integrations",
             },
             {
                 "key": "excel_csv",
                 "title": "Загрузить Excel / CSV",
                 "description": "Дайте ZANI продажи и услуги, чтобы dashboard показывал бизнес, а не пустоту.",
                 "status": "connect" if not setup_sources["sales_data"] else "connected",
-                "href": "/dashboard/settings#data-tools",
+                "href": "/app/settings#data-tools",
             },
             {
                 "key": "staff",
                 "title": "Добавить сотрудников",
                 "description": "Назначайте заявки и задачи, чтобы видеть ответственность по каждому клиенту.",
                 "status": "connect",
-                "href": "/dashboard/settings",
+                "href": "/app/settings",
             },
         ],
         "setup": {
@@ -244,7 +245,7 @@ def _build_mobile_owner_onboarding(*, business, setup_score, setup_sources, has_
             "title": "Лендинг активирован",
             "description": "ZANI уже знает источник заявок и может принимать лиды из формы.",
             "status": "done" if setup_sources.get("landing") else "todo",
-            "href": business.landing_preview_url or "/dashboard/leads",
+            "href": business.landing_preview_url or "/app/leads",
             "cta": "Открыть лендинг" if business.landing_preview_url else "Проверить заявки",
             "priority": 1,
         },
@@ -253,7 +254,7 @@ def _build_mobile_owner_onboarding(*, business, setup_score, setup_sources, has_
             "title": "Форма заявок подключена",
             "description": "Новая заявка с сайта попадёт в CRM Light и создаст уведомление.",
             "status": "done" if setup_sources.get("lead_form") else "todo",
-            "href": "/dashboard/leads",
+            "href": "/app/leads",
             "cta": "Открыть CRM",
             "priority": 2,
         },
@@ -262,7 +263,7 @@ def _build_mobile_owner_onboarding(*, business, setup_score, setup_sources, has_
             "title": "Подключить сообщения",
             "description": "WhatsApp/Telegram/сайт дадут ZANI живые обращения и историю общения с клиентом.",
             "status": "done" if setup_sources.get("communications") else "todo",
-            "href": "/dashboard/integrations",
+            "href": "/app/integrations",
             "cta": "Подключить канал",
             "priority": 3,
         },
@@ -271,7 +272,7 @@ def _build_mobile_owner_onboarding(*, business, setup_score, setup_sources, has_
             "title": "Загрузить продажи",
             "description": "Без продаж AI не будет выдумывать аналитику. CSV/Excel даст выручку, динамику и первые выводы.",
             "status": "done" if has_sales_data else "todo",
-            "href": "/dashboard/settings#data-tools",
+            "href": "/app/settings#data-tools",
             "cta": "Загрузить Excel",
             "priority": 4,
         },
@@ -280,7 +281,7 @@ def _build_mobile_owner_onboarding(*, business, setup_score, setup_sources, has_
             "title": "Добавить сотрудников",
             "description": "Назначайте заявки и задачи, чтобы владелец видел ответственность и скорость обработки.",
             "status": "todo",
-            "href": "/dashboard/settings",
+            "href": "/app/settings",
             "cta": "Добавить команду",
             "priority": 5,
         },
@@ -289,11 +290,11 @@ def _build_mobile_owner_onboarding(*, business, setup_score, setup_sources, has_
     if overdue_tasks_count:
         headline = "Есть задачи, которые требуют реакции"
         subtext = f"{overdue_tasks_count} задач просрочены. Начните с них, чтобы не потерять клиентов."
-        primary_action = {"label": "Открыть задачи", "href": "/dashboard/tasks"}
+        primary_action = {"label": "Открыть задачи", "href": "/app/tasks"}
     elif new_leads_count:
         headline = "Новые заявки ждут обработки"
         subtext = f"{new_leads_count} заявок нужно быстро разобрать или назначить менеджеру."
-        primary_action = {"label": "Открыть заявки", "href": "/dashboard/leads"}
+        primary_action = {"label": "Открыть заявки", "href": "/app/leads"}
     elif todo_steps:
         headline = "ZANI готовится увидеть бизнес полностью"
         subtext = "Подключайте источники по шагам. Первый месяц расширенного доступа уже включён."
@@ -301,7 +302,7 @@ def _build_mobile_owner_onboarding(*, business, setup_score, setup_sources, has_
     else:
         headline = "Базовый контур подключён"
         subtext = "CRM, форма и данные готовы. Следующий шаг — AI-задачи и регулярные отчёты владельцу."
-        primary_action = {"label": "Открыть AI", "href": "/dashboard/ai"}
+        primary_action = {"label": "Открыть AI", "href": "/app/ai"}
     return {
         "headline": headline,
         "subtext": subtext,
@@ -324,21 +325,21 @@ def _build_business_pulse(*, has_sales_data, new_leads_count, overdue_tasks_coun
             "tone": "setup",
             "title": "ZANI ждёт данные продаж",
             "text": "Лендинг и CRM уже подключены. Загрузите Excel/CSV или добавьте продажи вручную, чтобы владелец увидел выручку, каналы и первые AI-выводы.",
-            "primary_action": {"label": "Загрузить Excel", "href": "/dashboard/settings#data-tools"},
+            "primary_action": {"label": "Загрузить Excel", "href": "/app/settings#data-tools"},
         }
     if overdue_tasks_count:
         return {
             "tone": "warning",
             "title": "Есть просроченные задачи",
             "text": f"{overdue_tasks_count} задач требуют реакции. Проверьте ответственных, чтобы заявки не зависали без обработки.",
-            "primary_action": {"label": "Открыть задачи", "href": "/dashboard/tasks"},
+            "primary_action": {"label": "Открыть задачи", "href": "/app/tasks"},
         }
     if new_leads_count:
         return {
             "tone": "attention",
             "title": "Новые заявки ждут обработки",
             "text": f"Сегодня в работе {new_leads_count} новых заявок. Быстрая реакция поможет не потерять клиентов.",
-            "primary_action": {"label": "Открыть заявки", "href": "/dashboard/leads"},
+            "primary_action": {"label": "Открыть заявки", "href": "/app/leads"},
         }
     if revenue:
         source_text = f" Лучший источник сейчас: {top_source}." if top_source else ""
@@ -346,13 +347,13 @@ def _build_business_pulse(*, has_sales_data, new_leads_count, overdue_tasks_coun
             "tone": "growth",
             "title": "Бизнес начал давать данные",
             "text": f"ZANI уже видит продажи и может считать базовую выручку.{source_text} Следующий шаг — подключить каналы и сотрудников.",
-            "primary_action": {"label": "Подключить каналы", "href": "/dashboard/integrations"},
+            "primary_action": {"label": "Подключить каналы", "href": "/app/integrations"},
         }
     return {
         "tone": "setup",
         "title": "Настройка бизнеса продолжается",
         "text": f"Готовность подключения: {setup_score}%. Добавьте сотрудников, услуги и источники данных, чтобы dashboard стал полезнее.",
-        "primary_action": {"label": "Быстрый старт", "href": "/dashboard/onboarding"},
+        "primary_action": {"label": "Быстрый старт", "href": "/app/onboarding"},
     }
 
 
@@ -365,7 +366,7 @@ def _build_owner_recommendations(*, has_sales_data, new_leads_count, overdue_tas
             "description": "Так заявки и сообщения начнут попадать в единый кабинет, а сотрудники смогут быстрее отвечать клиентам.",
             "priority": "high",
             "action_label": "Подключить",
-            "href": "/dashboard/integrations",
+            "href": "/app/integrations",
         })
     if not has_sales_data:
         recommendations.append({
@@ -374,7 +375,7 @@ def _build_owner_recommendations(*, has_sales_data, new_leads_count, overdue_tas
             "description": "Без продаж ZANI не будет выдумывать аналитику. Загрузите Excel/CSV, чтобы увидеть выручку и динамику.",
             "priority": "high",
             "action_label": "Загрузить данные",
-            "href": "/dashboard/settings#data-tools",
+            "href": "/app/settings#data-tools",
         })
     if new_leads_count:
         recommendations.append({
@@ -383,7 +384,7 @@ def _build_owner_recommendations(*, has_sales_data, new_leads_count, overdue_tas
             "description": f"{new_leads_count} новых заявок ждут реакции. Назначьте ответственного или создайте задачу.",
             "priority": "medium",
             "action_label": "Открыть заявки",
-            "href": "/dashboard/leads",
+            "href": "/app/leads",
         })
     if overdue_tasks_count:
         recommendations.append({
@@ -392,7 +393,7 @@ def _build_owner_recommendations(*, has_sales_data, new_leads_count, overdue_tas
             "description": f"{overdue_tasks_count} задач просрочены. Это риск потерять клиента или не выполнить обещанное действие.",
             "priority": "high",
             "action_label": "Открыть задачи",
-            "href": "/dashboard/tasks",
+            "href": "/app/tasks",
         })
     if not recommendations:
         recommendations.append({
@@ -401,7 +402,7 @@ def _build_owner_recommendations(*, has_sales_data, new_leads_count, overdue_tas
             "description": "Добавьте канал, сотрудников или склад, чтобы ZANI показывал больше причин роста и просадок.",
             "priority": "medium",
             "action_label": "Открыть интеграции",
-            "href": "/dashboard/integrations",
+            "href": "/app/integrations",
         })
     return recommendations[:4]
 
@@ -466,13 +467,13 @@ def _latest_business_events(business):
 def _build_attention_items(*, new_leads_count, overdue_tasks_count, connector_health, has_sales_data):
     items = []
     if new_leads_count:
-        items.append({"key": "new_leads", "count": new_leads_count, "tone": "warning", "href": "/dashboard/leads"})
+        items.append({"key": "new_leads", "count": new_leads_count, "tone": "warning", "href": "/app/leads"})
     if overdue_tasks_count:
-        items.append({"key": "overdue_tasks", "count": overdue_tasks_count, "tone": "danger", "href": "/dashboard/tasks"})
+        items.append({"key": "overdue_tasks", "count": overdue_tasks_count, "tone": "danger", "href": "/app/tasks"})
     if connector_health["error"]:
-        items.append({"key": "connector_errors", "count": connector_health["error"], "tone": "danger", "href": "/dashboard/integrations"})
+        items.append({"key": "connector_errors", "count": connector_health["error"], "tone": "danger", "href": "/app/integrations"})
     if connector_health["pending"]:
-        items.append({"key": "connector_pending", "count": connector_health["pending"], "tone": "info", "href": "/dashboard/integrations"})
+        items.append({"key": "connector_pending", "count": connector_health["pending"], "tone": "info", "href": "/app/integrations"})
     if not has_sales_data:
-        items.append({"key": "sales_data", "count": 0, "tone": "info", "href": "/dashboard/integrations"})
+        items.append({"key": "sales_data", "count": 0, "tone": "info", "href": "/app/integrations"})
     return items[:5]

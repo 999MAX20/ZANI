@@ -82,6 +82,54 @@ class OutreachCampaignTests(APITestCase):
         self.assertEqual(bad_response.status_code, 400)
         self.assertIn("Outreach Biz", render_message(template.body, self.telegram_client))
 
+    def test_generic_write_cannot_bypass_campaign_or_recipient_state_actions(self):
+        create_response = self.client.post(
+            "/api/outreach/campaigns/",
+            {
+                "business": self.business.id,
+                "name": "Direct running",
+                "channel": OutreachCampaign.Channels.TELEGRAM,
+                "audience_type": OutreachCampaign.AudienceTypes.ALL_CLIENTS,
+                "message_text": "Здравствуйте, {client_name}!",
+                "status": OutreachCampaign.Statuses.RUNNING,
+            },
+            format="json",
+        )
+        campaign = OutreachCampaign.objects.create(
+            business=self.business,
+            name="Recipient bypass",
+            channel=OutreachCampaign.Channels.TELEGRAM,
+            audience_type=OutreachCampaign.AudienceTypes.ALL_CLIENTS,
+            message_text="Здравствуйте, {client_name}!",
+        )
+        recipient = OutreachRecipient.objects.create(
+            business=self.business,
+            campaign=campaign,
+            client=self.telegram_client,
+        )
+        campaign_patch = self.client.patch(
+            f"/api/outreach/campaigns/{campaign.id}/",
+            {"status": OutreachCampaign.Statuses.SENT},
+            format="json",
+        )
+        recipient_patch = self.client.patch(
+            f"/api/outreach/recipients/{recipient.id}/",
+            {"status": OutreachRecipient.Statuses.SENT, "sent_at": timezone.now().isoformat()},
+            format="json",
+        )
+
+        self.assertEqual(create_response.status_code, 400)
+        self.assertEqual(create_response.data["fields"], ["status"])
+        self.assertEqual(campaign_patch.status_code, 400)
+        self.assertEqual(campaign_patch.data["fields"], ["status"])
+        self.assertEqual(recipient_patch.status_code, 400)
+        self.assertEqual(recipient_patch.data["fields"], ["sent_at", "status"])
+        campaign.refresh_from_db()
+        recipient.refresh_from_db()
+        self.assertEqual(campaign.status, OutreachCampaign.Statuses.DRAFT)
+        self.assertEqual(recipient.status, OutreachRecipient.Statuses.QUEUED)
+        self.assertIsNone(recipient.sent_at)
+
     def test_launch_checklist_blocks_unprepared_campaign(self):
         campaign = OutreachCampaign.objects.create(
             business=self.business,

@@ -17,6 +17,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 
+import type { WorkQueuesResponse } from "../../api/workQueues";
 import { formatDateTime } from "../../lib/format";
 import { useI18n } from "../../lib/i18n";
 import type { Appointment, Client, Lead, OwnerDashboardMetrics, Service, Task } from "../../types";
@@ -39,6 +40,7 @@ type OwnerDashboardProps = {
   appointments: Appointment[];
   services: Service[];
   tasks: Task[];
+  workQueues?: WorkQueuesResponse;
 };
 
 type KpiTone = "blue" | "green" | "red";
@@ -272,9 +274,9 @@ function InsightListCard({
 function AttentionCard({ unassignedCount, overdueTasks, noAnswerCount }: { unassignedCount: number; overdueTasks: number; noAnswerCount: number }) {
   const { t } = useI18n();
   const items = [
-    { icon: UserPlus, title: t("dashboard.unassignedLeads"), subtitle: t("dashboard.unassignedLeadsText", { count: unassignedCount }), href: "/dashboard/leads", tone: "bg-blue-50 text-blue-600" },
-    { icon: CalendarCheck, title: t("dashboard.overdueTasks"), subtitle: t("dashboard.overdueTasks"), href: "/dashboard/tasks", tone: "bg-amber-50 text-amber-600" },
-    { icon: MessageSquareText, title: t("dashboard.managerNoAnswer"), subtitle: t("dashboard.managerNoAnswerText", { count: noAnswerCount }), href: "/dashboard/conversations", tone: "bg-red-50 text-red-600" },
+    { icon: UserPlus, title: t("dashboard.unassignedLeads"), subtitle: t("dashboard.unassignedLeadsText", { count: unassignedCount }), href: "/app/leads", tone: "bg-blue-50 text-blue-600" },
+    { icon: CalendarCheck, title: t("dashboard.overdueTasks"), subtitle: t("dashboard.overdueTasks"), href: "/app/tasks", tone: "bg-amber-50 text-amber-600" },
+    { icon: MessageSquareText, title: t("dashboard.managerNoAnswer"), subtitle: t("dashboard.managerNoAnswerText", { count: noAnswerCount }), href: "/app/conversations", tone: "bg-red-50 text-red-600" },
   ];
 
   return (
@@ -318,7 +320,7 @@ function ConnectionsCard({ communicationsReady, salesReady }: { communicationsRe
         <IntegrationRow name="1C" ready={salesReady} icon={CircleDollarSign} tone="bg-violet-50 text-violet-700" />
         <IntegrationRow name={t("dashboard.warehouse")} ready={salesReady} icon={PlugZap} tone="bg-blue-50 text-blue-700" />
       </div>
-      <Link to="/dashboard/integrations" className="mt-5 inline-flex w-full items-center justify-between rounded-lg px-1 text-sm font-semibold text-brand-700">
+      <Link to="/app/integrations" className="mt-5 inline-flex w-full items-center justify-between rounded-lg px-1 text-sm font-semibold text-brand-700">
         {t("dashboard.allConnections")}
         <ArrowRight size={16} />
       </Link>
@@ -333,14 +335,14 @@ function NewLeadsCard({ leads, clients, services }: { leads: Lead[]; clients: Cl
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-soft">
       <div className="mb-4 flex items-center justify-between gap-3">
         <h2 className="text-base font-semibold text-midnight">{t("dashboard.newLeads")}</h2>
-        <Link to="/dashboard/leads" className="text-sm font-semibold text-brand-700">{t("dashboard.allLeads")}</Link>
+        <Link to="/app/leads" className="text-sm font-semibold text-brand-700">{t("dashboard.allLeads")}</Link>
       </div>
       <div className="space-y-3">
         {visibleLeads.length ? visibleLeads.map((lead) => {
           const client = clients.find((item) => item.id === lead.client);
           const service = services.find((item) => item.id === lead.service);
           return (
-            <Link key={lead.id} to={`/dashboard/leads?lead=${lead.id}`} className="flex items-center gap-3 rounded-lg p-2 transition hover:bg-slate-50">
+            <Link key={lead.id} to={`/app/leads?lead=${lead.id}`} className="flex items-center gap-3 rounded-lg p-2 transition hover:bg-slate-50">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary-100 text-sm font-bold text-brand-700">{initials(client?.full_name)}</span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-semibold text-midnight">{client?.full_name || t("dashboard.leadNumber", { id: lead.id })}</span>
@@ -374,11 +376,13 @@ export function OwnerDashboard({
   appointments,
   services,
   tasks,
+  workQueues,
 }: OwnerDashboardProps) {
   const { t } = useI18n();
   const activeLeads = leads.filter((lead) => ["new", "contacted", "in_progress"].includes(lead.status));
-  const unassignedCount = activeLeads.filter((lead) => !lead.responsible_user).length;
+  const unassignedCount = workQueues?.summary.stale_leads ?? activeLeads.filter((lead) => !lead.responsible_user).length;
   const noAnswerLeads = leads.filter((lead) => ["contacted", "in_progress"].includes(lead.status));
+  const noAnswerCount = workQueues ? workQueues.summary.unread_conversations + workQueues.summary.handoff_conversations : noAnswerLeads.length;
   const staleDealsProxy = leads.filter((lead) => lead.status === "in_progress").length;
   const communicationsReady = Boolean(dashboard?.setup?.sources?.communications);
   const salesReady = Boolean(dashboard?.setup?.sources?.sales_data || revenueHasData);
@@ -434,9 +438,9 @@ export function OwnerDashboard({
       </section>
 
       <section className="grid grid-cols-1 gap-5 xl:grid-cols-[320px_320px_minmax(0,1fr)]">
-        <InsightListCard title={t("dashboard.aiSummaryDay")} items={aiSummaryItems} footer={t("dashboard.openAnalytics")} href="/dashboard/analytics" />
+        <InsightListCard title={t("dashboard.aiSummaryDay")} items={aiSummaryItems} footer={t("dashboard.openAnalytics")} href="/app/analytics" />
         <div className="space-y-5">
-          <AttentionCard unassignedCount={unassignedCount || newLeadsCount} overdueTasks={overdueTasks} noAnswerCount={noAnswerLeads.length} />
+          <AttentionCard unassignedCount={unassignedCount || newLeadsCount} overdueTasks={overdueTasks} noAnswerCount={noAnswerCount} />
           <ConnectionsCard communicationsReady={communicationsReady} salesReady={salesReady} />
         </div>
         <div className="space-y-5">

@@ -203,7 +203,7 @@ export function AIAssistantPage() {
         title: t("aiNavigator.insight.leadDrop.title", { percent: delta }),
         description: t("aiNavigator.insight.leadDrop.text", { today: leadsToday.length, yesterday: leadsYesterday.length }),
         actionLabel: t("aiNavigator.openLeads"),
-        href: "/dashboard/leads",
+        href: "/app/leads",
         icon: TrendingDown,
       });
     }
@@ -215,7 +215,7 @@ export function AIAssistantPage() {
         title: t("aiNavigator.insight.staleLeads.title", { count: staleLeads.length }),
         description: t("aiNavigator.insight.staleLeads.text"),
         actionLabel: t("aiNavigator.openLeads"),
-        href: "/dashboard/leads",
+        href: "/app/leads",
         icon: Clock3,
       });
     }
@@ -227,7 +227,7 @@ export function AIAssistantPage() {
         title: t("aiNavigator.insight.handoff.title", { count: handoffConversations.length }),
         description: t("aiNavigator.insight.handoff.text"),
         actionLabel: t("aiNavigator.openConversations"),
-        href: "/dashboard/conversations",
+        href: "/app/conversations",
         icon: MessageSquareWarning,
       });
     }
@@ -239,7 +239,7 @@ export function AIAssistantPage() {
         title: t("aiNavigator.insight.overdueTasks.title", { count: overdueTasks.length }),
         description: t("aiNavigator.insight.overdueTasks.text"),
         actionLabel: t("aiNavigator.openTasks"),
-        href: "/dashboard/tasks",
+        href: "/app/tasks",
         icon: AlertTriangle,
       });
     }
@@ -251,7 +251,7 @@ export function AIAssistantPage() {
         title: t("aiNavigator.insight.stuckDeals.title", { count: stuckDeals.length }),
         description: t("aiNavigator.insight.stuckDeals.text"),
         actionLabel: t("aiNavigator.openDeals"),
-        href: "/dashboard/deals",
+        href: "/app/deals",
         icon: Clock3,
       });
     }
@@ -263,7 +263,7 @@ export function AIAssistantPage() {
         title: t("aiNavigator.insight.notEnough.title"),
         description: t("aiNavigator.insight.notEnough.text"),
         actionLabel: t("aiNavigator.openIntegrations"),
-        href: "/dashboard/integrations",
+        href: "/app/integrations",
         icon: BookOpenText,
       });
     }
@@ -275,7 +275,7 @@ export function AIAssistantPage() {
         title: t("aiNavigator.insight.stable.title"),
         description: t("aiNavigator.insight.stable.text"),
         actionLabel: t("aiNavigator.openDashboard"),
-        href: "/dashboard",
+        href: "/app",
         icon: CheckCircle2,
       });
     }

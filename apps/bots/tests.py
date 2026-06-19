@@ -841,8 +841,8 @@ class InboxBackendTests(TestCase):
         self.assertEqual(self.conversation.unread_count, 1)
         self.assertIsNotNone(self.conversation.last_message_at)
         self.assertIsNotNone(self.conversation.last_inbound_at)
-        self.assertFalse(Notification.objects.filter(business=self.business, recipient=self.owner, action_url__contains="/dashboard/conversations").exists())
-        manager_notification = Notification.objects.get(business=self.business, recipient=self.manager, action_url__contains="/dashboard/conversations")
+        self.assertFalse(Notification.objects.filter(business=self.business, recipient=self.owner, action_url__contains="/app/conversations").exists())
+        manager_notification = Notification.objects.get(business=self.business, recipient=self.manager, action_url__contains="/app/conversations")
         self.assertIn("Можно записаться?", manager_notification.text)
 
         inbox_response = self.api.get("/api/inbox/conversations/?unread=true&search=записаться")

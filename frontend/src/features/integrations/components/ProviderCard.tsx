@@ -253,7 +253,7 @@ export function ProviderCard({
   const renderPrimaryButton = () => (
     <Button
       type="button"
-      className="h-9 min-w-[118px] rounded-xl px-4 text-sm"
+      className="h-8 min-w-[96px] rounded-lg px-3 text-xs"
       disabled={!canManage || isUnavailable}
       onClick={handlePrimaryAction}
     >
@@ -264,8 +264,23 @@ export function ProviderCard({
   const frontContent = (
     <>
       <div className="flex items-start justify-between gap-3">
-        <LogoMark logo={provider.logo} label={title} />
-        <div className="flex max-w-[70%] shrink-0 items-center justify-end gap-2">
+        <div className="flex min-w-0 items-start gap-2.5">
+          <LogoMark logo={provider.logo} label={title} compact />
+          <div className="min-w-0">
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+              <h3 className="min-w-0 break-words text-[15px] font-black leading-5 text-midnight">
+                {title}
+              </h3>
+              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-black ring-1 ${statusClass(status)}`}>
+                {readableStatus(status, t, t("integrations.status.notConnectedShort"))}
+              </span>
+            </div>
+            <p className="mt-1 max-h-8 overflow-hidden text-xs font-semibold leading-4 text-slate-500">
+              {primaryUse}
+            </p>
+          </div>
+        </div>
+        <div className="flex max-w-[62%] shrink-0 items-center justify-end gap-2">
           {renderPrimaryButton()}
           {showChannelToggle && channel ? (
             <ToggleSwitch
@@ -279,35 +294,21 @@ export function ProviderCard({
         </div>
       </div>
 
-      <div className={cn("min-w-0", isChannelProvider ? "mt-3" : "mt-4")}>
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <h3 className={cn("min-w-0 break-words font-black text-midnight", isChannelProvider ? "text-[17px] leading-6" : "text-lg")}>
-            {title}
-          </h3>
-          <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-black ring-1 ${statusClass(status)}`}>
-            {readableStatus(status, t, t("integrations.status.notConnectedShort"))}
-          </span>
-        </div>
-        <p className={cn("text-sm font-semibold leading-5 text-slate-500", isChannelProvider ? "mt-1" : "mt-2")}>
-          {primaryUse}
-        </p>
-      </div>
-
       {connector?.last_error && !isChannelProvider ? (
-        <div className="mt-3 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
+        <div className="mt-2 max-h-12 overflow-hidden rounded-lg border border-red-100 bg-red-50 px-2.5 py-1.5 text-xs font-semibold text-red-700">
           {readableConnectorError(connector.last_error, t)}
         </div>
       ) : null}
 
-      {error ? <div className="mt-3"><ErrorState message={getApiErrorMessage(error)} /></div> : null}
+      {error ? <div className="mt-2"><ErrorState message={getApiErrorMessage(error)} /></div> : null}
     </>
   );
 
   return (
     <article
       className={cn(
-        "rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft",
-        isChannelProvider ? "min-h-[128px]" : "min-h-[132px]",
+        "rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft",
+        "min-h-[82px]",
         isUnavailable && "opacity-60",
       )}
     >
@@ -368,7 +369,7 @@ export function ProviderCard({
                   </Button>
                 ) : null}
                 {["telegram", "whatsapp", "instagram", "website"].includes(String(provider.provider)) ? (
-                  <Link to={`/dashboard/conversations?channel=${provider.provider}`}>
+                  <Link to={`/app/conversations?channel=${provider.provider}`}>
                     <Button type="button" variant="ghost">
                       <Link2 size={16} /> {t("nav.conversations")}
                     </Button>

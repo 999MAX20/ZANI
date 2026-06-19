@@ -5,24 +5,17 @@ import { cn } from "../../../lib/cn";
 import { formatDate, formatDateTime } from "../../../lib/format";
 import type { DealRow, Translate } from "../types";
 import { DealAmount } from "./common/DealAmount";
-import { QuickActions } from "./common/QuickActions";
 
 export const DealListItem = memo(function DealListItem({
   deal,
   selected,
-  checked,
   onOpen,
-  onCheck,
-  onTask,
   onMore,
   t,
 }: {
   deal: DealRow;
   selected: boolean;
-  checked: boolean;
   onOpen: (deal: DealRow) => void;
-  onCheck: (deal: DealRow) => void;
-  onTask: (deal: DealRow) => void;
   onMore: (deal: DealRow) => void;
   t: Translate;
 }) {
@@ -37,14 +30,6 @@ export const DealListItem = memo(function DealListItem({
       )}
     >
       <div className="flex items-start">
-        <input
-          type="checkbox"
-          className="absolute left-2 top-2 h-3.5 w-3.5 rounded border-slate-300 opacity-0 transition group-hover:opacity-100"
-          checked={checked}
-          aria-label={`Выбрать ${deal.title}`}
-          onChange={() => onCheck(deal)}
-          onClick={(event) => event.stopPropagation()}
-        />
         <button type="button" className="min-w-0 flex-1 text-left" onClick={() => onOpen(deal)} onDoubleClick={() => onMore(deal)}>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
@@ -72,9 +57,6 @@ export const DealListItem = memo(function DealListItem({
             </span>
           </div>
         </button>
-        <div className="absolute right-2 top-2 opacity-0 transition group-hover:opacity-100">
-          <QuickActions deal={deal} client={deal.clientEntity} onTask={onTask} onMore={onMore} />
-        </div>
       </div>
     </article>
   );

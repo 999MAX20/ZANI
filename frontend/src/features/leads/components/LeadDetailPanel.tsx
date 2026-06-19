@@ -10,7 +10,7 @@ import type { Client, Id, Lead, Service, Task } from "../../../types";
 import { type LeadAction, type LeadAiInsight, type Translate } from "../types";
 import { fuzzyIncludes } from "../utils/leadFilters";
 import { formatFileSize, TruncatedText } from "../utils/leadFormat";
-import { CollapsedLeadDetailPanel, LeadAiInsightCard, LeadContactSummary } from "./LeadDetailSections";
+import { CollapsedLeadDetailPanel, LeadContactSummary } from "./LeadDetailSections";
 
 export function LeadDetailPanel({
   selected,
@@ -196,8 +196,6 @@ export function LeadDetailPanel({
       <LeadContactSummary selected={selected} selectedClient={selectedClient} selectedService={selectedService} clientList={clientList} onWhatsAppTemplate={onWhatsAppTemplate} onToggleCollapsed={onToggleCollapsed} onClose={onClose} t={t} />
 
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 pr-2">
-        <LeadAiInsightCard aiInsight={aiInsight} t={t} />
-
         <section className="rounded-xl border border-slate-200 bg-white p-3">
           <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">{t("leads.aiConversationSummary")}</p>
           <p className="mt-2 text-sm font-bold leading-6 text-midnight">{aiInsight.summary}</p>

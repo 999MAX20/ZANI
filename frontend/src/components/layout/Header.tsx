@@ -98,15 +98,15 @@ export function Header({ onMenuClick, pageHeader }: { onMenuClick: () => void; p
     urgent: t("notification.priority.urgent"),
   };
   const legacyNotificationRoutes: Record<string, string> = {
-    "/leads": "/dashboard/leads",
-    "/clients": "/dashboard/clients",
-    "/deals": "/dashboard/deals",
-    "/tasks": "/dashboard/tasks",
-    "/calendar": "/dashboard/calendar",
-    "/appointments": "/dashboard/appointments",
-    "/conversations": "/dashboard/conversations",
-    "/integrations": "/dashboard/integrations",
-    "/settings": "/dashboard/settings",
+    "/leads": "/app/leads",
+    "/clients": "/app/clients",
+    "/deals": "/app/deals",
+    "/tasks": "/app/tasks",
+    "/calendar": "/app/calendar",
+    "/appointments": "/app/calendar",
+    "/conversations": "/app/conversations",
+    "/integrations": "/app/integrations",
+    "/settings": "/app/settings",
   };
 
   function notificationAudienceLabel(notification: (typeof latestNotifications)[number]) {
@@ -292,7 +292,7 @@ export function Header({ onMenuClick, pageHeader }: { onMenuClick: () => void; p
                   ) : null}
                 </div>
                 <Link
-                  to="/dashboard/tasks"
+                  to="/app/tasks"
                   onClick={() => setShowNotifications(false)}
                   className="mt-4 block rounded-2xl bg-slate-950 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-slate-800"
                 >
@@ -317,7 +317,7 @@ export function Header({ onMenuClick, pageHeader }: { onMenuClick: () => void; p
                     className="mt-3 rounded-2xl bg-slate-950 px-3 py-2 text-xs font-black text-white transition hover:bg-slate-800"
                     onClick={() => {
                       setChatToastOpen(false);
-                      navigate("/dashboard/conversations?unread=true");
+                      navigate("/app/conversations?unread=true");
                     }}
                   >
                     {t("header.openMessages")}
@@ -353,18 +353,17 @@ function PrimaryPageAction({ action }: { action?: PageHeaderConfig["primaryActio
 
 function getPageTitle(pathname: string, t: (key: string) => string) {
   const routes: Array<[string, string]> = [
-    ["/dashboard/clients", "nav.clients"],
-    ["/dashboard/deals", "nav.deals"],
-    ["/dashboard/leads", "nav.leads"],
-    ["/dashboard/tasks", "nav.tasks"],
-    ["/dashboard/calendar", "nav.calendar"],
-    ["/dashboard/appointments", "nav.appointments"],
-    ["/dashboard/conversations", "nav.conversations"],
-    ["/dashboard/analytics", "nav.analytics"],
-    ["/dashboard/ai-agents", "nav.aiAgents"],
-    ["/dashboard/integrations", "nav.integrations"],
-    ["/dashboard/settings", "nav.settings"],
-    ["/dashboard/account", "account.title"],
+    ["/app/clients", "nav.clients"],
+    ["/app/deals", "nav.deals"],
+    ["/app/leads", "nav.leads"],
+    ["/app/tasks", "nav.tasks"],
+    ["/app/calendar", "nav.calendar"],
+    ["/app/conversations", "nav.conversations"],
+    ["/app/analytics", "nav.analytics"],
+    ["/app/ai-agents", "nav.aiAgents"],
+    ["/app/integrations", "nav.integrations"],
+    ["/app/settings", "nav.settings"],
+    ["/app/account", "account.title"],
   ];
   const match = routes.find(([route]) => pathname === route || pathname.startsWith(`${route}/`));
   return match ? t(match[1]) : t("nav.dashboard");

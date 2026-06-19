@@ -57,6 +57,8 @@ def infer_audit_risk(action, instance, metadata):
         return AuditLog.RiskLevels.HIGH
     if metadata.get("kind") == "file_download":
         return AuditLog.RiskLevels.MEDIUM
+    if metadata.get("kind") == "lifecycle":
+        return AuditLog.RiskLevels.MEDIUM
     if metadata.get("archive") or metadata.get("restore") or metadata.get("lost"):
         return AuditLog.RiskLevels.MEDIUM
     if instance.__class__.__name__ in {"BusinessRole", "RolePermission", "BusinessMember"}:

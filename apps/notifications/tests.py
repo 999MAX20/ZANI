@@ -192,6 +192,33 @@ class NotificationCenterTests(APITestCase):
 
         self.assertEqual(response.status_code, 400)
 
+    def test_generic_write_cannot_bypass_notification_state_actions(self):
+        create_response = self.client.post(
+            "/api/notifications/",
+            {
+                "business": self.business.id,
+                "client": self.client_obj.id,
+                "channel": Notification.Channels.SYSTEM,
+                "category": Notification.Categories.SYSTEM,
+                "text": "Direct state",
+                "send_at": timezone.now().isoformat(),
+                "status": Notification.Statuses.SENT,
+            },
+            format="json",
+        )
+        patch_response = self.client.patch(
+            f"/api/notifications/{self.notification.id}/",
+            {"read_at": timezone.now().isoformat()},
+            format="json",
+        )
+
+        self.assertEqual(create_response.status_code, 400)
+        self.assertEqual(create_response.data["fields"], ["status"])
+        self.assertEqual(patch_response.status_code, 400)
+        self.assertEqual(patch_response.data["fields"], ["read_at"])
+        self.notification.refresh_from_db()
+        self.assertIsNone(self.notification.read_at)
+
     def test_role_notification_prefers_responsible_manager_and_excludes_owner(self):
         manager = User.objects.create_user(
             username="notification-manager",
@@ -207,7 +234,7 @@ class NotificationCenterTests(APITestCase):
             roles=MANAGER_ROLES,
             client=self.client_obj,
             text="Новая сделка требует действия",
-            action_url="/dashboard/deals",
+            action_url="/app/deals",
         )
 
         self.assertEqual(len(notifications), 1)

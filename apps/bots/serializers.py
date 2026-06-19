@@ -18,14 +18,33 @@ from apps.leads.models import Lead
 class BotSerializer(serializers.ModelSerializer):
     class Meta:
         model = Bot
-        fields = "__all__"
+        fields = [
+            "id",
+            "business",
+            "name",
+            "status",
+            "default_language",
+            "settings_json",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = ["created_at", "updated_at"]
 
 
 class BotChannelSerializer(serializers.ModelSerializer):
     class Meta:
         model = BotChannel
-        fields = "__all__"
+        fields = [
+            "id",
+            "bot",
+            "channel",
+            "status",
+            "external_id",
+            "public_token",
+            "config_json",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = ["public_token", "created_at", "updated_at"]
 
     def to_representation(self, instance):
@@ -73,7 +92,36 @@ class InstagramChannelConfigSerializer(serializers.Serializer):
 class BotConversationSerializer(serializers.ModelSerializer):
     class Meta:
         model = BotConversation
-        fields = "__all__"
+        fields = [
+            "id",
+            "business",
+            "bot",
+            "public_id",
+            "channel",
+            "external_user_id",
+            "external_thread_id",
+            "client",
+            "lead",
+            "deal",
+            "assigned_to",
+            "status",
+            "priority",
+            "bot_enabled",
+            "handoff_required",
+            "handoff_reason",
+            "close_reason",
+            "last_message_at",
+            "last_inbound_at",
+            "last_outbound_at",
+            "unread_count",
+            "metadata_json",
+            "is_archived",
+            "archived_at",
+            "archived_by",
+            "archive_reason",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = ["public_id", "created_at", "updated_at", "archived_at", "archived_by"]
 
     def validate(self, attrs):
@@ -109,7 +157,21 @@ class BotConversationSerializer(serializers.ModelSerializer):
 class BotMessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = BotMessage
-        fields = "__all__"
+        fields = [
+            "id",
+            "conversation",
+            "direction",
+            "sender_type",
+            "text",
+            "external_message_id",
+            "payload_json",
+            "error_text",
+            "status",
+            "sent_at",
+            "delivered_at",
+            "read_at",
+            "created_at",
+        ]
         read_only_fields = ["created_at"]
 
     def create(self, validated_data):

@@ -44,12 +44,12 @@ PILOT_API_CHECKS = [
 
 PILOT_FRONTEND_ROUTES = [
     "/platform",
-    "/dashboard",
-    "/dashboard/leads",
-    "/dashboard/inbox",
-    "/dashboard/ai-assistant",
-    "/dashboard/integrations",
-    "/dashboard/pilot-readiness",
+    "/app",
+    "/app/leads",
+    "/app/inbox",
+    "/app/ai-assistant",
+    "/app/integrations",
+    "/app/pilot-readiness",
 ]
 
 
@@ -109,7 +109,7 @@ class Command(BaseCommand):
         self.stdout.write(f"Frontend: {options['frontend_url']}")
         self.stdout.write(f"Backend:  {options['backend_url']}")
         self.stdout.write(f"Platform: {options['frontend_url']}/platform")
-        self.stdout.write(f"Owner dashboard: {options['frontend_url']}/dashboard")
+        self.stdout.write(f"Owner dashboard: {options['frontend_url']}/app")
         self.stdout.write("-" * 72)
         self.stdout.write("LOGINS")
         self.stdout.write(f"Platform admin: {options['platform_email']} / {self._display_password(options['platform_password'], options['show_passwords'])}")

@@ -57,7 +57,7 @@ from apps.core.platform_views import (
     platform_operations_health_view,
 )
 from apps.core.security_views import SupportAccessGrantViewSet, security_audit, security_login_history, security_risk_summary
-from apps.core.views import health, health_db, platform_ping, readiness
+from apps.core.views import health, health_db, platform_ping, readiness, work_queues
 from apps.crm.views import DealViewSet, PipelineStageViewSet, PipelineViewSet, StageTransitionViewSet
 from apps.integrations.views import (
     ApiTokenViewSet,
@@ -199,6 +199,7 @@ urlpatterns = [
     path("api/analytics/reports/summary/", report_summary, name="analytics_report_summary"),
     path("api/analytics/reports/export/", report_export, name="analytics_report_export"),
     path("api/platform/ping/", platform_ping, name="platform_ping"),
+    path("api/work-queues/", work_queues, name="work_queues"),
     path("api/platform/overview/", platform_overview, name="platform_overview"),
     path("api/platform/operations-health/", platform_operations_health_view, name="platform_operations_health"),
     path("api/platform/merchants/", platform_merchants, name="platform_merchants"),

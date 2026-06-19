@@ -6,9 +6,11 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.accounts.models import User
+from apps.activities.models import ActivityEvent
 from apps.analytics.models import AnalyticsEvent
 from apps.businesses.models import Business, BusinessMember
 from apps.clients.models import Client
+from apps.core.models import AuditLog
 from apps.leads.models import Lead
 from apps.notifications.models import Notification
 from apps.scheduling.models import Appointment, AppointmentMessageSetting, Resource, WorkingHours
@@ -322,15 +324,122 @@ class CorePlatformTests(TestCase):
         appointment_id = response.data["id"]
         self.assertEqual(Notification.objects.filter(appointment_id=appointment_id, status=Notification.Statuses.PENDING).count(), 2)
 
-        cancel_response = api.patch(
-            f"/api/appointments/{appointment_id}/",
-            {"status": Appointment.Statuses.CANCELLED},
-            format="json",
-        )
+        cancel_response = api.post(f"/api/appointments/{appointment_id}/cancel/")
 
         self.assertEqual(cancel_response.status_code, 200)
         self.assertEqual(Notification.objects.filter(appointment_id=appointment_id, status=Notification.Statuses.PENDING).count(), 0)
         self.assertEqual(Notification.objects.filter(appointment_id=appointment_id, status=Notification.Statuses.CANCELLED).count(), 2)
+        self.assertTrue(
+            AuditLog.objects.filter(
+                business=self.business,
+                entity_type="Appointment",
+                entity_id=str(appointment_id),
+                metadata__kind="lifecycle",
+                metadata__lifecycle_action="appointment_cancelled",
+            ).exists()
+        )
+
+    def test_generic_patch_cannot_bypass_appointment_lifecycle_actions(self):
+        api = APIClient()
+        api.force_authenticate(self.owner)
+        client = Client.objects.create(business=self.business, full_name="Client", phone="+77015550124")
+        service = Service.objects.create(business=self.business, name="Consultation", duration_minutes=60)
+        start_at = timezone.now() + timedelta(days=2)
+        appointment = Appointment.objects.create(
+            business=self.business,
+            client=client,
+            service=service,
+            start_at=start_at,
+            end_at=start_at + timedelta(minutes=60),
+        )
+
+        response = api.patch(
+            f"/api/appointments/{appointment.id}/",
+            {"status": Appointment.Statuses.CANCELLED},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["fields"], ["status"])
+        appointment.refresh_from_db()
+        self.assertEqual(appointment.status, Appointment.Statuses.CREATED)
+
+    def test_generic_patch_cannot_bypass_appointment_reschedule_action(self):
+        api = APIClient()
+        api.force_authenticate(self.owner)
+        client = Client.objects.create(business=self.business, full_name="Client", phone="+77015550127")
+        service = Service.objects.create(business=self.business, name="Consultation", duration_minutes=60)
+        start_at = timezone.now() + timedelta(days=2)
+        appointment = Appointment.objects.create(
+            business=self.business,
+            client=client,
+            service=service,
+            start_at=start_at,
+            end_at=start_at + timedelta(minutes=60),
+        )
+
+        response = api.patch(
+            f"/api/appointments/{appointment.id}/",
+            {"start_at": (start_at + timedelta(hours=1)).isoformat()},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["fields"], ["start_at"])
+        appointment.refresh_from_db()
+        self.assertEqual(appointment.start_at, start_at)
+
+    def test_generic_patch_cannot_bypass_appointment_archive_action(self):
+        api = APIClient()
+        api.force_authenticate(self.owner)
+        client = Client.objects.create(business=self.business, full_name="Client", phone="+77015550125")
+        service = Service.objects.create(business=self.business, name="Consultation", duration_minutes=60)
+        start_at = timezone.now() + timedelta(days=3)
+        appointment = Appointment.objects.create(
+            business=self.business,
+            client=client,
+            service=service,
+            start_at=start_at,
+            end_at=start_at + timedelta(minutes=60),
+        )
+
+        response = api.patch(
+            f"/api/appointments/{appointment.id}/",
+            {"is_archived": True, "archive_reason": "Bypass attempt"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["fields"], ["archive_reason", "is_archived"])
+        appointment.refresh_from_db()
+        self.assertFalse(appointment.is_archived)
+        self.assertEqual(appointment.archive_reason, "")
+
+    def test_create_appointment_cannot_seed_archive_state(self):
+        api = APIClient()
+        api.force_authenticate(self.owner)
+        client = Client.objects.create(business=self.business, full_name="Client", phone="+77015550126")
+        service = Service.objects.create(business=self.business, name="Consultation", duration_minutes=60)
+        WorkingHours.objects.get_or_create(
+            business=self.business,
+            weekday=0,
+            defaults={"start_time": time(9, 0), "end_time": time(18, 0)},
+        )
+
+        response = api.post(
+            "/api/appointments/",
+            {
+                "business": self.business.id,
+                "client": client.id,
+                "service": service.id,
+                "start_at": "2026-05-11T11:00:00+05:00",
+                "is_archived": True,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["fields"], ["is_archived"])
 
     def test_apply_working_hours_preset_creates_weekdays_without_duplicates(self):
         api = APIClient()
@@ -361,6 +470,60 @@ class CorePlatformTests(TestCase):
         self.assertEqual(second_response.status_code, 200)
         self.assertEqual(WorkingHours.objects.filter(business=self.business, resource__isnull=True).count(), 7)
 
+    def test_bulk_upsert_week_creates_and_updates_without_duplicates(self):
+        api = APIClient()
+        api.force_authenticate(self.owner)
+        payload = {
+            "business": self.business.id,
+            "resource": None,
+            "days": [
+                {
+                    "weekday": weekday,
+                    "start_time": "09:00",
+                    "end_time": "18:00",
+                    "is_day_off": weekday >= 5,
+                }
+                for weekday in range(7)
+            ],
+        }
+
+        response = api.post("/api/working-hours/bulk-upsert-week/", payload, format="json")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["count"], 7)
+        self.assertEqual(WorkingHours.objects.filter(business=self.business, resource__isnull=True).count(), 7)
+
+        payload["days"][0]["start_time"] = "10:00"
+        second_response = api.post("/api/working-hours/bulk-upsert-week/", payload, format="json")
+
+        self.assertEqual(second_response.status_code, 200)
+        self.assertEqual(WorkingHours.objects.filter(business=self.business, resource__isnull=True).count(), 7)
+        monday = WorkingHours.objects.get(business=self.business, resource__isnull=True, weekday=0)
+        self.assertEqual(monday.start_time, time(10, 0))
+
+    def test_bulk_upsert_week_rejects_invalid_week_without_partial_save(self):
+        api = APIClient()
+        api.force_authenticate(self.owner)
+        payload = {
+            "business": self.business.id,
+            "resource": None,
+            "days": [
+                {
+                    "weekday": weekday,
+                    "start_time": "09:00",
+                    "end_time": "18:00",
+                    "is_day_off": False,
+                }
+                for weekday in range(7)
+            ],
+        }
+        payload["days"][3]["end_time"] = "08:00"
+
+        response = api.post("/api/working-hours/bulk-upsert-week/", payload, format="json")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(WorkingHours.objects.filter(business=self.business, resource__isnull=True).count(), 0)
+
     def test_available_slots_appear_after_working_hours_preset(self):
         api = APIClient()
         api.force_authenticate(self.owner)
@@ -378,6 +541,40 @@ class CorePlatformTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertGreater(len(response.data), 0)
+
+    def test_available_slots_can_exclude_current_appointment_for_reschedule(self):
+        api = APIClient()
+        api.force_authenticate(self.owner)
+        client = Client.objects.create(business=self.business, full_name="Client")
+        service = Service.objects.create(business=self.business, name="Consultation", duration_minutes=60)
+        WorkingHours.objects.create(
+            business=self.business,
+            weekday=0,
+            start_time=time(9, 0),
+            end_time=time(12, 0),
+        )
+        start_at = datetime(2026, 5, 11, 10, 0, tzinfo=ZoneInfo("Asia/Almaty"))
+        appointment = Appointment.objects.create(
+            business=self.business,
+            client=client,
+            service=service,
+            start_at=start_at,
+            end_at=start_at + timedelta(minutes=60),
+        )
+
+        response = api.get(
+            "/api/appointments/available-slots/",
+            {
+                "business_id": self.business.id,
+                "service_id": service.id,
+                "date": "2026-05-11",
+                "exclude_appointment_id": appointment.id,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        slot_times = [timezone.localtime(datetime.fromisoformat(item["start_at"]), ZoneInfo("Asia/Almaty")).time() for item in response.data]
+        self.assertIn(time(10, 0), slot_times)
 
     def test_appointment_api_rejects_slots_outside_working_hours(self):
         api = APIClient()
@@ -442,6 +639,231 @@ class CorePlatformTests(TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertIn("not available", str(response.data))
+
+    def test_appointment_api_filters_calendar_range_and_facets(self):
+        api = APIClient()
+        api.force_authenticate(self.owner)
+        client = Client.objects.create(business=self.business, full_name="Client")
+        service = Service.objects.create(business=self.business, name="Consultation", duration_minutes=60)
+        other_service = Service.objects.create(business=self.business, name="Massage", duration_minutes=60)
+        resource = Resource.objects.create(business=self.business, name="Room 1")
+        other_resource = Resource.objects.create(business=self.business, name="Room 2")
+        first_start = datetime(2026, 5, 11, 10, 0, tzinfo=ZoneInfo("Asia/Almaty"))
+        second_start = datetime(2026, 5, 12, 10, 0, tzinfo=ZoneInfo("Asia/Almaty"))
+        outside_start = datetime(2026, 5, 20, 10, 0, tzinfo=ZoneInfo("Asia/Almaty"))
+        first = Appointment.objects.create(
+            business=self.business,
+            client=client,
+            service=service,
+            resource=resource,
+            start_at=first_start,
+            end_at=first_start + timedelta(minutes=60),
+            status=Appointment.Statuses.CONFIRMED,
+        )
+        Appointment.objects.create(
+            business=self.business,
+            client=client,
+            service=other_service,
+            resource=other_resource,
+            start_at=second_start,
+            end_at=second_start + timedelta(minutes=60),
+            status=Appointment.Statuses.CREATED,
+        )
+        Appointment.objects.create(
+            business=self.business,
+            client=client,
+            service=service,
+            resource=resource,
+            start_at=outside_start,
+            end_at=outside_start + timedelta(minutes=60),
+            status=Appointment.Statuses.CONFIRMED,
+        )
+
+        response = api.get(
+            "/api/appointments/",
+            {
+                "business": self.business.id,
+                "start_from": "2026-05-11",
+                "start_to": "2026-05-13",
+                "resource": resource.id,
+                "service": service.id,
+                "status": Appointment.Statuses.CONFIRMED,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        rows = response.data["results"] if isinstance(response.data, dict) else response.data
+        self.assertEqual([item["id"] for item in rows], [first.id])
+
+    def test_appointment_api_requires_business_for_calendar_range(self):
+        api = APIClient()
+        api.force_authenticate(self.owner)
+
+        response = api.get("/api/appointments/", {"start_from": "2026-05-11", "start_to": "2026-05-13"})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("business is required", str(response.data))
+
+    def test_appointment_reschedule_moves_booking_and_requeues_followups(self):
+        api = APIClient()
+        api.force_authenticate(self.owner)
+        client = Client.objects.create(business=self.business, full_name="Client")
+        service = Service.objects.create(business=self.business, name="Consultation", duration_minutes=60)
+        resource = Resource.objects.create(business=self.business, name="Room 1")
+        WorkingHours.objects.create(
+            business=self.business,
+            resource=resource,
+            weekday=0,
+            start_time=time(9, 0),
+            end_time=time(18, 0),
+        )
+        start_at = datetime(2026, 5, 11, 10, 0, tzinfo=ZoneInfo("Asia/Almaty"))
+        appointment = Appointment.objects.create(
+            business=self.business,
+            client=client,
+            service=service,
+            resource=resource,
+            start_at=start_at,
+            end_at=start_at + timedelta(minutes=60),
+            status=Appointment.Statuses.CONFIRMED,
+        )
+        schedule_appointment_followups(appointment)
+        self.assertEqual(Notification.objects.filter(appointment=appointment, status=Notification.Statuses.PENDING).count(), 2)
+
+        response = api.post(
+            f"/api/appointments/{appointment.id}/reschedule/",
+            {
+                "start_at": "2026-05-11T12:00:00+05:00",
+                "resource": resource.id,
+                "reason": "Client asked for later time",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        appointment.refresh_from_db()
+        self.assertEqual(appointment.status, Appointment.Statuses.CONFIRMED)
+        self.assertEqual(appointment.start_at, datetime(2026, 5, 11, 12, 0, tzinfo=ZoneInfo("Asia/Almaty")))
+        self.assertEqual(appointment.end_at, datetime(2026, 5, 11, 13, 0, tzinfo=ZoneInfo("Asia/Almaty")))
+        self.assertEqual(Notification.objects.filter(appointment=appointment, status=Notification.Statuses.PENDING).count(), 2)
+        self.assertEqual(Notification.objects.filter(appointment=appointment, status=Notification.Statuses.CANCELLED).count(), 2)
+        self.assertTrue(ActivityEvent.objects.filter(business=self.business, event_type="appointment_rescheduled", entity_id=str(appointment.id)).exists())
+        self.assertTrue(
+            AuditLog.objects.filter(
+                business=self.business,
+                entity_type="Appointment",
+                entity_id=str(appointment.id),
+                metadata__kind="lifecycle",
+                metadata__lifecycle_action="appointment_rescheduled",
+            ).exists()
+        )
+
+    def test_appointment_reschedule_rejects_busy_slot(self):
+        api = APIClient()
+        api.force_authenticate(self.owner)
+        client = Client.objects.create(business=self.business, full_name="Client")
+        service = Service.objects.create(business=self.business, name="Consultation", duration_minutes=60)
+        WorkingHours.objects.create(
+            business=self.business,
+            weekday=0,
+            start_time=time(9, 0),
+            end_time=time(18, 0),
+        )
+        first_start = datetime(2026, 5, 11, 10, 0, tzinfo=ZoneInfo("Asia/Almaty"))
+        second_start = datetime(2026, 5, 11, 12, 0, tzinfo=ZoneInfo("Asia/Almaty"))
+        appointment = Appointment.objects.create(
+            business=self.business,
+            client=client,
+            service=service,
+            start_at=first_start,
+            end_at=first_start + timedelta(minutes=60),
+        )
+        Appointment.objects.create(
+            business=self.business,
+            client=client,
+            service=service,
+            start_at=second_start,
+            end_at=second_start + timedelta(minutes=60),
+        )
+
+        response = api.post(
+            f"/api/appointments/{appointment.id}/reschedule/",
+            {"start_at": "2026-05-11T12:30:00+05:00"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("not available", str(response.data))
+        appointment.refresh_from_db()
+        self.assertEqual(appointment.start_at, first_start)
+
+    def test_appointment_reschedule_rejects_slots_outside_working_hours(self):
+        api = APIClient()
+        api.force_authenticate(self.owner)
+        client = Client.objects.create(business=self.business, full_name="Client")
+        service = Service.objects.create(business=self.business, name="Consultation", duration_minutes=60)
+        WorkingHours.objects.create(
+            business=self.business,
+            weekday=0,
+            start_time=time(9, 0),
+            end_time=time(12, 0),
+        )
+        start_at = datetime(2026, 5, 11, 10, 0, tzinfo=ZoneInfo("Asia/Almaty"))
+        appointment = Appointment.objects.create(
+            business=self.business,
+            client=client,
+            service=service,
+            start_at=start_at,
+            end_at=start_at + timedelta(minutes=60),
+        )
+
+        response = api.post(
+            f"/api/appointments/{appointment.id}/reschedule/",
+            {"start_at": "2026-05-11T12:00:00+05:00"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("outside working hours", str(response.data))
+        appointment.refresh_from_db()
+        self.assertEqual(appointment.start_at, start_at)
+
+    def test_resource_day_off_overrides_business_working_hours(self):
+        api = APIClient()
+        api.force_authenticate(self.owner)
+        client = Client.objects.create(business=self.business, full_name="Client")
+        service = Service.objects.create(business=self.business, name="Consultation", duration_minutes=60)
+        resource = Resource.objects.create(business=self.business, name="Room 1")
+        WorkingHours.objects.create(
+            business=self.business,
+            weekday=0,
+            start_time=time(9, 0),
+            end_time=time(18, 0),
+        )
+        WorkingHours.objects.create(
+            business=self.business,
+            resource=resource,
+            weekday=0,
+            start_time=time(9, 0),
+            end_time=time(18, 0),
+            is_day_off=True,
+        )
+
+        response = api.post(
+            "/api/appointments/",
+            {
+                "business": self.business.id,
+                "client": client.id,
+                "service": service.id,
+                "resource": resource.id,
+                "start_at": "2026-05-11T10:00:00+05:00",
+                "source": Appointment.Sources.MANUAL,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("outside working hours", str(response.data))
 
     def test_apply_working_hours_preset_rejects_unknown_key(self):
         api = APIClient()

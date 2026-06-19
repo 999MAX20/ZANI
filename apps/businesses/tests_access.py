@@ -632,14 +632,36 @@ class TeamAccessTests(TestCase):
             owner=self.manager,
             stage_entered_at=timezone.now() - timezone.timedelta(hours=1),
         )
+        Deal.objects.create(
+            business=self.business,
+            client=client,
+            pipeline=pipeline,
+            stage=stage,
+            title="Closed old deal",
+            owner=self.manager,
+            status=Deal.Statuses.WON,
+            stage_entered_at=timezone.now() - timezone.timedelta(hours=1),
+        )
         bot = Bot.objects.create(business=self.business, name="Website bot")
         BotConversation.objects.create(
             business=self.business,
             bot=bot,
             channel=BotConversation.Channels.WEBSITE,
+            status=BotConversation.Statuses.OPEN,
+            handoff_required=True,
             assigned_to=self.manager,
             last_inbound_at=timezone.now() - timezone.timedelta(minutes=20),
             last_outbound_at=timezone.now() - timezone.timedelta(minutes=5),
+        )
+        BotConversation.objects.create(
+            business=self.business,
+            bot=bot,
+            channel=BotConversation.Channels.WEBSITE,
+            status=BotConversation.Statuses.OPEN,
+            handoff_required=True,
+            assigned_to=self.manager,
+            last_inbound_at=timezone.now() - timezone.timedelta(minutes=5),
+            last_outbound_at=None,
         )
         Appointment.objects.create(
             business=self.business,
@@ -656,6 +678,20 @@ class TeamAccessTests(TestCase):
             assignee=self.manager,
             due_at=timezone.now() - timezone.timedelta(days=1),
         )
+        Task.objects.create(
+            business=self.business,
+            title="Snoozed overdue",
+            assignee=self.manager,
+            due_at=timezone.now() - timezone.timedelta(days=1),
+            snoozed_until=timezone.now() + timezone.timedelta(hours=2),
+        )
+        Task.objects.create(
+            business=self.business,
+            title="Done overdue",
+            assignee=self.manager,
+            due_at=timezone.now() - timezone.timedelta(days=1),
+            status=Task.Statuses.DONE,
+        )
         self.api.force_authenticate(self.owner)
 
         response = self.api.get("/api/team/performance/", {"business": self.business.id})
@@ -666,11 +702,16 @@ class TeamAccessTests(TestCase):
         self.assertIn(self.owner.id, user_ids)
         self.assertIn(self.manager.id, user_ids)
         self.assertGreaterEqual(response.data["totals"]["tasks_overdue"], 1)
+        self.assertEqual(response.data["totals"]["overdue_handoffs"], 1)
+        self.assertEqual(response.data["totals"]["missed_chat_handoffs"], 1)
         self.assertEqual(response.data["totals"]["sla_overdue_deals"], 1)
         self.assertEqual(response.data["totals"]["no_show_appointments"], 1)
         self.assertTrue(response.data["action_items"])
         manager_row = next(row for row in response.data["members"] if row["user"]["id"] == self.manager.id)
         self.assertEqual(manager_row["avg_response_time_minutes"], 15)
+        self.assertEqual(manager_row["tasks_overdue"], 1)
+        self.assertEqual(manager_row["overdue_handoffs"], 1)
+        self.assertEqual(manager_row["missed_chat_handoffs"], 1)
 
     def test_team_lead_sees_only_own_team_performance(self):
         staff_member = BusinessMember.objects.create(

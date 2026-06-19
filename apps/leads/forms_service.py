@@ -126,7 +126,7 @@ def submit_lead_form(*, lead_form, payload, request=None):
             priority=Notification.Priorities.HIGH,
             text=f"Новая заявка с формы: {client.full_name}",
             send_at=submission.created_at,
-            action_url=f"/dashboard/leads?lead={lead.id}",
+            action_url=f"/app/leads?lead={lead.id}",
             action_label="Открыть заявку",
         )
         run_automations_for_event(

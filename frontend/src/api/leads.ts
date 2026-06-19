@@ -20,8 +20,18 @@ export type LeadListParams = {
   client_ids?: Id[] | string;
 };
 
+export type LeadCreatePayload = Omit<
+  Partial<Lead>,
+  "id" | "status" | "previous_status" | "lost_reason" | "lost_at" | "lost_by" | "is_archived" | "archive_reason" | "archived_at" | "archived_by" | "created_at" | "updated_at"
+>;
+
+export type LeadUpdatePayload = Omit<
+  Partial<Lead>,
+  "id" | "business" | "client" | "service" | "source" | "status" | "previous_status" | "lost_reason" | "lost_at" | "lost_by" | "is_archived" | "archive_reason" | "archived_at" | "archived_by" | "created_at" | "updated_at"
+>;
+
 export const leadsApi = {
-  ...createCrudApi<Lead>("/api/leads/"),
+  ...createCrudApi<Lead, LeadCreatePayload, LeadUpdatePayload>("/api/leads/"),
   listPaginated: async (params?: LeadListParams) => {
     const { data } = await apiClient.get<PaginatedResponse<Lead>>("/api/leads/", { params });
     return data;

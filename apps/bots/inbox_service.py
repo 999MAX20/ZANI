@@ -78,7 +78,7 @@ def create_inbound_message_notifications(conversation, message):
             text=f"Новое сообщение в {channel}: {title} — {preview}",
             send_at=now,
             status=Notification.Statuses.PENDING,
-            action_url=f"/dashboard/conversations?conversation={conversation.id}",
+            action_url=f"/app/conversations?conversation={conversation.id}",
             action_label="Открыть чат",
         )
         for user in recipients

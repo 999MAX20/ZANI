@@ -32,7 +32,6 @@ function createSchema(t: (key: string) => string) {
     prepayment_policy: z.string().optional(),
     sla_minutes: z.coerce.number().int().min(0),
     booking_buffer_minutes: z.coerce.number().int().min(0),
-    status: z.string(),
   });
 }
 
@@ -70,7 +69,6 @@ export function BusinessSettingsForm({
       prepayment_policy: initial?.prepayment_policy || "",
       sla_minutes: initial?.sla_minutes ?? 120,
       booking_buffer_minutes: initial?.booking_buffer_minutes ?? 0,
-      status: initial?.status || "trial",
     },
   });
 
@@ -90,12 +88,7 @@ export function BusinessSettingsForm({
           { value: "medical", label: t("businessType.medical") },
           { value: "other", label: t("businessType.other") },
         ]} {...form.register("business_type")} />
-        <Select label={t("settings.status")} options={[
-          { value: "trial", label: t("status.trial") },
-          { value: "active", label: t("status.active") },
-          { value: "inactive", label: t("status.inactive") },
-          { value: "blocked", label: t("status.blocked") },
-        ]} {...form.register("status")} />
+        <Input label={t("businessForm.timezone")} placeholder="Asia/Almaty" {...form.register("timezone")} />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <Input label={t("businessForm.city")} {...form.register("city")} />
@@ -103,10 +96,9 @@ export function BusinessSettingsForm({
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <Input label={t("businessForm.phone")} {...form.register("phone")} />
-        <Input label={t("businessForm.timezone")} placeholder="Asia/Almaty" {...form.register("timezone")} />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-3">
         <Input label="WhatsApp" {...form.register("whatsapp")} />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
         <Input label="Telegram" {...form.register("telegram")} />
         <Input label="Instagram" {...form.register("instagram")} />
       </div>

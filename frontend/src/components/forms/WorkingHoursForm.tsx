@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { getApiErrorMessage } from "../../api/client";
 import { useI18n } from "../../lib/i18n";
 import type { Id, Resource, WorkingHours } from "../../types";
 import { Button } from "../ui/Button";
@@ -158,6 +159,8 @@ export function WeeklyWorkingHoursForm({
         setError("");
         try {
           await onSubmit(days.map((day) => ({ ...day, business: businessId, resource: targetResource })));
+        } catch (error) {
+          setError(getApiErrorMessage(error));
         } finally {
           setSubmitting(false);
         }

@@ -361,7 +361,7 @@ class BusinessConnectorViewSet(TenantModelViewSet):
         serializer.is_valid(raise_exception=True)
         business = serializer.validated_data["business"]
         assert_can(request.user, business, Resources.INTEGRATIONS, Actions.MANAGE)
-        redirect_uri = serializer.validated_data.get("redirect_uri") or request.build_absolute_uri("/dashboard/integrations")
+        redirect_uri = serializer.validated_data.get("redirect_uri") or request.build_absolute_uri("/app/integrations")
         authorization_url, state = build_embedded_signup_url(business=business, user=request.user, redirect_uri=redirect_uri)
         return Response(
             {
@@ -382,7 +382,7 @@ class BusinessConnectorViewSet(TenantModelViewSet):
         serializer.is_valid(raise_exception=True)
         business = serializer.validated_data["business"]
         assert_can(request.user, business, Resources.INTEGRATIONS, Actions.MANAGE)
-        redirect_uri = serializer.validated_data.get("redirect_uri") or request.build_absolute_uri("/dashboard/integrations")
+        redirect_uri = serializer.validated_data.get("redirect_uri") or request.build_absolute_uri("/app/integrations")
         try:
             channel, connector = complete_embedded_signup(
                 business=business,
@@ -417,7 +417,7 @@ class BusinessConnectorViewSet(TenantModelViewSet):
         serializer.is_valid(raise_exception=True)
         business = serializer.validated_data["business"]
         assert_can(request.user, business, Resources.INTEGRATIONS, Actions.MANAGE)
-        redirect_uri = serializer.validated_data.get("redirect_uri") or request.build_absolute_uri("/dashboard/integrations")
+        redirect_uri = serializer.validated_data.get("redirect_uri") or request.build_absolute_uri("/app/integrations")
         authorization_url, state = build_instagram_oauth_url(business=business, user=request.user, redirect_uri=redirect_uri)
         return Response(
             {
@@ -436,7 +436,7 @@ class BusinessConnectorViewSet(TenantModelViewSet):
         serializer.is_valid(raise_exception=True)
         business = serializer.validated_data["business"]
         assert_can(request.user, business, Resources.INTEGRATIONS, Actions.MANAGE)
-        redirect_uri = serializer.validated_data.get("redirect_uri") or request.build_absolute_uri("/dashboard/integrations")
+        redirect_uri = serializer.validated_data.get("redirect_uri") or request.build_absolute_uri("/app/integrations")
         try:
             channel, connector = complete_instagram_oauth(
                 business=business,

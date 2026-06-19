@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Archive,
-  Bot,
   CalendarPlus,
   ClipboardList,
   CheckCheck,
@@ -37,9 +36,11 @@ import writeXlsxFile from "write-excel-file/browser";
 import { clientsApi } from "../../api/clients";
 import { getApiErrorMessage } from "../../api/client";
 import { fileAttachmentsApi } from "../../api/fileAttachments";
-import { leadsApi } from "../../api/leads";
-import { tasksApi } from "../../api/tasks";
+import { leadsApi, type LeadCreatePayload } from "../../api/leads";
+import { tasksApi, type TaskCreatePayload } from "../../api/tasks";
+import type { AppointmentCreatePayload } from "../../api/appointments";
 import { teamApi } from "../../api/team";
+import { CrmWorkspacePage } from "../../components/crm";
 import { CrmEntityDrawer, type CrmDrawerEntity } from "../../components/crm/CrmEntityDrawer";
 import { AppointmentForm } from "../../components/forms/AppointmentForm";
 import { LeadForm } from "../../components/forms/LeadForm";
@@ -58,8 +59,6 @@ import { useEntityData } from "../../hooks/useEntityData";
 import { useI18n } from "../../lib/i18n";
 import type { Appointment, Client, Id, Lead, Service, Task } from "../../types";
 import { useAuth } from "../auth/AuthProvider";
-import { LeadDetailPanel } from "./components/LeadDetailPanel";
-import { LeadKpiGrid } from "./components/LeadKpiGrid";
 import { LeadQueueItem } from "./components/LeadQueueItem";
 import { VirtualizedLeadTableRows } from "./components/LeadsTable";
 import { SourceBadge } from "./components/common/SourceBadge";
@@ -91,7 +90,6 @@ import {
 import { fuzzyIncludes, fuzzyScore, normalizePhoneSearchInput } from "./utils/leadFilters";
 import { formatRelativeTime, getClient, getService, getSourceLabel, getStatusLabel, leadAiInsight, leadTitle, nextAction } from "./utils/leadFormat";
 import { downloadText, toCsvValue } from "./utils/leadExport";
-import { isToday, isWithinLastDays } from "./utils/leadMetrics";
 import { loadJson, saveJson, toDateTimeLocal } from "./utils/leadStorage";
 
 export function LeadsPage() {
@@ -111,7 +109,6 @@ export function LeadsPage() {
   });
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedId, setSelectedId] = useState<number | null>(() => Number(searchParams.get("lead")) || null);
-  const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(searchParams.get("create") === "1");
   const [appointmentOpen, setAppointmentOpen] = useState(false);
   const [drawerEntity, setDrawerEntity] = useState<CrmDrawerEntity | null>(null);
@@ -127,12 +124,9 @@ export function LeadsPage() {
     return param && leadViewModes.includes(param) ? param : "table";
   });
   const [sortByAi, setSortByAi] = useState(true);
-  const [assignmentMode, setAssignmentMode] = useState<"round_robin" | "workload" | "specialization" | "language">("workload");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(LEADS_PAGE_SIZE);
   const [pageDraft, setPageDraft] = useState("1");
-  const [detailCollapsed, setDetailCollapsed] = useState(false);
-  const [kanbanDetailOpen, setKanbanDetailOpen] = useState(false);
   const [kanbanVisibleCounts, setKanbanVisibleCounts] = useState<Record<Lead["status"], number>>(() => ({
     new: 10,
     contacted: 10,
@@ -145,7 +139,6 @@ export function LeadsPage() {
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; lead: Lead } | null>(null);
   const [filterPresets, setFilterPresets] = useState<FilterPreset[]>(() => loadJson<FilterPreset[]>(LEAD_PRESETS_KEY, []));
   const [presetName, setPresetName] = useState("");
-  const [columnMenuOpen, setColumnMenuOpen] = useState(false);
   const [savedFiltersOpen, setSavedFiltersOpen] = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState<Record<LeadColumnKey, boolean>>(() => {
@@ -378,6 +371,12 @@ export function LeadsPage() {
   }, [searchParams]);
 
   useEffect(() => {
+    const leadId = Number(searchParams.get("lead"));
+    if (!Number.isFinite(leadId) || leadId <= 0) return;
+    setDrawerEntity({ type: "lead", id: leadId });
+  }, [searchParams]);
+
+  useEffect(() => {
     if (page > pageCount) setPage(pageCount);
   }, [page, pageCount]);
 
@@ -448,13 +447,9 @@ export function LeadsPage() {
               appointment: null,
               parent_task: null,
               assignee: item.assignee ? Number(item.assignee) : lead.responsible_user || null,
-              created_by: null,
-              watchers: [],
               due_at: new Date(item.due_at).toISOString(),
               reminder_at: null,
-              snoozed_until: null,
               priority: item.priority,
-              status: "open",
               recurrence_rule: "",
             });
           }
@@ -503,7 +498,7 @@ export function LeadsPage() {
   }, [leads.data, t]);
 
   const leadMutation = useMutation({
-    mutationFn: (payload: Partial<Lead>) => leadsApi.create(payload),
+    mutationFn: (payload: LeadCreatePayload) => leadsApi.create(payload),
     onSuccess: async (lead) => {
       setCreateOpen(false);
       setNotice(t("leads.noticeCreated"));
@@ -546,53 +541,11 @@ export function LeadsPage() {
             await queryClient.invalidateQueries({ queryKey: ["leads"] });
           },
         });
-      } else if (variables.action !== "deal") {
-        pushHistory({
-          message: labels[variables.action],
-          undo: async () => {
-            await leadsApi.update({
-              id: variables.lead.id,
-              payload: {
-                status: variables.lead.status,
-                responsible_user: variables.lead.responsible_user,
-                lost_reason: variables.lead.lost_reason || "",
-              },
-            });
-            await queryClient.invalidateQueries({ queryKey: ["leads"] });
-          },
-          redo: async () => {
-            if (variables.action === "take") await leadsApi.takeInWork({ id: variables.lead.id });
-            if (variables.action === "contacted") await leadsApi.markContacted({ id: variables.lead.id });
-            if (variables.action === "closed") await leadsApi.markClosed({ id: variables.lead.id });
-            if (variables.action === "lost") await leadsApi.markLost({ id: variables.lead.id, lost_reason: variables.lost_reason || variables.lead.lost_reason || t("leads.archiveReasonDefault") });
-            if (variables.action === "reopen") await leadsApi.reopen({ id: variables.lead.id });
-            await queryClient.invalidateQueries({ queryKey: ["leads"] });
-          },
-        });
       }
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["leads"] }),
         queryClient.invalidateQueries({ queryKey: ["deals"] }),
       ]);
-    },
-  });
-
-  const statusMutation = useMutation({
-    mutationFn: ({ lead, status }: { lead: Lead; status: Lead["status"] }) => leadsApi.update({ id: lead.id, payload: { status } }),
-    onSuccess: async (_, variables) => {
-      setNotice(t("leads.noticeStatusUpdated"));
-      pushHistory({
-        message: t("leads.statusUpdated"),
-        undo: async () => {
-          await leadsApi.update({ id: variables.lead.id, payload: { status: variables.lead.status } });
-          await queryClient.invalidateQueries({ queryKey: ["leads"] });
-        },
-        redo: async () => {
-          await leadsApi.update({ id: variables.lead.id, payload: { status: variables.status } });
-          await queryClient.invalidateQueries({ queryKey: ["leads"] });
-        },
-      });
-      await queryClient.invalidateQueries({ queryKey: ["leads"] });
     },
   });
 
@@ -622,53 +575,20 @@ export function LeadsPage() {
     onSuccess: async (_, selectedLeads) => {
       setSelectedLeadIds([]);
       setNotice(t("leads.bulkDone"));
-      pushHistory({
-        message: t("leads.bulkDone"),
-        undo: async () => {
-          await Promise.all(selectedLeads.map((lead) => leadsApi.update({ id: lead.id, payload: { status: lead.status } })));
-          await queryClient.invalidateQueries({ queryKey: ["leads"] });
-        },
-        redo: async () => {
-          await Promise.all(selectedLeads.map((lead) => leadsApi.markContacted({ id: lead.id })));
-          await queryClient.invalidateQueries({ queryKey: ["leads"] });
-        },
-      });
-      await queryClient.invalidateQueries({ queryKey: ["leads"] });
-    },
-  });
-
-  const smartAssignMutation = useMutation({
-    mutationFn: async ({ mode, leads }: { mode: typeof assignmentMode; leads: Lead[] }) => {
-      if (!teamList.length) return [];
-      const workload = new Map<Id, number>();
-      teamList.forEach((member) => workload.set(member.user.id, allLeads.filter((lead) => lead.responsible_user === member.user.id && !["closed", "lost"].includes(lead.status)).length));
-      return Promise.all(
-        leads.map((lead, index) => {
-          let member = teamList[index % teamList.length];
-          if (mode === "workload") {
-            member = [...teamList].sort((a, b) => (workload.get(a.user.id) || 0) - (workload.get(b.user.id) || 0))[0];
-          }
-          if (mode === "specialization" && lead.source !== "manual") {
-            const sourceIndex = Math.abs(lead.source.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0)) % teamList.length;
-            member = teamList[sourceIndex];
-          }
-          if (mode === "language") {
-            member = teamList.find((item) => /kz|kaz|қаз|каз/i.test(`${item.user.full_name || ""} ${item.user.email}`)) || teamList[index % teamList.length];
-          }
-          workload.set(member.user.id, (workload.get(member.user.id) || 0) + 1);
-          return leadsApi.assign({ id: lead.id, user_id: member.user.id });
-        }),
-      );
-    },
-    onSuccess: async (_, variables) => {
-      setNotice(t("leads.smartAssignmentDone", { count: variables.leads.length }));
       await queryClient.invalidateQueries({ queryKey: ["leads"] });
     },
   });
 
   const mergeClientMutation = useMutation({
-    mutationFn: ({ targetId, duplicateId }: { targetId: Id; duplicateId: Id }) => clientsApi.merge({ id: targetId, duplicate_client_id: duplicateId }),
-    onSuccess: async () => {
+    mutationFn: async ({ targetId, duplicateId }: { targetId: Id; duplicateId: Id }) => {
+      const preview = await clientsApi.mergeDryRun({ id: targetId, duplicate_client_id: duplicateId });
+      const transferredCount = Object.values(preview.transferred).reduce((sum, value) => sum + value, 0);
+      const confirmed = window.confirm(t("clients.mergePreviewConfirm", { count: transferredCount }));
+      if (!confirmed) return null;
+      return clientsApi.merge({ id: targetId, duplicate_client_id: duplicateId });
+    },
+    onSuccess: async (result) => {
+      if (!result) return;
       setNotice(t("leads.duplicatesMerged"));
       await queryClient.invalidateQueries();
     },
@@ -731,7 +651,7 @@ export function LeadsPage() {
         });
         return Promise.resolve({ offline: true });
       }
-      return tasksApi.create({
+      const payload: TaskCreatePayload = {
         business: business!.id,
         title: nextActionDraft.title,
         description: "",
@@ -741,15 +661,12 @@ export function LeadsPage() {
         appointment: null,
         parent_task: null,
         assignee: nextActionDraft.assignee ? Number(nextActionDraft.assignee) : lead.responsible_user || null,
-        created_by: null,
-        watchers: [],
         due_at: new Date(nextActionDraft.due_at).toISOString(),
         reminder_at: null,
-        snoozed_until: null,
         priority: nextActionDraft.priority,
-        status: "open",
         recurrence_rule: "",
-      });
+      };
+      return tasksApi.create(payload);
     },
     onSuccess: async (result) => {
       setNextActionOpen(false);
@@ -763,7 +680,7 @@ export function LeadsPage() {
   });
 
   const appointmentMutation = useMutation({
-    mutationFn: (payload: Partial<Appointment>) => {
+    mutationFn: (payload: AppointmentCreatePayload) => {
       if (!selected?.id || !payload.service || !payload.start_at) throw new Error(t("leads.appointmentSelectionRequired"));
       return leadsApi.createAppointment({
         leadId: selected.id,
@@ -813,13 +730,20 @@ export function LeadsPage() {
 
   function openLead(lead: Lead) {
     setSelectedId(lead.id);
-    setMobileDetailOpen(true);
-    setDetailCollapsed(false);
-    setKanbanDetailOpen(viewMode === "kanban");
+    setDrawerEntity({ type: "lead", id: lead.id });
     setContextMenu(null);
     const next = new URLSearchParams(searchParams);
     next.set("lead", String(lead.id));
     next.delete("create");
+    setSearchParams(next, { replace: true });
+  }
+
+  function closeDrawer() {
+    setDrawerEntity(null);
+    const next = new URLSearchParams(searchParams);
+    next.delete("lead");
+    next.delete("deal");
+    next.delete("client");
     setSearchParams(next, { replace: true });
   }
 
@@ -866,7 +790,11 @@ export function LeadsPage() {
       setLostReason(lead.lost_reason || "");
       return;
     }
-    statusMutation.mutate({ lead, status });
+    if (status === "new" && ["closed", "lost"].includes(lead.status)) {
+      actionMutation.mutate({ action: "reopen", lead });
+      return;
+    }
+    setNotice(t("leads.useActionForStatus"));
   }
 
   function toggleBulkLead(id: Id) {
@@ -894,17 +822,6 @@ export function LeadsPage() {
     setFilter(preset.filter);
     setSource(preset.source);
     setSearch(preset.search);
-  }
-
-  function moveColumn(column: LeadColumnKey, direction: -1 | 1) {
-    setColumnOrder((value) => {
-      const index = value.indexOf(column);
-      const nextIndex = index + direction;
-      if (index < 0 || nextIndex < 0 || nextIndex >= value.length) return value;
-      const next = [...value];
-      [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
-      return next;
-    });
   }
 
   function getExportRows() {
@@ -981,10 +898,8 @@ export function LeadsPage() {
       }
 
       if (event.key === "Escape") {
-        setMobileDetailOpen(false);
         setContextMenu(null);
         setShortcutsOpen(false);
-        setColumnMenuOpen(false);
         return;
       }
 
@@ -1039,10 +954,8 @@ export function LeadsPage() {
   const actionError =
     leadMutation.error ||
     actionMutation.error ||
-    statusMutation.error ||
     archiveMutation.error ||
     bulkContactMutation.error ||
-    smartAssignMutation.error ||
     mergeClientMutation.error ||
     noteMutation.error ||
     appointmentMutation.error ||
@@ -1061,25 +974,14 @@ export function LeadsPage() {
     }).length },
     { value: "mine" as const, label: t("leads.filterMine"), count: leadSummary.data?.mine ?? allLeads.filter((lead) => user?.id && lead.responsible_user === user.id).length },
   ];
-  const newLeadCount = leadSummary.data?.new ?? allLeads.filter((lead) => isToday(lead.created_at)).length;
-  const weekLeadCount = leadSummary.data?.new_this_week ?? allLeads.filter((lead) => isWithinLastDays(lead.created_at, 7)).length;
-  const unansweredLeadCount = leadSummary.data?.unanswered ?? allLeads.filter((lead) => !lead.responsible_user).length;
-  const unansweredWeekCount = leadSummary.data?.unanswered_this_week ?? allLeads.filter((lead) => !lead.responsible_user && isWithinLastDays(lead.created_at, 7)).length;
-  const waitingLeadCount = leadSummary.data?.in_progress ?? allLeads.filter((lead) => ["contacted", "in_progress"].includes(lead.status)).length;
-  const waitingWeekCount = leadSummary.data?.in_progress_this_week ?? allLeads.filter((lead) => ["contacted", "in_progress"].includes(lead.status) && isWithinLastDays(lead.created_at, 7)).length;
-  const hotLeadCount = leadSummary.data?.hot ?? allLeads.filter((lead) => lead.status === "new" && !lead.responsible_user).length;
-  const hotWeekCount = leadSummary.data?.hot_this_week ?? allLeads.filter((lead) => lead.status === "new" && !lead.responsible_user && isWithinLastDays(lead.created_at, 7)).length;
   const priorityLead = allLeads.find((lead) => !lead.responsible_user && lead.status === "new") || allLeads[0] || null;
-  const priorityLeadClient = priorityLead ? getClient(priorityLead, clientList) : undefined;
-  const priorityLeadName = priorityLeadClient?.full_name || (priorityLead ? t("leads.leadFallback", { id: priorityLead.id }) : t("leads.emptyTitle"));
   const pageStart = pageRows.length ? (safePage - 1) * pageSize + 1 : 0;
   const pageEnd = pageRows.length ? pageStart + pageRows.length - 1 : 0;
   const tableVisibleRowCount = Math.max(1, pageRows.length || Math.min(pageSize, rows.length || pageSize));
   const tablePanelHeight = Math.max(700, tableVisibleRowCount * 66 + 250);
   const activeTableColumns = columnOrder.filter((column) => visibleColumns[column]);
-  const tableGridTemplateColumns = `32px ${activeTableColumns.map((column) => leadColumnWidths[column]).join(" ")} 72px`;
+  const tableGridTemplateColumns = `32px ${activeTableColumns.map((column) => leadColumnWidths[column]).join(" ")}`;
   const tableGridMinWidth = activeTableColumns.length > 5 ? 1120 : undefined;
-  const weeklyDelta = (count: number) => t("leads.weeklyDelta", { count });
   const visiblePages = Array.from({ length: pageCount })
     .map((_, index) => index + 1)
     .filter((itemPage) => pageCount <= 5 || itemPage === 1 || itemPage === pageCount || Math.abs(itemPage - safePage) <= 1)
@@ -1091,7 +993,7 @@ export function LeadsPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <CrmWorkspacePage className="h-auto min-h-[calc(100vh-5.5rem)]" contentClassName="gap-4 pb-4">
       {notice ? <div className="rounded-xl border border-ai-100 bg-ai-50 px-4 py-3 text-sm font-bold text-ai-800">{notice}</div> : null}
       {!isOnline || offlineQueue.length ? (
         <div className="flex flex-col gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900 sm:flex-row sm:items-center sm:justify-between">
@@ -1104,334 +1006,12 @@ export function LeadsPage() {
       ) : null}
       {actionError ? <ErrorState message={getApiErrorMessage(actionError)} /> : null}
 
-      <section className="hidden">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold leading-tight text-midnight">{t("nav.leads")}</h1>
-          <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">{t("leads.incomingDescription", { count: allLeads.length })}</p>
-        </div>
-        <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center xl:justify-end">
-          <label className="relative flex h-11 w-full min-w-0 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-500 shadow-sm sm:w-[360px] xl:w-[440px]">
-            <Search size={18} />
-            <input
-              ref={searchInputRef}
-              className="min-w-0 flex-1 bg-transparent font-semibold outline-none placeholder:text-slate-400"
-              placeholder={t("leads.search")}
-              value={search}
-              onChange={(event) => setSearch(normalizePhoneSearchInput(event.target.value))}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => window.setTimeout(() => setSearchFocused(false), 140)}
-            />
-            {searchFocused && search.trim().length >= 2 ? (
-              <div className="absolute left-0 right-0 top-12 z-30 rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
-                <p className="px-2 py-1 text-xs font-black uppercase tracking-[0.12em] text-slate-400">{t("leads.searchSuggestions")}</p>
-                {searchSuggestions.length ? searchSuggestions.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className="flex w-full items-center justify-between gap-3 rounded-lg px-2 py-2 text-left hover:bg-slate-50"
-                    onMouseDown={(event) => {
-                      event.preventDefault();
-                      setSearch(item.label);
-                      if (item.lead) openLead(item.lead);
-                    }}
-                  >
-                    <span className="min-w-0">
-                      <span className="block truncate text-sm font-bold text-midnight">{item.label}</span>
-                      <span className="block truncate text-xs font-semibold text-slate-500">{item.meta}</span>
-                    </span>
-                    <span className="shrink-0 rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-black text-slate-500">{item.type}</span>
-                  </button>
-                )) : (
-                  <p className="px-2 py-3 text-sm font-semibold text-slate-500">{t("leads.noSuggestions")}</p>
-                )}
-              </div>
-            ) : null}
-          </label>
-          <div className="flex h-11 shrink-0 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
-            <button
-              type="button"
-              className={cn("grid h-9 w-9 place-items-center rounded-lg", viewMode === "table" ? "bg-brand-600 text-white" : "text-slate-500 hover:bg-slate-50")}
-              onClick={() => {
-                setViewMode("table");
-                setKanbanDetailOpen(false);
-              }}
-              aria-label={t("leads.viewTable")}
-            >
-              <Table2 size={17} />
-            </button>
-            <button
-              type="button"
-              className={cn("grid h-9 w-9 place-items-center rounded-lg", viewMode === "kanban" ? "bg-brand-600 text-white" : "text-slate-500 hover:bg-slate-50")}
-              onClick={() => {
-                setViewMode("kanban");
-                if (selectedId) setKanbanDetailOpen(true);
-              }}
-              aria-label={t("leads.viewKanban")}
-            >
-              <KanbanSquare size={17} />
-            </button>
-          </div>
-          <div className="relative shrink-0">
-            <Button variant="secondary" className="h-11 rounded-xl px-3" onClick={() => setSavedFiltersOpen((value) => !value)}>
-              <SlidersHorizontal size={17} />
-              <span className="hidden sm:inline">{t("leads.savedFilters")}</span>
-              {filterPresets.length ? <span className="rounded-lg bg-slate-100 px-1.5 py-0.5 text-xs font-black text-slate-500">{filterPresets.length}</span> : null}
-            </Button>
-            {savedFiltersOpen ? (
-              <div className="absolute right-0 top-12 z-30 w-[min(360px,calc(100vw-2rem))] rounded-xl border border-slate-200 bg-white p-3 shadow-xl">
-                <div className="flex min-w-0 items-center gap-2 overflow-x-auto pb-2">
-                  {filterPresets.length ? filterPresets.map((preset) => (
-                    <button
-                      key={preset.id}
-                      type="button"
-                      className="shrink-0 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
-                      onClick={() => {
-                        applyPreset(preset);
-                        setSavedFiltersOpen(false);
-                      }}
-                    >
-                      {preset.name}
-                    </button>
-                  )) : (
-                    <span className="py-2 text-xs font-semibold text-slate-400">{t("leads.noSavedFilters")}</span>
-                  )}
-                </div>
-                <div className="mt-2 flex gap-2 border-t border-slate-100 pt-3">
-                  <input
-                    className="h-9 min-w-0 flex-1 rounded-lg border border-slate-200 px-3 text-sm font-semibold outline-none focus:border-brand-300"
-                    placeholder={t("leads.filterPresetName")}
-                    value={presetName}
-                    onChange={(event) => setPresetName(event.target.value)}
-                  />
-                  <Button variant="secondary" size="sm" className="shrink-0 rounded-lg" onClick={savePreset}>{t("leads.saveFilter")}</Button>
-                </div>
-              </div>
-            ) : null}
-          </div>
-          <div className="relative shrink-0">
-            <Button variant="secondary" size="icon" className="h-11 w-11 rounded-xl px-0" aria-label={t("leads.moreActions")} onClick={() => setMoreMenuOpen((value) => !value)}>
-              <MoreHorizontal size={18} />
-            </Button>
-            {moreMenuOpen ? (
-              <div className="absolute right-0 top-12 z-30 w-[min(340px,calc(100vw-2rem))] rounded-xl border border-slate-200 bg-white p-3 shadow-xl">
-                <div className="space-y-2">
-                  <button type="button" className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-bold text-slate-700 hover:bg-slate-50" onClick={() => setSortByAi((value) => !value)}>
-                    <Flame size={16} /> {t("leads.sortByHeat")}
-                  </button>
-                  <div className="grid grid-cols-[1fr_auto] gap-2">
-                    <select
-                      className="h-9 min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 outline-none"
-                      value={assignmentMode}
-                      onChange={(event) => setAssignmentMode(event.target.value as typeof assignmentMode)}
-                    >
-                      <option value="workload">{t("leads.assignmentWorkload")}</option>
-                      <option value="round_robin">{t("leads.assignmentRoundRobin")}</option>
-                      <option value="specialization">{t("leads.assignmentSpecialization")}</option>
-                      <option value="language">{t("leads.assignmentLanguage")}</option>
-                    </select>
-                    <Button
-                      size="sm"
-                      className="h-9 rounded-lg bg-brand-600 px-3"
-                      disabled={!teamList.length || !allLeads.some((lead) => !lead.responsible_user)}
-                      isLoading={smartAssignMutation.isPending}
-                      onClick={() => smartAssignMutation.mutate({ mode: assignmentMode, leads: allLeads.filter((lead) => !lead.responsible_user && !["closed", "lost"].includes(lead.status)) })}
-                    >
-                      <UserCheck size={15} />
-                    </Button>
-                  </div>
-                </div>
-                <div className="mt-3 border-t border-slate-100 pt-3">
-                  <button type="button" className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm font-bold text-slate-700 hover:bg-slate-50" onClick={() => setColumnMenuOpen((value) => !value)}>
-                    <span className="flex items-center gap-2"><Columns3 size={16} /> {t("leads.columns")}</span>
-                    <ChevronRight size={15} className={cn("transition", columnMenuOpen && "rotate-90")} />
-                  </button>
-                  {columnMenuOpen ? (
-                    <div className="mt-1 max-h-64 overflow-y-auto rounded-lg bg-slate-50 p-2">
-                      {columnOrder.map((column, index) => (
-                        <div key={column} className="flex items-center gap-2 rounded-lg px-2 py-2 text-sm font-bold text-slate-700 hover:bg-white">
-                          <label className="flex min-w-0 flex-1 items-center gap-2">
-                            <input
-                              type="checkbox"
-                              checked={visibleColumns[column]}
-                              onChange={() => setVisibleColumns((value) => ({ ...value, [column]: !value[column] }))}
-                            />
-                            <span className="truncate">{t(`leads.column.${column}`)}</span>
-                          </label>
-                          <button type="button" className="grid h-6 w-6 place-items-center rounded text-slate-400 hover:bg-white hover:text-midnight" disabled={index === 0} onClick={() => moveColumn(column, -1)} aria-label={t("leads.moveColumnLeft")}>
-                            <ChevronLeft size={14} />
-                          </button>
-                          <button type="button" className="grid h-6 w-6 place-items-center rounded text-slate-400 hover:bg-white hover:text-midnight" disabled={index === columnOrder.length - 1} onClick={() => moveColumn(column, 1)} aria-label={t("leads.moveColumnRight")}>
-                            <ChevronRight size={14} />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
-                <div className="mt-3 grid grid-cols-2 gap-2 border-t border-slate-100 pt-3">
-                  <Button variant="secondary" size="sm" className="rounded-lg" onClick={() => exportRows("csv")}><Download size={15} /> CSV</Button>
-                  <Button variant="secondary" size="sm" className="rounded-lg" onClick={() => exportRows("excel")}>{t("leads.exportExcel")}</Button>
-                  <Button variant="secondary" size="sm" className="rounded-lg" onClick={shareView}><Share2 size={15} /> {t("leads.shareView")}</Button>
-                  <Button variant="secondary" size="sm" className="rounded-lg" onClick={() => setShortcutsOpen(true)}><Keyboard size={15} /> {t("leads.shortcuts")}</Button>
-                  <Button variant="secondary" size="sm" className="rounded-lg" disabled={!undoStack.length} onClick={runUndo}><Undo2 size={15} /> {t("leads.undo")}</Button>
-                  <Button variant="secondary" size="sm" className="rounded-lg" disabled={!redoStack.length} onClick={runRedo}><ChevronRight size={15} /> {t("leads.redo")}</Button>
-                </div>
-              </div>
-            ) : null}
-          </div>
-          <Button className="min-h-11 shrink-0 rounded-xl px-5 lg:hidden" onClick={() => setCreateOpen(true)}>
-            <Plus size={18} />
-            {t("leads.create")}
-          </Button>
-        </div>
-      </section>
-
-      <LeadKpiGrid
-        className="grid gap-3 md:grid-cols-2 xl:hidden"
-        total={allLeads.length}
-        newToday={newLeadCount}
-        unanswered={unansweredLeadCount}
-        inProgress={waitingLeadCount}
-        hot={hotLeadCount}
-        weekLeadCount={weekLeadCount}
-        unansweredWeekCount={unansweredWeekCount}
-        inProgressWeekCount={waitingWeekCount}
-        hotWeekCount={hotWeekCount}
-        weeklyDelta={weeklyDelta}
-        t={t}
-      />
-
-      <section className="rounded-xl border border-violet-100 bg-gradient-to-r from-violet-50 via-white to-brand-50 p-4 shadow-[0_4px_18px_rgba(15,23,42,0.04)] xl:hidden">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex min-w-0 items-start gap-3">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-violet-700 shadow-sm">
-              <Bot size={19} />
-            </div>
-            <div className="min-w-0">
-              <p className="font-black text-midnight">{t("leads.aiPriorityTitle")}</p>
-              <p className="mt-1 text-sm font-semibold leading-6 text-slate-600">{t("leads.aiBannerText", { lead: priorityLeadName })}</p>
-            </div>
-          </div>
-          <Button className="shrink-0 rounded-lg bg-brand-600" onClick={() => priorityLead && openLead(priorityLead)} disabled={!priorityLead}>
-            <Phone size={16} />
-            {t("leads.callNow")}
-          </Button>
-        </div>
-      </section>
-
-      <section className="hidden">
-        <div className="flex w-max items-center gap-2 pb-1">
-        {filters.map((item) => (
-          <button
-            key={item.value}
-            type="button"
-            onClick={() => {
-              setFilter(item.value);
-            }}
-            className={cn(
-              "inline-flex min-h-9 shrink-0 items-center gap-2 rounded-xl border px-3 text-sm font-bold transition",
-              filter === item.value ? "border-brand-200 bg-white text-brand-700 shadow-sm" : "border-slate-200 bg-white text-slate-600 hover:border-brand-100 hover:text-midnight",
-            )}
-          >
-            {item.label}
-            <span className={cn("rounded-lg px-2 py-0.5 text-xs", filter === item.value ? "bg-brand-50 text-brand-700" : "bg-slate-100 text-slate-500")}>{item.count}</span>
-          </button>
-        ))}
-        <span className="h-8 w-px shrink-0 bg-slate-200" />
-        {["whatsapp", "telegram", "instagram", "website"].map((item) => (
-          <button
-            key={item}
-            type="button"
-            onClick={() => {
-              setSource(source === item ? "" : item);
-            }}
-            className={cn(
-              "inline-flex min-h-9 shrink-0 items-center gap-2 rounded-xl border px-3 text-sm font-bold transition",
-              source === item ? "border-brand-200 bg-brand-50 text-brand-800" : "border-slate-200 bg-white text-slate-600 hover:border-brand-100 hover:text-midnight",
-            )}
-          >
-            <SourceBadge source={item} t={t} />
-          </button>
-        ))}
-        </div>
-      </section>
-
       <section className={cn(
         "grid gap-4",
         viewMode === "kanban" ? "xl:min-h-[1320px]" : "xl:items-start",
-        viewMode === "kanban" ? "xl:grid-cols-1" : detailCollapsed ? "xl:grid-cols-[minmax(0,1fr)_64px]" : "xl:grid-cols-[minmax(0,1fr)_384px]",
+        "xl:grid-cols-1",
       )}>
         <div className="flex min-h-0 flex-col gap-4">
-          <LeadKpiGrid
-            className="hidden shrink-0 gap-3 xl:grid xl:grid-cols-5"
-            total={allLeads.length}
-            newToday={newLeadCount}
-            unanswered={unansweredLeadCount}
-            inProgress={waitingLeadCount}
-            hot={hotLeadCount}
-            weekLeadCount={weekLeadCount}
-            unansweredWeekCount={unansweredWeekCount}
-            inProgressWeekCount={waitingWeekCount}
-            hotWeekCount={hotWeekCount}
-            weeklyDelta={weeklyDelta}
-            t={t}
-          />
-
-          <section className="hidden shrink-0 rounded-xl border border-violet-100 bg-gradient-to-r from-violet-50 via-white to-brand-50 p-4 shadow-[0_4px_18px_rgba(15,23,42,0.04)] xl:block">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex min-w-0 items-start gap-3">
-                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-violet-700 shadow-sm">
-                  <Bot size={19} />
-                </div>
-                <div className="min-w-0">
-                  <p className="font-black text-midnight">{t("leads.aiPriorityTitle")}</p>
-                  <p className="mt-1 text-sm font-semibold leading-6 text-slate-600">{t("leads.aiBannerText", { lead: priorityLeadName })}</p>
-                </div>
-              </div>
-              <Button className="shrink-0 rounded-lg bg-brand-600" onClick={() => priorityLead && openLead(priorityLead)} disabled={!priorityLead}>
-                <Phone size={16} />
-                {t("leads.callNow")}
-              </Button>
-            </div>
-          </section>
-
-          <section className="hidden">
-            <div className="flex w-max items-center gap-2 pb-1">
-            {filters.map((item) => (
-              <button
-                key={item.value}
-                type="button"
-                onClick={() => {
-                  setFilter(item.value);
-                }}
-                className={cn(
-                  "inline-flex min-h-9 shrink-0 items-center gap-2 rounded-xl border px-3 text-sm font-bold transition",
-                  filter === item.value ? "border-brand-200 bg-white text-brand-700 shadow-sm" : "border-slate-200 bg-white text-slate-600 hover:border-brand-100 hover:text-midnight",
-                )}
-              >
-                {item.label}
-                <span className={cn("rounded-lg px-2 py-0.5 text-xs", filter === item.value ? "bg-brand-50 text-brand-700" : "bg-slate-100 text-slate-500")}>{item.count}</span>
-              </button>
-            ))}
-            <span className="h-8 w-px shrink-0 bg-slate-200" />
-            {["whatsapp", "telegram", "instagram", "website"].map((item) => (
-              <button
-                key={item}
-                type="button"
-                onClick={() => {
-                  setSource(source === item ? "" : item);
-                }}
-                className={cn(
-                  "inline-flex min-h-9 shrink-0 items-center gap-2 rounded-xl border px-3 text-sm font-bold transition",
-                  source === item ? "border-brand-200 bg-brand-50 text-brand-800" : "border-slate-200 bg-white text-slate-600 hover:border-brand-100 hover:text-midnight",
-                )}
-              >
-                <SourceBadge source={item} t={t} />
-              </button>
-            ))}
-            </div>
-          </section>
-
           <div
             className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_4px_18px_rgba(15,23,42,0.04)]"
             style={viewMode === "table" ? { height: tablePanelHeight } : { minHeight: 1280 }}
@@ -1482,7 +1062,6 @@ export function LeadsPage() {
                     className={cn("grid h-8 w-8 place-items-center rounded-md", viewMode === "table" ? "bg-brand-600 text-white" : "text-slate-500 hover:bg-slate-50")}
                     onClick={() => {
                       setViewMode("table");
-                      setKanbanDetailOpen(false);
                     }}
                     aria-label={t("leads.viewTable")}
                   >
@@ -1493,7 +1072,6 @@ export function LeadsPage() {
                     className={cn("grid h-8 w-8 place-items-center rounded-md", viewMode === "kanban" ? "bg-brand-600 text-white" : "text-slate-500 hover:bg-slate-50")}
                     onClick={() => {
                       setViewMode("kanban");
-                      if (selectedId) setKanbanDetailOpen(true);
                     }}
                     aria-label={t("leads.viewKanban")}
                   >
@@ -1613,7 +1191,6 @@ export function LeadsPage() {
                 {activeTableColumns.map((column) => (
                   <span key={column}>{t(`leads.column.${column}`)}</span>
                 ))}
-                <span />
               </div>
             </div>
           ) : null}
@@ -1630,7 +1207,7 @@ export function LeadsPage() {
                     <Button onClick={() => setCreateOpen(true)}>
                       <Plus size={16} /> {t("leads.createFirstLead")}
                     </Button>
-                    <Button variant="secondary" onClick={() => { window.location.href = "/dashboard/integrations"; }}>
+                    <Button variant="secondary" onClick={() => { window.location.href = "/app/integrations"; }}>
                       <SlidersHorizontal size={16} /> {t("leads.setupIntegrations")}
                     </Button>
                   </div>
@@ -1681,7 +1258,7 @@ export function LeadsPage() {
                                   insight.stale && selected?.id !== lead.id && "bg-amber-50/50",
                                 )}
                               >
-                                <p className="truncate text-sm font-black text-midnight" title={title}>{title}</p>
+                                <p className="truncate text-sm font-black text-midnight">{title}</p>
                                 <p className="mt-1 truncate text-xs font-semibold text-slate-500">{client?.phone || service?.name || getSourceLabel(lead.source, t)}</p>
                                 <div className="mt-2 flex items-center justify-between gap-2">
                                   <SourceBadge source={lead.source} t={t} />
@@ -1732,9 +1309,6 @@ export function LeadsPage() {
                   toggleBulkLead={toggleBulkLead}
                   changeLeadStatus={changeLeadStatus}
                   assignLead={(lead, userId) => actionMutation.mutate({ action: "assign", lead, user_id: userId })}
-                  callLead={callLead}
-                  whatsAppLead={whatsAppLead}
-                  createTaskForLead={createTaskForLead}
                   openContextMenu={(event, lead) => {
                     event.preventDefault();
                     setContextMenu({ x: event.clientX, y: event.clientY, lead });
@@ -1823,111 +1397,7 @@ export function LeadsPage() {
           ) : null}
           </div>
         </div>
-
-        {viewMode === "table" ? (
-          <aside className="hidden min-h-0 xl:sticky xl:top-4 xl:block xl:h-[calc(100vh-8rem)] xl:self-start">
-            {!selected ? (
-              <div className="grid h-full place-items-center rounded-xl border border-slate-200 bg-white p-6 text-center shadow-[0_4px_18px_rgba(15,23,42,0.04)]">
-                <div>
-                  <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-xl bg-brand-50 text-brand-700">
-                    <CircleDot size={24} />
-                  </div>
-                  <p className="font-black text-slate-500">{t("leads.selectLead")}</p>
-                </div>
-              </div>
-            ) : (
-              <LeadDetailPanel
-                selected={selected}
-                selectedClient={selectedClient}
-                selectedService={selectedService}
-                selectedNextTask={selectedNextTask}
-                selectedDeals={selectedDeals}
-                selectedAppointments={selectedAppointments}
-                selectedConversations={selectedConversations}
-                aiInsight={selectedAiInsight!}
-                clientList={clientList}
-                teamList={teamList}
-                priorityLead={priorityLead}
-                actionMutation={actionMutation}
-                mergeClientMutation={mergeClientMutation}
-                noteMutation={noteMutation}
-                openLead={openLead}
-                onWhatsAppTemplate={whatsAppLead}
-                setAppointmentOpen={setAppointmentOpen}
-                setLostLead={setLostLead}
-                setLostReason={setLostReason}
-                setNextActionOpen={setNextActionOpen}
-                setDrawerEntity={setDrawerEntity}
-                collapsed={detailCollapsed}
-                onToggleCollapsed={() => setDetailCollapsed((value) => !value)}
-                t={t}
-              />
-            )}
-          </aside>
-        ) : null}
       </section>
-
-      {selected && viewMode === "kanban" && kanbanDetailOpen ? (
-        <div className="fixed bottom-4 right-4 top-24 z-40 hidden w-96 lg:block">
-          <LeadDetailPanel
-            selected={selected}
-            selectedClient={selectedClient}
-            selectedService={selectedService}
-            selectedNextTask={selectedNextTask}
-            selectedDeals={selectedDeals}
-            selectedAppointments={selectedAppointments}
-            selectedConversations={selectedConversations}
-            aiInsight={selectedAiInsight!}
-            clientList={clientList}
-            teamList={teamList}
-            priorityLead={priorityLead}
-            actionMutation={actionMutation}
-            mergeClientMutation={mergeClientMutation}
-            noteMutation={noteMutation}
-            openLead={openLead}
-            onWhatsAppTemplate={whatsAppLead}
-            setAppointmentOpen={setAppointmentOpen}
-            setLostLead={setLostLead}
-            setLostReason={setLostReason}
-            setNextActionOpen={setNextActionOpen}
-            setDrawerEntity={setDrawerEntity}
-            onClose={() => setKanbanDetailOpen(false)}
-            t={t}
-          />
-        </div>
-      ) : null}
-
-      {selected ? (
-        <div className={cn("fixed inset-0 z-50 bg-slate-950/30 transition lg:hidden", mobileDetailOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0")} onClick={() => setMobileDetailOpen(false)}>
-          <div className={cn("absolute inset-x-0 bottom-0 h-[88vh] rounded-t-2xl bg-white p-3 shadow-2xl transition-transform", mobileDetailOpen ? "translate-y-0" : "translate-y-full")} onClick={(event) => event.stopPropagation()}>
-            <LeadDetailPanel
-              selected={selected}
-              selectedClient={selectedClient}
-              selectedService={selectedService}
-              selectedNextTask={selectedNextTask}
-              selectedDeals={selectedDeals}
-              selectedAppointments={selectedAppointments}
-              selectedConversations={selectedConversations}
-              aiInsight={selectedAiInsight!}
-              clientList={clientList}
-              teamList={teamList}
-              priorityLead={priorityLead}
-              actionMutation={actionMutation}
-              mergeClientMutation={mergeClientMutation}
-              noteMutation={noteMutation}
-              openLead={openLead}
-              onWhatsAppTemplate={whatsAppLead}
-              setAppointmentOpen={setAppointmentOpen}
-              setLostLead={setLostLead}
-              setLostReason={setLostReason}
-              setNextActionOpen={setNextActionOpen}
-              setDrawerEntity={setDrawerEntity}
-              onClose={() => setMobileDetailOpen(false)}
-              t={t}
-            />
-          </div>
-        </div>
-      ) : null}
 
       {contextMenu ? (
         <div className="fixed inset-0 z-40" onClick={() => setContextMenu(null)}>
@@ -2135,7 +1605,7 @@ export function LeadsPage() {
         ) : null}
       </Modal>
 
-      <CrmEntityDrawer entity={drawerEntity} onClose={() => setDrawerEntity(null)} />
-    </div>
+      <CrmEntityDrawer entity={drawerEntity} onClose={closeDrawer} />
+    </CrmWorkspacePage>
   );
 }

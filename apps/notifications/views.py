@@ -27,7 +27,7 @@ class NotificationViewSet(TenantModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         queryset = queryset.exclude(
-            Q(action_url__startswith="/dashboard/conversations")
+            Q(action_url__startswith="/app/conversations")
             & Q(recipient__isnull=False)
             & ~Q(recipient=self.request.user)
         )

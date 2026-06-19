@@ -256,7 +256,7 @@ def _notify_pipeline_result(*, result, decision: AutoPipelineDecision) -> None:
         category=Notification.Categories.SALES,
         priority=Notification.Priorities.HIGH if result.deal else Notification.Priorities.NORMAL,
         text=text,
-        action_url=f"/dashboard/conversations?conversation={result.conversation.id}",
+        action_url=f"/app/conversations?conversation={result.conversation.id}",
         action_label="Открыть чат",
     )
 

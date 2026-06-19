@@ -144,7 +144,7 @@ export function ClientInspector({
 
   if (!row) {
     return (
-      <aside className="min-h-[640px] border-l border-slate-200 bg-white xl:min-h-0 xl:h-[calc(100vh-80px)]">
+      <div className="min-h-[640px] bg-white xl:min-h-0 xl:h-full">
         <div className="grid h-full place-items-center p-8 text-center">
           <div>
             <ClientAvatar name="Client" size="lg" />
@@ -152,7 +152,7 @@ export function ClientInspector({
             <p className="mt-2 text-sm text-slate-500">{t("clients.listHintText")}</p>
           </div>
         </div>
-      </aside>
+      </div>
     );
   }
 
@@ -163,6 +163,8 @@ export function ClientInspector({
   const latestAppointment = row.appointments[0];
   const openDealValue = row.deals.filter((deal) => deal.status === "open").reduce((sum, deal) => sum + Number(deal.amount || 0), 0);
   const mainTask = row.tasks[0];
+  const phoneDigits = client.phone?.replace(/\D/g, "") || "";
+  const hasTelegram = Boolean(client.telegram_id || client.source === "telegram");
   const historyItems: Array<{ key: string; icon: LucideIcon; title: string; meta: string; badge?: React.ReactNode }> = [
     ...row.conversations.slice(0, 2).map((conversation) => ({
       key: `conversation-${conversation.id}`,
@@ -196,7 +198,7 @@ export function ClientInspector({
   }
 
   return (
-    <aside className="min-h-0 border-l border-slate-200 bg-white xl:h-[calc(100vh-80px)] xl:overflow-y-auto">
+    <div className="min-h-0 bg-white xl:h-full xl:overflow-y-auto">
     <div className="sticky top-0 z-10 border-b border-slate-200 bg-white px-4 py-1.5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
@@ -249,6 +251,32 @@ export function ClientInspector({
             </button>
           ))}
         </div>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <Button
+            type="button"
+            size="sm"
+            className="h-8 min-h-8 rounded-lg px-2 text-xs"
+            disabled={!phoneDigits}
+            onClick={() => phoneDigits && window.open(`tel:${phoneDigits}`, "_blank", "noopener,noreferrer")}
+          >
+            <Phone size={14} />
+            {t("clients.call")}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            className="h-8 min-h-8 rounded-lg px-2 text-xs"
+            disabled={!phoneDigits && !hasTelegram}
+            onClick={() => {
+              if (phoneDigits) window.open(`https://wa.me/${phoneDigits}`, "_blank", "noopener,noreferrer");
+              else if (hasTelegram) onFullCard();
+            }}
+          >
+            <MessageCircle size={14} />
+            {phoneDigits ? t("clients.openWhatsapp") : t("clients.fullCard")}
+          </Button>
+        </div>
       </div>
 
       {activeTab === "deals" ? <DealsTab row={row} /> : null}
@@ -280,9 +308,10 @@ export function ClientInspector({
               ) : null
             }
           >
-            {client.phone || t("clients.noContacts")}
+            {client.phone || t("clients.phoneMissing")}
           </ContactLine>
-          <ContactLine icon={Mail}>{client.email || "Email не указан"}</ContactLine>
+          <ContactLine icon={Mail}>{client.email || t("clients.emailMissing")}</ContactLine>
+          {hasTelegram ? <ContactLine icon={MessageCircle}>{t("clients.telegramConnected")}</ContactLine> : null}
           <ContactLine icon={BriefcaseBusiness}>{sourceLabel(client.source, t)}</ContactLine>
         </div>
       </DetailSection>
@@ -362,6 +391,6 @@ export function ClientInspector({
       </div>
         </>
       ) : null}
-    </aside>
+    </div>
   );
 }

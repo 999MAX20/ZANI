@@ -13,7 +13,7 @@ const prefetchOptions = {
 };
 
 export function prefetchRouteData(path: string, queryClient: QueryClient, businessId?: number | null | string) {
-  if (path === "/dashboard") {
+  if (path === "/app") {
     void Promise.allSettled([
       queryClient.prefetchQuery({ queryKey: ["leads"], queryFn: leadsApi.list, ...prefetchOptions }),
       queryClient.prefetchQuery({ queryKey: ["clients"], queryFn: clientsApi.list, ...prefetchOptions }),
@@ -22,7 +22,7 @@ export function prefetchRouteData(path: string, queryClient: QueryClient, busine
     return;
   }
 
-  if (path.startsWith("/dashboard/leads")) {
+  if (path.startsWith("/app/leads")) {
     void Promise.allSettled([
       queryClient.prefetchQuery({ queryKey: ["leads"], queryFn: leadsApi.list, ...prefetchOptions }),
       queryClient.prefetchQuery({ queryKey: ["clients"], queryFn: clientsApi.list, ...prefetchOptions }),
@@ -31,7 +31,7 @@ export function prefetchRouteData(path: string, queryClient: QueryClient, busine
     return;
   }
 
-  if (path.startsWith("/dashboard/clients")) {
+  if (path.startsWith("/app/clients")) {
     void Promise.allSettled([
       queryClient.prefetchQuery({ queryKey: ["clients"], queryFn: clientsApi.list, ...prefetchOptions }),
       queryClient.prefetchQuery({ queryKey: ["leads"], queryFn: leadsApi.list, ...prefetchOptions }),
@@ -40,7 +40,7 @@ export function prefetchRouteData(path: string, queryClient: QueryClient, busine
     return;
   }
 
-  if (path.startsWith("/dashboard/deals")) {
+  if (path.startsWith("/app/deals")) {
     void Promise.allSettled([
       queryClient.prefetchQuery({ queryKey: ["deals"], queryFn: dealsApi.list, ...prefetchOptions }),
       queryClient.prefetchQuery({ queryKey: ["pipelines"], queryFn: pipelinesApi.list, ...prefetchOptions }),
@@ -50,7 +50,7 @@ export function prefetchRouteData(path: string, queryClient: QueryClient, busine
     return;
   }
 
-  if (path.startsWith("/dashboard/conversations")) {
+  if (path.startsWith("/app/conversations")) {
     const summaryKey = ["inbox-summary", businessId];
     const conversationFilters = normalizeFilters({});
     void Promise.allSettled([
@@ -60,17 +60,17 @@ export function prefetchRouteData(path: string, queryClient: QueryClient, busine
     return;
   }
 
-  if (path.startsWith("/dashboard/tasks")) {
+  if (path.startsWith("/app/tasks")) {
     void queryClient.prefetchQuery({ queryKey: ["tasks"], queryFn: tasksApi.list, ...prefetchOptions });
     return;
   }
 
-  if (path.startsWith("/dashboard/ai-agents")) {
+  if (path.startsWith("/app/ai-agents")) {
     void queryClient.prefetchQuery({ queryKey: ["bot-conversations"], queryFn: botConversationsApi.list, ...prefetchOptions });
     return;
   }
 
-  if (path.startsWith("/dashboard/settings")) {
+  if (path.startsWith("/app/settings")) {
     void queryClient.prefetchQuery({ queryKey: ["notifications"], queryFn: notificationsApi.list, ...prefetchOptions });
   }
 }

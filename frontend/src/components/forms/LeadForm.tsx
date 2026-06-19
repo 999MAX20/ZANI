@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
 import { z } from "zod";
 
-import { leadsApi } from "../../api/leads";
+import { leadsApi, type LeadCreatePayload } from "../../api/leads";
 import { useI18n } from "../../lib/i18n";
 import type { DuplicateClient, Id, Lead, Service, Client, TeamMember } from "../../types";
 import { Button } from "../ui/Button";
@@ -16,7 +16,6 @@ function createSchema(t: (key: string) => string) {
     client: z.coerce.number().min(1, t("leadForm.selectClientError")),
     service: z.coerce.number().optional(),
     source: z.string(),
-    status: z.string(),
     message: z.string().optional(),
     responsible_user: z.coerce.number().optional(),
   });
@@ -38,7 +37,7 @@ export function LeadForm({
   services: Service[];
   teamMembers?: TeamMember[];
   initial?: Lead;
-  onSubmit: (payload: Partial<Lead>) => Promise<unknown>;
+  onSubmit: (payload: LeadCreatePayload) => Promise<unknown>;
   onOpenClient?: (id: Id) => void;
 }) {
   const { t } = useI18n();
@@ -52,7 +51,6 @@ export function LeadForm({
       client: initial?.client || clients[0]?.id || 0,
       service: initial?.service || undefined,
       source: initial?.source || "manual",
-      status: initial?.status || "new",
       message: initial?.message || "",
       responsible_user: initial?.responsible_user || undefined,
     },
@@ -81,12 +79,12 @@ export function LeadForm({
   }, [businessId, clientId, initial?.id]);
 
   return (
-    <form className="grid gap-4 rounded-3xl border border-slate-100 bg-white p-4 shadow-sm sm:p-5" onSubmit={form.handleSubmit((values) => onSubmit({ ...values, business: businessId, service: values.service || null, responsible_user: values.responsible_user || null } as Partial<Lead>))}>
+    <form className="grid gap-4 rounded-3xl border border-slate-100 bg-white p-4 shadow-sm sm:p-5" onSubmit={form.handleSubmit((values) => onSubmit({ ...values, business: businessId, source: values.source as Lead["source"], service: values.service || null, responsible_user: values.responsible_user || null }))}>
       {!hasClients ? (
         <div className="rounded-3xl border border-amber-100 bg-amber-50/80 p-4 text-sm text-amber-900">
           <p className="font-bold">{t("leadForm.needClientTitle")}</p>
           <p className="mt-1 leading-6 text-amber-800">{t("leadForm.needClientText")}</p>
-          <Link className="mt-3 inline-flex font-bold text-amber-950 underline-offset-4 hover:underline" to="/dashboard/clients?create=1">
+          <Link className="mt-3 inline-flex font-bold text-amber-950 underline-offset-4 hover:underline" to="/app/clients?create=1">
             {t("clients.create")}
           </Link>
         </div>
@@ -95,7 +93,7 @@ export function LeadForm({
         <div className="rounded-3xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-600">
           <p className="font-bold text-midnight">{t("leadForm.serviceLaterTitle")}</p>
           <p className="mt-1 leading-6">{t("leadForm.serviceLaterText")}</p>
-          <Link className="mt-3 inline-flex font-bold text-brand-700 underline-offset-4 hover:underline" to="/dashboard/services">
+          <Link className="mt-3 inline-flex font-bold text-brand-700 underline-offset-4 hover:underline" to="/app/services">
             {t("services.title")}
           </Link>
         </div>
@@ -123,25 +121,15 @@ export function LeadForm({
         </div>
       ) : null}
       <Select label={t("appointment.service")} options={[{ value: "", label: t("leadForm.noService") }, ...services.map((service) => ({ value: service.id, label: service.name }))]} {...form.register("service")} />
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Select label={t("appointment.source")} options={[
-          { value: "manual", label: t("clients.sourceManual") },
-          { value: "website", label: t("clients.sourceWebsite") },
-          { value: "landing", label: t("leadForm.sourceLanding") },
-          { value: "telegram", label: "Telegram" },
-          { value: "whatsapp", label: "WhatsApp" },
-          { value: "instagram", label: "Instagram" },
-          { value: "other", label: t("clients.sourceOther") },
-        ]} {...form.register("source")} />
-        <Select label={t("settings.status")} options={[
-          { value: "new", label: t("status.new") },
-          { value: "in_progress", label: t("status.in_progress") },
-          { value: "appointment_created", label: t("status.appointment_created") },
-          { value: "contacted", label: t("status.contacted") },
-          { value: "closed", label: t("status.closed") },
-          { value: "lost", label: t("status.lost") },
-        ]} {...form.register("status")} />
-      </div>
+      <Select label={t("appointment.source")} options={[
+        { value: "manual", label: t("clients.sourceManual") },
+        { value: "website", label: t("clients.sourceWebsite") },
+        { value: "landing", label: t("leadForm.sourceLanding") },
+        { value: "telegram", label: "Telegram" },
+        { value: "whatsapp", label: "WhatsApp" },
+        { value: "instagram", label: "Instagram" },
+        { value: "other", label: t("clients.sourceOther") },
+      ]} {...form.register("source")} />
       {teamMembers.length ? (
         <Select
           label={t("leads.responsible")}

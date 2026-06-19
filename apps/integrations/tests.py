@@ -994,7 +994,7 @@ class WhatsAppIntegrationFoundationTests(TestCase):
 
         response = self.api.post(
             "/api/business-connectors/whatsapp-embedded-signup/start/",
-            {"business": self.business.id, "redirect_uri": "https://app.zani.kz/dashboard/integrations"},
+            {"business": self.business.id, "redirect_uri": "https://app.zani.kz/app/integrations"},
             format="json",
         )
 
@@ -1030,7 +1030,7 @@ class WhatsAppIntegrationFoundationTests(TestCase):
 
         response = self.api.post(
             "/api/business-connectors/whatsapp-embedded-signup/start/",
-            {"business": self.business.id, "redirect_uri": "https://evil.example/dashboard/integrations"},
+            {"business": self.business.id, "redirect_uri": "https://evil.example/app/integrations"},
             format="json",
         )
 
@@ -1046,7 +1046,7 @@ class WhatsAppIntegrationFoundationTests(TestCase):
         self.api.force_authenticate(self.owner)
         start_response = self.api.post(
             "/api/business-connectors/whatsapp-embedded-signup/start/",
-            {"business": self.business.id, "redirect_uri": "https://app.zani.kz/dashboard/integrations"},
+            {"business": self.business.id, "redirect_uri": "https://app.zani.kz/app/integrations"},
             format="json",
         )
 
@@ -1060,7 +1060,7 @@ class WhatsAppIntegrationFoundationTests(TestCase):
                     "business": self.business.id,
                     "code": "embedded-code",
                     "state": start_response.data["state"],
-                    "redirect_uri": "https://app.zani.kz/dashboard/integrations",
+                    "redirect_uri": "https://app.zani.kz/app/integrations",
                     "phone_number_id": "phone-embedded",
                     "waba_id": "waba-embedded",
                     "display_phone_number": "+77015550101",
@@ -1090,7 +1090,7 @@ class WhatsAppIntegrationFoundationTests(TestCase):
         self.api.force_authenticate(self.owner)
         start_response = self.api.post(
             "/api/business-connectors/whatsapp-embedded-signup/start/",
-            {"business": self.business.id, "redirect_uri": "https://app.zani.kz/dashboard/integrations"},
+            {"business": self.business.id, "redirect_uri": "https://app.zani.kz/app/integrations"},
             format="json",
         )
 
@@ -1100,7 +1100,7 @@ class WhatsAppIntegrationFoundationTests(TestCase):
                 "business": self.business.id,
                 "code": "embedded-code",
                 "state": start_response.data["state"],
-                "redirect_uri": "https://app.zani.kz/dashboard/integrations/other",
+                "redirect_uri": "https://app.zani.kz/app/integrations/other",
                 "phone_number_id": "phone-embedded",
             },
             format="json",
@@ -1359,7 +1359,7 @@ class InstagramIntegrationFoundationTests(TestCase):
 
         response = self.api.post(
             "/api/business-connectors/instagram-oauth/start/",
-            {"business": self.business.id, "redirect_uri": "http://localhost:5174/dashboard/integrations?zani_provider=instagram"},
+            {"business": self.business.id, "redirect_uri": "http://localhost:5174/app/integrations?zani_provider=instagram"},
             format="json",
         )
 
@@ -1387,7 +1387,7 @@ class InstagramIntegrationFoundationTests(TestCase):
 
         response = self.api.post(
             "/api/business-connectors/instagram-oauth/start/",
-            {"business": self.business.id, "redirect_uri": "https://evil.example/dashboard/integrations"},
+            {"business": self.business.id, "redirect_uri": "https://evil.example/app/integrations"},
             format="json",
         )
 
@@ -1413,7 +1413,7 @@ class InstagramIntegrationFoundationTests(TestCase):
         self.api.force_authenticate(self.owner)
         start = self.api.post(
             "/api/business-connectors/instagram-oauth/start/",
-            {"business": self.business.id, "redirect_uri": "http://localhost:5174/dashboard/integrations?zani_provider=instagram"},
+            {"business": self.business.id, "redirect_uri": "http://localhost:5174/app/integrations?zani_provider=instagram"},
             format="json",
         )
 
@@ -1423,7 +1423,7 @@ class InstagramIntegrationFoundationTests(TestCase):
                 "business": self.business.id,
                 "code": "oauth-code",
                 "state": start.data["state"],
-                "redirect_uri": "http://localhost:5174/dashboard/integrations?zani_provider=instagram",
+                "redirect_uri": "http://localhost:5174/app/integrations?zani_provider=instagram",
             },
             format="json",
         )

@@ -1,1221 +1,556 @@
-import { ArrowRight, Bot, CalendarCheck, CheckCircle2, Clock3, MessageSquareText, MousePointerClick, Send, ShieldCheck, Sparkles, Users, WalletCards } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 
-import { billingApi } from "../../api/billing";
-import { Button } from "../../components/ui/Button";
-import { Card, CardBody } from "../../components/ui/Card";
-import { ErrorState, LoadingState } from "../../components/ui/StateViews";
-import { useI18n } from "../../lib/i18n";
+import "./publicHeroV1.css";
 
-const messengerCases = [
-  {
-    role: "AI-администратор",
-    channel: "WhatsApp",
-    accent: "bg-emerald-500",
-    business: "Салон красоты",
-    lead: "Здравствуйте, есть окно на окрашивание завтра после 17:00?",
-    bot: "Здравствуйте! Да, есть 17:30 и 19:00. Подскажите длину волос и имя мастера, если есть предпочтение.",
-    result: "Заявка создана, клиент квалифицирован, менеджеру поставлена задача подтвердить запись.",
-  },
-  {
-    role: "AI-продавец",
-    channel: "Instagram",
-    accent: "bg-fuchsia-500",
-    business: "Онлайн-магазин",
-    lead: "Цена этого комплекта? И можно доставку сегодня?",
-    bot: "Комплект стоит 24 900 ₸. Доставка сегодня возможна по Алматы до 20:00. Оформить заказ на этот размер?",
-    result: "AI отвечает по каталогу, фиксирует интерес и переводит диалог в сделку.",
-  },
-  {
-    role: "AI-квалификатор",
-    channel: "Telegram",
-    accent: "bg-sky-500",
-    business: "Образовательный центр",
-    lead: "Хочу узнать про курс английского для подростка",
-    bot: "Подберу группу. Сколько лет ученику, какой уровень сейчас и удобны будни или выходные?",
-    result: "Лид попадает в CRM с возрастом, интересом, уровнем и следующим шагом.",
-  },
-  {
-    role: "AI-консультант",
-    channel: "Чат на сайте",
-    accent: "bg-indigo-500",
-    business: "B2B-услуги",
-    lead: "Нужно внедрить CRM для отдела продаж. Сколько стоит?",
-    bot: "Стоимость зависит от числа менеджеров и интеграций. Могу задать 3 вопроса и передать заявку специалисту с готовым брифом.",
-    result: "Zani собирает бриф, создает сделку и показывает приоритет менеджеру.",
-  },
-  {
-    role: "AI-контролер",
-    channel: "WhatsApp",
-    accent: "bg-amber-500",
-    business: "Клиника",
-    lead: "Я писала вчера по консультации, мне никто не ответил",
-    bot: "Извините за ожидание. Я вижу ваш запрос и сейчас уточню удобное время консультации, чтобы администратор сразу подтвердил запись.",
-    result: "AI фиксирует просрочку, поднимает приоритет заявки и отправляет владельцу сигнал.",
-  },
+const heroBase = "/backgrounds/hero/v2";
+const legacyHeroBase = "/backgrounds/hero/layers";
+const aiBotsBase = "/backgrounds/ai-bots";
+
+const layers = {
+  scene: `${heroBase}/hero-scene-formatted.webp`,
+  berkut: `${heroBase}/berkut.webp`,
+};
+
+const aiBotsAssets = {
+  background: `${aiBotsBase}/brick-bg.webp`,
+  monkey: `${aiBotsBase}/monkey-phone.webp`,
+  ownerMonkey: `${aiBotsBase}/owner-monkey-smile.webp`,
+  bubble: `${aiBotsBase}/speech-bubble.webp`,
+};
+
+const moneyLeads = [
+  { id: "whatsapp", src: `${legacyHeroBase}/lead-whatsapp.png`, alt: "Заявка из WhatsApp", delay: 0 },
+  { id: "telegram", src: `${legacyHeroBase}/lead-telegram.png`, alt: "Заявка из Telegram", delay: 2.6 },
+  { id: "instagram", src: `${legacyHeroBase}/lead-instagram.png`, alt: "Заявка из Instagram", delay: 5.2 },
+  { id: "site", src: `${legacyHeroBase}/lead-site.png`, alt: "Заявка с сайта", delay: 7.8 },
+  { id: "kaspi", src: `${legacyHeroBase}/lead-kaspi.png`, alt: "Заявка из Kaspi", delay: 10.4 },
+];
+
+const resultPopups = ["+85 000 ₸", "+125 000 ₸", "Клиент записан", "Сделка создана", "Оплата получена"];
+
+const featureCards = [
+  { title: "CRM бесплатно", text: "Навсегда.\nБез скрытых платежей.", metric: "0 ₸ скрытых платежей" },
+  { title: "Ваши данные в безопасности", text: "Серверы в Казахстане.\nРезервное копирование.", metric: "KZ серверы" },
+  { title: "Боты и AI работают 24/7", text: "Без выходных.\nБез перерывов.", metric: "24/7" },
+  { title: "Рост прибыли", text: "Аналитика.\nАвтоматизация.\nРекомендации.", metric: "+ прибыль" },
+];
+
+const aiBotsFeatures = [
+  { title: "Отвечают мгновенно 24/7", text: "Не теряют ни одного клиента" },
+  { title: "Записывают и напоминают", text: "Клиент не забудет о визите" },
+  { title: "Автоматически создают лиды", text: "Вся информация в CRM" },
+  { title: "Передают менеджеру", text: "Ничего не теряется" },
+  { title: "Доводят до оплаты", text: "Больше записей и выручки" },
+];
+
+const aiBotCards = [
+  { title: "Консультант-бот", text: "Отвечает на вопросы\nи квалифицирует клиентов", tone: "yellow" },
+  { title: "Запись-бот", text: "Записывает клиентов\nи подбирает удобное время", tone: "purple" },
+  { title: "Напоминание-бот", text: "Отправляет напоминания\nи снижает количество неявок", tone: "green" },
+  { title: "Оплата-бот", text: "Отправляет ссылки\nна оплату и проверяет платежи", tone: "blue" },
+];
+
+const integrationItems = [
+  { name: "WhatsApp", detail: "Business", mark: "W", tone: "green" },
+  { name: "Instagram", detail: "Direct", mark: "I", tone: "pink" },
+  { name: "Telegram", detail: "бот", mark: "T", tone: "blue" },
+  { name: "Сайт", detail: "Форма", mark: "S", tone: "white" },
+  { name: "Kaspi", detail: "Магазин", mark: "K", tone: "red" },
+  { name: "API", detail: "и другие", mark: "API", tone: "dark" },
 ];
 
 const pipelineSteps = [
-  { label: "Сообщение", text: "Клиент пишет в WhatsApp", icon: Send },
-  { label: "AI-ответ", text: "Бот уточняет детали и снимает возражения", icon: Bot },
-  { label: "Заявка", text: "CRM создает лид с источником и интересом", icon: Users },
-  { label: "Сделка", text: "Лид переходит в этап «Готов к записи»", icon: WalletCards },
-  { label: "Задача", text: "Менеджер получает следующий шаг", icon: CalendarCheck },
+  { title: "Запись создана", rows: ["Пациент: Андрей", "Телефон: +7 777 123 45 67", "Услуга: Первый прием", "Время: 18:00", "Источник: WhatsApp"], time: "14:33" },
+  { title: "Лид в CRM", rows: ["Статус: Записан", "Менеджер: Назначен автоматически", "Приоритет: Высокий"], time: "14:33" },
+  { title: "Напоминания отправлены", rows: ["За 24 часа", "За 3 часа", "За 1 час"], time: "14:35" },
+  { title: "Пациент пришел", rows: ["Визит подтвержден"], time: "18:02" },
+  { title: "Прием проведен", rows: ["Услуга: Лечение зуба", "Врач: Данияр Р.", "Статус: Завершен"], time: "19:05" },
+  { title: "Сделка завершена", rows: ["Сумма:", "85 000 ₸", "Статус: Оплачено"], time: "19:15", success: true },
 ];
 
-const crmTabs = [
-  {
-    name: "Сообщения",
-    title: "Входящие из всех каналов",
-    items: ["WhatsApp: запись на окрашивание", "Instagram: вопрос по доставке", "Telegram: подбор курса"],
-  },
-  {
-    name: "Заявки",
-    title: "AI уже собрал контекст",
-    items: ["Алина: окрашивание, завтра 17:30", "Руслан: комплект L, доставка сегодня", "Дина: курс английского, 13 лет"],
-  },
-  {
-    name: "Сделки",
-    title: "Воронка обновляется сама",
-    items: ["Готов к записи", "Ожидает оплату", "Нужен звонок менеджера"],
-  },
+const aiMetrics = [
+  { value: "98%", label: "Заявок обрабатываются автоматически" },
+  { value: "-70%", label: "Времени на обработку заявок" },
+  { value: "+45%", label: "Больше записей на прием" },
+  { value: "24/7", label: "Боты работают без выходных" },
 ];
 
-const crmScreens = [
-  {
-    name: "Заявки",
-    title: "Клиент из WhatsApp сразу становится заявкой",
-    src: "/landing/screens/leads.png",
-    note: "Владелец видит источник, ответственного, следующий шаг и AI-сводку по каждой заявке.",
-    callout: "Менеджер не ответил 18 мин",
-    marker: "left-[66%] top-[58%]",
-  },
-  {
-    name: "Сообщения",
-    title: "Все диалоги и контроль бота в одном окне",
-    src: "/landing/screens/messages.png",
-    note: "Команда видит, кто отвечает клиенту, где нужен оператор и где AI может продолжить диалог.",
-    callout: "AI предложил ответ",
-    marker: "left-[74%] top-[17%]",
-  },
-  {
-    name: "Контроль владельца",
-    title: "Деньги в работе видны в воронке",
-    src: "/landing/screens/deals.png",
-    note: "Заявки становятся сделками, а владелец видит, где зависают деньги и менеджеры.",
-    callout: "Сделка: 120 000 ₸",
-    marker: "left-[36%] top-[35%]",
-  },
+const ownerSignals = [
+  { title: "Реальные данные", text: "в режиме времени" },
+  { title: "AI находит проблемы", text: "и точки роста" },
+  { title: "Контроль команды", text: "и качества работы" },
+  { title: "Больше прибыли", text: "меньше потерь" },
 ];
 
-const setupSteps = [
-  ["01", "Подключаем каналы", "WhatsApp, Telegram, Instagram или сайт, где уже приходят входящие заявки."],
-  ["02", "Настраиваем заявки и воронку", "Под вашу сферу, услуги, этапы продаж и ответственных менеджеров."],
-  ["03", "Запускаем AI-ответы", "Сценарии для первых сообщений, записи, консультации и передачи менеджеру."],
-  ["04", "Показываем владельцу контроль", "Дашборд, заявки, просрочки, сделки и ежедневные AI-сигналы."],
+const ownerKpis = [
+  { label: "Выручка сегодня", value: "1 245 000 ₸", change: "↗ +42%" },
+  { label: "Новые заявки", value: "34", change: "↗ +12%" },
+  { label: "Без ответа", value: "14", change: "↗ -20%", alert: true },
+  { label: "Конверсия", value: "5%", change: "↗ +1.3%" },
 ];
 
-const problemCards = [
-  ["Заявки размазаны по чатам", "WhatsApp, Instagram и Telegram живут отдельно, а владелец не видит общий поток."],
-  ["Менеджеры отвечают с задержкой", "Клиент ждет, уходит к конкуренту, а проблема становится заметна слишком поздно."],
-  ["Деньги зависают в сделках", "Нет ясности, какие заявки горячие, кто отвечает и где нужен follow-up."],
+const ownerProblems = [
+  { title: "14 клиентов ждут ответа", text: "Потенциально потеряно", value: "420 000 ₸", tone: "red" },
+  { title: "Администратор Мария", text: "Отвечает на 42% медленнее остальных", tone: "yellow" },
+  { title: "3 заявки без статуса", text: "Уточните и не теряйте клиентов", tone: "yellow" },
 ];
 
-const ownerCards = [
-  ["Заявки по каналам", "WhatsApp, Instagram, Telegram и сайт в единой картине."],
-  ["Скорость ответа менеджеров", "Кто отвечает быстро, а кто теряет клиентов."],
-  ["Сделки и деньги в работе", "Сколько заявок дошли до продажи и где зависли."],
-  ["AI-сигналы", "3 клиента без ответа, 2 сделки зависли, менеджер не закрыл задачу."],
+const ownerSources = [
+  { name: "Instagram", value: "45%" },
+  { name: "WhatsApp", value: "30%" },
+  { name: "Telegram", value: "15%" },
+  { name: "Сайт", value: "7%" },
+  { name: "Звонки", value: "3%" },
 ];
 
-const audienceCards = [
-  ["Стоматологии и клиники", "Запись, консультации, повторные визиты, контроль администраторов."],
-  ["Салоны и услуги", "WhatsApp/Instagram-заявки, расписание, напоминания, повторные продажи."],
-  ["Магазины и шоурумы", "Диалоги, предзаказы, клиенты, статусы, возвраты и follow-up."],
-  ["Образовательные центры", "Лиды, менеджеры, пробные занятия, оплаты и повторные касания."],
+const ownerStages = [
+  { name: "Новая заявка", value: "100% (234)", width: "100%" },
+  { name: "В работе", value: "60% (140)", width: "60%" },
+  { name: "Предложение", value: "35% (82)", width: "35%" },
+  { name: "Переговоры", value: "20% (47)", width: "20%" },
+  { name: "Сделка", value: "5% (12)", width: "5%" },
 ];
 
-const beforeAfterRows = [
-  ["Заявки в разных мессенджерах", "Все заявки в одном кабинете"],
-  ["Клиенты ждут ответа", "AI отвечает сразу"],
-  ["Менеджеры забывают follow-up", "ZANI напоминает и контролирует"],
-  ["Владелец узнает проблемы поздно", "Владелец видит сигналы сразу"],
-  ["CRM ведут вручную", "Заявки создаются автоматически"],
+const ownerTeam = [
+  { name: "Алексей", value: "78 заявок", percent: "92%" },
+  { name: "Мария", value: "54 заявки", percent: "58%" },
+  { name: "Дмитрий", value: "48 заявок", percent: "85%" },
+  { name: "София", value: "32 заявки", percent: "90%" },
 ];
 
-const pilotIncludes = [
-  "Подключение 1-2 каналов",
-  "Настройка CRM-воронки",
-  "Кабинет владельца",
-  "AI-подсказки",
-  "Тестовые сценарии ответов",
-  "Базовая аналитика",
-  "Сопровождение запуска",
-];
-
-const metricCards = [
-  ["Контроль", "кто отвечает и где просрочки"],
-  ["Скорость", "AI принимает первое сообщение"],
-  ["Деньги", "сделки и заявки в работе"],
-];
-
-const impactMetrics = [
-  ["8 сек", "AI принимает первое сообщение быстрее менеджера"],
-  ["24/7", "входящие не остаются без первичного ответа"],
-  ["1 кабинет", "диалоги, заявки, сделки и менеджеры вместе"],
-  ["3 дня", "обычный срок запуска пилота"],
-];
-
-const capabilityCards = [
-  ["Отвечает клиентам 24/7", "WhatsApp, Instagram, Telegram и сайт работают как единая система входящих."],
-  ["Создает заявки автоматически", "Клиент попадает в CRM без ручного копирования сообщений и контактов."],
-  ["Контролирует менеджеров", "ZANI видит задержки, просрочки и забытые follow-up по каждой заявке."],
-  ["Двигает сделки", "Заявки переходят по этапам, а деньги в работе становятся видны владельцу."],
-  ["Дает AI-подсказки", "Следующий шаг: написать, позвонить, напомнить, закрыть сделку."],
-  ["Показывает AI-сигналы", "Коротко подсвечивает, что требует внимания сегодня."],
-];
-
-const trustCards = [
-  ["Работаем на ваших реальных заявках", "Пилот показывает не абстрактную демо-CRM, а входящие из ваших каналов."],
-  ["Показываем реальные просрочки", "Где клиент ждал, кто не ответил и какая сделка зависла."],
-  ["Считаем деньги в вашей воронке", "Смотрим, сколько заявок может быть потеряно из-за скорости и follow-up."],
-  ["Не ломаем текущую систему", "Начинаем с входящих и контроля, без замены всего процесса продаж."],
-];
-
-const faqItems = [
-  ["Нужно ли менять текущую CRM?", "Нет. Пилот можно начать с входящих заявок и контроля менеджеров без полной перестройки процессов."],
-  ["Какие каналы можно подключить?", "WhatsApp, Telegram, Instagram и сайт. Для старта лучше выбрать 1-2 канала, где уже есть входящие заявки."],
-  ["AI заменяет менеджера?", "Нет. Он принимает первые сообщения, помогает менеджеру и подсвечивает владельцу проблемы в заявках и сделках."],
-  ["Сколько времени занимает запуск?", "Обычно пилот можно запустить за 3 дня, если есть доступ к каналам и понятная воронка продаж."],
-  ["Что увидит владелец?", "Заявки, сделки, скорость ответа, просрочки, задачи менеджеров и AI-сигналы по проблемным местам."],
-  ["Что нужно для старта?", "Каналы, список услуг или товаров, этапы воронки и ответственные менеджеры."],
-];
-
-function Reveal({ children, className = "", delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
+function PublicLandingHeader({ navHidden }: { navHidden: boolean }) {
   return (
-    <motion.div
-      className={className}
-      initial={{ opacity: 0, y: 22 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-90px" }}
-      transition={{ duration: 0.48, delay }}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
-function SignupButton({ children = "Запустить пилот" }: { children?: string }) {
-  return (
-    <Link to="/signup">
-      <Button variant="ai" size="lg" className="group relative w-full overflow-hidden rounded-full px-6 sm:w-auto">
-        <span className="absolute inset-y-0 -left-10 w-8 rotate-12 bg-white/30 opacity-0 blur-sm transition-all duration-700 group-hover:left-[115%] group-hover:opacity-100" />
-        {children}
-        <ArrowRight size={18} />
-      </Button>
-    </Link>
-  );
-}
-
-function MessengerBubble({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <p className={`max-w-[88%] rounded-[1.15rem] px-4 py-3 text-sm leading-6 shadow-soft ${className}`}>{children}</p>;
-}
-
-function LandingHero() {
-  return (
-    <section className="relative overflow-hidden bg-[#f7f8fb] px-4 pb-16 pt-8 sm:pb-20">
-      <div className="absolute inset-x-0 top-0 h-80 bg-[radial-gradient(circle_at_50%_0%,rgba(79,70,229,0.16),transparent_62%)]" />
-      <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-white/80 to-transparent" />
-      <div className="relative mx-auto grid max-w-7xl gap-12 pt-10 lg:grid-cols-[0.84fr_1.16fr] lg:items-center lg:pt-16">
-        <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }}>
-          <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-brand-700 shadow-soft sm:text-sm">
-            <Sparkles size={16} />
-            <span className="truncate">AI-система контроля заявок и продаж</span>
-          </div>
-          <h1 className="mt-6 max-w-4xl text-4xl font-semibold leading-[0.99] tracking-tight text-midnight sm:text-6xl lg:text-[4rem]">
-            ZANI показывает владельцу, где бизнес теряет заявки и деньги
-          </h1>
-          <p className="mt-6 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">
-            Все диалоги, заявки, менеджеры, сделки и AI-сигналы в одном кабинете. Владелец видит, кто отвечает, где клиенты ждут и сколько денег уже в работе.
-          </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <SignupButton />
-            <a href="#crm-screens" className="inline-flex min-h-12 items-center justify-center rounded-full border border-slate-300 bg-white px-6 text-base font-semibold text-midnight shadow-soft transition hover:border-slate-400">
-              Посмотреть демо
-            </a>
-          </div>
-          <p className="mt-4 text-sm font-semibold text-slate-500">Подключение без сложной внедренческой системы. Первый запуск — за 3 дня.</p>
-          <div className="mt-6 flex flex-wrap gap-2">
-            {["WhatsApp", "Instagram", "Telegram", "Сайт", "CRM"].map((channel) => (
-              <span key={channel} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 shadow-soft">
-                {channel}
-              </span>
-            ))}
-          </div>
-          <div className="mt-8 grid max-w-2xl gap-3 sm:grid-cols-3">
-            {metricCards.map(([value, label]) => (
-              <motion.div key={value} whileHover={{ y: -3 }} className="rounded-card border border-slate-200 bg-white/92 p-4 shadow-soft backdrop-blur">
-                <p className="text-2xl font-semibold tabular-nums text-midnight">{value}</p>
-                <p className="mt-2 text-sm leading-5 text-slate-500">{label}</p>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-
-        <motion.div
-          className="relative"
-          initial={{ opacity: 0, scale: 0.96, y: 24 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ duration: 0.65, delay: 0.08 }}
-        >
-          <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 4, repeat: Infinity }} className="absolute -right-6 -top-6 hidden rounded-card border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-panel lg:block">
-            <span className="mr-2 inline-block h-2 w-2 rounded-full bg-emerald-500" />
-            Новая заявка из WhatsApp
-          </motion.div>
-          <motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 4.8, repeat: Infinity }} className="absolute -bottom-5 left-8 z-10 hidden rounded-card border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-panel lg:block">
-            <span className="mr-2 inline-block h-2 w-2 rounded-full bg-brand-600" />
-            Сделка: 120 000 ₸
-          </motion.div>
-          <motion.div animate={{ y: [0, -5, 0] }} transition={{ duration: 5.3, repeat: Infinity }} className="absolute right-12 top-24 z-10 hidden rounded-card border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 shadow-panel xl:block">
-            Менеджер не ответил 18 мин
-          </motion.div>
-          <div className="overflow-hidden rounded-[1.35rem] border border-slate-200 bg-white shadow-panel ring-1 ring-slate-100">
-            <div className="grid md:grid-cols-[220px_1fr]">
-              <aside className="hidden border-r border-slate-200 bg-slate-50 p-4 md:block">
-                <div className="mb-5 flex items-center gap-3">
-                  <div className="grid h-10 w-10 place-items-center rounded-card bg-primary-gradient text-white">
-                    <Sparkles size={18} />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-midnight">Zani</p>
-                    <p className="text-xs text-slate-500">Sales workspace</p>
-                  </div>
-                </div>
-                {["Сообщения", "Заявки", "Сделки", "Задачи", "AI-боты"].map((item, index) => (
-                  <div key={item} className={`mb-2 rounded-card px-3 py-2 text-sm font-semibold ${index === 0 ? "bg-midnight text-white" : "text-slate-600"}`}>
-                    {item}
-                  </div>
-                ))}
-              </aside>
-              <div>
-                <CrmShowcase />
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    </section>
-  );
-}
-
-function CrmShowcase() {
-  const [activeTab, setActiveTab] = useState(0);
-
-  return (
-    <div className="min-h-[520px] p-4 sm:p-5">
-      <div className="flex flex-col justify-between gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Live CRM demo</p>
-          <h2 className="mt-1 text-xl font-semibold text-midnight">Входящая заявка из WhatsApp</h2>
-        </div>
-        <div className="rounded-full bg-emerald-50 px-3 py-1 text-sm font-bold text-emerald-700">AI online</div>
-      </div>
-
-      <div className="mt-4 flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-        {crmTabs.map((tab, index) => (
-          <button
-            key={tab.name}
-            className={`min-h-10 whitespace-nowrap rounded-full px-4 text-sm font-semibold transition ${activeTab === index ? "bg-midnight text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
-            onClick={() => setActiveTab(index)}
-          >
-            {tab.name}
-          </button>
+    <header className={`zani-public-header${navHidden ? " zani-public-header--nav-hidden" : ""}`}>
+      <span className="zani-public-header__spacer" aria-hidden="true" />
+      <nav className="zani-public-header__nav" aria-label="Главная навигация">
+        {["Возможности", "Интеграции", "Тарифы", "Кейсы", "О нас"].map((item) => (
+          <a key={item} href={`#${item.toLowerCase()}`}>
+            {item}
+          </a>
         ))}
+      </nav>
+      <div className="zani-public-header__actions">
+        <Link to="/login" className="zani-public-header__login">
+          Войти
+        </Link>
+        <Link to="/contacts" className="zani-public-header__try">
+          Попробовать бесплатно
+        </Link>
       </div>
+    </header>
+  );
+}
 
-      <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_0.95fr]">
-        <motion.div layout className="rounded-card border border-slate-200 bg-slate-50 p-4">
-          <div className="flex items-center justify-between">
-            <p className="font-semibold text-midnight">{crmTabs[activeTab].title}</p>
-            <Clock3 size={17} className="text-slate-400" />
-          </div>
-          <div className="mt-4 space-y-3">
-            {crmTabs[activeTab].items.map((item, index) => (
-              <motion.div
-                key={item}
-                className="rounded-card border border-slate-200 bg-white p-3 shadow-soft"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.08 }}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-semibold text-midnight">{item}</p>
-                  <span className="rounded-full bg-primary-50 px-2 py-1 text-xs font-bold text-brand-700">new</span>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-
-        <div className="rounded-card border border-slate-200 bg-white p-4 shadow-soft">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-slate-500">AI-цепочка</p>
-              <p className="mt-1 font-semibold text-midnight">WhatsApp → заявка → сделка</p>
-            </div>
-            <MousePointerClick size={18} className="text-brand-600" />
-          </div>
-          <div className="mt-5 space-y-3">
-            {pipelineSteps.map((step, index) => {
-              const Icon = step.icon;
-              return (
-                <motion.div
-                  key={step.label}
-                  className="flex items-start gap-3 rounded-card border border-slate-200 bg-slate-50 p-3"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.35, delay: 0.2 + index * 0.13, repeat: Infinity, repeatDelay: 5 }}
-                >
-                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-card bg-white text-brand-700 shadow-soft">
-                    <Icon size={17} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-midnight">{step.label}</p>
-                    <p className="mt-0.5 text-xs leading-5 text-slate-500">{step.text}</p>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+function HeroMoneyFlow() {
+  return (
+    <div className="zani-v2__money-flow" aria-hidden="true">
+      <div className="zani-v2__trail zani-v2__trail--main" />
+      <div className="zani-v2__trail zani-v2__trail--soft" />
+      <div className="zani-v2__trail zani-v2__trail--thin" />
+      {moneyLeads.map((lead) => (
+        <motion.img
+          key={lead.id}
+          className={`zani-v2__money-lead zani-v2__money-lead--${lead.id}`}
+          src={lead.src}
+          alt={lead.alt}
+          animate={{
+            opacity: [0, 1, 1, 0],
+            x: [0, 96, 210, 330],
+            y: [0, -20, 32, 126],
+            rotate: [-4, -1, 3, -2],
+            scale: [0.92, 1.04, 1.02, 0.96],
+          }}
+          transition={{
+            delay: lead.delay,
+            duration: 1.8,
+            ease: [0.2, 0.78, 0.22, 1],
+            repeat: Infinity,
+            repeatDelay: 11.2,
+            times: [0, 0.28, 0.76, 1],
+          }}
+        />
+      ))}
+      {Array.from({ length: 14 }).map((_, index) => (
+        <span
+          key={index}
+          className={`zani-v2__flow-particle zani-v2__flow-particle--${(index % 4) + 1}`}
+          style={{ animationDelay: `${index * 0.34}s` }}
+        />
+      ))}
+      <span className="zani-v2__spark zani-v2__spark--start" />
+      <span className="zani-v2__spark zani-v2__spark--finish" />
+      <span className="zani-v2__dust zani-v2__dust--one" />
+      <span className="zani-v2__dust zani-v2__dust--two" />
     </div>
   );
 }
 
-function DialogExamples() {
-  const [active, setActive] = useState(0);
-  const [visibleStep, setVisibleStep] = useState(0);
-  const current = messengerCases[active];
-  const animatedSteps = useMemo(
-    () => [
-      { kind: "client", text: current.lead },
-      { kind: "bot", text: current.bot },
-      { kind: "client", text: "Да, давайте. Меня зовут Алина, номер этот." },
-      { kind: "bot", text: "Готово. Создаю заявку в CRM, закрепляю источник и ставлю менеджеру следующий шаг." },
-      { kind: "event", text: "Заявка создана" },
-      { kind: "event", text: "Сделка обновлена" },
-      { kind: "event", text: "Задача менеджеру" },
-    ],
-    [current],
-  );
-  const progress = Math.min(100, (visibleStep / animatedSteps.length) * 100);
-
-  useEffect(() => {
-    setVisibleStep(0);
-    const timers = animatedSteps.map((_, index) => window.setTimeout(() => setVisibleStep(index + 1), 550 + index * 950));
-    const restart = window.setTimeout(() => setVisibleStep(0), 550 + animatedSteps.length * 950 + 2200);
-    return () => {
-      timers.forEach(window.clearTimeout);
-      window.clearTimeout(restart);
-    };
-  }, [active, animatedSteps]);
-
+function HeroResultPopups() {
   return (
-    <section id="dialogs" className="bg-white px-4 py-16 sm:py-24">
-      <div className="mx-auto max-w-7xl">
-        <Reveal className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Готовые сценарии AI-агентов</p>
-            <h2 className="mt-3 max-w-3xl text-3xl font-semibold leading-tight tracking-tight text-midnight sm:text-5xl">
-              Показываем, как ZANI решает задачи в чате
-            </h2>
-          </div>
-          <p className="text-base leading-7 text-slate-600 sm:text-lg">
-            Клиент пишет в мессенджер, AI отвечает, задает уточняющий вопрос, создает заявку, двигает сделку и ставит задачу менеджеру.
-          </p>
-        </Reveal>
+    <div className="zani-v2__results" aria-hidden="true">
+      {resultPopups.map((popup, index) => (
+        <span key={popup} style={{ animationDelay: `${index * 2.6 + 1.72}s` }}>
+          {popup}
+        </span>
+      ))}
+    </div>
+  );
+}
 
-        <div className="mt-10 grid gap-6 lg:grid-cols-[330px_1fr]">
-          <div className="grid gap-3">
-            {messengerCases.map((item, index) => (
-              <motion.button
-                key={item.channel}
-                whileHover={{ x: 3 }}
-                className={`rounded-card border p-4 text-left transition ${active === index ? "border-brand-500 bg-primary-50 shadow-card" : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-soft"}`}
-                onClick={() => setActive(index)}
-              >
-                <div className="flex items-center gap-3">
-                  <span className={`h-3 w-3 rounded-full ${item.accent} ${active === index ? "animate-pulse" : ""}`} />
-                  <span className="font-semibold text-midnight">{item.role}</span>
-                </div>
-                <p className="mt-2 text-sm text-slate-500">{item.channel} · {item.business}</p>
-              </motion.button>
-            ))}
-          </div>
+function HeroFeatures() {
+  return (
+    <section className="zani-v2__features" aria-label="Преимущества">
+      {featureCards.map((card) => (
+        <article key={card.title} className="zani-v2__feature">
+          <h2>{card.title}</h2>
+          <p>{card.text}</p>
+          <strong className="zani-v2__feature-metric">{card.metric}</strong>
+        </article>
+      ))}
+    </section>
+  );
+}
 
-          <motion.div
-            key={current.channel}
-            className="grid gap-4 rounded-[1.25rem] border border-slate-200 bg-slate-50 p-4 shadow-card lg:grid-cols-[1fr_0.8fr]"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
+function HeroSection() {
+  return (
+    <section className="zani-v2" aria-label="Главный экран ZANI">
+      <img className="zani-v2__scene" src={layers.scene} alt="" aria-hidden="true" />
+      <div className="zani-v2__berkut-flight" aria-hidden="true">
+        <img className="zani-v2__berkut" src={layers.berkut} alt="" />
+      </div>
+      <HeroMoneyFlow />
+      <HeroResultPopups />
+      <HeroFeatures />
+    </section>
+  );
+}
+
+function AiBotsCopy() {
+  return (
+    <section className="zani-ai__copy" aria-label="AI-боты">
+      <h1>
+        <span>AI-боты</span>
+        <br />
+        <span>работают,</span>
+        <br />
+        <span>вы получаете</span>
+        <br />
+        <span>деньги</span>
+      </h1>
+      <p>
+        ZANI AI-боты мгновенно обрабатывают заявки из всех каналов, записывают клиентов,
+        передают в CRM и доводят до оплаты.
+      </p>
+      <div className="zani-ai__feature-list">
+        {aiBotsFeatures.map((feature) => (
+          <article key={feature.title}>
+            <span aria-hidden="true" />
+            <div>
+              <strong>{feature.title}</strong>
+              <p>{feature.text}</p>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function AiBotsIntegrations() {
+  return (
+    <section className="zani-ai__integrations" aria-label="Интеграции">
+      <div className="zani-ai__integration-row">
+        {integrationItems.map((item) => (
+          <article key={item.name} className={`zani-ai__integration zani-ai__integration--${item.tone}`}>
+            <span>{item.mark}</span>
+            <div>
+              <strong>{item.name}</strong>
+              <p>{item.detail}</p>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function AiBotsPipeline({ activeStep }: { activeStep: number }) {
+  return (
+    <section className="zani-ai__pipeline" aria-label="Полный путь заявки">
+      <h2>Полный путь заявки</h2>
+      <div className="zani-ai__pipeline-grid">
+        {pipelineSteps.map((step, index) => (
+          <article
+            key={step.title}
+            className={`zani-ai__step${index <= activeStep ? " zani-ai__step--active" : ""}${step.success ? " zani-ai__step--success" : ""}`}
+            style={{ animationDelay: `${index * 0.18}s` }}
           >
-            <div className="rounded-[1.1rem] border border-slate-200 bg-white p-4">
-              <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">{current.channel}</p>
-                  <p className="mt-1 text-sm font-semibold text-midnight">{current.business}</p>
-                </div>
-                <span className={`h-3 w-3 rounded-full ${current.accent}`} />
-              </div>
-              <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-slate-100">
-                <motion.div className="h-full rounded-full bg-primary-gradient" animate={{ width: `${progress}%` }} transition={{ duration: 0.35 }} />
-              </div>
-              <div className="mt-5 min-h-[340px] space-y-4">
-                {animatedSteps.slice(0, visibleStep).filter((step) => step.kind !== "event").map((step, index) => (
-                  <motion.div
-                    key={`${current.channel}-${index}-${step.text}`}
-                    initial={{ opacity: 0, y: 14, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{ duration: 0.28 }}
-                    className={step.kind === "bot" ? "flex justify-end" : ""}
-                  >
-                    <MessengerBubble className={step.kind === "bot" ? "ml-auto bg-primary-600 text-white" : "bg-slate-100 text-midnight"}>
-                      {step.text}
-                    </MessengerBubble>
-                  </motion.div>
-                ))}
-                {(visibleStep === 1 || visibleStep === 3) ? (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="ml-auto flex w-fit items-center gap-1 rounded-full bg-primary-50 px-4 py-2 text-sm font-semibold text-brand-700">
-                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-600" />
-                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-600 [animation-delay:120ms]" />
-                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-600 [animation-delay:240ms]" />
-                    AI печатает
-                  </motion.div>
-                ) : null}
-              </div>
-            </div>
-
-            <div className="rounded-[1.1rem] border border-slate-200 bg-white p-5">
-              <p className="text-sm font-semibold text-slate-500">Что делает ZANI в CRM</p>
-              <h3 className="mt-2 text-2xl font-semibold tracking-tight text-midnight">{current.result}</h3>
-              <div className="mt-5 grid gap-3">
-                {animatedSteps.filter((step) => step.kind === "event").map((step, index) => (
-                  <motion.div
-                    key={step.text}
-                    className="flex items-center gap-3 rounded-card border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700"
-                    initial={{ opacity: 0.35, x: 12 }}
-                    animate={visibleStep >= 5 + index ? { opacity: 1, x: 0, borderColor: "rgb(16 185 129)", backgroundColor: "rgb(240 253 244)" } : { opacity: 0.35, x: 12 }}
-                    transition={{ delay: index * 0.08 }}
-                  >
-                    <CheckCircle2 size={17} className="text-emerald-500" />
-                    {step.text}
-                  </motion.div>
-                ))}
-                <div className="flex items-center gap-3 rounded-card border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700">
-                  <Clock3 size={17} className="text-slate-400" />
-                  Передать менеджеру
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function CrmScreensShowcase() {
-  const [activeScreen, setActiveScreen] = useState(0);
-  const current = crmScreens[activeScreen];
-  const [screenProgress, setScreenProgress] = useState(0);
-
-  useEffect(() => {
-    setScreenProgress(0);
-    const progressInterval = window.setInterval(() => {
-      setScreenProgress((value) => (value >= 100 ? 100 : value + 2.5));
-    }, 100);
-    const interval = window.setInterval(() => {
-      setActiveScreen((value) => (value + 1) % crmScreens.length);
-    }, 4200);
-    return () => {
-      window.clearInterval(interval);
-      window.clearInterval(progressInterval);
-    };
-  }, [activeScreen]);
-
-  return (
-    <section id="crm-screens" className="bg-white px-4 py-16 sm:py-24">
-      <div className="mx-auto max-w-7xl">
-        <Reveal className="grid gap-8 lg:grid-cols-[0.88fr_1.12fr] lg:items-end">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">CRM в действии</p>
-            <h2 className="mt-3 max-w-3xl text-3xl font-semibold leading-tight tracking-tight text-midnight sm:text-5xl">
-              Реальный кабинет ZANI: заявки, менеджеры, сделки и AI-сигналы
-            </h2>
-          </div>
-          <p className="text-base leading-7 text-slate-600 sm:text-lg">
-            Реальные экраны продукта показывают, как входящие, диалоги и деньги в работе становятся понятной системой контроля.
-          </p>
-        </Reveal>
-
-        <div className="mt-10 overflow-hidden rounded-[1.35rem] border border-slate-200 bg-slate-950 shadow-panel">
-          <div className="flex flex-col gap-3 border-b border-white/10 bg-slate-900 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2">
-              <span className="h-3 w-3 rounded-full bg-red-400" />
-              <span className="h-3 w-3 rounded-full bg-amber-300" />
-              <span className="h-3 w-3 rounded-full bg-emerald-400" />
-              <span className="ml-3 text-sm font-semibold text-white/70">app.zani.crm</span>
-            </div>
-            <div className="flex gap-2 overflow-x-auto no-scrollbar">
-              {crmScreens.map((screen, index) => (
-                <button
-                  key={screen.name}
-                  className={`min-h-9 whitespace-nowrap rounded-full px-4 text-sm font-semibold transition ${activeScreen === index ? "bg-white text-midnight" : "bg-white/8 text-white/70 hover:bg-white/14"}`}
-                  onClick={() => setActiveScreen(index)}
-                >
-                  {screen.name}
-                </button>
+            <span className="zani-ai__step-number">{index + 1}</span>
+            <h3>{step.title}</h3>
+            <div>
+              {step.rows.map((row) => (
+                <p key={row}>{row}</p>
               ))}
             </div>
-          </div>
-          <div className="h-1 bg-white/8">
-            <motion.div className="h-full bg-cyan-300" animate={{ width: `${screenProgress}%` }} transition={{ duration: 0.1 }} />
-          </div>
-
-          <div className="grid gap-0 lg:grid-cols-[330px_1fr]">
-            <div className="border-b border-white/10 bg-slate-900 p-5 text-white lg:border-b-0 lg:border-r">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-200">Сейчас на экране</p>
-              <h3 className="mt-3 text-2xl font-semibold tracking-tight">{current.title}</h3>
-              <p className="mt-4 leading-7 text-white/68">{current.note}</p>
-              <div className="mt-6 grid gap-3">
-                {pipelineSteps.slice(0, 4).map((step, index) => (
-                  <motion.div
-                    key={step.label}
-                    className="flex items-center gap-3 rounded-card border border-white/10 bg-white/6 px-3 py-2 text-sm font-semibold text-white/82"
-                    animate={index === activeScreen + 1 ? { x: [0, 4, 0], borderColor: "rgba(125, 211, 252, 0.6)" } : { x: 0 }}
-                    transition={{ duration: 0.8, repeat: index === activeScreen + 1 ? Infinity : 0, repeatDelay: 1.6 }}
-                  >
-                    <span className="grid h-7 w-7 place-items-center rounded-full bg-white/10 text-xs">{index + 1}</span>
-                    {step.label}
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-
-            <div className="relative overflow-x-auto bg-slate-100 p-3 sm:p-5">
-              <p className="mb-3 text-xs font-semibold text-slate-500 sm:hidden">Свайпните экран CRM горизонтально</p>
-              <div className="relative min-w-[860px] lg:min-w-0">
-                <motion.img
-                  key={current.src}
-                  src={current.src}
-                  alt={`Экран CRM Zani: ${current.name}`}
-                  className="aspect-[16/10] w-full rounded-card border border-slate-200 bg-white object-cover object-left-top shadow-card"
-                  initial={{ opacity: 0, y: 18, scale: 0.985 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ duration: 0.45 }}
-                />
-                <motion.div
-                  key={`${current.name}-callout`}
-                  className="absolute right-6 top-6 rounded-card border border-slate-200 bg-white/94 px-4 py-3 text-sm font-semibold text-midnight shadow-panel backdrop-blur"
-                  initial={{ opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.25 }}
-                >
-                  <span className="mr-2 inline-block h-2 w-2 rounded-full bg-emerald-500" />
-                  {current.callout}
-                </motion.div>
-                <motion.div
-                  className={`absolute ${current.marker} hidden h-5 w-5 rounded-full border-4 border-white bg-brand-600 shadow-panel lg:block`}
-                  animate={{ scale: [1, 1.35, 1], opacity: [0.92, 0.55, 0.92] }}
-                  transition={{ duration: 1.6, repeat: Infinity }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
+            <time>{step.time}</time>
+          </article>
+        ))}
       </div>
     </section>
   );
 }
 
-function ProblemSection() {
+function AiBotsBottom() {
   return (
-    <section className="bg-white px-4 py-16 sm:py-24">
-      <div className="mx-auto max-w-7xl">
-        <Reveal className="max-w-4xl">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Проблема владельца</p>
-          <h2 className="mt-3 text-3xl font-semibold leading-tight tracking-tight text-midnight sm:text-5xl">Заявки теряются не потому, что нет CRM. А потому что нет контроля.</h2>
-          <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">Клиенты пишут в разные каналы, менеджеры отвечают в разное время, сделки живут отдельно. Владелец узнает о потерях, когда деньги уже ушли.</p>
-        </Reveal>
-        <div className="mt-10 grid gap-4 md:grid-cols-3">
-          {problemCards.map(([title, text], index) => (
-            <motion.article key={title} whileHover={{ y: -4 }} className="rounded-[1.35rem] border border-slate-200 bg-[#f7f8fc] p-6 shadow-soft">
-              <div className="mb-6 flex h-11 w-11 items-center justify-center rounded-full bg-white text-sm font-bold text-slate-500 shadow-soft">0{index + 1}</div>
-              <h3 className="text-xl font-semibold tracking-tight text-midnight">{title}</h3>
-              <p className="mt-3 leading-7 text-slate-600">{text}</p>
-            </motion.article>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function BusinessImpactSection() {
-  return (
-    <section className="bg-[#f7f8fc] px-4 py-16 sm:py-24">
-      <div className="mx-auto max-w-7xl">
-        <Reveal className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-end">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">О продукте</p>
-            <h2 className="mt-3 max-w-4xl text-3xl font-semibold leading-tight tracking-tight text-midnight sm:text-5xl">ZANI возвращает владельцу контроль над входящими заявками</h2>
-          </div>
-          <p className="text-base leading-7 text-slate-600 sm:text-lg">
-            Это не просто AI-бот и не просто CRM. ZANI соединяет каналы, диалоги, заявки, сделки и контроль менеджеров в одном рабочем кабинете.
-          </p>
-        </Reveal>
-        <div className="mt-10 grid gap-4 md:grid-cols-4">
-          {impactMetrics.map(([value, label], index) => (
-            <motion.article
-              key={value}
-              className="rounded-[1.35rem] border border-slate-200 bg-white p-6 shadow-soft"
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-80px" }}
-              transition={{ delay: index * 0.06 }}
+    <div className="zani-ai__bottom">
+      <section className="zani-ai__bots" aria-label="Наши AI-боты">
+        <div className="zani-ai__bot-grid">
+          {aiBotCards.map((bot, index) => (
+            <article
+              key={bot.title}
+              className={`zani-ai__bot zani-ai__bot--${bot.tone}`}
+              style={{ animationDelay: `${index * 0.14}s`, animationDuration: "560ms" }}
             >
-              <p className="text-4xl font-semibold tracking-tight text-midnight">{value}</p>
-              <p className="mt-4 text-sm font-semibold leading-6 text-slate-500">{label}</p>
-            </motion.article>
-          ))}
-        </div>
-        <p className="mt-5 text-sm leading-6 text-slate-500">Показатели зависят от каналов, сценариев и текущего процесса продаж.</p>
-      </div>
-    </section>
-  );
-}
-
-function AutomationRealitySection() {
-  const flowItems = ["WhatsApp", "Instagram", "Telegram", "Сайт"];
-  const outputItems = ["Заявки", "Сделки", "Задачи", "AI-сигналы"];
-
-  return (
-    <section className="overflow-hidden bg-white px-4 py-16 sm:py-24">
-      <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.86fr_1.14fr] lg:items-center">
-        <Reveal>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Автоматизация без тяжелого внедрения</p>
-          <h2 className="mt-3 text-3xl font-semibold leading-tight tracking-tight text-midnight sm:text-5xl">Подключаем входящие каналы и сразу показываем владельцу картину продаж</h2>
-          <p className="mt-5 text-lg leading-8 text-slate-600">Начинаем с того, где уже есть деньги: мессенджеры, заявки, менеджеры и сделки. Сложные интеграции можно добавлять после первых результатов пилота.</p>
-          <div className="mt-8">
-            <SignupButton>Запустить пилот</SignupButton>
-          </div>
-        </Reveal>
-
-        <div className="relative rounded-[1.5rem] border border-slate-200 bg-[#f7f8fc] p-5 shadow-panel">
-          <div className="grid gap-4 md:grid-cols-[1fr_180px_1fr] md:items-center">
-            <div className="grid gap-3">
-              {flowItems.map((item, index) => (
-                <motion.div key={item} animate={{ x: [0, 4, 0] }} transition={{ duration: 2.8, repeat: Infinity, delay: index * 0.18 }} className="rounded-card border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-soft">
-                  {item}
-                </motion.div>
-              ))}
-            </div>
-            <div className="relative mx-auto grid h-36 w-36 place-items-center rounded-full border border-brand-100 bg-white shadow-card">
-              <motion.div className="absolute inset-3 rounded-full border border-brand-200" animate={{ scale: [1, 1.08, 1], opacity: [0.7, 0.35, 0.7] }} transition={{ duration: 2.4, repeat: Infinity }} />
-              <div className="grid h-20 w-20 place-items-center rounded-full bg-primary-gradient text-white shadow-glow">
-                <Sparkles size={28} />
+              <span aria-hidden="true" />
+              <div>
+                <strong>{bot.title}</strong>
+                <p>{bot.text}</p>
               </div>
-              <span className="absolute -bottom-2 rounded-full bg-midnight px-3 py-1 text-xs font-bold text-white">ZANI</span>
-            </div>
-            <div className="grid gap-3">
-              {outputItems.map((item, index) => (
-                <motion.div key={item} animate={{ x: [0, -4, 0] }} transition={{ duration: 2.8, repeat: Infinity, delay: index * 0.18 }} className="rounded-card border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-soft">
-                  {item}
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function CapabilitiesGridSection() {
-  return (
-    <section id="capabilities" className="bg-[#f7f8fc] px-4 py-16 sm:py-24">
-      <div className="mx-auto max-w-7xl">
-        <Reveal className="max-w-4xl">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Что умеет ZANI</p>
-          <h2 className="mt-3 text-3xl font-semibold leading-tight tracking-tight text-midnight sm:text-5xl">AI-система, которая работает с заявками, менеджерами и продажами</h2>
-        </Reveal>
-        <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {capabilityCards.map(([title, text], index) => (
-            <motion.article key={title} whileHover={{ y: -4 }} className="rounded-[1.35rem] border border-slate-200 bg-white p-6 shadow-soft hover:shadow-card">
-              <div className="grid h-11 w-11 place-items-center rounded-card bg-primary-50 text-brand-700">
-                {index % 3 === 0 ? <Bot size={21} /> : index % 3 === 1 ? <Users size={21} /> : <Sparkles size={21} />}
-              </div>
-              <h3 className="mt-5 text-xl font-semibold tracking-tight text-midnight">{title}</h3>
-              <p className="mt-3 leading-7 text-slate-600">{text}</p>
-            </motion.article>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function PilotCallSection() {
-  return (
-    <section className="bg-white px-4 py-16 sm:py-24">
-      <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[1.6rem] border border-slate-200 bg-midnight p-6 text-white shadow-panel sm:p-10">
-        <div className="absolute inset-y-0 right-0 hidden w-1/2 bg-[radial-gradient(circle_at_70%_35%,rgba(99,102,241,0.35),transparent_58%)] lg:block" />
-        <div className="relative grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-200">30-минутный разбор</p>
-            <h2 className="mt-3 max-w-4xl text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">Разберем, где ваш бизнес теряет заявки</h2>
-            <p className="mt-5 max-w-3xl text-lg leading-8 text-white/70">Покажем, какие каналы подключить первыми, какие сценарии AI запустить и какие сигналы владелец увидит в пилоте.</p>
-          </div>
-          <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
-            <SignupButton>Запустить пилот</SignupButton>
-            <Link to="/contacts" className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/20 bg-white/10 px-6 text-base font-semibold text-white transition hover:bg-white/15">
-              Получить консультацию
-            </Link>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function TrustSection() {
-  return (
-    <section className="bg-[#f7f8fc] px-4 py-16 sm:py-24">
-      <div className="mx-auto max-w-7xl">
-        <Reveal className="max-w-4xl">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Пилот вместо обещаний</p>
-          <h2 className="mt-3 text-3xl font-semibold leading-tight tracking-tight text-midnight sm:text-5xl">Показываем контроль на вашем реальном потоке заявок</h2>
-        </Reveal>
-        <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {trustCards.map(([title, text]) => (
-            <article key={title} className="rounded-[1.35rem] border border-slate-200 bg-white p-6 shadow-soft">
-              <ShieldCheck size={22} className="text-brand-600" />
-              <h3 className="mt-5 text-lg font-semibold text-midnight">{title}</h3>
-              <p className="mt-3 leading-7 text-slate-600">{text}</p>
             </article>
           ))}
         </div>
+      </section>
+      <section className="zani-ai__metrics" aria-label="Метрики AI-ботов">
+        {aiMetrics.map((metric, index) => (
+          <article key={metric.value} style={{ animationDelay: `${index * 0.16 + 0.14}s` }}>
+            <strong>{metric.value}</strong>
+            <p>{metric.label}</p>
+          </article>
+        ))}
+      </section>
+    </div>
+  );
+}
+
+function AiBotsSection() {
+  return (
+    <section className="zani-ai" aria-label="AI-боты и интеграции">
+      <img className="zani-ai__bg" src={aiBotsAssets.background} alt="" aria-hidden="true" />
+      <div className="zani-ai__shade" aria-hidden="true" />
+      <div className="zani-brick-motion" aria-hidden="true" />
+      <span className="zani-ai__bubble-aura" aria-hidden="true" />
+      <span className="zani-ai__monkey-aura" aria-hidden="true" />
+      <div className="zani-ai__route-trails" aria-hidden="true">
+        <span />
+        <span />
+        <span />
       </div>
+      <img className="zani-ai__monkey" src={aiBotsAssets.monkey} alt="" aria-hidden="true" />
+      <img className="zani-ai__bubble" src={aiBotsAssets.bubble} alt="" aria-hidden="true" />
+      <AiBotsCopy />
+      <AiBotsIntegrations />
+      <AiBotsPipeline activeStep={pipelineSteps.length - 1} />
+      <AiBotsBottom />
     </section>
   );
 }
 
 function OwnerControlSection() {
   return (
-    <section className="bg-[#f7f8fc] px-4 py-16 sm:py-24">
-      <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.86fr_1.14fr] lg:items-center">
-        <Reveal>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Кабинет владельца</p>
-          <h2 className="mt-3 text-3xl font-semibold leading-tight tracking-tight text-midnight sm:text-5xl">Владелец видит бизнес без звонков менеджерам</h2>
-          <p className="mt-5 text-lg leading-8 text-slate-600">Кто отвечает клиентам, сколько заявок в работе, где просрочки, какие сделки зависли и сколько денег может быть потеряно.</p>
-        </Reveal>
-        <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-panel">
-          <div className="grid gap-4 sm:grid-cols-2">
-            {ownerCards.map(([title, text], index) => (
-              <motion.div key={title} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.06 }} className="rounded-[1.1rem] border border-slate-200 bg-slate-50 p-5">
-                <div className="mb-4 h-1.5 w-14 rounded-full bg-primary-gradient" />
-                <h3 className="text-lg font-semibold text-midnight">{title}</h3>
-                <p className="mt-2 leading-7 text-slate-600">{text}</p>
-              </motion.div>
-            ))}
-          </div>
-          <div className="mt-4 rounded-[1.1rem] bg-midnight p-5 text-white">
-            <p className="text-sm font-semibold text-white/55">AI-сводка сегодня</p>
-            <p className="mt-2 text-2xl font-semibold tracking-tight">3 клиента без ответа, 2 сделки зависли, 1 менеджер не закрыл задачу.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
+    <section className="zani-owner" aria-label="Панель владельца">
+      <img className="zani-owner__bg" src={aiBotsAssets.background} alt="" aria-hidden="true" />
+      <div className="zani-owner__shade" aria-hidden="true" />
+      <div className="zani-brick-motion zani-brick-motion--owner" aria-hidden="true" />
+      <div className="zani-owner__ring" aria-hidden="true" />
+      <img className="zani-owner__monkey" src={aiBotsAssets.ownerMonkey} alt="" aria-hidden="true" />
 
-function AudienceSection() {
-  return (
-    <section className="bg-[#f7f8fc] px-4 py-16 sm:py-24">
-      <div className="mx-auto max-w-7xl">
-        <Reveal className="max-w-4xl">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Для кого ZANI</p>
-          <h2 className="mt-3 text-3xl font-semibold leading-tight tracking-tight text-midnight sm:text-5xl">ZANI для бизнесов, где нельзя терять входящие заявки</h2>
-        </Reveal>
-        <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {audienceCards.map(([title, text]) => (
-            <motion.article key={title} whileHover={{ y: -4 }} className="rounded-[1.35rem] border border-slate-200 bg-white p-6 shadow-soft">
-              <h3 className="text-xl font-semibold text-midnight">{title}</h3>
-              <p className="mt-4 leading-7 text-slate-600">{text}</p>
-            </motion.article>
+      <section className="zani-owner__copy" aria-label="Весь бизнес под контролем">
+        <p>Панель владельца</p>
+        <h1>
+          <span>Весь бизнес</span>
+          <br />
+          <span>под контролем</span>
+        </h1>
+        <strong>
+          ZANI показывает владельцу главное. Вы видите картину целиком и принимаете
+          решения на основе данных, а не догадок.
+        </strong>
+        <div className="zani-owner__signals">
+          {ownerSignals.map((signal) => (
+            <article key={signal.title}>
+              <span aria-hidden="true" />
+              <b>{signal.title}</b>
+              <small>{signal.text}</small>
+            </article>
           ))}
         </div>
-      </div>
-    </section>
-  );
-}
+      </section>
 
-function BeforeAfterSection() {
-  return (
-    <section className="bg-white px-4 py-16 sm:py-24">
-      <div className="mx-auto max-w-7xl">
-        <Reveal className="max-w-4xl">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">До / После</p>
-          <h2 className="mt-3 text-3xl font-semibold leading-tight tracking-tight text-midnight sm:text-5xl">Как выглядит бизнес до и после ZANI</h2>
-        </Reveal>
-        <div className="mt-10 overflow-hidden rounded-[1.35rem] border border-slate-200 bg-white shadow-card">
-          {beforeAfterRows.map(([before, after]) => (
-            <div key={before} className="grid gap-0 border-b border-slate-200 last:border-b-0 md:grid-cols-2">
-              <div className="bg-slate-50 p-5 text-slate-600">{before}</div>
-              <div className="flex items-center gap-3 p-5 font-semibold text-midnight">
-                <CheckCircle2 size={18} className="text-emerald-500" />
-                {after}
+      <section className="zani-owner__dashboard" aria-label="Главная панель">
+        <header>
+          <div>
+            <h2>Главная панель</h2>
+            <p>Обзор вашего бизнеса на сегодня</p>
+          </div>
+          <time>17 июня, среда</time>
+        </header>
+
+        <div className="zani-owner__kpis">
+          {ownerKpis.map((kpi) => (
+            <article key={kpi.label} className={kpi.alert ? "zani-owner__kpi zani-owner__kpi--alert" : "zani-owner__kpi"}>
+              <span>{kpi.label}</span>
+              <strong>{kpi.value}</strong>
+              <small>{kpi.change} к вчерашнему дню</small>
+            </article>
+          ))}
+        </div>
+
+        <div className="zani-owner__main-grid">
+          <article className="zani-owner__chart">
+            <h3>Динамика выручки</h3>
+            <strong>1 245 000 ₸ <span>↗ +42%</span></strong>
+            <svg viewBox="0 0 520 170" aria-hidden="true">
+              <defs>
+                <linearGradient id="ownerRevenueGlow" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0%" stopColor="#f6b800" stopOpacity="0.46" />
+                  <stop offset="100%" stopColor="#f6b800" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              <path d="M0 132 C34 108 48 138 82 106 C118 74 132 112 174 80 C214 48 238 82 278 70 C320 58 318 30 366 44 C408 58 412 18 456 24 C488 30 498 18 520 6 L520 170 L0 170 Z" fill="url(#ownerRevenueGlow)" />
+              <path d="M0 132 C34 108 48 138 82 106 C118 74 132 112 174 80 C214 48 238 82 278 70 C320 58 318 30 366 44 C408 58 412 18 456 24 C488 30 498 18 520 6" fill="none" stroke="#f6b800" strokeWidth="4" strokeLinecap="round" />
+            </svg>
+          </article>
+
+          <article className="zani-owner__problems">
+            <header>
+              <h3>AI нашёл проблемы</h3>
+              <button type="button">Смотреть все</button>
+            </header>
+            {ownerProblems.map((problem) => (
+              <div key={problem.title} className={`zani-owner__problem zani-owner__problem--${problem.tone}`}>
+                <span aria-hidden="true" />
+                <div>
+                  <strong>{problem.title}</strong>
+                  <p>{problem.text}</p>
+                  {problem.value ? <b>{problem.value}</b> : null}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </article>
         </div>
-      </div>
-    </section>
-  );
-}
 
-function EconomySection() {
-  const [avgCheck, setAvgCheck] = useState(20000);
-  const [lostLeads, setLostLeads] = useState(5);
-  const [conversion, setConversion] = useState(30);
-  const recovered = Math.round(avgCheck * lostLeads * (conversion / 100));
+        <div className="zani-owner__mini-grid">
+          <article className="zani-owner__sources">
+            <h3>Источники заявок</h3>
+            <div className="zani-owner__donut"><strong>234</strong><span>всего</span></div>
+            {ownerSources.map((source) => (
+              <p key={source.name}><span>{source.name}</span><b>{source.value}</b></p>
+            ))}
+          </article>
 
-  return (
-    <section id="pricing-preview" className="bg-[#f7f8fc] px-4 py-16 sm:py-24">
-      <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-        <Reveal>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Экономика</p>
-          <h2 className="mt-3 text-3xl font-semibold leading-tight tracking-tight text-midnight sm:text-5xl">Одна сохраненная заявка может окупить ZANI</h2>
-          <p className="mt-5 text-lg leading-8 text-slate-600">Если бизнес теряет хотя бы 2-3 заявки в месяц из-за долгого ответа, забытых сообщений или слабого follow-up — ZANI уже начинает возвращать деньги.</p>
-        </Reveal>
-        <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-panel">
-          <div className="grid gap-5">
-            <label className="rounded-[1.1rem] bg-slate-50 p-4">
-              <span className="flex items-center justify-between gap-4 text-sm font-semibold text-slate-500">
-                Средний чек
-                <strong className="text-xl text-midnight">{avgCheck.toLocaleString("ru-RU")} ₸</strong>
-              </span>
-              <input className="mt-4 w-full accent-indigo-600" type="range" min={5000} max={200000} step={5000} value={avgCheck} onChange={(event) => setAvgCheck(Number(event.target.value))} />
-            </label>
-            <label className="rounded-[1.1rem] bg-slate-50 p-4">
-              <span className="flex items-center justify-between gap-4 text-sm font-semibold text-slate-500">
-                Потерянные заявки в месяц
-                <strong className="text-xl text-midnight">{lostLeads}</strong>
-              </span>
-              <input className="mt-4 w-full accent-indigo-600" type="range" min={1} max={30} step={1} value={lostLeads} onChange={(event) => setLostLeads(Number(event.target.value))} />
-            </label>
-            <label className="rounded-[1.1rem] bg-slate-50 p-4">
-              <span className="flex items-center justify-between gap-4 text-sm font-semibold text-slate-500">
-                Конверсия в продажу
-                <strong className="text-xl text-midnight">{conversion}%</strong>
-              </span>
-              <input className="mt-4 w-full accent-indigo-600" type="range" min={5} max={80} step={5} value={conversion} onChange={(event) => setConversion(Number(event.target.value))} />
-            </label>
-          </div>
-          <div className="mt-5 rounded-[1.1rem] bg-midnight p-5 text-white">
-            <p className="text-sm font-semibold text-white/55">Потенциально возвращено</p>
-            <p className="mt-2 text-4xl font-semibold">{recovered.toLocaleString("ru-RU")} ₸+</p>
-            <p className="mt-2 text-sm leading-6 text-white/65">Это пример для малого бизнеса. Реальный расчет зависит от среднего чека, каналов и скорости ответа.</p>
-          </div>
-          <div className="mt-5">
-            <SignupButton>Посчитать для моего бизнеса</SignupButton>
-          </div>
+          <article className="zani-owner__stages">
+            <h3>Конверсия по этапам</h3>
+            {ownerStages.map((stage) => (
+              <div key={stage.name}>
+                <p><span>{stage.name}</span><b>{stage.value}</b></p>
+                <i style={{ width: stage.width }} />
+              </div>
+            ))}
+          </article>
+
+          <article className="zani-owner__team">
+            <h3>Активность команды</h3>
+            {ownerTeam.map((member) => (
+              <div key={member.name}>
+                <span aria-hidden="true" />
+                <p><b>{member.name}</b><small>{member.value}</small></p>
+                <strong>{member.percent}</strong>
+              </div>
+            ))}
+          </article>
         </div>
-      </div>
-    </section>
-  );
-}
 
-function PilotSection() {
-  return (
-    <section className="bg-white px-4 py-16 sm:py-24">
-      <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
-        <Reveal>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Пилот ZANI</p>
-          <h2 className="mt-3 text-3xl font-semibold leading-tight tracking-tight text-midnight sm:text-5xl">Что входит в пилот ZANI</h2>
-          <p className="mt-5 text-lg leading-8 text-slate-600">Пилот нужен, чтобы показать на ваших реальных заявках, где теряются клиенты и сколько контроля можно вернуть.</p>
-        </Reveal>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {pilotIncludes.map((item) => (
-            <div key={item} className="flex items-center gap-3 rounded-[1.1rem] border border-slate-200 bg-[#f7f8fc] p-4 font-semibold text-midnight">
-              <CheckCircle2 size={18} className="text-emerald-500" />
-              {item}
-            </div>
-          ))}
-        </div>
-      </div>
+        <article className="zani-owner__summary">
+          <div className="zani-owner__ai-icon" aria-hidden="true">AI</div>
+          <div>
+            <h3>AI-итог за сегодня</h3>
+            <p>Выручка растёт. Но 14 клиентов ждут ответа. Это может стоить вам до 420 000 ₸.</p>
+          </div>
+          <strong>1 356 <span>ответов от AI</span></strong>
+          <strong>243 <span>напоминания команде</span></strong>
+          <strong>18 <span>сделок закрыто</span></strong>
+          <strong>+850 000 ₸ <span>дополнительной выручки</span></strong>
+        </article>
+      </section>
     </section>
   );
 }
 
 export function PublicHomePage() {
+  const landingRef = useRef<HTMLElement | null>(null);
+  const lastScrollTopRef = useRef(0);
+  const [isHeaderNavHidden, setIsHeaderNavHidden] = useState(false);
+
+  useEffect(() => {
+    const landing = landingRef.current;
+    if (!landing) {
+      return undefined;
+    }
+
+    let frame = 0;
+
+    const updateHeader = () => {
+      frame = 0;
+      const currentScrollTop = landing.scrollTop;
+      const isSecondScreen = currentScrollTop > landing.clientHeight * 0.45;
+      const isScrollingUp = currentScrollTop < lastScrollTopRef.current - 4;
+
+      setIsHeaderNavHidden(isSecondScreen && isScrollingUp);
+      lastScrollTopRef.current = currentScrollTop;
+    };
+
+    const handleScroll = () => {
+      if (frame) {
+        return;
+      }
+
+      frame = window.requestAnimationFrame(updateHeader);
+    };
+
+    landing.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      landing.removeEventListener("scroll", handleScroll);
+      if (frame) {
+        window.cancelAnimationFrame(frame);
+      }
+    };
+  }, []);
+
   return (
-    <>
-      <LandingHero />
-      <DialogExamples />
-      <BusinessImpactSection />
-      <ProblemSection />
-      <section id="demo" className="bg-[#f7f8fb] px-4 py-16 sm:py-24">
-        <div className="mx-auto max-w-7xl">
-          <Reveal className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Автоматический путь заявки</p>
-              <h2 className="mt-3 max-w-3xl text-3xl font-semibold leading-tight tracking-tight text-midnight sm:text-5xl">
-                Сообщение превращается в заявку, сделку и контроль владельца
-              </h2>
-            </div>
-            <p className="text-base leading-7 text-slate-600 sm:text-lg">
-              Клиент пишет в WhatsApp, AI отвечает, заявка попадает в CRM, сделка двигается по этапам, а менеджер получает следующий шаг.
-            </p>
-          </Reveal>
-          <div className="mt-10 grid gap-4 lg:grid-cols-5">
-            {pipelineSteps.map((item, index) => {
-              const Icon = item.icon;
-              return (
-                <motion.article
-                  key={item.label}
-                  whileHover={{ y: -4 }}
-                  className="relative rounded-card border border-slate-200 bg-white p-5 shadow-soft transition-shadow hover:shadow-card"
-                  initial={{ opacity: 0, y: 18 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-80px" }}
-                  transition={{ delay: index * 0.08 }}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="grid h-11 w-11 place-items-center rounded-card bg-primary-50 text-brand-700">
-                      <Icon size={21} />
-                    </div>
-                    <span className="text-sm font-bold text-slate-300">0{index + 1}</span>
-                  </div>
-                  <h3 className="mt-5 text-xl font-semibold text-midnight">{item.label}</h3>
-                  <p className="mt-3 leading-7 text-slate-600">{item.text}</p>
-                </motion.article>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-      <AutomationRealitySection />
-      <CapabilitiesGridSection />
+    <main ref={landingRef} className="zani-public-landing">
+      <PublicLandingHeader navHidden={isHeaderNavHidden} />
+      <HeroSection />
+      <AiBotsSection />
       <OwnerControlSection />
-      <CrmScreensShowcase />
-
-      <section id="setup" className="bg-[#f7f8fb] px-4 py-16 sm:py-24">
-        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.82fr_1.18fr]">
-          <Reveal>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Запуск</p>
-            <h2 className="mt-3 text-3xl font-semibold leading-tight tracking-tight text-midnight sm:text-5xl">Запуск без программистов, долгих интеграций и обучения команды</h2>
-            <p className="mt-5 text-lg leading-8 text-slate-600">Начните с входящих заявок: подключаем каналы, настраиваем воронку, запускаем AI-ответы и показываем владельцу контроль.</p>
-            <div className="mt-6 inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700">Обычно пилот можно запустить за 3 дня.</div>
-            <div className="mt-8">
-              <SignupButton>Запустить пилот</SignupButton>
-            </div>
-          </Reveal>
-          <div className="grid gap-3">
-            {setupSteps.map(([number, title, text]) => (
-              <motion.article key={number} whileHover={{ x: 4 }} className="grid gap-4 rounded-card border border-slate-200 bg-white p-5 shadow-soft sm:grid-cols-[72px_1fr]">
-                <div className="text-3xl font-semibold text-brand-600">{number}</div>
-                <div>
-                  <h3 className="text-xl font-semibold text-midnight">{title}</h3>
-                  <p className="mt-2 leading-7 text-slate-600">{text}</p>
-                </div>
-              </motion.article>
-            ))}
-          </div>
-        </div>
-      </section>
-      <PilotCallSection />
-      <TrustSection />
-      <EconomySection />
-      <AudienceSection />
-      <BeforeAfterSection />
-      <PilotSection />
-
-      <section id="faq" className="bg-white px-4 py-16 sm:py-24">
-        <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.8fr_1.2fr]">
-          <Reveal>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">FAQ</p>
-            <h2 className="mt-3 text-3xl font-semibold leading-tight tracking-tight text-midnight sm:text-5xl">Что важно уточнить перед запуском</h2>
-          </Reveal>
-          <div className="grid gap-3">
-            {faqItems.map(([question, answer]) => (
-              <details key={question} className="group rounded-card border border-slate-200 bg-white p-5 shadow-soft transition hover:border-slate-300 hover:shadow-card" open={question.startsWith("Нужно")}>
-                <summary className="cursor-pointer list-none text-lg font-semibold text-midnight">{question}</summary>
-                <motion.p initial={{ opacity: 0.8 }} animate={{ opacity: 1 }} className="mt-3 leading-7 text-slate-600">{answer}</motion.p>
-              </details>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-[#f7f8fb] px-4 py-16 sm:py-24">
-        <div className="relative mx-auto max-w-7xl overflow-hidden rounded-card border border-slate-200 bg-white p-6 shadow-panel sm:p-10">
-          <div className="absolute inset-y-0 right-0 hidden w-1/3 bg-[radial-gradient(circle_at_80%_35%,rgba(79,70,229,0.16),transparent_58%)] lg:block" />
-          <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-center">
-            <div className="relative">
-              <h2 className="text-3xl font-semibold leading-tight tracking-tight text-midnight sm:text-5xl">Проверьте, сколько заявок теряется в вашем бизнесе</h2>
-              <p className="mt-4 max-w-3xl text-lg leading-8 text-slate-600">Запустим ZANI на пилоте: подключим каналы, покажем заявки, менеджеров, сделки и AI-сигналы в одном кабинете.</p>
-              <p className="mt-3 text-sm font-semibold text-slate-500">Без сложного внедрения. Без замены всей вашей системы. Начинаем с входящих заявок.</p>
-            </div>
-            <div className="relative flex flex-col gap-3 sm:flex-row lg:flex-col">
-              <SignupButton>Запустить пилот</SignupButton>
-              <Link to="/contacts" className="inline-flex min-h-12 items-center justify-center rounded-full border border-slate-300 bg-white px-6 text-base font-semibold text-midnight shadow-soft transition hover:border-slate-400">
-                Получить консультацию
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-    </>
+    </main>
   );
 }
 
 export function PublicCrmPage() {
-  const { t } = useI18n();
-
-  return (
-    <PublicContentPage
-      eyebrow={t("public.crm.eyebrow")}
-      title={t("public.crm.title")}
-      description={t("public.crm.description")}
-      bullets={["public.crm.bullet1", "public.crm.bullet2", "public.crm.bullet3", "public.crm.bullet4"]}
-    />
-  );
+  return <main className="min-h-screen bg-black" />;
 }
 
 export function PublicBotsPage() {
-  const { t } = useI18n();
-
-  return (
-    <PublicContentPage
-      eyebrow={t("public.bots.eyebrow")}
-      title={t("public.bots.title")}
-      description={t("public.bots.description")}
-      bullets={["public.bots.bullet1", "public.bots.bullet2", "public.bots.bullet3", "public.bots.bullet4"]}
-    />
-  );
-}
-
-export function PublicContactsPage() {
-  const { t } = useI18n();
-
-  return (
-    <PublicContentPage
-      eyebrow={t("public.contacts.eyebrow")}
-      title={t("public.contacts.title")}
-      description={t("public.contacts.description")}
-      bullets={["public.contacts.bullet1", "public.contacts.bullet2", "public.contacts.bullet3", "public.contacts.bullet4"]}
-    />
-  );
+  return <main className="min-h-screen bg-black" />;
 }
 
 export function PublicPricingPage() {
-  const { t, language } = useI18n();
-  const plans = useQuery({ queryKey: ["billing-plans"], queryFn: billingApi.plans });
-  const locale = language === "kk" ? "kk-KZ" : language === "en" ? "en-US" : "ru-RU";
-
-  return (
-    <section className="px-4 py-12">
-      <div className="mx-auto max-w-7xl">
-        <div className="max-w-3xl">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">{t("public.pricing.eyebrow")}</p>
-          <h1 className="mt-3 text-5xl font-semibold tracking-tight text-midnight">{t("public.pricing.title")}</h1>
-          <p className="mt-5 text-lg leading-8 text-slate-600">{t("public.pricing.description")}</p>
-        </div>
-        {plans.isLoading ? <div className="mt-8"><LoadingState label={t("public.pricing.loading")} /></div> : null}
-        {plans.error ? <div className="mt-8"><ErrorState message={t("public.pricing.error")} /></div> : null}
-        <div className="mt-8 grid gap-4 lg:grid-cols-3">
-          {(plans.data || []).map((plan) => (
-            <Card key={plan.name}>
-              <CardBody className="p-6">
-                <h2 className="text-2xl font-semibold text-midnight">{plan.name}</h2>
-                <p className="mt-2 text-4xl font-semibold tracking-tight">{formatPrice(plan.monthly_price, locale, t("public.pricing.monthSuffix"))}</p>
-                <p className="mt-3 min-h-14 leading-7 text-slate-600">{plan.description}</p>
-                <div className="mt-5 space-y-3">
-                  {(plan.features_json.features || []).map((feature) => (
-                    <div key={feature} className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                      <CheckCircle2 size={17} className="text-emerald-500" />
-                      {feature}
-                    </div>
-                  ))}
-                </div>
-              </CardBody>
-            </Card>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
+  return <main className="min-h-screen bg-black" />;
 }
 
-function formatPrice(value: string, locale: string, monthSuffix: string) {
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) return value;
-  if (numeric === 0) return "0 ₸";
-  return `${numeric.toLocaleString(locale)} ₸${monthSuffix}`;
-}
-
-function PublicContentPage({ eyebrow, title, description, bullets }: { eyebrow: string; title: string; description: string; bullets: string[] }) {
-  const { t } = useI18n();
-
-  return (
-    <section className="px-4 py-12">
-      <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">{eyebrow}</p>
-          <h1 className="mt-3 text-5xl font-semibold leading-tight tracking-tight text-midnight">{title}</h1>
-          <p className="mt-5 text-lg leading-8 text-slate-600">{description}</p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link to="/login">
-              <Button variant="ai" className="rounded-full">
-                {t("public.login")}
-                <ArrowRight size={17} />
-              </Button>
-            </Link>
-            <Link to="/pricing">
-              <Button variant="secondary" className="rounded-full">
-                {t("public.viewPricing")}
-              </Button>
-            </Link>
-          </div>
-        </div>
-        <Card>
-          <CardBody className="p-6">
-            <div className="flex items-center gap-3">
-              <div className="grid h-12 w-12 place-items-center rounded-2xl bg-midnight text-white">
-                <ShieldCheck size={22} />
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold text-midnight">{t("public.readyTitle")}</h2>
-                <p className="text-sm text-slate-500">{t("public.readyText")}</p>
-              </div>
-            </div>
-            <div className="mt-6 space-y-3">
-              {bullets.map((bullet) => (
-                <div key={bullet} className="flex items-start gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
-                  <MessageSquareText size={17} className="mt-0.5 text-brand-600" />
-                  {t(bullet)}
-                </div>
-              ))}
-            </div>
-          </CardBody>
-        </Card>
-      </div>
-    </section>
-  );
+export function PublicContactsPage() {
+  return <main className="min-h-screen bg-black" />;
 }

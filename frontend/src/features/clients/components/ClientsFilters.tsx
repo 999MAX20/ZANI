@@ -1,11 +1,13 @@
-import { ChevronDown, MoreHorizontal, X } from "lucide-react";
+import { ChevronDown, Columns3, Search, X } from "lucide-react";
+import { useMemo, useState } from "react";
+
 import { Button } from "../../../components/ui/Button";
+import { CrmFilterChips } from "../../../components/crm";
 import { Select } from "../../../components/ui/Select";
-import { cn } from "../../../lib/cn";
-import type { ClientKpi, ClientQuickFilter, Translate } from "../types";
+import type { ClientKpi, ClientQuickFilter, ClientTableColumn, Translate } from "../types";
 
 type FilterChip = {
-  key: "search" | "source" | "tag" | "segment";
+  id: "search" | "source" | "tag" | "segment";
   label: string;
   value: string;
 };
@@ -24,8 +26,8 @@ export function ClientsFilters({
   segmentOptions,
   sourceOptions,
   kpi,
-  advancedFiltersOpen,
-  onAdvancedFiltersOpenChange,
+  visibleColumns,
+  onToggleColumn,
   onOpenSegment,
   onClearSearch,
   onClearAll,
@@ -44,94 +46,122 @@ export function ClientsFilters({
   segmentOptions: Array<{ value: string | number; label: string }>;
   sourceOptions: Array<{ value: string | number; label: string }>;
   kpi: ClientKpi;
-  advancedFiltersOpen: boolean;
-  onAdvancedFiltersOpenChange: (value: boolean) => void;
+  visibleColumns: Set<ClientTableColumn>;
+  onToggleColumn: (column: ClientTableColumn) => void;
   onOpenSegment: () => void;
   onClearSearch: () => void;
   onClearAll: () => void;
   t: Translate;
 }) {
-  const quickFilterOptions: Array<{ value: ClientQuickFilter; label: string }> = [
-    { value: "all", label: `Все ${kpi.total}` },
-    { value: "new", label: "Новые" },
-    { value: "vip", label: "VIP" },
-    { value: "no_reply", label: `Без ответа ${kpi.noReply}` },
-    { value: "mine", label: "Мои клиенты" },
-  ];
-  const activeFilters: FilterChip[] = [
-    search ? { key: "search", label: "Поиск", value: search } : null,
-    source ? { key: "source", label: "Источник", value: sourceOptions.find((option) => String(option.value) === source)?.label || source } : null,
-    selectedTag ? { key: "tag", label: "Тег", value: tagOptions.find((option) => String(option.value) === selectedTag)?.label || selectedTag } : null,
-    selectedSegment ? { key: "segment", label: "Сегмент", value: segmentOptions.find((option) => String(option.value) === selectedSegment)?.label || selectedSegment } : null,
-  ].filter(Boolean) as FilterChip[];
-  const activeFilterCount = activeFilters.length;
+  const [columnsOpen, setColumnsOpen] = useState(false);
+  const quickFilterOptions = useMemo(
+    () =>
+      [
+        { value: "all" as const, label: `Все ${kpi.total}` },
+        { value: "new" as const, label: "Новые" },
+        { value: "vip" as const, label: "VIP" },
+        { value: "no_reply" as const, label: `Без ответа ${kpi.noReply}` },
+        { value: "mine" as const, label: "Мои клиенты" },
+      ],
+    [kpi.noReply, kpi.total],
+  );
+  const columnOptions = useMemo(
+    () => [
+      { id: "source" as const, label: t("clients.source") },
+      { id: "manager" as const, label: t("clients.manager") },
+    ],
+    [t],
+  );
 
-  function removeFilter(key: FilterChip["key"]) {
-    if (key === "search") onClearSearch();
-    if (key === "source") onSourceChange("");
-    if (key === "tag") onSelectedTagChange("");
-    if (key === "segment") onSelectedSegmentChange("");
+  const activeFilters: FilterChip[] = [
+    search ? { id: "search", label: "Поиск", value: search } : null,
+    source ? { id: "source", label: "Источник", value: sourceOptions.find((option) => String(option.value) === source)?.label || source } : null,
+    selectedTag ? { id: "tag", label: "Тег", value: tagOptions.find((option) => String(option.value) === selectedTag)?.label || selectedTag } : null,
+    selectedSegment
+      ? { id: "segment", label: "Сегмент", value: segmentOptions.find((option) => String(option.value) === selectedSegment)?.label || selectedSegment }
+      : null,
+  ].filter(Boolean) as FilterChip[];
+
+  function removeFilter(id: string) {
+    if (id === "search") onClearSearch();
+    if (id === "source") onSourceChange("");
+    if (id === "tag") onSelectedTagChange("");
+    if (id === "segment") onSelectedSegmentChange("");
   }
 
-  return (
-    <div className="flex flex-col gap-2 border-b border-slate-200 px-4 py-2.5">
-      <div className="flex min-h-9 flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-        <div className="flex min-w-0 flex-wrap items-center gap-1" role="tablist" aria-label="Фильтр клиентов">
-          {quickFilterOptions.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              role="tab"
-              aria-selected={quickFilter === option.value}
-              onClick={() => onQuickFilterChange(option.value)}
-              className={cn(
-                "h-9 rounded-lg px-3 text-sm font-medium transition",
-                quickFilter === option.value ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
-              )}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="ghost" size="sm" className="h-9 gap-2 text-xs font-semibold text-slate-600 hover:bg-slate-50" onClick={() => onAdvancedFiltersOpenChange(!advancedFiltersOpen)}>
-            Ещё фильтры
-            {activeFilterCount ? <span className="rounded-full bg-indigo-50 px-1.5 py-0.5 text-[11px] text-indigo-700">{activeFilterCount}</span> : null}
-            <ChevronDown size={14} className={cn("transition", advancedFiltersOpen && "rotate-180")} />
-          </Button>
-          <Button variant="secondary" size="icon" className="h-9 w-9 min-h-9 min-w-9" aria-label="Еще">
-            <MoreHorizontal size={17} />
-          </Button>
-        </div>
+  const advancedContent = (
+    <div className="grid gap-2">
+      <div className="grid gap-2 md:grid-cols-2">
+        <Select value={source} onChange={(event) => onSourceChange(event.target.value)} options={sourceOptions} className="h-9 text-xs" aria-label="Источник" />
+        <Select value={selectedTag} onChange={(event) => onSelectedTagChange(event.target.value)} options={tagOptions} className="h-9 text-xs" aria-label="Тег" />
       </div>
-
-      {advancedFiltersOpen ? (
-        <div className="flex flex-wrap items-center gap-2 rounded-lg bg-slate-50 p-2">
-          <Select value={source} onChange={(event) => onSourceChange(event.target.value)} options={sourceOptions} className="h-9 min-h-9 w-[158px] text-xs" aria-label="Источник" />
-          <Select value={selectedTag} onChange={(event) => onSelectedTagChange(event.target.value)} options={tagOptions} className="h-9 min-h-9 w-[145px] text-xs" aria-label="Тег" />
-          <Button variant="secondary" size="sm" onClick={onOpenSegment}>
-            {t("clients.segment")} <ChevronDown size={14} />
-          </Button>
-          <Select value={selectedSegment} onChange={(event) => onSelectedSegmentChange(event.target.value)} options={segmentOptions} className="h-9 min-h-9 w-[160px] text-xs" aria-label="Сегмент" />
-        </div>
-      ) : null}
-
-      {activeFilters.length ? (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold text-slate-500">Активные фильтры:</span>
-          {activeFilters.map((filter) => (
-            <span key={filter.key} className="inline-flex h-8 items-center gap-1.5 rounded-full bg-slate-100 px-3 text-xs font-semibold text-slate-700">
-              {filter.label}: {filter.value}
-              <button type="button" onClick={() => removeFilter(filter.key)} className="grid h-5 w-5 place-items-center rounded-full text-slate-500 hover:bg-white hover:text-slate-900" aria-label={`Убрать фильтр ${filter.label}`}>
-                <X size={12} />
-              </button>
-            </span>
-          ))}
-          <button type="button" onClick={onClearAll} className="h-8 rounded-full px-3 text-xs font-semibold text-indigo-700 hover:bg-indigo-50">
-            Очистить все
-          </button>
-        </div>
-      ) : null}
+      <div className="grid gap-2 md:grid-cols-2">
+        <Button type="button" variant="secondary" size="sm" onClick={onOpenSegment} className="justify-between">
+          {t("clients.segment")}
+          <ChevronDown size={14} />
+        </Button>
+        <Select
+          value={selectedSegment}
+          onChange={(event) => onSelectedSegmentChange(event.target.value)}
+          options={segmentOptions}
+          className="h-9 text-xs"
+          aria-label="Сегмент"
+        />
+      </div>
+      <div className="pt-1 text-right">
+        <Button type="button" size="sm" variant="secondary" className="h-8" onClick={onClearAll}>
+          {search || source || selectedTag || selectedSegment ? "Очистить" : "Сбросить"}
+        </Button>
+      </div>
     </div>
+  );
+
+  return (
+    <CrmFilterChips
+      value={quickFilter}
+      options={quickFilterOptions}
+      onChange={onQuickFilterChange}
+      advanced={advancedContent}
+      advancedLabel="Расширенные"
+      activeFilters={activeFilters}
+      onClearFilter={removeFilter}
+      onClearAll={onClearAll}
+      ariaLabel="Фильтры клиентов"
+    >
+      <div className="relative">
+        <button
+          type="button"
+          className="inline-grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+          onClick={() => setColumnsOpen((value) => !value)}
+          aria-label={t("clients.columns")}
+        >
+          <Columns3 size={15} />
+        </button>
+        {columnsOpen ? (
+          <div className="absolute right-0 top-10 z-30 w-48 rounded-xl border border-slate-200 bg-white p-2 shadow-card">
+            {columnOptions.map((column) => (
+              <label key={column.id} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                <input
+                  type="checkbox"
+                  checked={visibleColumns.has(column.id)}
+                  onChange={() => onToggleColumn(column.id)}
+                  className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                />
+                {column.label}
+              </label>
+            ))}
+          </div>
+        ) : null}
+      </div>
+      {search ? (
+        <span className="inline-flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 text-sm text-slate-500">
+          <Search size={14} className="text-slate-400" />
+          <span className="max-w-40 truncate">{search}</span>
+          <button type="button" onClick={onClearSearch} className="ml-1 rounded-full p-1 text-slate-600 hover:bg-white" aria-label="Очистить поиск">
+            <X size={12} />
+          </button>
+        </span>
+      ) : null}
+    </CrmFilterChips>
   );
 }

@@ -31,11 +31,56 @@ export type DealBoardParams = DealListParams & {
   offset?: number;
 };
 
+export type DealCreatePayload = Omit<
+  Partial<Deal>,
+  | "id"
+  | "status"
+  | "probability"
+  | "lost_reason"
+  | "lost_by"
+  | "previous_status"
+  | "previous_stage"
+  | "won_at"
+  | "lost_at"
+  | "stage_entered_at"
+  | "is_archived"
+  | "archive_reason"
+  | "archived_at"
+  | "archived_by"
+  | "created_at"
+  | "updated_at"
+>;
+
+export type DealUpdatePayload = Omit<
+  Partial<Deal>,
+  | "id"
+  | "business"
+  | "client"
+  | "lead"
+  | "pipeline"
+  | "stage"
+  | "status"
+  | "probability"
+  | "lost_reason"
+  | "lost_by"
+  | "previous_status"
+  | "previous_stage"
+  | "won_at"
+  | "lost_at"
+  | "stage_entered_at"
+  | "is_archived"
+  | "archive_reason"
+  | "archived_at"
+  | "archived_by"
+  | "created_at"
+  | "updated_at"
+>;
+
 export const pipelinesApi = createCrudApi<Pipeline>("/api/pipelines/");
 export const pipelineStagesApi = createCrudApi<PipelineStage>("/api/pipeline-stages/");
 
 export const dealsApi = {
-  ...createCrudApi<Deal>("/api/deals/"),
+  ...createCrudApi<Deal, DealCreatePayload, DealUpdatePayload>("/api/deals/"),
   listPaginated: async (params?: DealListParams) => {
     const { data } = await apiClient.get<PaginatedResponse<Deal>>("/api/deals/", { params });
     return data;

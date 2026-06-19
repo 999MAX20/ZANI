@@ -227,7 +227,7 @@ def _notify_manager_for_reply(appointment, text, *, task=None):
         category=Notification.Categories.SALES,
         priority=Notification.Priorities.HIGH,
         text=text,
-        action_url=f"/dashboard/tasks?task={task.id}" if task else f"/dashboard/calendar?appointment={appointment.id}",
+        action_url=f"/app/tasks?task={task.id}" if task else f"/app/calendar?appointment={appointment.id}",
         action_label="Открыть",
         preferred_user=preferred_user,
         roles=MANAGER_ROLES,
@@ -243,7 +243,7 @@ def _notify_delivery_failure(notification, result):
         category=Notification.Categories.SYSTEM,
         priority=Notification.Priorities.HIGH,
         text=f"Не удалось отправить уведомление клиенту: {result.get('reason') or result}",
-        action_url=f"/dashboard/calendar?appointment={notification.appointment_id}" if notification.appointment_id else "/dashboard/settings",
+        action_url=f"/app/calendar?appointment={notification.appointment_id}" if notification.appointment_id else "/app/settings",
         action_label="Проверить",
         roles=TECHNICAL_ROLES,
     )

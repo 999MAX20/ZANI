@@ -1,11 +1,10 @@
-import { Bot, ChevronLeft, ChevronRight, Mail, MessageCircle, MoreHorizontal, Phone, Tag, XCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Mail, MessageCircle, MoreHorizontal, Phone, Tag, XCircle } from "lucide-react";
 
 import type { CrmDrawerEntity } from "../../../components/crm/CrmEntityDrawer";
 import { Button } from "../../../components/ui/Button";
-import { cn } from "../../../lib/cn";
 import { formatDateTime } from "../../../lib/format";
 import type { Client, Lead, Service } from "../../../types";
-import { statusClass, type LeadAiInsight, type Translate } from "../types";
+import { statusClass, type Translate } from "../types";
 import { getSourceLabel, getStatusLabel, initials, leadTitle, nextAction, Pill, TruncatedText } from "../utils/leadFormat";
 import { SourceBadge } from "./common/SourceBadge";
 
@@ -106,21 +105,5 @@ export function LeadContactSummary({
         <p className="mt-1 text-xs text-slate-500">{formatDateTime(selected.updated_at)}</p>
       </div>
     </div>
-  );
-}
-
-export function LeadAiInsightCard({ aiInsight, t }: { aiInsight: LeadAiInsight; t: Translate }) {
-  return (
-    <section className="rounded-xl border border-violet-100 bg-gradient-to-br from-violet-50 via-white to-brand-50 p-3">
-      <div className="flex items-start justify-between gap-3">
-        <p className="flex items-center gap-2 text-sm font-black text-midnight"><Bot size={16} /> {t("leads.aiPriorityTitle")}</p>
-        <span className="rounded-full bg-white px-2 py-1 text-xs font-black text-brand-700">{aiInsight.score}/100</span>
-      </div>
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white">
-        <span className={cn("block h-full rounded-full", aiInsight.score >= 75 ? "bg-emerald-500" : aiInsight.score >= 50 ? "bg-amber-500" : "bg-red-500")} style={{ width: `${aiInsight.score}%` }} />
-      </div>
-      <p className="mt-2 text-xs font-semibold leading-5 text-slate-600">{aiInsight.recommendation}</p>
-      <p className="mt-2 text-xs font-black text-red-700">{t("leads.aiLossRisk", { value: aiInsight.lossRisk })}</p>
-    </section>
   );
 }

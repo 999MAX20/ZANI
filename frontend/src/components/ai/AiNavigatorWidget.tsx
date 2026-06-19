@@ -26,7 +26,7 @@ export function AiNavigatorWidget({ signals }: { signals: AiNavigatorSignal[] })
     key: "missing",
     title: t("dashboard.aiBrief.missingTitle"),
     text: t("dashboard.aiBrief.missingText"),
-    href: "/dashboard/integrations",
+    href: "/app/integrations",
     tone: "info" as const,
   }];
   const primarySignal = visibleSignals[0];

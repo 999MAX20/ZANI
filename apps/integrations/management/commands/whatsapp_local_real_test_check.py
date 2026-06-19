@@ -45,7 +45,7 @@ class Command(BaseCommand):
         result = {
             "ready_for_local_real_test": all(check["status"] == "pass" for check in checks),
             "webhook_callback_url": urljoin(f"{display_public_url}/", "api/integrations/whatsapp/webhook/") if display_public_url else "",
-            "embedded_signup_redirect_uri": urljoin(f"{display_public_url}/", "dashboard/integrations") if display_public_url else "",
+            "embedded_signup_redirect_uri": urljoin(f"{display_public_url}/", "app/integrations") if display_public_url else "",
             "checks": checks,
         }
 

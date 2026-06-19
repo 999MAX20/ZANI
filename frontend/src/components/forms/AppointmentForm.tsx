@@ -5,10 +5,10 @@ import { useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
 import { z } from "zod";
 
-import { appointmentsApi } from "../../api/appointments";
+import { appointmentsApi, type AppointmentCreatePayload } from "../../api/appointments";
 import { getApiErrorMessage } from "../../api/client";
 import { workingHoursApi } from "../../api/workingHours";
-import { todayISO } from "../../lib/format";
+import { dateInTimeZone, hourInTimeZone, todayInTimeZone } from "../../lib/format";
 import { useI18n } from "../../lib/i18n";
 import type { Appointment, Client, Id, Lead, Resource, Service, WorkingHours } from "../../types";
 import { Button } from "../ui/Button";
@@ -24,7 +24,6 @@ function createSchema(t: (key: string) => string) {
     lead: z.coerce.number().optional(),
     date: z.string().min(1, t("appointment.dateRequired")),
     slot: z.string().optional(),
-    status: z.string(),
     source: z.string(),
     notes: z.string().optional(),
   });
@@ -80,6 +79,7 @@ export function AppointmentForm({
   initial,
   prefill,
   onSubmit,
+  timeZone = "UTC",
 }: {
   businessId: Id;
   clients: Client[];
@@ -97,7 +97,8 @@ export function AppointmentForm({
     hour?: number;
     source?: Appointment["source"];
   };
-  onSubmit: (payload: Partial<Appointment>) => Promise<unknown>;
+  onSubmit: (payload: AppointmentCreatePayload) => Promise<unknown>;
+  timeZone?: string;
 }) {
   const { t, language } = useI18n();
   const form = useForm<Values>({
@@ -107,9 +108,8 @@ export function AppointmentForm({
       service: initial?.service || prefill?.service || services[0]?.id || 0,
       resource: initial?.resource || prefill?.resource || undefined,
       lead: initial?.lead || prefill?.lead || undefined,
-      date: initial?.start_at?.slice(0, 10) || prefill?.date || todayISO(),
+      date: initial?.start_at ? dateInTimeZone(initial.start_at, timeZone) : prefill?.date || todayInTimeZone(timeZone),
       slot: initial?.start_at || prefill?.slot || "",
-      status: initial?.status || "created",
       source: initial?.source || prefill?.source || "manual",
       notes: initial?.notes || "",
     },
@@ -173,9 +173,9 @@ export function AppointmentForm({
 
   useEffect(() => {
     if (initial || prefill?.hour == null || form.getValues("slot") || !slots.data?.length) return;
-    const matchingSlot = slots.data.find((slot) => new Date(slot.start_at).getHours() === prefill.hour);
+    const matchingSlot = slots.data.find((slot) => hourInTimeZone(slot.start_at, timeZone) === prefill.hour);
     if (matchingSlot) form.setValue("slot", matchingSlot.start_at, { shouldDirty: true, shouldValidate: true });
-  }, [form, initial, prefill?.hour, slots.data]);
+  }, [form, initial, prefill?.hour, slots.data, timeZone]);
 
   return (
     <form
@@ -199,7 +199,6 @@ export function AppointmentForm({
             lead: values.lead || null,
             start_at: startAt,
             end_at: initial?.end_at || endAt.toISOString(),
-            status: values.status as Appointment["status"],
             source: values.source as Appointment["source"],
             notes: values.notes || "",
           });
@@ -212,7 +211,7 @@ export function AppointmentForm({
         <SetupNotice
           title={t("appointment.needClientTitle")}
           description={t("appointment.needClientText")}
-          to="/dashboard/clients"
+          to="/app/clients"
           action={t("appointment.goClients")}
         />
       ) : null}
@@ -220,7 +219,7 @@ export function AppointmentForm({
         <SetupNotice
           title={t("appointment.needServiceTitle")}
           description={t("appointment.needServiceText")}
-          to="/dashboard/services"
+          to="/app/services"
           action={t("appointment.goServices")}
         />
       ) : null}
@@ -228,7 +227,7 @@ export function AppointmentForm({
         <div className="rounded-3xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-600">
           <p className="font-bold text-midnight">{t("appointment.resourceHintTitle")}</p>
           <p className="mt-1 leading-6">{t("appointment.resourceHintText")}</p>
-          <Link className="mt-3 inline-flex font-bold text-brand-700 underline-offset-4 hover:underline" to="/dashboard/resources">
+          <Link className="mt-3 inline-flex font-bold text-brand-700 underline-offset-4 hover:underline" to="/app/resources">
             {t("appointment.goResources")}
           </Link>
         </div>
@@ -258,7 +257,7 @@ export function AppointmentForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <Input label={t("appointment.date")} type="date" error={form.formState.errors.date?.message} {...form.register("date")} disabled={Boolean(initial)} />
         {initial ? (
-          <Input label={t("appointment.time")} value={new Date(initial.start_at).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })} readOnly />
+          <Input label={t("appointment.time")} value={new Date(initial.start_at).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", timeZone })} readOnly />
         ) : (
           <Select
             label={t("appointment.slot")}
@@ -274,7 +273,7 @@ export function AppointmentForm({
               },
               ...(slots.data || []).map((slot) => ({
                 value: slot.start_at,
-                label: new Date(slot.start_at).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" }),
+                label: new Date(slot.start_at).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", timeZone }),
               })),
             ]}
             {...form.register("slot")}
@@ -301,7 +300,7 @@ export function AppointmentForm({
             <Button type="button" variant="secondary" isLoading={quickHoursMutation.isPending} onClick={() => quickHoursMutation.mutate()}>
               {t("appointment.applyQuickHours")}
             </Button>
-            <Link className="inline-flex min-h-10 items-center rounded-2xl px-4 py-2 font-bold text-amber-950 underline-offset-4 hover:underline" to="/dashboard/working-hours">
+            <Link className="inline-flex min-h-10 items-center rounded-2xl px-4 py-2 font-bold text-amber-950 underline-offset-4 hover:underline" to="/app/working-hours">
               {t("appointment.openHours")}
             </Link>
           </div>
@@ -312,24 +311,14 @@ export function AppointmentForm({
           {submitError}
         </div>
       ) : null}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Select label={t("appointment.status")} options={[
-          { value: "created", label: t("appointment.statusCreated") },
-          { value: "confirmed", label: t("appointment.statusConfirmed") },
-          { value: "cancelled", label: t("appointment.statusCancelled") },
-          { value: "rescheduled", label: t("appointment.statusRescheduled") },
-          { value: "completed", label: t("appointment.statusCompleted") },
-          { value: "no_show", label: t("appointment.statusNoShow") },
-        ]} {...form.register("status")} />
-        <Select label={t("appointment.source")} options={[
-          { value: "manual", label: t("appointment.sourceManual") },
-          { value: "website", label: t("appointment.sourceWebsite") },
-          { value: "telegram", label: "Telegram" },
-          { value: "whatsapp", label: "WhatsApp" },
-          { value: "instagram", label: "Instagram" },
-          { value: "bot", label: "Bot" },
-        ]} {...form.register("source")} />
-      </div>
+      <Select label={t("appointment.source")} options={[
+        { value: "manual", label: t("appointment.sourceManual") },
+        { value: "website", label: t("appointment.sourceWebsite") },
+        { value: "telegram", label: "Telegram" },
+        { value: "whatsapp", label: "WhatsApp" },
+        { value: "instagram", label: "Instagram" },
+        { value: "bot", label: "Bot" },
+      ]} {...form.register("source")} />
       <Textarea label={t("appointment.notes")} {...form.register("notes")} />
       <Button type="submit" isLoading={form.formState.isSubmitting} disabled={!initial && (!hasClients || !hasServices || slots.isLoading || slots.data?.length === 0)}>
         {initial ? t("appointment.save") : t("appointment.create")}

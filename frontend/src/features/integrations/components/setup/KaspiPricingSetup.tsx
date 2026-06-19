@@ -90,7 +90,7 @@ export function KaspiPricingInlineSetup({ businessId, canManage }: { businessId:
               {t("integrations.kaspiPricing.productDescription")}
             </p>
           </div>
-          <Link to="/dashboard/pricing">
+          <Link to="/app/pricing">
             <Button type="button">
               <TrendingDown size={16} /> {t("integrations.kaspiPricing.openAgent")}
             </Button>
@@ -140,7 +140,7 @@ export function KaspiPricingInlineSetup({ businessId, canManage }: { businessId:
       <div className="rounded-3xl border border-slate-100 bg-white p-4">
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm font-black text-midnight">{t("integrations.kaspiPricing.latestChange")}</p>
-          <Link to="/dashboard/pricing">
+          <Link to="/app/pricing">
             <Button type="button" variant="ghost" size="sm">
               {t("integrations.kaspiPricing.history")}
             </Button>

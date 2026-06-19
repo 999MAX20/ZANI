@@ -18,6 +18,10 @@ from apps.scheduling.serializers import AppointmentSerializer
 from apps.tasks.models import Task
 from apps.tasks.serializers import TaskSerializer
 
+RELATED_LIMIT = 25
+TIMELINE_LIMIT = 50
+NOTES_LIMIT = 50
+
 
 def _empty_q():
     return Q(pk__in=[])
@@ -31,7 +35,22 @@ def _or_queries(queries):
 
 
 def _entity_query(entity_refs):
-    return _or_queries([Q(entity_type=entity_type, entity_id=str(entity_id)) for entity_type, entity_id in entity_refs if entity_id])
+    queries = []
+    for entity_type, entity_id in entity_refs:
+        if not entity_id:
+            continue
+        queries.append(Q(entity_type=entity_type, entity_id=str(entity_id)))
+        queries.append(Q(entity_type=entity_type.lower(), entity_id=str(entity_id)))
+    return _or_queries(queries)
+
+
+def _append_entity_refs(entity_refs, entity_type, ids):
+    existing = {(item_type, str(item_id)) for item_type, item_id in entity_refs}
+    for entity_id in ids:
+        key = (entity_type, str(entity_id))
+        if entity_id and key not in existing:
+            entity_refs.append((entity_type, entity_id))
+            existing.add(key)
 
 
 def _custom_field_entity(client=None, lead=None, deal=None, appointment=None):
@@ -69,6 +88,80 @@ def _custom_field_payload(business, *, client=None, lead=None, deal=None, appoin
     ]
 
 
+def _primary_entity_payload(*, client=None, lead=None, deal=None, appointment=None):
+    if appointment is not None:
+        return {"type": "appointment", "id": appointment.id}
+    if deal is not None:
+        return {"type": "deal", "id": deal.id}
+    if lead is not None:
+        return {"type": "lead", "id": lead.id}
+    if client is not None:
+        return {"type": "client", "id": client.id}
+    return None
+
+
+def _lead_actions(lead, deals):
+    if lead is None:
+        return []
+    actions = []
+    if lead.status != Lead.Statuses.IN_PROGRESS:
+        actions.append("take")
+    if lead.status != Lead.Statuses.CONTACTED:
+        actions.append("contacted")
+    if not deals.filter(is_archived=False).exists():
+        actions.append("create_deal")
+    if lead.status not in [Lead.Statuses.CLOSED, Lead.Statuses.LOST]:
+        actions.extend(["create_appointment", "close", "lost"])
+    if lead.status in [Lead.Statuses.CLOSED, Lead.Statuses.LOST]:
+        actions.append("reopen")
+    actions.extend(["assign", "add_note", "create_task"])
+    return actions
+
+
+def _deal_actions(deal):
+    if deal is None:
+        return []
+    actions = ["create_task", "create_appointment", "add_note"]
+    if deal.status != Deal.Statuses.WON:
+        actions.append("won")
+    if deal.status != Deal.Statuses.LOST:
+        actions.append("lost")
+    if deal.status != Deal.Statuses.OPEN:
+        actions.append("reopen")
+    return actions
+
+
+def _appointment_actions(appointment):
+    if appointment is None:
+        return []
+    actions = ["add_note"]
+    if appointment.status in [Appointment.Statuses.CREATED, Appointment.Statuses.RESCHEDULED]:
+        actions.extend(["confirm", "cancel", "reschedule"])
+    if appointment.status == Appointment.Statuses.CONFIRMED:
+        actions.extend(["complete", "cancel", "no_show", "reschedule"])
+    if appointment.status in [Appointment.Statuses.CANCELLED, Appointment.Statuses.COMPLETED, Appointment.Statuses.NO_SHOW]:
+        actions.append("repeat")
+    return actions
+
+
+def _client_actions(client):
+    if client is None:
+        return []
+    return ["create_lead", "create_deal", "create_appointment", "create_task", "add_note", "merge"]
+
+
+def _available_actions(*, client=None, lead=None, deal=None, appointment=None, deals=None):
+    if appointment is not None:
+        return _appointment_actions(appointment)
+    if deal is not None:
+        return _deal_actions(deal)
+    if lead is not None:
+        return _lead_actions(lead, deals or Deal.objects.none())
+    if client is not None:
+        return _client_actions(client)
+    return []
+
+
 def _tags_payload(business, entity_refs):
     if not entity_refs:
         return []
@@ -79,8 +172,7 @@ def _tags_payload(business, entity_refs):
 def _attachments_payload(business, entity_refs):
     if not entity_refs:
         return []
-    entity_query = _or_queries([(Q(entity_type=entity_type.lower(), entity_id=str(entity_id))) for entity_type, entity_id in entity_refs if entity_id])
-    attachments = FileAttachment.objects.filter(business=business).filter(entity_query).distinct()
+    attachments = FileAttachment.objects.filter(business=business).filter(_entity_query(entity_refs)).distinct()
     return FileAttachmentSerializer(attachments, many=True).data
 
 
@@ -144,6 +236,23 @@ def build_crm_card_payload(*, business, client=None, lead=None, deal=None, appoi
     if lead is not None:
         conversation_filters.append(Q(lead=lead))
 
+    leads = Lead.objects.filter(business=business).select_related("business", "client", "service", "responsible_user").filter(_or_queries(lead_filters)).distinct().order_by("-updated_at")
+    deals = Deal.objects.filter(business=business).select_related("business", "client", "lead", "pipeline", "stage", "owner").filter(_or_queries(deal_filters)).distinct().order_by("-updated_at")
+    appointments = Appointment.objects.filter(business=business).select_related("business", "client", "lead", "service", "resource").filter(_or_queries(appointment_filters)).distinct().order_by("-start_at")
+    tasks = Task.objects.filter(business=business).select_related("business", "client", "lead", "deal", "appointment", "assignee").filter(_or_queries(task_filters)).distinct().order_by("-updated_at")
+    conversations = (
+        BotConversation.objects.filter(business=business)
+        .select_related("business", "bot", "client", "lead", "assigned_to")
+        .filter(_or_queries(conversation_filters))
+        .distinct()
+        .order_by("-updated_at")
+    )
+
+    _append_entity_refs(entity_refs, "Lead", leads.values_list("id", flat=True))
+    _append_entity_refs(entity_refs, "Deal", deals.values_list("id", flat=True))
+    _append_entity_refs(entity_refs, "Appointment", appointments.values_list("id", flat=True))
+    _append_entity_refs(entity_refs, "Task", tasks.values_list("id", flat=True))
+
     timeline_filters = []
     if client is not None:
         timeline_filters.append(Q(client=client))
@@ -152,35 +261,55 @@ def build_crm_card_payload(*, business, client=None, lead=None, deal=None, appoi
 
     notes_filters = list(timeline_filters)
 
-    leads = Lead.objects.filter(business=business).select_related("business", "client", "service", "responsible_user").filter(_or_queries(lead_filters)).distinct()
-    deals = Deal.objects.filter(business=business).select_related("business", "client", "lead", "pipeline", "stage", "owner").filter(_or_queries(deal_filters)).distinct()
-    appointments = Appointment.objects.filter(business=business).select_related("business", "client", "lead", "service", "resource").filter(_or_queries(appointment_filters)).distinct()
-    tasks = Task.objects.filter(business=business).select_related("business", "client", "lead", "deal", "appointment", "assignee").filter(_or_queries(task_filters)).distinct()
-    conversations = (
-        BotConversation.objects.filter(business=business)
-        .select_related("business", "bot", "client", "lead", "assigned_to")
-        .filter(_or_queries(conversation_filters))
-        .distinct()
-    )
-    timeline = ActivityEvent.objects.filter(business=business).filter(_or_queries(timeline_filters)).distinct()[:50]
-    notes = Note.objects.filter(business=business).select_related("business", "client", "author").filter(_or_queries(notes_filters)).distinct()
+    timeline = ActivityEvent.objects.filter(business=business).filter(_or_queries(timeline_filters)).distinct().order_by("-created_at")
+    notes = Note.objects.filter(business=business).select_related("business", "client", "author").filter(_or_queries(notes_filters)).distinct().order_by("-created_at")
 
     primary_lead = lead or leads.first()
     primary_deal = deal or deals.first()
     primary_appointment = appointment or appointments.first()
+    related_counts = {
+        "leads": leads.count(),
+        "deals": deals.count(),
+        "appointments": appointments.count(),
+        "tasks": tasks.count(),
+        "conversations": conversations.count(),
+        "timeline": timeline.count(),
+        "notes": notes.count(),
+    }
+    primary_entity = _primary_entity_payload(client=client, lead=lead, deal=deal, appointment=appointment)
+    available_actions = _available_actions(client=client, lead=lead, deal=deal, appointment=appointment, deals=deals)
 
     return {
+        "primary_entity": primary_entity,
+        "available_actions": available_actions,
+        "meta": {
+            "related_counts": related_counts,
+            "limits": {
+                "related": RELATED_LIMIT,
+                "timeline": TIMELINE_LIMIT,
+                "notes": NOTES_LIMIT,
+            },
+            "has_more": {
+                "leads": related_counts["leads"] > RELATED_LIMIT,
+                "deals": related_counts["deals"] > RELATED_LIMIT,
+                "appointments": related_counts["appointments"] > RELATED_LIMIT,
+                "tasks": related_counts["tasks"] > RELATED_LIMIT,
+                "conversations": related_counts["conversations"] > RELATED_LIMIT,
+                "timeline": related_counts["timeline"] > TIMELINE_LIMIT,
+                "notes": related_counts["notes"] > NOTES_LIMIT,
+            },
+        },
         "client": ClientSerializer(client).data if client is not None else None,
         "lead": LeadSerializer(primary_lead).data if primary_lead is not None else None,
         "deal": DealSerializer(primary_deal).data if primary_deal is not None else None,
         "appointment": AppointmentSerializer(primary_appointment).data if primary_appointment is not None else None,
-        "leads": LeadSerializer(leads, many=True).data,
-        "deals": DealSerializer(deals, many=True).data,
-        "appointments": AppointmentSerializer(appointments, many=True).data,
-        "tasks": TaskSerializer(tasks, many=True).data,
-        "conversations": InboxConversationSerializer(conversations, many=True).data,
-        "timeline": ActivityEventSerializer(timeline, many=True).data,
-        "notes": NoteSerializer(notes, many=True).data,
+        "leads": LeadSerializer(leads[:RELATED_LIMIT], many=True).data,
+        "deals": DealSerializer(deals[:RELATED_LIMIT], many=True).data,
+        "appointments": AppointmentSerializer(appointments[:RELATED_LIMIT], many=True).data,
+        "tasks": TaskSerializer(tasks[:RELATED_LIMIT], many=True).data,
+        "conversations": InboxConversationSerializer(conversations[:RELATED_LIMIT], many=True).data,
+        "timeline": ActivityEventSerializer(timeline[:TIMELINE_LIMIT], many=True).data,
+        "notes": NoteSerializer(notes[:NOTES_LIMIT], many=True).data,
         "tags": _tags_payload(business, entity_refs),
         "attachments": _attachments_payload(business, entity_refs),
         "custom_fields": _custom_field_payload(

@@ -6,6 +6,8 @@ from rest_framework.test import APIClient
 
 from apps.accounts.models import User
 from apps.activities.models import ActivityEvent
+from apps.activities.services import create_activity_event
+from apps.activities.taxonomy import ActivityEvents
 from apps.bots.inbox_service import register_bot_message, send_outbound_message
 from apps.bots.models import Bot, BotConversation, BotMessage
 from apps.businesses.models import Business, BusinessMember
@@ -54,11 +56,11 @@ class ActivityTimelineUnificationTests(TestCase):
         self.assertEqual(create_response.status_code, 201)
         lead_id = create_response.data["id"]
 
-        update_response = self.api.patch(f"/api/leads/{lead_id}/", {"status": Lead.Statuses.CONTACTED}, format="json")
+        update_response = self.api.post(f"/api/leads/{lead_id}/mark-contacted/", {}, format="json")
 
         self.assertEqual(update_response.status_code, 200)
         self.assertTrue(ActivityEvent.objects.filter(business=self.business, client=self.client, event_type="lead_created").exists())
-        self.assertTrue(ActivityEvent.objects.filter(business=self.business, client=self.client, event_type="lead_status_changed").exists())
+        self.assertTrue(ActivityEvent.objects.filter(business=self.business, client=self.client, event_type="lead_contacted").exists())
 
     def test_appointment_create_cancel_and_task_complete_write_timeline_events(self):
         start_at = datetime(2026, 5, 13, 10, 0, tzinfo=ZoneInfo("Asia/Almaty"))
@@ -83,7 +85,7 @@ class ActivityTimelineUnificationTests(TestCase):
         self.assertEqual(appointment_response.status_code, 201)
         appointment_id = appointment_response.data["id"]
 
-        cancel_response = self.api.patch(f"/api/appointments/{appointment_id}/", {"status": Appointment.Statuses.CANCELLED}, format="json")
+        cancel_response = self.api.post(f"/api/appointments/{appointment_id}/cancel/", {}, format="json")
         task_response = self.api.post(
             "/api/tasks/",
             {"business": self.business.id, "client": self.client.id, "title": "Follow up"},
@@ -118,6 +120,18 @@ class ActivityTimelineUnificationTests(TestCase):
 
         self.assertTrue(ActivityEvent.objects.filter(event_type="message_received", client=self.client).exists())
         self.assertTrue(ActivityEvent.objects.filter(event_type="message_sent", client=self.client).exists())
+
+    def test_activity_event_aliases_are_stored_as_canonical_taxonomy(self):
+        event = create_activity_event(
+            business=self.business,
+            client=self.client,
+            actor=self.owner,
+            event_type="deal_marked_won",
+            text="",
+        )
+
+        self.assertEqual(event.event_type, ActivityEvents.DEAL_WON)
+        self.assertEqual(event.text, "Сделка выиграна")
 
     def test_activity_event_filters_are_tenant_safe(self):
         own_event = ActivityEvent.objects.create(

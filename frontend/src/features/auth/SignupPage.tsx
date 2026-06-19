@@ -70,7 +70,7 @@ export function SignupPage() {
         business_type: values.business_type,
         city: values.city,
       });
-      navigate("/dashboard");
+      navigate("/app");
     } catch (err) {
       setError(getApiErrorMessage(err));
     }

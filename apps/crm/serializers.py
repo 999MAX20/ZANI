@@ -1,14 +1,30 @@
 from rest_framework import serializers
-from django.utils import timezone
 
 from apps.businesses.access import Resources, can_view_sensitive_field
+from apps.core.work_queues import deal_risk, deal_sla_overdue
 from apps.crm.models import Deal, Pipeline, PipelineStage, StageTransition
 
 
 class PipelineStageSerializer(serializers.ModelSerializer):
     class Meta:
         model = PipelineStage
-        fields = "__all__"
+        fields = [
+            "id",
+            "business",
+            "pipeline",
+            "name",
+            "order",
+            "color",
+            "probability",
+            "sla_minutes",
+            "required_fields_json",
+            "allowed_roles_json",
+            "is_won",
+            "is_lost",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["created_at", "updated_at"]
 
 
 class PipelineSerializer(serializers.ModelSerializer):
@@ -16,21 +32,75 @@ class PipelineSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Pipeline
-        fields = "__all__"
+        fields = [
+            "id",
+            "business",
+            "name",
+            "slug",
+            "entity_type",
+            "is_default",
+            "template_key",
+            "stages",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["created_at", "updated_at", "stages"]
 
 
 class DealSerializer(serializers.ModelSerializer):
     sla_overdue = serializers.SerializerMethodField()
+    lifecycle_update_fields = {
+        "stage",
+        "status",
+        "probability",
+        "lost_reason",
+        "lost_by",
+        "won_at",
+        "lost_at",
+        "previous_status",
+        "previous_stage",
+        "stage_entered_at",
+    }
+    archive_update_fields = {"is_archived", "archive_reason", "archived_at", "archived_by"}
 
     class Meta:
         model = Deal
-        fields = "__all__"
+        fields = [
+            "id",
+            "business",
+            "client",
+            "lead",
+            "pipeline",
+            "stage",
+            "title",
+            "amount",
+            "currency",
+            "probability",
+            "expected_close_at",
+            "owner",
+            "status",
+            "source",
+            "lost_reason",
+            "lost_by",
+            "won_at",
+            "lost_at",
+            "previous_status",
+            "previous_stage",
+            "stage_entered_at",
+            "next_action_at",
+            "notes",
+            "is_archived",
+            "archived_at",
+            "archived_by",
+            "archive_reason",
+            "sla_overdue",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = ["sla_overdue", "lost_at", "lost_by", "previous_status", "previous_stage", "archived_at", "archived_by"]
 
     def get_sla_overdue(self, obj):
-        if not obj.stage or not obj.stage.sla_minutes or not obj.stage_entered_at:
-            return False
-        return timezone.now() > obj.stage_entered_at + timezone.timedelta(minutes=obj.stage.sla_minutes)
+        return deal_sla_overdue(obj)
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -45,6 +115,23 @@ class DealSerializer(serializers.ModelSerializer):
         return data
 
     def validate(self, attrs):
+        attempted_archive_fields = sorted(self.archive_update_fields.intersection((self.initial_data or {}).keys()))
+        if attempted_archive_fields:
+            raise serializers.ValidationError(
+                {
+                    "detail": "Use deal archive action endpoints for archive state changes.",
+                    "fields": attempted_archive_fields,
+                }
+            )
+        if self.instance is not None:
+            attempted_lifecycle_fields = sorted(self.lifecycle_update_fields.intersection((self.initial_data or {}).keys()))
+            if attempted_lifecycle_fields:
+                raise serializers.ValidationError(
+                    {
+                        "detail": "Use deal lifecycle action endpoints for protected state changes.",
+                        "fields": attempted_lifecycle_fields,
+                    }
+                )
         pipeline = attrs.get("pipeline") or getattr(self.instance, "pipeline", None)
         stage = attrs.get("stage") or getattr(self.instance, "stage", None)
         business = attrs.get("business") or getattr(self.instance, "business", None)
@@ -153,13 +240,7 @@ class DealListSerializer(DealSerializer):
         return task.priority if task else ""
 
     def _risk(self, obj):
-        if self.get_sla_overdue(obj):
-            return "high", 86
-        if obj.expected_close_at and obj.expected_close_at < timezone.now().date():
-            return "high", 78
-        if obj.status == Deal.Statuses.OPEN and not self._next_task(obj) and not obj.next_action_at:
-            return "medium", 62
-        return "low", 24 if obj.status == Deal.Statuses.OPEN else 12
+        return deal_risk(obj, next_task=self._next_task(obj))
 
     def get_risk_level(self, obj):
         return self._risk(obj)[0]
@@ -171,4 +252,16 @@ class DealListSerializer(DealSerializer):
 class StageTransitionSerializer(serializers.ModelSerializer):
     class Meta:
         model = StageTransition
-        fields = "__all__"
+        fields = [
+            "id",
+            "business",
+            "pipeline",
+            "from_stage",
+            "to_stage",
+            "required_permission",
+            "conditions",
+            "is_active",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["created_at", "updated_at"]

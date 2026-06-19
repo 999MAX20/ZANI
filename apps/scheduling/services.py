@@ -5,6 +5,13 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.analytics.models import AnalyticsEvent
+from apps.activities.services import create_activity_event
+from apps.activities.taxonomy import ActivityEvents
+from apps.automations.engine import run_automations_for_event
+from apps.automations.models import AutomationRule
+from apps.businesses.models import Business
+from apps.core.audit import write_audit_log
+from apps.core.models import AuditLog
 from apps.leads.models import Lead
 from apps.notifications.models import Notification
 from apps.scheduling.models import Appointment, AppointmentMessageSetting, WorkingHours
@@ -113,7 +120,7 @@ def apply_working_hours_preset(business, preset_key, resource=None):
     return updated
 
 
-def get_available_slots(business, service, date, resource=None, after_time=None):
+def get_available_slots(business, service, date, resource=None, after_time=None, exclude_appointment=None):
     if service.business_id != business.id:
         raise ValueError("Service must belong to the selected business.")
     if resource and resource.business_id != business.id:
@@ -146,6 +153,8 @@ def get_available_slots(business, service, date, resource=None, after_time=None)
     ).exclude(status__in=[Appointment.Statuses.CANCELLED, Appointment.Statuses.RESCHEDULED])
     if resource:
         busy_query = busy_query.filter(resource=resource)
+    if exclude_appointment:
+        busy_query = busy_query.exclude(pk=exclude_appointment.pk)
 
     busy_intervals = list(busy_query.values_list("start_at", "end_at"))
     slots = []
@@ -237,6 +246,228 @@ def create_appointment_from_lead(lead, service, start_at, resource=None):
     return appointment
 
 
+def handle_appointment_created(appointment):
+    schedule_appointment_followups(appointment)
+    run_automations_for_event(
+        business=appointment.business,
+        trigger_type=AutomationRule.TriggerTypes.APPOINTMENT_CREATED,
+        entity=appointment,
+        payload={"trigger_type": AutomationRule.TriggerTypes.APPOINTMENT_CREATED, "appointment_id": appointment.id},
+    )
+
+
+def sync_appointment_after_update(
+    *,
+    appointment,
+    actor,
+    previous_status,
+    previous_start_at,
+    previous_service_id,
+    previous_resource_id,
+):
+    if previous_status != Appointment.Statuses.CANCELLED and appointment.status == Appointment.Statuses.CANCELLED:
+        cancel_appointment_followups(appointment)
+        create_appointment_activity(
+            appointment=appointment,
+            actor=actor,
+            event_type=ActivityEvents.APPOINTMENT_CANCELLED,
+            text=f"Запись отменена: {appointment.start_at:%d.%m.%Y %H:%M}",
+            previous_status=previous_status,
+        )
+        run_appointment_cancelled_automations(appointment)
+    elif previous_status != Appointment.Statuses.COMPLETED and appointment.status == Appointment.Statuses.COMPLETED:
+        cancel_appointment_followups(appointment)
+        schedule_post_service_followup(appointment)
+        create_appointment_activity(
+            appointment=appointment,
+            actor=actor,
+            event_type=ActivityEvents.APPOINTMENT_COMPLETED,
+            text=f"Визит завершён: {appointment.start_at:%d.%m.%Y %H:%M}",
+            previous_status=previous_status,
+        )
+    elif appointment.status not in {Appointment.Statuses.CANCELLED, Appointment.Statuses.COMPLETED, Appointment.Statuses.NO_SHOW} and (
+        previous_start_at != appointment.start_at
+        or previous_service_id != appointment.service_id
+        or previous_resource_id != appointment.resource_id
+        or previous_status != appointment.status
+    ):
+        schedule_appointment_followups(appointment)
+
+
+def confirm_appointment(*, appointment, actor):
+    return apply_appointment_status(
+        appointment=appointment,
+        actor=actor,
+        status_value=Appointment.Statuses.CONFIRMED,
+        event_type=ActivityEvents.APPOINTMENT_CONFIRMED,
+        text="Запись подтверждена",
+    )
+
+
+def cancel_appointment(*, appointment, actor, request=None):
+    return apply_appointment_status(
+        appointment=appointment,
+        actor=actor,
+        status_value=Appointment.Statuses.CANCELLED,
+        event_type=ActivityEvents.APPOINTMENT_CANCELLED,
+        text="Запись отменена",
+        request=request,
+        audit_metadata={"lifecycle_action": "appointment_cancelled"},
+    )
+
+
+def complete_appointment(*, appointment, actor, request=None):
+    return apply_appointment_status(
+        appointment=appointment,
+        actor=actor,
+        status_value=Appointment.Statuses.COMPLETED,
+        event_type=ActivityEvents.APPOINTMENT_COMPLETED,
+        text="Визит завершён",
+        request=request,
+        audit_metadata={"lifecycle_action": "appointment_completed"},
+    )
+
+
+def mark_appointment_no_show(*, appointment, actor, request=None):
+    return apply_appointment_status(
+        appointment=appointment,
+        actor=actor,
+        status_value=Appointment.Statuses.NO_SHOW,
+        event_type=ActivityEvents.APPOINTMENT_NO_SHOW,
+        text="Клиент не пришёл",
+        request=request,
+        audit_metadata={"lifecycle_action": "appointment_no_show"},
+    )
+
+
+@transaction.atomic
+def reschedule_appointment(*, appointment, actor, start_at, resource=None, reason="", request=None):
+    Business.objects.select_for_update().get(pk=appointment.business_id)
+    if appointment.is_archived:
+        raise ValueError("Archived appointment cannot be rescheduled.")
+    if appointment.status in {Appointment.Statuses.CANCELLED, Appointment.Statuses.COMPLETED, Appointment.Statuses.NO_SHOW}:
+        raise ValueError("Terminal appointment cannot be rescheduled.")
+    if resource and resource.business_id != appointment.business_id:
+        raise ValueError("Resource must belong to the selected business.")
+
+    previous_status = appointment.status
+    previous_start_at = appointment.start_at
+    previous_end_at = appointment.end_at
+    previous_resource_id = appointment.resource_id
+
+    end_at = validate_appointment_availability(
+        appointment.business,
+        appointment.service,
+        start_at,
+        resource=resource,
+        exclude_appointment=appointment,
+    )
+
+    appointment.start_at = start_at
+    appointment.end_at = end_at
+    appointment.resource = resource
+    appointment.status = previous_status
+    appointment.save(update_fields=["start_at", "end_at", "resource", "status", "updated_at"])
+
+    schedule_appointment_followups(appointment)
+    create_activity_event(
+        business=appointment.business,
+        client=appointment.client,
+        actor=actor,
+        event_type=ActivityEvents.APPOINTMENT_RESCHEDULED,
+        instance=appointment,
+        category="appointment",
+        text=f"Запись перенесена: {previous_start_at:%d.%m.%Y %H:%M} -> {appointment.start_at:%d.%m.%Y %H:%M}",
+        metadata={
+            "from": previous_status,
+            "to": appointment.status,
+            "previous_start_at": previous_start_at.isoformat(),
+            "previous_end_at": previous_end_at.isoformat(),
+            "start_at": appointment.start_at.isoformat(),
+            "end_at": appointment.end_at.isoformat(),
+            "previous_resource_id": previous_resource_id,
+            "resource_id": appointment.resource_id,
+            "reason": reason,
+        },
+    )
+    if request is not None:
+        write_audit_log(
+            request,
+            AuditLog.Actions.UPDATE,
+            appointment,
+            metadata={
+                "kind": "lifecycle",
+                "lifecycle_action": "appointment_rescheduled",
+                "from": previous_status,
+                "to": appointment.status,
+                "previous_start_at": previous_start_at.isoformat(),
+                "start_at": appointment.start_at.isoformat(),
+                "previous_resource_id": previous_resource_id,
+                "resource_id": appointment.resource_id,
+                "reason": reason,
+            },
+        )
+    return appointment
+
+
+def apply_appointment_status(*, appointment, actor, status_value, event_type, text, request=None, audit_metadata=None):
+    previous_status = appointment.status
+    appointment.status = status_value
+    appointment.save(update_fields=["status", "updated_at"])
+
+    if status_value in {Appointment.Statuses.CANCELLED, Appointment.Statuses.COMPLETED, Appointment.Statuses.NO_SHOW}:
+        cancel_appointment_followups(appointment)
+    if status_value == Appointment.Statuses.COMPLETED:
+        schedule_post_service_followup(appointment)
+    elif status_value not in {Appointment.Statuses.CANCELLED, Appointment.Statuses.NO_SHOW}:
+        schedule_appointment_followups(appointment)
+
+    create_appointment_activity(
+        appointment=appointment,
+        actor=actor,
+        event_type=event_type,
+        text=f"{text}: {appointment.start_at:%d.%m.%Y %H:%M}",
+        previous_status=previous_status,
+    )
+    if status_value == Appointment.Statuses.CANCELLED:
+        run_appointment_cancelled_automations(appointment)
+    if request is not None and audit_metadata is not None:
+        write_audit_log(
+            request,
+            AuditLog.Actions.UPDATE,
+            appointment,
+            metadata={
+                "kind": "lifecycle",
+                "from": previous_status,
+                "to": appointment.status,
+                **audit_metadata,
+            },
+        )
+    return appointment
+
+
+def create_appointment_activity(*, appointment, actor, event_type, text, previous_status):
+    create_activity_event(
+        business=appointment.business,
+        client=appointment.client,
+        actor=actor,
+        event_type=event_type,
+        instance=appointment,
+        category="appointment",
+        text=text,
+        metadata={"from": previous_status, "to": appointment.status},
+    )
+
+
+def run_appointment_cancelled_automations(appointment):
+    run_automations_for_event(
+        business=appointment.business,
+        trigger_type=AutomationRule.TriggerTypes.APPOINTMENT_CANCELLED,
+        entity=appointment,
+        payload={"trigger_type": AutomationRule.TriggerTypes.APPOINTMENT_CANCELLED, "appointment_id": appointment.id},
+    )
+
+
 def schedule_appointment_followups(appointment, *, responsible_user=None):
     if appointment.status in {Appointment.Statuses.CANCELLED, Appointment.Statuses.COMPLETED, Appointment.Statuses.NO_SHOW}:
         return []
@@ -260,7 +491,7 @@ def schedule_appointment_followups(appointment, *, responsible_user=None):
                 text=text,
                 send_at=send_at,
                 status=Notification.Statuses.PENDING,
-                action_url=f"/dashboard/calendar?appointment={appointment.id}",
+                action_url=f"/app/calendar?appointment={appointment.id}",
                 action_label=label,
             )
         )
@@ -294,7 +525,7 @@ def schedule_post_service_followup(appointment, *, responsible_user=None):
         text=render_appointment_message(appointment, setting.template_text),
         send_at=send_at,
         status=Notification.Statuses.PENDING,
-        action_url=f"/dashboard/calendar?appointment={appointment.id}",
+        action_url=f"/app/calendar?appointment={appointment.id}",
         action_label=APPOINTMENT_THANK_YOU_LABEL,
     )
 

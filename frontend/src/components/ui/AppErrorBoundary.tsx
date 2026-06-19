@@ -65,7 +65,7 @@ export class AppErrorBoundary extends React.Component<React.PropsWithChildren, A
               <button
                 type="button"
                 className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-soft transition hover:-translate-y-0.5 hover:shadow-soft-lg"
-                onClick={() => window.location.assign("/dashboard")}
+                onClick={() => window.location.assign("/app")}
               >
                 {translate(language, "errorBoundary.home")}
               </button>

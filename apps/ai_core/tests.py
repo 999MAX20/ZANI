@@ -275,7 +275,7 @@ class AICoreFoundationTests(TestCase):
         self.assertIsNotNone(task.due_at)
         notification = Notification.objects.get(business=self.business, category=Notification.Categories.TASKS)
         self.assertIn("AI создал задачу", notification.text)
-        self.assertEqual(notification.action_url, f"/dashboard/tasks?task={task.id}")
+        self.assertEqual(notification.action_url, f"/app/tasks?task={task.id}")
         self.assertTrue(response.data["output_json"]["notification_created"])
         self.assertEqual(response.data["output_json"]["calendar_status"], "scheduled")
 

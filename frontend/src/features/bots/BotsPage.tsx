@@ -106,7 +106,7 @@ export function BotsPage() {
                   </div>
 
                   <div className="mt-5 flex flex-wrap gap-2">
-                    <Link to={`/dashboard/bots/${bot.id}`}>
+                    <Link to={`/app/bots/${bot.id}`}>
                       <Button variant="secondary">{t("common.open")}</Button>
                     </Link>
                   </div>

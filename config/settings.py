@@ -398,7 +398,8 @@ EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="Zani <no-reply@zani.local>")
 
-if "test" in __import__("sys").argv:
+_argv = __import__("sys").argv
+if "test" in _argv or any("pytest" in arg for arg in _argv):
     OPENAI_API_KEY = ""
     OPENROUTER_API_KEY = ""
     KIMI_API_KEY = ""

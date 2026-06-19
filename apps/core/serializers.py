@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from apps.core.custom_fields import validate_custom_field_value
 from apps.core.file_validation import validate_file_upload
 from apps.core.models import (
     AuditLog,
@@ -17,7 +18,21 @@ from apps.integrations.sanitization import sanitize_error_payload, sanitize_erro
 class CustomFieldDefinitionSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomFieldDefinition
-        fields = "__all__"
+        fields = [
+            "id",
+            "business",
+            "entity_type",
+            "key",
+            "label",
+            "field_type",
+            "options_json",
+            "permissions_json",
+            "is_required",
+            "is_active",
+            "sort_order",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = ["created_at", "updated_at"]
 
     def validate_permissions_json(self, value):
@@ -35,7 +50,16 @@ class CustomFieldDefinitionSerializer(serializers.ModelSerializer):
 class CustomFieldValueSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomFieldValue
-        fields = "__all__"
+        fields = [
+            "id",
+            "business",
+            "definition",
+            "entity_type",
+            "entity_id",
+            "value_json",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = ["created_at", "updated_at"]
 
     def validate(self, attrs):
@@ -46,6 +70,8 @@ class CustomFieldValueSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Definition must belong to the selected business.")
         if definition and entity_type and definition.entity_type != entity_type:
             raise serializers.ValidationError("Definition entity_type must match value entity_type.")
+        if definition and "value_json" in attrs:
+            attrs["value_json"] = validate_custom_field_value(definition=definition, value_json=attrs.get("value_json"))
         return attrs
 
 
@@ -108,8 +134,23 @@ class AuditLogSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AuditLog
-        fields = "__all__"
-        read_only_fields = ["created_at"]
+        fields = [
+            "id",
+            "business",
+            "business_name",
+            "actor",
+            "actor_email",
+            "action",
+            "category",
+            "risk_level",
+            "entity_type",
+            "entity_id",
+            "metadata",
+            "ip_address",
+            "user_agent",
+            "created_at",
+        ]
+        read_only_fields = ["business_name", "actor_email", "created_at"]
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -124,8 +165,20 @@ class LoginHistorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LoginHistory
-        fields = "__all__"
-        read_only_fields = ["created_at"]
+        fields = [
+            "id",
+            "business",
+            "business_name",
+            "user",
+            "user_email",
+            "email",
+            "status",
+            "ip_address",
+            "user_agent",
+            "metadata",
+            "created_at",
+        ]
+        read_only_fields = ["business_name", "user_email", "created_at"]
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -141,8 +194,20 @@ class SupportAccessGrantSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SupportAccessGrant
-        fields = "__all__"
-        read_only_fields = ["created_at", "created_by"]
+        fields = [
+            "id",
+            "business",
+            "user",
+            "user_email",
+            "reason",
+            "is_active",
+            "expires_at",
+            "created_at",
+            "created_by",
+            "created_by_email",
+            "is_valid_now",
+        ]
+        read_only_fields = ["user_email", "created_at", "created_by", "created_by_email", "is_valid_now"]
 
     def get_is_valid_now(self, obj):
         return obj.is_valid()

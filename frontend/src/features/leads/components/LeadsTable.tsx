@@ -139,7 +139,7 @@ function LeadTableRow({
         </span>
       </label>
       {activeColumns.map((column) => <span key={column} className="min-w-0">{cells[column]}</span>)}
-      <span className="flex items-center justify-end gap-1.5 opacity-70 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100" onClick={(event) => event.stopPropagation()}>
+      <span className="flex items-center justify-end gap-1.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100" onClick={(event) => event.stopPropagation()}>
         {[
           { label: t("leads.open"), icon: SquareArrowOutUpRight, onClick },
           { label: t("leads.call"), icon: Phone, onClick: onCall },
@@ -151,7 +151,7 @@ function LeadTableRow({
             <button
               key={item.label}
               type="button"
-              className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-none transition duration-200 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 active:scale-[0.96]"
+              className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 bg-white text-slate-500 transition duration-200 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 active:scale-[0.96]"
               aria-label={item.label}
               title={item.label}
               onClick={(event) => {

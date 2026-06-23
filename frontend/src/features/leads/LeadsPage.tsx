@@ -840,9 +840,9 @@ export function LeadsPage() {
     .filter((itemPage) => pageCount <= 5 || itemPage === 1 || itemPage === pageCount || Math.abs(itemPage - safePage) <= 1)
     .slice(0, 7);
   return (
-    <CrmWorkspacePage className="h-auto min-h-[calc(100vh-5.5rem)] overflow-visible bg-slate-50/60" contentClassName="flex-none gap-3" maxWidthClassName="max-w-[1520px]">
+    <CrmWorkspacePage className="h-auto min-h-[calc(100vh-5.5rem)] overflow-visible" contentClassName="flex-none gap-3" maxWidthClassName="max-w-[1520px]">
       <CrmTableSurface
-        className="flex-none overflow-visible rounded-lg border border-slate-200 bg-white shadow-[0_14px_48px_-42px_rgba(15,23,42,0.35)]"
+        className="flex-none overflow-visible rounded-card border border-slate-200 bg-white shadow-card"
         filtersClassName="border-b border-slate-100 bg-white px-4 py-3"
         filters={
           <LeadsToolbar
@@ -905,7 +905,7 @@ export function LeadsPage() {
         <CrmDataTable className="rounded-none border-0 bg-transparent shadow-none" contentClassName="min-h-0">
           <div className="hidden shrink-0 overflow-x-auto lg:block">
             <div
-              className={cn(CRM_TABLE_HEADER_GRID_CLASS, "bg-slate-50/80")}
+              className={cn(CRM_TABLE_HEADER_GRID_CLASS, "bg-slate-50")}
               style={{ gridTemplateColumns: tableGridTemplateColumns, minWidth: tableGridMinWidth }}
             >
               <label className="flex h-5 w-5 items-center justify-center">

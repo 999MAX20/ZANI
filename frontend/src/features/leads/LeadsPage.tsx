@@ -1,23 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  CheckCheck,
-  ChevronLeft,
-  ChevronRight,
-  CircleDot,
-  Columns3,
-  Download,
-  Filter,
-  Flame,
-  MessageCircle,
-  Phone,
-  Plus,
-  Search,
-  SlidersHorizontal,
-  Share2,
-  Upload,
-  UserCheck,
-  XCircle,
-} from "lucide-react";
+import { CheckCheck, Plus, SlidersHorizontal } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import writeXlsxFile from "write-excel-file/browser";
@@ -35,25 +17,16 @@ import {
   CrmWorkspacePage,
   CRM_TABLE_ACTIONS_COLUMN,
   CRM_TABLE_CHECKBOX_COLUMN,
-  CRM_TABLE_CONTENT_CLASS,
-  CRM_TABLE_EMBEDDED_CLASS,
   CRM_TABLE_HEADER_GRID_CLASS,
   CRM_TABLE_MIN_WIDTH,
-  CRM_TABLE_PAGINATION_CLASS,
   CRM_TABLE_WIDE_MIN_WIDTH,
 } from "../../components/crm";
 import { CrmEntityDrawer, type CrmDrawerEntity } from "../../components/crm/CrmEntityDrawer";
-import { AppointmentForm } from "../../components/forms/AppointmentForm";
-import { LeadForm } from "../../components/forms/LeadForm";
 import { useActionConfirm } from "../../components/actions/ActionConfirmProvider";
 import { useUndoToast } from "../../components/actions/UndoToastProvider";
 import { usePageHeader } from "../../components/layout/PageHeaderContext";
 import { useNotification } from "../../components/notifications/NotificationProvider";
 import { Button } from "../../components/ui/Button";
-import { Input } from "../../components/ui/Input";
-import { Modal } from "../../components/ui/Modal";
-import { PopoverSurface } from "../../components/ui/Overlay";
-import { Select } from "../../components/ui/Select";
 import { ErrorState, PageSkeleton } from "../../components/ui/StateViews";
 import { cn } from "../../lib/cn";
 import { formatDateTime } from "../../lib/format";
@@ -65,7 +38,13 @@ import { useI18n } from "../../lib/i18n";
 import type { Appointment, Client, Id, Lead, Service, Task } from "../../types";
 import { useAuth } from "../auth/AuthProvider";
 import { LeadQueueItem } from "./components/LeadQueueItem";
+import { LeadAppointmentModal } from "./components/LeadAppointmentModal";
+import { LeadCreateModal } from "./components/LeadCreateModal";
+import { LeadLostModal } from "./components/LeadLostModal";
+import { LeadNextActionModal } from "./components/LeadNextActionModal";
+import { LeadsPagination } from "./components/LeadsPagination";
 import { VirtualizedLeadTableRows } from "./components/LeadsTable";
+import { LeadsToolbar } from "./components/LeadsToolbar";
 import {
   defaultVisibleColumns,
   LEAD_CACHE_KEY,
@@ -77,7 +56,6 @@ import {
   LEAD_OFFLINE_QUEUE_KEY,
   LEAD_PRESETS_KEY,
   LEADS_PAGE_SIZE,
-  statusClass,
   type ActionHistoryItem,
   type FilterPreset,
   type LeadAction,
@@ -85,12 +63,14 @@ import {
   type LeadColumnKey,
   type LeadFilter,
   type OfflineLeadAction,
-  type Translate,
   type UndoToast,
 } from "./types";
-import { fuzzyScore } from "./utils/leadFilters";
-import { formatRelativeTime, getClient, getService, getSourceLabel, getStatusLabel, leadAiInsight, leadTitle, nextAction } from "./utils/leadFormat";
+import { getClient, getService, getSourceLabel, getStatusLabel, leadAiInsight, leadTitle, nextAction } from "./utils/leadFormat";
 import { downloadText, toCsvValue } from "./utils/leadExport";
+import { LeadContextMenu } from "./components/LeadContextMenu";
+import { LeadsBulkBar } from "./components/LeadsBulkBar";
+import { LeadShortcutsModal } from "./components/LeadShortcutsModal";
+import { useLeadKeyboardShortcuts } from "./hooks/useLeadKeyboardShortcuts";
 import { loadJson, saveJson, toDateTimeLocal } from "./utils/leadStorage";
 
 export function LeadsPage() {
@@ -125,7 +105,6 @@ export function LeadsPage() {
   const [sortByAi, setSortByAi] = useState(true);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(LEADS_PAGE_SIZE);
-  const [pageDraft, setPageDraft] = useState("1");
   const [selectedLeadIds, setSelectedLeadIds] = useState<Id[]>([]);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; lead: Lead } | null>(null);
   const [filterPresets, setFilterPresets] = useState<FilterPreset[]>(() => loadJson<FilterPreset[]>(LEAD_PRESETS_KEY, []));
@@ -244,31 +223,7 @@ export function LeadsPage() {
     return () => setPageHeader(null);
   }, [setPageHeader, t]);
 
-  const rows = useMemo(() => {
-    const value = search.trim().toLowerCase();
-    return allLeads
-      .map((lead) => {
-        const client = getClient(lead, clientList);
-        const service = getService(lead, serviceList);
-        const ai = aiInsights.get(lead.id);
-        const searchable = [client?.full_name, client?.phone, client?.email, lead.message, service?.name].join(" ");
-        return { lead, score: value ? fuzzyScore(searchable, value) : sortByAi ? ai?.score || 1 : 1 };
-      })
-      .filter(({ lead, score }) => {
-        const matchesSearch = !value || score > 0;
-        const matchesSource = !source || (source === "website" ? ["website", "landing"].includes(lead.source) : lead.source === source);
-        const matchesFilter =
-          filter === "all" ||
-          (filter === "new" && lead.status === "new") ||
-          (filter === "hot" && lead.status === "new" && !lead.responsible_user) ||
-          (filter === "unanswered" && !lead.responsible_user) ||
-          (filter === "attention" && Boolean(aiInsights.get(lead.id)?.stale || (aiInsights.get(lead.id)?.lossRisk || 0) >= 70)) ||
-          (filter === "mine" && Boolean(user?.id && lead.responsible_user === user.id));
-        return matchesSearch && matchesSource && matchesFilter;
-      })
-      .sort((a, b) => b.score - a.score || (sortByAi ? (aiInsights.get(b.lead.id)?.score || 0) - (aiInsights.get(a.lead.id)?.score || 0) : 0) || new Date(b.lead.updated_at).getTime() - new Date(a.lead.updated_at).getTime())
-      .map(({ lead }) => lead);
-  }, [aiInsights, allLeads, clientList, filter, search, serviceList, sortByAi, source, user?.id]);
+  const rows = useMemo(() => allLeads, [allLeads]);
   const totalLeadCount = leads.data?.count ?? rows.length;
   const pageCount = Math.max(1, Math.ceil(totalLeadCount / pageSize));
   const safePage = Math.min(page, pageCount);
@@ -348,10 +303,6 @@ export function LeadsPage() {
   useEffect(() => {
     if (page > pageCount) setPage(pageCount);
   }, [page, pageCount]);
-
-  useEffect(() => {
-    setPageDraft(String(safePage));
-  }, [safePage]);
 
   useEffect(() => {
     saveJson(LEAD_PRESETS_KEY, filterPresets);
@@ -832,67 +783,19 @@ export function LeadsPage() {
     setSearchParams(next, { replace: true });
   }
 
-  useEffect(() => {
-    function isEditableTarget(target: EventTarget | null) {
-      if (!(target instanceof HTMLElement)) return false;
-      return Boolean(target.closest("input, textarea, select, [contenteditable='true']"));
-    }
-
-    function handleKeyDown(event: KeyboardEvent) {
-      const editable = isEditableTarget(event.target);
-      if (editable && event.key !== "Escape") return;
-      if (event.metaKey || event.ctrlKey || event.altKey) return;
-
-      if (event.key === "?") {
-        event.preventDefault();
-        setShortcutsOpen(true);
-        return;
-      }
-
-      if (event.key === "Escape") {
-        setContextMenu(null);
-        setShortcutsOpen(false);
-        return;
-      }
-
-      if (event.key.toLowerCase() === "n") {
-        event.preventDefault();
-        setCreateOpen(true);
-        return;
-      }
-
-      if (!selected && !rows.length) return;
-
-      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-        event.preventDefault();
-        const currentIndex = selected ? rows.findIndex((lead) => lead.id === selected.id) : -1;
-        const nextIndex = event.key === "ArrowDown" ? Math.min(rows.length - 1, currentIndex + 1) : Math.max(0, currentIndex - 1);
-        const nextLead = rows[nextIndex] || rows[0];
-        if (nextLead) openLead(nextLead);
-        return;
-      }
-
-      if (event.key === "Enter" && selected) {
-        event.preventDefault();
-        openLead(selected);
-        return;
-      }
-
-      if (event.key.toLowerCase() === "c" && selected) {
-        event.preventDefault();
-        callLead(selected);
-        return;
-      }
-
-      if (event.key.toLowerCase() === "w" && selected) {
-        event.preventDefault();
-        whatsAppLead(selected);
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [rows, selected, searchParams, setSearchParams]);
+  useLeadKeyboardShortcuts({
+    rows,
+    selected,
+    onOpenLead: openLead,
+    onCallLead: callLead,
+    onWhatsAppLead: whatsAppLead,
+    onCreateLead: () => setCreateOpen(true),
+    onCloseOverlays: () => {
+      setContextMenu(null);
+      setShortcutsOpen(false);
+    },
+    onOpenShortcuts: () => setShortcutsOpen(true),
+  });
 
   const pageError = clients.error || services.error || leads.error;
   const actionError =
@@ -936,137 +839,73 @@ export function LeadsPage() {
     .map((_, index) => index + 1)
     .filter((itemPage) => pageCount <= 5 || itemPage === 1 || itemPage === pageCount || Math.abs(itemPage - safePage) <= 1)
     .slice(0, 7);
-  function jumpToPage(value: string) {
-    const nextPage = Number(value);
-    if (!Number.isFinite(nextPage)) return;
-    setPage(Math.min(pageCount, Math.max(1, Math.trunc(nextPage))));
-  }
-
   return (
-    <CrmWorkspacePage contentClassName="gap-0">
+    <CrmWorkspacePage className="h-auto min-h-[calc(100vh-5.5rem)] overflow-visible" contentClassName="flex-none gap-3" maxWidthClassName="max-w-[1520px]">
       <CrmTableSurface
+        className="flex-none overflow-visible rounded-card border border-slate-200 bg-white shadow-card"
+        filtersClassName="border-b border-slate-100 bg-white px-4 py-3"
         filters={
-          <>
-          <div className="grid gap-2 xl:grid-cols-[minmax(240px,1fr)_minmax(150px,190px)_minmax(150px,190px)_auto] xl:items-center">
-            <label className="relative block min-w-0">
-              <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-              <input
-                className="h-9 w-full rounded-control border border-slate-200 bg-white px-9 text-sm font-semibold text-midnight outline-none transition placeholder:text-slate-400 focus:border-brand-300 focus:ring-4 focus:ring-brand-50"
-                placeholder={t("leads.search")}
-                value={search}
-                onChange={(event) => {
-                  setSearch(event.target.value);
-                  setPage(1);
-                  setPageDraft("1");
-                }}
-              />
-            </label>
-            <Select
-              className="h-9 text-xs"
-              value={filter}
-              onChange={(event) => {
-                setFilter(event.target.value as LeadFilter);
-                setPage(1);
-                setPageDraft("1");
-              }}
-              aria-label={t("leads.filtersLabel")}
-              options={filters.map((item) => ({ value: item.value, label: `${item.label} (${item.count})` }))}
-            />
-            <Select
-              className="h-9 text-xs"
-              value={source}
-              onChange={(event) => {
-                setSource(event.target.value);
-                setPage(1);
-                setPageDraft("1");
-              }}
-              aria-label={t("leads.source")}
-              options={sourceOptions.map((item) => ({ value: item, label: item ? getSourceLabel(item, t) : t("leads.allSources") }))}
-            />
-            <div className="flex min-w-0 flex-wrap items-center justify-start gap-1.5 xl:justify-end">
-              <Button variant="secondary" size="sm" className="h-9 rounded-control px-3" onClick={() => setSavedFiltersOpen((value) => !value)}>
-                <Filter size={16} />
-                {t("leads.filters")}
-              </Button>
-              <Button variant="secondary" size="sm" className="h-9 rounded-control px-3" onClick={() => setMoreMenuOpen((value) => !value)}>
-                <Columns3 size={16} />
-                {t("leads.columns")}
-              </Button>
-              <Button variant="secondary" size="sm" className="h-9 rounded-control px-3" onClick={() => exportRows("csv")}>
-                <Download size={16} />
-                {t("leads.exportCsv")}
-              </Button>
-              <Button variant="secondary" size="sm" className="h-9 rounded-control px-3" onClick={() => { window.location.href = "/app/integrations"; }}>
-                <Upload size={16} />
-                {t("leads.import")}
-              </Button>
-            </div>
-          </div>
-            {savedFiltersOpen ? (
-              <div className="mt-3 rounded-card border border-slate-200 bg-white p-3">
-                <div className="flex min-w-0 items-center gap-2 overflow-x-auto pb-2">
-                  {filterPresets.length ? filterPresets.map((preset) => (
-                    <button
-                      key={preset.id}
-                      type="button"
-                      className="shrink-0 rounded-control border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
-                      onClick={() => {
-                        applyPreset(preset);
-                        setSavedFiltersOpen(false);
-                      }}
-                    >
-                      {preset.name}
-                    </button>
-                  )) : (
-                    <span className="py-2 text-xs font-semibold text-slate-400">{t("leads.noSavedFilters")}</span>
-                  )}
-                </div>
-                <div className="mt-2 flex gap-2 border-t border-slate-200 pt-3">
-                  <input
-                    className="h-9 min-w-0 flex-1 rounded-control border border-slate-200 bg-white px-3 text-sm font-semibold outline-none focus:border-brand-300"
-                    placeholder={t("leads.filterPresetName")}
-                    value={presetName}
-                    onChange={(event) => setPresetName(event.target.value)}
-                  />
-                  <Button variant="secondary" size="sm" className="shrink-0 rounded-control" onClick={savePreset}>{t("leads.saveFilter")}</Button>
-                </div>
-              </div>
-            ) : null}
-            {moreMenuOpen ? (
-              <div className="mt-3 grid gap-3 rounded-card border border-slate-200 bg-white p-3 lg:grid-cols-[minmax(0,1fr)_auto]">
-                <div className="min-w-0">
-                  <div className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700">
-                    <Columns3 size={16} /> {t("leads.columns")}
-                  </div>
-                  <div className="flex min-w-0 flex-wrap gap-2">
-                    {columnOrder.map((column) => (
-                      <label key={column} className="inline-flex h-8 cursor-pointer items-center gap-2 rounded-control border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 hover:border-brand-200">
-                        <input
-                          type="checkbox"
-                          checked={visibleColumns[column]}
-                          onChange={() => setVisibleColumns((value) => ({ ...value, [column]: !value[column] }))}
-                        />
-                        <span className="truncate">{t(`leads.column.${column}`)}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex flex-wrap items-start gap-2">
-                  <Button variant="secondary" size="sm" className="rounded-control" onClick={() => setSortByAi((value) => !value)}><Flame size={15} /> {t("leads.sortByHeat")}</Button>
-                  <Button variant="secondary" size="sm" className="rounded-control" onClick={() => exportRows("csv")}><Download size={15} /> CSV</Button>
-                  <Button variant="secondary" size="sm" className="rounded-control" onClick={() => exportRows("excel")}>{t("leads.exportExcel")}</Button>
-                  <Button variant="secondary" size="sm" className="rounded-control" onClick={shareView}><Share2 size={15} /> {t("leads.shareView")}</Button>
-                </div>
-              </div>
-            ) : null}
-          </>
+          <LeadsToolbar
+            filters={filters}
+            filter={filter}
+            search={search}
+            source={source}
+            sourceOptions={sourceOptions.map((item) => ({ value: item, label: item ? getSourceLabel(item, t) : t("leads.allSources") }))}
+            savedFiltersOpen={savedFiltersOpen}
+            filterPresets={filterPresets}
+            presetName={presetName}
+            moreMenuOpen={moreMenuOpen}
+            columnOrder={columnOrder}
+            visibleColumns={visibleColumns}
+            labels={{
+              search: t("leads.search"),
+              source: t("leads.source"),
+              filters: t("leads.filters"),
+              columns: t("leads.columns"),
+              exportCsv: t("leads.exportCsv"),
+              exportExcel: t("leads.exportExcel"),
+              import: t("leads.import"),
+              noSavedFilters: t("leads.noSavedFilters"),
+              filterPresetName: t("leads.filterPresetName"),
+              saveFilter: t("leads.saveFilter"),
+              sortByHeat: t("leads.sortByHeat"),
+              shareView: t("leads.shareView"),
+              column: (column) => t(`leads.column.${column}`),
+            }}
+            onFilterChange={(nextFilter) => {
+              setFilter(nextFilter);
+              setPage(1);
+            }}
+            onSearchChange={(value) => {
+              setSearch(value);
+              setPage(1);
+            }}
+            onSourceChange={(value) => {
+              setSource(value);
+              setPage(1);
+            }}
+            onToggleSavedFilters={() => setSavedFiltersOpen((value) => !value)}
+            onApplyPreset={(preset) => {
+              applyPreset(preset);
+              setSavedFiltersOpen(false);
+            }}
+            onPresetNameChange={setPresetName}
+            onSavePreset={savePreset}
+            onToggleMoreMenu={() => setMoreMenuOpen((value) => !value)}
+            onToggleColumn={(column) => setVisibleColumns((value) => ({ ...value, [column]: !value[column] }))}
+            onToggleSortByAi={() => setSortByAi((value) => !value)}
+            onExportCsv={() => exportRows("csv")}
+            onExportExcel={() => exportRows("excel")}
+            onShareView={shareView}
+            onOpenImport={() => { window.location.href = "/app/integrations"; }}
+          />
         }
       >
 
-        <CrmDataTable className={CRM_TABLE_EMBEDDED_CLASS} contentClassName={CRM_TABLE_CONTENT_CLASS}>
+        <CrmDataTable className="rounded-none border-0 bg-transparent shadow-none" contentClassName="min-h-0">
           <div className="hidden shrink-0 overflow-x-auto lg:block">
             <div
-              className={CRM_TABLE_HEADER_GRID_CLASS}
+              className={cn(CRM_TABLE_HEADER_GRID_CLASS, "bg-slate-50")}
               style={{ gridTemplateColumns: tableGridTemplateColumns, minWidth: tableGridMinWidth }}
             >
               <label className="flex h-5 w-5 items-center justify-center">
@@ -1081,7 +920,7 @@ export function LeadsPage() {
               <span>{t("leads.actions")}</span>
             </div>
           </div>
-          <div className="min-h-0 flex-1 overflow-hidden lg:min-h-[430px]">
+          <div className="min-h-0 overflow-visible">
             {!rows.length ? (
               <div className="grid h-full min-h-[320px] place-items-center p-5">
                 <div className="max-w-sm text-center">
@@ -1146,252 +985,163 @@ export function LeadsPage() {
               </>
             )}
           </div>
-          <div className={CRM_TABLE_PAGINATION_CLASS}>
-            <span>{t("leads.tableShowingRange", { start: pageStart, end: pageEnd, total: totalLeadCount })}</span>
-            <div className="flex flex-wrap items-center gap-2">
-              <label className="flex items-center gap-2 rounded-control border border-slate-200 bg-white px-2 py-1.5 text-xs font-bold text-slate-500">
-                <span>{t("leads.pageSize")}</span>
-                <select
-                  className="bg-transparent text-xs font-black text-midnight outline-none"
-                  value={pageSize}
-                  onChange={(event) => {
-                    setPageSize(Number(event.target.value));
-                    setPage(1);
-                    setPageDraft("1");
-                  }}
-                  aria-label={t("leads.pageSize")}
-                >
-                  {[10, 30, 50, 100].map((size) => (
-                    <option key={size} value={size}>{size}</option>
-                  ))}
-                </select>
-              </label>
-              <Button variant="secondary" size="icon" className="h-8 w-8 rounded-control px-0" disabled={safePage <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>
-                <ChevronLeft size={16} />
-              </Button>
-              {visiblePages.map((itemPage, index) => (
-                <button
-                  key={`${itemPage}-${index}`}
-                  type="button"
-                  onClick={() => setPage(itemPage)}
-                  className={cn("grid h-8 w-8 place-items-center rounded-control border text-sm font-bold", itemPage === safePage ? "border-brand-200 bg-brand-50 text-brand-700" : "border-slate-200 text-slate-500 hover:text-midnight")}
-                >
-                  {itemPage}
-                </button>
-              ))}
-              <Button variant="secondary" size="icon" className="h-8 w-8 rounded-control px-0" disabled={safePage >= pageCount} onClick={() => setPage((value) => Math.min(pageCount, value + 1))}>
-                <ChevronRight size={16} />
-              </Button>
-              <form
-                className="ml-2 flex items-center gap-2"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  jumpToPage(pageDraft);
-                }}
-              >
-                <input
-                  className="h-8 w-14 rounded-control border border-slate-200 bg-white px-2 text-center text-sm font-bold text-midnight outline-none focus:border-brand-300"
-                  inputMode="numeric"
-                  value={pageDraft}
-                  onChange={(event) => setPageDraft(event.target.value)}
-                  onBlur={() => jumpToPage(pageDraft)}
-                  aria-label={t("leads.pageNumber")}
-                />
-                <span className="text-slate-400">/ {pageCount}</span>
-              </form>
-            </div>
-          </div>
+          <LeadsPagination
+            page={safePage}
+            pageCount={pageCount}
+            pageSize={pageSize}
+            pageSizeOptions={[10, 25, 50]}
+            visiblePages={visiblePages}
+            label={t("leads.tableShowingRange", { start: pageStart, end: pageEnd, total: totalLeadCount })}
+            pageSizeLabel={t("leads.pageSize")}
+            onPageChange={setPage}
+            onPageSizeChange={(value) => {
+              setPageSize(value);
+              setPage(1);
+            }}
+          />
         </CrmDataTable>
       </CrmTableSurface>
 
       {contextMenu ? (
-        <div className="fixed inset-0 z-40" onClick={() => setContextMenu(null)}>
-          <PopoverSurface
-            className="absolute w-56 p-2"
-            style={{ left: contextMenu.x, top: contextMenu.y }}
-            onClick={(event) => event.stopPropagation()}
-          >
-            {[
-              { label: t("leads.open"), icon: CircleDot, onClick: () => openLead(contextMenu.lead) },
-              { label: t("leads.call"), icon: Phone, onClick: () => callLead(contextMenu.lead) },
-              { label: "WhatsApp", icon: MessageCircle, onClick: () => whatsAppLead(contextMenu.lead) },
-              { label: t("leads.assignToMe"), icon: UserCheck, onClick: () => actionMutation.mutate({ action: "take", lead: contextMenu.lead }) },
-              { label: t("leads.archive"), icon: XCircle, onClick: () => archiveMutation.mutate({ leads: [contextMenu.lead], reason: t("leads.archiveReasonDefault") }) },
-            ].map((item) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.label}
-                  type="button"
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-midnight"
-                  onClick={() => {
-                    item.onClick();
-                    setContextMenu(null);
-                  }}
-                >
-                  <Icon size={16} />
-                  {item.label}
-                </button>
-              );
-            })}
-          </PopoverSurface>
-        </div>
+        <LeadContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          lead={contextMenu.lead}
+          labels={{
+            open: t("leads.open"),
+            call: t("leads.call"),
+            whatsApp: "WhatsApp",
+            assignToMe: t("leads.assignToMe"),
+            archive: t("leads.archive"),
+          }}
+          onClose={() => setContextMenu(null)}
+          onOpen={openLead}
+          onCall={callLead}
+          onWhatsApp={whatsAppLead}
+          onTake={(lead) => actionMutation.mutate({ action: "take", lead })}
+          onArchive={(lead) => archiveMutation.mutate({ leads: [lead], reason: t("leads.archiveReasonDefault") })}
+        />
       ) : null}
 
-      {selectedLeadIds.length ? (
-        <div className="fixed inset-x-0 bottom-5 z-40 flex justify-center px-4">
-          <div className="flex max-w-full flex-wrap items-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-white shadow-2xl">
-            <span className="mr-2 text-sm font-black">{t("leads.bulkSelected", { count: selectedLeadIds.length })}</span>
-            <select
-              className="h-9 rounded-lg border border-white/10 bg-white/10 px-3 text-sm font-bold text-white outline-none"
-              defaultValue=""
-              onChange={(event) => {
-                const userId = event.target.value ? Number(event.target.value) : undefined;
-                const selectedLeads = allLeads.filter((lead) => selectedLeadIds.includes(lead.id));
-                selectedLeads.forEach((lead) => actionMutation.mutate({ action: "assign", lead, user_id: userId }));
-                setSelectedLeadIds([]);
-              }}
-            >
-              <option className="text-slate-900" value="">{t("leads.bulkAssign")}</option>
-              {teamList.map((member) => (
-                <option className="text-slate-900" key={member.user.id} value={member.user.id}>{member.user.full_name || member.user.email}</option>
-              ))}
-            </select>
-            <Button size="sm" variant="secondary" className="rounded-lg bg-white text-slate-950 hover:bg-slate-100" onClick={() => bulkContactMutation.mutate(allLeads.filter((lead) => selectedLeadIds.includes(lead.id)))}>
-              <MessageCircle size={15} /> {t("leads.bulkContact")}
-            </Button>
-            <Button size="sm" variant="secondary" className="rounded-lg bg-white text-slate-950 hover:bg-slate-100" onClick={() => archiveMutation.mutate({ leads: allLeads.filter((lead) => selectedLeadIds.includes(lead.id)), reason: t("leads.archiveReasonDefault") })}>
-              <XCircle size={15} /> {t("leads.bulkArchive")}
-            </Button>
-            <Button size="sm" variant="ghost" className="rounded-lg text-white hover:bg-white/10" onClick={() => setSelectedLeadIds([])}>
-              {t("leads.bulkReset")}
-            </Button>
-          </div>
-        </div>
-      ) : null}
+      <LeadsBulkBar
+        selectedCount={selectedLeadIds.length}
+        teamMembers={teamList}
+        labels={{
+          selected: t("leads.bulkSelected", { count: selectedLeadIds.length }),
+          assign: t("leads.bulkAssign"),
+          contact: t("leads.bulkContact"),
+          archive: t("leads.bulkArchive"),
+          reset: t("leads.bulkReset"),
+        }}
+        onAssign={(userId) => {
+          const selectedLeads = allLeads.filter((lead) => selectedLeadIds.includes(lead.id));
+          selectedLeads.forEach((lead) => actionMutation.mutate({ action: "assign", lead, user_id: userId }));
+          setSelectedLeadIds([]);
+        }}
+        onContact={() => bulkContactMutation.mutate(allLeads.filter((lead) => selectedLeadIds.includes(lead.id)))}
+        onArchive={() => archiveMutation.mutate({ leads: allLeads.filter((lead) => selectedLeadIds.includes(lead.id)), reason: t("leads.archiveReasonDefault") })}
+        onReset={() => setSelectedLeadIds([])}
+      />
 
-      <Modal title={t("leads.shortcuts")} open={shortcutsOpen} onClose={() => setShortcutsOpen(false)}>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {[
-            ["N", t("leads.shortcutNew")],
-            ["↑ / ↓", t("leads.shortcutNavigate")],
-            ["Enter", t("leads.shortcutOpen")],
-            ["C", t("leads.shortcutCall")],
-            ["W", t("leads.shortcutWhatsApp")],
-            ["Esc", t("leads.shortcutClose")],
-            ["?", t("leads.shortcutHelp")],
-          ].map(([key, label]) => (
-            <div key={key} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-              <span className="text-sm font-bold text-slate-600">{label}</span>
-              <kbd className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-black text-midnight shadow-sm">{key}</kbd>
-            </div>
-          ))}
-        </div>
-      </Modal>
+      <LeadShortcutsModal
+        open={shortcutsOpen}
+        title={t("leads.shortcuts")}
+        shortcuts={[
+          { key: "N", label: t("leads.shortcutNew") },
+          { key: "↑ / ↓", label: t("leads.shortcutNavigate") },
+          { key: "Enter", label: t("leads.shortcutOpen") },
+          { key: "C", label: t("leads.shortcutCall") },
+          { key: "W", label: t("leads.shortcutWhatsApp") },
+          { key: "Esc", label: t("leads.shortcutClose") },
+          { key: "?", label: t("leads.shortcutHelp") },
+        ]}
+        onClose={() => setShortcutsOpen(false)}
+      />
 
-      <Modal title={t("leads.new")} open={createOpen} onClose={closeCreateModal}>
-        <LeadForm
-          businessId={business.id}
-          clients={clientList}
-          services={serviceList}
+      <LeadCreateModal
+        open={createOpen}
+        title={t("leads.new")}
+        businessId={business.id}
+        clients={clientList}
+        services={serviceList}
+        teamMembers={teamList}
+        onClose={closeCreateModal}
+        onSubmit={(payload) => leadMutation.mutateAsync(payload)}
+        onOpenClient={(id) => {
+          setCreateOpen(false);
+          setDrawerEntity({ type: "client", id });
+        }}
+      />
+
+      <LeadAppointmentModal
+        open={appointmentOpen}
+        title={t("leads.bookFromLead")}
+        businessId={business.id}
+        clients={clientList}
+        services={serviceList}
+        resources={resources.data || []}
+        leads={allLeads}
+        selectedLead={selected}
+        onClose={() => setAppointmentOpen(false)}
+        onSubmit={(payload) => appointmentMutation.mutateAsync(payload)}
+      />
+
+      {selected ? (
+        <LeadNextActionModal
+          open={nextActionOpen}
+          title={t("leads.nextActionModal")}
+          draft={nextActionDraft}
           teamMembers={teamList}
-          onSubmit={(payload) => leadMutation.mutateAsync(payload)}
-          onOpenClient={(id) => {
-            setCreateOpen(false);
-            setDrawerEntity({ type: "client", id });
+          isLoading={nextActionMutation.isPending}
+          labels={{
+            task: t("leads.task"),
+            deadline: t("leads.deadline"),
+            responsible: t("leads.responsible"),
+            leadResponsible: t("leads.leadResponsible"),
+            priority: t("leads.priority"),
+            priorityLow: t("leads.priorityLow"),
+            priorityNormal: t("leads.priorityNormalLabel"),
+            priorityHigh: t("leads.priorityHigh"),
+            priorityUrgent: t("leads.priorityUrgent"),
+            createTask: t("leads.createTask"),
           }}
+          onClose={() => setNextActionOpen(false)}
+          onDraftChange={setNextActionDraft}
+          onSubmit={() => nextActionMutation.mutate(selected)}
         />
-      </Modal>
+      ) : null}
 
-      <Modal title={t("leads.bookFromLead")} open={appointmentOpen} onClose={() => setAppointmentOpen(false)}>
-        <AppointmentForm
-          businessId={business.id}
-          clients={clientList}
-          services={serviceList}
-          resources={resources.data || []}
-          leads={allLeads}
-          prefill={{
-            client: selected?.client,
-            service: selected?.service,
-            lead: selected?.id,
-            source: "manual",
-          }}
-          onSubmit={(payload) => appointmentMutation.mutateAsync({ ...payload, lead: selected?.id || payload.lead, client: selected?.client || payload.client, service: selected?.service || payload.service })}
-        />
-      </Modal>
-
-      <Modal title={t("leads.nextActionModal")} open={nextActionOpen} onClose={() => setNextActionOpen(false)}>
-        {selected ? (
-          <form
-            className="space-y-4"
-            onSubmit={(event) => {
-              event.preventDefault();
-              nextActionMutation.mutate(selected);
-            }}
-          >
-            <Input label={t("leads.task")} value={nextActionDraft.title} onChange={(event) => setNextActionDraft({ ...nextActionDraft, title: event.target.value })} required />
-            <Input label={t("leads.deadline")} type="datetime-local" value={nextActionDraft.due_at} onChange={(event) => setNextActionDraft({ ...nextActionDraft, due_at: event.target.value })} required />
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Select
-                label={t("leads.responsible")}
-                value={nextActionDraft.assignee}
-                onChange={(event) => setNextActionDraft({ ...nextActionDraft, assignee: event.target.value })}
-                options={[
-                  { value: "", label: t("leads.leadResponsible") },
-                  ...teamList.map((member) => ({ value: String(member.user.id), label: member.user.full_name || member.user.email })),
-                ]}
-              />
-              <Select
-                label={t("leads.priority")}
-                value={nextActionDraft.priority}
-                onChange={(event) => setNextActionDraft({ ...nextActionDraft, priority: event.target.value as Task["priority"] })}
-                options={[
-                  { value: "low", label: t("leads.priorityLow") },
-                  { value: "normal", label: t("leads.priorityNormalLabel") },
-                  { value: "high", label: t("leads.priorityHigh") },
-                  { value: "urgent", label: t("leads.priorityUrgent") },
-                ]}
-              />
-            </div>
-            <Button type="submit" isLoading={nextActionMutation.isPending}>{t("leads.createTask")}</Button>
-          </form>
-        ) : null}
-      </Modal>
-
-      <Modal title={t("leads.closeAsLost")} open={Boolean(lostLead)} onClose={() => setLostLead(null)}>
-        {lostLead ? (
-          <form
-            className="space-y-4"
-            onSubmit={(event) => {
-              event.preventDefault();
-              actionMutation.mutate({ action: "lost", lead: lostLead, lost_reason: lostReason });
-              setLostLead(null);
-              setLostReason("");
-            }}
-          >
-            <div className="rounded-3xl bg-slate-50 p-4">
-              <p className="font-black text-midnight">{leadTitle(lostLead, clientList, t)}</p>
-              <p className="mt-1 text-sm font-semibold text-slate-500">{lostLead.message || t("leads.noComment")}</p>
-            </div>
-            <Select
-              label={t("leads.reasonType")}
-              value={lostReason}
-              onChange={(event) => setLostReason(event.target.value)}
-              options={[
-                { value: "", label: t("leads.selectReason") },
-                { value: t("leads.reasonNoAnswer"), label: t("leads.reasonNoAnswer") },
-                { value: t("leads.reasonExpensive"), label: t("leads.reasonExpensive") },
-                { value: t("leads.reasonCompetitor"), label: t("leads.reasonCompetitor") },
-                { value: t("leads.reasonNoBudget"), label: t("leads.reasonNoBudget") },
-                { value: t("leads.reasonDuplicate"), label: t("leads.reasonDuplicate") },
-                { value: t("leads.reasonIrrelevant"), label: t("leads.reasonIrrelevant") },
-              ]}
-            />
-            <Input label={t("leads.comment")} value={lostReason} onChange={(event) => setLostReason(event.target.value)} required />
-            <Button type="submit" variant="danger" isLoading={actionMutation.isPending} disabled={!lostReason}>{t("leads.closeAsLost")}</Button>
-          </form>
-        ) : null}
-      </Modal>
+      <LeadLostModal
+        open={Boolean(lostLead)}
+        title={t("leads.closeAsLost")}
+        leadTitle={lostLead ? leadTitle(lostLead, clientList, t) : ""}
+        leadMessage={lostLead?.message || ""}
+        reason={lostReason}
+        reasons={[
+          t("leads.reasonNoAnswer"),
+          t("leads.reasonExpensive"),
+          t("leads.reasonCompetitor"),
+          t("leads.reasonNoBudget"),
+          t("leads.reasonDuplicate"),
+          t("leads.reasonIrrelevant"),
+        ]}
+        isLoading={actionMutation.isPending}
+        labels={{
+          noComment: t("leads.noComment"),
+          reasonType: t("leads.reasonType"),
+          selectReason: t("leads.selectReason"),
+          comment: t("leads.comment"),
+          submit: t("leads.closeAsLost"),
+        }}
+        onClose={() => setLostLead(null)}
+        onReasonChange={setLostReason}
+        onSubmit={() => {
+          if (!lostLead) return;
+          actionMutation.mutate({ action: "lost", lead: lostLead, lost_reason: lostReason });
+          setLostLead(null);
+          setLostReason("");
+        }}
+      />
 
       <CrmEntityDrawer entity={drawerEntity} onClose={closeDrawer} />
     </CrmWorkspacePage>

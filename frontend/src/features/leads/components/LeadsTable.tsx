@@ -209,7 +209,7 @@ export function VirtualizedLeadTableRows({
   const gridTemplateColumns = `${CRM_TABLE_CHECKBOX_COLUMN} ${activeColumns.map((column) => leadColumnWidths[column]).join(" ")} ${CRM_TABLE_ACTIONS_COLUMN}`;
 
   return (
-    <div className="hidden h-full overflow-auto lg:block">
+    <div className="hidden overflow-x-auto lg:block">
       <div className="min-w-0" style={{ minWidth: needsWideTable ? CRM_TABLE_WIDE_MIN_WIDTH : undefined }}>
         {rows.map((lead, index) => {
           const responsible = teamList.find((member) => member.user.id === lead.responsible_user);

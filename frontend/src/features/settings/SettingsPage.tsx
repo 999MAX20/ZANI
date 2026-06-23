@@ -1,15 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Bell, CalendarCheck2, CalendarClock, ChevronDown, Copy, Send, ShieldAlert, ShieldCheck, SlidersHorizontal, Stethoscope, UsersRound, Workflow } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Bell, CalendarCheck2, CalendarClock, ChevronDown, Copy, Send, ShieldAlert, ShieldCheck, SlidersHorizontal } from "lucide-react";
 
 import { billingApi } from "../../api/billing";
 import { appointmentMessageSettingsApi } from "../../api/appointments";
 import { businessesApi } from "../../api/businesses";
 import { getApiErrorMessage } from "../../api/client";
 import { customFieldsApi } from "../../api/customFields";
-import { importExportApi, type ImportEntity } from "../../api/importExport";
-import { leadFormFieldsApi, leadFormsApi, leadFormSubmissionsApi } from "../../api/leadForms";
 import { notificationsApi } from "../../api/notifications";
 import { quickRepliesApi } from "../../api/quickReplies";
 import { securityApi } from "../../api/security";
@@ -26,8 +23,7 @@ import { useActiveBusiness } from "../../hooks/useBusiness";
 import { hasPermission, permissionResourceLabel } from "../../lib/permissions";
 import { useI18n } from "../../lib/i18n";
 import { useAuth } from "../auth/AuthProvider";
-import { DevelopersSection } from "./DevelopersSection";
-import type { AppointmentMessageSetting, Business, BusinessInvitation, BusinessMembershipSummary, BusinessRole, CrmEntityType, CustomFieldDefinition, Id, LeadCaptureForm, LeadFormField, Notification, NotificationPreference, QuickReplyTemplate, RolePermission } from "../../types";
+import type { AppointmentMessageSetting, Business, BusinessInvitation, BusinessMembershipSummary, BusinessRole, CrmEntityType, CustomFieldDefinition, Id, Notification, NotificationPreference, QuickReplyTemplate, RolePermission } from "../../types";
 
 const teamRoleOptions = [
   { value: "owner" },
@@ -137,7 +133,6 @@ export function SettingsPage() {
   const canManageSettings = hasPermission(user, business?.id, "settings", "update");
   const canViewNotifications = hasPermission(user, business?.id, "notifications", "view");
   const canViewConversations = hasPermission(user, business?.id, "conversations", "view");
-  const canCreateLeads = hasPermission(user, business?.id, "leads", "create");
 
   async function confirmDelete(label: string) {
     const result = await confirmAction({
@@ -250,34 +245,6 @@ export function SettingsPage() {
     category: "",
     channel: "all",
   });
-  const [editingLeadFormId, setEditingLeadFormId] = useState<number | null>(null);
-  const [leadFormEditForm, setLeadFormEditForm] = useState({
-    name: "",
-    title: "",
-    description: "",
-    source: "website" as LeadCaptureForm["source"],
-    success_message: "",
-    landing_id: "",
-    landing_domain: "",
-    preview_url: "",
-    default_responsible_user: "" as string,
-    is_active: true,
-  });
-  const [leadFieldForm, setLeadFieldForm] = useState({
-    label: "",
-    key: "",
-    field_type: "text" as LeadFormField["field_type"],
-    placeholder: "",
-    options: "",
-    is_required: false,
-    sort_order: 0,
-  });
-  const [importFile, setImportFile] = useState<File | null>(null);
-  const [importEntity, setImportEntity] = useState<ImportEntity>("clients");
-  const [activeImportId, setActiveImportId] = useState<number | null>(null);
-  const [manualSaleForm, setManualSaleForm] = useState({ external_id: "", client_name: "", item_name: "", amount: "", source: "manual" });
-  const [manualCatalogForm, setManualCatalogForm] = useState({ item_type: "service", sku: "", name: "", duration_minutes: "30", price_from: "", stock_quantity: "", source: "manual" });
-  const [activeDataTool, setActiveDataTool] = useState<"import" | "export" | "manual">("import");
   const [appointmentMessageDrafts, setAppointmentMessageDrafts] = useState<Record<number, Partial<AppointmentMessageSetting>>>({});
   const [billingSettingsForm, setBillingSettingsForm] = useState({
     billing_email: "",
@@ -287,21 +254,6 @@ export function SettingsPage() {
     invoice_address: "",
   });
   const [selectedPlanId, setSelectedPlanId] = useState("");
-  const importJobs = useQuery({
-    queryKey: ["import-jobs", business?.id],
-    queryFn: () => importExportApi.importJobs(business?.id),
-    enabled: Boolean(business && canManageSettings && allowedSettingsSectionIds.has("data-tools")),
-  });
-  const leadForms = useQuery({
-    queryKey: ["lead-forms", business?.id],
-    queryFn: leadFormsApi.list,
-    enabled: Boolean(business && canCreateLeads && allowedSettingsSectionIds.has("lead-forms")),
-  });
-  const leadFormSubmissions = useQuery({
-    queryKey: ["lead-form-submissions", business?.id],
-    queryFn: leadFormSubmissionsApi.list,
-    enabled: Boolean(business && canCreateLeads && allowedSettingsSectionIds.has("lead-forms")),
-  });
   const securityRisk = useQuery({
     queryKey: ["security-risk", business?.id],
     queryFn: () => securityApi.riskSummary(business?.id),
@@ -537,103 +489,6 @@ export function SettingsPage() {
       if (editingQuickReplyId) setEditingQuickReplyId(null);
     },
   });
-  const uploadImportMutation = useMutation({
-    mutationFn: () => {
-      if (!business || !importFile) throw new Error("Business and file are required.");
-      return importExportApi.upload({ business: business.id, entity: importEntity, file: importFile });
-    },
-    onSuccess: (job) => {
-      setActiveImportId(Number(job.id));
-      setImportFile(null);
-      queryClient.invalidateQueries({ queryKey: ["import-jobs"] });
-    },
-  });
-  const confirmImportMutation = useMutation({
-    mutationFn: importExportApi.confirm,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["import-jobs"] });
-      queryClient.invalidateQueries({ queryKey: ["clients"] });
-    },
-  });
-  const exportMutation = useMutation({
-    mutationFn: (entity: "clients" | "leads" | "deals" | "sales" | "catalog") => {
-      if (!business) throw new Error("Business is required.");
-      return importExportApi.exportEntity({ business: business.id, entity });
-    },
-  });
-  const templateMutation = useMutation({
-    mutationFn: importExportApi.downloadTemplate,
-  });
-  const manualSaleMutation = useMutation({
-    mutationFn: () => {
-      if (!business) throw new Error("Business is required.");
-      return importExportApi.createManualSale({ business: business.id, ...manualSaleForm });
-    },
-    onSuccess: () => {
-      setManualSaleForm({ external_id: "", client_name: "", item_name: "", amount: "", source: "manual" });
-      queryClient.invalidateQueries({ queryKey: ["owner-dashboard"] });
-    },
-  });
-  const manualCatalogMutation = useMutation({
-    mutationFn: () => {
-      if (!business) throw new Error("Business is required.");
-      return importExportApi.createManualCatalogItem({ business: business.id, ...manualCatalogForm });
-    },
-    onSuccess: () => {
-      setManualCatalogForm({ item_type: "service", sku: "", name: "", duration_minutes: "30", price_from: "", stock_quantity: "", source: "manual" });
-      queryClient.invalidateQueries({ queryKey: ["services"] });
-    },
-  });
-  const createLeadFormMutation = useMutation({
-    mutationFn: () => {
-      if (!business) throw new Error("Business is required.");
-      return leadFormsApi.createTemplate({ business: business.id });
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["lead-forms"] }),
-  });
-  const updateLeadFormMutation = useMutation({
-    mutationFn: ({ id, payload }: { id: Id; payload: Partial<LeadCaptureForm> }) => leadFormsApi.update({ id, payload }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["lead-forms"] }),
-  });
-  const removeLeadFormMutation = useMutation({
-    mutationFn: (id: Id) => leadFormsApi.remove(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["lead-forms"] });
-      setEditingLeadFormId(null);
-    },
-  });
-  const createLeadFieldMutation = useMutation({
-    mutationFn: () => {
-      if (!editingLeadFormId) throw new Error("Lead form is required.");
-      return leadFormFieldsApi.create({
-        form: editingLeadFormId,
-        label: leadFieldForm.label,
-        key: leadFieldForm.key || slugify(leadFieldForm.label),
-        field_type: leadFieldForm.field_type,
-        placeholder: leadFieldForm.placeholder,
-        options_json: {
-          options: leadFieldForm.options
-            .split(",")
-            .map((item) => item.trim())
-            .filter(Boolean),
-        },
-        is_required: leadFieldForm.is_required,
-        sort_order: Number(leadFieldForm.sort_order || 0),
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["lead-forms"] });
-      setLeadFieldForm({ label: "", key: "", field_type: "text", placeholder: "", options: "", is_required: false, sort_order: 0 });
-    },
-  });
-  const updateLeadFieldMutation = useMutation({
-    mutationFn: ({ id, payload }: { id: Id; payload: Partial<LeadFormField> }) => leadFormFieldsApi.update({ id, payload }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["lead-forms"] }),
-  });
-  const removeLeadFieldMutation = useMutation({
-    mutationFn: (id: Id) => leadFormFieldsApi.remove(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["lead-forms"] }),
-  });
   const appointmentMessageMutation = useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: Partial<AppointmentMessageSetting> }) => appointmentMessageSettingsApi.update({ id, payload }),
     onSuccess: () => {
@@ -712,37 +567,6 @@ export function SettingsPage() {
     };
   }
 
-  function startEditingLeadForm(form: LeadCaptureForm) {
-    setEditingLeadFormId(Number(form.id));
-    setLeadFormEditForm({
-      name: form.name,
-      title: form.title,
-      description: form.description || "",
-      source: form.source,
-      success_message: form.success_message || "",
-      landing_id: form.landing_id || "",
-      landing_domain: form.landing_domain || "",
-      preview_url: form.preview_url || "",
-      default_responsible_user: form.default_responsible_user ? String(form.default_responsible_user) : "",
-      is_active: form.is_active,
-    });
-  }
-
-  function leadFormPayloadFromEdit(): Partial<LeadCaptureForm> {
-    return {
-      name: leadFormEditForm.name,
-      title: leadFormEditForm.title,
-      description: leadFormEditForm.description,
-      source: leadFormEditForm.source,
-      success_message: leadFormEditForm.success_message,
-      landing_id: leadFormEditForm.landing_id,
-      landing_domain: leadFormEditForm.landing_domain,
-      preview_url: leadFormEditForm.preview_url,
-      default_responsible_user: leadFormEditForm.default_responsible_user ? Number(leadFormEditForm.default_responsible_user) : null,
-      is_active: leadFormEditForm.is_active,
-    };
-  }
-
   if (isLoading) return <LoadingState />;
 
   const currentPlan = subscription.data?.plan;
@@ -757,10 +581,6 @@ export function SettingsPage() {
     roles.find((role) => role.preset_key === "staff") ||
     roles[0];
   const selectedVisibility = selectedRole ? roleVisibility(selectedRole) : "none";
-  const jobs = importJobs.data || [];
-  const activeImport = jobs.find((job) => Number(job.id) === activeImportId) || jobs[0];
-  const importSummary = activeImport?.summary_json || activeImport?.preview_json?.import_summary;
-  const apiOrigin = import.meta.env.VITE_API_URL || window.location.origin;
   const translatedTeamRoleOptions = teamRoleOptions.map((option) => ({
     ...option,
     label: t(`settings.role.${option.value}`),
@@ -790,23 +610,12 @@ export function SettingsPage() {
     { value: "instagram", label: "Instagram" },
     { value: "manual", label: t("settings.channel.manual") },
   ];
-  const importEntityOptions = [
-    { value: "clients", label: t("settings.entity.clients") },
-    { value: "sales", label: t("settings.entity.sales") },
-    { value: "catalog", label: t("settings.entity.catalog") },
-  ];
   const locale = language === "kk" ? "kk-KZ" : language === "en" ? "en-US" : "ru-RU";
-  const operationsSetup = [
-    { key: "services", href: "/app/services", icon: Stethoscope },
-    { key: "resources", href: "/app/resources", icon: UsersRound },
-    { key: "working-hours", href: "/app/working-hours", icon: CalendarClock },
-  ];
   const appointmentMessages = appointmentMessageSettings.data || [];
   const appointmentMessageValue = <K extends keyof AppointmentMessageSetting>(setting: AppointmentMessageSetting, key: K): AppointmentMessageSetting[K] => {
     return (appointmentMessageDrafts[Number(setting.id)]?.[key] as AppointmentMessageSetting[K] | undefined) ?? setting[key];
   };
   const settingsSectionClass = (id: string, className = "mb-5 scroll-mt-24") => `${className} ${activeSettingsSection === id && allowedSettingsSectionIds.has(id) ? "" : "hidden"}`;
-  const dataToolPanelClass = (id: typeof activeDataTool) => (activeDataTool === id ? "" : "hidden");
 
   function updateMemberRole(memberId: number, roleKey: BusinessMembershipSummary["role"]) {
     if (roleKey === "owner") return;
@@ -866,22 +675,19 @@ export function SettingsPage() {
 
   return (
     <>
-      <section className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <section className="mb-5">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-midnight md:text-3xl">{t("settings.title")}</h1>
-          <p className="mt-1 max-w-2xl text-base leading-6 text-slate-600">{t("settings.description")}</p>
-        </div>
-        <div className="grid h-12 w-12 place-items-center rounded-2xl bg-slate-100 text-midnight">
-          <SlidersHorizontal size={22} />
+          <h1 className="text-2xl font-black tracking-tight text-midnight">{t("settings.title")}</h1>
+          <p className="mt-1 max-w-2xl text-sm font-semibold leading-6 text-slate-500">{t("settings.description")}</p>
         </div>
       </section>
       {mutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(mutation.error)} /></div> : null}
-      <div className="grid gap-5 xl:grid-cols-[300px_minmax(0,1fr)]">
+      <div className="grid gap-4 xl:grid-cols-[260px_minmax(0,1fr)]">
         <aside className="xl:sticky xl:top-20 xl:self-start">
-          <Card className="border-slate-200 shadow-[0_4px_20px_rgba(0,47,108,0.04)]">
-            <CardBody className="p-3">
+          <Card className="rounded-card border-slate-200 shadow-card">
+            <CardBody className="p-2">
               <Select
-                className="min-h-12 rounded-2xl xl:hidden"
+                className="min-h-10 rounded-control xl:hidden"
                 value={activeSettingsSection}
                 onChange={(event) => {
                   setActiveSettingsSection(event.target.value);
@@ -890,19 +696,18 @@ export function SettingsPage() {
                 options={translatedSettingsSections.map((section) => ({ value: section.id, label: section.label }))}
               />
               <div className="hidden xl:block">
-                <div className="mb-3 px-2">
+                <div className="mb-2 px-2 py-1">
                   <p className="text-sm font-black text-midnight">{t("settings.navigationTitle")}</p>
-                  <p className="mt-1 text-xs font-semibold leading-5 text-slate-500">{t("settings.navigationText")}</p>
                 </div>
-                <nav className="space-y-2">
+                <nav className="space-y-1.5">
                   {translatedSettingsGroups.map((groupItem) => {
                     const groupOpen = openSettingsGroups[groupItem.key];
                     const hasActiveSection = groupItem.sections.some((section) => section.id === activeSettingsSection);
                     return (
-                      <div key={groupItem.key} className="rounded-control border border-slate-200 bg-slate-50 p-2">
+                      <div key={groupItem.key} className="rounded-control border border-slate-200 bg-white p-1">
                         <button
                           type="button"
-                          className="flex min-h-10 w-full items-center justify-between gap-3 rounded-xl px-3 text-left text-xs font-black uppercase tracking-[0.14em] text-slate-500 transition hover:bg-white hover:text-midnight"
+                          className="flex min-h-8 w-full items-center justify-between gap-3 rounded-lg px-2.5 text-left text-[11px] font-black uppercase tracking-[0.14em] text-slate-500 transition hover:bg-slate-50 hover:text-midnight"
                           onClick={() => setOpenSettingsGroups((current) => ({ ...current, [groupItem.key]: !current[groupItem.key] }))}
                           aria-expanded={groupOpen}
                         >
@@ -917,8 +722,8 @@ export function SettingsPage() {
                                 <a
                                   key={section.id}
                                   href={`#${section.id}`}
-                                  className={`block rounded-xl px-3 py-2 text-sm font-bold transition ${
-                                    active ? "bg-white text-midnight shadow-sm ring-1 ring-slate-200" : "text-slate-600 hover:bg-white hover:text-midnight"
+                                  className={`block rounded-lg px-2.5 py-2 text-sm font-bold transition ${
+                                    active ? "bg-slate-950 text-white shadow-sm" : "text-slate-600 hover:bg-slate-50 hover:text-midnight"
                                   }`}
                                   onClick={() => setActiveSettingsSection(section.id)}
                                 >
@@ -1663,511 +1468,6 @@ export function SettingsPage() {
           ) : null}
         </CardBody>
       </Card>
-      {allowedSettingsSectionIds.has("operations-setup") ? (
-      <Card id="operations-setup" className={settingsSectionClass("operations-setup")}>
-        <CardBody>
-          <div className="mb-5">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">{t("settings.operationsEyebrow")}</p>
-            <h2 className="mt-2 text-2xl font-semibold text-midnight">{t("settings.operationsTitle")}</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">{t("settings.operationsText")}</p>
-          </div>
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
-            <div className="grid gap-3 md:grid-cols-3">
-              {operationsSetup.map((item, index) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.key}
-                    to={item.href}
-                    className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-brand-200 hover:shadow-sm"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="grid h-11 w-11 place-items-center rounded-xl bg-brand-50 text-brand-700">
-                        <Icon size={20} />
-                      </div>
-                      <span className="rounded-full bg-slate-50 px-2.5 py-1 text-xs font-black text-slate-500">{index + 1}</span>
-                    </div>
-                    <p className="mt-4 font-black text-midnight">{t(`settings.operations.${item.key}.title`)}</p>
-                    <p className="mt-1 text-sm leading-6 text-slate-500">{t(`settings.operations.${item.key}.text`)}</p>
-                    <span className="mt-4 inline-flex text-sm font-black text-brand-700">{t("settings.openSection")}</span>
-                  </Link>
-                );
-              })}
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <p className="font-black text-midnight">{t("settings.operations.orderTitle")}</p>
-              <div className="mt-3 space-y-2 text-sm font-semibold leading-6 text-slate-600">
-                <p>{t("settings.operations.orderStep1")}</p>
-                <p>{t("settings.operations.orderStep2")}</p>
-                <p>{t("settings.operations.orderStep3")}</p>
-              </div>
-            </div>
-          </div>
-        </CardBody>
-      </Card>
-      ) : null}
-      {allowedSettingsSectionIds.has("data-tools") ? (
-      <Card id="data-tools" className={settingsSectionClass("data-tools")}>
-        <CardBody>
-          <div className="mb-4">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">{t("settings.dataToolsEyebrow")}</p>
-            <h2 className="mt-2 text-2xl font-semibold text-midnight">{t("settings.dataToolsTitle")}</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-              {t("settings.dataToolsText")}
-            </p>
-          </div>
-          {uploadImportMutation.error || confirmImportMutation.error || exportMutation.error || templateMutation.error || manualSaleMutation.error || manualCatalogMutation.error ? (
-            <div className="mb-4">
-              <ErrorState message={getApiErrorMessage(uploadImportMutation.error || confirmImportMutation.error || exportMutation.error || templateMutation.error || manualSaleMutation.error || manualCatalogMutation.error)} />
-            </div>
-          ) : null}
-          <div className="mb-4 grid gap-2 rounded-card border border-slate-200 bg-slate-50 p-2 md:grid-cols-3">
-            {[
-              { id: "import" as const, title: t("settings.dataTool.import"), text: t("settings.dataTool.importText") },
-              { id: "export" as const, title: t("settings.dataTool.export"), text: t("settings.dataTool.exportText") },
-              { id: "manual" as const, title: t("settings.dataTool.manual"), text: t("settings.dataTool.manualText") },
-            ].map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setActiveDataTool(item.id)}
-                className={`rounded-2xl px-4 py-3 text-left transition ${
-                  activeDataTool === item.id ? "bg-white text-midnight shadow-sm ring-1 ring-slate-200" : "text-slate-500 hover:bg-white hover:text-midnight"
-                }`}
-              >
-                <span className="block text-sm font-black">{item.title}</span>
-                <span className="mt-1 block text-xs font-semibold leading-5">{item.text}</span>
-              </button>
-            ))}
-          </div>
-          <div className="grid gap-4 xl:grid-cols-[1fr_0.9fr]">
-            <div className={`rounded-card border border-slate-200 bg-slate-50 p-4 xl:col-span-2 ${dataToolPanelClass("import")}`}>
-              <h3 className="font-bold text-midnight">{t("settings.importTitle")}</h3>
-              <p className="mt-1 text-sm leading-6 text-slate-500">
-                {t("settings.importText")}
-              </p>
-              <div className="mt-4 grid gap-3 lg:grid-cols-[180px_1fr_auto_auto]">
-                <Select
-                  value={importEntity}
-                  onChange={(event) => setImportEntity(event.target.value as ImportEntity)}
-                  options={importEntityOptions}
-                />
-                <Input
-                  type="file"
-                  accept=".csv,.xlsx"
-                  onChange={(event) => setImportFile(event.target.files?.[0] || null)}
-                />
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => templateMutation.mutate(importEntity)}
-                  isLoading={templateMutation.isPending}
-                >
-                  {t("settings.template")}
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => uploadImportMutation.mutate()}
-                  disabled={!importFile}
-                  isLoading={uploadImportMutation.isPending}
-                >
-                  {t("settings.preview")}
-                </Button>
-              </div>
-              {activeImport ? (
-                <div className="mt-4 rounded-card bg-white p-4">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <p className="font-bold text-midnight">{activeImport.original_filename || t("settings.importNumber", { id: activeImport.id })}</p>
-                      <p className="mt-1 text-sm text-slate-500">{activeImport.entity_type} · {activeImport.total_rows} {t("settings.rows")} · {activeImport.status}</p>
-                    </div>
-                    {activeImport.status === "previewed" && !(activeImport.errors_json?.rows || []).length ? (
-                      <Button
-                        type="button"
-                        onClick={() => confirmImportMutation.mutate(activeImport.id)}
-                        isLoading={confirmImportMutation.isPending}
-                      >
-                        {t("settings.confirmImport")}
-                      </Button>
-                    ) : null}
-                  </div>
-                  {importSummary ? (
-                    <div className="mt-4 grid gap-2 sm:grid-cols-4">
-                      {[
-                        { label: t("settings.importCreated"), value: importSummary.created || 0 },
-                        { label: t("settings.importUpdated"), value: importSummary.updated || 0 },
-                        { label: t("settings.importSkipped"), value: importSummary.skipped || 0 },
-                        { label: t("settings.importErrors"), value: importSummary.errors || 0 },
-                      ].map((item) => (
-                        <div key={item.label} className="rounded-2xl bg-slate-50 px-3 py-2">
-                          <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-400">{item.label}</p>
-                          <p className="mt-1 text-lg font-black text-midnight">{item.value}</p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
-                  {(activeImport.errors_json?.rows || []).length ? (
-                    <div className="mt-4 rounded-2xl border border-red-100 bg-red-50 p-3">
-                      <p className="text-sm font-black text-red-800">{t("settings.importFixFile")}</p>
-                      <div className="mt-2 space-y-1">
-                        {(activeImport.errors_json?.rows || []).slice(0, 4).map((error, index) => (
-                          <p key={`${error.row}-${error.field}-${index}`} className="text-xs font-semibold text-red-700">
-                            Row {error.row}, {error.field}: {error.message}
-                          </p>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
-                  <div className="mt-4 grid gap-3 lg:grid-cols-2">
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{t("settings.mapping")}</p>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {Object.entries(activeImport.mapping_json || {}).map(([field, header]) => (
-                          <span key={field} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
-                            {field} {"<-"} {header}
-                          </span>
-                        ))}
-                        {!Object.keys(activeImport.mapping_json || {}).length ? <span className="text-sm text-slate-500">{t("settings.noMapping")}</span> : null}
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{t("settings.duplicates")}</p>
-                      <p className={activeImport.duplicates_json?.rows?.length ? "mt-2 text-sm font-bold text-amber-700" : "mt-2 text-sm font-bold text-emerald-700"}>
-                        {t("settings.duplicatesCount", { count: activeImport.duplicates_json?.rows?.length || 0 })}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-4 overflow-hidden rounded-2xl border border-slate-100">
-                    {(activeImport.preview_json?.rows || []).slice(0, 3).map((row, index) => (
-                      <div key={index} className="border-b border-slate-100 px-3 py-2 text-xs text-slate-600 last:border-b-0">
-                        {Object.entries(row).slice(0, 5).map(([key, value]) => `${key}: ${value || "-"}`).join(" · ")}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <p className="mt-4 rounded-2xl bg-white p-4 text-sm text-slate-500">{t("settings.importHistoryEmpty")}</p>
-              )}
-            </div>
-            <div className={`rounded-card border border-slate-200 bg-white p-4 xl:col-span-2 ${dataToolPanelClass("export")}`}>
-              <h3 className="font-bold text-midnight">{t("settings.exportTitle")}</h3>
-              <p className="mt-1 text-sm leading-6 text-slate-500">{t("settings.exportText")}</p>
-              <div className="mt-4 grid gap-2 sm:grid-cols-3 xl:grid-cols-1">
-                {(["clients", "leads", "deals", "sales", "catalog"] as const).map((entity) => (
-                  <Button
-                    key={entity}
-                    type="button"
-                    variant="secondary"
-                    onClick={() => exportMutation.mutate(entity)}
-                    isLoading={exportMutation.isPending}
-                  >
-                    {t("settings.exportEntity", { entity: entityLabel(entity, t) })}
-                  </Button>
-                ))}
-              </div>
-              <div className="mt-4 space-y-2">
-                {jobs.slice(0, 5).map((job) => (
-                  <button
-                    key={job.id}
-                    type="button"
-                    onClick={() => setActiveImportId(Number(job.id))}
-                    className="w-full rounded-2xl bg-slate-50 px-3 py-2 text-left text-sm transition hover:bg-slate-100"
-                  >
-                    <span className="font-bold text-midnight">#{job.id} {job.entity_type}</span>
-                    <span className="ml-2 text-slate-500">{job.status} · {job.total_rows} {t("settings.rows")}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className={`mt-4 grid gap-4 xl:grid-cols-2 ${dataToolPanelClass("manual")}`}>
-            <form
-              className="rounded-card border border-slate-200 bg-white p-4"
-              onSubmit={(event) => {
-                event.preventDefault();
-                manualSaleMutation.mutate();
-              }}
-            >
-              <h3 className="font-bold text-midnight">{t("settings.manualSaleTitle")}</h3>
-              <p className="mt-1 text-sm leading-6 text-slate-500">{t("settings.manualSaleText")}</p>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <Input label={t("settings.number")} value={manualSaleForm.external_id} onChange={(event) => setManualSaleForm({ ...manualSaleForm, external_id: event.target.value })} />
-                <Input label={t("settings.amount")} value={manualSaleForm.amount} onChange={(event) => setManualSaleForm({ ...manualSaleForm, amount: event.target.value })} required />
-                <Input label={t("settings.client")} value={manualSaleForm.client_name} onChange={(event) => setManualSaleForm({ ...manualSaleForm, client_name: event.target.value })} />
-                <Input label={t("settings.item")} value={manualSaleForm.item_name} onChange={(event) => setManualSaleForm({ ...manualSaleForm, item_name: event.target.value })} />
-              </div>
-              <div className="mt-4">
-                <Button type="submit" isLoading={manualSaleMutation.isPending}>{t("settings.saveSale")}</Button>
-              </div>
-            </form>
-            <form
-              className="rounded-card border border-slate-200 bg-white p-4"
-              onSubmit={(event) => {
-                event.preventDefault();
-                manualCatalogMutation.mutate();
-              }}
-            >
-              <h3 className="font-bold text-midnight">{t("settings.catalogTitle")}</h3>
-              <p className="mt-1 text-sm leading-6 text-slate-500">{t("settings.catalogText")}</p>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <Select
-                  label={t("settings.type")}
-                  value={manualCatalogForm.item_type}
-                  onChange={(event) => setManualCatalogForm({ ...manualCatalogForm, item_type: event.target.value })}
-                  options={[
-                    { value: "service", label: t("settings.service") },
-                    { value: "product", label: t("settings.product") },
-                  ]}
-                />
-                <Input label="SKU" value={manualCatalogForm.sku} onChange={(event) => setManualCatalogForm({ ...manualCatalogForm, sku: event.target.value })} />
-                <Input label={t("settings.templateTitle")} value={manualCatalogForm.name} onChange={(event) => setManualCatalogForm({ ...manualCatalogForm, name: event.target.value })} required />
-                <Input label={t("settings.price")} value={manualCatalogForm.price_from} onChange={(event) => setManualCatalogForm({ ...manualCatalogForm, price_from: event.target.value })} />
-                <Input label={t("settings.durationMinutes")} value={manualCatalogForm.duration_minutes} onChange={(event) => setManualCatalogForm({ ...manualCatalogForm, duration_minutes: event.target.value })} />
-                <Input label={t("settings.stock")} value={manualCatalogForm.stock_quantity} onChange={(event) => setManualCatalogForm({ ...manualCatalogForm, stock_quantity: event.target.value })} />
-              </div>
-              <div className="mt-4">
-                <Button type="submit" isLoading={manualCatalogMutation.isPending}>{t("settings.saveCatalogItem")}</Button>
-              </div>
-            </form>
-          </div>
-        </CardBody>
-      </Card>
-      ) : null}
-      {allowedSettingsSectionIds.has("lead-forms") ? (
-      <Card id="lead-forms" className={settingsSectionClass("lead-forms")}>
-        <CardBody>
-          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">{t("settings.leadFormsEyebrow")}</p>
-              <h2 className="mt-2 text-2xl font-semibold text-midnight">{t("settings.leadFormsTitle")}</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                {t("settings.leadFormsText")}
-              </p>
-            </div>
-            <Button type="button" onClick={() => createLeadFormMutation.mutate()} isLoading={createLeadFormMutation.isPending}>
-              {t("settings.createForm")}
-            </Button>
-          </div>
-          {createLeadFormMutation.error || updateLeadFormMutation.error || removeLeadFormMutation.error || createLeadFieldMutation.error || updateLeadFieldMutation.error || removeLeadFieldMutation.error ? (
-            <div className="mb-4"><ErrorState message={getApiErrorMessage(createLeadFormMutation.error || updateLeadFormMutation.error || removeLeadFormMutation.error || createLeadFieldMutation.error || updateLeadFieldMutation.error || removeLeadFieldMutation.error)} /></div>
-          ) : null}
-          <div className="grid gap-4 xl:grid-cols-[1fr_0.8fr]">
-            <div className="space-y-3">
-              {(leadForms.data || []).map((form) => {
-                const publicUrl = `${apiOrigin}/api/public/forms/${form.public_id}/submit/`;
-                const embedCode = `<form method="POST" action="${publicUrl}"><input name="full_name" /><input name="phone" /><button>${t("settings.send")}</button></form>`;
-                return (
-                  <div key={form.id} className="rounded-card border border-slate-200 bg-slate-50 p-4">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <p className="font-bold text-midnight">{form.name}</p>
-                        <p className="mt-1 text-sm text-slate-500">{form.title} · {form.source} · {form.submissions_count || 0} {t("settings.submissions")}</p>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <span className={form.is_active ? "rounded-full bg-green-50 px-3 py-1 text-xs font-bold text-green-700" : "rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500"}>
-                          {form.is_active ? t("settings.active") : t("settings.paused")}
-                        </span>
-                        <Button type="button" variant="secondary" className="min-h-8 px-3 text-xs" onClick={() => startEditingLeadForm(form)}>{t("settings.edit")}</Button>
-                        <Button type="button" variant="secondary" className="min-h-8 px-3 text-xs" onClick={() => updateLeadFormMutation.mutate({ id: Number(form.id), payload: { is_active: !form.is_active } })} isLoading={updateLeadFormMutation.isPending}>
-                          {form.is_active ? t("settings.disable") : t("settings.enable")}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="danger"
-                          className="min-h-8 px-3 text-xs"
-                          onClick={async () => {
-                            if (await confirmDelete(form.name || form.title)) removeLeadFormMutation.mutate(Number(form.id));
-                          }}
-                          isLoading={removeLeadFormMutation.isPending}
-                        >
-                          {t("settings.delete")}
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {form.fields.map((field) => (
-                        <span key={field.id} className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-500">
-                          {field.label}{field.is_required ? " *" : ""}
-                        </span>
-                      ))}
-                    </div>
-                    {editingLeadFormId === Number(form.id) ? (
-                      <div className="mt-4 rounded-card border border-brand-100 bg-brand-50 p-4">
-                        <form
-                          className="grid gap-3"
-                          onSubmit={(event) => {
-                            event.preventDefault();
-                            updateLeadFormMutation.mutate({ id: Number(form.id), payload: leadFormPayloadFromEdit() });
-                          }}
-                        >
-                          <div className="grid gap-3 sm:grid-cols-2">
-                            <Input label="Название" value={leadFormEditForm.name} onChange={(event) => setLeadFormEditForm({ ...leadFormEditForm, name: event.target.value })} required />
-                            <Input label="Заголовок формы" value={leadFormEditForm.title} onChange={(event) => setLeadFormEditForm({ ...leadFormEditForm, title: event.target.value })} required />
-                            <Select
-                              label="Источник"
-                              value={leadFormEditForm.source}
-                              onChange={(event) => setLeadFormEditForm({ ...leadFormEditForm, source: event.target.value as LeadCaptureForm["source"] })}
-                              options={[
-                                { value: "website", label: "Website" },
-                                { value: "landing", label: "Landing" },
-                                { value: "telegram", label: "Telegram" },
-                                { value: "whatsapp", label: "WhatsApp" },
-                                { value: "instagram", label: "Instagram" },
-                                { value: "manual", label: "Manual" },
-                                { value: "other", label: "Other" },
-                              ]}
-                            />
-                            <Select
-                              label="Ответственный"
-                              value={leadFormEditForm.default_responsible_user}
-                              onChange={(event) => setLeadFormEditForm({ ...leadFormEditForm, default_responsible_user: event.target.value })}
-                              options={[
-                                { value: "", label: "Владелец бизнеса" },
-                                ...members.map((member) => ({ value: String(member.user.id), label: member.user.full_name || member.user.email })),
-                              ]}
-                            />
-                            <Input label="Landing ID" value={leadFormEditForm.landing_id} onChange={(event) => setLeadFormEditForm({ ...leadFormEditForm, landing_id: event.target.value })} />
-                            <Input label="Домен" value={leadFormEditForm.landing_domain} onChange={(event) => setLeadFormEditForm({ ...leadFormEditForm, landing_domain: event.target.value })} />
-                            <Input label="Preview URL" value={leadFormEditForm.preview_url} onChange={(event) => setLeadFormEditForm({ ...leadFormEditForm, preview_url: event.target.value })} />
-                            <Input label="Сообщение успеха" value={leadFormEditForm.success_message} onChange={(event) => setLeadFormEditForm({ ...leadFormEditForm, success_message: event.target.value })} />
-                          </div>
-                          <Textarea label="Описание" rows={3} value={leadFormEditForm.description} onChange={(event) => setLeadFormEditForm({ ...leadFormEditForm, description: event.target.value })} />
-                          <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                            <input type="checkbox" checked={leadFormEditForm.is_active} onChange={(event) => setLeadFormEditForm({ ...leadFormEditForm, is_active: event.target.checked })} />
-                            {t("settings.active")}
-                          </label>
-                          <div className="flex flex-wrap gap-2">
-                            <Button type="submit" isLoading={updateLeadFormMutation.isPending}>{t("settings.save")}</Button>
-                            <Button type="button" variant="secondary" onClick={() => setEditingLeadFormId(null)}>{t("settings.cancel")}</Button>
-                          </div>
-                        </form>
-                        <div className="mt-5 rounded-2xl bg-slate-50 p-3">
-                          <p className="font-black text-midnight">Поля формы</p>
-                          <div className="mt-3 space-y-2">
-                            {form.fields.map((field) => (
-                              <div key={field.id} className="flex flex-col gap-2 rounded-2xl bg-white px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
-                                <div>
-                                  <p className="text-sm font-bold text-midnight">{field.label}{field.is_required ? " *" : ""}</p>
-                                  <p className="text-xs text-slate-500">{field.key} · {field.field_type} · #{field.sort_order}</p>
-                                </div>
-                                <div className="flex flex-wrap gap-2">
-                                  <Button type="button" variant="secondary" className="min-h-8 px-3 text-xs" onClick={() => updateLeadFieldMutation.mutate({ id: Number(field.id), payload: { is_required: !field.is_required } })} isLoading={updateLeadFieldMutation.isPending}>
-                                    {field.is_required ? "Необязательное" : "Обязательное"}
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    variant="danger"
-                                    className="min-h-8 px-3 text-xs"
-                                    onClick={async () => {
-                                      if (await confirmDelete(field.label)) removeLeadFieldMutation.mutate(Number(field.id));
-                                    }}
-                                    isLoading={removeLeadFieldMutation.isPending}
-                                  >
-                                    {t("settings.delete")}
-                                  </Button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                          <form
-                            className="mt-3 grid gap-2 lg:grid-cols-[1fr_140px_140px_1fr_90px_auto]"
-                            onSubmit={(event) => {
-                              event.preventDefault();
-                              createLeadFieldMutation.mutate();
-                            }}
-                          >
-                            <Input label="Label" value={leadFieldForm.label} onChange={(event) => setLeadFieldForm({ ...leadFieldForm, label: event.target.value })} required />
-                            <Input label="Key" value={leadFieldForm.key} onChange={(event) => setLeadFieldForm({ ...leadFieldForm, key: event.target.value })} />
-                            <Select
-                              label="Type"
-                              value={leadFieldForm.field_type}
-                              onChange={(event) => setLeadFieldForm({ ...leadFieldForm, field_type: event.target.value as LeadFormField["field_type"] })}
-                              options={[
-                                { value: "text", label: "Text" },
-                                { value: "textarea", label: "Textarea" },
-                                { value: "phone", label: "Phone" },
-                                { value: "email", label: "Email" },
-                                { value: "select", label: "Select" },
-                              ]}
-                            />
-                            <Input label="Options" placeholder="A, B, C" value={leadFieldForm.options} onChange={(event) => setLeadFieldForm({ ...leadFieldForm, options: event.target.value })} />
-                            <Input label="Order" type="number" value={leadFieldForm.sort_order} onChange={(event) => setLeadFieldForm({ ...leadFieldForm, sort_order: Number(event.target.value || 0) })} />
-                            <div className="flex items-end">
-                              <Button type="submit" isLoading={createLeadFieldMutation.isPending}>{t("settings.add")}</Button>
-                            </div>
-                            <Input className="lg:col-span-3" label="Placeholder" value={leadFieldForm.placeholder} onChange={(event) => setLeadFieldForm({ ...leadFieldForm, placeholder: event.target.value })} />
-                            <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 lg:col-span-3 lg:self-end">
-                              <input type="checkbox" checked={leadFieldForm.is_required} onChange={(event) => setLeadFieldForm({ ...leadFieldForm, is_required: event.target.checked })} />
-                              Обязательное поле
-                            </label>
-                          </form>
-                        </div>
-                      </div>
-                    ) : null}
-                    <div className="mt-4 rounded-2xl bg-white p-3">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div>
-                          <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{t("settings.formInstallTitle")}</p>
-                          <p className="mt-1 text-sm font-semibold leading-5 text-slate-500">{t("settings.formInstallText")}</p>
-                        </div>
-                        <Button type="button" variant="secondary" onClick={() => navigator.clipboard?.writeText(embedCode)}>
-                          <Copy size={14} />
-                          {t("settings.copyEmbed")}
-                        </Button>
-                      </div>
-                      <div className="mt-3 rounded-2xl border border-slate-100 bg-slate-50 p-3">
-                        <p className="text-sm font-black text-midnight">{form.title}</p>
-                        <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                          {form.fields.slice(0, 4).map((field) => (
-                            <div key={field.id} className="rounded-xl border border-slate-100 bg-white px-3 py-2 text-xs font-bold text-slate-500">
-                              {field.label}{field.is_required ? " *" : ""}
-                            </div>
-                          ))}
-                        </div>
-                        <div className="mt-3 inline-flex rounded-full bg-brand-600 px-4 py-2 text-sm font-bold text-white">{t("settings.send")}</div>
-                      </div>
-                      <details className="mt-3">
-                        <summary className="cursor-pointer text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{t("settings.embedCode")}</summary>
-                        <code className="mt-2 block break-all rounded-2xl bg-slate-950 p-3 text-xs leading-5 text-white">{embedCode}</code>
-                      </details>
-                    </div>
-                  </div>
-                );
-              })}
-              {!leadForms.isLoading && !leadForms.data?.length ? (
-                <div className="rounded-card border border-dashed border-slate-200 bg-slate-50 p-5">
-                  <p className="font-black text-midnight">{t("settings.noLeadFormsTitle")}</p>
-                  <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">{t("settings.noLeadForms")}</p>
-                  <div className="mt-4 rounded-2xl bg-white p-4">
-                    <p className="text-sm font-black text-midnight">{t("settings.formPreviewTitle")}</p>
-                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                      <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500">{t("settings.fullName")}</div>
-                      <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500">{t("settings.phone")}</div>
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-            </div>
-            <div className="rounded-card border border-slate-200 bg-white p-4">
-              <h3 className="font-bold text-midnight">{t("settings.latestSubmissions")}</h3>
-              <div className="mt-4 space-y-2">
-                {(leadFormSubmissions.data || []).slice(0, 6).map((submission) => (
-                  <div key={submission.id} className="rounded-2xl bg-slate-50 p-3">
-                    <p className="font-semibold text-midnight">{submission.form_name || `Form #${submission.form}`}</p>
-                    <p className="mt-1 text-xs leading-5 text-slate-500">
-                      {t("settings.lead")} #{submission.lead || "-"} · {t("settings.client")} #{submission.client || "-"} · {Object.keys(submission.utm_json || {}).join(", ") || "no utm"}
-                    </p>
-                  </div>
-                ))}
-                {!leadFormSubmissions.isLoading && !leadFormSubmissions.data?.length ? (
-                  <p className="text-sm text-slate-500">{t("settings.noSubmissions")}</p>
-                ) : null}
-              </div>
-            </div>
-          </div>
-        </CardBody>
-      </Card>
-      ) : null}
       <Card id="billing" className={settingsSectionClass("billing")}>
         <CardBody>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -2447,39 +1747,6 @@ export function SettingsPage() {
           </div>
         </CardBody>
       </Card>
-      {allowedSettingsSectionIds.has("automations") ? (
-      <Card id="automations" className={settingsSectionClass("automations")}>
-        <CardBody>
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-start gap-3">
-              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-brand-50 text-brand-700">
-                <Workflow size={20} />
-              </div>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">{t("settings.automationsEyebrow")}</p>
-                <h2 className="mt-1 text-2xl font-semibold text-midnight">{t("settings.automationsTitle")}</h2>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">{t("settings.automationsText")}</p>
-              </div>
-            </div>
-            <Link to="/app/automations">
-              <Button type="button" variant="secondary">{t("settings.openSection")}</Button>
-            </Link>
-          </div>
-        </CardBody>
-      </Card>
-      ) : null}
-      {allowedSettingsSectionIds.has("developer") ? (
-      <details id="developer" className={settingsSectionClass("developer", "mb-5 scroll-mt-24 rounded-card border border-slate-200 bg-white p-4 shadow-card")}>
-        <summary className="cursor-pointer list-none">
-          <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">{t("settings.developerConnections")}</p>
-          <h2 className="mt-2 text-2xl font-semibold text-midnight">{t("settings.developerTitle")}</h2>
-          <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-slate-500">{t("settings.developerText")}</p>
-        </summary>
-        <div className="mt-4">
-          <DevelopersSection />
-        </div>
-      </details>
-      ) : null}
         </div>
       </div>
     </>

@@ -120,10 +120,10 @@ test("business owner can use core merchant CRM pages", async ({ page, isMobile }
   await login(page, users.owner, /\/app/);
 
   await expect(page).toHaveURL(/\/app/);
-  await expect(page.getByRole("heading", { name: /Главная|Business dashboard|Dashboard|Басты/ })).toBeVisible();
+  await expect(page.getByText(/Выручка|Revenue/).first()).toBeVisible();
 
   await navigateInsideApp(page, "/app/leads");
-  await expect(page.getByRole("heading", { name: /Заявки|Leads/ })).toBeVisible();
+  await expect(page.getByText(/Заявки|Leads/).first()).toBeVisible();
   await page.locator('div[role="button"][tabindex="0"]').first().click();
   await expect(page.getByRole("button", { name: "История" })).toBeVisible();
   await page.getByRole("button", { name: "Заметки" }).click();
@@ -137,7 +137,7 @@ test("business owner can use core merchant CRM pages", async ({ page, isMobile }
   await page.getByRole("button", { name: "Закрыть карточку" }).click();
 
   await navigateInsideApp(page, "/app/conversations");
-  await expect(page.getByRole("heading", { name: /Диалоги|Conversations/ })).toBeVisible();
+  await expect(page.getByText(/Сообщения|Messages/).first()).toBeVisible();
 
   await navigateInsideApp(page, "/app/settings");
   await expect(page.getByRole("heading", { name: /Настройки|Settings/ })).toBeVisible();

@@ -29,22 +29,22 @@ export function MetricCard({ label, value, hint, icon: Icon, tone = "brand", hre
     <>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate text-xs font-semibold uppercase tracking-[0.04em] text-slate-500">{label}</p>
-          <p className={cn("mt-2 font-bold text-midnight", compact ? "text-2xl" : "text-3xl")}>{value}</p>
+          <p className="truncate text-xs font-bold uppercase tracking-[0.04em] text-slate-500">{label}</p>
+          <p className={cn("mt-1.5 font-black text-midnight", compact ? "text-xl" : "text-2xl")}>{value}</p>
         </div>
         {Icon ? (
-          <div className={cn("grid shrink-0 place-items-center rounded-xl", compact ? "h-10 w-10" : "h-12 w-12", toneClasses[tone])}>
-            <Icon size={compact ? 20 : 22} />
+          <div className={cn("grid shrink-0 place-items-center rounded-control", compact ? "h-9 w-9" : "h-10 w-10", toneClasses[tone])}>
+            <Icon size={compact ? 18 : 20} />
           </div>
         ) : null}
       </div>
-      {hint ? <p className="mt-3 text-sm font-medium leading-5 text-slate-500">{hint}</p> : null}
+      {hint ? <p className="mt-2 text-sm font-semibold leading-5 text-slate-500">{hint}</p> : null}
     </>
   );
   const classNames = cn(
-    "rounded-xl border border-slate-200 bg-white shadow-soft transition duration-150 hover:-translate-y-0.5 hover:shadow-md",
-    compact ? "p-4" : "p-5",
-    href && "transition-colors hover:border-brand-200",
+    "rounded-card border border-slate-200 bg-white shadow-card transition-colors duration-150",
+    compact ? "p-3" : "p-4",
+    href && "hover:border-brand-200 hover:bg-slate-50",
     className,
   );
 

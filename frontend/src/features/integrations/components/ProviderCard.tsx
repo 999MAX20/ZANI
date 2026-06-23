@@ -10,6 +10,7 @@ import { Button } from "../../../components/ui/Button";
 import { ErrorState } from "../../../components/ui/StateViews";
 import { Input } from "../../../components/ui/Input";
 import { Modal } from "../../../components/ui/Modal";
+import { useNotification } from "../../../components/notifications/NotificationProvider";
 import { cn } from "../../../lib/cn";
 import { useI18n } from "../../../lib/i18n";
 import type { Bot, BotChannel, BusinessConnector, ConnectorCapability, Id } from "../../../types";
@@ -134,12 +135,12 @@ export function ProviderCard({
   provider: (typeof providerCatalog)[number];
 }) {
   const { t } = useI18n();
+  const showNotification = useNotification();
   const queryClient = useQueryClient();
   const [connectOpen, setConnectOpen] = useState(false);
   const [apiKey, setApiKey] = useState("");
   const [accountId, setAccountId] = useState("");
   const [webhookSecret, setWebhookSecret] = useState("");
-  const [notice, setNotice] = useState<string | null>(null);
   const isPricingProvider = provider.provider === "kaspi_pricing";
   const status = isPricingProvider ? "setup_required" : deriveProviderStatus({ capability, channel, connector });
   const title = providerTitle(provider.provider, t, capability);
@@ -216,7 +217,7 @@ export function ProviderCard({
       return businessConnectorsApi.create(payload);
     },
     onSuccess: () => {
-      setNotice(t("integrations.card.connectionSaved"));
+      showNotification({ message: t("integrations.card.connectionSaved"), tone: "success" });
       setApiKey("");
       setWebhookSecret("");
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
@@ -307,7 +308,7 @@ export function ProviderCard({
   return (
     <article
       className={cn(
-        "rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft",
+        "rounded-card border border-slate-200 bg-white p-3 shadow-card transition hover:bg-slate-50",
         "min-h-[82px]",
         isUnavailable && "opacity-60",
       )}
@@ -316,7 +317,6 @@ export function ProviderCard({
 
       <Modal title={t("integrations.card.connectionTitle", { title })} open={connectOpen} onClose={() => setConnectOpen(false)}>
         <div className="space-y-4">
-          {notice ? <div className="rounded-2xl bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800">{notice}</div> : null}
           {provider.provider === "telegram" ? (
             <TelegramInlineSetup businessId={businessId} bots={bots} canManage={canManage} channel={channel} />
           ) : provider.provider === "excel_csv" ? (
@@ -336,13 +336,13 @@ export function ProviderCard({
           ) : provider.provider === "ozon" ? (
             <OzonInlineSetup businessId={businessId} canManage={canManage} connector={connector} />
           ) : (
-            <div className="space-y-4 rounded-3xl border border-slate-100 bg-white p-4">
+            <div className="space-y-4 rounded-card border border-slate-200 bg-white p-4">
               <div>
                 <p className="text-sm font-black text-midnight">{title}</p>
                 <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">{primaryUse}</p>
               </div>
               {provider.provider === "website" ? (
-                <div className="rounded-2xl bg-slate-50 p-3 text-sm font-semibold text-slate-600">
+                <div className="rounded-control bg-slate-50 p-3 text-sm font-semibold text-slate-600">
                   {t("integrations.card.websiteNoExtraData")}
                 </div>
               ) : (

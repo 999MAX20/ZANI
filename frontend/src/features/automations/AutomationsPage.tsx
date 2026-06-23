@@ -184,7 +184,7 @@ export function AutomationsPage() {
         <div className="mb-4"><ErrorState message={t("automations.saveError")} /></div>
       ) : null}
 
-      <details className="mb-6 rounded-3xl border border-slate-100 bg-white/80 p-4 shadow-soft">
+      <details className="mb-6 rounded-card border border-slate-200 bg-white p-4 shadow-card">
         <summary className="cursor-pointer text-sm font-black uppercase tracking-[0.16em] text-slate-500">
           {t("automations.advancedTitle")}
         </summary>
@@ -277,9 +277,9 @@ export function AutomationsPage() {
 
       <div className="mt-6">
         <h2 className="text-xl font-bold text-midnight">{t("automations.runsTitle")}</h2>
-        <div className="mt-3 overflow-hidden rounded-3xl border border-slate-100 bg-white">
+        <div className="mt-3 overflow-hidden rounded-card border border-slate-200 bg-white">
         {(runs.data || []).slice(0, 8).map((run) => (
-            <div key={run.id} className="grid gap-2 border-b border-slate-100 px-4 py-3 text-sm last:border-b-0 md:grid-cols-[1fr_120px_160px_auto]">
+            <div key={run.id} className="grid gap-2 border-b border-slate-200 px-4 py-3 text-sm last:border-b-0 md:grid-cols-[1fr_120px_160px_auto]">
               <div>
                 <p className="font-bold text-midnight">{triggers.find((item) => item.value === run.trigger_type)?.label || run.trigger_type}</p>
                 <p className="text-xs text-slate-500">
@@ -358,7 +358,7 @@ export function AutomationsPage() {
             </label>
           </div>
 
-          <div className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
+          <div className="rounded-card border border-slate-200 bg-slate-50 p-4">
             <div className="mb-3 flex items-center justify-between gap-3">
               <h3 className="font-bold text-midnight">{t("automations.conditions")}</h3>
               <Button
@@ -396,7 +396,7 @@ export function AutomationsPage() {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
+          <div className="rounded-card border border-slate-200 bg-slate-50 p-4">
             <div className="mb-3 flex items-center justify-between gap-3">
               <h3 className="font-bold text-midnight">{t("automations.actions")}</h3>
               <Button
@@ -409,7 +409,7 @@ export function AutomationsPage() {
             </div>
             <div className="space-y-3">
               {actions.map((action, index) => (
-                <div key={`${action.action_type}-${index}`} className="rounded-2xl border border-slate-100 bg-white p-3">
+                <div key={`${action.action_type}-${index}`} className="rounded-2xl border border-slate-200 bg-white p-3">
                   <div className="grid gap-2 md:grid-cols-[1fr_150px_auto]">
                     <Select
                       value={action.action_type}
@@ -441,7 +441,7 @@ export function AutomationsPage() {
           </div>
 
           {preview ? (
-            <div className="rounded-3xl border border-emerald-100 bg-emerald-50 p-4 text-sm text-emerald-800">
+            <div className="rounded-card border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
               <p className="font-bold">{t("automations.previewOk", { name: preview.name })}</p>
               <p className="mt-1">{preview.will_run_when}</p>
               <p className="mt-2 font-semibold">{t("automations.previewMeta", { conditions: preview.conditions_count, actions: preview.actions_count })}</p>

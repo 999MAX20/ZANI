@@ -1,32 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Archive,
-  CalendarPlus,
-  ClipboardList,
   CheckCheck,
   ChevronLeft,
   ChevronRight,
-  CircleDollarSign,
   CircleDot,
   Columns3,
   Download,
+  Filter,
   Flame,
-  KanbanSquare,
-  Keyboard,
-  Mail,
   MessageCircle,
-  MoreHorizontal,
-  Mic,
   Phone,
   Plus,
   Search,
   SlidersHorizontal,
-  Tag,
   Share2,
-  Table2,
-  Undo2,
+  Upload,
   UserCheck,
-  WifiOff,
   XCircle,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -40,14 +29,30 @@ import { leadsApi, type LeadCreatePayload } from "../../api/leads";
 import { tasksApi, type TaskCreatePayload } from "../../api/tasks";
 import type { AppointmentCreatePayload } from "../../api/appointments";
 import { teamApi } from "../../api/team";
-import { CrmWorkspacePage } from "../../components/crm";
+import {
+  CrmDataTable,
+  CrmTableSurface,
+  CrmWorkspacePage,
+  CRM_TABLE_ACTIONS_COLUMN,
+  CRM_TABLE_CHECKBOX_COLUMN,
+  CRM_TABLE_CONTENT_CLASS,
+  CRM_TABLE_EMBEDDED_CLASS,
+  CRM_TABLE_HEADER_GRID_CLASS,
+  CRM_TABLE_MIN_WIDTH,
+  CRM_TABLE_PAGINATION_CLASS,
+  CRM_TABLE_WIDE_MIN_WIDTH,
+} from "../../components/crm";
 import { CrmEntityDrawer, type CrmDrawerEntity } from "../../components/crm/CrmEntityDrawer";
 import { AppointmentForm } from "../../components/forms/AppointmentForm";
 import { LeadForm } from "../../components/forms/LeadForm";
+import { useActionConfirm } from "../../components/actions/ActionConfirmProvider";
+import { useUndoToast } from "../../components/actions/UndoToastProvider";
 import { usePageHeader } from "../../components/layout/PageHeaderContext";
+import { useNotification } from "../../components/notifications/NotificationProvider";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { Modal } from "../../components/ui/Modal";
+import { PopoverSurface } from "../../components/ui/Overlay";
 import { Select } from "../../components/ui/Select";
 import { ErrorState, PageSkeleton } from "../../components/ui/StateViews";
 import { cn } from "../../lib/cn";
@@ -61,10 +66,8 @@ import type { Appointment, Client, Id, Lead, Service, Task } from "../../types";
 import { useAuth } from "../auth/AuthProvider";
 import { LeadQueueItem } from "./components/LeadQueueItem";
 import { VirtualizedLeadTableRows } from "./components/LeadsTable";
-import { SourceBadge } from "./components/common/SourceBadge";
 import {
   defaultVisibleColumns,
-  kanbanStatuses,
   LEAD_CACHE_KEY,
   LEAD_COLUMNS_KEY,
   LEAD_COLUMN_ORDER_KEY,
@@ -74,7 +77,6 @@ import {
   LEAD_OFFLINE_QUEUE_KEY,
   LEAD_PRESETS_KEY,
   LEADS_PAGE_SIZE,
-  leadViewModes,
   statusClass,
   type ActionHistoryItem,
   type FilterPreset,
@@ -82,12 +84,11 @@ import {
   type LeadAiInsight,
   type LeadColumnKey,
   type LeadFilter,
-  type LeadViewMode,
   type OfflineLeadAction,
   type Translate,
   type UndoToast,
 } from "./types";
-import { fuzzyIncludes, fuzzyScore, normalizePhoneSearchInput } from "./utils/leadFilters";
+import { fuzzyScore } from "./utils/leadFilters";
 import { formatRelativeTime, getClient, getService, getSourceLabel, getStatusLabel, leadAiInsight, leadTitle, nextAction } from "./utils/leadFormat";
 import { downloadText, toCsvValue } from "./utils/leadExport";
 import { loadJson, saveJson, toDateTimeLocal } from "./utils/leadStorage";
@@ -95,6 +96,9 @@ import { loadJson, saveJson, toDateTimeLocal } from "./utils/leadStorage";
 export function LeadsPage() {
   const { t } = useI18n();
   const { setPageHeader } = usePageHeader();
+  const confirmAction = useActionConfirm();
+  const showUndoToast = useUndoToast();
+  const showNotification = useNotification();
   const queryClient = useQueryClient();
   const { business } = useActiveBusiness();
   const { user } = useAuth();
@@ -118,23 +122,10 @@ export function LeadsPage() {
   });
   const [source, setSource] = useState(searchParams.get("source") || "");
   const [search, setSearch] = useState(searchParams.get("search") || "");
-  const [searchFocused, setSearchFocused] = useState(false);
-  const [viewMode, setViewMode] = useState<LeadViewMode>(() => {
-    const param = searchParams.get("view") as LeadViewMode | null;
-    return param && leadViewModes.includes(param) ? param : "table";
-  });
   const [sortByAi, setSortByAi] = useState(true);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(LEADS_PAGE_SIZE);
   const [pageDraft, setPageDraft] = useState("1");
-  const [kanbanVisibleCounts, setKanbanVisibleCounts] = useState<Record<Lead["status"], number>>(() => ({
-    new: 10,
-    contacted: 10,
-    in_progress: 10,
-    appointment_created: 10,
-    closed: 10,
-    lost: 10,
-  }));
   const [selectedLeadIds, setSelectedLeadIds] = useState<Id[]>([]);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; lead: Lead } | null>(null);
   const [filterPresets, setFilterPresets] = useState<FilterPreset[]>(() => loadJson<FilterPreset[]>(LEAD_PRESETS_KEY, []));
@@ -151,13 +142,11 @@ export function LeadsPage() {
     const saved = loadJson<LeadColumnKey[]>(LEAD_COLUMN_ORDER_KEY, leadColumnOrder);
     return [...saved.filter((column): column is LeadColumnKey => leadColumnOrder.includes(column)), ...leadColumnOrder.filter((column) => !saved.includes(column))];
   });
-  const [undoToast, setUndoToast] = useState<UndoToast | null>(null);
   const [undoStack, setUndoStack] = useState<ActionHistoryItem[]>([]);
   const [redoStack, setRedoStack] = useState<ActionHistoryItem[]>([]);
   const [isOnline, setIsOnline] = useState(() => navigator.onLine);
   const [offlineQueue, setOfflineQueue] = useState<OfflineLeadAction[]>(() => loadJson<OfflineLeadAction[]>(LEAD_OFFLINE_QUEUE_KEY, []));
   const [cachedLeads, setCachedLeads] = useState<Lead[]>(() => loadJson<Lead[]>(LEAD_CACHE_KEY, []));
-  const [notice, setNotice] = useState<string | null>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [lostLead, setLostLead] = useState<Lead | null>(null);
   const [lostReason, setLostReason] = useState("");
@@ -168,8 +157,13 @@ export function LeadsPage() {
     assignee: "",
     priority: "normal" as Task["priority"],
   });
-  const searchInputRef = useRef<HTMLInputElement | null>(null);
   const knownLeadIdsRef = useRef<Set<Id> | null>(null);
+  const lastSystemNoticeRef = useRef("");
+
+  function setNotice(message: string | null, tone: "success" | "info" | "warning" | "danger" = "info") {
+    if (!message) return;
+    showNotification({ message, tone });
+  }
 
   const teamMembers = useQuery({
     queryKey: ["team-members", business?.id],
@@ -275,7 +269,6 @@ export function LeadsPage() {
       .sort((a, b) => b.score - a.score || (sortByAi ? (aiInsights.get(b.lead.id)?.score || 0) - (aiInsights.get(a.lead.id)?.score || 0) : 0) || new Date(b.lead.updated_at).getTime() - new Date(a.lead.updated_at).getTime())
       .map(({ lead }) => lead);
   }, [aiInsights, allLeads, clientList, filter, search, serviceList, sortByAi, source, user?.id]);
-
   const totalLeadCount = leads.data?.count ?? rows.length;
   const pageCount = Math.max(1, Math.ceil(totalLeadCount / pageSize));
   const safePage = Math.min(page, pageCount);
@@ -333,30 +326,6 @@ export function LeadsPage() {
     };
   }, [aiInsights, allLeads, business?.id, clientList, duplicateCheck.data?.duplicates, selected, serviceList, t]);
 
-  const searchSuggestions = useMemo(() => {
-    const value = search.trim();
-    if (value.length < 2) return [];
-    const leadSuggestions = allLeads
-      .map((lead) => {
-        const client = getClient(lead, clientList);
-        const service = getService(lead, serviceList);
-        const label = client?.full_name || t("leads.leadFallback", { id: lead.id });
-        const meta = service?.name || getSourceLabel(lead.source, t);
-        return { id: `lead-${lead.id}`, type: t("leads.suggestionLead"), label, meta, lead, score: fuzzyScore(`${label} ${meta}`, value) };
-      })
-      .filter((item) => item.score > 0);
-    const clientSuggestions = clientList
-      .map((client) => {
-        const meta = client.phone || client.email || "";
-        return { id: `client-${client.id}`, type: t("leads.suggestionClient"), label: client.full_name, meta, lead: undefined, score: fuzzyScore(`${client.full_name} ${meta}`, value) };
-      })
-      .filter((item) => item.score > 0);
-    const serviceSuggestions = serviceList
-      .map((service) => ({ id: `service-${service.id}`, type: t("leads.suggestionService"), label: service.name, meta: "", lead: undefined, score: fuzzyScore(service.name, value) }))
-      .filter((item) => item.score > 0);
-    return [...leadSuggestions, ...clientSuggestions, ...serviceSuggestions].sort((a, b) => b.score - a.score).slice(0, 7);
-  }, [allLeads, clientList, search, serviceList, t]);
-
   useEffect(() => {
     setPage(1);
   }, [filter, search, source]);
@@ -395,12 +364,6 @@ export function LeadsPage() {
   useEffect(() => {
     saveJson(LEAD_COLUMN_ORDER_KEY, columnOrder);
   }, [columnOrder]);
-
-  useEffect(() => {
-    if (!undoToast) return;
-    const timer = window.setTimeout(() => setUndoToast(null), 5000);
-    return () => window.clearTimeout(timer);
-  }, [undoToast]);
 
   useEffect(() => {
     function updateOnlineState() {
@@ -472,6 +435,13 @@ export function LeadsPage() {
       cancelled = true;
     };
   }, [allLeads, business, isOnline, offlineQueue, queryClient, t]);
+
+  useEffect(() => {
+    const message = !isOnline ? t("leads.offlineMode") : offlineQueue.length ? t("leads.offlinePending", { count: offlineQueue.length }) : "";
+    if (!message || lastSystemNoticeRef.current === message) return;
+    lastSystemNoticeRef.current = message;
+    showNotification({ message, tone: "warning", durationMs: 8_000 });
+  }, [isOnline, offlineQueue.length, showNotification, t]);
 
   useEffect(() => {
     if (!business || !isOnline) return;
@@ -583,8 +553,12 @@ export function LeadsPage() {
     mutationFn: async ({ targetId, duplicateId }: { targetId: Id; duplicateId: Id }) => {
       const preview = await clientsApi.mergeDryRun({ id: targetId, duplicate_client_id: duplicateId });
       const transferredCount = Object.values(preview.transferred).reduce((sum, value) => sum + value, 0);
-      const confirmed = window.confirm(t("clients.mergePreviewConfirm", { count: transferredCount }));
-      if (!confirmed) return null;
+      const result = await confirmAction({
+        title: t("clients.mergePreviewTitle"),
+        description: t("clients.mergePreviewConfirm", { count: transferredCount }),
+        confirmLabel: t("clients.mergeConfirm"),
+      });
+      if (!result.confirmed) return null;
       return clientsApi.merge({ id: targetId, duplicate_client_id: duplicateId });
     },
     onSuccess: async (result) => {
@@ -701,7 +675,17 @@ export function LeadsPage() {
     const nextItem = { ...item, id: String(Date.now()) };
     setUndoStack((value) => [nextItem, ...value].slice(0, 20));
     setRedoStack([]);
-    setUndoToast(item);
+    showUndoToast({
+      message: item.message,
+      undoLabel: t("leads.undo"),
+      durationMs: 5_000,
+      onUndo: async () => {
+        await nextItem.undo();
+        setUndoStack((value) => value.filter((historyItem) => historyItem.id !== nextItem.id));
+        setRedoStack((value) => [nextItem, ...value].slice(0, 20));
+        setNotice(t("leads.actionUndone"));
+      },
+    });
   }
 
   function enqueueOfflineAction(action: OfflineLeadAction) {
@@ -715,7 +699,6 @@ export function LeadsPage() {
     await item.undo();
     setUndoStack(rest);
     setRedoStack((value) => [item, ...value].slice(0, 20));
-    setUndoToast(null);
     setNotice(t("leads.actionUndone"));
   }
 
@@ -771,32 +754,6 @@ export function LeadsPage() {
     setNextActionOpen(true);
   }
 
-  function changeLeadStatus(lead: Lead, status: Lead["status"]) {
-    if (status === lead.status) return;
-    if (status === "contacted") {
-      actionMutation.mutate({ action: "contacted", lead });
-      return;
-    }
-    if (status === "in_progress") {
-      actionMutation.mutate({ action: "take", lead });
-      return;
-    }
-    if (status === "closed") {
-      actionMutation.mutate({ action: "closed", lead });
-      return;
-    }
-    if (status === "lost") {
-      setLostLead(lead);
-      setLostReason(lead.lost_reason || "");
-      return;
-    }
-    if (status === "new" && ["closed", "lost"].includes(lead.status)) {
-      actionMutation.mutate({ action: "reopen", lead });
-      return;
-    }
-    setNotice(t("leads.useActionForStatus"));
-  }
-
   function toggleBulkLead(id: Id) {
     setSelectedLeadIds((value) => (value.includes(id) ? value.filter((item) => item !== id) : [...value, id]));
   }
@@ -805,10 +762,6 @@ export function LeadsPage() {
     const pageIds = pageRows.map((lead) => lead.id);
     const allSelected = pageIds.every((id) => selectedLeadIds.includes(id));
     setSelectedLeadIds((value) => (allSelected ? value.filter((id) => !pageIds.includes(id)) : Array.from(new Set([...value, ...pageIds]))));
-  }
-
-  function showMoreKanban(status: Lead["status"]) {
-    setKanbanVisibleCounts((value) => ({ ...value, [status]: (value[status] || 10) + 10 }));
   }
 
   function savePreset() {
@@ -867,7 +820,6 @@ export function LeadsPage() {
     else params.delete("source");
     if (search) params.set("search", search);
     else params.delete("search");
-    params.set("view", viewMode);
     const url = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
     await navigator.clipboard?.writeText(url);
     setNotice(t("leads.viewCopied"));
@@ -909,12 +861,6 @@ export function LeadsPage() {
         return;
       }
 
-      if (event.key.toLowerCase() === "f") {
-        event.preventDefault();
-        searchInputRef.current?.focus();
-        return;
-      }
-
       if (!selected && !rows.length) return;
 
       if (event.key === "ArrowDown" || event.key === "ArrowUp") {
@@ -948,9 +894,7 @@ export function LeadsPage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [rows, selected, searchParams, setSearchParams]);
 
-  if (!business) return <ErrorState message={t("leads.noBusiness")} />;
-  if (leads.isLoading || clients.isLoading || services.isLoading || tasks.isLoading) return <PageSkeleton />;
-
+  const pageError = clients.error || services.error || leads.error;
   const actionError =
     leadMutation.error ||
     actionMutation.error ||
@@ -959,10 +903,18 @@ export function LeadsPage() {
     mergeClientMutation.error ||
     noteMutation.error ||
     appointmentMutation.error ||
-    nextActionMutation.error ||
-    clients.error ||
-    services.error ||
-    leads.error;
+    nextActionMutation.error;
+  const actionErrorMessage = actionError ? getApiErrorMessage(actionError) : "";
+
+  useEffect(() => {
+    if (!actionErrorMessage) return;
+    showNotification({ message: actionErrorMessage, tone: "danger" });
+  }, [actionErrorMessage, showNotification]);
+
+  if (!business) return <ErrorState message={t("leads.noBusiness")} />;
+  if (leads.isLoading || clients.isLoading || services.isLoading || tasks.isLoading) return <PageSkeleton />;
+  if (pageError) return <ErrorState message={getApiErrorMessage(pageError)} />;
+
   const filters = [
     { value: "all" as const, label: t("leads.filterAll"), count: leadSummary.data?.total ?? totalLeadCount },
     { value: "new" as const, label: t("leads.filterNew"), count: leadSummary.data?.new ?? allLeads.filter((lead) => lead.status === "new").length },
@@ -974,14 +926,12 @@ export function LeadsPage() {
     }).length },
     { value: "mine" as const, label: t("leads.filterMine"), count: leadSummary.data?.mine ?? allLeads.filter((lead) => user?.id && lead.responsible_user === user.id).length },
   ];
-  const priorityLead = allLeads.find((lead) => !lead.responsible_user && lead.status === "new") || allLeads[0] || null;
   const pageStart = pageRows.length ? (safePage - 1) * pageSize + 1 : 0;
   const pageEnd = pageRows.length ? pageStart + pageRows.length - 1 : 0;
-  const tableVisibleRowCount = Math.max(1, pageRows.length || Math.min(pageSize, rows.length || pageSize));
-  const tablePanelHeight = Math.max(700, tableVisibleRowCount * 66 + 250);
   const activeTableColumns = columnOrder.filter((column) => visibleColumns[column]);
-  const tableGridTemplateColumns = `32px ${activeTableColumns.map((column) => leadColumnWidths[column]).join(" ")}`;
-  const tableGridMinWidth = activeTableColumns.length > 5 ? 1120 : undefined;
+  const tableGridTemplateColumns = `${CRM_TABLE_CHECKBOX_COLUMN} ${activeTableColumns.map((column) => leadColumnWidths[column]).join(" ")} ${CRM_TABLE_ACTIONS_COLUMN}`;
+  const tableGridMinWidth = activeTableColumns.length > 5 ? CRM_TABLE_WIDE_MIN_WIDTH : CRM_TABLE_MIN_WIDTH;
+  const sourceOptions = ["", "whatsapp", "telegram", "instagram", "website", "manual", "parser", "other"];
   const visiblePages = Array.from({ length: pageCount })
     .map((_, index) => index + 1)
     .filter((itemPage) => pageCount <= 5 || itemPage === 1 || itemPage === pageCount || Math.abs(itemPage - safePage) <= 1)
@@ -993,139 +943,73 @@ export function LeadsPage() {
   }
 
   return (
-    <CrmWorkspacePage className="h-auto min-h-[calc(100vh-5.5rem)]" contentClassName="gap-4 pb-4">
-      {notice ? <div className="rounded-xl border border-ai-100 bg-ai-50 px-4 py-3 text-sm font-bold text-ai-800">{notice}</div> : null}
-      {!isOnline || offlineQueue.length ? (
-        <div className="flex flex-col gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900 sm:flex-row sm:items-center sm:justify-between">
-          <span className="flex items-center gap-2">
-            <WifiOff size={17} />
-            {!isOnline ? t("leads.offlineMode") : t("leads.offlinePending", { count: offlineQueue.length })}
-          </span>
-          {offlineQueue.length ? <span className="text-xs font-black uppercase tracking-[0.12em] text-amber-700">{t("leads.offlinePending", { count: offlineQueue.length })}</span> : null}
-        </div>
-      ) : null}
-      {actionError ? <ErrorState message={getApiErrorMessage(actionError)} /> : null}
-
-      <section className={cn(
-        "grid gap-4",
-        viewMode === "kanban" ? "xl:min-h-[1320px]" : "xl:items-start",
-        "xl:grid-cols-1",
-      )}>
-        <div className="flex min-h-0 flex-col gap-4">
-          <div
-            className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_4px_18px_rgba(15,23,42,0.04)]"
-            style={viewMode === "table" ? { height: tablePanelHeight } : { minHeight: 1280 }}
-          >
-          <div className="shrink-0 border-b border-slate-100 px-4 py-3">
-            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-              <label className="relative flex h-10 min-w-0 flex-1 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-500 shadow-sm">
-                <Search size={17} />
-                <input
-                  ref={searchInputRef}
-                  className="min-w-0 flex-1 bg-transparent font-semibold outline-none placeholder:text-slate-400"
-                  placeholder={t("leads.search")}
-                  value={search}
-                  onChange={(event) => setSearch(normalizePhoneSearchInput(event.target.value))}
-                  onFocus={() => setSearchFocused(true)}
-                  onBlur={() => window.setTimeout(() => setSearchFocused(false), 140)}
-                />
-                {searchFocused && search.trim().length >= 2 ? (
-                  <div className="absolute left-0 right-0 top-11 z-30 rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
-                    <p className="px-2 py-1 text-xs font-black uppercase tracking-[0.12em] text-slate-400">{t("leads.searchSuggestions")}</p>
-                    {searchSuggestions.length ? searchSuggestions.map((item) => (
-                      <button
-                        key={item.id}
-                        type="button"
-                        className="flex w-full items-center justify-between gap-3 rounded-lg px-2 py-2 text-left hover:bg-slate-50"
-                        onMouseDown={(event) => {
-                          event.preventDefault();
-                          setSearch(item.label);
-                          if (item.lead) openLead(item.lead);
-                        }}
-                      >
-                        <span className="min-w-0">
-                          <span className="block truncate text-sm font-bold text-midnight">{item.label}</span>
-                          <span className="block truncate text-xs font-semibold text-slate-500">{item.meta}</span>
-                        </span>
-                        <span className="shrink-0 rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-black text-slate-500">{item.type}</span>
-                      </button>
-                    )) : (
-                      <p className="px-2 py-3 text-sm font-semibold text-slate-500">{t("leads.noSuggestions")}</p>
-                    )}
-                  </div>
-                ) : null}
-              </label>
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="flex h-10 shrink-0 rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
-                  <button
-                    type="button"
-                    className={cn("grid h-8 w-8 place-items-center rounded-md", viewMode === "table" ? "bg-brand-600 text-white" : "text-slate-500 hover:bg-slate-50")}
-                    onClick={() => {
-                      setViewMode("table");
-                    }}
-                    aria-label={t("leads.viewTable")}
-                  >
-                    <Table2 size={16} />
-                  </button>
-                  <button
-                    type="button"
-                    className={cn("grid h-8 w-8 place-items-center rounded-md", viewMode === "kanban" ? "bg-brand-600 text-white" : "text-slate-500 hover:bg-slate-50")}
-                    onClick={() => {
-                      setViewMode("kanban");
-                    }}
-                    aria-label={t("leads.viewKanban")}
-                  >
-                    <KanbanSquare size={16} />
-                  </button>
-                </div>
-                <Button variant="secondary" className="h-10 rounded-lg px-3" onClick={() => setSavedFiltersOpen((value) => !value)}>
-                  <SlidersHorizontal size={16} />
-                  {t("leads.filters")}
-                  {filterPresets.length ? <span className="rounded-lg bg-slate-100 px-1.5 py-0.5 text-xs font-black text-slate-500">{filterPresets.length}</span> : null}
-                </Button>
-                <Button variant="secondary" size="icon" className="h-10 w-10 rounded-lg px-0" aria-label={t("leads.moreActions")} onClick={() => setMoreMenuOpen((value) => !value)}>
-                  <MoreHorizontal size={17} />
-                </Button>
-              </div>
+    <CrmWorkspacePage contentClassName="gap-0">
+      <CrmTableSurface
+        filters={
+          <>
+          <div className="grid gap-2 xl:grid-cols-[minmax(240px,1fr)_minmax(150px,190px)_minmax(150px,190px)_auto] xl:items-center">
+            <label className="relative block min-w-0">
+              <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <input
+                className="h-9 w-full rounded-control border border-slate-200 bg-white px-9 text-sm font-semibold text-midnight outline-none transition placeholder:text-slate-400 focus:border-brand-300 focus:ring-4 focus:ring-brand-50"
+                placeholder={t("leads.search")}
+                value={search}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(1);
+                  setPageDraft("1");
+                }}
+              />
+            </label>
+            <Select
+              className="h-9 text-xs"
+              value={filter}
+              onChange={(event) => {
+                setFilter(event.target.value as LeadFilter);
+                setPage(1);
+                setPageDraft("1");
+              }}
+              aria-label={t("leads.filtersLabel")}
+              options={filters.map((item) => ({ value: item.value, label: `${item.label} (${item.count})` }))}
+            />
+            <Select
+              className="h-9 text-xs"
+              value={source}
+              onChange={(event) => {
+                setSource(event.target.value);
+                setPage(1);
+                setPageDraft("1");
+              }}
+              aria-label={t("leads.source")}
+              options={sourceOptions.map((item) => ({ value: item, label: item ? getSourceLabel(item, t) : t("leads.allSources") }))}
+            />
+            <div className="flex min-w-0 flex-wrap items-center justify-start gap-1.5 xl:justify-end">
+              <Button variant="secondary" size="sm" className="h-9 rounded-control px-3" onClick={() => setSavedFiltersOpen((value) => !value)}>
+                <Filter size={16} />
+                {t("leads.filters")}
+              </Button>
+              <Button variant="secondary" size="sm" className="h-9 rounded-control px-3" onClick={() => setMoreMenuOpen((value) => !value)}>
+                <Columns3 size={16} />
+                {t("leads.columns")}
+              </Button>
+              <Button variant="secondary" size="sm" className="h-9 rounded-control px-3" onClick={() => exportRows("csv")}>
+                <Download size={16} />
+                {t("leads.exportCsv")}
+              </Button>
+              <Button variant="secondary" size="sm" className="h-9 rounded-control px-3" onClick={() => { window.location.href = "/app/integrations"; }}>
+                <Upload size={16} />
+                {t("leads.import")}
+              </Button>
             </div>
-            <div className="mt-3 flex min-w-0 flex-wrap items-center gap-2">
-              {filters.map((item) => (
-                <button
-                  key={item.value}
-                  type="button"
-                  onClick={() => setFilter(item.value)}
-                  className={cn(
-                    "inline-flex min-h-8 shrink-0 items-center gap-2 rounded-lg border px-3 text-sm font-bold transition",
-                    filter === item.value ? "border-brand-200 bg-brand-50 text-brand-700" : "border-slate-200 bg-white text-slate-600 hover:border-brand-100 hover:text-midnight",
-                  )}
-                >
-                  {item.label}
-                  <span className={cn("rounded-md px-1.5 py-0.5 text-xs", filter === item.value ? "bg-white text-brand-700" : "bg-slate-100 text-slate-500")}>{item.count}</span>
-                </button>
-              ))}
-              <span className="h-7 w-px shrink-0 bg-slate-200" />
-              {["whatsapp", "telegram", "instagram", "website"].map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  onClick={() => setSource(source === item ? "" : item)}
-                  className={cn(
-                    "inline-flex min-h-8 shrink-0 items-center gap-2 rounded-lg border px-3 text-sm font-bold transition",
-                    source === item ? "border-brand-200 bg-brand-50 text-brand-800" : "border-slate-200 bg-white text-slate-600 hover:border-brand-100 hover:text-midnight",
-                  )}
-                >
-                  <SourceBadge source={item} t={t} />
-                </button>
-              ))}
-            </div>
+          </div>
             {savedFiltersOpen ? (
-              <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <div className="mt-3 rounded-card border border-slate-200 bg-white p-3">
                 <div className="flex min-w-0 items-center gap-2 overflow-x-auto pb-2">
                   {filterPresets.length ? filterPresets.map((preset) => (
                     <button
                       key={preset.id}
                       type="button"
-                      className="shrink-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
+                      className="shrink-0 rounded-control border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
                       onClick={() => {
                         applyPreset(preset);
                         setSavedFiltersOpen(false);
@@ -1139,24 +1023,24 @@ export function LeadsPage() {
                 </div>
                 <div className="mt-2 flex gap-2 border-t border-slate-200 pt-3">
                   <input
-                    className="h-9 min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold outline-none focus:border-brand-300"
+                    className="h-9 min-w-0 flex-1 rounded-control border border-slate-200 bg-white px-3 text-sm font-semibold outline-none focus:border-brand-300"
                     placeholder={t("leads.filterPresetName")}
                     value={presetName}
                     onChange={(event) => setPresetName(event.target.value)}
                   />
-                  <Button variant="secondary" size="sm" className="shrink-0 rounded-lg" onClick={savePreset}>{t("leads.saveFilter")}</Button>
+                  <Button variant="secondary" size="sm" className="shrink-0 rounded-control" onClick={savePreset}>{t("leads.saveFilter")}</Button>
                 </div>
               </div>
             ) : null}
             {moreMenuOpen ? (
-              <div className="mt-3 grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 lg:grid-cols-[minmax(0,1fr)_auto]">
+              <div className="mt-3 grid gap-3 rounded-card border border-slate-200 bg-white p-3 lg:grid-cols-[minmax(0,1fr)_auto]">
                 <div className="min-w-0">
                   <div className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700">
                     <Columns3 size={16} /> {t("leads.columns")}
                   </div>
                   <div className="flex min-w-0 flex-wrap gap-2">
                     {columnOrder.map((column) => (
-                      <label key={column} className="inline-flex h-8 cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 hover:border-brand-200">
+                      <label key={column} className="inline-flex h-8 cursor-pointer items-center gap-2 rounded-control border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 hover:border-brand-200">
                         <input
                           type="checkbox"
                           checked={visibleColumns[column]}
@@ -1168,33 +1052,36 @@ export function LeadsPage() {
                   </div>
                 </div>
                 <div className="flex flex-wrap items-start gap-2">
-                  <Button variant="secondary" size="sm" className="rounded-lg" onClick={() => setSortByAi((value) => !value)}><Flame size={15} /> {t("leads.sortByHeat")}</Button>
-                  <Button variant="secondary" size="sm" className="rounded-lg" onClick={() => exportRows("csv")}><Download size={15} /> CSV</Button>
-                  <Button variant="secondary" size="sm" className="rounded-lg" onClick={() => exportRows("excel")}>{t("leads.exportExcel")}</Button>
-                  <Button variant="secondary" size="sm" className="rounded-lg" onClick={shareView}><Share2 size={15} /> {t("leads.shareView")}</Button>
+                  <Button variant="secondary" size="sm" className="rounded-control" onClick={() => setSortByAi((value) => !value)}><Flame size={15} /> {t("leads.sortByHeat")}</Button>
+                  <Button variant="secondary" size="sm" className="rounded-control" onClick={() => exportRows("csv")}><Download size={15} /> CSV</Button>
+                  <Button variant="secondary" size="sm" className="rounded-control" onClick={() => exportRows("excel")}>{t("leads.exportExcel")}</Button>
+                  <Button variant="secondary" size="sm" className="rounded-control" onClick={shareView}><Share2 size={15} /> {t("leads.shareView")}</Button>
                 </div>
               </div>
             ) : null}
-          </div>
-          {viewMode === "table" ? (
-            <div className="hidden shrink-0 overflow-x-auto lg:block">
-              <div
-                className="sticky top-0 z-10 grid min-w-0 border-b border-slate-100 bg-slate-50/95 px-4 py-3 text-xs font-bold text-slate-500 backdrop-blur"
-                style={{ gridTemplateColumns: tableGridTemplateColumns, minWidth: tableGridMinWidth }}
-              >
-                <label className="flex h-5 w-5 items-center justify-center">
-                  <input className="sr-only" type="checkbox" checked={pageRows.length > 0 && pageRows.every((lead) => selectedLeadIds.includes(lead.id))} onChange={toggleAllPageRows} aria-label={t("leads.selectAll")} />
-                  <span className={cn("grid h-5 w-5 place-items-center rounded border", pageRows.length > 0 && pageRows.every((lead) => selectedLeadIds.includes(lead.id)) ? "border-brand-600 bg-brand-600 text-white" : "border-slate-300 bg-white")}>
-                    {pageRows.length > 0 && pageRows.every((lead) => selectedLeadIds.includes(lead.id)) ? <CheckCheck size={13} /> : null}
-                  </span>
-                </label>
-                {activeTableColumns.map((column) => (
-                  <span key={column}>{t(`leads.column.${column}`)}</span>
-                ))}
-              </div>
+          </>
+        }
+      >
+
+        <CrmDataTable className={CRM_TABLE_EMBEDDED_CLASS} contentClassName={CRM_TABLE_CONTENT_CLASS}>
+          <div className="hidden shrink-0 overflow-x-auto lg:block">
+            <div
+              className={CRM_TABLE_HEADER_GRID_CLASS}
+              style={{ gridTemplateColumns: tableGridTemplateColumns, minWidth: tableGridMinWidth }}
+            >
+              <label className="flex h-5 w-5 items-center justify-center">
+                <input className="sr-only" type="checkbox" checked={pageRows.length > 0 && pageRows.every((lead) => selectedLeadIds.includes(lead.id))} onChange={toggleAllPageRows} aria-label={t("leads.selectAll")} />
+                <span className={cn("grid h-5 w-5 place-items-center rounded border", pageRows.length > 0 && pageRows.every((lead) => selectedLeadIds.includes(lead.id)) ? "border-brand-600 bg-brand-600 text-white" : "border-slate-300 bg-white")}>
+                  {pageRows.length > 0 && pageRows.every((lead) => selectedLeadIds.includes(lead.id)) ? <CheckCheck size={13} /> : null}
+                </span>
+              </label>
+              {activeTableColumns.map((column) => (
+                <span key={column}>{t(`leads.column.${column}`)}</span>
+              ))}
+              <span>{t("leads.actions")}</span>
             </div>
-          ) : null}
-          <div className={cn("min-h-0 flex-1", viewMode === "table" ? "overflow-hidden lg:min-h-[430px]" : "overflow-visible")}>
+          </div>
+          <div className="min-h-0 flex-1 overflow-hidden lg:min-h-[430px]">
             {!rows.length ? (
               <div className="grid h-full min-h-[320px] place-items-center p-5">
                 <div className="max-w-sm text-center">
@@ -1214,86 +1101,7 @@ export function LeadsPage() {
                 </div>
               </div>
             ) : (
-              viewMode === "kanban" ? (
-                <div className="flex min-h-[1060px] gap-3 overflow-x-auto overflow-y-visible p-4">
-                  {kanbanStatuses.map((status) => {
-                    const columnRows = rows.filter((lead) => lead.status === status);
-                    const visibleCount = kanbanVisibleCounts[status] || 10;
-                    const visibleColumnRows = columnRows.slice(0, visibleCount);
-                    const hiddenCount = Math.max(0, columnRows.length - visibleColumnRows.length);
-                    return (
-                      <section
-                        key={status}
-                        className="flex min-h-[1020px] w-[320px] shrink-0 flex-col rounded-xl border border-slate-200 bg-slate-50 p-3"
-                        onDragOver={(event) => event.preventDefault()}
-                        onDrop={(event) => {
-                          const leadId = Number(event.dataTransfer.getData("text/plain"));
-                          const lead = rows.find((item) => item.id === leadId);
-                          if (lead && lead.status !== status) changeLeadStatus(lead, status);
-                        }}
-                      >
-                        <div className="mb-3 flex shrink-0 items-center justify-between gap-2">
-                          <div className="min-w-0">
-                            <p className="font-black text-midnight">{getStatusLabel(status, t)}</p>
-                            <p className="truncate text-xs font-semibold text-slate-500">{columnRows.length ? t("leads.dropHere") : t("leads.noLeadsInColumn")}</p>
-                          </div>
-                          <span className="rounded-lg bg-white px-2 py-1 text-xs font-black text-slate-500">{columnRows.length}</span>
-                        </div>
-                        <div className="space-y-2 pr-1">
-                          {visibleColumnRows.map((lead) => {
-                            const client = getClient(lead, clientList);
-                            const service = getService(lead, serviceList);
-                            const insight = aiInsights.get(lead.id) || leadAiInsight(lead, clientList, serviceList, allLeads, t);
-                            const title = client?.full_name || t("leads.leadFallback", { id: lead.id });
-                            return (
-                              <button
-                                key={lead.id}
-                                type="button"
-                                draggable
-                                onDragStart={(event) => event.dataTransfer.setData("text/plain", String(lead.id))}
-                                onClick={() => openLead(lead)}
-                                className={cn(
-                                  "w-full rounded-xl border border-slate-200 bg-white p-3 text-left shadow-sm transition hover:border-brand-200 hover:shadow-md",
-                                  selected?.id === lead.id && "border-brand-300 bg-brand-50 ring-2 ring-brand-100 shadow-[inset_3px_0_0_#2563eb]",
-                                  insight.stale && selected?.id !== lead.id && "bg-amber-50/50",
-                                )}
-                              >
-                                <p className="truncate text-sm font-black text-midnight">{title}</p>
-                                <p className="mt-1 truncate text-xs font-semibold text-slate-500">{client?.phone || service?.name || getSourceLabel(lead.source, t)}</p>
-                                <div className="mt-2 flex items-center justify-between gap-2">
-                                  <SourceBadge source={lead.source} t={t} />
-                                  <span className="text-xs font-bold text-slate-400">{formatRelativeTime(lead.updated_at, t)}</span>
-                                </div>
-                                <div className="mt-3 flex items-center gap-2">
-                                  <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
-                                    <span className={cn("block h-full rounded-full", insight.score >= 75 ? "bg-emerald-500" : insight.score >= 50 ? "bg-amber-500" : "bg-red-500")} style={{ width: `${insight.score}%` }} />
-                                  </span>
-                                  <span className="text-[11px] font-black text-slate-500">{insight.score}</span>
-                                </div>
-                              </button>
-                            );
-                          })}
-                          {!columnRows.length ? (
-                            <div className="rounded-xl border border-dashed border-slate-200 bg-white/70 p-4 text-center text-xs font-bold text-slate-400">
-                              {t("leads.dropHere")}
-                            </div>
-                          ) : null}
-                          {hiddenCount > 0 ? (
-                            <button
-                              type="button"
-                              className="mt-1 flex w-full items-center justify-center rounded-xl border border-dashed border-brand-200 bg-white px-3 py-3 text-sm font-black text-brand-700 transition hover:border-brand-300 hover:bg-brand-50"
-                              onClick={() => showMoreKanban(status)}
-                            >
-                              {t("leads.showMoreInColumn", { count: Math.min(10, hiddenCount) })}
-                            </button>
-                          ) : null}
-                        </div>
-                      </section>
-                    );
-                  })}
-                </div>
-              ) : (
-                <>
+              <>
                 <VirtualizedLeadTableRows
                   rows={pageRows}
                   selected={selected}
@@ -1307,8 +1115,9 @@ export function LeadsPage() {
                   columnOrder={columnOrder}
                   openLead={openLead}
                   toggleBulkLead={toggleBulkLead}
-                  changeLeadStatus={changeLeadStatus}
                   assignLead={(lead, userId) => actionMutation.mutate({ action: "assign", lead, user_id: userId })}
+                  callLead={callLead}
+                  whatsAppLead={whatsAppLead}
                   openContextMenu={(event, lead) => {
                     event.preventDefault();
                     setContextMenu({ x: event.clientX, y: event.clientY, lead });
@@ -1334,15 +1143,13 @@ export function LeadsPage() {
                     />
                   ))}
                 </div>
-                </>
-              )
+              </>
             )}
           </div>
-          {viewMode === "table" ? (
-          <div className="flex shrink-0 flex-col gap-3 border-t border-slate-100 px-4 py-3 text-xs font-semibold text-slate-500 lg:flex-row lg:items-center lg:justify-between">
+          <div className={CRM_TABLE_PAGINATION_CLASS}>
             <span>{t("leads.tableShowingRange", { start: pageStart, end: pageEnd, total: totalLeadCount })}</span>
             <div className="flex flex-wrap items-center gap-2">
-              <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-bold text-slate-500">
+              <label className="flex items-center gap-2 rounded-control border border-slate-200 bg-white px-2 py-1.5 text-xs font-bold text-slate-500">
                 <span>{t("leads.pageSize")}</span>
                 <select
                   className="bg-transparent text-xs font-black text-midnight outline-none"
@@ -1359,7 +1166,7 @@ export function LeadsPage() {
                   ))}
                 </select>
               </label>
-              <Button variant="secondary" size="icon" className="h-8 w-8 rounded-lg px-0" disabled={safePage <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>
+              <Button variant="secondary" size="icon" className="h-8 w-8 rounded-control px-0" disabled={safePage <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>
                 <ChevronLeft size={16} />
               </Button>
               {visiblePages.map((itemPage, index) => (
@@ -1367,12 +1174,12 @@ export function LeadsPage() {
                   key={`${itemPage}-${index}`}
                   type="button"
                   onClick={() => setPage(itemPage)}
-                  className={cn("grid h-8 w-8 place-items-center rounded-lg border text-sm font-bold", itemPage === safePage ? "border-brand-200 bg-brand-50 text-brand-700" : "border-slate-200 text-slate-500 hover:text-midnight")}
+                  className={cn("grid h-8 w-8 place-items-center rounded-control border text-sm font-bold", itemPage === safePage ? "border-brand-200 bg-brand-50 text-brand-700" : "border-slate-200 text-slate-500 hover:text-midnight")}
                 >
                   {itemPage}
                 </button>
               ))}
-              <Button variant="secondary" size="icon" className="h-8 w-8 rounded-lg px-0" disabled={safePage >= pageCount} onClick={() => setPage((value) => Math.min(pageCount, value + 1))}>
+              <Button variant="secondary" size="icon" className="h-8 w-8 rounded-control px-0" disabled={safePage >= pageCount} onClick={() => setPage((value) => Math.min(pageCount, value + 1))}>
                 <ChevronRight size={16} />
               </Button>
               <form
@@ -1383,7 +1190,7 @@ export function LeadsPage() {
                 }}
               >
                 <input
-                  className="h-8 w-14 rounded-lg border border-slate-200 bg-white px-2 text-center text-sm font-bold text-midnight outline-none focus:border-brand-300"
+                  className="h-8 w-14 rounded-control border border-slate-200 bg-white px-2 text-center text-sm font-bold text-midnight outline-none focus:border-brand-300"
                   inputMode="numeric"
                   value={pageDraft}
                   onChange={(event) => setPageDraft(event.target.value)}
@@ -1394,15 +1201,13 @@ export function LeadsPage() {
               </form>
             </div>
           </div>
-          ) : null}
-          </div>
-        </div>
-      </section>
+        </CrmDataTable>
+      </CrmTableSurface>
 
       {contextMenu ? (
         <div className="fixed inset-0 z-40" onClick={() => setContextMenu(null)}>
-          <div
-            className="absolute w-56 rounded-xl border border-slate-200 bg-white p-2 shadow-2xl"
+          <PopoverSurface
+            className="absolute w-56 p-2"
             style={{ left: contextMenu.x, top: contextMenu.y }}
             onClick={(event) => event.stopPropagation()}
           >
@@ -1429,7 +1234,7 @@ export function LeadsPage() {
                 </button>
               );
             })}
-          </div>
+          </PopoverSurface>
         </div>
       ) : null}
 
@@ -1465,27 +1270,10 @@ export function LeadsPage() {
         </div>
       ) : null}
 
-      {undoToast ? (
-        <div className="fixed bottom-24 right-5 z-50 flex max-w-sm items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-2xl">
-          <Undo2 size={17} className="text-brand-700" />
-          <span className="min-w-0 flex-1">{undoToast.message}</span>
-          <button
-            type="button"
-            className="shrink-0 rounded-lg bg-brand-50 px-3 py-1.5 text-xs font-black text-brand-700"
-            onClick={async () => {
-              await runUndo();
-            }}
-          >
-            {t("leads.undo")}
-          </button>
-        </div>
-      ) : null}
-
       <Modal title={t("leads.shortcuts")} open={shortcutsOpen} onClose={() => setShortcutsOpen(false)}>
         <div className="grid gap-2 sm:grid-cols-2">
           {[
             ["N", t("leads.shortcutNew")],
-            ["F", t("leads.shortcutSearch")],
             ["↑ / ↓", t("leads.shortcutNavigate")],
             ["Enter", t("leads.shortcutOpen")],
             ["C", t("leads.shortcutCall")],

@@ -24,7 +24,7 @@ def create_activity_event(*, business, event_type, instance=None, client=None, a
     )
 
 
-def write_activity_event(request, event_type, instance, text=""):
+def write_activity_event(request, event_type, instance, text="", metadata=None):
     if isinstance(instance, ActivityEvent):
         return
 
@@ -45,6 +45,7 @@ def write_activity_event(request, event_type, instance, text=""):
         source="api",
         instance=instance,
         text=text,
+        metadata=metadata,
     )
 
 

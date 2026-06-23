@@ -2,11 +2,9 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { useRef, useState } from "react";
 import { MousePointer2, X } from "lucide-react";
 
-import { CrmDataTable, CrmPagination } from "../../../components/crm";
+import { CrmDataTable, CrmPagination, CRM_TABLE_CONTENT_CLASS, CRM_TABLE_EMBEDDED_CLASS, CRM_TABLE_ROW_HEIGHT } from "../../../components/crm";
 import type { ClientTableColumn, ClientTableRow, Translate } from "../types";
 import { ClientRow } from "./ClientRow";
-
-const ROW_HEIGHT = 52;
 
 export function ClientsTable({
   rows,
@@ -37,7 +35,7 @@ export function ClientsTable({
   const rowVirtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => ROW_HEIGHT,
+    estimateSize: () => CRM_TABLE_ROW_HEIGHT,
     overscan: 8,
   });
 
@@ -72,8 +70,8 @@ export function ClientsTable({
 
   return (
     <CrmDataTable
-      className="flex min-h-0 flex-1 flex-col rounded-none border-0 shadow-none"
-      contentClassName="flex min-h-0 flex-1 flex-col"
+      className={CRM_TABLE_EMBEDDED_CLASS}
+      contentClassName={CRM_TABLE_CONTENT_CLASS}
       toolbar={
         checkedRows.size ? (
           <div className="flex flex-col gap-2 text-sm sm:flex-row sm:items-center sm:justify-between">

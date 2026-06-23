@@ -14,7 +14,7 @@ import { ErrorState } from "../../ui/StateViews";
 import { StatusBadge } from "../../ui/StatusBadge";
 import { Textarea } from "../../ui/Textarea";
 import { EntityAttachmentsPanel, EntityCustomFieldsPanel } from "./panels";
-import { EntityDecisionSnapshot, SummaryItem } from "./shared";
+import { drawerPrimarySurfaceClass, drawerSoftSurfaceClass, drawerSurfaceClass, EntityDecisionSnapshot, SummaryItem } from "./shared";
 import type { CrmDrawerEntity } from "./types";
 
 function EntityQuickActions({ data }: { data: CrmCardPayload }) {
@@ -41,7 +41,7 @@ function EntityQuickActions({ data }: { data: CrmCardPayload }) {
   );
 }
 
-function ClientCardContent({ data }: { data: CrmCardPayload }) {
+function ClientCardContent({ data, entity }: { data: CrmCardPayload; entity: CrmDrawerEntity }) {
   const { t } = useI18n();
   const client = data.client;
 
@@ -68,8 +68,8 @@ function ClientCardContent({ data }: { data: CrmCardPayload }) {
         <SummaryItem icon={WalletCards} label={t("nav.deals")} value={data.deals.length} />
         <SummaryItem icon={CalendarClock} label={t("nav.appointments")} value={data.appointments.length} />
       </div>
-      {client?.notes ? <div className="rounded-3xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">{client.notes}</div> : null}
-      <EntityAttachmentsPanel data={data} />
+      {client?.notes ? <div className={`${drawerSoftSurfaceClass} text-sm leading-6 text-slate-600`}>{client.notes}</div> : null}
+      <EntityAttachmentsPanel data={data} entity={entity} />
     </div>
   );
 }
@@ -79,7 +79,7 @@ function LeadCardContent({ lead }: { lead: Lead | null }) {
   if (!lead) return null;
 
   return (
-    <div className="rounded-3xl border border-slate-100 bg-white/80 p-4 shadow-sm">
+    <div className={drawerSurfaceClass}>
       <div className="mb-3 flex items-center justify-between gap-3">
         <h3 className="font-black text-midnight">{t("crmCard.leadNumber", { id: lead.id })}</h3>
         <StatusBadge status={lead.status} />
@@ -95,7 +95,7 @@ function DealCardContent({ deal }: { deal: Deal | null }) {
   if (!deal) return null;
 
   return (
-    <div className="rounded-3xl border border-slate-100 bg-white/80 p-4 shadow-sm">
+    <div className={drawerSurfaceClass}>
       <div className="mb-3 flex items-center justify-between gap-3">
         <h3 className="font-black text-midnight">{deal.title}</h3>
         <StatusBadge status={deal.status} />
@@ -115,7 +115,7 @@ function AppointmentCardContent({ appointment }: { appointment: Appointment | nu
   if (!appointment) return null;
 
   return (
-    <div className="rounded-3xl border border-brand-100 bg-gradient-to-r from-brand-50 to-ai-50 p-4 shadow-sm">
+    <div className={drawerPrimarySurfaceClass}>
       <div className="mb-3 flex items-center justify-between gap-3">
         <h3 className="font-black text-midnight">{t("crmCard.appointmentNumber", { id: appointment.id })}</h3>
         <StatusBadge status={appointment.status} />
@@ -190,7 +190,7 @@ function EntityInlineEditPanel({ data, entity }: { data: CrmCardPayload; entity:
 
   return (
     <>
-      <div className="rounded-3xl border border-brand-100 bg-white/85 p-4 shadow-sm">
+      <div className={drawerSurfaceClass}>
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h3 className="font-black text-midnight">{t("crmCard.quickEdit")}</h3>
@@ -251,7 +251,7 @@ function EntityInlineEditPanel({ data, entity }: { data: CrmCardPayload; entity:
 export function GenericDrawerContent({ data, entity }: { data: CrmCardPayload; entity: CrmDrawerEntity }) {
   return (
     <div className="space-y-4">
-      <ClientCardContent data={data} />
+      <ClientCardContent data={data} entity={entity} />
       <EntityInlineEditPanel data={data} entity={entity} />
       <EntityCustomFieldsPanel data={data} entity={entity} />
       <LeadCardContent lead={data.lead} />

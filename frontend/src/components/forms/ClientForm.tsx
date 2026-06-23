@@ -86,12 +86,12 @@ export function ClientForm({
         <Input label={t("common.email")} error={form.formState.errors.email?.message} {...form.register("email")} />
       </div>
       {duplicates.length ? (
-        <div className="rounded-3xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        <div className="rounded-card border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           <p className="font-black">{t("clients.duplicateTitle")}</p>
           <p className="mt-1 text-amber-800">{t("clients.duplicateText")}</p>
           <div className="mt-3 space-y-2">
             {duplicates.slice(0, 3).map((client) => (
-              <div key={client.id} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-white/70 p-3">
+              <div key={client.id} className="flex flex-wrap items-center justify-between gap-2 rounded-control bg-white p-3">
                 <span className="font-semibold">{client.full_name} · {client.phone || client.email || t("clients.noContact")}</span>
                 {onOpenClient ? (
                   <Button type="button" variant="secondary" className="h-9 rounded-xl px-3 text-xs" onClick={() => onOpenClient(client.id)}>
@@ -108,7 +108,7 @@ export function ClientForm({
           </div>
         </div>
       ) : null}
-      {duplicateError ? <div className="rounded-2xl bg-slate-50 p-3 text-sm text-slate-500">{duplicateError}</div> : null}
+      {duplicateError ? <div className="rounded-control bg-slate-50 p-3 text-sm text-slate-500">{duplicateError}</div> : null}
       <Select
         label={t("appointment.source")}
         options={[

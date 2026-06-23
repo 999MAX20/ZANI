@@ -91,6 +91,63 @@ class FileAttachmentTests(TestCase):
         self.assertNotIn("\\", attachment.file.name)
         self.assertNotIn("evil", attachment.file.name)
 
+    def test_attachment_rename_sanitizes_name_and_writes_audit(self):
+        self.api.force_authenticate(self.owner)
+        attachment = FileAttachment.objects.create(
+            business=self.business,
+            uploaded_by=self.owner,
+            file=SimpleUploadedFile("existing.txt", b"note", content_type="text/plain"),
+            original_name="existing.txt",
+            content_type="text/plain",
+            size=4,
+            entity_type="client",
+            entity_id=str(self.client.id),
+        )
+
+        response = self.api.post(
+            f"/api/file-attachments/{attachment.id}/rename/",
+            {"original_name": "../Renamed contract.pdf"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        attachment.refresh_from_db()
+        self.assertEqual(attachment.original_name, "Renamed_contract.pdf")
+        self.assertEqual(response.data["original_name"], "Renamed_contract.pdf")
+        self.assertTrue(
+            AuditLog.objects.filter(
+                business=self.business,
+                actor=self.owner,
+                action=AuditLog.Actions.UPDATE,
+                entity_type="FileAttachment",
+                entity_id=str(attachment.id),
+                metadata__kind="file_rename",
+            ).exists()
+        )
+
+    def test_merchant_cannot_rename_another_merchant_file(self):
+        attachment = FileAttachment.objects.create(
+            business=self.business,
+            uploaded_by=self.owner,
+            file=SimpleUploadedFile("existing.txt", b"note", content_type="text/plain"),
+            original_name="existing.txt",
+            content_type="text/plain",
+            size=4,
+            entity_type="client",
+            entity_id=str(self.client.id),
+        )
+        self.api.force_authenticate(self.other_owner)
+
+        response = self.api.post(
+            f"/api/file-attachments/{attachment.id}/rename/",
+            {"original_name": "stolen.txt"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 404)
+        attachment.refresh_from_db()
+        self.assertEqual(attachment.original_name, "existing.txt")
+
     def test_forbidden_extension_rejected(self):
         self.api.force_authenticate(self.owner)
         upload = SimpleUploadedFile("payload.exe", b"bad", content_type="application/octet-stream")

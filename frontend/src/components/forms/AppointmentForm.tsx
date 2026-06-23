@@ -43,7 +43,7 @@ function SetupNotice({
   action: string;
 }) {
   return (
-    <div className="rounded-3xl border border-amber-100 bg-amber-50/80 p-4 text-sm text-amber-900">
+    <div className="rounded-card border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
       <p className="font-bold">{title}</p>
       <p className="mt-1 leading-6 text-amber-800">{description}</p>
       <Link className="mt-3 inline-flex font-bold text-amber-950 underline-offset-4 hover:underline" to={to}>
@@ -179,7 +179,7 @@ export function AppointmentForm({
 
   return (
     <form
-      className="grid gap-4 rounded-3xl border border-slate-100 bg-white p-4 shadow-sm sm:p-5"
+      className="grid gap-4 rounded-card border border-slate-200 bg-white p-4 shadow-card sm:p-5"
       onSubmit={form.handleSubmit(async (values) => {
         setSubmitError(null);
         const startAt = initial?.start_at || values.slot;
@@ -224,7 +224,7 @@ export function AppointmentForm({
         />
       ) : null}
       {!hasResources ? (
-        <div className="rounded-3xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-600">
+        <div className="rounded-card border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
           <p className="font-bold text-midnight">{t("appointment.resourceHintTitle")}</p>
           <p className="mt-1 leading-6">{t("appointment.resourceHintText")}</p>
           <Link className="mt-3 inline-flex font-bold text-brand-700 underline-offset-4 hover:underline" to="/app/resources">
@@ -233,7 +233,7 @@ export function AppointmentForm({
         </div>
       ) : null}
       {hasResources ? (
-        <div className="rounded-3xl border border-brand-100 bg-brand-50/70 p-4 text-sm text-brand-900">
+        <div className="rounded-card border border-brand-100 bg-brand-50 p-4 text-sm text-brand-900">
           <p className="font-bold">{t("appointment.resourceOptionalTitle")}</p>
           <p className="mt-1 leading-6">{t("appointment.resourceSelectedText")}</p>
         </div>
@@ -281,12 +281,12 @@ export function AppointmentForm({
         )}
       </div>
       {slots.error ? (
-        <div className="rounded-3xl border border-red-100 bg-red-50 p-4 text-sm font-medium text-red-700">
+        <div className="rounded-card border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
           {getApiErrorMessage(slots.error)}
         </div>
       ) : null}
       {noSlots ? (
-        <div className="rounded-3xl border border-amber-100 bg-amber-50/80 p-4 text-sm text-amber-900">
+        <div className="rounded-card border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           <p className="font-bold">{t("appointment.noSlotsForDate").replace("{date}", selectedDateLabel)}</p>
           <p className="mt-1 leading-6 text-amber-800">
             {t(noSlotsReasonKey)}
@@ -300,14 +300,14 @@ export function AppointmentForm({
             <Button type="button" variant="secondary" isLoading={quickHoursMutation.isPending} onClick={() => quickHoursMutation.mutate()}>
               {t("appointment.applyQuickHours")}
             </Button>
-            <Link className="inline-flex min-h-10 items-center rounded-2xl px-4 py-2 font-bold text-amber-950 underline-offset-4 hover:underline" to="/app/working-hours">
+            <Link className="inline-flex min-h-10 items-center rounded-control px-4 py-2 font-bold text-amber-950 underline-offset-4 hover:underline" to="/app/working-hours">
               {t("appointment.openHours")}
             </Link>
           </div>
         </div>
       ) : null}
       {submitError ? (
-        <div className="rounded-3xl border border-red-100 bg-red-50 p-4 text-sm font-medium text-red-700">
+        <div className="rounded-card border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
           {submitError}
         </div>
       ) : null}

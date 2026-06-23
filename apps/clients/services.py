@@ -1,13 +1,13 @@
-import re
-
 from django.db import transaction
 from django.db.models import Q
+from django.utils import timezone
 
 from apps.activities.models import ActivityEvent, Note, TaggedObject
 from apps.activities.services import create_activity_event
 from apps.activities.taxonomy import ActivityEvents
 from apps.analytics.models import AnalyticsEvent
 from apps.bots.models import BotConversation
+from apps.clients.identity import normalize_client_identity, normalize_email, normalize_phone
 from apps.clients.models import Client, ClientMergeLog
 from apps.conversations.models import Conversation
 from apps.crm.models import Deal
@@ -16,17 +16,6 @@ from apps.leads.models import Lead
 from apps.notifications.models import Notification
 from apps.scheduling.models import Appointment
 from apps.tasks.models import Task
-
-
-def normalize_phone(phone):
-    digits = re.sub(r"\D+", "", phone or "")
-    if len(digits) == 11 and digits.startswith("8"):
-        digits = f"7{digits[1:]}"
-    return digits
-
-
-def normalize_email(email):
-    return (email or "").strip().lower()
 
 
 def find_duplicate_clients(
@@ -44,7 +33,7 @@ def find_duplicate_clients(
     query = Q(pk__in=[])
 
     if normalized_email:
-        query |= Q(email__iexact=normalized_email)
+        query |= Q(normalized_email=normalized_email)
     if whatsapp_id:
         query |= Q(whatsapp_id=whatsapp_id)
     if telegram_id:
@@ -52,17 +41,17 @@ def find_duplicate_clients(
     if instagram_id:
         query |= Q(instagram_id=instagram_id)
 
-    candidates = Client.objects.filter(business=business).filter(query)
+    candidates = Client.objects.filter(business=business, is_archived=False).filter(query)
     if exclude_client_id:
         candidates = candidates.exclude(id=exclude_client_id)
 
     duplicates = list(candidates)
 
     if normalized_phone:
-        phone_candidates = Client.objects.filter(business=business).exclude(phone="")
+        phone_candidates = Client.objects.filter(business=business, is_archived=False, normalized_phone=normalized_phone).exclude(normalized_phone="")
         if exclude_client_id:
             phone_candidates = phone_candidates.exclude(id=exclude_client_id)
-        duplicates.extend([client for client in phone_candidates if normalize_phone(client.phone) == normalized_phone])
+        duplicates.extend(phone_candidates)
 
     unique = {}
     for client in duplicates:
@@ -76,9 +65,9 @@ def duplicate_payload(clients, *, phone=None, email=None, whatsapp_id=None, tele
     rows = []
     for client in clients:
         matched_fields = []
-        if normalized_phone and normalize_phone(client.phone) == normalized_phone:
+        if normalized_phone and (client.normalized_phone or normalize_phone(client.phone)) == normalized_phone:
             matched_fields.append("phone")
-        if normalized_email and normalize_email(client.email) == normalized_email:
+        if normalized_email and (client.normalized_email or normalize_email(client.email)) == normalized_email:
             matched_fields.append("email")
         if whatsapp_id and client.whatsapp_id == whatsapp_id:
             matched_fields.append("whatsapp_id")
@@ -127,9 +116,13 @@ def merge_clients(*, target_client, duplicate_client, actor=None):
         actor=actor,
         duplicate_snapshot=duplicate_snapshot,
         transferred_counts=transferred,
-        metadata={"policy": "hard_delete_duplicate_after_transfer", "skipped": entity_transfer["skipped"]},
+        metadata={"policy": "archive_duplicate_after_transfer", "skipped": entity_transfer["skipped"]},
     )
-    duplicate_client.delete()
+    duplicate_client.is_archived = True
+    duplicate_client.archived_at = timezone.now()
+    duplicate_client.archived_by = actor
+    duplicate_client.archive_reason = f"Merged into client #{target_client.id}"
+    duplicate_client.save(update_fields=["is_archived", "archived_at", "archived_by", "archive_reason", "updated_at"])
 
     create_activity_event(
         business=business,
@@ -144,6 +137,7 @@ def merge_clients(*, target_client, duplicate_client, actor=None):
 
     return {
         "target_client_id": target_client.id,
+        "archived_duplicate": duplicate_snapshot,
         "deleted_duplicate": duplicate_snapshot,
         "transferred": transferred,
         "merge_log_id": merge_log.id,
@@ -175,8 +169,8 @@ def merge_clients_dry_run(*, target_client, duplicate_client):
             "attachments": FileAttachment.objects.filter(business=business, entity_type="client", entity_id=str(duplicate_client.id)).count(),
             "custom_field_values": CustomFieldValue.objects.filter(business=business, entity_type="client", entity_id=str(duplicate_client.id)).count(),
         },
-        "will_delete_duplicate": True,
-        "policy": "hard_delete_duplicate_after_transfer",
+        "will_delete_duplicate": False,
+        "policy": "archive_duplicate_after_transfer",
     }
 
 

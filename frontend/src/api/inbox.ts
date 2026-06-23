@@ -179,10 +179,12 @@ export const inboxApi = {
     );
     return data;
   },
-  createTask: async ({ conversationId, title }: { conversationId: Id; title?: string }) => {
+  createTask: async ({ conversationId, title, description, priority, due_at }: { conversationId: Id; title?: string; description?: string; priority?: Task["priority"]; due_at?: string | null }) => {
     const { data } = await apiClient.post<Task>(`/api/inbox/conversations/${conversationId}/create-task/`, {
       title,
-      priority: "normal",
+      description,
+      priority: priority || "normal",
+      due_at,
     });
     return data;
   },

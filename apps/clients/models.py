@@ -2,6 +2,7 @@ from django.conf import settings
 from django.db import models
 
 from apps.businesses.models import Business, TimeStampedModel
+from apps.clients.identity import normalize_client_identity
 
 
 class Client(TimeStampedModel):
@@ -18,6 +19,8 @@ class Client(TimeStampedModel):
     full_name = models.CharField(max_length=255)
     phone = models.CharField(max_length=32, blank=True)
     email = models.EmailField(blank=True)
+    normalized_phone = models.CharField(max_length=32, blank=True, editable=False)
+    normalized_email = models.EmailField(blank=True, editable=False)
     whatsapp_id = models.CharField(max_length=128, blank=True)
     telegram_id = models.CharField(max_length=128, blank=True)
     instagram_id = models.CharField(max_length=128, blank=True)
@@ -38,8 +41,23 @@ class Client(TimeStampedModel):
         ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["business", "phone"]),
+            models.Index(fields=["business", "normalized_phone"]),
+            models.Index(fields=["business", "normalized_email"]),
             models.Index(fields=["business", "is_archived", "created_at"]),
         ]
+
+    def save(self, *args, **kwargs):
+        identity = normalize_client_identity(phone=self.phone, email=self.email)
+        self.normalized_phone = identity["normalized_phone"]
+        self.normalized_email = identity["normalized_email"]
+        if update_fields := kwargs.get("update_fields"):
+            update_fields = set(update_fields)
+            if "phone" in update_fields:
+                update_fields.add("normalized_phone")
+            if "email" in update_fields:
+                update_fields.add("normalized_email")
+            kwargs["update_fields"] = update_fields
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.full_name

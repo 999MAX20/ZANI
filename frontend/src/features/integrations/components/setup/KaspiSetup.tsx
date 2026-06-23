@@ -8,6 +8,7 @@ import { Button } from "../../../../components/ui/Button";
 import { ErrorState } from "../../../../components/ui/StateViews";
 import { Input } from "../../../../components/ui/Input";
 import { Select } from "../../../../components/ui/Select";
+import { useNotification } from "../../../../components/notifications/NotificationProvider";
 import { useI18n } from "../../../../lib/i18n";
 import type { BusinessConnector, Id } from "../../../../types";
 
@@ -21,6 +22,7 @@ export function KaspiInlineSetup({
   connector?: BusinessConnector;
 }) {
   const { t } = useI18n();
+  const showNotification = useNotification();
   const queryClient = useQueryClient();
   const [apiToken, setApiToken] = useState("");
   const [merchantId, setMerchantId] = useState(String(connector?.config_json?.merchant_id || ""));
@@ -29,7 +31,11 @@ export function KaspiInlineSetup({
   const [pageSize, setPageSize] = useState(String(connector?.config_json?.page_size || "20"));
   const [showAccessSetup, setShowAccessSetup] = useState(Boolean(connector?.config_json?.api_token_configured));
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
+
+  function setNotice(message: string | null) {
+    if (!message) return;
+    showNotification({ message, tone: "info" });
+  }
 
   const status = useQuery({
     queryKey: ["kaspi-status", connector?.id],
@@ -78,9 +84,8 @@ export function KaspiInlineSetup({
   const tokenConfigured = Boolean(status.data?.api_token_configured || connector?.config_json?.api_token_configured);
 
   return (
-    <div className="w-full space-y-4 rounded-3xl border border-slate-100 bg-slate-50/70 p-4">
+    <div className="w-full space-y-4 rounded-card border border-slate-200 bg-slate-50 p-4">
       {error ? <ErrorState message={getApiErrorMessage(error)} /> : null}
-      {notice ? <div className="rounded-2xl bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800">{notice}</div> : null}
 
       <div className="grid gap-2 sm:grid-cols-3">
         <div className="rounded-2xl bg-white p-3">
@@ -98,7 +103,7 @@ export function KaspiInlineSetup({
       </div>
 
       {!showAccessSetup ? (
-        <div className="rounded-3xl border border-blue-100 bg-blue-50 p-4">
+        <div className="rounded-card border border-blue-100 bg-blue-50 p-4">
           <p className="text-sm font-black text-blue-950">{t("integrations.kaspi.connectionTitle")}</p>
           <p className="mt-1 text-sm font-semibold leading-6 text-blue-800">
             {t("integrations.kaspi.connectionDescription")}

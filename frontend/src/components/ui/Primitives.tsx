@@ -51,11 +51,10 @@ export function MetricTile({
 }) {
   return (
     <Card className={cn("group overflow-hidden", className)}>
-      <CardBody className="relative flex items-start gap-4">
-        <div className="absolute right-0 top-0 h-24 w-24 rounded-full bg-brand-100/35 blur-3xl transition group-hover:bg-ai-100/50" />
-        <IconBubble icon={icon} tone={tone} className="relative" />
-        <div className="relative min-w-0">
-          <p className="text-sm font-medium text-slate-500">{label}</p>
+      <CardBody className="flex items-start gap-3">
+        <IconBubble icon={icon} tone={tone} className="h-10 w-10 rounded-control" />
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-slate-500">{label}</p>
           <p className="mt-1 text-2xl font-semibold tracking-tight text-midnight">{value}</p>
           {hint ? <p className="mt-1 text-xs font-medium text-slate-400">{hint}</p> : null}
         </div>
@@ -98,7 +97,7 @@ export function ProductionKpiCard({
   );
 
   const baseClassName = cn(
-    "rounded-3xl border border-white/75 bg-white/86 p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft",
+    "rounded-card border border-slate-200 bg-white p-4 shadow-card transition-colors hover:border-brand-200",
     className,
   );
 
@@ -118,7 +117,7 @@ export function SegmentedControl<T extends string>({
   className?: string;
 }) {
   return (
-    <div className={cn("inline-flex rounded-2xl border border-slate-100 bg-white/80 p-1 shadow-sm", className)}>
+    <div className={cn("inline-flex rounded-control border border-slate-200 bg-slate-50 p-1", className)}>
       {options.map((option) => {
         const active = option.value === value;
         return (
@@ -126,8 +125,8 @@ export function SegmentedControl<T extends string>({
             key={option.value}
             type="button"
             className={cn(
-              "min-h-9 rounded-xl px-4 text-sm font-black transition",
-              active ? "bg-ai-gradient text-white shadow-glow" : "text-slate-500 hover:bg-slate-50 hover:text-midnight",
+              "min-h-8 rounded-control px-3 text-sm font-black transition",
+              active ? "bg-brand-600 text-white shadow-sm" : "text-slate-500 hover:bg-white hover:text-midnight",
             )}
             onClick={() => onChange(option.value)}
           >
@@ -160,16 +159,16 @@ export function FilterChips<T extends string>({
             key={option.value}
             type="button"
             className={cn(
-              "inline-flex min-h-10 shrink-0 items-center gap-2 rounded-2xl border px-4 text-sm font-black transition",
+              "inline-flex min-h-9 shrink-0 items-center gap-2 rounded-control border px-3 text-sm font-bold transition",
               active
-                ? "border-brand-200 bg-brand-50 text-brand-700 shadow-sm"
-                : "border-slate-100 bg-white/80 text-slate-600 hover:bg-white hover:text-midnight",
+                ? "border-brand-200 bg-brand-50 text-brand-700"
+                : "border-slate-200 bg-white text-slate-600 hover:border-brand-100 hover:text-midnight",
             )}
             onClick={() => onChange(option.value)}
           >
             {Icon ? <Icon size={16} /> : null}
             {option.label}
-            {typeof option.count === "number" ? <span className="rounded-full bg-white/80 px-2 py-0.5 text-xs">{option.count}</span> : null}
+            {typeof option.count === "number" ? <span className="rounded-control bg-white px-2 py-0.5 text-xs">{option.count}</span> : null}
           </button>
         );
       })}
@@ -192,7 +191,7 @@ export function FloatingActionButton({
     <button
       type="button"
       className={cn(
-        "fixed bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] right-5 z-30 inline-flex h-14 w-14 items-center justify-center rounded-full bg-ai-gradient text-white shadow-glow transition hover:-translate-y-0.5 sm:hidden",
+        "fixed bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] right-5 z-30 inline-flex h-14 w-14 items-center justify-center rounded-full bg-brand-600 text-white shadow-panel transition hover:bg-brand-700 sm:hidden",
         className,
       )}
       onClick={onClick}
@@ -223,7 +222,7 @@ export function DetailPanel({
   if (!open) return null;
 
   return (
-    <aside className={cn("hidden h-full min-w-[22rem] max-w-[26rem] rounded-3xl border border-white/75 bg-white/90 shadow-soft xl:block", className)}>
+    <aside className={cn("hidden h-full min-w-[22rem] max-w-[26rem] rounded-card border border-slate-200 bg-white shadow-card xl:block", className)}>
       <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
         <div className="min-w-0">
           <h2 className="truncate text-lg font-black text-midnight">{title}</h2>
@@ -257,7 +256,7 @@ export function BottomSheet({
   return (
     <div className="fixed inset-0 z-50 flex items-end bg-slate-950/35 backdrop-blur-sm xl:hidden">
       <button className="absolute inset-0 cursor-default" type="button" aria-label={t("common.close")} onClick={onClose} />
-      <section className="relative max-h-[86dvh] w-full overflow-hidden rounded-t-[2rem] border border-white/75 bg-white shadow-premium">
+      <section className="relative max-h-[86dvh] w-full overflow-hidden rounded-t-[1.25rem] border border-slate-200 bg-white shadow-panel">
         <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-slate-200" />
         <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
           <div className="min-w-0">
@@ -311,8 +310,8 @@ export function EntityListItem({
   );
 
   const baseClassName = cn(
-    "flex min-h-[4.5rem] w-full items-center gap-3 rounded-3xl border bg-white/82 px-4 py-3 text-left shadow-sm transition",
-    selected ? "border-brand-200 ring-2 ring-brand-100" : "border-slate-100 hover:border-brand-100 hover:bg-white hover:shadow-soft",
+    "flex min-h-[4.25rem] w-full items-center gap-3 rounded-card border bg-white px-3.5 py-3 text-left shadow-sm transition-colors",
+    selected ? "border-brand-200 bg-brand-50/60 ring-2 ring-brand-100" : "border-slate-200 hover:border-brand-100 hover:bg-slate-50",
     className,
   );
 

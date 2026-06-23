@@ -107,6 +107,7 @@ function LegacyDashboardRedirect() {
 
 const merchantChildren = [
   { index: true, element: <PageLoader><DashboardPage /></PageLoader> },
+  { path: "dashboard", element: <PageLoader><DashboardPage /></PageLoader> },
   { path: "account", element: <PageLoader><AccountPage /></PageLoader> },
   { path: "leads", resource: "leads", element: <PageLoader><LeadsPage /></PageLoader> },
   { path: "deals", resource: "deals", element: <PageLoader><DealsPage /></PageLoader> },

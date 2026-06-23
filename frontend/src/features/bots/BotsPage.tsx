@@ -1,10 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Bot as BotIcon, MessageSquareText, Plus, Radio, Settings2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { botsApi } from "../../api/bots";
 import { getApiErrorMessage } from "../../api/client";
+import { useNotification } from "../../components/notifications/NotificationProvider";
 import { Button } from "../../components/ui/Button";
 import { Card, CardBody } from "../../components/ui/Card";
 import { Input } from "../../components/ui/Input";
@@ -20,6 +21,7 @@ import type { Bot } from "../../types";
 
 export function BotsPage() {
   const { t } = useI18n();
+  const showNotification = useNotification();
   const queryClient = useQueryClient();
   const { business } = useActiveBusiness();
   const { bots, botChannels, botConversations } = useEntityData({ bots: true, botChannels: true, botConversations: true });
@@ -34,6 +36,12 @@ export function BotsPage() {
       setForm({ name: "", status: "draft", default_language: "ru" });
     },
   });
+  const actionErrorMessage = mutation.error ? getApiErrorMessage(mutation.error) : "";
+
+  useEffect(() => {
+    if (!actionErrorMessage) return;
+    showNotification({ message: actionErrorMessage, tone: "danger" });
+  }, [actionErrorMessage, showNotification]);
 
   const statusOptions = [
     { value: "draft", label: t("status.draft") },
@@ -58,7 +66,6 @@ export function BotsPage() {
         description={t("bots.description")}
         actions={<Button variant="ai" onClick={() => setOpen(true)}><Plus size={18} />{t("bots.create")}</Button>}
       />
-      {mutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(mutation.error)} /></div> : null}
 
       {!botList.length ? (
         <EmptyState

@@ -166,7 +166,7 @@ export function WeeklyWorkingHoursForm({
         }
       }}
     >
-      <div className="rounded-3xl border border-brand-100 bg-brand-50/60 p-4 text-sm text-slate-700">
+      <div className="rounded-card border border-brand-100 bg-brand-50 p-4 text-sm text-slate-700">
         <p className="font-bold text-midnight">{t("workingHours.formTitle")}</p>
         <p className="mt-1 leading-6">
           {t("workingHours.formText")}
@@ -200,12 +200,12 @@ export function WeeklyWorkingHoursForm({
           <Button type="button" variant="secondary" onClick={copyBusinessSchedule}>{t("workingHours.copyBusinessSchedule")}</Button>
         ) : null}
       </div>
-      {error ? <div className="rounded-3xl border border-red-100 bg-red-50 p-4 text-sm font-bold text-red-700">{error}</div> : null}
+      {error ? <div className="rounded-card border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">{error}</div> : null}
       <div className="grid gap-3">
         {weekdays.map((weekday) => {
           const day = days.find((item) => item.weekday === weekday.value)!;
           return (
-            <div key={weekday.value} className="grid gap-3 rounded-3xl border border-slate-100 bg-white/80 p-3 sm:grid-cols-[120px_1fr_1fr_140px] sm:items-center">
+            <div key={weekday.value} className="grid gap-3 rounded-card border border-slate-200 bg-white p-3 sm:grid-cols-[120px_1fr_1fr_140px] sm:items-center">
               <div>
                 <p className="font-bold text-midnight">{t(weekday.labelKey)}</p>
                 <p className="text-xs text-slate-400">{t(weekday.shortKey)}</p>
@@ -224,7 +224,7 @@ export function WeeklyWorkingHoursForm({
                 disabled={day.is_day_off}
                 onChange={(event) => updateDay(weekday.value, { end_time: event.target.value })}
               />
-              <label className="flex min-h-12 items-center gap-3 rounded-2xl bg-slate-50 px-3 text-sm font-bold text-slate-700 sm:pt-0">
+              <label className="flex min-h-12 items-center gap-3 rounded-control bg-slate-50 px-3 text-sm font-bold text-slate-700 sm:pt-0">
                 <input
                   type="checkbox"
                   className="h-5 w-5 rounded border-slate-300"

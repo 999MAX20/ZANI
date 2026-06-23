@@ -7,26 +7,31 @@
   --zani-surface: #ffffff;
   --zani-surface-muted: #f3f4f6;
   --zani-surface-raised: rgba(255, 255, 255, 0.96);
-  --zani-brand: #4f46e5;
-  --zani-brand-strong: #3730a3;
+  --zani-brand: #2563eb;
+  --zani-brand-strong: #1d4ed8;
   --zani-ai: #7c3aed;
   --zani-ai-end: #4f46e5;
   --zani-success: #10b981;
   --zani-warning: #f59e0b;
   --zani-danger: #ef4444;
-  --zani-info: #3b82f6;
+  --zani-info: #0284c7;
   --zani-ink: #111827;
   --zani-midnight: #111827;
   --zani-muted: #6b7280;
   --zani-muted-soft: #9ca3af;
   --zani-border: #e5e7eb;
-  --zani-shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.1);
-  --zani-shadow-elevated: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --zani-shadow-soft: 0 1px 3px rgba(15, 23, 42, 0.08);
+  --zani-shadow-elevated: 0 4px 12px rgba(15, 23, 42, 0.05);
   --zani-shadow-card: 0 4px 12px rgba(17, 24, 39, 0.06);
-  --zani-shadow-panel: 0 12px 28px rgba(17, 24, 39, 0.1);
-  --zani-shadow-premium: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --zani-shadow-panel: 0 16px 40px rgba(15, 23, 42, 0.1);
+  --zani-shadow-premium: 0 16px 40px rgba(15, 23, 42, 0.1);
   --zani-radius-card: 12px;
-  --zani-radius-control: 8px;
+  --zani-radius-control: 10px;
+  --zani-radius-modal: 16px;
+  --zani-z-popover: 60;
+  --zani-z-drawer: 70;
+  --zani-z-modal: 80;
+  --zani-z-toast: 90;
   color: var(--zani-ink);
   background: var(--zani-bg);
   font-family:
@@ -50,6 +55,12 @@ body,
   overflow-x: hidden;
 }
 
+html[data-scroll-lock="true"],
+html[data-scroll-lock="true"] body,
+html[data-scroll-lock="true"] #root {
+  overscroll-behavior: none;
+}
+
 button,
 input,
 textarea,
@@ -62,7 +73,7 @@ select {
 }
 
 ::selection {
-  background: rgba(79, 70, 229, 0.18);
+  background: rgba(37, 99, 235, 0.18);
 }
 
 @layer components {
@@ -94,6 +105,39 @@ select {
     border-radius: var(--zani-radius-card);
   }
 
+  .zani-overlay-backdrop {
+    background: rgba(15, 23, 42, 0.46);
+    backdrop-filter: blur(10px);
+  }
+
+  .zani-dialog-surface {
+    border: 1px solid var(--zani-border);
+    background: var(--zani-surface);
+    box-shadow: var(--zani-shadow-premium);
+    border-radius: var(--zani-radius-modal);
+  }
+
+  .zani-drawer-surface {
+    border-left: 1px solid var(--zani-border);
+    background: var(--zani-bg);
+    box-shadow: var(--zani-shadow-premium);
+  }
+
+  .zani-popover-surface {
+    z-index: var(--zani-z-popover);
+    border: 1px solid var(--zani-border);
+    background: var(--zani-surface);
+    box-shadow: var(--zani-shadow-panel);
+    border-radius: var(--zani-radius-card);
+  }
+
+  .zani-toast-surface {
+    border: 1px solid var(--zani-border);
+    background: var(--zani-surface);
+    box-shadow: var(--zani-shadow-panel);
+    border-radius: var(--zani-radius-card);
+  }
+
   .zani-control {
     min-height: 40px;
     border-radius: var(--zani-radius-control);
@@ -114,26 +158,18 @@ select {
 
   .zani-focus-ring:focus-visible {
     border-color: var(--zani-brand);
-    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.14);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14);
   }
 
   .zani-ai-surface {
     position: relative;
-    border: 1px solid rgba(124, 58, 237, 0.28);
-    background:
-      radial-gradient(circle at top right, rgba(124, 58, 237, 0.12), transparent 34%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.9));
-    box-shadow: 0 10px 30px rgba(79, 70, 229, 0.08);
+    border: 1px solid rgba(124, 58, 237, 0.22);
+    background: #f5f3ff;
+    box-shadow: var(--zani-shadow-card);
   }
 
   .zani-ai-surface::before {
-    content: "";
-    position: absolute;
-    inset: -1px;
-    z-index: -1;
-    border-radius: inherit;
-    background: linear-gradient(135deg, rgba(79, 70, 229, 0.82), rgba(124, 58, 237, 0.82));
-    opacity: 0.42;
+    content: none;
   }
 }
 

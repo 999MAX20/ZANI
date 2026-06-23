@@ -72,7 +72,6 @@ export function MessengerSetupShell({
   description,
   status,
   statusTone = "neutral",
-  notice,
   error,
   children,
   advanced,
@@ -91,7 +90,6 @@ export function MessengerSetupShell({
   description: string;
   status: string;
   statusTone?: "neutral" | "progress" | "success" | "warning";
-  notice?: string | null;
   error?: ReactNode;
   children?: ReactNode;
   advanced?: ReactNode;
@@ -128,7 +126,6 @@ export function MessengerSetupShell({
       </div>
 
       {error}
-      {notice ? <div className="rounded-2xl bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800">{notice}</div> : null}
 
       {children ? <div className="rounded-2xl border border-slate-200 bg-white p-4">{children}</div> : null}
 

@@ -1,7 +1,7 @@
 from django.http import FileResponse
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied
-from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
@@ -9,14 +9,14 @@ from apps.businesses.access import Actions, assert_can, can, scope_queryset
 from apps.billing.storage import assert_storage_quota_allows
 from apps.core.audit import write_audit_log
 from apps.core.file_attachments import assert_attachment_access, resolve_attachment_entity
-from apps.core.models import AuditLog, FileAttachment
+from apps.core.models import AuditLog, FileAttachment, safe_original_filename
 from apps.core.permissions import IsTenantMember, accessible_businesses, platform_admin_has_global_access, user_can_access_business
 from apps.core.serializers import FileAttachmentSerializer
 
 
 class FileAttachmentViewSet(ModelViewSet):
     serializer_class = FileAttachmentSerializer
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
     permission_classes = [IsTenantMember]
     http_method_names = ["get", "post", "head", "options"]
 
@@ -82,6 +82,31 @@ class FileAttachmentViewSet(ModelViewSet):
             metadata={"kind": "file_download", "entity_type": attachment.entity_type, "entity_id": attachment.entity_id},
         )
         return FileResponse(attachment.file.open("rb"), as_attachment=False, filename=attachment.original_name)
+
+    @action(detail=True, methods=["post"])
+    def rename(self, request, pk=None):
+        attachment = self.get_object()
+        assert_attachment_access(request.user, attachment, Actions.UPDATE)
+        original_name = safe_original_filename(str(request.data.get("original_name") or ""))
+        if not original_name:
+            raise ValidationError({"original_name": "File name is required."})
+        previous_name = attachment.original_name
+        attachment.original_name = original_name[:255]
+        attachment.save(update_fields=["original_name"])
+        write_audit_log(
+            request,
+            AuditLog.Actions.UPDATE,
+            attachment,
+            business=attachment.business,
+            metadata={
+                "kind": "file_rename",
+                "entity_type": attachment.entity_type,
+                "entity_id": attachment.entity_id,
+                "previous_name": previous_name,
+                "original_name": attachment.original_name,
+            },
+        )
+        return Response(self.get_serializer(attachment).data)
 
 
 def _attachment_resources():

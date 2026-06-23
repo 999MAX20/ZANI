@@ -1,4 +1,4 @@
-import { createContext, useContext } from "react";
+import { createContext, useContext, type ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 
 export type PageHeaderAction = {
@@ -11,6 +11,10 @@ export type PageHeaderConfig = {
   title: string;
   primaryAction?: PageHeaderAction;
   secondaryActions?: PageHeaderAction[];
+  filterLabel?: string;
+  filters?: ReactNode;
+  activeFilterCount?: number;
+  activeFilters?: ReactNode;
 };
 
 type PageHeaderContextValue = {

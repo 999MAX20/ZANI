@@ -70,11 +70,7 @@ class ArchiveGuardrailTests(TestCase):
         missing_reason = self.api.patch(f"/api/leads/{lead.id}/", {"status": Lead.Statuses.LOST}, format="json")
         self.assertEqual(missing_reason.status_code, 400)
 
-        response = self.api.patch(
-            f"/api/leads/{lead.id}/",
-            {"status": Lead.Statuses.LOST, "lost_reason": "No response"},
-            format="json",
-        )
+        response = self.api.post(f"/api/leads/{lead.id}/mark-lost/", {"lost_reason": "No response"}, format="json")
 
         self.assertEqual(response.status_code, 200)
         lead.refresh_from_db()

@@ -5,8 +5,15 @@ import { useSearchParams } from "react-router-dom";
 
 import { dealsApi } from "../../api/deals";
 import { CrmEntityDrawer, type CrmDrawerEntity } from "../../components/crm/CrmEntityDrawer";
-import { CrmWorkspacePage } from "../../components/crm";
+import {
+  CrmDataTable,
+  CrmTableSurface,
+  CrmWorkspacePage,
+  CRM_TABLE_CONTENT_CLASS,
+  CRM_TABLE_EMBEDDED_CLASS,
+} from "../../components/crm";
 import { usePageHeader } from "../../components/layout/PageHeaderContext";
+import { useNotification } from "../../components/notifications/NotificationProvider";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { Modal } from "../../components/ui/Modal";
@@ -24,6 +31,7 @@ import { useDeals } from "./hooks/useDeals";
 export function DealsPage() {
   const { t } = useI18n();
   const { setPageHeader } = usePageHeader();
+  const showNotification = useNotification();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const { filters } = useDealFilters();
@@ -105,19 +113,44 @@ export function DealsPage() {
     setSearchParams(next, { replace: true });
   }
 
+  const actionErrorMessage = actions.hasError || archiveMutation.error ? t("deals.saveChangeError") : "";
+
+  useEffect(() => {
+    if (!actionErrorMessage) return;
+    showNotification({ message: actionErrorMessage, tone: "danger" });
+  }, [actionErrorMessage, showNotification]);
+
+  useEffect(() => {
+    if (!actions.stageGuard) return;
+    showNotification({ message: actions.stageGuard, tone: "warning" });
+  }, [actions.stageGuard, showNotification]);
+
   if (!business) return <ErrorState message={t("deals.noBusiness")} />;
   if (isLoading) return <LoadingState />;
 
   return (
     <>
-      <CrmWorkspacePage className="h-auto min-h-[calc(100vh-5.5rem)]" contentClassName="gap-4 pb-4">
-      {actions.hasError || archiveMutation.error ? <div className="mb-4"><ErrorState message={t("deals.saveChangeError")} /></div> : null}
-      {actions.stageGuard ? <div className="mb-4 rounded-lg border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">{actions.stageGuard}</div> : null}
-      {!data.pipelines.length ? <ErrorState message={t("deals.noPipeline")} /> : (
-        <section className="-mx-1 overflow-hidden rounded-lg border border-slate-100 bg-white/70 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
-          <DealsList rows={sortedRows} viewMode="kanban" stages={activeStages} selectedDealId={selection.selectedDealId} selectedIds={selection.selectedIds} onOpen={openDealDrawer} onCheck={(deal) => selection.toggleSelected(deal.id)} onSelectAll={selection.selectAll} onCreate={() => actions.setCreateOpen(true)} onMore={openDealDrawer} onStageChange={actions.handleStageChange} t={t} />
-        </section>
-      )}
+      <CrmWorkspacePage contentClassName="gap-0">
+        {!data.pipelines.length ? <ErrorState message={t("deals.noPipeline")} /> : (
+          <CrmTableSurface>
+            <CrmDataTable className={CRM_TABLE_EMBEDDED_CLASS} contentClassName={CRM_TABLE_CONTENT_CLASS}>
+              <DealsList
+                rows={sortedRows}
+                viewMode="kanban"
+                stages={activeStages}
+                selectedDealId={selection.selectedDealId}
+                selectedIds={selection.selectedIds}
+                onOpen={openDealDrawer}
+                onCheck={(deal) => selection.toggleSelected(deal.id)}
+                onSelectAll={selection.selectAll}
+                onCreate={() => actions.setCreateOpen(true)}
+                onMore={openDealDrawer}
+                onStageChange={actions.handleStageChange}
+                t={t}
+              />
+            </CrmDataTable>
+          </CrmTableSurface>
+        )}
       </CrmWorkspacePage>
       <CreateDealModal open={actions.createOpen} form={actions.form} clients={data.clients} pipelines={data.pipelines} defaultPipeline={defaultPipeline} stages={stagesForForm} isPending={actions.createMutation.isPending} onClose={() => actions.setCreateOpen(false)} onFormChange={actions.setForm} onSubmit={() => actions.createMutation.mutate({ business: business.id, title: actions.form.title, client: Number(actions.form.client), pipeline: Number(actions.form.pipeline || defaultPipeline?.id), stage: Number(actions.form.stage || stagesForForm[0]?.id), amount: actions.form.amount, currency: "KZT", source: actions.form.source })} t={t} />
       <DealActionModal actionFlow={actions.actionFlow} draft={actions.actionDraft} isPending={actions.quickActionMutation.isPending} onClose={() => actions.setActionFlow(null)} onDraftChange={actions.setActionDraft} onSubmit={() => actions.actionFlow && actions.quickActionMutation.mutate({ id: actions.actionFlow.deal.id, action: actions.actionFlow.type, amount: actions.actionDraft.amount, lost_reason: actions.actionDraft.lost_reason })} t={t} />

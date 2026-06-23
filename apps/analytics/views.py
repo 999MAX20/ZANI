@@ -353,7 +353,7 @@ def _build_business_pulse(*, has_sales_data, new_leads_count, overdue_tasks_coun
         "tone": "setup",
         "title": "Настройка бизнеса продолжается",
         "text": f"Готовность подключения: {setup_score}%. Добавьте сотрудников, услуги и источники данных, чтобы dashboard стал полезнее.",
-        "primary_action": {"label": "Быстрый старт", "href": "/app/onboarding"},
+        "primary_action": {"label": "Открыть настройки", "href": "/app/settings#operations-setup"},
     }
 
 

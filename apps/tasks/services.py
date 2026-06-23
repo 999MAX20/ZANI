@@ -10,7 +10,16 @@ from apps.notifications.models import Notification
 from apps.tasks.models import Task
 
 
+OPEN_STATUSES = {Task.Statuses.OPEN, Task.Statuses.IN_PROGRESS}
+
+
+def assert_task_status(task: Task, allowed_statuses: set[str], action: str) -> None:
+    if task.status not in allowed_statuses:
+        raise ValidationError({"status": f"Cannot {action} task with status '{task.status}'."})
+
+
 def complete_task(*, task: Task, actor, request=None) -> Task:
+    assert_task_status(task, OPEN_STATUSES, "complete")
     task.status = Task.Statuses.DONE
     task.completed_at = timezone.now()
     task.completed_by = actor
@@ -22,6 +31,7 @@ def complete_task(*, task: Task, actor, request=None) -> Task:
 
 
 def start_task(*, task: Task, actor, request=None) -> Task:
+    assert_task_status(task, {Task.Statuses.OPEN}, "start")
     task.status = Task.Statuses.IN_PROGRESS
     task.save(update_fields=["status", "updated_at"])
     write_task_activity(request, ActivityEvents.TASK_STARTED, task, text=f"Задача взята в работу: {task.title}")
@@ -29,11 +39,15 @@ def start_task(*, task: Task, actor, request=None) -> Task:
     return task
 
 
-def cancel_task(*, task: Task, actor, request=None) -> Task:
+def cancel_task(*, task: Task, actor, reason: str, request=None) -> Task:
+    assert_task_status(task, OPEN_STATUSES, "cancel")
     previous_status = task.status
     task.status = Task.Statuses.CANCELLED
-    task.save(update_fields=["status", "updated_at"])
-    write_task_activity(request, ActivityEvents.TASK_CANCELLED, task, text=f"Задача отменена: {task.title}")
+    task.cancelled_at = timezone.now()
+    task.cancelled_by = actor
+    task.cancel_reason = reason
+    task.save(update_fields=["status", "cancelled_at", "cancelled_by", "cancel_reason", "updated_at"])
+    write_task_activity(request, ActivityEvents.TASK_CANCELLED, task, text=f"Задача отменена: {task.title}. Причина: {reason}")
     create_task_notification(task, f"Задача отменена: {task.title}")
     write_task_audit(
         request,
@@ -43,22 +57,68 @@ def cancel_task(*, task: Task, actor, request=None) -> Task:
             "lifecycle_action": "task_cancelled",
             "from": previous_status,
             "to": task.status,
+            "reason": reason,
         },
     )
     return task
 
 
 def reopen_task(*, task: Task, actor, request=None) -> Task:
+    assert_task_status(task, {Task.Statuses.DONE, Task.Statuses.CANCELLED}, "reopen")
     task.status = Task.Statuses.OPEN
     task.completed_at = None
     task.completed_by = None
-    task.save(update_fields=["status", "completed_at", "completed_by", "updated_at"])
+    task.cancelled_at = None
+    task.cancelled_by = None
+    task.cancel_reason = ""
+    task.save(update_fields=["status", "completed_at", "completed_by", "cancelled_at", "cancelled_by", "cancel_reason", "updated_at"])
     write_task_activity(request, ActivityEvents.TASK_REOPENED, task, text=f"Задача переоткрыта: {task.title}")
     create_task_notification(task, f"Задача возвращена в работу: {task.title}")
     return task
 
 
+def undo_cancel_task(*, task: Task, actor, request=None) -> Task:
+    if task.status != Task.Statuses.CANCELLED:
+        raise ValidationError({"status": "Only cancelled tasks can be restored from cancellation."})
+
+    previous_cancel_log = (
+        AuditLog.objects.filter(
+            business=task.business,
+            entity_type="Task",
+            entity_id=str(task.id),
+            metadata__kind="lifecycle",
+            metadata__lifecycle_action="task_cancelled",
+        )
+        .order_by("-created_at")
+        .first()
+    )
+    previous_status = (previous_cancel_log.metadata or {}).get("from") if previous_cancel_log else Task.Statuses.OPEN
+    if previous_status not in {Task.Statuses.OPEN, Task.Statuses.IN_PROGRESS, Task.Statuses.DONE}:
+        previous_status = Task.Statuses.OPEN
+
+    task.status = previous_status
+    task.cancelled_at = None
+    task.cancelled_by = None
+    task.cancel_reason = ""
+    task.save(update_fields=["status", "cancelled_at", "cancelled_by", "cancel_reason", "updated_at"])
+    write_task_activity(request, ActivityEvents.TASK_REOPENED, task, text=f"Отмена задачи отменена: {task.title}")
+    create_task_notification(task, f"Задача восстановлена: {task.title}")
+    write_task_audit(
+        request,
+        task,
+        {
+            "kind": "lifecycle",
+            "lifecycle_action": "task_cancel_undone",
+            "from": Task.Statuses.CANCELLED,
+            "to": task.status,
+            "actor": actor.id if actor else None,
+        },
+    )
+    return task
+
+
 def snooze_task(*, task: Task, snoozed_until, request=None) -> Task:
+    assert_task_status(task, OPEN_STATUSES, "snooze")
     task.snoozed_until = snoozed_until
     task.save(update_fields=["snoozed_until", "updated_at"])
     write_task_activity(request, ActivityEvents.TASK_SNOOZED, task, text=f"Задача отложена: {task.title}")
@@ -67,6 +127,9 @@ def snooze_task(*, task: Task, snoozed_until, request=None) -> Task:
 
 
 def assign_task(*, task: Task, actor, user_id=None, request=None) -> Task:
+    assert_task_status(task, OPEN_STATUSES, "assign")
+    if not user_id:
+        raise ValidationError({"user_id": "This field is required."})
     assignee = resolve_active_business_user(task=task, user_id=user_id or actor.id, field_name="user_id")
     previous_assignee_id = task.assignee_id
     task.assignee = assignee
@@ -91,6 +154,7 @@ def assign_task(*, task: Task, actor, user_id=None, request=None) -> Task:
 
 
 def assign_task_to_me(*, task: Task, actor, request=None) -> Task:
+    assert_task_status(task, OPEN_STATUSES, "assign")
     if not task.business.members.filter(user=actor, is_active=True).exists():
         raise ValidationError({"user_id": "Current user must be an active business member."})
     previous_status = task.status
@@ -116,6 +180,7 @@ def assign_task_to_me(*, task: Task, actor, request=None) -> Task:
 
 
 def set_task_due_today(*, task: Task, request=None) -> Task:
+    assert_task_status(task, OPEN_STATUSES, "schedule")
     task.due_at = business_local_datetime(task.business, days=0, hour=18)
     task.reminder_at = task.due_at - timezone.timedelta(hours=1)
     task.save(update_fields=["due_at", "reminder_at", "updated_at"])
@@ -125,6 +190,7 @@ def set_task_due_today(*, task: Task, request=None) -> Task:
 
 
 def set_task_due_tomorrow(*, task: Task, request=None) -> Task:
+    assert_task_status(task, OPEN_STATUSES, "schedule")
     task.due_at = business_local_datetime(task.business, days=1, hour=10)
     task.reminder_at = task.due_at - timezone.timedelta(hours=1)
     task.save(update_fields=["due_at", "reminder_at", "updated_at"])
@@ -134,6 +200,7 @@ def set_task_due_tomorrow(*, task: Task, request=None) -> Task:
 
 
 def add_task_watcher(*, task: Task, actor, user_id=None, request=None) -> Task:
+    assert_task_status(task, OPEN_STATUSES, "watch")
     watcher = resolve_active_business_user(task=task, user_id=user_id or actor.id, field_name="user_id", role_name="Watcher")
     task.watchers.add(watcher)
     write_task_activity(request, ActivityEvents.TASK_WATCHER_ADDED, task, text=f"Наблюдатель добавлен к задаче: {task.title}")

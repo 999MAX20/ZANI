@@ -23,6 +23,7 @@ import { CrmEntityDrawer, type CrmDrawerEntity } from "../../components/crm/CrmE
 import { AppointmentForm } from "../../components/forms/AppointmentForm";
 import { AppointmentRescheduleForm } from "../../components/forms/AppointmentRescheduleForm";
 import { usePageHeader } from "../../components/layout/PageHeaderContext";
+import { useNotification } from "../../components/notifications/NotificationProvider";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { Modal } from "../../components/ui/Modal";
@@ -371,7 +372,7 @@ function CalendarPicker({
         <CalendarDays size={18} />
       </Button>
       {open ? (
-        <div className="fixed inset-x-3 top-24 z-30 rounded-[2rem] border border-slate-200 bg-white p-4 shadow-premium sm:absolute sm:inset-auto sm:left-0 sm:top-14 sm:w-[340px]">
+        <div className="fixed inset-x-3 top-24 z-30 rounded-card border border-slate-200 bg-white p-4 shadow-premium sm:absolute sm:inset-auto sm:left-0 sm:top-14 sm:w-[340px]">
           <div className="mb-4 flex items-center justify-between">
             <Button variant="ghost" className="h-12 w-12 rounded-full px-0" onClick={() => shiftMonth(-1)} aria-label={labels.previousMonth}>
               <ChevronLeft size={22} />
@@ -407,7 +408,7 @@ function CalendarPicker({
                   className={cn(
                     "h-11 rounded-2xl text-sm font-black transition disabled:pointer-events-none disabled:opacity-0",
                     isSelected
-                      ? "bg-ai-gradient text-white shadow-glow"
+                      ? "bg-brand-600 text-white shadow-card"
                       : isToday
                         ? "bg-brand-50 text-brand-700"
                         : "text-slate-700 hover:bg-slate-100",
@@ -429,6 +430,7 @@ function CalendarPicker({
 
 export function CalendarPage() {
   const { t, language } = useI18n();
+  const showNotification = useNotification();
   const { setPageHeader } = usePageHeader();
   const { business } = useActiveBusiness();
   const { clients, services, resources, leads, workingHours, tasks } = useEntityData({
@@ -465,7 +467,6 @@ export function CalendarPage() {
   const [rescheduleTarget, setRescheduleTarget] = useState<Appointment | null>(null);
   const [archiveTarget, setArchiveTarget] = useState<Appointment | null>(null);
   const [archiveReason, setArchiveReason] = useState("");
-  const [notice, setNotice] = useState<string | null>(null);
   const appointmentIdFromUrl = Number(searchParams.get("appointment")) || null;
   const searchParamsKey = searchParams.toString();
   const calendarRange = useMemo(() => getCalendarRange(date, viewMode), [date, viewMode]);
@@ -553,6 +554,11 @@ export function CalendarPage() {
     if (appointment) queryClient.invalidateQueries({ queryKey: ["crm-card", "appointment", appointment.id] });
   }
 
+  function setNotice(message: string | null, tone: "success" | "info" | "warning" | "danger" = "success") {
+    if (!message) return;
+    showNotification({ message, tone });
+  }
+
   const mutation = useMutation({
     mutationFn: (payload: AppointmentCreatePayload) => appointmentsApi.create(payload),
     onSuccess: (appointment) => {
@@ -607,12 +613,6 @@ export function CalendarPage() {
   });
 
   useEffect(() => {
-    if (!notice) return;
-    const timer = window.setTimeout(() => setNotice(null), 4500);
-    return () => window.clearTimeout(timer);
-  }, [notice]);
-
-  useEffect(() => {
     setPageHeader({
       title: t("nav.calendar"),
       primaryAction: {
@@ -623,6 +623,14 @@ export function CalendarPage() {
     });
     return () => setPageHeader(null);
   }, [date, setPageHeader, t]);
+
+  const actionError = statusMutation.error || quickHoursMutation.error || rescheduleMutation.error || archiveMutation.error;
+  const actionErrorMessage = actionError ? getApiErrorMessage(actionError) : "";
+
+  useEffect(() => {
+    if (!actionErrorMessage) return;
+    showNotification({ message: actionErrorMessage, tone: "danger" });
+  }, [actionErrorMessage, showNotification]);
 
   if (!business) return <ErrorState message={t("calendar.noBusiness")} />;
 
@@ -752,7 +760,7 @@ export function CalendarPage() {
         key={appointment.id}
         type="button"
         className={cn(
-          "w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-left transition hover:border-brand-300 hover:bg-brand-50/50",
+          "w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-left transition hover:border-brand-300 hover:bg-brand-50",
           selectedAppointment?.id === appointment.id && "border-brand-400 bg-brand-50 ring-1 ring-brand-200",
         )}
         onClick={() => selectAppointment(appointment)}
@@ -824,7 +832,7 @@ export function CalendarPage() {
   }
 
   const activeFilterMonitor = activeFilterChips.length ? (
-    <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-slate-50/80 px-4 py-2">
+    <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-slate-50 px-4 py-2">
       <span className="text-[11px] font-black uppercase text-slate-400">{t("calendar.filters")}</span>
       {activeFilterChips.map((chip) => (
         <button
@@ -898,16 +906,10 @@ export function CalendarPage() {
           </summary>
           <div className="mt-3 grid gap-2 sm:grid-cols-3">{filterControls}</div>
         </details>
-        <div className="mt-3 hidden items-center gap-2 border-t border-slate-100 pt-3 lg:grid lg:grid-cols-[minmax(180px,0.8fr)_minmax(220px,1fr)_170px]">{filterControls}</div>
+        <div className="mt-3 hidden items-center gap-2 border-t border-slate-200 pt-3 lg:grid lg:grid-cols-[minmax(180px,0.8fr)_minmax(220px,1fr)_170px]">{filterControls}</div>
       </section>
 
       {isCalendarDataLoading ? <div className="mb-4"><LoadingState label={t("calendar.loadingInline")} /></div> : null}
-      {notice ? <div className="mb-4 rounded-lg border border-green-100 bg-green-50 px-4 py-3 text-sm font-bold text-green-800">{notice}</div> : null}
-      {statusMutation.error || quickHoursMutation.error || rescheduleMutation.error || archiveMutation.error ? (
-        <div className="mb-4">
-          <ErrorState message={getApiErrorMessage(statusMutation.error || quickHoursMutation.error || rescheduleMutation.error || archiveMutation.error)} />
-        </div>
-      ) : null}
 
       <section className="space-y-4">
         <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm lg:hidden">
@@ -952,7 +954,7 @@ export function CalendarPage() {
               <div className="min-w-0">
                 <div className="sticky top-0 z-10 grid border-b border-slate-200 bg-white" style={{ gridTemplateColumns: "72px minmax(0, 1fr)" }}>
                   <div className="bg-slate-50 p-3 text-xs font-black uppercase text-slate-400">{timeZoneLabel}</div>
-                    <div className="border-l border-slate-200 bg-white/95 p-3 backdrop-blur">
+                    <div className="border-l border-slate-200 bg-white p-3 ">
                       <div className="flex items-center gap-3">
                         <div className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-lg text-xs font-black", getTone(0))}>{getInitials(dayScheduleResource.name)}</div>
                         <div className="min-w-0">
@@ -979,8 +981,8 @@ export function CalendarPage() {
                               type="button"
                               disabled={!isWorking}
                               className={cn(
-                                "absolute left-0 right-0 border-t border-slate-100 text-left transition",
-                                isWorking ? "hover:bg-brand-50/50" : "cursor-not-allowed bg-slate-50/70 opacity-70",
+                                "absolute left-0 right-0 border-t border-slate-200 text-left transition",
+                                isWorking ? "hover:bg-brand-50" : "cursor-not-allowed bg-slate-50 opacity-70",
                               )}
                               style={{ top: `${(hour - dayStartHour) * hourHeight}px`, height: `${hourHeight}px` }}
                               onClick={() => isWorking && openBookingForDate(date, hour, dayScheduleResource.id)}
@@ -1061,7 +1063,7 @@ export function CalendarPage() {
                     const key = toDateInputValue(day);
                     const items = weekAppointments.filter((appointment) => dateInTimeZone(appointment.start_at, businessTimeZone) === key);
                     return (
-                      <div key={key} className={cn("relative border-l border-slate-200", key === date && "bg-brand-50/25")}>
+                      <div key={key} className={cn("relative border-l border-slate-200", key === date && "bg-brand-50")}>
                         {timelineHours.slice(0, -1).map((hour) => {
                           const isWorking = isWorkingHourSlot(workingHourItems, key, hour, null);
                           return (
@@ -1070,8 +1072,8 @@ export function CalendarPage() {
                               type="button"
                               disabled={!isWorking}
                               className={cn(
-                                "absolute left-0 right-0 border-t border-slate-100 transition",
-                                isWorking ? "hover:bg-brand-50/50" : "cursor-not-allowed bg-slate-50/80 opacity-70",
+                                "absolute left-0 right-0 border-t border-slate-200 transition",
+                                isWorking ? "hover:bg-brand-50" : "cursor-not-allowed bg-slate-50 opacity-70",
                               )}
                               style={{ top: `${(hour - dayStartHour) * hourHeight}px`, height: `${hourHeight}px` }}
                               onClick={() => isWorking && openBookingForDate(key, hour)}
@@ -1122,7 +1124,7 @@ export function CalendarPage() {
                   return (
                     <div
                       key={key}
-                      className={cn("relative min-h-28 bg-white p-3 text-left transition", !day && "bg-slate-50", isSelectedDay ? "bg-brand-50 ring-2 ring-inset ring-brand-500" : day && "hover:bg-brand-50/60")}
+                      className={cn("relative min-h-28 bg-white p-3 text-left transition", !day && "bg-slate-50", isSelectedDay ? "bg-brand-50 ring-2 ring-inset ring-brand-500" : day && "hover:bg-brand-50")}
                     >
                       {day ? (
                         <button
@@ -1176,7 +1178,7 @@ export function CalendarPage() {
                 const service = serviceById.get(appointment.service);
                 const resource = appointment.resource ? resourceById.get(appointment.resource) : null;
                 return (
-                  <div key={appointment.id} className={cn("grid gap-3 p-4 transition hover:bg-slate-50 lg:grid-cols-[170px_minmax(0,1.2fr)_minmax(0,1fr)_180px]", selectedAppointment?.id === appointment.id && "bg-brand-50/50")}>
+                  <div key={appointment.id} className={cn("grid gap-3 p-4 transition hover:bg-slate-50 lg:grid-cols-[170px_minmax(0,1.2fr)_minmax(0,1fr)_180px]", selectedAppointment?.id === appointment.id && "bg-brand-50")}>
                     <button type="button" className="text-left" onClick={() => selectAppointment(appointment)}>
                       <p className="text-sm font-black text-midnight">{formatCalendarDateTime(appointment.start_at, locale, businessTimeZone)}</p>
                       <p className="mt-1 text-xs font-bold text-slate-500">{formatTime(appointment.start_at, locale, businessTimeZone)}-{formatTime(appointment.end_at, locale, businessTimeZone)}</p>
@@ -1231,7 +1233,7 @@ export function CalendarPage() {
                 [openSlotsLabel, openSlotsCount],
                 [t("calendar.tasksToday"), dayTasks.length],
               ].map(([label, value]) => (
-                <div key={label} className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
+                <div key={label} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
                   <p className="text-lg font-black text-midnight">{value}</p>
                   <p className="truncate text-[11px] font-black uppercase text-slate-400">{label}</p>
                 </div>
@@ -1280,7 +1282,7 @@ export function CalendarPage() {
                 <p className="mb-2 text-xs font-black uppercase tracking-[0.14em] text-slate-400">{t("calendar.tasksToday")}</p>
                 <div className="space-y-2">
                   {dayTasks.slice(0, 5).map((task) => (
-                    <div key={task.id} className="rounded-lg border border-slate-100 bg-slate-50 p-3">
+                    <div key={task.id} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
                       <p className="truncate text-sm font-black text-midnight">{task.title}</p>
                       {task.due_at ? <p className="mt-1 text-xs font-bold text-slate-500">{formatCalendarDateTime(task.due_at, locale, businessTimeZone)}</p> : null}
                     </div>
@@ -1315,7 +1317,7 @@ export function CalendarPage() {
                 <StatusBadge status={selectedAppointment.status} />
               </div>
 
-              <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50/70 p-3">
+              <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-3">
                 <p className="mb-3 text-xs font-black uppercase tracking-[0.14em] text-slate-400">{t("calendar.visit")}</p>
                 <div className="grid grid-cols-[88px_minmax(0,1fr)] items-center gap-3 border-t border-slate-200/70 py-2 first:border-t-0 first:pt-0">
                   <p className="text-xs font-black uppercase text-slate-400">{t("common.service")}</p>
@@ -1378,7 +1380,7 @@ export function CalendarPage() {
                 </div>
                 <button
                   type="button"
-                  className="mt-2 min-h-9 w-full rounded-lg border border-red-100 bg-white px-3 py-2 text-xs font-black text-red-600 transition hover:border-red-200 hover:bg-red-50"
+                  className="mt-2 min-h-9 w-full rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-black text-red-600 transition hover:border-red-200 hover:bg-red-50"
                   onClick={() => setArchiveTarget(selectedAppointment)}
                 >
                   {t("appointments.archiveAction")}

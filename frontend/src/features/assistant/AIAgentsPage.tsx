@@ -390,7 +390,7 @@ export function AIAgentsPage() {
       </section>
 
     <div className="mx-auto grid w-full max-w-[1320px] gap-6 xl:grid-cols-[300px_minmax(0,1fr)]">
-      <aside className="rounded-[28px] border border-slate-200 bg-white/92 p-4 shadow-soft">
+      <aside className="rounded-card border border-slate-200 bg-white p-4 shadow-card">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-600">{t("aiAgents.eyebrow")}</p>
@@ -421,7 +421,7 @@ export function AIAgentsPage() {
                 </Link>
 
                 {active ? (
-                  <nav className="ml-4 mt-2 space-y-1 border-l border-slate-100 pl-3">
+                  <nav className="ml-4 mt-2 space-y-1 border-l border-slate-200 pl-3">
                     {sections.map((section) => {
                       const Icon = section.icon;
                       const sectionActive = activeSection === section.id;
@@ -1058,7 +1058,7 @@ function MessagesSection({
       <Card>
         <CardBody>
           <h3 className="text-xl font-black text-midnight">{t("aiAgents.draftReply")}</h3>
-          <div className="mt-4 min-h-40 rounded-3xl bg-ai-50 p-4 text-sm font-semibold leading-7 text-ai-900">
+          <div className="mt-4 min-h-40 rounded-card bg-ai-50 p-4 text-sm font-semibold leading-7 text-ai-900">
             {suggestedReply?.suggested_reply || t("aiAgents.draftReplyEmpty")}
           </div>
         </CardBody>
@@ -1168,7 +1168,7 @@ function ControlSection({ bot, updateBot, canManage }: { bot: BotType; updateBot
             ["create_appointment", t("aiAgents.control.appointmentTitle"), t("aiAgents.control.appointmentText")],
             ["auto_send_reply", t("aiAgents.control.autoReplyTitle"), t("aiAgents.control.autoReplyText")],
           ].map(([key, title, text]) => (
-            <div key={key} className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-slate-50 p-4">
+            <div key={key} className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <div>
                 <h4 className="font-black text-midnight">{title}</h4>
                 <p className="mt-1 text-sm font-semibold text-slate-500">{text}</p>
@@ -1183,7 +1183,7 @@ function ControlSection({ bot, updateBot, canManage }: { bot: BotType; updateBot
           ))}
         </div>
 
-        <div className="mt-5 rounded-2xl border border-slate-100 bg-slate-50 p-4">
+        <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <button
             type="button"
             className="flex w-full items-center justify-between gap-3 text-left"
@@ -1339,7 +1339,7 @@ function KnowledgeSection({ businessId, items, canManage }: { businessId: Id; it
           text={t("aiAgents.onboarding.knowledge.helpText")}
           recommendation={t("aiAgents.onboarding.knowledge.recommendation")}
         />
-        <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="rounded-card border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 className="text-xl font-black text-midnight">{t("aiAgents.knowledgeCompany")}</h3>
@@ -1546,7 +1546,7 @@ function WebsiteSetup({ bot, channel }: { bot: BotType; channel?: BotChannel }) 
   const snippet = channel ? `<script src=\"/widget/zani-widget.js\" data-zani-token=\"${channel.public_token}\" data-zani-api=\"${widgetApiBase}\"></script>` : "";
   return (
     <div className="space-y-4">
-      <div className="rounded-3xl border border-slate-100 bg-white p-4">
+      <div className="rounded-card border border-slate-200 bg-white p-4">
         <h3 className="text-lg font-black text-midnight">{t("aiAgents.websiteSetupTitle")}</h3>
         <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">
           {t("aiAgents.websiteSetupText", { name: bot.name })}

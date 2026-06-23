@@ -19,13 +19,28 @@ import {
 } from "./drawers/panels";
 import { CrmEntityHeader, CrmEntityTabs } from "./drawers/shell";
 import type { CrmCardTab, CrmDrawerEntity } from "./drawers/types";
+import { Drawer } from "../ui/Overlay";
 import { ErrorState, LoadingState } from "../ui/StateViews";
+import type { Client } from "../../types";
 
 export type { CrmCardTab, CrmDrawerEntity } from "./drawers/types";
 
 type TabId = CrmCardTab;
+export type ClientDrawerActions = {
+  onEdit?: (client: Client) => void;
+  onAddTag?: (client: Client) => void;
+  onArchive?: (client: Client) => void;
+};
 
-export function CrmEntityDrawer({ entity, onClose }: { entity: CrmDrawerEntity | null; onClose: () => void }) {
+export function CrmEntityDrawer({
+  entity,
+  onClose,
+  clientActions,
+}: {
+  entity: CrmDrawerEntity | null;
+  onClose: () => void;
+  clientActions?: ClientDrawerActions;
+}) {
   const { t } = useI18n();
   const [activeTab, setActiveTab] = useState<TabId>(entity?.initialTab || "overview");
   const [isOpen, setIsOpen] = useState(false);
@@ -56,44 +71,35 @@ export function CrmEntityDrawer({ entity, onClose }: { entity: CrmDrawerEntity |
     if (activeTab === "timeline") return <EntityTimeline data={data} />;
     if (activeTab === "tasks") return <EntityTasksPanel data={data} />;
     if (activeTab === "deals") return <EntityDealsPanel data={data} />;
-    if (activeTab === "files") return <EntityAttachmentsPanel data={data} />;
+    if (activeTab === "files") return <EntityAttachmentsPanel data={data} entity={entity!} />;
     if (activeTab === "messages") return <EntityConversationsPanel data={data} />;
     if (activeTab === "notes") return <EntityNotesPanel data={data} entity={entity!} />;
     if (entity?.type === "appointment") return <AppointmentDrawerContent data={data} entity={entity} />;
     if (entity?.type === "lead") return <LeadDrawerContent data={data} entity={entity} />;
     if (entity?.type === "deal") return <DealDrawerContent data={data} entity={entity} />;
-    if (entity?.type === "client") return <ClientDrawerContent data={data} entity={entity} />;
+    if (entity?.type === "client") return <ClientDrawerContent data={data} entity={entity} actions={clientActions} />;
     return <GenericDrawerContent data={data} entity={entity!} />;
-  }, [activeTab, data, entity]);
+  }, [activeTab, clientActions, data, entity]);
 
   if (!entity) return null;
 
   return (
-    <div
+    <Drawer
+      open={Boolean(entity)}
+      onClose={onClose}
+      titleId={titleId}
       className={cn(
-        "fixed inset-0 z-50 bg-slate-950/35 backdrop-blur-sm transition-opacity duration-[520ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
-        isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
+        "transition-transform duration-[620ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform",
+        isOpen ? "translate-x-0" : "translate-x-full",
       )}
-      onMouseDown={onClose}
     >
-      <aside
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        className={cn(
-          "ml-auto flex h-full w-full max-w-3xl flex-col overflow-hidden bg-slate-50 shadow-premium transition-transform duration-[620ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform sm:rounded-l-[2rem]",
-          isOpen ? "translate-x-0" : "translate-x-full",
-        )}
-        onMouseDown={(event) => event.stopPropagation()}
-      >
-        <CrmEntityHeader data={data} entity={entity} titleId={titleId} onClose={onClose} />
-        <CrmEntityTabs active={activeTab} onChange={setActiveTab} />
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-8 sm:px-7">
-          {query.isLoading ? <LoadingState /> : null}
-          {query.error ? <ErrorState message={t("crmCard.loadError")} /> : null}
-          {tabContent}
-        </div>
-      </aside>
-    </div>
+      <CrmEntityHeader data={data} entity={entity} titleId={titleId} onClose={onClose} />
+      <CrmEntityTabs active={activeTab} onChange={setActiveTab} />
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-8 sm:px-7">
+        {query.isLoading ? <LoadingState /> : null}
+        {query.error ? <ErrorState message={t("crmCard.loadError")} /> : null}
+        {tabContent}
+      </div>
+    </Drawer>
   );
 }

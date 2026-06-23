@@ -7,6 +7,8 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.accounts.models import User
+from apps.activities.models import ActivityEvent
+from apps.activities.taxonomy import ActivityEvents
 from apps.businesses.models import Business, BusinessMember
 from apps.clients.models import Client
 from apps.core.models import AuditLog
@@ -57,6 +59,7 @@ class TasksAndNotificationsPolishTests(TestCase):
                 "title": "Call before appointment",
                 "client": self.client.id,
                 "appointment": self.appointment.id,
+                "assignee": self.owner.id,
                 "priority": Task.Priorities.HIGH,
             },
             format="json",
@@ -65,8 +68,12 @@ class TasksAndNotificationsPolishTests(TestCase):
         self.assertEqual(response.status_code, 201)
         task = Task.objects.get(id=response.data["id"])
         self.assertEqual(task.created_by, self.owner)
+        self.assertEqual(task.assignee, self.owner)
         self.assertEqual(task.client, self.client)
         self.assertEqual(task.appointment, self.appointment)
+        my_tasks_response = self.api.get("/api/tasks/", {"tab": "my", "status": "active"})
+        self.assertEqual(my_tasks_response.status_code, 200)
+        self.assertIn(task.id, {item["id"] for item in my_tasks_response.data["results"]})
 
     def test_task_serializer_includes_display_fields_for_list_rows(self):
         task = Task.objects.create(
@@ -100,6 +107,37 @@ class TasksAndNotificationsPolishTests(TestCase):
         ids = {item["id"] for item in response.data["results"]}
         self.assertEqual(ids, {active.id})
 
+    def test_task_filters_search_assignee_and_due_range(self):
+        due_at = timezone.now() + timezone.timedelta(days=1)
+        visible = Task.objects.create(
+            business=self.business,
+            title="Call premium client",
+            description="Discuss renewal",
+            client=self.client,
+            assignee=self.owner,
+            due_at=due_at,
+        )
+        Task.objects.create(
+            business=self.business,
+            title="Different task",
+            client=self.client,
+            due_at=due_at + timezone.timedelta(days=7),
+        )
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.get(
+            "/api/tasks/",
+            {
+                "search": "premium",
+                "assignee": self.owner.id,
+                "due_from": (due_at - timezone.timedelta(hours=1)).isoformat(),
+                "due_to": (due_at + timezone.timedelta(hours=1)).isoformat(),
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([item["id"] for item in response.data["results"]], [visible.id])
+
     def test_task_rejects_related_objects_from_another_business(self):
         self.api.force_authenticate(self.owner)
 
@@ -132,9 +170,17 @@ class TasksAndNotificationsPolishTests(TestCase):
         task.refresh_from_db()
         self.assertIsNone(task.completed_at)
 
-        cancel_response = self.api.post(f"/api/tasks/{task.id}/cancel/")
+        missing_reason_response = self.api.post(f"/api/tasks/{task.id}/cancel/", {})
+        cancel_response = self.api.post(f"/api/tasks/{task.id}/cancel/", {"reason": "Client no longer needs this follow-up"}, format="json")
 
+        self.assertEqual(missing_reason_response.status_code, 400)
         self.assertEqual(cancel_response.status_code, 200)
+        self.assertEqual(cancel_response.data["status"], Task.Statuses.CANCELLED)
+        self.assertEqual(cancel_response.data["cancel_reason"], "Client no longer needs this follow-up")
+        task.refresh_from_db()
+        self.assertEqual(task.cancel_reason, "Client no longer needs this follow-up")
+        self.assertEqual(task.cancelled_by, self.owner)
+        self.assertIsNotNone(task.cancelled_at)
         self.assertTrue(
             AuditLog.objects.filter(
                 business=self.business,
@@ -144,6 +190,221 @@ class TasksAndNotificationsPolishTests(TestCase):
                 metadata__lifecycle_action="task_cancelled",
             ).exists()
         )
+
+    def test_undo_cancel_restores_previous_task_status(self):
+        task = Task.objects.create(business=self.business, title="Undo cancel task", client=self.client, status=Task.Statuses.IN_PROGRESS)
+        self.api.force_authenticate(self.owner)
+
+        cancel_response = self.api.post(f"/api/tasks/{task.id}/cancel/", {"reason": "Mistaken cancellation"}, format="json")
+        undo_response = self.api.post(f"/api/tasks/{task.id}/undo-cancel/")
+
+        self.assertEqual(cancel_response.status_code, 200)
+        self.assertEqual(undo_response.status_code, 200)
+        self.assertEqual(undo_response.data["status"], Task.Statuses.IN_PROGRESS)
+        self.assertEqual(undo_response.data["cancel_reason"], "")
+        task.refresh_from_db()
+        self.assertEqual(task.status, Task.Statuses.IN_PROGRESS)
+        self.assertEqual(task.cancel_reason, "")
+        self.assertIsNone(task.cancelled_at)
+
+    def test_invalid_task_lifecycle_transitions_are_rejected(self):
+        done_task = Task.objects.create(business=self.business, title="Done lifecycle task", client=self.client, status=Task.Statuses.DONE)
+        cancelled_task = Task.objects.create(business=self.business, title="Cancelled lifecycle task", client=self.client, status=Task.Statuses.CANCELLED)
+        self.api.force_authenticate(self.owner)
+
+        start_done_response = self.api.post(f"/api/tasks/{done_task.id}/start/")
+        complete_cancelled_response = self.api.post(f"/api/tasks/{cancelled_task.id}/complete/")
+        cancel_done_response = self.api.post(f"/api/tasks/{done_task.id}/cancel/", {"reason": "No longer needed"}, format="json")
+        snooze_cancelled_response = self.api.post(f"/api/tasks/{cancelled_task.id}/snooze/", {"snoozed_until": "2026-05-14T10:00:00+06:00"}, format="json")
+
+        self.assertEqual(start_done_response.status_code, 400)
+        self.assertEqual(complete_cancelled_response.status_code, 400)
+        self.assertEqual(cancel_done_response.status_code, 400)
+        self.assertEqual(snooze_cancelled_response.status_code, 400)
+
+    def test_assign_endpoint_requires_explicit_user_id(self):
+        task = Task.objects.create(business=self.business, title="Explicit assign task", client=self.client)
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(f"/api/tasks/{task.id}/assign/", {}, format="json")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("user_id", response.data)
+        task.refresh_from_db()
+        self.assertIsNone(task.assignee)
+
+    def test_task_due_filters_reject_invalid_datetimes(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.get("/api/tasks/", {"due_from": "not-a-date"})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("due_from", response.data)
+
+    def test_task_smart_ordering_prioritizes_important_due_work(self):
+        base_due = timezone.now() + timezone.timedelta(days=1)
+        low_due = Task.objects.create(
+            business=self.business,
+            title="Low due",
+            client=self.client,
+            priority=Task.Priorities.LOW,
+            due_at=base_due,
+        )
+        urgent_no_due = Task.objects.create(
+            business=self.business,
+            title="Urgent no due",
+            client=self.client,
+            priority=Task.Priorities.URGENT,
+        )
+        high_due = Task.objects.create(
+            business=self.business,
+            title="High due",
+            client=self.client,
+            priority=Task.Priorities.HIGH,
+            due_at=base_due + timezone.timedelta(hours=1),
+        )
+        urgent_due = Task.objects.create(
+            business=self.business,
+            title="Urgent due",
+            client=self.client,
+            priority=Task.Priorities.URGENT,
+            due_at=base_due + timezone.timedelta(hours=2),
+        )
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.get("/api/tasks/", {"ordering": "smart", "status": "active"})
+
+        self.assertEqual(response.status_code, 200)
+        ids = [item["id"] for item in response.data["results"]]
+        ordered_ids = [urgent_due.id, urgent_no_due.id, high_due.id, low_due.id]
+        self.assertEqual([task_id for task_id in ids if task_id in ordered_ids], ordered_ids)
+
+    def test_task_list_rejects_unknown_ordering(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.get("/api/tasks/", {"ordering": "random"})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("ordering", response.data)
+
+    def test_task_bucket_filter_and_summary_are_tenant_scoped(self):
+        now = timezone.now()
+        overdue = Task.objects.create(business=self.business, title="Overdue", client=self.client, due_at=now - timezone.timedelta(hours=1))
+        today = Task.objects.create(business=self.business, title="Today", client=self.client, due_at=now + timezone.timedelta(hours=1))
+        Task.objects.create(business=self.business, title="Later", client=self.client, due_at=now + timezone.timedelta(days=2))
+        Task.objects.create(business=self.business, title="No due", client=self.client)
+        Task.objects.create(business=self.business, title="Unassigned", client=self.client, assignee=None, due_at=now + timezone.timedelta(days=3))
+        Task.objects.create(business=self.business, title="Progress", client=self.client, status=Task.Statuses.IN_PROGRESS, due_at=now + timezone.timedelta(days=4))
+        Task.objects.create(business=self.business, title="Closed", client=self.client, status=Task.Statuses.DONE)
+        Task.objects.create(business=self.other_business, title="Hidden overdue", due_at=now - timezone.timedelta(hours=2))
+        self.api.force_authenticate(self.owner)
+
+        summary_response = self.api.get("/api/tasks/summary/")
+        overdue_response = self.api.get("/api/tasks/", {"bucket": "overdue"})
+        invalid_response = self.api.get("/api/tasks/", {"bucket": "missing"})
+
+        self.assertEqual(summary_response.status_code, 200)
+        self.assertGreaterEqual(summary_response.data["overdue"], 1)
+        self.assertGreaterEqual(summary_response.data["today"], 1)
+        self.assertGreaterEqual(summary_response.data["later"], 1)
+        self.assertGreaterEqual(summary_response.data["noDue"], 1)
+        self.assertGreaterEqual(summary_response.data["unassigned"], 1)
+        self.assertGreaterEqual(summary_response.data["inProgress"], 1)
+        self.assertGreaterEqual(summary_response.data["closed"], 1)
+        self.assertEqual(overdue_response.status_code, 200)
+        overdue_ids = {item["id"] for item in overdue_response.data["results"]}
+        self.assertIn(overdue.id, overdue_ids)
+        self.assertNotIn(today.id, overdue_ids)
+        self.assertEqual(invalid_response.status_code, 400)
+        self.assertIn("bucket", invalid_response.data)
+
+    def test_update_details_updates_task_and_assignee_atomically(self):
+        task = Task.objects.create(business=self.business, title="Original details", client=self.client)
+        due_at = timezone.now() + timezone.timedelta(days=2)
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.patch(
+            f"/api/tasks/{task.id}/update-details/",
+            {
+                "title": "Updated details",
+                "description": "Call the client after the demo",
+                "assignee": self.owner.id,
+                "priority": Task.Priorities.HIGH,
+                "due_at": due_at.isoformat(),
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        task.refresh_from_db()
+        self.assertEqual(task.title, "Updated details")
+        self.assertEqual(task.description, "Call the client after the demo")
+        self.assertEqual(task.assignee, self.owner)
+        self.assertEqual(task.priority, Task.Priorities.HIGH)
+        self.assertTrue(
+            AuditLog.objects.filter(
+                business=self.business,
+                entity_type="Task",
+                entity_id=str(task.id),
+                metadata__kind="task_details_update",
+                metadata__fields__title__to="Updated details",
+                metadata__fields__assignee__to=self.owner.id,
+            ).exists()
+        )
+        self.assertTrue(
+            ActivityEvent.objects.filter(
+                business=self.business,
+                entity_type="Task",
+                entity_id=str(task.id),
+                event_type=ActivityEvents.TASK_UPDATED,
+                metadata__kind="task_details_update",
+                metadata__fields__priority__to=Task.Priorities.HIGH,
+            ).exists()
+        )
+
+    def test_update_details_rejects_invalid_assignee_without_partial_save(self):
+        task = Task.objects.create(business=self.business, title="Original title", client=self.client)
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.patch(
+            f"/api/tasks/{task.id}/update-details/",
+            {
+                "title": "Should not persist",
+                "assignee": self.other_owner.id,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("assignee", response.data)
+        task.refresh_from_db()
+        self.assertEqual(task.title, "Original title")
+        self.assertIsNone(task.assignee)
+
+    def test_update_details_rejects_closed_tasks_without_partial_save(self):
+        done_task = Task.objects.create(business=self.business, title="Done details", client=self.client, status=Task.Statuses.DONE)
+        cancelled_task = Task.objects.create(business=self.business, title="Cancelled details", client=self.client, status=Task.Statuses.CANCELLED)
+        self.api.force_authenticate(self.owner)
+
+        done_response = self.api.patch(
+            f"/api/tasks/{done_task.id}/update-details/",
+            {"title": "Should not update done"},
+            format="json",
+        )
+        cancelled_response = self.api.patch(
+            f"/api/tasks/{cancelled_task.id}/update-details/",
+            {"title": "Should not update cancelled"},
+            format="json",
+        )
+
+        self.assertEqual(done_response.status_code, 400)
+        self.assertEqual(cancelled_response.status_code, 400)
+        self.assertIn("status", done_response.data)
+        self.assertIn("status", cancelled_response.data)
+        done_task.refresh_from_db()
+        cancelled_task.refresh_from_db()
+        self.assertEqual(done_task.title, "Done details")
+        self.assertEqual(cancelled_task.title, "Cancelled details")
 
     def test_overdue_tab_uses_work_queue_overdue_definition(self):
         due_at = timezone.now() - timezone.timedelta(hours=1)
@@ -290,7 +551,7 @@ class TasksAndNotificationsPolishTests(TestCase):
 
         comment_response = self.api.post(f"/api/tasks/{task.id}/add-comment/", {"text": "Call after lunch"}, format="json")
         watcher_response = self.api.post(f"/api/tasks/{task.id}/add-watcher/", format="json")
-        assign_response = self.api.post(f"/api/tasks/{task.id}/assign/", format="json")
+        assign_response = self.api.post(f"/api/tasks/{task.id}/assign/", {"user_id": self.owner.id}, format="json")
         snooze_response = self.api.post(f"/api/tasks/{task.id}/snooze/", {"snoozed_until": snoozed_until}, format="json")
 
         self.assertEqual(comment_response.status_code, 201)
@@ -303,6 +564,36 @@ class TasksAndNotificationsPolishTests(TestCase):
         self.assertEqual(task.assignee, self.owner)
         self.assertIsNotNone(task.snoozed_until)
 
+    def test_task_comment_can_be_deleted_and_writes_activity(self):
+        task = Task.objects.create(business=self.business, title="Delete comment task", client=self.client)
+        comment = TaskComment.objects.create(task=task, author=self.owner, text="Remove this comment")
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.delete(f"/api/tasks/{task.id}/comments/{comment.id}/")
+
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(TaskComment.objects.filter(id=comment.id).exists())
+        self.assertTrue(
+            ActivityEvent.objects.filter(
+                business=self.business,
+                entity_type="Task",
+                entity_id=str(task.id),
+                event_type=ActivityEvents.TASK_COMMENT_DELETED,
+                metadata__kind="task_comment_deleted",
+                metadata__comment_id=comment.id,
+            ).exists()
+        )
+
+    def test_task_comment_delete_rejects_comment_from_another_task(self):
+        task = Task.objects.create(business=self.business, title="Delete comment task", client=self.client)
+        other_task = Task.objects.create(business=self.business, title="Other delete comment task", client=self.client)
+        comment = TaskComment.objects.create(task=other_task, author=self.owner, text="Wrong task comment")
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.delete(f"/api/tasks/{task.id}/comments/{comment.id}/")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertTrue(TaskComment.objects.filter(id=comment.id).exists())
 
     def test_task_assign_to_me_and_due_quick_actions_create_notifications(self):
         task = Task.objects.create(business=self.business, title="Call hot lead", client=self.client, priority=Task.Priorities.HIGH)

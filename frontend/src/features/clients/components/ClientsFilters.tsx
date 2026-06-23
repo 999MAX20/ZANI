@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 
 import { Button } from "../../../components/ui/Button";
 import { CrmFilterChips } from "../../../components/crm";
+import { PopoverSurface } from "../../../components/ui/Overlay";
 import { Select } from "../../../components/ui/Select";
 import type { ClientKpi, ClientQuickFilter, ClientTableColumn, Translate } from "../types";
 
@@ -138,7 +139,7 @@ export function ClientsFilters({
           <Columns3 size={15} />
         </button>
         {columnsOpen ? (
-          <div className="absolute right-0 top-10 z-30 w-48 rounded-xl border border-slate-200 bg-white p-2 shadow-card">
+          <PopoverSurface className="absolute right-0 top-10 w-48 p-2">
             {columnOptions.map((column) => (
               <label key={column.id} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
                 <input
@@ -150,7 +151,7 @@ export function ClientsFilters({
                 {column.label}
               </label>
             ))}
-          </div>
+          </PopoverSurface>
         ) : null}
       </div>
       {search ? (

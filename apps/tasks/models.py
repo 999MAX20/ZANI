@@ -40,6 +40,9 @@ class Task(TimeStampedModel):
     recurrence_rule = models.CharField(max_length=255, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     completed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="completed_tasks")
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+    cancelled_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="cancelled_tasks")
+    cancel_reason = models.TextField(blank=True)
     is_archived = models.BooleanField(default=False)
     archived_at = models.DateTimeField(null=True, blank=True)
     archived_by = models.ForeignKey(
@@ -56,6 +59,10 @@ class Task(TimeStampedModel):
         indexes = [
             models.Index(fields=["business", "status", "due_at"]),
             models.Index(fields=["business", "is_archived", "updated_at"]),
+            models.Index(fields=["business", "assignee", "due_at"]),
+            models.Index(fields=["business", "priority", "due_at"]),
+            models.Index(fields=["business", "due_at", "updated_at"]),
+            models.Index(fields=["business", "updated_at"]),
             models.Index(fields=["assignee", "status", "due_at"]),
             models.Index(fields=["appointment", "status"]),
             models.Index(fields=["business", "assignee", "status", "snoozed_until"]),

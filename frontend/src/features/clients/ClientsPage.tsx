@@ -1,18 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
-import { appointmentsApi } from "../../api/appointments";
 import { clientsApi, type ClientMergeDryRun } from "../../api/clients";
 import { getApiErrorMessage, unwrapList } from "../../api/client";
-import { dealsApi } from "../../api/deals";
-import { leadsApi } from "../../api/leads";
-import { tasksApi } from "../../api/tasks";
 import { segmentFiltersApi, segmentsApi, taggedObjectsApi, tagsApi } from "../../api/activities";
-import { botConversationsApi } from "../../api/bots";
 import { CrmEntityDrawer, type CrmCardTab, type CrmDrawerEntity } from "../../components/crm/CrmEntityDrawer";
-import { CrmWorkspaceGrid, CrmWorkspacePage } from "../../components/crm";
+import { CrmTableSurface, CrmWorkspaceGrid, CrmWorkspacePage } from "../../components/crm";
 import { ClientForm } from "../../components/forms/ClientForm";
 import { Button } from "../../components/ui/Button";
 import { ErrorState, LoadingState } from "../../components/ui/StateViews";
@@ -23,7 +18,7 @@ import { usePageHeader } from "../../components/layout/PageHeaderContext";
 import { useI18n } from "../../lib/i18n";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useAuth } from "../auth/AuthProvider";
-import type { Appointment, BotConversation, Client, Deal, Id, Lead, Segment, Tag, TaggedObject, Task } from "../../types";
+import type { Client, Id, Segment, Tag, TaggedObject } from "../../types";
 import { ClientsFilters } from "./components/ClientsFilters";
 import { ClientsTable } from "./components/ClientsTable";
 import { MobileClientCards } from "./components/MobileClientCards";
@@ -50,6 +45,7 @@ export function ClientsPage() {
   const [editing, setEditing] = useState<Client | undefined>();
   const [drawerEntity, setDrawerEntity] = useState<CrmDrawerEntity | null>(null);
   const [selectedClientId, setSelectedClientId] = useState<Id | null>(null);
+  const [actionClient, setActionClient] = useState<Client | null>(null);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 350);
   const [source, setSource] = useState("");
@@ -85,36 +81,6 @@ export function ClientsPage() {
   const serverSummary = filteredClients.data?.summary;
   const totalPages = Math.max(1, Math.ceil(totalClients / pageSize));
 
-  const leads = useQuery({
-    queryKey: ["leads", "for-clients", business?.id, clientIdList, RELATED_PAGE_SIZE],
-    queryFn: () => leadsApi.list({ client_ids: clientIdList, page_size: RELATED_PAGE_SIZE }),
-    enabled: Boolean(business && clientIds.length > 0),
-  });
-
-  const deals = useQuery({
-    queryKey: ["deals", "for-clients", business?.id, clientIdList, RELATED_PAGE_SIZE],
-    queryFn: () => dealsApi.list({ client_ids: clientIdList, page_size: RELATED_PAGE_SIZE }),
-    enabled: Boolean(business && clientIds.length > 0),
-  });
-
-  const appointments = useQuery({
-    queryKey: ["appointments", "for-clients", business?.id, clientIdList, RELATED_PAGE_SIZE],
-    queryFn: () => appointmentsApi.list({ client_ids: clientIdList, page_size: RELATED_PAGE_SIZE }),
-    enabled: Boolean(business && clientIds.length > 0),
-  });
-
-  const tasks = useQuery({
-    queryKey: ["tasks", "for-clients", business?.id, clientIdList, RELATED_PAGE_SIZE],
-    queryFn: () => tasksApi.list({ client_ids: clientIdList, page_size: RELATED_PAGE_SIZE }),
-    enabled: Boolean(business && clientIds.length > 0),
-  });
-
-  const botConversations = useQuery({
-    queryKey: ["bot-conversations", "for-clients", business?.id, clientIdList, RELATED_PAGE_SIZE],
-    queryFn: () => botConversationsApi.list({ client_ids: clientIdList, page_size: RELATED_PAGE_SIZE }),
-    enabled: Boolean(business && clientIds.length > 0),
-  });
-
   const tagsQuery = useQuery<Tag[]>({
     queryKey: ["tags"],
     queryFn: () => tagsApi.list(),
@@ -137,11 +103,6 @@ export function ClientsPage() {
     mutationFn: (payload: Partial<Client>) => (editing ? clientsApi.update({ id: editing.id, payload }) : clientsApi.create(payload)),
     onSuccess: (client) => {
       queryClient.invalidateQueries({ queryKey: ["clients"] });
-      queryClient.invalidateQueries({ queryKey: ["leads"] });
-      queryClient.invalidateQueries({ queryKey: ["deals"] });
-      queryClient.invalidateQueries({ queryKey: ["appointments"] });
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["bot-conversations"] });
       queryClient.invalidateQueries({ queryKey: ["crm-card", "client", client.id] });
       setCreateOpen(false);
       setEditing(undefined);
@@ -153,11 +114,8 @@ export function ClientsPage() {
   const mergeMutation = useMutation({
     mutationFn: ({ targetId, duplicateId }: { targetId: number; duplicateId: number }) => clientsApi.merge({ id: targetId, duplicate_client_id: duplicateId }),
     onSuccess: (mergedClient) => {
-      queryClient.invalidateQueries();
-      const mergedClientId = (mergedClient as { id?: number } | null)?.id;
-      if (mergedClientId) {
-        queryClient.invalidateQueries({ queryKey: ["crm-card", "client", mergedClientId] });
-      }
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
+      queryClient.invalidateQueries({ queryKey: ["crm-card", "client", mergedClient.target_client_id] });
       setCreateOpen(false);
       setEditing(undefined);
       setMergePreview(null);
@@ -178,6 +136,7 @@ export function ClientsPage() {
       }
       setArchiveOpen(false);
       setArchiveReason("");
+      setActionClient(null);
     },
   });
 
@@ -194,6 +153,7 @@ export function ClientsPage() {
       queryClient.invalidateQueries({ queryKey: ["crm-card"] });
       setTagOpen(false);
       setTagDraft("");
+      setActionClient(null);
     },
   });
 
@@ -250,10 +210,24 @@ export function ClientsPage() {
     setCreateOpen(true);
   }
 
+  function openEditClient(client: Client) {
+    setEditing(client);
+    setCreateOpen(true);
+  }
+
   function openClientCard(clientId: number, initialTab: CrmCardTab = "overview") {
     setSelectedClientId(clientId);
     setDrawerEntity({ type: "client", id: clientId, initialTab });
   }
+
+  const closeClientCard = useCallback(() => {
+    setDrawerEntity(null);
+    const nextParams = new URLSearchParams(searchParams);
+    if (nextParams.has("client")) {
+      nextParams.delete("client");
+      setSearchParams(nextParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   function selectClient(clientId: number) {
     openClientCard(clientId);
@@ -308,12 +282,12 @@ export function ClientsPage() {
         event.preventDefault();
         openCreateClient();
       }
-      if (event.key === "Escape") setDrawerEntity(null);
+      if (event.key === "Escape") closeClientCard();
     }
 
     window.addEventListener("keydown", handleHotkeys);
     return () => window.removeEventListener("keydown", handleHotkeys);
-  }, []);
+  }, [closeClientCard]);
 
   useEffect(() => {
     setPage(1);
@@ -324,11 +298,6 @@ export function ClientsPage() {
     if (safePage !== page) setPage(safePage);
   }, [page, totalPages]);
 
-  const leadList = unwrapList<Lead>(leads.data);
-  const dealList = unwrapList<Deal>(deals.data);
-  const appointmentList = unwrapList<Appointment>(appointments.data);
-  const taskList = unwrapList<Task>(tasks.data);
-  const conversationList = unwrapList<BotConversation>(botConversations.data);
   const taggedObjectList = unwrapList<TaggedObject>(taggedObjects.data);
   const segmentList = unwrapList<Segment>(segments.data);
 
@@ -344,19 +313,14 @@ export function ClientsPage() {
 
   const { rows, kpi } = useClientRows({
     clients: clientList,
-    leads: leadList,
-    deals: dealList,
-    appointments: appointmentList,
-    tasks: taskList,
-    conversations: conversationList,
     tagsByClient: clientTags,
-    quickFilter,
     currentUserId: user?.id || null,
     totalOverride: totalClients,
     serverSummary,
   });
 
   const selectedRow = rows.find((row) => row.client.id === selectedClientId) || null;
+  const selectedClient = actionClient || selectedRow?.client || null;
   const sourceOptions = useMemo(
     () => clientSourceOptions.map((option) => ({ value: option.value, label: option.label.startsWith("clients.") ? t(option.label) : option.label })),
     [t],
@@ -364,16 +328,8 @@ export function ClientsPage() {
   const tagOptions = [{ value: "", label: t("clients.allTags") }, ...tagList.map((tag) => ({ value: tag.id, label: tag.name }))];
   const segmentOptions = [{ value: "", label: t("clients.allSegments") }, ...segmentList.map((segment) => ({ value: segment.id, label: `${segment.name} (${segment.cached_count})` }))];
 
-  const pageError = filteredClients.error || leads.error || deals.error || appointments.error || tasks.error || botConversations.error || tagsQuery.error || segments.error || taggedObjects.error || saveClientMutation.error || mergeDryRunMutation.error || mergeMutation.error || archiveMutation.error || addTagMutation.error || createSegmentMutation.error;
-  const relatedLoading =
-    (clientIds.length > 0 && (leads.isLoading || deals.isLoading || appointments.isLoading || tasks.isLoading || botConversations.isLoading || taggedObjects.isLoading)) ||
-    leads.isFetching ||
-    deals.isFetching ||
-    appointments.isFetching ||
-    tasks.isFetching ||
-    botConversations.isFetching ||
-    taggedObjects.isFetching;
-  const pageLoading = filteredClients.isLoading || relatedLoading || tagsQuery.isLoading || segments.isLoading;
+  const pageError = filteredClients.error || tagsQuery.error || segments.error || taggedObjects.error || saveClientMutation.error || mergeDryRunMutation.error || mergeMutation.error || archiveMutation.error || addTagMutation.error || createSegmentMutation.error;
+  const pageLoading = filteredClients.isLoading || tagsQuery.isLoading || segments.isLoading || taggedObjects.isLoading;
 
   if (!business) return <ErrorState message={t("clients.noBusiness")} />;
   if (pageLoading) return <LoadingState />;
@@ -389,28 +345,32 @@ export function ClientsPage() {
 
         <CrmWorkspaceGrid>
           <main className="min-w-0">
-            <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-card border border-slate-200 bg-white shadow-card">
-              <ClientsFilters
-                quickFilter={quickFilter}
-                onQuickFilterChange={setQuickFilter}
-                search={search}
-                source={source}
-                onSourceChange={setSource}
-                selectedTag={selectedTag}
-                onSelectedTagChange={setSelectedTag}
-                selectedSegment={selectedSegment}
-                onSelectedSegmentChange={setSelectedSegment}
-                tagOptions={tagOptions}
-                segmentOptions={segmentOptions}
-                sourceOptions={sourceOptions}
-                kpi={kpi}
-                visibleColumns={visibleClientColumns}
-                onToggleColumn={toggleClientColumn}
-                onOpenSegment={() => setSegmentOpen(true)}
-                onClearSearch={clearSearchFilter}
-                onClearAll={clearAllFilters}
-                t={t}
-              />
+            <CrmTableSurface
+              className="h-full"
+              filters={
+                <ClientsFilters
+                  quickFilter={quickFilter}
+                  onQuickFilterChange={setQuickFilter}
+                  search={search}
+                  source={source}
+                  onSourceChange={setSource}
+                  selectedTag={selectedTag}
+                  onSelectedTagChange={setSelectedTag}
+                  selectedSegment={selectedSegment}
+                  onSelectedSegmentChange={setSelectedSegment}
+                  tagOptions={tagOptions}
+                  segmentOptions={segmentOptions}
+                  sourceOptions={sourceOptions}
+                  kpi={kpi}
+                  visibleColumns={visibleClientColumns}
+                  onToggleColumn={toggleClientColumn}
+                  onOpenSegment={() => setSegmentOpen(true)}
+                  onClearSearch={clearSearchFilter}
+                  onClearAll={clearAllFilters}
+                  t={t}
+                />
+              }
+            >
               <MobileClientCards rows={rows} selectedClientId={selectedClientId} onSelectClient={selectClient} t={t} />
               <ClientsTable
                 rows={rows}
@@ -427,7 +387,7 @@ export function ClientsPage() {
                 visibleColumns={visibleClientColumns}
                 t={t}
               />
-            </section>
+            </CrmTableSurface>
           </main>
         </CrmWorkspaceGrid>
       </CrmWorkspacePage>
@@ -452,17 +412,17 @@ export function ClientsPage() {
       <Modal title={t("clients.mergePreviewTitle")} open={Boolean(mergePreview)} onClose={() => setMergePreview(null)}>
         {mergePreview ? (
           <div className="space-y-4">
-            <div className="rounded-3xl border border-amber-100 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+            <div className="rounded-card border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
               <p className="font-black">{t("clients.mergePreviewWarning")}</p>
               <p className="mt-1">{t("clients.mergePreviewPolicy")}: {mergePreview.policy}</p>
             </div>
-            <div className="rounded-3xl border border-slate-100 bg-white p-4">
+            <div className="rounded-card border border-slate-200 bg-white p-4">
               <p className="font-black text-midnight">{mergePreview.duplicate.full_name || t("common.client")}</p>
               <p className="mt-1 text-sm text-slate-500">{mergePreview.duplicate.phone || mergePreview.duplicate.email || t("clients.noContact")}</p>
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
               {Object.entries(mergePreview.transferred).map(([key, value]) => (
-                <div key={key} className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 text-sm">
+                <div key={key} className="flex items-center justify-between gap-3 rounded-control bg-slate-50 px-3 py-2 text-sm">
                   <span className="font-semibold text-slate-600">{key.replace(/_/g, " ")}</span>
                   <span className="font-black text-midnight">{value}</span>
                 </div>
@@ -491,8 +451,8 @@ export function ClientsPage() {
           onSubmit={(event) => {
             event.preventDefault();
             const tagName = tagDraft.trim();
-            if (!selectedRow || !tagName) return;
-            addTagMutation.mutate({ clientId: selectedRow.client.id, tagName });
+            if (!selectedClient || !tagName) return;
+            addTagMutation.mutate({ clientId: selectedClient.id, tagName });
           }}
         >
           <Input label={t("clients.tagPrompt")} value={tagDraft} onChange={(event) => setTagDraft(event.target.value)} required />
@@ -512,8 +472,8 @@ export function ClientsPage() {
           className="space-y-4"
           onSubmit={(event) => {
             event.preventDefault();
-            if (!selectedRow) return;
-            archiveMutation.mutate({ id: selectedRow.client.id, reason: archiveReason.trim() });
+            if (!selectedClient) return;
+            archiveMutation.mutate({ id: selectedClient.id, reason: archiveReason.trim() });
           }}
         >
           <Input label={t("clients.archiveReason")} value={archiveReason} onChange={(event) => setArchiveReason(event.target.value)} placeholder={t("clients.archiveReasonPlaceholder")} />
@@ -580,7 +540,23 @@ export function ClientsPage() {
         </form>
       </Modal>
 
-      <CrmEntityDrawer entity={drawerEntity} onClose={() => setDrawerEntity(null)} />
+      <CrmEntityDrawer
+        entity={drawerEntity}
+        onClose={closeClientCard}
+        clientActions={{
+          onEdit: openEditClient,
+          onAddTag: (client) => {
+            setActionClient(client);
+            setSelectedClientId(client.id);
+            setTagOpen(true);
+          },
+          onArchive: (client) => {
+            setActionClient(client);
+            setSelectedClientId(client.id);
+            setArchiveOpen(true);
+          },
+        }}
+      />
     </>
   );
 }

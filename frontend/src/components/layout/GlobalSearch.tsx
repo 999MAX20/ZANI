@@ -60,6 +60,7 @@ export function GlobalSearch() {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const activeContext = useMemo(() => getSearchContext(location.pathname), [location.pathname]);
+  const rendersPageSearchInline = scope === "page" && activeContext.id === "tasks";
   const shouldLoadSearchData = open || mobileExpanded;
   const { clients, leads, appointments, services, deals, tasks, botConversations } = useEntityData({
     enabled: shouldLoadSearchData,
@@ -237,10 +238,10 @@ export function GlobalSearch() {
           aria-label={t("search.aria")}
           placeholder={placeholder}
           value={query}
-          onFocus={() => setOpen(true)}
+          onFocus={() => setOpen(!rendersPageSearchInline)}
           onChange={(event) => {
             setQuery(event.target.value);
-            setOpen(true);
+            setOpen(!rendersPageSearchInline);
           }}
         />
         {query || mobileExpanded ? (
@@ -254,7 +255,7 @@ export function GlobalSearch() {
         )}
       </div>
 
-      {open ? (
+      {open && !rendersPageSearchInline ? (
         <div className="fixed inset-x-3 top-20 z-[70] rounded-xl border border-slate-200 bg-white p-3 shadow-premium lg:absolute lg:inset-x-auto lg:left-1/2 lg:top-full lg:mt-2 lg:w-[min(560px,calc(100vw-8rem))] lg:-translate-x-1/2">
           <div className="mb-3 grid grid-cols-2 rounded-2xl bg-slate-100 p-1">
             {(["page", "global"] as const).map((value) => (

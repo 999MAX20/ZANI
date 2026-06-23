@@ -1,11 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Clock3, Plus, Scissors, WalletCards } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { getApiErrorMessage } from "../../api/client";
 import { servicesApi } from "../../api/services";
 import { ServiceForm } from "../../components/forms/ServiceForm";
+import { useNotification } from "../../components/notifications/NotificationProvider";
 import { DataTable } from "../../components/tables/DataTable";
 import { Button } from "../../components/ui/Button";
 import { MetricCard } from "../../components/ui/MetricCard";
@@ -20,6 +21,7 @@ import type { Service } from "../../types";
 
 export function ServicesPage() {
   const { t } = useI18n();
+  const showNotification = useNotification();
   const queryClient = useQueryClient();
   const { business } = useActiveBusiness();
   const { services, appointments } = useEntityData({ services: true, appointments: true });
@@ -34,6 +36,12 @@ export function ServicesPage() {
       setEditing(undefined);
     },
   });
+  const actionErrorMessage = mutation.error ? getApiErrorMessage(mutation.error) : "";
+
+  useEffect(() => {
+    if (!actionErrorMessage) return;
+    showNotification({ message: actionErrorMessage, tone: "danger" });
+  }, [actionErrorMessage, showNotification]);
 
   if (!business) return <ErrorState message={t("services.noBusiness")} />;
   if (services.isLoading || appointments.isLoading) return <LoadingState />;
@@ -63,10 +71,9 @@ export function ServicesPage() {
         <MetricCard label={t("services.avgDuration")} value={avgDuration ? `${avgDuration} ${t("appointment.minutes")}` : "-"} hint={t("services.avgDurationHint")} icon={Clock3} />
         <MetricCard label={t("services.usedInBookings")} value={usedServiceIds.size} hint={t("services.usedInBookingsHint")} icon={WalletCards} />
       </section>
-      <div className="mb-5 rounded-3xl border border-brand-100 bg-white/80 p-4 text-sm leading-6 text-slate-600 shadow-sm">
+      <div className="mb-5 rounded-card border border-brand-100 bg-brand-50 p-4 text-sm leading-6 text-slate-600 shadow-card">
         <span className="font-black text-midnight">{t("services.logicTitle")}</span> {t("services.logicText")}
       </div>
-      {mutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(mutation.error)} /></div> : null}
       <DataTable
         rows={serviceList}
         emptyTitle={t("services.emptyTitle")}

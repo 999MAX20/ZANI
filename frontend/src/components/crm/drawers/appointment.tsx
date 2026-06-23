@@ -6,12 +6,13 @@ import { appointmentsApi } from "../../../api/appointments";
 import { formatDateTime } from "../../../lib/format";
 import { useI18n } from "../../../lib/i18n";
 import type { CrmCardPayload } from "../../../types";
+import { useNotification } from "../../notifications/NotificationProvider";
 import { Button } from "../../ui/Button";
 import { ErrorState } from "../../ui/StateViews";
 import { StatusBadge } from "../../ui/StatusBadge";
 import { Textarea } from "../../ui/Textarea";
 import { EntityAttachmentsPanel, EntityCustomFieldsPanel } from "./panels";
-import { EmptyBlock, SummaryItem, getChannelLabel } from "./shared";
+import { drawerPrimarySurfaceClass, drawerSurfaceClass, EmptyBlock, SummaryItem, getChannelLabel } from "./shared";
 import type { CrmDrawerEntity } from "./types";
 
 type AppointmentAction = "confirmed" | "cancelled" | "completed" | "no_show";
@@ -22,16 +23,15 @@ function sourceLabel(source: string, t: (key: string) => string) {
 
 export function AppointmentDrawerContent({ data, entity }: { data: CrmCardPayload; entity: CrmDrawerEntity }) {
   const { t } = useI18n();
+  const showNotification = useNotification();
   const queryClient = useQueryClient();
   const appointment = data.appointment;
   const client = data.client;
   const lead = data.lead;
   const [notes, setNotes] = useState(appointment?.notes || "");
-  const [notice, setNotice] = useState("");
 
   useEffect(() => {
     setNotes(appointment?.notes || "");
-    setNotice("");
   }, [appointment?.id, appointment?.notes]);
 
   const notesMutation = useMutation({
@@ -42,7 +42,7 @@ export function AppointmentDrawerContent({ data, entity }: { data: CrmCardPayloa
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["crm-card", entity.type, entity.id] });
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
-      setNotice(t("common.saved"));
+      showNotification({ message: t("common.saved"), tone: "success" });
     },
   });
 
@@ -64,7 +64,7 @@ export function AppointmentDrawerContent({ data, entity }: { data: CrmCardPayloa
         completed: t("appointment.statusCompleted"),
         no_show: t("appointment.statusNoShow"),
       };
-      setNotice(labels[action]);
+      showNotification({ message: labels[action], tone: "success" });
     },
   });
 
@@ -78,7 +78,7 @@ export function AppointmentDrawerContent({ data, entity }: { data: CrmCardPayloa
 
   return (
     <div className="space-y-4">
-      <div className="rounded-3xl border border-brand-100 bg-white/90 p-4 shadow-sm">
+      <div className={drawerSurfaceClass}>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -113,7 +113,6 @@ export function AppointmentDrawerContent({ data, entity }: { data: CrmCardPayloa
             ) : null}
           </div>
         </div>
-        {notice ? <div className="mt-3 rounded-2xl border border-green-100 bg-green-50 px-3 py-2 text-sm font-bold text-green-800">{notice}</div> : null}
         {notesMutation.error || lifecycleMutation.error ? <div className="mt-3"><ErrorState message={t("crmCard.saveError")} /></div> : null}
       </div>
 
@@ -125,21 +124,21 @@ export function AppointmentDrawerContent({ data, entity }: { data: CrmCardPayloa
       </div>
 
       <div className="grid gap-3 lg:grid-cols-3">
-        <div className="rounded-3xl border border-brand-100 bg-brand-50/70 p-4">
+        <div className={drawerPrimarySurfaceClass}>
           <p className="text-xs font-black uppercase tracking-[0.14em] text-brand-700">{t("nav.calendar")}</p>
           <p className="mt-2 text-sm font-semibold leading-6 text-slate-700">{formatDateTime(appointment.start_at)}</p>
         </div>
-        <div className="rounded-3xl border border-slate-100 bg-white/80 p-4 shadow-sm">
+        <div className={drawerSurfaceClass}>
           <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">{t("nav.leads")}</p>
           <p className="mt-2 text-sm font-semibold leading-6 text-slate-700">{lead ? t("crmCard.leadNumber", { id: lead.id }) : t("appointment.noLead")}</p>
         </div>
-        <div className="rounded-3xl border border-slate-100 bg-white/80 p-4 shadow-sm">
+        <div className={drawerSurfaceClass}>
           <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">{t("nav.deals")}</p>
           <p className="mt-2 text-sm font-semibold leading-6 text-slate-700">{data.deals.length}</p>
         </div>
       </div>
 
-      <div className="rounded-3xl border border-slate-100 bg-white/80 p-4 shadow-sm">
+      <div className={drawerSurfaceClass}>
         <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
           <div>
             <h3 className="font-black text-midnight">{t("appointment.notes")}</h3>
@@ -153,7 +152,7 @@ export function AppointmentDrawerContent({ data, entity }: { data: CrmCardPayloa
       </div>
 
       <EntityCustomFieldsPanel data={data} entity={entity} />
-      <EntityAttachmentsPanel data={data} />
+      <EntityAttachmentsPanel data={data} entity={entity} />
     </div>
   );
 }

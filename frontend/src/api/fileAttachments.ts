@@ -33,4 +33,16 @@ export const fileAttachmentsApi = {
     });
     return data;
   },
+  downloadBlob: async (id: Id) => {
+    const { data } = await apiClient.get<Blob>(`/api/file-attachments/${id}/download/`, {
+      responseType: "blob",
+    });
+    return data;
+  },
+  rename: async ({ id, originalName }: { id: Id; originalName: string }) => {
+    const { data } = await apiClient.post<FileAttachment>(`/api/file-attachments/${id}/rename/`, {
+      original_name: originalName,
+    });
+    return data;
+  },
 };

@@ -12,6 +12,8 @@ const prefetchOptions = {
   staleTime: 5 * 60_000,
 };
 
+const defaultTaskFilters = { tab: "my", status: "active" } as const;
+
 export function prefetchRouteData(path: string, queryClient: QueryClient, businessId?: number | null | string) {
   if (path === "/app") {
     void Promise.allSettled([
@@ -61,7 +63,11 @@ export function prefetchRouteData(path: string, queryClient: QueryClient, busine
   }
 
   if (path.startsWith("/app/tasks")) {
-    void queryClient.prefetchQuery({ queryKey: ["tasks"], queryFn: tasksApi.list, ...prefetchOptions });
+    void queryClient.prefetchQuery({
+      queryKey: ["tasks", defaultTaskFilters],
+      queryFn: () => tasksApi.list(defaultTaskFilters),
+      ...prefetchOptions,
+    });
     return;
   }
 

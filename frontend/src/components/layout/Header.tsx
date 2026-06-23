@@ -1,4 +1,4 @@
-import { Bell, Check, Menu, MessageSquareText, Sparkles, X } from "lucide-react";
+import { Bell, Check, Menu, MessageSquareText, SlidersHorizontal, Sparkles, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
@@ -25,9 +25,11 @@ export function Header({ onMenuClick, pageHeader }: { onMenuClick: () => void; p
   const { business } = useActiveBusiness();
   const { t } = useI18n();
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [chatToastOpen, setChatToastOpen] = useState(false);
   const [headerVisible, setHeaderVisible] = useState(true);
   const notificationsRef = useRef<HTMLDivElement | null>(null);
+  const filtersRef = useRef<HTMLDivElement | null>(null);
   const previousUnreadMessagesRef = useRef<number | null>(null);
   const lastScrollYRef = useRef(0);
   const notifications = useQuery({
@@ -145,6 +147,27 @@ export function Header({ onMenuClick, pageHeader }: { onMenuClick: () => void; p
   }, [showNotifications]);
 
   useEffect(() => {
+    function handlePointerDown(event: PointerEvent) {
+      if (filtersRef.current?.contains(event.target as Node)) return;
+      setShowFilters(false);
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setShowFilters(false);
+      }
+    }
+
+    if (showFilters) {
+      document.addEventListener("pointerdown", handlePointerDown);
+      document.addEventListener("keydown", handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [showFilters]);
+
+  useEffect(() => {
     const previous = previousUnreadMessagesRef.current;
     previousUnreadMessagesRef.current = unreadChatMessages;
     if (!receivesChatToasts || previous === null || unreadChatMessages <= previous) return;
@@ -197,6 +220,47 @@ export function Header({ onMenuClick, pageHeader }: { onMenuClick: () => void; p
         <div className="flex min-w-0 items-center justify-end gap-1.5 sm:gap-2">
           {pageHeader ? (
             <div className="hidden min-w-0 items-center justify-end gap-2 lg:flex">
+              {pageHeader.filters ? (
+                <div className="relative" ref={filtersRef}>
+                  <Button
+                    variant={pageHeader.activeFilterCount ? "primary" : "secondary"}
+                    className="relative h-10 shrink-0 px-3"
+                    onClick={() => setShowFilters((current) => !current)}
+                    aria-label={pageHeader.filterLabel || t("calendar.filters")}
+                    aria-expanded={showFilters}
+                  >
+                    <SlidersHorizontal size={17} />
+                    <span className="hidden xl:inline">{pageHeader.filterLabel || t("calendar.filters")}</span>
+                    {pageHeader.activeFilterCount ? (
+                      <span className="grid min-w-5 place-items-center rounded-full bg-white/90 px-1.5 py-0.5 text-[11px] font-black text-brand-700">
+                        {pageHeader.activeFilterCount}
+                      </span>
+                    ) : null}
+                  </Button>
+                  {showFilters ? (
+                    <div className="fixed inset-0 z-[80] bg-slate-950/25 backdrop-blur-[1px]">
+                      <button type="button" className="absolute inset-0 cursor-default" aria-label={t("common.close")} onClick={() => setShowFilters(false)} />
+                      <aside className="absolute bottom-0 right-0 top-0 flex w-[min(420px,calc(100vw-1rem))] flex-col border-l border-slate-200 bg-white shadow-premium">
+                        <div className="flex h-16 items-center justify-between gap-3 border-b border-slate-200 px-5">
+                          <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.12em] text-slate-500">
+                            <SlidersHorizontal size={15} />
+                            <span>{pageHeader.filterLabel || t("calendar.filters")}</span>
+                          </div>
+                          <button
+                            type="button"
+                            className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-slate-400 transition hover:bg-slate-50 hover:text-slate-700"
+                            onClick={() => setShowFilters(false)}
+                            aria-label={t("common.close")}
+                          >
+                            <X size={18} />
+                          </button>
+                        </div>
+                        <div className="min-h-0 flex-1 overflow-y-auto p-5">{pageHeader.filters}</div>
+                      </aside>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
               {pageHeader.secondaryActions?.map((action) => {
                 const Icon = action.icon;
                 return (
@@ -336,6 +400,11 @@ export function Header({ onMenuClick, pageHeader }: { onMenuClick: () => void; p
           ) : null}
         </div>
       </div>
+      {pageHeader?.activeFilters ? (
+        <div className="border-t border-slate-100 bg-white/95 px-4 py-1.5 sm:px-6">
+          <div className="flex min-w-0 items-center gap-2 overflow-x-auto pb-1">{pageHeader.activeFilters}</div>
+        </div>
+      ) : null}
     </header>
   );
 }

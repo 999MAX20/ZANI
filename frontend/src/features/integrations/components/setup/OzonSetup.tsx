@@ -7,6 +7,7 @@ import { getApiErrorMessage } from "../../../../api/client";
 import { Button } from "../../../../components/ui/Button";
 import { ErrorState } from "../../../../components/ui/StateViews";
 import { Input } from "../../../../components/ui/Input";
+import { useNotification } from "../../../../components/notifications/NotificationProvider";
 import { useI18n } from "../../../../lib/i18n";
 import type { BusinessConnector, Id } from "../../../../types";
 
@@ -20,6 +21,7 @@ export function OzonInlineSetup({
   connector?: BusinessConnector;
 }) {
   const { t } = useI18n();
+  const showNotification = useNotification();
   const queryClient = useQueryClient();
   const [clientId, setClientId] = useState("");
   const [apiKey, setApiKey] = useState("");
@@ -28,7 +30,11 @@ export function OzonInlineSetup({
   const [limit, setLimit] = useState(String(connector?.config_json?.limit || "50"));
   const [showAccessSetup, setShowAccessSetup] = useState(Boolean(connector?.config_json?.client_id_configured && connector?.config_json?.api_key_configured));
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
+
+  function setNotice(message: string | null) {
+    if (!message) return;
+    showNotification({ message, tone: "info" });
+  }
 
   const status = useQuery({
     queryKey: ["ozon-status", connector?.id],
@@ -82,9 +88,8 @@ export function OzonInlineSetup({
   const accessConfigured = Boolean((status.data?.client_id_configured && status.data?.api_key_configured) || (connector?.config_json?.client_id_configured && connector?.config_json?.api_key_configured));
 
   return (
-    <div className="w-full space-y-4 rounded-3xl border border-slate-100 bg-slate-50/70 p-4">
+    <div className="w-full space-y-4 rounded-card border border-slate-200 bg-slate-50 p-4">
       {error ? <ErrorState message={getApiErrorMessage(error)} /> : null}
-      {notice ? <div className="rounded-2xl bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800">{notice}</div> : null}
 
       <div className="grid gap-2 sm:grid-cols-3">
         <div className="rounded-2xl bg-white p-3">
@@ -102,7 +107,7 @@ export function OzonInlineSetup({
       </div>
 
       {!showAccessSetup ? (
-        <div className="rounded-3xl border border-blue-100 bg-blue-50 p-4">
+        <div className="rounded-card border border-blue-100 bg-blue-50 p-4">
           <p className="text-sm font-black text-blue-950">{t("integrations.ozon.connectionTitle")}</p>
           <p className="mt-1 text-sm font-semibold leading-6 text-blue-800">
             {t("integrations.ozon.connectionDescription")}
@@ -143,7 +148,7 @@ export function OzonInlineSetup({
               ["fbo_postings", "FBO"],
               ["stocks", t("integrations.ozon.entity.stocks")],
             ].map(([value, label]) => (
-              <label key={value} className="flex items-center gap-2 rounded-xl border border-slate-100 px-3 py-2 text-sm font-bold text-slate-700">
+              <label key={value} className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700">
                 <input type="checkbox" className="h-4 w-4 rounded border-slate-300" checked={entities.includes(value)} onChange={() => toggleEntity(value)} />
                 {label}
               </label>

@@ -8,6 +8,7 @@ import { getApiErrorMessage } from "../../../../api/client";
 import { Button } from "../../../../components/ui/Button";
 import { ErrorState } from "../../../../components/ui/StateViews";
 import { Input } from "../../../../components/ui/Input";
+import { useNotification } from "../../../../components/notifications/NotificationProvider";
 import { useI18n } from "../../../../lib/i18n";
 import type { Bot, BotChannel, Id } from "../../../../types";
 import { MessengerSetupShell } from "./IntegrationSetupUi";
@@ -25,6 +26,7 @@ export function WhatsAppInlineSetup({
   channel?: BotChannel;
 }) {
   const { t } = useI18n();
+  const showNotification = useNotification();
   const queryClient = useQueryClient();
   const [phoneNumberId, setPhoneNumberId] = useState("");
   const [accessToken, setAccessToken] = useState("");
@@ -37,8 +39,12 @@ export function WhatsAppInlineSetup({
   const [signupPhoneNumberId, setSignupPhoneNumberId] = useState("");
   const [signupWabaId, setSignupWabaId] = useState("");
   const [signupDisplayPhone, setSignupDisplayPhone] = useState("");
-  const [notice, setNotice] = useState<string | null>(null);
   const metaRedirectUri = `${window.location.origin}${window.location.pathname}?zani_provider=whatsapp`;
+
+  function setNotice(message: string | null, tone: "success" | "info" | "warning" | "danger" = "info") {
+    if (!message) return;
+    showNotification({ message, tone });
+  }
 
   useEffect(() => {
     const applyCallback = (payload: WhatsAppEmbeddedSignupCallback) => {
@@ -209,7 +215,6 @@ export function WhatsAppInlineSetup({
     return (
       <div className="w-full space-y-3">
         {error ? <ErrorState message={getApiErrorMessage(error)} /> : null}
-        {notice ? <div className="rounded-2xl bg-green-50 px-3 py-2 text-sm font-semibold text-green-800">{notice}</div> : null}
         <Button type="button" disabled={!canManage} isLoading={ensureChannel.isPending} onClick={() => ensureChannel.mutate()}>
           <Send size={16} /> {t("integrations.whatsapp.createChannel")}
         </Button>
@@ -224,7 +229,6 @@ export function WhatsAppInlineSetup({
       description={t("integrations.whatsapp.inlineDescription")}
       status={connectionStatus}
       statusTone={connectionTone}
-      notice={notice}
       error={error ? <ErrorState message={getApiErrorMessage(error)} /> : null}
       canManage={canManage}
       inboxChannel="whatsapp"

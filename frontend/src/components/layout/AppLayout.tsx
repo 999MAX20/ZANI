@@ -45,7 +45,7 @@ export function AppLayout() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.22 }}
-              className="mx-auto w-full max-w-[1400px] flex-1 px-4 pb-4 pt-20 sm:px-6 sm:pb-6 lg:px-6"
+              className={`mx-auto w-full max-w-[1400px] flex-1 px-4 pb-4 ${pageHeader?.activeFilters ? "pt-28" : "pt-20"} sm:px-6 sm:pb-6 lg:px-6`}
             >
               <Outlet />
             </motion.main>

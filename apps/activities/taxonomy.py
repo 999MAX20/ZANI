@@ -32,6 +32,7 @@ class ActivityEvents:
     APPOINTMENT_RESCHEDULED = "appointment_rescheduled"
 
     TASK_CREATED = "task_created"
+    TASK_UPDATED = "task_updated"
     TASK_STARTED = "task_started"
     TASK_COMPLETED = "task_completed"
     TASK_CANCELLED = "task_cancelled"
@@ -43,6 +44,7 @@ class ActivityEvents:
     TASK_DUE_TOMORROW = "task_due_tomorrow"
     TASK_WATCHER_ADDED = "task_watcher_added"
     TASK_COMMENT_ADDED = "task_comment_added"
+    TASK_COMMENT_DELETED = "task_comment_deleted"
 
     MESSAGE_RECEIVED = "message_received"
     MESSAGE_SENT = "message_sent"
@@ -85,6 +87,7 @@ EVENT_LABELS = {
     ActivityEvents.APPOINTMENT_NO_SHOW: "Клиент не пришёл",
     ActivityEvents.APPOINTMENT_RESCHEDULED: "Запись перенесена",
     ActivityEvents.TASK_CREATED: "Создана задача",
+    ActivityEvents.TASK_UPDATED: "Обновлена задача",
     ActivityEvents.TASK_STARTED: "Задача взята в работу",
     ActivityEvents.TASK_COMPLETED: "Задача закрыта",
     ActivityEvents.TASK_CANCELLED: "Задача отменена",
@@ -96,6 +99,7 @@ EVENT_LABELS = {
     ActivityEvents.TASK_DUE_TOMORROW: "Задача поставлена на завтра",
     ActivityEvents.TASK_WATCHER_ADDED: "Добавлен наблюдатель к задаче",
     ActivityEvents.TASK_COMMENT_ADDED: "Добавлен комментарий к задаче",
+    ActivityEvents.TASK_COMMENT_DELETED: "Удалён комментарий к задаче",
     ActivityEvents.MESSAGE_RECEIVED: "Получено сообщение",
     ActivityEvents.MESSAGE_SENT: "Отправлено сообщение",
     ActivityEvents.NOTE_CREATED: "Добавлена заметка",
@@ -114,6 +118,7 @@ EVENT_CATEGORIES = {
     ActivityEvents.APPOINTMENT_NO_SHOW: ActivityEvent.Categories.APPOINTMENT,
     ActivityEvents.APPOINTMENT_RESCHEDULED: ActivityEvent.Categories.APPOINTMENT,
     ActivityEvents.TASK_CREATED: ActivityEvent.Categories.TASK,
+    ActivityEvents.TASK_UPDATED: ActivityEvent.Categories.TASK,
     ActivityEvents.TASK_STARTED: ActivityEvent.Categories.TASK,
     ActivityEvents.TASK_COMPLETED: ActivityEvent.Categories.TASK,
     ActivityEvents.TASK_CANCELLED: ActivityEvent.Categories.TASK,
@@ -125,6 +130,7 @@ EVENT_CATEGORIES = {
     ActivityEvents.TASK_DUE_TOMORROW: ActivityEvent.Categories.TASK,
     ActivityEvents.TASK_WATCHER_ADDED: ActivityEvent.Categories.TASK,
     ActivityEvents.TASK_COMMENT_ADDED: ActivityEvent.Categories.TASK,
+    ActivityEvents.TASK_COMMENT_DELETED: ActivityEvent.Categories.TASK,
     ActivityEvents.AUTOMATION_RUN: ActivityEvent.Categories.AUTOMATION,
 }
 

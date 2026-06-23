@@ -1,9 +1,16 @@
-import { CheckCheck } from "lucide-react";
+import { CheckCheck, MessageCircle, MoreHorizontal, Phone, SquareArrowOutUpRight } from "lucide-react";
 
+import {
+  CRM_TABLE_ACTIONS_COLUMN,
+  CRM_TABLE_CHECKBOX_COLUMN,
+  CRM_TABLE_MIN_WIDTH,
+  CRM_TABLE_ROW_GRID_CLASS,
+  CRM_TABLE_WIDE_MIN_WIDTH,
+} from "../../../components/crm";
 import { cn } from "../../../lib/cn";
 import { formatDateTime } from "../../../lib/format";
 import type { Client, Id, Lead, Service } from "../../../types";
-import { kanbanStatuses, leadColumnWidths, statusClass, type LeadAiInsight, type LeadColumnKey, type Translate } from "../types";
+import { leadColumnWidths, statusClass, type LeadAiInsight, type LeadColumnKey, type Translate } from "../types";
 import { formatRelativeTime, getClient, getService, getSourceLabel, getStatusLabel, initials, leadAiInsight, nextAction, TruncatedText } from "../utils/leadFormat";
 import { SourceBadge } from "./common/SourceBadge";
 
@@ -29,8 +36,9 @@ function LeadTableRow({
   columnOrder,
   onClick,
   onToggleBulk,
-  onStatusChange,
   onAssign,
+  onCall,
+  onWhatsApp,
   onContextMenu,
   t,
 }: {
@@ -46,8 +54,9 @@ function LeadTableRow({
   columnOrder: LeadColumnKey[];
   onClick: () => void;
   onToggleBulk: () => void;
-  onStatusChange: (status: Lead["status"]) => void;
   onAssign: (userId?: Id) => void;
+  onCall: () => void;
+  onWhatsApp: () => void;
   onContextMenu: (event: React.MouseEvent) => void;
   t: Translate;
 }) {
@@ -55,7 +64,7 @@ function LeadTableRow({
   const isHot = lead.status === "new" && !lead.responsible_user;
   const activeColumns = columnOrder.filter((column) => visibleColumns[column]);
   const needsWideTable = activeColumns.length > 5;
-  const gridTemplateColumns = `32px ${activeColumns.map((column) => leadColumnWidths[column]).join(" ")}`;
+  const gridTemplateColumns = `${CRM_TABLE_CHECKBOX_COLUMN} ${activeColumns.map((column) => leadColumnWidths[column]).join(" ")} ${CRM_TABLE_ACTIONS_COLUMN}`;
   const cells: Record<LeadColumnKey, React.ReactNode> = {
     lead: (
       <span className="flex min-w-0 items-center gap-3">
@@ -70,28 +79,9 @@ function LeadTableRow({
     ),
     phone: <span className="truncate font-semibold text-slate-700">{client?.phone || t("leads.noPhoneLower")}</span>,
     source: <span className="flex min-w-0"><SourceBadge source={lead.source} t={t} /></span>,
-    ai: (
-      <span className="min-w-0">
-        <span className="flex items-center justify-between gap-2 text-xs font-black">
-          <span className={cn(aiInsight.lossRisk >= 70 ? "text-red-700" : aiInsight.score >= 75 ? "text-emerald-700" : "text-amber-700")}>{aiInsight.score}</span>
-        </span>
-        <span className="mt-1 block h-1.5 overflow-hidden rounded-full bg-slate-100">
-          <span className={cn("block h-full rounded-full", aiInsight.score >= 75 ? "bg-emerald-500" : aiInsight.score >= 50 ? "bg-amber-500" : "bg-red-500")} style={{ width: `${aiInsight.score}%` }} />
-        </span>
-      </span>
-    ),
     status: (
-      <span onClick={(event) => event.stopPropagation()}>
-        <select
-          className={cn("max-w-[118px] rounded-full border-0 px-2.5 py-1 text-xs font-black outline-none ring-1", statusClass[lead.status])}
-          value={lead.status}
-          onChange={(event) => onStatusChange(event.target.value as Lead["status"])}
-          aria-label={t("leads.tableStatus")}
-        >
-          {kanbanStatuses.map((status) => (
-            <option key={status} value={status}>{getStatusLabel(status, t)}</option>
-          ))}
-        </select>
+      <span className={cn("inline-flex max-w-full items-center rounded-full px-2.5 py-1 text-xs font-black ring-1", statusClass[lead.status])}>
+        {getStatusLabel(lead.status, t)}
       </span>
     ),
     priority: (
@@ -129,13 +119,12 @@ function LeadTableRow({
       role="button"
       tabIndex={0}
       className={cn(
-        "group grid min-w-0 items-center border-b border-slate-100 px-4 py-3.5 text-left text-sm transition hover:bg-slate-50",
-        needsWideTable && "min-w-[1120px]",
+        CRM_TABLE_ROW_GRID_CLASS,
         selected && "bg-brand-50/70 shadow-[inset_3px_0_0_#2563eb]",
         bulkSelected && "bg-slate-50",
         aiInsight.stale && !selected && "bg-amber-50/35",
       )}
-      style={{ gridTemplateColumns }}
+      style={{ gridTemplateColumns, minWidth: needsWideTable ? CRM_TABLE_WIDE_MIN_WIDTH : CRM_TABLE_MIN_WIDTH }}
       onClick={onClick}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") onClick();
@@ -149,6 +138,31 @@ function LeadTableRow({
         </span>
       </label>
       {activeColumns.map((column) => <span key={column} className="min-w-0">{cells[column]}</span>)}
+      <span className="flex items-center justify-end gap-2" onClick={(event) => event.stopPropagation()}>
+        {[
+          { label: t("leads.open"), icon: SquareArrowOutUpRight, onClick },
+          { label: t("leads.call"), icon: Phone, onClick: onCall },
+          { label: "WhatsApp", icon: MessageCircle, onClick: onWhatsApp },
+          { label: t("leads.moreActions"), icon: MoreHorizontal, onClick: (event: React.MouseEvent) => onContextMenu(event) },
+        ].map((item) => {
+          const Icon = item.icon;
+          return (
+            <button
+              key={item.label}
+              type="button"
+              className="grid h-8 w-8 place-items-center rounded-control border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
+              aria-label={item.label}
+              title={item.label}
+              onClick={(event) => {
+                event.stopPropagation();
+                item.onClick(event);
+              }}
+            >
+              <Icon size={15} />
+            </button>
+          );
+        })}
+      </span>
     </div>
   );
 }
@@ -166,8 +180,9 @@ export function VirtualizedLeadTableRows({
   columnOrder,
   openLead,
   toggleBulkLead,
-  changeLeadStatus,
   assignLead,
+  callLead,
+  whatsAppLead,
   openContextMenu,
   t,
 }: {
@@ -183,18 +198,19 @@ export function VirtualizedLeadTableRows({
   columnOrder: LeadColumnKey[];
   openLead: (lead: Lead) => void;
   toggleBulkLead: (id: Id) => void;
-  changeLeadStatus: (lead: Lead, status: Lead["status"]) => void;
   assignLead: (lead: Lead, userId?: Id) => void;
+  callLead: (lead: Lead) => void;
+  whatsAppLead: (lead: Lead) => void;
   openContextMenu: (event: React.MouseEvent, lead: Lead) => void;
   t: Translate;
 }) {
   const activeColumns = columnOrder.filter((column) => visibleColumns[column]);
   const needsWideTable = activeColumns.length > 5;
-  const gridTemplateColumns = `32px ${activeColumns.map((column) => leadColumnWidths[column]).join(" ")}`;
+  const gridTemplateColumns = `${CRM_TABLE_CHECKBOX_COLUMN} ${activeColumns.map((column) => leadColumnWidths[column]).join(" ")} ${CRM_TABLE_ACTIONS_COLUMN}`;
 
   return (
     <div className="hidden h-full overflow-auto lg:block">
-      <div className={cn("min-w-0", needsWideTable && "min-w-[1120px]")}>
+      <div className="min-w-0" style={{ minWidth: needsWideTable ? CRM_TABLE_WIDE_MIN_WIDTH : undefined }}>
         {rows.map((lead, index) => {
           const responsible = teamList.find((member) => member.user.id === lead.responsible_user);
           return (
@@ -215,8 +231,9 @@ export function VirtualizedLeadTableRows({
                 columnOrder={columnOrder}
                 onClick={() => openLead(lead)}
                 onToggleBulk={() => toggleBulkLead(lead.id)}
-                onStatusChange={(status) => changeLeadStatus(lead, status)}
                 onAssign={(userId) => assignLead(lead, userId)}
+                onCall={() => callLead(lead)}
+                onWhatsApp={() => whatsAppLead(lead)}
                 onContextMenu={(event) => openContextMenu(event, lead)}
                 t={t}
               />
@@ -224,7 +241,11 @@ export function VirtualizedLeadTableRows({
           );
         })}
         {!rows.length ? null : (
-          <div className={cn("grid h-0 min-w-0", needsWideTable && "min-w-[1120px]")} style={{ gridTemplateColumns }} aria-hidden="true" />
+          <div
+            className="grid h-0"
+            style={{ gridTemplateColumns, minWidth: needsWideTable ? CRM_TABLE_WIDE_MIN_WIDTH : CRM_TABLE_MIN_WIDTH }}
+            aria-hidden="true"
+          />
         )}
       </div>
     </div>

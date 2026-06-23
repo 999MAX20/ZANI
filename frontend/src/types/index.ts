@@ -1238,6 +1238,9 @@ export type Task = {
   recurrence_rule: string;
   completed_at: string | null;
   completed_by: Id | null;
+  cancelled_at?: string | null;
+  cancelled_by?: Id | null;
+  cancel_reason?: string;
   comments_count?: number;
   watchers_count?: number;
   is_archived?: boolean;

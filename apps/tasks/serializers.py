@@ -17,6 +17,42 @@ class TaskSnoozeSerializer(serializers.Serializer):
     snoozed_until = serializers.DateTimeField()
 
 
+class TaskCancelSerializer(serializers.Serializer):
+    reason = serializers.CharField(trim_whitespace=True, min_length=3, max_length=2000)
+
+
+class TaskDetailsUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Task
+        fields = [
+            "title",
+            "description",
+            "client",
+            "lead",
+            "deal",
+            "appointment",
+            "parent_task",
+            "assignee",
+            "priority",
+            "due_at",
+            "reminder_at",
+        ]
+        extra_kwargs = {field: {"required": False} for field in fields}
+
+    def validate(self, attrs):
+        business = getattr(self.instance, "business", None)
+        related_fields = ["client", "lead", "deal", "appointment", "parent_task"]
+        for field in related_fields:
+            obj = attrs.get(field)
+            if obj and business and obj.business_id != business.id:
+                raise serializers.ValidationError({field: "Must belong to the task business."})
+
+        assignee = attrs.get("assignee")
+        if assignee and business and not business.members.filter(user=assignee, is_active=True).exists():
+            raise serializers.ValidationError({"assignee": "Assignee must be an active business member."})
+        return attrs
+
+
 class TaskSerializer(serializers.ModelSerializer):
     comments_count = serializers.IntegerField(read_only=True)
     watchers_count = serializers.IntegerField(read_only=True)
@@ -66,6 +102,9 @@ class TaskSerializer(serializers.ModelSerializer):
             "recurrence_rule",
             "completed_at",
             "completed_by",
+            "cancelled_at",
+            "cancelled_by",
+            "cancel_reason",
             "is_archived",
             "archived_at",
             "archived_by",
@@ -75,7 +114,18 @@ class TaskSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["archived_at", "archived_by", "created_by", "completed_at", "completed_by", "comments_count", "watchers_count"]
+        read_only_fields = [
+            "archived_at",
+            "archived_by",
+            "created_by",
+            "completed_at",
+            "completed_by",
+            "cancelled_at",
+            "cancelled_by",
+            "cancel_reason",
+            "comments_count",
+            "watchers_count",
+        ]
 
     def get_lead_title(self, obj):
         if not obj.lead_id:

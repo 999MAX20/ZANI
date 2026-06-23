@@ -333,7 +333,7 @@ export function OutreachPage() {
       </div>
 
       {appointmentAutomation.data ? (
-        <section className="mb-5 rounded-3xl border border-slate-100 bg-white/95 p-4 shadow-soft">
+        <section className="mb-5 rounded-card border border-slate-200 bg-white p-4 shadow-card">
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-xs font-black uppercase text-brand-700">{t("outreach.appointmentAutoEyebrow")}</p>
@@ -345,7 +345,7 @@ export function OutreachPage() {
           </div>
           <div className="mt-4 grid gap-3 lg:grid-cols-3">
             {appointmentAutomation.data.scenarios.map((scenario) => (
-              <div key={scenario.key} className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+              <div key={scenario.key} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-black text-midnight">{scenario.label}</p>
@@ -363,7 +363,7 @@ export function OutreachPage() {
             ))}
           </div>
           {appointmentAutomation.data.failed_notifications.length ? (
-            <div className="mt-4 rounded-2xl border border-amber-100 bg-amber-50/70 p-4">
+            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
               <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="text-sm font-black text-amber-950">{t("outreach.deliveryErrorsTitle")}</p>
@@ -390,7 +390,7 @@ export function OutreachPage() {
       ) : null}
 
       <section className="grid gap-5 xl:grid-cols-[420px_1fr]">
-        <div className="rounded-3xl border border-slate-100 bg-white/95 p-3 shadow-soft">
+        <div className="rounded-card border border-slate-200 bg-white p-3 shadow-card">
           <div className="flex items-center justify-between px-2 py-2">
             <h2 className="text-lg font-black text-midnight">{t("outreach.campaigns")}</h2>
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-500">{campaignList.length}</span>
@@ -402,7 +402,7 @@ export function OutreachPage() {
                 <button
                   key={campaign.id}
                   type="button"
-                  className={`w-full rounded-2xl border p-4 text-left transition ${active ? "border-brand-200 bg-brand-50/70 shadow-sm" : "border-slate-100 bg-white hover:bg-slate-50"}`}
+                  className={`w-full rounded-2xl border p-4 text-left transition ${active ? "border-brand-200 bg-brand-50 shadow-sm" : "border-slate-200 bg-white hover:bg-slate-50"}`}
                   onClick={() => setSelectedId(campaign.id)}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -419,7 +419,7 @@ export function OutreachPage() {
           </div>
         </div>
 
-        <div className="rounded-3xl border border-slate-100 bg-white/95 p-5 shadow-soft">
+        <div className="rounded-card border border-slate-200 bg-white p-5 shadow-card">
           {selectedCampaign ? (
             <div>
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -454,7 +454,7 @@ export function OutreachPage() {
               </div>
 
               {!canManageOutreach ? (
-                <div className="mt-4 rounded-3xl border border-amber-100 bg-amber-50/70 p-4 text-sm font-semibold leading-6 text-amber-950">
+                <div className="mt-4 rounded-card border border-amber-200 bg-amber-50 p-4 text-sm font-semibold leading-6 text-amber-950">
                   {t("outreach.readOnlyNotice")}
                 </div>
               ) : null}
@@ -474,7 +474,7 @@ export function OutreachPage() {
               </div>
 
               {launchChecklist.data ? (
-                <div className={`mt-4 rounded-3xl border p-4 ${launchChecklist.data.can_launch ? "border-emerald-100 bg-emerald-50/70" : "border-amber-100 bg-amber-50/70"}`}>
+                <div className={`mt-4 rounded-card border p-4 ${launchChecklist.data.can_launch ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}>
                   <div className="flex items-center justify-between gap-3">
                     <h3 className={`text-sm font-black ${launchChecklist.data.can_launch ? "text-emerald-900" : "text-amber-950"}`}>{t("outreach.prelaunchCheck")}</h3>
                     <span className="rounded-full bg-white px-3 py-1 text-xs font-black">{launchChecklist.data.can_launch ? t("outreach.ready") : t("outreach.needsCheck")}</span>
@@ -491,7 +491,7 @@ export function OutreachPage() {
               ) : null}
 
               {stats.data?.errors?.length ? (
-                <div className="mt-4 rounded-3xl border border-amber-100 bg-amber-50/70 p-4">
+                <div className="mt-4 rounded-card border border-amber-200 bg-amber-50 p-4">
                   <h3 className="text-sm font-black text-amber-950">{t("outreach.errorReasons")}</h3>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {stats.data.errors.map((error) => (
@@ -515,7 +515,7 @@ export function OutreachPage() {
                 />
               </div>
 
-              <div className="mt-5 rounded-3xl bg-slate-50 p-4">
+              <div className="mt-5 rounded-card bg-slate-50 p-4">
                 <div className="flex items-center gap-2 text-sm font-black text-midnight">
                   <MessageSquareText size={17} /> {t("outreach.messageText")}
                 </div>
@@ -536,7 +536,7 @@ export function OutreachPage() {
               ) : null}
 
               <div className="mt-5 grid gap-4 lg:grid-cols-2">
-                <div className="rounded-3xl border border-slate-100 p-4">
+                <div className="rounded-card border border-slate-200 p-4">
                   <h3 className="font-black text-midnight">{t("outreach.audience")}</h3>
                   <p className="mt-1 text-sm font-semibold text-slate-500">
                     {t("outreach.audiencePreview", { total: audiencePreview.data?.count ?? "...", eligible: audiencePreview.data?.eligible_count ?? "...", suppressed: audiencePreview.data?.suppressed_count ?? "..." })}
@@ -551,7 +551,7 @@ export function OutreachPage() {
                   </div>
                 </div>
 
-                <div className="rounded-3xl border border-slate-100 p-4">
+                <div className="rounded-card border border-slate-200 p-4">
                   <h3 className="font-black text-midnight">{t("outreach.latestRecipients")}</h3>
                   <div className="mt-3 space-y-2">
                     {(recipients.data || []).slice(0, 6).map((recipient) => (
@@ -575,7 +575,7 @@ export function OutreachPage() {
 
       <Modal title={t("outreach.newCampaign")} open={open} onClose={() => setOpen(false)}>
         <div className="space-y-4">
-          <div className="rounded-3xl border border-brand-100 bg-brand-50/70 p-4">
+          <div className="rounded-card border border-brand-100 bg-brand-50 p-4">
             <p className="text-sm font-black text-brand-900">{t("outreach.launchOrderTitle")}</p>
             <p className="mt-1 text-sm font-semibold leading-6 text-slate-600">
               {t("outreach.launchOrderText")}
@@ -761,7 +761,7 @@ function ManualAudiencePicker({
 }) {
   const { t } = useI18n();
   return (
-    <div className="mt-5 rounded-3xl border border-slate-100 bg-white p-4">
+    <div className="mt-5 rounded-card border border-slate-200 bg-white p-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <h3 className="font-black text-midnight">{t("outreach.manualAudience")}</h3>
@@ -780,7 +780,7 @@ function ManualAudiencePicker({
               type="button"
               disabled={disabled}
               onClick={() => onToggle(Number(client.id))}
-              className={`rounded-2xl border px-3 py-2 text-left transition ${selected ? "border-brand-200 bg-brand-50 text-brand-900" : "border-slate-100 bg-slate-50 text-slate-700"} ${disabled ? "cursor-not-allowed opacity-50" : "hover:border-brand-100 hover:bg-white"}`}
+              className={`rounded-2xl border px-3 py-2 text-left transition ${selected ? "border-brand-200 bg-brand-50 text-brand-900" : "border-slate-200 bg-slate-50 text-slate-700"} ${disabled ? "cursor-not-allowed opacity-50" : "hover:border-brand-100 hover:bg-white"}`}
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
@@ -826,7 +826,7 @@ function ReadinessCard({
 }) {
   const iconClass = tone === "green" ? "bg-emerald-50 text-emerald-700" : tone === "amber" ? "bg-amber-50 text-amber-800" : "bg-brand-50 text-brand-700";
   return (
-    <div className="rounded-3xl border border-slate-100 bg-white/95 p-4 shadow-soft">
+    <div className="rounded-card border border-slate-200 bg-white p-4 shadow-card">
       <div className="flex items-start gap-3">
         <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${iconClass}`}>
           <Icon size={20} />

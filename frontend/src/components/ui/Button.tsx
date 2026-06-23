@@ -20,10 +20,10 @@ export function Button({ className, variant = "primary", size = "md", isLoading,
     ai: "bg-primary-gradient text-white shadow-glow hover:brightness-105",
   };
   const sizes = {
-    sm: "min-h-9 rounded-lg px-3 py-1.5 text-xs",
-    md: "min-h-10 rounded-lg px-4 py-2 text-sm",
-    lg: "min-h-12 rounded-lg px-5 py-3 text-base",
-    icon: "zani-touch-target rounded-lg p-0",
+    sm: "min-h-9 rounded-control px-3 py-1.5 text-xs",
+    md: "min-h-10 rounded-control px-4 py-2 text-sm",
+    lg: "min-h-12 rounded-control px-5 py-3 text-base",
+    icon: "zani-touch-target rounded-control p-0",
   };
 
   return (

@@ -74,7 +74,7 @@ class WorkQueuesTests(TestCase):
             amount=5000,
             stage_entered_at=now,
         )
-        Task.objects.create(
+        overdue_task = Task.objects.create(
             business=self.business,
             client=self.client,
             title="Overdue task",
@@ -139,7 +139,7 @@ class WorkQueuesTests(TestCase):
         self.assertEqual(response.data["queues"]["appointment_confirmations"][0]["id"], appointment_to_confirm.id)
         self.assertEqual(response.data["queues"]["unread_conversations"][0]["id"], conversation.id)
         self.assertEqual(response.data["queues"]["handoff_conversations"][0]["id"], conversation.id)
-        self.assertTrue(response.data["queues"]["overdue_tasks"][0]["href"].startswith("/app/tasks/"))
+        self.assertEqual(response.data["queues"]["overdue_tasks"][0]["href"], f"/app/tasks?task={overdue_task.id}")
         self.assertTrue(any(item["id"] == no_next_action_deal.id for item in response.data["queues"]["no_next_action_deals"]))
         self.assertEqual(inbox_summary.status_code, 200)
         self.assertEqual(inbox_summary.data["unread"], response.data["summary"]["unread_conversations"])

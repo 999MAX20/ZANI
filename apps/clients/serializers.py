@@ -53,7 +53,7 @@ class ClientSerializer(serializers.ModelSerializer):
             "next_step_date",
             "next_step_priority",
         ]
-        read_only_fields = ["created_at", "updated_at", "archived_at", "archived_by"]
+        read_only_fields = ["created_at", "updated_at", "is_archived", "archived_at", "archived_by", "archive_reason"]
 
 
 class DuplicateCheckSerializer(serializers.Serializer):

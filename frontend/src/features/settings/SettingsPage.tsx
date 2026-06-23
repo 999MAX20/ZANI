@@ -14,6 +14,7 @@ import { notificationsApi } from "../../api/notifications";
 import { quickRepliesApi } from "../../api/quickReplies";
 import { securityApi } from "../../api/security";
 import { teamApi } from "../../api/team";
+import { useActionConfirm } from "../../components/actions/ActionConfirmProvider";
 import { BusinessSettingsForm } from "../../components/forms/BusinessSettingsForm";
 import { Button } from "../../components/ui/Button";
 import { Card, CardBody } from "../../components/ui/Card";
@@ -72,14 +73,9 @@ const settingsSections: SettingsSectionConfig[] = [
   { id: "appointment-messages", resource: "settings", action: "update" },
   { id: "notification-preferences", group: "communication", resource: "notifications", action: "view" },
   { id: "quick-replies", group: "communication", resource: "conversations", action: "view" },
-  { id: "operations-setup", group: "setup", resource: "settings", action: "update" },
-  { id: "data-tools", group: "setup", resource: "settings", action: "update" },
-  { id: "lead-forms", group: "setup", resource: "leads", action: "create" },
   { id: "billing", group: "setup", resource: "billing", action: "view" },
   { id: "usage", group: "setup", resource: "billing", action: "view" },
   { id: "custom-fields", group: "advanced", resource: "settings", action: "update" },
-  { id: "automations", group: "advanced", resource: "automations", action: "view" },
-  { id: "developer", group: "advanced", resource: "integrations", action: "manage" },
 ];
 
 const settingsSectionGroupFallback: Record<string, SettingsGroupKey> = {
@@ -121,6 +117,7 @@ const notificationCategories: Array<{ category: Notification["category"]; titleK
 
 export function SettingsPage() {
   const { t, language } = useI18n();
+  const confirmAction = useActionConfirm();
   const queryClient = useQueryClient();
   const { business, isLoading } = useActiveBusiness();
   const { user } = useAuth();
@@ -141,24 +138,29 @@ export function SettingsPage() {
   const canViewNotifications = hasPermission(user, business?.id, "notifications", "view");
   const canViewConversations = hasPermission(user, business?.id, "conversations", "view");
   const canCreateLeads = hasPermission(user, business?.id, "leads", "create");
-  const canViewAutomations = hasPermission(user, business?.id, "automations", "view");
-  const canManageIntegrations = hasPermission(user, business?.id, "integrations", "manage");
+
+  async function confirmDelete(label: string) {
+    const result = await confirmAction({
+      title: t("settings.delete"),
+      description: label ? `${t("settings.delete")}: ${label}` : t("settings.delete"),
+      confirmLabel: t("settings.delete"),
+      variant: "danger",
+    });
+    return result.confirmed;
+  }
   const allowedSettingsSections = useMemo(
     () =>
       settingsSections.filter((section) => {
-        if (section.id === "business-profile" || section.id === "appointment-messages" || section.id === "operations-setup" || section.id === "data-tools" || section.id === "custom-fields") return canManageSettings;
+        if (section.id === "business-profile" || section.id === "appointment-messages" || section.id === "custom-fields") return canManageSettings;
         if (section.id === "team-access") return canViewTeam;
         if (section.id === "roles") return canManageTeam;
         if (section.id === "security-center") return canViewAudit;
         if (section.id === "notification-preferences") return canViewNotifications;
         if (section.id === "quick-replies") return canViewConversations;
-        if (section.id === "lead-forms") return canCreateLeads;
         if (section.id === "billing" || section.id === "usage") return canViewBilling;
-        if (section.id === "automations") return canViewAutomations;
-        if (section.id === "developer") return canManageIntegrations;
         return hasPermission(user, business?.id, section.resource, section.action || "view");
       }),
-    [business?.id, canCreateLeads, canManageIntegrations, canManageSettings, canManageTeam, canViewAudit, canViewAutomations, canViewBilling, canViewConversations, canViewNotifications, canViewTeam, user],
+    [business?.id, canManageSettings, canManageTeam, canViewAudit, canViewBilling, canViewConversations, canViewNotifications, canViewTeam, user],
   );
   const allowedSettingsSectionIds = useMemo(() => new Set(allowedSettingsSections.map((section) => section.id)), [allowedSettingsSections]);
   const subscription = useQuery({
@@ -206,7 +208,7 @@ export function SettingsPage() {
   const customFields = useQuery({
     queryKey: ["custom-fields", business?.id],
     queryFn: () => customFieldsApi.list(),
-    enabled: Boolean(business && canManageSettings),
+    enabled: Boolean(business && canManageSettings && allowedSettingsSectionIds.has("custom-fields")),
   });
   const teamMembers = useQuery({
     queryKey: ["team-members", business?.id],
@@ -288,17 +290,17 @@ export function SettingsPage() {
   const importJobs = useQuery({
     queryKey: ["import-jobs", business?.id],
     queryFn: () => importExportApi.importJobs(business?.id),
-    enabled: Boolean(business && canManageSettings),
+    enabled: Boolean(business && canManageSettings && allowedSettingsSectionIds.has("data-tools")),
   });
   const leadForms = useQuery({
     queryKey: ["lead-forms", business?.id],
     queryFn: leadFormsApi.list,
-    enabled: Boolean(business && canCreateLeads),
+    enabled: Boolean(business && canCreateLeads && allowedSettingsSectionIds.has("lead-forms")),
   });
   const leadFormSubmissions = useQuery({
     queryKey: ["lead-form-submissions", business?.id],
     queryFn: leadFormSubmissionsApi.list,
-    enabled: Boolean(business && canCreateLeads),
+    enabled: Boolean(business && canCreateLeads && allowedSettingsSectionIds.has("lead-forms")),
   });
   const securityRisk = useQuery({
     queryKey: ["security-risk", business?.id],
@@ -897,7 +899,7 @@ export function SettingsPage() {
                     const groupOpen = openSettingsGroups[groupItem.key];
                     const hasActiveSection = groupItem.sections.some((section) => section.id === activeSettingsSection);
                     return (
-                      <div key={groupItem.key} className="rounded-2xl border border-slate-100 bg-slate-50/70 p-2">
+                      <div key={groupItem.key} className="rounded-control border border-slate-200 bg-slate-50 p-2">
                         <button
                           type="button"
                           className="flex min-h-10 w-full items-center justify-between gap-3 rounded-xl px-3 text-left text-xs font-black uppercase tracking-[0.14em] text-slate-500 transition hover:bg-white hover:text-midnight"
@@ -956,7 +958,7 @@ export function SettingsPage() {
           </div>
           {appointmentMessageMutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(appointmentMessageMutation.error)} /></div> : null}
           {appointmentMessageSettings.isLoading ? (
-            <div className="rounded-3xl border border-slate-100 bg-slate-50 p-5 text-sm font-bold text-slate-500">{t("settings.appointmentMessagesLoading")}</div>
+            <div className="rounded-card border border-slate-200 bg-slate-50 p-5 text-sm font-bold text-slate-500">{t("settings.appointmentMessagesLoading")}</div>
           ) : (
             <div className="grid gap-4 xl:grid-cols-3">
               {appointmentMessages.map((setting) => {
@@ -965,7 +967,7 @@ export function SettingsPage() {
                 const offsetValue = Number(appointmentMessageValue(setting, "offset_minutes"));
                 const hasDraft = Boolean(appointmentMessageDrafts[Number(setting.id)]);
                 return (
-                  <div key={setting.id} className="flex flex-col rounded-3xl border border-slate-100 bg-slate-50/70 p-4">
+                  <div key={setting.id} className="flex flex-col rounded-card border border-slate-200 bg-slate-50 p-4">
                     <div className="mb-4 flex items-start justify-between gap-3">
                       <div>
                         <p className="font-black text-midnight">{t(meta.titleKey)}</p>
@@ -1067,8 +1069,8 @@ export function SettingsPage() {
             <div className="mb-4"><ErrorState message={getApiErrorMessage(inviteMutation.error || revokeInvitationMutation.error)} /></div>
           ) : null}
           <div className="grid gap-4 xl:grid-cols-[1.3fr_0.7fr]">
-            <div className="rounded-3xl border border-slate-100 p-4">
-              <div className="mb-4 flex items-start gap-3 rounded-3xl bg-slate-50 p-4">
+            <div className="rounded-card border border-slate-200 bg-white p-4">
+              <div className="mb-4 flex items-start gap-3 rounded-card bg-slate-50 p-4">
                 <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white text-brand-600 shadow-sm">
                   <ShieldCheck size={22} />
                 </div>
@@ -1105,7 +1107,7 @@ export function SettingsPage() {
                   </div>
                 </div>
               </div>
-              <div className="mt-4 rounded-3xl border border-slate-100 bg-slate-50/70 p-4">
+              <div className="mt-4 rounded-card border border-slate-200 bg-slate-50 p-4">
                 <p className="text-sm font-black text-midnight">{t("settings.roleGuideTitle")}</p>
                 <p className="mt-1 text-sm leading-6 text-slate-500">{t("settings.roleGuideText")}</p>
                 <div className="mt-3 grid gap-2 md:grid-cols-2">
@@ -1113,8 +1115,8 @@ export function SettingsPage() {
                     <button
                       key={roleKey}
                       type="button"
-                      className={`rounded-2xl border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-soft ${
-                        inviteForm.role === roleKey ? "border-brand-200 bg-white shadow-sm" : "border-white bg-white/70"
+                      className={`rounded-control border p-3 text-left transition hover:bg-white ${
+                        inviteForm.role === roleKey ? "border-brand-200 bg-white shadow-sm" : "border-slate-200 bg-slate-50"
                       }`}
                       onClick={() => setInviteForm((current) => ({ ...current, role: roleKey }))}
                     >
@@ -1125,7 +1127,7 @@ export function SettingsPage() {
                 </div>
               </div>
               {selectedMember ? (
-                <div className="mt-4 rounded-3xl border border-slate-100 bg-white p-4">
+                <div className="mt-4 rounded-card border border-slate-200 bg-white p-4">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <p className="text-lg font-black text-midnight">{selectedMember.user.full_name || selectedMember.user.email}</p>
@@ -1158,7 +1160,7 @@ export function SettingsPage() {
               {!teamMembers.isLoading && !members.length ? (
                 <div className="mt-4 rounded-2xl bg-slate-50 px-4 py-5 text-sm text-slate-500">{t("settings.teamEmpty")}</div>
               ) : null}
-              <div className="mt-4 rounded-3xl border border-brand-100 bg-brand-50/50 p-4">
+              <div className="mt-4 rounded-card border border-brand-100 bg-brand-50 p-4">
                 <div className="mb-3 flex items-start gap-3">
                   <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white text-brand-700 shadow-sm">
                     <Send size={18} />
@@ -1188,7 +1190,7 @@ export function SettingsPage() {
                     onChange={(event) => setInviteForm({ ...inviteForm, role: event.target.value as BusinessMembershipSummary["role"] })}
                     options={editableTeamRoleOptions}
                   />
-                  <div className="rounded-2xl bg-white/70 px-3 py-2 text-xs leading-5 text-slate-500">
+                  <div className="rounded-control bg-white px-3 py-2 text-xs leading-5 text-slate-500">
                     <span className="font-bold text-slate-700">{translatedTeamRoleOptions.find((role) => role.value === inviteForm.role)?.label}:</span>{" "}
                     {roleDescription(inviteForm.role)}
                   </div>
@@ -1203,7 +1205,7 @@ export function SettingsPage() {
                       { value: "manual", label: t("settings.copyLink") },
                     ]}
                   />
-                  <p className="rounded-2xl bg-white/70 px-3 py-2 text-xs leading-5 text-slate-500 lg:col-span-2">
+                  <p className="rounded-control bg-white px-3 py-2 text-xs leading-5 text-slate-500 lg:col-span-2">
                     {t(`settings.deliveryHelp.${inviteForm.delivery_channel}`)}
                   </p>
                   {inviteForm.delivery_channel === "whatsapp" ? (
@@ -1217,7 +1219,7 @@ export function SettingsPage() {
                   </div>
                 </form>
                 {lastCreatedInvite ? (
-                  <div className="mt-4 rounded-3xl border border-emerald-100 bg-emerald-50 p-4">
+                  <div className="mt-4 rounded-card border border-emerald-200 bg-emerald-50 p-4">
                     <p className="font-bold text-emerald-950">{t("settings.inviteCreatedTitle")}</p>
                     <p className="mt-1 text-sm leading-6 text-emerald-800">
                       {t("settings.inviteCreatedText", {
@@ -1226,7 +1228,7 @@ export function SettingsPage() {
                       })}
                     </p>
                     <div className="mt-3 grid gap-2 min-[420px]:grid-cols-2">
-                      <a href={inviteShareUrl(lastCreatedInvite)} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center justify-center rounded-full bg-emerald-700 px-4 py-2 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-emerald-800">
+                      <a href={inviteShareUrl(lastCreatedInvite)} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center justify-center rounded-full bg-emerald-700 px-4 py-2 text-sm font-bold text-white transition hover:bg-emerald-800">
                         {t("settings.sendInviteNow")}
                       </a>
                       <Button type="button" variant="secondary" className="min-h-11 rounded-full px-4 text-sm" onClick={() => copyInvitation(lastCreatedInvite)}>
@@ -1247,7 +1249,7 @@ export function SettingsPage() {
                           </p>
                         </div>
                         <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-3 sm:flex sm:flex-wrap">
-                          <a href={inviteShareUrl(invitation)} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center justify-center rounded-full bg-slate-950 px-4 py-2 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-slate-800">
+                          <a href={inviteShareUrl(invitation)} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center justify-center rounded-full bg-slate-950 px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-800">
                             {t("settings.send")}
                           </a>
                           <Button
@@ -1272,7 +1274,7 @@ export function SettingsPage() {
                 </div>
               </div>
             </div>
-            <div className="rounded-3xl border border-slate-100 p-4">
+            <div className="rounded-card border border-slate-200 bg-white p-4">
               <h3 className="text-base font-bold text-midnight">{t("settings.departments")}</h3>
               <form
                 className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto]"
@@ -1324,7 +1326,7 @@ export function SettingsPage() {
               </div>
             </div>
             {securityRisk.error || auditLogs.error || loginHistory.error ? (
-              <div className="mb-4 rounded-3xl border border-amber-100 bg-amber-50 p-4">
+              <div className="mb-4 rounded-card border border-amber-200 bg-amber-50 p-4">
                 <div className="flex gap-3">
                   <ShieldAlert className="mt-0.5 text-amber-700" size={20} />
                   <div>
@@ -1335,7 +1337,7 @@ export function SettingsPage() {
               </div>
             ) : null}
             <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-              <div className="rounded-3xl border border-slate-100 bg-white p-4">
+              <div className="rounded-card border border-slate-200 bg-white p-4">
                 <div className="mb-3 flex items-center justify-between">
                   <h3 className="font-black text-midnight">{t("settings.riskEvents")}</h3>
                   <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-500">{auditLogs.data?.length || 0} {t("settings.events")}</span>
@@ -1356,7 +1358,7 @@ export function SettingsPage() {
                 </div>
               </div>
               <div className="space-y-4">
-                <div className="rounded-3xl border border-slate-100 bg-white p-4">
+                <div className="rounded-card border border-slate-200 bg-white p-4">
                   <h3 className="font-black text-midnight">{t("settings.logins")}</h3>
                   <div className="mt-3 space-y-2">
                     {(loginHistory.data || []).slice(0, 5).map((item) => (
@@ -1371,7 +1373,7 @@ export function SettingsPage() {
                     {!loginHistory.isLoading && !loginHistory.data?.length ? <p className="text-sm text-slate-500">{t("settings.noLoginHistory")}</p> : null}
                   </div>
                 </div>
-                <div className="rounded-3xl border border-slate-100 bg-white p-4">
+                <div className="rounded-card border border-slate-200 bg-white p-4">
                   <h3 className="font-black text-midnight">{t("settings.supportAccess")}</h3>
                   <div className="mt-3 space-y-2">
                     {(supportGrants.data || []).slice(0, 4).map((grant) => (
@@ -1413,7 +1415,7 @@ export function SettingsPage() {
                 const preference = preferenceByCategory.get(item.category);
                 const enabled = preference?.in_app_enabled !== false;
                 return (
-                  <div key={item.category} className="rounded-3xl border border-slate-100 bg-slate-50/70 p-4">
+                  <div key={item.category} className="rounded-card border border-slate-200 bg-slate-50 p-4">
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0">
                         <p className="font-black text-midnight">{t(item.titleKey)}</p>
@@ -1473,7 +1475,7 @@ export function SettingsPage() {
           </form>
           <div className="mt-5 grid gap-3 md:grid-cols-2">
             {(quickReplies.data || []).map((template) => (
-              <div key={template.id} className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
+              <div key={template.id} className="rounded-card border border-slate-200 bg-slate-50 p-4">
                 {editingQuickReplyId === Number(template.id) ? (
                   <form
                     className="space-y-3"
@@ -1563,7 +1565,9 @@ export function SettingsPage() {
                       <Button
                         type="button"
                         variant="danger"
-                        onClick={() => removeQuickReplyMutation.mutate(Number(template.id))}
+                        onClick={async () => {
+                          if (await confirmDelete(template.title)) removeQuickReplyMutation.mutate(Number(template.id));
+                        }}
                         isLoading={removeQuickReplyMutation.isPending}
                       >
                         {t("settings.delete")}
@@ -1601,7 +1605,7 @@ export function SettingsPage() {
                 key={role.id}
                 type="button"
                 onClick={() => setSelectedRoleId(Number(role.id))}
-                className={Number(selectedRole?.id) === Number(role.id) ? "rounded-3xl border border-brand-200 bg-brand-50 p-4 text-left shadow-soft" : "rounded-3xl border border-slate-100 bg-slate-50 p-4 text-left transition hover:-translate-y-0.5 hover:bg-white hover:shadow-soft"}
+                className={Number(selectedRole?.id) === Number(role.id) ? "rounded-card border border-brand-200 bg-brand-50 p-4 text-left shadow-card" : "rounded-card border border-slate-200 bg-slate-50 p-4 text-left transition hover:bg-white"}
               >
                 <p className="font-bold text-midnight">{role.name}</p>
                 <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">{role.preset_key || "custom"}</p>
@@ -1616,7 +1620,7 @@ export function SettingsPage() {
             ) : null}
           </div>
           {advancedAccessOpen && selectedRole ? (
-            <div className="mt-5 rounded-3xl border border-slate-100 bg-slate-50 p-4">
+            <div className="mt-5 rounded-card border border-slate-200 bg-slate-50 p-4">
               <div className="mb-4">
                 <p className="text-base font-black text-midnight">{t("settings.advancedFor", { name: selectedRole.name })}</p>
                 <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">
@@ -1627,7 +1631,7 @@ export function SettingsPage() {
                 {accessGroups.map((group) => {
                   const level = groupLevel(selectedRole, group.resources);
                   return (
-                    <div key={group.key} className="rounded-3xl bg-white p-4">
+                    <div key={group.key} className="rounded-card bg-white p-4">
                       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                         <div>
                           <p className="font-bold text-midnight">{t(`settings.accessGroup.${group.key}`)}</p>
@@ -1659,6 +1663,7 @@ export function SettingsPage() {
           ) : null}
         </CardBody>
       </Card>
+      {allowedSettingsSectionIds.has("operations-setup") ? (
       <Card id="operations-setup" className={settingsSectionClass("operations-setup")}>
         <CardBody>
           <div className="mb-5">
@@ -1700,6 +1705,8 @@ export function SettingsPage() {
           </div>
         </CardBody>
       </Card>
+      ) : null}
+      {allowedSettingsSectionIds.has("data-tools") ? (
       <Card id="data-tools" className={settingsSectionClass("data-tools")}>
         <CardBody>
           <div className="mb-4">
@@ -1714,7 +1721,7 @@ export function SettingsPage() {
               <ErrorState message={getApiErrorMessage(uploadImportMutation.error || confirmImportMutation.error || exportMutation.error || templateMutation.error || manualSaleMutation.error || manualCatalogMutation.error)} />
             </div>
           ) : null}
-          <div className="mb-4 grid gap-2 rounded-3xl border border-slate-100 bg-slate-50 p-2 md:grid-cols-3">
+          <div className="mb-4 grid gap-2 rounded-card border border-slate-200 bg-slate-50 p-2 md:grid-cols-3">
             {[
               { id: "import" as const, title: t("settings.dataTool.import"), text: t("settings.dataTool.importText") },
               { id: "export" as const, title: t("settings.dataTool.export"), text: t("settings.dataTool.exportText") },
@@ -1725,7 +1732,7 @@ export function SettingsPage() {
                 type="button"
                 onClick={() => setActiveDataTool(item.id)}
                 className={`rounded-2xl px-4 py-3 text-left transition ${
-                  activeDataTool === item.id ? "bg-white text-midnight shadow-sm ring-1 ring-slate-200" : "text-slate-500 hover:bg-white/70 hover:text-midnight"
+                  activeDataTool === item.id ? "bg-white text-midnight shadow-sm ring-1 ring-slate-200" : "text-slate-500 hover:bg-white hover:text-midnight"
                 }`}
               >
                 <span className="block text-sm font-black">{item.title}</span>
@@ -1734,7 +1741,7 @@ export function SettingsPage() {
             ))}
           </div>
           <div className="grid gap-4 xl:grid-cols-[1fr_0.9fr]">
-            <div className={`rounded-3xl border border-slate-100 bg-slate-50 p-4 xl:col-span-2 ${dataToolPanelClass("import")}`}>
+            <div className={`rounded-card border border-slate-200 bg-slate-50 p-4 xl:col-span-2 ${dataToolPanelClass("import")}`}>
               <h3 className="font-bold text-midnight">{t("settings.importTitle")}</h3>
               <p className="mt-1 text-sm leading-6 text-slate-500">
                 {t("settings.importText")}
@@ -1768,7 +1775,7 @@ export function SettingsPage() {
                 </Button>
               </div>
               {activeImport ? (
-                <div className="mt-4 rounded-3xl bg-white p-4">
+                <div className="mt-4 rounded-card bg-white p-4">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <p className="font-bold text-midnight">{activeImport.original_filename || t("settings.importNumber", { id: activeImport.id })}</p>
@@ -1842,7 +1849,7 @@ export function SettingsPage() {
                 <p className="mt-4 rounded-2xl bg-white p-4 text-sm text-slate-500">{t("settings.importHistoryEmpty")}</p>
               )}
             </div>
-            <div className={`rounded-3xl border border-slate-100 p-4 xl:col-span-2 ${dataToolPanelClass("export")}`}>
+            <div className={`rounded-card border border-slate-200 bg-white p-4 xl:col-span-2 ${dataToolPanelClass("export")}`}>
               <h3 className="font-bold text-midnight">{t("settings.exportTitle")}</h3>
               <p className="mt-1 text-sm leading-6 text-slate-500">{t("settings.exportText")}</p>
               <div className="mt-4 grid gap-2 sm:grid-cols-3 xl:grid-cols-1">
@@ -1875,7 +1882,7 @@ export function SettingsPage() {
           </div>
           <div className={`mt-4 grid gap-4 xl:grid-cols-2 ${dataToolPanelClass("manual")}`}>
             <form
-              className="rounded-3xl border border-slate-100 bg-white p-4"
+              className="rounded-card border border-slate-200 bg-white p-4"
               onSubmit={(event) => {
                 event.preventDefault();
                 manualSaleMutation.mutate();
@@ -1894,7 +1901,7 @@ export function SettingsPage() {
               </div>
             </form>
             <form
-              className="rounded-3xl border border-slate-100 bg-white p-4"
+              className="rounded-card border border-slate-200 bg-white p-4"
               onSubmit={(event) => {
                 event.preventDefault();
                 manualCatalogMutation.mutate();
@@ -1925,6 +1932,8 @@ export function SettingsPage() {
           </div>
         </CardBody>
       </Card>
+      ) : null}
+      {allowedSettingsSectionIds.has("lead-forms") ? (
       <Card id="lead-forms" className={settingsSectionClass("lead-forms")}>
         <CardBody>
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -1948,7 +1957,7 @@ export function SettingsPage() {
                 const publicUrl = `${apiOrigin}/api/public/forms/${form.public_id}/submit/`;
                 const embedCode = `<form method="POST" action="${publicUrl}"><input name="full_name" /><input name="phone" /><button>${t("settings.send")}</button></form>`;
                 return (
-                  <div key={form.id} className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
+                  <div key={form.id} className="rounded-card border border-slate-200 bg-slate-50 p-4">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
                         <p className="font-bold text-midnight">{form.name}</p>
@@ -1962,7 +1971,17 @@ export function SettingsPage() {
                         <Button type="button" variant="secondary" className="min-h-8 px-3 text-xs" onClick={() => updateLeadFormMutation.mutate({ id: Number(form.id), payload: { is_active: !form.is_active } })} isLoading={updateLeadFormMutation.isPending}>
                           {form.is_active ? t("settings.disable") : t("settings.enable")}
                         </Button>
-                        <Button type="button" variant="danger" className="min-h-8 px-3 text-xs" onClick={() => removeLeadFormMutation.mutate(Number(form.id))} isLoading={removeLeadFormMutation.isPending}>{t("settings.delete")}</Button>
+                        <Button
+                          type="button"
+                          variant="danger"
+                          className="min-h-8 px-3 text-xs"
+                          onClick={async () => {
+                            if (await confirmDelete(form.name || form.title)) removeLeadFormMutation.mutate(Number(form.id));
+                          }}
+                          isLoading={removeLeadFormMutation.isPending}
+                        >
+                          {t("settings.delete")}
+                        </Button>
                       </div>
                     </div>
                     <div className="mt-3 flex flex-wrap gap-2">
@@ -1973,7 +1992,7 @@ export function SettingsPage() {
                       ))}
                     </div>
                     {editingLeadFormId === Number(form.id) ? (
-                      <div className="mt-4 rounded-3xl border border-brand-100 bg-white p-4">
+                      <div className="mt-4 rounded-card border border-brand-100 bg-brand-50 p-4">
                         <form
                           className="grid gap-3"
                           onSubmit={(event) => {
@@ -2035,7 +2054,17 @@ export function SettingsPage() {
                                   <Button type="button" variant="secondary" className="min-h-8 px-3 text-xs" onClick={() => updateLeadFieldMutation.mutate({ id: Number(field.id), payload: { is_required: !field.is_required } })} isLoading={updateLeadFieldMutation.isPending}>
                                     {field.is_required ? "Необязательное" : "Обязательное"}
                                   </Button>
-                                  <Button type="button" variant="danger" className="min-h-8 px-3 text-xs" onClick={() => removeLeadFieldMutation.mutate(Number(field.id))} isLoading={removeLeadFieldMutation.isPending}>{t("settings.delete")}</Button>
+                                  <Button
+                                    type="button"
+                                    variant="danger"
+                                    className="min-h-8 px-3 text-xs"
+                                    onClick={async () => {
+                                      if (await confirmDelete(field.label)) removeLeadFieldMutation.mutate(Number(field.id));
+                                    }}
+                                    isLoading={removeLeadFieldMutation.isPending}
+                                  >
+                                    {t("settings.delete")}
+                                  </Button>
                                 </div>
                               </div>
                             ))}
@@ -2106,7 +2135,7 @@ export function SettingsPage() {
                 );
               })}
               {!leadForms.isLoading && !leadForms.data?.length ? (
-                <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-5">
+                <div className="rounded-card border border-dashed border-slate-200 bg-slate-50 p-5">
                   <p className="font-black text-midnight">{t("settings.noLeadFormsTitle")}</p>
                   <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">{t("settings.noLeadForms")}</p>
                   <div className="mt-4 rounded-2xl bg-white p-4">
@@ -2119,7 +2148,7 @@ export function SettingsPage() {
                 </div>
               ) : null}
             </div>
-            <div className="rounded-3xl border border-slate-100 p-4">
+            <div className="rounded-card border border-slate-200 bg-white p-4">
               <h3 className="font-bold text-midnight">{t("settings.latestSubmissions")}</h3>
               <div className="mt-4 space-y-2">
                 {(leadFormSubmissions.data || []).slice(0, 6).map((submission) => (
@@ -2138,6 +2167,7 @@ export function SettingsPage() {
           </div>
         </CardBody>
       </Card>
+      ) : null}
       <Card id="billing" className={settingsSectionClass("billing")}>
         <CardBody>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -2172,7 +2202,7 @@ export function SettingsPage() {
           ) : null}
           <div className="mt-5 grid gap-4 xl:grid-cols-[1fr_0.8fr]">
             <form
-              className="rounded-3xl border border-slate-100 bg-slate-50 p-4"
+              className="rounded-card border border-slate-200 bg-slate-50 p-4"
               onSubmit={(event) => {
                 event.preventDefault();
                 billingSettingsMutation.mutate();
@@ -2200,7 +2230,7 @@ export function SettingsPage() {
                 <Button type="submit" disabled={!canManageBilling || !subscription.data} isLoading={billingSettingsMutation.isPending}>Сохранить биллинг</Button>
               </div>
             </form>
-            <div className="rounded-3xl border border-slate-100 p-4">
+            <div className="rounded-card border border-slate-200 bg-white p-4">
               <h3 className="font-black text-midnight">Тариф</h3>
               <p className="mt-1 text-sm leading-6 text-slate-500">Смена тарифа фиксируется как запрос, чтобы поддержка могла проверить оплату и лимиты.</p>
               <div className="mt-4 grid gap-3">
@@ -2231,7 +2261,7 @@ export function SettingsPage() {
             {(entitlements.data || usage.data || []).map((item) => {
               const percent = item.limit ? Math.min(100, Math.round((item.value / item.limit) * 100)) : 0;
               return (
-                <div key={item.metric} className="rounded-3xl bg-slate-50 p-4">
+                <div key={item.metric} className="rounded-card bg-slate-50 p-4">
                   <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{formatMetric(item.metric, t)}</p>
                   <p className="mt-2 text-2xl font-black text-midnight">
                     {item.value}
@@ -2263,7 +2293,7 @@ export function SettingsPage() {
           {customFieldMutation.error || updateCustomFieldMutation.error || removeCustomFieldMutation.error ? (
             <div className="mb-4"><ErrorState message={getApiErrorMessage(customFieldMutation.error || updateCustomFieldMutation.error || removeCustomFieldMutation.error)} /></div>
           ) : null}
-          <div className="mb-4 rounded-3xl border border-amber-100 bg-amber-50 p-4">
+          <div className="mb-4 rounded-card border border-amber-200 bg-amber-50 p-4">
             <p className="font-black text-amber-950">{t("settings.customFieldsGuardTitle")}</p>
             <p className="mt-1 text-sm font-semibold leading-6 text-amber-800">{t("settings.customFieldsGuardText")}</p>
           </div>
@@ -2311,7 +2341,7 @@ export function SettingsPage() {
           </form>
           <div className="mt-5 grid gap-3 md:grid-cols-2">
             {(customFields.data || []).map((field) => (
-              <div key={field.id} className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
+              <div key={field.id} className="rounded-card border border-slate-200 bg-slate-50 p-4">
                 {editingCustomFieldId === Number(field.id) ? (
                   <form
                     className="grid gap-3"
@@ -2396,7 +2426,14 @@ export function SettingsPage() {
                       <Button type="button" variant="secondary" onClick={() => updateCustomFieldMutation.mutate({ id: Number(field.id), payload: { is_active: !field.is_active } })} isLoading={updateCustomFieldMutation.isPending && editingCustomFieldId === Number(field.id)}>
                         {field.is_active ? t("settings.disable") : t("settings.enable")}
                       </Button>
-                      <Button type="button" variant="danger" onClick={() => removeCustomFieldMutation.mutate(Number(field.id))} isLoading={removeCustomFieldMutation.isPending}>
+                      <Button
+                        type="button"
+                        variant="danger"
+                        onClick={async () => {
+                          if (await confirmDelete(field.label)) removeCustomFieldMutation.mutate(Number(field.id));
+                        }}
+                        isLoading={removeCustomFieldMutation.isPending}
+                      >
                         {t("settings.delete")}
                       </Button>
                     </div>
@@ -2410,6 +2447,7 @@ export function SettingsPage() {
           </div>
         </CardBody>
       </Card>
+      {allowedSettingsSectionIds.has("automations") ? (
       <Card id="automations" className={settingsSectionClass("automations")}>
         <CardBody>
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -2429,7 +2467,9 @@ export function SettingsPage() {
           </div>
         </CardBody>
       </Card>
-      <details id="developer" className={settingsSectionClass("developer", "mb-5 scroll-mt-24 rounded-3xl border border-slate-100 bg-white/80 p-4 shadow-soft")}>
+      ) : null}
+      {allowedSettingsSectionIds.has("developer") ? (
+      <details id="developer" className={settingsSectionClass("developer", "mb-5 scroll-mt-24 rounded-card border border-slate-200 bg-white p-4 shadow-card")}>
         <summary className="cursor-pointer list-none">
           <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">{t("settings.developerConnections")}</p>
           <h2 className="mt-2 text-2xl font-semibold text-midnight">{t("settings.developerTitle")}</h2>
@@ -2439,6 +2479,7 @@ export function SettingsPage() {
           <DevelopersSection />
         </div>
       </details>
+      ) : null}
         </div>
       </div>
     </>

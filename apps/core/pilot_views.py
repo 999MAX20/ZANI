@@ -100,7 +100,7 @@ class PilotReadinessView(APIView):
                 "Есть базовая структура CRM: услуги, ресурсы, график и воронка.",
                 business.services.exists() and business.resources.exists() and business.working_hours.exists() and business.pipelines.exists(),
                 status="ready" if business.services.exists() and business.resources.exists() and business.working_hours.exists() and business.pipelines.exists() else "needs_attention",
-                href="/app/onboarding",
+                href="/app/settings#operations-setup",
             ),
             self.item(
                 "business_profile",

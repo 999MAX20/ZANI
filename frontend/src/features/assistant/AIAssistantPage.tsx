@@ -425,14 +425,14 @@ export function AIAssistantPage() {
               </div>
               <div className="mt-5 grid gap-3">
                 {navigatorData.summary.map((item, index) => (
-                  <div key={item} className="flex items-start gap-3 rounded-3xl border border-slate-100 bg-slate-50/70 p-4">
+                  <div key={item} className="flex items-start gap-3 rounded-card border border-slate-200 bg-slate-50 p-4">
                     <span className={`mt-1 h-3 w-3 rounded-full ${aiInsightDotClass(index === 0 ? "info" : index === 1 ? "good" : index === 2 ? "warning" : "critical")}`} />
                     <p className="text-sm font-semibold leading-6 text-slate-700">{item}</p>
                   </div>
                 ))}
               </div>
               {aiBrief ? (
-                <div className="mt-5 rounded-3xl border border-brand-100 bg-brand-50/70 p-4">
+                <div className="mt-5 rounded-card border border-brand-100 bg-brand-50 p-4">
                   <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">{t("aiNavigator.aiInterpretation")}</p>
                   <p className="mt-2 whitespace-pre-wrap text-sm font-semibold leading-7 text-slate-700">{aiBrief}</p>
                 </div>
@@ -457,7 +457,7 @@ export function AIAssistantPage() {
 
               <div className="mt-5 grid gap-3">
                 {(analystBrief.data?.insights || []).map((insight) => (
-                  <div key={insight.id} className="rounded-3xl border border-slate-100 bg-slate-50/70 p-4">
+                  <div key={insight.id} className="rounded-card border border-slate-200 bg-slate-50 p-4">
                     <div className="flex items-start gap-3">
                       <span className={`mt-1 h-3 w-3 rounded-full ${aiInsightDotClass(insight.severity)}`} />
                       <div className="min-w-0 flex-1">
@@ -469,7 +469,7 @@ export function AIAssistantPage() {
                   </div>
                 ))}
                 {!analystBrief.isLoading && !(analystBrief.data?.insights || []).length ? (
-                  <p className="rounded-3xl bg-slate-50 p-4 text-sm font-semibold leading-6 text-slate-500">
+                  <p className="rounded-card bg-slate-50 p-4 text-sm font-semibold leading-6 text-slate-500">
                     {t("aiNavigator.emptyIntegrationInsights")}
                   </p>
                 ) : null}
@@ -480,7 +480,7 @@ export function AIAssistantPage() {
                   <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{t("aiNavigator.suggestedActions")}</p>
                   <div className="mt-3 grid gap-3">
                     {(analystBrief.data?.actions || []).map((action) => (
-                      <div key={action.id} className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
+                      <div key={action.id} className="rounded-card border border-slate-200 bg-white p-4 shadow-sm">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                           <div className="min-w-0">
                             <span className="rounded-full bg-violet-50 px-2 py-1 text-[10px] font-black uppercase text-violet-700">
@@ -490,7 +490,7 @@ export function AIAssistantPage() {
                             <p className="mt-1 text-sm font-semibold leading-6 text-slate-600">{action.description}</p>
                             <SourceChips sourceIds={action.source_ids} sourcesById={analystSourcesById} />
                           </div>
-                          <Link to={action.href} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2 text-sm font-black text-midnight transition hover:bg-white hover:shadow-soft">
+                          <Link to={action.href} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-black text-midnight transition hover:bg-white hover:shadow-card">
                             {t("common.open")} <ExternalLink size={15} />
                           </Link>
                         </div>
@@ -568,7 +568,7 @@ export function AIAssistantPage() {
 
           <Card>
             <CardBody>
-              <div className="mb-4 flex items-start gap-3 rounded-3xl border border-brand-100 bg-brand-50/70 p-4">
+              <div className="mb-4 flex items-start gap-3 rounded-card border border-brand-100 bg-brand-50 p-4">
                 <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white text-brand-700 shadow-sm">
                   <BookOpenText size={19} />
                 </div>
@@ -591,7 +591,7 @@ export function AIAssistantPage() {
                     key={item.id}
                     type="button"
                     onClick={() => { setEditingMemory(item); setMemoryDraft(memoryDraftFromItem(item)); setMemoryOpen(true); }}
-                    className="w-full rounded-3xl border border-slate-100 bg-slate-50/80 p-4 text-left transition hover:bg-white hover:shadow-soft"
+                    className="w-full rounded-card border border-slate-200 bg-slate-50 p-4 text-left transition hover:bg-white hover:shadow-card"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -605,7 +605,7 @@ export function AIAssistantPage() {
                   </button>
                 ))}
                 {!memory.data?.length ? (
-                  <p className="rounded-3xl bg-slate-50 p-4 text-sm leading-6 text-slate-500">
+                  <p className="rounded-card bg-slate-50 p-4 text-sm leading-6 text-slate-500">
                     {t("aiAssistant.emptyMemoryText")}
                   </p>
                 ) : null}
@@ -643,7 +643,7 @@ export function AIAssistantPage() {
             placeholder={t("aiAssistant.contentPlaceholder")}
             required
           />
-          <label className="flex items-center gap-3 rounded-3xl border border-slate-100 bg-slate-50 p-4 text-sm font-semibold text-slate-700">
+          <label className="flex items-center gap-3 rounded-card border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-700">
             <input
               type="checkbox"
               checked={memoryDraft.is_active}
@@ -662,7 +662,7 @@ export function AIAssistantPage() {
 
 function MetricTile({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-3xl border border-slate-100 bg-slate-50/80 p-4">
+    <div className="rounded-card border border-slate-200 bg-slate-50 p-4">
       <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{label}</p>
       <p className="mt-3 text-3xl font-black text-midnight">{value}</p>
     </div>

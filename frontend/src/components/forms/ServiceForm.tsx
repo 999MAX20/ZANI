@@ -55,12 +55,12 @@ export function ServiceForm({ businessId, initial, onSubmit }: { businessId: Id;
 
   return (
     <form className="grid gap-4" onSubmit={form.handleSubmit((values) => onSubmit({ ...values, business: businessId, price_from: values.price_from || null }))}>
-      <div className="rounded-3xl border border-brand-100 bg-brand-50/60 p-4 text-sm text-slate-700">
+      <div className="rounded-card border border-brand-100 bg-brand-50 p-4 text-sm text-slate-700">
         <p className="font-bold text-midnight">{t("services.formHintTitle")}</p>
         <p className="mt-1 leading-6">{t("services.formHintText")}</p>
       </div>
       {!initial ? (
-        <div className="rounded-3xl border border-slate-100 bg-white/80 p-4">
+        <div className="rounded-card border border-slate-200 bg-white p-4">
           <p className="text-sm font-black text-midnight">{t("services.templatesTitle")}</p>
           <p className="mt-1 text-sm leading-6 text-slate-500">{t("services.templatesText")}</p>
           <div className="mt-3 flex flex-wrap gap-2">

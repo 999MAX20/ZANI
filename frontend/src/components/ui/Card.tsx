@@ -1,34 +1,66 @@
+import type { ElementType, HTMLAttributes, ReactNode } from "react";
+
 import { cn } from "../../lib/cn";
 
-type CardProps = React.HTMLAttributes<HTMLElement> & {
-  children: React.ReactNode;
+const surfaceVariants = {
+  default: "rounded-card border border-slate-200 bg-white shadow-card",
+  elevated: "rounded-card border border-slate-200 bg-white shadow-card",
+  outlined: "rounded-card border border-slate-200 bg-white",
+  muted: "rounded-card border border-slate-200 bg-slate-50",
+  ai: "zani-ai-surface rounded-xl",
+  danger: "rounded-card border border-red-200 bg-red-50 shadow-sm",
+};
+
+const surfacePaddings = {
+  none: "",
+  sm: "p-3",
+  md: "p-4",
+  lg: "p-5",
+};
+
+type SurfaceVariant = keyof typeof surfaceVariants;
+type SurfacePadding = keyof typeof surfacePaddings;
+
+export const surfaceClass = surfaceVariants.default;
+export const mutedSurfaceClass = surfaceVariants.muted;
+export const outlinedSurfaceClass = surfaceVariants.outlined;
+export const interactiveSurfaceClass = `${surfaceVariants.default} transition hover:border-brand-200 hover:shadow-card`;
+
+type CardProps = HTMLAttributes<HTMLElement> & {
+  children: ReactNode;
   variant?: "default" | "elevated" | "outlined" | "muted" | "ai" | "danger";
-  padding?: "none" | "sm" | "md" | "lg";
+  padding?: SurfacePadding;
 };
 
 export function Card({ className, children, variant = "default", padding = "none", ...props }: CardProps) {
-  const variants = {
-    default: "rounded-card border border-slate-200 bg-white shadow-soft",
-    elevated: "rounded-card border border-slate-200 bg-white shadow-card",
-    outlined: "rounded-card border border-slate-200 bg-white",
-    muted: "rounded-xl border border-slate-200 bg-slate-50/80",
-    ai: "zani-ai-surface rounded-xl",
-    danger: "rounded-xl border border-red-100 bg-red-50/80 shadow-sm",
-  };
-  const paddings = {
-    none: "",
-    sm: "p-3",
-    md: "p-4",
-    lg: "p-5",
-  };
-
-  return <section className={cn(variants[variant], paddings[padding], className)} {...props}>{children}</section>;
+  return <section className={cn(surfaceVariants[variant], surfacePaddings[padding], className)} {...props}>{children}</section>;
 }
 
-export function CardHeader({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <div className={cn("border-b border-slate-100/80 px-4 py-4 sm:px-5", className)}>{children}</div>;
+type SurfaceProps = HTMLAttributes<HTMLElement> & {
+  as?: ElementType;
+  children: ReactNode;
+  href?: string;
+  interactive?: boolean;
+  to?: string;
+  variant?: SurfaceVariant;
+  padding?: SurfacePadding;
+};
+
+export function Surface({ as: Component = "div", className, children, interactive = false, variant = "default", padding = "md", ...props }: SurfaceProps) {
+  return (
+    <Component
+      className={cn(surfaceVariants[variant], surfacePaddings[padding], interactive && "transition hover:border-brand-200 hover:shadow-card", className)}
+      {...props}
+    >
+      {children}
+    </Component>
+  );
 }
 
-export function CardBody({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <div className={cn("p-4 sm:p-5", className)}>{children}</div>;
+export function CardHeader({ className, children }: { className?: string; children: ReactNode }) {
+  return <div className={cn("border-b border-slate-200 px-4 py-3", className)}>{children}</div>;
+}
+
+export function CardBody({ className, children }: { className?: string; children: ReactNode }) {
+  return <div className={cn("p-4", className)}>{children}</div>;
 }

@@ -2,7 +2,15 @@ import { createCrudApi } from "./crud";
 import { apiClient, unwrapList } from "./client";
 import type { ActivityEvent, Client, Id, Note, Segment, SegmentFilter, Tag, TaggedObject } from "../types";
 
-export const activityEventsApi = createCrudApi<ActivityEvent>("/api/activity-events/");
+export const activityEventsApi = {
+  ...createCrudApi<ActivityEvent>("/api/activity-events/"),
+  listForEntity: async ({ entity_type, entity_id }: { entity_type: string; entity_id: Id | string }) => {
+    const { data } = await apiClient.get<ActivityEvent[] | { results: ActivityEvent[] }>("/api/activity-events/", {
+      params: { entity_type, entity_id },
+    });
+    return unwrapList(data);
+  },
+};
 export const notesApi = createCrudApi<Note>("/api/notes/");
 export const tagsApi = createCrudApi<Tag>("/api/tags/");
 export const taggedObjectsApi = {

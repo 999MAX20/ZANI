@@ -18,6 +18,7 @@ import type { LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import type { WorkQueuesResponse } from "../../api/workQueues";
+import { Surface } from "../../components/ui/Card";
 import { formatDateTime } from "../../lib/format";
 import { useI18n } from "../../lib/i18n";
 import type { Appointment, Client, Lead, OwnerDashboardMetrics, Service, Task } from "../../types";
@@ -69,7 +70,7 @@ function initials(value?: string | null) {
 function KpiCard({ label, value, trend, tone = "blue" }: { label: string; value: string | number; trend: string; tone?: KpiTone }) {
   const stroke = tone === "red" ? "#EFB8B8" : "#A9C7F8";
   return (
-    <section className="min-h-[188px] rounded-xl border border-slate-200 bg-white p-5 shadow-soft">
+    <Surface as="section" className="min-h-[188px] rounded-xl" padding="lg">
       <div className="flex items-start justify-between gap-3">
         <p className="text-xs font-medium uppercase tracking-[0.14em] text-slate-700">{label}</p>
         <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${trendColor(tone)}`}>{trend}</span>
@@ -78,7 +79,7 @@ function KpiCard({ label, value, trend, tone = "blue" }: { label: string; value:
       <svg className="mt-8 h-12 w-full" viewBox="0 0 130 72" fill="none" aria-hidden="true">
         <path d={sparkPaths[tone]} stroke={stroke} strokeWidth="3" strokeLinecap="round" />
       </svg>
-    </section>
+    </Surface>
   );
 }
 
@@ -135,7 +136,7 @@ function UrgentAction({
 
 function ChatPreview({ name, text, time, tone }: { name: string; text: string; time: string; tone: "green" | "pink" }) {
   return (
-    <div className="flex items-center gap-4 border-b border-slate-100 py-4 last:border-b-0">
+    <div className="flex items-center gap-4 border-b border-slate-200 py-4 last:border-b-0">
       <div className="relative grid h-12 w-12 shrink-0 place-items-center rounded-full bg-slate-100 text-sm font-bold text-midnight">
         {initials(name)}
         <span className={`absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full border-2 border-white ${tone === "green" ? "bg-emerald-500" : "bg-pink-500"}`} />
@@ -155,34 +156,34 @@ function RevenueChartCard({ revenue, revenueHasData }: { revenue: number; revenu
   const previousRevenue = Math.max(0, Math.round(displayRevenue * 0.89));
 
   return (
-    <section className="relative min-h-[280px] overflow-hidden rounded-xl bg-dashboard-gradient p-6 text-white shadow-glow">
+    <Surface as="section" className="relative min-h-[280px] overflow-hidden p-6 text-slate-900" padding="none">
       <div className="relative z-10 flex h-full min-h-[232px] flex-col justify-between">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold text-white/80">{t("dashboard.revenue")}</p>
+            <p className="text-sm font-semibold text-slate-500">{t("dashboard.revenue")}</p>
             <p className="mt-3 text-4xl font-bold leading-none sm:text-5xl">{formatMoney(displayRevenue)}</p>
-            <p className="mt-3 text-sm font-medium text-white/75">{t("dashboard.yesterday")}: {formatMoney(previousRevenue)}</p>
+            <p className="mt-3 text-sm font-medium text-slate-500">{t("dashboard.yesterday")}: {formatMoney(previousRevenue)}</p>
           </div>
-          <div className="rounded-lg border border-white/20 bg-white/15 px-3 py-2 text-sm font-semibold text-white backdrop-blur">
+          <div className="rounded-control border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700">
             {t("dashboard.periodToday")}
           </div>
         </div>
 
         <div>
           <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-emerald-500 px-3 py-1 text-xs font-bold text-white">
-            +12% <span className="font-medium text-white/85">{t("dashboard.toYesterday")}</span>
+            +12% <span className="font-medium text-white">{t("dashboard.toYesterday")}</span>
           </div>
           <svg className="h-24 w-full" viewBox="0 0 640 120" fill="none" aria-hidden="true">
             <path d="M0 92 C80 84 112 66 176 72 C256 80 300 28 376 36 C456 44 496 18 640 24 L640 120 L0 120 Z" fill="url(#revenueFill)" />
-            <path d="M0 92 C80 84 112 66 176 72 C256 80 300 28 376 36 C456 44 496 18 640 24" stroke="white" strokeWidth="4" strokeLinecap="round" />
+            <path d="M0 92 C80 84 112 66 176 72 C256 80 300 28 376 36 C456 44 496 18 640 24" stroke="#2563eb" strokeWidth="4" strokeLinecap="round" />
             <defs>
               <linearGradient id="revenueFill" x1="320" y1="24" x2="320" y2="120" gradientUnits="userSpaceOnUse">
-                <stop stopColor="white" stopOpacity="0.32" />
-                <stop offset="1" stopColor="white" stopOpacity="0" />
+                <stop stopColor="#2563eb" stopOpacity="0.18" />
+                <stop offset="1" stopColor="#2563eb" stopOpacity="0" />
               </linearGradient>
             </defs>
           </svg>
-          <div className="mt-2 flex justify-between text-[11px] font-medium text-white/70">
+          <div className="mt-2 flex justify-between text-[11px] font-medium text-slate-400">
             <span>00:00</span>
             <span>06:00</span>
             <span>12:00</span>
@@ -191,7 +192,7 @@ function RevenueChartCard({ revenue, revenueHasData }: { revenue: number; revenu
           </div>
         </div>
       </div>
-    </section>
+    </Surface>
   );
 }
 
@@ -216,7 +217,7 @@ function DashboardMetricCard({
   }[tone];
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-soft transition duration-150 hover:-translate-y-0.5 hover:shadow-md">
+    <Surface as="section" className="rounded-xl transition duration-150 hover:shadow-md" padding="lg">
       <div className="flex items-start justify-between gap-3">
         <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${toneClass}`}>
           <Icon size={21} />
@@ -225,7 +226,7 @@ function DashboardMetricCard({
       </div>
       <p className="mt-5 text-sm font-semibold text-slate-500">{label}</p>
       <p className="mt-1 text-3xl font-bold leading-none text-midnight">{value}</p>
-    </section>
+    </Surface>
   );
 }
 
@@ -248,7 +249,7 @@ function InsightListCard({
   };
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-soft">
+    <Surface as="section" className="rounded-xl" padding="lg">
       <div className="mb-4 flex items-center gap-2">
         <Sparkles size={20} className="text-violet-600" />
         <h2 className="text-base font-semibold text-midnight">{title}</h2>
@@ -267,7 +268,7 @@ function InsightListCard({
       <Link to={href} className="mt-5 inline-flex min-h-10 w-full items-center justify-center rounded-lg border border-slate-200 px-4 text-sm font-semibold text-midnight transition hover:bg-slate-50">
         {footer}
       </Link>
-    </section>
+    </Surface>
   );
 }
 
@@ -280,7 +281,7 @@ function AttentionCard({ unassignedCount, overdueTasks, noAnswerCount }: { unass
   ];
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-soft">
+    <Surface as="section" className="rounded-xl" padding="lg">
       <div className="mb-4 flex items-center justify-between gap-3">
         <h2 className="text-base font-semibold text-midnight">{t("dashboard.requiresAttention")}</h2>
         <span className="grid h-7 min-w-7 place-items-center rounded-full bg-red-500 px-2 text-xs font-bold text-white">{unassignedCount + overdueTasks + noAnswerCount}</span>
@@ -302,14 +303,14 @@ function AttentionCard({ unassignedCount, overdueTasks, noAnswerCount }: { unass
           );
         })}
       </div>
-    </section>
+    </Surface>
   );
 }
 
 function ConnectionsCard({ communicationsReady, salesReady }: { communicationsReady: boolean; salesReady: boolean }) {
   const { t } = useI18n();
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-soft">
+    <Surface as="section" className="rounded-xl" padding="lg">
       <div className="mb-1 flex items-center gap-2">
         <PlugZap size={20} className="text-brand-600" />
         <h2 className="text-base font-semibold text-midnight">{t("dashboard.connections")}</h2>
@@ -324,7 +325,7 @@ function ConnectionsCard({ communicationsReady, salesReady }: { communicationsRe
         {t("dashboard.allConnections")}
         <ArrowRight size={16} />
       </Link>
-    </section>
+    </Surface>
   );
 }
 
@@ -332,7 +333,7 @@ function NewLeadsCard({ leads, clients, services }: { leads: Lead[]; clients: Cl
   const { t } = useI18n();
   const visibleLeads = leads.slice(0, 3);
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-soft">
+    <Surface as="section" className="rounded-xl" padding="lg">
       <div className="mb-4 flex items-center justify-between gap-3">
         <h2 className="text-base font-semibold text-midnight">{t("dashboard.newLeads")}</h2>
         <Link to="/app/leads" className="text-sm font-semibold text-brand-700">{t("dashboard.allLeads")}</Link>
@@ -355,7 +356,7 @@ function NewLeadsCard({ leads, clients, services }: { leads: Lead[]; clients: Cl
           <div className="rounded-lg bg-slate-50 p-4 text-center text-sm font-medium text-slate-500">{t("dashboard.noUrgentLeadsText")}</div>
         )}
       </div>
-    </section>
+    </Surface>
   );
 }
 
@@ -422,7 +423,7 @@ export function OwnerDashboard({
       ) : null}
 
       {metricsError ? (
-        <div className="mb-5 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+        <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
           {t("dashboard.ownerAnalyticsError")}
         </div>
       ) : null}
@@ -445,7 +446,7 @@ export function OwnerDashboard({
         </div>
         <div className="space-y-5">
           <NewLeadsCard leads={activeLeads} clients={clients} services={services} />
-          <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-soft">
+          <Surface as="section" className="rounded-xl" padding="lg">
             <div className="mb-4 flex items-center gap-2">
               <Bot className="text-violet-600" size={20} />
               <h2 className="text-base font-semibold text-midnight">{t("dashboard.aiNavigator")}</h2>
@@ -465,7 +466,7 @@ export function OwnerDashboard({
                 <p className="mt-1 text-xs font-semibold text-slate-500">{t("dashboard.setupScore")}</p>
               </div>
             </div>
-          </section>
+          </Surface>
         </div>
       </section>
     </div>

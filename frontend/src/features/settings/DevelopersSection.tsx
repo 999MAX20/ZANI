@@ -132,17 +132,17 @@ export function DevelopersSection() {
               {t("developers.description")}
             </p>
           </div>
-          <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
+          <div className="rounded-control border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
             {t("developers.summary", { tokens: tokens.data?.length || 0, webhooks: webhooks.data?.length || 0 })}
           </div>
         </div>
         {error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(error)} /></div> : null}
         {lastToken ? (
-          <div className="mb-4 rounded-3xl border border-emerald-100 bg-emerald-50 p-4">
+          <div className="mb-4 rounded-card border border-emerald-200 bg-emerald-50 p-4">
             <p className="font-black text-emerald-900">{t("developers.copyNow")}</p>
             <p className="mt-1 text-sm text-emerald-800">{t("developers.copyNowText")}</p>
             <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-              <code className="min-w-0 flex-1 break-all rounded-2xl bg-white px-3 py-2 text-sm text-slate-700">{lastToken.token}</code>
+              <code className="min-w-0 flex-1 break-all rounded-control bg-white px-3 py-2 text-sm text-slate-700">{lastToken.token}</code>
               <Button type="button" variant="secondary" onClick={() => copyText(lastToken.token, "token")}>
                 <Copy size={16} />
                 {lastCopied === "token" ? t("developers.copied") : t("common.copy")}
@@ -151,9 +151,9 @@ export function DevelopersSection() {
           </div>
         ) : null}
         <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-          <div className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
+          <div className="rounded-card border border-slate-200 bg-slate-50 p-4">
             <div className="flex items-center gap-3">
-              <div className="grid h-11 w-11 place-items-center rounded-2xl bg-white text-brand-600">
+              <div className="grid h-11 w-11 place-items-center rounded-control bg-white text-brand-600">
                 <KeyRound size={20} />
               </div>
               <div>
@@ -176,7 +176,7 @@ export function DevelopersSection() {
             </form>
             <div className="mt-5 space-y-2">
               {(tokens.data || []).map((token) => (
-                <div key={token.id} className="rounded-2xl bg-white p-3">
+                <div key={token.id} className="rounded-control bg-white p-3">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <p className="font-bold text-midnight">{token.name}</p>
@@ -201,9 +201,9 @@ export function DevelopersSection() {
               {!tokens.isLoading && !tokens.data?.length ? <p className="text-sm text-slate-500">{t("developers.noTokens")}</p> : null}
             </div>
           </div>
-          <div className="rounded-3xl border border-slate-100 p-4">
+          <div className="rounded-card border border-slate-200 bg-white p-4">
             <div className="flex items-center gap-3">
-              <div className="grid h-11 w-11 place-items-center rounded-2xl bg-slate-50 text-brand-600">
+              <div className="grid h-11 w-11 place-items-center rounded-control bg-slate-50 text-brand-600">
                 <Webhook size={20} />
               </div>
               <div>
@@ -234,7 +234,7 @@ export function DevelopersSection() {
             </form>
             <div className="mt-5 space-y-3">
               {(webhooks.data || []).map((endpoint) => (
-                <div key={endpoint.id} className="rounded-2xl bg-slate-50 p-3">
+                <div key={endpoint.id} className="rounded-control bg-slate-50 p-3">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
                       <p className="font-bold text-midnight">{endpoint.name}</p>
@@ -252,7 +252,7 @@ export function DevelopersSection() {
             </div>
           </div>
         </div>
-        <div className="mt-5 rounded-3xl border border-slate-100 bg-white p-4">
+        <div className="mt-5 rounded-card border border-slate-200 bg-white p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
             <div>
               <h3 className="font-black text-midnight">{t("developers.deliveryTitle")}</h3>
@@ -273,7 +273,7 @@ export function DevelopersSection() {
                 t={t}
               />
             ))}
-            {!deliveries.isLoading && !latestDeliveries.length ? <p className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">{t("developers.noDeliveries")}</p> : null}
+            {!deliveries.isLoading && !latestDeliveries.length ? <p className="rounded-control bg-slate-50 p-4 text-sm text-slate-500">{t("developers.noDeliveries")}</p> : null}
           </div>
         </div>
       </CardBody>
@@ -293,7 +293,7 @@ function DeliveryRow({
   t: (key: string, vars?: Record<string, string | number>) => string;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+    <div className="rounded-control border border-slate-200 bg-slate-50 p-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="font-bold text-midnight">{delivery.event_type} · {delivery.endpoint_name || `Endpoint #${delivery.endpoint}`}</p>
@@ -311,7 +311,7 @@ function DeliveryRow({
           ) : null}
         </div>
       </div>
-      <details className="mt-3 rounded-2xl bg-white px-3 py-2">
+      <details className="mt-3 rounded-control bg-white px-3 py-2">
         <summary className="cursor-pointer text-xs font-bold text-slate-500">{t("developers.showPayload")}</summary>
         <Textarea className="mt-3 text-xs" value={JSON.stringify(delivery.payload_json, null, 2)} readOnly />
       </details>

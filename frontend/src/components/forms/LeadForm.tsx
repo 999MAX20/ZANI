@@ -79,9 +79,9 @@ export function LeadForm({
   }, [businessId, clientId, initial?.id]);
 
   return (
-    <form className="grid gap-4 rounded-3xl border border-slate-100 bg-white p-4 shadow-sm sm:p-5" onSubmit={form.handleSubmit((values) => onSubmit({ ...values, business: businessId, source: values.source as Lead["source"], service: values.service || null, responsible_user: values.responsible_user || null }))}>
+    <form className="grid gap-4 rounded-card border border-slate-200 bg-white p-4 shadow-card sm:p-5" onSubmit={form.handleSubmit((values) => onSubmit({ ...values, business: businessId, source: values.source as Lead["source"], service: values.service || null, responsible_user: values.responsible_user || null }))}>
       {!hasClients ? (
-        <div className="rounded-3xl border border-amber-100 bg-amber-50/80 p-4 text-sm text-amber-900">
+        <div className="rounded-card border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           <p className="font-bold">{t("leadForm.needClientTitle")}</p>
           <p className="mt-1 leading-6 text-amber-800">{t("leadForm.needClientText")}</p>
           <Link className="mt-3 inline-flex font-bold text-amber-950 underline-offset-4 hover:underline" to="/app/clients?create=1">
@@ -90,7 +90,7 @@ export function LeadForm({
         </div>
       ) : null}
       {!hasServices ? (
-        <div className="rounded-3xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-600">
+        <div className="rounded-card border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
           <p className="font-bold text-midnight">{t("leadForm.serviceLaterTitle")}</p>
           <p className="mt-1 leading-6">{t("leadForm.serviceLaterText")}</p>
           <Link className="mt-3 inline-flex font-bold text-brand-700 underline-offset-4 hover:underline" to="/app/services">
@@ -100,7 +100,7 @@ export function LeadForm({
       ) : null}
       <Select label={t("appointment.client")} options={[{ value: 0, label: t("appointment.selectClient") }, ...clients.map((client) => ({ value: client.id, label: `${client.full_name} ${client.phone || ""}` }))]} {...form.register("client")} />
       {duplicates.length || relatedLeadsCount ? (
-        <div className="rounded-3xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        <div className="rounded-card border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           <p className="font-black">{t("leadForm.relatedTitle")}</p>
           <p className="mt-1 text-amber-800">
             {relatedLeadsCount ? `${t("leadForm.relatedCount").replace("{count}", String(relatedLeadsCount))} ` : ""}

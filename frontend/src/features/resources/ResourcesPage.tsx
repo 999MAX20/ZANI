@@ -1,11 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { BriefcaseBusiness, CalendarClock, Plus, UsersRound } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { getApiErrorMessage } from "../../api/client";
 import { resourcesApi } from "../../api/resources";
 import { ResourceForm } from "../../components/forms/ResourceForm";
+import { useNotification } from "../../components/notifications/NotificationProvider";
 import { DataTable } from "../../components/tables/DataTable";
 import { Button } from "../../components/ui/Button";
 import { MetricCard } from "../../components/ui/MetricCard";
@@ -29,6 +30,7 @@ const resourceTypeLabelKeys: Record<Resource["resource_type"], string> = {
 
 export function ResourcesPage() {
   const { t } = useI18n();
+  const showNotification = useNotification();
   const queryClient = useQueryClient();
   const { business } = useActiveBusiness();
   const { resources, appointments, workingHours } = useEntityData({ resources: true, appointments: true, workingHours: true });
@@ -45,6 +47,12 @@ export function ResourcesPage() {
       setDraft(undefined);
     },
   });
+  const actionErrorMessage = mutation.error ? getApiErrorMessage(mutation.error) : "";
+
+  useEffect(() => {
+    if (!actionErrorMessage) return;
+    showNotification({ message: actionErrorMessage, tone: "danger" });
+  }, [actionErrorMessage, showNotification]);
 
   if (!business) return <ErrorState message={t("resources.noBusiness")} />;
   if (resources.isLoading || appointments.isLoading || workingHours.isLoading) return <LoadingState />;
@@ -86,8 +94,7 @@ export function ResourcesPage() {
         <MetricCard label={t("resources.staff")} value={staffCount} hint={t("resources.staffHint")} icon={BriefcaseBusiness} />
         <MetricCard label={t("resources.withSchedule")} value={`${scheduledResources}/${activeResources.length}`} hint={t("resources.withScheduleHint")} icon={CalendarClock} />
       </section>
-      {mutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(mutation.error)} /></div> : null}
-      <div className="mb-5 rounded-3xl border border-white/80 bg-white/75 p-4 text-sm text-slate-600 shadow-sm">
+      <div className="mb-5 rounded-card border border-slate-200 bg-white p-4 text-sm text-slate-600 shadow-card">
         <span className="font-black text-midnight">{t("resources.logicTitle")}</span> {t("resources.logicText")}
       </div>
       <section className="mb-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -96,7 +103,7 @@ export function ResourcesPage() {
             key={template.label}
             type="button"
             onClick={() => openCreate(template.draft)}
-            className="rounded-3xl border border-white/80 bg-white/80 p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft"
+            className="rounded-card border border-slate-200 bg-white p-4 text-left shadow-card transition hover:bg-slate-50"
           >
             <p className="font-black text-midnight">{template.label}</p>
             <p className="mt-1 text-sm leading-6 text-slate-500">{template.text}</p>

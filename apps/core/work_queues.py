@@ -217,7 +217,7 @@ def _task_item(task):
         "deal_id": task.deal_id,
         "appointment_id": task.appointment_id,
         "assignee_id": task.assignee_id,
-        "href": f"/app/tasks/{task.id}",
+        "href": f"/app/tasks?task={task.id}",
     }
 
 
@@ -231,7 +231,7 @@ def _lead_item(lead, *, now):
         "client_id": lead.client_id,
         "responsible_user_id": lead.responsible_user_id,
         "age_hours": _hours_since(lead.updated_at, now=now),
-        "href": f"/app/leads/{lead.id}",
+        "href": f"/app/leads?lead={lead.id}",
     }
 
 
@@ -251,7 +251,7 @@ def _deal_item(deal, *, now, reason):
         "currency": deal.currency,
         "risk_level": risk_level,
         "risk_percent": risk_percent,
-        "href": f"/app/deals/{deal.id}",
+        "href": f"/app/deals?deal={deal.id}",
     }
 
 
@@ -267,7 +267,7 @@ def _appointment_item(appointment):
         "resource_id": appointment.resource_id,
         "start_at": appointment.start_at.isoformat(),
         "end_at": appointment.end_at.isoformat(),
-        "href": f"/app/appointments/{appointment.id}",
+        "href": f"/app/calendar?appointment={appointment.id}",
     }
 
 
@@ -288,7 +288,7 @@ def _conversation_item(conversation, *, reason):
         "assigned_to_id": conversation.assigned_to_id,
         "last_message_at": conversation.last_message_at.isoformat() if conversation.last_message_at else None,
         "last_inbound_at": conversation.last_inbound_at.isoformat() if conversation.last_inbound_at else None,
-        "href": f"/app/inbox/{conversation.id}",
+        "href": f"/app/conversations?conversation={conversation.id}",
     }
 
 

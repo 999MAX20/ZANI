@@ -49,7 +49,7 @@ PILOT_FRONTEND_ROUTES = [
     "/app/inbox",
     "/app/ai-assistant",
     "/app/integrations",
-    "/app/pilot-readiness",
+    "/app/settings",
 ]
 
 

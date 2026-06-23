@@ -3,7 +3,7 @@ import type { Id, Lead, Task } from "../../../types";
 export type LeadFilter = "all" | "new" | "hot" | "unanswered" | "mine" | "attention";
 export type LeadAction = "take" | "contacted" | "deal" | "closed" | "lost" | "reopen" | "assign";
 export type LeadViewMode = "table" | "kanban";
-export type LeadColumnKey = "lead" | "phone" | "source" | "ai" | "status" | "priority" | "manager" | "activity" | "next";
+export type LeadColumnKey = "lead" | "phone" | "source" | "status" | "priority" | "manager" | "activity" | "next";
 export type Translate = (key: string, params?: Record<string, string | number>) => string;
 
 export type OfflineLeadAction =
@@ -60,13 +60,12 @@ export const LEAD_CACHE_KEY = "zani_leads_cache";
 
 export const leadFilters: LeadFilter[] = ["all", "new", "hot", "unanswered", "mine", "attention"];
 export const leadViewModes: LeadViewMode[] = ["table", "kanban"];
-export const leadColumnOrder: LeadColumnKey[] = ["lead", "phone", "source", "ai", "status", "priority", "manager", "activity", "next"];
+export const leadColumnOrder: LeadColumnKey[] = ["lead", "phone", "source", "status", "priority", "manager", "activity", "next"];
 
 export const leadColumnWidths: Record<LeadColumnKey, string> = {
   lead: "minmax(220px,1.7fr)",
   phone: "minmax(130px,0.8fr)",
   source: "minmax(110px,0.7fr)",
-  ai: "minmax(82px,0.45fr)",
   status: "minmax(112px,0.7fr)",
   priority: "minmax(96px,0.55fr)",
   manager: "minmax(128px,0.75fr)",
@@ -78,7 +77,6 @@ export const defaultVisibleColumns: Record<LeadColumnKey, boolean> = {
   lead: true,
   phone: false,
   source: true,
-  ai: true,
   status: true,
   priority: false,
   manager: false,

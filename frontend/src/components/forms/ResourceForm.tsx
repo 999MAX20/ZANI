@@ -30,7 +30,7 @@ export function ResourceForm({ businessId, initial, onSubmit }: { businessId: Id
 
   return (
     <form className="grid gap-4" onSubmit={form.handleSubmit((values) => onSubmit({ ...values, business: businessId } as Partial<Resource>))}>
-      <div className="rounded-3xl border border-brand-100 bg-brand-50/60 p-4 text-sm text-slate-700">
+      <div className="rounded-card border border-brand-100 bg-brand-50 p-4 text-sm text-slate-700">
         <p className="font-bold text-midnight">{t("resources.formHintTitle")}</p>
         <p className="mt-1 leading-6">
           {t("resources.formHintText")}

@@ -59,7 +59,15 @@ export type ClientMergeDryRun = {
     number
   >;
   will_delete_duplicate: boolean;
-  policy: "hard_delete_duplicate_after_transfer" | string;
+  policy: "archive_duplicate_after_transfer" | "hard_delete_duplicate_after_transfer" | string;
+};
+
+export type ClientMergeResult = {
+  target_client_id: Id;
+  archived_duplicate?: Pick<Client, "id" | "full_name" | "phone" | "email" | "whatsapp_id" | "telegram_id" | "instagram_id" | "source" | "is_archived">;
+  deleted_duplicate: Pick<Client, "id" | "full_name" | "phone" | "email" | "whatsapp_id" | "telegram_id" | "instagram_id" | "source" | "is_archived">;
+  transferred: Record<string, number>;
+  merge_log_id: Id;
 };
 
 export const clientsApi = {
@@ -106,7 +114,7 @@ export const clientsApi = {
     return data;
   },
   merge: async ({ id, duplicate_client_id }: { id: Id; duplicate_client_id: Id }) => {
-    const { data } = await apiClient.post(`/api/clients/${id}/merge/`, { duplicate_client_id });
+    const { data } = await apiClient.post<ClientMergeResult>(`/api/clients/${id}/merge/`, { duplicate_client_id });
     return data;
   },
   mergeDryRun: async ({ id, duplicate_client_id }: { id: Id; duplicate_client_id: Id }) => {

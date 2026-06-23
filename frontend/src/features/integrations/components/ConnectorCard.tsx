@@ -141,10 +141,10 @@ export function ConnectorCard({
   const statusUi = merchantStatusUi(merchantStatus(connector, capability), t);
 
   return (
-    <div className="rounded-3xl border border-white/80 bg-white/90 p-5 shadow-soft backdrop-blur-xl">
+    <div className="rounded-card border border-slate-200 bg-white p-5 shadow-card">
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 items-start gap-3">
-          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-slate-100 text-brand-600">
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-control bg-slate-100 text-brand-600">
             {isConnected ? <ShieldCheck size={22} /> : <PlugZap size={22} />}
           </div>
           <div className="min-w-0">
@@ -160,28 +160,28 @@ export function ConnectorCard({
       <p className="mt-4 text-sm leading-6 text-slate-600">{capability.description}</p>
 
       {connector?.last_error ? (
-        <div className="mt-4 flex gap-2 rounded-2xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <div className="mt-4 flex gap-2 rounded-control border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
           <AlertTriangle className="mt-0.5 shrink-0" size={16} />
           <span>{connector.last_error}</span>
         </div>
       ) : null}
 
       <div className="mt-5 grid gap-3 text-sm text-slate-600 sm:grid-cols-3">
-        <div className="rounded-2xl bg-slate-50 p-3">
+        <div className="rounded-control bg-slate-50 p-3">
           <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{t("integrations.card.businessValue")}</p>
           <p className="mt-1 font-semibold text-midnight">{connectorTitle(capability, t)}</p>
         </div>
-        <div className="rounded-2xl bg-slate-50 p-3">
+        <div className="rounded-control bg-slate-50 p-3">
           <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{t("integrations.card.plan")}</p>
           <p className="mt-1 font-semibold text-midnight">{availabilityLabel(capability.availability, t)} · {planLabel(capability.required_plan)}</p>
         </div>
-        <div className="rounded-2xl bg-slate-50 p-3">
+        <div className="rounded-control bg-slate-50 p-3">
           <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{t("integrations.card.connection")}</p>
           <p className="mt-1 font-semibold text-midnight">{setupStateLabel(capability.setup_state, t)}</p>
         </div>
       </div>
 
-      <div className="mt-4 rounded-3xl border border-slate-100 bg-slate-50 p-4">
+      <div className="mt-4 rounded-card border border-slate-200 bg-slate-50 p-4">
         <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{t("integrations.card.ownerAction")}</p>
         <p className="mt-2 text-sm leading-6 text-slate-600">{connectorSetupMessage(capability, t, connector)}</p>
         <p className="mt-2 text-xs font-semibold text-slate-500">{connectorActionHint(capability, t)}</p>
@@ -201,12 +201,12 @@ export function ConnectorCard({
                 {isRequestOnly ? <Send size={16} /> : isRoadmapOnly ? <LockKeyhole size={16} /> : <Link2 size={16} />} {primaryLabel}
               </Button>
               {isRequestOnly ? (
-                <p className="rounded-2xl bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-700">
+                <p className="rounded-control bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-700">
                   {t("integrations.card.requestNotice")}
                 </p>
               ) : null}
               {isRoadmapOnly ? (
-                <p className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">
+                <p className="rounded-control bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">
                   {t("integrations.card.roadmapNotice")}
                 </p>
               ) : null}
@@ -214,11 +214,11 @@ export function ConnectorCard({
           ) : (
             <>
               {connector.status !== "connected" ? (
-                <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+                <div className="rounded-control border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
                   {t("integrations.card.pendingNotice")}
                 </div>
               ) : (
-                <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+                <div className="rounded-control border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
                   {t("integrations.card.connectedNotice")}
                 </div>
               )}
@@ -235,7 +235,7 @@ export function ConnectorCard({
           {error ? <ErrorState message={getApiErrorMessage(error)} /> : null}
         </div>
       ) : (
-        <p className="mt-5 rounded-2xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">
+        <p className="mt-5 rounded-control bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">
           {t("integrations.card.readOnly")}
         </p>
       )}

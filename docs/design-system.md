@@ -77,3 +77,9 @@ Status colors should communicate state, not decorate layout.
   - right: selected object and actions.
 - Avoid hero blocks on operational CRM screens.
 - Avoid nested cards unless the inner card is a real repeated item or modal/form section.
+
+## Shared UI Helpers
+
+- Use `Surface` from `frontend/src/components/ui/Card.tsx` for standard white CRM surfaces.
+- Use exported surface class helpers from `Card.tsx` when a low-level wrapper must own the element markup, for example table shells.
+- Table shells should use `CrmTableSurface`, `CrmDataTable`, or `DataTable` before adding page-local card wrappers.

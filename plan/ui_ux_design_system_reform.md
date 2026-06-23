@@ -107,6 +107,12 @@ Analytics    -> KPI + charts + AI interpretation
 Settings     -> Structured forms by sections
 ```
 
+Settings scope:
+
+- keep persistent workspace configuration: business profile, team/access, roles, security, communication preferences, quick replies, appointment messages, billing/usage and guarded custom fields;
+- keep operational tools out of Settings: import/export, lead capture forms, automation builders, connector/developer setup and workflow shortcuts belong on their dedicated pages;
+- avoid developer-console surfaces inside merchant settings unless explicitly gated by a separate advanced/admin route.
+
 ## Approved Color Direction
 
 Основной стиль: светлая business CRM с синим primary и фиолетовым AI-акцентом.
@@ -221,3 +227,21 @@ Panel shadow:      0 16px 40px rgba(15, 23, 42, 0.10)
 - Browser visual QA is done for desktop and mobile;
 - readiness document is updated.
 
+## Implementation Checkpoints
+
+### 2026-06-21 Shared UI cleanup
+
+Выполнен первый проход по общим UI-компонентам:
+
+- `Card`, `DataTable`, `MetricCard`, `PageHeader`, `StateViews` приведены к более плотному CRM-стилю;
+- старые glass/blur surfaces в shared-компонентах заменены на белые поверхности с `slate` border;
+- generic active states в `Primitives` переведены с AI-gradient на обычный CRM blue;
+- `zani-ai-surface` упрощен до спокойной AI-поверхности без декоративного radial/gradient фона;
+- базовые shadows стали мягче и ближе к принятому `Clean Business CRM + AI Accent`.
+
+Осталось:
+
+- пройти feature-level блоки, где еще вручную используются `rounded-3xl`, `bg-white/80`, `shadow-soft`, `hover:-translate-y-*`;
+- унифицировать формы и modal footer/content layout;
+- завершить перевод transient action errors в bottom-right notifications;
+- провести desktop/mobile visual QA по приоритетным страницам.

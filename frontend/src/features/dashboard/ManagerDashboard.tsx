@@ -1,7 +1,7 @@
 import { CalendarCheck, Flame, ListChecks, MessageSquareText, Target, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import { Card, CardBody } from "../../components/ui/Card";
+import { Card, CardBody, Surface } from "../../components/ui/Card";
 import { MetricTile } from "../../components/ui/Primitives";
 import { EmptyState } from "../../components/ui/StateViews";
 import { StatusBadge } from "../../components/ui/StatusBadge";
@@ -83,9 +83,9 @@ export function ManagerDashboard({
   return (
     <div className="pb-6">
       {isCoreDataLoading ? (
-        <div className="mb-5 rounded-xl border border-cyan-100 bg-white px-5 py-4 text-sm font-semibold text-slate-600 shadow-soft">
+        <Surface className="mb-5 border-cyan-100 px-5 py-4 text-sm font-semibold text-slate-600" padding="none">
           {t("dashboard.loadingCoreData")}
-        </div>
+        </Surface>
       ) : null}
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -95,33 +95,33 @@ export function ManagerDashboard({
         <MetricTile label={t("nav.tasks")} value={taskAttentionCount} hint={overdueTasks ? `${t("dashboard.overdueCount")}: ${overdueTasks}` : t("dashboard.openFollowups")} icon={ListChecks} />
       </section>
 
-      <section className="mt-5 rounded-xl border border-slate-200 bg-white p-5 shadow-soft">
+      <Surface as="section" className="mt-5" padding="lg">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">{t("dashboard.operatorWorkspace")}</p>
             <h2 className="mt-1 text-xl font-black text-midnight">{t("dashboard.operatorFocus")}</h2>
           </div>
           <div className="grid grid-cols-3 gap-2 text-center">
-            <Link to="/app/leads" className="rounded-xl bg-slate-50 px-4 py-3 transition hover:bg-white hover:shadow-soft">
+            <Surface as={Link} to="/app/leads" variant="muted" padding="none" interactive className="rounded-xl px-4 py-3">
               <p className="text-2xl font-black text-midnight">{leadAttentionCount}</p>
               <p className="text-xs font-bold text-slate-500">{t("dashboard.leadsLabel")}</p>
-            </Link>
-            <Link to="/app/conversations" className="rounded-xl bg-slate-50 px-4 py-3 transition hover:bg-white hover:shadow-soft">
+            </Surface>
+            <Surface as={Link} to="/app/conversations" variant="muted" padding="none" interactive className="rounded-xl px-4 py-3">
               <MessageSquareText className="mx-auto text-brand-600" size={22} />
               <p className="mt-1 text-xs font-bold text-slate-500">{t("dashboard.chatsLabel")}</p>
-            </Link>
-            <Link to="/app/deals" className="rounded-xl bg-slate-50 px-4 py-3 transition hover:bg-white hover:shadow-soft">
+            </Surface>
+            <Surface as={Link} to="/app/deals" variant="muted" padding="none" interactive className="rounded-xl px-4 py-3">
               <Target className="mx-auto text-ai-600" size={22} />
               <p className="mt-1 text-xs font-bold text-slate-500">{t("nav.deals")}</p>
-            </Link>
+            </Surface>
           </div>
         </div>
-      </section>
+      </Surface>
 
       <section className="mt-5 grid gap-4 xl:grid-cols-3">
         <WorkListCard eyebrow={t("dashboard.queue")} title={t("dashboard.leadsToAnswer")} href="/app/leads">
           {queueLeads.length ? queueLeads.map((lead) => (
-            <Link key={lead.id} to={`/app/leads?lead=${lead.id}`} className="block rounded-xl border border-slate-200 bg-white p-3 transition hover:border-brand-200 hover:shadow-soft">
+            <Surface key={lead.id} as={Link} to={`/app/leads?lead=${lead.id}`} padding="sm" interactive className="block rounded-xl">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="truncate font-bold text-midnight">{lead.title || t("dashboard.leadNumber", { id: lead.id })}</p>
@@ -129,12 +129,12 @@ export function ManagerDashboard({
                 </div>
                 <StatusBadge status={lead.status} />
               </div>
-            </Link>
+            </Surface>
           )) : urgentLeads.map((lead) => {
             const client = clients.find((item) => item.id === lead.client);
             const service = services.find((item) => item.id === lead.service);
             return (
-              <Link key={lead.id} to="/app/leads" className="block rounded-xl border border-slate-200 bg-white p-3 transition hover:border-brand-200 hover:shadow-soft">
+              <Surface key={lead.id} as={Link} to="/app/leads" padding="sm" interactive className="block rounded-xl">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="truncate font-bold text-midnight">{client?.full_name || t("dashboard.leadNumber", { id: lead.id })}</p>
@@ -142,7 +142,7 @@ export function ManagerDashboard({
                   </div>
                   <StatusBadge status={lead.status} />
                 </div>
-              </Link>
+              </Surface>
             );
           })}
           {!urgentLeads.length ? <EmptyState title={t("dashboard.noUrgentLeads")} description={t("dashboard.noUrgentLeadsText")} /> : null}
@@ -150,7 +150,7 @@ export function ManagerDashboard({
 
         <WorkListCard eyebrow={t("common.today")} title={t("nav.appointments")} href="/app/calendar">
           {queueAppointments.length ? queueAppointments.map((appointment) => (
-            <Link key={`${appointment.type}-${appointment.id}`} to="/app/calendar" className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 transition hover:border-brand-200 hover:shadow-soft">
+            <Surface key={`${appointment.type}-${appointment.id}`} as={Link} to="/app/calendar" padding="sm" interactive className="flex items-start gap-3 rounded-xl">
               <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700">
                 <CalendarCheck size={17} />
               </div>
@@ -158,12 +158,12 @@ export function ManagerDashboard({
                 <p className="truncate font-bold text-midnight">{appointment.title || t("common.client")}</p>
                 <p className="mt-1 text-xs text-slate-500">{formatDateTime(appointment.start_at)}</p>
               </div>
-            </Link>
+            </Surface>
           )) : todayAppointments.map((appointment) => {
             const client = clients.find((item) => item.id === appointment.client);
             const service = services.find((item) => item.id === appointment.service);
             return (
-              <Link key={appointment.id} to="/app/calendar" className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 transition hover:border-brand-200 hover:shadow-soft">
+              <Surface key={appointment.id} as={Link} to="/app/calendar" padding="sm" interactive className="flex items-start gap-3 rounded-xl">
                 <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700">
                   <CalendarCheck size={17} />
                 </div>
@@ -171,7 +171,7 @@ export function ManagerDashboard({
                   <p className="truncate font-bold text-midnight">{client?.full_name || t("common.client")}</p>
                   <p className="mt-1 text-xs text-slate-500">{service?.name || t("common.service")} · {formatDateTime(appointment.start_at)}</p>
                 </div>
-              </Link>
+              </Surface>
             );
           })}
           {!todayAppointments.length ? <EmptyState title={t("dashboard.noBookingsToday")} description={t("dashboard.noBookingsTodayText")} /> : null}
@@ -179,7 +179,7 @@ export function ManagerDashboard({
 
         <WorkListCard eyebrow={t("dashboard.followUp")} title={t("dashboard.myTasks")} href="/app/tasks">
           {queueTasks.length ? queueTasks.map((task) => (
-            <Link key={task.id} to="/app/tasks" className="block rounded-xl border border-slate-200 bg-white p-3 transition hover:border-brand-200 hover:shadow-soft">
+            <Surface key={task.id} as={Link} to="/app/tasks" padding="sm" interactive className="block rounded-xl">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="truncate font-bold text-midnight">{task.title}</p>
@@ -187,9 +187,9 @@ export function ManagerDashboard({
                 </div>
                 <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-black uppercase text-slate-600">{task.priority}</span>
               </div>
-            </Link>
+            </Surface>
           )) : openTaskItems.map((task) => (
-            <Link key={task.id} to="/app/tasks" className="block rounded-xl border border-slate-200 bg-white p-3 transition hover:border-brand-200 hover:shadow-soft">
+            <Surface key={task.id} as={Link} to="/app/tasks" padding="sm" interactive className="block rounded-xl">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="truncate font-bold text-midnight">{task.title}</p>
@@ -197,7 +197,7 @@ export function ManagerDashboard({
                 </div>
                 <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-black uppercase text-slate-600">{task.priority}</span>
               </div>
-            </Link>
+            </Surface>
           ))}
           {!openTaskItems.length ? <EmptyState title={t("dashboard.noOpenTasks")} description={t("dashboard.noOpenTasksText")} /> : null}
         </WorkListCard>

@@ -37,6 +37,13 @@ class DuplicateDetectionFoundationTests(TestCase):
         self.other_business = Business.objects.create(owner=self.other_owner, name="Other Duplicate", slug="other-duplicate")
         BusinessMember.objects.create(business=self.business, user=self.owner, role=BusinessMember.Roles.OWNER)
         BusinessMember.objects.create(business=self.other_business, user=self.other_owner, role=BusinessMember.Roles.OWNER)
+        self.view_only_user = User.objects.create_user(
+            username="duplicate-viewer",
+            email="duplicate-viewer@example.com",
+            password="pass",
+            role=User.Roles.BUSINESS_MANAGER,
+        )
+        BusinessMember.objects.create(business=self.business, user=self.view_only_user, role=BusinessMember.Roles.MARKETER)
         self.target = Client.objects.create(business=self.business, full_name="Main Client", phone="+77015550101", email="main@example.com")
         self.duplicate = Client.objects.create(business=self.business, full_name="Duplicate Client", phone="8 701 555 01 01", email="duplicate@example.com")
         Client.objects.create(business=self.other_business, full_name="Hidden Client", phone="+77015550101")
@@ -54,6 +61,70 @@ class DuplicateDetectionFoundationTests(TestCase):
         ids = {item["id"] for item in response.data["duplicates"]}
         self.assertEqual(ids, {self.target.id, self.duplicate.id})
         self.assertTrue(all("phone" in item["matched_fields"] for item in response.data["duplicates"]))
+
+    def test_client_identity_is_normalized_for_duplicates_and_search(self):
+        self.target.refresh_from_db()
+        self.duplicate.refresh_from_db()
+
+        self.assertEqual(self.target.normalized_phone, "77015550101")
+        self.assertEqual(self.duplicate.normalized_phone, "77015550101")
+
+        response = self.api.post(
+            "/api/clients/check-duplicates/",
+            {"business": self.business.id, "email": "MAIN@EXAMPLE.COM"},
+            format="json",
+        )
+        search_response = self.api.get("/api/clients/", {"q": "8 (701) 555-01-01", "page_size": 10})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([item["id"] for item in response.data["duplicates"]], [self.target.id])
+        self.assertEqual(search_response.status_code, 200)
+        self.assertEqual(search_response.data["count"], 2)
+
+    def test_duplicate_check_requires_client_create_permission(self):
+        self.api.force_authenticate(self.view_only_user)
+
+        response = self.api.post(
+            "/api/clients/check-duplicates/",
+            {"business": self.business.id, "phone": "+7 (701) 555-01-01"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_view_only_member_cannot_merge_or_archive_client(self):
+        self.api.force_authenticate(self.view_only_user)
+
+        merge_response = self.api.post(
+            f"/api/clients/{self.target.id}/merge/",
+            {"duplicate_client_id": self.duplicate.id},
+            format="json",
+        )
+        archive_response = self.api.post(
+            f"/api/clients/{self.target.id}/archive/",
+            {"reason": "Not allowed"},
+            format="json",
+        )
+
+        self.assertEqual(merge_response.status_code, 403)
+        self.assertEqual(archive_response.status_code, 403)
+        self.assertTrue(Client.objects.filter(id=self.duplicate.id).exists())
+        self.duplicate.refresh_from_db()
+        self.assertFalse(self.duplicate.is_archived)
+        self.target.refresh_from_db()
+        self.assertFalse(self.target.is_archived)
+
+    def test_generic_update_cannot_bypass_client_archive_endpoint(self):
+        response = self.api.patch(
+            f"/api/clients/{self.target.id}/",
+            {"is_archived": True, "archive_reason": "Bypass"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.target.refresh_from_db()
+        self.assertFalse(self.target.is_archived)
+        self.assertEqual(self.target.archive_reason, "")
 
     def test_lead_duplicate_check_returns_related_leads(self):
         lead = Lead.objects.create(business=self.business, client=self.target, service=self.service, message="Existing lead")
@@ -90,7 +161,10 @@ class DuplicateDetectionFoundationTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertFalse(Client.objects.filter(id=self.duplicate.id).exists())
+        self.assertTrue(Client.objects.filter(id=self.duplicate.id).exists())
+        self.duplicate.refresh_from_db()
+        self.assertTrue(self.duplicate.is_archived)
+        self.assertEqual(self.duplicate.archived_by, self.owner)
         lead.refresh_from_db()
         appointment.refresh_from_db()
         task.refresh_from_db()
@@ -166,7 +240,8 @@ class DuplicateDetectionFoundationTests(TestCase):
         self.assertEqual(response.data["transferred"]["tags"], 1)
         self.assertEqual(response.data["transferred"]["attachments"], 1)
         self.assertEqual(response.data["transferred"]["custom_field_values"], 1)
-        self.assertTrue(response.data["will_delete_duplicate"])
+        self.assertFalse(response.data["will_delete_duplicate"])
+        self.assertEqual(response.data["policy"], "archive_duplicate_after_transfer")
         self.assertTrue(Client.objects.filter(id=self.duplicate.id).exists())
         lead.refresh_from_db()
         self.assertEqual(lead.client, self.duplicate)
@@ -234,6 +309,8 @@ class DuplicateDetectionFoundationTests(TestCase):
         self.assertEqual(attachment.entity_id, str(self.target.id))
         self.assertEqual(moved_value.entity_id, str(self.target.id))
         self.assertFalse(CustomFieldValue.objects.filter(id=conflict_value.id).exists())
+        self.duplicate.refresh_from_db()
+        self.assertTrue(self.duplicate.is_archived)
         self.assertTrue(TaggedObject.objects.filter(business=self.business, tag=duplicate_only_tag, entity_id=str(self.target.id)).exists())
         self.assertEqual(TaggedObject.objects.filter(business=self.business, tag=shared_tag, entity_id=str(self.target.id)).count(), 1)
         merge_log = ClientMergeLog.objects.get(id=response.data["merge_log_id"])
@@ -261,13 +338,13 @@ class DuplicateDetectionFoundationTests(TestCase):
         bot = Bot.objects.create(business=self.business, name="Client list bot")
         BotConversation.objects.create(business=self.business, bot=bot, channel=BotConversation.Channels.WEBSITE, client=self.target)
 
-        response = self.api.get("/api/clients/", {"q": "7015550101", "page_size": 10})
+        response = self.api.get("/api/clients/", {"q": "main@example.com", "page_size": 10})
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["count"], 1)
         self.assertEqual(response.data["summary"]["total"], 1)
         self.assertEqual(response.data["facets"]["source"][Client.Sources.MANUAL], 1)
-        row = response.data["results"][0]
+        row = next(item for item in response.data["results"] if item["id"] == self.target.id)
         self.assertEqual(row["id"], self.target.id)
         self.assertEqual(row["leads_count"], 1)
         self.assertEqual(row["tasks_count"], 1)

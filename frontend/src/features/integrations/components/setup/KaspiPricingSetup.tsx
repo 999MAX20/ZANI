@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { kaspiPricingApi, type KaspiPriceChangeLog, type KaspiPricingRule } from "../../../../api/pricing";
 import { getApiErrorMessage } from "../../../../api/client";
 import { Button } from "../../../../components/ui/Button";
+import { useNotification } from "../../../../components/notifications/NotificationProvider";
 import { ErrorState } from "../../../../components/ui/StateViews";
 import { cn } from "../../../../lib/cn";
 import { useI18n } from "../../../../lib/i18n";
@@ -31,8 +32,13 @@ function readableStatus(status: string | undefined, t: Translate, fallback = t("
 
 export function KaspiPricingInlineSetup({ businessId, canManage }: { businessId: Id; canManage: boolean }) {
   const { t } = useI18n();
+  const showNotification = useNotification();
   const queryClient = useQueryClient();
-  const [notice, setNotice] = useState<string | null>(null);
+
+  function setNotice(message: string | null) {
+    if (!message) return;
+    showNotification({ message, tone: "warning" });
+  }
 
   const control = useQuery({
     queryKey: ["kaspi-pricing-control", businessId],
@@ -78,11 +84,10 @@ export function KaspiPricingInlineSetup({ businessId, canManage }: { businessId:
   const stopped = Boolean(control.data?.emergency_stop_enabled);
 
   return (
-    <div className="w-full space-y-4 rounded-3xl border border-slate-100 bg-slate-50/70 p-4">
+    <div className="w-full space-y-4 rounded-card border border-slate-200 bg-slate-50 p-4">
       {error ? <ErrorState message={getApiErrorMessage(error)} /> : null}
-      {notice ? <div className="rounded-2xl bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800">{notice}</div> : null}
 
-      <div className="rounded-3xl border border-amber-100 bg-amber-50 p-4">
+      <div className="rounded-card border border-amber-200 bg-amber-50 p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-sm font-black text-amber-950">{t("integrations.kaspiPricing.productTitle")}</p>
@@ -117,7 +122,7 @@ export function KaspiPricingInlineSetup({ businessId, canManage }: { businessId:
         </div>
       </div>
 
-      <div className={cn("rounded-3xl border p-4", stopped ? "border-red-100 bg-red-50" : "border-emerald-100 bg-emerald-50")}>
+      <div className={cn("rounded-card border p-4", stopped ? "border-red-200 bg-red-50" : "border-emerald-200 bg-emerald-50")}>
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <p className={cn("text-sm font-black", stopped ? "text-red-950" : "text-emerald-950")}>{stopped ? t("integrations.kaspiPricing.agentStopped") : t("integrations.kaspiPricing.agentReady")}</p>
@@ -137,7 +142,7 @@ export function KaspiPricingInlineSetup({ businessId, canManage }: { businessId:
         </div>
       </div>
 
-      <div className="rounded-3xl border border-slate-100 bg-white p-4">
+      <div className="rounded-card border border-slate-200 bg-white p-4">
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm font-black text-midnight">{t("integrations.kaspiPricing.latestChange")}</p>
           <Link to="/app/pricing">

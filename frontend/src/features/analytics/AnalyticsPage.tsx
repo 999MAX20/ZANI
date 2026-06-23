@@ -229,17 +229,17 @@ export function AnalyticsPage() {
             {reportSummary.error ? <div className="mt-4"><ErrorState message={getApiErrorMessage(reportSummary.error)} /></div> : null}
             {report ? (
               <div className="mt-5 grid gap-4 lg:grid-cols-3">
-                <div className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
+                <div className="rounded-card border border-slate-200 bg-slate-50 p-4">
                   <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{t("analytics.repeatRate")}</p>
                   <p className="mt-2 text-3xl font-black text-midnight">{report.retention_ltv.repeat_rate}%</p>
                   <p className="mt-1 text-sm text-slate-500">{t("analytics.repeatClientsCount", { count: report.retention_ltv.repeat_clients })}</p>
                 </div>
-                <div className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
+                <div className="rounded-card border border-slate-200 bg-slate-50 p-4">
                   <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{t("analytics.ltvEstimate")}</p>
                   <p className="mt-2 text-3xl font-black text-midnight">{report.retention_ltv.ltv_estimate}</p>
                   <p className="mt-1 text-sm text-slate-500">{report.retention_ltv.data_quality}</p>
                 </div>
-                <div className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
+                <div className="rounded-card border border-slate-200 bg-slate-50 p-4">
                   <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{t("analytics.openDeals")}</p>
                   <p className="mt-2 text-3xl font-black text-midnight">{report.funnel_velocity.open_deals}</p>
                   <p className="mt-1 text-sm text-slate-500">{t("analytics.wonLost")}: {report.funnel_velocity.won_deals}/{report.funnel_velocity.lost_deals}</p>
@@ -255,7 +255,7 @@ export function AnalyticsPage() {
             <p className="mt-1 text-sm leading-6 text-slate-500">{t("analytics.scheduledReportsText")}</p>
             <div className="mt-4 space-y-3">
               {(scheduledReports.data || []).map((item) => (
-                <div key={item.id} className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+                <div key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
                   <div className="flex items-center justify-between gap-3">
                     <p className="font-bold text-midnight">{item.name}</p>
                     <StatusBadge status={item.frequency} />
@@ -311,7 +311,7 @@ export function AnalyticsPage() {
             <h2 className="text-lg font-semibold text-midnight">{t("analytics.dealFunnel")}</h2>
             <div className="mt-4 space-y-3">
               {(report?.funnel_velocity.deal_stages || []).map((stage) => (
-                <div key={stage.stage} className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+                <div key={stage.stage} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
                   <div className="flex items-center justify-between">
                     <p className="font-semibold text-midnight">{stage.stage}</p>
                     <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-600">{stage.count}</span>
@@ -389,7 +389,7 @@ export function AnalyticsPage() {
                   </div>
                   <div className="space-y-3">
                     {teamPerformanceMembers.map((member) => (
-                      <div key={member.user.id} className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
+                      <div key={member.user.id} className="rounded-card border border-slate-200 bg-slate-50 p-4">
                         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                           <div>
                             <p className="font-bold text-midnight">{member.user.full_name || member.user.email}</p>
@@ -435,7 +435,7 @@ export function AnalyticsPage() {
                       <Link
                         key={`${action.user_id}-${action.type}`}
                         to={action.route}
-                        className={action.severity === "critical" ? "block rounded-2xl border border-red-100 bg-red-50 p-3 transition hover:-translate-y-0.5 hover:shadow-soft" : "block rounded-2xl border border-amber-100 bg-amber-50 p-3 transition hover:-translate-y-0.5 hover:shadow-soft"}
+                        className={action.severity === "critical" ? "block rounded-2xl border border-red-200 bg-red-50 p-3 transition hover:shadow-card" : "block rounded-2xl border border-amber-200 bg-amber-50 p-3 transition hover:shadow-card"}
                       >
                         <div className="flex items-center justify-between gap-3">
                           <div>
@@ -454,7 +454,7 @@ export function AnalyticsPage() {
                   <h3 className="mt-6 font-bold text-midnight">{t("analytics.teamTab")}</h3>
                   <div className="mt-4 space-y-3">
                     {teamPerformanceTeams.map((team) => (
-                      <div key={team.id} className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+                      <div key={team.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
                         <div className="flex items-start justify-between gap-3">
                           <div>
                             <p className="font-semibold text-midnight">{team.name}</p>

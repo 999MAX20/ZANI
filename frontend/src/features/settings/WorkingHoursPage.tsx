@@ -7,6 +7,7 @@ import { getApiErrorMessage } from "../../api/client";
 import { workingHoursApi, type WorkingHoursPreset } from "../../api/workingHours";
 import { WeeklyWorkingHoursForm } from "../../components/forms/WorkingHoursForm";
 import { DataTable } from "../../components/tables/DataTable";
+import { useNotification } from "../../components/notifications/NotificationProvider";
 import { Button } from "../../components/ui/Button";
 import { Modal } from "../../components/ui/Modal";
 import { PageHeader } from "../../components/ui/PageHeader";
@@ -26,13 +27,13 @@ const presetOptions: Array<{ value: WorkingHoursPreset; labelKey: string; descri
 
 export function WorkingHoursPage() {
   const { t } = useI18n();
+  const showNotification = useNotification();
   const queryClient = useQueryClient();
   const { business } = useActiveBusiness();
   const { workingHours, resources } = useEntityData({ workingHours: true, resources: true });
   const [open, setOpen] = useState(false);
   const [editingResource, setEditingResource] = useState<number | null>(null);
   const [preset, setPreset] = useState<WorkingHoursPreset>("weekdays_9_18");
-  const [notice, setNotice] = useState<string | null>(null);
   const mutation = useMutation({
     mutationFn: async (payloads: Array<Partial<WorkingHours>>) =>
       workingHoursApi.bulkUpsertWeek({
@@ -50,7 +51,7 @@ export function WorkingHoursPage() {
       queryClient.invalidateQueries({ queryKey: ["available-slots"] });
       setOpen(false);
       setEditingResource(null);
-      setNotice(t("workingHours.savedNotice"));
+      showNotification({ message: t("workingHours.savedNotice"), tone: "success" });
     },
   });
   const presetMutation = useMutation({
@@ -58,7 +59,7 @@ export function WorkingHoursPage() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["working-hours"] });
       queryClient.invalidateQueries({ queryKey: ["available-slots"] });
-      setNotice(t("workingHours.presetNotice").replace("{count}", String(data.count)));
+      showNotification({ message: t("workingHours.presetNotice").replace("{count}", String(data.count)), tone: "success" });
     },
   });
 
@@ -100,23 +101,23 @@ export function WorkingHoursPage() {
         }
       />
       <section className="mb-5 grid gap-3 lg:grid-cols-3">
-        <div className="rounded-3xl border border-white/80 bg-white/85 p-5 shadow-soft">
+        <div className="rounded-card border border-slate-200 bg-white p-5 shadow-card">
           <CalendarDays className="text-brand-600" size={24} />
           <p className="mt-4 text-sm font-bold text-slate-500">{t("workingHours.businessDays")}</p>
           <p className="mt-2 text-3xl font-black text-midnight">{businessDays}/7</p>
         </div>
-        <div className="rounded-3xl border border-white/80 bg-white/85 p-5 shadow-soft">
+        <div className="rounded-card border border-slate-200 bg-white p-5 shadow-card">
           <UsersRound className="text-brand-600" size={24} />
           <p className="mt-4 text-sm font-bold text-slate-500">{t("workingHours.resourceSchedules")}</p>
           <p className="mt-2 text-3xl font-black text-midnight">{resourceSchedules}/{activeResources.length}</p>
         </div>
-        <div className="rounded-3xl border border-white/80 bg-white/85 p-5 shadow-soft">
+        <div className="rounded-card border border-slate-200 bg-white p-5 shadow-card">
           <Clock3 className="text-brand-600" size={24} />
           <p className="mt-4 text-sm font-bold text-slate-500">{t("workingHours.daysOff")}</p>
           <p className="mt-2 text-3xl font-black text-midnight">{dayOffRows}</p>
         </div>
       </section>
-      <div className="mb-5 rounded-3xl border border-brand-100 bg-white/80 p-4 shadow-sm">
+      <div className="mb-5 rounded-card border border-brand-100 bg-brand-50 p-4 shadow-card">
         <div className="grid gap-4 lg:grid-cols-[1fr_220px] lg:items-end">
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.16em] text-brand-600">{t("workingHours.quickSetup")}</p>
@@ -137,15 +138,10 @@ export function WorkingHoursPage() {
           </div>
         </div>
       </div>
-      {notice ? (
-        <div className="mb-4 rounded-3xl border border-green-100 bg-green-50 px-4 py-3 text-sm font-bold text-green-800">
-          {notice}
-        </div>
-      ) : null}
       {mutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(mutation.error)} /></div> : null}
       {presetMutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(presetMutation.error)} /></div> : null}
       <section className="mb-5 grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-        <div className="rounded-[2rem] border border-white/80 bg-white/85 p-5 shadow-soft">
+        <div className="rounded-card border border-slate-200 bg-white p-5 shadow-card">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-600">{t("workingHours.wholeBusinessSchedule")}</p>
@@ -157,14 +153,14 @@ export function WorkingHoursPage() {
           </div>
           <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-7">
             {businessWeek.map((row, index) => (
-              <div key={weekdays[index]} className={`rounded-2xl border p-3 ${row && !row.is_day_off ? "border-brand-100 bg-brand-50/70" : "border-slate-100 bg-slate-50"}`}>
+              <div key={weekdays[index]} className={`rounded-control border p-3 ${row && !row.is_day_off ? "border-brand-100 bg-brand-50" : "border-slate-200 bg-slate-50"}`}>
                 <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{t(weekdays[index])}</p>
                 <p className={`mt-2 text-sm font-black ${row && !row.is_day_off ? "text-brand-800" : "text-slate-500"}`}>{formatHours(row)}</p>
               </div>
             ))}
           </div>
         </div>
-        <div className="rounded-[2rem] border border-white/80 bg-white/85 p-5 shadow-soft">
+        <div className="rounded-card border border-slate-200 bg-white p-5 shadow-card">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-600">{t("workingHours.resourceSchedules")}</p>
@@ -179,7 +175,7 @@ export function WorkingHoursPage() {
               <button
                 key={item.resource.id}
                 type="button"
-                className="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-left transition hover:bg-brand-50"
+                className="flex w-full items-center justify-between gap-3 rounded-control border border-slate-200 bg-slate-50 px-4 py-3 text-left transition hover:bg-brand-50"
                 onClick={() => { setEditingResource(item.resource.id); setOpen(true); }}
               >
                 <span className="font-bold text-midnight">{item.resource.name}</span>
@@ -188,7 +184,7 @@ export function WorkingHoursPage() {
                 </span>
               </button>
             )) : (
-              <p className="rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-500">{t("workingHours.noResourcesText")}</p>
+              <p className="rounded-control bg-slate-50 p-4 text-sm leading-6 text-slate-500">{t("workingHours.noResourcesText")}</p>
             )}
           </div>
         </div>

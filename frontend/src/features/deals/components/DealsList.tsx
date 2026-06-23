@@ -2,6 +2,7 @@ import { ChevronDown, FolderSearch, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Button } from "../../../components/ui/Button";
+import { CRM_TABLE_ROW_HEIGHT } from "../../../components/crm";
 import { cn } from "../../../lib/cn";
 import { formatDate } from "../../../lib/format";
 import type { DealRow, DealViewMode, Translate } from "../types";
@@ -73,27 +74,27 @@ export function DealsList({
     return (
       <div className="min-h-0 overflow-auto">
         <table className="w-full min-w-[860px] border-separate border-spacing-0 text-left text-sm">
-          <thead className="sticky top-0 z-10 bg-slate-50 text-xs uppercase text-slate-500">
-            <tr>
-              <th className="w-12 border-b border-slate-200 p-3"><input type="checkbox" checked={selectedIds.length === rows.length} onChange={onSelectAll} /></th>
-              <th className="border-b border-slate-200 p-3">{t("deals.deal")}</th>
-              <th className="border-b border-slate-200 p-3">{t("deals.client")}</th>
-              <th className="border-b border-slate-200 p-3">{t("deals.amount")}</th>
-              <th className="border-b border-slate-200 p-3">{t("deals.stage")}</th>
-              <th className="border-b border-slate-200 p-3">{t("deals.risk")}</th>
-              <th className="border-b border-slate-200 p-3">{t("deals.date")}</th>
+          <thead className="sticky top-0 z-10 bg-white text-xs font-semibold text-slate-600">
+            <tr className="h-10">
+              <th className="w-12 border-b border-slate-200 px-3 py-2"><input type="checkbox" checked={selectedIds.length === rows.length} onChange={onSelectAll} /></th>
+              <th className="border-b border-slate-200 px-3 py-2">{t("deals.deal")}</th>
+              <th className="border-b border-slate-200 px-3 py-2">{t("deals.client")}</th>
+              <th className="border-b border-slate-200 px-3 py-2">{t("deals.amount")}</th>
+              <th className="border-b border-slate-200 px-3 py-2">{t("deals.stage")}</th>
+              <th className="border-b border-slate-200 px-3 py-2">{t("deals.risk")}</th>
+              <th className="border-b border-slate-200 px-3 py-2">{t("deals.date")}</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((deal) => (
-              <tr key={deal.id} className={cn("cursor-pointer hover:bg-blue-50/40", selectedDealId === deal.id && "bg-blue-50")}>
-                <td className="border-b border-slate-100 p-3"><input type="checkbox" checked={selectedIds.includes(deal.id)} onChange={() => onCheck(deal)} /></td>
-                <td className="border-b border-slate-100 p-3 font-black text-midnight" onClick={() => onOpen(deal)}>{deal.title}</td>
-                <td className="border-b border-slate-100 p-3 text-slate-600">{deal.clientEntity?.full_name || t("deals.clientMissing")}</td>
-                <td className="border-b border-slate-100 p-3"><DealAmount value={deal.amount} currency={deal.currency} /></td>
-                <td className="border-b border-slate-100 p-3"><DealStageBadge stage={deal.stageEntity} fallback={t("deals.noStage")} /></td>
-                <td className="border-b border-slate-100 p-3"><DealRiskIndicator deal={deal} compact /></td>
-                <td className="border-b border-slate-100 p-3 text-slate-500">{formatDate(deal.created_at)}</td>
+              <tr key={deal.id} className={cn("cursor-pointer hover:bg-slate-50", selectedDealId === deal.id && "bg-brand-50")} style={{ minHeight: CRM_TABLE_ROW_HEIGHT }}>
+                <td className="border-b border-slate-100 px-3 py-2"><input type="checkbox" checked={selectedIds.includes(deal.id)} onChange={() => onCheck(deal)} /></td>
+                <td className="border-b border-slate-100 px-3 py-2 font-black text-midnight" onClick={() => onOpen(deal)}>{deal.title}</td>
+                <td className="border-b border-slate-100 px-3 py-2 text-slate-600">{deal.clientEntity?.full_name || t("deals.clientMissing")}</td>
+                <td className="border-b border-slate-100 px-3 py-2"><DealAmount value={deal.amount} currency={deal.currency} /></td>
+                <td className="border-b border-slate-100 px-3 py-2"><DealStageBadge stage={deal.stageEntity} fallback={t("deals.noStage")} /></td>
+                <td className="border-b border-slate-100 px-3 py-2"><DealRiskIndicator deal={deal} compact /></td>
+                <td className="border-b border-slate-100 px-3 py-2 text-slate-500">{formatDate(deal.created_at)}</td>
               </tr>
             ))}
           </tbody>
@@ -152,7 +153,7 @@ export function DealsList({
       {groups.map((group) => (
         <section
           key={group.id}
-          className="mb-3 rounded-xl border border-slate-200 bg-white shadow-soft"
+          className="mb-3 rounded-card border border-slate-200 bg-white shadow-card"
           onDragOver={(event) => event.preventDefault()}
           onDrop={(event) => {
             const deal = dealMap.get(Number(event.dataTransfer.getData("text/plain")));

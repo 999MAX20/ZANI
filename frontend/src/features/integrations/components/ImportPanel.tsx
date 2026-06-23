@@ -91,7 +91,7 @@ export function ImportPanel({ businessId }: { businessId: Id }) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-3xl border border-slate-200 bg-white p-4">
+      <div className="rounded-card border border-slate-200 bg-white p-4">
         <p className="text-sm font-black text-midnight">Excel / CSV</p>
         <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">
           {t("integrations.import.panelDescription")}
@@ -100,7 +100,7 @@ export function ImportPanel({ businessId }: { businessId: Id }) {
 
       {importError ? <ErrorState message={getApiErrorMessage(importError)} /> : null}
 
-      <div className="rounded-3xl border border-slate-200 bg-white p-4">
+      <div className="rounded-card border border-slate-200 bg-white p-4">
         <div className="grid gap-3 lg:grid-cols-[180px_1fr_auto_auto]">
           <Select value={entity} onChange={(event) => setEntity(event.target.value as ImportEntity)} options={entityOptions} />
           <Input type="file" accept=".csv,.xlsx" onChange={(event) => setFile(event.target.files?.[0] || null)} />
@@ -113,7 +113,7 @@ export function ImportPanel({ businessId }: { businessId: Id }) {
         </div>
       </div>
 
-      <div className="rounded-3xl border border-slate-200 bg-white p-4">
+      <div className="rounded-card border border-slate-200 bg-white p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="font-black text-midnight">{selected?.original_filename || t("integrations.import.noFileSelected")}</p>
@@ -144,7 +144,7 @@ export function ImportPanel({ businessId }: { businessId: Id }) {
         ) : null}
 
         {errors.length ? (
-          <div className="mt-4 rounded-2xl border border-red-100 bg-red-50 p-3">
+          <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-3">
             <p className="text-sm font-black text-red-800">{t("integrations.import.fixFileShort")}</p>
             {errors.slice(0, 5).map((item, index) => (
               <p key={`${item.row}-${item.field}-${index}`} className="mt-1 text-xs font-semibold text-red-700">
@@ -155,7 +155,7 @@ export function ImportPanel({ businessId }: { businessId: Id }) {
         ) : null}
 
         {duplicates.length ? (
-          <div className="mt-4 rounded-2xl border border-amber-100 bg-amber-50 p-3">
+          <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-3">
             <p className="text-sm font-black text-amber-900">{t("integrations.import.duplicatesFound")}</p>
             <p className="mt-1 text-xs font-semibold leading-5 text-amber-800">
               {t("integrations.import.duplicatesDescription")}
@@ -163,9 +163,9 @@ export function ImportPanel({ businessId }: { businessId: Id }) {
           </div>
         ) : null}
 
-        <div className="mt-4 overflow-hidden rounded-2xl border border-slate-100 bg-white">
+        <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white">
           {previewRows.slice(0, 5).map((row, index) => (
-            <div key={index} className="border-b border-slate-100 px-3 py-2 text-xs text-slate-600 last:border-b-0">
+            <div key={index} className="border-b border-slate-200 px-3 py-2 text-xs text-slate-600 last:border-b-0">
               {Object.entries(row).slice(0, 6).map(([key, value]) => `${key}: ${value || "-"}`).join(" · ")}
             </div>
           ))}
@@ -173,7 +173,7 @@ export function ImportPanel({ businessId }: { businessId: Id }) {
         </div>
       </div>
 
-      <div className="rounded-3xl border border-slate-200 bg-white p-4">
+      <div className="rounded-card border border-slate-200 bg-white p-4">
         <p className="font-black text-midnight">{t("integrations.import.history")}</p>
         <div className="mt-3 space-y-2">
           {jobs.slice(0, 8).map((job) => (

@@ -17,7 +17,7 @@ import { SourceBadge } from "./common/SourceBadge";
 function ManagerAvatar({ name }: { name?: string }) {
   if (!name) return <span className="text-xs font-bold text-slate-500">-</span>;
   return (
-    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-100 text-[11px] font-black text-brand-700 ring-1 ring-white">
+    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-slate-100 text-[11px] font-black text-brand-700 ring-1 ring-white">
       {initials(name)}
     </span>
   );
@@ -68,7 +68,7 @@ function LeadTableRow({
   const cells: Record<LeadColumnKey, React.ReactNode> = {
     lead: (
       <span className="flex min-w-0 items-center gap-3">
-        <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-slate-100 text-xs font-black text-brand-700">
+        <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-lg bg-slate-100 text-xs font-black text-brand-700">
           {initials(title)}
         </span>
         <span className="min-w-0">
@@ -120,8 +120,9 @@ function LeadTableRow({
       tabIndex={0}
       className={cn(
         CRM_TABLE_ROW_GRID_CLASS,
-        selected && "bg-brand-50/70 shadow-[inset_3px_0_0_#2563eb]",
-        bulkSelected && "bg-slate-50",
+        "focus-visible:bg-brand-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-200",
+        selected && "bg-brand-50/60 shadow-[inset_3px_0_0_#2563eb]",
+        bulkSelected && !selected && "bg-slate-50",
         aiInsight.stale && !selected && "bg-amber-50/35",
       )}
       style={{ gridTemplateColumns, minWidth: needsWideTable ? CRM_TABLE_WIDE_MIN_WIDTH : CRM_TABLE_MIN_WIDTH }}
@@ -138,7 +139,7 @@ function LeadTableRow({
         </span>
       </label>
       {activeColumns.map((column) => <span key={column} className="min-w-0">{cells[column]}</span>)}
-      <span className="flex items-center justify-end gap-2" onClick={(event) => event.stopPropagation()}>
+      <span className="flex items-center justify-end gap-1.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100" onClick={(event) => event.stopPropagation()}>
         {[
           { label: t("leads.open"), icon: SquareArrowOutUpRight, onClick },
           { label: t("leads.call"), icon: Phone, onClick: onCall },
@@ -150,7 +151,7 @@ function LeadTableRow({
             <button
               key={item.label}
               type="button"
-              className="grid h-8 w-8 place-items-center rounded-control border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
+              className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 bg-white text-slate-500 transition duration-200 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 active:scale-[0.96]"
               aria-label={item.label}
               title={item.label}
               onClick={(event) => {

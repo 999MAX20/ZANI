@@ -82,21 +82,21 @@ export function LeadsToolbar({
 }) {
   return (
     <>
-      <div className="flex min-w-0 items-center gap-2 overflow-x-auto pb-2">
+      <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto pb-2">
         {filters.map((item) => (
           <button
             key={item.value}
             type="button"
             className={cn(
-              "inline-flex h-9 shrink-0 items-center gap-2 rounded-control border px-3 text-sm font-black transition",
+              "inline-flex h-8 shrink-0 items-center gap-2 rounded-lg border px-3 text-xs font-black transition duration-200 active:scale-[0.98]",
               filter === item.value
-                ? "border-brand-200 bg-brand-50 text-brand-700 shadow-sm"
-                : "border-slate-200 bg-white text-slate-600 hover:border-brand-200 hover:text-brand-700",
+                ? "border-brand-200 bg-brand-50 text-brand-700"
+                : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-midnight",
             )}
             onClick={() => onFilterChange(item.value)}
           >
             <span>{item.label}</span>
-            <span className={cn("rounded-full px-2 py-0.5 text-xs", filter === item.value ? "bg-white text-brand-700" : "bg-slate-100 text-slate-500")}>
+            <span className={cn("rounded-md px-1.5 py-0.5 text-[11px] tabular-nums", filter === item.value ? "bg-white text-brand-700" : "bg-slate-100 text-slate-500")}>
               {item.count}
             </span>
           </button>
@@ -106,7 +106,7 @@ export function LeadsToolbar({
         <label className="relative block min-w-0">
           <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input
-            className="h-9 w-full rounded-control border border-slate-200 bg-white px-9 text-sm font-semibold text-midnight outline-none transition placeholder:text-slate-400 focus:border-brand-300 focus:ring-4 focus:ring-brand-50"
+            className="h-9 w-full rounded-control border border-slate-200 bg-white px-9 text-sm font-semibold text-midnight outline-none transition duration-200 placeholder:text-slate-400 focus:border-brand-300 focus:ring-4 focus:ring-brand-50"
             placeholder={labels.search}
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
@@ -120,32 +120,32 @@ export function LeadsToolbar({
           options={sourceOptions}
         />
         <div className="flex min-w-0 flex-wrap items-center justify-start gap-1.5 xl:justify-end">
-          <Button variant="secondary" size="sm" className="h-9 rounded-control px-3" onClick={onToggleSavedFilters}>
+          <Button variant="secondary" size="sm" className="h-9 rounded-control px-3 shadow-none active:scale-[0.98]" onClick={onToggleSavedFilters}>
             <Filter size={16} />
             {labels.filters}
           </Button>
-          <Button variant="secondary" size="sm" className="h-9 rounded-control px-3" onClick={onToggleMoreMenu}>
+          <Button variant="secondary" size="sm" className="h-9 rounded-control px-3 shadow-none active:scale-[0.98]" onClick={onToggleMoreMenu}>
             <Columns3 size={16} />
             {labels.columns}
           </Button>
-          <Button variant="secondary" size="sm" className="h-9 rounded-control px-3" onClick={onExportCsv}>
+          <Button variant="secondary" size="sm" className="h-9 rounded-control px-3 shadow-none active:scale-[0.98]" onClick={onExportCsv}>
             <Download size={16} />
             {labels.exportCsv}
           </Button>
-          <Button variant="secondary" size="sm" className="h-9 rounded-control px-3" onClick={onOpenImport}>
+          <Button variant="secondary" size="sm" className="h-9 rounded-control px-3 shadow-none active:scale-[0.98]" onClick={onOpenImport}>
             <Upload size={16} />
             {labels.import}
           </Button>
         </div>
       </div>
       {savedFiltersOpen ? (
-        <div className="mt-3 rounded-card border border-slate-200 bg-slate-50 p-3">
+        <div className="mt-3 rounded-card border border-slate-200 bg-white p-3 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.35)]">
           <div className="flex min-w-0 items-center gap-2 overflow-x-auto pb-2">
             {filterPresets.length ? filterPresets.map((preset) => (
               <button
                 key={preset.id}
                 type="button"
-                className="shrink-0 rounded-control border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
+                className="shrink-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 active:scale-[0.98]"
                 onClick={() => onApplyPreset(preset)}
               >
                 {preset.name}
@@ -166,14 +166,14 @@ export function LeadsToolbar({
         </div>
       ) : null}
       {moreMenuOpen ? (
-        <div className="mt-3 grid gap-3 rounded-card border border-slate-200 bg-slate-50 p-3 lg:grid-cols-[minmax(0,1fr)_auto]">
+        <div className="mt-3 grid gap-3 rounded-card border border-slate-200 bg-white p-3 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.35)] lg:grid-cols-[minmax(0,1fr)_auto]">
           <div className="min-w-0">
             <div className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700">
               <Columns3 size={16} /> {labels.columns}
             </div>
             <div className="flex min-w-0 flex-wrap gap-2">
               {columnOrder.map((column) => (
-                <label key={column} className="inline-flex h-8 cursor-pointer items-center gap-2 rounded-control border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 hover:border-brand-200">
+                <label key={column} className="inline-flex h-8 cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 transition hover:border-brand-200 hover:bg-brand-50">
                   <input
                     type="checkbox"
                     checked={visibleColumns[column]}
@@ -185,10 +185,10 @@ export function LeadsToolbar({
             </div>
           </div>
           <div className="flex flex-wrap items-start gap-2">
-            <Button variant="secondary" size="sm" className="rounded-control" onClick={onToggleSortByAi}><Flame size={15} /> {labels.sortByHeat}</Button>
-            <Button variant="secondary" size="sm" className="rounded-control" onClick={onExportCsv}><Download size={15} /> CSV</Button>
-            <Button variant="secondary" size="sm" className="rounded-control" onClick={onExportExcel}>{labels.exportExcel}</Button>
-            <Button variant="secondary" size="sm" className="rounded-control" onClick={onShareView}><Share2 size={15} /> {labels.shareView}</Button>
+            <Button variant="secondary" size="sm" className="rounded-control shadow-none active:scale-[0.98]" onClick={onToggleSortByAi}><Flame size={15} /> {labels.sortByHeat}</Button>
+            <Button variant="secondary" size="sm" className="rounded-control shadow-none active:scale-[0.98]" onClick={onExportCsv}><Download size={15} /> CSV</Button>
+            <Button variant="secondary" size="sm" className="rounded-control shadow-none active:scale-[0.98]" onClick={onExportExcel}>{labels.exportExcel}</Button>
+            <Button variant="secondary" size="sm" className="rounded-control shadow-none active:scale-[0.98]" onClick={onShareView}><Share2 size={15} /> {labels.shareView}</Button>
           </div>
         </div>
       ) : null}

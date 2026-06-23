@@ -1,4 +1,4 @@
-import { Columns3, Download, Filter, Flame, Search, Share2, Upload } from "lucide-react";
+import { Columns3, Download, Filter, Flame, Share2, Upload } from "lucide-react";
 
 import { Button } from "../../../components/ui/Button";
 import { Select } from "../../../components/ui/Select";
@@ -14,7 +14,6 @@ type LeadFilterTab = {
 export function LeadsToolbar({
   filters,
   filter,
-  search,
   source,
   sourceOptions,
   savedFiltersOpen,
@@ -25,7 +24,6 @@ export function LeadsToolbar({
   visibleColumns,
   labels,
   onFilterChange,
-  onSearchChange,
   onSourceChange,
   onToggleSavedFilters,
   onApplyPreset,
@@ -41,7 +39,6 @@ export function LeadsToolbar({
 }: {
   filters: LeadFilterTab[];
   filter: LeadFilter;
-  search: string;
   source: string;
   sourceOptions: { value: string; label: string }[];
   savedFiltersOpen: boolean;
@@ -51,7 +48,6 @@ export function LeadsToolbar({
   columnOrder: LeadColumnKey[];
   visibleColumns: Record<LeadColumnKey, boolean>;
   labels: {
-    search: string;
     source: string;
     filters: string;
     columns: string;
@@ -66,7 +62,6 @@ export function LeadsToolbar({
     column: (column: LeadColumnKey) => string;
   };
   onFilterChange: (filter: LeadFilter) => void;
-  onSearchChange: (search: string) => void;
   onSourceChange: (source: string) => void;
   onToggleSavedFilters: () => void;
   onApplyPreset: (preset: FilterPreset) => void;
@@ -102,16 +97,7 @@ export function LeadsToolbar({
           </button>
         ))}
       </div>
-      <div className="grid gap-2 border-t border-slate-100 pt-3 xl:grid-cols-[minmax(260px,1fr)_minmax(160px,220px)_auto] xl:items-center">
-        <label className="relative block min-w-0">
-          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <input
-            className="h-9 w-full rounded-control border border-slate-200 bg-white px-9 text-sm font-semibold text-midnight outline-none transition duration-200 placeholder:text-slate-400 focus:border-brand-300 focus:ring-4 focus:ring-brand-50"
-            placeholder={labels.search}
-            value={search}
-            onChange={(event) => onSearchChange(event.target.value)}
-          />
-        </label>
+      <div className="grid gap-2 border-t border-slate-100 pt-3 xl:grid-cols-[minmax(180px,240px)_auto] xl:items-center">
         <Select
           className="h-9 text-xs"
           value={source}

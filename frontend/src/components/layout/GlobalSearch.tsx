@@ -55,6 +55,7 @@ export function GlobalSearch() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [open, setOpen] = useState(false);
   const [mobileExpanded, setMobileExpanded] = useState(false);
+  const [desktopExpanded, setDesktopExpanded] = useState(false);
   const [scope, setScope] = useState<SearchScope>("page");
   const [query, setQuery] = useState(searchParams.get("search") || "");
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -159,6 +160,7 @@ export function GlobalSearch() {
       if (!rootRef.current?.contains(event.target as Node)) {
         setOpen(false);
         setMobileExpanded(false);
+        if (!query.trim()) setDesktopExpanded(false);
       }
     }
 
@@ -166,6 +168,7 @@ export function GlobalSearch() {
       if (event.key === "Escape") {
         setOpen(false);
         setMobileExpanded(false);
+        if (!query.trim()) setDesktopExpanded(false);
         inputRef.current?.blur();
       }
     }
@@ -183,16 +186,18 @@ export function GlobalSearch() {
       document.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("zani:open-global-search", handleOpenSearch);
     };
-  }, []);
+  }, [query]);
 
   function openSearch() {
     setOpen(true);
+    setDesktopExpanded(true);
     window.setTimeout(() => inputRef.current?.focus(), 0);
   }
 
   function closeSearch() {
     setOpen(false);
     setMobileExpanded(false);
+    if (!query.trim()) setDesktopExpanded(false);
   }
 
   function clearSearch() {
@@ -209,9 +214,17 @@ export function GlobalSearch() {
     task: t("search.task"),
   };
   const placeholder = scope === "page" ? t(activeContext.placeholderKey) : t("search.placeholder.global");
+  const expanded = desktopExpanded || mobileExpanded || Boolean(query.trim());
 
   return (
-    <div ref={rootRef} className={cn("relative w-full", mobileExpanded && "absolute inset-x-[4.35rem] top-1/2 z-[70] -translate-y-1/2 lg:static lg:translate-y-0")}>
+    <div
+      ref={rootRef}
+      className={cn(
+        "relative flex w-full justify-center",
+        expanded && "lg:block",
+        mobileExpanded && "absolute inset-x-[4.35rem] top-1/2 z-[70] -translate-y-1/2 lg:static lg:translate-y-0",
+      )}
+    >
       <Button
         className={cn("h-[52px] w-[52px] min-h-[52px] min-w-[52px] rounded-full px-0 lg:hidden", mobileExpanded && "hidden")}
         variant="ghost"
@@ -224,10 +237,22 @@ export function GlobalSearch() {
         <Search size={24} strokeWidth={2.35} />
       </Button>
 
+      {!expanded ? (
+        <Button
+          className="hidden h-11 w-11 shrink-0 rounded-xl border border-slate-200 bg-white px-0 text-slate-600 shadow-sm transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 lg:grid"
+          variant="ghost"
+          aria-label={t("search.aria")}
+          onClick={openSearch}
+        >
+          <Search size={20} strokeWidth={2.3} />
+        </Button>
+      ) : null}
+
       <div
         className={cn(
           "hidden h-11 w-full items-center gap-3 rounded-xl border border-slate-200/70 bg-white/90 px-3 text-sm shadow-sm",
-          "lg:flex lg:min-w-0",
+          "lg:min-w-0",
+          expanded && "lg:flex",
           mobileExpanded && "flex h-[52px] min-w-0 rounded-full",
         )}
       >
@@ -242,9 +267,10 @@ export function GlobalSearch() {
           onChange={(event) => {
             setQuery(event.target.value);
             setOpen(!rendersPageSearchInline);
+            setDesktopExpanded(true);
           }}
         />
-        {query || mobileExpanded ? (
+        {query || mobileExpanded || desktopExpanded ? (
           <button type="button" className="grid h-8 w-8 place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700" onClick={query ? clearSearch : closeSearch} aria-label={t("search.close")}>
             <X size={20} />
           </button>

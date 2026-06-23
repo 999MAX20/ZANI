@@ -286,6 +286,10 @@ export function LeadsPage() {
   }, [filter, search, source]);
 
   useEffect(() => {
+    setSearch(searchParams.get("search") || "");
+  }, [searchParams]);
+
+  useEffect(() => {
     setCreateOpen(searchParams.get("create") === "1");
   }, [searchParams]);
 
@@ -848,7 +852,6 @@ export function LeadsPage() {
           <LeadsToolbar
             filters={filters}
             filter={filter}
-            search={search}
             source={source}
             sourceOptions={sourceOptions.map((item) => ({ value: item, label: item ? getSourceLabel(item, t) : t("leads.allSources") }))}
             savedFiltersOpen={savedFiltersOpen}
@@ -858,7 +861,6 @@ export function LeadsPage() {
             columnOrder={columnOrder}
             visibleColumns={visibleColumns}
             labels={{
-              search: t("leads.search"),
               source: t("leads.source"),
               filters: t("leads.filters"),
               columns: t("leads.columns"),
@@ -874,10 +876,6 @@ export function LeadsPage() {
             }}
             onFilterChange={(nextFilter) => {
               setFilter(nextFilter);
-              setPage(1);
-            }}
-            onSearchChange={(value) => {
-              setSearch(value);
               setPage(1);
             }}
             onSourceChange={(value) => {

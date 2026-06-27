@@ -3,6 +3,7 @@ import {
   loginWithCredentials,
   loginWithSocial,
   requestPasswordReset as requestPasswordResetToken,
+  clearRefreshCookie,
   confirmPasswordReset as confirmPasswordResetToken,
   signupOwner as signupOwnerWithCredentials,
   refreshToken,
@@ -50,6 +51,10 @@ export async function confirmPasswordReset(payload: PasswordResetConfirmPayload)
   return confirmPasswordResetToken(payload);
 }
 
+export async function restoreSession() {
+  return refreshToken();
+}
+
 export async function getCurrentUser() {
   const { data } = await apiClient.get<CurrentUser>("/api/auth/me/");
   return data;
@@ -71,5 +76,6 @@ export async function getCurrentUserLoginHistory() {
 }
 
 export function logout() {
+  void clearRefreshCookie().catch(() => undefined);
   tokenStorage.clear();
 }

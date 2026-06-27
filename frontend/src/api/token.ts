@@ -12,7 +12,7 @@ export type LoginPayload = {
 
 export type TokenPair = {
   access: string;
-  refresh: string;
+  refresh?: string;
 };
 
 export type SocialProvider = "google" | "apple";
@@ -63,8 +63,8 @@ export type PasswordResetConfirmPayload = {
 };
 
 export async function loginWithCredentials(payload: LoginPayload) {
-  const { data } = await axios.post<TokenPair>(`${baseURL}/api/auth/token/`, payload);
-  tokenStorage.setTokens(data.access, data.refresh);
+  const { data } = await axios.post<TokenPair>(`${baseURL}/api/auth/token/`, payload, { withCredentials: true });
+  tokenStorage.setAccess(data.access);
   tokenStorage.setEmail(payload.email);
   return data;
 }
@@ -73,14 +73,14 @@ export async function loginWithSocial(payload: SocialLoginPayload) {
   const { data } = await axios.post<SocialLoginResponse>(`${baseURL}/api/auth/social/`, {
     provider: payload.provider,
     id_token: payload.idToken,
-  });
-  tokenStorage.setTokens(data.access, data.refresh);
+  }, { withCredentials: true });
+  tokenStorage.setAccess(data.access);
   return data;
 }
 
 export async function signupOwner(payload: OwnerSignupPayload) {
-  const { data } = await axios.post<SignupOwnerResponse>(`${baseURL}/api/auth/signup/owner/`, payload);
-  tokenStorage.setTokens(data.access, data.refresh);
+  const { data } = await axios.post<SignupOwnerResponse>(`${baseURL}/api/auth/signup/owner/`, payload, { withCredentials: true });
+  tokenStorage.setAccess(data.access);
   tokenStorage.setEmail(payload.email);
   return data;
 }
@@ -95,10 +95,12 @@ export async function confirmPasswordReset(payload: PasswordResetConfirmPayload)
   return data;
 }
 
-export async function refreshToken(refresh: string) {
-  const { data } = await axios.post<{ access: string; refresh?: string }>(`${baseURL}/api/auth/token/refresh/`, {
-    refresh,
-  });
-  tokenStorage.setTokens(data.access, data.refresh || refresh);
+export async function refreshToken() {
+  const { data } = await axios.post<{ access: string }>(`${baseURL}/api/auth/token/refresh/`, {}, { withCredentials: true });
+  tokenStorage.setAccess(data.access);
   return data.access;
+}
+
+export async function clearRefreshCookie() {
+  await axios.post(`${baseURL}/api/auth/logout/`, {}, { withCredentials: true });
 }

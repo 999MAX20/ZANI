@@ -61,15 +61,8 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    const refresh = tokenStorage.getRefresh();
-    if (!refresh) {
-      tokenStorage.clear();
-      notifyAuthExpired();
-      return Promise.reject(error);
-    }
-
     originalRequest._retry = true;
-    refreshPromise = refreshPromise || refreshToken(refresh).finally(() => {
+    refreshPromise = refreshPromise || refreshToken().finally(() => {
       refreshPromise = null;
     });
 

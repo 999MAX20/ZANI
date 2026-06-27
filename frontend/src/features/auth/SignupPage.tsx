@@ -1,16 +1,19 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowRight, Building2, Sparkles } from "lucide-react";
+import { ArrowRight, Building2, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 
 import { getApiErrorMessage } from "../../api/client";
-import { signupOwner } from "../../api/auth";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { Select } from "../../components/ui/Select";
 import { useI18n } from "../../lib/i18n";
+import { AuthExperienceShell } from "./AuthExperienceShell";
+import { useAuth } from "./AuthProvider";
+import "./authExperience.css";
+import "./authExperienceMobileFix.css";
 
 type FormValues = {
   full_name: string;
@@ -25,6 +28,7 @@ type FormValues = {
 
 export function SignupPage() {
   const navigate = useNavigate();
+  const { signupOwner } = useAuth();
   const { t } = useI18n();
   const schema = z.object({
     full_name: z.string().min(2, t("validation.name")),
@@ -52,11 +56,18 @@ export function SignupPage() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { business_type: "beauty" },
   });
+  const passwordValue = watch("password") || "";
+  const passwordChecks = [
+    { label: t("signup.passwordMinCheck"), active: passwordValue.length >= 8 },
+    { label: t("signup.passwordLettersNumbersCheck"), active: /[A-Za-zА-Яа-я]/.test(passwordValue) && /\d/.test(passwordValue) },
+    { label: t("signup.passwordNoSpacesCheck"), active: passwordValue.length > 0 && !/\s/.test(passwordValue) },
+  ];
 
   async function onSubmit(values: FormValues) {
     setError(null);
@@ -77,77 +88,54 @@ export function SignupPage() {
   }
 
   return (
-    <main className="min-h-screen bg-soft-mesh px-4 py-8">
-      <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-6xl items-center gap-8 lg:grid-cols-[1fr_520px]">
-        <section className="hidden lg:block">
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/75 px-4 py-2 text-sm font-bold text-ai-700 shadow-soft">
-            <Sparkles size={16} />
-            {t("signup.badge")}
+    <AuthExperienceShell mode="signup">
+      <section className="zani-auth-card">
+        <div className="zani-auth-card-icon">
+          <Building2 size={31} />
+        </div>
+        <h2>{t("signup.createCompanyTitle")}</h2>
+        <p>{t("signup.createCompanyText")}</p>
+
+        {error ? <div className="zani-auth-error">{error}</div> : null}
+
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div className="zani-auth-field-grid">
+            <Input label={t("signup.yourName")} placeholder={t("signup.namePlaceholder")} error={errors.full_name?.message} {...register("full_name")} />
+            <Input label={t("signup.phone")} placeholder="+7 777 000 00 00" error={errors.phone?.message} {...register("phone")} />
           </div>
-          <h1 className="max-w-3xl text-6xl font-semibold leading-[1.03] tracking-tight text-midnight">
-            {t("signup.headline")}
-          </h1>
-          <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-            {t("signup.copy")}
-          </p>
-        </section>
-
-        <section className="glass-panel rounded-[2rem] p-6 sm:p-8">
-          <div className="mb-7">
-            <div className="mb-4 grid h-14 w-14 place-items-center rounded-3xl bg-ai-gradient text-white shadow-glow">
-              <Building2 size={25} />
-            </div>
-            <p className="text-sm font-bold uppercase tracking-[0.16em] text-brand-700">{t("signup.eyebrow")}</p>
-            <h2 className="mt-2 text-3xl font-semibold tracking-tight text-midnight">{t("signup.title")}</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              {t("signup.text")}
-            </p>
+          <Input label={t("auth.email")} type="email" placeholder={t("auth.emailPlaceholder")} error={errors.email?.message} {...register("email")} />
+          <div className="zani-auth-field-grid">
+            <Input label={t("auth.password")} type="password" placeholder={t("signup.passwordPlaceholder")} error={errors.password?.message} {...register("password")} />
+            <Input label={t("signup.passwordConfirm")} type="password" placeholder={t("passwordReset.repeatPassword")} error={errors.password_confirm?.message} {...register("password_confirm")} />
           </div>
+          <div className="zani-auth-password-checks">
+            {passwordChecks.map((check) => (
+              <span key={check.label} data-active={check.active}>
+                <CheckCircle2 size={14} />
+                {check.label}
+              </span>
+            ))}
+          </div>
+          <Input label={t("signup.businessName")} placeholder={t("signup.businessNamePlaceholder")} error={errors.business_name?.message} {...register("business_name")} />
+          <div className="zani-auth-field-grid">
+            <Select label={t("signup.businessType")} options={businessTypeOptions} error={errors.business_type?.message} {...register("business_type")} />
+            <Input label={t("signup.cityOptional")} placeholder={t("signup.cityPlaceholder")} error={errors.city?.message} {...register("city")} />
+          </div>
+          <p className="zani-auth-helper">{t("signup.afterSignInHelper")}</p>
+          <Button className="zani-auth-primary" type="submit" isLoading={isSubmitting}>
+            {t("signup.freeSubmit")}
+            <ArrowRight size={18} />
+          </Button>
+        </form>
 
-          {error ? <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
-
-          <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
-            <section className="rounded-3xl border border-white/70 bg-white/55 p-4">
-              <p className="mb-3 text-xs font-black uppercase tracking-[0.14em] text-brand-700">{t("signup.accountSection")}</p>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Input label={t("signup.yourName")} error={errors.full_name?.message} {...register("full_name")} />
-                <Input label={t("signup.phone")} error={errors.phone?.message} {...register("phone")} />
-              </div>
-              <div className="mt-4 space-y-4">
-                <Input label={t("signup.email")} type="email" error={errors.email?.message} {...register("email")} />
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Input label={t("auth.password")} type="password" error={errors.password?.message} {...register("password")} />
-                  <Input label={t("signup.passwordConfirm")} type="password" error={errors.password_confirm?.message} {...register("password_confirm")} />
-                </div>
-              </div>
-            </section>
-
-            <section className="rounded-3xl border border-white/70 bg-white/55 p-4">
-              <p className="mb-3 text-xs font-black uppercase tracking-[0.14em] text-brand-700">{t("signup.businessSection")}</p>
-              <Input label={t("signup.businessName")} error={errors.business_name?.message} {...register("business_name")} />
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <Select label={t("signup.businessType")} options={businessTypeOptions} error={errors.business_type?.message} {...register("business_type")} />
-                <Input label={t("signup.cityOptional")} error={errors.city?.message} {...register("city")} />
-              </div>
-              <p className="mt-3 text-xs leading-5 text-slate-500">{t("signup.nextText")}</p>
-            </section>
-
-            <div className="rounded-3xl border border-brand-100 bg-brand-50/70 px-4 py-3 text-sm leading-6 text-slate-600">
-              {t("signup.startNote")}
-            </div>
-            <Button variant="ai" className="w-full" type="submit" isLoading={isSubmitting}>
-              {t("signup.submit")}
-              <ArrowRight size={18} />
-            </Button>
-          </form>
-          <p className="mt-5 text-center text-sm text-slate-500">
-            {t("signup.hasAccess")}{" "}
-            <Link className="font-bold text-brand-700 hover:text-brand-800" to="/login">
-              {t("auth.submit")}
-            </Link>
-          </p>
-        </section>
-      </div>
-    </main>
+        <p className="zani-auth-terms">
+          {t("signup.terms")}
+        </p>
+        <p className="zani-auth-links">
+          <span>{t("signup.hasAccess")}</span>
+          <Link to="/login">{t("auth.submit")}</Link>
+        </p>
+      </section>
+    </AuthExperienceShell>
   );
 }

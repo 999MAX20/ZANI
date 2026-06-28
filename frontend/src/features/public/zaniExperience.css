@@ -8304,12 +8304,12 @@ p {
 
 @media (min-width: 1101px) {
   html:has(.zani-experience) {
-    scroll-snap-type: y mandatory;
+    scroll-snap-type: none;
   }
 
   .zani-experience section {
-    scroll-snap-align: start;
-    scroll-snap-stop: always;
+    scroll-snap-align: none;
+    scroll-snap-stop: normal;
   }
 
   .zani-experience .hero,
@@ -8320,10 +8320,10 @@ p {
   .zani-experience .launch-section,
   .zani-experience .trust-section,
   .zani-experience .pricing-section {
-    height: 100svh;
+    height: auto;
     min-height: 100svh;
-    max-height: 100svh;
-    overflow: hidden;
+    max-height: none;
+    overflow: visible;
   }
 
   .zani-experience .crm-bots-layout,

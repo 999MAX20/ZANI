@@ -2476,6 +2476,28 @@ export default function ZaniExperience() {
   }, []);
 
   useEffect(() => {
+    function scrollToCurrentHash() {
+      const rawHash = window.location.hash.replace("#", "");
+      if (!rawHash) return;
+
+      const targetId = decodeURIComponent(rawHash);
+      const target = document.getElementById(targetId);
+      if (!target) return;
+
+      window.requestAnimationFrame(() => {
+        window.scrollTo({
+          top: target.offsetTop,
+          behavior: "smooth"
+        });
+      });
+    }
+
+    scrollToCurrentHash();
+    window.addEventListener("hashchange", scrollToCurrentHash);
+    return () => window.removeEventListener("hashchange", scrollToCurrentHash);
+  }, []);
+
+  useEffect(() => {
     function handleAuthClick(event: MouseEvent) {
       const target = event.target;
       if (!(target instanceof Element)) return;

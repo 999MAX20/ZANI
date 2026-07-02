@@ -11,7 +11,7 @@ import { LoginPage } from "../features/auth/LoginPage";
 import { PlatformPlaceholderPage, platformPages } from "../features/platform/PlatformPlaceholderPage";
 import { NotFoundPage } from "../features/pilot/NotFoundPage";
 import { PublicLayout } from "../features/public/PublicLayout";
-import { PublicBotsPage, PublicContactsPage, PublicCrmPage, PublicHomePage, PublicPricingPage } from "../features/public/PublicPages";
+import { PublicBotsPage, PublicContactsPage, PublicCrmPage, PublicDubaiRealEstatePage, PublicHomePage, PublicPricingPage } from "../features/public/PublicPages";
 import { useActiveBusiness } from "../hooks/useBusiness";
 import { useI18n } from "../lib/i18n";
 import { permissionForbiddenMessage } from "../lib/permissions";
@@ -174,6 +174,7 @@ const router = createBrowserRouter([
       { path: "bots", element: <PublicBotsPage /> },
       { path: "crm", element: <PublicCrmPage /> },
       { path: "contacts", element: <PublicContactsPage /> },
+      { path: "dubai-real-estate", element: <PublicDubaiRealEstatePage /> },
     ],
   },
   {

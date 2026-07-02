@@ -1,3 +1,4 @@
+import { DubaiRealEstatePage } from "./DubaiRealEstatePage";
 import ZaniExperience from "./ZaniExperience";
 
 export function PublicHomePage() {
@@ -18,4 +19,8 @@ export function PublicPricingPage() {
 
 export function PublicContactsPage() {
   return <main className="min-h-screen bg-black" />;
+}
+
+export function PublicDubaiRealEstatePage() {
+  return <DubaiRealEstatePage />;
 }

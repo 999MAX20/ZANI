@@ -11,6 +11,7 @@ export function PublicLayout() {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const isLanding = location.pathname === "/";
+  const isImmersiveLanding = isLanding || location.pathname === "/dubai-real-estate";
   const navItems = [
     { to: "/crm", label: t("public.nav.crm") },
     { to: "/bots", label: t("public.nav.bots") },
@@ -20,7 +21,7 @@ export function PublicLayout() {
 
   return (
     <main className="min-h-screen bg-soft-mesh text-midnight">
-      {isLanding ? null : (
+      {isImmersiveLanding ? null : (
         <header className="sticky top-0 z-30 px-3 py-2 sm:px-4 sm:py-3">
           <div className="mx-auto flex max-w-7xl items-center justify-between rounded-[1.5rem] border border-white/70 bg-white/88 px-3 py-2 shadow-soft backdrop-blur-2xl sm:rounded-3xl sm:px-4 sm:py-3">
             <Link to="/" className="flex items-center gap-3">

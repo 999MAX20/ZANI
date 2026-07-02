@@ -257,8 +257,8 @@ function PainSection() {
   const story = [
     ["09:37", "Клиент написал", MessageCircle],
     ["09:42", "Ответа нет", Clock3],
-    ["09:51", "Ушел к конкуренту", XCircle],
-    ["10:05", "Выручка потеряна", CircleDollarSign]
+    ["09:51", "Выбрал конкурента", XCircle],
+    ["10:05", "Деньги ушли", CircleDollarSign]
   ];
 
   return (
@@ -266,8 +266,8 @@ function PainSection() {
       <div className="zani-stitch-container zani-two-col">
         <Reveal className="zani-section-copy">
           <span className="zani-kicker">Боль</span>
-          <h2>Каждый день вы теряете клиентов</h2>
-          <p>Проблема не в менеджерах. Клиенты пишут быстрее, чем команда успевает переключаться между каналами, задачами и таблицами.</p>
+          <h2>Клиенты уходят не из-за цены</h2>
+          <p>Пока команда переключается между мессенджерами, звонками и таблицами, клиент уже получает ответ в другом месте.</p>
           <div className="zani-channel-dock" aria-label="Каналы, где теряются обращения">
             {["WhatsApp", "Instagram", "Telegram", "Звонки", "Почта", "Kaspi"].map((item) => (
               <span key={item}>{item}</span>
@@ -286,7 +286,7 @@ function PainSection() {
             ))}
             <div className="zani-story-zani">
               <Sparkles size={20} />
-              ZANI появляется до потери клиента
+              ZANI отвечает до того, как клиент остыл
             </div>
           </div>
           <div className="zani-reference-mini">
@@ -307,10 +307,10 @@ function PainSection() {
 
 function AgentSection() {
   const abilities = [
-    ["Отвечает", "первое сообщение уходит мгновенно"],
-    ["Квалифицирует", "уточняет услугу, время и контакт"],
-    ["Записывает", "создает визит и ставит напоминание"],
-    ["Продает", "возвращает клиента после визита"]
+    ["Ответил сразу", "клиент не ждет менеджера"],
+    ["Уточнил детали", "услуга, время и контакт в диалоге"],
+    ["Создал запись", "визит и напоминание появились сами"],
+    ["Вернул после визита", "просит отзыв и предлагает следующий шаг"]
   ];
 
   return (
@@ -318,8 +318,8 @@ function AgentSection() {
       <div className="zani-stitch-container zani-three-col">
         <Reveal className="zani-section-copy">
           <span className="zani-kicker">AI агент</span>
-          <h2>AI ведет диалог как живой сотрудник</h2>
-          <p>Клиент не ждет. ZANI отвечает, уточняет детали, записывает и передает менеджеру уже готовую карточку.</p>
+          <h2>AI доводит клиента до записи</h2>
+          <p>ZANI не просто отвечает. Он уточняет, предлагает время, фиксирует контакт и передает команде уже готовый результат.</p>
         </Reveal>
         <Reveal className="zani-agent-phone" delay={0.08}>
           <PhoneMockup mode="chat" />
@@ -352,7 +352,7 @@ function CrmSection() {
         <Reveal className="zani-section-copy zani-center-copy">
           <span className="zani-kicker">CRM</span>
           <h2>CRM появляется автоматически</h2>
-          <p>Вы не рекламируете CRM сотрудникам. Она просто становится местом, куда сами попадают клиенты, сделки, задачи, записи и оплаты.</p>
+          <p>Менеджеру не нужно переносить данные руками. Сообщение превращается в клиента, сделку, задачу и запись в одном рабочем окне.</p>
         </Reveal>
         <Reveal className="zani-crm-board">
           <div className="zani-crm-sidebar">
@@ -419,7 +419,7 @@ function MarketplaceSection() {
         <Reveal className="zani-section-copy">
           <span className="zani-kicker">Маркетплейсы</span>
           <h2>Маржа и остатки без ручных таблиц</h2>
-          <p>Маркетплейсы, склад и AI собираются в один живой интерфейс: остатки, цены, демпинг, аналитика и рассылки работают вместе.</p>
+          <p>Заказы, остатки, цены и себестоимость сходятся в ZANI. AI видит просадки и подсказывает, что менять сегодня.</p>
         </Reveal>
         <Reveal className="zani-market-network" delay={0.08}>
           {chain.map((item, index) => (

@@ -1,7 +1,9 @@
 import { motion, useScroll, useSpring, useTransform } from "framer-motion";
 import {
   ArrowRight,
+  BarChart3,
   Bot,
+  CalendarCheck,
   CheckCircle2,
   CircleDollarSign,
   Clock3,
@@ -12,7 +14,9 @@ import {
   PhoneCall,
   Send,
   ShieldCheck,
+  ShoppingBag,
   Sparkles,
+  Store,
   UsersRound,
   WalletCards,
   XCircle,
@@ -214,6 +218,7 @@ function Hero() {
           <h1>
             Ваш бизнес наконец работает <em>спокойно</em>
           </h1>
+          <div className="zani-hand-note">даже когда команда занята</div>
           <p>
             ZANI отвечает клиентам, создает заявки, ведет CRM, подключает маркетплейсы и показывает владельцу картину дня без ручного контроля.
           </p>
@@ -233,6 +238,11 @@ function Hero() {
         </Reveal>
 
         <Reveal className="zani-light-hero-visual" delay={0.1}>
+          <div className="zani-hero-paths" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+          </div>
           <PhoneMockup />
           {channels.map((channel, index) => (
             <FloatingChannel channel={channel} index={index} key={channel.name} />
@@ -258,19 +268,36 @@ function PainSection() {
           <span className="zani-kicker">Боль</span>
           <h2>Каждый день вы теряете клиентов</h2>
           <p>Проблема не в менеджерах. Клиенты пишут быстрее, чем команда успевает переключаться между каналами, задачами и таблицами.</p>
+          <div className="zani-channel-dock" aria-label="Каналы, где теряются обращения">
+            {["WhatsApp", "Instagram", "Telegram", "Звонки", "Почта", "Kaspi"].map((item) => (
+              <span key={item}>{item}</span>
+            ))}
+          </div>
         </Reveal>
-        <Reveal className="zani-story-card" delay={0.08}>
-          {story.map(([time, title, Icon], index) => (
-            <article key={title as string}>
-              <span>{time as string}</span>
-              <i><Icon size={20} /></i>
-              <b>{title as string}</b>
-              {index < story.length - 1 ? <em /> : null}
+        <Reveal className="zani-pain-board" delay={0.08}>
+          <div className="zani-story-card">
+            {story.map(([time, title, Icon], index) => (
+              <article key={title as string}>
+                <span>{time as string}</span>
+                <i><Icon size={20} /></i>
+                <b>{title as string}</b>
+                {index < story.length - 1 ? <em /> : null}
+              </article>
+            ))}
+            <div className="zani-story-zani">
+              <Sparkles size={20} />
+              ZANI появляется до потери клиента
+            </div>
+          </div>
+          <div className="zani-reference-mini">
+            <article>
+              <b>Сегодня</b>
+              <span>10:00 Запись: Анна</span>
+              <span>11:30 Встреча</span>
+              <span className="is-lost">14:00 Перезвонить клиенту</span>
+              <span>16:30 Консультация</span>
             </article>
-          ))}
-          <div className="zani-story-zani">
-            <Sparkles size={20} />
-            ZANI появляется до потери клиента
+            <p>Ничего не забыть!</p>
           </div>
         </Reveal>
       </div>
@@ -305,6 +332,12 @@ function AgentSection() {
               <p>{text}</p>
             </article>
           ))}
+          <div className="zani-appointment-card">
+            <span>Новая запись создана</span>
+            <b>Анна Смирнова</b>
+            <p>Сегодня, 16:30 · Консультация</p>
+            <a href="#crm">Открыть карточку</a>
+          </div>
         </Reveal>
       </div>
     </section>
@@ -338,6 +371,28 @@ function CrmSection() {
                   <ArrowRight size={16} />
                 </article>
               ))}
+            </div>
+            <div className="zani-crm-workspace">
+              <article>
+                <h3>Новая карточка</h3>
+                <p>Источник: WhatsApp</p>
+                <b>Анна Смирнова</b>
+                <span>Запись на сегодня, 16:30</span>
+              </article>
+              <article>
+                <h3>Задачи менеджера</h3>
+                <p>Подтвердить запись · 5 мин</p>
+                <p>Отправить напоминание · 45 мин</p>
+                <p>Попросить отзыв · после визита</p>
+              </article>
+              <article>
+                <h3>Календарь</h3>
+                <div className="zani-calendar-bars">
+                  <span />
+                  <span />
+                  <span />
+                </div>
+              </article>
             </div>
           </div>
         </Reveal>
@@ -373,6 +428,16 @@ function MarketplaceSection() {
               {index < chain.length - 1 ? <i /> : null}
             </article>
           ))}
+          <div className="zani-market-insight">
+            <BarChart3 size={18} />
+            <b>Демпинг-бот 24/7</b>
+            <p>Следит за ценами и предлагает оптимальную цену.</p>
+          </div>
+          <div className="zani-market-insight">
+            <Store size={18} />
+            <b>Склад и остатки</b>
+            <p>Остатки и себестоимость подтягиваются автоматически.</p>
+          </div>
         </Reveal>
       </div>
     </section>
@@ -389,9 +454,37 @@ function EcosystemSection() {
           <h2>ZANI — не CRM. Это операционная система бизнеса</h2>
           <p>Все продукты связаны между собой, чтобы бизнес не собирался из отдельных сервисов вручную.</p>
         </Reveal>
-        <Reveal className="zani-product-orbit">
-          <div className="zani-orbit-core">ZANI</div>
-          {products.map((item, index) => <span className={`orbit-${index}`} key={item}>{item}</span>)}
+        <Reveal className="zani-ecosystem-board">
+          <aside>
+            <strong>ZANI</strong>
+            {products.slice(0, 7).map((item, index) => (
+              <span className={index === 0 ? "active" : ""} key={item}>{item}</span>
+            ))}
+          </aside>
+          <main>
+            <div className="zani-eco-top">
+              <Metric value="12" label="каналов" good="подключены" />
+              <Metric value="248" label="лидов" good="+24%" />
+              <Metric value="₸2.45M" label="выручка" good="+32%" />
+            </div>
+            <div className="zani-eco-bento">
+              <article>
+                <Bot size={22} />
+                <b>AI отвечает клиентам</b>
+                <p>Первый ответ, запись, уточнение и повторная продажа.</p>
+              </article>
+              <article>
+                <ShoppingBag size={22} />
+                <b>Маркетплейсы в работе</b>
+                <p>Kaspi, WB, Ozon, склад и цены в одном контуре.</p>
+              </article>
+              <article>
+                <CalendarCheck size={22} />
+                <b>Команда видит задачи</b>
+                <p>Ответственные, дедлайны и история клиента рядом.</p>
+              </article>
+            </div>
+          </main>
         </Reveal>
       </div>
     </section>

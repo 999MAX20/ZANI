@@ -2160,3 +2160,478 @@ body:has(.zani-stitch) {
     grid-template-columns: 1fr;
   }
 }
+
+/* Reference alignment pass */
+.zani-light {
+  --zani-paper: #fff8ef;
+  --zani-ink: #101827;
+  background:
+    radial-gradient(circle at 70% 8%, rgba(255, 140, 0, 0.18), transparent 34%),
+    linear-gradient(180deg, #fffaf4 0%, #fff7ed 28%, #fbfcfd 62%, #fff8ef 100%);
+}
+
+.zani-light .zani-stitch-header {
+  border-bottom-color: rgba(255, 140, 0, 0.12);
+  background: rgba(255, 250, 244, 0.9);
+}
+
+.zani-light .zani-stitch-brand span {
+  border-radius: 8px;
+  transform: rotate(-6deg);
+}
+
+.zani-hand-note {
+  width: fit-content;
+  margin: 4px 0 0 168px;
+  color: var(--stitch-orange);
+  font-family: "Hanken Grotesk", Inter, sans-serif;
+  font-size: clamp(24px, 3.1vw, 44px);
+  font-style: italic;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  transform: rotate(-3deg);
+}
+
+.zani-hand-note::after {
+  display: block;
+  width: 92%;
+  height: 12px;
+  margin-top: -4px;
+  content: "";
+  border-bottom: 2px solid rgba(255, 140, 0, 0.48);
+  border-radius: 50%;
+}
+
+.zani-light-hero-grid {
+  grid-template-columns: minmax(0, 0.88fr) minmax(540px, 1.12fr);
+}
+
+.zani-light-hero-copy h1 {
+  max-width: 720px;
+  font-size: clamp(58px, 6.9vw, 112px);
+}
+
+.zani-light-hero-copy h1 em {
+  display: inline-block;
+  padding-bottom: 6px;
+}
+
+.zani-light-hero-visual {
+  min-height: 720px;
+}
+
+.zani-hero-paths {
+  position: absolute;
+  inset: 8% -4% 5% -10%;
+  pointer-events: none;
+}
+
+.zani-hero-paths i {
+  position: absolute;
+  border: 1.5px dashed rgba(255, 140, 0, 0.28);
+  border-right-color: transparent;
+  border-left-color: transparent;
+  border-radius: 50%;
+}
+
+.zani-hero-paths i:nth-child(1) {
+  inset: 7% 4% 18% 2%;
+  transform: rotate(-10deg);
+}
+
+.zani-hero-paths i:nth-child(2) {
+  inset: 20% -2% 27% -6%;
+  transform: rotate(8deg);
+}
+
+.zani-hero-paths i:nth-child(3) {
+  inset: 34% 8% 38% -3%;
+  transform: rotate(-4deg);
+}
+
+.zani-light-hero-visual .zani-light-phone {
+  width: min(405px, 74vw);
+  min-height: 705px;
+  transform: perspective(1200px) rotateZ(2deg) rotateY(-5deg);
+  box-shadow:
+    0 42px 90px rgba(19, 27, 46, 0.2),
+    -18px 18px 0 rgba(255, 140, 0, 0.06),
+    inset 0 0 0 1px rgba(255,255,255,0.58);
+}
+
+.zani-floating-channel {
+  border-radius: 17px;
+  background: rgba(255, 255, 255, 0.84);
+}
+
+.pos-0 { top: 56px; left: 8px; }
+.pos-1 { top: 126px; right: -8px; }
+.pos-2 { top: 280px; left: -18px; }
+.pos-3 { bottom: 210px; right: 0; }
+.pos-4 { bottom: 104px; left: 46px; }
+.pos-5 { bottom: 54px; right: 88px; }
+
+.zani-channel-dock {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 34px;
+}
+
+.zani-channel-dock span {
+  display: inline-flex;
+  min-height: 54px;
+  align-items: center;
+  border: 1px solid rgba(137, 115, 98, 0.12);
+  border-radius: 16px;
+  padding: 0 18px;
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--stitch-navy);
+  font-weight: 800;
+  box-shadow: var(--stitch-shadow);
+}
+
+.zani-pain-board {
+  position: relative;
+}
+
+.zani-reference-mini {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 18px;
+  align-items: end;
+  margin-top: 20px;
+}
+
+.zani-reference-mini article {
+  border: 1px solid rgba(137, 115, 98, 0.14);
+  border-radius: 22px;
+  padding: 18px;
+  background: #fff;
+  box-shadow: var(--stitch-shadow);
+}
+
+.zani-reference-mini b,
+.zani-reference-mini span {
+  display: block;
+}
+
+.zani-reference-mini b {
+  margin-bottom: 12px;
+  color: var(--stitch-navy);
+}
+
+.zani-reference-mini span {
+  border-radius: 12px;
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  color: rgba(25, 28, 30, 0.68);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.zani-reference-mini .is-lost {
+  background: rgba(255, 140, 0, 0.13);
+  color: var(--stitch-orange-dark);
+}
+
+.zani-reference-mini p {
+  max-width: 160px;
+  border-radius: 8px;
+  padding: 16px;
+  background: #fff1c9;
+  color: var(--stitch-navy);
+  font-size: 18px;
+  font-style: italic;
+  font-weight: 800;
+  transform: rotate(-5deg);
+}
+
+.zani-agent-flow {
+  align-self: stretch;
+}
+
+.zani-appointment-card {
+  border: 1px solid rgba(255, 140, 0, 0.22);
+  border-radius: 24px;
+  padding: 20px;
+  background: #fff;
+  box-shadow: 0 18px 46px rgba(255, 140, 0, 0.13);
+}
+
+.zani-appointment-card span,
+.zani-appointment-card b,
+.zani-appointment-card p,
+.zani-appointment-card a {
+  display: block;
+}
+
+.zani-appointment-card span {
+  color: var(--stitch-orange);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.zani-appointment-card b {
+  margin-top: 10px;
+  color: var(--stitch-navy);
+  font-size: 20px;
+}
+
+.zani-appointment-card p {
+  margin-top: 6px;
+  color: rgba(25,28,30,0.62);
+}
+
+.zani-appointment-card a {
+  width: fit-content;
+  border-radius: 14px;
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: var(--stitch-orange);
+  color: #fff;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.zani-crm-board {
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.86), rgba(255,248,239,0.72)),
+    rgba(255,255,255,0.74);
+}
+
+.zani-crm-workspace {
+  display: grid;
+  grid-template-columns: 1.05fr 1.05fr 0.9fr;
+  gap: 16px;
+}
+
+.zani-crm-workspace article {
+  min-height: 176px;
+  border-radius: 22px;
+  padding: 18px;
+  background: #fff;
+  box-shadow: 0 12px 34px rgba(15,23,42,0.05);
+}
+
+.zani-crm-workspace h3 {
+  color: var(--stitch-navy);
+  font-family: "Hanken Grotesk", Inter, sans-serif;
+  font-size: 19px;
+}
+
+.zani-crm-workspace p,
+.zani-crm-workspace span {
+  display: block;
+  margin-top: 9px;
+  color: rgba(25,28,30,0.6);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.zani-crm-workspace b {
+  display: block;
+  margin-top: 16px;
+  color: var(--stitch-orange-dark);
+  font-size: 22px;
+}
+
+.zani-calendar-bars {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.zani-calendar-bars span {
+  height: 34px;
+  border-radius: 12px;
+  margin: 0;
+}
+
+.zani-calendar-bars span:nth-child(1) { width: 70%; background: #ffead5; }
+.zani-calendar-bars span:nth-child(2) { width: 92%; background: #e9f3ff; }
+.zani-calendar-bars span:nth-child(3) { width: 78%; background: #eaf8ee; }
+
+.zani-market-network {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+.zani-market-insight {
+  grid-column: span 5;
+  display: grid;
+  grid-template-columns: 42px 0.45fr 1fr;
+  align-items: center;
+  gap: 14px;
+  border-radius: 22px;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 12px 34px rgba(15,23,42,0.05);
+}
+
+.zani-market-insight svg {
+  color: var(--stitch-orange);
+}
+
+.zani-market-insight b {
+  color: var(--stitch-navy);
+  font-size: 18px;
+}
+
+.zani-market-insight p {
+  color: rgba(25,28,30,0.62);
+  font-size: 14px;
+}
+
+.zani-ecosystem-board {
+  display: grid;
+  grid-template-columns: 210px 1fr;
+  gap: 22px;
+  border: 1px solid rgba(137, 115, 98, 0.16);
+  border-radius: 32px;
+  padding: 24px;
+  background: rgba(255,255,255,0.78);
+  box-shadow: var(--stitch-shadow);
+}
+
+.zani-ecosystem-board aside {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  border-radius: 24px;
+  padding: 18px;
+  background: var(--stitch-navy);
+}
+
+.zani-ecosystem-board aside strong {
+  margin-bottom: 8px;
+  color: #fff;
+  font-size: 28px;
+}
+
+.zani-ecosystem-board aside span {
+  border-radius: 13px;
+  padding: 11px 12px;
+  color: rgba(255,255,255,0.66);
+  font-weight: 800;
+}
+
+.zani-ecosystem-board aside .active {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+}
+
+.zani-ecosystem-board main {
+  display: grid;
+  gap: 18px;
+}
+
+.zani-eco-top {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.zani-eco-top article,
+.zani-eco-bento article {
+  border-radius: 22px;
+  padding: 20px;
+  background: #fff;
+  box-shadow: 0 12px 34px rgba(15,23,42,0.05);
+}
+
+.zani-eco-bento {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
+}
+
+.zani-eco-bento svg {
+  color: var(--stitch-orange);
+}
+
+.zani-eco-bento b {
+  display: block;
+  margin-top: 16px;
+  color: var(--stitch-navy);
+  font-size: 20px;
+}
+
+.zani-eco-bento p {
+  margin-top: 8px;
+  color: rgba(25,28,30,0.62);
+  line-height: 1.45;
+}
+
+@media (max-width: 1180px) {
+  .zani-light-hero-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .zani-light-hero-visual .zani-light-phone {
+    transform: none;
+  }
+
+  .zani-ecosystem-board,
+  .zani-crm-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .zani-eco-top,
+  .zani-eco-bento {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 780px) {
+  .zani-light-hero {
+    padding-top: 54px;
+  }
+
+  .zani-light-hero-grid {
+    gap: 28px;
+  }
+
+  .zani-light-hero-copy h1 {
+    font-size: clamp(40px, 12vw, 52px);
+    line-height: 0.96;
+  }
+
+  .zani-light-hero-copy p {
+    margin-top: 18px;
+    font-size: 18px;
+  }
+
+  .zani-hand-note {
+    margin-left: 26px;
+    font-size: 23px;
+  }
+
+  .zani-light-actions {
+    margin-top: 28px;
+  }
+
+  .zani-light-proof {
+    margin-top: 28px;
+  }
+
+  .zani-hero-paths {
+    display: none;
+  }
+
+  .zani-reference-mini,
+  .zani-market-insight {
+    grid-template-columns: 1fr;
+  }
+
+  .zani-market-insight {
+    grid-column: span 1;
+  }
+
+  .zani-ecosystem-board {
+    padding: 16px;
+  }
+}

@@ -3560,14 +3560,17 @@ body:has(.zani-stitch) {
   }
 
   .zani-light .zani-stitch-actions {
+    display: flex !important;
     position: absolute;
     top: 50%;
     right: 0;
+    z-index: 3;
     flex: 0 0 auto;
     transform: translateY(-50%);
   }
 
   .zani-light .zani-stitch-trial {
+    display: inline-flex !important;
     width: 82px !important;
     max-width: 82px !important;
     padding: 0 12px !important;

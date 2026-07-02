@@ -2635,3 +2635,988 @@ body:has(.zani-stitch) {
     padding: 16px;
   }
 }
+
+/* Night polish pass: keep ZANI language, fix composition, density and mobile */
+.zani-light {
+  --zani-page: #fff7ee;
+  --zani-page-2: #fffaf5;
+  --zani-line: rgba(255, 140, 0, 0.16);
+  --zani-card: rgba(255, 255, 255, 0.86);
+  --zani-card-solid: #ffffff;
+  --zani-soft-shadow: 0 18px 48px rgba(115, 72, 24, 0.08);
+  --zani-strong-shadow: 0 34px 90px rgba(64, 44, 20, 0.16);
+  background:
+    radial-gradient(circle at 78% 9%, rgba(255, 140, 0, 0.14), transparent 30rem),
+    radial-gradient(circle at 12% 42%, rgba(255, 191, 112, 0.12), transparent 34rem),
+    linear-gradient(180deg, var(--zani-page-2) 0%, var(--zani-page) 44%, #fffdf9 100%);
+}
+
+.zani-light .zani-stitch-container {
+  width: min(1240px, calc(100% - 56px));
+}
+
+.zani-light .zani-stitch-header {
+  background: rgba(255, 250, 245, 0.92);
+  box-shadow: 0 1px 0 rgba(255, 140, 0, 0.08), 0 12px 34px rgba(92, 56, 18, 0.04);
+}
+
+.zani-light .zani-stitch-header-inner {
+  min-height: 70px;
+  gap: 22px;
+}
+
+.zani-light .zani-stitch-header nav {
+  gap: clamp(16px, 2.1vw, 28px);
+}
+
+.zani-light .zani-stitch-header nav a {
+  padding: 23px 0 21px;
+  color: rgba(16, 24, 39, 0.62);
+  font-size: 14px;
+  letter-spacing: -0.01em;
+}
+
+.zani-light .zani-stitch-header nav a:hover,
+.zani-light .zani-stitch-header nav a.is-active {
+  color: var(--stitch-orange-dark);
+}
+
+.zani-stitch-trial,
+.zani-stitch-primary,
+.zani-stitch-cta form a {
+  background: linear-gradient(135deg, #ff8c00 0%, #ff9f1f 100%);
+  color: #101827;
+  box-shadow: 0 16px 36px rgba(255, 140, 0, 0.25);
+}
+
+.zani-stitch-primary,
+.zani-stitch-cta form a {
+  display: inline-flex;
+  min-height: 58px;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border-radius: 18px;
+  padding: 0 26px;
+  font-weight: 900;
+  text-decoration: none;
+  transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+}
+
+.zani-stitch-primary:hover,
+.zani-stitch-cta form a:hover,
+.zani-stitch-trial:hover {
+  filter: saturate(1.05);
+  transform: translateY(-2px);
+  box-shadow: 0 22px 44px rgba(255, 140, 0, 0.3);
+}
+
+.zani-light-hero,
+.zani-light-section {
+  isolation: isolate;
+  padding: clamp(76px, 9vh, 112px) 0;
+}
+
+.zani-light-hero {
+  min-height: calc(100dvh - 70px);
+  padding-top: clamp(64px, 7vh, 92px);
+  padding-bottom: clamp(56px, 7vh, 86px);
+}
+
+.zani-light-hero::before,
+.zani-light-section::before {
+  background-size: 76px 76px;
+  opacity: 0.74;
+  mask-image: linear-gradient(180deg, transparent 0%, black 8%, black 90%, transparent 100%);
+}
+
+.zani-light-hero-grid {
+  grid-template-columns: minmax(460px, 0.9fr) minmax(520px, 1.1fr);
+  gap: clamp(44px, 5vw, 78px);
+}
+
+.zani-light-hero-copy {
+  align-self: center;
+  padding-top: 12px;
+}
+
+.zani-kicker {
+  min-height: 32px;
+  margin-bottom: 18px;
+  border-color: rgba(255, 140, 0, 0.2);
+  background: rgba(255, 255, 255, 0.72);
+  color: #9a5300;
+  font-size: 11px;
+  letter-spacing: 0.095em;
+}
+
+.zani-light-hero-copy h1 {
+  max-width: 620px;
+  font-size: clamp(58px, 6.1vw, 92px);
+  letter-spacing: -0.055em;
+  line-height: 0.95;
+  text-wrap: balance;
+}
+
+.zani-light-hero-copy h1 em {
+  color: #ff8c00;
+  font-style: normal;
+}
+
+.zani-hand-note {
+  margin: 8px 0 0 154px;
+  color: #ff8c00;
+  font-size: clamp(24px, 2.6vw, 36px);
+  font-style: italic;
+  font-weight: 800;
+  line-height: 1.08;
+  transform: rotate(-2deg);
+}
+
+.zani-hand-note::after {
+  height: 8px;
+  margin-top: -3px;
+  border-bottom-color: rgba(255, 140, 0, 0.34);
+}
+
+.zani-light-hero-copy p {
+  max-width: 570px;
+  margin-top: 26px;
+  color: rgba(16, 24, 39, 0.64);
+  font-size: 18px;
+  line-height: 1.58;
+}
+
+.zani-light-actions {
+  gap: 14px;
+  margin-top: 30px;
+}
+
+.zani-light-secondary {
+  min-height: 58px;
+  border: 1px solid rgba(255, 140, 0, 0.14);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.58);
+  color: rgba(16, 24, 39, 0.78);
+}
+
+.zani-light-proof {
+  margin-top: 34px;
+}
+
+.zani-light-proof div span {
+  width: 34px;
+  height: 34px;
+  background:
+    radial-gradient(circle at 34% 26%, rgba(255, 255, 255, 0.84), transparent 22%),
+    linear-gradient(135deg, #101827, #ff8c00);
+}
+
+.zani-light-hero-visual {
+  min-height: clamp(610px, 72vh, 720px);
+  align-self: center;
+}
+
+.zani-light-hero-visual .zani-light-phone {
+  width: min(382px, 66vw);
+  min-height: 650px;
+  border-width: 11px;
+  border-color: #151922;
+  border-radius: 50px;
+  padding: 24px 17px 17px;
+  transform: perspective(1300px) rotateZ(2deg) rotateY(-5deg);
+  box-shadow:
+    0 34px 80px rgba(31, 25, 18, 0.18),
+    -16px 22px 0 rgba(255, 140, 0, 0.055),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.64);
+}
+
+.zani-phone-screen,
+.zani-chat-screen,
+.zani-phone-dashboard {
+  height: 560px;
+  border-radius: 31px;
+  margin-top: 32px;
+}
+
+.zani-inbox-row {
+  min-height: 76px;
+  border-radius: 18px;
+  margin-bottom: 11px;
+}
+
+.zani-floating-channel {
+  min-width: 196px;
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 18px 42px rgba(64, 44, 20, 0.1);
+}
+
+.zani-floating-channel > span {
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+}
+
+.pos-0 { top: 62px; left: 10px; }
+.pos-1 { top: 128px; right: -2px; }
+.pos-2 { top: 292px; left: -14px; }
+.pos-3 { bottom: 202px; right: 8px; }
+.pos-4 { bottom: 98px; left: 50px; }
+.pos-5 { bottom: 58px; right: 88px; }
+
+.zani-hero-paths {
+  inset: 7% 0 4% -4%;
+  opacity: 0.75;
+}
+
+.zani-hero-paths i {
+  border-width: 1px;
+  border-color: rgba(255, 140, 0, 0.2);
+  border-right-color: transparent;
+  border-left-color: transparent;
+}
+
+.zani-two-col {
+  grid-template-columns: minmax(390px, 0.84fr) minmax(520px, 1.16fr);
+  gap: clamp(44px, 5.4vw, 78px);
+}
+
+.zani-three-col {
+  grid-template-columns: minmax(330px, 0.78fr) minmax(310px, 0.72fr) minmax(330px, 0.8fr);
+  gap: clamp(32px, 4vw, 54px);
+}
+
+.zani-section-copy h2 {
+  max-width: 720px;
+  font-size: clamp(44px, 4.8vw, 72px);
+  letter-spacing: -0.05em;
+  line-height: 0.98;
+  text-wrap: balance;
+}
+
+.zani-section-copy > p {
+  max-width: 610px;
+  font-size: 18px;
+  line-height: 1.58;
+  text-wrap: pretty;
+}
+
+.zani-center-copy {
+  max-width: 780px;
+  margin-bottom: 36px;
+}
+
+.zani-story-card,
+.zani-crm-board,
+.zani-market-network,
+.zani-owner-dashboard,
+.zani-integration-grid,
+.zani-case-card,
+.zani-ecosystem-board {
+  border: 1px solid rgba(139, 91, 37, 0.12);
+  background: var(--zani-card);
+  box-shadow: var(--zani-soft-shadow);
+}
+
+.zani-story-card {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  padding: 22px;
+}
+
+.zani-story-card article {
+  min-height: 142px;
+  padding: 16px;
+  box-shadow: 0 10px 28px rgba(64, 44, 20, 0.06);
+}
+
+.zani-reference-mini p {
+  color: #101827;
+  box-shadow: 0 14px 30px rgba(150, 95, 24, 0.08);
+}
+
+.zani-agent .zani-light-phone {
+  width: min(320px, 58vw);
+  min-height: 620px;
+  border-color: #151922;
+}
+
+.zani-agent .zani-chat-screen {
+  height: 535px;
+}
+
+.zani-agent-flow article,
+.zani-owner-list article,
+.zani-appointment-card {
+  border: 1px solid rgba(139, 91, 37, 0.1);
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 14px 36px rgba(64, 44, 20, 0.07);
+}
+
+.zani-agent-flow article {
+  min-height: 112px;
+  align-items: center;
+}
+
+.zani-agent-flow b,
+.zani-owner-list h3 {
+  font-size: 19px;
+  letter-spacing: -0.02em;
+}
+
+.zani-crm-board {
+  grid-template-columns: 176px 1fr;
+  border-radius: 30px;
+  padding: 22px;
+}
+
+.zani-crm-sidebar,
+.zani-ecosystem-board aside {
+  background: #121827;
+}
+
+.zani-crm-stats article,
+.zani-calm-panel article,
+.zani-crm-workspace article,
+.zani-eco-top article,
+.zani-eco-bento article,
+.zani-market-network article,
+.zani-mini-stats span,
+.zani-phone-dashboard article {
+  box-shadow: 0 12px 32px rgba(64, 44, 20, 0.055);
+}
+
+.zani-crm-stats b,
+.zani-calm-panel b {
+  font-size: clamp(27px, 2.3vw, 34px);
+}
+
+.zani-flow-strip {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  background: rgba(255, 140, 0, 0.08);
+}
+
+.zani-flow-strip article {
+  min-height: 92px;
+  padding: 12px;
+  text-align: center;
+}
+
+.zani-crm-workspace article {
+  min-height: 156px;
+}
+
+.zani-market-network {
+  gap: 12px;
+  padding: 24px;
+}
+
+.zani-market-network article {
+  min-height: 86px;
+}
+
+.zani-market-network i {
+  border-top-color: rgba(255, 140, 0, 0.28);
+}
+
+.zani-market-insight {
+  padding: 16px 18px;
+}
+
+.zani-ecosystem-board {
+  border-radius: 30px;
+}
+
+.zani-eco-bento article {
+  min-height: 188px;
+}
+
+.zani-owner-dashboard {
+  grid-template-columns: minmax(250px, 300px) 1fr;
+  border-radius: 30px;
+}
+
+.zani-owner-dashboard .zani-light-phone {
+  width: min(280px, 100%);
+  min-height: 540px;
+}
+
+.zani-owner-dashboard .zani-phone-dashboard {
+  height: 460px;
+}
+
+.zani-integration-grid {
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  border-radius: 30px;
+}
+
+.zani-integration-grid article {
+  min-height: 150px;
+  padding: 14px 8px;
+  text-align: center;
+}
+
+.zani-case-card {
+  padding: 30px;
+}
+
+.zani-case-card strong {
+  font-size: clamp(44px, 4vw, 56px);
+}
+
+.zani-final-cta {
+  padding-top: 74px;
+}
+
+.zani-stitch-cta {
+  border: 1px solid rgba(139, 91, 37, 0.12);
+  border-radius: 34px;
+  padding: clamp(34px, 5vw, 58px);
+  background:
+    radial-gradient(circle at 78% 8%, rgba(255, 140, 0, 0.16), transparent 26rem),
+    rgba(255, 255, 255, 0.82);
+  box-shadow: var(--zani-strong-shadow);
+}
+
+.zani-stitch-cta h2 {
+  max-width: 900px;
+  color: #101827;
+  font-family: "Hanken Grotesk", Inter, sans-serif;
+  font-size: clamp(42px, 5.2vw, 76px);
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  line-height: 0.98;
+}
+
+.zani-stitch-footer {
+  background: #101827;
+  color: #fff;
+}
+
+.zani-stitch-footer p,
+.zani-stitch-footer a,
+.zani-stitch-footer small {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+@media (max-width: 1180px) {
+  .zani-light .zani-stitch-container {
+    width: min(100% - 40px, 960px);
+  }
+
+  .zani-light .zani-stitch-header nav {
+    display: none;
+  }
+
+  .zani-light-hero-grid,
+  .zani-two-col,
+  .zani-three-col,
+  .zani-owner-dashboard,
+  .zani-ecosystem-board {
+    grid-template-columns: 1fr;
+  }
+
+  .zani-light-hero-copy {
+    max-width: 720px;
+  }
+
+  .zani-light-hero-copy h1 {
+    max-width: 720px;
+  }
+
+  .zani-light-hero-visual {
+    min-height: 650px;
+  }
+
+  .zani-light-hero-visual .zani-light-phone {
+    transform: none;
+  }
+
+  .zani-floating-channel {
+    animation-duration: 9s;
+  }
+
+  .zani-story-card {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .zani-crm-board {
+    grid-template-columns: 1fr;
+  }
+
+  .zani-crm-sidebar,
+  .zani-ecosystem-board aside {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .zani-ecosystem-board aside strong {
+    grid-column: 1 / -1;
+  }
+
+  .zani-crm-workspace,
+  .zani-eco-bento {
+    grid-template-columns: 1fr;
+  }
+
+  .zani-market-network {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .zani-market-insight {
+    grid-column: 1 / -1;
+  }
+
+  .zani-integration-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 780px) {
+  body:has(.zani-stitch) {
+    width: 100vw;
+    overflow-x: hidden;
+  }
+
+  .zani-stitch {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  html:has(.zani-stitch) {
+    scroll-padding-top: 64px;
+  }
+
+  .zani-light .zani-stitch-container {
+    width: min(calc(100% - 28px), 520px);
+    max-width: calc(100vw - 28px);
+    min-width: 0;
+  }
+
+  .zani-light .zani-stitch-header-inner {
+    min-height: 64px;
+    width: min(calc(100% - 24px), 520px);
+    max-width: calc(100vw - 24px);
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+  }
+
+  .zani-stitch-brand {
+    font-size: 20px;
+  }
+
+  .zani-stitch-brand span {
+    width: 28px;
+    font-size: 18px;
+  }
+
+  .zani-stitch-actions {
+    min-width: 0;
+    gap: 8px;
+  }
+
+  .zani-stitch-login {
+    display: none;
+  }
+
+  .zani-stitch-trial {
+    max-width: 174px;
+    min-height: 38px;
+    overflow: hidden;
+    padding: 0 13px;
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .zani-stitch-language {
+    display: none !important;
+  }
+
+  .zani-light-hero,
+  .zani-light-section {
+    padding: 58px 0;
+  }
+
+  .zani-light-hero {
+    min-height: auto;
+    padding-top: 42px;
+  }
+
+  .zani-light-hero-grid,
+  .zani-two-col,
+  .zani-three-col {
+    min-width: 0;
+    gap: 34px;
+  }
+
+  .zani-light-hero-copy,
+  .zani-section-copy,
+  .zani-light-hero-grid > *,
+  .zani-two-col > *,
+  .zani-three-col > * {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .zani-kicker {
+    min-height: 30px;
+    margin-bottom: 14px;
+    padding: 0 12px;
+    font-size: 10px;
+  }
+
+  .zani-light-hero-copy h1,
+  .zani-section-copy h2,
+  .zani-stitch-cta h2 {
+    width: 100%;
+    max-width: 340px;
+    overflow-wrap: normal;
+    word-break: normal;
+    font-size: clamp(30px, 8.45vw, 38px);
+    letter-spacing: -0.045em;
+    line-height: 1.02;
+  }
+
+  .zani-section-copy h2,
+  .zani-stitch-cta h2 {
+    max-width: 100%;
+  }
+
+  .zani-light-hero-copy p,
+  .zani-section-copy > p {
+    margin-top: 18px;
+    font-size: 16px;
+    line-height: 1.52;
+  }
+
+  .zani-hand-note {
+    margin-left: 14px;
+    font-size: clamp(18px, 5.7vw, 24px);
+  }
+
+  .zani-light-actions {
+    display: grid;
+    gap: 10px;
+  }
+
+  .zani-stitch-primary,
+  .zani-light-secondary,
+  .zani-stitch-cta form a {
+    width: min(100%, calc(100vw - 28px));
+    min-height: 54px;
+    border-radius: 16px;
+  }
+
+  .zani-light-proof {
+    align-items: flex-start;
+    gap: 12px;
+    margin-top: 24px;
+    padding-bottom: 4px;
+  }
+
+  .zani-light-proof p {
+    max-width: 220px;
+    font-size: 13px;
+    line-height: 1.35;
+  }
+
+  .zani-light-hero-visual {
+    display: grid;
+    min-height: 0;
+    gap: 10px;
+  }
+
+  .zani-light-hero-visual .zani-light-phone,
+  .zani-light-phone,
+  .zani-agent .zani-light-phone,
+  .zani-owner-dashboard .zani-light-phone {
+    width: min(315px, 90vw);
+    min-height: 560px;
+    border-width: 9px;
+    border-radius: 42px;
+    padding: 21px 14px 14px;
+    transform: none;
+  }
+
+  .zani-light-notch {
+    top: 17px;
+    width: 108px;
+    height: 30px;
+  }
+
+  .zani-phone-screen,
+  .zani-chat-screen,
+  .zani-phone-dashboard,
+  .zani-agent .zani-chat-screen,
+  .zani-owner-dashboard .zani-phone-dashboard {
+    height: 485px;
+    border-radius: 27px;
+    margin-top: 28px;
+    padding: 20px 14px;
+  }
+
+  .zani-inbox-row {
+    min-height: 66px;
+    grid-template-columns: 36px 1fr auto;
+    gap: 9px;
+    padding: 10px;
+  }
+
+  .zani-inbox-row > span,
+  .zani-floating-channel > span {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+  }
+
+  .zani-floating-channel {
+    position: static;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    animation: none;
+  }
+
+  .zani-hero-paths {
+    display: none;
+  }
+
+  .zani-channel-dock {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .zani-channel-dock span {
+    min-height: 48px;
+    justify-content: center;
+    padding: 0 12px;
+    font-size: 13px;
+  }
+
+  .zani-story-card,
+  .zani-crm-stats,
+  .zani-flow-strip,
+  .zani-market-network,
+  .zani-case-grid,
+  .zani-eco-top,
+  .zani-eco-bento,
+  .zani-crm-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .zani-story-card,
+  .zani-crm-board,
+  .zani-market-network,
+  .zani-owner-dashboard,
+  .zani-ecosystem-board,
+  .zani-stitch-cta {
+    border-radius: 24px;
+    padding: 16px;
+  }
+
+  .zani-story-card article {
+    min-height: auto;
+  }
+
+  .zani-story-card article em,
+  .zani-market-network i,
+  .zani-integration-grid i {
+    display: none;
+  }
+
+  .zani-reference-mini {
+    grid-template-columns: 1fr;
+  }
+
+  .zani-reference-mini p {
+    max-width: none;
+    transform: rotate(-2deg);
+  }
+
+  .zani-agent-flow article,
+  .zani-owner-list article {
+    grid-template-columns: 38px 1fr;
+    padding: 15px;
+  }
+
+  .zani-crm-sidebar,
+  .zani-ecosystem-board aside {
+    grid-template-columns: 1fr 1fr;
+    padding: 14px;
+  }
+
+  .zani-crm-sidebar span,
+  .zani-ecosystem-board aside span {
+    padding: 10px;
+    font-size: 12px;
+  }
+
+  .zani-flow-strip article {
+    min-height: 62px;
+    justify-content: space-between;
+    padding-inline: 16px;
+  }
+
+  .zani-market-network {
+    gap: 10px;
+  }
+
+  .zani-market-insight {
+    grid-template-columns: 36px 1fr;
+    gap: 12px;
+  }
+
+  .zani-market-insight p {
+    grid-column: 1 / -1;
+  }
+
+  .zani-integration-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .zani-integration-grid article {
+    min-height: 118px;
+  }
+
+  .zani-case-card {
+    padding: 22px;
+  }
+
+  .zani-stitch-cta form {
+    display: grid;
+    gap: 10px;
+  }
+
+  .zani-stitch-cta form input {
+    min-height: 54px;
+    width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .zani-light .zani-stitch-container {
+    width: min(calc(100% - 22px), 390px);
+    max-width: calc(100vw - 22px);
+  }
+
+  .zani-stitch-trial {
+    max-width: 146px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .zani-light-hero-copy h1,
+  .zani-section-copy h2,
+  .zani-stitch-cta h2 {
+    font-size: clamp(28px, 8.25vw, 34px);
+    line-height: 1.04;
+  }
+
+  .zani-light-hero-copy p,
+  .zani-section-copy > p {
+    font-size: 15px;
+  }
+
+  .zani-hand-note {
+    margin-left: 8px;
+    font-size: clamp(17px, 5.8vw, 22px);
+  }
+
+  .zani-light-hero-visual .zani-light-phone,
+  .zani-light-phone,
+  .zani-agent .zani-light-phone,
+  .zani-owner-dashboard .zani-light-phone {
+    width: min(292px, 91vw);
+    min-height: 520px;
+  }
+
+  .zani-phone-screen,
+  .zani-chat-screen,
+  .zani-phone-dashboard,
+  .zani-agent .zani-chat-screen,
+  .zani-owner-dashboard .zani-phone-dashboard {
+    height: 450px;
+  }
+
+  .zani-floating-channel {
+    padding: 10px;
+  }
+}
+
+/* Mobile hard-stop polish: prevent clipped header and bring product into view */
+@media (max-width: 780px) {
+  .zani-light .zani-stitch-header-inner {
+    display: flex !important;
+    position: relative;
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px) !important;
+    justify-content: space-between !important;
+  }
+
+  .zani-light .zani-stitch-actions {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    flex: 0 0 auto;
+    transform: translateY(-50%);
+  }
+
+  .zani-light .zani-stitch-trial {
+    width: 82px !important;
+    max-width: 82px !important;
+    padding: 0 12px !important;
+    font-size: 0 !important;
+  }
+
+  .zani-light .zani-stitch-trial::after {
+    content: "Старт";
+    font-size: 12px;
+    line-height: 1;
+  }
+
+  .zani-light .zani-light-hero {
+    padding-top: 40px !important;
+    padding-bottom: 34px !important;
+  }
+
+  .zani-light .zani-light-hero-grid {
+    gap: 22px !important;
+  }
+
+  .zani-light .zani-light-hero-copy h1 {
+    max-width: 335px !important;
+    font-size: clamp(29px, 8.2vw, 35px) !important;
+    line-height: 1.04 !important;
+    letter-spacing: -0.04em !important;
+  }
+
+  .zani-light .zani-hand-note {
+    margin-top: 10px !important;
+    margin-left: 8px !important;
+    font-size: clamp(17px, 5.4vw, 22px) !important;
+  }
+
+  .zani-light .zani-light-hero-copy p {
+    margin-top: 16px !important;
+    font-size: 15px !important;
+    line-height: 1.5 !important;
+  }
+
+  .zani-light .zani-light-actions {
+    margin-top: 22px !important;
+  }
+
+  .zani-light .zani-light-proof {
+    display: none !important;
+  }
+
+  .zani-light .zani-light-hero-visual {
+    margin-top: 4px !important;
+  }
+}

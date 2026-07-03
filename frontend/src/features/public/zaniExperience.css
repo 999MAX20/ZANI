@@ -3966,3 +3966,73 @@ body:has(.zani-stitch) {
   color: rgba(18, 26, 43, 0.64) !important;
   font-size: 14px;
 }
+
+/* Cycle 7 desktop section fit */
+@media (min-width: 981px) {
+  .zani-light-section {
+    padding-top: 62px !important;
+    padding-bottom: 62px !important;
+  }
+
+  .zani-crm-board {
+    padding: 18px !important;
+    gap: 16px !important;
+  }
+
+  .zani-crm-sidebar {
+    gap: 8px !important;
+    padding: 14px !important;
+  }
+
+  .zani-crm-sidebar span {
+    min-height: 42px !important;
+    padding: 10px 12px !important;
+  }
+
+  .zani-crm-stats {
+    gap: 12px !important;
+  }
+
+  .zani-crm-stats article {
+    min-height: 118px !important;
+    padding: 18px !important;
+  }
+
+  .zani-flow-strip article {
+    min-height: 70px !important;
+  }
+
+  .zani-crm-workspace article {
+    min-height: 130px !important;
+    padding: 16px !important;
+  }
+
+  .zani-ecosystem-board {
+    grid-template-columns: 190px 1fr !important;
+    gap: 18px !important;
+    padding: 18px !important;
+  }
+
+  .zani-ecosystem-board aside {
+    gap: 8px !important;
+    padding: 16px !important;
+  }
+
+  .zani-ecosystem-board aside span {
+    padding: 9px 11px !important;
+  }
+
+  .zani-ecosystem-board main {
+    gap: 14px !important;
+  }
+
+  .zani-eco-top article {
+    min-height: 104px !important;
+    padding: 16px !important;
+  }
+
+  .zani-eco-bento article {
+    min-height: 144px !important;
+    padding: 16px !important;
+  }
+}

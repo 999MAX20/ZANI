@@ -4514,7 +4514,7 @@ export const en: Record<string, string> = {
   "landing.experience.ecosystem.team": "Team sees tasks",
   "landing.experience.ecosystem.teamText": "Owners, deadlines and client history stay nearby.",
   "landing.experience.owner.kicker": "Owner",
-  "landing.experience.owner.title": "You open the dashboard and everything is calm",
+  "landing.experience.owner.title": "Open the dashboard. Everything is calm",
   "landing.experience.owner.text": "AI answers. Employees see tasks. Sales move. Money comes in. The owner understands the day without calling every manager.",
   "landing.experience.owner.control": "Everything under control",
   "landing.experience.owner.controlText": "Clients, sales, tasks and risks are visible immediately.",

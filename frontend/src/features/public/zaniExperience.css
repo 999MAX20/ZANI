@@ -3955,7 +3955,7 @@ body:has(.zani-stitch) {
 }
 
 .zani-stitch-cta form {
-  grid-template-columns: minmax(240px, 1fr) minmax(220px, 260px);
+  grid-template-columns: minmax(240px, 1fr) minmax(280px, 320px);
   width: min(720px, 100%);
 }
 
@@ -3972,6 +3972,7 @@ body:has(.zani-stitch) {
 .zani-stitch-cta form a {
   min-height: 62px;
   border-radius: 18px;
+  white-space: nowrap;
   background: linear-gradient(135deg, #ff8c00, #ffad33) !important;
   color: var(--stitch-navy) !important;
   box-shadow: 0 18px 40px rgba(255, 140, 0, 0.22);

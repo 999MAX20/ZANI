@@ -3720,3 +3720,164 @@ body:has(.zani-stitch) {
 .zani-agent-flow article {
   padding-left: 60px !important;
 }
+
+/* Cycle 5 mobile density pass */
+@media (max-width: 780px) {
+  .zani-light-section {
+    min-height: auto !important;
+    padding: 32px 0 !important;
+    scroll-margin-top: 0 !important;
+  }
+
+  .zani-light .zani-light-hero {
+    min-height: auto !important;
+    padding-top: 26px !important;
+    padding-bottom: 28px !important;
+  }
+
+  .zani-light .zani-light-hero-copy h1,
+  .zani-section-copy h2,
+  .zani-stitch-cta h2 {
+    font-size: clamp(30px, 8.2vw, 38px) !important;
+    line-height: 1.03 !important;
+    letter-spacing: -0.045em !important;
+  }
+
+  .zani-light .zani-hand-note {
+    font-size: clamp(19px, 5.5vw, 24px) !important;
+    line-height: 1.08 !important;
+  }
+
+  .zani-light .zani-light-hero-copy p,
+  .zani-section-copy > p,
+  .zani-stitch-cta p {
+    max-width: 34ch;
+    font-size: 16px !important;
+    line-height: 1.46 !important;
+  }
+
+  .zani-light-phone,
+  .zani-agent .zani-light-phone,
+  .zani-owner-dashboard .zani-light-phone {
+    width: min(300px, 82vw) !important;
+    min-height: 500px !important;
+  }
+
+  .zani-phone-screen,
+  .zani-chat-screen,
+  .zani-phone-dashboard,
+  .zani-agent .zani-chat-screen,
+  .zani-owner-dashboard .zani-phone-dashboard {
+    height: 420px !important;
+  }
+
+  .zani-story-card {
+    display: grid !important;
+    gap: 12px !important;
+  }
+
+  .zani-story-card article {
+    min-height: 118px !important;
+    padding: 18px !important;
+  }
+
+  .zani-crm-board {
+    max-height: 680px;
+    overflow: hidden;
+    gap: 14px !important;
+    padding: 16px !important;
+  }
+
+  .zani-crm-sidebar {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .zani-crm-sidebar span {
+    min-height: 40px !important;
+    padding: 9px 10px !important;
+    font-size: 12px !important;
+  }
+
+  .zani-crm-stats {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .zani-crm-stats article {
+    min-height: 108px !important;
+    padding: 14px !important;
+  }
+
+  .zani-crm-stats b {
+    font-size: clamp(22px, 7vw, 30px) !important;
+  }
+
+  .zani-crm-stats span,
+  .zani-crm-stats em {
+    font-size: 11px !important;
+  }
+
+  .zani-flow-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .zani-flow-strip article {
+    min-height: 48px !important;
+    padding: 10px 12px !important;
+    font-size: 12px !important;
+  }
+
+  .zani-crm-workspace {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .zani-crm-workspace article {
+    min-height: auto !important;
+    padding: 14px !important;
+  }
+
+  .zani-market-network {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    padding: 16px !important;
+  }
+
+  .zani-market-network article {
+    min-height: 74px !important;
+    padding: 14px !important;
+  }
+
+  .zani-market-insight {
+    grid-column: 1 / -1 !important;
+    padding: 14px !important;
+  }
+
+  .zani-owner-list article {
+    grid-template-columns: 34px minmax(0, 1fr) !important;
+    gap: 12px !important;
+    padding: 16px !important;
+  }
+
+  .zani-owner-list h3 {
+    font-size: 24px !important;
+  }
+
+  .zani-owner-list p {
+    font-size: 17px !important;
+    line-height: 1.38 !important;
+  }
+
+  .zani-stitch-cta {
+    padding: 22px !important;
+  }
+
+  .zani-stitch-cta p,
+  .zani-stitch-cta > div span {
+    color: rgba(18, 26, 43, 0.68) !important;
+  }
+}

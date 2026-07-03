@@ -1,71 +1,85 @@
+@import url("https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap");
+
+:root {
+  --auth-bg: #f7f9fb;
+  --auth-surface: #ffffff;
+  --auth-surface-low: #f2f4f6;
+  --auth-surface-high: #eceef0;
+  --auth-text: #191c1e;
+  --auth-muted: #565e74;
+  --auth-navy: #131b2e;
+  --auth-orange: #ff8c00;
+  --auth-orange-dark: #904d00;
+  --auth-border: rgba(137, 115, 98, 0.18);
+  --auth-danger: #ba1a1a;
+  --auth-success: #168a43;
+  --auth-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
+  --auth-shadow-strong: 0 24px 70px rgba(15, 23, 42, 0.14);
+}
+
+body:has(.zani-auth-experience) {
+  background: var(--auth-bg);
+}
+
+.zani-auth-experience,
+.zani-auth-experience * {
+  box-sizing: border-box;
+}
+
 .zani-auth-experience {
   position: relative;
   min-height: 100dvh;
-  overflow: hidden;
+  overflow-x: clip;
   background:
-    radial-gradient(circle at 16% 15%, rgba(62, 106, 255, 0.22), transparent 28rem),
-    radial-gradient(circle at 52% 82%, rgba(143, 69, 255, 0.28), transparent 34rem),
-    radial-gradient(circle at 86% 16%, rgba(36, 229, 176, 0.1), transparent 24rem),
-    linear-gradient(135deg, #030617 0%, #071024 46%, #0b0820 100%);
-  color: #f8fafc;
-  isolation: isolate;
-}
-
-.zani-auth-experience::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -2;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-  background-size: 86px 86px;
-  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.9), transparent 86%);
+    radial-gradient(circle at 82% 12%, rgba(255, 140, 0, 0.08), transparent 27rem),
+    linear-gradient(180deg, #ffffff 0%, var(--auth-bg) 100%);
+  color: var(--auth-text);
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 .zani-auth-noise {
   pointer-events: none;
   position: absolute;
   inset: 0;
-  z-index: -1;
-  background:
-    linear-gradient(120deg, rgba(255, 255, 255, 0.04), transparent 28%, rgba(127, 94, 255, 0.08) 56%, transparent 76%),
-    radial-gradient(circle at 68% 60%, rgba(255, 255, 255, 0.09), transparent 1px);
-  background-size: auto, 4px 4px;
-  opacity: 0.55;
+  background-image:
+    linear-gradient(rgba(19, 27, 46, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(19, 27, 46, 0.03) 1px, transparent 1px);
+  background-size: 88px 88px;
+  mask-image: linear-gradient(to bottom, black, transparent 74%);
 }
 
 .zani-auth-topbar {
   position: relative;
   z-index: 5;
   display: grid;
+  width: min(1280px, calc(100% - 48px));
+  min-height: 74px;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 24px;
-  width: min(1440px, calc(100% - 64px));
   margin: 0 auto;
-  padding: 24px 0 8px;
 }
 
 .zani-auth-back,
 .zani-auth-brand,
-.zani-auth-switch,
 .zani-auth-switch a {
-  color: rgba(248, 250, 252, 0.9);
+  color: var(--auth-navy);
+  text-decoration: none;
 }
 
 .zani-auth-back {
   display: inline-flex;
   width: fit-content;
   align-items: center;
-  gap: 10px;
-  font-size: 15px;
-  text-decoration: none;
-  transition: color 160ms ease, transform 160ms ease;
+  gap: 9px;
+  color: var(--auth-muted);
+  font-size: 14px;
+  font-weight: 800;
+  transition: color 180ms ease, transform 180ms ease;
 }
 
 .zani-auth-back:hover {
-  color: #ffffff;
+  color: var(--auth-orange-dark);
   transform: translateX(-2px);
 }
 
@@ -73,31 +87,33 @@
   display: inline-flex;
   align-items: center;
   justify-self: center;
-  gap: 16px;
-  text-decoration: none;
+  gap: 15px;
 }
 
 .zani-auth-brand span {
-  background: linear-gradient(100deg, #8b5cf6 0%, #ffffff 34%, #ffffff 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--auth-navy);
+  font-family: "Hanken Grotesk", Inter, sans-serif;
   font-size: 34px;
   font-weight: 900;
-  letter-spacing: 0.01em;
+  letter-spacing: -0.02em;
   line-height: 1;
+}
+
+.zani-auth-brand span::first-letter {
+  color: var(--auth-orange);
 }
 
 .zani-auth-brand i {
   width: 1px;
   height: 28px;
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--auth-border);
 }
 
 .zani-auth-brand em {
-  color: rgba(248, 250, 252, 0.74);
+  color: var(--auth-muted);
   font-size: 15px;
   font-style: normal;
+  font-weight: 700;
   white-space: nowrap;
 }
 
@@ -106,146 +122,131 @@
   align-items: center;
   justify-self: end;
   gap: 12px;
-  font-size: 15px;
-}
-
-.zani-auth-switch span {
-  color: rgba(248, 250, 252, 0.84);
+  color: var(--auth-muted);
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .zani-auth-switch a {
-  min-width: 86px;
-  position: relative;
-  z-index: 6;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 10px;
-  padding: 13px 20px;
-  background: rgba(255, 255, 255, 0.045);
-  text-align: center;
-  text-decoration: none;
-  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  border: 1px solid var(--auth-border);
+  border-radius: 12px;
+  padding: 0 20px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--auth-navy);
+  font-weight: 900;
+  box-shadow: var(--auth-shadow);
+  transition: transform 180ms ease, border-color 180ms ease;
 }
 
 .zani-auth-switch a:hover {
-  border-color: rgba(255, 255, 255, 0.32);
-  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 140, 0, 0.36);
   transform: translateY(-1px);
 }
 
 .zani-auth-language {
-  height: 46px !important;
-  border-color: rgba(255, 255, 255, 0.16) !important;
-  background: rgba(255, 255, 255, 0.05) !important;
-  color: #ffffff !important;
-  box-shadow: none !important;
+  min-width: 84px;
+  height: 44px !important;
+  border-color: var(--auth-border) !important;
+  border-radius: 12px !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+  color: var(--auth-navy) !important;
+  box-shadow: var(--auth-shadow) !important;
 }
 
 .zani-auth-language svg,
 .zani-auth-language select {
-  color: #ffffff !important;
-}
-
-.zani-auth-language select {
-  min-width: 46px;
+  color: var(--auth-navy) !important;
 }
 
 .zani-auth-grid {
+  position: relative;
+  z-index: 2;
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(420px, 532px);
+  width: min(1280px, calc(100% - 48px));
+  min-height: calc(100dvh - 74px);
+  grid-template-columns: minmax(0, 1.04fr) minmax(390px, 520px);
   align-items: center;
-  gap: clamp(36px, 5vw, 84px);
-  width: min(1440px, calc(100% - 64px));
-  min-height: calc(100dvh - 84px);
+  gap: clamp(42px, 6vw, 88px);
   margin: 0 auto;
-  padding: 8px 0 34px;
+  padding: clamp(24px, 4vh, 40px) 0 clamp(26px, 4vh, 46px);
 }
 
 .zani-auth-hero {
   position: relative;
-  min-height: min(720px, calc(100dvh - 116px));
-  padding: 56px 0 44px;
-}
-
-.zani-auth-kicker {
-  width: fit-content;
-  margin: 0 0 22px;
-  border: 1px solid rgba(126, 87, 255, 0.34);
-  border-radius: 999px;
-  padding: 9px 14px;
-  background: rgba(126, 87, 255, 0.09);
-  color: #c9bbff;
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  display: grid;
+  align-content: center;
 }
 
 .zani-auth-hero h1 {
-  max-width: 610px;
+  max-width: 660px;
   margin: 0;
-  color: #ffffff;
-  font-size: clamp(46px, 4.7vw, 72px);
-  font-weight: 850;
-  letter-spacing: -0.045em;
-  line-height: 1.02;
+  color: var(--auth-navy);
+  font-family: "Hanken Grotesk", Inter, sans-serif;
+  font-size: clamp(50px, 5.6vw, 82px);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 0.98;
 }
 
 .zani-auth-hero h1 strong {
-  background: linear-gradient(95deg, #8b5cf6 0%, #4f7bff 48%, #70f5b6 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--auth-orange);
+  font-style: italic;
   font-weight: 900;
   white-space: nowrap;
 }
 
 .zani-auth-lead {
-  max-width: 610px;
-  margin: 20px 0 0;
-  color: rgba(226, 232, 240, 0.76);
+  max-width: 660px;
+  margin: 22px 0 0;
+  color: var(--auth-muted);
   font-size: 18px;
-  line-height: 1.65;
+  line-height: 1.58;
 }
 
 .zani-auth-feature-list {
   display: grid;
-  gap: 18px;
-  max-width: 520px;
-  margin-top: 28px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  max-width: 690px;
+  margin-top: 34px;
 }
 
 .zani-auth-feature {
   display: grid;
-  grid-template-columns: 58px minmax(0, 1fr);
+  grid-template-columns: 48px minmax(0, 1fr);
   align-items: center;
-  gap: 18px;
+  gap: 14px;
+  border: 1px solid var(--auth-border);
+  border-radius: 18px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.76);
+  box-shadow: var(--auth-shadow);
 }
 
 .zani-auth-feature > span {
   display: grid;
-  width: 56px;
-  height: 56px;
+  width: 46px;
+  aspect-ratio: 1;
   place-items: center;
-  border: 1px solid rgba(138, 104, 255, 0.48);
-  border-radius: 999px;
-  background:
-    radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.22), transparent 30%),
-    linear-gradient(145deg, rgba(126, 87, 255, 0.42), rgba(32, 93, 255, 0.18));
-  color: #b99cff;
-  box-shadow: 0 0 34px rgba(126, 87, 255, 0.22);
+  border-radius: 15px;
+  background: rgba(255, 140, 0, 0.1);
+  color: var(--auth-orange);
 }
 
 .zani-auth-feature h2 {
   margin: 0;
-  color: #ffffff;
-  font-size: 16px;
-  font-weight: 800;
+  color: var(--auth-navy);
+  font-size: 15px;
+  font-weight: 900;
 }
 
 .zani-auth-feature p {
-  margin: 7px 0 0;
-  color: rgba(226, 232, 240, 0.66);
-  font-size: 14px;
+  margin: 5px 0 0;
+  color: var(--auth-muted);
+  font-size: 13px;
   line-height: 1.35;
 }
 
@@ -264,15 +265,14 @@
 .zani-auth-avatars span,
 .zani-auth-avatars b {
   display: grid;
-  width: 38px;
-  height: 38px;
+  width: 42px;
+  aspect-ratio: 1;
   place-items: center;
-  margin-left: -8px;
-  border: 2px solid #071024;
-  border-radius: 999px;
-  background: linear-gradient(145deg, #e2e8f0, #7dd3fc);
-  color: #172033;
-  font-size: 13px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  margin-left: -10px;
+  background: #dbe5ef;
+  color: var(--auth-navy);
   font-weight: 900;
 }
 
@@ -281,350 +281,258 @@
 }
 
 .zani-auth-avatars b {
-  background: linear-gradient(145deg, #8b5cf6, #111827);
-  color: #ffffff;
+  background: var(--auth-orange);
+  color: #fff;
+  font-size: 13px;
 }
 
 .zani-auth-proof p {
-  max-width: 230px;
+  max-width: 280px;
   margin: 0;
-  color: rgba(226, 232, 240, 0.62);
-  font-size: 14px;
-  line-height: 1.45;
+  color: var(--auth-muted);
+  font-weight: 700;
+  line-height: 1.35;
 }
 
 .zani-auth-trust {
-  position: absolute;
-  bottom: 6px;
-  left: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 22px;
-  color: rgba(248, 250, 252, 0.78);
-  font-size: 14px;
+  gap: 18px;
+  margin-top: 22px;
 }
 
 .zani-auth-trust span {
   display: inline-flex;
   align-items: center;
   gap: 9px;
-}
-
-.zani-auth-trust svg {
-  color: #c4b5fd;
+  color: var(--auth-muted);
+  font-weight: 800;
 }
 
 .zani-auth-dashboard {
-  position: absolute;
-  right: auto;
-  left: 340px;
-  bottom: 46px;
+  position: relative;
   display: grid;
-  grid-template-columns: 128px minmax(0, 1fr);
-  width: min(620px, 54vw);
-  min-height: 380px;
+  grid-template-columns: 130px minmax(0, 1fr);
+  width: min(780px, 100%);
+  min-height: 286px;
+  margin-top: 34px;
   overflow: hidden;
-  border: 1px solid rgba(139, 92, 246, 0.42);
+  border: 8px solid #fff;
   border-radius: 28px;
-  background:
-    linear-gradient(135deg, rgba(8, 13, 35, 0.95), rgba(9, 13, 31, 0.75)),
-    radial-gradient(circle at 88% 18%, rgba(112, 245, 182, 0.1), transparent 26rem);
-  box-shadow: 0 40px 120px rgba(0, 0, 0, 0.45), 0 0 60px rgba(139, 92, 246, 0.2);
-  transform: perspective(1100px) rotateY(-9deg) rotateX(3deg) rotateZ(-2deg);
-  transform-origin: right bottom;
+  background: var(--auth-navy);
+  box-shadow: var(--auth-shadow-strong);
+  transform: rotate(-3deg);
 }
 
 .zani-auth-dashboard-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 24px 16px;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 22px 16px;
+  background: rgba(0, 0, 0, 0.14);
 }
 
 .zani-auth-dashboard-sidebar b {
-  margin-bottom: 10px;
-  color: #ffffff;
-  font-size: 17px;
+  margin-bottom: 8px;
+  color: #fff;
+  font-family: "Hanken Grotesk", Inter, sans-serif;
+  font-size: 18px;
+  font-weight: 900;
 }
 
 .zani-auth-dashboard-sidebar span {
-  border-radius: 8px;
-  padding: 9px 10px;
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(226, 232, 240, 0.66);
-  font-size: 11px;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .zani-auth-dashboard-main {
-  padding: 22px 18px;
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  padding: 22px;
 }
 
 .zani-auth-dashboard-title {
   display: flex;
-  align-items: center;
+  align-items: start;
   justify-content: space-between;
   gap: 16px;
-  color: #ffffff;
+  color: #fff;
 }
 
 .zani-auth-dashboard-title p {
   margin: 0;
-  font-size: 15px;
-  font-weight: 800;
+  font-weight: 900;
 }
 
 .zani-auth-dashboard-title small {
-  color: rgba(226, 232, 240, 0.58);
+  display: block;
+  margin-top: 4px;
+  color: rgba(255, 255, 255, 0.58);
 }
 
 .zani-auth-metrics {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
-  margin-top: 22px;
 }
 
 .zani-auth-metrics div,
 .zani-auth-pipeline,
-.zani-auth-dashboard-bottom div {
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 13px;
-  background: rgba(255, 255, 255, 0.04);
+.zani-auth-dashboard-bottom > div {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.055);
 }
 
 .zani-auth-metrics div {
-  padding: 13px;
+  display: grid;
+  gap: 7px;
+  padding: 14px;
 }
 
-.zani-auth-metrics span {
-  display: block;
-  color: rgba(226, 232, 240, 0.56);
+.zani-auth-metrics span,
+.zani-auth-pipeline div,
+.zani-auth-dashboard-bottom div {
+  color: rgba(255, 255, 255, 0.64);
   font-size: 11px;
+  font-weight: 800;
 }
 
 .zani-auth-metrics strong {
-  display: block;
-  margin-top: 7px;
-  color: #ffffff;
-  font-size: 20px;
+  color: #fff;
+  font-size: 24px;
+  font-weight: 900;
 }
 
 .zani-auth-metrics i {
-  display: block;
-  margin-top: 8px;
-  color: #70f5b6;
-  font-size: 11px;
+  color: #6ee7b7;
+  font-size: 12px;
   font-style: normal;
+  font-weight: 900;
 }
 
 .zani-auth-pipeline {
-  margin-top: 14px;
-  padding: 14px;
+  display: grid;
+  gap: 10px;
+  padding: 16px;
 }
 
 .zani-auth-pipeline div {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #ffffff;
-  font-size: 13px;
-  font-weight: 800;
+  color: #fff;
 }
 
 .zani-auth-pipeline span {
   display: block;
-  height: 9px;
-  margin-top: 14px;
+  height: 10px;
   border-radius: 999px;
-  background: linear-gradient(90deg, rgba(79, 123, 255, 0.72), rgba(112, 245, 182, 0.52));
+  background: linear-gradient(90deg, #4f7bff, var(--auth-orange));
 }
 
 .zani-auth-pipeline span:nth-child(3) {
-  width: 72%;
+  width: 78%;
 }
 
 .zani-auth-pipeline span:nth-child(4) {
-  width: 46%;
+  width: 52%;
 }
 
 .zani-auth-dashboard-bottom {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
-  margin-top: 14px;
 }
 
-.zani-auth-dashboard-bottom div {
+.zani-auth-dashboard-bottom > div {
   display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  padding: 12px;
-  color: rgba(248, 250, 252, 0.76);
-  font-size: 12px;
-  line-height: 1.35;
+  align-items: center;
+  gap: 8px;
+  padding: 13px;
 }
 
 .zani-auth-card-wrap {
-  position: relative;
-  z-index: 4;
+  display: grid;
+  align-items: center;
 }
 
 .zani-auth-card {
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  width: 100%;
+  border: 1px solid var(--auth-border);
   border-radius: 28px;
-  background:
-    linear-gradient(145deg, rgba(17, 24, 45, 0.78), rgba(5, 10, 25, 0.9)),
-    radial-gradient(circle at 20% 0%, rgba(126, 87, 255, 0.17), transparent 17rem);
-  box-shadow: 0 34px 120px rgba(0, 0, 0, 0.42);
-  padding: clamp(22px, 2.4vw, 34px);
-  backdrop-filter: blur(24px);
+  padding: clamp(24px, 3.2vw, 34px);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: var(--auth-shadow-strong);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
 
 .zani-auth-card-icon {
   display: grid;
   width: 64px;
-  height: 64px;
+  aspect-ratio: 1;
   place-items: center;
-  border: 1px solid rgba(139, 92, 246, 0.65);
-  border-radius: 22px;
-  background:
-    radial-gradient(circle at 38% 26%, rgba(255, 255, 255, 0.2), transparent 30%),
-    linear-gradient(145deg, rgba(126, 87, 255, 0.28), rgba(24, 28, 52, 0.85));
-  color: #9d7cff;
-  box-shadow: 0 0 44px rgba(126, 87, 255, 0.23);
+  border-radius: 18px;
+  background: rgba(255, 140, 0, 0.12);
+  color: var(--auth-orange);
 }
 
 .zani-auth-card h2 {
-  margin: 18px 0 0;
-  color: #ffffff;
-  font-size: clamp(28px, 2.4vw, 34px);
-  font-weight: 850;
-  letter-spacing: -0.035em;
+  margin: 24px 0 0;
+  color: var(--auth-navy);
+  font-family: "Hanken Grotesk", Inter, sans-serif;
+  font-size: clamp(32px, 3vw, 44px);
+  font-weight: 900;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
 }
 
 .zani-auth-card > p {
-  margin: 8px 0 20px;
-  color: rgba(226, 232, 240, 0.68);
-  font-size: 15px;
-  line-height: 1.55;
-}
-
-.zani-auth-card form {
-  display: grid;
-  gap: 12px;
-}
-
-.zani-auth-field-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-}
-
-.zani-auth-card label > span:first-child {
-  color: rgba(248, 250, 252, 0.9) !important;
-  font-size: 13px !important;
-  font-weight: 800 !important;
-  margin-bottom: 6px !important;
-}
-
-.zani-auth-card input,
-.zani-auth-card button[class*="rounded-control"] {
-  min-height: 44px;
-  border-color: rgba(255, 255, 255, 0.16) !important;
-  border-radius: 11px !important;
-  background: rgba(255, 255, 255, 0.055) !important;
-  color: #ffffff !important;
-  box-shadow: none !important;
-}
-
-.zani-auth-card input::placeholder {
-  color: rgba(226, 232, 240, 0.46);
-}
-
-.zani-auth-card input:focus,
-.zani-auth-card button[class*="rounded-control"]:focus {
-  border-color: rgba(139, 92, 246, 0.74) !important;
-  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.18) !important;
-}
-
-.zani-auth-card label span:last-child:not(:first-child) {
-  color: #fca5a5 !important;
-}
-
-.zani-auth-helper {
-  margin: -3px 0 0;
-  color: rgba(226, 232, 240, 0.56);
-  font-size: 13px;
-  line-height: 1.45;
+  margin: 12px 0 0;
+  color: var(--auth-muted);
+  line-height: 1.5;
 }
 
 .zani-auth-error {
-  border: 1px solid rgba(248, 113, 113, 0.28);
-  border-radius: 16px;
-  background: rgba(127, 29, 29, 0.28);
-  padding: 12px 14px;
-  color: #fecaca;
-  font-size: 14px;
-  line-height: 1.45;
-}
-
-.zani-auth-password-checks {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  margin-top: -8px;
-}
-
-.zani-auth-password-checks span {
-  display: inline-flex;
-  min-height: 32px;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.055);
-  color: rgba(226, 232, 240, 0.62);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.zani-auth-password-checks span[data-active="true"] {
-  color: #70f5b6;
-}
-
-.zani-auth-primary {
-  min-height: 48px !important;
-  width: 100%;
-  border: 0 !important;
-  background: linear-gradient(100deg, #2f6dff 0%, #8f45ff 100%) !important;
-  color: #ffffff !important;
-  font-size: 15px !important;
-  box-shadow: 0 18px 42px rgba(79, 123, 255, 0.26) !important;
+  border: 1px solid rgba(186, 26, 26, 0.18);
+  border-radius: 14px;
+  margin-top: 18px;
+  padding: 13px 14px;
+  background: #ffdad6;
+  color: #93000a;
+  font-weight: 800;
 }
 
 .zani-auth-secondary-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 24px;
 }
 
 .zani-auth-social {
-  min-height: 48px !important;
-  border-color: rgba(255, 255, 255, 0.16) !important;
-  background: rgba(255, 255, 255, 0.045) !important;
-  color: #ffffff !important;
+  min-height: 50px !important;
+  border: 1px solid var(--auth-border) !important;
+  border-radius: 14px !important;
+  background: var(--auth-surface-low) !important;
+  color: var(--auth-navy) !important;
+  box-shadow: none !important;
 }
 
 .zani-auth-social mark {
   display: grid;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  aspect-ratio: 1;
   place-items: center;
-  border-radius: 999px;
-  background: #ffffff;
-  color: #111827;
-  font-size: 13px;
+  border-radius: 50%;
+  background: rgba(19, 27, 46, 0.1);
+  color: var(--auth-navy);
   font-weight: 900;
 }
 
@@ -632,38 +540,86 @@
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: 16px;
-  margin: 6px 0;
-  color: rgba(226, 232, 240, 0.52);
+  gap: 14px;
+  margin: 20px 0;
+  color: var(--auth-muted);
   font-size: 13px;
+  font-weight: 800;
 }
 
 .zani-auth-divider::before,
 .zani-auth-divider::after {
-  content: "";
   height: 1px;
-  background: rgba(255, 255, 255, 0.14);
+  content: "";
+  background: var(--auth-border);
 }
 
-.zani-auth-terms,
-.zani-auth-links {
-  color: rgba(226, 232, 240, 0.54);
+.zani-auth-card form {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.zani-auth-card label {
+  color: var(--auth-navy) !important;
+  font-weight: 900 !important;
+}
+
+.zani-auth-card input,
+.zani-auth-card select {
+  min-height: 52px !important;
+  border-color: rgba(137, 115, 98, 0.28) !important;
+  border-radius: 12px !important;
+  background: var(--auth-surface-low) !important;
+  color: var(--auth-navy) !important;
+  box-shadow: none !important;
+}
+
+.zani-auth-card input::placeholder {
+  color: rgba(86, 94, 116, 0.62) !important;
+}
+
+.zani-auth-card input:focus,
+.zani-auth-card select:focus {
+  border-color: var(--auth-orange) !important;
+  box-shadow: 0 0 0 4px rgba(255, 140, 0, 0.14) !important;
+}
+
+.zani-auth-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.zani-auth-password-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.zani-auth-password-checks span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--auth-border);
+  border-radius: 999px;
+  padding: 7px 10px;
+  color: var(--auth-muted);
   font-size: 12px;
-  line-height: 1.55;
+  font-weight: 800;
 }
 
+.zani-auth-password-checks span[data-active="true"] {
+  border-color: rgba(22, 138, 67, 0.28);
+  background: rgba(22, 138, 67, 0.08);
+  color: var(--auth-success);
+}
+
+.zani-auth-helper,
 .zani-auth-terms {
-  margin: 14px 0 0;
-}
-
-.zani-auth-links {
-  margin-top: 16px;
-}
-
-.zani-auth-terms a,
-.zani-auth-links a {
-  color: #9db7ff;
-  text-decoration: none;
+  color: var(--auth-muted);
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 .zani-auth-links {
@@ -671,215 +627,248 @@
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 12px;
+  color: var(--auth-muted);
   font-size: 14px;
+  font-weight: 800;
 }
 
-@media (min-width: 1181px) {
-  .zani-auth-experience.is-login .zani-auth-topbar {
-    padding: 18px 0 4px;
+.zani-auth-links a {
+  color: var(--auth-orange-dark);
+  text-decoration: none;
+}
+
+.zani-auth-links a:hover {
+  text-decoration: underline;
+}
+
+.zani-auth-primary {
+  min-height: 56px !important;
+  border: 0 !important;
+  border-radius: 14px !important;
+  background: var(--auth-orange) !important;
+  color: #fff !important;
+  font-weight: 900 !important;
+  box-shadow: 0 18px 36px rgba(255, 140, 0, 0.26) !important;
+}
+
+@media (min-width: 1101px) and (max-height: 900px) {
+  body:has(.zani-auth-experience) {
+    overflow: hidden;
   }
 
-  .zani-auth-experience.is-login .zani-auth-grid {
-    grid-template-columns: minmax(0, 1.18fr) minmax(390px, 520px);
-    min-height: calc(100dvh - 76px);
-    gap: clamp(28px, 4vw, 64px);
-    padding: 0 0 10px;
+  .zani-auth-experience {
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow: hidden;
   }
 
-  .zani-auth-experience.is-login .zani-auth-hero {
-    min-height: calc(100dvh - 90px);
-    padding: 24px 0 18px;
+  .zani-auth-topbar {
+    min-height: 62px;
   }
 
-  .zani-auth-experience.is-login .zani-auth-hero h1 {
-    max-width: 560px;
-    font-size: clamp(44px, 4.35vw, 64px);
-    line-height: 0.98;
+  .zani-auth-grid {
+    min-height: calc(100dvh - 62px);
+    gap: clamp(32px, 5vw, 72px);
+    padding: 18px 0 24px;
   }
 
-  .zani-auth-experience.is-login .zani-auth-lead {
-    max-width: 580px;
+  .zani-auth-hero h1 {
+    font-size: clamp(44px, 5vw, 68px);
+  }
+
+  .zani-auth-lead {
     margin-top: 16px;
     font-size: 16px;
-    line-height: 1.5;
   }
 
-  .zani-auth-experience.is-login .zani-auth-feature-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px 18px;
-    max-width: 610px;
+  .zani-auth-feature-list {
+    gap: 12px;
     margin-top: 22px;
   }
 
-  .zani-auth-experience.is-login .zani-auth-feature {
-    grid-template-columns: 48px minmax(0, 1fr);
-    gap: 12px;
+  .zani-auth-feature {
+    grid-template-columns: 42px minmax(0, 1fr);
+    padding: 12px;
   }
 
-  .zani-auth-experience.is-login .zani-auth-feature > span {
-    width: 46px;
-    height: 46px;
+  .zani-auth-feature > span {
+    width: 40px;
   }
 
-  .zani-auth-experience.is-login .zani-auth-feature h2 {
-    font-size: 14px;
+  .zani-auth-proof,
+  .zani-auth-trust {
+    margin-top: 18px;
   }
 
-  .zani-auth-experience.is-login .zani-auth-feature p {
-    margin-top: 4px;
-    font-size: 12px;
-    line-height: 1.28;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-proof,
-  .zani-auth-experience.is-login .zani-auth-trust {
-    display: none;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-dashboard {
-    left: 300px;
-    bottom: 2px;
-    width: min(560px, 48vw);
-    min-height: 270px;
-    grid-template-columns: 108px minmax(0, 1fr);
+  .zani-auth-dashboard {
+    position: absolute;
+    right: -12px;
+    bottom: -118px;
+    z-index: -1;
+    width: min(720px, 92%);
+    min-height: 220px;
+    margin-top: 18px;
+    border-width: 6px;
     border-radius: 22px;
-    transform: perspective(1050px) rotateY(-8deg) rotateX(2deg) rotateZ(-1.4deg) scale(0.92);
+    opacity: 0.92;
   }
 
-  .zani-auth-experience.is-login .zani-auth-dashboard-sidebar {
-    gap: 8px;
-    padding: 18px 13px;
+  .zani-auth-dashboard-sidebar,
+  .zani-auth-dashboard-main {
+    padding: 16px;
   }
 
-  .zani-auth-experience.is-login .zani-auth-dashboard-sidebar b {
-    margin-bottom: 6px;
-    font-size: 14px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-dashboard-sidebar span {
-    padding: 7px 8px;
-    font-size: 9.5px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-dashboard-main {
-    padding: 16px 14px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-dashboard-title p {
-    font-size: 13px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-dashboard-title small {
-    font-size: 10.5px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-metrics {
-    gap: 9px;
-    margin-top: 14px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-metrics div {
-    padding: 10px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-metrics strong {
-    font-size: 17px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-pipeline {
-    margin-top: 10px;
-    padding: 11px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-pipeline span {
-    height: 7px;
-    margin-top: 10px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-dashboard-bottom {
+  .zani-auth-dashboard-bottom {
     display: none;
   }
 
-  .zani-auth-experience.is-login .zani-auth-card {
+  .zani-auth-card {
     border-radius: 24px;
     padding: 24px;
   }
 
-  .zani-auth-experience.is-login .zani-auth-card-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 18px;
+  .zani-auth-card-icon {
+    width: 52px;
+    border-radius: 15px;
   }
 
-  .zani-auth-experience.is-login .zani-auth-card h2 {
-    margin-top: 14px;
-    font-size: clamp(27px, 2.1vw, 32px);
+  .zani-auth-card h2 {
+    margin-top: 18px;
+    font-size: clamp(30px, 2.7vw, 38px);
   }
 
-  .zani-auth-experience.is-login .zani-auth-card > p {
-    margin: 6px 0 16px;
-    font-size: 14px;
-    line-height: 1.45;
+  .zani-auth-secondary-row {
+    margin-top: 18px;
   }
 
-  .zani-auth-experience.is-login .zani-auth-social,
-  .zani-auth-experience.is-login .zani-auth-primary {
+  .zani-auth-social {
     min-height: 44px !important;
   }
 
-  .zani-auth-experience.is-login .zani-auth-card input,
-  .zani-auth-experience.is-login .zani-auth-card button[class*="rounded-control"] {
-    min-height: 42px;
+  .zani-auth-divider {
+    margin: 14px 0;
   }
 
-  .zani-auth-experience.is-login .zani-auth-divider {
-    margin: 2px 0;
+  .zani-auth-card input,
+  .zani-auth-card select {
+    min-height: 46px !important;
   }
 
-  .zani-auth-experience.is-login .zani-auth-card form {
-    gap: 10px;
+  .zani-auth-primary {
+    min-height: 48px !important;
   }
 
-  .zani-auth-experience.is-login .zani-auth-links {
-    margin-top: 8px;
-  }
-}
-
-@media (max-width: 1180px) {
-  .zani-auth-grid {
-    grid-template-columns: 1fr;
-    width: min(760px, calc(100% - 40px));
+  .is-signup .zani-auth-grid {
+    grid-template-columns: minmax(0, 0.9fr) minmax(390px, 500px);
+    align-items: start;
+    padding-top: 12px;
   }
 
-  .zani-auth-hero {
+  .is-signup .zani-auth-hero {
+    padding-top: 118px;
+  }
+
+  .is-signup .zani-auth-dashboard {
     display: none;
   }
 
-  .zani-auth-topbar {
-    width: min(760px, calc(100% - 40px));
+  .is-signup .zani-auth-card {
+    padding: 20px 24px;
   }
 
-  .zani-auth-card-wrap {
-    width: 100%;
+  .is-signup .zani-auth-card-icon {
+    display: none;
+  }
+
+  .is-signup .zani-auth-card h2 {
+    margin-top: 0;
+    font-size: 32px;
+  }
+
+  .is-signup .zani-auth-card > p {
+    margin-top: 8px;
+    font-size: 14px;
+  }
+
+  .is-signup .zani-auth-card form {
+    gap: 9px;
+    margin-top: 12px;
+  }
+
+  .is-signup .zani-auth-card input,
+  .is-signup .zani-auth-card select {
+    min-height: 42px !important;
+  }
+
+  .is-signup .zani-auth-field-grid {
+    gap: 10px;
+  }
+
+  .is-signup .zani-auth-password-checks span {
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+
+  .is-signup .zani-auth-helper,
+  .is-signup .zani-auth-terms {
+    font-size: 12px;
+    line-height: 1.32;
   }
 }
 
-@media (max-width: 720px) {
-  .zani-auth-experience {
-    overflow: auto;
-  }
+.zani-auth-primary:hover {
+  transform: translateY(-1px);
+}
 
+.zani-auth-primary:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+@media (max-width: 1100px) {
   .zani-auth-topbar {
-    grid-template-columns: 1fr;
-    justify-items: start;
-    gap: 12px;
-    width: calc(100% - 32px);
-    padding-top: 16px;
+    grid-template-columns: auto 1fr;
   }
 
   .zani-auth-brand {
     justify-self: start;
-    gap: 10px;
+  }
+
+  .zani-auth-back {
+    display: none;
+  }
+
+  .zani-auth-switch {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .zani-auth-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .zani-auth-dashboard {
+    width: 100%;
+    max-width: 720px;
+    transform: none;
+  }
+
+  .zani-auth-card-wrap {
+    max-width: 620px;
+  }
+}
+
+@media (max-width: 720px) {
+  .zani-auth-topbar,
+  .zani-auth-grid {
+    width: min(100% - 32px, 1280px);
+  }
+
+  .zani-auth-topbar {
+    min-height: 56px;
+    grid-template-columns: auto auto;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
   }
 
   .zani-auth-brand span {
@@ -887,417 +876,143 @@
   }
 
   .zani-auth-brand em,
-  .zani-auth-back,
-  .zani-auth-switch span {
-    font-size: 13px;
-  }
-
-  .zani-auth-brand i {
-    height: 22px;
-  }
-
-  .zani-auth-brand em {
-    max-width: 145px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  .zani-auth-switch span,
+  .zani-auth-language {
+    display: none !important;
   }
 
   .zani-auth-switch {
-    justify-self: stretch;
-    justify-content: space-between;
-    width: 100%;
-    gap: 8px;
+    grid-column: auto;
+    justify-self: end;
   }
 
   .zani-auth-switch a {
-    min-width: 78px;
-    padding: 11px 14px;
-  }
-
-  .zani-auth-language {
-    height: 42px !important;
+    min-height: 40px;
+    padding: 0 14px;
   }
 
   .zani-auth-grid {
-    width: calc(100% - 32px);
-    min-height: auto;
-    padding: 10px 0 26px;
+    gap: 18px;
+    padding: 6px 0 28px;
   }
 
-  .zani-auth-card {
-    border-radius: 22px;
-    padding: 20px;
+  .zani-auth-card-wrap {
+    order: 1;
   }
 
-  .zani-auth-card h2 {
-    font-size: 27px;
+  .zani-auth-hero {
+    order: 2;
+    align-content: start;
   }
 
-  .zani-auth-card-icon {
-    width: 54px;
-    height: 54px;
-    border-radius: 18px;
+  .zani-auth-hero h1 {
+    font-size: clamp(28px, 8vw, 34px);
+    letter-spacing: -0.035em;
+    line-height: 1.04;
   }
 
-  .zani-auth-field-grid,
-  .zani-auth-password-checks,
-  .zani-auth-secondary-row {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 430px) {
-  .zani-auth-topbar,
-  .zani-auth-grid {
-    width: calc(100% - 24px);
-  }
-
-  .zani-auth-back {
-    gap: 8px;
-  }
-
-  .zani-auth-switch {
-    display: grid;
-    grid-template-columns: 1fr auto auto;
-    align-items: center;
-  }
-
-  .zani-auth-card {
-    padding: 18px;
-  }
-
-  .zani-auth-card input,
-  .zani-auth-card button[class*="rounded-control"] {
-    min-height: 46px;
-  }
-}
-
-@keyframes authPanelIn {
-  from {
-    opacity: 0;
-    transform: translate3d(0, 18px, 0) scale(0.985);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-}
-
-@keyframes authDashboardFloat {
-  0%,
-  100% {
-    transform: perspective(1050px) rotateY(-8deg) rotateX(2deg) rotateZ(-1.4deg) scale(0.82) translate3d(0, 0, 0);
-  }
-  50% {
-    transform: perspective(1050px) rotateY(-7deg) rotateX(2.6deg) rotateZ(-1.1deg) scale(0.82) translate3d(0, -10px, 0);
-  }
-}
-
-@keyframes authMetricPulse {
-  0%,
-  100% {
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  }
-  50% {
-    box-shadow:
-      0 0 24px rgba(112, 245, 182, 0.1),
-      inset 0 1px 0 rgba(255, 255, 255, 0.14);
-  }
-}
-
-@media (min-width: 1181px) {
-  .zani-auth-experience.is-login {
-    height: 100dvh;
-    max-height: 100dvh;
-    overflow: hidden;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-topbar {
-    width: min(1480px, calc(100% - 56px));
-    padding: 14px 0 0;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-brand span {
-    font-size: 30px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-switch a,
-  .zani-auth-experience.is-login .zani-auth-language {
-    height: 42px !important;
-    min-height: 42px;
-    padding-top: 0;
-    padding-bottom: 0;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-grid {
-    width: min(1480px, calc(100% - 56px));
-    height: calc(100dvh - 62px);
-    min-height: 0;
-    grid-template-columns: minmax(0, 1.06fr) minmax(390px, 520px);
-    gap: clamp(24px, 3vw, 54px);
-    padding: 0 0 12px;
-    overflow: hidden;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-hero {
-    min-height: 0;
-    height: 100%;
-    padding: 34px 0 0;
-    overflow: hidden;
-    animation: authPanelIn 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-hero h1 {
-    max-width: 520px;
-    font-size: clamp(42px, 4.25vw, 66px);
-    line-height: 0.96;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-lead {
-    max-width: 520px;
-    margin-top: 14px;
-    font-size: 15px;
+  .zani-auth-lead {
+    max-width: 38ch;
+    margin-top: 10px;
+    font-size: 13px;
     line-height: 1.42;
   }
 
-  .zani-auth-experience.is-login .zani-auth-feature-list {
+  .zani-auth-feature-list {
     grid-template-columns: 1fr;
-    gap: 10px;
-    max-width: 460px;
-    margin-top: 18px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-feature {
-    grid-template-columns: 44px minmax(0, 1fr);
-    gap: 12px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-feature > span {
-    width: 42px;
-    height: 42px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-feature h2 {
-    font-size: 14px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-feature p {
-    margin-top: 3px;
-    font-size: 12px;
-    line-height: 1.22;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-feature:nth-child(n + 4),
-  .zani-auth-experience.is-login .zani-auth-proof,
-  .zani-auth-experience.is-login .zani-auth-trust {
-    display: none;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-dashboard {
-    left: clamp(300px, 31vw, 500px);
-    bottom: -4px;
-    width: min(500px, 43vw);
-    min-height: 242px;
-    grid-template-columns: 92px minmax(0, 1fr);
-    border-radius: 22px;
-    animation: authDashboardFloat 7s ease-in-out infinite;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-dashboard-sidebar {
-    gap: 7px;
-    padding: 15px 11px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-dashboard-sidebar b {
-    margin-bottom: 4px;
-    font-size: 13px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-dashboard-sidebar span {
-    padding: 6px 7px;
-    font-size: 9px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-dashboard-main {
-    padding: 14px 12px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-dashboard-title p {
-    font-size: 12px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-dashboard-title small {
-    font-size: 9.5px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-metrics {
-    gap: 7px;
-    margin-top: 12px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-metrics div {
-    padding: 8px;
-    animation: authMetricPulse 3.8s ease-in-out infinite;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-metrics span {
-    font-size: 9px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-metrics strong {
-    margin-top: 5px;
-    font-size: 15px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-metrics i {
-    margin-top: 5px;
-    font-size: 9px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-pipeline {
-    margin-top: 9px;
-    padding: 9px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-pipeline div {
-    font-size: 11px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-pipeline span {
-    height: 6px;
-    margin-top: 8px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-dashboard-bottom {
-    display: none;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-card-wrap {
-    align-self: center;
-    max-height: 100%;
-    animation: authPanelIn 680ms cubic-bezier(0.22, 1, 0.36, 1) 90ms both;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-card {
-    border-radius: 24px;
-    padding: 22px 24px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-card-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 16px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-card h2 {
-    margin-top: 12px;
-    font-size: clamp(26px, 2vw, 31px);
-  }
-
-  .zani-auth-experience.is-login .zani-auth-card > p {
-    margin: 6px 0 14px;
-    font-size: 13px;
-    line-height: 1.36;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-card form {
-    gap: 9px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-secondary-row {
-    gap: 10px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-social,
-  .zani-auth-experience.is-login .zani-auth-primary {
-    min-height: 42px !important;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-card input,
-  .zani-auth-experience.is-login .zani-auth-card button[class*="rounded-control"] {
-    min-height: 40px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-card label > span:first-child {
-    margin-bottom: 5px !important;
-    font-size: 12px !important;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-divider {
-    gap: 12px;
-    margin: 0;
-    font-size: 12px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-links {
-    margin-top: 8px;
-    font-size: 13px;
-  }
-}
-
-@media (min-width: 1181px) and (max-height: 760px) {
-  .zani-auth-experience.is-login .zani-auth-topbar {
-    padding-top: 10px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-grid {
-    height: calc(100dvh - 54px);
-    padding-bottom: 8px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-hero {
-    padding-top: 24px;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-hero h1 {
-    max-width: 480px;
-    font-size: clamp(36px, 3.9vw, 56px);
-  }
-
-  .zani-auth-experience.is-login .zani-auth-lead {
-    max-width: 470px;
-    margin-top: 10px;
-    font-size: 13px;
-    line-height: 1.32;
-  }
-
-  .zani-auth-experience.is-login .zani-auth-feature-list {
     gap: 8px;
     margin-top: 14px;
   }
 
-  .zani-auth-experience.is-login .zani-auth-feature:nth-child(n + 3) {
+  .zani-auth-feature {
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap: 10px;
+    border-radius: 16px;
+    padding: 10px;
+  }
+
+  .zani-auth-feature > span {
+    width: 38px;
+    border-radius: 13px;
+  }
+
+  .zani-auth-feature h2 {
+    font-size: 13px;
+  }
+
+  .zani-auth-feature p {
+    margin-top: 2px;
+    font-size: 12px;
+    line-height: 1.25;
+  }
+
+  .zani-auth-proof,
+  .zani-auth-trust {
     display: none;
   }
 
-  .zani-auth-experience.is-login .zani-auth-dashboard {
-    left: clamp(260px, 30vw, 430px);
-    width: min(450px, 40vw);
-    min-height: 220px;
+  .zani-auth-dashboard {
+    display: none;
   }
 
-  .zani-auth-experience.is-login .zani-auth-card {
-    padding: 18px 22px;
+  .zani-auth-card {
+    border-radius: 22px;
+    padding: 18px;
   }
 
-  .zani-auth-experience.is-login .zani-auth-card-icon {
-    width: 42px;
-    height: 42px;
+  .zani-auth-secondary-row,
+  .zani-auth-field-grid {
+    grid-template-columns: 1fr;
   }
 
-  .zani-auth-experience.is-login .zani-auth-card h2 {
-    margin-top: 10px;
-    font-size: 26px;
+  .zani-auth-card h2 {
+    margin-top: 14px;
+    font-size: 28px;
   }
 
-  .zani-auth-experience.is-login .zani-auth-card > p {
-    margin-bottom: 10px;
+  .zani-auth-card > p {
+    margin-top: 8px;
+    font-size: 13px;
+    line-height: 1.38;
   }
 
-  .zani-auth-experience.is-login .zani-auth-social,
-  .zani-auth-experience.is-login .zani-auth-primary,
-  .zani-auth-experience.is-login .zani-auth-card input,
-  .zani-auth-experience.is-login .zani-auth-card button[class*="rounded-control"] {
-    min-height: 38px !important;
+  .zani-auth-card form {
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .zani-auth-card input,
+  .zani-auth-card select {
+    min-height: 46px !important;
+  }
+
+  .zani-auth-card-icon {
+    width: 48px;
+    border-radius: 15px;
+  }
+
+  .zani-auth-secondary-row {
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .zani-auth-divider {
+    margin: 12px 0;
+  }
+
+  .zani-auth-primary {
+    min-height: 48px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zani-auth-experience,
+  .zani-auth-experience *,
+  .zani-auth-experience *::before,
+  .zani-auth-experience *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
   }
 }

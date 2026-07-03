@@ -5799,3 +5799,46 @@ html:has(.zani-stitch) {
     line-height: 1.2 !important;
   }
 }
+
+/* Cycle 13 mobile ecosystem polish */
+@media (max-width: 780px) {
+  .zani-ecosystem-board {
+    background: rgba(255, 255, 255, 0.86) !important;
+    border-color: rgba(255, 140, 0, 0.12) !important;
+    box-shadow: 0 24px 70px rgba(255, 140, 0, 0.08), 0 18px 44px rgba(18, 26, 43, 0.06) !important;
+  }
+
+  .zani-ecosystem-board aside {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    padding: 10px !important;
+    border: 1px solid rgba(255, 140, 0, 0.12) !important;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(255, 247, 235, 0.82)) !important;
+  }
+
+  .zani-ecosystem-board aside strong {
+    min-height: 30px !important;
+    margin: 0 !important;
+    color: var(--stitch-navy) !important;
+    font-size: 24px !important;
+    letter-spacing: -0.04em !important;
+  }
+
+  .zani-ecosystem-board aside span {
+    min-height: 32px !important;
+    border: 1px solid rgba(18, 26, 43, 0.06) !important;
+    background: rgba(255, 255, 255, 0.78) !important;
+    color: rgba(18, 26, 43, 0.62) !important;
+    font-size: 11px !important;
+  }
+
+  .zani-ecosystem-board aside .active {
+    border-color: rgba(255, 140, 0, 0.24) !important;
+    background: rgba(255, 140, 0, 0.12) !important;
+    color: var(--stitch-navy) !important;
+  }
+
+  .zani-eco-bento article {
+    border: 1px solid rgba(255, 140, 0, 0.08) !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+  }
+}

@@ -93,6 +93,9 @@ function Header({ activeSection }: { activeSection: LandingSectionId }) {
           <span>Z</span>
           ZANI
         </a>
+        <a className="zani-mobile-header-cta" href={AUTH_ROUTES.signup} data-auth-action="signup" data-auth-intent="Мобильный старт">
+          Старт
+        </a>
 
         <nav aria-label="Основные разделы">
           {landingSections.slice(0, 7).map((section) => (

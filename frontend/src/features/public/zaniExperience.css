@@ -3623,3 +3623,100 @@ body:has(.zani-stitch) {
     margin-top: 4px !important;
   }
 }
+
+/* Cycle 4 polish: stable mobile header CTA and readable AI cards */
+.zani-mobile-header-cta {
+  display: none;
+}
+
+.zani-agent-flow {
+  min-width: min(100%, 370px);
+}
+
+.zani-agent-flow article {
+  position: relative;
+  display: block;
+  min-height: 112px;
+  padding-left: 60px;
+}
+
+.zani-agent-flow article p,
+.zani-agent-flow article b {
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+}
+
+.zani-agent-flow article svg {
+  position: absolute;
+  top: 19px;
+  left: 18px;
+}
+
+@media (min-width: 981px) {
+  .zani-three-col {
+    grid-template-columns: minmax(360px, 0.92fr) minmax(300px, 0.72fr) minmax(390px, 0.95fr);
+    gap: clamp(34px, 3.8vw, 62px);
+  }
+
+  .zani-agent-flow article {
+    padding: 17px 18px;
+  }
+
+  .zani-agent-flow b {
+    font-size: clamp(18px, 1.25vw, 21px);
+    line-height: 1.12;
+  }
+
+  .zani-agent-flow p {
+    max-width: 29ch;
+    font-size: clamp(14px, 0.95vw, 16px);
+    line-height: 1.36;
+  }
+}
+
+@media (max-width: 780px) {
+  .zani-stitch-header-inner {
+    box-sizing: border-box !important;
+    width: calc(100vw - 24px) !important;
+    min-width: 0 !important;
+    max-width: calc(100vw - 24px) !important;
+    margin-right: auto !important;
+    margin-left: auto !important;
+  }
+
+  .zani-light .zani-stitch-actions {
+    display: none !important;
+  }
+
+  .zani-mobile-header-cta {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    z-index: 5;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 82px;
+    min-height: 38px;
+    border: 1px solid rgba(255, 140, 0, 0.34);
+    border-radius: 999px;
+    background: linear-gradient(135deg, #ff8c00 0%, #ffb14a 100%);
+    box-shadow: 0 14px 30px rgba(255, 140, 0, 0.22);
+    color: #17130d;
+    font-family: "Hanken Grotesk", Inter, sans-serif;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0.01em;
+    text-decoration: none;
+    transform: translateY(-50%);
+  }
+
+  .zani-agent-flow {
+    min-width: 0;
+  }
+}
+
+.zani-agent-flow article {
+  padding-left: 60px !important;
+}

@@ -5869,3 +5869,10 @@ html:has(.zani-stitch) {
     margin-bottom: 28px !important;
   }
 }
+
+/* Cycle 16 mobile CTA viewport fit */
+@media (max-width: 780px) {
+  .zani-final-cta {
+    min-height: calc(100dvh - 68px) !important;
+  }
+}

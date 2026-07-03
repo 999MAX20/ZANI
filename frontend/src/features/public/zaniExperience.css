@@ -5842,3 +5842,18 @@ html:has(.zani-stitch) {
     background: rgba(255, 255, 255, 0.9) !important;
   }
 }
+
+/* Cycle 14 mobile hero phone content density */
+@media (max-width: 780px) {
+  .zani-light-hero-visual .zani-inbox-row:nth-of-type(n+3) {
+    display: grid !important;
+  }
+
+  .zani-light-hero-visual .zani-inbox-row {
+    margin-bottom: 8px !important;
+  }
+
+  .zani-light-hero-visual .zani-inbox-row time {
+    display: none !important;
+  }
+}

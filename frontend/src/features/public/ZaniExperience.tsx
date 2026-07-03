@@ -625,7 +625,7 @@ function FinalCtaSection() {
           </h2>
           <p>{t("landing.experience.cta.text")}</p>
           <form>
-            <input type="email" placeholder={t("landing.experience.cta.email")} aria-label={t("landing.experience.cta.email")} />
+            <input type="email" name="email" placeholder={t("landing.experience.cta.email")} aria-label={t("landing.experience.cta.email")} />
             <a href={AUTH_ROUTES.signup} data-auth-action="signup" data-auth-intent={t("landing.experience.tryFree")}>
               {t("landing.experience.tryFree")}
               <ArrowRight size={18} />
@@ -694,6 +694,13 @@ export default function ZaniExperience() {
           window.sessionStorage.setItem("zani_signup_intent", intent);
         } else {
           window.sessionStorage.removeItem("zani_signup_intent");
+        }
+        const emailInput = trigger.closest("form")?.querySelector<HTMLInputElement>('input[type="email"]');
+        const email = emailInput?.value.trim() || "";
+        if (action === "signup" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          window.sessionStorage.setItem("zani_signup_email", email);
+        } else if (action !== "signup") {
+          window.sessionStorage.removeItem("zani_signup_email");
         }
       } catch {
         // Navigation must work even when storage is unavailable.

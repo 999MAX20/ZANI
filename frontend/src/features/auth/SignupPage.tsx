@@ -30,6 +30,13 @@ export function SignupPage() {
   const navigate = useNavigate();
   const { signupOwner } = useAuth();
   const { t } = useI18n();
+  const signupEmail = (() => {
+    try {
+      return window.sessionStorage.getItem("zani_signup_email") || "";
+    } catch {
+      return "";
+    }
+  })();
   const schema = z.object({
     full_name: z.string().min(2, t("validation.name")),
     email: z.string().email(t("validation.email")),
@@ -60,7 +67,7 @@ export function SignupPage() {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { business_type: "beauty" },
+    defaultValues: { business_type: "beauty", email: signupEmail },
   });
   const passwordValue = watch("password") || "";
   const passwordChecks = [

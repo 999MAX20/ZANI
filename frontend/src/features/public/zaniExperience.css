@@ -5857,3 +5857,15 @@ html:has(.zani-stitch) {
     display: none !important;
   }
 }
+
+/* Cycle 15 mobile CRM rhythm */
+@media (max-width: 780px) {
+  .zani-crm.zani-light-section {
+    align-items: flex-start !important;
+    padding-top: 104px !important;
+  }
+
+  .zani-crm .zani-center-copy {
+    margin-bottom: 28px !important;
+  }
+}

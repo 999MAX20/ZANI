@@ -25,6 +25,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { LanguageSelector } from "../../components/layout/LanguageSelector";
+import { useI18n } from "../../lib/i18n";
 import "./zaniExperience.css";
 import "./zaniExperienceMobileFix.css";
 
@@ -36,27 +37,27 @@ const AUTH_ROUTES = {
 const AUTH_ACTIONS = new Set(["login", "signup"]);
 
 const landingSections = [
-  { id: "top", label: "Главная" },
-  { id: "pain", label: "Проблема" },
-  { id: "agent", label: "AI агент" },
-  { id: "crm", label: "CRM" },
-  { id: "marketplace", label: "Маркетплейсы" },
-  { id: "ecosystem", label: "Экосистема" },
-  { id: "owner", label: "Владелец" },
-  { id: "integrations", label: "Интеграции" },
-  { id: "proof", label: "Кейсы" },
-  { id: "cta", label: "Старт" }
+  { id: "top", labelKey: "landing.experience.nav.top" },
+  { id: "pain", labelKey: "landing.experience.nav.pain" },
+  { id: "agent", labelKey: "landing.experience.nav.agent" },
+  { id: "crm", labelKey: "landing.experience.nav.crm" },
+  { id: "marketplace", labelKey: "landing.experience.nav.marketplace" },
+  { id: "ecosystem", labelKey: "landing.experience.nav.ecosystem" },
+  { id: "owner", labelKey: "landing.experience.nav.owner" },
+  { id: "integrations", labelKey: "landing.experience.nav.integrations" },
+  { id: "proof", labelKey: "landing.experience.nav.proof" },
+  { id: "cta", labelKey: "landing.experience.nav.cta" }
 ] as const;
 
 type LandingSectionId = (typeof landingSections)[number]["id"];
 
 const channels = [
-  { name: "WhatsApp", icon: MessageCircle, tone: "green", text: "Новый клиент" },
-  { name: "Telegram", icon: Send, tone: "blue", text: "Вопрос по записи" },
-  { name: "Instagram", icon: Sparkles, tone: "pink", text: "Ответьте, пожалуйста" },
-  { name: "Kaspi", icon: WalletCards, tone: "red", text: "Новый заказ" },
-  { name: "AI", icon: Bot, tone: "violet", text: "Отвечает 24/7" },
-  { name: "CRM", icon: UsersRound, tone: "orange", text: "Карточка создана" }
+  { name: "WhatsApp", icon: MessageCircle, tone: "green", textKey: "landing.experience.channel.whatsapp" },
+  { name: "Telegram", icon: Send, tone: "blue", textKey: "landing.experience.channel.telegram" },
+  { name: "Instagram", icon: Sparkles, tone: "pink", textKey: "landing.experience.channel.instagram" },
+  { name: "Kaspi", icon: WalletCards, tone: "red", textKey: "landing.experience.channel.kaspi" },
+  { name: "AI", icon: Bot, tone: "violet", textKey: "landing.experience.channel.ai" },
+  { name: "CRM", icon: UsersRound, tone: "orange", textKey: "landing.experience.channel.crm" }
 ];
 
 function normalizeIntent(value: string) {
@@ -86,6 +87,8 @@ function Reveal({
 }
 
 function Header({ activeSection }: { activeSection: LandingSectionId }) {
+  const { t } = useI18n();
+
   return (
     <header className="zani-stitch-header">
       <div className="zani-stitch-header-inner">
@@ -93,14 +96,14 @@ function Header({ activeSection }: { activeSection: LandingSectionId }) {
           <span>Z</span>
           ZANI
         </a>
-        <a className="zani-mobile-header-cta" href={AUTH_ROUTES.signup} data-auth-action="signup" data-auth-intent="Мобильный старт">
-          Старт
+        <a className="zani-mobile-header-cta" href={AUTH_ROUTES.signup} data-auth-action="signup" data-auth-intent={t("landing.experience.nav.cta")}>
+          {t("landing.experience.nav.cta")}
         </a>
 
-        <nav aria-label="Основные разделы">
+        <nav aria-label={t("landing.experience.nav.aria")}>
           {landingSections.slice(0, 7).map((section) => (
             <a className={activeSection === section.id ? "is-active" : ""} href={`#${section.id}`} key={section.id}>
-              {section.label}
+              {t(section.labelKey)}
             </a>
           ))}
         </nav>
@@ -108,10 +111,10 @@ function Header({ activeSection }: { activeSection: LandingSectionId }) {
         <div className="zani-stitch-actions">
           <a className="zani-stitch-login" href={AUTH_ROUTES.login} data-auth-action="login">
             <LogIn size={16} />
-            Войти
+            {t("landing.experience.login")}
           </a>
-          <a className="zani-stitch-trial" href={AUTH_ROUTES.signup} data-auth-action="signup" data-auth-intent="Попробовать бесплатно">
-            Попробовать бесплатно
+          <a className="zani-stitch-trial" href={AUTH_ROUTES.signup} data-auth-action="signup" data-auth-intent={t("landing.experience.tryFree")}>
+            {t("landing.experience.tryFree")}
           </a>
           <LanguageSelector className="zani-stitch-language" />
         </div>
@@ -121,8 +124,10 @@ function Header({ activeSection }: { activeSection: LandingSectionId }) {
 }
 
 function PhoneMockup({ mode = "inbox" }: { mode?: "inbox" | "chat" | "dashboard" }) {
+  const { t } = useI18n();
+
   return (
-    <div className={`zani-light-phone is-${mode}`} aria-label="Телефон с интерфейсом ZANI">
+    <div className={`zani-light-phone is-${mode}`} aria-label={t("landing.experience.phone.aria")}>
       <div className="zani-light-phone-top">
         <span>9:41</span>
         <i />
@@ -135,15 +140,18 @@ function PhoneMockup({ mode = "inbox" }: { mode?: "inbox" | "chat" | "dashboard"
 }
 
 function PhoneInbox() {
+  const { t } = useI18n();
+  const rows = [
+    ["WhatsApp", t("landing.experience.phone.inbox.whatsapp"), "09:41", "green"],
+    ["Instagram", t("landing.experience.phone.inbox.instagram"), "09:40", "pink"],
+    ["Telegram", t("landing.experience.phone.inbox.telegram"), "09:38", "blue"],
+    ["Kaspi", t("landing.experience.phone.inbox.kaspi"), "09:37", "red"]
+  ];
+
   return (
     <div className="zani-phone-screen">
-      <h4>Все сообщения <span>12</span></h4>
-      {[
-        ["WhatsApp", "Здравствуйте! Можно записаться сегодня?", "09:41", "green"],
-        ["Instagram", "Ответьте, пожалуйста", "09:40", "pink"],
-        ["Telegram", "Добрый день! Есть свободное время?", "09:38", "blue"],
-        ["Kaspi", "Новый вопрос покупателя", "09:37", "red"]
-      ].map(([name, text, time, tone]) => (
+      <h4>{t("landing.experience.phone.inbox.title")} <span>12</span></h4>
+      {rows.map(([name, text, time, tone]) => (
         <article className={`zani-inbox-row tone-${tone}`} key={name}>
           <span>{name.slice(0, 2)}</span>
           <div>
@@ -158,31 +166,35 @@ function PhoneInbox() {
 }
 
 function PhoneChat() {
+  const { t } = useI18n();
+
   return (
     <div className="zani-chat-screen">
       <div className="zani-chat-head">
         <span>Z</span>
         <div>
           <b>ZANI Bot</b>
-          <p>● онлайн</p>
+          <p>● {t("landing.experience.phone.online")}</p>
         </div>
       </div>
-      <p className="bubble client">Здравствуйте! Можно записаться сегодня?</p>
-      <p className="bubble bot">Здравствуйте. Сегодня есть 16:30 и 18:00. Как вам удобнее?</p>
-      <p className="bubble client small">16:30 подойдет</p>
-      <p className="bubble bot">Отлично. Записали вас на 16:30. Напоминание придет за час.</p>
-      <div className="zani-chat-input">Сообщение...</div>
+      <p className="bubble client">{t("landing.experience.phone.chat.client1")}</p>
+      <p className="bubble bot">{t("landing.experience.phone.chat.bot1")}</p>
+      <p className="bubble client small">{t("landing.experience.phone.chat.client2")}</p>
+      <p className="bubble bot">{t("landing.experience.phone.chat.bot2")}</p>
+      <div className="zani-chat-input">{t("landing.experience.phone.chat.input")}</div>
     </div>
   );
 }
 
 function PhoneDashboard() {
+  const { t } = useI18n();
+
   return (
     <div className="zani-phone-dashboard">
-      <h4>Сегодня</h4>
+      <h4>{t("landing.experience.today")}</h4>
       <div className="zani-mini-stats">
-        <span><b>128</b>лидов</span>
-        <span><b>24</b>записи</span>
+        <span><b>128</b>{t("landing.experience.metric.leads")}</span>
+        <span><b>24</b>{t("landing.experience.metric.records")}</span>
       </div>
       <div className="zani-mini-chart">
         <i />
@@ -192,51 +204,54 @@ function PhoneDashboard() {
         <i />
       </div>
       <article>
-        <b>AI рекомендация</b>
-        <p>Запустить рассылку на 15:00</p>
+        <b>{t("landing.experience.phone.dashboard.recommendation")}</b>
+        <p>{t("landing.experience.phone.dashboard.action")}</p>
       </article>
     </div>
   );
 }
 
 function FloatingChannel({ channel, index }: { channel: (typeof channels)[number]; index: number }) {
+  const { t } = useI18n();
   const Icon = channel.icon;
   return (
     <div className={`zani-floating-channel tone-${channel.tone} pos-${index}`}>
       <span><Icon size={18} /></span>
       <div>
         <b>{channel.name}</b>
-        <p>{channel.text}</p>
+        <p>{t(channel.textKey)}</p>
       </div>
     </div>
   );
 }
 
 function Hero() {
+  const { t } = useI18n();
+
   return (
     <section className="zani-light-hero" id="top">
       <div className="zani-stitch-container zani-light-hero-grid">
         <Reveal className="zani-light-hero-copy">
-          <span className="zani-kicker">AI-экосистема для бизнеса</span>
+          <span className="zani-kicker">{t("landing.experience.hero.kicker")}</span>
           <h1>
-            Ваш бизнес наконец работает <em>спокойно</em>
+            {t("landing.experience.hero.titlePrefix")} <em>{t("landing.experience.hero.titleAccent")}</em>
           </h1>
-          <div className="zani-hand-note">даже когда команда занята</div>
+          <div className="zani-hand-note">{t("landing.experience.hero.note")}</div>
           <p>
-            ZANI отвечает клиентам, создает заявки, ведет CRM, подключает маркетплейсы и показывает владельцу картину дня без ручного контроля.
+            {t("landing.experience.hero.text")}
           </p>
           <div className="zani-light-actions">
-            <a className="zani-stitch-primary" href={AUTH_ROUTES.signup} data-auth-action="signup" data-auth-intent="Получить CRM бесплатно">
-              Получить CRM бесплатно
+            <a className="zani-stitch-primary" href={AUTH_ROUTES.signup} data-auth-action="signup" data-auth-intent={t("landing.experience.getCrmFree")}>
+              {t("landing.experience.getCrmFree")}
               <ArrowRight size={18} />
             </a>
             <a className="zani-light-secondary" href="#agent">
-              Смотреть, как работает
+              {t("landing.experience.watchHow")}
             </a>
           </div>
           <div className="zani-light-proof">
             <div><span /> <span /> <span /> <span /></div>
-            <p>Более 14 000 компаний уже растут с ZANI</p>
+            <p>{t("landing.experience.hero.proof")}</p>
           </div>
         </Reveal>
 
@@ -257,22 +272,23 @@ function Hero() {
 }
 
 function PainSection() {
+  const { t } = useI18n();
   const story = [
-    ["09:37", "Клиент написал", MessageCircle],
-    ["09:42", "Ответа нет", Clock3],
-    ["09:51", "Выбрал конкурента", XCircle],
-    ["10:05", "Деньги ушли", CircleDollarSign]
+    ["09:37", t("landing.experience.pain.story.client"), MessageCircle],
+    ["09:42", t("landing.experience.pain.story.noAnswer"), Clock3],
+    ["09:51", t("landing.experience.pain.story.competitor"), XCircle],
+    ["10:05", t("landing.experience.pain.story.money"), CircleDollarSign]
   ];
 
   return (
     <section className="zani-light-section zani-pain" id="pain">
       <div className="zani-stitch-container zani-two-col">
         <Reveal className="zani-section-copy">
-          <span className="zani-kicker">Боль</span>
-          <h2>Клиенты уходят не из-за цены</h2>
-          <p>Пока команда переключается между мессенджерами, звонками и таблицами, клиент уже получает ответ в другом месте.</p>
-          <div className="zani-channel-dock" aria-label="Каналы, где теряются обращения">
-            {["WhatsApp", "Instagram", "Telegram", "Звонки", "Почта", "Kaspi"].map((item) => (
+          <span className="zani-kicker">{t("landing.experience.pain.kicker")}</span>
+          <h2>{t("landing.experience.pain.title")}</h2>
+          <p>{t("landing.experience.pain.text")}</p>
+          <div className="zani-channel-dock" aria-label={t("landing.experience.pain.channelsAria")}>
+            {["WhatsApp", "Instagram", "Telegram", t("landing.experience.channel.calls"), t("landing.experience.channel.email"), "Kaspi"].map((item) => (
               <span key={item}>{item}</span>
             ))}
           </div>
@@ -289,18 +305,18 @@ function PainSection() {
             ))}
             <div className="zani-story-zani">
               <Sparkles size={20} />
-              ZANI отвечает до того, как клиент остыл
+              {t("landing.experience.pain.zani")}
             </div>
           </div>
           <div className="zani-reference-mini">
             <article>
-              <b>Сегодня</b>
-              <span>10:00 Запись: Анна</span>
-              <span>11:30 Встреча</span>
-              <span className="is-lost">14:00 Перезвонить клиенту</span>
-              <span>16:30 Консультация</span>
+              <b>{t("landing.experience.today")}</b>
+              <span>{t("landing.experience.pain.calendar.record")}</span>
+              <span>{t("landing.experience.pain.calendar.meeting")}</span>
+              <span className="is-lost">{t("landing.experience.pain.calendar.callback")}</span>
+              <span>{t("landing.experience.pain.calendar.consult")}</span>
             </article>
-            <p>Ничего не забыть!</p>
+            <p>{t("landing.experience.pain.note")}</p>
           </div>
         </Reveal>
       </div>
@@ -309,20 +325,21 @@ function PainSection() {
 }
 
 function AgentSection() {
+  const { t } = useI18n();
   const abilities = [
-    ["Ответил сразу", "клиент не ждет менеджера"],
-    ["Уточнил детали", "услуга, время и контакт в диалоге"],
-    ["Создал запись", "визит и напоминание появились сами"],
-    ["Вернул после визита", "просит отзыв и предлагает следующий шаг"]
+    [t("landing.experience.agent.ability.reply"), t("landing.experience.agent.ability.replyText")],
+    [t("landing.experience.agent.ability.details"), t("landing.experience.agent.ability.detailsText")],
+    [t("landing.experience.agent.ability.record"), t("landing.experience.agent.ability.recordText")],
+    [t("landing.experience.agent.ability.return"), t("landing.experience.agent.ability.returnText")]
   ];
 
   return (
     <section className="zani-light-section zani-agent" id="agent">
       <div className="zani-stitch-container zani-three-col">
         <Reveal className="zani-section-copy">
-          <span className="zani-kicker">AI агент</span>
-          <h2>AI доводит клиента до записи</h2>
-          <p>ZANI не просто отвечает. Он уточняет, предлагает время, фиксирует контакт и передает команде уже готовый результат.</p>
+          <span className="zani-kicker">{t("landing.experience.agent.kicker")}</span>
+          <h2>{t("landing.experience.agent.title")}</h2>
+          <p>{t("landing.experience.agent.text")}</p>
         </Reveal>
         <Reveal className="zani-agent-phone" delay={0.08}>
           <PhoneMockup mode="chat" />
@@ -336,10 +353,10 @@ function AgentSection() {
             </article>
           ))}
           <div className="zani-appointment-card">
-            <span>Новая запись создана</span>
-            <b>Анна Смирнова</b>
-            <p>Сегодня, 16:30 · Консультация</p>
-            <a href="#crm">Открыть карточку</a>
+            <span>{t("landing.experience.agent.cardCreated")}</span>
+            <b>{t("landing.experience.person.anna")}</b>
+            <p>{t("landing.experience.agent.cardTime")}</p>
+            <a href="#crm">{t("landing.experience.agent.openCard")}</a>
           </div>
         </Reveal>
       </div>
@@ -348,24 +365,32 @@ function AgentSection() {
 }
 
 function CrmSection() {
-  const flow = ["Сообщение", "Клиент", "Сделка", "Задача", "Календарь", "Оплата"];
+  const { t } = useI18n();
+  const flow = [
+    t("landing.experience.crm.flow.message"),
+    t("landing.experience.crm.flow.client"),
+    t("landing.experience.crm.flow.deal"),
+    t("landing.experience.crm.flow.task"),
+    t("landing.experience.crm.flow.calendar"),
+    t("landing.experience.crm.flow.payment")
+  ];
   return (
     <section className="zani-light-section zani-crm" id="crm">
       <div className="zani-stitch-container">
         <Reveal className="zani-section-copy zani-center-copy">
           <span className="zani-kicker">CRM</span>
-          <h2>CRM появляется автоматически</h2>
-          <p>Менеджеру не нужно переносить данные руками. Сообщение превращается в клиента, сделку, задачу и запись в одном рабочем окне.</p>
+          <h2>{t("landing.experience.crm.title")}</h2>
+          <p>{t("landing.experience.crm.text")}</p>
         </Reveal>
         <Reveal className="zani-crm-board">
           <div className="zani-crm-sidebar">
-            {["Главная", "Клиенты", "Сделки", "Задачи", "Календарь"].map((item, index) => <span className={index === 0 ? "active" : ""} key={item}>{item}</span>)}
+            {[t("landing.experience.crm.sidebar.home"), t("landing.experience.crm.sidebar.clients"), t("landing.experience.crm.sidebar.deals"), t("landing.experience.crm.sidebar.tasks"), t("landing.experience.crm.flow.calendar")].map((item, index) => <span className={index === 0 ? "active" : ""} key={item}>{item}</span>)}
           </div>
           <div className="zani-crm-main">
             <div className="zani-crm-stats">
-              <Metric value="248" label="новые лиды" good="+24%" />
-              <Metric value="68" label="сделки" good="+18%" />
-              <Metric value="2.45M ₸" label="выручка" good="+32%" />
+              <Metric value="248" label={t("landing.experience.metric.newLeads")} good="+24%" />
+              <Metric value="68" label={t("landing.experience.metric.deals")} good="+18%" />
+              <Metric value="2.45M ₸" label={t("landing.experience.metric.revenue")} good="+32%" />
             </div>
             <div className="zani-flow-strip">
               {flow.map((item) => (
@@ -377,19 +402,19 @@ function CrmSection() {
             </div>
             <div className="zani-crm-workspace">
               <article>
-                <h3>Новая карточка</h3>
-                <p>Источник: WhatsApp</p>
-                <b>Анна Смирнова</b>
-                <span>Запись на сегодня, 16:30</span>
-              </article>
-              <article>
-                <h3>Задачи менеджера</h3>
-                <p>Подтвердить запись · 5 мин</p>
-                <p>Отправить напоминание · 45 мин</p>
-                <p>Попросить отзыв · после визита</p>
-              </article>
-              <article>
-                <h3>Календарь</h3>
+              <h3>{t("landing.experience.crm.card.new")}</h3>
+              <p>{t("landing.experience.crm.card.source")}</p>
+              <b>{t("landing.experience.person.anna")}</b>
+              <span>{t("landing.experience.crm.card.record")}</span>
+            </article>
+            <article>
+              <h3>{t("landing.experience.crm.tasks.title")}</h3>
+              <p>{t("landing.experience.crm.tasks.confirm")}</p>
+              <p>{t("landing.experience.crm.tasks.remind")}</p>
+              <p>{t("landing.experience.crm.tasks.review")}</p>
+            </article>
+            <article>
+              <h3>{t("landing.experience.crm.flow.calendar")}</h3>
                 <div className="zani-calendar-bars">
                   <span />
                   <span />
@@ -415,14 +440,15 @@ function Metric({ value, label, good }: { value: string; label: string; good: st
 }
 
 function MarketplaceSection() {
-  const chain = ["Kaspi", "Wildberries", "Ozon", "AI", "1C", "МойСклад", "Остатки", "Цены", "Аналитика", "Рассылки"];
+  const { t } = useI18n();
+  const chain = ["Kaspi", "Wildberries", "Ozon", "AI", "1C", t("landing.experience.integration.moysklad"), t("landing.experience.market.chain.stock"), t("landing.experience.market.chain.prices"), t("landing.experience.market.chain.analytics"), t("landing.experience.market.chain.outreach")];
   return (
     <section className="zani-light-section zani-marketplace" id="marketplace">
       <div className="zani-stitch-container zani-two-col">
         <Reveal className="zani-section-copy">
-          <span className="zani-kicker">Маркетплейсы</span>
-          <h2>Маржа и остатки без ручных таблиц</h2>
-          <p>Заказы, остатки, цены и себестоимость сходятся в ZANI. AI видит просадки и подсказывает, что менять сегодня.</p>
+          <span className="zani-kicker">{t("landing.experience.market.kicker")}</span>
+          <h2>{t("landing.experience.market.title")}</h2>
+          <p>{t("landing.experience.market.text")}</p>
         </Reveal>
         <Reveal className="zani-market-network" delay={0.08}>
           {chain.map((item, index) => (
@@ -433,13 +459,13 @@ function MarketplaceSection() {
           ))}
           <div className="zani-market-insight">
             <BarChart3 size={18} />
-            <b>Демпинг-бот 24/7</b>
-            <p>Следит за ценами и предлагает оптимальную цену.</p>
+            <b>{t("landing.experience.market.dumping")}</b>
+            <p>{t("landing.experience.market.dumpingText")}</p>
           </div>
           <div className="zani-market-insight">
             <Store size={18} />
-            <b>Склад и остатки</b>
-            <p>Остатки и себестоимость подтягиваются автоматически.</p>
+            <b>{t("landing.experience.market.stock")}</b>
+            <p>{t("landing.experience.market.stockText")}</p>
           </div>
         </Reveal>
       </div>
@@ -448,14 +474,15 @@ function MarketplaceSection() {
 }
 
 function EcosystemSection() {
+  const { t } = useI18n();
   const products = ["CRM", "Bots", "AI", "Marketplace", "Loyalty", "Analytics", "Websites", "Landing", "Mobile", "Automation", "Integrations"];
   return (
     <section className="zani-light-section zani-ecosystem" id="ecosystem">
       <div className="zani-stitch-container">
         <Reveal className="zani-section-copy zani-center-copy">
-          <span className="zani-kicker">Экосистема</span>
-          <h2>ZANI — не CRM. Это операционная система бизнеса</h2>
-          <p>Все продукты связаны между собой, чтобы бизнес не собирался из отдельных сервисов вручную.</p>
+          <span className="zani-kicker">{t("landing.experience.ecosystem.kicker")}</span>
+          <h2>{t("landing.experience.ecosystem.title")}</h2>
+          <p>{t("landing.experience.ecosystem.text")}</p>
         </Reveal>
         <Reveal className="zani-ecosystem-board">
           <aside>
@@ -466,25 +493,25 @@ function EcosystemSection() {
           </aside>
           <main>
             <div className="zani-eco-top">
-              <Metric value="12" label="каналов" good="подключены" />
-              <Metric value="248" label="лидов" good="+24%" />
-              <Metric value="₸2.45M" label="выручка" good="+32%" />
+              <Metric value="12" label={t("landing.experience.metric.channels")} good={t("landing.experience.metric.connected")} />
+              <Metric value="248" label={t("landing.experience.metric.leads")} good="+24%" />
+              <Metric value="₸2.45M" label={t("landing.experience.metric.revenue")} good="+32%" />
             </div>
             <div className="zani-eco-bento">
               <article>
                 <Bot size={22} />
-                <b>AI отвечает клиентам</b>
-                <p>Первый ответ, запись, уточнение и повторная продажа.</p>
+                <b>{t("landing.experience.ecosystem.ai")}</b>
+                <p>{t("landing.experience.ecosystem.aiText")}</p>
               </article>
               <article>
                 <ShoppingBag size={22} />
-                <b>Маркетплейсы в работе</b>
-                <p>Kaspi, WB, Ozon, склад и цены в одном контуре.</p>
+                <b>{t("landing.experience.ecosystem.market")}</b>
+                <p>{t("landing.experience.ecosystem.marketText")}</p>
               </article>
               <article>
                 <CalendarCheck size={22} />
-                <b>Команда видит задачи</b>
-                <p>Ответственные, дедлайны и история клиента рядом.</p>
+                <b>{t("landing.experience.ecosystem.team")}</b>
+                <p>{t("landing.experience.ecosystem.teamText")}</p>
               </article>
             </div>
           </main>
@@ -495,24 +522,25 @@ function EcosystemSection() {
 }
 
 function OwnerSection() {
+  const { t } = useI18n();
   return (
     <section className="zani-light-section zani-owner" id="owner">
       <div className="zani-stitch-container zani-two-col">
         <Reveal className="zani-section-copy">
-          <span className="zani-kicker">Владелец</span>
-          <h2>Вы открываете кабинет — и все спокойно</h2>
-          <p>AI отвечает. Сотрудники видят задачи. Продажи идут. Деньги приходят. Владелец понимает день без звонков каждому менеджеру.</p>
+          <span className="zani-kicker">{t("landing.experience.owner.kicker")}</span>
+          <h2>{t("landing.experience.owner.title")}</h2>
+          <p>{t("landing.experience.owner.text")}</p>
           <div className="zani-owner-list">
-            <CheckItem icon={ShieldCheck} title="Все под контролем" text="Клиенты, продажи, задачи и риски видны сразу." />
-            <CheckItem icon={LineChart} title="Рост понятен" text="AI подсвечивает, где можно заработать больше." />
+            <CheckItem icon={ShieldCheck} title={t("landing.experience.owner.control")} text={t("landing.experience.owner.controlText")} />
+            <CheckItem icon={LineChart} title={t("landing.experience.owner.growth")} text={t("landing.experience.owner.growthText")} />
           </div>
         </Reveal>
         <Reveal className="zani-owner-dashboard" delay={0.08}>
           <PhoneMockup mode="dashboard" />
           <div className="zani-calm-panel">
-            <Metric value="100%" label="заявок обработано" good="спокойно" />
-            <Metric value="12" label="сотрудников онлайн" good="работают" />
-            <Metric value="₸1.24M" label="прибыль сегодня" good="+18%" />
+            <Metric value="100%" label={t("landing.experience.metric.requestsProcessed")} good={t("landing.experience.hero.titleAccent")} />
+            <Metric value="12" label={t("landing.experience.metric.teamOnline")} good={t("landing.experience.metric.working")} />
+            <Metric value="₸1.24M" label={t("landing.experience.metric.profitToday")} good="+18%" />
           </div>
         </Reveal>
       </div>
@@ -533,14 +561,15 @@ function CheckItem({ icon: Icon, title, text }: { icon: typeof ShieldCheck; titl
 }
 
 function IntegrationsSection() {
-  const logos = ["WhatsApp", "Instagram", "Telegram", "Kaspi", "1C", "МойСклад", "Google", "Email", "Телефония"];
+  const { t } = useI18n();
+  const logos = ["WhatsApp", "Instagram", "Telegram", "Kaspi", "1C", t("landing.experience.integration.moysklad"), "Google", "Email", t("landing.experience.integration.telephony")];
   return (
     <section className="zani-light-section zani-integrations" id="integrations">
       <div className="zani-stitch-container">
         <Reveal className="zani-section-copy zani-center-copy">
-          <span className="zani-kicker">Интеграции</span>
-          <h2>Не логотипы. Сеть, по которой идут данные</h2>
-          <p>Каналы, склад, реклама, почта и телефония связаны в одну рабочую картину.</p>
+          <span className="zani-kicker">{t("landing.experience.integrations.kicker")}</span>
+          <h2>{t("landing.experience.integrations.title")}</h2>
+          <p>{t("landing.experience.integrations.text")}</p>
         </Reveal>
         <Reveal className="zani-integration-grid">
           {logos.map((logo, index) => (
@@ -557,17 +586,18 @@ function IntegrationsSection() {
 }
 
 function ProofSection() {
+  const { t } = useI18n();
   const cases = [
-    ["+32%", "рост повторных продаж", "Салон услуг"],
-    ["-47%", "пропущенных заявок", "Медицинский центр"],
-    ["15 мин", "до первого подключения", "Розница"]
+    ["+32%", t("landing.experience.proof.repeat"), t("landing.experience.proof.salon")],
+    ["-47%", t("landing.experience.proof.missed"), t("landing.experience.proof.medical")],
+    [t("landing.experience.proof.connectTime"), t("landing.experience.proof.connect"), t("landing.experience.proof.retail")]
   ];
   return (
     <section className="zani-light-section zani-proof-section" id="proof">
       <div className="zani-stitch-container">
         <Reveal className="zani-section-copy zani-center-copy">
-          <span className="zani-kicker">Доказательство</span>
-          <h2>Минимум слов. Видимый результат</h2>
+          <span className="zani-kicker">{t("landing.experience.proof.kicker")}</span>
+          <h2>{t("landing.experience.proof.title")}</h2>
         </Reveal>
         <div className="zani-case-grid">
           {cases.map(([value, text, company]) => (
@@ -584,25 +614,26 @@ function ProofSection() {
 }
 
 function FinalCtaSection() {
+  const { t } = useI18n();
   return (
     <section className="zani-light-section zani-final-cta" id="cta">
       <div className="zani-stitch-container">
         <Reveal className="zani-stitch-cta">
           <h2>
-            Подключите ZANI за несколько минут и дайте бизнесу работать <span>самостоятельно</span>
+            {t("landing.experience.cta.titlePrefix")} <span>{t("landing.experience.cta.titleAccent")}</span>
           </h2>
-          <p>CRM бесплатно. Карта не нужна. Подключение начинается сразу после регистрации.</p>
+          <p>{t("landing.experience.cta.text")}</p>
           <form>
-            <input type="email" placeholder="Ваш e-mail" aria-label="Ваш e-mail" />
-            <a href={AUTH_ROUTES.signup} data-auth-action="signup" data-auth-intent="Начать бесплатно">
-              Попробовать бесплатно
+            <input type="email" placeholder={t("landing.experience.cta.email")} aria-label={t("landing.experience.cta.email")} />
+            <a href={AUTH_ROUTES.signup} data-auth-action="signup" data-auth-intent={t("landing.experience.tryFree")}>
+              {t("landing.experience.tryFree")}
               <ArrowRight size={18} />
             </a>
           </form>
           <div>
-            <span>Без карты</span>
-            <span>Быстрый старт</span>
-            <span>CRM бесплатно</span>
+            <span>{t("landing.experience.cta.noCard")}</span>
+            <span>{t("landing.experience.cta.fastStart")}</span>
+            <span>{t("landing.experience.cta.freeCrm")}</span>
           </div>
         </Reveal>
       </div>
@@ -611,6 +642,8 @@ function FinalCtaSection() {
 }
 
 function Footer() {
+  const { t } = useI18n();
+
   return (
     <footer className="zani-stitch-footer" id="footer">
       <div className="zani-stitch-container">
@@ -619,15 +652,15 @@ function Footer() {
             <span>Z</span>
             ZANI
           </a>
-          <p>AI-экосистема для коммуникаций, продаж, маркетплейсов и контроля команды.</p>
+          <p>{t("landing.experience.footer.text")}</p>
         </div>
-        <nav aria-label="Нижняя навигация">
-          <a href="#agent">AI агент</a>
+        <nav aria-label={t("landing.experience.footer.aria")}>
+          <a href="#agent">{t("landing.experience.nav.agent")}</a>
           <a href="#crm">CRM</a>
-          <a href="#marketplace">Маркетплейсы</a>
-          <a href={AUTH_ROUTES.login} data-auth-action="login">Войти</a>
+          <a href="#marketplace">{t("landing.experience.nav.marketplace")}</a>
+          <a href={AUTH_ROUTES.login} data-auth-action="login">{t("landing.experience.login")}</a>
         </nav>
-        <small>© 2026 ZANI. Все права защищены.</small>
+        <small>{t("landing.experience.footer.rights")}</small>
       </div>
     </footer>
   );

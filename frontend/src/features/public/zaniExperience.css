@@ -5721,3 +5721,14 @@ html:has(.zani-stitch) {
     display: none;
   }
 }
+
+@media (max-width: 780px) {
+  .zani-light-hero-visual .zani-inbox-row p {
+    display: none !important;
+  }
+
+  .zani-owner-dashboard .zani-phone-dashboard article p {
+    max-height: 24px !important;
+    line-height: 1.2 !important;
+  }
+}

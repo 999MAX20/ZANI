@@ -5112,3 +5112,40 @@ body:has(.zani-stitch) {
     font-size: 12px !important;
   }
 }
+
+/* Cycle 13 anchor and section handoff polish */
+html:has(.zani-stitch) {
+  scroll-padding-top: 72px !important;
+}
+
+.zani-light-section,
+.zani-light-hero {
+  scroll-margin-top: 72px !important;
+}
+
+.zani-proof-section {
+  padding-bottom: 72px !important;
+}
+
+.zani-final-cta {
+  padding-top: 72px !important;
+}
+
+@media (max-width: 780px) {
+  html:has(.zani-stitch) {
+    scroll-padding-top: 64px !important;
+  }
+
+  .zani-light-section,
+  .zani-light-hero {
+    scroll-margin-top: 64px !important;
+  }
+
+  .zani-proof-section {
+    padding-bottom: 40px !important;
+  }
+
+  .zani-final-cta {
+    padding-top: 40px !important;
+  }
+}

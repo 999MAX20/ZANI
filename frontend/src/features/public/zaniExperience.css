@@ -2761,12 +2761,13 @@ body:has(.zani-stitch) {
 
 .zani-light-hero,
 .zani-light-section {
+  box-sizing: border-box;
   isolation: isolate;
   padding: clamp(76px, 9vh, 112px) 0;
 }
 
 .zani-light-hero {
-  min-height: calc(100dvh - 70px);
+  min-height: calc(100dvh - 72px);
   padding-top: clamp(64px, 7vh, 92px);
   padding-bottom: clamp(56px, 7vh, 86px);
 }
@@ -5244,11 +5245,23 @@ html:has(.zani-stitch) {
   }
 
   .zani-light-actions {
-    margin-top: 26px !important;
+    gap: 12px !important;
+    margin-top: 24px !important;
+  }
+
+  .zani-light-hero .zani-light-secondary {
+    min-height: 54px !important;
+    padding-inline: 16px !important;
+    font-size: 15px !important;
+  }
+
+  .zani-light-hero .zani-stitch-primary {
+    min-height: 54px !important;
+    padding-inline: 22px !important;
   }
 
   .zani-light-proof {
-    margin-top: 24px !important;
+    margin-top: 18px !important;
   }
 
   .zani-light-hero-visual > .zani-light-phone {

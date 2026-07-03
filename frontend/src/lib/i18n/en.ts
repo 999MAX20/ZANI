@@ -4416,7 +4416,7 @@ export const en: Record<string, string> = {
   "landing.experience.channel.calls": "Calls",
   "landing.experience.channel.email": "Email",
   "landing.experience.phone.aria": "Phone with ZANI interface",
-  "landing.experience.phone.inbox.title": "All messages",
+  "landing.experience.phone.inbox.title": "Messages",
   "landing.experience.phone.inbox.whatsapp": "Hello! Can I book today?",
   "landing.experience.phone.inbox.instagram": "Please reply",
   "landing.experience.phone.inbox.telegram": "Hi! Any free time?",

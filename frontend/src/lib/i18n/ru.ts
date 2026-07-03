@@ -4413,7 +4413,7 @@ export const ru: Record<string, string> = {
   "landing.experience.channel.calls": "Звонки",
   "landing.experience.channel.email": "Почта",
   "landing.experience.phone.aria": "Телефон с интерфейсом ZANI",
-  "landing.experience.phone.inbox.title": "Все сообщения",
+  "landing.experience.phone.inbox.title": "Сообщения",
   "landing.experience.phone.inbox.whatsapp": "Здравствуйте! Можно записаться сегодня?",
   "landing.experience.phone.inbox.instagram": "Ответьте, пожалуйста",
   "landing.experience.phone.inbox.telegram": "Добрый день! Есть свободное время?",

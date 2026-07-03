@@ -4416,7 +4416,7 @@ export const kk: Record<string, string> = {
   "landing.experience.channel.calls": "Қоңыраулар",
   "landing.experience.channel.email": "Пошта",
   "landing.experience.phone.aria": "ZANI интерфейсі бар телефон",
-  "landing.experience.phone.inbox.title": "Барлық хабарламалар",
+  "landing.experience.phone.inbox.title": "Хабарламалар",
   "landing.experience.phone.inbox.whatsapp": "Сәлеметсіз бе! Бүгін жазылуға бола ма?",
   "landing.experience.phone.inbox.instagram": "Жауап беріңізші",
   "landing.experience.phone.inbox.telegram": "Сәлем! Бос уақыт бар ма?",

@@ -5531,3 +5531,94 @@ html:has(.zani-stitch) {
     line-height: 1.15 !important;
   }
 }
+
+/* Cycle 16: calm product signals */
+.zani-story-card article,
+.zani-crm-stats article,
+.zani-crm-workspace article,
+.zani-flow-strip article,
+.zani-market-network article,
+.zani-market-insight,
+.zani-eco-top article,
+.zani-eco-bento article,
+.zani-owner-list article,
+.zani-calm-panel article,
+.zani-integration-grid article,
+.zani-case-card {
+  transition:
+    transform 220ms ease,
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    background 220ms ease;
+}
+
+.zani-story-card article:hover,
+.zani-crm-stats article:hover,
+.zani-crm-workspace article:hover,
+.zani-market-network article:hover,
+.zani-market-insight:hover,
+.zani-eco-top article:hover,
+.zani-eco-bento article:hover,
+.zani-owner-list article:hover,
+.zani-calm-panel article:hover,
+.zani-integration-grid article:hover,
+.zani-case-card:hover {
+  transform: translate3d(0, -3px, 0);
+  border-color: rgba(255, 140, 0, 0.2);
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.08), 0 10px 26px rgba(255, 140, 0, 0.08);
+}
+
+.zani-market-insight {
+  position: relative;
+  overflow: hidden;
+}
+
+.zani-flow-strip article {
+  position: relative;
+  overflow: hidden;
+}
+
+.zani-flow-strip article::before,
+.zani-market-network article::before,
+.zani-market-insight::before {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  background: linear-gradient(110deg, transparent 0%, rgba(255, 140, 0, 0.12) 45%, transparent 72%);
+  opacity: 0;
+  transform: translateX(-60%);
+  transition: opacity 220ms ease, transform 700ms ease;
+}
+
+.zani-crm-board:hover .zani-flow-strip article::before,
+.zani-market-network:hover article::before,
+.zani-market-network:hover .zani-market-insight::before {
+  opacity: 1;
+  transform: translateX(70%);
+}
+
+.zani-story-card:hover article em,
+.zani-market-network:hover i {
+  border-color: rgba(255, 140, 0, 0.72);
+  box-shadow: 0 0 18px rgba(255, 140, 0, 0.18);
+}
+
+.zani-flow-strip article svg,
+.zani-market-network i,
+.zani-story-card article em {
+  transition: border-color 220ms ease, color 220ms ease, box-shadow 220ms ease, transform 220ms ease;
+}
+
+.zani-crm-board:hover .zani-flow-strip article svg {
+  color: var(--stitch-orange);
+  transform: translateX(2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zani-flow-strip article::before,
+  .zani-market-network article::before,
+  .zani-market-insight::before {
+    display: none;
+  }
+}

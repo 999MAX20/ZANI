@@ -93,7 +93,7 @@ function Header({ activeSection }: { activeSection: LandingSectionId }) {
     <header className="zani-stitch-header">
       <div className="zani-stitch-header-inner">
         <a className="zani-stitch-brand" href="#top" aria-label="ZANI">
-          <span>Z</span>
+          <span aria-hidden="true">Z</span>
           ZANI
         </a>
         <a className="zani-mobile-header-cta" href={AUTH_ROUTES.signup} data-auth-action="signup" data-auth-intent={t("landing.experience.nav.cta")}>
@@ -649,8 +649,8 @@ function Footer() {
     <footer className="zani-stitch-footer" id="footer">
       <div className="zani-stitch-container">
         <div>
-          <a className="zani-stitch-brand" href="#top">
-            <span>Z</span>
+          <a className="zani-stitch-brand" href="#top" aria-label="ZANI">
+            <span aria-hidden="true">Z</span>
             ZANI
           </a>
           <p>{t("landing.experience.footer.text")}</p>

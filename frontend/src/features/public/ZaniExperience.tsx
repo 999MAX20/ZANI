@@ -588,9 +588,9 @@ function IntegrationsSection() {
 function ProofSection() {
   const { t } = useI18n();
   const cases = [
-    ["+32%", t("landing.experience.proof.repeat"), t("landing.experience.proof.salon")],
-    ["-47%", t("landing.experience.proof.missed"), t("landing.experience.proof.medical")],
-    [t("landing.experience.proof.connectTime"), t("landing.experience.proof.connect"), t("landing.experience.proof.retail")]
+    ["+32%", t("landing.experience.proof.repeat"), t("landing.experience.proof.salon"), t("landing.experience.proof.quoteRepeat")],
+    ["-47%", t("landing.experience.proof.missed"), t("landing.experience.proof.medical"), t("landing.experience.proof.quoteMissed")],
+    [t("landing.experience.proof.connectTime"), t("landing.experience.proof.connect"), t("landing.experience.proof.retail"), t("landing.experience.proof.quoteConnect")]
   ];
   return (
     <section className="zani-light-section zani-proof-section" id="proof">
@@ -600,10 +600,11 @@ function ProofSection() {
           <h2>{t("landing.experience.proof.title")}</h2>
         </Reveal>
         <div className="zani-case-grid">
-          {cases.map(([value, text, company]) => (
+          {cases.map(([value, text, company, quote]) => (
             <Reveal className="zani-case-card" key={value}>
               <strong>{value}</strong>
               <p>{text}</p>
+              <blockquote>{quote}</blockquote>
               <span>{company}</span>
             </Reveal>
           ))}

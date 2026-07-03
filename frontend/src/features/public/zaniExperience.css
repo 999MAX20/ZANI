@@ -2065,6 +2065,17 @@ body:has(.zani-stitch) {
   line-height: 1.08;
 }
 
+.zani-case-card blockquote {
+  margin: 18px 0 0;
+  border-top: 1px solid rgba(137, 115, 98, 0.12);
+  padding-top: 16px;
+  color: rgba(25, 28, 30, 0.62);
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1.42;
+}
+
 .zani-case-card span {
   display: block;
   margin-top: 24px;
@@ -5529,6 +5540,44 @@ html:has(.zani-stitch) {
     padding: 8px 10px !important;
     font-size: 13px !important;
     line-height: 1.15 !important;
+  }
+
+  .zani-proof-section .zani-center-copy {
+    margin-bottom: 18px !important;
+  }
+
+  .zani-proof-section .zani-case-grid {
+    gap: 8px !important;
+  }
+
+  .zani-proof-section .zani-case-card {
+    min-height: 0 !important;
+    padding: 14px !important;
+  }
+
+  .zani-proof-section .zani-case-card strong {
+    font-size: 30px !important;
+    line-height: 0.96 !important;
+  }
+
+  .zani-proof-section .zani-case-card p {
+    margin-top: 6px !important;
+    font-size: 15px !important;
+    line-height: 1.08 !important;
+  }
+
+  .zani-proof-section .zani-case-card blockquote {
+    max-height: 34px !important;
+    overflow: hidden !important;
+    margin-top: 9px !important;
+    padding-top: 8px !important;
+    font-size: 11px !important;
+    line-height: 1.24 !important;
+  }
+
+  .zani-proof-section .zani-case-card span {
+    margin-top: 8px !important;
+    font-size: 11px !important;
   }
 }
 

@@ -4036,3 +4036,16 @@ body:has(.zani-stitch) {
     padding: 16px !important;
   }
 }
+
+@media (max-width: 780px) {
+  .zani-stitch-cta form {
+    grid-template-columns: 1fr !important;
+    width: 100% !important;
+  }
+
+  .zani-stitch-cta input,
+  .zani-stitch-cta form a {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}

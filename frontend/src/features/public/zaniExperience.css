@@ -5427,3 +5427,107 @@ html:has(.zani-stitch) {
     line-height: 1.2 !important;
   }
 }
+
+/* Cycle 15: final story-frame alignment */
+.zani-light-section {
+  min-height: calc(100dvh - 72px);
+  display: flex;
+  align-items: center;
+}
+
+.zani-light-section > .zani-stitch-container {
+  width: min(1280px, calc(100% - 48px));
+}
+
+.zani-proof-section,
+.zani-final-cta {
+  padding-top: 76px !important;
+  padding-bottom: 76px !important;
+}
+
+@media (max-width: 780px) {
+  .zani-light-section {
+    min-height: calc(100dvh - 65px) !important;
+    display: flex !important;
+    align-items: center !important;
+    padding-top: 34px !important;
+    padding-bottom: 34px !important;
+  }
+
+  .zani-light-section > .zani-stitch-container {
+    width: calc(100vw - 28px) !important;
+  }
+
+  .zani-proof-section,
+  .zani-final-cta {
+    padding-top: 42px !important;
+    padding-bottom: 42px !important;
+  }
+
+  .zani-pain .zani-stitch-container {
+    gap: 14px !important;
+  }
+
+  .zani-pain .zani-section-copy .zani-kicker {
+    margin-bottom: 10px !important;
+  }
+
+  .zani-pain .zani-section-copy > p {
+    margin-top: 10px !important;
+    font-size: 13px !important;
+    line-height: 1.32 !important;
+  }
+
+  .zani-pain .zani-channel-dock {
+    margin-top: 14px !important;
+  }
+
+  .zani-pain .zani-story-card {
+    gap: 8px !important;
+    padding: 12px !important;
+  }
+
+  .zani-pain .zani-story-card article {
+    min-height: 78px !important;
+    padding: 10px !important;
+  }
+
+  .zani-pain .zani-story-card article b {
+    font-size: 13px !important;
+    line-height: 1.12 !important;
+  }
+
+  .zani-pain .zani-story-zani {
+    min-height: 48px !important;
+    padding: 9px 12px !important;
+    font-size: 12px !important;
+    line-height: 1.25 !important;
+  }
+
+  .zani-pain .zani-reference-mini {
+    gap: 8px !important;
+    margin-top: 10px !important;
+  }
+
+  .zani-pain .zani-reference-mini article {
+    padding: 12px !important;
+  }
+
+  .zani-pain .zani-reference-mini b {
+    margin-bottom: 8px !important;
+  }
+
+  .zani-pain .zani-reference-mini span {
+    min-height: 28px !important;
+    margin-top: 6px !important;
+    padding: 6px 9px !important;
+    font-size: 11px !important;
+  }
+
+  .zani-pain .zani-reference-mini p {
+    min-height: 34px !important;
+    padding: 8px 10px !important;
+    font-size: 13px !important;
+    line-height: 1.15 !important;
+  }
+}

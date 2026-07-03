@@ -142,18 +142,18 @@ function PhoneMockup({ mode = "inbox" }: { mode?: "inbox" | "chat" | "dashboard"
 function PhoneInbox() {
   const { t } = useI18n();
   const rows = [
-    ["WhatsApp", t("landing.experience.phone.inbox.whatsapp"), "09:41", "green"],
-    ["Instagram", t("landing.experience.phone.inbox.instagram"), "09:40", "pink"],
-    ["Telegram", t("landing.experience.phone.inbox.telegram"), "09:38", "blue"],
-    ["Kaspi", t("landing.experience.phone.inbox.kaspi"), "09:37", "red"]
+    { name: "WhatsApp", text: t("landing.experience.phone.inbox.whatsapp"), time: "09:41", tone: "green", Icon: MessageCircle },
+    { name: "Instagram", text: t("landing.experience.phone.inbox.instagram"), time: "09:40", tone: "pink", Icon: Sparkles },
+    { name: "Telegram", text: t("landing.experience.phone.inbox.telegram"), time: "09:38", tone: "blue", Icon: Send },
+    { name: "Kaspi", text: t("landing.experience.phone.inbox.kaspi"), time: "09:37", tone: "red", Icon: WalletCards }
   ];
 
   return (
     <div className="zani-phone-screen">
       <h4>{t("landing.experience.phone.inbox.title")} <span>12</span></h4>
-      {rows.map(([name, text, time, tone]) => (
+      {rows.map(({ name, text, time, tone, Icon }) => (
         <article className={`zani-inbox-row tone-${tone}`} key={name}>
-          <span>{name.slice(0, 2)}</span>
+          <span><Icon aria-hidden="true" size={18} strokeWidth={2.4} /></span>
           <div>
             <b>{name}</b>
             <p>{text}</p>

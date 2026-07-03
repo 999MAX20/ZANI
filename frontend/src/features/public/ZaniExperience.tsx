@@ -1,4 +1,5 @@
 import { motion, useScroll, useSpring, useTransform } from "framer-motion";
+import type { CSSProperties } from "react";
 import {
   ArrowRight,
   BarChart3,
@@ -17,7 +18,6 @@ import {
   ShoppingBag,
   Sparkles,
   Store,
-  UsersRound,
   WalletCards,
   XCircle,
 } from "lucide-react";
@@ -53,11 +53,11 @@ type LandingSectionId = (typeof landingSections)[number]["id"];
 
 const channels = [
   { name: "WhatsApp", icon: MessageCircle, tone: "green", textKey: "landing.experience.channel.whatsapp" },
-  { name: "Telegram", icon: Send, tone: "blue", textKey: "landing.experience.channel.telegram" },
   { name: "Instagram", icon: Sparkles, tone: "pink", textKey: "landing.experience.channel.instagram" },
+  { name: "Telegram", icon: Send, tone: "blue", textKey: "landing.experience.channel.telegram" },
   { name: "Kaspi", icon: WalletCards, tone: "red", textKey: "landing.experience.channel.kaspi" },
-  { name: "AI", icon: Bot, tone: "violet", textKey: "landing.experience.channel.ai" },
-  { name: "CRM", icon: UsersRound, tone: "orange", textKey: "landing.experience.channel.crm" }
+  { name: "Ответ отправлен", icon: CheckCircle2, tone: "orange", textKey: "landing.experience.channel.reply" },
+  { name: "Заявка создана", icon: CalendarCheck, tone: "orange", textKey: "landing.experience.channel.lead" }
 ];
 
 function normalizeIntent(value: string) {
@@ -151,8 +151,8 @@ function PhoneInbox() {
   return (
     <div className="zani-phone-screen">
       <h4>{t("landing.experience.phone.inbox.title")} <span>12</span></h4>
-      {rows.map(({ name, text, time, tone, Icon }) => (
-        <article className={`zani-inbox-row tone-${tone}`} key={name}>
+      {rows.map(({ name, text, time, tone, Icon }, index) => (
+        <article className={`zani-inbox-row tone-${tone} ${index === 0 ? "is-latest" : ""}`} data-channel={name.toLowerCase()} key={name}>
           <span><Icon aria-hidden="true" size={18} strokeWidth={2.4} /></span>
           <div>
             <b>{name}</b>
@@ -211,15 +211,227 @@ function PhoneDashboard() {
   );
 }
 
+function AgentPhone() {
+  const { t } = useI18n();
+  const [dialogStep, setDialogStep] = useState(0);
+  const dialog = [
+    { type: "message", tone: "client", text: t("landing.experience.agent.dialog.clientStart") },
+    { type: "typing" },
+    { type: "message", tone: "bot", text: t("landing.experience.agent.dialog.botSlots") },
+    { type: "message", tone: "client small", text: t("landing.experience.agent.dialog.clientTime") },
+    { type: "typing" },
+    { type: "message", tone: "bot", text: t("landing.experience.agent.dialog.botContact") },
+    { type: "message", tone: "client small", text: t("landing.experience.agent.dialog.clientPhone") },
+    { type: "typing" },
+    { type: "message", tone: "bot", text: t("landing.experience.agent.dialog.botBooked") },
+    { type: "message", tone: "system", text: t("landing.experience.agent.dialog.autoReminder") },
+    { type: "message", tone: "system", text: t("landing.experience.agent.dialog.autoCampaign") }
+  ];
+  const currentDialogItem = dialog[dialogStep];
+
+  useEffect(() => {
+    const delay = currentDialogItem?.type === "typing" ? 760 : dialogStep === dialog.length - 1 ? 2100 : 1180;
+    const timeout = window.setTimeout(() => {
+      setDialogStep((step) => (step >= dialog.length - 1 ? 0 : step + 1));
+    }, delay);
+
+    return () => window.clearTimeout(timeout);
+  }, [currentDialogItem?.type, dialog.length, dialogStep]);
+
+  return (
+    <div className="zani-agent-iphone-stage" aria-label={t("landing.experience.phone.aria")}>
+      <img
+        alt=""
+        aria-hidden="true"
+        className="zani-agent-iphone"
+        src="/backgrounds/hero/zani-orange-iphone-agent-screen.png"
+      />
+      <div className="zani-agent-phone-ui">
+        <div className="zani-agent-status">
+          <span>9:41</span>
+          <IosStatusIcons />
+        </div>
+        <div className="zani-agent-chat-head">
+          <span>Z</span>
+          <div>
+            <b>ZANI Bot</b>
+            <p>{t("landing.experience.phone.online")}</p>
+          </div>
+        </div>
+        <div className="zani-agent-dialog" aria-live="polite">
+          <div className="zani-agent-dialog-track">
+            {dialog.map((item, index) =>
+              index <= dialogStep && item.type === "typing" && index === dialogStep ? (
+                <span className="zani-agent-typing-indicator" key={`typing-${index}`} style={{ "--step": index } as CSSProperties}>
+                  <i />
+                  <i />
+                  <i />
+                </span>
+              ) : index <= dialogStep && item.type === "message" ? (
+                <p className={`zani-agent-bubble ${item.tone}`} key={`${item.tone}-${index}`} style={{ "--step": index } as CSSProperties}>
+                  {item.text}
+                </p>
+              ) : null
+            )}
+          </div>
+        </div>
+        <div className="zani-agent-input">{t("landing.experience.phone.chat.input")}</div>
+      </div>
+    </div>
+  );
+}
+
+function ClientCardModal({ onClose }: { onClose: () => void }) {
+  const { t } = useI18n();
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
+
+  return (
+    <div className="zani-client-modal-backdrop" role="presentation" onClick={onClose}>
+      <section
+        aria-modal="true"
+        className="zani-client-modal"
+        role="dialog"
+        aria-labelledby="zani-client-card-title"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button className="zani-client-modal-close" type="button" aria-label={t("landing.experience.agent.modal.close")} onClick={onClose}>
+          ×
+        </button>
+        <span>{t("landing.experience.agent.modal.status")}</span>
+        <h3 id="zani-client-card-title">{t("landing.experience.person.anna")}</h3>
+        <p>{t("landing.experience.agent.cardTime")}</p>
+        <div className="zani-client-modal-grid">
+          <article>
+            <b>{t("landing.experience.agent.modal.contact")}</b>
+            <p>+7 777 418 22 10</p>
+          </article>
+          <article>
+            <b>{t("landing.experience.agent.modal.source")}</b>
+            <p>WhatsApp</p>
+          </article>
+          <article>
+            <b>{t("landing.experience.agent.modal.automation")}</b>
+            <p>{t("landing.experience.agent.modal.automationText")}</p>
+          </article>
+          <article>
+            <b>{t("landing.experience.agent.modal.next")}</b>
+            <p>{t("landing.experience.agent.modal.nextText")}</p>
+          </article>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function FloatingChannel({ channel, index }: { channel: (typeof channels)[number]; index: number }) {
   const { t } = useI18n();
   const Icon = channel.icon;
   return (
-    <div className={`zani-floating-channel tone-${channel.tone} pos-${index}`}>
+    <div className={`zani-floating-channel tone-${channel.tone} pos-${index}`} data-channel={channel.name.toLowerCase()}>
       <span><Icon size={18} /></span>
       <div>
         <b>{channel.name}</b>
         <p>{t(channel.textKey)}</p>
+      </div>
+    </div>
+  );
+}
+
+function IosStatusIcons() {
+  return (
+    <span className="zani-ios-status-icons" aria-hidden="true">
+      <span className="zani-ios-signal">
+        <i />
+        <i />
+        <i />
+        <i />
+      </span>
+      <span className="zani-ios-wifi">
+        <i />
+        <i />
+        <i />
+      </span>
+      <span className="zani-ios-battery">
+        <b>33</b>
+      </span>
+    </span>
+  );
+}
+
+function ChannelLogo({ kind, name }: { kind: "whatsapp" | "instagram" | "telegram" | "zani"; name: string }) {
+  if (kind === "zani") {
+    return <span className="zani-logo-mark" aria-hidden="true">Z</span>;
+  }
+
+  return (
+    <img
+      alt=""
+      aria-hidden="true"
+      draggable="false"
+      src={`/integrations_logos/${kind}.png`}
+      title={name}
+    />
+  );
+}
+
+function HeroPhone() {
+  const { t } = useI18n();
+  const notifications = [
+    { name: "WhatsApp", text: "Новый клиент: можно записаться сегодня?", tone: "green", kind: "whatsapp" },
+    { name: "Instagram", text: "Ответьте, пожалуйста. Нужна цена", tone: "pink", kind: "instagram" },
+    { name: "Telegram", text: "Вопрос по записи на завтра", tone: "blue", kind: "telegram" },
+    { name: "ZANI", text: t("landing.experience.channel.reply"), tone: "orange", kind: "zani" },
+    { name: "WhatsApp", text: "Клиент ждет подтверждение", tone: "green", kind: "whatsapp" }
+  ];
+
+  return (
+    <div className="zani-generated-iphone-stage" aria-label={t("landing.experience.phone.aria")}>
+      <img
+        alt=""
+        aria-hidden="true"
+        className="zani-generated-iphone"
+        src="/backgrounds/hero/zani-orange-iphone-front.png"
+      />
+      <div className="zani-generated-phone-ui">
+        <div className="zani-lock-status">
+          <span>Tele2</span>
+          <IosStatusIcons />
+        </div>
+        <div className="zani-lock-head">
+          <b>Пт 3 июля</b>
+          <span>23:38</span>
+        </div>
+        <div className="zani-lock-title">
+          Центр уведомлений
+        </div>
+        <div className="zani-lock-dnd">
+          <i><Clock3 aria-hidden="true" size={14} strokeWidth={2.5} /></i>
+          <div>
+            <strong>В режиме «Не беспокоить»</strong>
+            <p>112, ZANI и YouTube</p>
+          </div>
+        </div>
+        <div className="zani-lock-notifications">
+          {notifications.map(({ name, text, tone, kind }, index) => (
+            <article className={`zani-lock-notification tone-${tone}`} key={`${name}-${index}`}>
+              <i><ChannelLogo kind={kind as "whatsapp" | "instagram" | "telegram" | "zani"} name={name} /></i>
+              <div>
+                <strong>{name}</strong>
+                <p>{text}</p>
+              </div>
+              <time>сейчас</time>
+            </article>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -234,15 +446,18 @@ function Hero() {
         <Reveal className="zani-light-hero-copy">
           <span className="zani-kicker">{t("landing.experience.hero.kicker")}</span>
           <h1>
-            {t("landing.experience.hero.titlePrefix")} <em>{t("landing.experience.hero.titleAccent")}</em>
+            <span>{t("landing.experience.hero.titleLine1")}</span>
+            <span>{t("landing.experience.hero.titleLine2")}</span>
+            <span className="zani-hand-accent">
+              <img alt={t("landing.experience.hero.titleAccent")} src="/backgrounds/hero/hero-busy-handwriting.png" />
+            </span>
           </h1>
-          <div className="zani-hand-note">{t("landing.experience.hero.note")}</div>
           <p>
             {t("landing.experience.hero.text")}
           </p>
           <div className="zani-light-actions">
-            <a className="zani-stitch-primary" href={AUTH_ROUTES.signup} data-auth-action="signup" data-auth-intent={t("landing.experience.getCrmFree")}>
-              {t("landing.experience.getCrmFree")}
+            <a className="zani-stitch-primary" href={AUTH_ROUTES.signup} data-auth-action="signup" data-auth-intent={t("landing.experience.tryFree")}>
+              {t("landing.experience.tryFree")}
               <ArrowRight size={18} />
             </a>
             <a className="zani-light-secondary" href="#agent">
@@ -256,15 +471,7 @@ function Hero() {
         </Reveal>
 
         <Reveal className="zani-light-hero-visual" delay={0.1}>
-          <div className="zani-hero-paths" aria-hidden="true">
-            <i />
-            <i />
-            <i />
-          </div>
-          <PhoneMockup />
-          {channels.map((channel, index) => (
-            <FloatingChannel channel={channel} index={index} key={channel.name} />
-          ))}
+          <HeroPhone />
         </Reveal>
       </div>
     </section>
@@ -279,24 +486,40 @@ function PainSection() {
     ["09:51", t("landing.experience.pain.story.competitor"), XCircle],
     ["10:05", t("landing.experience.pain.story.money"), CircleDollarSign]
   ];
+  const channelDock = [
+    { label: "WhatsApp", kind: "whatsapp" },
+    { label: "Instagram", kind: "instagram" },
+    { label: "Telegram", kind: "telegram" },
+    { label: t("landing.experience.channel.calls"), kind: "calls" },
+    { label: t("landing.experience.channel.email"), kind: "email" },
+    { label: "Kaspi", kind: "kaspi" }
+  ];
 
   return (
     <section className="zani-light-section zani-pain" id="pain">
       <div className="zani-stitch-container zani-two-col">
         <Reveal className="zani-section-copy">
-          <span className="zani-kicker">{t("landing.experience.pain.kicker")}</span>
           <h2>{t("landing.experience.pain.title")}</h2>
           <p>{t("landing.experience.pain.text")}</p>
           <div className="zani-channel-dock" aria-label={t("landing.experience.pain.channelsAria")}>
-            {["WhatsApp", "Instagram", "Telegram", t("landing.experience.channel.calls"), t("landing.experience.channel.email"), "Kaspi"].map((item) => (
-              <span key={item}>{item}</span>
+            {channelDock.map((item) => (
+              <span className={`tone-${item.kind}`} key={item.label}>
+                {["whatsapp", "instagram", "telegram", "kaspi"].includes(item.kind) ? (
+                  <img alt="" aria-hidden="true" draggable="false" src={`/integrations_logos/${item.kind}.png`} />
+                ) : item.kind === "calls" ? (
+                  <PhoneCall aria-hidden="true" size={18} strokeWidth={2.4} />
+                ) : (
+                  <Mail aria-hidden="true" size={18} strokeWidth={2.4} />
+                )}
+                {item.label}
+              </span>
             ))}
           </div>
         </Reveal>
         <Reveal className="zani-pain-board" delay={0.08}>
           <div className="zani-story-card">
             {story.map(([time, title, Icon], index) => (
-              <article key={title as string}>
+              <article className={`step-${index + 1}`} key={title as string}>
                 <span>{time as string}</span>
                 <i><Icon size={20} /></i>
                 <b>{title as string}</b>
@@ -326,6 +549,7 @@ function PainSection() {
 
 function AgentSection() {
   const { t } = useI18n();
+  const [isClientCardOpen, setIsClientCardOpen] = useState(false);
   const abilities = [
     [t("landing.experience.agent.ability.reply"), t("landing.experience.agent.ability.replyText")],
     [t("landing.experience.agent.ability.details"), t("landing.experience.agent.ability.detailsText")],
@@ -337,12 +561,11 @@ function AgentSection() {
     <section className="zani-light-section zani-agent" id="agent">
       <div className="zani-stitch-container zani-three-col">
         <Reveal className="zani-section-copy">
-          <span className="zani-kicker">{t("landing.experience.agent.kicker")}</span>
           <h2>{t("landing.experience.agent.title")}</h2>
           <p>{t("landing.experience.agent.text")}</p>
         </Reveal>
         <Reveal className="zani-agent-phone" delay={0.08}>
-          <PhoneMockup mode="chat" />
+          <AgentPhone />
         </Reveal>
         <Reveal className="zani-agent-flow" delay={0.14}>
           {abilities.map(([title, text]) => (
@@ -356,10 +579,13 @@ function AgentSection() {
             <span>{t("landing.experience.agent.cardCreated")}</span>
             <b>{t("landing.experience.person.anna")}</b>
             <p>{t("landing.experience.agent.cardTime")}</p>
-            <a href="#crm">{t("landing.experience.agent.openCard")}</a>
+            <button type="button" onClick={() => setIsClientCardOpen(true)}>
+              {t("landing.experience.agent.openCard")}
+            </button>
           </div>
         </Reveal>
       </div>
+      {isClientCardOpen ? <ClientCardModal onClose={() => setIsClientCardOpen(false)} /> : null}
     </section>
   );
 }

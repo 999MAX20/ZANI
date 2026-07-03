@@ -2543,6 +2543,40 @@ body:has(.zani-stitch) {
   box-shadow: 0 12px 34px rgba(15,23,42,0.05);
 }
 
+.zani-eco-top article {
+  display: grid;
+  align-content: center;
+  min-height: 126px;
+  gap: 8px;
+}
+
+.zani-eco-top b,
+.zani-eco-top span,
+.zani-eco-top em {
+  display: block;
+}
+
+.zani-eco-top b {
+  color: var(--stitch-navy);
+  font-family: "Hanken Grotesk", Inter, sans-serif;
+  font-size: 34px;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+}
+
+.zani-eco-top span {
+  color: rgba(25,28,30,0.62);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.zani-eco-top em {
+  color: #11823b;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 900;
+}
+
 .zani-eco-bento {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
@@ -3880,4 +3914,55 @@ body:has(.zani-stitch) {
   .zani-stitch-cta > div span {
     color: rgba(18, 26, 43, 0.68) !important;
   }
+}
+
+/* Cycle 6 final CTA contrast */
+.zani-stitch-cta {
+  background:
+    radial-gradient(circle at 78% 18%, rgba(255, 140, 0, 0.16), transparent 22rem),
+    linear-gradient(135deg, rgba(255,255,255,0.96), rgba(255,246,232,0.92)) !important;
+  color: var(--stitch-navy) !important;
+}
+
+.zani-stitch-cta h2,
+.zani-stitch-cta h2 span {
+  color: var(--stitch-navy) !important;
+}
+
+.zani-stitch-cta h2 span {
+  background: none !important;
+  -webkit-text-fill-color: var(--stitch-orange);
+}
+
+.zani-stitch-cta p {
+  color: rgba(18, 26, 43, 0.68) !important;
+  font-size: clamp(17px, 1.45vw, 22px);
+}
+
+.zani-stitch-cta form {
+  grid-template-columns: minmax(240px, 1fr) minmax(220px, 260px);
+  width: min(720px, 100%);
+}
+
+.zani-stitch-cta input {
+  border-color: rgba(140, 79, 0, 0.16) !important;
+  background: rgba(255,255,255,0.72) !important;
+  color: var(--stitch-navy) !important;
+}
+
+.zani-stitch-cta input::placeholder {
+  color: rgba(18, 26, 43, 0.42) !important;
+}
+
+.zani-stitch-cta form a {
+  min-height: 62px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #ff8c00, #ffad33) !important;
+  color: var(--stitch-navy) !important;
+  box-shadow: 0 18px 40px rgba(255, 140, 0, 0.22);
+}
+
+.zani-stitch-cta > div {
+  color: rgba(18, 26, 43, 0.64) !important;
+  font-size: 14px;
 }

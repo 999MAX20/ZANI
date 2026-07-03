@@ -677,6 +677,20 @@ export default function ZaniExperience() {
   const sectionIds = useMemo(() => landingSections.map((section) => section.id), []);
 
   useEffect(() => {
+    function scrollToCurrentHash() {
+      const id = window.location.hash.slice(1);
+      if (!sectionIds.includes(id as LandingSectionId)) return;
+      window.requestAnimationFrame(() => {
+        document.getElementById(id)?.scrollIntoView({ block: "start" });
+      });
+    }
+
+    scrollToCurrentHash();
+    window.addEventListener("hashchange", scrollToCurrentHash);
+    return () => window.removeEventListener("hashchange", scrollToCurrentHash);
+  }, [sectionIds]);
+
+  useEffect(() => {
     function handleAuthClick(event: MouseEvent) {
       const target = event.target;
       if (!(target instanceof Element)) return;

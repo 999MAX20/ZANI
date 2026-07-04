@@ -8624,8 +8624,8 @@ html:has(.zani-stitch) {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 16px;
-  margin-bottom: 13px;
+  margin-top: 12px;
+  margin-bottom: 9px;
 }
 
 .zani-agent-chat-head > span {
@@ -8668,7 +8668,7 @@ html:has(.zani-stitch) {
   max-width: 88%;
   margin: 0;
   border-radius: 14px;
-  padding: 8px 10px;
+  padding: 7px 9px;
   font-size: clamp(9px, 0.78vw, 11px);
   font-weight: 750;
   line-height: 1.23;
@@ -9284,7 +9284,7 @@ html:has(.zani-stitch) {
   min-height: 100%;
   flex-direction: column;
   justify-content: flex-end;
-  gap: 5px;
+  gap: 4px;
   overflow: visible;
 }
 
@@ -9392,6 +9392,1670 @@ html:has(.zani-stitch) {
   }
 }
 
+/* Interactive CRM preview: mirrors the real product flow without auth or backend state. */
+.zani-live-crm-board {
+  grid-template-columns: 190px minmax(0, 1fr) !important;
+  align-items: stretch;
+  border: 1px solid rgba(139, 91, 37, 0.1);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(255, 248, 239, 0.78)),
+    rgba(255, 255, 255, 0.78) !important;
+}
+
+.zani-live-crm-board .zani-crm-sidebar {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.zani-live-crm-board .zani-crm-sidebar button {
+  width: 100%;
+  border: 0;
+  border-radius: 13px;
+  padding: 12px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.66);
+  font: inherit;
+  font-weight: 900;
+  text-align: left;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.zani-live-crm-board .zani-crm-sidebar button:hover,
+.zani-live-crm-board .zani-crm-sidebar button.active {
+  background: rgba(255, 255, 255, 0.13);
+  color: #fff;
+  transform: translateX(2px);
+}
+
+.zani-live-crm-flow {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid rgba(255, 140, 0, 0.12);
+  border-radius: 22px;
+  background: rgba(255, 140, 0, 0.08);
+}
+
+.zani-live-crm-flow button {
+  display: flex;
+  min-height: 70px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-right: 1px solid rgba(255, 140, 0, 0.12);
+  background: transparent;
+  color: var(--stitch-orange-dark);
+  font: inherit;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.zani-live-crm-flow button:last-child {
+  border-right: 0;
+}
+
+.zani-live-crm-flow button:hover {
+  background: rgba(255, 140, 0, 0.1);
+}
+
+.zani-live-crm-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.28fr) minmax(320px, 0.72fr);
+  gap: 16px;
+  min-height: 330px;
+}
+
+.zani-live-crm-table,
+.zani-live-crm-card {
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 12px 32px rgba(64, 44, 20, 0.055);
+}
+
+.zani-live-crm-table {
+  overflow: hidden;
+}
+
+.zani-live-crm-table-head,
+.zani-live-crm-table button {
+  display: grid;
+  grid-template-columns: minmax(160px, 1.2fr) 96px minmax(116px, 0.82fr) minmax(150px, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.zani-live-crm-table-head {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.07);
+  color: rgba(25, 28, 30, 0.45);
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.zani-live-crm-table button {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  padding: 16px;
+  background: transparent;
+  color: var(--stitch-navy);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.zani-live-crm-table button:hover,
+.zani-live-crm-table button.is-selected {
+  background: rgba(255, 140, 0, 0.08);
+}
+
+.zani-live-crm-table button b,
+.zani-live-crm-table button small {
+  display: block;
+}
+
+.zani-live-crm-table button b {
+  font-weight: 950;
+}
+
+.zani-live-crm-table button small {
+  margin-top: 4px;
+  color: rgba(25, 28, 30, 0.52);
+  font-weight: 800;
+}
+
+.zani-live-crm-card {
+  padding: 20px;
+}
+
+.zani-live-crm-card > span {
+  color: var(--stitch-orange);
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.zani-live-crm-card h3 {
+  margin: 10px 0 0;
+  color: var(--stitch-navy);
+  font-size: clamp(24px, 2.1vw, 34px);
+  letter-spacing: -0.04em;
+}
+
+.zani-live-crm-card p {
+  margin: 12px 0 0;
+  color: rgba(25, 28, 30, 0.62);
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.zani-live-crm-card div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.zani-live-crm-card div b {
+  border-radius: 14px;
+  padding: 12px;
+  background: #fff3e4;
+  color: var(--stitch-orange-dark);
+  font-size: 14px;
+}
+
+.zani-live-crm-card ul {
+  display: grid;
+  gap: 9px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.zani-live-crm-card li {
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(15, 23, 42, 0.045);
+  color: rgba(25, 28, 30, 0.7);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.zani-live-crm-card button {
+  width: 100%;
+  min-height: 48px;
+  border: 0;
+  border-radius: 14px;
+  margin-top: 18px;
+  background: var(--stitch-orange);
+  color: #fff;
+  font: inherit;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.zani-live-crm-card button:hover {
+  background: #f07f00;
+}
+
+@media (max-width: 1023px) {
+  .zani-live-crm-board {
+    grid-template-columns: 1fr !important;
+  }
+
+  .zani-live-crm-board .zani-crm-sidebar {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    border-radius: 20px;
+  }
+
+  .zani-live-crm-board .zani-crm-sidebar button {
+    text-align: center;
+  }
+
+  .zani-live-crm-flow,
+  .zani-live-crm-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .zani-live-crm-flow {
+    display: flex;
+    overflow-x: auto;
+  }
+
+  .zani-live-crm-flow button {
+    min-width: 132px;
+  }
+
+  .zani-live-crm-table-head,
+  .zani-live-crm-table button {
+    grid-template-columns: minmax(132px, 1fr) 80px minmax(110px, 0.8fr);
+  }
+
+  .zani-live-crm-table-head span:nth-child(4),
+  .zani-live-crm-table button > span:nth-child(4) {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .zani-live-crm-board {
+    padding: 14px !important;
+  }
+
+  .zani-live-crm-board .zani-crm-sidebar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .zani-live-crm-table-head {
+    display: none;
+  }
+
+  .zani-live-crm-table button {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .zani-live-crm-table button > span {
+    display: block !important;
+  }
+
+  .zani-live-crm-card div {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Real CRM demo: one-to-one with the Leads workspace behavior, restyled for the landing. */
+.zani-crm {
+  min-height: 100svh;
+  padding-top: clamp(56px, 6vh, 76px) !important;
+  padding-bottom: clamp(28px, 4vh, 48px) !important;
+}
+
+.zani-crm .zani-stitch-container {
+  display: grid;
+  min-height: calc(100svh - clamp(84px, 10vh, 124px));
+  align-content: start;
+  gap: clamp(18px, 2.2vh, 28px);
+}
+
+.zani-crm .zani-center-copy {
+  max-width: 760px;
+}
+
+.zani-crm .zani-center-copy h2 {
+  font-size: clamp(44px, 5vw, 72px);
+  line-height: 0.96;
+}
+
+.zani-crm .zani-center-copy p {
+  max-width: 620px;
+  margin-top: 16px;
+  font-size: clamp(16px, 1.35vw, 22px);
+  line-height: 1.28;
+}
+
+.zani-real-crm-board {
+  display: grid !important;
+  grid-template-columns: 228px minmax(0, 1fr) !important;
+  align-items: stretch;
+  gap: 14px !important;
+  height: min(580px, calc(100svh - 260px));
+  min-height: 500px;
+  overflow: hidden;
+  border: 1px solid rgba(139, 91, 37, 0.1);
+  border-radius: 28px;
+  padding: 18px !important;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(255, 248, 239, 0.78)),
+    rgba(255, 255, 255, 0.78) !important;
+}
+
+.zani-real-crm-content {
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+  min-width: 0;
+  min-height: 0;
+  gap: 14px;
+}
+
+.zani-real-crm-niches {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.zani-real-crm-niches button {
+  min-width: 0;
+  min-height: 58px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 16px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--stitch-navy);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.zani-real-crm-niches button.active {
+  border-color: rgba(255, 140, 0, 0.42);
+  background: rgba(255, 140, 0, 0.12);
+  color: var(--stitch-orange-dark);
+}
+
+.zani-real-crm-niches b,
+.zani-real-crm-niches span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.zani-real-crm-niches b {
+  font-size: 13px;
+  font-weight: 1000;
+}
+
+.zani-real-crm-niches span {
+  margin-top: 4px;
+  color: rgba(25, 28, 30, 0.54);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.zani-real-crm-sidebar {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  min-width: 0;
+  border-radius: 22px;
+  padding: 14px;
+  background:
+    radial-gradient(circle at top right, rgba(255, 140, 0, 0.2), transparent 38%),
+    #111827;
+  color: #fff;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.18);
+}
+
+.zani-real-crm-brand {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 4px 4px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.zani-real-crm-brand > span {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 13px;
+  background: var(--stitch-orange);
+  color: #fff;
+  font-size: 24px;
+  font-weight: 1000;
+  transform: rotate(-5deg);
+}
+
+.zani-real-crm-brand b,
+.zani-real-crm-brand small {
+  display: block;
+}
+
+.zani-real-crm-brand b {
+  color: #fff;
+  font-size: 18px;
+  font-weight: 1000;
+}
+
+.zani-real-crm-brand small {
+  margin-top: 2px;
+  color: rgba(255, 255, 255, 0.54);
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.zani-real-crm-sidebar nav {
+  display: grid;
+  gap: 4px;
+}
+
+.zani-real-crm-sidebar nav button {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  border: 0;
+  border-radius: 12px;
+  padding: 0 10px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.72);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 900;
+  text-align: left;
+  cursor: pointer;
+}
+
+.zani-real-crm-sidebar nav button:hover,
+.zani-real-crm-sidebar nav button.active {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.zani-real-crm-sidebar nav button.active {
+  box-shadow: inset 3px 0 0 var(--stitch-orange);
+}
+
+.zani-real-crm-sidebar nav svg {
+  color: currentColor;
+}
+
+.zani-real-crm-sidebar nav span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.zani-real-crm-sidebar nav em {
+  min-width: 22px;
+  border-radius: 999px;
+  padding: 3px 7px;
+  background: var(--stitch-orange);
+  color: #fff;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 1000;
+  text-align: center;
+}
+
+.zani-real-crm-toolbar {
+  display: grid;
+  gap: 12px;
+}
+
+.zani-real-crm-filters,
+.zani-real-crm-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.zani-real-crm-filters button,
+.zani-real-crm-controls button,
+.zani-real-crm-controls input,
+.zani-real-crm-controls select {
+  min-height: 42px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 13px;
+  padding: 0 13px;
+  background: rgba(255, 255, 255, 0.86);
+  color: var(--stitch-navy);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.zani-real-crm-controls input {
+  width: min(320px, 100%);
+}
+
+.zani-real-crm-filters button,
+.zani-real-crm-controls button,
+.zani-real-crm-controls select {
+  cursor: pointer;
+}
+
+.zani-real-crm-filters button.active {
+  border-color: rgba(255, 140, 0, 0.32);
+  background: rgba(255, 140, 0, 0.12);
+  color: var(--stitch-orange-dark);
+}
+
+.zani-real-crm-filters span {
+  margin-left: 6px;
+  color: rgba(25, 28, 30, 0.45);
+}
+
+.zani-real-crm-notice {
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: #fff3e4;
+  color: var(--stitch-orange-dark);
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.zani-real-crm-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
+  gap: 14px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.zani-real-crm-table,
+.zani-real-crm-panel {
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 12px 32px rgba(64, 44, 20, 0.055);
+}
+
+.zani-real-crm-head,
+.zani-real-crm-table > button {
+  display: grid;
+  grid-template-columns: 28px minmax(190px, 1.55fr) 92px 112px 74px 128px minmax(160px, 1.1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.zani-real-crm-table {
+  overflow-y: auto;
+}
+
+.zani-real-crm-head {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.07);
+  color: rgba(25, 28, 30, 0.45);
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.zani-real-crm-table > button {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  padding: 15px 14px;
+  background: transparent;
+  color: var(--stitch-navy);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 850;
+  text-align: left;
+  cursor: pointer;
+}
+
+.zani-real-crm-table > button:hover,
+.zani-real-crm-table > button.is-selected {
+  background: rgba(255, 140, 0, 0.08);
+}
+
+.zani-real-crm-table b,
+.zani-real-crm-table small {
+  display: block;
+}
+
+.zani-real-crm-table small {
+  margin-top: 4px;
+  color: rgba(25, 28, 30, 0.52);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.zani-real-crm-check {
+  display: grid;
+  width: 19px;
+  height: 19px;
+  place-items: center;
+  border: 1px solid rgba(15, 23, 42, 0.18);
+  border-radius: 6px;
+  color: #fff;
+  background: rgba(255, 140, 0, 0.9);
+}
+
+.zani-real-crm-table [class^="status-"] {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 6px 9px;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.zani-real-crm-table .status-new { background: #fff3e4; color: #9a5400; }
+.zani-real-crm-table .status-contacted { background: #e9f3ff; color: #245d92; }
+.zani-real-crm-table .status-in_progress { background: #f0eaff; color: #6642a5; }
+.zani-real-crm-table .status-appointment_created { background: #eaf8ee; color: #168a43; }
+.zani-real-crm-table .status-closed { background: #111827; color: #fff; }
+.zani-real-crm-table .status-lost { background: #ffecec; color: #b42318; }
+
+.zani-real-crm-panel {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.zani-real-crm-module {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(260px, 0.68fr);
+  grid-template-areas:
+    "copy stats"
+    "actions stats";
+  gap: 14px;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  border-radius: 22px;
+  padding: clamp(18px, 2.5vw, 28px);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 12px 32px rgba(64, 44, 20, 0.055);
+}
+
+.zani-real-crm-module > div:first-child {
+  grid-area: copy;
+  align-self: end;
+}
+
+.zani-real-crm-module > div:first-child span {
+  color: var(--stitch-orange);
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.zani-real-crm-module h3 {
+  max-width: 560px;
+  margin: 10px 0 0;
+  color: var(--stitch-navy);
+  font-size: clamp(34px, 5vw, 70px);
+  font-weight: 1000;
+  letter-spacing: 0;
+  line-height: 0.94;
+}
+
+.zani-real-crm-module p {
+  max-width: 560px;
+  margin: 18px 0 0;
+  color: rgba(25, 28, 30, 0.62);
+  font-size: clamp(15px, 1.45vw, 21px);
+  font-weight: 750;
+  line-height: 1.38;
+}
+
+/* Compact CRM workspace: keep the inner app visible inside the landing viewport. */
+.zani-real-crm-board {
+  grid-template-columns: 210px minmax(0, 1fr) !important;
+  gap: 12px !important;
+  height: min(540px, calc(100svh - 280px));
+  min-height: 460px;
+  border-radius: 24px;
+  padding: 14px !important;
+}
+
+.zani-real-crm-content {
+  gap: 10px;
+  align-self: stretch;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+.zani-real-crm-board > * {
+  min-height: 0;
+}
+
+.zani-real-crm-sidebar {
+  gap: 10px;
+  border-radius: 18px;
+  padding: 12px;
+}
+
+.zani-real-crm-brand {
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 9px;
+  padding: 3px 3px 10px;
+}
+
+.zani-real-crm-brand > span {
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  font-size: 21px;
+}
+
+.zani-real-crm-brand b {
+  font-size: 16px;
+}
+
+.zani-real-crm-brand small {
+  font-size: 10px;
+}
+
+.zani-real-crm-sidebar nav button {
+  min-height: 36px;
+  border-radius: 10px;
+  padding: 0 9px;
+  font-size: 12px;
+}
+
+.zani-real-crm-niches {
+  gap: 7px;
+}
+
+.zani-real-crm-niches button {
+  min-height: 46px;
+  border-radius: 13px;
+  padding: 8px 10px;
+}
+
+.zani-real-crm-niches b {
+  font-size: 12px;
+}
+
+.zani-real-crm-niches span {
+  margin-top: 3px;
+  font-size: 9px;
+}
+
+.zani-real-crm-toolbar {
+  gap: 8px;
+}
+
+.zani-real-crm-filters,
+.zani-real-crm-controls {
+  gap: 7px;
+}
+
+.zani-real-crm-filters button,
+.zani-real-crm-controls button,
+.zani-real-crm-controls input,
+.zani-real-crm-controls select {
+  min-height: 34px;
+  border-radius: 11px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.zani-real-crm-notice {
+  border-radius: 12px;
+  padding: 9px 12px;
+  font-size: 12px;
+}
+
+.zani-real-crm-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 330px);
+  gap: 10px;
+}
+
+.zani-real-crm-table,
+.zani-real-crm-panel,
+.zani-real-crm-module {
+  border-radius: 18px;
+}
+
+.zani-real-crm-head,
+.zani-real-crm-table > button {
+  grid-template-columns: 24px minmax(160px, 1.55fr) 82px 98px 64px 112px minmax(132px, 1.1fr);
+  gap: 9px;
+}
+
+.zani-real-crm-head {
+  padding: 9px 12px;
+  font-size: 10px;
+}
+
+.zani-real-crm-table > button {
+  padding: 11px 12px;
+  font-size: 12px;
+}
+
+.zani-real-crm-table small {
+  margin-top: 3px;
+  font-size: 10px;
+}
+
+.zani-real-crm-check {
+  width: 17px;
+  height: 17px;
+}
+
+.zani-real-crm-table [class^="status-"] {
+  padding: 5px 8px;
+  font-size: 10px;
+}
+
+.zani-real-crm-panel {
+  gap: 8px;
+  padding: 12px;
+}
+
+.zani-real-crm-module {
+  grid-template-columns: minmax(0, 0.86fr) minmax(250px, 0.72fr);
+  gap: 10px;
+  padding: clamp(16px, 1.7vw, 20px);
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.zani-real-crm-module > div:first-child {
+  align-self: center;
+}
+
+.zani-real-crm-module h3 {
+  max-width: 440px;
+  margin-top: 8px;
+  font-size: clamp(26px, 2.8vw, 38px);
+  line-height: 0.98;
+}
+
+.zani-real-crm-module p {
+  max-width: 460px;
+  margin-top: 12px;
+  font-size: clamp(12px, 0.95vw, 15px);
+  line-height: 1.25;
+}
+
+.zani-real-crm-module-stats {
+  gap: 8px;
+  min-height: 0;
+  overflow-y: auto;
+  align-content: start;
+}
+
+.zani-real-crm-module-stats article {
+  min-height: 46px;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: clamp(12px, 0.95vw, 15px);
+  line-height: 1.15;
+}
+
+.zani-real-crm-module-actions {
+  gap: 8px;
+}
+
+.zani-real-crm-module-actions button {
+  min-height: 38px;
+  border-radius: 11px;
+  padding: 0 12px;
+  font-size: 12px;
+}
+
+.zani-real-crm-contact h3,
+.zani-real-crm-drawer h3 {
+  font-size: 22px;
+}
+
+.zani-real-crm-contact p,
+.zani-real-crm-panel p,
+.zani-real-crm-drawer p,
+.zani-real-crm-panel dd {
+  font-size: 12px;
+  line-height: 1.34;
+}
+
+.zani-real-crm-panel section {
+  border-radius: 13px;
+  padding: 10px;
+}
+
+.zani-real-crm-actions div {
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.zani-real-crm-actions button,
+.zani-real-crm-panel textarea + button,
+.zani-real-crm-open,
+.zani-real-crm-drawer nav button {
+  min-height: 32px;
+  border-radius: 10px;
+  font-size: 11px;
+}
+
+.zani-real-crm-panel textarea {
+  min-height: 52px;
+  border-radius: 10px;
+  margin-top: 8px;
+  padding: 8px;
+  font-size: 11px;
+}
+
+.zani-real-crm-module-stats {
+  grid-area: stats;
+  display: grid;
+  gap: 10px;
+  align-content: center;
+  min-width: 0;
+}
+
+.zani-real-crm-module-stats article {
+  display: flex;
+  min-height: 86px;
+  align-items: center;
+  border-radius: 18px;
+  padding: 18px;
+  background: rgba(255, 140, 0, 0.08);
+  color: var(--stitch-navy);
+  font-size: clamp(17px, 1.55vw, 24px);
+  font-weight: 950;
+  line-height: 1.08;
+}
+
+.zani-real-crm-module-actions {
+  grid-area: actions;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-self: start;
+}
+
+.zani-real-crm-module-actions button {
+  display: inline-flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 14px;
+  padding: 0 16px;
+  background: var(--stitch-orange);
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.zani-real-crm-contact > span,
+.zani-real-crm-panel section > b,
+.zani-real-crm-drawer > span,
+.zani-real-crm-drawer section > b {
+  color: var(--stitch-orange);
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.zani-real-crm-contact h3,
+.zani-real-crm-drawer h3 {
+  margin: 7px 0 0;
+  color: var(--stitch-navy);
+  font-size: 28px;
+  letter-spacing: -0.04em;
+}
+
+.zani-real-crm-contact p,
+.zani-real-crm-panel p,
+.zani-real-crm-drawer p,
+.zani-real-crm-panel dd {
+  margin: 7px 0 0;
+  color: rgba(25, 28, 30, 0.64);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.42;
+}
+
+.zani-real-crm-panel section {
+  border-radius: 16px;
+  padding: 12px;
+  background: rgba(15, 23, 42, 0.035);
+}
+
+.zani-real-crm-panel dl {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 0;
+}
+
+.zani-real-crm-panel dt {
+  color: rgba(25, 28, 30, 0.44);
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.zani-real-crm-actions div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.zani-real-crm-actions button,
+.zani-real-crm-panel textarea + button,
+.zani-real-crm-open,
+.zani-real-crm-drawer nav button {
+  min-height: 38px;
+  border: 1px solid rgba(255, 140, 0, 0.18);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--stitch-orange-dark);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.zani-real-crm-panel textarea {
+  width: 100%;
+  min-height: 72px;
+  resize: none;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 12px;
+  margin-top: 10px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--stitch-navy);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.zani-real-crm-panel textarea + button,
+.zani-real-crm-open {
+  width: 100%;
+  margin-top: 8px;
+  background: var(--stitch-orange);
+  color: #fff;
+}
+
+.zani-real-crm-related {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.zani-real-crm-related span {
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(15, 23, 42, 0.04);
+  color: rgba(25, 28, 30, 0.58);
+  font-size: 11px;
+  font-weight: 850;
+  text-align: center;
+}
+
+.zani-real-crm-related b {
+  display: block;
+  color: var(--stitch-navy);
+  font-size: 18px;
+}
+
+.zani-real-crm-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  justify-content: flex-end;
+  background: transparent;
+}
+
+.zani-real-crm-drawer {
+  width: min(480px, 94vw);
+  height: 100%;
+  overflow-y: auto;
+  padding: 28px;
+  background: #fffaf4;
+  box-shadow: -28px 0 60px rgba(15, 23, 42, 0.18);
+  animation: zani-real-crm-drawer-in 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.zani-real-crm-drawer > button {
+  float: right;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--stitch-navy);
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.zani-real-crm-drawer nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 18px 0;
+}
+
+.zani-real-crm-drawer section {
+  border-radius: 16px;
+  margin-top: 12px;
+  padding: 14px;
+  background: #fff;
+}
+
+/* CRM showcase: compact, clickable product demo that fits inside one landing screen. */
+.zani-crm-showcase-content {
+  grid-template-rows: auto auto auto minmax(0, 1fr) !important;
+  gap: 8px !important;
+}
+
+.zani-crm-showcase-content > .zani-real-crm-notice {
+  display: none;
+}
+
+.zani-crm-showcase-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  overflow: hidden;
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  border-radius: 17px;
+  padding: 10px 12px;
+  background:
+    linear-gradient(135deg, rgba(255, 140, 0, 0.08), rgba(255, 255, 255, 0.94) 56%),
+    #fff;
+}
+
+.zani-crm-showcase-hero span,
+.zani-crm-showcase-primary > span {
+  color: var(--stitch-orange);
+  font-size: 11px;
+  font-weight: 1000;
+  text-transform: uppercase;
+}
+
+.zani-crm-showcase-hero h3 {
+  max-width: 760px;
+  margin: 4px 0 0;
+  overflow: hidden;
+  color: var(--stitch-navy);
+  font-size: clamp(20px, 2.1vw, 30px);
+  font-weight: 1000;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.zani-crm-showcase-hero p {
+  margin: 5px 0 0;
+  overflow: hidden;
+  color: rgba(25, 28, 30, 0.58);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.zani-crm-showcase-stats {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 6px;
+  align-items: center;
+  min-width: 245px;
+}
+
+.zani-crm-showcase-stats strong {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  grid-row: 1 / span 2;
+  place-items: center;
+  border-radius: 16px;
+  background: var(--stitch-orange);
+  color: #fff;
+  font-size: 24px;
+  font-weight: 1000;
+}
+
+.zani-crm-showcase-stats span {
+  overflow: hidden;
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: rgba(255, 140, 0, 0.09);
+  color: var(--stitch-orange-dark);
+  font-size: 10px;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.zani-crm-showcase-flow {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 7px;
+  min-width: 0;
+}
+
+.zani-crm-showcase-flow button {
+  display: grid;
+  align-content: center;
+  min-width: 0;
+  min-height: 58px;
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  border-radius: 15px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.86);
+  color: var(--stitch-navy);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.zani-crm-showcase-flow button.active,
+.zani-crm-showcase-flow button:hover {
+  border-color: rgba(255, 140, 0, 0.34);
+  background: rgba(255, 140, 0, 0.12);
+}
+
+.zani-crm-showcase-flow b,
+.zani-crm-showcase-flow span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.zani-crm-showcase-flow b {
+  font-size: 13px;
+  font-weight: 1000;
+}
+
+.zani-crm-showcase-flow span {
+  margin-top: 4px;
+  color: rgba(25, 28, 30, 0.58);
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.zani-crm-showcase-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(300px, 0.74fr);
+  gap: 10px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.zani-crm-showcase-primary,
+.zani-crm-showcase-detail {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.93);
+  box-shadow: 0 12px 32px rgba(64, 44, 20, 0.052);
+}
+
+.zani-crm-showcase-primary {
+  display: grid;
+  align-content: center;
+  padding: 18px;
+}
+
+.zani-crm-showcase-primary h3 {
+  max-width: 640px;
+  margin: 7px 0 0;
+  color: var(--stitch-navy);
+  font-size: clamp(28px, 3.1vw, 46px);
+  font-weight: 1000;
+  line-height: 0.96;
+}
+
+.zani-crm-showcase-primary p {
+  max-width: 620px;
+  margin: 12px 0 0;
+  color: rgba(25, 28, 30, 0.62);
+  font-size: clamp(13px, 1.1vw, 16px);
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.zani-crm-showcase-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.zani-crm-showcase-actions button {
+  min-height: 38px;
+  border: 0;
+  border-radius: 12px;
+  padding: 0 14px;
+  background: var(--stitch-orange);
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.zani-crm-showcase-actions button:nth-child(3) {
+  border: 1px solid rgba(255, 140, 0, 0.22);
+  background: #fff;
+  color: var(--stitch-orange-dark);
+}
+
+.zani-crm-showcase-detail {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 7px;
+  padding: 10px;
+}
+
+.zani-crm-showcase-mini-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.zani-crm-showcase-mini-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.zani-crm-showcase-mini-tabs button {
+  flex: 0 0 auto;
+  min-height: 32px;
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  border-radius: 999px;
+  padding: 0 10px;
+  background: #fff;
+  color: var(--stitch-navy);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.zani-crm-showcase-mini-tabs button.active {
+  border-color: rgba(255, 140, 0, 0.38);
+  background: rgba(255, 140, 0, 0.12);
+  color: var(--stitch-orange-dark);
+}
+
+.zani-crm-showcase-chat {
+  display: grid;
+  align-content: start;
+  gap: 5px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.zani-crm-showcase-chat p {
+  max-width: 86%;
+  margin: 0;
+  border-radius: 12px;
+  padding: 7px 10px;
+  color: var(--stitch-navy);
+  font-size: 11px;
+  font-weight: 950;
+  line-height: 1.18;
+}
+
+.zani-crm-showcase-chat p.client {
+  justify-self: start;
+  background: #fff3e4;
+}
+
+.zani-crm-showcase-chat p.bot {
+  justify-self: end;
+  background: var(--stitch-orange);
+  color: #fff;
+}
+
+.zani-crm-showcase-result {
+  display: grid;
+  gap: 3px;
+  border-radius: 12px;
+  padding: 9px 11px;
+  background: #111827;
+  color: #fff;
+}
+
+.zani-crm-showcase-result b {
+  font-size: 12px;
+  font-weight: 1000;
+}
+
+.zani-crm-showcase-result span {
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.24;
+}
+
+@keyframes zani-real-crm-drawer-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@media (max-width: 1180px) {
+  .zani-real-crm-board {
+    grid-template-columns: 1fr !important;
+    height: min(720px, calc(100svh - 220px));
+  }
+
+  .zani-real-crm-sidebar {
+    min-height: 0;
+  }
+
+  .zani-real-crm-sidebar nav {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+
+  .zani-real-crm-sidebar nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .zani-real-crm-sidebar nav button {
+    min-width: 154px;
+  }
+
+  .zani-real-crm-niches {
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .zani-real-crm-niches::-webkit-scrollbar {
+    display: none;
+  }
+
+  .zani-real-crm-niches button {
+    min-width: 168px;
+  }
+
+  .zani-crm-showcase-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .zani-crm-showcase-stats {
+    display: flex;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .zani-crm-showcase-stats::-webkit-scrollbar {
+    display: none;
+  }
+
+  .zani-crm-showcase-stats strong {
+    width: 42px;
+    height: 34px;
+    font-size: 18px;
+  }
+
+  .zani-crm-showcase-flow {
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .zani-crm-showcase-flow::-webkit-scrollbar {
+    display: none;
+  }
+
+  .zani-crm-showcase-flow button {
+    min-width: 146px;
+  }
+
+  .zani-crm-showcase-workspace {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 0.9fr) minmax(0, 1fr);
+  }
+
+  .zani-real-crm-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 0.92fr) minmax(0, 1fr);
+  }
+
+  .zani-real-crm-head,
+  .zani-real-crm-table > button {
+    grid-template-columns: 28px minmax(180px, 1fr) 92px 112px minmax(150px, 1fr);
+  }
+
+  .zani-real-crm-head span:nth-child(5),
+  .zani-real-crm-head span:nth-child(6),
+  .zani-real-crm-table > button > span:nth-child(5),
+  .zani-real-crm-table > button > span:nth-child(6) {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .zani-crm {
+    padding-top: 44px !important;
+    padding-bottom: 28px !important;
+  }
+
+  .zani-crm .zani-stitch-container {
+    min-height: calc(100svh - 72px);
+    gap: 14px;
+  }
+
+  .zani-crm .zani-center-copy h2 {
+    font-size: clamp(34px, 10vw, 42px);
+    line-height: 0.98;
+  }
+
+  .zani-crm .zani-center-copy p {
+    display: none;
+  }
+
+  .zani-real-crm-board {
+    height: calc(100svh - 188px);
+    min-height: 560px;
+    padding: 14px !important;
+  }
+
+  .zani-real-crm-sidebar {
+    border-radius: 18px;
+    padding: 12px;
+  }
+
+  .zani-real-crm-brand {
+    grid-template-columns: 36px minmax(0, 1fr);
+  }
+
+  .zani-real-crm-brand > span {
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+    font-size: 21px;
+  }
+
+  .zani-real-crm-sidebar nav button {
+    min-width: 136px;
+    min-height: 40px;
+    font-size: 12px;
+  }
+
+  .zani-real-crm-controls input,
+  .zani-real-crm-controls select,
+  .zani-real-crm-controls button {
+    width: 100%;
+  }
+
+  .zani-real-crm-controls input,
+  .zani-real-crm-controls select {
+    display: none;
+  }
+
+  .zani-real-crm-filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .zani-real-crm-filters button {
+    justify-content: center;
+  }
+
+  .zani-real-crm-head {
+    display: none;
+  }
+
+  .zani-real-crm-table > button {
+    grid-template-columns: 24px 1fr;
+    gap: 8px;
+  }
+
+  .zani-real-crm-table > button > span:nth-child(n+3) {
+    grid-column: 2;
+  }
+
+  .zani-real-crm-layout {
+    min-height: 0;
+    grid-template-rows: minmax(0, 0.82fr) minmax(0, 1fr);
+  }
+
+  .zani-real-crm-actions div,
+  .zani-real-crm-related {
+    grid-template-columns: 1fr;
+  }
+
+  .zani-real-crm-module {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "copy"
+      "stats"
+      "actions";
+    overflow-y: auto;
+    padding: 16px;
+  }
+
+  .zani-real-crm-module h3 {
+    font-size: clamp(30px, 11vw, 42px);
+  }
+
+  .zani-real-crm-module p {
+    margin-top: 12px;
+    font-size: 14px;
+  }
+
+  .zani-real-crm-module-stats article {
+    min-height: 58px;
+    padding: 14px;
+    font-size: 16px;
+  }
+
+  .zani-real-crm-module-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Mobile audit fixes for the polished public sections. */
 @media (max-width: 767px) {
   .zani-agent {
@@ -9460,5 +11124,215 @@ html:has(.zani-stitch) {
   .zani-appointment-card button {
     width: 100% !important;
     min-height: 48px !important;
+  }
+}
+
+/* Final CRM viewport fit: keep the interactive CRM demo on one screen. */
+@media (max-width: 767px) {
+  .zani-stitch .zani-crm.zani-light-section {
+    min-height: 100svh !important;
+    padding-top: 28px !important;
+    padding-bottom: 20px !important;
+  }
+
+  .zani-stitch .zani-crm.zani-light-section > .zani-stitch-container {
+    min-height: calc(100svh - 48px) !important;
+    gap: 10px !important;
+  }
+
+  .zani-stitch .zani-crm .zani-center-copy {
+    margin-bottom: 0 !important;
+  }
+
+  .zani-stitch .zani-crm .zani-center-copy h2 {
+    font-size: clamp(30px, 9vw, 38px) !important;
+    line-height: 0.96 !important;
+  }
+
+  .zani-stitch .zani-crm .zani-center-copy p {
+    display: none !important;
+  }
+
+  .zani-stitch .zani-real-crm-board {
+    height: calc(100svh - 156px) !important;
+    min-height: 430px !important;
+    border-radius: 20px !important;
+    padding: 10px !important;
+  }
+
+  .zani-stitch .zani-real-crm-content {
+    gap: 8px !important;
+  }
+
+  .zani-stitch .zani-real-crm-niches {
+    gap: 6px !important;
+  }
+
+  .zani-stitch .zani-real-crm-niches button {
+    min-width: 132px !important;
+    min-height: 44px !important;
+    border-radius: 12px !important;
+    padding: 8px 10px !important;
+  }
+
+  .zani-stitch .zani-real-crm-niches b {
+    font-size: 11px !important;
+  }
+
+  .zani-stitch .zani-real-crm-niches span {
+    font-size: 9px !important;
+  }
+
+  .zani-stitch .zani-real-crm-sidebar {
+    gap: 8px !important;
+    padding: 10px !important;
+  }
+
+  .zani-stitch .zani-real-crm-brand {
+    padding-bottom: 8px !important;
+  }
+
+  .zani-stitch .zani-real-crm-sidebar nav button {
+    min-width: 126px !important;
+    min-height: 36px !important;
+  }
+
+  .zani-stitch .zani-real-crm-filters {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  .zani-stitch .zani-real-crm-filters button,
+  .zani-stitch .zani-real-crm-controls button {
+    min-height: 34px !important;
+    padding: 0 8px !important;
+    border-radius: 10px !important;
+    font-size: 11px !important;
+  }
+
+  .zani-stitch .zani-real-crm-notice {
+    padding: 8px 10px !important;
+    border-radius: 10px !important;
+    font-size: 11px !important;
+  }
+
+  .zani-stitch .zani-crm-showcase-content {
+    grid-template-rows: auto auto auto minmax(0, 1fr) !important;
+    gap: 6px !important;
+  }
+
+  .zani-stitch .zani-crm-showcase-hero {
+    min-height: 0 !important;
+    border-radius: 14px !important;
+    padding: 10px !important;
+  }
+
+  .zani-stitch .zani-crm-showcase-hero h3 {
+    font-size: 18px !important;
+  }
+
+  .zani-stitch .zani-crm-showcase-hero p {
+    display: none !important;
+  }
+
+  .zani-stitch .zani-crm-showcase-stats span:nth-of-type(n+3) {
+    display: none !important;
+  }
+
+  .zani-stitch .zani-crm-showcase-flow {
+    gap: 6px !important;
+  }
+
+  .zani-stitch .zani-crm-showcase-flow button {
+    min-width: 128px !important;
+    min-height: 52px !important;
+    border-radius: 12px !important;
+    padding: 8px 10px !important;
+  }
+
+  .zani-stitch .zani-crm-showcase-flow b {
+    font-size: 11px !important;
+  }
+
+  .zani-stitch .zani-crm-showcase-flow span {
+    font-size: 9px !important;
+  }
+
+  .zani-stitch .zani-crm-showcase-workspace {
+    grid-template-rows: minmax(0, 0.8fr) minmax(0, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  .zani-stitch .zani-crm-showcase-primary,
+  .zani-stitch .zani-crm-showcase-detail {
+    border-radius: 14px !important;
+  }
+
+  .zani-stitch .zani-crm-showcase-primary {
+    padding: 12px !important;
+  }
+
+  .zani-stitch .zani-crm-showcase-primary h3 {
+    font-size: 24px !important;
+  }
+
+  .zani-stitch .zani-crm-showcase-primary p {
+    margin-top: 8px !important;
+    font-size: 12px !important;
+    line-height: 1.22 !important;
+  }
+
+  .zani-stitch .zani-crm-showcase-actions {
+    gap: 6px !important;
+    margin-top: 10px !important;
+  }
+
+  .zani-stitch .zani-crm-showcase-actions button {
+    min-height: 32px !important;
+    border-radius: 10px !important;
+    padding: 0 10px !important;
+    font-size: 10px !important;
+  }
+
+  .zani-stitch .zani-crm-showcase-detail {
+    gap: 6px !important;
+    padding: 9px !important;
+  }
+
+  .zani-stitch .zani-crm-showcase-mini-tabs button {
+    min-height: 28px !important;
+    font-size: 10px !important;
+  }
+
+  .zani-stitch .zani-crm-showcase-chat {
+    gap: 5px !important;
+  }
+
+  .zani-stitch .zani-crm-showcase-chat p {
+    border-radius: 11px !important;
+    padding: 7px 9px !important;
+    font-size: 10px !important;
+  }
+
+  .zani-stitch .zani-crm-showcase-result {
+    border-radius: 11px !important;
+    padding: 8px 10px !important;
+  }
+
+  .zani-stitch .zani-real-crm-table > button {
+    padding: 10px !important;
+  }
+
+  .zani-stitch .zani-real-crm-panel {
+    gap: 8px !important;
+    padding: 10px !important;
+  }
+
+  .zani-stitch .zani-real-crm-panel section {
+    padding: 9px !important;
+  }
+
+  .zani-stitch .zani-real-crm-contact h3 {
+    font-size: 22px !important;
   }
 }

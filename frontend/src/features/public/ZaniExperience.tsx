@@ -1157,7 +1157,68 @@ function Metric({ value, label, good }: { value: string; label: string; good: st
 
 function MarketplaceSection() {
   const { t } = useI18n();
-  const chain = ["Kaspi", "Wildberries", "Ozon", "AI", "1C", t("landing.experience.integration.moysklad"), t("landing.experience.market.chain.stock"), t("landing.experience.market.chain.prices"), t("landing.experience.market.chain.analytics"), t("landing.experience.market.chain.outreach")];
+  const scenarios = [
+    {
+      id: "kaspi",
+      label: "Kaspi",
+      title: "Kaspi в приоритете",
+      product: "Электрическая щетка Sonic Pro",
+      sku: "KSP-8842",
+      price: "24 990 ₸",
+      competitor: "22 900 ₸",
+      margin: "31%",
+      stock: "18 шт",
+      loss: "−42 000 ₸",
+      recommendation: "Поставить 23 490 ₸, удержать маржу 27% и поднять карточку через промо.",
+      primary: true,
+      events: ["Kaspi конкурент снизил цену на 8%", "ZANI пересчитал себестоимость", "Рекомендация готова к применению"],
+    },
+    {
+      id: "wildberries",
+      label: "Wildberries",
+      title: "WB: контроль акции",
+      product: "Набор ухода Travel Kit",
+      sku: "WB-1097",
+      price: "8 490 ₸",
+      competitor: "8 190 ₸",
+      margin: "24%",
+      stock: "42 шт",
+      loss: "−16 800 ₸",
+      recommendation: "Не снижать цену. Списать 12 шт в промо и поднять остаток в Kaspi.",
+      events: ["WB запустил скидку категории", "Остаток выше нормы", "AI предлагает перераспределение"],
+    },
+    {
+      id: "ozon",
+      label: "Ozon",
+      title: "Ozon: остаток и доставка",
+      product: "Увлажнитель Air Mini",
+      sku: "OZ-4550",
+      price: "17 900 ₸",
+      competitor: "18 300 ₸",
+      margin: "29%",
+      stock: "9 шт",
+      loss: "0 ₸",
+      recommendation: "Цену оставить. Дозаказать 30 шт и включить уведомление о низком остатке.",
+      events: ["Остаток ниже 10 шт", "Маржа стабильна", "Создана задача закупки"],
+    },
+    {
+      id: "one-c",
+      label: "1C / Склад",
+      title: "1C: себестоимость",
+      product: "Складская партия #A-42",
+      sku: "1C-7841",
+      price: "Синхронизировано",
+      competitor: "Нет расхождений",
+      margin: "33%",
+      stock: "126 шт",
+      loss: "0 ₸",
+      recommendation: "Все цены сходятся. Следующая проверка себестоимости через 2 часа.",
+      events: ["Себестоимость подтянулась из 1C", "Остатки сверены", "Расхождений нет"],
+    },
+  ];
+  const [activeMarketId, setActiveMarketId] = useState("kaspi");
+  const activeMarket = scenarios.find((scenario) => scenario.id === activeMarketId) || scenarios[0];
+
   return (
     <section className="zani-light-section zani-marketplace" id="marketplace">
       <div className="zani-stitch-container zani-two-col">
@@ -1165,23 +1226,60 @@ function MarketplaceSection() {
           <span className="zani-kicker">{t("landing.experience.market.kicker")}</span>
           <h2>{t("landing.experience.market.title")}</h2>
           <p>{t("landing.experience.market.text")}</p>
-        </Reveal>
-        <Reveal className="zani-market-network" delay={0.08}>
-          {chain.map((item, index) => (
-            <article className={item === "AI" ? "is-ai" : ""} key={`${item}-${index}`}>
-              <span>{item}</span>
-              {index < chain.length - 1 ? <i /> : null}
-            </article>
-          ))}
-          <div className="zani-market-insight">
-            <BarChart3 size={18} />
-            <b>{t("landing.experience.market.dumping")}</b>
-            <p>{t("landing.experience.market.dumpingText")}</p>
+          <div className="zani-market-proof">
+            <span>Kaspi first</span>
+            <span>Маржа в реальном времени</span>
+            <span>Без ручных таблиц</span>
           </div>
-          <div className="zani-market-insight">
-            <Store size={18} />
-            <b>{t("landing.experience.market.stock")}</b>
-            <p>{t("landing.experience.market.stockText")}</p>
+        </Reveal>
+        <Reveal className="zani-market-control" delay={0.08}>
+          <div className="zani-market-tabs" aria-label="Маркетплейсы">
+            {scenarios.map((scenario) => (
+              <button
+                className={`${activeMarketId === scenario.id ? "active" : ""} ${scenario.primary ? "primary" : ""}`}
+                key={scenario.id}
+                type="button"
+                onClick={() => setActiveMarketId(scenario.id)}
+              >
+                {scenario.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="zani-market-console">
+            <section className="zani-market-product">
+              <div>
+                <span>{activeMarket.title}</span>
+                <h3>{activeMarket.product}</h3>
+                <p>SKU {activeMarket.sku}</p>
+              </div>
+              <div className="zani-market-metrics">
+                <article><b>{activeMarket.price}</b><span>текущая цена</span></article>
+                <article><b>{activeMarket.margin}</b><span>маржа</span></article>
+                <article><b>{activeMarket.stock}</b><span>остаток</span></article>
+              </div>
+            </section>
+
+            <section className="zani-market-ai-card">
+              <div>
+                <BarChart3 size={18} />
+                <span>AI-рекомендация</span>
+              </div>
+              <h3>{activeMarket.recommendation}</h3>
+              <dl>
+                <div><dt>Цена конкурента</dt><dd>{activeMarket.competitor}</dd></div>
+                <div><dt>Риск потери</dt><dd>{activeMarket.loss}</dd></div>
+              </dl>
+            </section>
+          </div>
+
+          <div className="zani-market-events">
+            {activeMarket.events.map((event, index) => (
+              <article key={event}>
+                <span>{`09:${12 + index * 2}`}</span>
+                <b>{event}</b>
+              </article>
+            ))}
           </div>
         </Reveal>
       </div>

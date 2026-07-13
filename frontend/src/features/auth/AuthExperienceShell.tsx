@@ -1,4 +1,4 @@
-import { ArrowLeft, BarChart3, Bot, BriefcaseBusiness, Cloud, Gift, MessageSquareText, ShieldCheck, ShoppingCart, Sparkles, UsersRound } from "lucide-react";
+import { ArrowLeft, Cloud, Gift, MessageSquareText, ShieldCheck, ShoppingCart, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { LanguageSelector } from "../../components/layout/LanguageSelector";
@@ -104,66 +104,10 @@ export function AuthExperienceShell({ children, mode }: AuthExperienceShellProps
             </span>
           </div>
 
-          <DashboardPreview />
         </section>
 
         <section className="zani-auth-card-wrap">{children}</section>
       </div>
     </main>
-  );
-}
-
-function DashboardPreview() {
-  const { t } = useI18n();
-  return (
-    <div className="zani-auth-dashboard" aria-hidden="true">
-      <div className="zani-auth-dashboard-sidebar">
-        <b>ZANI</b>
-        {[t("nav.dashboard"), t("nav.clients"), t("nav.deals"), t("nav.bots"), t("nav.analytics")].map((item) => (
-          <span key={item}>{item}</span>
-        ))}
-      </div>
-      <div className="zani-auth-dashboard-main">
-        <div className="zani-auth-dashboard-title">
-          <div>
-            <p>{t("auth.previewWelcome")}</p>
-            <small>{t("auth.previewScanned")}</small>
-          </div>
-          <UsersRound size={18} />
-        </div>
-        <div className="zani-auth-metrics">
-          {[
-            [t("auth.previewNewLeads"), "248", "+24%"],
-            [t("auth.previewBookings"), "32", "+18%"],
-            [t("auth.previewRevenue"), "2 450 800 ₸", "+32%"],
-          ].map(([label, value, delta]) => (
-            <div key={label}>
-              <span>{label}</span>
-              <strong>{value}</strong>
-              <i>{delta}</i>
-            </div>
-          ))}
-        </div>
-        <div className="zani-auth-pipeline">
-          <div>
-            <BriefcaseBusiness size={15} />
-            {t("auth.previewPipeline")}
-          </div>
-          <span />
-          <span />
-          <span />
-        </div>
-        <div className="zani-auth-dashboard-bottom">
-          <div>
-            <Bot size={16} />
-            {t("auth.previewAiTip")}
-          </div>
-          <div>
-            <BarChart3 size={16} />
-            {t("auth.previewConversion")}
-          </div>
-        </div>
-      </div>
-    </div>
   );
 }

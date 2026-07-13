@@ -1,3 +1,5 @@
+import { Navigate } from "react-router-dom";
+
 import { DubaiRealEstatePage } from "./DubaiRealEstatePage";
 import ZaniExperience from "./ZaniExperience";
 
@@ -6,19 +8,19 @@ export function PublicHomePage() {
 }
 
 export function PublicCrmPage() {
-  return <main className="min-h-screen bg-black" />;
+  return <Navigate to="/#agent" replace />;
 }
 
 export function PublicBotsPage() {
-  return <main className="min-h-screen bg-black" />;
+  return <Navigate to="/#agent" replace />;
 }
 
 export function PublicPricingPage() {
-  return <main className="min-h-screen bg-black" />;
+  return <Navigate to="/#proof" replace />;
 }
 
 export function PublicContactsPage() {
-  return <main className="min-h-screen bg-black" />;
+  return <Navigate to="/#cta" replace />;
 }
 
 export function PublicDubaiRealEstatePage() {

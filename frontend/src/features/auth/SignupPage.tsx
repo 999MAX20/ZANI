@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowRight, Building2, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Building2, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
@@ -60,9 +60,11 @@ export function SignupPage() {
     { value: "other", label: t("businessType.other") },
   ];
   const [error, setError] = useState<string | null>(null);
+  const [step, setStep] = useState<1 | 2>(1);
   const {
     register,
     handleSubmit,
+    trigger,
     watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
@@ -75,6 +77,11 @@ export function SignupPage() {
     { label: t("signup.passwordLettersNumbersCheck"), active: /[A-Za-zА-Яа-я]/.test(passwordValue) && /\d/.test(passwordValue) },
     { label: t("signup.passwordNoSpacesCheck"), active: passwordValue.length > 0 && !/\s/.test(passwordValue) },
   ];
+
+  async function continueToBusiness() {
+    const accountValid = await trigger(["full_name", "phone", "email", "password", "password_confirm"]);
+    if (accountValid) setStep(2);
+  }
 
   async function onSubmit(values: FormValues) {
     setError(null);
@@ -105,39 +112,56 @@ export function SignupPage() {
 
         {error ? <div className="zani-auth-error">{error}</div> : null}
 
+        <div className="zani-signup-progress" aria-label={t("signup.progressAria")}>
+          <span className="is-active"><i>1</i>{t("signup.accountStep")}</span>
+          <span className={step === 2 ? "is-active" : undefined}><i>2</i>{t("signup.businessStep")}</span>
+        </div>
+
         <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="zani-auth-field-grid">
-            <Input label={t("signup.yourName")} placeholder={t("signup.namePlaceholder")} error={errors.full_name?.message} {...register("full_name")} />
-            <Input label={t("signup.phone")} placeholder="+7 777 000 00 00" error={errors.phone?.message} {...register("phone")} />
-          </div>
-          <Input label={t("auth.email")} type="email" placeholder={t("auth.emailPlaceholder")} error={errors.email?.message} {...register("email")} />
-          <div className="zani-auth-field-grid">
-            <Input label={t("auth.password")} type="password" placeholder={t("signup.passwordPlaceholder")} error={errors.password?.message} {...register("password")} />
-            <Input label={t("signup.passwordConfirm")} type="password" placeholder={t("passwordReset.repeatPassword")} error={errors.password_confirm?.message} {...register("password_confirm")} />
-          </div>
-          <div className="zani-auth-password-checks">
-            {passwordChecks.map((check) => (
-              <span key={check.label} data-active={check.active}>
-                <CheckCircle2 size={14} />
-                {check.label}
-              </span>
-            ))}
-          </div>
-          <Input label={t("signup.businessName")} placeholder={t("signup.businessNamePlaceholder")} error={errors.business_name?.message} {...register("business_name")} />
-          <div className="zani-auth-field-grid">
-            <Select label={t("signup.businessType")} options={businessTypeOptions} error={errors.business_type?.message} {...register("business_type")} />
-            <Input label={t("signup.cityOptional")} placeholder={t("signup.cityPlaceholder")} error={errors.city?.message} {...register("city")} />
-          </div>
-          <p className="zani-auth-helper">{t("signup.afterSignInHelper")}</p>
-          <Button className="zani-auth-primary" type="submit" isLoading={isSubmitting}>
-            {t("signup.freeSubmit")}
-            <ArrowRight size={18} />
-          </Button>
+          {step === 1 ? (
+            <>
+              <div className="zani-auth-field-grid">
+                <Input label={t("signup.yourName")} placeholder={t("signup.namePlaceholder")} error={errors.full_name?.message} {...register("full_name")} />
+                <Input label={t("signup.phone")} placeholder="+7 777 000 00 00" error={errors.phone?.message} {...register("phone")} />
+              </div>
+              <Input label={t("auth.email")} type="email" placeholder={t("auth.emailPlaceholder")} error={errors.email?.message} {...register("email")} />
+              <div className="zani-auth-field-grid">
+                <Input label={t("auth.password")} type="password" placeholder={t("signup.passwordPlaceholder")} error={errors.password?.message} {...register("password")} />
+                <Input label={t("signup.passwordConfirm")} type="password" placeholder={t("passwordReset.repeatPassword")} error={errors.password_confirm?.message} {...register("password_confirm")} />
+              </div>
+              <div className="zani-auth-password-checks">
+                {passwordChecks.map((check) => (
+                  <span key={check.label} data-active={check.active}>
+                    <CheckCircle2 size={14} />
+                    {check.label}
+                  </span>
+                ))}
+              </div>
+              <Button className="zani-auth-primary" type="button" onClick={continueToBusiness}>
+                {t("signup.continue")}
+                <ArrowRight size={18} />
+              </Button>
+            </>
+          ) : (
+            <>
+              <Input label={t("signup.businessName")} placeholder={t("signup.businessNamePlaceholder")} error={errors.business_name?.message} {...register("business_name")} />
+              <div className="zani-auth-field-grid">
+                <Select label={t("signup.businessType")} options={businessTypeOptions} error={errors.business_type?.message} {...register("business_type")} />
+                <Input label={t("signup.cityOptional")} placeholder={t("signup.cityPlaceholder")} error={errors.city?.message} {...register("city")} />
+              </div>
+              <p className="zani-auth-helper">{t("signup.afterSignInHelper")}</p>
+              <div className="zani-signup-actions">
+                <button className="zani-auth-step-back" type="button" onClick={() => setStep(1)}><ArrowLeft size={17} />{t("signup.back")}</button>
+                <Button className="zani-auth-primary" type="submit" isLoading={isSubmitting}>
+                  {t("signup.freeSubmit")}
+                  <ArrowRight size={18} />
+                </Button>
+              </div>
+            </>
+          )}
         </form>
 
-        <p className="zani-auth-terms">
-          {t("signup.terms")}
-        </p>
+        {step === 2 ? <p className="zani-auth-terms">{t("signup.terms")}</p> : null}
         <p className="zani-auth-links">
           <span>{t("signup.hasAccess")}</span>
           <Link to="/login">{t("auth.submit")}</Link>

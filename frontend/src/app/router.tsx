@@ -285,7 +285,9 @@ const router = createBrowserRouter([
     ],
   })),
   { path: "*", element: <NotFoundPage />, errorElement: <RouteErrorBoundary /> },
-]);
+], {
+  basename: import.meta.env.BASE_URL,
+});
 
 export function AppRouter() {
   return <RouterProvider router={router} />;

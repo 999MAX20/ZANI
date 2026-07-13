@@ -1,0 +1,1 @@
+import{An as e}from"./layout-yxQ_wwlv.js";var t=e(`CircleDot`,[[`circle`,{cx:`12`,cy:`12`,r:`10`,key:`1mglay`}],[`circle`,{cx:`12`,cy:`12`,r:`1`,key:`41hilf`}]]);export{t};

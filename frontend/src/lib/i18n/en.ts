@@ -1318,6 +1318,8 @@ export const en: Record<string, string> = {
   "resources.typeBox": "Bay / workplace",
   "resources.typeEquipment": "Equipment",
   "resources.typeOther": "Other",
+  "resources.linkedUser": "Responsible team member",
+  "resources.noLinkedUser": "Not assigned",
   "resources.available": "Available for bookings",
   "resources.save": "Save",
   "clients.title": "Clients",

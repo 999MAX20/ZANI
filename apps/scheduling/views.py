@@ -64,7 +64,7 @@ def _parse_range_boundary(value, *, business, end_of_date=False):
 
 
 class ResourceViewSet(TenantModelViewSet):
-    queryset = Resource.objects.select_related("business")
+    queryset = Resource.objects.select_related("business", "linked_user")
     serializer_class = ResourceSerializer
 
     def get_access_resource(self):
@@ -200,7 +200,7 @@ class AppointmentMessageSettingViewSet(TenantModelViewSet):
 
 
 class AppointmentViewSet(TenantModelViewSet):
-    queryset = Appointment.objects.select_related("business", "client", "lead", "service", "resource")
+    queryset = Appointment.objects.select_related("business", "client", "lead", "lead__responsible_user", "service", "resource", "resource__linked_user")
     serializer_class = AppointmentSerializer
 
     def get_queryset(self):

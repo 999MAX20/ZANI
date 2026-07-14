@@ -477,7 +477,7 @@ def apply_appointment_status(
 ):
     appointment = (
         Appointment.objects.select_for_update()
-        .select_related("business", "client", "lead", "service", "resource")
+        .select_related("business", "client", "lead", "lead__responsible_user", "service", "resource", "resource__linked_user")
         .get(pk=appointment.pk)
     )
     previous_status = appointment.status
@@ -674,6 +674,7 @@ def notify_appointment_responsible(appointment, text, *, actor=None, priority=No
 def appointment_responsible_user(appointment, *, actor=None):
     candidates = [
         getattr(getattr(appointment, "lead", None), "responsible_user", None),
+        getattr(getattr(appointment, "resource", None), "linked_user", None),
         actor,
         appointment.business.owner,
     ]
@@ -716,10 +717,11 @@ def schedule_appointment_followups(appointment, *, responsible_user=None):
     cancel_appointment_followups(appointment)
     now = timezone.now()
     notifications = []
+    system_recipient = responsible_user or appointment_responsible_user(appointment)
     for kind, label, send_at, text, channel in _appointment_followup_specs(appointment):
         if send_at <= now:
             send_at = now + timedelta(minutes=5)
-        recipient = None if channel != Notification.Channels.SYSTEM else (responsible_user or appointment.business.owner)
+        recipient = None if channel != Notification.Channels.SYSTEM else system_recipient
         notifications.append(
             Notification.objects.create(
                 business=appointment.business,
@@ -753,7 +755,7 @@ def schedule_post_service_followup(appointment, *, responsible_user=None):
     ).update(status=Notification.Statuses.CANCELLED, updated_at=timezone.now())
 
     channel = _appointment_notification_channel(appointment.client, setting.channel_policy)
-    recipient = None if channel != Notification.Channels.SYSTEM else (responsible_user or appointment.business.owner)
+    recipient = None if channel != Notification.Channels.SYSTEM else (responsible_user or appointment_responsible_user(appointment))
     send_at = max(timezone.now() + timedelta(minutes=5), appointment.end_at + timedelta(minutes=setting.offset_minutes))
     return Notification.objects.create(
         business=appointment.business,

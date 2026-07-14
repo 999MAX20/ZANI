@@ -1,10 +1,15 @@
 from rest_framework import serializers
 
+from apps.accounts.models import User
 from apps.scheduling.models import Appointment, AppointmentMessageSetting, Resource, WorkingHours
 from apps.scheduling.services import validate_appointment_availability
 
 
 class ResourceSerializer(serializers.ModelSerializer):
+    linked_user = serializers.PrimaryKeyRelatedField(queryset=User.objects.filter(is_active=True), required=False, allow_null=True)
+    linked_user_name = serializers.SerializerMethodField()
+    linked_user_email = serializers.EmailField(source="linked_user.email", read_only=True, allow_null=True)
+
     class Meta:
         model = Resource
         fields = [
@@ -12,11 +17,30 @@ class ResourceSerializer(serializers.ModelSerializer):
             "business",
             "name",
             "resource_type",
+            "linked_user",
+            "linked_user_name",
+            "linked_user_email",
             "is_active",
             "created_at",
             "updated_at",
         ]
         read_only_fields = ["created_at", "updated_at"]
+
+    def get_linked_user_name(self, obj):
+        if obj.linked_user is None:
+            return ""
+        return obj.linked_user.full_name or obj.linked_user.email
+
+    def validate(self, attrs):
+        business = attrs.get("business") or getattr(self.instance, "business", None)
+        linked_user = attrs.get("linked_user", getattr(self.instance, "linked_user", None))
+        should_validate_link = self.instance is None or "linked_user" in attrs or "business" in attrs
+        if should_validate_link and linked_user is not None and business is not None:
+            is_owner = business.owner_id == linked_user.id
+            is_member = business.members.filter(user=linked_user, is_active=True).exists()
+            if not linked_user.is_active or not (is_owner or is_member):
+                raise serializers.ValidationError({"linked_user": "Linked user must be an active member of the selected business."})
+        return attrs
 
 
 class WorkingHoursSerializer(serializers.ModelSerializer):

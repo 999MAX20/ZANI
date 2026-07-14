@@ -1,10 +1,11 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BriefcaseBusiness, CalendarClock, Plus, UsersRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { getApiErrorMessage } from "../../api/client";
 import { resourcesApi } from "../../api/resources";
+import { teamApi } from "../../api/team";
 import { ResourceForm } from "../../components/forms/ResourceForm";
 import { useNotification } from "../../components/notifications/NotificationProvider";
 import { DataTable } from "../../components/tables/DataTable";
@@ -34,6 +35,11 @@ export function ResourcesPage() {
   const queryClient = useQueryClient();
   const { business } = useActiveBusiness();
   const { resources, appointments, workingHours } = useEntityData({ resources: true, appointments: true, workingHours: true });
+  const teamMembers = useQuery({
+    queryKey: ["team-members", business?.id],
+    queryFn: teamApi.members,
+    enabled: Boolean(business),
+  });
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Resource | undefined>();
   const [draft, setDraft] = useState<Partial<Resource> | undefined>();
@@ -42,6 +48,7 @@ export function ResourcesPage() {
       editing ? resourcesApi.update({ id: editing.id, payload }) : resourcesApi.create(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["resources"] });
+      queryClient.invalidateQueries({ queryKey: ["team-members"] });
       setOpen(false);
       setEditing(undefined);
       setDraft(undefined);
@@ -55,9 +62,10 @@ export function ResourcesPage() {
   }, [actionErrorMessage, showNotification]);
 
   if (!business) return <ErrorState message={t("resources.noBusiness")} />;
-  if (resources.isLoading || appointments.isLoading || workingHours.isLoading) return <LoadingState />;
+  if (resources.isLoading || appointments.isLoading || workingHours.isLoading || teamMembers.isLoading) return <LoadingState />;
 
   const resourceList = resources.data || [];
+  const activeTeamMembers = (teamMembers.data || []).filter((member) => member.is_active);
   const activeResources = resourceList.filter((resource) => resource.is_active);
   const staffCount = activeResources.filter((resource) => resource.resource_type === "staff").length;
   const scheduledResources = new Set((workingHours.data || []).map((item) => item.resource).filter(Boolean)).size;
@@ -118,13 +126,14 @@ export function ResourcesPage() {
         columns={[
           { header: t("resources.name"), cell: (resource) => <span className="font-medium text-ink">{resource.name}</span> },
           { header: t("resources.type"), cell: (resource) => t(resourceTypeLabelKeys[resource.resource_type] || "resources.typeOther") },
+          { header: t("resources.linkedUser"), cell: (resource) => resource.linked_user_name || t("resources.noLinkedUser") },
           { header: t("resources.bookings"), cell: (resource) => resourceUsage(resource) },
           { header: t("appointment.status"), cell: (resource) => <StatusBadge status={resource.is_active ? "active" : "inactive"} /> },
           { header: t("appointments.actions"), cell: (resource) => <Button variant="ghost" onClick={() => { setDraft(undefined); setEditing(resource); setOpen(true); }}>{t("appointments.edit")}</Button> },
         ]}
       />
       <Modal title={editing ? t("resources.editTitle") : t("resources.add")} open={open} onClose={() => { setOpen(false); setEditing(undefined); setDraft(undefined); }}>
-        <ResourceForm businessId={business.id} initial={editing || draft} onSubmit={(payload) => mutation.mutateAsync(payload)} />
+        <ResourceForm businessId={business.id} initial={editing || draft} teamMembers={activeTeamMembers} onSubmit={(payload) => mutation.mutateAsync(payload)} />
       </Modal>
     </>
   );

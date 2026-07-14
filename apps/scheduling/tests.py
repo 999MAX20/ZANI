@@ -348,6 +348,153 @@ class CorePlatformTests(TestCase):
             {"confirmation", "reminder", "thank_you"},
         )
 
+    def test_resource_can_link_active_business_member(self):
+        api = APIClient()
+        api.force_authenticate(self.owner)
+        staff = User.objects.create_user(
+            username="resource-staff",
+            email="resource-staff@example.com",
+            password="pass",
+            full_name="Resource Staff",
+            role=User.Roles.BUSINESS_MANAGER,
+        )
+        BusinessMember.objects.create(business=self.business, user=staff, role=BusinessMember.Roles.STAFF)
+
+        response = api.post(
+            "/api/resources/",
+            {
+                "business": self.business.id,
+                "name": "Resource Staff",
+                "resource_type": Resource.ResourceTypes.STAFF,
+                "linked_user": staff.id,
+                "is_active": True,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        resource = Resource.objects.get(id=response.data["id"])
+        self.assertEqual(resource.linked_user, staff)
+        self.assertEqual(response.data["linked_user"], staff.id)
+        self.assertEqual(response.data["linked_user_name"], "Resource Staff")
+
+    def test_resource_rejects_inactive_or_cross_tenant_linked_user(self):
+        api = APIClient()
+        api.force_authenticate(self.owner)
+        inactive_staff = User.objects.create_user(
+            username="inactive-staff",
+            email="inactive-staff@example.com",
+            password="pass",
+            role=User.Roles.BUSINESS_MANAGER,
+        )
+        BusinessMember.objects.create(
+            business=self.business,
+            user=inactive_staff,
+            role=BusinessMember.Roles.STAFF,
+            is_active=False,
+        )
+        other_owner = User.objects.create_user(
+            username="other-owner",
+            email="other-owner@example.com",
+            password="pass",
+            role=User.Roles.BUSINESS_OWNER,
+        )
+        other_business = Business.objects.create(
+            owner=other_owner,
+            name="Other Clinic",
+            slug="other-clinic",
+            business_type=Business.BusinessTypes.MEDICAL,
+            city="Astana",
+            timezone="Asia/Almaty",
+        )
+        BusinessMember.objects.create(business=other_business, user=other_owner, role=BusinessMember.Roles.OWNER)
+
+        inactive_response = api.post(
+            "/api/resources/",
+            {
+                "business": self.business.id,
+                "name": "Inactive Staff",
+                "resource_type": Resource.ResourceTypes.STAFF,
+                "linked_user": inactive_staff.id,
+                "is_active": True,
+            },
+            format="json",
+        )
+        cross_tenant_response = api.post(
+            "/api/resources/",
+            {
+                "business": self.business.id,
+                "name": "Foreign Staff",
+                "resource_type": Resource.ResourceTypes.STAFF,
+                "linked_user": other_owner.id,
+                "is_active": True,
+            },
+            format="json",
+        )
+
+        self.assertEqual(inactive_response.status_code, 400)
+        self.assertEqual(cross_tenant_response.status_code, 400)
+        self.assertEqual(Resource.objects.filter(name__in=["Inactive Staff", "Foreign Staff"]).count(), 0)
+
+    def test_appointment_creation_notifies_linked_resource_user(self):
+        api = APIClient()
+        api.force_authenticate(self.owner)
+        staff = User.objects.create_user(
+            username="notified-staff",
+            email="notified-staff@example.com",
+            password="pass",
+            role=User.Roles.BUSINESS_MANAGER,
+        )
+        BusinessMember.objects.create(business=self.business, user=staff, role=BusinessMember.Roles.STAFF)
+        client = Client.objects.create(business=self.business, full_name="Client")
+        service = Service.objects.create(business=self.business, name="Consultation", duration_minutes=60)
+        resource = Resource.objects.create(
+            business=self.business,
+            name="Notified Staff",
+            resource_type=Resource.ResourceTypes.STAFF,
+            linked_user=staff,
+        )
+        WorkingHours.objects.create(
+            business=self.business,
+            resource=resource,
+            weekday=0,
+            start_time=time(9, 0),
+            end_time=time(18, 0),
+        )
+
+        response = api.post(
+            "/api/appointments/",
+            {
+                "business": self.business.id,
+                "client": client.id,
+                "service": service.id,
+                "resource": resource.id,
+                "start_at": "2026-05-11T10:00:00+05:00",
+                "source": Appointment.Sources.MANUAL,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        appointment_id = response.data["id"]
+        self.assertTrue(
+            Notification.objects.filter(
+                business=self.business,
+                appointment_id=appointment_id,
+                recipient=staff,
+                channel=Notification.Channels.SYSTEM,
+                action_label="Open appointment",
+            ).exists()
+        )
+        self.assertFalse(
+            Notification.objects.filter(
+                business=self.business,
+                appointment_id=appointment_id,
+                recipient=self.owner,
+                action_label="Open appointment",
+            ).exists()
+        )
+
     def test_appointment_api_cancels_pending_followups_when_cancelled(self):
         api = APIClient()
         api.force_authenticate(self.owner)

@@ -1318,6 +1318,8 @@ export const kk: Record<string, string> = {
   "resources.typeBox": "Бокс / жұмыс орны",
   "resources.typeEquipment": "Жабдық",
   "resources.typeOther": "Басқа",
+  "resources.linkedUser": "Жауапты қызметкер",
+  "resources.noLinkedUser": "Тағайындалмаған",
   "resources.available": "Жазбаға қолжетімді",
   "resources.save": "Сақтау",
   "clients.title": "Клиенттер",

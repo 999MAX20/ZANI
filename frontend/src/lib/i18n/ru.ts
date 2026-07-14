@@ -1315,6 +1315,8 @@ export const ru: Record<string, string> = {
   "resources.typeBox": "Бокс / рабочее место",
   "resources.typeEquipment": "Оборудование",
   "resources.typeOther": "Другое",
+  "resources.linkedUser": "Ответственный сотрудник",
+  "resources.noLinkedUser": "Не назначен",
   "resources.available": "Доступен для записи",
   "resources.save": "Сохранить",
   "clients.title": "Клиенты",

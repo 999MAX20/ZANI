@@ -19,10 +19,20 @@ class Resource(TimeStampedModel):
     business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name="resources")
     name = models.CharField(max_length=255)
     resource_type = models.CharField(max_length=32, choices=ResourceTypes.choices, default=ResourceTypes.STAFF)
+    linked_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="scheduled_resources",
+    )
     is_active = models.BooleanField(default=True)
 
     class Meta:
         ordering = ["name"]
+        indexes = [
+            models.Index(fields=["business", "linked_user"], name="sched_res_bus_user_idx"),
+        ]
 
     def __str__(self):
         return self.name

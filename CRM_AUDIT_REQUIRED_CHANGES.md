@@ -206,7 +206,7 @@ Completion note 2026-07-14:
 
 ### 5. Add Resource to User mapping for scheduling staff ownership
 
-- [ ] Design and implement a safe `Resource -> User` or `Resource -> BusinessMembership` mapping.
+- [x] Design and implement a safe `Resource -> User` or `Resource -> BusinessMembership` mapping.
 
 Problem:
 
@@ -243,6 +243,13 @@ Test gate:
 - Resource can link only to active member of same business.
 - Appointment notification targets linked user.
 - Cross-tenant assignment rejected.
+
+Completion note 2026-07-14:
+
+- affected area: permissions yes through Resource serializer validation against owner/active BusinessMember and existing settings endpoint permissions; notifications yes through appointment responsible routing and system follow-up recipients; BusinessEvent/activity indirect only, no new event type was added; AI indirect through more accurate staff ownership context; migrations/env yes through `apps/scheduling/migrations/0006_resource_linked_user.py`; frontend yes through Resources page/form/table contract.
+- checks run: `.\.venv\Scripts\python.exe manage.py makemigrations scheduling --name resource_linked_user`; targeted scheduling pytest for active member link, inactive/cross-tenant rejection and linked-user notification (`3 passed`); `.\.venv\Scripts\python.exe -m pytest apps\scheduling\tests.py -q` (`39 passed`); `.\.venv\Scripts\python.exe manage.py check`; `cd frontend && npm run build`; `.\.venv\Scripts\python.exe manage.py migrate`; `.\.venv\Scripts\python.exe manage.py makemigrations --check --dry-run`; scoped CRM pytest for clients, lead forms, crm, scheduling, tasks and tenant isolation (`124 passed`).
+- checks skipped: full `scripts/codex_verify.sh`, because this was a bounded scheduling Resource/User mapping with explicit backend, migration, scoped CRM and frontend build gates already run on Windows.
+- baseline failures: none.
 
 ### 6. Harden outreach campaign lifecycle
 

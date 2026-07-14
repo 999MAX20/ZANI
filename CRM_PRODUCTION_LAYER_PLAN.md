@@ -30,11 +30,13 @@ Update 2026-07-13: Phase 12 is complete at the current CRM scope. `apps/analytic
 
 Статус: Phase 6 scheduling checklist is complete at current scope.
 
+Update 2026-07-14: Scheduling resources now support an optional `linked_user` staff owner. Resource API create/update validates that the linked user is the business owner or an active member of the same business, exposes safe display fields for the Resources page, and rejects inactive or cross-tenant assignments. Appointment responsible routing now uses lead responsible user -> linked resource user -> actor -> business owner, so direct resource staff can receive appointment notifications and system follow-ups.
+
 Update 2026-07-14: Appointment confirmation/cancellation replies from Telegram/WhatsApp now call scheduling lifecycle services instead of mutating `appointment.status` inside notification delivery. Client-triggered cancellation records explicit source/channel/reason metadata in activity and request-less system audit, cancels pending appointment follow-ups, triggers appointment-cancelled automations and creates the same follow-up task path as API cancellation.
 
 Update 2026-07-09: Phase 6 pass 2 completed mobile agenda UX. The mobile calendar now exposes a day agenda header, working-hours label, booking/open-slot/task counters, direct new-booking and working-hours actions, row-style appointment items and linked task rows. Mobile Playwright smoke now asserts the agenda header and new-booking action on `/app/calendar`.
 
-Update 2026-07-09: Phase 6 pass 1 hardened appointment lifecycle as a CRM mechanic. Appointment create/reschedule availability rules were reviewed and verified against working-hours, overlap and resource day-off tests. Cancel/no-show now require a reason in API and UI, terminal lifecycle replay is rejected, cancel/no-show activity/audit carries the reason, cancel/no-show/complete creates linked follow-up tasks, and appointment creation/lifecycle emits internal responsible-user notifications. Current responsible notification routing uses lead responsible user -> actor -> business owner because `Resource` is not linked to `User` in the current schema.
+Update 2026-07-09: Phase 6 pass 1 hardened appointment lifecycle as a CRM mechanic. Appointment create/reschedule availability rules were reviewed and verified against working-hours, overlap and resource day-off tests. Cancel/no-show now require a reason in API and UI, terminal lifecycle replay is rejected, cancel/no-show activity/audit carries the reason, cancel/no-show/complete creates linked follow-up tasks, and appointment creation/lifecycle emits internal responsible-user notifications. The initial responsible notification route used lead responsible user -> actor -> business owner before Resource -> User mapping was added.
 
 Сделано:
 

@@ -902,6 +902,9 @@ export type Resource = {
   business: Id;
   name: string;
   resource_type: "staff" | "room" | "hall" | "box" | "equipment" | "other";
+  linked_user: Id | null;
+  linked_user_name?: string;
+  linked_user_email?: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;

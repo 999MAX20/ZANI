@@ -1,0 +1,54 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Django/local generated
+.env
+.env.*
+!.env.example
+!.env.local.example
+!.env.render.example
+!.env.staging.example
+!.env.production.example
+!frontend/.env.staging.example
+!frontend/.env.production.example
+db.sqlite3
+media/
+staticfiles/
+logs/
+*.log
+*.pid
+
+# Node/frontend
+node_modules/
+frontend/node_modules/
+dist/
+build/
+frontend/dist/
+*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
+coverage/
+playwright-report/
+test-results/
+
+# OS/editor
+.DS_Store
+__MACOSX/
+.vscode/
+.idea/
+
+# Archives
+*.zip
+
+# Local scratch/artifacts
+troubles/
+useless/

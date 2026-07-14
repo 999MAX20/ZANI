@@ -1,0 +1,7 @@
+interface:
+  display_name: "ZANI Incident Response"
+  short_description: "Diagnose ZANI incidents safely and clearly"
+  default_prompt: "Use $zani-handle-incident to diagnose and contain a ZANI production or staging incident safely."
+
+policy:
+  allow_implicit_invocation: true

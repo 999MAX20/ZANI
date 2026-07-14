@@ -1,0 +1,7 @@
+interface:
+  display_name: "ZANI Code Review"
+  short_description: "Review ZANI changes for production risks"
+  default_prompt: "Use $zani-review-code to review a ZANI change and report only actionable findings."
+
+policy:
+  allow_implicit_invocation: true

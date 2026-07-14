@@ -1,0 +1,7 @@
+interface:
+  display_name: "ZANI Access Review"
+  short_description: "Review tenant isolation and permissions"
+  default_prompt: "Use $zani-review-access to review this ZANI change for tenant isolation and backend authorization."
+
+policy:
+  allow_implicit_invocation: true

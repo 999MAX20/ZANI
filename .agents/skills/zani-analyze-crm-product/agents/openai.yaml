@@ -1,0 +1,7 @@
+interface:
+  display_name: "ZANI CRM Product Analysis"
+  short_description: "Analyze ZANI against real CRM mechanics"
+  default_prompt: "Use $zani-analyze-crm-product to assess an implemented ZANI workflow against practical CRM mechanics."
+
+policy:
+  allow_implicit_invocation: true

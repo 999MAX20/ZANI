@@ -1,0 +1,94 @@
+import { Bot, CalendarClock, CheckCircle2, ClipboardList, MessageCircle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+
+import { Card, CardBody } from "../../components/ui/Card";
+import { PageHeader } from "../../components/ui/PageHeader";
+import { ErrorState, LoadingState } from "../../components/ui/StateViews";
+import { unwrapList } from "../../api/client";
+import { formatDateTime } from "../../lib/format";
+import { useActiveBusiness } from "../../hooks/useBusiness";
+import { useEntityData } from "../../hooks/useEntityData";
+import { useI18n } from "../../lib/i18n";
+
+export function TimelinePage() {
+  const { language, t } = useI18n();
+  const { business } = useActiveBusiness();
+  const { activityEvents, clients } = useEntityData({ activityEvents: true, clients: true });
+  const [searchParams] = useSearchParams();
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    setSearch(searchParams.get("search") || "");
+  }, [searchParams]);
+
+  if (!business) return <ErrorState message={t("timeline.noBusiness")} />;
+  if (activityEvents.isLoading || clients.isLoading) return <LoadingState />;
+
+  const clientList = unwrapList(clients.data);
+  const rows = unwrapList(activityEvents.data).filter((event) => {
+    const text = `${event.event_type} ${event.text}`.toLowerCase();
+    return !search || text.includes(search.toLowerCase());
+  });
+  const grouped = rows.reduce<Record<string, typeof rows>>((acc, event) => {
+    const key = new Intl.DateTimeFormat(language === "en" ? "en-US" : language === "kk" ? "kk-KZ" : "ru-RU", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    }).format(new Date(event.created_at));
+    acc[key] = acc[key] || [];
+    acc[key].push(event);
+    return acc;
+  }, {});
+
+  function iconFor(category: string) {
+    if (category === "message") return <MessageCircle size={18} />;
+    if (category === "appointment") return <CalendarClock size={18} />;
+    if (category === "task") return <CheckCircle2 size={18} />;
+    if (category === "automation") return <Bot size={18} />;
+    return <ClipboardList size={18} />;
+  }
+
+  return (
+    <>
+      <PageHeader title={t("timeline.title")} description={t("timeline.description")} />
+      <Card>
+        <CardBody>
+          <div className="space-y-6">
+            {Object.entries(grouped).map(([date, events]) => (
+              <section key={date} className="space-y-3">
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{date}</p>
+                {events.map((event) => {
+                  const client = clientList.find((item) => item.id === event.client);
+                  return (
+                    <div key={event.id} className="rounded-3xl border border-slate-100 bg-white/80 p-4 shadow-sm">
+                      <div className="flex items-start gap-3">
+                        <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-50 text-brand-600">
+                          {iconFor(event.category)}
+                        </span>
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-semibold text-midnight">{event.text || event.event_type}</p>
+                            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-500">{event.category}</span>
+                          </div>
+                          <p className="mt-1 text-sm text-slate-500">{client?.full_name || t("timeline.noClient")} · {formatDateTime(event.created_at)}</p>
+                          {event.text && event.text !== event.event_type ? <p className="mt-2 text-sm leading-6 text-slate-700">{event.event_type}</p> : null}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </section>
+            ))}
+            {!rows.length ? (
+              <div className="rounded-3xl border border-dashed border-slate-200 bg-white/60 p-6 text-center">
+                <p className="font-bold text-midnight">{t("timeline.emptyTitle")}</p>
+                <p className="mt-1 text-sm text-slate-500">{t("timeline.emptyText")}</p>
+              </div>
+            ) : null}
+          </div>
+        </CardBody>
+      </Card>
+    </>
+  );
+}

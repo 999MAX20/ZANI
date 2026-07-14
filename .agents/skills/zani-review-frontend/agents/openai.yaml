@@ -1,0 +1,7 @@
+interface:
+  display_name: "ZANI Frontend Review"
+  short_description: "Build and review production ZANI frontend"
+  default_prompt: "Use $zani-review-frontend to implement or review a ZANI authenticated frontend flow."
+
+policy:
+  allow_implicit_invocation: true

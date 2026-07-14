@@ -1,0 +1,7 @@
+interface:
+  display_name: "ZANI Integration Reliability"
+  short_description: "Build safe and reliable ZANI integrations"
+  default_prompt: "Use $zani-build-integration-reliability to implement or review a ZANI provider integration."
+
+policy:
+  allow_implicit_invocation: true

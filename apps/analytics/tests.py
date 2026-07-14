@@ -1,0 +1,380 @@
+from datetime import datetime, timedelta
+from decimal import Decimal
+from zoneinfo import ZoneInfo
+
+from django.test import TestCase
+from django.utils import timezone
+from rest_framework.test import APIClient
+
+from apps.accounts.models import User
+from apps.bots.models import Bot, BotConversation
+from apps.businesses.models import Business, BusinessMember
+from apps.clients.models import Client
+from apps.core.models import AuditLog
+from apps.integrations.models import BusinessConnector, BusinessEvent, ConnectorSyncRun
+from apps.crm.models import Deal, Pipeline, PipelineStage
+from apps.leads.models import Lead
+from apps.scheduling.models import Appointment
+from apps.services.models import Service
+from apps.tasks.models import Task
+
+
+class OwnerDashboardAnalyticsTests(TestCase):
+    def setUp(self):
+        self.api = APIClient()
+        self.owner = User.objects.create_user(
+            username="analytics-owner",
+            email="analytics-owner@example.com",
+            password="pass",
+            role=User.Roles.BUSINESS_OWNER,
+        )
+        self.other_owner = User.objects.create_user(
+            username="analytics-other",
+            email="analytics-other@example.com",
+            password="pass",
+            role=User.Roles.BUSINESS_OWNER,
+        )
+        self.business = Business.objects.create(owner=self.owner, name="Analytics Clinic", slug="analytics-clinic", timezone="Asia/Almaty")
+        self.other_business = Business.objects.create(owner=self.other_owner, name="Other Analytics", slug="other-analytics")
+        BusinessMember.objects.create(business=self.business, user=self.owner, role=BusinessMember.Roles.OWNER)
+        BusinessMember.objects.create(business=self.other_business, user=self.other_owner, role=BusinessMember.Roles.OWNER)
+        self.client = Client.objects.create(business=self.business, full_name="Analytics Client")
+        self.service = Service.objects.create(business=self.business, name="Consultation", duration_minutes=60, price_from=15000)
+        self.pipeline = Pipeline.objects.create(business=self.business, name="Sales", slug="sales", is_default=True)
+        self.stage = PipelineStage.objects.create(business=self.business, pipeline=self.pipeline, name="New", order=1, probability=20)
+        self.api.force_authenticate(self.owner)
+
+    def test_owner_dashboard_returns_real_metrics(self):
+        Lead.objects.create(business=self.business, client=self.client, source=Lead.Sources.WEBSITE, status=Lead.Statuses.NEW)
+        Lead.objects.create(business=self.business, client=self.client, source=Lead.Sources.WEBSITE, status=Lead.Statuses.APPOINTMENT_CREATED)
+        Lead.objects.create(business=self.business, client=self.client, source=Lead.Sources.TELEGRAM, status=Lead.Statuses.CLOSED)
+        today = timezone.localdate()
+        start_at = datetime(today.year, today.month, today.day, 10, 0, tzinfo=ZoneInfo("Asia/Almaty"))
+        Appointment.objects.create(
+            business=self.business,
+            client=self.client,
+            service=self.service,
+            start_at=start_at,
+            end_at=start_at + timedelta(hours=1),
+            status=Appointment.Statuses.COMPLETED,
+        )
+        Appointment.objects.create(
+            business=self.business,
+            client=self.client,
+            service=self.service,
+            start_at=start_at + timedelta(hours=2),
+            end_at=start_at + timedelta(hours=3),
+            status=Appointment.Statuses.NO_SHOW,
+        )
+        Task.objects.create(business=self.business, client=self.client, title="Overdue", due_at=timezone.now() - timedelta(hours=1))
+        Task.objects.create(
+            business=self.business,
+            client=self.client,
+            title="Snoozed overdue",
+            due_at=timezone.now() - timedelta(hours=1),
+            snoozed_until=timezone.now() + timedelta(hours=2),
+        )
+
+        response = self.api.get("/api/analytics/owner-dashboard/", {"business": self.business.id})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["new_leads"], 1)
+        self.assertEqual(response.data["appointments_today"], 2)
+        self.assertEqual(response.data["appointments_completed"], 1)
+        self.assertEqual(response.data["no_show_count"], 1)
+        self.assertEqual(response.data["conversion_lead_to_appointment"], 33)
+        self.assertEqual(response.data["open_tasks"], 2)
+        self.assertEqual(response.data["overdue_tasks"], 1)
+        self.assertEqual(response.data["revenue_estimate"], "15000")
+        self.assertEqual(response.data["leads_by_source"][0]["source"], Lead.Sources.WEBSITE)
+        self.assertIn("business_pulse", response.data)
+        self.assertIn("recommendations", response.data)
+        self.assertIn("quick_connect", response.data)
+        self.assertIn("setup", response.data)
+        self.assertIn("connector_health", response.data)
+        self.assertIn("latest_business_events", response.data)
+        self.assertIn("attention_items", response.data)
+        self.assertIn("mobile_onboarding", response.data)
+        self.assertEqual(response.data["mobile_onboarding"]["score"], response.data["setup"]["score"])
+        self.assertEqual(response.data["mobile_onboarding"]["steps"][0]["key"], "landing")
+        self.assertTrue(any(item["key"] == "sales_data" for item in response.data["mobile_onboarding"]["steps"]))
+        self.assertEqual(response.data["business_pulse"]["tone"], "setup")
+        self.assertTrue(any(item["key"] == "upload_sales" for item in response.data["recommendations"]))
+        self.assertEqual(response.data["quick_connect"][0]["key"], "whatsapp")
+
+    def test_owner_dashboard_returns_phase_12_crm_metrics_and_blocks_tenant_leakage(self):
+        lead = Lead.objects.create(business=self.business, client=self.client, source=Lead.Sources.WEBSITE, status=Lead.Statuses.NEW, responsible_user=self.owner)
+        second_lead = Lead.objects.create(
+            business=self.business,
+            client=self.client,
+            source=Lead.Sources.TELEGRAM,
+            status=Lead.Statuses.APPOINTMENT_CREATED,
+            responsible_user=self.owner,
+        )
+        Deal.objects.create(
+            business=self.business,
+            client=self.client,
+            lead=lead,
+            pipeline=self.pipeline,
+            stage=self.stage,
+            title="Won analytics deal",
+            amount=42000,
+            owner=self.owner,
+            status=Deal.Statuses.WON,
+        )
+        Deal.objects.create(
+            business=self.business,
+            client=self.client,
+            lead=second_lead,
+            pipeline=self.pipeline,
+            stage=self.stage,
+            title="Lost analytics deal",
+            amount=18000,
+            owner=self.owner,
+            status=Deal.Statuses.LOST,
+        )
+        start_at = timezone.now()
+        Appointment.objects.create(
+            business=self.business,
+            client=self.client,
+            lead=lead,
+            service=self.service,
+            start_at=start_at,
+            end_at=start_at + timedelta(hours=1),
+            status=Appointment.Statuses.COMPLETED,
+        )
+        Appointment.objects.create(
+            business=self.business,
+            client=self.client,
+            lead=second_lead,
+            service=self.service,
+            start_at=start_at + timedelta(hours=2),
+            end_at=start_at + timedelta(hours=3),
+            status=Appointment.Statuses.NO_SHOW,
+        )
+        Task.objects.create(business=self.business, client=self.client, title="Phase 12 overdue", due_at=timezone.now() - timedelta(hours=2), assignee=self.owner)
+        bot = Bot.objects.create(business=self.business, name="Website bot")
+        conversation = BotConversation.objects.create(
+            business=self.business,
+            bot=bot,
+            channel=BotConversation.Channels.WEBSITE,
+            status=BotConversation.Statuses.OPEN,
+            client=self.client,
+            assigned_to=self.owner,
+            unread_count=2,
+            handoff_required=True,
+            last_inbound_at=timezone.now() - timedelta(hours=1),
+            last_message_at=timezone.now() - timedelta(minutes=20),
+        )
+        connector = BusinessConnector.objects.create(
+            business=self.business,
+            provider=BusinessConnector.Providers.WHATSAPP,
+            capability=BusinessConnector.Capabilities.COMMUNICATIONS,
+            name="WhatsApp",
+            status=BusinessConnector.Statuses.ERROR,
+        )
+        ConnectorSyncRun.objects.create(
+            business=self.business,
+            connector=connector,
+            status=ConnectorSyncRun.Statuses.FAILED,
+            mode=ConnectorSyncRun.Modes.HEALTHCHECK,
+            error="provider unavailable",
+        )
+        other_client = Client.objects.create(business=self.other_business, full_name="Other client")
+        other_pipeline = Pipeline.objects.create(business=self.other_business, name="Other", slug="other")
+        other_stage = PipelineStage.objects.create(business=self.other_business, pipeline=other_pipeline, name="Other stage", order=1)
+        other_lead = Lead.objects.create(business=self.other_business, client=other_client, source=Lead.Sources.WHATSAPP, status=Lead.Statuses.NEW)
+        Deal.objects.create(
+            business=self.other_business,
+            client=other_client,
+            lead=other_lead,
+            pipeline=other_pipeline,
+            stage=other_stage,
+            title="Other tenant deal",
+            amount=999999,
+            status=Deal.Statuses.WON,
+        )
+
+        response = self.api.get("/api/analytics/owner-dashboard/", {"business": self.business.id})
+
+        self.assertEqual(response.status_code, 200)
+        funnel = response.data["crm_funnel"]
+        self.assertEqual(funnel["lead_counts"]["total"], 2)
+        self.assertEqual({row["key"]: row["count"] for row in funnel["lead_counts"]["by_source"]}, {Lead.Sources.WEBSITE: 1, Lead.Sources.TELEGRAM: 1})
+        self.assertEqual(funnel["conversion_to_deal"]["deals_from_leads"], 2)
+        self.assertEqual(funnel["conversion_to_deal"]["rate"], 100)
+        self.assertEqual(funnel["deal_outcomes"]["won_count"], 1)
+        self.assertEqual(funnel["deal_outcomes"]["lost_count"], 1)
+        self.assertEqual(Decimal(funnel["deal_outcomes"]["won_value"]), Decimal("42000"))
+        self.assertEqual(Decimal(funnel["deal_outcomes"]["lost_value"]), Decimal("18000"))
+        self.assertEqual(funnel["appointments"]["completion_rate"], 50)
+        self.assertEqual(funnel["appointments"]["no_show_rate"], 50)
+        self.assertEqual(funnel["tasks"]["overdue"], 1)
+        self.assertEqual(funnel["conversations"]["unanswered"], 1)
+        self.assertEqual(funnel["conversations"]["unread_sla_overdue"], 1)
+        self.assertEqual(response.data["connector_health"]["error"], 1)
+        self.assertEqual(response.data["connector_health"]["failed_sync_runs"], 1)
+        self.assertEqual(response.data["connector_health"]["by_provider"][0]["provider"], BusinessConnector.Providers.WHATSAPP)
+        cards = {card["key"]: card for card in response.data["ai_insight_cards"]}
+        self.assertIn("overdue_tasks", cards)
+        self.assertIn("unanswered_conversations", cards)
+        self.assertIn("failed_connectors", cards)
+        self.assertIn(f"CONV:{conversation.id}", cards["unanswered_conversations"]["source_ids"])
+        self.assertNotIn("999999", str(response.data))
+
+    def test_manager_scope_limits_crm_reporting_metrics(self):
+        manager = User.objects.create_user(username="analytics-manager", email="analytics-manager@example.com", password="pass", role=User.Roles.BUSINESS_MANAGER)
+        other_manager = User.objects.create_user(
+            username="analytics-other-manager",
+            email="analytics-other-manager@example.com",
+            password="pass",
+            role=User.Roles.BUSINESS_MANAGER,
+        )
+        BusinessMember.objects.create(business=self.business, user=manager, role=BusinessMember.Roles.MANAGER)
+        BusinessMember.objects.create(business=self.business, user=other_manager, role=BusinessMember.Roles.MANAGER)
+        manager_lead = Lead.objects.create(
+            business=self.business,
+            client=self.client,
+            source=Lead.Sources.WEBSITE,
+            status=Lead.Statuses.NEW,
+            responsible_user=manager,
+        )
+        other_lead = Lead.objects.create(
+            business=self.business,
+            client=self.client,
+            source=Lead.Sources.TELEGRAM,
+            status=Lead.Statuses.NEW,
+            responsible_user=other_manager,
+        )
+        Deal.objects.create(
+            business=self.business,
+            client=self.client,
+            lead=manager_lead,
+            pipeline=self.pipeline,
+            stage=self.stage,
+            title="Manager deal",
+            amount=12000,
+            owner=manager,
+            status=Deal.Statuses.WON,
+        )
+        Deal.objects.create(
+            business=self.business,
+            client=self.client,
+            lead=other_lead,
+            pipeline=self.pipeline,
+            stage=self.stage,
+            title="Other manager deal",
+            amount=33000,
+            owner=other_manager,
+            status=Deal.Statuses.WON,
+        )
+        Task.objects.create(business=self.business, client=self.client, title="Mine", due_at=timezone.now() - timedelta(hours=1), assignee=manager)
+        Task.objects.create(business=self.business, client=self.client, title="Other", due_at=timezone.now() - timedelta(hours=1), assignee=other_manager)
+        self.api.force_authenticate(manager)
+
+        dashboard = self.api.get("/api/analytics/owner-dashboard/", {"business": self.business.id})
+        report = self.api.get("/api/analytics/reports/summary/", {"business": self.business.id})
+
+        self.assertEqual(dashboard.status_code, 200)
+        self.assertEqual(dashboard.data["crm_funnel"]["lead_counts"]["total"], 1)
+        self.assertEqual(dashboard.data["crm_funnel"]["deal_outcomes"]["won_count"], 1)
+        self.assertEqual(Decimal(dashboard.data["crm_funnel"]["deal_outcomes"]["won_value"]), Decimal("12000"))
+        self.assertEqual(dashboard.data["crm_funnel"]["tasks"]["overdue"], 1)
+        self.assertEqual(dashboard.data["manager_performance"]["scope"], "own")
+        self.assertEqual([row["user_id"] for row in dashboard.data["manager_performance"]["rows"]], [manager.id])
+        self.assertEqual(report.status_code, 200)
+        self.assertEqual(report.data["manager_performance_scope"], "own")
+        self.assertEqual(report.data["scoped_manager_performance"]["totals"]["assigned_leads"], 1)
+        self.assertEqual(report.data["crm_funnel"]["lead_counts"]["total"], 1)
+
+    def test_owner_dashboard_uses_sales_events_for_business_pulse(self):
+        BusinessConnector.objects.create(
+            business=self.business,
+            provider=BusinessConnector.Providers.KASPI,
+            name="Kaspi connector request",
+            status=BusinessConnector.Statuses.PENDING_REQUEST,
+            capability=BusinessConnector.Capabilities.FINANCE,
+        )
+        BusinessEvent.objects.create(
+            business=self.business,
+            source=BusinessConnector.Providers.KASPI,
+            event_type="kaspi_sale_detected",
+            deduplication_key="kaspi-sale-1",
+            payload_json={"amount": "25000"},
+        )
+
+        response = self.api.get("/api/analytics/owner-dashboard/", {"business": self.business.id})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["sales_events_count"], 1)
+        self.assertEqual(response.data["data_quality"]["has_sales_data"], True)
+        self.assertEqual(response.data["business_pulse"]["tone"], "growth")
+        self.assertEqual(response.data["revenue"]["total_estimate"], "25000")
+        self.assertEqual(response.data["latest_business_events"][0]["event_type"], "kaspi_sale_detected")
+        self.assertEqual(response.data["connector_health"]["pending"], 1)
+        self.assertTrue(response.data["setup"]["sources"]["sales_data"])
+        sales_step = next(item for item in response.data["mobile_onboarding"]["steps"] if item["key"] == "sales_data")
+        self.assertEqual(sales_step["status"], "done")
+
+    def test_owner_dashboard_is_tenant_safe(self):
+        self.api.force_authenticate(self.other_owner)
+
+        response = self.api.get("/api/analytics/owner-dashboard/", {"business": self.business.id})
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_report_summary_returns_operational_reports(self):
+        lead = Lead.objects.create(business=self.business, client=self.client, source=Lead.Sources.WEBSITE, status=Lead.Statuses.APPOINTMENT_CREATED, responsible_user=self.owner)
+        Deal.objects.create(business=self.business, client=self.client, lead=lead, pipeline=self.pipeline, stage=self.stage, title="Analytics deal", amount=15000, owner=self.owner)
+        start_at = timezone.now()
+        Appointment.objects.create(
+            business=self.business,
+            client=self.client,
+            lead=lead,
+            service=self.service,
+            start_at=start_at,
+            end_at=start_at + timedelta(hours=1),
+            status=Appointment.Statuses.COMPLETED,
+        )
+
+        response = self.api.get("/api/analytics/reports/summary/", {"business": self.business.id})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["source_roi"][0]["source"], Lead.Sources.WEBSITE)
+        self.assertEqual(response.data["source_roi"][0]["conversion_rate"], 100)
+        self.assertEqual(response.data["retention_ltv"]["total_clients"], 1)
+        self.assertTrue(response.data["widgets"])
+
+    def test_report_summary_respects_tenant_access(self):
+        self.api.force_authenticate(self.other_owner)
+
+        response = self.api.get("/api/analytics/reports/summary/", {"business": self.business.id})
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_report_export_returns_csv_and_writes_audit(self):
+        Lead.objects.create(business=self.business, client=self.client, source=Lead.Sources.WEBSITE, status=Lead.Statuses.NEW)
+
+        response = self.api.get("/api/analytics/reports/export/", {"business": self.business.id, "report": "source_roi"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/csv; charset=utf-8")
+        self.assertIn("source,leads", response.content.decode())
+        self.assertTrue(AuditLog.objects.filter(business=self.business, metadata__entity_type="analytics_report").exists())
+
+    def test_scheduled_report_create_sets_actor(self):
+        response = self.api.post(
+            "/api/scheduled-reports/",
+            {
+                "business": self.business.id,
+                "name": "Weekly owner report",
+                "frequency": "weekly",
+                "recipients_json": ["owner@example.com"],
+                "report_config_json": {"reports": ["source_roi"]},
+                "is_active": True,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["created_by_email"], self.owner.email)

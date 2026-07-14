@@ -1,0 +1,7 @@
+interface:
+  display_name: "ZANI AI Grounding"
+  short_description: "Check AI grounding, permissions and approvals"
+  default_prompt: "Use $zani-evaluate-ai-grounding to implement or review source-grounded AI behavior in ZANI."
+
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,470 @@
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+
+from django.core.files.base import ContentFile
+from django.test import TestCase
+from rest_framework.test import APIClient
+
+from apps.accounts.models import User
+from apps.activities.models import ActivityEvent, Note, Tag, TaggedObject
+from apps.activities.taxonomy import ActivityEvents
+from apps.bots.models import Bot, BotConversation
+from apps.businesses.models import Business, BusinessMember
+from apps.clients.models import Client, ClientMergeLog
+from apps.conversations.models import Conversation
+from apps.core.models import AuditLog, CustomFieldDefinition, CustomFieldValue, FileAttachment
+from apps.crm.models import Deal, Pipeline, PipelineStage
+from apps.leads.models import Lead
+from apps.scheduling.models import Appointment
+from apps.services.models import Service
+from apps.tasks.models import Task
+
+
+class DuplicateDetectionFoundationTests(TestCase):
+    def setUp(self):
+        self.api = APIClient()
+        self.owner = User.objects.create_user(
+            username="duplicate-owner",
+            email="duplicate-owner@example.com",
+            password="pass",
+            role=User.Roles.BUSINESS_OWNER,
+        )
+        self.other_owner = User.objects.create_user(
+            username="duplicate-other",
+            email="duplicate-other@example.com",
+            password="pass",
+            role=User.Roles.BUSINESS_OWNER,
+        )
+        self.business = Business.objects.create(owner=self.owner, name="Duplicate Clinic", slug="duplicate-clinic", timezone="Asia/Almaty")
+        self.other_business = Business.objects.create(owner=self.other_owner, name="Other Duplicate", slug="other-duplicate")
+        BusinessMember.objects.create(business=self.business, user=self.owner, role=BusinessMember.Roles.OWNER)
+        BusinessMember.objects.create(business=self.other_business, user=self.other_owner, role=BusinessMember.Roles.OWNER)
+        self.view_only_user = User.objects.create_user(
+            username="duplicate-viewer",
+            email="duplicate-viewer@example.com",
+            password="pass",
+            role=User.Roles.BUSINESS_MANAGER,
+        )
+        BusinessMember.objects.create(business=self.business, user=self.view_only_user, role=BusinessMember.Roles.MARKETER)
+        self.target = Client.objects.create(business=self.business, full_name="Main Client", phone="+77015550101", email="main@example.com")
+        self.duplicate = Client.objects.create(business=self.business, full_name="Duplicate Client", phone="8 701 555 01 01", email="duplicate@example.com")
+        Client.objects.create(business=self.other_business, full_name="Hidden Client", phone="+77015550101")
+        self.service = Service.objects.create(business=self.business, name="Consultation", duration_minutes=60)
+        self.api.force_authenticate(self.owner)
+
+    def test_client_duplicate_check_normalizes_phone_and_is_tenant_scoped(self):
+        response = self.api.post(
+            "/api/clients/check-duplicates/",
+            {"business": self.business.id, "phone": "+7 (701) 555-01-01"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        ids = {item["id"] for item in response.data["duplicates"]}
+        self.assertEqual(ids, {self.target.id, self.duplicate.id})
+        self.assertTrue(all("phone" in item["matched_fields"] for item in response.data["duplicates"]))
+
+    def test_client_identity_is_normalized_for_duplicates_and_search(self):
+        self.target.refresh_from_db()
+        self.duplicate.refresh_from_db()
+
+        self.assertEqual(self.target.normalized_phone, "77015550101")
+        self.assertEqual(self.duplicate.normalized_phone, "77015550101")
+
+        response = self.api.post(
+            "/api/clients/check-duplicates/",
+            {"business": self.business.id, "email": "MAIN@EXAMPLE.COM"},
+            format="json",
+        )
+        search_response = self.api.get("/api/clients/", {"q": "8 (701) 555-01-01", "page_size": 10})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([item["id"] for item in response.data["duplicates"]], [self.target.id])
+        self.assertEqual(search_response.status_code, 200)
+        self.assertEqual(search_response.data["count"], 2)
+
+    def test_duplicate_check_requires_client_create_permission(self):
+        self.api.force_authenticate(self.view_only_user)
+
+        response = self.api.post(
+            "/api/clients/check-duplicates/",
+            {"business": self.business.id, "phone": "+7 (701) 555-01-01"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_view_only_member_cannot_merge_or_archive_client(self):
+        self.api.force_authenticate(self.view_only_user)
+
+        merge_response = self.api.post(
+            f"/api/clients/{self.target.id}/merge/",
+            {"duplicate_client_id": self.duplicate.id},
+            format="json",
+        )
+        archive_response = self.api.post(
+            f"/api/clients/{self.target.id}/archive/",
+            {"reason": "Not allowed"},
+            format="json",
+        )
+
+        self.assertEqual(merge_response.status_code, 403)
+        self.assertEqual(archive_response.status_code, 403)
+        self.assertTrue(Client.objects.filter(id=self.duplicate.id).exists())
+        self.duplicate.refresh_from_db()
+        self.assertFalse(self.duplicate.is_archived)
+        self.target.refresh_from_db()
+        self.assertFalse(self.target.is_archived)
+
+    def test_generic_update_cannot_bypass_client_archive_endpoint(self):
+        response = self.api.patch(
+            f"/api/clients/{self.target.id}/",
+            {"is_archived": True, "archive_reason": "Bypass"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.target.refresh_from_db()
+        self.assertFalse(self.target.is_archived)
+        self.assertEqual(self.target.archive_reason, "")
+
+    def test_client_source_attribution_fields_are_persisted(self):
+        response = self.api.patch(
+            f"/api/clients/{self.target.id}/",
+            {
+                "source_detail": "Spring landing",
+                "source_context_json": {"campaign": "spring", "page_domain": "example.com"},
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.target.refresh_from_db()
+        self.assertEqual(self.target.source_detail, "Spring landing")
+        self.assertEqual(self.target.source_context_json["campaign"], "spring")
+        self.assertEqual(response.data["source_detail"], "Spring landing")
+        self.assertEqual(response.data["source_context_json"]["page_domain"], "example.com")
+
+    def test_lead_duplicate_check_returns_related_leads(self):
+        lead = Lead.objects.create(business=self.business, client=self.target, service=self.service, message="Existing lead")
+
+        response = self.api.post(
+            "/api/leads/check-duplicates/",
+            {"business": self.business.id, "client": self.target.id},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["related_leads"][0]["id"], lead.id)
+
+    def test_merge_transfers_related_entities_and_logs_activity(self):
+        self.duplicate.source_detail = "Duplicate landing"
+        self.duplicate.source_context_json = {"campaign": "duplicate-campaign"}
+        self.duplicate.save(update_fields=["source_detail", "source_context_json", "updated_at"])
+        lead = Lead.objects.create(business=self.business, client=self.duplicate, service=self.service)
+        pipeline = Pipeline.objects.create(business=self.business, name="Merge pipeline", slug="merge-pipeline")
+        stage = PipelineStage.objects.create(business=self.business, pipeline=pipeline, name="New", order=1)
+        deal = Deal.objects.create(
+            business=self.business,
+            client=self.duplicate,
+            lead=lead,
+            pipeline=pipeline,
+            stage=stage,
+            title="Merge deal",
+        )
+        start_at = datetime(2026, 5, 14, 10, 0, tzinfo=ZoneInfo("Asia/Almaty"))
+        appointment = Appointment.objects.create(
+            business=self.business,
+            client=self.duplicate,
+            lead=lead,
+            service=self.service,
+            start_at=start_at,
+            end_at=start_at + timedelta(hours=1),
+        )
+        Conversation.objects.create(business=self.business, client=self.duplicate, channel=Conversation.Channels.MANUAL)
+        bot = Bot.objects.create(business=self.business, name="Merge bot")
+        BotConversation.objects.create(business=self.business, bot=bot, channel=BotConversation.Channels.WEBSITE, client=self.duplicate)
+        task = Task.objects.create(business=self.business, client=self.duplicate, lead=lead, title="Merge task")
+        note = Note.objects.create(business=self.business, client=self.duplicate, text="Merge note")
+        old_activity = ActivityEvent.objects.create(
+            business=self.business,
+            client=self.duplicate,
+            event_type="client_updated",
+            entity_type="Client",
+            entity_id=str(self.duplicate.id),
+            text="Old duplicate activity",
+        )
+
+        response = self.api.post(
+            f"/api/clients/{self.target.id}/merge/",
+            {"duplicate_client_id": self.duplicate.id},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(Client.objects.filter(id=self.duplicate.id).exists())
+        self.duplicate.refresh_from_db()
+        self.assertTrue(self.duplicate.is_archived)
+        self.assertEqual(self.duplicate.archived_by, self.owner)
+        lead.refresh_from_db()
+        deal.refresh_from_db()
+        appointment.refresh_from_db()
+        task.refresh_from_db()
+        note.refresh_from_db()
+        old_activity.refresh_from_db()
+        self.assertEqual(lead.client, self.target)
+        self.assertEqual(deal.client, self.target)
+        self.assertEqual(appointment.client, self.target)
+        self.assertEqual(task.client, self.target)
+        self.assertEqual(note.client, self.target)
+        self.assertEqual(old_activity.client, self.target)
+        self.assertTrue(Conversation.objects.filter(client=self.target).exists())
+        self.assertTrue(BotConversation.objects.filter(client=self.target).exists())
+        self.assertTrue(
+            ActivityEvent.objects.filter(
+                business=self.business,
+                client=self.target,
+                event_type=ActivityEvents.CLIENT_MERGED,
+                metadata__event_type=ActivityEvents.CLIENT_MERGED,
+                metadata__duplicate_client_id=self.duplicate.id,
+            ).exists()
+        )
+        merge_log = ClientMergeLog.objects.get(business=self.business, target_client=self.target)
+        self.assertEqual(merge_log.duplicate_snapshot["id"], self.duplicate.id)
+        self.assertEqual(merge_log.metadata["event_type"], ActivityEvents.CLIENT_MERGED)
+        self.assertEqual(merge_log.metadata["duplicate_client_id"], self.duplicate.id)
+        self.assertEqual(merge_log.duplicate_snapshot["source_detail"], "Duplicate landing")
+        self.assertEqual(merge_log.duplicate_snapshot["source_context_json"]["campaign"], "duplicate-campaign")
+        self.assertEqual(merge_log.transferred_counts["leads"], 1)
+        self.assertTrue(
+            AuditLog.objects.filter(
+                business=self.business,
+                entity_type="Client",
+                entity_id=str(self.target.id),
+                metadata__kind="merge",
+                metadata__event_type=ActivityEvents.CLIENT_MERGED,
+                metadata__merge_log_id=merge_log.id,
+                metadata__duplicate_client_id=self.duplicate.id,
+            ).exists()
+        )
+
+    def test_client_archive_and_restore_write_taxonomy_activity_and_audit(self):
+        archive_response = self.api.post(
+            f"/api/clients/{self.target.id}/archive/",
+            {"reason": "Duplicate cleanup"},
+            format="json",
+        )
+        restore_response = self.api.post(f"/api/clients/{self.target.id}/restore/", {}, format="json")
+
+        self.assertEqual(archive_response.status_code, 200)
+        self.assertEqual(restore_response.status_code, 200)
+        self.target.refresh_from_db()
+        self.assertFalse(self.target.is_archived)
+        self.assertTrue(
+            ActivityEvent.objects.filter(
+                business=self.business,
+                client=self.target,
+                entity_type="Client",
+                entity_id=str(self.target.id),
+                event_type=ActivityEvents.CLIENT_ARCHIVED,
+                metadata__kind="archive",
+                metadata__event_type=ActivityEvents.CLIENT_ARCHIVED,
+                metadata__reason="Duplicate cleanup",
+            ).exists()
+        )
+        self.assertTrue(
+            ActivityEvent.objects.filter(
+                business=self.business,
+                client=self.target,
+                entity_type="Client",
+                entity_id=str(self.target.id),
+                event_type=ActivityEvents.CLIENT_RESTORED,
+                metadata__kind="restore",
+                metadata__event_type=ActivityEvents.CLIENT_RESTORED,
+            ).exists()
+        )
+        self.assertTrue(
+            AuditLog.objects.filter(
+                business=self.business,
+                entity_type="Client",
+                entity_id=str(self.target.id),
+                metadata__kind="archive",
+                metadata__event_type=ActivityEvents.CLIENT_ARCHIVED,
+                metadata__reason="Duplicate cleanup",
+            ).exists()
+        )
+        self.assertTrue(
+            AuditLog.objects.filter(
+                business=self.business,
+                entity_type="Client",
+                entity_id=str(self.target.id),
+                metadata__kind="restore",
+                metadata__event_type=ActivityEvents.CLIENT_RESTORED,
+            ).exists()
+        )
+
+    def test_merge_dry_run_reports_transfer_counts_without_mutating_data(self):
+        lead = Lead.objects.create(business=self.business, client=self.duplicate, service=self.service)
+        start_at = datetime(2026, 5, 14, 10, 0, tzinfo=ZoneInfo("Asia/Almaty"))
+        Appointment.objects.create(
+            business=self.business,
+            client=self.duplicate,
+            lead=lead,
+            service=self.service,
+            start_at=start_at,
+            end_at=start_at + timedelta(hours=1),
+        )
+        Task.objects.create(business=self.business, client=self.duplicate, lead=lead, title="Dry run task")
+        tag = Tag.objects.create(business=self.business, name="Dry run tag")
+        TaggedObject.objects.create(business=self.business, tag=tag, entity_type="client", entity_id=str(self.duplicate.id))
+        FileAttachment.objects.create(
+            business=self.business,
+            uploaded_by=self.owner,
+            file=ContentFile(b"dry-run", name="dry-run.txt"),
+            original_name="dry-run.txt",
+            content_type="text/plain",
+            size=7,
+            entity_type="client",
+            entity_id=str(self.duplicate.id),
+        )
+        definition = CustomFieldDefinition.objects.create(
+            business=self.business,
+            entity_type=CustomFieldDefinition.EntityTypes.CLIENT,
+            key="dry_run_field",
+            label="Dry run field",
+        )
+        CustomFieldValue.objects.create(
+            business=self.business,
+            definition=definition,
+            entity_type=CustomFieldDefinition.EntityTypes.CLIENT,
+            entity_id=str(self.duplicate.id),
+            value_json={"value": "x"},
+        )
+
+        response = self.api.post(
+            f"/api/clients/{self.target.id}/merge-dry-run/",
+            {"duplicate_client_id": self.duplicate.id},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["target_client_id"], self.target.id)
+        self.assertEqual(response.data["duplicate"]["id"], self.duplicate.id)
+        self.assertEqual(response.data["transferred"]["leads"], 1)
+        self.assertEqual(response.data["transferred"]["appointments"], 1)
+        self.assertEqual(response.data["transferred"]["tasks"], 1)
+        self.assertEqual(response.data["transferred"]["tags"], 1)
+        self.assertEqual(response.data["transferred"]["attachments"], 1)
+        self.assertEqual(response.data["transferred"]["custom_field_values"], 1)
+        self.assertFalse(response.data["will_delete_duplicate"])
+        self.assertEqual(response.data["policy"], "archive_duplicate_after_transfer")
+        self.assertTrue(Client.objects.filter(id=self.duplicate.id).exists())
+        lead.refresh_from_db()
+        self.assertEqual(lead.client, self.duplicate)
+        self.assertFalse(ClientMergeLog.objects.filter(business=self.business).exists())
+
+    def test_merge_transfers_entity_linked_tags_files_and_custom_fields(self):
+        duplicate_only_tag = Tag.objects.create(business=self.business, name="Duplicate only")
+        shared_tag = Tag.objects.create(business=self.business, name="Shared")
+        TaggedObject.objects.create(business=self.business, tag=duplicate_only_tag, entity_type="client", entity_id=str(self.duplicate.id))
+        TaggedObject.objects.create(business=self.business, tag=shared_tag, entity_type="client", entity_id=str(self.target.id))
+        TaggedObject.objects.create(business=self.business, tag=shared_tag, entity_type="client", entity_id=str(self.duplicate.id))
+        attachment = FileAttachment.objects.create(
+            business=self.business,
+            uploaded_by=self.owner,
+            file=ContentFile(b"merge-file", name="merge.txt"),
+            original_name="merge.txt",
+            content_type="text/plain",
+            size=10,
+            entity_type="client",
+            entity_id=str(self.duplicate.id),
+        )
+        moved_definition = CustomFieldDefinition.objects.create(
+            business=self.business,
+            entity_type=CustomFieldDefinition.EntityTypes.CLIENT,
+            key="favorite_service",
+            label="Favorite service",
+        )
+        conflict_definition = CustomFieldDefinition.objects.create(
+            business=self.business,
+            entity_type=CustomFieldDefinition.EntityTypes.CLIENT,
+            key="loyalty_level",
+            label="Loyalty level",
+        )
+        moved_value = CustomFieldValue.objects.create(
+            business=self.business,
+            definition=moved_definition,
+            entity_type=CustomFieldDefinition.EntityTypes.CLIENT,
+            entity_id=str(self.duplicate.id),
+            value_json={"value": "Consultation"},
+        )
+        CustomFieldValue.objects.create(
+            business=self.business,
+            definition=conflict_definition,
+            entity_type=CustomFieldDefinition.EntityTypes.CLIENT,
+            entity_id=str(self.target.id),
+            value_json={"value": "A"},
+        )
+        conflict_value = CustomFieldValue.objects.create(
+            business=self.business,
+            definition=conflict_definition,
+            entity_type=CustomFieldDefinition.EntityTypes.CLIENT,
+            entity_id=str(self.duplicate.id),
+            value_json={"value": "B"},
+        )
+
+        response = self.api.post(
+            f"/api/clients/{self.target.id}/merge/",
+            {"duplicate_client_id": self.duplicate.id},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        attachment.refresh_from_db()
+        moved_value.refresh_from_db()
+        self.assertEqual(attachment.entity_id, str(self.target.id))
+        self.assertEqual(moved_value.entity_id, str(self.target.id))
+        self.assertFalse(CustomFieldValue.objects.filter(id=conflict_value.id).exists())
+        self.duplicate.refresh_from_db()
+        self.assertTrue(self.duplicate.is_archived)
+        self.assertTrue(TaggedObject.objects.filter(business=self.business, tag=duplicate_only_tag, entity_id=str(self.target.id)).exists())
+        self.assertEqual(TaggedObject.objects.filter(business=self.business, tag=shared_tag, entity_id=str(self.target.id)).count(), 1)
+        merge_log = ClientMergeLog.objects.get(id=response.data["merge_log_id"])
+        self.assertEqual(merge_log.transferred_counts["tags"], 1)
+        self.assertEqual(merge_log.transferred_counts["attachments"], 1)
+        self.assertEqual(merge_log.transferred_counts["custom_field_values"], 1)
+        self.assertEqual(merge_log.metadata["skipped"]["tags"][0]["tag_id"], shared_tag.id)
+        self.assertEqual(merge_log.metadata["skipped"]["custom_field_values"][0]["definition_id"], conflict_definition.id)
+
+    def test_merge_rejects_foreign_duplicate(self):
+        foreign = Client.objects.create(business=self.other_business, full_name="Foreign")
+
+        response = self.api.post(
+            f"/api/clients/{self.target.id}/merge/",
+            {"duplicate_client_id": foreign.id},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_client_list_returns_summary_facets_and_enriched_row_fields(self):
+        lead = Lead.objects.create(business=self.business, client=self.target, service=self.service, message="Need details")
+        due_at = datetime(2026, 6, 20, 10, 0, tzinfo=ZoneInfo("Asia/Almaty"))
+        Task.objects.create(business=self.business, client=self.target, lead=lead, title="Call client", due_at=due_at)
+        bot = Bot.objects.create(business=self.business, name="Client list bot")
+        BotConversation.objects.create(business=self.business, bot=bot, channel=BotConversation.Channels.WEBSITE, client=self.target)
+
+        response = self.api.get("/api/clients/", {"q": "main@example.com", "page_size": 10})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["summary"]["total"], 1)
+        self.assertEqual(response.data["facets"]["source"][Client.Sources.MANUAL], 1)
+        row = next(item for item in response.data["results"] if item["id"] == self.target.id)
+        self.assertEqual(row["id"], self.target.id)
+        self.assertEqual(row["leads_count"], 1)
+        self.assertEqual(row["tasks_count"], 1)
+        self.assertEqual(row["conversations_count"], 1)
+        self.assertEqual(row["next_step_title"], "Call client")
+        self.assertIsNotNone(row["next_step_date"])
+        self.assertIsNotNone(row["last_activity_at"])

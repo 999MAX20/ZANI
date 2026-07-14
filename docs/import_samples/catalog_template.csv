@@ -1,0 +1,4 @@
+item_type,sku,name,description,duration_minutes,price_from,stock_quantity,source
+service,SVC-001,Консультация,Первичная консультация,30,15000,,manual
+service,SVC-002,Стрижка,Женская стрижка,60,8000,,manual
+product,PRD-001,Шампунь уходовый,Товар на складе,,4500,12,manual

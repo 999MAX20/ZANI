@@ -1,0 +1,7 @@
+interface:
+  display_name: "ZANI Performance Review"
+  short_description: "Find and fix ZANI performance bottlenecks"
+  default_prompt: "Use $zani-review-performance to measure and improve a ZANI backend or frontend bottleneck."
+
+policy:
+  allow_implicit_invocation: true

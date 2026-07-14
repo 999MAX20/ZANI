@@ -1,0 +1,336 @@
+from rest_framework import serializers
+
+from apps.clients.models import Client
+from apps.clients.services import duplicate_payload, find_duplicate_clients
+from apps.core.permissions import accessible_businesses
+from apps.integrations.sanitization import sanitize_config
+from apps.leads.models import Lead, LeadForm, LeadFormField, LeadFormSubmission, LeadFormSubmissionError
+from apps.scheduling.models import Resource
+from apps.services.models import Service
+from apps.tasks.models import Task
+
+
+class LeadSerializer(serializers.ModelSerializer):
+    lifecycle_update_fields = {
+        "status",
+        "previous_status",
+        "lost_reason",
+        "lost_at",
+        "lost_by",
+    }
+    archive_update_fields = {"is_archived", "archive_reason", "archived_at", "archived_by"}
+
+    class Meta:
+        model = Lead
+        fields = [
+            "id",
+            "business",
+            "client",
+            "service",
+            "source",
+            "message",
+            "status",
+            "previous_status",
+            "lost_reason",
+            "lost_at",
+            "lost_by",
+            "responsible_user",
+            "is_archived",
+            "archived_at",
+            "archived_by",
+            "archive_reason",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["created_at", "updated_at", "lost_at", "lost_by", "previous_status", "archived_at", "archived_by"]
+
+    def validate(self, attrs):
+        attempted_archive_fields = sorted(self.archive_update_fields.intersection((self.initial_data or {}).keys()))
+        if attempted_archive_fields:
+            raise serializers.ValidationError(
+                {
+                    "detail": "Use lead archive action endpoints for archive state changes.",
+                    "fields": attempted_archive_fields,
+                }
+            )
+        if self.instance is not None:
+            attempted_lifecycle_fields = sorted(self.lifecycle_update_fields.intersection((self.initial_data or {}).keys()))
+            if attempted_lifecycle_fields:
+                raise serializers.ValidationError(
+                    {
+                        "detail": "Use lead lifecycle action endpoints for protected state changes.",
+                        "fields": attempted_lifecycle_fields,
+                    }
+                )
+        business = attrs.get("business") or getattr(self.instance, "business", None)
+        client = attrs.get("client") or getattr(self.instance, "client", None)
+        service = attrs.get("service") or getattr(self.instance, "service", None)
+        if client and business and client.business_id != business.id:
+            raise serializers.ValidationError("Client must belong to the selected business.")
+        if service and business and service.business_id != business.id:
+            raise serializers.ValidationError("Service must belong to the selected business.")
+        responsible_user = attrs.get("responsible_user") if "responsible_user" in attrs else getattr(self.instance, "responsible_user", None)
+        if responsible_user and business and not business.members.filter(user=responsible_user, is_active=True).exists():
+            raise serializers.ValidationError({"responsible_user": "Responsible user must be an active business member."})
+        return attrs
+
+
+class LeadListSerializer(serializers.ModelSerializer):
+    client_name = serializers.CharField(source="client.full_name", read_only=True)
+    client_phone = serializers.CharField(source="client.phone", read_only=True)
+    client_email = serializers.CharField(source="client.email", read_only=True)
+    service_name = serializers.CharField(source="service.name", read_only=True)
+    responsible_name = serializers.CharField(source="responsible_user.full_name", read_only=True)
+    responsible_email = serializers.CharField(source="responsible_user.email", read_only=True)
+    ai_score = serializers.SerializerMethodField()
+    loss_risk = serializers.SerializerMethodField()
+    recommended_action = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Lead
+        fields = [
+            "id",
+            "business",
+            "client",
+            "client_name",
+            "client_phone",
+            "client_email",
+            "service",
+            "service_name",
+            "source",
+            "message",
+            "status",
+            "responsible_user",
+            "responsible_name",
+            "responsible_email",
+            "ai_score",
+            "loss_risk",
+            "recommended_action",
+            "created_at",
+            "updated_at",
+        ]
+
+    def _score(self, obj):
+        score = 45
+        if obj.source in {Lead.Sources.WEBSITE, Lead.Sources.LANDING, Lead.Sources.WHATSAPP}:
+            score += 12
+        if obj.service_id:
+            score += 10
+        if obj.responsible_user_id:
+            score += 8
+        if obj.status in {Lead.Statuses.IN_PROGRESS, Lead.Statuses.APPOINTMENT_CREATED, Lead.Statuses.CLOSED}:
+            score += 15
+        if obj.status == Lead.Statuses.LOST:
+            score -= 25
+        if obj.status == Lead.Statuses.NEW and not obj.responsible_user_id:
+            score -= 8
+        return max(0, min(100, score))
+
+    def get_ai_score(self, obj):
+        return self._score(obj)
+
+    def get_loss_risk(self, obj):
+        score = self._score(obj)
+        risk = 100 - score
+        if obj.status == Lead.Statuses.NEW and not obj.responsible_user_id:
+            risk += 15
+        if obj.status == Lead.Statuses.LOST:
+            risk = 100
+        return max(0, min(100, risk))
+
+    def get_recommended_action(self, obj):
+        if obj.status == Lead.Statuses.NEW:
+            return "Связаться с клиентом"
+        if obj.status == Lead.Statuses.CONTACTED:
+            return "Назначить ответственного"
+        if obj.status == Lead.Statuses.IN_PROGRESS:
+            return "Создать сделку или запись"
+        if obj.status == Lead.Statuses.APPOINTMENT_CREATED:
+            return "Подтвердить запись"
+        if obj.status == Lead.Statuses.LOST:
+            return "Проверить причину потери"
+        return "Проверить заявку"
+
+
+class CreateAppointmentFromLeadSerializer(serializers.Serializer):
+    service = serializers.PrimaryKeyRelatedField(queryset=Service.objects.all())
+    resource = serializers.PrimaryKeyRelatedField(queryset=Resource.objects.all(), required=False, allow_null=True)
+    start_at = serializers.DateTimeField()
+
+    def validate(self, attrs):
+        lead = self.context["lead"]
+        service = attrs["service"]
+        resource = attrs.get("resource")
+        if service.business_id != lead.business_id:
+            raise serializers.ValidationError("Service must belong to lead business.")
+        if resource and resource.business_id != lead.business_id:
+            raise serializers.ValidationError("Resource must belong to lead business.")
+        return attrs
+
+
+class CreateTaskFromLeadSerializer(serializers.Serializer):
+    title = serializers.CharField(trim_whitespace=True, min_length=1, max_length=255)
+    description = serializers.CharField(required=False, allow_blank=True)
+    priority = serializers.ChoiceField(choices=Task.Priorities.choices, required=False, default=Task.Priorities.NORMAL)
+    due_at = serializers.DateTimeField(required=False, allow_null=True)
+    assignee = serializers.IntegerField(required=False, allow_null=True)
+
+    def validate_assignee(self, value):
+        if value in ("", None):
+            return None
+        lead = self.context["lead"]
+        user = lead.business.members.filter(user_id=value, is_active=True).select_related("user").first()
+        if user is None:
+            raise serializers.ValidationError("Assignee must be an active business member.")
+        return value
+
+
+class LeadDuplicateCheckSerializer(serializers.Serializer):
+    business = serializers.IntegerField()
+    client = serializers.IntegerField(required=False, allow_null=True)
+    phone = serializers.CharField(required=False, allow_blank=True)
+    email = serializers.EmailField(required=False, allow_blank=True)
+
+    def validate_business(self, value):
+        request = self.context["request"]
+        business = accessible_businesses(request.user).filter(id=value).first()
+        if business is None and getattr(request.user, "is_platform_user", False):
+            from apps.businesses.models import Business
+
+            business = Business.objects.filter(id=value).first()
+        if business is None:
+            raise serializers.ValidationError("Business is not available.")
+        return business
+
+    def duplicates(self):
+        business = self.validated_data["business"]
+        client = None
+        if self.validated_data.get("client"):
+            client = Client.objects.filter(id=self.validated_data["client"], business=business).first()
+        phone = self.validated_data.get("phone") or getattr(client, "phone", "")
+        email = self.validated_data.get("email") or getattr(client, "email", "")
+        duplicates = find_duplicate_clients(business, phone=phone, email=email, exclude_client_id=getattr(client, "id", None))
+        client_rows = duplicate_payload(duplicates, phone=phone, email=email)
+        lead_rows = []
+        if client:
+            related_leads = Lead.objects.filter(business=business, client=client).order_by("-created_at")[:5]
+            lead_rows = [
+                {"id": lead.id, "client": lead.client_id, "status": lead.status, "source": lead.source, "message": lead.message}
+                for lead in related_leads
+            ]
+        return {"duplicates": client_rows, "related_leads": lead_rows}
+
+
+class LeadFormFieldSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LeadFormField
+        fields = [
+            "id",
+            "form",
+            "label",
+            "key",
+            "field_type",
+            "placeholder",
+            "options_json",
+            "is_required",
+            "sort_order",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["created_at", "updated_at"]
+
+
+class LeadFormSerializer(serializers.ModelSerializer):
+    fields = LeadFormFieldSerializer(many=True, read_only=True)
+    submissions_count = serializers.IntegerField(source="submissions.count", read_only=True)
+
+    class Meta:
+        model = LeadForm
+        fields = [
+            "id",
+            "business",
+            "name",
+            "public_id",
+            "landing_id",
+            "landing_domain",
+            "preview_url",
+            "title",
+            "description",
+            "source",
+            "success_message",
+            "default_responsible_user",
+            "is_active",
+            "fields",
+            "submissions_count",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["public_id", "created_at", "updated_at", "submissions_count"]
+
+
+class LeadFormSubmissionSerializer(serializers.ModelSerializer):
+    form_name = serializers.CharField(source="form.name", read_only=True)
+
+    class Meta:
+        model = LeadFormSubmission
+        fields = [
+            "id",
+            "form",
+            "form_name",
+            "business",
+            "client",
+            "lead",
+            "payload_json",
+            "utm_json",
+            "source_context_json",
+            "duplicate_json",
+            "landing_id",
+            "page_url",
+            "page_domain",
+            "ip_address",
+            "user_agent",
+            "created_at",
+        ]
+        read_only_fields = ["form_name", "created_at"]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["payload_json"] = sanitize_config(data.get("payload_json") or {})
+        return data
+
+
+class LeadFormSubmissionErrorSerializer(serializers.ModelSerializer):
+    form_name = serializers.CharField(source="form.name", read_only=True)
+
+    class Meta:
+        model = LeadFormSubmissionError
+        fields = [
+            "id",
+            "form",
+            "form_name",
+            "business",
+            "public_id",
+            "landing_id",
+            "page_url",
+            "page_domain",
+            "payload_json",
+            "error_message",
+            "ip_address",
+            "user_agent",
+            "created_at",
+        ]
+        read_only_fields = ["form_name", "created_at"]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["payload_json"] = sanitize_config(data.get("payload_json") or {})
+        return data
+
+
+class PublicLeadFormSerializer(serializers.ModelSerializer):
+    fields = LeadFormFieldSerializer(many=True, read_only=True)
+    business_name = serializers.CharField(source="business.name", read_only=True)
+
+    class Meta:
+        model = LeadForm
+        fields = ["public_id", "business_name", "title", "description", "success_message", "fields"]

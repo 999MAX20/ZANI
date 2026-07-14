@@ -161,7 +161,7 @@ Completion note 2026-07-14:
 
 ### 4. Normalize lead/deal/task lifecycle transitions through services
 
-- [ ] Audit direct assignments to lifecycle fields and move unsafe transitions into services/selectors/state-machine helpers.
+- [x] Audit direct assignments to lifecycle fields and move unsafe transitions into services/selectors/state-machine helpers.
 
 Problem:
 
@@ -196,6 +196,13 @@ Test gate:
 
 - Happy path, permission denial and tenant isolation coverage for each changed lifecycle action.
 - Relevant backend scoped tests.
+
+Completion note 2026-07-14:
+
+- affected area: permissions yes through existing lead/inbox API gates; notifications yes through lead responsible and appointment follow-up routing; BusinessEvent/activity/audit yes through lead lifecycle activity, audit and automation trigger; AI indirect through reliable source-grounded lead lifecycle state; migrations/env no.
+- checks run: targeted lifecycle pytest for lead create-appointment, scheduling service create-appointment, inbox create-appointment and auto-booking invalid-transition paths (`9 passed`); `.\.venv\Scripts\python.exe -m pytest apps\leads\tests_crm_light.py apps\scheduling\tests.py apps\bots\tests.py -q` (`106 passed`); `.\.venv\Scripts\python.exe manage.py check`; `.\.venv\Scripts\python.exe manage.py makemigrations --check --dry-run`; equivalent AGENTS CRM scoped file-path pytest for clients, lead forms, crm, scheduling, tasks and tenant isolation (`121 passed`); `.\.venv\Scripts\python.exe -m pytest apps\core\tests_business_flows_e2e.py -q` (`8 passed`, JWT dev-secret warnings only).
+- checks skipped: frontend build, because this is backend-only lifecycle/service/test work with no frontend files or API response shape changes; full `scripts/codex_verify.sh`, because this was a narrow backend CRM lifecycle pass on Windows and the focused/scoped Django gates above covered the changed behavior.
+- baseline failures: none. The literal dotted-module AGENTS pytest command was not executable by current pytest (`file or directory not found: apps.clients.tests`), so the same scoped gate was rerun with real file paths and passed.
 
 ### 5. Add Resource to User mapping for scheduling staff ownership
 

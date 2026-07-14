@@ -12,7 +12,6 @@ from apps.automations.models import AutomationRule
 from apps.businesses.models import Business
 from apps.core.audit import infer_audit_category, infer_audit_risk, sanitize_audit_metadata, write_audit_log
 from apps.core.models import AuditLog
-from apps.leads.models import Lead
 from apps.notifications.models import Notification
 from apps.scheduling.models import Appointment, AppointmentMessageSetting, WorkingHours
 from apps.tasks.models import Task
@@ -222,7 +221,16 @@ def validate_appointment_availability(business, service, start_at, resource=None
 
 
 @transaction.atomic
-def create_appointment_from_lead(lead, service, start_at, resource=None):
+def create_appointment_from_lead(
+    lead,
+    service,
+    start_at,
+    resource=None,
+    actor=None,
+    request=None,
+    source=Appointment.Sources.MANUAL,
+    lead_activity_source="scheduling",
+):
     if service.business_id != lead.business_id:
         raise ValueError("Service must belong to lead business.")
     if resource and resource.business_id != lead.business_id:
@@ -242,11 +250,20 @@ def create_appointment_from_lead(lead, service, start_at, resource=None):
         start_at=start_at,
         end_at=end_at,
         status=Appointment.Statuses.CREATED,
-        source=Appointment.Sources.MANUAL,
+        source=source,
     )
-    lead.service = service
-    lead.status = Lead.Statuses.APPOINTMENT_CREATED
-    lead.save(update_fields=["service", "status", "updated_at"])
+
+    from apps.leads.services import mark_lead_appointment_created
+
+    mark_lead_appointment_created(
+        lead=lead,
+        actor=actor,
+        request=request,
+        service=service,
+        appointment=appointment,
+        resource=resource,
+        source=lead_activity_source,
+    )
 
     AnalyticsEvent.objects.create(
         business=lead.business,

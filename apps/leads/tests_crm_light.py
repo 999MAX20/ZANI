@@ -480,14 +480,70 @@ class LeadFlowQuickActionTests(TestCase):
         self.assertEqual(self.lead.service, service)
         self.assertTrue(ActivityEvent.objects.filter(business=self.business, event_type="appointment_created", entity_id=str(appointment.id)).exists())
         self.assertTrue(
+            ActivityEvent.objects.filter(
+                business=self.business,
+                entity_type="Lead",
+                entity_id=str(self.lead.id),
+                event_type=ActivityEvents.APPOINTMENT_CREATED,
+                metadata__lifecycle_action="lead_appointment_created",
+                metadata__appointment_id=appointment.id,
+                metadata__service_id=service.id,
+            ).exists()
+        )
+        self.assertTrue(
             AuditLog.objects.filter(
                 business=self.business,
                 entity_type="Lead",
                 entity_id=str(self.lead.id),
                 metadata__kind="lifecycle",
+                metadata__event_type=ActivityEvents.APPOINTMENT_CREATED,
                 metadata__lifecycle_action="lead_appointment_created",
+                metadata__appointment_id=appointment.id,
             ).exists()
         )
+
+    def test_manager_cannot_create_appointment_for_unassigned_lead(self):
+        other_client = Client.objects.create(business=self.business, full_name="Other Lead Client")
+        other_lead = Lead.objects.create(business=self.business, client=other_client, responsible_user=self.owner)
+        service = Service.objects.create(business=self.business, name="Consultation", duration_minutes=60)
+        WorkingHours.objects.create(
+            business=self.business,
+            weekday=0,
+            start_time=time(9, 0),
+            end_time=time(18, 0),
+        )
+        self.api.force_authenticate(self.manager)
+
+        response = self.api.post(
+            f"/api/leads/{other_lead.id}/create-appointment/",
+            {"service": service.id, "start_at": "2026-05-11T10:00:00+05:00"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.assertFalse(Appointment.objects.filter(business=self.business, lead=other_lead).exists())
+
+    def test_create_appointment_rejects_foreign_service_without_side_effects(self):
+        foreign_owner = User.objects.create_user(username="appointment-foreign-owner", email="appointment-foreign-owner@example.com", password="pass12345")
+        foreign_business = Business.objects.create(owner=foreign_owner, name="Appointment Foreign", slug="appointment-foreign")
+        foreign_service = Service.objects.create(business=foreign_business, name="Foreign consultation", duration_minutes=60)
+        WorkingHours.objects.create(
+            business=self.business,
+            weekday=0,
+            start_time=time(9, 0),
+            end_time=time(18, 0),
+        )
+
+        response = self.api.post(
+            f"/api/leads/{self.lead.id}/create-appointment/",
+            {"service": foreign_service.id, "start_at": "2026-05-11T10:00:00+05:00"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(Appointment.objects.filter(business=self.business, lead=self.lead).exists())
+        self.lead.refresh_from_db()
+        self.assertEqual(self.lead.status, Lead.Statuses.NEW)
 
     def test_create_appointment_from_closed_lead_is_rejected_without_side_effects(self):
         service = Service.objects.create(business=self.business, name="Consultation", duration_minutes=60)

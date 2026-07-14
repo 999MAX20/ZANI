@@ -154,6 +154,17 @@ class CorePlatformTests(TestCase):
 
         self.assertEqual(appointment.lead, lead)
         self.assertEqual(lead.status, Lead.Statuses.APPOINTMENT_CREATED)
+        self.assertEqual(lead.service, service)
+        self.assertTrue(
+            ActivityEvent.objects.filter(
+                business=self.business,
+                entity_type="Lead",
+                entity_id=str(lead.id),
+                event_type=ActivityEvents.APPOINTMENT_CREATED,
+                metadata__lifecycle_action="lead_appointment_created",
+                metadata__appointment_id=appointment.id,
+            ).exists()
+        )
         self.assertTrue(
             AnalyticsEvent.objects.filter(
                 business=self.business,
@@ -162,6 +173,38 @@ class CorePlatformTests(TestCase):
             ).exists()
         )
         self.assertEqual(Notification.objects.filter(appointment=appointment, status=Notification.Statuses.PENDING).count(), 2)
+
+    def test_create_appointment_from_closed_lead_is_rejected_without_side_effects(self):
+        client = Client.objects.create(business=self.business, full_name="Client")
+        service = Service.objects.create(business=self.business, name="Consultation", duration_minutes=60)
+        lead = Lead.objects.create(
+            business=self.business,
+            client=client,
+            message="Please book me",
+            status=Lead.Statuses.CLOSED,
+        )
+        WorkingHours.objects.create(
+            business=self.business,
+            weekday=0,
+            start_time=time(9, 0),
+            end_time=time(12, 0),
+        )
+        start_at = datetime(2026, 5, 11, 9, 0, tzinfo=ZoneInfo("Asia/Almaty"))
+
+        with self.assertRaisesMessage(Exception, "Cannot move lead"):
+            create_appointment_from_lead(lead, service, start_at)
+
+        self.assertFalse(Appointment.objects.filter(business=self.business, lead=lead).exists())
+        lead.refresh_from_db()
+        self.assertEqual(lead.status, Lead.Statuses.CLOSED)
+        self.assertFalse(
+            ActivityEvent.objects.filter(
+                business=self.business,
+                entity_type="Lead",
+                entity_id=str(lead.id),
+                event_type=ActivityEvents.APPOINTMENT_CREATED,
+            ).exists()
+        )
 
     def test_appointment_followups_prefer_client_channel_and_schedule_confirmation_and_reminder(self):
         client = Client.objects.create(

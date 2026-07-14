@@ -11,7 +11,7 @@ from apps.activities.services import create_activity_event
 from apps.activities.taxonomy import ActivityEvents
 from apps.bots.inbox_service import send_outbound_message
 from apps.bots.models import BotConversation, BotMessage
-from apps.leads.models import Lead
+from apps.leads.services import can_mark_lead_appointment_created, mark_lead_appointment_created
 from apps.notifications.models import Notification
 from apps.notifications.routing import MANAGER_ROLES, create_role_notification
 from apps.scheduling.models import Appointment, Resource
@@ -72,6 +72,12 @@ def maybe_create_appointment_from_reply(*, conversation: BotConversation, messag
     except Exception as exc:
         return _booking_blocked(conversation, f"Выбранный слот больше недоступен: {exc}")
 
+    if not can_mark_lead_appointment_created(conversation.lead):
+        return _booking_blocked(
+            conversation,
+            f"Cannot move lead from '{conversation.lead.status}' to appointment_created.",
+        )
+
     appointment = Appointment.objects.create(
         business=conversation.business,
         client=conversation.client,
@@ -84,9 +90,15 @@ def maybe_create_appointment_from_reply(*, conversation: BotConversation, messag
         source=_appointment_source(conversation.channel),
         notes=f"Создано автоматически из диалога #{conversation.id}",
     )
-    conversation.lead.service = service
-    conversation.lead.status = Lead.Statuses.APPOINTMENT_CREATED
-    conversation.lead.save(update_fields=["service", "status", "updated_at"])
+    mark_lead_appointment_created(
+        lead=conversation.lead,
+        actor=None,
+        service=service,
+        appointment=appointment,
+        resource=resource,
+        source="auto_booking",
+        activity_metadata={"conversation_id": conversation.id, "slot": slot},
+    )
     schedule_appointment_followups(appointment, responsible_user=conversation.lead.responsible_user)
     _save_booking_meta(conversation, status="booked", appointment=appointment, slot=slot)
     create_activity_event(
@@ -119,6 +131,11 @@ def create_appointment_from_conversation(*, conversation: BotConversation, servi
             raise ValueError("Resource was not found in this business.")
 
     end_at = validate_appointment_availability(conversation.business, service, start_at, resource=resource)
+    if conversation.lead_id:
+        if conversation.lead.business_id != conversation.business_id:
+            raise ValueError("Lead must belong to the conversation business.")
+        if not can_mark_lead_appointment_created(conversation.lead):
+            raise ValueError(f"Cannot move lead from '{conversation.lead.status}' to appointment_created.")
     appointment = Appointment.objects.create(
         business=conversation.business,
         client=conversation.client,
@@ -132,9 +149,15 @@ def create_appointment_from_conversation(*, conversation: BotConversation, servi
         notes=notes or f"Created from inbox conversation #{conversation.id}",
     )
     if conversation.lead_id:
-        conversation.lead.service = service
-        conversation.lead.status = Lead.Statuses.APPOINTMENT_CREATED
-        conversation.lead.save(update_fields=["service", "status", "updated_at"])
+        mark_lead_appointment_created(
+            lead=conversation.lead,
+            actor=actor if actor and getattr(actor, "is_authenticated", False) else None,
+            service=service,
+            appointment=appointment,
+            resource=resource,
+            source="inbox",
+            activity_metadata={"conversation_id": conversation.id},
+        )
     schedule_appointment_followups(
         appointment,
         responsible_user=conversation.lead.responsible_user if conversation.lead_id and conversation.lead.responsible_user_id else conversation.assigned_to,

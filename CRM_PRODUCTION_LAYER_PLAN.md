@@ -125,6 +125,8 @@ Update 2026-07-09: Phase 5 pass 1 hardened the inbox action/activity layer. Manu
 
 ### Leads
 
+Update 2026-07-14: Lead appointment-created lifecycle transitions are centralized in `apps.leads.services`. Lead API create-appointment, scheduling service `create_appointment_from_lead`, inbox conversation appointment creation and auto-booking now call the same lead lifecycle helper instead of assigning `lead.status`/`lead.service` directly. The helper validates allowed transitions and same-business service/resource/appointment links, writes taxonomy-backed lead activity/audit metadata, preserves responsible-user notification routing and emits the lead status automation trigger. Focused tests cover happy path, permission denial, tenant-related service rejection, invalid closed-lead no-side-effect behavior and backend E2E CRM flows.
+
 Update 2026-07-04: Phase 1 UI alignment and Phase 2 lead lifecycle are complete. Leads now have service-backed lifecycle actions with explicit allowed transitions, protected generic update paths for lifecycle/archive fields, lost-reason enforcement, active business member validation, lead -> client, lead -> deal, lead -> appointment and lead -> follow-up task API contracts, activity/audit coverage for key actions, normalized phone/email duplicate detection through the client identity layer, and focused backend tests for lifecycle, permission denial, tenant isolation and conversion flows. Still open for later phases: frontend E2E for lead -> appointment -> task and lead -> deal, and deeper automation/BusinessEvent mapping.
 
 Статус: следующий основной frontend/backend слой.

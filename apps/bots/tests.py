@@ -564,6 +564,17 @@ class BotsFoundationTests(TestCase):
         self.assertEqual(appointment.source, Appointment.Sources.WEBSITE)
         self.assertEqual(conversation.metadata_json["auto_booking"]["status"], "booked")
         self.assertEqual(conversation.metadata_json["auto_booking"]["appointment_id"], appointment.id)
+        self.assertTrue(
+            ActivityEvent.objects.filter(
+                business=self.business,
+                client=conversation.client,
+                event_type=ActivityEvents.APPOINTMENT_CREATED,
+                entity_type="Lead",
+                entity_id=str(conversation.lead_id),
+                metadata__lifecycle_action="lead_appointment_created",
+                metadata__conversation_id=conversation.id,
+            ).exists()
+        )
         self.assertTrue(Notification.objects.filter(business=self.business, appointment=appointment, action_label="Подтвердить запись").exists())
         self.assertTrue(
             BotMessage.objects.filter(
@@ -1359,6 +1370,17 @@ class InboxBackendTests(TestCase):
             ActivityEvent.objects.filter(
                 business=self.business,
                 client=self.client,
+                event_type=ActivityEvents.APPOINTMENT_CREATED,
+                entity_type="Lead",
+                entity_id=str(lead.id),
+                metadata__lifecycle_action="lead_appointment_created",
+                metadata__conversation_id=self.conversation.id,
+            ).exists()
+        )
+        self.assertTrue(
+            ActivityEvent.objects.filter(
+                business=self.business,
+                client=self.client,
                 actor=self.owner,
                 event_type=ActivityEvents.APPOINTMENT_CREATED,
                 entity_id=str(response.data["id"]),
@@ -1380,6 +1402,39 @@ class InboxBackendTests(TestCase):
             format="json",
         )
         self.assertEqual(missing_client_response.status_code, 400)
+
+    def test_inbox_rejects_appointment_when_linked_lead_transition_is_invalid(self):
+        lead = Lead.objects.create(
+            business=self.business,
+            client=self.client,
+            source=Lead.Sources.WEBSITE,
+            responsible_user=self.manager,
+            status=Lead.Statuses.CLOSED,
+        )
+        self.conversation.lead = lead
+        self.conversation.assigned_to = self.manager
+        self.conversation.save(update_fields=["lead", "assigned_to", "updated_at"])
+        service = Service.objects.create(business=self.business, name="Inbox consultation", duration_minutes=30, price_from=10000)
+        start_at = (timezone.now() + timezone.timedelta(days=1)).replace(hour=10, minute=0, second=0, microsecond=0)
+        WorkingHours.objects.create(
+            business=self.business,
+            weekday=start_at.weekday(),
+            start_time=time(9, 0),
+            end_time=time(18, 0),
+            is_day_off=False,
+        )
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            f"/api/inbox/conversations/{self.conversation.id}/create-appointment/",
+            {"service_id": service.id, "start_at": start_at.isoformat(), "notes": "Booked from inbox"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(Appointment.objects.filter(business=self.business, lead=lead).exists())
+        lead.refresh_from_db()
+        self.assertEqual(lead.status, Lead.Statuses.CLOSED)
 
     def test_inbox_can_link_existing_lead_and_reject_foreign_lead(self):
         lead = Lead.objects.create(business=self.business, client=self.client, source=Lead.Sources.WEBSITE)

@@ -18,6 +18,8 @@ domain invariants -> state machines -> audit/activity -> API contracts -> fronte
 
 ### Integrations
 
+Update 2026-07-14: Provider-specific setup, status, test, sync and OAuth actions are no longer implemented directly in `BusinessConnectorViewSet` or `BotChannelViewSet`. Business connector orchestration now lives in `apps.integrations.services`, bot-channel Telegram/WhatsApp/Instagram orchestration lives in `apps.bots.services`, and DRF viewsets keep the HTTP/serializer/permission boundary. Focused integration and bot API tests passed for the current scope.
+
 Update 2026-07-13: Phase 11 is complete at the current CRM scope. Connector provider logic stays behind provider/service layers, credentials and connector errors are masked in serializers, connector health checks and sync-run retry are tenant-scoped and permission-gated, and the merchant integrations UI now shows the latest sync run with safe retry for failed runs. Website forms/chat and Telegram, WhatsApp and Instagram inbound messages now create source-grounded `BusinessEvent` rows with CRM links where available. Excel/CSV import now maps clients, leads, deals, sales and catalog into CRM/business events. Marketplace/commerce sync endpoints use a provider-neutral sync service before writing `BusinessEvent`.
 
 ### Analytics And Reporting

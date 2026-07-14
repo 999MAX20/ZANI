@@ -11,6 +11,8 @@ Phase 4 adds the first production-oriented integration foundation for merchant c
 
 This keeps integration state separate from CRM entities and avoids putting provider-specific logic directly into CRM views.
 
+Update 2026-07-14: provider-specific connector and bot-channel actions are now service-backed. `BusinessConnectorViewSet` validates HTTP input and delegates marketplace/Meta/WhatsApp/Kaspi/MoySklad/Wildberries/Ozon config, status, test and sync orchestration to `apps.integrations.services`. `BotChannelViewSet` delegates Telegram, WhatsApp and Instagram setup/test/status/sync orchestration to `apps.bots.services`. Raw provider credentials remain write-only or masked in connector/channel API responses.
+
 ## API
 
 Merchant endpoints:

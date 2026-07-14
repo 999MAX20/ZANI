@@ -9,6 +9,7 @@ from django.core.management.base import CommandError
 from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
+from apps.bots import services as bot_services
 from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
 from apps.businesses.models import Business, BusinessMember
 from apps.accounts.models import User
@@ -436,6 +437,31 @@ class TelegramIntegrationSkeletonTests(TestCase):
         self.assertEqual(connector.config_json["bot_channel_id"], self.channel.id)
         self.assertNotIn("secret-token", str(connector.config_json))
         self.assertNotIn("merchant-secret-P9k_L4m-Q8r_T2v-W6x_Y3z-A7b_C5d", str(connector.config_json))
+
+    def test_telegram_channel_config_service_syncs_connector_without_leaking_token(self):
+        result = bot_services.configure_telegram_channel(
+            self.channel,
+            {
+                "bot_token": "123456:service-secret-token",
+                "webhook_secret": "service-secret-P9k_L4m-Q8r_T2v-W6x_Y3z-A7b_C5d",
+            },
+        )
+
+        self.assertTrue(result["ok"])
+        self.assertTrue(result["token_configured"])
+        self.channel.refresh_from_db()
+        self.assertEqual(self.channel.status, BotChannel.Statuses.ACTIVE)
+        connector = BusinessConnector.objects.get(
+            business=self.business,
+            provider=BusinessConnector.Providers.TELEGRAM,
+            name="Telegram",
+        )
+        self.assertEqual(connector.status, BusinessConnector.Statuses.NEEDS_ATTENTION)
+        self.assertEqual(connector.config_json["bot_channel_id"], self.channel.id)
+        self.assertTrue(connector.config_json["token_configured"])
+        self.assertTrue(connector.config_json["webhook_secret_configured"])
+        self.assertNotIn("service-secret-token", str(connector.config_json))
+        self.assertNotIn("service-secret-P9k_L4m-Q8r_T2v-W6x_Y3z-A7b_C5d", str(connector.config_json))
 
     def test_merchant_cannot_configure_weak_telegram_webhook_secret(self):
         self.api.force_authenticate(self.owner)

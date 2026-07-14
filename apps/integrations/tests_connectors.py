@@ -16,6 +16,7 @@ from apps.integrations.moysklad import (
     moysklad_entity_to_import_type,
 )
 from apps.integrations.models import BusinessConnector, BusinessEvent, ConnectorCredential, ConnectorSyncRun, IntegrationEventLog
+from apps.integrations import services as integration_services
 from apps.integrations.one_c import ONE_C_EVENT_TYPES, build_one_c_mock_events, one_c_entity_to_import_type
 from apps.integrations.ozon import (
     OZON_EVENT_TYPES,
@@ -648,6 +649,63 @@ class BusinessConnectorFoundationTests(TestCase):
         self.assertTrue(sync_response.data["ok"])
         self.assertTrue(sync_response.data["mock"])
         self.assertEqual(BusinessEvent.objects.filter(connector=connector, source=BusinessConnector.Providers.KASPI).count(), 3)
+
+    def test_kaspi_config_service_saves_masked_credentials_and_status_payload(self):
+        connector, created = integration_services.save_provider_connector_config(
+            business=self.business,
+            user=self.owner,
+            provider=BusinessConnector.Providers.KASPI,
+            validated_data={
+                "api_token": "kaspi-service-secret-token",
+                "merchant_id": "merchant-service",
+                "order_state": "ARCHIVE",
+                "sync_days": 5,
+                "page_size": 10,
+            },
+        )
+
+        self.assertTrue(created)
+        self.assertEqual(connector.provider, BusinessConnector.Providers.KASPI)
+        self.assertEqual(connector.status, BusinessConnector.Statuses.CONNECTED)
+        self.assertTrue(connector.config_json["read_only"])
+        self.assertTrue(connector.config_json["api_token_configured"])
+        self.assertNotIn("kaspi-service-secret-token", str(connector.config_json))
+        credential = ConnectorCredential.objects.get(connector=connector, key="api_token")
+        self.assertEqual(decrypt_credential_value(credential.encrypted_value), "kaspi-service-secret-token")
+
+        status_payload = integration_services.connector_status_payload(connector, BusinessConnector.Providers.KASPI)
+
+        self.assertTrue(status_payload["api_token_configured"])
+        self.assertEqual(status_payload["merchant_id"], "merchant-service")
+        self.assertIn("kaspi_enabled", status_payload)
+
+    def test_operator_cannot_run_connector_provider_action(self):
+        connector = BusinessConnector.objects.create(
+            business=self.business,
+            provider=BusinessConnector.Providers.KASPI,
+            name="Kaspi",
+            auth_type=BusinessConnector.AuthTypes.TOKEN,
+            created_by=self.owner,
+        )
+        self.api.force_authenticate(self.operator)
+
+        response = self.api.post(f"/api/business-connectors/{connector.id}/kaspi-test-connection/")
+
+        self.assertIn(response.status_code, [403, 404])
+
+    def test_other_merchant_cannot_run_connector_provider_action(self):
+        connector = BusinessConnector.objects.create(
+            business=self.business,
+            provider=BusinessConnector.Providers.KASPI,
+            name="Kaspi",
+            auth_type=BusinessConnector.AuthTypes.TOKEN,
+            created_by=self.owner,
+        )
+        self.api.force_authenticate(self.other_owner)
+
+        response = self.api.post(f"/api/business-connectors/{connector.id}/kaspi-test-connection/")
+
+        self.assertEqual(response.status_code, 404)
 
     def test_kaspi_orders_payload_normalizes_to_read_only_events(self):
         events = build_kaspi_events_from_orders(

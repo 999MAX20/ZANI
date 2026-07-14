@@ -21,6 +21,7 @@ Zani does not enable all external providers at once. Every real provider must pa
 - webhook verification exists where relevant;
 - inbound events are normalized through `BusinessEvent` / `IntegrationEventLog`;
 - provider-specific inbound handlers and pull syncs feed CRM through `apps.integrations.crm_mapping` or `apps.integrations.sync_service`, not direct CRM mutations in views;
+- provider-specific setup, status, test, sync and OAuth actions are routed through service/provider layers, not implemented inside DRF viewsets;
 - duplicate delivery is handled by deduplication keys or idempotent processing;
 - connector health is visible to support;
 - tenant isolation is covered by tests;
@@ -59,6 +60,7 @@ Use the provider-specific form before turning on any real provider env flag.
 
 ## Current Provider Notes
 
+- Update 2026-07-14: connector setup/status/test/sync/OAuth actions are service-backed for BusinessConnector providers, and Telegram/WhatsApp/Instagram bot-channel setup/status/test/sync actions are service-backed for BotChannel endpoints. This is a rollout boundary only; provider live flags and readiness gates below still control production exposure.
 - Telegram: has provider adapter and webhook verification. Real mode requires `TELEGRAM_ENABLED=True`, `TELEGRAM_WEBHOOK_SECRET`, Redis/Celery runtime and Sentry.
 - Website/public forms: can be used first because it does not require paid provider credentials. Keep public throttles enabled.
 - Excel/CSV: available as the first data connector. It is not an external provider, but it must keep connector catalog metadata, clients/leads/deals/sales/catalog import entity support, upload limits and BusinessEvent normalization green before merchant data onboarding.

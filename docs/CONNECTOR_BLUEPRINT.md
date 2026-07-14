@@ -45,6 +45,8 @@ Preferred structure:
 
 Views should not contain provider business logic. They should validate input, enforce permissions and call services/providers.
 
+Current implementation note 2026-07-14: `BusinessConnectorViewSet` delegates provider config/status/test/sync/OAuth/setup actions to `apps.integrations.services`, and `BotChannelViewSet` delegates Telegram/WhatsApp/Instagram setup, test, status and sync actions to `apps.bots.services`. New provider actions should extend those service/provider boundaries instead of adding provider-specific orchestration to viewsets.
+
 ## Frontend Shape
 
 The `Подключения` page should show each integration as a clear operational card:

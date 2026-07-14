@@ -109,8 +109,8 @@ Completion note 2026-07-14:
 
 ### 3. Refactor provider-specific integration actions out of viewsets
 
-- [ ] Вынести Kaspi, MoySklad, Wildberries, Ozon, WhatsApp, Instagram actions из `BusinessConnectorViewSet` в provider/service layer.
-- [ ] Вынести Telegram, WhatsApp, Instagram bot channel setup/test/status/sync из `BotChannelViewSet` в provider/service layer.
+- [x] Вынести Kaspi, MoySklad, Wildberries, Ozon, WhatsApp, Instagram actions из `BusinessConnectorViewSet` в provider/service layer.
+- [x] Вынести Telegram, WhatsApp, Instagram bot channel setup/test/status/sync из `BotChannelViewSet` в provider/service layer.
 
 Problem:
 
@@ -149,6 +149,13 @@ Test gate:
 - Add focused tests for at least one connector config/test/status path through the new provider service.
 - Permission denial test for connector action.
 - Tenant isolation test for connector action.
+
+Completion note 2026-07-14:
+
+- affected area: permissions yes; notifications no direct change; BusinessEvent yes through connector sync/event service boundaries; AI indirect through connector health/recommendation source data; migrations/env no.
+- checks run: `.\.venv\Scripts\python.exe -m pytest apps\integrations\tests.py::TelegramIntegrationSkeletonTests -q`; `.\.venv\Scripts\python.exe -m pytest apps\integrations\tests.py apps\integrations\tests_connectors.py apps\bots\tests.py -q`; `.\.venv\Scripts\python.exe manage.py check`; `.\.venv\Scripts\python.exe manage.py makemigrations --check --dry-run`.
+- checks skipped: full `scripts/codex_verify.sh`, because this was a bounded backend integrations refactor on Windows and the scoped integration/bot/API gate plus Django structural checks covered the task; frontend build, because no frontend files or UI contracts changed.
+- baseline failures: none observed.
 
 ## P1 CRM Lifecycle And Business Logic Hardening
 

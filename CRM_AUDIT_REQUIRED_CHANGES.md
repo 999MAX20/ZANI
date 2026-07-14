@@ -20,7 +20,7 @@
 
 ### 1. Align legacy AI route permissions with `/app` routes
 
-- [ ] Исправить legacy routes `/ai-assistant`, `/assistant`, `/ai`, `/ai-agents`, чтобы они использовали те же resources, что и новые `/app` routes.
+- [x] Исправить legacy routes `/ai-assistant`, `/assistant`, `/ai`, `/ai-agents`, чтобы они использовали те же resources, что и новые `/app` routes.
 
 Problem:
 
@@ -51,6 +51,13 @@ Test gate:
 
 - Frontend route/unit coverage or focused manual route check for users with and without `ai_assistant:view`.
 - `cd frontend && npm run build`
+
+Completion note 2026-07-14:
+
+- affected area: permissions yes; AI yes; notifications no; BusinessEvent no; migrations/env no.
+- checks run: static route check confirmed legacy `/ai-assistant`, `/ai`, `/assistant` use `ai_assistant` and `/ai-agents` uses `ai_automation`; `cd frontend && npm run build`.
+- checks skipped: backend tests, because this is frontend route gating only and no backend/API behavior changed; Playwright route smoke, because the focused static route check plus production build covered the acceptance gate for this narrow change.
+- baseline failures: none observed.
 
 ### 2. Move appointment reply handling into scheduling lifecycle services
 

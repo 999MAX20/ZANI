@@ -61,7 +61,7 @@ Completion note 2026-07-14:
 
 ### 2. Move appointment reply handling into scheduling lifecycle services
 
-- [ ] Убрать прямое изменение `appointment.status` из notification delivery flow.
+- [x] Убрать прямое изменение `appointment.status` из notification delivery flow.
 
 Problem:
 
@@ -99,6 +99,13 @@ Test gate:
 - Activity/audit assertion for cancellation.
 - Notification side effects assertion where applicable.
 - Backend scoped tests for scheduling/notifications.
+
+Completion note 2026-07-14:
+
+- affected area: permissions indirect; notifications yes; BusinessEvent/activity yes; AI indirect; migrations/env no.
+- checks run: `DATABASE_URL=sqlite:///db.sqlite3 .\.venv\Scripts\python.exe -m pytest apps\notifications\tests.py apps\scheduling\tests.py -q`; `DATABASE_URL=sqlite:///db.sqlite3 .\.venv\Scripts\python.exe manage.py check`.
+- checks skipped: full `scripts/codex_verify.sh`, because this was a narrow backend CRM lifecycle fix and the required scoped scheduling/notification gate passed on Windows.
+- baseline failures: none observed.
 
 ### 3. Refactor provider-specific integration actions out of viewsets
 

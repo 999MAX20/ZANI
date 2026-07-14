@@ -8,6 +8,7 @@ from apps.integrations.sanitization import sanitize_error_payload, sanitize_erro
 from apps.notifications.models import Notification
 from apps.notifications.routing import MANAGER_ROLES, TECHNICAL_ROLES, create_role_notification
 from apps.scheduling.models import Appointment
+from apps.scheduling.services import cancel_appointment, confirm_appointment
 from apps.tasks.models import Task
 
 
@@ -73,34 +74,30 @@ def handle_appointment_followup_reply(*, business, channel, external_user_id, te
 
     normalized = _normalize_reply(text)
     if normalized in POSITIVE_CONFIRMATION_WORDS:
-        appointment.status = Appointment.Statuses.CONFIRMED
-        appointment.save(update_fields=["status", "updated_at"])
-        create_activity_event(
-            business=business,
-            client=client,
-            instance=appointment,
-            event_type="appointment_confirmed",
-            category="appointment",
-            source=channel,
-            text="Клиент подтвердил запись",
-            metadata={"reply": text},
-        )
+        if appointment.status != Appointment.Statuses.CONFIRMED:
+            try:
+                appointment = confirm_appointment(
+                    appointment=appointment,
+                    actor=None,
+                    activity_metadata=_reply_lifecycle_metadata(channel=channel, text=text, action="confirm"),
+                    activity_source=channel,
+                )
+            except ValueError as exc:
+                return {"status": "skipped", "reason": str(exc), "appointment_id": appointment.id}
         _notify_manager_for_reply(appointment, f"Клиент подтвердил запись: {client.full_name}")
         return {"status": "confirmed", "appointment_id": appointment.id}
 
     if normalized in CANCEL_WORDS:
-        appointment.status = Appointment.Statuses.CANCELLED
-        appointment.save(update_fields=["status", "updated_at"])
-        create_activity_event(
-            business=business,
-            client=client,
-            instance=appointment,
-            event_type="appointment_cancelled_by_client",
-            category="appointment",
-            source=channel,
-            text="Клиент отменил запись",
-            metadata={"reply": text},
-        )
+        try:
+            appointment = cancel_appointment(
+                appointment=appointment,
+                actor=None,
+                reason=_client_reply_cancellation_reason(channel=channel, text=text),
+                activity_metadata=_reply_lifecycle_metadata(channel=channel, text=text, action="cancel"),
+                activity_source=channel,
+            )
+        except ValueError as exc:
+            return {"status": "skipped", "reason": str(exc), "appointment_id": appointment.id}
         _notify_manager_for_reply(appointment, f"Клиент отменил запись: {client.full_name}")
         return {"status": "cancelled", "appointment_id": appointment.id}
 
@@ -216,6 +213,19 @@ def _client_from_channel(*, business, channel, external_user_id):
 
 def _normalize_reply(text):
     return " ".join((text or "").strip().lower().split())
+
+
+def _reply_lifecycle_metadata(*, channel, text, action):
+    return {
+        "source": "client_reply",
+        "channel": channel,
+        "reply": text,
+        "reply_action": action,
+    }
+
+
+def _client_reply_cancellation_reason(*, channel, text):
+    return f"Client reply via {channel}: {(text or '').strip()}"
 
 
 def _notify_manager_for_reply(appointment, text, *, task=None):

@@ -6,14 +6,20 @@ from django.utils import timezone
 from rest_framework.test import APITestCase
 
 from apps.accounts.models import User
+from apps.activities.models import ActivityEvent
+from apps.activities.taxonomy import ActivityEvents
+from apps.automations.models import AutomationRule, AutomationRun
 from apps.bots.models import Bot, BotChannel
 from apps.businesses.models import Business, BusinessMember
 from apps.clients.models import Client
+from apps.core.models import AuditLog
 from apps.notifications.models import Notification, NotificationPreference
 from apps.notifications.delivery import handle_appointment_followup_reply, process_due_notifications
 from apps.notifications.routing import MANAGER_ROLES, create_role_notification
 from apps.scheduling.models import Appointment
+from apps.scheduling.services import APPOINTMENT_CONFIRMATION_LABEL, APPOINTMENT_REMINDER_LABEL, schedule_appointment_followups
 from apps.services.models import Service
+from apps.tasks.models import Task
 
 
 class NotificationCenterTests(APITestCase):
@@ -410,13 +416,178 @@ class NotificationCenterTests(APITestCase):
             business=self.business,
             channel=Notification.Channels.TELEGRAM,
             external_user_id="telegram-client-200",
-            text="Да",
+            text="yes",
         )
 
         appointment.refresh_from_db()
         self.assertEqual(result["status"], "confirmed")
         self.assertEqual(appointment.status, Appointment.Statuses.CONFIRMED)
-        self.assertTrue(Notification.objects.filter(business=self.business, recipient=self.operator, text__startswith="Клиент подтвердил").exists())
+        self.assertTrue(
+            ActivityEvent.objects.filter(
+                business=self.business,
+                event_type=ActivityEvents.APPOINTMENT_CONFIRMED,
+                source=Notification.Channels.TELEGRAM,
+                entity_id=str(appointment.id),
+                metadata__event_type=ActivityEvents.APPOINTMENT_CONFIRMED,
+                metadata__lifecycle_action="appointment_confirmed",
+                metadata__source="client_reply",
+                metadata__channel=Notification.Channels.TELEGRAM,
+                metadata__reply_action="confirm",
+            ).exists()
+        )
+        self.assertTrue(
+            Notification.objects.filter(
+                business=self.business,
+                recipient=self.operator,
+                appointment=appointment,
+                priority=Notification.Priorities.HIGH,
+                text__contains=self.client_obj.full_name,
+            ).exists()
+        )
+
+    def test_appointment_followup_cancel_reply_uses_lifecycle_service(self):
+        self.client_obj.whatsapp_id = "whatsapp-client-201"
+        self.client_obj.save(update_fields=["whatsapp_id", "updated_at"])
+        service = Service.objects.create(business=self.business, name="Consultation", duration_minutes=60)
+        start_at = timezone.now() + timezone.timedelta(days=2)
+        appointment = Appointment.objects.create(
+            business=self.business,
+            client=self.client_obj,
+            service=service,
+            start_at=start_at,
+            end_at=start_at + timezone.timedelta(hours=1),
+            status=Appointment.Statuses.CREATED,
+        )
+        schedule_appointment_followups(appointment)
+        followup_labels = [APPOINTMENT_CONFIRMATION_LABEL, APPOINTMENT_REMINDER_LABEL]
+        self.assertEqual(
+            Notification.objects.filter(
+                business=self.business,
+                appointment=appointment,
+                status=Notification.Statuses.PENDING,
+                action_label__in=followup_labels,
+            ).count(),
+            2,
+        )
+        AutomationRule.objects.create(
+            business=self.business,
+            name="Cancel reply automation",
+            trigger_type=AutomationRule.TriggerTypes.APPOINTMENT_CANCELLED,
+            is_active=True,
+        )
+
+        result = handle_appointment_followup_reply(
+            business=self.business,
+            channel=Notification.Channels.WHATSAPP,
+            external_user_id="whatsapp-client-201",
+            text="cancel",
+        )
+
+        appointment.refresh_from_db()
+        reason = f"Client reply via {Notification.Channels.WHATSAPP}: cancel"
+        self.assertEqual(result["status"], "cancelled")
+        self.assertEqual(appointment.status, Appointment.Statuses.CANCELLED)
+        self.assertEqual(
+            Notification.objects.filter(
+                business=self.business,
+                appointment=appointment,
+                status=Notification.Statuses.PENDING,
+                action_label__in=followup_labels,
+            ).count(),
+            0,
+        )
+        self.assertEqual(
+            Notification.objects.filter(
+                business=self.business,
+                appointment=appointment,
+                status=Notification.Statuses.CANCELLED,
+                action_label__in=followup_labels,
+            ).count(),
+            2,
+        )
+        self.assertTrue(
+            Task.objects.filter(
+                business=self.business,
+                appointment=appointment,
+                title__icontains="cancelled",
+                description__contains=reason,
+            ).exists()
+        )
+        self.assertTrue(
+            ActivityEvent.objects.filter(
+                business=self.business,
+                event_type=ActivityEvents.APPOINTMENT_CANCELLED,
+                source=Notification.Channels.WHATSAPP,
+                entity_id=str(appointment.id),
+                metadata__event_type=ActivityEvents.APPOINTMENT_CANCELLED,
+                metadata__lifecycle_action="appointment_cancelled",
+                metadata__reason=reason,
+                metadata__source="client_reply",
+                metadata__channel=Notification.Channels.WHATSAPP,
+                metadata__reply_action="cancel",
+            ).exists()
+        )
+        self.assertTrue(
+            AuditLog.objects.filter(
+                business=self.business,
+                entity_type="Appointment",
+                entity_id=str(appointment.id),
+                metadata__kind="lifecycle",
+                metadata__event_type=ActivityEvents.APPOINTMENT_CANCELLED,
+                metadata__lifecycle_action="appointment_cancelled",
+                metadata__reason=reason,
+                metadata__source="client_reply",
+                metadata__channel=Notification.Channels.WHATSAPP,
+            ).exists()
+        )
+        self.assertTrue(
+            AutomationRun.objects.filter(
+                business=self.business,
+                trigger_type=AutomationRule.TriggerTypes.APPOINTMENT_CANCELLED,
+                entity_type="Appointment",
+                entity_id=str(appointment.id),
+            ).exists()
+        )
+        self.assertTrue(
+            Notification.objects.filter(
+                business=self.business,
+                appointment=appointment,
+                priority=Notification.Priorities.HIGH,
+                text__contains=self.client_obj.full_name,
+            ).exists()
+        )
+
+    def test_appointment_followup_cancel_reply_skips_terminal_appointment(self):
+        self.client_obj.whatsapp_id = "whatsapp-client-202"
+        self.client_obj.save(update_fields=["whatsapp_id", "updated_at"])
+        service = Service.objects.create(business=self.business, name="Consultation", duration_minutes=60)
+        appointment = Appointment.objects.create(
+            business=self.business,
+            client=self.client_obj,
+            service=service,
+            start_at=timezone.now() + timezone.timedelta(days=1),
+            end_at=timezone.now() + timezone.timedelta(days=1, hours=1),
+            status=Appointment.Statuses.COMPLETED,
+        )
+
+        result = handle_appointment_followup_reply(
+            business=self.business,
+            channel=Notification.Channels.WHATSAPP,
+            external_user_id="whatsapp-client-202",
+            text="cancel",
+        )
+
+        appointment.refresh_from_db()
+        self.assertEqual(result["status"], "skipped")
+        self.assertEqual(appointment.status, Appointment.Statuses.COMPLETED)
+        self.assertFalse(
+            ActivityEvent.objects.filter(
+                business=self.business,
+                event_type=ActivityEvents.APPOINTMENT_CANCELLED,
+                entity_id=str(appointment.id),
+            ).exists()
+        )
+        self.assertFalse(Task.objects.filter(business=self.business, appointment=appointment, title__icontains="cancelled").exists())
 
     def test_appointment_followup_reschedule_reply_creates_manager_task(self):
         self.client_obj.whatsapp_id = "whatsapp-client-200"

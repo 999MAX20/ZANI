@@ -10,7 +10,7 @@ from apps.activities.taxonomy import ActivityEvents
 from apps.automations.engine import run_automations_for_event
 from apps.automations.models import AutomationRule
 from apps.businesses.models import Business
-from apps.core.audit import write_audit_log
+from apps.core.audit import infer_audit_category, infer_audit_risk, sanitize_audit_metadata, write_audit_log
 from apps.core.models import AuditLog
 from apps.leads.models import Lead
 from apps.notifications.models import Notification
@@ -310,20 +310,25 @@ def sync_appointment_after_update(
         schedule_appointment_followups(appointment)
 
 
-def confirm_appointment(*, appointment, actor):
+def confirm_appointment(*, appointment, actor, activity_metadata=None, activity_source="api"):
     return apply_appointment_status(
         appointment=appointment,
         actor=actor,
         status_value=Appointment.Statuses.CONFIRMED,
         event_type=ActivityEvents.APPOINTMENT_CONFIRMED,
         text="Запись подтверждена",
+        activity_metadata=activity_metadata,
+        activity_source=activity_source,
     )
 
 
-def cancel_appointment(*, appointment, actor, reason, request=None):
+def cancel_appointment(*, appointment, actor, reason, request=None, activity_metadata=None, activity_source="api"):
     reason = (reason or "").strip()
     if not reason:
         raise ValueError("Cancellation reason is required.")
+    audit_metadata = {"reason": reason}
+    if activity_metadata:
+        audit_metadata.update(activity_metadata)
     return apply_appointment_status(
         appointment=appointment,
         actor=actor,
@@ -331,8 +336,10 @@ def cancel_appointment(*, appointment, actor, reason, request=None):
         event_type=ActivityEvents.APPOINTMENT_CANCELLED,
         text="Запись отменена",
         request=request,
-        audit_metadata={"reason": reason},
+        audit_metadata=audit_metadata,
         reason=reason,
+        activity_metadata=activity_metadata,
+        activity_source=activity_source,
     )
 
 
@@ -438,7 +445,19 @@ def reschedule_appointment(*, appointment, actor, start_at, resource=None, reaso
 
 
 @transaction.atomic
-def apply_appointment_status(*, appointment, actor, status_value, event_type, text, request=None, audit_metadata=None, reason=""):
+def apply_appointment_status(
+    *,
+    appointment,
+    actor,
+    status_value,
+    event_type,
+    text,
+    request=None,
+    audit_metadata=None,
+    reason="",
+    activity_metadata=None,
+    activity_source="api",
+):
     appointment = (
         Appointment.objects.select_for_update()
         .select_related("business", "client", "lead", "service", "resource")
@@ -462,13 +481,17 @@ def apply_appointment_status(*, appointment, actor, status_value, event_type, te
     elif status_value not in {Appointment.Statuses.CANCELLED, Appointment.Statuses.NO_SHOW}:
         schedule_appointment_followups(appointment)
 
+    transition_metadata = {"reason": reason} if reason else {}
+    if activity_metadata:
+        transition_metadata.update(activity_metadata)
     create_appointment_activity(
         appointment=appointment,
         actor=actor,
         event_type=event_type,
         text=f"{text}: {appointment.start_at:%d.%m.%Y %H:%M}",
         previous_status=previous_status,
-        metadata={"reason": reason} if reason else None,
+        metadata=transition_metadata or None,
+        source=activity_source,
     )
     if status_value == Appointment.Statuses.CANCELLED:
         run_appointment_cancelled_automations(appointment)
@@ -477,7 +500,7 @@ def apply_appointment_status(*, appointment, actor, status_value, event_type, te
     if status_value in TERMINAL_APPOINTMENT_STATUSES:
         create_appointment_follow_up_task(appointment=appointment, actor=actor, request=request, reason=reason)
     notify_appointment_responsible(appointment, f"Appointment status changed to {status_value}", actor=actor)
-    if request is not None and audit_metadata is not None:
+    if audit_metadata is not None:
         lifecycle_metadata = {
             "kind": "lifecycle",
             "event_type": event_type,
@@ -486,16 +509,19 @@ def apply_appointment_status(*, appointment, actor, status_value, event_type, te
             "to": appointment.status,
         }
         lifecycle_metadata.update(audit_metadata)
-        write_audit_log(
-            request,
-            AuditLog.Actions.UPDATE,
-            appointment,
-            metadata=lifecycle_metadata,
-        )
+        if request is not None:
+            write_audit_log(
+                request,
+                AuditLog.Actions.UPDATE,
+                appointment,
+                metadata=lifecycle_metadata,
+            )
+        else:
+            _write_system_appointment_audit(appointment=appointment, actor=actor, metadata=lifecycle_metadata)
     return appointment
 
 
-def create_appointment_activity(*, appointment, actor, event_type, text, previous_status, metadata=None):
+def create_appointment_activity(*, appointment, actor, event_type, text, previous_status, metadata=None, source="api"):
     payload = {
         "event_type": event_type,
         "lifecycle_action": APPOINTMENT_LIFECYCLE_ACTIONS.get(event_type, event_type),
@@ -511,8 +537,23 @@ def create_appointment_activity(*, appointment, actor, event_type, text, previou
         event_type=event_type,
         instance=appointment,
         category="appointment",
+        source=source,
         text=text,
         metadata=payload,
+    )
+
+
+def _write_system_appointment_audit(*, appointment, actor, metadata):
+    metadata = sanitize_audit_metadata(metadata)
+    AuditLog.objects.create(
+        business=appointment.business,
+        actor=actor if _is_active_business_member(appointment.business, actor) else None,
+        action=AuditLog.Actions.UPDATE,
+        category=infer_audit_category(AuditLog.Actions.UPDATE, appointment, metadata),
+        risk_level=infer_audit_risk(AuditLog.Actions.UPDATE, appointment, metadata),
+        entity_type=appointment.__class__.__name__,
+        entity_id=str(appointment.pk),
+        metadata=metadata,
     )
 
 

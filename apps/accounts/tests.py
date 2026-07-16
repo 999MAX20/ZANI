@@ -46,19 +46,22 @@ class AuthSecurityBaselineTests(TestCase):
 
         self.assertEqual(login_response.status_code, 200)
         self.assertIn("access", login_response.data)
-        self.assertIn("refresh", login_response.data)
+        self.assertNotIn("refresh", login_response.data)
+        self.assertIn("zani_refresh_token", login_response.cookies)
+        self.assertTrue(login_response.cookies["zani_refresh_token"]["httponly"])
 
-        old_refresh = login_response.data["refresh"]
+        old_refresh = login_response.cookies["zani_refresh_token"].value
         refresh_response = self.api.post(
             "/api/auth/token/refresh/",
-            {"refresh": old_refresh},
+            {},
             format="json",
         )
 
         self.assertEqual(refresh_response.status_code, 200)
         self.assertIn("access", refresh_response.data)
-        self.assertIn("refresh", refresh_response.data)
-        self.assertNotEqual(refresh_response.data["refresh"], old_refresh)
+        self.assertNotIn("refresh", refresh_response.data)
+        self.assertIn("zani_refresh_token", refresh_response.cookies)
+        self.assertNotEqual(refresh_response.cookies["zani_refresh_token"].value, old_refresh)
 
         reused_refresh_response = self.api.post(
             "/api/auth/token/refresh/",
@@ -134,7 +137,8 @@ class AuthSecurityBaselineTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn("access", response.data)
-        self.assertIn("refresh", response.data)
+        self.assertNotIn("refresh", response.data)
+        self.assertIn("zani_refresh_token", response.cookies)
         self.assertTrue(response.data["created"])
         user = User.objects.get(email="social-owner@example.com")
         self.assertEqual(user.role, User.Roles.BUSINESS_OWNER)
@@ -185,11 +189,36 @@ class AuthSecurityBaselineTests(TestCase):
 
         self.assertEqual(response.status_code, 201)
         self.assertIn("access", response.data)
+        self.assertNotIn("refresh", response.data)
+        self.assertIn("zani_refresh_token", response.cookies)
         user = User.objects.get(email="new-owner@example.com")
         business = Business.objects.get(owner=user)
         self.assertEqual(user.role, User.Roles.BUSINESS_OWNER)
         self.assertEqual(business.name, "Fresh Salon")
         self.assertTrue(BusinessMember.objects.filter(business=business, user=user, role=BusinessMember.Roles.OWNER, is_active=True).exists())
+
+    def test_owner_signup_duplicate_email_uses_generic_error(self):
+        response = self.api.post(
+            "/api/auth/signup/owner/",
+            {
+                "email": self.user.email,
+                "password": "StrongPass123",
+                "business_name": "Fresh Salon",
+                "business_type": "beauty",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data, {"detail": "Unable to create an account with the submitted details."})
+        self.assertNotIn("email", response.data)
+
+    def test_logout_clears_refresh_cookie(self):
+        response = self.api.post("/api/auth/logout/", {}, format="json")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("zani_refresh_token", response.cookies)
+        self.assertEqual(response.cookies["zani_refresh_token"].value, "")
 
     def test_current_user_can_update_personal_profile(self):
         self.api.force_authenticate(self.user)

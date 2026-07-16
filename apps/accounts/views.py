@@ -11,7 +11,7 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from apps.accounts.auth_views import record_login
+from apps.accounts.auth_views import auth_token_response, clear_refresh_cookie, record_login
 from apps.accounts.serializers import (
     ChangePasswordSerializer,
     CurrentUserSerializer,
@@ -80,6 +80,16 @@ class CurrentUserLoginHistoryView(APIView):
         )
 
 
+class LogoutView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def post(self, request):
+        response = Response({"ok": True})
+        clear_refresh_cookie(response)
+        return response
+
+
 class SocialAuthView(APIView):
     permission_classes = [AllowAny]
     throttle_classes = [ScopedRateThrottle]
@@ -95,14 +105,7 @@ class SocialAuthView(APIView):
         user, created = get_or_create_social_user(claims)
         refresh = RefreshToken.for_user(user)
         record_login(request, user=user, email=user.email, status=LoginHistory.Statuses.SUCCESS)
-        return Response(
-            {
-                "access": str(refresh.access_token),
-                "refresh": str(refresh),
-                "created": created,
-                "provider": claims.provider,
-            }
-        )
+        return auth_token_response(refresh, {"created": created, "provider": claims.provider})
 
 
 class PasswordResetRequestView(APIView):
@@ -175,7 +178,7 @@ class OwnerSignupView(APIView):
         data = serializer.validated_data
         email = data["email"].strip().lower()
         if User.objects.filter(email__iexact=email).exists():
-            return Response({"email": ["User with this email already exists."]}, status=400)
+            return Response({"detail": "Unable to create an account with the submitted details."}, status=400)
 
         user = User.objects.create_user(
             username=email,
@@ -213,10 +216,9 @@ class OwnerSignupView(APIView):
         )
         refresh = RefreshToken.for_user(user)
         record_login(request, user=user, email=user.email, status=LoginHistory.Statuses.SUCCESS)
-        return Response(
+        return auth_token_response(
+            refresh,
             {
-                "access": str(refresh.access_token),
-                "refresh": str(refresh),
                 "user": CurrentUserSerializer(user).data,
                 "business": {"id": business.id, "name": business.name, "slug": business.slug},
             },

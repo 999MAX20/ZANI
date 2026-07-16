@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
+from django.utils import timezone
 import uuid
 
 from apps.businesses.models import Business, TimeStampedModel
@@ -50,6 +51,8 @@ class Lead(TimeStampedModel):
         blank=True,
         related_name="assigned_leads",
     )
+    response_due_at = models.DateTimeField(null=True, blank=True)
+    first_responded_at = models.DateTimeField(null=True, blank=True)
     is_archived = models.BooleanField(default=False)
     archived_at = models.DateTimeField(null=True, blank=True)
     archived_by = models.ForeignKey(
@@ -65,7 +68,20 @@ class Lead(TimeStampedModel):
         ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["business", "status", "is_archived"]),
+            models.Index(fields=["business", "status", "response_due_at"], name="lead_biz_status_due_idx"),
         ]
+
+    def save(self, *args, **kwargs):
+        if self._state.adding and self.response_due_at is None:
+            sla_minutes = getattr(self.business, "sla_minutes", 120) or 120
+            self.response_due_at = timezone.now() + timezone.timedelta(minutes=sla_minutes)
+        if self._state.adding and self.first_responded_at is None and self.status in {
+            self.Statuses.CONTACTED,
+            self.Statuses.APPOINTMENT_CREATED,
+            self.Statuses.CLOSED,
+        }:
+            self.first_responded_at = timezone.now()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Lead #{self.pk} - {self.client}"

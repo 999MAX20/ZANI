@@ -16,7 +16,7 @@ const users = {
 
 type TokenPayload = {
   access: string;
-  refresh: string;
+  refresh?: string;
 };
 
 const tokenCache = new Map<string, TokenPayload>();
@@ -49,7 +49,7 @@ async function login(page: Page, email: string, target: RegExp) {
   await page.evaluate(
     ({ access, refresh }) => {
       localStorage.setItem("ai_smb_access_token", access);
-      localStorage.setItem("ai_smb_refresh_token", refresh);
+      if (refresh) localStorage.setItem("ai_smb_refresh_token", refresh);
     },
     tokens,
   );
@@ -82,7 +82,6 @@ async function apiLogin(page: Page, email: string) {
   expect(response.ok()).toBeTruthy();
   const payload = (await response.json()) as TokenPayload;
   expect(payload.access).toBeTruthy();
-  expect(payload.refresh).toBeTruthy();
   tokenCache.set(email, payload);
   return payload;
 }
@@ -296,24 +295,6 @@ test("core merchant business flow works through API", async ({ page, isMobile })
   }
   expect(slots.length).toBeGreaterThan(0);
 
-  const appointmentResponse = await page.request.post(`${apiBaseURL}/api/appointments/`, {
-    headers,
-    data: {
-      business: businessId,
-      client: client.id,
-      service: service.id,
-      resource: resource.id,
-      start_at: slots[0].start_at,
-      end_at: slots[0].end_at,
-      status: "created",
-      source: "manual",
-      notes: "Playwright appointment smoke.",
-    },
-  });
-  expect(appointmentResponse.ok()).toBeTruthy();
-  const appointment = await appointmentResponse.json();
-  expect(appointment.client).toBe(client.id);
-
   const leadResponse = await page.request.post(`${apiBaseURL}/api/leads/`, {
     headers,
     data: {
@@ -327,6 +308,67 @@ test("core merchant business flow works through API", async ({ page, isMobile })
   });
   expect(leadResponse.ok()).toBeTruthy();
   const lead = await leadResponse.json();
+  expect(lead.response_due_at).toBeTruthy();
+
+  const assignResponse = await page.request.post(`${apiBaseURL}/api/leads/${lead.id}/assign/`, {
+    headers,
+    data: { user_id: me.id },
+  });
+  expect(assignResponse.ok()).toBeTruthy();
+
+  const contactedResponse = await page.request.post(`${apiBaseURL}/api/leads/${lead.id}/mark-contacted/`, {
+    headers,
+    data: {},
+  });
+  expect(contactedResponse.ok()).toBeTruthy();
+  const contactedLead = await contactedResponse.json();
+  expect(contactedLead.first_responded_at).toBeTruthy();
+  expect(contactedLead.sla_overdue).toBeFalsy();
+
+  const duplicateResponse = await page.request.post(`${apiBaseURL}/api/clients/`, {
+    headers,
+    data: {
+      business: businessId,
+      full_name: `Duplicate E2E Client ${unique}`,
+      phone: client.phone,
+      email: client.email,
+      source: "manual",
+    },
+  });
+  expect(duplicateResponse.ok()).toBeTruthy();
+  const duplicateClient = await duplicateResponse.json();
+
+  const duplicateCheckResponse = await page.request.post(`${apiBaseURL}/api/clients/check-duplicates/`, {
+    headers,
+    data: { business: businessId, phone: client.phone, email: client.email, exclude_client_id: client.id },
+  });
+  expect(duplicateCheckResponse.ok()).toBeTruthy();
+  const duplicateCheck = await duplicateCheckResponse.json();
+  expect(duplicateCheck.duplicates.some((candidate: { id: number }) => candidate.id === duplicateClient.id)).toBeTruthy();
+
+  const mergePreviewResponse = await page.request.post(`${apiBaseURL}/api/clients/${client.id}/merge-dry-run/`, {
+    headers,
+    data: { duplicate_client_id: duplicateClient.id },
+  });
+  expect(mergePreviewResponse.ok()).toBeTruthy();
+  const mergeResponse = await page.request.post(`${apiBaseURL}/api/clients/${client.id}/merge/`, {
+    headers,
+    data: { duplicate_client_id: duplicateClient.id },
+  });
+  expect(mergeResponse.ok()).toBeTruthy();
+
+  const appointmentResponse = await page.request.post(`${apiBaseURL}/api/leads/${lead.id}/create-appointment/`, {
+    headers,
+    data: {
+      service: service.id,
+      resource: resource.id,
+      start_at: slots[0].start_at,
+    },
+  });
+  expect(appointmentResponse.ok()).toBeTruthy();
+  const appointment = await appointmentResponse.json();
+  expect(appointment.client).toBe(client.id);
+  expect(appointment.lead).toBe(lead.id);
 
   const dealResponse = await page.request.post(`${apiBaseURL}/api/leads/${lead.id}/create-deal/`, {
     headers,
@@ -335,6 +377,27 @@ test("core merchant business flow works through API", async ({ page, isMobile })
   expect(dealResponse.ok()).toBeTruthy();
   const deal = await dealResponse.json();
   expect(deal.lead).toBe(lead.id);
+
+  const guardedStageResponse = await page.request.post(`${apiBaseURL}/api/pipeline-stages/`, {
+    headers,
+    data: {
+      business: businessId,
+      pipeline: deal.pipeline,
+      name: `E2E Qualified ${unique}`,
+      order: 900,
+      color: "#d96718",
+      probability: 70,
+      required_fields_json: { require_next_action: true },
+    },
+  });
+  expect(guardedStageResponse.ok()).toBeTruthy();
+  const guardedStage = await guardedStageResponse.json();
+
+  const blockedMoveResponse = await page.request.post(`${apiBaseURL}/api/deals/${deal.id}/move-stage/`, {
+    headers,
+    data: { stage: guardedStage.id },
+  });
+  expect(blockedMoveResponse.status()).toBe(400);
 
   const taskResponse = await page.request.post(`${apiBaseURL}/api/tasks/`, {
     headers,
@@ -345,13 +408,44 @@ test("core merchant business flow works through API", async ({ page, isMobile })
       lead: lead.id,
       deal: deal.id,
       appointment: appointment.id,
+      assignee: me.id,
+      due_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       priority: "normal",
-      status: "open",
     },
   });
   expect(taskResponse.ok()).toBeTruthy();
   const task = await taskResponse.json();
   expect(task.deal).toBe(deal.id);
+
+  const moveResponse = await page.request.post(`${apiBaseURL}/api/deals/${deal.id}/move-stage/`, {
+    headers,
+    data: { stage: guardedStage.id },
+  });
+  expect(moveResponse.ok()).toBeTruthy();
+  const movedDeal = await moveResponse.json();
+  expect(movedDeal.stage).toBe(guardedStage.id);
+
+  const wonStageResponse = await page.request.post(`${apiBaseURL}/api/pipeline-stages/`, {
+    headers,
+    data: {
+      business: businessId,
+      pipeline: deal.pipeline,
+      name: `E2E Won ${unique}`,
+      order: 1000,
+      color: "#16a34a",
+      probability: 100,
+      is_won: true,
+    },
+  });
+  expect(wonStageResponse.ok()).toBeTruthy();
+
+  const wonResponse = await page.request.post(`${apiBaseURL}/api/deals/${deal.id}/mark-won/`, {
+    headers,
+    data: { amount: "2500.00" },
+  });
+  expect(wonResponse.ok()).toBeTruthy();
+  const wonDeal = await wonResponse.json();
+  expect(wonDeal.status).toBe("won");
 });
 
 test("business owner can create an appointment from calendar UI", async ({ page, isMobile }) => {

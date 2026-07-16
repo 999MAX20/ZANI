@@ -232,7 +232,9 @@ def create_appointment_from_lead(lead, service, start_at, resource=None):
     )
     lead.service = service
     lead.status = Lead.Statuses.APPOINTMENT_CREATED
-    lead.save(update_fields=["service", "status", "updated_at"])
+    if lead.first_responded_at is None:
+        lead.first_responded_at = timezone.now()
+    lead.save(update_fields=["service", "status", "first_responded_at", "updated_at"])
 
     AnalyticsEvent.objects.create(
         business=lead.business,

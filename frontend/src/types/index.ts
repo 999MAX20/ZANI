@@ -757,6 +757,9 @@ export type Lead = {
   ai_score?: number;
   loss_risk?: number;
   recommended_action?: string;
+  response_due_at?: string | null;
+  first_responded_at?: string | null;
+  sla_overdue?: boolean;
   is_archived?: boolean;
   archived_at?: string | null;
   archived_by?: Id | null;
@@ -803,7 +806,7 @@ export type PipelineStage = {
   color: string;
   probability: number;
   sla_minutes: number | null;
-  required_fields_json?: { fields?: string[] } & Record<string, unknown>;
+  required_fields_json?: { fields?: string[]; require_next_action?: boolean } & Record<string, unknown>;
   allowed_roles_json?: { roles?: string[] } & Record<string, unknown>;
   is_won: boolean;
   is_lost: boolean;

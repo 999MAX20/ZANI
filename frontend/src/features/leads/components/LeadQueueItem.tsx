@@ -90,6 +90,7 @@ export function LeadQueueItem({
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
             <Pill className={statusClass[lead.status]}>{getStatusLabel(lead.status, t)}</Pill>
+            {lead.sla_overdue ? <Pill className="bg-red-50 text-red-700 ring-red-200">{t("leads.slaOverdue")}</Pill> : null}
             <span className="text-xs font-bold text-slate-400">{nextAction(lead, t)}</span>
           </div>
           <p className="mt-2 text-[11px] font-bold text-slate-400 lg:hidden">{t("leads.mobileSwipeHint")}</p>

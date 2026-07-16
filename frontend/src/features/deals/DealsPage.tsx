@@ -71,8 +71,8 @@ export function DealsPage() {
       });
       const stages = [
         { name: t("deals.pipelineStageNew"), order: 10, color: "#e7772d", probability: 10 },
-        { name: t("deals.pipelineStageContact"), order: 20, color: "#c76b2c", probability: 35 },
-        { name: t("deals.pipelineStageProposal"), order: 30, color: "#a86432", probability: 60 },
+        { name: t("deals.pipelineStageContact"), order: 20, color: "#c76b2c", probability: 35, required_fields_json: { require_next_action: true } },
+        { name: t("deals.pipelineStageProposal"), order: 30, color: "#a86432", probability: 60, required_fields_json: { require_next_action: true } },
         { name: t("deals.pipelineStageWon"), order: 40, color: "#4f8066", probability: 100, is_won: true },
         { name: t("deals.pipelineStageLost"), order: 50, color: "#a94f48", probability: 0, is_lost: true },
       ];

@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.accounts.models import User
@@ -215,6 +216,28 @@ class LeadCrmLightTests(TestCase):
         self.assertEqual(response.data["in_progress"], 1)
         self.assertEqual(response.data["attention"], 1)
         self.assertEqual(response.data["by_status"][Lead.Statuses.IN_PROGRESS], 1)
+
+    def test_lead_response_sla_is_exposed_and_resolved_by_contact_action(self):
+        Lead.objects.filter(id=self.assigned_lead.id).update(
+            response_due_at=timezone.now() - timezone.timedelta(minutes=1),
+        )
+        self.api.force_authenticate(self.owner)
+
+        list_response = self.api.get("/api/leads/", {"search": "Assigned"})
+
+        self.assertEqual(list_response.status_code, 200)
+        row = list_response.data["results"][0]
+        self.assertTrue(row["sla_overdue"])
+        self.assertIsNotNone(row["response_due_at"])
+        self.assertIsNone(row["first_responded_at"])
+
+        contacted = self.api.post(f"/api/leads/{self.assigned_lead.id}/mark-contacted/", {}, format="json")
+
+        self.assertEqual(contacted.status_code, 200)
+        self.assertFalse(contacted.data["sla_overdue"])
+        self.assertIsNotNone(contacted.data["first_responded_at"])
+        self.assigned_lead.refresh_from_db()
+        self.assertIsNotNone(self.assigned_lead.first_responded_at)
 
 from apps.crm.models import Deal, Pipeline, PipelineStage
 from apps.notifications.models import Notification

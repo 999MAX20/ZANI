@@ -62,6 +62,7 @@ function LeadTableRow({
 }) {
   const title = client?.full_name || t("leads.leadFallback", { id: lead.id });
   const isHot = lead.status === "new" && !lead.responsible_user;
+  const isSlaOverdue = Boolean(lead.sla_overdue);
   const activeColumns = columnOrder.filter((column) => visibleColumns[column]);
   const needsWideTable = activeColumns.length > 5;
   const gridTemplateColumns = `${CRM_TABLE_CHECKBOX_COLUMN} ${activeColumns.map((column) => leadColumnWidths[column]).join(" ")} ${CRM_TABLE_ACTIONS_COLUMN}`;
@@ -86,8 +87,10 @@ function LeadTableRow({
     ),
     priority: (
       <span className="flex items-center gap-2">
-        <span className={cn("h-2 w-2 rounded-full", isHot ? "bg-red-500" : lead.status === "new" ? "bg-amber-400" : "bg-emerald-500")} />
-        <span className="text-xs font-bold text-slate-600">{isHot ? t("leads.priorityHot") : t("leads.priorityNormal")}</span>
+        <span className={cn("h-2 w-2 rounded-full", isSlaOverdue || isHot ? "bg-red-500" : lead.status === "new" ? "bg-amber-400" : "bg-emerald-500")} />
+        <span className={cn("text-xs font-bold", isSlaOverdue ? "text-red-700" : "text-slate-600")}>
+          {isSlaOverdue ? t("leads.slaOverdue") : isHot ? t("leads.priorityHot") : t("leads.priorityNormal")}
+        </span>
       </span>
     ),
     manager: (

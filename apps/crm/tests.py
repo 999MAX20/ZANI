@@ -66,6 +66,27 @@ class PipelineStageEngineUpgradeTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data["required_fields"], ["amount"])
 
+    def test_move_stage_can_require_a_real_next_action(self):
+        self.offer_stage.required_fields_json = {"require_next_action": True}
+        self.offer_stage.save(update_fields=["required_fields_json", "updated_at"])
+
+        blocked = self.api.post(f"/api/deals/{self.deal.id}/move-stage/", {"stage": self.offer_stage.id}, format="json")
+        Task.objects.create(
+            business=self.business,
+            client=self.client,
+            deal=self.deal,
+            title="Send the offer",
+            due_at=timezone.now() + timezone.timedelta(hours=2),
+            created_by=self.owner,
+        )
+        moved = self.api.post(f"/api/deals/{self.deal.id}/move-stage/", {"stage": self.offer_stage.id}, format="json")
+
+        self.assertEqual(blocked.status_code, 400)
+        self.assertIn("next_action", blocked.data)
+        self.assertEqual(moved.status_code, 200)
+        self.deal.refresh_from_db()
+        self.assertEqual(self.deal.stage, self.offer_stage)
+
     def test_move_stage_requires_configured_custom_fields(self):
         definition = CustomFieldDefinition.objects.create(
             business=self.business,

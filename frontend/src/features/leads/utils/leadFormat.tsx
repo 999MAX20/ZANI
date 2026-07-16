@@ -108,7 +108,7 @@ export function hoursSince(value: string) {
 }
 
 export function isStaleLead(lead: Lead) {
-  return !["closed", "lost"].includes(lead.status) && hoursSince(lead.updated_at) > 72;
+  return Boolean(lead.sla_overdue) || (!["closed", "lost"].includes(lead.status) && hoursSince(lead.updated_at) > 72);
 }
 
 export function leadAiInsight(lead: Lead, clients: Client[], services: Service[], allLeads: Lead[], t: Translate): LeadAiInsight {

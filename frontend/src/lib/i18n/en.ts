@@ -3265,6 +3265,8 @@ export const en: Record<string, string> = {
   "leads.duplicatesText": "Similar clients found: {count}",
   "leads.mergeDuplicate": "Merge",
   "leads.duplicatesMerged": "Duplicates merged.",
+  "leads.slaOverdue": "Response SLA overdue",
+  "leads.responseDue": "Respond by {date}",
   "leads.aiAutomationTitle": "AI and automation",
   "leads.aiAutomationText": "Scoring, stale leads and smart assignment run on current CRM data.",
   "leads.sortByHeat": "Sort by heat",

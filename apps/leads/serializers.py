@@ -5,11 +5,13 @@ from apps.clients.services import duplicate_payload, find_duplicate_clients
 from apps.core.permissions import accessible_businesses
 from apps.integrations.sanitization import sanitize_config
 from apps.leads.models import Lead, LeadForm, LeadFormField, LeadFormSubmission, LeadFormSubmissionError
+from apps.core.work_queues import lead_sla_overdue
 from apps.scheduling.models import Resource
 from apps.services.models import Service
 
 
 class LeadSerializer(serializers.ModelSerializer):
+    sla_overdue = serializers.SerializerMethodField()
     lifecycle_update_fields = {
         "status",
         "previous_status",
@@ -34,6 +36,9 @@ class LeadSerializer(serializers.ModelSerializer):
             "lost_at",
             "lost_by",
             "responsible_user",
+            "response_due_at",
+            "first_responded_at",
+            "sla_overdue",
             "is_archived",
             "archived_at",
             "archived_by",
@@ -41,7 +46,10 @@ class LeadSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["created_at", "updated_at", "lost_at", "lost_by", "previous_status", "archived_at", "archived_by"]
+        read_only_fields = ["created_at", "updated_at", "lost_at", "lost_by", "previous_status", "response_due_at", "first_responded_at", "sla_overdue", "archived_at", "archived_by"]
+
+    def get_sla_overdue(self, obj):
+        return lead_sla_overdue(obj)
 
     def validate(self, attrs):
         attempted_archive_fields = sorted(self.archive_update_fields.intersection((self.initial_data or {}).keys()))
@@ -84,6 +92,7 @@ class LeadListSerializer(serializers.ModelSerializer):
     ai_score = serializers.SerializerMethodField()
     loss_risk = serializers.SerializerMethodField()
     recommended_action = serializers.SerializerMethodField()
+    sla_overdue = serializers.SerializerMethodField()
 
     class Meta:
         model = Lead
@@ -105,6 +114,9 @@ class LeadListSerializer(serializers.ModelSerializer):
             "ai_score",
             "loss_risk",
             "recommended_action",
+            "response_due_at",
+            "first_responded_at",
+            "sla_overdue",
             "created_at",
             "updated_at",
         ]
@@ -149,6 +161,9 @@ class LeadListSerializer(serializers.ModelSerializer):
         if obj.status == Lead.Statuses.LOST:
             return "Проверить причину потери"
         return "Проверить заявку"
+
+    def get_sla_overdue(self, obj):
+        return lead_sla_overdue(obj)
 
 
 class CreateAppointmentFromLeadSerializer(serializers.Serializer):

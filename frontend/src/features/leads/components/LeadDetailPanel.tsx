@@ -240,6 +240,11 @@ export function LeadDetailPanel({
 
         <section className="space-y-2">
           <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">{t("leads.control")}</p>
+          {selected.response_due_at && !selected.first_responded_at ? (
+            <p className={cn("rounded-lg px-3 py-2 text-xs font-bold", selected.sla_overdue ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-800")}>
+              {selected.sla_overdue ? t("leads.slaOverdue") : t("leads.responseDue", { date: formatDateTime(selected.response_due_at) })}
+            </p>
+          ) : null}
           <Select
             label={t("leads.responsible")}
             value={selected.responsible_user ? String(selected.responsible_user) : ""}

@@ -84,7 +84,9 @@ def maybe_create_appointment_from_reply(*, conversation: BotConversation, messag
     )
     conversation.lead.service = service
     conversation.lead.status = "appointment_created"
-    conversation.lead.save(update_fields=["service", "status", "updated_at"])
+    if conversation.lead.first_responded_at is None:
+        conversation.lead.first_responded_at = timezone.now()
+    conversation.lead.save(update_fields=["service", "status", "first_responded_at", "updated_at"])
     schedule_appointment_followups(appointment, responsible_user=conversation.lead.responsible_user)
     _save_booking_meta(conversation, status="booked", appointment=appointment, slot=slot)
     create_activity_event(

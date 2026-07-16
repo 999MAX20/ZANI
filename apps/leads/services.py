@@ -166,6 +166,8 @@ def apply_lead_status(*, lead: Lead, actor, status: str, event_type: str, text: 
     previous_status = lead.status
     now = timezone.now()
     lead.status = status
+    if status in {Lead.Statuses.CONTACTED, Lead.Statuses.APPOINTMENT_CREATED, Lead.Statuses.CLOSED} and lead.first_responded_at is None:
+        lead.first_responded_at = now
     if status == Lead.Statuses.LOST:
         lead.previous_status = previous_status if previous_status != Lead.Statuses.LOST else ""
         lead.lost_reason = lost_reason or lead.lost_reason
@@ -177,7 +179,7 @@ def apply_lead_status(*, lead: Lead, actor, status: str, event_type: str, text: 
         lead.lost_reason = ""
         lead.lost_at = None
         lead.lost_by = None
-    lead.save(update_fields=["status", "previous_status", "lost_reason", "lost_at", "lost_by", "updated_at"])
+    lead.save(update_fields=["status", "previous_status", "lost_reason", "lost_at", "lost_by", "first_responded_at", "updated_at"])
     if request is not None:
         metadata = {"kind": "lifecycle", "from": previous_status, "to": status, "lifecycle_action": f"lead_{status}"}
         if status == Lead.Statuses.LOST:

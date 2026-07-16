@@ -12,6 +12,16 @@ OPEN_TASK_STATUSES = [Task.Statuses.OPEN, Task.Statuses.IN_PROGRESS]
 OPEN_LEAD_STATUSES = [Lead.Statuses.NEW, Lead.Statuses.CONTACTED, Lead.Statuses.IN_PROGRESS]
 
 
+def lead_sla_overdue(lead, *, now=None):
+    now = now or timezone.now()
+    return bool(
+        lead.status == Lead.Statuses.NEW
+        and lead.first_responded_at is None
+        and lead.response_due_at
+        and lead.response_due_at < now
+    )
+
+
 def deal_sla_overdue(deal, *, now=None):
     now = now or timezone.now()
     if not deal.stage or not deal.stage.sla_minutes or not deal.stage_entered_at:
@@ -110,7 +120,11 @@ def stale_leads_queryset(*, business=None, queryset=None, now=None):
         queryset = queryset.filter(business=business)
     return (
         queryset.filter(status__in=OPEN_LEAD_STATUSES)
-        .filter(Q(responsible_user__isnull=True) | Q(updated_at__lte=stale_before))
+        .filter(
+            Q(responsible_user__isnull=True)
+            | Q(updated_at__lte=stale_before)
+            | Q(status=Lead.Statuses.NEW, first_responded_at__isnull=True, response_due_at__lt=now)
+        )
         .select_related("client", "service", "responsible_user")
         .order_by("updated_at", "-created_at")
     )
@@ -231,6 +245,8 @@ def _lead_item(lead, *, now):
         "client_id": lead.client_id,
         "responsible_user_id": lead.responsible_user_id,
         "age_hours": _hours_since(lead.updated_at, now=now),
+        "response_due_at": lead.response_due_at.isoformat() if lead.response_due_at else None,
+        "sla_overdue": lead_sla_overdue(lead, now=now),
         "href": f"/app/leads?lead={lead.id}",
     }
 

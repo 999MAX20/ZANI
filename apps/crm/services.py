@@ -9,6 +9,7 @@ from apps.crm.models import Deal, Pipeline, PipelineStage, StageTransition
 from apps.core.audit import write_audit_log
 from apps.core.custom_fields import required_custom_fields_missing
 from apps.core.models import AuditLog
+from apps.tasks.models import Task
 
 
 DEFAULT_STAGES = [
@@ -19,6 +20,8 @@ DEFAULT_STAGES = [
     ("Won", "#16a34a", 100, None),
     ("Lost", "#ef4444", 0, None),
 ]
+
+OPEN_TASK_STATUSES = [Task.Statuses.OPEN, Task.Statuses.IN_PROGRESS]
 
 
 def ensure_default_pipeline(business: Business) -> Pipeline:
@@ -33,6 +36,7 @@ def ensure_default_pipeline(business: Business) -> Pipeline:
         },
     )
     for order, (name, color, probability, sla_minutes) in enumerate(DEFAULT_STAGES, start=1):
+        require_next_action = name in {"Contacted", "Qualified", "Booked"}
         PipelineStage.objects.get_or_create(
             business=business,
             pipeline=pipeline,
@@ -42,6 +46,7 @@ def ensure_default_pipeline(business: Business) -> Pipeline:
                 "color": color,
                 "probability": probability,
                 "sla_minutes": sla_minutes,
+                "required_fields_json": {"require_next_action": True} if require_next_action else {},
                 "is_won": slugify(name) == "won",
                 "is_lost": slugify(name) == "lost",
             },
@@ -250,6 +255,13 @@ def validate_stage_requirements(*, deal: Deal, stage: PipelineStage, actor, payl
     if allowed_roles and actor.role not in allowed_roles:
         raise ValidationError({"stage": "Your role cannot move deals to this stage."})
 
+    if stage.required_fields_json.get("require_next_action") and not deal_has_next_action(deal):
+        raise ValidationError(
+            {
+                "next_action": "Create an open task with a due date or set the deal next action before moving to this stage."
+            }
+        )
+
     missing = []
     for field in stage.required_fields_json.get("fields", []):
         value = payload.get(field, getattr(deal, field, None))
@@ -270,3 +282,13 @@ def validate_stage_requirements(*, deal: Deal, stage: PipelineStage, actor, payl
         if missing_custom_fields:
             errors["required_custom_fields"] = missing_custom_fields
         raise ValidationError(errors)
+
+
+def deal_has_next_action(deal: Deal) -> bool:
+    if deal.next_action_at is not None:
+        return True
+    return deal.tasks.filter(
+        status__in=OPEN_TASK_STATUSES,
+        is_archived=False,
+        due_at__isnull=False,
+    ).exists()

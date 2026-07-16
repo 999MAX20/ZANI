@@ -1,6 +1,6 @@
 # CRM Production Layer Plan
 
-Дата обновления: 2026-06-23
+Дата обновления: 2026-07-16
 
 Цель: довести CRM до production-уровня слоями по всему продукту, а не полировать одну страницу изолированно. Этот документ является текущим source-of-truth для CRM hardening.
 
@@ -75,21 +75,24 @@ domain invariants -> state machines -> audit/activity -> API contracts -> fronte
 
 ### Leads
 
-Статус: следующий основной frontend/backend слой.
+Статус: close-to-production для контролируемого merchant pilot.
 
 Сделано:
 
 - базовый table UX;
 - lead drawer foundation;
 - фильтры и pagination foundation.
+- назначение конкретного активного сотрудника через lifecycle action;
+- duplicate check и безопасный client merge с dry-run, archive и merge log;
+- SLA первого ответа от `Business.sla_minutes` с deadline, overdue state и work queue;
+- `mark-contacted` и создание записи фиксируют первый ответ;
+- SLA виден в desktop/mobile списке и detail panel.
 
 Осталось:
 
 - убрать лишние вложенные containers;
 - привести страницу к единому CRM table pattern;
-- закрепить lead lifecycle service;
-- проверить conversion lead -> client/deal/appointment;
-- сделать actions auditable and activity-backed.
+- расширить bulk lifecycle actions и правила merge конфликтов.
 
 ### Clients
 
@@ -110,15 +113,22 @@ domain invariants -> state machines -> audit/activity -> API contracts -> fronte
 
 ### Deals
 
-Статус: базовая CRM-сущность есть, production hardening впереди.
+Статус: close-to-production для базового pipeline flow.
+
+Сделано:
+
+- stage transition service и terminal lifecycle actions;
+- activity/audit trail для won/lost/reopen/move;
+- stage SLA и risk queues;
+- backend next-action guard для стадий с `required_fields_json.require_next_action`;
+- стандартная frontend-воронка включает обязательный next action на рабочих стадиях.
 
 Осталось:
 
-- stage transition service;
 - stage history;
 - required fields/custom fields validation;
 - deal drawer polishing;
-- activity/audit coverage.
+- добавить настройку next-action requirement в редактор пользовательской воронки.
 
 ## 3. Non-Negotiable CRM Invariants
 
@@ -191,6 +201,15 @@ cd frontend && npm run build
 - calendar booking/reschedule/cancel;
 - task assign/comment/complete/cancel;
 - client duplicate warning -> merge/dismiss.
+
+Текущий API E2E smoke проверяет цельный цикл:
+
+- client/service/resource -> lead;
+- назначение сотрудника и первый ответ в SLA;
+- duplicate detection -> merge dry-run -> merge;
+- lead -> appointment -> deal -> next-action task;
+- backend-блокировку stage move без next action;
+- успешный stage move после задачи и закрытие сделки как won.
 
 ## 5. Ближайший Приоритет
 

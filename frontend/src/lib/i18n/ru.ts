@@ -3262,6 +3262,8 @@ export const ru: Record<string, string> = {
   "leads.duplicatesText": "Найдено похожих клиентов: {count}",
   "leads.mergeDuplicate": "Объединить",
   "leads.duplicatesMerged": "Дубли объединены.",
+  "leads.slaOverdue": "SLA ответа просрочен",
+  "leads.responseDue": "Ответить до {date}",
   "leads.aiAutomationTitle": "AI и автоматизация",
   "leads.aiAutomationText": "Скоринг, зависшие лиды и автоназначение работают по текущим CRM-данным.",
   "leads.sortByHeat": "Сортировать по горячести",

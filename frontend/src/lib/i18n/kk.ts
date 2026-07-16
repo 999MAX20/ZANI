@@ -3265,6 +3265,8 @@ export const kk: Record<string, string> = {
   "leads.duplicatesText": "Ұқсас клиенттер табылды: {count}",
   "leads.mergeDuplicate": "Біріктіру",
   "leads.duplicatesMerged": "Дубльдер біріктірілді.",
+  "leads.slaOverdue": "Жауап беру SLA мерзімі өтті",
+  "leads.responseDue": "{date} дейін жауап беру",
   "leads.aiAutomationTitle": "AI және автоматтандыру",
   "leads.aiAutomationText": "Скоринг, тоқтап тұрған лидтер және авто-тағайындау ағымдағы CRM деректерімен жұмыс істейді.",
   "leads.sortByHeat": "Маңыздылығы бойынша сұрыптау",

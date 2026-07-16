@@ -153,7 +153,15 @@ function TaskTableSection({
       />
 
       {tasks.length ? (
-        <div className="overflow-x-auto">
+        <div className="divide-y divide-slate-100 lg:hidden">
+          {tasks.map((task) => (
+            <TaskMobileCard key={task.id} task={task} onOpenTask={onOpenTask} />
+          ))}
+        </div>
+      ) : null}
+
+      {tasks.length ? (
+        <div className="hidden overflow-x-auto lg:block">
           <table className="min-w-[980px] w-full border-collapse text-left">
             <thead className="sticky top-0 z-10 bg-white">
               <tr className="h-10 border-b border-slate-200 text-xs font-semibold text-slate-600">
@@ -175,6 +183,56 @@ function TaskTableSection({
         </div>
       ) : null}
     </section>
+  );
+}
+
+function TaskMobileCard({ task, onOpenTask }: { task: Task; onOpenTask: (task: Task) => void }) {
+  const { t } = useI18n();
+  const StatusIcon = task.status === "in_progress" ? Pause : Play;
+  const relation =
+    task.client_name ||
+    task.lead_title ||
+    task.deal_title ||
+    task.appointment_service_name ||
+    t("tasks.noLinkedEntities");
+
+  return (
+    <article className="px-4 py-4">
+      <button
+        type="button"
+        className="w-full rounded-xl text-left transition active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+        onClick={() => onOpenTask(task)}
+      >
+        <div className="flex items-start gap-3">
+          <span className={`mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-xl ${task.status === "in_progress" ? "bg-brand-600 text-white" : "bg-brand-50 text-brand-700"}`}>
+            <StatusIcon size={16} fill="currentColor" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="flex items-start justify-between gap-3">
+              <span className="line-clamp-2 text-[15px] font-black leading-5 text-midnight">{task.title}</span>
+              <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${priorityDotClass(task.priority)}`} aria-label={priorityLabel(task.priority, t)} />
+            </span>
+            {task.description ? <span className="mt-1.5 line-clamp-2 block text-sm font-medium leading-5 text-slate-500">{task.description}</span> : null}
+          </span>
+        </div>
+
+        <span className="mt-4 grid grid-cols-2 gap-2 text-xs font-semibold text-slate-500">
+          <span className="rounded-lg bg-slate-50 px-3 py-2">
+            <span className="block text-[10px] font-black uppercase tracking-[0.08em] text-slate-400">{t("tasks.tableStatus")}</span>
+            <span className="mt-1 block text-slate-700">{statusLabel(task.status, t)}</span>
+          </span>
+          <span className="rounded-lg bg-slate-50 px-3 py-2">
+            <span className="block text-[10px] font-black uppercase tracking-[0.08em] text-slate-400">{t("tasks.tableDue")}</span>
+            <span className="mt-1 block text-slate-700">{task.due_at ? formatDateTime(task.due_at) : t("tasks.groupNoDue")}</span>
+          </span>
+        </span>
+
+        <span className="mt-3 flex items-center justify-between gap-3 border-t border-slate-100 pt-3 text-xs font-semibold">
+          <span className="min-w-0 truncate text-slate-500">{relation}</span>
+          <span className="shrink-0 text-brand-700">{task.assignee_name || task.assignee_email || t("tasks.noAssignee")}</span>
+        </span>
+      </button>
+    </article>
   );
 }
 

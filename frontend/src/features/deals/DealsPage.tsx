@@ -3,7 +3,7 @@ import { Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
-import { dealsApi } from "../../api/deals";
+import { dealsApi, pipelinesApi, pipelineStagesApi } from "../../api/deals";
 import { CrmEntityDrawer, type CrmDrawerEntity } from "../../components/crm/CrmEntityDrawer";
 import {
   CrmDataTable,
@@ -17,7 +17,7 @@ import { useNotification } from "../../components/notifications/NotificationProv
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { Modal } from "../../components/ui/Modal";
-import { ErrorState, LoadingState } from "../../components/ui/StateViews";
+import { EmptyState, ErrorState, LoadingState } from "../../components/ui/StateViews";
 import { useI18n } from "../../lib/i18n";
 import type { Deal, Id } from "../../types";
 import { DealsList } from "./components/DealsList";
@@ -56,6 +56,38 @@ export function DealsPage() {
       selection.setSelectedIds([]);
       setArchiveOpen(false);
       setArchiveReason("");
+    },
+  });
+  const createPipelineMutation = useMutation({
+    mutationFn: async () => {
+      if (!business) throw new Error(t("deals.noBusiness"));
+      const pipeline = await pipelinesApi.create({
+        business: business.id,
+        name: t("deals.defaultPipelineName"),
+        slug: "sales",
+        entity_type: "deal",
+        is_default: true,
+        template_key: "zani-standard",
+      });
+      const stages = [
+        { name: t("deals.pipelineStageNew"), order: 10, color: "#e7772d", probability: 10 },
+        { name: t("deals.pipelineStageContact"), order: 20, color: "#c76b2c", probability: 35 },
+        { name: t("deals.pipelineStageProposal"), order: 30, color: "#a86432", probability: 60 },
+        { name: t("deals.pipelineStageWon"), order: 40, color: "#4f8066", probability: 100, is_won: true },
+        { name: t("deals.pipelineStageLost"), order: 50, color: "#a94f48", probability: 0, is_lost: true },
+      ];
+      await Promise.all(
+        stages.map((stage) => pipelineStagesApi.create({ business: business.id, pipeline: pipeline.id, ...stage })),
+      );
+      return pipeline;
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["pipelines"] }),
+        queryClient.invalidateQueries({ queryKey: ["pipeline-stages"] }),
+        queryClient.invalidateQueries({ queryKey: ["deals"] }),
+      ]);
+      showNotification({ message: t("deals.pipelineCreated"), tone: "success" });
     },
   });
 
@@ -113,7 +145,7 @@ export function DealsPage() {
     setSearchParams(next, { replace: true });
   }
 
-  const actionErrorMessage = actions.hasError || archiveMutation.error ? t("deals.saveChangeError") : "";
+  const actionErrorMessage = actions.hasError || archiveMutation.error || createPipelineMutation.error ? t("deals.saveChangeError") : "";
 
   useEffect(() => {
     if (!actionErrorMessage) return;
@@ -131,7 +163,18 @@ export function DealsPage() {
   return (
     <>
       <CrmWorkspacePage contentClassName="gap-0">
-        {!data.pipelines.length ? <ErrorState message={t("deals.noPipeline")} /> : (
+        {!data.pipelines.length ? (
+          <EmptyState
+            title={t("deals.noPipelineTitle")}
+            description={t("deals.noPipeline")}
+            action={(
+              <Button onClick={() => createPipelineMutation.mutate()} isLoading={createPipelineMutation.isPending}>
+                <Plus size={16} />
+                {t("deals.createPipeline")}
+              </Button>
+            )}
+          />
+        ) : (
           <CrmTableSurface>
             <CrmDataTable className={CRM_TABLE_EMBEDDED_CLASS} contentClassName={CRM_TABLE_CONTENT_CLASS}>
               <DealsList

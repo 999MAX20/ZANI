@@ -32,9 +32,16 @@ export function TasksPage() {
   const showUndoToast = useUndoToast();
   const showNotification = useNotification();
   const { business } = useActiveBusiness();
-  const { appointments, clients, deals, leads, services } = useEntityData({ appointments: true, clients: true, deals: true, leads: true, services: true });
   const [searchParams, setSearchParams] = useSearchParams();
   const [open, setOpen] = useState(false);
+  const { appointments, clients, deals, leads, services } = useEntityData({
+    enabled: open,
+    appointments: true,
+    clients: true,
+    deals: true,
+    leads: true,
+    services: true,
+  });
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [tabFilter, setTabFilter] = useState<TaskTabFilter>(() => normalizeTaskTab(searchParams.get("tab")));
@@ -321,14 +328,18 @@ export function TasksPage() {
   }, [actionErrorMessage, showNotification]);
 
   if (!business) return <ErrorState message={t("tasks.noBusiness")} />;
-  if (taskSummary.isLoading || tasksQuery.isLoading || clients.isLoading || leads.isLoading || deals.isLoading || appointments.isLoading || services.isLoading) return <LoadingState />;
+  if (taskSummary.isLoading || tasksQuery.isLoading) return <LoadingState />;
   if (taskSummary.error) return <ErrorState message={getApiErrorMessage(taskSummary.error)} />;
   if (tasksQuery.error) return <ErrorState message={getApiErrorMessage(tasksQuery.error)} />;
   if (selectedTaskQuery.error) return <ErrorState message={getApiErrorMessage(selectedTaskQuery.error)} />;
 
   const visibleTasks = loadedTasks;
   const totalTasks = tasksQuery.data?.pages[0]?.count ?? visibleTasks.length;
-  const formError = createMutation.error || updateDetailsMutation.error;
+  const formReferencesLoading = open && (clients.isLoading || leads.isLoading || deals.isLoading || appointments.isLoading || services.isLoading);
+  const formError =
+    createMutation.error ||
+    updateDetailsMutation.error ||
+    (open ? clients.error || leads.error || deals.error || appointments.error || services.error : null);
   const emptyState = getTaskEmptyState({
     tabFilter,
     hasFilters: activeFilterCount > 0 || Boolean(searchFilter),
@@ -392,7 +403,7 @@ export function TasksPage() {
         appointments={appointments.data || []}
         services={services.data || []}
         teamMembers={teamMembers.data || []}
-        isSaving={createMutation.isPending || updateDetailsMutation.isPending}
+        isSaving={createMutation.isPending || updateDetailsMutation.isPending || formReferencesLoading}
         errorMessage={formError ? getApiErrorMessage(formError) : null}
         onClose={() => {
           setOpen(false);

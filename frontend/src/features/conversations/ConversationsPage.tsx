@@ -20,7 +20,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { getApiErrorMessage } from "../../api/client";
 import { botsApi } from "../../api/bots";
@@ -361,6 +361,7 @@ export function ConversationsPage() {
   const showNotification = useNotification();
   const { setPageHeader } = usePageHeader();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedId, setSelectedId] = useState<number | null>(() => Number(searchParams.get("conversation")) || null);
   const savedState = getSavedConversationsFilterState();
@@ -1288,7 +1289,15 @@ export function ConversationsPage() {
             {conversations.isLoading ? <div className="p-5"><LoadingState label={t("conversations.loadingDialogs")} /></div> : null}
             {!conversations.isLoading && !items.length ? (
               <div className="p-5">
-                <EmptyState title={t("conversations.emptyTitle")} description={t("conversations.emptyText")} />
+                <EmptyState
+                  title={t("conversations.emptyTitle")}
+                  description={t("conversations.emptyText")}
+                  action={(
+                    <Button variant="secondary" onClick={() => navigate("/app/integrations")}>
+                      {t("conversations.connectChannel")}
+                    </Button>
+                  )}
+                />
               </div>
             ) : null}
             {sortedItems.map((conversation) => (

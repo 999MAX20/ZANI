@@ -82,19 +82,15 @@ export function LeadsPage() {
   const queryClient = useQueryClient();
   const { business } = useActiveBusiness();
   const { user } = useAuth();
-  const { clients, services, resources, tasks, deals, appointments, botConversations } = useEntityData({
+  const { clients, services } = useEntityData({
     clients: true,
     services: true,
-    resources: true,
-    tasks: true,
-    deals: true,
-    appointments: true,
-    botConversations: true,
   });
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedId, setSelectedId] = useState<number | null>(() => Number(searchParams.get("lead")) || null);
   const [createOpen, setCreateOpen] = useState(searchParams.get("create") === "1");
   const [appointmentOpen, setAppointmentOpen] = useState(false);
+  const { resources } = useEntityData({ enabled: appointmentOpen, resources: true });
   const [drawerEntity, setDrawerEntity] = useState<CrmDrawerEntity | null>(null);
   const [filter, setFilter] = useState<LeadFilter>(() => {
     const param = searchParams.get("filter") as LeadFilter | null;
@@ -183,10 +179,6 @@ export function LeadsPage() {
   const allLeads = leads.data?.results?.length ? leads.data.results : (!isOnline ? cachedLeads : leads.data?.results || []);
   const clientList = clients.data || [];
   const serviceList = services.data || [];
-  const taskList = tasks.data || [];
-  const dealList = deals.data || [];
-  const appointmentList = appointments.data || [];
-  const conversationList = botConversations.data || [];
   const teamList = Array.isArray(teamMembers.data) ? teamMembers.data : [];
   const aiInsights = useMemo(() => {
     const result = new Map<Id, LeadAiInsight>();
@@ -229,15 +221,6 @@ export function LeadsPage() {
   const selected = useMemo(() => rows.find((lead) => lead.id === selectedId) || pageRows[0] || null, [pageRows, rows, selectedId]);
   const selectedClient = selected ? getClient(selected, clientList) : undefined;
   const selectedService = selected ? getService(selected, serviceList) : undefined;
-  const selectedTasks = selected
-    ? taskList
-        .filter((task) => task.lead === selected.id && !["done", "cancelled"].includes(task.status))
-        .sort((a, b) => String(a.due_at || "9999").localeCompare(String(b.due_at || "9999")))
-    : [];
-  const selectedNextTask = selectedTasks[0];
-  const selectedDeals = selected ? dealList.filter((deal) => deal.lead === selected.id || deal.client === selected.client) : [];
-  const selectedAppointments = selected ? appointmentList.filter((appointment) => appointment.lead === selected.id || appointment.client === selected.client) : [];
-  const selectedConversations = selected ? conversationList.filter((conversation) => conversation.lead === selected.id || conversation.client === selected.client) : [];
   const duplicateCheck = useQuery({
     queryKey: ["lead-duplicates", business?.id, selected?.id, selectedClient?.phone, selectedClient?.email],
     queryFn: () =>
@@ -813,7 +796,7 @@ export function LeadsPage() {
   }, [actionErrorMessage, showNotification]);
 
   if (!business) return <ErrorState message={t("leads.noBusiness")} />;
-  if (leads.isLoading || clients.isLoading || services.isLoading || tasks.isLoading) return <PageSkeleton />;
+  if (leads.isLoading || clients.isLoading || services.isLoading) return <PageSkeleton />;
   if (pageError) {
     return (
       <ErrorState

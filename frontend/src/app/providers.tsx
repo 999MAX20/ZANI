@@ -7,6 +7,7 @@ import { UndoToastProvider } from "../components/actions/UndoToastProvider";
 import { NotificationProvider } from "../components/notifications/NotificationProvider";
 import { AuthProvider } from "../features/auth/AuthProvider";
 import { I18nProvider } from "../lib/i18n";
+import { ThemeProvider } from "../lib/theme";
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -32,13 +33,15 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <I18nProvider>
-        <ActionConfirmProvider>
-          <NotificationProvider>
-            <UndoToastProvider>
-              <AuthProvider>{children}</AuthProvider>
-            </UndoToastProvider>
-          </NotificationProvider>
-        </ActionConfirmProvider>
+        <ThemeProvider>
+          <ActionConfirmProvider>
+            <NotificationProvider>
+              <UndoToastProvider>
+                <AuthProvider>{children}</AuthProvider>
+              </UndoToastProvider>
+            </NotificationProvider>
+          </ActionConfirmProvider>
+        </ThemeProvider>
       </I18nProvider>
     </QueryClientProvider>
   );

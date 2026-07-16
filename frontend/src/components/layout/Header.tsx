@@ -1,4 +1,4 @@
-import { Bell, Check, Menu, MessageSquareText, SlidersHorizontal, Sparkles, X } from "lucide-react";
+import { Bell, Check, Menu, MessageSquareText, Moon, SlidersHorizontal, Sparkles, Sun, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
@@ -12,6 +12,7 @@ import { useI18n } from "../../lib/i18n";
 import { formatDateTime } from "../../lib/format";
 import { hasPermission } from "../../lib/permissions";
 import { realtimeIntervals, realtimeQueryOptions } from "../../lib/realtime";
+import { useTheme } from "../../lib/theme";
 import { Button } from "../ui/Button";
 import { StatusBadge } from "../ui/StatusBadge";
 import { GlobalSearch } from "./GlobalSearch";
@@ -24,6 +25,7 @@ export function Header({ onMenuClick, pageHeader }: { onMenuClick: () => void; p
   const { user } = useAuth();
   const { business } = useActiveBusiness();
   const { t } = useI18n();
+  const { theme, toggleTheme } = useTheme();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [chatToastOpen, setChatToastOpen] = useState(false);
@@ -177,6 +179,11 @@ export function Header({ onMenuClick, pageHeader }: { onMenuClick: () => void; p
   }, [receivesChatToasts, unreadChatMessages]);
 
   useEffect(() => {
+    if (window.matchMedia("(max-width: 1023px)").matches) {
+      setHeaderVisible(true);
+      return;
+    }
+
     lastScrollYRef.current = window.scrollY;
 
     function handleScroll() {
@@ -199,14 +206,14 @@ export function Header({ onMenuClick, pageHeader }: { onMenuClick: () => void; p
   }, [showNotifications]);
 
   return (
-    <header className={`fixed left-0 right-0 top-0 z-50 border-b border-slate-200 bg-white/95 shadow-[0_1px_3px_rgba(0,0,0,0.06)] backdrop-blur-xl transition-transform duration-200 ease-out lg:left-[72px] ${headerVisible ? "translate-y-0" : "-translate-y-full"}`}>
+    <header className={`zani-app-header fixed left-0 right-0 top-0 z-50 border-b border-slate-200 bg-white/95 shadow-[0_1px_3px_rgba(0,0,0,0.06)] backdrop-blur-xl transition-transform duration-200 ease-out lg:left-[72px] ${headerVisible ? "translate-y-0" : "-translate-y-full"}`}>
       <div className="grid h-16 grid-cols-[auto_1fr_auto] items-center gap-3 px-4 sm:px-6 lg:grid-cols-[260px_minmax(320px,560px)_auto]">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <Button className="h-10 w-10 min-h-10 min-w-10 px-0 text-midnight lg:hidden" variant="ghost" onClick={onMenuClick} aria-label={t("sidebar.expand")}>
             <Menu size={22} strokeWidth={2.2} />
           </Button>
           <div className="hidden min-w-0 items-center gap-4 lg:flex">
-            <span className="whitespace-nowrap border-b-2 border-brand-600 py-1 text-base font-bold text-midnight">{currentPageTitle}</span>
+            <span className="zani-header-title whitespace-nowrap rounded-full px-3 py-1.5 text-base font-bold text-midnight">{currentPageTitle}</span>
           </div>
           <div className={pageHeader ? "min-w-0 flex-1 lg:hidden" : "lg:hidden"}>
             <GlobalSearch />
@@ -275,7 +282,18 @@ export function Header({ onMenuClick, pageHeader }: { onMenuClick: () => void; p
           <div className="relative" ref={notificationsRef}>
             <Button
               variant="ghost"
-              className="relative h-12 w-12 min-h-12 min-w-12 rounded-xl px-0"
+              className="zani-theme-toggle mr-1 h-[30px] min-h-[30px] w-[66px] rounded-full p-0"
+              aria-label={theme === "dark" ? t("theme.switchLight") : t("theme.switchDark")}
+              title={theme === "dark" ? t("theme.switchLight") : t("theme.switchDark")}
+              onClick={toggleTheme}
+            >
+              <span className="zani-theme-toggle__thumb">
+                {theme === "dark" ? <Moon size={12} strokeWidth={2.45} /> : <Sun size={12} strokeWidth={2.45} />}
+              </span>
+            </Button>
+            <Button
+              variant="ghost"
+              className="zani-header-icon-button relative h-12 w-12 min-h-12 min-w-12 rounded-xl px-0"
               aria-label={t("header.notifications")}
               onClick={() => setShowNotifications((current) => !current)}
             >

@@ -173,13 +173,11 @@ export function LeadsPage() {
     queryKey: ["leads", "paginated", business?.id, leadListParams],
     queryFn: () => leadsApi.listPaginated(leadListParams),
     enabled: Boolean(business),
-    retry: false,
   });
   const leadSummary = useQuery({
     queryKey: ["leads", "summary", business?.id],
     queryFn: leadsApi.summary,
     enabled: Boolean(business),
-    retry: false,
   });
 
   const allLeads = leads.data?.results?.length ? leads.data.results : (!isOnline ? cachedLeads : leads.data?.results || []);
@@ -816,7 +814,21 @@ export function LeadsPage() {
 
   if (!business) return <ErrorState message={t("leads.noBusiness")} />;
   if (leads.isLoading || clients.isLoading || services.isLoading || tasks.isLoading) return <PageSkeleton />;
-  if (pageError) return <ErrorState message={getApiErrorMessage(pageError)} />;
+  if (pageError) {
+    return (
+      <ErrorState
+        message={getApiErrorMessage(pageError)}
+        action={(
+          <Button
+            variant="secondary"
+            onClick={() => void Promise.all([clients.refetch(), services.refetch(), leads.refetch(), leadSummary.refetch()])}
+          >
+            {t("common.retry")}
+          </Button>
+        )}
+      />
+    );
+  }
 
   const filters = [
     { value: "all" as const, label: t("leads.filterAll"), count: leadSummary.data?.total ?? totalLeadCount },

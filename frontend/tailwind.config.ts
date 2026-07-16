@@ -1,49 +1,51 @@
 import type { Config } from "tailwindcss";
 
+const animate = require("tailwindcss-animate");
+
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
         zani: {
-          bg: "#F9FAFB",
+          bg: "#F4F6F8",
           surface: "#FFFFFF",
-          muted: "#F3F4F6",
-          border: "#E5E7EB",
+          muted: "#EEF1F4",
+          border: "#DCE1E7",
           text: "#111827",
-          subtle: "#6B7280",
-          faint: "#9CA3AF",
-          primary: "#2563EB",
-          secondary: "#7C3AED",
+          subtle: "#5D6574",
+          faint: "#8B94A3",
+          primary: "#D96718",
+          secondary: "#9F410D",
           success: "#10B981",
           warning: "#F59E0B",
           danger: "#EF4444",
           info: "#3B82F6",
         },
         primary: {
-          50: "#EFF6FF",
-          100: "#DBEAFE",
-          500: "#2563EB",
-          600: "#2563EB",
-          700: "#1D4ED8",
+          50: "#FFF0E4",
+          100: "#FFE2CC",
+          500: "#ED7A22",
+          600: "#D96718",
+          700: "#B84F0B",
         },
         brand: {
-          50: "#EFF6FF",
-          100: "#DBEAFE",
-          500: "#2563EB",
-          600: "#2563EB",
-          700: "#1D4ED8",
+          50: "#FFF0E4",
+          100: "#FFE2CC",
+          500: "#ED7A22",
+          600: "#D96718",
+          700: "#9F410D",
         },
         ai: {
-          50: "#f5f3ff",
-          100: "#ede9fe",
-          500: "#7c3aed",
-          600: "#6d28d9",
-          700: "#5b21b6",
+          50: "#FFF6EE",
+          100: "#FFE6D2",
+          500: "#C65D17",
+          600: "#A94910",
+          700: "#7F350E",
         },
         surface: {
-          DEFAULT: "#F9FAFB",
-          muted: "#F3F4F6",
+          DEFAULT: "#F4F6F8",
+          muted: "#EEF1F4",
           card: "#ffffff",
         },
         ink: "#111827",
@@ -63,19 +65,19 @@ export default {
         "crm-title": ["1.5rem", { lineHeight: "2rem" }],
       },
       borderRadius: {
-        control: "0.625rem",
-        card: "0.75rem",
-        "2xl": "0.75rem",
-        "3xl": "1rem",
+        control: "0.75rem",
+        card: "1.125rem",
+        "2xl": "1rem",
+        "3xl": "1.25rem",
       },
       backgroundImage: {
-        "primary-gradient": "linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)",
-        "dashboard-gradient": "linear-gradient(135deg, #667EEA 0%, #764BA2 100%)",
-        "ai-gradient": "linear-gradient(135deg, #7C3AED 0%, #2563EB 100%)",
+        "primary-gradient": "linear-gradient(135deg, #ED7A22 0%, #B84F0B 100%)",
+        "dashboard-gradient": "linear-gradient(135deg, #171D29 0%, #2B3341 100%)",
+        "ai-gradient": "linear-gradient(135deg, #D96718 0%, #9F410D 100%)",
         "sidebar-depth":
-          "linear-gradient(180deg, #ffffff 0%, #F9FAFB 100%)",
+          "linear-gradient(180deg, #ffffff 0%, #F4F6F8 100%)",
         "soft-mesh":
-          "linear-gradient(180deg, #F9FAFB 0%, #F3F4F6 100%)",
+          "linear-gradient(180deg, #F4F6F8 0%, #EEF1F4 100%)",
       },
       keyframes: {
         float: {
@@ -98,5 +100,5 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [animate],
 } satisfies Config;

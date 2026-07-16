@@ -10,12 +10,12 @@ ZANI должен выглядеть как светлая, плотная и р
 
 Ключевая формула:
 
-`Clean Business CRM + AI Accent`
+`Warm Editorial CRM + ZANI Orange`
 
 Это означает:
 
 - интерфейс в первую очередь помогает работать с клиентами, лидами, сделками, календарем и сообщениями;
-- AI заметен как полезный помощник, но не превращает весь продукт в декоративную AI-витрину;
+- AI заметен как полезный помощник через контекст и иконографику, но не создаёт отдельную фиолетово-синюю визуальную вселенную;
 - страницы должны быть плотными, сканируемыми и понятными для ежедневной работы;
 - визуальный шум, большие декоративные блоки, лишние градиенты и карточки без задачи должны удаляться.
 
@@ -115,39 +115,49 @@ Settings scope:
 
 ## Approved Color Direction
 
-Основной стиль: светлая business CRM с синим primary и фиолетовым AI-акцентом.
+Основной стиль: светлая business CRM как прямое продолжение лендинга — тёплый технический фон, графитовый текст и оранжевый ZANI accent.
 
 ### Base
 
 ```txt
-Background:        #F8FAFC
+Background:        #F4F6F8
 Surface/Card:      #FFFFFF
-Surface Muted:     #F1F5F9
-Border:            #E2E8F0
+Surface Muted:     #EEF1F4
+Border:            #DCE1E7
 ```
 
 ### Text
 
 ```txt
-Text Primary:      #0F172A
-Text Secondary:    #475569
-Text Muted:        #94A3B8
+Text Primary:      #111827
+Text Secondary:    #5D6574
+Text Muted:        #8B94A3
 ```
 
 ### Actions
 
 ```txt
-Primary:           #2563EB
-Primary Hover:     #1D4ED8
-Primary Soft:      #EFF6FF
+Primary:           #D96718
+Primary Hover:     #B84F0B
+Primary Soft:      #FFF0E4
 ```
 
 ### AI
 
 ```txt
-AI Accent:         #7C3AED
-AI Soft:           #F5F3FF
+AI Accent:         #C65D17
+AI Soft:           #FFF6EE
 ```
+
+### Brand Accent
+
+```txt
+Brand Pink:        #DB2777
+Brand Pink Dark:   #F472B6
+Brand Pink Soft:   subtle tokenized blush only
+```
+
+Розовый используется только как связующий акцент с лендингом: мягкое свечение, active edge, AI/landing-бейджи и тонкие hover/selected состояния. Он не заменяет primary blue и не становится обычным статусом CRM.
 
 ### Status
 
@@ -167,25 +177,25 @@ Info Soft:         #F0F9FF
 
 ## Color Usage Rules
 
-- Blue primary is used for normal CRM actions: create, save, assign, launch, selected state, primary focus.
-- Violet AI is used only for AI actions: AI answer, AI analyst, AI pipeline, generate, AI insight.
+- Orange primary is used for normal CRM actions: create, save, assign, launch, selected state and primary focus.
+- AI uses orange/rust accents plus explicit AI labeling; purple-blue gradients are not used as an AI shortcut.
 - Green is used only for success/connected/won/confirmed/completed.
 - Orange is used only for attention/waiting/needs operator/not confirmed.
 - Red is used only for error/lost/failed/expired/destructive.
 - Do not use violet/blue gradients as generic decoration.
-- Do not make pages dominated by one purple-blue hue.
+- Light and dark themes must stay in one warm graphite/orange family.
 
 ## Component Shape
 
 ```txt
-Card radius:       12px
-Control radius:    10px
-Button radius:     10px
-Modal radius:      16px
+Card radius:       18px
+Control radius:    12px
+Button radius:     12px
+Modal radius:      20px
 Sidebar radius:    20-24px for shell only
-Border:            1px solid #E2E8F0
-Card shadow:       0 4px 12px rgba(15, 23, 42, 0.05)
-Panel shadow:      0 16px 40px rgba(15, 23, 42, 0.10)
+Border:            tokenized via --zani-theme-panel-border / --zani-theme-soft-border
+Card shadow:       tokenized via --zani-theme-card-shadow
+Panel shadow:      tokenized via --zani-theme-card-shadow / --zani-shadow-panel
 ```
 
 ## Density Rules
@@ -245,3 +255,13 @@ Panel shadow:      0 16px 40px rgba(15, 23, 42, 0.10)
 - унифицировать формы и modal footer/content layout;
 - завершить перевод transient action errors в bottom-right notifications;
 - провести desktop/mobile visual QA по приоритетным страницам.
+
+### 2026-06-27 Dashboard visual reference
+
+Главная страница `/app` зафиксирована как эталон для следующего прохода по CRM-страницам:
+
+- light/dark темы используют одну конструкцию, размеры, радиусы, spacing и hover states;
+- темы отличаются только цветовыми токенами: фон, surface, text, border, accent;
+- базовый card radius обновлен до `18px`, control/button radius до `12px`, modal radius до `20px`;
+- dashboard-паттерны для переноса: KPI card, large analytics card, compact row-card, AI panel, sidebar active pill, tokenized glass surface;
+- перед переносом на страницу нужно сверять, что visible-блоки имеют продуктовую функцию, а не декоративный/маркетинговый смысл.

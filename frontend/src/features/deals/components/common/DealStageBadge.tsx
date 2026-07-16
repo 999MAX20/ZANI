@@ -3,8 +3,8 @@ import type { PipelineStage } from "../../../../types";
 
 export function DealStageBadge({ stage, fallback }: { stage?: PipelineStage; fallback: string }) {
   return (
-    <span className="inline-flex max-w-full items-center gap-2 rounded-lg bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">
-      <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: stage?.color || "#2563eb" }} />
+    <span className="inline-flex max-w-full items-center gap-2 rounded-lg bg-brand-50 px-2.5 py-1 text-xs font-bold text-brand-700">
+      <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: stage?.color || "#d96718" }} />
       <span className="truncate">{stage?.name || fallback}</span>
     </span>
   );

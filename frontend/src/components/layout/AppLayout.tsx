@@ -15,6 +15,9 @@ export function AppLayout() {
   const [commandOpen, setCommandOpen] = useState(false);
   const [pageHeader, setPageHeader] = useState<PageHeaderConfig | null>(null);
   const location = useLocation();
+  const routeSlug = location.pathname.replace(/^\/app\/?/, "").split("/")[0] || "dashboard";
+  const routeClass = `zani-route-${routeSlug.replace(/[^a-z0-9-]/gi, "-")}`;
+  const routeScopeClass = "zani-route-restyled";
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -28,7 +31,7 @@ export function AppLayout() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-soft-mesh text-ink">
+    <div className="zani-merchant-shell min-h-screen bg-soft-mesh text-ink">
       <PageHeaderContext.Provider value={{ pageHeader, setPageHeader }}>
         <div className="relative flex min-h-screen">
           <Sidebar
@@ -45,7 +48,7 @@ export function AppLayout() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.22 }}
-              className={`mx-auto w-full max-w-[1400px] flex-1 px-4 pb-4 ${pageHeader?.activeFilters ? "pt-28" : "pt-20"} sm:px-6 sm:pb-6 lg:px-6`}
+              className={`zani-app-route ${routeClass} ${routeScopeClass} mx-auto w-full max-w-[1400px] flex-1 px-4 pb-4 ${pageHeader?.activeFilters ? "pt-28" : "pt-20"} sm:px-6 sm:pb-6 lg:px-6`}
             >
               <Outlet />
             </motion.main>

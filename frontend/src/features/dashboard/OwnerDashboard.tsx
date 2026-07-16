@@ -1,9 +1,11 @@
 import {
   ArrowRight,
+  AlertCircle,
   Bolt,
   Bot,
   CalendarCheck,
   ChartNoAxesColumnIncreasing,
+  CheckCircle2,
   CircleDollarSign,
   MessageSquareText,
   Phone,
@@ -86,7 +88,7 @@ function KpiCard({ label, value, trend, tone = "blue" }: { label: string; value:
 function IntegrationRow({ name, ready, icon: Icon, tone }: { name: string; ready: boolean; icon: LucideIcon; tone: string }) {
   const { t } = useI18n();
   return (
-    <div className="flex items-center justify-between gap-3">
+    <div className="zani-dashboard-row flex min-h-[52px] items-center justify-between gap-3 rounded-xl px-3 py-2">
       <div className="flex min-w-0 items-center gap-3">
         <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ${tone}`}>
           <Icon size={18} />
@@ -156,7 +158,7 @@ function RevenueChartCard({ revenue, revenueHasData }: { revenue: number; revenu
   const previousRevenue = Math.max(0, Math.round(displayRevenue * 0.89));
 
   return (
-    <Surface as="section" className="relative min-h-[280px] overflow-hidden p-6 text-slate-900" padding="none">
+    <Surface as="section" className="zani-revenue-card relative min-h-[280px] overflow-hidden p-6 text-slate-900" padding="none">
       <div className="relative z-10 flex h-full min-h-[232px] flex-col justify-between">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -164,7 +166,7 @@ function RevenueChartCard({ revenue, revenueHasData }: { revenue: number; revenu
             <p className="mt-3 text-4xl font-bold leading-none sm:text-5xl">{formatMoney(displayRevenue)}</p>
             <p className="mt-3 text-sm font-medium text-slate-500">{t("dashboard.yesterday")}: {formatMoney(previousRevenue)}</p>
           </div>
-          <div className="rounded-control border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700">
+          <div className="zani-period-chip rounded-control border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700">
             {t("dashboard.periodToday")}
           </div>
         </div>
@@ -173,13 +175,13 @@ function RevenueChartCard({ revenue, revenueHasData }: { revenue: number; revenu
           <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-emerald-500 px-3 py-1 text-xs font-bold text-white">
             +12% <span className="font-medium text-white">{t("dashboard.toYesterday")}</span>
           </div>
-          <svg className="h-24 w-full" viewBox="0 0 640 120" fill="none" aria-hidden="true">
+          <svg className="zani-revenue-chart h-24 w-full" viewBox="0 0 640 120" fill="none" aria-hidden="true">
             <path d="M0 92 C80 84 112 66 176 72 C256 80 300 28 376 36 C456 44 496 18 640 24 L640 120 L0 120 Z" fill="url(#revenueFill)" />
-            <path d="M0 92 C80 84 112 66 176 72 C256 80 300 28 376 36 C456 44 496 18 640 24" stroke="#2563eb" strokeWidth="4" strokeLinecap="round" />
+            <path d="M0 92 C80 84 112 66 176 72 C256 80 300 28 376 36 C456 44 496 18 640 24" stroke="#d96718" strokeWidth="4" strokeLinecap="round" />
             <defs>
               <linearGradient id="revenueFill" x1="320" y1="24" x2="320" y2="120" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#2563eb" stopOpacity="0.18" />
-                <stop offset="1" stopColor="#2563eb" stopOpacity="0" />
+                <stop stopColor="#d96718" stopOpacity="0.2" />
+                <stop offset="1" stopColor="#d96718" stopOpacity="0" />
               </linearGradient>
             </defs>
           </svg>
@@ -191,6 +193,80 @@ function RevenueChartCard({ revenue, revenueHasData }: { revenue: number; revenu
             <span>23:59</span>
           </div>
         </div>
+      </div>
+    </Surface>
+  );
+}
+
+function CommandCenterStrip({
+  attentionCount,
+  newLeadsCount,
+  openTasks,
+  todayAppointmentsCount,
+  setupScore,
+  conversion,
+}: {
+  attentionCount: number;
+  newLeadsCount: number;
+  openTasks: number;
+  todayAppointmentsCount: number;
+  setupScore: number;
+  conversion: number;
+}) {
+  const { t } = useI18n();
+  const primaryAction = attentionCount > 0 ? t("dashboard.answerNewLeads") : t("dashboard.checkBookingsToday");
+  const primaryHref = attentionCount > 0 ? "/app/leads" : "/app/calendar";
+
+  return (
+    <Surface as="section" className="zani-command-strip mb-5 rounded-xl" padding="none">
+      <div className="zani-command-strip__main">
+        <div className="min-w-0">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <span className="zani-command-kicker inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-black uppercase">
+              <Sparkles size={14} />
+              ZANI AI
+            </span>
+            <span className="rounded-full px-3 py-1 text-xs font-bold text-slate-500">{t("dashboard.dayUnderControl")}</span>
+          </div>
+          <h1 className="text-2xl font-black leading-tight text-midnight sm:text-3xl">{t("dashboard.ownerCockpit")}</h1>
+          <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-slate-500">
+            {t("dashboard.ownerReadinessLine", { setup: setupScore, conversion })}
+          </p>
+        </div>
+
+        <div className="zani-command-action">
+          <span className="text-xs font-black uppercase text-slate-500">{t("dashboard.requiresAttention")}</span>
+          <div className="mt-2 flex items-end justify-between gap-4">
+            <span className="text-4xl font-black leading-none text-midnight">{attentionCount}</span>
+            <Link to={primaryHref} className="zani-primary-action inline-flex min-h-10 items-center gap-2 rounded-xl px-4 text-sm font-black">
+              {primaryAction}
+              <ArrowRight size={16} />
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      <div className="zani-system-map grid gap-3 border-t border-slate-200 p-4 sm:grid-cols-4">
+        <Link to="/app/leads" className="zani-system-node">
+          <UserPlus size={17} />
+          <span>{t("dashboard.newLeadsShort")}</span>
+          <strong>{newLeadsCount}</strong>
+        </Link>
+        <Link to="/app/tasks" className="zani-system-node">
+          <CheckCircle2 size={17} />
+          <span>{t("dashboard.openTasks")}</span>
+          <strong>{openTasks}</strong>
+        </Link>
+        <Link to="/app/calendar" className="zani-system-node">
+          <CalendarCheck size={17} />
+          <span>{t("dashboard.appointments")}</span>
+          <strong>{todayAppointmentsCount}</strong>
+        </Link>
+        <Link to="/app/ai-assistant" className="zani-system-node is-ai">
+          <Bot size={17} />
+          <span>{t("dashboard.aiNavigator")}</span>
+          <strong>{setupScore}%</strong>
+        </Link>
       </div>
     </Surface>
   );
@@ -217,14 +293,14 @@ function DashboardMetricCard({
   }[tone];
 
   return (
-    <Surface as="section" className="rounded-xl transition duration-150 hover:shadow-md" padding="lg">
+    <Surface as="section" className="zani-dashboard-metric min-h-[158px] rounded-xl transition duration-150 hover:shadow-md" padding="lg">
       <div className="flex items-start justify-between gap-3">
         <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${toneClass}`}>
           <Icon size={21} />
         </span>
         <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-600">{change}</span>
       </div>
-      <p className="mt-5 text-sm font-semibold text-slate-500">{label}</p>
+      <p className="mt-5 text-sm font-semibold leading-5 text-slate-500">{label}</p>
       <p className="mt-1 text-3xl font-bold leading-none text-midnight">{value}</p>
     </Surface>
   );
@@ -249,14 +325,16 @@ function InsightListCard({
   };
 
   return (
-    <Surface as="section" className="rounded-xl" padding="lg">
+    <Surface as="section" className="zani-ai-summary-card rounded-xl" padding="lg">
       <div className="mb-4 flex items-center gap-2">
-        <Sparkles size={20} className="text-violet-600" />
+        <span className="zani-ai-icon grid h-8 w-8 shrink-0 place-items-center rounded-xl">
+          <Sparkles size={18} className="text-violet-600" />
+        </span>
         <h2 className="text-base font-semibold text-midnight">{title}</h2>
       </div>
       <div className="space-y-4">
         {items.map((item) => (
-          <div key={item.title} className="flex gap-3">
+          <div key={item.title} className="zani-insight-row flex gap-3 rounded-xl px-2 py-1.5">
             <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${toneClass[item.tone]}`} />
             <div className="min-w-0">
               <p className="text-sm font-semibold text-midnight">{item.title}</p>
@@ -265,7 +343,7 @@ function InsightListCard({
           </div>
         ))}
       </div>
-      <Link to={href} className="mt-5 inline-flex min-h-10 w-full items-center justify-center rounded-lg border border-slate-200 px-4 text-sm font-semibold text-midnight transition hover:bg-slate-50">
+      <Link to={href} className="zani-secondary-action mt-5 inline-flex min-h-10 w-full items-center justify-center rounded-xl border border-slate-200 px-4 text-sm font-semibold text-midnight transition hover:bg-slate-50">
         {footer}
       </Link>
     </Surface>
@@ -281,16 +359,19 @@ function AttentionCard({ unassignedCount, overdueTasks, noAnswerCount }: { unass
   ];
 
   return (
-    <Surface as="section" className="rounded-xl" padding="lg">
+    <Surface as="section" className="zani-attention-card zani-priority-card rounded-xl" padding="lg">
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-base font-semibold text-midnight">{t("dashboard.requiresAttention")}</h2>
+        <div className="flex items-center gap-2">
+          <AlertCircle size={18} className="text-red-600" />
+          <h2 className="text-base font-semibold text-midnight">{t("dashboard.requiresAttention")}</h2>
+        </div>
         <span className="grid h-7 min-w-7 place-items-center rounded-full bg-red-500 px-2 text-xs font-bold text-white">{unassignedCount + overdueTasks + noAnswerCount}</span>
       </div>
       <div className="space-y-2">
         {items.map((item) => {
           const Icon = item.icon;
           return (
-            <Link key={item.title} to={item.href} className="flex items-center gap-3 rounded-lg p-2 transition hover:bg-slate-50">
+            <Link key={item.title} to={item.href} className="zani-attention-row flex min-h-[64px] items-center gap-3 rounded-xl p-3 transition hover:bg-slate-50">
               <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg ${item.tone}`}>
                 <Icon size={18} />
               </span>
@@ -310,7 +391,7 @@ function AttentionCard({ unassignedCount, overdueTasks, noAnswerCount }: { unass
 function ConnectionsCard({ communicationsReady, salesReady }: { communicationsReady: boolean; salesReady: boolean }) {
   const { t } = useI18n();
   return (
-    <Surface as="section" className="rounded-xl" padding="lg">
+    <Surface as="section" className="zani-dashboard-panel rounded-xl" padding="lg">
       <div className="mb-1 flex items-center gap-2">
         <PlugZap size={20} className="text-brand-600" />
         <h2 className="text-base font-semibold text-midnight">{t("dashboard.connections")}</h2>
@@ -321,7 +402,7 @@ function ConnectionsCard({ communicationsReady, salesReady }: { communicationsRe
         <IntegrationRow name="1C" ready={salesReady} icon={CircleDollarSign} tone="bg-violet-50 text-violet-700" />
         <IntegrationRow name={t("dashboard.warehouse")} ready={salesReady} icon={PlugZap} tone="bg-blue-50 text-blue-700" />
       </div>
-      <Link to="/app/integrations" className="mt-5 inline-flex w-full items-center justify-between rounded-lg px-1 text-sm font-semibold text-brand-700">
+      <Link to="/app/integrations" className="zani-panel-link mt-5 inline-flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold text-brand-700">
         {t("dashboard.allConnections")}
         <ArrowRight size={16} />
       </Link>
@@ -333,7 +414,7 @@ function NewLeadsCard({ leads, clients, services }: { leads: Lead[]; clients: Cl
   const { t } = useI18n();
   const visibleLeads = leads.slice(0, 3);
   return (
-    <Surface as="section" className="rounded-xl" padding="lg">
+    <Surface as="section" className="zani-new-leads-card rounded-xl" padding="lg">
       <div className="mb-4 flex items-center justify-between gap-3">
         <h2 className="text-base font-semibold text-midnight">{t("dashboard.newLeads")}</h2>
         <Link to="/app/leads" className="text-sm font-semibold text-brand-700">{t("dashboard.allLeads")}</Link>
@@ -343,13 +424,13 @@ function NewLeadsCard({ leads, clients, services }: { leads: Lead[]; clients: Cl
           const client = clients.find((item) => item.id === lead.client);
           const service = services.find((item) => item.id === lead.service);
           return (
-            <Link key={lead.id} to={`/app/leads?lead=${lead.id}`} className="flex items-center gap-3 rounded-lg p-2 transition hover:bg-slate-50">
+            <Link key={lead.id} to={`/app/leads?lead=${lead.id}`} className="zani-lead-row flex min-h-[64px] items-center gap-3 rounded-xl p-3 transition hover:bg-slate-50">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary-100 text-sm font-bold text-brand-700">{initials(client?.full_name)}</span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-semibold text-midnight">{client?.full_name || t("dashboard.leadNumber", { id: lead.id })}</span>
                 <span className="block truncate text-xs text-slate-500">{service?.name || lead.source}</span>
               </span>
-              <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">{t("dashboard.newLead")}</span>
+              <span className="zani-lead-status shrink-0 whitespace-nowrap rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">{t("dashboard.newLead")}</span>
             </Link>
           );
         }) : (
@@ -415,7 +496,7 @@ export function OwnerDashboard({
   ];
 
   return (
-    <div className="pb-8">
+    <div className="zani-dashboard-page pb-8">
       {isCoreDataLoading ? (
         <div className="mb-5 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700">
           {t("dashboard.loadingCoreData")}
@@ -428,6 +509,15 @@ export function OwnerDashboard({
         </div>
       ) : null}
 
+      <CommandCenterStrip
+        attentionCount={(unassignedCount || newLeadsCount) + overdueTasks + noAnswerCount}
+        newLeadsCount={newLeadsCount || activeLeads.length}
+        openTasks={openTasks}
+        todayAppointmentsCount={todayAppointmentsCount}
+        setupScore={setupScore}
+        conversion={conversion}
+      />
+
       <section className="mb-6 grid gap-4 xl:grid-cols-[minmax(0,1fr)_580px]">
         <RevenueChartCard revenue={revenue} revenueHasData={revenueHasData} />
         <div className="grid gap-4 sm:grid-cols-2">
@@ -438,7 +528,7 @@ export function OwnerDashboard({
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-5 xl:grid-cols-[320px_320px_minmax(0,1fr)]">
+      <section className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[360px_320px_minmax(0,1fr)]">
         <InsightListCard title={t("dashboard.aiSummaryDay")} items={aiSummaryItems} footer={t("dashboard.openAnalytics")} href="/app/analytics" />
         <div className="space-y-5">
           <AttentionCard unassignedCount={unassignedCount || newLeadsCount} overdueTasks={overdueTasks} noAnswerCount={noAnswerCount} />
@@ -446,22 +536,22 @@ export function OwnerDashboard({
         </div>
         <div className="space-y-5">
           <NewLeadsCard leads={activeLeads} clients={clients} services={services} />
-          <Surface as="section" className="rounded-xl" padding="lg">
+          <Surface as="section" className="zani-dashboard-panel zani-navigator-card rounded-xl" padding="lg">
             <div className="mb-4 flex items-center gap-2">
               <Bot className="text-violet-600" size={20} />
               <h2 className="text-base font-semibold text-midnight">{t("dashboard.aiNavigator")}</h2>
             </div>
             <p className="text-sm leading-6 text-slate-600">{t("dashboard.ownerReadinessLine", { setup: setupScore, conversion })}</p>
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-lg bg-slate-50 p-4 text-center">
+              <div className="zani-mini-stat rounded-xl bg-slate-50 p-4 text-center">
                 <p className="text-2xl font-bold text-midnight">{openTasks}</p>
                 <p className="mt-1 text-xs font-semibold text-slate-500">{t("dashboard.openTasks")}</p>
               </div>
-              <div className="rounded-lg bg-slate-50 p-4 text-center">
+              <div className="zani-mini-stat rounded-xl bg-slate-50 p-4 text-center">
                 <p className="text-2xl font-bold text-midnight">{todayAppointmentsCount}</p>
                 <p className="mt-1 text-xs font-semibold text-slate-500">{t("dashboard.appointments")}</p>
               </div>
-              <div className="rounded-lg bg-slate-50 p-4 text-center">
+              <div className="zani-mini-stat rounded-xl bg-slate-50 p-4 text-center">
                 <p className="text-2xl font-bold text-midnight">{setupScore}%</p>
                 <p className="mt-1 text-xs font-semibold text-slate-500">{t("dashboard.setupScore")}</p>
               </div>

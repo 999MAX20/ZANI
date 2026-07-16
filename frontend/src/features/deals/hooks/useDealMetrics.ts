@@ -45,7 +45,7 @@ export function useDealMetrics(data: DealDataContext, filters: DealFiltersState)
           pipeline: deal.pipeline,
           name: deal.stage_name,
           order: deal.stage_order || 0,
-          color: deal.stage_color || "#2563eb",
+          color: deal.stage_color || "#d96718",
           probability: deal.stage_probability || deal.probability || 0,
           sla_minutes: null,
           is_won: Boolean(deal.stage_is_won),

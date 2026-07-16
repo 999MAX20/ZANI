@@ -13,7 +13,6 @@ import {
   MessageSquareText,
   PlugZap,
   Settings,
-  Sparkles,
   Users,
   Wrench,
 } from "lucide-react";
@@ -194,7 +193,7 @@ export function Sidebar({
       onMouseEnter={forceVisible ? undefined : onDesktopMouseEnter}
       onMouseLeave={forceVisible ? undefined : onDesktopMouseLeave}
       className={cn(
-        "relative z-[60] shrink-0 border-r border-slate-200 bg-white transition-[width,box-shadow,background-color,backdrop-filter] duration-200 ease-out",
+        "zani-sidebar-shell relative z-[60] shrink-0 border-r border-slate-200 bg-white transition-[width,box-shadow,background-color,backdrop-filter] duration-200 ease-out",
         forceVisible && "h-dvh max-h-dvh w-[min(390px,94vw)] bg-white/[0.97] shadow-premium backdrop-blur-2xl",
         !forceVisible && cn(
           "hidden bg-white/[0.88] backdrop-blur-2xl lg:fixed lg:inset-y-0 lg:left-0 lg:block",
@@ -206,8 +205,8 @@ export function Sidebar({
       <div className={cn("flex h-full min-h-0 flex-col", forceVisible && "min-h-dvh overflow-y-auto pb-8")}>
         <div className={cn("py-8", isExpanded ? "px-6" : "px-3")}>
           <div className="flex items-center gap-3">
-            <div className="relative grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary-gradient text-white shadow-glow">
-              <Sparkles size={20} />
+            <div className="zani-sidebar-brand-mark relative grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-500 text-xl font-black text-white">
+              Z
               <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-slate-100 bg-emerald-500" />
             </div>
             <div className={cn("min-w-0 transition-opacity duration-150", isExpanded ? "opacity-100" : "pointer-events-none hidden opacity-0")}>
@@ -243,10 +242,10 @@ export function Sidebar({
                           onClick={() => setOpenGroups((value) => ({ ...value, [item.label]: !childrenOpen }))}
                           title={t(item.label)}
                           className={cn(
-                            "group relative flex min-h-[48px] w-full items-center gap-3 border-l-4 border-transparent px-4 py-3 text-sm font-medium text-slate-700 transition-colors duration-150",
+                            "zani-sidebar-item group relative flex min-h-[48px] w-full items-center gap-3 rounded-[14px] px-4 py-3 text-sm font-medium text-slate-700 transition-colors duration-150",
                             !isExpanded && "justify-center px-0",
                             "hover:bg-primary-50 hover:text-midnight",
-                            active && "border-brand-600 bg-primary-50 font-semibold text-midnight",
+                            active && "is-active bg-primary-50 font-semibold text-midnight",
                           )}
                         >
                           <span
@@ -275,9 +274,9 @@ export function Sidebar({
                                   onFocus={() => prefetchRouteData(child.to!, queryClient, business?.id)}
                                   title={t(child.label)}
                                   className={cn(
-                                    "group relative flex min-h-[42px] items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition-colors duration-150",
+                                    "zani-sidebar-subitem group relative flex min-h-[42px] items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition-colors duration-150",
                                     "hover:bg-primary-50 hover:text-midnight",
-                                    childIsActive && "bg-primary-50 font-semibold text-midnight",
+                                    childIsActive && "is-active bg-primary-50 font-semibold text-midnight",
                                   )}
                                 >
                                   <ChildIcon size={18} strokeWidth={2.1} className={cn("shrink-0 text-slate-400", childIsActive && "text-brand-600")} />
@@ -301,10 +300,10 @@ export function Sidebar({
                       onFocus={() => prefetchRouteData(item.to!, queryClient, business?.id)}
                       title={t(item.label)}
                       className={cn(
-                        "group relative flex min-h-[48px] items-center gap-3 border-l-4 border-transparent px-4 py-3 text-sm font-medium text-slate-700 transition-colors duration-150",
+                        "zani-sidebar-item group relative flex min-h-[48px] items-center gap-3 rounded-[14px] px-4 py-3 text-sm font-medium text-slate-700 transition-colors duration-150",
                         !isExpanded && "justify-center px-0",
                         "hover:bg-primary-50 hover:text-midnight",
-                        active && "border-brand-600 bg-primary-50 font-semibold text-midnight",
+                        active && "is-active bg-primary-50 font-semibold text-midnight",
                       )}
                     >
                       <span

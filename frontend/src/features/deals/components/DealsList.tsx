@@ -13,7 +13,7 @@ import { DealListItem } from "./DealListItem";
 import { money } from "../utils/dealHelpers";
 
 type StageGroup = { id: string; name: string; color: string; rows: DealRow[] };
-const stageFallbackColors = ["#7c3aed", "#3b82f6", "#f59e0b", "#10b981", "#14b8a6", "#ef4444"];
+const stageFallbackColors = ["#d96718", "#ed9a5e", "#9f410d", "#c88752", "#7f5c45", "#374151"];
 
 function EmptyDeals({ onCreate, t }: { onCreate: () => void; t: Translate }) {
   return (
@@ -135,7 +135,7 @@ export function DealsList({
               {group.rows.length > (visibleByStage[group.id] || 10) ? (
                 <button
                   type="button"
-                  className="w-full rounded-md px-2 py-2 text-left text-xs font-bold text-[#4f46e5] hover:bg-indigo-50"
+                  className="w-full rounded-md px-2 py-2 text-left text-xs font-bold text-brand-700 hover:bg-brand-50"
                   onClick={() => setVisibleByStage((state) => ({ ...state, [group.id]: (state[group.id] || 10) + 10 }))}
                 >
                   + {t("deals.moreDeals", { count: Math.min(10, Math.max(group.rows.length - (visibleByStage[group.id] || 10), 0)) })}

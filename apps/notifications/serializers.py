@@ -72,6 +72,8 @@ class NotificationPreferenceSerializer(serializers.ModelSerializer):
             "user_name",
             "category",
             "in_app_enabled",
+            "push_enabled",
+            "privacy_mode",
             "created_at",
             "updated_at",
         ]

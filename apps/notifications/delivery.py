@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.mail import send_mail
 from django.utils import timezone
 
@@ -41,6 +42,9 @@ def deliver_notification(notification):
     if result.get("ok"):
         notification.status = Notification.Statuses.SENT
         notification.save(update_fields=["status", "updated_at"])
+        push_queue_result = enqueue_mobile_push_delivery(notification)
+        if push_queue_result.get("queued"):
+            result["mobile_push"] = push_queue_result
         _write_delivery_activity(notification, status="sent", result=result)
         return {"notification_id": notification.id, "status": "sent", "result": result}
 
@@ -148,6 +152,18 @@ def _deliver(notification):
     if notification.channel == Notification.Channels.SMS:
         return {"ok": False, "reason": "SMS provider is not configured."}
     return {"ok": False, "reason": f"Unsupported channel: {notification.channel}."}
+
+
+def enqueue_mobile_push_delivery(notification):
+    if notification.channel != Notification.Channels.SYSTEM:
+        return {"queued": False, "reason": "Mobile push is only queued for system notifications."}
+    if not getattr(settings, "MOBILE_PUSH_QUEUE_ENABLED", False):
+        return {"queued": False, "reason": "MOBILE_PUSH_QUEUE_ENABLED=False"}
+
+    from apps.notifications.tasks import deliver_mobile_push_notification_task
+
+    deliver_mobile_push_notification_task.apply_async(args=[notification.id], queue="notifications")
+    return {"queued": True, "queue": "notifications", "task": "notifications.deliver_mobile_push"}
 
 
 def _delivery_payload(notification):

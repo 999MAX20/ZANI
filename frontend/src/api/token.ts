@@ -2,8 +2,9 @@ import axios from "axios";
 
 import { tokenStorage } from "../lib/storage";
 import type { Business, CurrentUser } from "../types";
+import { apiBaseURL } from "./baseUrl";
 
-const baseURL = import.meta.env.VITE_API_URL || "";
+const baseURL = apiBaseURL;
 
 export type LoginPayload = {
   email: string;

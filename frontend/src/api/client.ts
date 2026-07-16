@@ -2,8 +2,9 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 
 import { refreshToken } from "./token";
 import { tokenStorage } from "../lib/storage";
+import { apiBaseURL } from "./baseUrl";
 
-const baseURL = import.meta.env.VITE_API_URL || "";
+const baseURL = apiBaseURL;
 export const AUTH_EXPIRED_EVENT = "zani:auth-expired";
 
 function notifyAuthExpired() {

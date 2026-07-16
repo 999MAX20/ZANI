@@ -1,10 +1,46 @@
 from apps.ai_core.ai_client import generate_text
 from apps.ai_core.context_service import get_business_knowledge_context
-from apps.ai_core.models import AIRequestLog
+from django.utils import timezone
+from rest_framework.exceptions import ValidationError
+
+from apps.ai_core.models import AIRequestLog, ApprovalRequest
 from apps.ai_core.prompt_service import build_prompt
 from apps.billing.models import UsageCounter
 from apps.billing.entitlements import EntitlementMetrics, assert_entitlement_allows
 from apps.billing.usage import increment_usage
+from apps.businesses.access import Resources
+
+
+def approval_resource_for_action(action_type):
+    if action_type in {ApprovalRequest.ActionTypes.AI_OUTREACH, ApprovalRequest.ActionTypes.CAMPAIGN_LAUNCH}:
+        return Resources.AI_OUTREACH
+    if action_type == ApprovalRequest.ActionTypes.AI_PIPELINE:
+        return Resources.AI_PIPELINE
+    return Resources.AI_AUTOMATION
+
+
+def approve_approval_request(*, approval: ApprovalRequest, actor, reason="") -> ApprovalRequest:
+    if approval.status != ApprovalRequest.Statuses.PENDING:
+        raise ValidationError({"status": "Only pending approval requests can be approved."})
+    approval.status = ApprovalRequest.Statuses.APPROVED
+    approval.approved_by = actor
+    approval.approved_at = timezone.now()
+    if reason:
+        approval.reason = reason
+    approval.save(update_fields=["status", "approved_by", "approved_at", "reason", "updated_at"])
+    return approval
+
+
+def reject_approval_request(*, approval: ApprovalRequest, actor, reason="") -> ApprovalRequest:
+    if approval.status != ApprovalRequest.Statuses.PENDING:
+        raise ValidationError({"status": "Only pending approval requests can be rejected."})
+    approval.status = ApprovalRequest.Statuses.REJECTED
+    approval.rejected_by = actor
+    approval.rejected_at = timezone.now()
+    if reason:
+        approval.reason = reason
+    approval.save(update_fields=["status", "rejected_by", "rejected_at", "reason", "updated_at"])
+    return approval
 
 
 def run_ai_request(

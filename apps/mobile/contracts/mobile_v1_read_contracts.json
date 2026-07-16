@@ -1,0 +1,15 @@
+{
+  "/api/mobile/v1/bootstrap/": ["active_business", "api_version", "budgets", "businesses", "feature_flags", "server_time", "user", "version_policy"],
+  "/api/mobile/v1/home/{business}": ["attention", "business", "generated_at", "kpis", "limit", "payload_budget", "quick_actions", "sections"],
+  "/api/mobile/v1/today/{business}": ["business", "date", "generated_at", "limit", "payload_budget", "sections"],
+  "/api/mobile/v1/actions/{business}": ["business", "generated_at", "items", "limit", "payload_budget", "total"],
+  "/api/mobile/v1/inbox/{business}": ["business", "generated_at", "items", "limit", "payload_budget", "summary"],
+  "/api/mobile/v1/leads/{business}": ["business", "generated_at", "items", "limit", "payload_budget", "summary"],
+  "/api/mobile/v1/clients/{business}": ["business", "generated_at", "items", "limit", "payload_budget", "summary"],
+  "/api/mobile/v1/tasks/{business}": ["business", "generated_at", "items", "limit", "payload_budget", "summary"],
+  "/api/mobile/v1/appointments/{business}": ["business", "date", "generated_at", "items", "limit", "payload_budget", "summary"],
+  "/api/mobile/v1/notifications/{business}": ["business", "generated_at", "items", "limit", "payload_budget", "summary"],
+  "/api/mobile/v1/notification-preferences/{business}": ["business", "generated_at", "items"],
+  "/api/mobile/v1/devices/{business}": ["business", "generated_at", "items"],
+  "/api/mobile/v1/operations/summary/{business}": ["business", "devices", "generated_at", "idempotency", "push_tokens", "sessions", "telemetry"]
+}

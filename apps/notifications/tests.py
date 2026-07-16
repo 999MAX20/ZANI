@@ -1,5 +1,5 @@
 import json
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 from django.test import override_settings
 from django.utils import timezone
@@ -9,9 +9,13 @@ from apps.accounts.models import User
 from apps.bots.models import Bot, BotChannel
 from apps.businesses.models import Business, BusinessMember
 from apps.clients.models import Client
+from apps.activities.models import ActivityEvent
+from apps.integrations.connectors import encrypt_credential_value
+from apps.mobile.models import MobileDevice, MobilePushToken, hash_mobile_secret
 from apps.notifications.models import Notification, NotificationPreference
 from apps.notifications.delivery import handle_appointment_followup_reply, process_due_notifications
 from apps.notifications.routing import MANAGER_ROLES, create_role_notification
+from apps.notifications.tasks import deliver_mobile_push_notification_task
 from apps.scheduling.models import Appointment
 from apps.services.models import Service
 
@@ -103,6 +107,46 @@ class NotificationCenterTests(APITestCase):
         self.assertEqual(notification.status, Notification.Statuses.FAILED)
         self.assertEqual(delivery_result["status"], "failed")
         self.assertNotIn("raw-delivery-token", str(result))
+
+    @override_settings(MOBILE_PUSH_QUEUE_ENABLED=True)
+    def test_system_delivery_queues_mobile_push_on_notifications_queue(self):
+        with patch("apps.notifications.tasks.deliver_mobile_push_notification_task.apply_async") as apply_async:
+            result = process_due_notifications()
+
+        self.notification.refresh_from_db()
+        delivery_result = next(item for item in result if item["notification_id"] == self.notification.id)
+        self.assertEqual(self.notification.status, Notification.Statuses.SENT)
+        self.assertEqual(delivery_result["result"]["mobile_push"]["queue"], "notifications")
+        self.assertIn(
+            call(args=[self.notification.id], queue="notifications"),
+            apply_async.call_args_list,
+        )
+
+    @override_settings(CELERY_TASK_ALWAYS_EAGER=True, MOBILE_PUSH_DELIVERY_ENABLED=False)
+    def test_mobile_push_worker_records_delivery_activity_without_raw_token(self):
+        device = MobileDevice.objects.create(
+            business=self.business,
+            user=self.owner,
+            device_id_hash=hash_mobile_secret("notify-owner-ios", namespace="mobile-device"),
+            platform=MobileDevice.Platforms.IOS,
+            last_seen_at=timezone.now(),
+        )
+        MobilePushToken.objects.create(
+            business=self.business,
+            user=self.owner,
+            device=device,
+            provider=MobilePushToken.Providers.EXPO,
+            token_hash=hash_mobile_secret("ExponentPushToken[notify-owner]", namespace="mobile-push"),
+            encrypted_token=encrypt_credential_value("ExponentPushToken[notify-owner]"),
+            is_active=True,
+            last_seen_at=timezone.now(),
+        )
+
+        result = deliver_mobile_push_notification_task.apply(args=[self.notification.id]).get()
+
+        self.assertEqual(result["status"], "planned")
+        activity = ActivityEvent.objects.get(business=self.business, event_type="mobile_push_planned")
+        self.assertNotIn("ExponentPushToken[notify-owner]", str(activity.metadata))
 
     def test_mark_read_and_mark_all_read(self):
         mark_response = self.client.post(f"/api/notifications/{self.notification.id}/mark-read/")

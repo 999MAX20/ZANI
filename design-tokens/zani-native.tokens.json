@@ -1,0 +1,72 @@
+{
+  "version": "2026-06-27",
+  "source": "Zani authenticated SaaS design system",
+  "themes": {
+    "light": {
+      "page": "#F8FAFC",
+      "panel": "#FFFFFF",
+      "panelSoft": "#F1F5F9",
+      "text": "#0F172A",
+      "muted": "#64748B",
+      "border": "#E2E8F0",
+      "primary": "#2563EB",
+      "primarySoft": "#EFF6FF",
+      "ai": "#7C3AED",
+      "pink": "#DB2777",
+      "success": "#16A34A",
+      "warning": "#D97706",
+      "danger": "#DC2626"
+    },
+    "dark": {
+      "page": "#070B16",
+      "panel": "#101827",
+      "panelSoft": "#182235",
+      "text": "#F8FAFC",
+      "muted": "#94A3B8",
+      "border": "#243247",
+      "primary": "#60A5FA",
+      "primarySoft": "#102542",
+      "ai": "#A78BFA",
+      "pink": "#F472B6",
+      "success": "#34D399",
+      "warning": "#F59E0B",
+      "danger": "#F87171"
+    }
+  },
+  "spacing": {
+    "xs": 4,
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 24,
+    "xxl": 32
+  },
+  "radius": {
+    "control": 12,
+    "card": 18,
+    "modal": 20,
+    "pill": 999
+  },
+  "typography": {
+    "caption": {
+      "fontSize": 12,
+      "lineHeight": 16,
+      "fontWeight": "700"
+    },
+    "body": {
+      "fontSize": 15,
+      "lineHeight": 22,
+      "fontWeight": "700"
+    },
+    "section": {
+      "fontSize": 20,
+      "lineHeight": 26,
+      "fontWeight": "900"
+    },
+    "title": {
+      "fontSize": 34,
+      "lineHeight": 40,
+      "fontWeight": "900"
+    }
+  }
+}

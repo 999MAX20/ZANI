@@ -30,6 +30,11 @@ env = environ.Env(
     PAID_BETA_BACKUP_RESTORE_DRILL_DONE=(bool, False),
     PAID_BETA_SUPPORT_GRANT_FLOW_TESTED=(bool, False),
     SOCIAL_AUTH_AUTO_CREATE_MERCHANT=(bool, True),
+    MOBILE_PUSH_DELIVERY_ENABLED=(bool, False),
+    MOBILE_PUSH_QUEUE_ENABLED=(bool, False),
+    MOBILE_API_VERSION=(str, "mobile-v1"),
+    MOBILE_APP_MIN_SUPPORTED_VERSION=(str, "0.1.0"),
+    MOBILE_APP_LATEST_VERSION=(str, "0.1.0"),
 )
 environ.Env.read_env(BASE_DIR / ".env")
 
@@ -41,6 +46,14 @@ ALLOWED_HOSTS = env("ALLOWED_HOSTS", default=["*"])
 CORS_ALLOWED_ORIGINS = env("CORS_ALLOWED_ORIGINS", default=[])
 CORS_ALLOW_CREDENTIALS = env("CORS_ALLOW_CREDENTIALS")
 CSRF_TRUSTED_ORIGINS = env("CSRF_TRUSTED_ORIGINS", default=[])
+MOBILE_PUSH_DELIVERY_ENABLED = env("MOBILE_PUSH_DELIVERY_ENABLED")
+MOBILE_PUSH_QUEUE_ENABLED = env("MOBILE_PUSH_QUEUE_ENABLED")
+MOBILE_EXPO_PUSH_URL = env("MOBILE_EXPO_PUSH_URL", default="https://exp.host/--/api/v2/push/send")
+MOBILE_API_VERSION = env("MOBILE_API_VERSION")
+MOBILE_APP_MIN_SUPPORTED_VERSION = env("MOBILE_APP_MIN_SUPPORTED_VERSION")
+MOBILE_APP_LATEST_VERSION = env("MOBILE_APP_LATEST_VERSION")
+MOBILE_APP_UPDATE_URL_IOS = env("MOBILE_APP_UPDATE_URL_IOS", default="")
+MOBILE_APP_UPDATE_URL_ANDROID = env("MOBILE_APP_UPDATE_URL_ANDROID", default="")
 
 
 def build_database_url():
@@ -97,6 +110,7 @@ INSTALLED_APPS = [
     "apps.crm",
     "apps.services",
     "apps.leads",
+    "apps.mobile",
     "apps.scheduling",
     "apps.tasks",
     "apps.conversations",
@@ -118,6 +132,8 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "apps.core.request_id.RequestIdMiddleware",
+    "apps.mobile.observability.MobileApiTelemetryMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -239,6 +255,14 @@ REST_FRAMEWORK = {
         "auth_social": env("AUTH_SOCIAL_RATE", default="20/min"),
         "auth_signup": env("AUTH_SIGNUP_RATE", default="10/hour"),
         "auth_password_reset": env("AUTH_PASSWORD_RESET_RATE", default="5/hour"),
+        "mobile_auth_login": env("MOBILE_AUTH_LOGIN_RATE", default="10/min"),
+        "mobile_auth_refresh": env("MOBILE_AUTH_REFRESH_RATE", default="60/min"),
+        "mobile_device_register": env("MOBILE_DEVICE_REGISTER_RATE", default="20/hour"),
+        "mobile_push_register": env("MOBILE_PUSH_REGISTER_RATE", default="20/hour"),
+        "mobile_bootstrap": env("MOBILE_BOOTSTRAP_RATE", default="60/min"),
+        "mobile_home": env("MOBILE_HOME_RATE", default="120/min"),
+        "mobile_list": env("MOBILE_LIST_RATE", default="180/min"),
+        "mobile_write": env("MOBILE_WRITE_RATE", default="60/min"),
         "public_api": env("PUBLIC_API_RATE", default="120/min"),
         "public_form": env("PUBLIC_FORM_RATE", default="60/min"),
         "public_widget": env("PUBLIC_WIDGET_RATE", default="120/min"),
@@ -444,6 +468,11 @@ LOGGING = {
     },
     "loggers": {
         "django.server": {
+            "handlers": ["console"],
+            "level": env("LOG_LEVEL"),
+            "propagate": False,
+        },
+        "zani.mobile": {
             "handlers": ["console"],
             "level": env("LOG_LEVEL"),
             "propagate": False,

@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "Zani",
+    "slug": "zani-mobile",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "zani",
+    "userInterfaceStyle": "automatic",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "plugins": [
+      "expo-notifications",
+      "@sentry/react-native"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "kz.zani.mobile",
+      "associatedDomains": [
+        "applinks:app.zani.kz"
+      ]
+    },
+    "android": {
+      "package": "kz.zani.mobile",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "app.zani.kz",
+              "pathPrefix": "/mobile"
+            },
+            {
+              "scheme": "zani"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
+    },
+    "extra": {
+      "apiUrl": ""
+    }
+  }
+}

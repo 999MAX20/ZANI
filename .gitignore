@@ -34,6 +34,7 @@ frontend/dist/
 *.tsbuildinfo
 frontend/vite.config.js
 frontend/vite.config.d.ts
+mobile/.expo/
 coverage/
 playwright-report/
 test-results/

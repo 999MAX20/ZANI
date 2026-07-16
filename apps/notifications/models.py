@@ -83,10 +83,16 @@ class Notification(TimeStampedModel):
 
 
 class NotificationPreference(TimeStampedModel):
+    class PrivacyModes(models.TextChoices):
+        REDACTED = "redacted", "Redacted"
+        FULL = "full", "Full"
+
     business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name="notification_preferences")
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notification_preferences")
     category = models.CharField(max_length=32, choices=Notification.Categories.choices)
     in_app_enabled = models.BooleanField(default=True)
+    push_enabled = models.BooleanField(default=True)
+    privacy_mode = models.CharField(max_length=16, choices=PrivacyModes.choices, default=PrivacyModes.REDACTED)
 
     class Meta:
         ordering = ["category"]

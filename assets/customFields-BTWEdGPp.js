@@ -1,1 +1,0 @@
-import{$ as e,Xt as t,qt as n}from"./layout-yxQ_wwlv.js";var r={...e(`/api/custom-fields/`),listByEntity:async e=>{let{data:r}=await n.get(`/api/custom-fields/`,{params:{entity_type:e}});return t(r)}},i={...e(`/api/custom-field-values/`),bulkUpsert:async e=>{let{data:r}=await n.post(`/api/custom-field-values/bulk-upsert/`,e);return t(r)}};export{r as n,i as t};

@@ -1,0 +1,1 @@
+import{$ as e}from"./layout-CmF8mgMk.js";var t=e(`/api/quick-replies/`);export{t};

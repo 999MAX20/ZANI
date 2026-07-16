@@ -1,1 +1,0 @@
-import{i as e}from"./i18n-iwNEsCEz.js";import{_ as t}from"./index-C4wVJI-w.js";var n=e();function r({title:e,open:r,onClose:i,children:a}){return(0,n.jsx)(t,{title:e,open:r,onClose:i,children:a})}export{r as t};

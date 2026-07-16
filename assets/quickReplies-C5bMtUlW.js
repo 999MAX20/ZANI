@@ -1,1 +1,0 @@
-import{$ as e}from"./layout-yxQ_wwlv.js";var t=e(`/api/quick-replies/`);export{t};

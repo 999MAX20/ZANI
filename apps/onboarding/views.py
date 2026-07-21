@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.businesses.access import Actions, Resources, assert_can
+from apps.core.permissions import user_can_access_business
 from apps.onboarding.serializers import (
     ApplyOnboardingTemplateSerializer,
     OnboardingChannelSetupSerializer,
@@ -28,8 +29,9 @@ def onboarding_status(request):
     serializer = OnboardingStatusQuerySerializer(data=request.query_params)
     serializer.is_valid(raise_exception=True)
     business = serializer.validated_data["business"]
-    assert_can(request.user, business, Resources.SETTINGS, Actions.VIEW)
-    return Response(get_onboarding_status(business))
+    if not user_can_access_business(request.user, business):
+        raise PermissionDenied("You do not have access to this business.")
+    return Response(get_onboarding_status(business, user=request.user))
 
 
 @api_view(["POST"])

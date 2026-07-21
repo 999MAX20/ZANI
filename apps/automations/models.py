@@ -86,6 +86,8 @@ class AutomationRun(models.Model):
     class Statuses(models.TextChoices):
         PENDING = "pending", "Pending"
         RUNNING = "running", "Running"
+        WAITING = "waiting", "Waiting"
+        RETRY_SCHEDULED = "retry_scheduled", "Retry scheduled"
         SUCCESS = "success", "Success"
         FAILED = "failed", "Failed"
         SKIPPED = "skipped", "Skipped"
@@ -100,6 +102,7 @@ class AutomationRun(models.Model):
     status = models.CharField(max_length=32, choices=Statuses.choices, default=Statuses.PENDING)
     payload = models.JSONField(default=dict, blank=True)
     action_results = models.JSONField(default=list, blank=True)
+    current_action_index = models.PositiveIntegerField(default=0)
     error = models.TextField(blank=True)
     attempts = models.PositiveSmallIntegerField(default=0)
     max_attempts = models.PositiveSmallIntegerField(default=3)
@@ -120,6 +123,7 @@ class AutomationRun(models.Model):
             models.Index(fields=["status", "created_at"]),
             models.Index(fields=["business", "status", "run_after"]),
             models.Index(fields=["business", "next_retry_at"]),
+            models.Index(fields=["status", "run_after", "next_retry_at"]),
         ]
 
     def __str__(self):

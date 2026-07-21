@@ -2,7 +2,10 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.viewsets import ReadOnlyModelViewSet
 from django.conf import settings
+from django.http import FileResponse
 
 from apps.businesses.access import Actions, Resources, assert_can
 from apps.core.audit import write_audit_log
@@ -11,18 +14,14 @@ from apps.core.import_export import (
     confirm_import,
     create_manual_catalog_item,
     create_manual_sale,
-    export_catalog,
-    export_clients,
-    export_deals,
-    export_leads,
-    export_sales,
     import_template_response,
     mark_excel_csv_import_failed,
 )
 from apps.core.file_validation import validate_file_upload
-from apps.core.models import AuditLog, ImportJob
+from apps.core.export_jobs import request_entity_export
+from apps.core.models import AuditLog, ExportJob, ImportJob
 from apps.core.permissions import accessible_businesses
-from apps.core.serializers import ImportJobSerializer
+from apps.core.serializers import ExportJobSerializer, ImportJobSerializer
 from apps.core.viewsets import TenantModelViewSet
 from apps.integrations.serializers import BusinessEventSerializer
 
@@ -87,6 +86,34 @@ class ImportJobViewSet(TenantModelViewSet):
         return Response(self.get_serializer(job).data)
 
 
+class ExportJobViewSet(ReadOnlyModelViewSet):
+    serializer_class = ExportJobSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = ExportJob.objects.select_related("business", "actor").filter(
+            business__in=accessible_businesses(self.request.user)
+        )
+        if not self.request.user.is_platform_user:
+            queryset = queryset.filter(actor=self.request.user)
+        business_id = self.request.query_params.get("business")
+        return queryset.filter(business_id=business_id) if business_id else queryset
+
+    @action(detail=True, methods=["get"])
+    def download(self, request, pk=None):
+        job = self.get_object()
+        if job.status != ExportJob.Statuses.SUCCEEDED or not job.result_file:
+            raise ValidationError({"export": "Export file is not ready."})
+        assert_can(request.user, job.business, _resource_for_export_key(job.export_key), Actions.VIEW)
+        write_audit_log(
+            request,
+            AuditLog.Actions.CREATE,
+            job,
+            business=job.business,
+            metadata={"kind": "file_download", "entity_type": "export_job", "export_key": job.export_key},
+        )
+        return FileResponse(job.result_file.open("rb"), as_attachment=True, filename=f"{job.export_key}.csv")
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def export_entity(request, entity_type):
@@ -96,24 +123,18 @@ def export_entity(request, entity_type):
         raise PermissionDenied("Business is required.")
     resource = _resource_for_entity(entity_type)
     assert_can(request.user, business, resource, Actions.VIEW)
+    response, job = request_entity_export(business=business, actor=request.user, export_key=entity_type)
+    audit_target = job or business
     write_audit_log(
         request,
         AuditLog.Actions.CREATE,
-        business,
+        audit_target,
         business=business,
-        metadata={"kind": "export", "entity_type": entity_type},
+        metadata={"kind": "export", "entity_type": entity_type, "queued": bool(job)},
     )
-    if entity_type == ImportJob.EntityTypes.CLIENTS:
-        return export_clients(business)
-    if entity_type == ImportJob.EntityTypes.LEADS:
-        return export_leads(business)
-    if entity_type == ImportJob.EntityTypes.DEALS:
-        return export_deals(business)
-    if entity_type == ImportJob.EntityTypes.SALES:
-        return export_sales(business)
-    if entity_type == ImportJob.EntityTypes.CATALOG:
-        return export_catalog(business)
-    raise ValidationError("Unsupported export entity.")
+    if job:
+        return Response(ExportJobSerializer(job, context={"request": request}).data, status=status.HTTP_202_ACCEPTED)
+    return response
 
 
 @api_view(["GET"])
@@ -158,6 +179,12 @@ def _resource_for_entity(entity_type):
     if entity_type in {ImportJob.EntityTypes.SALES, ImportJob.EntityTypes.CATALOG}:
         return Resources.INTEGRATIONS
     raise ValidationError("Unsupported import/export entity.")
+
+
+def _resource_for_export_key(export_key):
+    if export_key in {"source_roi", "manager_performance", "funnel_velocity", "retention_ltv"}:
+        return Resources.ANALYTICS
+    return _resource_for_entity(export_key)
 
 
 def _validate_import_file(upload):

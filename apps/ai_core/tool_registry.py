@@ -1,5 +1,8 @@
+import hashlib
+import json
 from dataclasses import dataclass
 
+from django.db import transaction
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
@@ -9,6 +12,7 @@ from apps.activities.taxonomy import ActivityEvents
 from apps.automations.engine import run_automations_for_event
 from apps.automations.models import AutomationRule
 from apps.businesses.access import Actions, Resources, assert_can
+from apps.businesses.capabilities import assert_resource_enabled
 from apps.clients.models import Client
 from apps.crm.models import Deal, PipelineStage
 from apps.crm.services import ensure_default_pipeline
@@ -55,6 +59,7 @@ def assert_tool_execution_allowed(log, user):
     if permission is None:
         return None
     resource, action = permission
+    assert_resource_enabled(log.business, resource)
     return assert_can(user, log.business, resource, action, obj=log)
 
 
@@ -88,27 +93,62 @@ def suggest_tool_calls(*, business, user, conversation=None, message=""):
     return logs
 
 
-def execute_tool_call(log, user):
+def tool_call_fingerprint(log):
+    payload = {
+        "business_id": log.business_id,
+        "user_id": log.user_id,
+        "conversation_id": log.conversation_id,
+        "tool_name": log.tool_name,
+        "input_json": log.input_json or {},
+    }
+    serialized = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)
+    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+
+
+def execute_tool_call_once(log_id, user):
     try:
-        handler = {
-            "create_client": _execute_create_client,
-            "create_lead": _execute_create_lead,
-            "create_task": _execute_create_task,
-            "create_deal": _execute_create_deal,
-            "summarize_conversation": _execute_summarize_conversation,
-            "qualify_lead": _execute_qualify_lead,
-        }[log.tool_name]
-        output = handler(log, user)
-        log.status = AIToolCallLog.Statuses.EXECUTED
-        log.output_json = output
-        log.error = ""
-        log.save(update_fields=["status", "output_json", "error"])
-        return log
-    except Exception as exc:  # Keep tool execution controlled and logged.
+        with transaction.atomic():
+            log = AIToolCallLog.objects.select_for_update().select_related("business", "conversation").get(id=log_id)
+            if log.status == AIToolCallLog.Statuses.EXECUTED:
+                return log, True
+            if log.status != AIToolCallLog.Statuses.SUGGESTED:
+                return log, False
+            log.status = AIToolCallLog.Statuses.EXECUTING
+            log.locked_at = timezone.now()
+            log.attempts += 1
+            log.error = ""
+            log.save(update_fields=["status", "locked_at", "attempts", "error"])
+            output = _tool_handler(log.tool_name)(log, user)
+            log.status = AIToolCallLog.Statuses.EXECUTED
+            log.output_json = output
+            log.error = ""
+            log.locked_at = None
+            log.executed_at = timezone.now()
+            log.save(update_fields=["status", "output_json", "error", "locked_at", "executed_at"])
+            return log, False
+    except Exception as exc:
+        log = AIToolCallLog.objects.get(id=log_id)
         log.status = AIToolCallLog.Statuses.FAILED
         log.error = sanitize_error_text(exc)
-        log.save(update_fields=["status", "error"])
-        return log
+        log.locked_at = None
+        log.save(update_fields=["status", "error", "locked_at"])
+        return log, False
+
+
+def execute_tool_call(log, user):
+    executed_log, _ = execute_tool_call_once(log.id, user)
+    return executed_log
+
+
+def _tool_handler(tool_name):
+    return {
+        "create_client": _execute_create_client,
+        "create_lead": _execute_create_lead,
+        "create_task": _execute_create_task,
+        "create_deal": _execute_create_deal,
+        "summarize_conversation": _execute_summarize_conversation,
+        "qualify_lead": _execute_qualify_lead,
+    }[tool_name]
 
 
 def _execute_create_client(log, user):

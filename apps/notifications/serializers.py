@@ -31,10 +31,22 @@ class NotificationSerializer(serializers.ModelSerializer):
             "action_label",
             "read_at",
             "is_read",
+            "attempts",
+            "max_attempts",
+            "next_retry_at",
+            "last_attempt_at",
+            "delivered_at",
+            "failed_at",
+            "last_error",
+            "provider_reference",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["status", "read_at", "is_read", "created_at", "updated_at"]
+        read_only_fields = [
+            "status", "read_at", "is_read", "attempts", "max_attempts", "next_retry_at",
+            "last_attempt_at", "delivered_at", "failed_at", "last_error", "provider_reference",
+            "created_at", "updated_at",
+        ]
 
     def validate(self, attrs):
         attempted_state_fields = sorted(self.protected_state_fields.intersection((self.initial_data or {}).keys()))

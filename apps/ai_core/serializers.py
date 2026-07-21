@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.ai_core.models import AIToolCallLog, AIRequestLog, AgentProfile, ApprovalRequest, BusinessKnowledgeItem
+from apps.ai_core.models import AIJob, AIToolCallLog, AIRequestLog, AgentProfile, ApprovalRequest, BusinessKnowledgeItem
 from apps.businesses.models import Business
 from apps.bots.models import BotConversation
 from apps.integrations.sanitization import sanitize_config, sanitize_error_text
@@ -10,7 +10,7 @@ class AIRequestLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = AIRequestLog
         fields = "__all__"
-        read_only_fields = ["created_at"]
+        read_only_fields = [field.name for field in AIRequestLog._meta.fields]
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -46,6 +46,14 @@ class AIAssistantChatSerializer(serializers.Serializer):
     business = serializers.PrimaryKeyRelatedField(queryset=Business.objects.all())
     message = serializers.CharField(required=True, allow_blank=False)
     prompt_type = serializers.CharField(required=False, default="crm_assistant")
+    idempotency_key = serializers.CharField(required=False, max_length=160)
+
+
+class AIJobSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AIJob
+        fields = "__all__"
+        read_only_fields = [field.name for field in AIJob._meta.fields]
 
 
 class AIAssistantStatusSerializer(serializers.Serializer):

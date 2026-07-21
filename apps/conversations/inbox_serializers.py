@@ -6,6 +6,30 @@ from apps.core.serializers import FileAttachmentSerializer
 from apps.integrations.sanitization import sanitize_config
 
 
+def _attachments_for(serializer, obj, entity_type):
+    cache_key = f"attachment_map:{entity_type}"
+    attachment_map = serializer.context.get(cache_key)
+    if attachment_map is None:
+        parent_instance = getattr(serializer.parent, "instance", None)
+        instances = list(parent_instance) if parent_instance is not None and not isinstance(parent_instance, (str, bytes)) else [obj]
+        entity_ids = [str(instance.id) for instance in instances]
+        business_ids = {
+            getattr(instance, "business_id", None) or getattr(getattr(instance, "conversation", None), "business_id", None)
+            for instance in instances
+        }
+        attachments = FileAttachment.objects.filter(
+            business_id__in={business_id for business_id in business_ids if business_id},
+            entity_type=entity_type,
+            entity_id__in=entity_ids,
+        )
+        attachment_map = {}
+        for attachment in attachments:
+            attachment_map.setdefault((attachment.business_id, attachment.entity_id), []).append(attachment)
+        serializer.context[cache_key] = attachment_map
+    business_id = getattr(obj, "business_id", None) or obj.conversation.business_id
+    return attachment_map.get((business_id, str(obj.id)), [])
+
+
 class InboxMessageSerializer(serializers.ModelSerializer):
     attachments = serializers.SerializerMethodField()
 
@@ -30,11 +54,7 @@ class InboxMessageSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_attachments(self, obj):
-        attachments = FileAttachment.objects.filter(
-            business=obj.conversation.business,
-            entity_type="bot_message",
-            entity_id=str(obj.id),
-        )
+        attachments = _attachments_for(self, obj, "bot_message")
         return FileAttachmentSerializer(attachments, many=True, context=self.context).data
 
     def to_representation(self, instance):
@@ -89,7 +109,18 @@ class InboxConversationSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_last_message(self, obj):
-        message = getattr(obj, "_prefetched_last_message", None) or obj.messages.order_by("-created_at").first()
+        if hasattr(obj, "latest_message_id"):
+            if obj.latest_message_id is None:
+                return None
+            return {
+                "id": obj.latest_message_id,
+                "direction": obj.latest_message_direction,
+                "sender_type": obj.latest_message_sender_type,
+                "text": obj.latest_message_text,
+                "status": obj.latest_message_status,
+                "created_at": obj.latest_message_created_at,
+            }
+        message = obj.messages.order_by("-created_at", "-id").first()
         if message is None:
             return None
         return {
@@ -102,11 +133,7 @@ class InboxConversationSerializer(serializers.ModelSerializer):
         }
 
     def get_attachments(self, obj):
-        attachments = FileAttachment.objects.filter(
-            business=obj.business,
-            entity_type="bot_conversation",
-            entity_id=str(obj.id),
-        )
+        attachments = _attachments_for(self, obj, "bot_conversation")
         return FileAttachmentSerializer(attachments, many=True, context=self.context).data
 
     def to_representation(self, instance):

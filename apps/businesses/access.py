@@ -40,6 +40,20 @@ class Actions:
     APPROVE = "approve"
 
 
+OWNERSHIP_FIELDS = (
+    "responsible_user",
+    "assigned_to",
+    "owner",
+    "assignee",
+    "created_by",
+    "requested_by",
+    "manager",
+    "operator",
+    "user",
+    "recipient",
+)
+
+
 PERMISSION_CATALOG = {
     Resources.CLIENTS: [Actions.VIEW, Actions.CREATE, Actions.UPDATE, Actions.DELETE],
     Resources.LEADS: [Actions.VIEW, Actions.CREATE, Actions.UPDATE, Actions.DELETE],
@@ -71,11 +85,11 @@ ROLE_PRESETS = {
     },
     BusinessMember.Roles.MANAGER: {
         Resources.CLIENTS: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.CREATE: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.BUSINESS},
-        Resources.LEADS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.CREATE: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.OWN},
-        Resources.DEALS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.CREATE: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.OWN},
+        Resources.LEADS: {Actions.VIEW: RolePermission.Scopes.TEAM, Actions.CREATE: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.TEAM},
+        Resources.DEALS: {Actions.VIEW: RolePermission.Scopes.TEAM, Actions.CREATE: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.TEAM},
         Resources.APPOINTMENTS: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.CREATE: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.BUSINESS},
         Resources.CONVERSATIONS: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.CREATE: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.BUSINESS, Actions.MANAGE: RolePermission.Scopes.BUSINESS},
-        Resources.TASKS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.CREATE: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.OWN},
+        Resources.TASKS: {Actions.VIEW: RolePermission.Scopes.TEAM, Actions.CREATE: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.TEAM},
         Resources.ANALYTICS: {Actions.VIEW: RolePermission.Scopes.BUSINESS},
         Resources.NOTIFICATIONS: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.BUSINESS},
         Resources.SETTINGS: {Actions.VIEW: RolePermission.Scopes.BUSINESS},
@@ -126,6 +140,14 @@ ROLE_PRESETS = {
         Resources.NOTIFICATIONS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.UPDATE: RolePermission.Scopes.OWN},
         Resources.AI_ASSISTANT: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.SUGGEST: RolePermission.Scopes.OWN},
     },
+    BusinessMember.Roles.DOCTOR: {
+        Resources.CLIENTS: {Actions.VIEW: RolePermission.Scopes.BUSINESS},
+        Resources.LEADS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.UPDATE: RolePermission.Scopes.OWN},
+        Resources.APPOINTMENTS: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.OWN},
+        Resources.TASKS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.UPDATE: RolePermission.Scopes.OWN},
+        Resources.NOTIFICATIONS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.UPDATE: RolePermission.Scopes.OWN},
+        Resources.AI_ASSISTANT: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.SUGGEST: RolePermission.Scopes.OWN},
+    },
 }
 
 
@@ -138,6 +160,7 @@ ROLE_DISPLAY_NAMES = {
     BusinessMember.Roles.ACCOUNTANT: "Бухгалтер",
     BusinessMember.Roles.SUPPORT: "Поддержка",
     BusinessMember.Roles.STAFF: "Сотрудник",
+    BusinessMember.Roles.DOCTOR: "Doctor",
 }
 
 
@@ -235,13 +258,13 @@ def can(user, business: Business | None, resource: str, action: str, obj=None) -
     if is_platform_admin(user):
         return PermissionResult(True, RolePermission.Scopes.BUSINESS)
 
-    membership = get_membership(user, business)
     if user_is_business_owner(user, business):
         scope = role_allows(BusinessMember.Roles.OWNER, resource, action)
         if not scope or scope == RolePermission.Scopes.NONE:
             return PermissionResult(False, reason="Permission denied.")
         return PermissionResult(True, scope)
 
+    membership = get_membership(user, business)
     if membership is None:
         return PermissionResult(False, reason="No active membership.")
 
@@ -250,7 +273,11 @@ def can(user, business: Business | None, resource: str, action: str, obj=None) -
     if not scope or scope == RolePermission.Scopes.NONE:
         return PermissionResult(False, reason="Permission denied.")
 
-    return PermissionResult(True, scope)
+    result = PermissionResult(True, scope)
+    if obj is not None and scope in {RolePermission.Scopes.OWN, RolePermission.Scopes.TEAM}:
+        if not _object_matches_scope(obj, user, business, scope, action):
+            return PermissionResult(False, scope=scope, reason="Object is outside your permitted scope.")
+    return result
 
 
 def assert_can(user, business: Business | None, resource: str, action: str, obj=None):
@@ -303,6 +330,44 @@ def _is_business_shared_configuration_queryset(queryset):
     return queryset.model.__name__ in {"Pipeline", "PipelineStage", "StageTransition"}
 
 
+def _object_matches_scope(obj, user, business: Business | None, scope: str, action: str) -> bool:
+    if obj.__class__.__name__ in {"Pipeline", "PipelineStage", "StageTransition"}:
+        return True
+
+    object_business_id = _object_business_id(obj)
+    if object_business_id is not None and business is not None and object_business_id != business.id:
+        return False
+
+    model_fields = {field.name for field in obj._meta.get_fields()}
+    object_user_ids = {
+        getattr(obj, f"{field}_id", None)
+        for field in OWNERSHIP_FIELDS
+        if field in model_fields
+    }
+    object_user_ids.discard(None)
+
+    if not object_user_ids and action == Actions.UPDATE:
+        return True
+
+    if scope == RolePermission.Scopes.OWN:
+        if action == Actions.VIEW and "recipient" in model_fields and getattr(obj, "recipient_id", None) is None:
+            return True
+        return user.id in object_user_ids
+    if scope == RolePermission.Scopes.TEAM:
+        return bool(object_user_ids.intersection(_team_user_ids_for(user, business)))
+    return False
+
+
+def _object_business_id(obj):
+    if hasattr(obj, "business_id"):
+        return obj.business_id
+    for relation_name in ("conversation", "bot", "rule"):
+        related = getattr(obj, relation_name, None)
+        if related is not None and hasattr(related, "business_id"):
+            return related.business_id
+    return None
+
+
 def _team_user_ids_for(user, business: Business | None):
     if not user or not user.is_authenticated or business is None:
         return []
@@ -323,20 +388,14 @@ def _team_user_ids_for(user, business: Business | None):
     )
 
 
+def team_user_ids_for(user, business: Business | None):
+    return _team_user_ids_for(user, business)
+
+
 def _filter_queryset_by_users(queryset, user_ids, *, include_business_wide_notifications: bool):
     model_fields = {field.name for field in queryset.model._meta.get_fields()}
-    ownership_fields = [
-        "responsible_user",
-        "assigned_to",
-        "owner",
-        "assignee",
-        "created_by",
-        "manager",
-        "operator",
-        "user",
-    ]
     query = Q()
-    for field in ownership_fields:
+    for field in OWNERSHIP_FIELDS:
         if field in model_fields:
             query |= Q(**{f"{field}_id__in": user_ids})
     if "recipient" in model_fields:

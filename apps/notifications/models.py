@@ -17,6 +17,8 @@ class Notification(TimeStampedModel):
 
     class Statuses(models.TextChoices):
         PENDING = "pending", "Pending"
+        SENDING = "sending", "Sending"
+        RETRY_SCHEDULED = "retry_scheduled", "Retry scheduled"
         SENT = "sent", "Sent"
         FAILED = "failed", "Failed"
         CANCELLED = "cancelled", "Cancelled"
@@ -55,6 +57,15 @@ class Notification(TimeStampedModel):
     action_url = models.CharField(max_length=255, blank=True)
     action_label = models.CharField(max_length=64, blank=True)
     read_at = models.DateTimeField(null=True, blank=True)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    max_attempts = models.PositiveSmallIntegerField(default=3)
+    next_retry_at = models.DateTimeField(null=True, blank=True)
+    locked_at = models.DateTimeField(null=True, blank=True)
+    last_attempt_at = models.DateTimeField(null=True, blank=True)
+    delivered_at = models.DateTimeField(null=True, blank=True)
+    failed_at = models.DateTimeField(null=True, blank=True)
+    last_error = models.TextField(blank=True)
+    provider_reference = models.CharField(max_length=255, blank=True)
 
     class Meta:
         ordering = ["read_at", "-send_at"]
@@ -62,6 +73,7 @@ class Notification(TimeStampedModel):
             models.Index(fields=["business", "status", "read_at", "send_at"]),
             models.Index(fields=["business", "category", "priority"]),
             models.Index(fields=["business", "recipient", "read_at"]),
+            models.Index(fields=["status", "send_at", "next_retry_at"]),
         ]
 
     def __str__(self):

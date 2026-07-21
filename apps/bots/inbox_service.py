@@ -9,6 +9,9 @@ from apps.billing.entitlements import EntitlementMetrics, assert_entitlement_all
 from apps.billing.usage import increment_usage
 from apps.bots.models import BotChannel, BotMessage
 from apps.businesses.models import BusinessMember
+from apps.businesses.assignment_notifications import create_assignment_notifications
+from apps.businesses.assignment_policy import assert_assignment_allowed, available_fallback_user
+from apps.businesses.access import Resources
 from apps.integrations.sanitization import sanitize_error_payload, sanitize_error_text
 from apps.integrations.providers import send_message
 from apps.notifications.models import Notification
@@ -104,7 +107,8 @@ def _chat_notification_recipients(conversation):
             is_active=True,
             role__in=CHAT_NOTIFICATION_ROLES,
         ).select_related("user").first()
-        return [membership.user] if membership else []
+        recipient = available_fallback_user(membership)
+        return [recipient] if recipient else []
 
     memberships = (
         BusinessMember.objects.select_related("user")
@@ -121,7 +125,18 @@ def mark_conversation_read(conversation):
 
 
 def assign_conversation(conversation, user, *, actor=None):
+    if user is None:
+        raise ValueError("Conversation assignee is required.")
+    assert_assignment_allowed(
+        actor=actor,
+        business=conversation.business,
+        target_user=user,
+        resource=Resources.CONVERSATIONS,
+    )
     previous_assignee_id = conversation.assigned_to_id
+    previous_assignee = conversation.assigned_to
+    if previous_assignee_id == user.id:
+        return conversation
     conversation.assigned_to = user
     conversation.save(update_fields=["assigned_to", "updated_at"])
     _write_conversation_activity(
@@ -130,6 +145,13 @@ def assign_conversation(conversation, user, *, actor=None):
         actor=actor,
         text="Conversation assigned.",
         metadata={"from_user_id": previous_assignee_id, "to_user_id": user.id if user else None},
+    )
+    create_assignment_notifications(
+        business=conversation.business,
+        previous_user=previous_assignee,
+        new_user=user,
+        text="Conversation assigned.",
+        action_url=f"/app/conversations?conversation={conversation.id}",
     )
     return conversation
 
@@ -146,6 +168,27 @@ def handoff_conversation(conversation, reason="", *, actor=None):
         text="Conversation handed off to a manager.",
         metadata={"reason": reason, "bot_enabled": False},
     )
+    manager_members = conversation.business.members.filter(
+        is_active=True,
+        role__in=[BusinessMember.Roles.OWNER, BusinessMember.Roles.ADMIN, BusinessMember.Roles.MANAGER],
+    ).select_related("user")
+    for member in manager_members:
+        recipient = available_fallback_user(member)
+        if recipient:
+            Notification.objects.get_or_create(
+                business=conversation.business,
+                recipient=recipient,
+                category=Notification.Categories.SALES,
+                action_url=f"/app/conversations?conversation={conversation.id}",
+                status=Notification.Statuses.PENDING,
+                defaults={
+                    "channel": Notification.Channels.SYSTEM,
+                    "priority": Notification.Priorities.HIGH,
+                    "text": f"Conversation handoff requires attention: {reason or 'operator requested manager help'}",
+                    "send_at": timezone.now(),
+                    "action_label": "Open",
+                },
+            )
     return conversation
 
 

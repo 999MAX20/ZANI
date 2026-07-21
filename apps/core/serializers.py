@@ -7,6 +7,7 @@ from apps.core.models import (
     CustomFieldDefinition,
     CustomFieldValue,
     FileAttachment,
+    ExportJob,
     ImportJob,
     LoginHistory,
     SupportAccessGrant,
@@ -126,6 +127,39 @@ class ImportJobSerializer(serializers.ModelSerializer):
         summary.setdefault("skipped", 0)
         summary["status"] = obj.status
         return summary
+
+
+class ExportJobSerializer(serializers.ModelSerializer):
+    actor_email = serializers.EmailField(source="actor.email", read_only=True)
+    download_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ExportJob
+        fields = [
+            "id",
+            "business",
+            "actor",
+            "actor_email",
+            "kind",
+            "export_key",
+            "parameters_json",
+            "status",
+            "row_count",
+            "error",
+            "download_url",
+            "started_at",
+            "completed_at",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = fields
+
+    def get_download_url(self, obj):
+        if obj.status != ExportJob.Statuses.SUCCEEDED or not obj.result_file:
+            return None
+        request = self.context.get("request")
+        url = f"/api/export-jobs/{obj.id}/download/"
+        return request.build_absolute_uri(url) if request else url
 
 
 class AuditLogSerializer(serializers.ModelSerializer):

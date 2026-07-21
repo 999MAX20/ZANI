@@ -123,13 +123,37 @@ class BotConversationSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["public_id", "created_at", "updated_at", "archived_at", "archived_by"]
+        read_only_fields = [
+            "public_id",
+            "client",
+            "lead",
+            "deal",
+            "assigned_to",
+            "status",
+            "priority",
+            "bot_enabled",
+            "handoff_required",
+            "handoff_reason",
+            "close_reason",
+            "last_message_at",
+            "last_inbound_at",
+            "last_outbound_at",
+            "unread_count",
+            "metadata_json",
+            "is_archived",
+            "archived_at",
+            "archived_by",
+            "archive_reason",
+            "created_at",
+            "updated_at",
+        ]
 
     def validate(self, attrs):
         business = attrs.get("business") or getattr(self.instance, "business", None)
         bot = attrs.get("bot") or getattr(self.instance, "bot", None)
         client = attrs.get("client") or getattr(self.instance, "client", None)
         lead = attrs.get("lead") or getattr(self.instance, "lead", None)
+        deal = attrs.get("deal") or getattr(self.instance, "deal", None)
         assigned_to = attrs.get("assigned_to") or getattr(self.instance, "assigned_to", None)
 
         if business and bot and bot.business_id != business.id:
@@ -138,6 +162,8 @@ class BotConversationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Client must belong to the selected business.")
         if business and lead and lead.business_id != business.id:
             raise serializers.ValidationError("Lead must belong to the selected business.")
+        if business and deal and deal.business_id != business.id:
+            raise serializers.ValidationError("Deal must belong to the selected business.")
         if business and assigned_to and not business.members.filter(user=assigned_to, is_active=True).exists():
             raise serializers.ValidationError("Assigned user must be an active member of the selected business.")
         return attrs

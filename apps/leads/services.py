@@ -6,6 +6,9 @@ from rest_framework.exceptions import ValidationError
 
 from apps.activities.services import create_activity_event
 from apps.activities.taxonomy import ActivityEvents
+from apps.businesses.assignment_notifications import create_assignment_notifications
+from apps.businesses.assignment_policy import assert_assignment_allowed
+from apps.businesses.access import Resources
 from apps.core.audit import write_audit_log
 from apps.core.models import AuditLog
 from apps.crm.models import Deal, Pipeline, PipelineStage
@@ -48,10 +51,17 @@ def assign_lead(*, lead: Lead, actor, user_id=None, request=None) -> Lead:
     responsible_user = get_user_model().objects.filter(id=responsible_user_id, is_active=True).first()
     if responsible_user is None:
         raise ValidationError({"user_id": "User was not found."})
-    if not lead.business.members.filter(user=responsible_user, is_active=True).exists():
-        raise ValidationError({"user_id": "Responsible user must be an active business member."})
+    assert_assignment_allowed(
+        actor=actor,
+        business=lead.business,
+        target_user=responsible_user,
+        resource=Resources.LEADS,
+    )
 
     previous_responsible_user_id = lead.responsible_user_id
+    previous_responsible_user = lead.responsible_user
+    if previous_responsible_user_id == responsible_user.id:
+        return lead
     lead.responsible_user = responsible_user
     lead.save(update_fields=["responsible_user", "updated_at"])
     if request is not None:
@@ -75,6 +85,13 @@ def assign_lead(*, lead: Lead, actor, user_id=None, request=None) -> Lead:
         instance=lead,
         text="Ответственный по заявке обновлён",
         metadata={"from": previous_responsible_user_id, "to": responsible_user.id},
+    )
+    create_assignment_notifications(
+        business=lead.business,
+        previous_user=previous_responsible_user,
+        new_user=responsible_user,
+        text=f"Lead assigned: {lead.client}",
+        action_url=f"/app/leads?lead={lead.id}",
     )
     return lead
 

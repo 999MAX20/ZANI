@@ -1,6 +1,6 @@
 # CRM Production Layer Plan
 
-Last updated: 2026-07-16
+Last updated: 2026-07-21
 
 Цель: довести CRM до production-уровня слоями по всему продукту, а не полировать одну страницу изолированно. Этот документ является текущим source-of-truth для CRM hardening.
 
@@ -17,6 +17,12 @@ domain invariants -> state machines -> audit/activity -> API contracts -> fronte
 ## 2. Текущее Состояние
 
 ### Backend Boundaries
+
+Update 2026-07-21: Backend Phases B1-B5 are implemented at local verified scope. Notification delivery, automation runs, approved AI tools and live AI requests now have queue-backed claim/idempotency/retry/checkpoint contracts; role-scoped daily queues, assignment/handoff, absence/fallback and manager escalation are server-enforced; aggregate/error/onboarding contracts are stable; dentistry receives appointment-first capabilities with Deals disabled by default; and disabled modules are enforced by APIs, AI and automations. B5 removes inbox and team/dashboard N+1 query shapes, bounds analytics periods, adds role-scoped synchronous/queued export jobs, hot-path indexes, JSON correlation logs and export queue health. This does not declare paid-beta readiness: real Redis worker/beat, S3, SMTP, Sentry, provider webhooks, backup restore and deployed smoke gates still require target-environment evidence.
+
+Verification snapshot 2026-07-21: the complete Django test suite passed (`441 passed, 7 warnings`), `manage.py check` passed, a clean SQLite migration run passed, `makemigrations --check --dry-run` reported no drift, and `git diff --check` passed. Focused B5 regression budgets cover bounded inbox, team-performance and owner-dashboard query counts. Local eager Celery and private filesystem storage smoke checks passed. Production readiness remains blocked in the local development environment by ten configuration/infrastructure failures: production secrets/hosts/origins/HTTPS, support grants, managed TLS PostgreSQL, TLS Redis with real workers/beat, private object storage and Sentry; SMTP is an additional warning. Paid-beta also requires deployed browser/staging smoke and a tested backup restore drill.
+
+Update 2026-07-21: Backend Phase B0 security and tenant invariants are complete. Deal create/update now rejects cross-business client, lead, pipeline, stage and owner relationships; business roles, memberships and team membership relations are same-business and owner-policy safe; AI request logs and generic bot conversations are server-owned/read-only at their public boundaries; OWN/TEAM scope is enforced against proposed create/update state, including custom AI approval creation; and inbox CRM linking checks both tenant and object permission scope. The focused B0, AI, access, CRM, notification, bot, inbox, tenant, API-contract and E2E suites passed, together with Django check, migration drift check and diff validation. No migration or environment change was required.
 
 Update 2026-07-16: App 2.0 workspace related data strategy is implemented at the API-contract layer. Full entity workspaces should use CRM card payloads for first load/counts/previews/actions, then reuse existing paginated list APIs for deep tabs instead of adding duplicate related endpoints. Deals now support `lead_ids`; appointments support `lead_ids`; tasks support `client_ids`, `lead_ids`, `deal_ids`, `appointment_ids` and `conversation_ids` with conversation-linked task inclusion for client/lead/deal filters; inbox conversations support `client_ids`, `lead_ids` and `deal_ids`. The shared ID parser accepts comma-separated ids and frontend `ids[]` arrays. Workspace related filter tests, task/inbox/CRM-card regressions, Django check, migration drift check and frontend build passed.
 

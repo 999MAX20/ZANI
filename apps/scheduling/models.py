@@ -101,6 +101,8 @@ class Appointment(TimeStampedModel):
             models.Index(fields=["business", "start_at", "end_at"]),
             models.Index(fields=["resource", "start_at", "end_at"]),
             models.Index(fields=["business", "is_archived", "start_at"]),
+            models.Index(fields=["business", "lead", "status"]),
+            models.Index(fields=["business", "created_at"]),
         ]
 
     def __str__(self):

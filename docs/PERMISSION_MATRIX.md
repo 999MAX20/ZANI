@@ -10,6 +10,7 @@ This file is the working reference for role-aware behavior in ZANI.
 - `manager`: handles clients, conversations, leads, deals and appointments.
 - `employee`: performs assigned operational work with limited access.
 - `support`: helps troubleshoot with explicit grants and audit requirements.
+- Business presets include owner, admin/director, manager, operator, marketer, accountant, support, staff and dentistry doctor.
 
 ## Principles
 
@@ -45,6 +46,18 @@ This file is the working reference for role-aware behavior in ZANI.
 - Owners should receive escalations, business risks, connector failures and high-value events.
 - Support should receive notifications only for granted support sessions or platform incidents.
 - Notification preferences must be business-scoped and role-aware.
+- Assignment targets must be active same-business members and inside the caller's OWN/TEAM/BUSINESS scope.
+- Operators may self-claim eligible unassigned conversations/tasks; managers may redistribute work inside managed teams; owner/admin may assign across the business.
+- Temporarily unavailable members are not valid new assignment targets. Inbound assignment notifications use an available same-business fallback member when configured.
+- Unassigned and SLA-risk handoffs create manager attention notifications instead of silently remaining in a personal queue.
+
+## Capability Rules
+
+- Business capabilities are backend-enforced for inbox, leads, clients, appointments, tasks, deals, analytics, AI, automations and integrations.
+- Dentistry defaults to appointment-first workflow with Deals disabled; disabling a module preserves its data.
+- Only users with settings update access may change capabilities.
+- Disabled modules return a permission denial and are excluded from work queues, operational aggregates, AI tools and automation actions.
+- Re-enabling a module restores access to preserved records without a destructive migration.
 
 ## AI Action Permission Rules
 

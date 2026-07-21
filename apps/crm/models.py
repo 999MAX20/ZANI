@@ -117,6 +117,7 @@ class Deal(TimeStampedModel):
             models.Index(fields=["business", "status", "updated_at"]),
             models.Index(fields=["business", "is_archived", "updated_at"]),
             models.Index(fields=["owner", "updated_at"]),
+            models.Index(fields=["business", "owner", "created_at"]),
         ]
 
     def __str__(self):

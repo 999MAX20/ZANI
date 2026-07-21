@@ -2,6 +2,9 @@ from django.db.models import Q
 from django.utils import timezone
 
 from apps.bots.models import BotConversation
+from apps.businesses.access import Actions, Resources, scope_queryset, user_scope_for
+from apps.businesses.capabilities import is_module_enabled
+from apps.businesses.models import BusinessMember, RolePermission
 from apps.crm.models import Deal
 from apps.leads.models import Lead
 from apps.scheduling.models import Appointment
@@ -37,17 +40,42 @@ def build_work_queues(*, business, user=None, limit=10, now=None):
     now = now or timezone.now()
     limit = max(1, min(int(limit or 10), 50))
 
-    overdue_tasks = overdue_tasks_queryset(business=business, now=now)
-    stale_leads = stale_leads_queryset(business=business, now=now)
-    open_deals = Deal.objects.filter(business=business, status=Deal.Statuses.OPEN, is_archived=False).select_related("client", "stage", "owner")
+    task_scope, lead_scope, deal_scope, appointment_scope, conversation_scope = _scoped_work_querysets(
+        business=business,
+        user=user,
+    )
+    overdue_tasks = overdue_tasks_queryset(queryset=task_scope, now=now)
+    stale_leads = stale_leads_queryset(queryset=lead_scope, now=now)
+    open_deals = deal_scope.filter(status=Deal.Statuses.OPEN).select_related("client", "stage", "owner")
     sla_overdue_deals = sla_overdue_deals_queryset(open_deals, now=now)
     no_next_action_deals = no_next_action_deals_queryset(open_deals)
-    upcoming_appointments = upcoming_appointments_queryset(business=business, now=now)
-    appointment_confirmations = appointment_confirmations_queryset(business=business, now=now)
-    unread_conversations = unread_conversations_queryset(business=business)
-    handoff_conversations = handoff_conversations_queryset(business=business)
-    unread_sla_overdue_conversations = unread_sla_overdue_conversations_queryset(business=business, now=now)
-    handoff_sla_overdue_conversations = overdue_handoff_conversations_queryset(business=business, now=now)
+    upcoming_appointments = upcoming_appointments_queryset(queryset=appointment_scope, now=now)
+    appointment_confirmations = appointment_confirmations_queryset(queryset=appointment_scope, now=now)
+    unread_conversations = unread_conversations_queryset(queryset=conversation_scope)
+    handoff_conversations = handoff_conversations_queryset(queryset=conversation_scope)
+    unread_sla_overdue_conversations = unread_sla_overdue_conversations_queryset(queryset=conversation_scope, now=now)
+    handoff_sla_overdue_conversations = overdue_handoff_conversations_queryset(queryset=conversation_scope, now=now)
+
+    unassigned_tasks = task_scope.filter(assignee__isnull=True).order_by("due_at", "-priority")
+    own_tasks = task_scope.filter(assignee=user).order_by("due_at", "-priority") if user else task_scope.none()
+    team_tasks = task_scope.exclude(assignee__isnull=True).exclude(assignee=user).order_by("due_at", "-priority") if user else task_scope.none()
+    unassigned_leads = lead_scope.filter(responsible_user__isnull=True).order_by("created_at")
+    own_leads = lead_scope.filter(responsible_user=user).order_by("updated_at") if user else lead_scope.none()
+    team_leads = lead_scope.exclude(responsible_user__isnull=True).exclude(responsible_user=user).order_by("updated_at") if user else lead_scope.none()
+    unassigned_deals = open_deals.filter(owner__isnull=True).order_by("created_at")
+    own_deals = open_deals.filter(owner=user).order_by("updated_at") if user else open_deals.none()
+    team_deals = open_deals.exclude(owner__isnull=True).exclude(owner=user).order_by("updated_at") if user else open_deals.none()
+    unassigned_conversations = conversation_scope.filter(
+        assigned_to__isnull=True,
+        status=BotConversation.Statuses.OPEN,
+    ).order_by("-last_message_at", "-updated_at")
+    own_conversations = conversation_scope.filter(
+        assigned_to=user,
+        status=BotConversation.Statuses.OPEN,
+    ).order_by("-last_message_at", "-updated_at") if user else conversation_scope.none()
+    team_conversations = conversation_scope.filter(status=BotConversation.Statuses.OPEN).exclude(
+        assigned_to__isnull=True
+    ).exclude(assigned_to=user).order_by("-last_message_at", "-updated_at") if user else conversation_scope.none()
 
     queues = {
         "overdue_tasks": [_task_item(task, now=now) for task in overdue_tasks[:limit]],
@@ -64,6 +92,24 @@ def build_work_queues(*, business, user=None, limit=10, now=None):
         "handoff_sla_overdue_conversations": [
             _conversation_item(conversation, reason="handoff_sla_overdue", now=now) for conversation in handoff_sla_overdue_conversations[:limit]
         ],
+        "unassigned_tasks": [_task_item(task, now=now) for task in unassigned_tasks[:limit]],
+        "own_tasks": [_task_item(task, now=now) for task in own_tasks[:limit]],
+        "team_tasks": [_task_item(task, now=now) for task in team_tasks[:limit]],
+        "unassigned_leads": [_lead_item(lead, now=now) for lead in unassigned_leads[:limit]],
+        "own_leads": [_lead_item(lead, now=now) for lead in own_leads[:limit]],
+        "team_leads": [_lead_item(lead, now=now) for lead in team_leads[:limit]],
+        "unassigned_deals": [_deal_item(deal, now=now, reason="unassigned") for deal in unassigned_deals[:limit]],
+        "own_deals": [_deal_item(deal, now=now, reason="assigned_to_me") for deal in own_deals[:limit]],
+        "team_deals": [_deal_item(deal, now=now, reason="team") for deal in team_deals[:limit]],
+        "unassigned_conversations": [
+            _conversation_item(conversation, reason="unassigned", now=now) for conversation in unassigned_conversations[:limit]
+        ],
+        "own_conversations": [
+            _conversation_item(conversation, reason="assigned_to_me", now=now) for conversation in own_conversations[:limit]
+        ],
+        "team_conversations": [
+            _conversation_item(conversation, reason="team", now=now) for conversation in team_conversations[:limit]
+        ],
     }
     summary = {key: query.count() for key, query in {
         "overdue_tasks": overdue_tasks,
@@ -76,6 +122,18 @@ def build_work_queues(*, business, user=None, limit=10, now=None):
         "handoff_conversations": handoff_conversations,
         "unread_sla_overdue_conversations": unread_sla_overdue_conversations,
         "handoff_sla_overdue_conversations": handoff_sla_overdue_conversations,
+        "unassigned_tasks": unassigned_tasks,
+        "own_tasks": own_tasks,
+        "team_tasks": team_tasks,
+        "unassigned_leads": unassigned_leads,
+        "own_leads": own_leads,
+        "team_leads": team_leads,
+        "unassigned_deals": unassigned_deals,
+        "own_deals": own_deals,
+        "team_deals": team_deals,
+        "unassigned_conversations": unassigned_conversations,
+        "own_conversations": own_conversations,
+        "team_conversations": team_conversations,
     }.items()}
     summary["total_attention"] = (
         summary["overdue_tasks"]
@@ -90,9 +148,58 @@ def build_work_queues(*, business, user=None, limit=10, now=None):
         "business": business.id,
         "generated_at": now.isoformat(),
         "limit": limit,
+        "scope": {
+            "tasks": user_scope_for(user, business, Resources.TASKS, Actions.VIEW) if user else RolePermission.Scopes.BUSINESS,
+            "leads": user_scope_for(user, business, Resources.LEADS, Actions.VIEW) if user else RolePermission.Scopes.BUSINESS,
+            "deals": user_scope_for(user, business, Resources.DEALS, Actions.VIEW) if user else RolePermission.Scopes.BUSINESS,
+            "appointments": user_scope_for(user, business, Resources.APPOINTMENTS, Actions.VIEW) if user else RolePermission.Scopes.BUSINESS,
+            "conversations": user_scope_for(user, business, Resources.CONVERSATIONS, Actions.VIEW) if user else RolePermission.Scopes.BUSINESS,
+        },
         "summary": summary,
         "queues": queues,
     }
+
+
+def _scoped_work_querysets(*, business, user):
+    task_scope = _active_tasks().filter(business=business)
+    lead_scope = Lead.objects.filter(business=business, is_archived=False)
+    deal_scope = Deal.objects.filter(business=business, is_archived=False)
+    appointment_scope = Appointment.objects.filter(business=business, is_archived=False)
+    conversation_scope = BotConversation.objects.filter(business=business, is_archived=False)
+    if not is_module_enabled(business, "tasks"):
+        task_scope = task_scope.none()
+    if not is_module_enabled(business, "leads"):
+        lead_scope = lead_scope.none()
+    if not is_module_enabled(business, "deals"):
+        deal_scope = deal_scope.none()
+    if not is_module_enabled(business, "appointments"):
+        appointment_scope = appointment_scope.none()
+    if not is_module_enabled(business, "inbox"):
+        conversation_scope = conversation_scope.none()
+    if user is None:
+        return task_scope, lead_scope, deal_scope, appointment_scope, conversation_scope
+
+    task_scope = scope_queryset(task_scope, user, business, Resources.TASKS)
+    lead_scope = scope_queryset(lead_scope, user, business, Resources.LEADS)
+    deal_scope = scope_queryset(deal_scope, user, business, Resources.DEALS)
+    appointment_scope = scope_queryset(appointment_scope, user, business, Resources.APPOINTMENTS)
+    conversation_scope = scope_queryset(conversation_scope, user, business, Resources.CONVERSATIONS)
+
+    membership = business.members.filter(user=user, is_active=True).first()
+    if business.owner_id == user.id or (membership and membership.role in {BusinessMember.Roles.ADMIN, BusinessMember.Roles.MANAGER}):
+        task_scope = _active_tasks().filter(business=business).filter(
+            Q(id__in=task_scope.values("id")) | Q(assignee__isnull=True)
+        )
+        lead_scope = Lead.objects.filter(business=business, is_archived=False).filter(
+            Q(id__in=lead_scope.values("id")) | Q(responsible_user__isnull=True)
+        )
+        deal_scope = Deal.objects.filter(business=business, is_archived=False).filter(
+            Q(id__in=deal_scope.values("id")) | Q(owner__isnull=True)
+        )
+        conversation_scope = BotConversation.objects.filter(business=business, is_archived=False).filter(
+            Q(id__in=conversation_scope.values("id")) | Q(assigned_to__isnull=True)
+        )
+    return task_scope, lead_scope, deal_scope, appointment_scope, conversation_scope
 
 
 def _active_tasks():

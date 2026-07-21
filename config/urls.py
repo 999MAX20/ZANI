@@ -7,6 +7,7 @@ from apps.accounts.views import ChangePasswordView, CurrentUserLoginHistoryView,
 from apps.activities.views import ActivityEventViewSet, NoteViewSet, SegmentFilterViewSet, SegmentViewSet, TaggedObjectViewSet, TagViewSet
 from apps.ai_core.views import (
     AIAnalystBriefView,
+    AIJobViewSet,
     AIOwnerDailyBriefView,
     AIAssistantChatView,
     AIAssistantStatusView,
@@ -31,6 +32,7 @@ from apps.bots.views import (
 )
 from apps.businesses.views import (
     BusinessMemberViewSet,
+    BusinessCapabilityViewSet,
     BusinessInvitationViewSet,
     BusinessRoleViewSet,
     BusinessViewSet,
@@ -47,7 +49,7 @@ from apps.conversations.views import ConversationViewSet, MessageViewSet, QuickR
 from apps.core.file_views import private_media_file
 from apps.core.file_attachment_views import FileAttachmentViewSet
 from apps.core.custom_field_views import CustomFieldDefinitionViewSet, CustomFieldValueViewSet
-from apps.core.import_export_views import ImportJobViewSet, export_entity, import_template, manual_catalog_item, manual_sale
+from apps.core.import_export_views import ExportJobViewSet, ImportJobViewSet, export_entity, import_template, manual_catalog_item, manual_sale
 from apps.core.pilot_views import PilotReadinessView
 from apps.core.platform_views import (
     platform_activate_landing,
@@ -95,6 +97,7 @@ from apps.tasks.views import TaskViewSet
 router = DefaultRouter()
 router.register("businesses", BusinessViewSet, basename="business")
 router.register("business-members", BusinessMemberViewSet, basename="business-member")
+router.register("business-capabilities", BusinessCapabilityViewSet, basename="business-capability")
 router.register("team/members", TeamMemberManagementViewSet, basename="team-member")
 router.register("team/invitations", BusinessInvitationViewSet, basename="team-invitation")
 router.register("team/roles", BusinessRoleViewSet, basename="team-role")
@@ -137,6 +140,7 @@ router.register("segment-filters", SegmentFilterViewSet, basename="segment-filte
 router.register("custom-fields", CustomFieldDefinitionViewSet, basename="custom-field")
 router.register("custom-field-values", CustomFieldValueViewSet, basename="custom-field-value")
 router.register("import-jobs", ImportJobViewSet, basename="import-job")
+router.register("export-jobs", ExportJobViewSet, basename="export-job")
 router.register("file-attachments", FileAttachmentViewSet, basename="file-attachment")
 router.register("security/support-grants", SupportAccessGrantViewSet, basename="security-support-grant")
 router.register("tasks", TaskViewSet, basename="task")
@@ -154,6 +158,7 @@ router.register("bot-conversations", BotConversationViewSet, basename="bot-conve
 router.register("bot-messages", BotMessageViewSet, basename="bot-message")
 router.register("inbox/conversations", InboxConversationViewSet, basename="inbox-conversation")
 router.register("ai/request-logs", AIRequestLogViewSet, basename="ai-request-log")
+router.register("ai/jobs", AIJobViewSet, basename="ai-job")
 router.register("ai/knowledge-items", BusinessKnowledgeItemViewSet, basename="ai-knowledge-item")
 router.register("ai/agent-profiles", AgentProfileViewSet, basename="ai-agent-profile")
 router.register("ai/approval-requests", ApprovalRequestViewSet, basename="ai-approval-request")

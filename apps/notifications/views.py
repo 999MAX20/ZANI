@@ -58,7 +58,9 @@ class NotificationViewSet(TenantModelViewSet):
         notification = self.get_object()
         assert_can(request.user, notification.business, self.get_access_resource(), Actions.MANAGE, obj=notification)
         notification.status = Notification.Statuses.SENT
-        notification.save(update_fields=["status", "updated_at"])
+        notification.delivered_at = timezone.now()
+        notification.locked_at = None
+        notification.save(update_fields=["status", "delivered_at", "locked_at", "updated_at"])
         return Response(NotificationSerializer(notification).data)
 
     @action(detail=True, methods=["post"])
@@ -66,7 +68,9 @@ class NotificationViewSet(TenantModelViewSet):
         notification = self.get_object()
         assert_can(request.user, notification.business, self.get_access_resource(), Actions.MANAGE, obj=notification)
         notification.status = Notification.Statuses.CANCELLED
-        notification.save(update_fields=["status", "updated_at"])
+        notification.locked_at = None
+        notification.next_retry_at = None
+        notification.save(update_fields=["status", "locked_at", "next_retry_at", "updated_at"])
         return Response(NotificationSerializer(notification).data)
 
     @action(detail=True, methods=["post"])
@@ -77,7 +81,13 @@ class NotificationViewSet(TenantModelViewSet):
             return Response({"detail": "Only failed notifications can be retried.", "notification": NotificationSerializer(notification).data}, status=400)
         notification.status = Notification.Statuses.PENDING
         notification.send_at = timezone.now()
-        notification.save(update_fields=["status", "send_at", "updated_at"])
+        notification.attempts = 0
+        notification.next_retry_at = None
+        notification.failed_at = None
+        notification.last_error = ""
+        notification.save(
+            update_fields=["status", "send_at", "attempts", "next_retry_at", "failed_at", "last_error", "updated_at"]
+        )
         result = deliver_notification(notification)
         notification.refresh_from_db()
         return Response({"result": result, "notification": NotificationSerializer(notification).data})
@@ -111,6 +121,8 @@ class NotificationViewSet(TenantModelViewSet):
         return Response(
             {
                 "pending": queryset.filter(status=Notification.Statuses.PENDING).count(),
+                "sending": queryset.filter(status=Notification.Statuses.SENDING).count(),
+                "retry_scheduled": queryset.filter(status=Notification.Statuses.RETRY_SCHEDULED).count(),
                 "failed": queryset.filter(status=Notification.Statuses.FAILED).count(),
                 "due": queryset.filter(status=Notification.Statuses.PENDING, send_at__lte=now).count(),
                 "unread": unread.count(),

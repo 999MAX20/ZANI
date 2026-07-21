@@ -1,6 +1,5 @@
 from decimal import Decimal, InvalidOperation
 
-from django.utils.dateparse import parse_date
 from django.db.models import Count, Sum
 from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes
@@ -10,11 +9,15 @@ from rest_framework.response import Response
 
 from apps.analytics.crm_metrics import build_crm_operational_metrics
 from apps.analytics.models import AnalyticsEvent, ReportWidget, ScheduledReport
-from apps.analytics.reports import build_report_summary, export_report_csv
+from apps.analytics.reports import build_report_summary
 from apps.analytics.serializers import AnalyticsEventSerializer, ReportWidgetSerializer, ScheduledReportSerializer
 from apps.core.audit import write_audit_log
+from apps.core.date_ranges import parse_bounded_date_range
+from apps.core.export_jobs import request_report_export
 from apps.core.models import AuditLog
+from apps.core.serializers import ExportJobSerializer
 from apps.businesses.access import Actions, Resources, assert_can, scope_queryset
+from apps.businesses.capabilities import assert_resource_enabled
 from apps.core.permissions import accessible_businesses, user_can_access_business
 from apps.core.viewsets import TenantModelViewSet
 from apps.core.work_queues import overdue_tasks_queryset
@@ -59,6 +62,7 @@ class ScheduledReportViewSet(TenantModelViewSet):
 def owner_dashboard(request):
     business = _resolve_business(request)
     assert_can(request.user, business, Resources.ANALYTICS, Actions.VIEW)
+    assert_resource_enabled(business, Resources.ANALYTICS)
     today = timezone.localdate()
 
     leads = scope_queryset(Lead.objects.filter(business=business), request.user, business, Resources.LEADS)
@@ -190,6 +194,7 @@ def owner_dashboard(request):
         "connector_health": connector_health,
         "latest_business_events": latest_business_events,
         "crm_funnel": crm_operational_metrics["crm_funnel"],
+        "crm_metrics_meta": crm_operational_metrics["meta"],
         "manager_performance": crm_operational_metrics["manager_performance"],
         "ai_insight_cards": crm_operational_metrics["ai_insight_cards"],
         "attention_items": _build_attention_items(
@@ -207,13 +212,15 @@ def owner_dashboard(request):
 @permission_classes([IsAuthenticated])
 def report_summary(request):
     business = _resolve_business(request)
+    assert_resource_enabled(business, Resources.ANALYTICS)
     assert_can(request.user, business, Resources.ANALYTICS, Actions.VIEW)
+    start_date, end_date = parse_bounded_date_range(request.query_params)
     return Response(
         build_report_summary(
             business,
             user=request.user,
-            start_date=parse_date(request.query_params.get("start", "") or ""),
-            end_date=parse_date(request.query_params.get("end", "") or ""),
+            start_date=start_date,
+            end_date=end_date,
         )
     )
 
@@ -222,25 +229,29 @@ def report_summary(request):
 @permission_classes([IsAuthenticated])
 def report_export(request):
     business = _resolve_business(request)
+    assert_resource_enabled(business, Resources.ANALYTICS)
     assert_can(request.user, business, Resources.ANALYTICS, Actions.VIEW)
     report_key = request.query_params.get("report", "source_roi")
+    start_date, end_date = parse_bounded_date_range(request.query_params)
     try:
-        response = export_report_csv(
-            business,
-            report_key,
-            user=request.user,
-            start_date=parse_date(request.query_params.get("start", "") or ""),
-            end_date=parse_date(request.query_params.get("end", "") or ""),
+        response, job = request_report_export(
+            business=business,
+            actor=request.user,
+            report_key=report_key,
+            start_date=start_date,
+            end_date=end_date,
         )
     except ValueError as exc:
         raise ValidationError(str(exc)) from exc
     write_audit_log(
         request,
         AuditLog.Actions.CREATE,
-        business,
+        job or business,
         business=business,
-        metadata={"kind": "export", "entity_type": "analytics_report", "report": report_key},
+        metadata={"kind": "export", "entity_type": "analytics_report", "report": report_key, "queued": bool(job)},
     )
+    if job:
+        return Response(ExportJobSerializer(job, context={"request": request}).data, status=202)
     return response
 
 

@@ -396,7 +396,8 @@ class AutomationFoundationTests(TestCase):
         run = runs[0]
         run.refresh_from_db()
         self.assertEqual(run.rule, rule)
-        self.assertEqual(run.status, AutomationRun.Statuses.PENDING)
+        self.assertEqual(run.status, AutomationRun.Statuses.WAITING)
+        self.assertEqual(run.current_action_index, 1)
         self.assertIsNotNone(run.run_after)
         self.assertFalse(Task.objects.filter(business=self.business, title="Delayed follow up").exists())
 
@@ -425,7 +426,7 @@ class AutomationFoundationTests(TestCase):
         )
         run = runs[0]
         run.refresh_from_db()
-        self.assertEqual(run.status, AutomationRun.Statuses.FAILED)
+        self.assertEqual(run.status, AutomationRun.Statuses.RETRY_SCHEDULED)
         self.assertEqual(run.attempts, 1)
         self.assertIsNotNone(run.next_retry_at)
 
@@ -601,7 +602,7 @@ class AutomationFoundationTests(TestCase):
 
         self.assertIn(response.status_code, {403, 404})
         run.refresh_from_db()
-        self.assertEqual(run.status, AutomationRun.Statuses.PENDING)
+        self.assertEqual(run.status, AutomationRun.Statuses.WAITING)
 
     @override_settings(AUTOMATION_RULE_RUN_LIMIT=1, AUTOMATION_RULE_RUN_WINDOW_MINUTES=10)
     def test_noisy_rule_is_throttled_per_business(self):

@@ -1,16 +1,24 @@
 from django.contrib.auth.password_validation import validate_password
+from django.utils import timezone
 from rest_framework import serializers
 
 from apps.accounts.models import User
 from apps.businesses.access import PERMISSION_CATALOG
-from apps.businesses.models import Business, BusinessInvitation, BusinessMember, BusinessRole, RolePermission, RolePreset, Team, TeamMember
+from apps.businesses.models import Business, BusinessCapability, BusinessInvitation, BusinessMember, BusinessRole, RolePermission, RolePreset, Team, TeamMember
 
 
 class BusinessSerializer(serializers.ModelSerializer):
     class Meta:
         model = Business
         fields = "__all__"
-        read_only_fields = ["owner", "created_at", "updated_at"]
+    read_only_fields = ["owner", "created_at", "updated_at"]
+
+
+class BusinessCapabilitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BusinessCapability
+        fields = ["id", "business", "module_key", "is_enabled", "configured_by", "created_at", "updated_at"]
+        read_only_fields = ["business", "module_key", "configured_by", "created_at", "updated_at"]
 
 
 class BusinessMemberSerializer(serializers.ModelSerializer):
@@ -22,6 +30,39 @@ class BusinessMemberSerializer(serializers.ModelSerializer):
         model = BusinessMember
         fields = "__all__"
         read_only_fields = ["created_at", "updated_at"]
+
+    def validate(self, attrs):
+        business = attrs.get("business") or getattr(self.instance, "business", None)
+        user = attrs.get("user") or getattr(self.instance, "user", None)
+        business_role = attrs.get("business_role") if "business_role" in attrs else getattr(self.instance, "business_role", None)
+        role = attrs.get("role") or getattr(self.instance, "role", BusinessMember.Roles.STAFF)
+        fallback_member = attrs.get("fallback_member") if "fallback_member" in attrs else getattr(self.instance, "fallback_member", None)
+
+        if self.instance is not None:
+            if business and business.id != self.instance.business_id:
+                raise serializers.ValidationError({"business": "Membership business cannot be changed."})
+            if user and user.id != self.instance.user_id:
+                raise serializers.ValidationError({"user": "Membership user cannot be changed."})
+        if business_role and business and business_role.business_id != business.id:
+            raise serializers.ValidationError({"business_role": "Business role must belong to the selected business."})
+        if fallback_member and business and fallback_member.business_id != business.id:
+            raise serializers.ValidationError({"fallback_member": "Fallback member must belong to the selected business."})
+        if fallback_member and self.instance and fallback_member.id == self.instance.id:
+            raise serializers.ValidationError({"fallback_member": "A member cannot be their own fallback."})
+        if fallback_member and not fallback_member.is_active:
+            raise serializers.ValidationError({"fallback_member": "Fallback member must be active."})
+        if business_role and not business_role.is_active:
+            raise serializers.ValidationError({"business_role": "Business role must be active."})
+        if role == BusinessMember.Roles.OWNER and (
+            self.instance is None or self.instance.role != BusinessMember.Roles.OWNER
+        ):
+            raise serializers.ValidationError({"role": "Ownership transfer must be handled explicitly."})
+        if self.instance is not None and self.instance.role == BusinessMember.Roles.OWNER:
+            if role != BusinessMember.Roles.OWNER:
+                raise serializers.ValidationError({"role": "Business owner role cannot be changed here."})
+            if attrs.get("is_active") is False:
+                raise serializers.ValidationError({"is_active": "Business owner cannot be deactivated here."})
+        return attrs
 
 
 class TeamUserSerializer(serializers.ModelSerializer):
@@ -83,6 +124,13 @@ class TeamMemberSerializer(serializers.ModelSerializer):
         fields = ["id", "team", "team_name", "member", "member_email", "member_full_name", "is_lead", "created_at", "updated_at"]
         read_only_fields = ["created_at", "updated_at"]
 
+    def validate(self, attrs):
+        team = attrs.get("team") or getattr(self.instance, "team", None)
+        member = attrs.get("member") or getattr(self.instance, "member", None)
+        if team and member and team.business_id != member.business_id:
+            raise serializers.ValidationError({"member": "Team member must belong to the same business as the team."})
+        return attrs
+
 
 class TeamMemberManagementSerializer(serializers.ModelSerializer):
     user = TeamUserSerializer(read_only=True)
@@ -102,6 +150,9 @@ class TeamMemberManagementSerializer(serializers.ModelSerializer):
             "business_role_name",
             "teams",
             "is_active",
+            "availability_status",
+            "unavailable_until",
+            "fallback_member",
             "created_at",
             "updated_at",
         ]
@@ -114,9 +165,28 @@ class TeamMemberManagementSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, attrs):
+        business = attrs.get("business") or getattr(self.instance, "business", None)
+        user = attrs.get("user") or getattr(self.instance, "user", None)
+        business_role = attrs.get("business_role") if "business_role" in attrs else getattr(self.instance, "business_role", None)
+        fallback_member = attrs.get("fallback_member") if "fallback_member" in attrs else getattr(self.instance, "fallback_member", None)
         role = attrs.get("role")
         is_active = attrs.get("is_active")
         current_role = getattr(self.instance, "role", None)
+        if self.instance is not None:
+            if business and business.id != self.instance.business_id:
+                raise serializers.ValidationError({"business": "Membership business cannot be changed."})
+            if user and user.id != self.instance.user_id:
+                raise serializers.ValidationError({"user_id": "Membership user cannot be changed."})
+        if business_role and business and business_role.business_id != business.id:
+            raise serializers.ValidationError({"business_role": "Business role must belong to the selected business."})
+        if fallback_member and business and fallback_member.business_id != business.id:
+            raise serializers.ValidationError({"fallback_member": "Fallback member must belong to the selected business."})
+        if fallback_member and self.instance and fallback_member.id == self.instance.id:
+            raise serializers.ValidationError({"fallback_member": "A member cannot be their own fallback."})
+        if fallback_member and not fallback_member.is_active:
+            raise serializers.ValidationError({"fallback_member": "Fallback member must be active."})
+        if business_role and not business_role.is_active:
+            raise serializers.ValidationError({"business_role": "Business role must be active."})
         if role == BusinessMember.Roles.OWNER and current_role != BusinessMember.Roles.OWNER:
             raise serializers.ValidationError("Ownership transfer must be handled explicitly.")
         if current_role == BusinessMember.Roles.OWNER and role and role != BusinessMember.Roles.OWNER:
@@ -146,6 +216,7 @@ class BusinessInvitationSerializer(serializers.ModelSerializer):
             "role",
             "business_role",
             "business_role_name",
+            "team",
             "invited_by",
             "invited_by_email",
             "delivery_channel",
@@ -171,6 +242,7 @@ class BusinessInvitationSerializer(serializers.ModelSerializer):
         delivery_channel = attrs.get("delivery_channel") or getattr(self.instance, "delivery_channel", BusinessInvitation.DeliveryChannels.MANUAL)
         role = attrs.get("role") or getattr(self.instance, "role", BusinessMember.Roles.STAFF)
         business_role = attrs.get("business_role") or getattr(self.instance, "business_role", None)
+        team = attrs.get("team") if "team" in attrs else getattr(self.instance, "team", None)
         if email:
             attrs["email"] = email
         attrs["phone"] = phone
@@ -181,8 +253,17 @@ class BusinessInvitationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Telegram username or phone is required for Telegram delivery.")
         if business_role and business and business_role.business_id != business.id:
             raise serializers.ValidationError("Business role must belong to the selected business.")
+        if team and business and team.business_id != business.id:
+            raise serializers.ValidationError("Team must belong to the selected business.")
         if business and email and business.members.filter(user__email__iexact=email, is_active=True).exists():
             raise serializers.ValidationError("This user is already an active member of the business.")
+        if business and email and business.invitations.filter(
+            email__iexact=email,
+            accepted_at__isnull=True,
+            revoked_at__isnull=True,
+            expires_at__gt=timezone.now(),
+        ).exclude(id=getattr(self.instance, "id", None)).exists():
+            raise serializers.ValidationError("A pending invitation already exists for this user.")
         if role == BusinessMember.Roles.OWNER:
             raise serializers.ValidationError("Invite admins or staff from this screen. Ownership transfer must be explicit.")
         return attrs

@@ -116,6 +116,7 @@ if USE_S3:
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "apps.core.middleware.CorrelationIdMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -171,6 +172,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 MAX_UPLOAD_SIZE_MB = env.int("MAX_UPLOAD_SIZE_MB", default=10)
 IMPORT_MAX_ROWS = env.int("IMPORT_MAX_ROWS", default=5000)
+EXPORT_SYNC_MAX_ROWS = env.int("EXPORT_SYNC_MAX_ROWS", default=5000)
+EXPORT_MAX_ROWS = env.int("EXPORT_MAX_ROWS", default=100000)
+REPORT_MAX_RANGE_DAYS = env.int("REPORT_MAX_RANGE_DAYS", default=366)
+REPORT_EXPORT_SYNC_MAX_DAYS = env.int("REPORT_EXPORT_SYNC_MAX_DAYS", default=90)
+EXPORT_STALE_SECONDS = env.int("EXPORT_STALE_SECONDS", default=900)
 IMPORT_PREVIEW_ROWS = env.int("IMPORT_PREVIEW_ROWS", default=10)
 ALLOWED_UPLOAD_EXTENSIONS = env.list(
     "ALLOWED_UPLOAD_EXTENSIONS",
@@ -223,6 +229,7 @@ if USE_S3:
     }
 
 REST_FRAMEWORK = {
+    "EXCEPTION_HANDLER": "apps.core.exceptions.api_exception_handler",
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
@@ -271,12 +278,19 @@ CELERY_TASK_ROUTES = {
     "apps.notifications.*": {"queue": "notifications"},
     "apps.ai_core.*": {"queue": "ai"},
     "apps.core.import_export*": {"queue": "reports_exports"},
+    "exports.*": {"queue": "reports_exports"},
 }
 CELERY_TASK_ACKS_LATE = env.bool("CELERY_TASK_ACKS_LATE", default=True)
 CELERY_WORKER_PREFETCH_MULTIPLIER = env.int("CELERY_WORKER_PREFETCH_MULTIPLIER", default=1)
 CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=False)
 CELERY_TASK_STORE_EAGER_RESULT = env.bool("CELERY_TASK_STORE_EAGER_RESULT", default=False)
 AUTOMATIONS_RUN_INLINE = env.bool("AUTOMATIONS_RUN_INLINE", default=True)
+NOTIFICATION_DELIVERY_BATCH_SIZE = env.int("NOTIFICATION_DELIVERY_BATCH_SIZE", default=100)
+NOTIFICATION_DELIVERY_INTERVAL_SECONDS = env.int("NOTIFICATION_DELIVERY_INTERVAL_SECONDS", default=60)
+AUTOMATION_RUNTIME_INTERVAL_SECONDS = env.int("AUTOMATION_RUNTIME_INTERVAL_SECONDS", default=30)
+AUTOMATION_STALE_LOCK_SECONDS = env.int("AUTOMATION_STALE_LOCK_SECONDS", default=900)
+AI_QUEUE_LIVE_REQUESTS = env.bool("AI_QUEUE_LIVE_REQUESTS", default=True)
+AI_JOB_INTERVAL_SECONDS = env.int("AI_JOB_INTERVAL_SECONDS", default=30)
 PAID_BETA_STAGING_SMOKE_GREEN = env.bool("PAID_BETA_STAGING_SMOKE_GREEN", default=False)
 PAID_BETA_BROWSER_E2E_GREEN = env.bool("PAID_BETA_BROWSER_E2E_GREEN", default=False)
 PAID_BETA_BACKUP_RESTORE_DRILL_DONE = env.bool("PAID_BETA_BACKUP_RESTORE_DRILL_DONE", default=False)
@@ -333,6 +347,32 @@ KASPI_COMPETITOR_MONITOR_PROVIDER = env("KASPI_COMPETITOR_MONITOR_PROVIDER", def
 KASPI_COMPETITOR_MONITOR_API_URL = env("KASPI_COMPETITOR_MONITOR_API_URL", default="")
 KASPI_COMPETITOR_MONITOR_API_KEY = env("KASPI_COMPETITOR_MONITOR_API_KEY", default="")
 CELERY_BEAT_SCHEDULE = {}
+CELERY_BEAT_SCHEDULE.update(
+    {
+        "notification-delivery": {
+            "task": "notifications.process_due_notifications",
+            "schedule": NOTIFICATION_DELIVERY_INTERVAL_SECONDS,
+            "kwargs": {"limit": NOTIFICATION_DELIVERY_BATCH_SIZE},
+        },
+        "automation-runtime": {
+            "task": "automations.process_due_automation_runs",
+            "schedule": AUTOMATION_RUNTIME_INTERVAL_SECONDS,
+        },
+        "automation-overdue-trigger": {
+            "task": "automations.emit_task_overdue_runs",
+            "schedule": 300,
+        },
+        "ai-job-runtime": {
+            "task": "ai.process_due_jobs",
+            "schedule": AI_JOB_INTERVAL_SECONDS,
+        },
+        "export-runtime": {
+            "task": "exports.process_due_jobs",
+            "schedule": 60,
+            "kwargs": {"limit": 50},
+        },
+    }
+)
 if KASPI_REPRICING_SCHEDULE_ENABLED:
     CELERY_BEAT_SCHEDULE["kaspi-pricing-cycle"] = {
         "task": "pricing.run_kaspi_pricing_cycle",
@@ -429,14 +469,16 @@ LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
-        "console": {
-            "format": "%(asctime)s %(levelname)s %(name)s %(message)s",
-        },
+        "json": {"()": "apps.core.logging.JsonLogFormatter"},
+    },
+    "filters": {
+        "request_context": {"()": "apps.core.logging.RequestContextFilter"},
     },
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
-            "formatter": "console",
+            "formatter": "json",
+            "filters": ["request_context"],
         },
     },
     "root": {

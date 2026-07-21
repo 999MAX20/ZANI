@@ -24,6 +24,7 @@ from apps.accounts.serializers import (
 from apps.accounts.models import User
 from apps.accounts.social_auth import get_or_create_social_user, verify_social_id_token
 from apps.businesses.access import ensure_default_roles, ensure_owner_memberships_for_user
+from apps.businesses.capabilities import apply_business_type_defaults
 from apps.businesses.models import Business, BusinessMember, BusinessRole
 from apps.core.models import LoginHistory
 from apps.crm.services import ensure_default_pipeline
@@ -198,6 +199,7 @@ class OwnerSignupView(APIView):
             status=Business.Statuses.TRIAL,
         )
         ensure_default_roles(business)
+        apply_business_type_defaults(business, configured_by=user)
         ensure_default_pipeline(business)
         owner_role = BusinessRole.objects.filter(
             business=business,

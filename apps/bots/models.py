@@ -103,6 +103,11 @@ class BotConversation(TimeStampedModel):
 
     class Meta:
         ordering = ["-updated_at"]
+        indexes = [
+            models.Index(fields=["business", "status", "is_archived", "updated_at"]),
+            models.Index(fields=["business", "assigned_to", "status", "updated_at"]),
+            models.Index(fields=["business", "handoff_required", "last_inbound_at"]),
+        ]
 
     def __str__(self):
         return f"{self.bot} conversation via {self.channel}"
@@ -141,6 +146,7 @@ class BotMessage(models.Model):
 
     class Meta:
         ordering = ["created_at"]
+        indexes = [models.Index(fields=["conversation", "created_at"])]
         constraints = [
             models.UniqueConstraint(
                 fields=["conversation", "direction", "external_message_id"],

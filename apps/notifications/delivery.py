@@ -1,4 +1,5 @@
 from django.core.mail import send_mail
+from django.db.models import F, Q
 from django.utils import timezone
 
 from apps.activities.services import create_activity_event
@@ -18,39 +19,114 @@ RESCHEDULE_WORDS = {"перенести", "перенос", "другое вре
 
 
 def process_due_notifications(*, limit=100):
-    notifications = (
-        Notification.objects.select_related("business", "client", "appointment")
-        .filter(status=Notification.Statuses.PENDING, send_at__lte=timezone.now())
-        .order_by("send_at", "id")[:limit]
+    now = timezone.now()
+    notification_ids = list(
+        Notification.objects.filter(
+            Q(status=Notification.Statuses.PENDING, send_at__lte=now)
+            | Q(status=Notification.Statuses.RETRY_SCHEDULED, next_retry_at__lte=now)
+        )
+        .order_by("send_at", "id")
+        .values_list("id", flat=True)[:limit]
     )
-    return [deliver_notification(notification) for notification in notifications]
+    results = []
+    for notification_id in notification_ids:
+        notification = claim_notification(notification_id, now=now)
+        if notification is not None:
+            results.append(deliver_notification(notification, claimed=True))
+    return results
 
 
-def deliver_notification(notification):
-    if notification.status != Notification.Statuses.PENDING:
+def claim_notification(notification_id, *, now=None):
+    now = now or timezone.now()
+    claimed = (
+        Notification.objects.filter(id=notification_id)
+        .filter(
+            Q(status=Notification.Statuses.PENDING, send_at__lte=now)
+            | Q(status=Notification.Statuses.RETRY_SCHEDULED, next_retry_at__lte=now)
+        )
+        .update(
+            status=Notification.Statuses.SENDING,
+            locked_at=now,
+            last_attempt_at=now,
+            attempts=F("attempts") + 1,
+            next_retry_at=None,
+            last_error="",
+            updated_at=now,
+        )
+    )
+    if not claimed:
+        return None
+    return Notification.objects.select_related("business", "client", "appointment").get(id=notification_id)
+
+
+def deliver_notification(notification, *, claimed=False):
+    if not claimed:
+        notification_id = notification.id
+        notification = claim_notification(notification_id)
+        if notification is None:
+            current_status = Notification.objects.filter(id=notification_id).values_list("status", flat=True).first()
+            return {"notification_id": notification_id, "status": "skipped", "reason": f"Notification is {current_status or 'missing'}."}
+    if notification.status != Notification.Statuses.SENDING:
         return {"notification_id": notification.id, "status": "skipped", "reason": "Notification is not pending."}
 
     try:
         result = _deliver(notification)
     except Exception as exc:
-        notification.status = Notification.Statuses.FAILED
-        notification.save(update_fields=["status", "updated_at"])
         reason = sanitize_error_text(exc)
-        _write_delivery_activity(notification, status="failed", result={"reason": reason})
-        return {"notification_id": notification.id, "status": "failed", "reason": reason}
+        status = _record_delivery_failure(notification, reason=reason, retryable=True)
+        _write_delivery_activity(notification, status=status, result={"reason": reason})
+        return {"notification_id": notification.id, "status": status, "reason": reason}
 
     if result.get("ok"):
         notification.status = Notification.Statuses.SENT
-        notification.save(update_fields=["status", "updated_at"])
+        notification.delivered_at = timezone.now()
+        notification.failed_at = None
+        notification.locked_at = None
+        notification.last_error = ""
+        notification.provider_reference = str(
+            result.get("provider_reference") or result.get("message_id") or result.get("id") or ""
+        )[:255]
+        notification.save(
+            update_fields=[
+                "status", "delivered_at", "failed_at", "locked_at", "last_error",
+                "provider_reference", "updated_at",
+            ]
+        )
         _write_delivery_activity(notification, status="sent", result=result)
         return {"notification_id": notification.id, "status": "sent", "result": result}
 
-    notification.status = Notification.Statuses.FAILED
-    notification.save(update_fields=["status", "updated_at"])
     safe_result = sanitize_error_payload(result)
-    _notify_delivery_failure(notification, safe_result)
-    _write_delivery_activity(notification, status="failed", result=safe_result)
-    return {"notification_id": notification.id, "status": "failed", "result": safe_result}
+    reason = sanitize_error_text(safe_result.get("reason") or safe_result.get("error") or "Delivery failed.")
+    status = _record_delivery_failure(notification, reason=reason, retryable=_is_retryable_result(result))
+    if status == Notification.Statuses.FAILED:
+        _notify_delivery_failure(notification, safe_result)
+    _write_delivery_activity(notification, status=status, result=safe_result)
+    return {"notification_id": notification.id, "status": status, "result": safe_result}
+
+
+def _record_delivery_failure(notification, *, reason, retryable):
+    notification.last_error = reason
+    notification.locked_at = None
+    if retryable and notification.attempts < notification.max_attempts:
+        delay_seconds = min(3600, 60 * (2 ** max(notification.attempts - 1, 0)))
+        notification.status = Notification.Statuses.RETRY_SCHEDULED
+        notification.next_retry_at = timezone.now() + timezone.timedelta(seconds=delay_seconds)
+        notification.failed_at = None
+    else:
+        notification.status = Notification.Statuses.FAILED
+        notification.next_retry_at = None
+        notification.failed_at = timezone.now()
+    notification.save(
+        update_fields=["status", "last_error", "locked_at", "next_retry_at", "failed_at", "updated_at"]
+    )
+    return notification.status
+
+
+def _is_retryable_result(result):
+    if "retryable" in result:
+        return bool(result["retryable"])
+    status_code = result.get("status_code") or result.get("http_status")
+    return status_code in {408, 425, 429, 500, 502, 503, 504}
 
 
 def handle_appointment_followup_reply(*, business, channel, external_user_id, text):

@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.db.models import OuterRef, Subquery
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import action
@@ -23,6 +24,7 @@ from apps.bots.inbox_service import (
 )
 from apps.bots.models import BotConversation, BotMessage
 from apps.businesses.access import Actions, Resources, assert_can, can, scope_queryset
+from apps.businesses.capabilities import resource_is_enabled
 from apps.clients.models import Client
 from apps.clients.serializers import ClientSerializer
 from apps.clients.services import duplicate_payload, find_duplicate_clients
@@ -80,6 +82,7 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
     permission_classes = [IsMerchantInboxUser]
 
     def get_queryset(self):
+        latest_message = BotMessage.objects.filter(conversation_id=OuterRef("pk")).order_by("-created_at", "-id")
         queryset = BotConversation.objects.select_related(
             "business",
             "bot",
@@ -87,11 +90,20 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
             "lead",
             "deal",
             "assigned_to",
-        ).prefetch_related("messages")
+        ).annotate(
+            latest_message_id=Subquery(latest_message.values("id")[:1]),
+            latest_message_direction=Subquery(latest_message.values("direction")[:1]),
+            latest_message_sender_type=Subquery(latest_message.values("sender_type")[:1]),
+            latest_message_text=Subquery(latest_message.values("text")[:1]),
+            latest_message_status=Subquery(latest_message.values("status")[:1]),
+            latest_message_created_at=Subquery(latest_message.values("created_at")[:1]),
+        )
         businesses = list(accessible_businesses(self.request.user))
         filtered = queryset.filter(business__in=businesses)
         scoped_queryset = queryset.none()
         for business in businesses:
+            if not resource_is_enabled(business, Resources.CONVERSATIONS):
+                continue
             if not can(self.request.user, business, Resources.CONVERSATIONS, Actions.VIEW).allowed:
                 continue
             scoped_queryset = scoped_queryset | scope_queryset(
@@ -177,8 +189,13 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
 
     @action(detail=True, methods=["post"])
     def assign(self, request, pk=None):
-        conversation = self.get_object()
-        assert_can(request.user, conversation.business, Resources.CONVERSATIONS, Actions.MANAGE, obj=conversation)
+        conversation = BotConversation.objects.select_related("business", "assigned_to").filter(
+            id=pk,
+            business__in=accessible_businesses(request.user),
+        ).first()
+        if conversation is None:
+            raise PermissionDenied("Conversation was not found.")
+        assert_can(request.user, conversation.business, Resources.CONVERSATIONS, Actions.UPDATE, obj=conversation)
         serializer = InboxAssignSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -403,7 +420,6 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
     @action(detail=True, methods=["post"], url_path="link-lead")
     def link_lead(self, request, pk=None):
         conversation = self.get_object()
-        assert_can(request.user, conversation.business, Resources.LEADS, Actions.UPDATE)
         assert_can(request.user, conversation.business, Resources.CONVERSATIONS, Actions.UPDATE, obj=conversation)
         serializer = InboxLinkLeadSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -411,6 +427,7 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
         lead = Lead.objects.filter(id=serializer.validated_data["lead_id"], business=conversation.business).first()
         if lead is None:
             raise ValidationError({"lead_id": "Lead was not found in this business."})
+        assert_can(request.user, conversation.business, Resources.LEADS, Actions.VIEW, obj=lead)
         conversation.lead = lead
         if conversation.client is None:
             conversation.client = lead.client
@@ -428,7 +445,6 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
     @action(detail=True, methods=["post"], url_path="link-client")
     def link_client(self, request, pk=None):
         conversation = self.get_object()
-        assert_can(request.user, conversation.business, Resources.CLIENTS, Actions.UPDATE)
         assert_can(request.user, conversation.business, Resources.CONVERSATIONS, Actions.UPDATE, obj=conversation)
         serializer = InboxLinkClientSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -436,6 +452,7 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
         client = Client.objects.filter(id=serializer.validated_data["client_id"], business=conversation.business).first()
         if client is None:
             raise ValidationError({"client_id": "Client was not found in this business."})
+        assert_can(request.user, conversation.business, Resources.CLIENTS, Actions.VIEW, obj=client)
         conversation.client = client
         conversation.save(update_fields=["client", "updated_at"])
         record_inbox_crm_activity(
@@ -518,7 +535,6 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
     @action(detail=True, methods=["post"], url_path="link-deal")
     def link_deal(self, request, pk=None):
         conversation = self.get_object()
-        assert_can(request.user, conversation.business, Resources.DEALS, Actions.UPDATE)
         assert_can(request.user, conversation.business, Resources.CONVERSATIONS, Actions.UPDATE, obj=conversation)
         serializer = InboxLinkDealSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -526,6 +542,7 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
         deal = Deal.objects.filter(id=serializer.validated_data["deal_id"], business=conversation.business).first()
         if deal is None:
             raise ValidationError({"deal_id": "Deal was not found in this business."})
+        assert_can(request.user, conversation.business, Resources.DEALS, Actions.VIEW, obj=deal)
         conversation.deal = deal
         if conversation.client is None:
             conversation.client = deal.client

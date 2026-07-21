@@ -4,6 +4,9 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.businesses.models import Business
+from apps.businesses.assignment_notifications import create_assignment_notifications
+from apps.businesses.assignment_policy import assert_assignment_allowed
+from apps.businesses.access import Resources
 from apps.activities.services import create_activity_event
 from apps.activities.taxonomy import ActivityEvents, event_label
 from apps.crm.models import Deal, DealStageHistory, DealValueHistory, Pipeline, PipelineStage, StageTransition
@@ -111,10 +114,17 @@ def assign_deal_owner(*, deal: Deal, actor, user_id, request=None, source="api")
     owner = get_user_model().objects.filter(id=user_id, is_active=True).first()
     if owner is None:
         raise ValidationError({"user_id": "User was not found."})
-    if not _is_active_business_user(deal.business, owner):
-        raise ValidationError({"user_id": "Owner must be an active business member."})
+    assert_assignment_allowed(
+        actor=actor,
+        business=deal.business,
+        target_user=owner,
+        resource=Resources.DEALS,
+    )
 
     previous_owner_id = deal.owner_id
+    previous_owner = deal.owner
+    if previous_owner_id == owner.id:
+        return deal
     deal.owner = owner
     deal.save(update_fields=["owner", "updated_at"])
     create_activity_event(
@@ -134,6 +144,13 @@ def assign_deal_owner(*, deal: Deal, actor, user_id, request=None, source="api")
             deal,
             metadata={"kind": "assignment", "lifecycle_action": "deal_assigned", "from_owner": previous_owner_id, "to_owner": owner.id},
         )
+    create_assignment_notifications(
+        business=deal.business,
+        previous_user=previous_owner,
+        new_user=owner,
+        text=f"Deal assigned: {deal.title}",
+        action_url=f"/app/deals?deal={deal.id}",
+    )
     return deal
 
 

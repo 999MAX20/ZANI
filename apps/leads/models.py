@@ -65,6 +65,7 @@ class Lead(TimeStampedModel):
         ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["business", "status", "is_archived"]),
+            models.Index(fields=["business", "responsible_user", "created_at"]),
         ]
 
     def __str__(self):

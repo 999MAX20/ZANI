@@ -358,7 +358,7 @@ class TaskViewSet(TenantModelViewSet):
 
     @action(detail=True, methods=["post"])
     def assign(self, request, pk=None):
-        task = self.get_object()
+        task = self.get_unassigned_action_object()
         assert_can(request.user, task.business, Resources.TASKS, Actions.UPDATE, obj=task)
         task = assign_task(task=task, actor=request.user, user_id=request.data.get("user_id"), request=request)
         return Response(TaskSerializer(task).data)
@@ -366,7 +366,7 @@ class TaskViewSet(TenantModelViewSet):
 
     @action(detail=True, methods=["post"], url_path="assign-to-me")
     def assign_to_me(self, request, pk=None):
-        task = self.get_object()
+        task = self.get_unassigned_action_object()
         assert_can(request.user, task.business, Resources.TASKS, Actions.UPDATE, obj=task)
         task = assign_task_to_me(task=task, actor=request.user, request=request)
         return Response(TaskSerializer(task).data)

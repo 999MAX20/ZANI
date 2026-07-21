@@ -1,6 +1,8 @@
-from django.db.models import Count, Q
+from django.db import transaction
+from collections import defaultdict
+
+from django.db.models import Avg, Count, DurationField, ExpressionWrapper, F, Prefetch, Q
 from django.utils import timezone
-from django.utils.dateparse import parse_date
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -10,10 +12,12 @@ from rest_framework.viewsets import ModelViewSet
 from apps.accounts.models import User
 from apps.billing.entitlements import EntitlementMetrics, assert_entitlement_allows
 from apps.businesses.access import Actions, Resources, assert_can, can, ensure_default_roles
-from apps.businesses.models import Business, BusinessInvitation, BusinessMember, BusinessRole, RolePermission, Team, TeamMember
+from apps.businesses.capabilities import assert_resource_enabled, ensure_business_capabilities
+from apps.businesses.models import Business, BusinessCapability, BusinessInvitation, BusinessMember, BusinessRole, RolePermission, Team, TeamMember
 from apps.businesses.serializers import (
     BusinessInvitationAcceptSerializer,
     BusinessInvitationSerializer,
+    BusinessCapabilitySerializer,
     BusinessMemberSerializer,
     BusinessRoleSerializer,
     BusinessSerializer,
@@ -24,15 +28,10 @@ from apps.businesses.serializers import (
     TeamSerializer,
 )
 from apps.core.audit import write_audit_log
+from apps.core.date_ranges import parse_bounded_date_range
 from apps.core.models import AuditLog
 from apps.core.permissions import IsTenantMember, accessible_businesses, is_platform_admin, platform_admin_has_global_access
 from apps.core.viewsets import TenantModelViewSet
-from apps.core.work_queues import (
-    missed_chat_handoffs_queryset,
-    overdue_handoff_conversations_queryset,
-    overdue_tasks_queryset,
-    sla_overdue_deals_queryset,
-)
 from apps.crm.models import Deal
 from apps.leads.models import Lead
 from apps.scheduling.models import Appointment
@@ -229,6 +228,29 @@ class TeamMembershipViewSet(TeamAccessMixin, ModelViewSet):
         return super().get_business_from_request()
 
 
+class BusinessCapabilityViewSet(TenantModelViewSet):
+    queryset = BusinessCapability.objects.select_related("business", "configured_by")
+    serializer_class = BusinessCapabilitySerializer
+    access_resource = Resources.SETTINGS
+    http_method_names = ["get", "patch", "head", "options"]
+
+    def get_queryset(self):
+        for business in accessible_businesses(self.request.user):
+            ensure_business_capabilities(business)
+        return super().get_queryset()
+
+    def perform_update(self, serializer):
+        self._enforce_business_access(serializer)
+        instance = serializer.save(configured_by=self.request.user)
+        write_audit_log(
+            self.request,
+            AuditLog.Actions.UPDATE,
+            instance,
+            business=instance.business,
+            metadata={"kind": "business_capability", "module_key": instance.module_key, "is_enabled": instance.is_enabled},
+        )
+
+
 class BusinessInvitationViewSet(TeamAccessMixin, ModelViewSet):
     serializer_class = BusinessInvitationSerializer
     queryset = BusinessInvitation.objects.select_related("business", "business_role", "invited_by")
@@ -283,10 +305,11 @@ class BusinessInvitationViewSet(TeamAccessMixin, ModelViewSet):
         )
 
     @action(detail=False, methods=["post"])
+    @transaction.atomic
     def accept(self, request):
         serializer = BusinessInvitationAcceptSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        invitation = BusinessInvitation.objects.select_related("business", "business_role").filter(token=serializer.validated_data["token"]).first()
+        invitation = BusinessInvitation.objects.select_for_update().select_related("business", "business_role", "team").filter(token=serializer.validated_data["token"]).first()
         if invitation is None:
             raise ValidationError("Invitation was not found.")
         if not invitation.is_pending:
@@ -326,6 +349,8 @@ class BusinessInvitationViewSet(TeamAccessMixin, ModelViewSet):
                 "is_active": True,
             },
         )
+        if invitation.team_id:
+            TeamMember.objects.get_or_create(team=invitation.team, member=membership)
         invitation.accepted_at = timezone.now()
         invitation.save(update_fields=["accepted_at", "updated_at"])
         write_audit_log(request, AuditLog.Actions.CREATE, membership, business=invitation.business, metadata={"source": "invitation"})
@@ -350,6 +375,7 @@ def team_permissions_catalog(request):
 @permission_classes([IsAuthenticated])
 def team_performance(request):
     business = _resolve_team_business(request)
+    assert_resource_enabled(business, Resources.ANALYTICS)
     assert_can(request.user, business, Resources.ANALYTICS, Actions.VIEW)
     membership = BusinessMember.objects.filter(business=business, user=request.user, is_active=True).select_related("business_role").first()
     if membership is None and not is_platform_admin(request.user):
@@ -361,8 +387,7 @@ def team_performance(request):
 
     visible_members = _apply_member_filters(visible_members, request)
     visible_user_ids = list(visible_members.values_list("user_id", flat=True))
-    start_date = parse_date(request.query_params.get("start", "") or "")
-    end_date = parse_date(request.query_params.get("end", "") or "")
+    start_date, end_date = parse_bounded_date_range(request.query_params)
     source = request.query_params.get("source")
     pipeline = request.query_params.get("pipeline")
     now = timezone.now()
@@ -388,54 +413,60 @@ def team_performance(request):
     conversations = BotConversation.objects.filter(business=business, assigned_to_id__in=visible_user_ids)
     conversations = _date_filter(conversations, "updated_at", start_date, end_date)
 
+    metric_maps = _team_performance_metric_maps(
+        leads=leads,
+        deals=deals,
+        appointments=appointments,
+        tasks=tasks,
+        conversations=conversations,
+        now=now,
+    )
     rows = []
-    for member in visible_members.select_related("user").prefetch_related("team_memberships__team").order_by("user__email"):
-        user = member.user
-        user_leads = leads.filter(responsible_user=user)
-        user_deals = deals.filter(owner=user)
-        user_tasks = tasks.filter(Q(assignee=user) | Q(completed_by=user))
-        user_conversations = conversations.filter(assigned_to=user)
-        user_appointments = appointments.filter(lead__responsible_user=user)
-        assigned_leads_count = user_leads.count()
-        appointments_created_count = user_appointments.count()
-        lost_leads_count = user_leads.filter(status=Lead.Statuses.LOST).count()
-        closed_leads_count = user_leads.filter(status=Lead.Statuses.CLOSED).count()
-        contacted_leads_count = user_leads.filter(status__in=[Lead.Statuses.CONTACTED, Lead.Statuses.APPOINTMENT_CREATED, Lead.Statuses.CLOSED]).count()
-        overdue_handoffs_count = overdue_handoff_conversations_queryset(queryset=user_conversations, now=now).count()
-        missed_chat_handoffs_count = missed_chat_handoffs_queryset(queryset=user_conversations).count()
-        tasks_overdue_count = overdue_tasks_queryset(queryset=user_tasks, now=now).count()
-        sla_overdue_deals_count = sla_overdue_deals_queryset(user_deals.filter(status=Deal.Statuses.OPEN), now=now).count()
-        lost_reasons = list(
-            user_leads.filter(status=Lead.Statuses.LOST)
-            .exclude(lost_reason="")
-            .values("lost_reason")
-            .annotate(count=Count("id"))
-            .order_by("-count")[:5]
+    member_queryset = visible_members.select_related("user").prefetch_related(
+        Prefetch(
+            "team_memberships",
+            queryset=TeamMember.objects.select_related("team").order_by("team__name"),
+            to_attr="_performance_team_memberships",
         )
+    ).order_by("user__email")
+    for member in member_queryset:
+        user = member.user
+        lead_metrics = metric_maps["leads"].get(user.id, {})
+        appointment_metrics = metric_maps["appointments"].get(user.id, {})
+        deal_metrics = metric_maps["deals"].get(user.id, {})
+        task_metrics = metric_maps["tasks"].get(user.id, {})
+        conversation_metrics = metric_maps["conversations"].get(user.id, {})
+        assigned_leads_count = lead_metrics.get("assigned_leads", 0)
+        appointments_created_count = appointment_metrics.get("appointments_created", 0)
+        lost_leads_count = lead_metrics.get("lost_leads", 0)
+        overdue_handoffs_count = conversation_metrics.get("overdue_handoffs", 0)
+        missed_chat_handoffs_count = conversation_metrics.get("missed_chat_handoffs", 0)
+        tasks_overdue_count = task_metrics.get("tasks_overdue", 0)
+        sla_overdue_deals_count = metric_maps["sla_overdue_deals"].get(user.id, 0)
 
         rows.append(
             {
                 "user": {"id": user.id, "email": user.email, "full_name": user.full_name},
                 "role": member.role,
-                "teams": [{"id": item.team_id, "name": item.team.name, "is_lead": item.is_lead} for item in member.team_memberships.all()],
+                "teams": [{"id": item.team_id, "name": item.team.name, "is_lead": item.is_lead} for item in member._performance_team_memberships],
                 "assigned_leads": assigned_leads_count,
-                "contacted_leads": contacted_leads_count,
-                "closed_leads": closed_leads_count,
+                "contacted_leads": lead_metrics.get("contacted_leads", 0),
+                "closed_leads": lead_metrics.get("closed_leads", 0),
                 "lost_leads": lost_leads_count,
-                "lost_without_reason": user_leads.filter(status=Lead.Statuses.LOST, lost_reason="").count(),
-                "lost_reason_breakdown": lost_reasons,
+                "lost_without_reason": lead_metrics.get("lost_without_reason", 0),
+                "lost_reason_breakdown": metric_maps["lost_reasons"].get(user.id, []),
                 "overdue_handoffs": overdue_handoffs_count,
                 "missed_chat_handoffs": missed_chat_handoffs_count,
-                "avg_response_time_minutes": _avg_response_minutes(user_conversations),
+                "avg_response_time_minutes": _duration_minutes(conversation_metrics.get("avg_response_time")),
                 "appointments_created": appointments_created_count,
                 "appointment_conversion_rate": _percent(appointments_created_count, assigned_leads_count),
                 "lost_rate": _percent(lost_leads_count, assigned_leads_count),
-                "no_show_appointments": user_appointments.filter(status=Appointment.Statuses.NO_SHOW).count(),
-                "deals_won": user_deals.filter(status=Deal.Statuses.WON).count(),
-                "deals_lost": user_deals.filter(status=Deal.Statuses.LOST).count(),
+                "no_show_appointments": appointment_metrics.get("no_show_appointments", 0),
+                "deals_won": deal_metrics.get("deals_won", 0),
+                "deals_lost": deal_metrics.get("deals_lost", 0),
                 "sla_overdue_deals": sla_overdue_deals_count,
                 "tasks_overdue": tasks_overdue_count,
-                "tasks_completed": user_tasks.filter(status=Task.Statuses.DONE).count(),
+                "tasks_completed": task_metrics.get("tasks_completed", 0),
                 "action_items": _member_action_items(
                     user,
                     overdue_handoffs_count=overdue_handoffs_count,
@@ -533,20 +564,131 @@ def _date_filter(queryset, field, start_date, end_date):
     return queryset
 
 
+def _rows_by_user(queryset, user_field, **aggregates):
+    return {
+        row[user_field]: row
+        for row in queryset.values(user_field).annotate(**aggregates)
+        if row[user_field] is not None
+    }
+
+
+def _team_performance_metric_maps(*, leads, deals, appointments, tasks, conversations, now):
+    lead_metrics = _rows_by_user(
+        leads,
+        "responsible_user_id",
+        assigned_leads=Count("id"),
+        contacted_leads=Count(
+            "id",
+            filter=Q(status__in=[Lead.Statuses.CONTACTED, Lead.Statuses.APPOINTMENT_CREATED, Lead.Statuses.CLOSED]),
+        ),
+        closed_leads=Count("id", filter=Q(status=Lead.Statuses.CLOSED)),
+        lost_leads=Count("id", filter=Q(status=Lead.Statuses.LOST)),
+        lost_without_reason=Count("id", filter=Q(status=Lead.Statuses.LOST, lost_reason="")),
+    )
+    lost_reasons = defaultdict(list)
+    lost_reason_rows = (
+        leads.filter(status=Lead.Statuses.LOST)
+        .exclude(lost_reason="")
+        .values("responsible_user_id", "lost_reason")
+        .annotate(count=Count("id"))
+        .order_by("responsible_user_id", "-count", "lost_reason")
+    )
+    for row in lost_reason_rows:
+        bucket = lost_reasons[row["responsible_user_id"]]
+        if len(bucket) < 5:
+            bucket.append({"lost_reason": row["lost_reason"], "count": row["count"]})
+
+    appointment_metrics = _rows_by_user(
+        appointments,
+        "lead__responsible_user_id",
+        appointments_created=Count("id"),
+        no_show_appointments=Count("id", filter=Q(status=Appointment.Statuses.NO_SHOW)),
+    )
+    deal_metrics = _rows_by_user(
+        deals,
+        "owner_id",
+        deals_won=Count("id", filter=Q(status=Deal.Statuses.WON)),
+        deals_lost=Count("id", filter=Q(status=Deal.Statuses.LOST)),
+    )
+    sla_overdue_deals = defaultdict(int)
+    for owner_id, stage_entered_at, sla_minutes in deals.filter(
+        status=Deal.Statuses.OPEN,
+        stage__sla_minutes__isnull=False,
+        stage_entered_at__isnull=False,
+    ).values_list("owner_id", "stage_entered_at", "stage__sla_minutes"):
+        if owner_id and now > stage_entered_at + timezone.timedelta(minutes=sla_minutes):
+            sla_overdue_deals[owner_id] += 1
+
+    task_metrics = _rows_by_user(
+        tasks,
+        "assignee_id",
+        tasks_overdue=Count(
+            "id",
+            filter=(
+                ~Q(status__in=[Task.Statuses.DONE, Task.Statuses.CANCELLED])
+                & Q(is_archived=False, due_at__lt=now)
+                & (Q(snoozed_until__isnull=True) | Q(snoozed_until__lte=now))
+            ),
+        ),
+        tasks_completed=Count("id", filter=Q(status=Task.Statuses.DONE)),
+    )
+    completed_by_rows = tasks.filter(status=Task.Statuses.DONE, completed_by__isnull=False).exclude(
+        completed_by_id=F("assignee_id")
+    ).values("completed_by_id").annotate(count=Count("id"))
+    for row in completed_by_rows:
+        if row["completed_by_id"] is not None:
+            task_metrics.setdefault(row["completed_by_id"], {})["tasks_completed"] = (
+                task_metrics.get(row["completed_by_id"], {}).get("tasks_completed", 0) + row["count"]
+            )
+    response_duration = ExpressionWrapper(F("last_outbound_at") - F("last_inbound_at"), output_field=DurationField())
+    conversation_metrics = _rows_by_user(
+        conversations,
+        "assigned_to_id",
+        overdue_handoffs=Count(
+            "id",
+            filter=Q(
+                is_archived=False,
+                status=BotConversation.Statuses.OPEN,
+                handoff_required=True,
+                last_inbound_at__lt=now - timezone.timedelta(minutes=15),
+            ),
+        ),
+        missed_chat_handoffs=Count(
+            "id",
+            filter=Q(
+                is_archived=False,
+                status=BotConversation.Statuses.OPEN,
+                handoff_required=True,
+                assigned_to__isnull=False,
+                last_outbound_at__isnull=True,
+            ),
+        ),
+        avg_response_time=Avg(
+            response_duration,
+            filter=Q(last_inbound_at__isnull=False, last_outbound_at__isnull=False, last_outbound_at__gte=F("last_inbound_at")),
+        ),
+    )
+    return {
+        "leads": lead_metrics,
+        "lost_reasons": lost_reasons,
+        "appointments": appointment_metrics,
+        "deals": deal_metrics,
+        "sla_overdue_deals": sla_overdue_deals,
+        "tasks": task_metrics,
+        "conversations": conversation_metrics,
+    }
+
+
+def _duration_minutes(value):
+    if value is None:
+        return None
+    return round(value.total_seconds() / 60)
+
+
 def _percent(value, total):
     if not total:
         return 0
     return round((value / total) * 100)
-
-
-def _avg_response_minutes(conversations):
-    diffs = []
-    for conversation in conversations.only("last_inbound_at", "last_outbound_at"):
-        if conversation.last_inbound_at and conversation.last_outbound_at and conversation.last_outbound_at >= conversation.last_inbound_at:
-            diffs.append((conversation.last_outbound_at - conversation.last_inbound_at).total_seconds() / 60)
-    if not diffs:
-        return None
-    return round(sum(diffs) / len(diffs))
 
 
 def _member_action_items(user, *, overdue_handoffs_count, missed_chat_handoffs_count, tasks_overdue_count, sla_overdue_deals_count):

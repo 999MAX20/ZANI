@@ -5,6 +5,7 @@ from rest_framework.response import Response
 
 from apps.activities.services import write_activity_event
 from apps.businesses.access import Actions, assert_can, can, scope_queryset
+from apps.businesses.capabilities import assert_resource_enabled, resource_is_enabled
 from apps.core.archive import archive_instance, can_hard_delete, restore_instance, supports_archive
 from apps.core.audit import write_audit_log
 from apps.core.models import AuditLog
@@ -147,6 +148,8 @@ class TenantModelViewSet(ModelViewSet):
 
         scoped_queryset = queryset.none()
         for business in businesses:
+            if not resource_is_enabled(business, resource):
+                continue
             if not can(user, business, resource, Actions.VIEW).allowed:
                 continue
             business_queryset = filtered.filter(**{self.business_lookup: business})
@@ -186,13 +189,45 @@ class TenantModelViewSet(ModelViewSet):
             assert_can(self.request.user, business, resource, Actions.VIEW, obj=instance)
         return instance
 
+    def get_unassigned_action_object(self):
+        lookup_value = self.kwargs.get(self.lookup_url_kwarg or self.lookup_field)
+        instance = self.queryset.filter(**{self.lookup_field: lookup_value}).first()
+        if instance is None:
+            return self.get_object()
+        business = getattr(instance, "business", None)
+        resource = self.get_access_resource()
+        if not user_can_access_business(self.request.user, business):
+            return self.get_object()
+        if resource is not None:
+            result = can(self.request.user, business, resource, Actions.UPDATE, obj=instance)
+            if not result.allowed:
+                return self.get_object()
+        return instance
+
     def _enforce_business_access(self, serializer):
         business = self._business_from_serializer(serializer)
         if not user_can_access_business(self.request.user, business):
             raise PermissionDenied("You do not have access to this business.")
         resource = self.get_access_resource()
         if resource is not None:
-            assert_can(self.request.user, business, resource, self.get_access_action(), obj=serializer.instance)
+            assert_resource_enabled(business, resource)
+            assert_can(
+                self.request.user,
+                business,
+                resource,
+                self.get_access_action(),
+                obj=self._scope_candidate_from_serializer(serializer),
+            )
+
+    def _scope_candidate_from_serializer(self, serializer):
+        model = serializer.Meta.model
+        candidate = model()
+        for field in model._meta.concrete_fields:
+            if field.name in serializer.validated_data:
+                setattr(candidate, field.name, serializer.validated_data[field.name])
+            elif serializer.instance is not None:
+                setattr(candidate, field.attname, getattr(serializer.instance, field.attname))
+        return candidate
 
     def perform_create(self, serializer):
         self._enforce_business_access(serializer)

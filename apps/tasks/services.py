@@ -4,6 +4,9 @@ from rest_framework.exceptions import ValidationError
 
 from apps.activities.services import create_activity_event, write_activity_event
 from apps.activities.taxonomy import ActivityEvents
+from apps.businesses.assignment_policy import assert_assignment_allowed
+from apps.businesses.assignment_notifications import create_assignment_notifications
+from apps.businesses.access import Resources
 from apps.businesses.models import BusinessMember
 from apps.core.audit import write_audit_log
 from apps.core.models import AuditLog
@@ -161,7 +164,16 @@ def assign_task(*, task: Task, actor, user_id=None, request=None) -> Task:
     if not user_id:
         raise ValidationError({"user_id": "This field is required."})
     assignee = resolve_active_business_user(task=task, user_id=user_id or actor.id, field_name="user_id")
+    assert_assignment_allowed(
+        actor=actor,
+        business=task.business,
+        target_user=assignee,
+        resource=Resources.TASKS,
+    )
     previous_assignee_id = task.assignee_id
+    previous_assignee = task.assignee
+    if previous_assignee_id == assignee.id:
+        return task
     task.assignee = assignee
     task.save(update_fields=["assignee", "updated_at"])
     write_task_activity(request, ActivityEvents.TASK_ASSIGNED, task, text=f"Задача назначена: {task.title}")
@@ -169,6 +181,14 @@ def assign_task(*, task: Task, actor, user_id=None, request=None) -> Task:
         task,
         f"Задача назначена: {task.title}",
         priority=Notification.Priorities.HIGH if task.priority in {Task.Priorities.HIGH, Task.Priorities.URGENT} else Notification.Priorities.NORMAL,
+    )
+    create_assignment_notifications(
+        business=task.business,
+        previous_user=previous_assignee,
+        new_user=assignee,
+        text=f"Task assigned: {task.title}",
+        action_url=f"/app/tasks?task={task.id}",
+        include_new=False,
     )
     write_task_audit(
         request,
@@ -187,6 +207,12 @@ def assign_task_to_me(*, task: Task, actor, request=None) -> Task:
     assert_task_status(task, OPEN_STATUSES, "assign")
     if not task.business.members.filter(user=actor, is_active=True).exists():
         raise ValidationError({"user_id": "Current user must be an active business member."})
+    assert_assignment_allowed(
+        actor=actor,
+        business=task.business,
+        target_user=actor,
+        resource=Resources.TASKS,
+    )
     previous_status = task.status
     previous_assignee_id = task.assignee_id
     task.assignee = actor

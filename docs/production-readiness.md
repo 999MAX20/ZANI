@@ -56,6 +56,11 @@ CELERY_TASK_ACKS_LATE=True
 CELERY_WORKER_PREFETCH_MULTIPLIER=1
 CELERY_TASK_ALWAYS_EAGER=False
 AUTOMATIONS_RUN_INLINE=False
+EXPORT_SYNC_MAX_ROWS=5000
+EXPORT_MAX_ROWS=100000
+REPORT_MAX_RANGE_DAYS=366
+REPORT_EXPORT_SYNC_MAX_DAYS=90
+EXPORT_STALE_SECONDS=900
 
 AUTH_LOGIN_RATE=10/min
 AUTH_REFRESH_RATE=30/min
@@ -149,6 +154,10 @@ Queues:
 - `notifications`;
 - `ai`;
 - `reports_exports`.
+
+Web logs are JSON and include release, environment and request correlation ID without request payloads. `X-Request-ID` is returned to clients and included in merchant-safe API errors.
+
+Large entity/report exports use `ExportJob`; the `reports_exports` worker re-checks current permission/capability before generating a private file. See `docs/data-exports.md`.
 
 ## 5. Health And Readiness
 
@@ -260,8 +269,9 @@ This baseline does not yet implement:
 
 - storage quotas and antivirus;
 - realtime WebSocket/SSE;
-- queue-backed automation runtime;
 - payment provider;
-- full load testing.
+- production-scale load testing in the target infrastructure.
+
+Queue-backed notifications, automations, AI jobs and large exports are implemented and covered in local/eager-mode tests. They are not production-proven until real Redis worker/beat smoke succeeds in staging.
 
 Those are separate phases in `plan/ZANI_MASTER_TECH_PLAN.md`.

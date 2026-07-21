@@ -1,13 +1,8 @@
 from django.db.models import Count, Max, Q, Sum
+from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.bots.models import BotConversation
-from apps.core.work_queues import (
-    handoff_conversations_queryset,
-    overdue_handoff_conversations_queryset,
-    unread_conversations_queryset,
-    unread_sla_overdue_conversations_queryset,
-)
 
 
 QUALIFICATION_PREVIEW_META_KEY = "conversation_qualification_preview"
@@ -36,17 +31,48 @@ def _parse_id_list(params, key):
 
 
 def build_inbox_summary_payload(queryset, user):
-    total = queryset.count()
-    unread = unread_conversations_queryset(queryset=queryset).count()
-    unread_messages = queryset.aggregate(total=Sum("unread_count"))["total"] or 0
-    handoff_required = handoff_conversations_queryset(queryset=queryset).count()
-    unread_sla_overdue = unread_sla_overdue_conversations_queryset(queryset=queryset).count()
-    handoff_sla_overdue = overdue_handoff_conversations_queryset(queryset=queryset).count()
-    assigned_to_me = queryset.filter(assigned_to=user).count()
-    unassigned = queryset.filter(assigned_to__isnull=True).count()
-    urgent = queryset.filter(priority=BotConversation.Priorities.URGENT).count()
-    high_priority = queryset.filter(priority__in=[BotConversation.Priorities.HIGH, BotConversation.Priorities.URGENT]).count()
-    bot_paused = queryset.filter(bot_enabled=False).count()
+    now = timezone.now()
+    aggregates = queryset.aggregate(
+        total=Count("id"),
+        unread=Count("id", filter=Q(status=BotConversation.Statuses.OPEN, unread_count__gt=0)),
+        unread_messages=Sum("unread_count"),
+        handoff_required_count=Count("id", filter=Q(status=BotConversation.Statuses.OPEN, handoff_required=True)),
+        unread_sla_overdue=Count(
+            "id",
+            filter=Q(
+                status=BotConversation.Statuses.OPEN,
+                unread_count__gt=0,
+                last_inbound_at__lt=now - timezone.timedelta(minutes=30),
+            ),
+        ),
+        handoff_sla_overdue=Count(
+            "id",
+            filter=Q(
+                status=BotConversation.Statuses.OPEN,
+                handoff_required=True,
+                last_inbound_at__lt=now - timezone.timedelta(minutes=15),
+            ),
+        ),
+        assigned_to_me=Count("id", filter=Q(assigned_to=user)),
+        unassigned=Count("id", filter=Q(assigned_to__isnull=True)),
+        urgent=Count("id", filter=Q(priority=BotConversation.Priorities.URGENT)),
+        high_priority=Count(
+            "id",
+            filter=Q(priority__in=[BotConversation.Priorities.HIGH, BotConversation.Priorities.URGENT]),
+        ),
+        bot_paused=Count("id", filter=Q(bot_enabled=False)),
+    )
+    total = aggregates["total"] or 0
+    unread = aggregates["unread"] or 0
+    unread_messages = aggregates["unread_messages"] or 0
+    handoff_required = aggregates["handoff_required_count"] or 0
+    unread_sla_overdue = aggregates["unread_sla_overdue"] or 0
+    handoff_sla_overdue = aggregates["handoff_sla_overdue"] or 0
+    assigned_to_me = aggregates["assigned_to_me"] or 0
+    unassigned = aggregates["unassigned"] or 0
+    urgent = aggregates["urgent"] or 0
+    high_priority = aggregates["high_priority"] or 0
+    bot_paused = aggregates["bot_paused"] or 0
 
     channel_rows = queryset.values("channel").annotate(
         total=Count("id"),

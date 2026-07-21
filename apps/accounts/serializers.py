@@ -3,6 +3,7 @@ from rest_framework import serializers
 
 from apps.accounts.models import SocialIdentity, User, UserPreference
 from apps.businesses.access import effective_permissions_for, owner_business_role, user_is_business_owner
+from apps.businesses.capabilities import capability_payload
 from apps.businesses.models import BusinessMember
 from apps.businesses.serializers import BusinessSerializer
 from apps.core.permissions import accessible_businesses
@@ -17,6 +18,7 @@ class CurrentUserSerializer(serializers.ModelSerializer):
     effective_permissions = serializers.SerializerMethodField()
     preferences = serializers.SerializerMethodField()
     social_identities = serializers.SerializerMethodField()
+    capabilities = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -32,6 +34,7 @@ class CurrentUserSerializer(serializers.ModelSerializer):
             "businesses",
             "memberships",
             "effective_permissions",
+            "capabilities",
             "preferences",
             "social_identities",
         ]
@@ -74,6 +77,9 @@ class CurrentUserSerializer(serializers.ModelSerializer):
     def get_effective_permissions(self, obj):
         businesses = self._get_businesses(obj)
         return {str(business.id): effective_permissions_for(obj, business) for business in businesses}
+
+    def get_capabilities(self, obj):
+        return {str(business.id): capability_payload(business) for business in self._get_businesses(obj)}
 
     def get_preferences(self, obj):
         preferences, _ = UserPreference.objects.get_or_create(user=obj)

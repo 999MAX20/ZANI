@@ -81,6 +81,7 @@ class AgentProfile(TimeStampedModel):
 class AIToolCallLog(models.Model):
     class Statuses(models.TextChoices):
         SUGGESTED = "suggested", "Suggested"
+        EXECUTING = "executing", "Executing"
         EXECUTED = "executed", "Executed"
         FAILED = "failed", "Failed"
         REJECTED = "rejected", "Rejected"
@@ -105,6 +106,9 @@ class AIToolCallLog(models.Model):
     output_json = models.JSONField(default=dict, blank=True)
     status = models.CharField(max_length=32, choices=Statuses.choices, default=Statuses.SUGGESTED)
     error = models.TextField(blank=True)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    locked_at = models.DateTimeField(null=True, blank=True)
+    executed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -116,6 +120,53 @@ class AIToolCallLog(models.Model):
 
     def __str__(self):
         return f"{self.tool_name} ({self.status}) for {self.business}"
+
+
+class AIJob(TimeStampedModel):
+    class Statuses(models.TextChoices):
+        PENDING = "pending", "Pending"
+        RUNNING = "running", "Running"
+        RETRY_SCHEDULED = "retry_scheduled", "Retry scheduled"
+        SUCCEEDED = "succeeded", "Succeeded"
+        FAILED = "failed", "Failed"
+
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name="ai_jobs")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="ai_jobs",
+    )
+    source = models.CharField(max_length=32, choices=AIRequestLog.Sources.choices, default=AIRequestLog.Sources.CRM)
+    prompt_type = models.CharField(max_length=64)
+    input_json = models.JSONField(default=dict, blank=True)
+    result_json = models.JSONField(default=dict, blank=True)
+    idempotency_key = models.CharField(max_length=160)
+    status = models.CharField(max_length=32, choices=Statuses.choices, default=Statuses.PENDING)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    max_attempts = models.PositiveSmallIntegerField(default=3)
+    next_retry_at = models.DateTimeField(null=True, blank=True)
+    locked_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    error = models.TextField(blank=True)
+    request_log = models.OneToOneField(
+        AIRequestLog,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="job",
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["business", "idempotency_key"], name="unique_ai_job_idempotency_key"),
+        ]
+        indexes = [
+            models.Index(fields=["business", "status", "created_at"]),
+            models.Index(fields=["status", "next_retry_at"]),
+        ]
 
 
 class ApprovalRequest(TimeStampedModel):

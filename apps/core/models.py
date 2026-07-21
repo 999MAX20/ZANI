@@ -258,3 +258,39 @@ class ImportJob(models.Model):
 
     def __str__(self):
         return f"{self.business}: {self.entity_type} import #{self.id}"
+
+
+class ExportJob(models.Model):
+    class Kinds(models.TextChoices):
+        ENTITY = "entity", "Entity"
+        ANALYTICS_REPORT = "analytics_report", "Analytics report"
+
+    class Statuses(models.TextChoices):
+        PENDING = "pending", "Pending"
+        RUNNING = "running", "Running"
+        SUCCEEDED = "succeeded", "Succeeded"
+        FAILED = "failed", "Failed"
+
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name="export_jobs")
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="export_jobs")
+    kind = models.CharField(max_length=32, choices=Kinds.choices)
+    export_key = models.CharField(max_length=64)
+    parameters_json = models.JSONField(default=dict, blank=True)
+    status = models.CharField(max_length=32, choices=Statuses.choices, default=Statuses.PENDING)
+    row_count = models.PositiveIntegerField(default=0)
+    result_file = models.FileField(upload_to="exports/%Y/%m/%d/", blank=True)
+    error = models.TextField(blank=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["business", "actor", "status", "created_at"]),
+            models.Index(fields=["business", "kind", "export_key", "created_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.business}: {self.kind}/{self.export_key} export #{self.id}"

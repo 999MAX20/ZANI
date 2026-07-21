@@ -20,6 +20,7 @@ except ImportError:  # pragma: no cover - local env may install requirements aft
 
 from apps.clients.models import Client
 from apps.clients.services import duplicate_payload, find_duplicate_clients
+from apps.businesses.access import Actions, Resources, scope_queryset
 from apps.core.audit import write_audit_log
 from apps.core.csv_safety import safe_csv_cell
 from apps.core.models import AuditLog, ImportJob
@@ -829,42 +830,42 @@ def export_csv_response(queryset, fields, filename):
     buffer = io.StringIO()
     writer = csv.writer(buffer)
     writer.writerow(fields)
-    for instance in queryset:
+    for instance in queryset.iterator(chunk_size=1000):
         writer.writerow([safe_csv_cell(getattr(instance, field, "")) for field in fields])
     response = HttpResponse(buffer.getvalue(), content_type="text/csv; charset=utf-8")
     response["Content-Disposition"] = f'attachment; filename="{filename}"'
     return response
 
 
-def export_clients(business):
+def export_clients(business, *, user=None):
     return export_csv_response(
-        Client.objects.filter(business=business, is_archived=False).order_by("id"),
+        entity_export_queryset(business, ImportJob.EntityTypes.CLIENTS, user=user),
         ["id", "full_name", "phone", "email", "source", "notes", "created_at"],
         "clients.csv",
     )
 
 
-def export_leads(business):
+def export_leads(business, *, user=None):
     return export_csv_response(
-        Lead.objects.filter(business=business, is_archived=False).order_by("id"),
+        entity_export_queryset(business, ImportJob.EntityTypes.LEADS, user=user),
         ["id", "client_id", "service_id", "source", "status", "message", "responsible_user_id", "created_at"],
         "leads.csv",
     )
 
 
-def export_deals(business):
+def export_deals(business, *, user=None):
     return export_csv_response(
-        Deal.objects.filter(business=business, is_archived=False).order_by("id"),
+        entity_export_queryset(business, ImportJob.EntityTypes.DEALS, user=user),
         ["id", "client_id", "pipeline_id", "stage_id", "title", "amount", "status", "owner_id", "source", "created_at"],
         "deals.csv",
     )
 
 
-def export_sales(business):
+def export_sales(business, *, user=None):
     return export_business_events(business, "sale.recorded", "sales.csv")
 
 
-def export_catalog(business):
+def export_catalog(business, *, user=None):
     return export_business_events(business, "catalog.", "catalog.csv")
 
 
@@ -874,8 +875,43 @@ def export_business_events(business, event_type_prefix, filename):
     writer = csv.writer(buffer)
     writer.writerow(fields)
     queryset = BusinessEvent.objects.filter(business=business, event_type__startswith=event_type_prefix).order_by("id")
-    for event in queryset:
+    for event in queryset.iterator(chunk_size=1000):
         writer.writerow([safe_csv_cell(value) for value in [event.id, event.event_type, event.source, event.external_id, event.occurred_at.isoformat(), event.payload_json]])
     response = HttpResponse(buffer.getvalue(), content_type="text/csv; charset=utf-8")
     response["Content-Disposition"] = f'attachment; filename="{filename}"'
     return response
+
+
+def entity_export_queryset(business, entity_type, *, user=None):
+    if entity_type == ImportJob.EntityTypes.CLIENTS:
+        queryset = Client.objects.filter(business=business, is_archived=False)
+        resource = Resources.CLIENTS
+    elif entity_type == ImportJob.EntityTypes.LEADS:
+        queryset = Lead.objects.filter(business=business, is_archived=False)
+        resource = Resources.LEADS
+    elif entity_type == ImportJob.EntityTypes.DEALS:
+        queryset = Deal.objects.filter(business=business, is_archived=False)
+        resource = Resources.DEALS
+    elif entity_type == ImportJob.EntityTypes.SALES:
+        return BusinessEvent.objects.filter(business=business, event_type__startswith="sale.recorded").order_by("id")
+    elif entity_type == ImportJob.EntityTypes.CATALOG:
+        return BusinessEvent.objects.filter(business=business, event_type__startswith="catalog.").order_by("id")
+    else:
+        raise ValidationError("Unsupported export entity.")
+    if user is not None:
+        queryset = scope_queryset(queryset, user, business, resource, Actions.VIEW)
+    return queryset.order_by("id")
+
+
+def export_entity_response(business, entity_type, *, user=None):
+    if entity_type == ImportJob.EntityTypes.CLIENTS:
+        return export_clients(business, user=user)
+    if entity_type == ImportJob.EntityTypes.LEADS:
+        return export_leads(business, user=user)
+    if entity_type == ImportJob.EntityTypes.DEALS:
+        return export_deals(business, user=user)
+    if entity_type == ImportJob.EntityTypes.SALES:
+        return export_sales(business, user=user)
+    if entity_type == ImportJob.EntityTypes.CATALOG:
+        return export_catalog(business, user=user)
+    raise ValidationError("Unsupported export entity.")

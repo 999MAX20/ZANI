@@ -14,6 +14,7 @@ Each run stores:
 - `run_after`;
 - `next_retry_at`;
 - `action_results`;
+- `current_action_index`;
 - `error`.
 
 This gives the owner and support team a clear record of what happened and prevents duplicate CRM actions.
@@ -79,7 +80,7 @@ Rules with `WAIT` actions or action-level `delay_seconds` set `run_after`.
 
 When `AUTOMATIONS_RUN_INLINE=True`, future runs remain `pending` and are not executed inside the HTTP request.
 
-When `AUTOMATIONS_RUN_INLINE=False`, Celery receives the task with `eta=run_after`.
+When `AUTOMATIONS_RUN_INLINE=False`, Celery workers and beat claim due runs from the `automations` queue. `WAIT` persists the next action index, moves the run to `waiting`, and resumes without replaying completed actions.
 
 ## Retry
 
@@ -88,6 +89,8 @@ Failed runs store:
 - error text;
 - attempt count;
 - `next_retry_at`.
+
+Transient failures move to `retry_scheduled`; due selection includes pending, waiting and retry-scheduled runs. Claims use a conditional state transition so two workers cannot execute the same run. Stale running claims are recovered after the configured timeout.
 
 API:
 
@@ -152,7 +155,6 @@ The Automations page exposes a run detail drawer with:
 
 ## Next Steps
 
-- add scheduled beat task for due pending/retry runs;
 - add webhook action delivery through integrations queue;
 - add deeper circuit-breakers for repeatedly failing rules;
 - add richer owner-facing filtering/search over run history.

@@ -135,10 +135,18 @@ class DealSerializer(serializers.ModelSerializer):
         pipeline = attrs.get("pipeline") or getattr(self.instance, "pipeline", None)
         stage = attrs.get("stage") or getattr(self.instance, "stage", None)
         business = attrs.get("business") or getattr(self.instance, "business", None)
+        client = attrs.get("client") if "client" in attrs else getattr(self.instance, "client", None)
+        lead = attrs.get("lead") if "lead" in attrs else getattr(self.instance, "lead", None)
+        if client and business and client.business_id != business.id:
+            raise serializers.ValidationError({"client": "Client must belong to the selected business."})
+        if lead and business and lead.business_id != business.id:
+            raise serializers.ValidationError({"lead": "Lead must belong to the selected business."})
+        if pipeline and business and pipeline.business_id != business.id:
+            raise serializers.ValidationError({"pipeline": "Pipeline must belong to the selected business."})
         if stage and pipeline and stage.pipeline_id != pipeline.id:
-            raise serializers.ValidationError("Stage must belong to selected pipeline.")
+            raise serializers.ValidationError({"stage": "Stage must belong to selected pipeline."})
         if stage and business and stage.business_id != business.id:
-            raise serializers.ValidationError("Stage must belong to selected business.")
+            raise serializers.ValidationError({"stage": "Stage must belong to selected business."})
         owner = attrs.get("owner") if "owner" in attrs else getattr(self.instance, "owner", None)
         if owner and business and not business.members.filter(user=owner, is_active=True).exists():
             raise serializers.ValidationError({"owner": "Owner must be an active business member."})

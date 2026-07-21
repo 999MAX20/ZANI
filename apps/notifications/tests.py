@@ -106,8 +106,9 @@ class NotificationCenterTests(APITestCase):
 
         notification.refresh_from_db()
         delivery_result = next(item for item in result if item["notification_id"] == notification.id)
-        self.assertEqual(notification.status, Notification.Statuses.FAILED)
-        self.assertEqual(delivery_result["status"], "failed")
+        self.assertEqual(notification.status, Notification.Statuses.RETRY_SCHEDULED)
+        self.assertIsNotNone(notification.next_retry_at)
+        self.assertEqual(delivery_result["status"], "retry_scheduled")
         self.assertNotIn("raw-delivery-token", str(result))
 
     def test_mark_read_and_mark_all_read(self):

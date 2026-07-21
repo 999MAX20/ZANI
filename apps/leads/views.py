@@ -219,7 +219,7 @@ class LeadViewSet(TenantModelViewSet):
 
     @action(detail=True, methods=["post"])
     def assign(self, request, pk=None):
-        lead = self.get_object()
+        lead = self.get_unassigned_action_object()
         assert_can(request.user, lead.business, Resources.LEADS, Actions.UPDATE, obj=lead)
         lead = assign_lead(lead=lead, actor=request.user, user_id=request.data.get("user_id"), request=request)
         return Response(self.get_serializer(lead).data)

@@ -81,7 +81,6 @@ class ResourceViewSet(TenantModelViewSet):
 class WorkingHoursViewSet(TenantModelViewSet):
     queryset = WorkingHours.objects.select_related("business", "resource")
     serializer_class = WorkingHoursSerializer
-    pagination_class = None
 
     def get_queryset(self):
         queryset = super().get_queryset()

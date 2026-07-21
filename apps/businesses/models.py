@@ -70,6 +70,29 @@ class Business(TimeStampedModel):
         return self.name
 
 
+class BusinessCapability(TimeStampedModel):
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name="capabilities")
+    module_key = models.CharField(max_length=32)
+    is_enabled = models.BooleanField(default=True)
+    configured_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="configured_business_capabilities",
+    )
+
+    class Meta:
+        ordering = ["module_key"]
+        constraints = [
+            models.UniqueConstraint(fields=["business", "module_key"], name="unique_business_capability"),
+        ]
+        indexes = [models.Index(fields=["business", "module_key", "is_enabled"])]
+
+    def __str__(self):
+        return f"{self.business}: {self.module_key}={self.is_enabled}"
+
+
 class BusinessMember(TimeStampedModel):
     class Roles(models.TextChoices):
         OWNER = "owner", "Owner"
@@ -80,6 +103,11 @@ class BusinessMember(TimeStampedModel):
         ACCOUNTANT = "accountant", "Accountant"
         SUPPORT = "support", "Support"
         STAFF = "staff", "Staff"
+        DOCTOR = "doctor", "Doctor"
+
+    class AvailabilityStatuses(models.TextChoices):
+        AVAILABLE = "available", "Available"
+        UNAVAILABLE = "unavailable", "Unavailable"
 
     business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name="members")
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="business_memberships")
@@ -92,11 +120,25 @@ class BusinessMember(TimeStampedModel):
         related_name="members",
     )
     is_active = models.BooleanField(default=True)
+    availability_status = models.CharField(
+        max_length=24,
+        choices=AvailabilityStatuses.choices,
+        default=AvailabilityStatuses.AVAILABLE,
+    )
+    unavailable_until = models.DateTimeField(null=True, blank=True)
+    fallback_member = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="fallback_for_members",
+    )
 
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=["business", "user"], name="unique_business_member"),
         ]
+        indexes = [models.Index(fields=["business", "is_active", "availability_status"])]
 
     def __str__(self):
         return f"{self.user} in {self.business} ({self.role})"
@@ -214,6 +256,7 @@ class BusinessInvitation(TimeStampedModel):
     full_name = models.CharField(max_length=255, blank=True)
     role = models.CharField(max_length=32, choices=BusinessMember.Roles.choices, default=BusinessMember.Roles.STAFF)
     business_role = models.ForeignKey(BusinessRole, on_delete=models.SET_NULL, null=True, blank=True, related_name="invitations")
+    team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True, related_name="invitations")
     invited_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="sent_business_invitations")
     delivery_channel = models.CharField(max_length=32, choices=DeliveryChannels.choices, default=DeliveryChannels.MANUAL)
     token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)

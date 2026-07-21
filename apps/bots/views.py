@@ -31,7 +31,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import MethodNotAllowed, PermissionDenied
 from django.shortcuts import get_object_or_404
 from rest_framework.throttling import ScopedRateThrottle
 
@@ -99,6 +99,10 @@ class BotChannelViewSet(TenantModelViewSet):
 class BotConversationViewSet(TenantModelViewSet):
     queryset = BotConversation.objects.select_related("business", "bot", "client", "lead")
     serializer_class = BotConversationSerializer
+    http_method_names = ["get", "post", "head", "options"]
+
+    def create(self, request, *args, **kwargs):
+        raise MethodNotAllowed("POST", detail="Conversations are created by channel services.")
 
     def get_queryset(self):
         queryset = super().get_queryset()

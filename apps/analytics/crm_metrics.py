@@ -1,10 +1,11 @@
 from decimal import Decimal
 
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, F, Q, Sum
 from django.utils import timezone
 
 from apps.bots.models import BotConversation
-from apps.businesses.access import Actions, Resources, get_membership, scope_queryset, user_is_business_owner
+from apps.businesses.access import Actions, Resources, can, get_membership, scope_queryset, user_is_business_owner
+from apps.businesses.capabilities import resource_is_enabled
 from apps.businesses.models import BusinessMember, TeamMember
 from apps.core.permissions import is_platform_admin, platform_admin_has_global_access
 from apps.core.work_queues import (
@@ -118,6 +119,24 @@ def build_crm_operational_metrics(business, *, user=None, start_date=None, end_d
         "visible_leads": _source_ids("LEAD", leads.values_list("id", flat=True)[:5]),
     }
     return {
+        "meta": {
+            "business_id": business.id,
+            "generated_at": now.isoformat(),
+            "start_date": start_date.isoformat() if start_date else None,
+            "end_date": end_date.isoformat() if end_date else None,
+            "timezone": business.timezone,
+            "currency": business.currency,
+            "availability": {
+                resource: (user is None or can(user, business, resource, Actions.VIEW).allowed)
+                for resource in [
+                    Resources.LEADS,
+                    Resources.DEALS,
+                    Resources.APPOINTMENTS,
+                    Resources.TASKS,
+                    Resources.CONVERSATIONS,
+                ]
+            },
+        },
         "crm_funnel": crm_funnel,
         "manager_performance": manager_performance,
         "connector_health": connector_health,
@@ -171,15 +190,53 @@ def _manager_performance(*, business, user, start_date, end_date, now):
         end_date,
     )
     tasks = _date_filter(Task.objects.filter(business=business, is_archived=False, assignee_id__in=visible_user_ids), "created_at", start_date, end_date)
+    lead_metrics = {
+        row["responsible_user_id"]: row
+        for row in leads.values("responsible_user_id").annotate(assigned_leads=Count("id"))
+        if row["responsible_user_id"] is not None
+    }
+    deal_metrics = {
+        row["owner_id"]: row
+        for row in deals.values("owner_id").annotate(
+            deals_from_leads=Count("lead_id", distinct=True, filter=Q(lead__responsible_user_id=F("owner_id"))),
+            won_deals=Count("id", filter=Q(status=Deal.Statuses.WON)),
+            lost_deals=Count("id", filter=Q(status=Deal.Statuses.LOST)),
+            won_value=Sum("amount", filter=Q(status=Deal.Statuses.WON)),
+            lost_value=Sum("amount", filter=Q(status=Deal.Statuses.LOST)),
+        )
+        if row["owner_id"] is not None
+    }
+    appointment_metrics = {
+        row["lead__responsible_user_id"]: row
+        for row in appointments.values("lead__responsible_user_id").annotate(
+            appointments_completed=Count("id", filter=Q(status=Appointment.Statuses.COMPLETED)),
+            appointments_no_show=Count("id", filter=Q(status=Appointment.Statuses.NO_SHOW)),
+        )
+        if row["lead__responsible_user_id"] is not None
+    }
+    task_metrics = {
+        row["assignee_id"]: row
+        for row in tasks.values("assignee_id").annotate(
+            open_tasks=Count("id", filter=~Q(status__in=[Task.Statuses.DONE, Task.Statuses.CANCELLED])),
+            overdue_tasks=Count(
+                "id",
+                filter=(
+                    ~Q(status__in=[Task.Statuses.DONE, Task.Statuses.CANCELLED])
+                    & Q(is_archived=False, due_at__lt=now)
+                    & (Q(snoozed_until__isnull=True) | Q(snoozed_until__lte=now))
+                ),
+            ),
+        )
+        if row["assignee_id"] is not None
+    }
     rows = []
     for member in visible_members.select_related("user").order_by("user__email"):
-        member_leads = leads.filter(responsible_user=member.user)
-        member_deals = deals.filter(owner=member.user)
-        member_appointments = appointments.filter(lead__responsible_user=member.user)
-        member_tasks = tasks.filter(assignee=member.user)
-        assigned_leads = member_leads.count()
-        deals_from_leads = member_deals.filter(lead_id__in=member_leads.values("id")).values("lead_id").distinct().count()
-        member_open_tasks = member_tasks.exclude(status__in=[Task.Statuses.DONE, Task.Statuses.CANCELLED])
+        member_leads = lead_metrics.get(member.user_id, {})
+        member_deals = deal_metrics.get(member.user_id, {})
+        member_appointments = appointment_metrics.get(member.user_id, {})
+        member_tasks = task_metrics.get(member.user_id, {})
+        assigned_leads = member_leads.get("assigned_leads", 0)
+        deals_from_leads = member_deals.get("deals_from_leads", 0)
         rows.append(
             {
                 "user_id": member.user_id,
@@ -189,14 +246,14 @@ def _manager_performance(*, business, user, start_date, end_date, now):
                 "assigned_leads": assigned_leads,
                 "deals_from_leads": deals_from_leads,
                 "lead_to_deal_rate": _percent(deals_from_leads, assigned_leads),
-                "won_deals": member_deals.filter(status=Deal.Statuses.WON).count(),
-                "lost_deals": member_deals.filter(status=Deal.Statuses.LOST).count(),
-                "won_value": _decimal_str(_sum_amount(member_deals.filter(status=Deal.Statuses.WON))),
-                "lost_value": _decimal_str(_sum_amount(member_deals.filter(status=Deal.Statuses.LOST))),
-                "appointments_completed": member_appointments.filter(status=Appointment.Statuses.COMPLETED).count(),
-                "appointments_no_show": member_appointments.filter(status=Appointment.Statuses.NO_SHOW).count(),
-                "open_tasks": member_open_tasks.count(),
-                "overdue_tasks": overdue_tasks_queryset(queryset=member_open_tasks, now=now).count(),
+                "won_deals": member_deals.get("won_deals", 0),
+                "lost_deals": member_deals.get("lost_deals", 0),
+                "won_value": _decimal_str(member_deals.get("won_value")),
+                "lost_value": _decimal_str(member_deals.get("lost_value")),
+                "appointments_completed": member_appointments.get("appointments_completed", 0),
+                "appointments_no_show": member_appointments.get("appointments_no_show", 0),
+                "open_tasks": member_tasks.get("open_tasks", 0),
+                "overdue_tasks": member_tasks.get("overdue_tasks", 0),
             }
         )
     totals = {
@@ -315,6 +372,8 @@ def _card(key, severity, metric_value, metric_keys, source_ids, href, *, no_data
 
 
 def _scoped(queryset, user, business, resource):
+    if not resource_is_enabled(business, resource):
+        return queryset.none()
     if user is None:
         return queryset
     return scope_queryset(queryset, user, business, resource, Actions.VIEW)

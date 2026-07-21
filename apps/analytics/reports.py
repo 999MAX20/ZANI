@@ -2,7 +2,8 @@ import csv
 import io
 from decimal import Decimal
 
-from django.db.models import Avg, Count, Sum
+from django.contrib.auth import get_user_model
+from django.db.models import Avg, Count, DurationField, ExpressionWrapper, F, Q, Sum
 from django.http import HttpResponse
 from django.utils import timezone
 
@@ -79,20 +80,27 @@ def build_report_summary(business, *, user=None, start_date=None, end_date=None)
 
 def source_roi(leads, appointments):
     rows = []
+    appointment_map = {
+        (item["lead__source"] or "unknown"): item
+        for item in appointments.values("lead__source").annotate(
+            appointments=Count("id"),
+            completed_appointments=Count("id", filter=Q(status=Appointment.Statuses.COMPLETED)),
+            revenue=Sum("service__price_from", filter=Q(status=Appointment.Statuses.COMPLETED)),
+        )
+    }
     lead_sources = leads.values("source").annotate(leads=Count("id")).order_by("-leads", "source")
     for item in lead_sources:
         source = item["source"] or "unknown"
-        source_appointments = appointments.filter(lead__source=source)
-        completed = source_appointments.filter(status=Appointment.Statuses.COMPLETED)
-        revenue = completed.aggregate(total=Sum("service__price_from"))["total"] or Decimal("0")
+        source_appointments = appointment_map.get(source, {})
+        appointment_count = source_appointments.get("appointments", 0)
         rows.append(
             {
                 "source": source,
                 "leads": item["leads"],
-                "appointments": source_appointments.count(),
-                "completed_appointments": completed.count(),
-                "revenue_estimate": str(revenue),
-                "conversion_rate": _percent(source_appointments.count(), item["leads"]),
+                "appointments": appointment_count,
+                "completed_appointments": source_appointments.get("completed_appointments", 0),
+                "revenue_estimate": str(source_appointments.get("revenue") or Decimal("0")),
+                "conversion_rate": _percent(appointment_count, item["leads"]),
                 "roi_status": "tracked_without_cost",
             }
         )
@@ -104,16 +112,21 @@ def funnel_velocity(leads, deals):
         {"status": item["status"], "count": item["count"]}
         for item in leads.values("status").annotate(count=Count("id")).order_by("status")
     ]
+    age = ExpressionWrapper(timezone.now() - F("stage_entered_at"), output_field=DurationField())
     stage_rows = []
-    for item in deals.values("stage_id", "stage__name").annotate(count=Count("id"), avg_probability=Avg("probability")).order_by("stage__order", "stage__name"):
-        stage_deals = deals.filter(stage_id=item["stage_id"]).exclude(stage_entered_at=None)
-        age_days = [(timezone.now().date() - deal.stage_entered_at.date()).days for deal in stage_deals.only("stage_entered_at")]
+    stage_metrics = deals.values("stage_id", "stage__name").annotate(
+        count=Count("id"),
+        avg_probability=Avg("probability"),
+        avg_stage_age=Avg(age, filter=Q(stage_entered_at__isnull=False)),
+    ).order_by("stage__order", "stage__name")
+    for item in stage_metrics:
+        avg_stage_age = item["avg_stage_age"]
         stage_rows.append(
             {
                 "stage": item["stage__name"] or "No stage",
                 "count": item["count"],
                 "avg_probability": round(item["avg_probability"] or 0, 1),
-                "avg_days_in_stage": round(sum(age_days) / len(age_days), 1) if age_days else None,
+                "avg_days_in_stage": round(avg_stage_age.total_seconds() / 86400, 1) if avg_stage_age else None,
             }
         )
     return {
@@ -130,23 +143,48 @@ def manager_performance(leads, deals, tasks):
     user_ids = set(leads.exclude(responsible_user_id=None).values_list("responsible_user_id", flat=True))
     user_ids.update(deals.exclude(owner_id=None).values_list("owner_id", flat=True))
     user_ids.update(tasks.exclude(assignee_id=None).values_list("assignee_id", flat=True))
+    users = get_user_model().objects.in_bulk(user_ids)
+    lead_metrics = {
+        row["responsible_user_id"]: row
+        for row in leads.values("responsible_user_id").annotate(
+            assigned_leads=Count("id"),
+            appointment_leads=Count("id", filter=Q(status=Lead.Statuses.APPOINTMENT_CREATED)),
+            lost_leads=Count("id", filter=Q(status=Lead.Statuses.LOST)),
+        )
+        if row["responsible_user_id"] is not None
+    }
+    deal_metrics = {
+        row["owner_id"]: row
+        for row in deals.values("owner_id").annotate(
+            won_deals=Count("id", filter=Q(status=Deal.Statuses.WON)),
+            lost_deals=Count("id", filter=Q(status=Deal.Statuses.LOST)),
+        )
+        if row["owner_id"] is not None
+    }
+    task_metrics = {
+        row["assignee_id"]: row
+        for row in tasks.values("assignee_id").annotate(
+            open_tasks=Count("id", filter=~Q(status__in=[Task.Statuses.DONE, Task.Statuses.CANCELLED])),
+        )
+        if row["assignee_id"] is not None
+    }
     rows = []
     for user_id in sorted(user_ids):
-        user_leads = leads.filter(responsible_user_id=user_id)
-        user_deals = deals.filter(owner_id=user_id)
-        user_tasks = tasks.filter(assignee_id=user_id)
-        user = (user_leads.first() and user_leads.first().responsible_user) or (user_deals.first() and user_deals.first().owner) or (user_tasks.first() and user_tasks.first().assignee)
+        user_leads = lead_metrics.get(user_id, {})
+        user_deals = deal_metrics.get(user_id, {})
+        user_tasks = task_metrics.get(user_id, {})
+        user = users.get(user_id)
         rows.append(
             {
                 "user_id": user_id,
                 "email": getattr(user, "email", ""),
                 "full_name": getattr(user, "full_name", ""),
-                "assigned_leads": user_leads.count(),
-                "appointment_leads": user_leads.filter(status=Lead.Statuses.APPOINTMENT_CREATED).count(),
-                "lost_leads": user_leads.filter(status=Lead.Statuses.LOST).count(),
-                "won_deals": user_deals.filter(status=Deal.Statuses.WON).count(),
-                "lost_deals": user_deals.filter(status=Deal.Statuses.LOST).count(),
-                "open_tasks": user_tasks.exclude(status__in=[Task.Statuses.DONE, Task.Statuses.CANCELLED]).count(),
+                "assigned_leads": user_leads.get("assigned_leads", 0),
+                "appointment_leads": user_leads.get("appointment_leads", 0),
+                "lost_leads": user_leads.get("lost_leads", 0),
+                "won_deals": user_deals.get("won_deals", 0),
+                "lost_deals": user_deals.get("lost_deals", 0),
+                "open_tasks": user_tasks.get("open_tasks", 0),
             }
         )
     return rows

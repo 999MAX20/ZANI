@@ -7,6 +7,7 @@ from django.utils.text import slugify
 from apps.automations.models import AutomationAction, AutomationRule
 from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
 from apps.businesses.access import ensure_default_roles
+from apps.businesses.capabilities import apply_business_type_defaults
 from apps.businesses.models import Business
 from apps.clients.models import Client
 from apps.conversations.models import QuickReplyTemplate
@@ -39,6 +40,7 @@ def apply_niche_template(business: Business, niche: str, actor=None):
     template = get_niche_template(niche)
     business.business_type = niche if niche in NICHES else Business.BusinessTypes.OTHER
     business.save(update_fields=["business_type", "updated_at"])
+    apply_business_type_defaults(business, configured_by=actor)
 
     ensure_default_roles(business)
     pipeline = _apply_pipeline(business, niche, template["stages"])
@@ -295,7 +297,16 @@ def create_first_channel_message(business: Business, actor=None):
     }
 
 
-def get_onboarding_status(business: Business):
+def get_onboarding_status(business: Business, user=None):
+    if user is not None and business.owner_id != user.id:
+        membership = business.members.filter(user=user, is_active=True).first()
+        employee_items = [
+            _item("membership", "Membership accepted", membership is not None),
+            _item("assigned_task", "First assigned task", business.tasks.filter(assignee=user).exists()),
+            _item("assigned_lead", "First assigned lead", business.leads.filter(responsible_user=user).exists()),
+            _item("assigned_conversation", "First assigned conversation", business.bot_conversations.filter(assigned_to=user).exists()),
+        ]
+        return _onboarding_payload(business, employee_items, audience="employee")
     items = [
         _item("template", "Выбрать шаблон ниши", business.services.exists() and business.pipeline_stages.exists() and business.quick_reply_templates.exists()),
         _item("services", "Добавить услуги", business.services.filter(is_active=True).exists()),
@@ -308,13 +319,21 @@ def get_onboarding_status(business: Business):
         _item("first_lead", "Создать первую заявку", business.leads.exists()),
         _item("first_appointment", "Создать первую запись", business.appointments.exists()),
     ]
+    return _onboarding_payload(business, items, audience="owner")
+
+
+def _onboarding_payload(business, items, *, audience):
     completed = sum(1 for item in items if item["is_completed"])
+    next_item = next((item for item in items if not item["is_completed"]), None)
     return {
         "business": business.id,
+        "audience": audience,
         "progress": round((completed / len(items)) * 100),
         "completed": completed,
         "total": len(items),
         "items": items,
+        "next_recommended_action": next_item,
+        "is_complete": completed == len(items),
     }
 
 

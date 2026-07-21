@@ -14,7 +14,7 @@ from apps.core.work_queues import no_next_action_deals_queryset, sla_overdue_dea
 from apps.crm.models import Deal, Pipeline, PipelineStage, StageTransition
 from apps.crm.selectors import build_deal_summary, stale_deals_queryset
 from apps.crm.serializers import DealListSerializer, DealSerializer, PipelineSerializer, PipelineStageSerializer, StageTransitionSerializer
-from apps.crm.services import mark_deal_lost, mark_deal_won, move_deal_stage, record_deal_value_change, reopen_deal
+from apps.crm.services import assign_deal_owner, mark_deal_lost, mark_deal_won, move_deal_stage, record_deal_value_change, reopen_deal
 from apps.tasks.models import Task
 
 
@@ -93,6 +93,20 @@ class DealViewSet(TenantModelViewSet):
     queryset = Deal.objects.select_related("business", "client", "lead", "pipeline", "stage", "owner")
     serializer_class = DealSerializer
     pagination_class = DealPagination
+
+    @action(detail=True, methods=["post"], url_path="assign-owner")
+    def assign_owner(self, request, pk=None):
+        deal = self.get_unassigned_action_object()
+        user_id = request.data.get("user_id")
+        if not user_id:
+            raise ValidationError({"user_id": "This field is required."})
+        deal = assign_deal_owner(
+            deal=deal,
+            actor=request.user,
+            user_id=user_id,
+            request=request,
+        )
+        return Response(self.get_serializer(deal).data)
 
     def get_serializer_class(self):
         if self.action in {"list", "board"}:

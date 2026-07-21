@@ -2,12 +2,14 @@ from django.conf import settings
 from django.utils import timezone
 
 from apps.automations.models import AutomationRun
+from apps.ai_core.models import AIJob
 from apps.core.backup_readiness import run_backup_restore_readiness_check
-from apps.core.models import SupportAccessGrant
+from apps.core.models import ExportJob, SupportAccessGrant
 from apps.core.production_audit import run_production_readiness_audit
 from apps.integrations.models import BusinessConnector, ConnectorSyncRun, IntegrationEventLog, WebhookDeliveryLog
 from apps.integrations.provider_rollout import run_provider_rollout_readiness_check
 from apps.integrations.sanitization import sanitize_error_text
+from apps.notifications.models import Notification
 
 
 def _status_from_failures(critical_count, warning_count=0):
@@ -110,6 +112,22 @@ def _queue_summary():
     failed_runs = AutomationRun.objects.filter(status=AutomationRun.Statuses.FAILED).count()
     pending_runs = AutomationRun.objects.filter(status=AutomationRun.Statuses.PENDING).count()
     running_runs = AutomationRun.objects.filter(status=AutomationRun.Statuses.RUNNING).count()
+    retry_runs = AutomationRun.objects.filter(status=AutomationRun.Statuses.RETRY_SCHEDULED).count()
+    failed_notifications = Notification.objects.filter(status=Notification.Statuses.FAILED).count()
+    retry_notifications = Notification.objects.filter(status=Notification.Statuses.RETRY_SCHEDULED).count()
+    due_notifications = Notification.objects.filter(
+        status=Notification.Statuses.PENDING,
+        send_at__lte=timezone.now(),
+    ).count()
+    failed_ai_jobs = AIJob.objects.filter(status=AIJob.Statuses.FAILED).count()
+    retry_ai_jobs = AIJob.objects.filter(status=AIJob.Statuses.RETRY_SCHEDULED).count()
+    pending_export_jobs = ExportJob.objects.filter(status=ExportJob.Statuses.PENDING).count()
+    running_export_jobs = ExportJob.objects.filter(status=ExportJob.Statuses.RUNNING).count()
+    failed_export_jobs = ExportJob.objects.filter(status=ExportJob.Statuses.FAILED).count()
+    stale_export_jobs = ExportJob.objects.filter(
+        status=ExportJob.Statuses.RUNNING,
+        started_at__lt=timezone.now() - timezone.timedelta(seconds=getattr(settings, "EXPORT_STALE_SECONDS", 900)),
+    ).count()
     failed_syncs = ConnectorSyncRun.objects.filter(status=ConnectorSyncRun.Statuses.FAILED).count()
     failed_webhooks = WebhookDeliveryLog.objects.filter(status=WebhookDeliveryLog.Statuses.FAILED).count()
     return {
@@ -121,10 +139,26 @@ def _queue_summary():
             "pending": pending_runs,
             "running": running_runs,
             "failed": failed_runs,
+            "retry_scheduled": retry_runs,
+        },
+        "notifications": {
+            "due": due_notifications,
+            "retry_scheduled": retry_notifications,
+            "failed": failed_notifications,
+        },
+        "ai_jobs": {"retry_scheduled": retry_ai_jobs, "failed": failed_ai_jobs},
+        "export_jobs": {
+            "pending": pending_export_jobs,
+            "running": running_export_jobs,
+            "stale": stale_export_jobs,
+            "failed": failed_export_jobs,
         },
         "failed_connector_syncs": failed_syncs,
         "failed_webhook_deliveries": failed_webhooks,
-        "status": _status_from_failures(failed_runs + failed_syncs + failed_webhooks),
+        "status": _status_from_failures(
+            failed_runs + failed_notifications + failed_ai_jobs + failed_export_jobs + stale_export_jobs + failed_syncs + failed_webhooks,
+            retry_runs + retry_notifications + retry_ai_jobs + pending_export_jobs + due_notifications,
+        ),
     }
 
 

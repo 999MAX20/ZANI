@@ -28,6 +28,23 @@ npm ci
 npm run build
 ```
 
+## Frontend Bundle Hygiene
+
+After frontend-only routing, i18n, layout, or page-splitting work, record the relevant production build output instead of treating bundle warnings as noise:
+
+```bash
+cd frontend
+npm run build
+npm run check:bundle
+```
+
+Use this as a lightweight regression note for large first-load risks. Pay special attention to:
+
+- `i18n-*` chunks: the app should not load all supported language dictionaries for every first load;
+- authenticated route chunks: large CRM pages should stay behind lazy route boundaries;
+- shell chunks such as app layout, search, public pages, and platform layout;
+- any JS chunk above 500 kB before gzip, which should be explained or split when the cause is avoidable.
+
 ## CRM E2E Business Flow Gates
 
 Phase 13 cross-entity CRM coverage lives in:
@@ -46,6 +63,51 @@ npx playwright test --project=mobile-chromium -g "mobile (owner|manager) smoke"
 ```
 
 If you deliberately start services yourself, set `E2E_SKIP_LOCAL_SETUP=true`, `E2E_BASE_URL` and `E2E_API_BASE_URL`.
+
+## Controlled Pilot QA
+
+Use this gate before claiming a local/dev merchant journey is ready for a controlled pilot without production credentials or live provider traffic.
+
+PowerShell-safe local setup:
+
+```powershell
+$env:DATABASE_URL = 'sqlite:///db.sqlite3'
+$env:SECURE_SSL_REDIRECT = 'False'
+$env:SESSION_COOKIE_SECURE = 'False'
+$env:CSRF_COOKIE_SECURE = 'False'
+$env:REDIS_URL = 'memory://'
+$env:CELERY_TASK_ALWAYS_EAGER = 'True'
+$env:CELERY_TASK_STORE_EAGER_RESULT = 'False'
+$env:AUTOMATIONS_RUN_INLINE = 'True'
+```
+
+Pilot data and API quality gate:
+
+```powershell
+.\.venv\Scripts\python.exe manage.py prepare_pilot_demo --reset
+.\.venv\Scripts\python.exe manage.py pilot_launch_quality_gate
+```
+
+The pilot demo seed is deterministic for local/dev QA and includes platform admin, business owner, manager and operator users. It creates a demo merchant with leads, clients, tasks, inbox handoff, website/Excel connector signals, sales events and a safe AI-created task flow. Mock/dev connector states must stay visibly separated from live production providers.
+
+`ALLOW_DEMO_MERCHANT_FLOWS=True` is required for local/staging demo-data and mock-sync QA. Keep it `False` in production so onboarding demo-data and connector mock-sync cannot be presented as live merchant functionality.
+
+Required controlled-pilot verification:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest apps\businesses\tests_demo_seed.py apps\core\tests_business_flows_e2e.py -q
+cd frontend
+npm run build
+npx playwright test --project=mobile-chromium -g "mobile (owner|manager) smoke"
+```
+
+Manual fallback when browser automation is unavailable:
+
+1. Run `prepare_pilot_demo --reset` and log in as owner, manager and operator.
+2. Owner path: dashboard -> leads -> inbox -> AI assistant/action -> integrations -> analytics.
+3. Manager path: assigned leads/tasks/inbox handoff.
+4. Operator path: task queue and inbox handoff visibility.
+5. Confirm `/api/pilot/readiness/`, owner dashboard, inbox summary and integration health states are reachable and do not imply live providers are connected.
 
 ## External Network Policy
 

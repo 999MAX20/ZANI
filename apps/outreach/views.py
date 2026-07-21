@@ -14,7 +14,7 @@ from apps.core.viewsets import TenantModelViewSet
 from apps.outreach.imports import read_consent_upload
 from apps.outreach.models import OutreachCampaign, OutreachConsent, OutreachRecipient, OutreachTemplate
 from apps.outreach.serializers import OutreachCampaignSerializer, OutreachConsentSerializer, OutreachRecipientSerializer, OutreachTemplateSerializer
-from apps.outreach.services import appointment_automation_status, campaign_launch_checklist, campaign_stats, launch_campaign, prepare_campaign_recipients, preview_campaign_audience, refresh_campaign_status, retry_failed_recipients
+from apps.outreach.services import appointment_automation_status, campaign_launch_checklist, campaign_stats, cancel_campaign, launch_campaign, prepare_campaign_recipients, preview_campaign_audience, refresh_campaign_status, retry_failed_recipients
 
 
 OUTREACH_MANAGE_ROLES = {BusinessMember.Roles.OWNER, BusinessMember.Roles.ADMIN, BusinessMember.Roles.MARKETER}
@@ -132,10 +132,11 @@ class OutreachCampaignViewSet(TenantModelViewSet):
     def cancel(self, request, pk=None):
         campaign = self.get_object()
         _assert_outreach_role(request.user, campaign.business, OUTREACH_LAUNCH_ROLES)
-        campaign.status = OutreachCampaign.Statuses.CANCELLED
-        campaign.save(update_fields=["status", "updated_at"])
-        campaign.recipients.filter(status__in=[OutreachRecipient.Statuses.QUEUED, OutreachRecipient.Statuses.PENDING]).update(status=OutreachRecipient.Statuses.CANCELLED)
-        return Response(OutreachCampaignSerializer(campaign, context={"request": request}).data)
+        try:
+            result = cancel_campaign(campaign, request=request, reason=str(request.data.get("reason") or ""))
+        except ValueError as exc:
+            raise ValidationError({"detail": str(exc)}) from exc
+        return Response({"campaign": OutreachCampaignSerializer(campaign, context={"request": request}).data, **result})
 
 
 class OutreachRecipientViewSet(TenantModelViewSet):

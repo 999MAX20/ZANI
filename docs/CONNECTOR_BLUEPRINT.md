@@ -45,7 +45,7 @@ Preferred structure:
 
 Views should not contain provider business logic. They should validate input, enforce permissions and call services/providers.
 
-Current implementation note 2026-07-14: `BusinessConnectorViewSet` delegates provider config/status/test/sync/OAuth/setup actions to `apps.integrations.services`, and `BotChannelViewSet` delegates Telegram/WhatsApp/Instagram setup, test, status and sync actions to `apps.bots.services`. New provider actions should extend those service/provider boundaries instead of adding provider-specific orchestration to viewsets.
+Current implementation note 2026-07-14: `BusinessConnectorViewSet` delegates provider config/status/test/sync/OAuth/setup actions to `apps.integrations.services`, and `BotChannelViewSet` delegates Telegram/WhatsApp/Instagram setup, test, status and sync actions to `apps.bots.services`. Telegram and Instagram bot-channel secrets are stored through `ConnectorCredential`; channel `config_json` keeps only configured flags and safe account metadata. New provider actions should extend those service/provider boundaries instead of adding provider-specific orchestration to viewsets.
 
 ## Frontend Shape
 
@@ -92,6 +92,7 @@ Each event should include:
 - Never expose raw tokens to frontend.
 - Never log access tokens, webhook secrets or authorization codes.
 - Mask credentials in serializers.
+- Do not persist Telegram/Instagram/WhatsApp access tokens in `BotChannel.config_json`; use `ConnectorCredential` and safe `*_configured` flags.
 - Validate webhook signatures or secret tokens where provider supports it.
 - Rate limit public webhook and setup endpoints.
 - Keep tenant isolation mandatory.
@@ -99,6 +100,8 @@ Each event should include:
 ## Production Checklist
 
 - Setup works for a real merchant or has an explicit mock/dev mode.
+- Provider readiness status is documented in `docs/provider-rollout.md` before the provider appears in merchant UI or support playbooks.
+- Merchant-facing labels distinguish live-ready, beta read-only, pilot/setup required, request/roadmap and mock/dev states.
 - Status card shows connected, attention and error states.
 - Health check can be run safely.
 - Last sync/webhook time is visible.

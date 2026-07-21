@@ -30,8 +30,9 @@ export function CrmControlBar<TValue extends string>({
   secondary,
   className,
   ariaLabel,
-  activeFiltersLabel = "Активные:",
-  clearAllLabel = "Очистить все",
+  activeFiltersLabel = "Active:",
+  clearAllLabel = "Clear all",
+  filtersLabel = "Filters",
 }: {
   value: TValue;
   tabs: Array<CrmControlTab<TValue>>;
@@ -47,6 +48,7 @@ export function CrmControlBar<TValue extends string>({
   ariaLabel: string;
   activeFiltersLabel?: string;
   clearAllLabel?: string;
+  filtersLabel?: string;
 }) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const advancedRef = useRef<HTMLDivElement | null>(null);
@@ -94,7 +96,7 @@ export function CrmControlBar<TValue extends string>({
             <div ref={advancedRef} className="relative">
               <Button variant="secondary" size="sm" className="h-9 gap-2 rounded-control" type="button" onClick={() => setAdvancedOpen((open) => !open)}>
                 <SlidersHorizontal size={14} />
-                {advancedLabel || "Фильтры"}
+                {advancedLabel || filtersLabel}
                 <ChevronDown size={14} className={cn("transition", advancedOpen && "rotate-180")} />
                 {advancedCounter ? <span className="rounded-full bg-white/90 px-1.5 py-0.5 text-[11px] text-slate-600">{advancedCounter}</span> : null}
               </Button>

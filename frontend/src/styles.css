@@ -3,28 +3,42 @@
 @tailwind utilities;
 
 :root {
-  --zani-bg: #f9fafb;
+  --zani-bg: #f7f3ee;
+  --zani-page-soft: #f4eee7;
   --zani-surface: #ffffff;
-  --zani-surface-muted: #f3f4f6;
-  --zani-surface-raised: rgba(255, 255, 255, 0.96);
-  --zani-brand: #2563eb;
-  --zani-brand-strong: #1d4ed8;
-  --zani-ai: #7c3aed;
-  --zani-ai-end: #4f46e5;
-  --zani-success: #10b981;
-  --zani-warning: #f59e0b;
-  --zani-danger: #ef4444;
-  --zani-info: #0284c7;
-  --zani-ink: #111827;
-  --zani-midnight: #111827;
-  --zani-muted: #6b7280;
-  --zani-muted-soft: #9ca3af;
-  --zani-border: #e5e7eb;
-  --zani-shadow-soft: 0 1px 3px rgba(15, 23, 42, 0.08);
-  --zani-shadow-elevated: 0 4px 12px rgba(15, 23, 42, 0.05);
-  --zani-shadow-card: 0 4px 12px rgba(17, 24, 39, 0.06);
-  --zani-shadow-panel: 0 16px 40px rgba(15, 23, 42, 0.1);
-  --zani-shadow-premium: 0 16px 40px rgba(15, 23, 42, 0.1);
+  --zani-surface-warm: #fffcf8;
+  --zani-surface-muted: #f2ede6;
+  --zani-surface-raised: rgba(255, 252, 248, 0.96);
+  --zani-brand: #d96718;
+  --zani-brand-hover: #b84f0b;
+  --zani-brand-strong: #8f3a08;
+  --zani-brand-soft: #fff0e4;
+  --zani-focus-ring: rgba(217, 103, 24, 0.22);
+  --zani-ai: #6f4cc3;
+  --zani-ai-hover: #5e3cae;
+  --zani-ai-soft: #f4f0ff;
+  --zani-ai-border: #ddd2ff;
+  --zani-ai-end: #5e3cae;
+  --zani-success: #15803d;
+  --zani-success-soft: #ecfdf3;
+  --zani-warning: #b7791f;
+  --zani-warning-soft: #fff7e6;
+  --zani-danger: #c2410c;
+  --zani-danger-soft: #fff1ed;
+  --zani-info: #0e7490;
+  --zani-info-soft: #eaf9fc;
+  --zani-neutral: #6b625a;
+  --zani-neutral-soft: #f2ede6;
+  --zani-ink: #17120f;
+  --zani-midnight: #17120f;
+  --zani-muted: #5f554d;
+  --zani-muted-soft: #8a7b70;
+  --zani-border: #e6ddd2;
+  --zani-shadow-soft: 0 1px 3px rgba(23, 18, 15, 0.06);
+  --zani-shadow-elevated: 0 4px 12px rgba(23, 18, 15, 0.05);
+  --zani-shadow-card: 0 4px 12px rgba(23, 18, 15, 0.05);
+  --zani-shadow-panel: 0 16px 40px rgba(23, 18, 15, 0.1);
+  --zani-shadow-premium: 0 16px 40px rgba(23, 18, 15, 0.1);
   --zani-radius-card: 12px;
   --zani-radius-control: 10px;
   --zani-radius-modal: 16px;
@@ -35,7 +49,7 @@
   color: var(--zani-ink);
   background: var(--zani-bg);
   font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI",
+    "Manrope Variable", "Noto Sans", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI",
     sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -73,7 +87,7 @@ select {
 }
 
 ::selection {
-  background: rgba(37, 99, 235, 0.18);
+  background: rgba(217, 103, 24, 0.18);
 }
 
 @layer components {
@@ -86,7 +100,7 @@ select {
 
   .zani-surface-strong {
     border: 1px solid var(--zani-border);
-    background: rgba(255, 255, 255, 0.96);
+    background: var(--zani-surface-warm);
     box-shadow: var(--zani-shadow-elevated);
     border-radius: var(--zani-radius-card);
   }
@@ -106,7 +120,7 @@ select {
   }
 
   .zani-overlay-backdrop {
-    background: rgba(15, 23, 42, 0.46);
+    background: rgba(23, 18, 15, 0.46);
     backdrop-filter: blur(10px);
   }
 
@@ -158,13 +172,13 @@ select {
 
   .zani-focus-ring:focus-visible {
     border-color: var(--zani-brand);
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14);
+    box-shadow: 0 0 0 4px var(--zani-focus-ring);
   }
 
   .zani-ai-surface {
     position: relative;
-    border: 1px solid rgba(124, 58, 237, 0.22);
-    background: #f5f3ff;
+    border: 1px solid var(--zani-ai-border);
+    background: var(--zani-ai-soft);
     box-shadow: var(--zani-shadow-card);
   }
 
@@ -175,7 +189,7 @@ select {
 
 .glass-panel {
   border: 1px solid var(--zani-border);
-  background: rgba(255, 255, 255, 0.94);
+  background: var(--zani-surface-raised);
   box-shadow: var(--zani-shadow-soft);
   backdrop-filter: blur(10px);
   border-radius: var(--zani-radius-card);
@@ -246,20 +260,20 @@ select {
 
 .custom-scrollbar::-webkit-scrollbar-track {
   border-radius: 4px;
-  background: #f1f1f1;
+  background: #f2ede6;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
   border-radius: 4px;
-  background: #c1c1c1;
+  background: #d4c7ba;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #a1a1a1;
+  background: #bda898;
 }
 
 .focus-visible-ring:focus-visible {
-  outline: 2px solid #3b82f6;
+  outline: 2px solid var(--zani-brand);
   outline-offset: 2px;
 }
 

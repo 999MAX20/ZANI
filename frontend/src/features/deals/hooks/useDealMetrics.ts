@@ -1,11 +1,11 @@
 import { useMemo } from "react";
 
 import { useAuth } from "../../auth/AuthProvider";
-import type { DealDataContext, DealFiltersState, DealMetricsModel, DealRow } from "../types";
+import type { DealDataContext, DealFiltersState, DealMetricsModel, DealRow, Translate } from "../types";
 import { dealRisk, nextOpenTask } from "../utils/dealHelpers";
 import type { Client, PipelineStage, Task, TeamMember } from "../../../types";
 
-export function useDealMetrics(data: DealDataContext, filters: DealFiltersState) {
+export function useDealMetrics(data: DealDataContext, filters: DealFiltersState, t: Translate) {
   const { user } = useAuth();
   const activePipeline = Number(
     filters.pipelineId || data.pipelines.find((pipeline) => pipeline.is_default)?.id || data.pipelines[0]?.id || 0,
@@ -151,19 +151,19 @@ export function useDealMetrics(data: DealDataContext, filters: DealFiltersState)
       noTaskDeals,
       staleDeals,
       stageOptions: [
-        { value: "all", label: "Все стадии", count: pipelineRows.length },
+        { value: "all", label: t("deals.allStages"), count: pipelineRows.length },
         ...activeStages.map((stage) => ({ value: String(stage.id), label: stage.name, count: pipelineRows.filter((deal) => deal.stage === stage.id).length })),
       ],
       quickFilters: [
-        { value: "all", label: "Все стадии", count: pipelineRows.length },
-        { value: "mine", label: "Мои сделки", count: pipelineRows.filter((deal) => user?.id && deal.owner === user.id).length },
-        { value: "hot", label: "Горячие", count: staleDeals.length },
-        { value: "overdue", label: "Просрочено", count: overdueDeals.length },
-        { value: "no_tasks", label: "Без задач", count: noTaskDeals.length },
+        { value: "all", label: t("deals.allStages"), count: pipelineRows.length },
+        { value: "mine", label: t("deals.filterMine"), count: pipelineRows.filter((deal) => user?.id && deal.owner === user.id).length },
+        { value: "hot", label: t("deals.hot"), count: staleDeals.length },
+        { value: "overdue", label: t("deals.overdue"), count: overdueDeals.length },
+        { value: "no_tasks", label: t("deals.noTasksFilter"), count: noTaskDeals.length },
       ],
       priorityDeal: staleDeals[0] || null,
     };
-  }, [activePipeline, activeStages, data, user?.id]);
+  }, [activePipeline, activeStages, data, t, user?.id]);
 
   return { activePipeline, activeStages, rows, metrics: model };
 }

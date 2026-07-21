@@ -13,6 +13,10 @@ export function CrmPagination({
   onPageChange,
   onPageSizeChange,
   className,
+  rangeLabel,
+  previousLabel = "Previous",
+  nextLabel = "Next",
+  pageSizeLabel,
 }: {
   shown: number;
   total: number;
@@ -21,6 +25,10 @@ export function CrmPagination({
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: number) => void;
   className?: string;
+  rangeLabel?: string;
+  previousLabel?: string;
+  nextLabel?: string;
+  pageSizeLabel?: (size: number) => string;
 }) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
@@ -37,7 +45,7 @@ export function CrmPagination({
   return (
     <footer className={cn("flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-600", className)}>
       <p>
-        Показано {from}—{to} из {total}
+        {rangeLabel || `Showing ${from}—${to} of ${total}`}
       </p>
       <div className="flex items-center gap-2">
         <button
@@ -46,7 +54,7 @@ export function CrmPagination({
           disabled={page <= 1}
           className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 hover:bg-slate-50"
         >
-          Назад
+          {previousLabel}
         </button>
         <span className="rounded-lg bg-slate-100 px-3 py-2">{page}/{totalPages}</span>
         <button
@@ -55,16 +63,15 @@ export function CrmPagination({
           disabled={page >= totalPages}
           className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 hover:bg-slate-50"
         >
-          Вперёд
+          {nextLabel}
         </button>
         <Select
           value={String(pageSize)}
           onChange={(event: ChangeEvent<HTMLSelectElement>) => onPageSizeChange(Number(event.target.value))}
-          options={PAGE_SIZE_OPTIONS.map((size) => ({ value: String(size), label: `По ${size}` }))}
+          options={PAGE_SIZE_OPTIONS.map((size) => ({ value: String(size), label: pageSizeLabel ? pageSizeLabel(size) : `Per ${size}` }))}
           className="h-9 min-h-9 w-[110px]"
         />
       </div>
     </footer>
   );
 }
-

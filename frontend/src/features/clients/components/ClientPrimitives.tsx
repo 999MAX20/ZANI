@@ -2,7 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import { Building2, Globe2, Hand, Instagram, MessageCircle, Phone, Search, Users } from "lucide-react";
 
 import { cn } from "../../../lib/cn";
-import type { ClientTableRow } from "../types";
+import type { ClientTableRow, Translate } from "../types";
 import { initials, statusMeta } from "../utils";
 
 export function SourceIcon({ source, className }: { source: string | undefined; className?: string }) {
@@ -55,8 +55,8 @@ export function ClientAvatar({ name, size = "md" }: { name: string; size?: "sm" 
   );
 }
 
-export function ClientStatusBadge({ status }: { status: ClientTableRow["status"] }) {
-  const meta = statusMeta(status);
+export function ClientStatusBadge({ status, t }: { status: ClientTableRow["status"]; t: Translate }) {
+  const meta = statusMeta(status, t);
   return (
     <span className={cn("inline-flex h-6 items-center gap-1.5 rounded-full px-2.5 text-[11px] font-semibold before:h-1.5 before:w-1.5 before:rounded-full", meta.className)}>
       {meta.label}

@@ -1,4 +1,6 @@
+from django.conf import settings
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -56,6 +58,8 @@ def apply_onboarding_template(request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def onboarding_demo_data(request):
+    if not getattr(settings, "ALLOW_DEMO_MERCHANT_FLOWS", False):
+        raise PermissionDenied("Demo data creation is disabled in this environment.")
     serializer = OnboardingDemoDataSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     business = serializer.validated_data["business"]

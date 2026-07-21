@@ -58,13 +58,13 @@ export function ClientsFilters({
   const quickFilterOptions = useMemo(
     () =>
       [
-        { value: "all" as const, label: `Все ${kpi.total}` },
-        { value: "new" as const, label: "Новые" },
+        { value: "all" as const, label: t("clients.filterAllWithCount", { count: kpi.total }) },
+        { value: "new" as const, label: t("clients.filterNew") },
         { value: "vip" as const, label: "VIP" },
-        { value: "no_reply" as const, label: `Без ответа ${kpi.noReply}` },
-        { value: "mine" as const, label: "Мои клиенты" },
+        { value: "no_reply" as const, label: t("clients.filterNoReplyWithCount", { count: kpi.noReply }) },
+        { value: "mine" as const, label: t("clients.filterMine") },
       ],
-    [kpi.noReply, kpi.total],
+    [kpi.noReply, kpi.total, t],
   );
   const columnOptions = useMemo(
     () => [
@@ -75,11 +75,11 @@ export function ClientsFilters({
   );
 
   const activeFilters: FilterChip[] = [
-    search ? { id: "search", label: "Поиск", value: search } : null,
-    source ? { id: "source", label: "Источник", value: sourceOptions.find((option) => String(option.value) === source)?.label || source } : null,
-    selectedTag ? { id: "tag", label: "Тег", value: tagOptions.find((option) => String(option.value) === selectedTag)?.label || selectedTag } : null,
+    search ? { id: "search", label: t("clients.searchFilter"), value: search } : null,
+    source ? { id: "source", label: t("clients.source"), value: sourceOptions.find((option) => String(option.value) === source)?.label || source } : null,
+    selectedTag ? { id: "tag", label: t("clients.tag"), value: tagOptions.find((option) => String(option.value) === selectedTag)?.label || selectedTag } : null,
     selectedSegment
-      ? { id: "segment", label: "Сегмент", value: segmentOptions.find((option) => String(option.value) === selectedSegment)?.label || selectedSegment }
+      ? { id: "segment", label: t("clients.segment"), value: segmentOptions.find((option) => String(option.value) === selectedSegment)?.label || selectedSegment }
       : null,
   ].filter(Boolean) as FilterChip[];
 
@@ -93,8 +93,8 @@ export function ClientsFilters({
   const advancedContent = (
     <div className="grid gap-2">
       <div className="grid gap-2 md:grid-cols-2">
-        <Select value={source} onChange={(event) => onSourceChange(event.target.value)} options={sourceOptions} className="h-9 text-xs" aria-label="Источник" />
-        <Select value={selectedTag} onChange={(event) => onSelectedTagChange(event.target.value)} options={tagOptions} className="h-9 text-xs" aria-label="Тег" />
+        <Select value={source} onChange={(event) => onSourceChange(event.target.value)} options={sourceOptions} className="h-9 text-xs" aria-label={t("clients.source")} />
+        <Select value={selectedTag} onChange={(event) => onSelectedTagChange(event.target.value)} options={tagOptions} className="h-9 text-xs" aria-label={t("clients.tag")} />
       </div>
       <div className="grid gap-2 md:grid-cols-2">
         <Button type="button" variant="secondary" size="sm" onClick={onOpenSegment} className="justify-between">
@@ -106,12 +106,12 @@ export function ClientsFilters({
           onChange={(event) => onSelectedSegmentChange(event.target.value)}
           options={segmentOptions}
           className="h-9 text-xs"
-          aria-label="Сегмент"
+          aria-label={t("clients.segment")}
         />
       </div>
       <div className="pt-1 text-right">
         <Button type="button" size="sm" variant="secondary" className="h-8" onClick={onClearAll}>
-          {search || source || selectedTag || selectedSegment ? "Очистить" : "Сбросить"}
+          {search || source || selectedTag || selectedSegment ? t("common.clear") : t("common.reset")}
         </Button>
       </div>
     </div>
@@ -123,11 +123,14 @@ export function ClientsFilters({
       options={quickFilterOptions}
       onChange={onQuickFilterChange}
       advanced={advancedContent}
-      advancedLabel="Расширенные"
+      advancedLabel={t("common.advanced")}
       activeFilters={activeFilters}
       onClearFilter={removeFilter}
       onClearAll={onClearAll}
-      ariaLabel="Фильтры клиентов"
+      ariaLabel={t("clients.filtersAriaLabel")}
+      activeFiltersLabel={t("crm.activeFilters")}
+      clearAllLabel={t("common.clearAll")}
+      filtersLabel={t("clients.filters")}
     >
       <div className="relative">
         <button
@@ -158,7 +161,7 @@ export function ClientsFilters({
         <span className="inline-flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 text-sm text-slate-500">
           <Search size={14} className="text-slate-400" />
           <span className="max-w-40 truncate">{search}</span>
-          <button type="button" onClick={onClearSearch} className="ml-1 rounded-full p-1 text-slate-600 hover:bg-white" aria-label="Очистить поиск">
+          <button type="button" onClick={onClearSearch} className="ml-1 rounded-full p-1 text-slate-600 hover:bg-white" aria-label={t("clients.clearSearch")}>
             <X size={12} />
           </button>
         </span>

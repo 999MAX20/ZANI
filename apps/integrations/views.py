@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.exceptions import AuthenticationFailed, NotFound, PermissionDenied
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
@@ -44,13 +44,9 @@ from apps.integrations.serializers import (
     InstagramOAuthCompleteSerializer,
     InstagramOAuthStartSerializer,
     IntegrationEventLogSerializer,
-    KaspiConnectorConfigSerializer,
-    MoySkladConnectorConfigSerializer,
-    OzonConnectorConfigSerializer,
     WhatsAppConnectionRequestSerializer,
     WhatsAppEmbeddedSignupCompleteSerializer,
     WhatsAppEmbeddedSignupStartSerializer,
-    WildberriesConnectorConfigSerializer,
     WebhookDeliveryLogSerializer,
     WebhookEndpointSerializer,
 )
@@ -59,19 +55,22 @@ from apps.integrations.services import (
     complete_whatsapp_embedded_signup,
     connect_business_connector,
     connector_healthcheck,
-    connector_status_payload,
     disconnect_business_connector,
     ingest_connector_business_event,
     mock_sync_connector,
-    save_provider_connector_config,
     save_whatsapp_connection_request,
     start_instagram_oauth,
     start_whatsapp_embedded_signup,
-    sync_connector,
-    test_connector_connection,
 )
 from apps.integrations.sync_service import retry_connector_sync_run
 from apps.integrations.telegram import save_telegram_inbound_message, verify_telegram_secret
+from apps.integrations.view_actions import (
+    provider_status_action,
+    provider_sync_action,
+    provider_test_connection_action,
+    save_provider_config_action,
+    sync_response,
+)
 from apps.integrations.webhooks import deliver_webhook_event
 from apps.integrations.instagram import save_instagram_inbound_message, verify_instagram_secret
 from apps.integrations.whatsapp import process_whatsapp_statuses, save_whatsapp_inbound_message, verify_whatsapp_secret
@@ -113,8 +112,13 @@ class BusinessConnectorViewSet(TenantModelViewSet):
     def get_queryset(self):
         return super().get_queryset().order_by("provider", "name", "id")
 
+    def _assert_manage_business_or_not_found(self, business, obj=None):
+        if not can(self.request.user, business, Resources.INTEGRATIONS, Actions.MANAGE, obj=obj).allowed:
+            raise NotFound()
+
     def perform_create(self, serializer):
-        self._enforce_business_access(serializer)
+        business = self._business_from_serializer(serializer)
+        self._assert_manage_business_or_not_found(business)
         connector = serializer.save(created_by=self.request.user)
         update_connector_health(connector)
         write_audit_log(self.request, AuditLog.Actions.CREATE, connector, business=connector.business, metadata={"kind": "business_connector_created"})
@@ -131,70 +135,26 @@ class BusinessConnectorViewSet(TenantModelViewSet):
 
     @action(detail=False, methods=["post"], url_path="kaspi-config")
     def kaspi_config(self, request):
-        serializer = KaspiConnectorConfigSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        business = serializer.validated_data["business"]
-        assert_can(request.user, business, Resources.INTEGRATIONS, Actions.MANAGE)
-        connector, created = save_provider_connector_config(
-            business=business,
-            provider=BusinessConnector.Providers.KASPI,
-            validated_data=serializer.validated_data,
-            user=request.user,
-            request=request,
-        )
-        return Response(self.get_serializer(connector).data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+        return save_provider_config_action(self, request, BusinessConnector.Providers.KASPI)
 
     @action(detail=False, methods=["post"], url_path="moysklad-config")
     def moysklad_config(self, request):
-        serializer = MoySkladConnectorConfigSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        business = serializer.validated_data["business"]
-        assert_can(request.user, business, Resources.INTEGRATIONS, Actions.MANAGE)
-        connector, created = save_provider_connector_config(
-            business=business,
-            provider=BusinessConnector.Providers.MOYSKLAD,
-            validated_data=serializer.validated_data,
-            user=request.user,
-            request=request,
-        )
-        return Response(self.get_serializer(connector).data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+        return save_provider_config_action(self, request, BusinessConnector.Providers.MOYSKLAD)
 
     @action(detail=False, methods=["post"], url_path="wildberries-config")
     def wildberries_config(self, request):
-        serializer = WildberriesConnectorConfigSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        business = serializer.validated_data["business"]
-        assert_can(request.user, business, Resources.INTEGRATIONS, Actions.MANAGE)
-        connector, created = save_provider_connector_config(
-            business=business,
-            provider=BusinessConnector.Providers.WILDBERRIES,
-            validated_data=serializer.validated_data,
-            user=request.user,
-            request=request,
-        )
-        return Response(self.get_serializer(connector).data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+        return save_provider_config_action(self, request, BusinessConnector.Providers.WILDBERRIES)
 
     @action(detail=False, methods=["post"], url_path="ozon-config")
     def ozon_config(self, request):
-        serializer = OzonConnectorConfigSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        business = serializer.validated_data["business"]
-        assert_can(request.user, business, Resources.INTEGRATIONS, Actions.MANAGE)
-        connector, created = save_provider_connector_config(
-            business=business,
-            provider=BusinessConnector.Providers.OZON,
-            validated_data=serializer.validated_data,
-            user=request.user,
-            request=request,
-        )
-        return Response(self.get_serializer(connector).data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+        return save_provider_config_action(self, request, BusinessConnector.Providers.OZON)
 
     @action(detail=False, methods=["post"], url_path="whatsapp-request")
     def whatsapp_request(self, request):
         serializer = WhatsAppConnectionRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         business = serializer.validated_data["business"]
-        assert_can(request.user, business, Resources.INTEGRATIONS, Actions.MANAGE)
+        self._assert_manage_business_or_not_found(business)
         config = serializer.build_config()
         connector, created = save_whatsapp_connection_request(
             business=business,
@@ -296,88 +256,51 @@ class BusinessConnectorViewSet(TenantModelViewSet):
 
     @action(detail=True, methods=["get"], url_path="kaspi-status")
     def kaspi_status(self, request, pk=None):
-        connector = self.get_object()
-        assert_can(request.user, connector.business, Resources.INTEGRATIONS, Actions.VIEW, obj=connector)
-        return Response(connector_status_payload(connector, BusinessConnector.Providers.KASPI))
+        return provider_status_action(self, request, BusinessConnector.Providers.KASPI)
 
     @action(detail=True, methods=["get"], url_path="moysklad-status")
     def moysklad_status(self, request, pk=None):
-        connector = self.get_object()
-        assert_can(request.user, connector.business, Resources.INTEGRATIONS, Actions.VIEW, obj=connector)
-        return Response(connector_status_payload(connector, BusinessConnector.Providers.MOYSKLAD))
+        return provider_status_action(self, request, BusinessConnector.Providers.MOYSKLAD)
 
     @action(detail=True, methods=["get"], url_path="wildberries-status")
     def wildberries_status(self, request, pk=None):
-        connector = self.get_object()
-        assert_can(request.user, connector.business, Resources.INTEGRATIONS, Actions.VIEW, obj=connector)
-        return Response(connector_status_payload(connector, BusinessConnector.Providers.WILDBERRIES))
+        return provider_status_action(self, request, BusinessConnector.Providers.WILDBERRIES)
 
     @action(detail=True, methods=["get"], url_path="ozon-status")
     def ozon_status(self, request, pk=None):
-        connector = self.get_object()
-        assert_can(request.user, connector.business, Resources.INTEGRATIONS, Actions.VIEW, obj=connector)
-        return Response(connector_status_payload(connector, BusinessConnector.Providers.OZON))
+        return provider_status_action(self, request, BusinessConnector.Providers.OZON)
 
     @action(detail=True, methods=["post"], url_path="kaspi-test-connection")
     def kaspi_test_connection(self, request, pk=None):
-        connector = self.get_object()
-        assert_can(request.user, connector.business, Resources.INTEGRATIONS, Actions.MANAGE, obj=connector)
-        return Response(test_connector_connection(connector, BusinessConnector.Providers.KASPI))
+        return provider_test_connection_action(self, request, BusinessConnector.Providers.KASPI)
 
     @action(detail=True, methods=["post"], url_path="moysklad-test-connection")
     def moysklad_test_connection(self, request, pk=None):
-        connector = self.get_object()
-        assert_can(request.user, connector.business, Resources.INTEGRATIONS, Actions.MANAGE, obj=connector)
-        return Response(test_connector_connection(connector, BusinessConnector.Providers.MOYSKLAD))
+        return provider_test_connection_action(self, request, BusinessConnector.Providers.MOYSKLAD)
 
     @action(detail=True, methods=["post"], url_path="wildberries-test-connection")
     def wildberries_test_connection(self, request, pk=None):
-        connector = self.get_object()
-        assert_can(request.user, connector.business, Resources.INTEGRATIONS, Actions.MANAGE, obj=connector)
-        return Response(test_connector_connection(connector, BusinessConnector.Providers.WILDBERRIES))
+        return provider_test_connection_action(self, request, BusinessConnector.Providers.WILDBERRIES)
 
     @action(detail=True, methods=["post"], url_path="ozon-test-connection")
     def ozon_test_connection(self, request, pk=None):
-        connector = self.get_object()
-        assert_can(request.user, connector.business, Resources.INTEGRATIONS, Actions.MANAGE, obj=connector)
-        return Response(test_connector_connection(connector, BusinessConnector.Providers.OZON))
-
-    def _sync_response(self, result):
-        response_status = status.HTTP_201_CREATED if result.get("ok") else status.HTTP_400_BAD_REQUEST
-        return Response(
-            {
-                "ok": result.get("ok", False),
-                "mock": result.get("mock", False),
-                "reason": result.get("reason", ""),
-                "events": BusinessEventSerializer(result["events"], many=True).data,
-                "sync_run": ConnectorSyncRunSerializer(result["sync_run"]).data,
-            },
-            status=response_status,
-        )
+        return provider_test_connection_action(self, request, BusinessConnector.Providers.OZON)
 
     @action(detail=True, methods=["post"], url_path="kaspi-sync-orders")
     def kaspi_sync_orders(self, request, pk=None):
-        connector = self.get_object()
-        assert_can(request.user, connector.business, Resources.INTEGRATIONS, Actions.MANAGE, obj=connector)
-        return self._sync_response(sync_connector(connector, BusinessConnector.Providers.KASPI, request=request))
+        return provider_sync_action(self, request, BusinessConnector.Providers.KASPI)
 
     @action(detail=True, methods=["post"], url_path="moysklad-sync")
     def moysklad_sync(self, request, pk=None):
-        connector = self.get_object()
-        assert_can(request.user, connector.business, Resources.INTEGRATIONS, Actions.MANAGE, obj=connector)
-        return self._sync_response(sync_connector(connector, BusinessConnector.Providers.MOYSKLAD, request=request))
+        return provider_sync_action(self, request, BusinessConnector.Providers.MOYSKLAD)
 
     @action(detail=True, methods=["post"], url_path="wildberries-sync")
     def wildberries_sync(self, request, pk=None):
-        connector = self.get_object()
-        assert_can(request.user, connector.business, Resources.INTEGRATIONS, Actions.MANAGE, obj=connector)
-        return self._sync_response(sync_connector(connector, BusinessConnector.Providers.WILDBERRIES, request=request))
+        return provider_sync_action(self, request, BusinessConnector.Providers.WILDBERRIES)
 
     @action(detail=True, methods=["post"], url_path="ozon-sync")
     def ozon_sync(self, request, pk=None):
-        connector = self.get_object()
-        assert_can(request.user, connector.business, Resources.INTEGRATIONS, Actions.MANAGE, obj=connector)
-        return self._sync_response(sync_connector(connector, BusinessConnector.Providers.OZON, request=request))
+        return provider_sync_action(self, request, BusinessConnector.Providers.OZON)
 
     @action(detail=True, methods=["post"], url_path="events")
     def ingest_event(self, request, pk=None):
@@ -389,6 +312,8 @@ class BusinessConnectorViewSet(TenantModelViewSet):
 
     @action(detail=True, methods=["post"], url_path="mock-sync")
     def mock_sync(self, request, pk=None):
+        if not getattr(settings, "ALLOW_DEMO_MERCHANT_FLOWS", False):
+            raise PermissionDenied("Mock connector sync is disabled in this environment.")
         connector = self.get_object()
         assert_can(request.user, connector.business, Resources.INTEGRATIONS, Actions.MANAGE, obj=connector)
         events = mock_sync_connector(connector, request=request)
@@ -477,17 +402,7 @@ class ConnectorSyncRunViewSet(ReadOnlyModelViewSet):
                 "events": len(result["events"]),
             },
         )
-        response_status = status.HTTP_201_CREATED if result.get("ok") else status.HTTP_400_BAD_REQUEST
-        return Response(
-            {
-                "ok": result.get("ok", False),
-                "mock": result.get("mock", False),
-                "reason": result.get("reason", ""),
-                "events": BusinessEventSerializer(result["events"], many=True).data,
-                "sync_run": ConnectorSyncRunSerializer(result["sync_run"]).data,
-            },
-            status=response_status,
-        )
+        return sync_response(result)
 
 
 class ApiTokenViewSet(TenantModelViewSet):

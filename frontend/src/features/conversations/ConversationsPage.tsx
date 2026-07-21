@@ -2,21 +2,15 @@ import { InfiniteData, useInfiniteQuery, useMutation, useQuery, useQueryClient }
 import {
   BellDot,
   CalendarCheck,
-  CheckCheck,
   CheckSquare,
   ExternalLink,
   Link2,
-  MessageSquare,
   PanelRightClose,
   PanelRightOpen,
-  Paperclip,
   PauseCircle,
   PlayCircle,
-  RotateCcw,
   Sparkles,
-  Square,
   Tags,
-  UserCheck,
   UserRound,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -32,14 +26,13 @@ import {
   INBOX_MESSAGES_PAGE_SIZE,
   inboxApi,
   inboxQueryKeys,
-  normalizeFilters,
   type InboxConversation,
   type InboxFilters,
   type InboxMessage,
   type PaginatedInboxMessageResponse,
 } from "../../api/inbox";
 import { usePageHeader } from "../../components/layout/PageHeaderContext";
-import { WorkQueueDetailPane, WorkQueueLayout, WorkQueueListPane } from "../../components/layout/WorkQueueLayout";
+import { WorkQueueLayout } from "../../components/layout/WorkQueueLayout";
 import { useNotification } from "../../components/notifications/NotificationProvider";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
@@ -53,319 +46,12 @@ import { hasPermission } from "../../lib/permissions";
 import { realtimeIntervals, realtimeQueryOptions } from "../../lib/realtime";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useAuth } from "../auth/AuthProvider";
-import { ConversationQueueFilters } from "./components/ConversationQueueFilters";
-
-type InboxPreset = "all" | "mine" | "new" | "attention" | "custom";
-type InboxSort = "latest" | "unread" | "first_response";
-
-const CONVERSATIONS_SHELL_OFFSET = 104;
-
-const channelLabels: Record<string, string> = {
-  website: "source.website",
-  telegram: "Telegram",
-  whatsapp: "WhatsApp",
-  instagram: "Instagram",
-};
-
-type Translate = ReturnType<typeof useI18n>["t"];
-
-const CONVERSATIONS_PRESET_STORAGE_KEY = "zani_conversations_filters_v1";
-
-const priorityOptions = [
-  { value: "", labelKey: "conversations.anyPriority" },
-  { value: "urgent", labelKey: "notification.priority.urgent" },
-  { value: "high", labelKey: "notification.priority.high" },
-  { value: "normal", labelKey: "notification.priority.normal" },
-  { value: "low", labelKey: "notification.priority.low" },
-];
-
-const channelOptions = [
-  { value: "", label: "Все каналы" },
-  { value: "website", label: "Website" },
-  { value: "telegram", label: "Telegram" },
-  { value: "whatsapp", label: "WhatsApp" },
-  { value: "instagram", label: "Instagram" },
-];
-
-function getSavedConversationsFilterState() {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.localStorage.getItem(CONVERSATIONS_PRESET_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as {
-      preset?: InboxPreset;
-      sortBy?: InboxSort;
-      filters?: InboxFilters;
-    };
-    return {
-      preset: parsed.preset,
-      sortBy: parsed.sortBy,
-      filters: parsed.filters,
-    };
-  } catch {
-    return null;
-  }
-}
-
-function getPresetFilters(preset: InboxPreset, existing: InboxFilters): InboxFilters {
-  const presetFilters: InboxFilters = { ...existing };
-  if (preset === "mine") {
-    presetFilters.assigned_to = "me";
-  } else if (preset === "new") {
-    presetFilters.unread = "true";
-  } else if (preset === "attention") {
-    presetFilters.handoff_required = "true";
-  } else {
-    presetFilters.assigned_to = undefined;
-    presetFilters.unread = undefined;
-    presetFilters.handoff_required = undefined;
-  }
-  if (preset === "all") {
-    presetFilters.status = "";
-    presetFilters.bot_enabled = undefined;
-  }
-  return presetFilters;
-}
-
-function isValidPreset(value: string | null): value is InboxPreset {
-  return value === "all" || value === "mine" || value === "new" || value === "attention" || value === "custom";
-}
-
-function getConversationTimestamp(value?: string | null): number {
-  if (!value) return Number.MAX_SAFE_INTEGER;
-  const parsed = new Date(value).getTime();
-  return Number.isNaN(parsed) ? Number.MAX_SAFE_INTEGER : parsed;
-}
-
-function channelLabel(channel: string | undefined, t: Translate) {
-  if (!channel) return "";
-  const label = channelLabels[channel];
-  return label ? t(label) : channel;
-}
-
-function formatDateTime(value?: string | null) {
-  if (!value) return "";
-  return new Intl.DateTimeFormat("ru-RU", {
-    day: "2-digit",
-    month: "short",
-  }).format(new Date(value));
-}
-
-function formatMessageTime(value?: string | null) {
-  if (!value) return "";
-  return new Intl.DateTimeFormat("ru-RU", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
-}
-
-function conversationTitle(conversation: InboxConversation | null | undefined, t: Translate) {
-  if (!conversation) return t("conversations.selectDialog");
-  return conversation.client_name || conversation.external_user_id || t("conversations.clientFromChannel", { channel: channelLabel(conversation.channel, t) });
-}
-
-function Pill({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ring-1", className)}>{children}</span>;
-}
-
-function Tooltip({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <span className="group/tooltip relative inline-flex">
-      {children}
-      <span className="pointer-events-none absolute left-1/2 top-[calc(100%+8px)] z-30 w-max max-w-72 -translate-x-1/2 rounded-xl bg-midnight px-3 py-2 text-xs font-bold leading-5 text-white opacity-0 shadow-xl transition group-hover/tooltip:opacity-100 group-focus-within/tooltip:opacity-100">
-        {label}
-      </span>
-    </span>
-  );
-}
-
-function getAutoPipelineInsight(conversation: InboxConversation) {
-  const metadata = conversation.metadata_json || {};
-  const preview = metadata.conversation_qualification_preview;
-  const auto = metadata.auto_crm_pipeline;
-  const manual = metadata.conversation_pipeline;
-  const payload = (
-    preview && typeof preview === "object"
-      ? preview
-      : auto && typeof auto === "object"
-        ? auto
-        : manual && typeof manual === "object"
-          ? manual
-          : null
-  ) as Record<string, unknown> | null;
-  if (!payload) return null;
-  const qualification = payload?.qualification && typeof payload.qualification === "object" ? (payload.qualification as Record<string, unknown>) : null;
-  if (!qualification) return null;
-  const confidence = typeof qualification?.confidence === "number" ? Math.round(qualification.confidence * 100) : null;
-  return {
-    status: typeof payload?.status === "string" ? payload.status : "",
-    intent: typeof qualification?.intent === "string" ? qualification.intent : "",
-    confidence,
-    nextAction: typeof qualification?.next_action === "string" ? qualification.next_action : "",
-  };
-}
-
-function ConversationItem({
-  conversation,
-  active,
-  selectable,
-  selectedForBulk,
-  onToggleSelected,
-  onClick,
-  t,
-}: {
-  conversation: InboxConversation;
-  active: boolean;
-  selectable: boolean;
-  selectedForBulk: boolean;
-  onToggleSelected: () => void;
-  onClick: () => void;
-  t: Translate;
-}) {
-  const preview = conversation.last_message?.text || t("conversations.emptyHistoryPreview");
-  const unread = conversation.unread_count || 0;
-  const initials = conversationTitle(conversation, t)
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-
-  return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={onClick}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") onClick();
-      }}
-      className={cn(
-        "group relative w-full border-b border-slate-100 px-3 py-2.5 text-left transition hover:bg-slate-50",
-        active ? "bg-brand-50/80 before:absolute before:bottom-0 before:left-0 before:top-0 before:w-1 before:bg-brand-600" : "bg-white",
-      )}
-    >
-      <div className="flex items-center gap-2.5">
-        {selectable ? (
-          <button
-            type="button"
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-slate-500 hover:bg-white"
-            onClick={(event) => {
-              event.stopPropagation();
-              onToggleSelected();
-            }}
-            aria-label={selectedForBulk ? t("conversations.removeFromSelection") : t("conversations.selectForBulk")}
-          >
-            {selectedForBulk ? <CheckSquare size={19} /> : <Square size={19} />}
-          </button>
-        ) : null}
-        <div className="relative grid h-10 w-10 shrink-0 place-items-center rounded-full border border-slate-200 bg-white text-xs font-black text-brand-700 shadow-sm">
-          {initials || <MessageSquare size={16} />}
-          <span className={cn("absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full border-2 border-white", conversation.channel === "telegram" ? "bg-blue-500" : conversation.channel === "whatsapp" ? "bg-emerald-500" : conversation.channel === "instagram" ? "bg-pink-500" : "bg-slate-400")} />
-          {unread > 0 ? (
-            <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-midnight px-1 text-[10px] font-black text-white">
-              {unread}
-            </span>
-          ) : null}
-        </div>
-        <div className="min-w-0 flex-1 text-left">
-          <div className="flex items-center gap-2">
-            <p className="min-w-0 flex-1 truncate text-sm font-black text-midnight">{conversationTitle(conversation, t)}</p>
-            <span className="shrink-0 text-[11px] font-bold text-slate-400">{formatDateTime(conversation.last_message_at)}</span>
-          </div>
-          <p className="mt-0.5 truncate text-xs font-semibold leading-5 text-slate-500">{preview}</p>
-          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-            <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-black text-slate-500">{channelLabel(conversation.channel, t)}</span>
-            {conversation.handoff_required ? <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-black text-red-600">{t("conversations.noReply")}</span> : null}
-            {!conversation.handoff_required && !conversation.bot_enabled ? <span className="rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-black text-amber-600">{t("conversations.paused")}</span> : null}
-            {conversation.status === "closed" ? <span className="rounded-full bg-slate-50 px-1.5 py-0.5 text-[10px] font-black text-slate-500">{t("status.closed")}</span> : null}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function MessageBubble({ message, t, onRetry }: { message: InboxMessage; t: Translate; onRetry?: (message: InboxMessage) => void }) {
-  const system = message.sender_type === "system";
-  const inbound = message.direction === "inbound";
-  const ai = message.sender_type === "bot" || message.sender_type === "ai";
-  const author = ai ? t("conversations.senderAssistant") : message.sender_type === "manager" ? t("conversations.senderManager") : t("conversations.senderClient");
-  const time = formatMessageTime(message.created_at || message.sent_at);
-  const messageStatusLabel = message.status === "failed"
-    ? t("conversations.messageStatusFailed")
-    : message.status === "queued"
-      ? t("conversations.messageStatusQueued")
-      : message.status === "sent"
-        ? t("conversations.messageStatusSent")
-        : t("conversations.messageStatusReceived");
-
-  if (system) {
-    return (
-      <div className="flex justify-center">
-        <div className="max-w-[80%] rounded-full bg-slate-100 px-3 py-1.5 text-center text-xs font-bold text-slate-500">
-          {message.text || t("conversations.emptyMessage")}
-          {time ? <span className="ml-2 text-slate-400">{time}</span> : null}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className={cn("flex", inbound ? "justify-start" : "justify-end")}>
-      <div
-        className={cn(
-          "max-w-[78%] rounded-2xl px-4 py-3 text-sm leading-6 shadow-sm",
-          inbound ? "rounded-tl-md border border-slate-100 bg-white text-slate-700" : ai ? "rounded-tr-md bg-ai-50 text-ai-800 ring-1 ring-ai-100" : "rounded-tr-md bg-brand-600 text-white",
-        )}
-      >
-        <div className="mb-1 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] opacity-60">
-          {ai ? <Sparkles size={13} /> : null}
-          {author}
-        </div>
-        <p className="whitespace-pre-wrap">{message.text || t("conversations.emptyMessage")}</p>
-        {message.attachments?.length ? (
-          <div className={cn("mt-3 space-y-2", inbound ? "text-slate-700" : "text-white")}>
-            {message.attachments.map((attachment) => (
-              <a
-                key={attachment.id}
-                href={attachment.download_url}
-                target="_blank"
-                rel="noreferrer"
-                className={cn("flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold ring-1", inbound ? "bg-slate-50 ring-slate-200" : "bg-white/15 ring-white/20")}
-              >
-                <Paperclip size={14} />
-                <span className="min-w-0 flex-1 truncate">{attachment.original_name}</span>
-              </a>
-            ))}
-          </div>
-        ) : null}
-        {message.error_text ? (
-          <p className={cn("mt-2 text-xs font-bold", message.status === "failed" ? "text-red-500" : "text-amber-500")}>
-            {message.error_text}
-          </p>
-        ) : null}
-        <div className={cn("mt-2 flex flex-wrap items-center justify-end gap-1.5 text-[11px] font-bold", inbound ? "text-slate-400" : "text-white/70")}>
-          {!inbound ? (
-            <span className={cn("rounded-full px-1.5 py-0.5", message.status === "failed" ? "bg-red-50 text-red-600 ring-1 ring-red-100" : inbound ? "bg-slate-100" : "bg-white/15")}>
-              {messageStatusLabel}
-            </span>
-          ) : null}
-          {message.status === "failed" && onRetry ? (
-            <button
-              type="button"
-              className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-[11px] font-black text-red-600 shadow-sm ring-1 ring-red-100 hover:bg-red-50"
-              onClick={() => onRetry(message)}
-            >
-              <RotateCcw size={12} /> {t("common.retry")}
-            </button>
-          ) : null}
-          {time ? <span>{time}</span> : null}
-          {!inbound && message.status !== "failed" ? <span>{message.read_at ? "✓✓" : message.delivered_at || message.status === "sent" ? "✓✓" : "✓"}</span> : null}
-        </div>
-      </div>
-    </div>
-  );
-}
+import { ConversationListPane } from "./components/ConversationListPane";
+import { Pill } from "./components/ConversationPrimitives";
+import { ConversationThreadPane } from "./components/ConversationThreadPane";
+import { channelOptions, CONVERSATIONS_SHELL_OFFSET, priorityOptions } from "./conversationConstants";
+import { channelLabel, conversationTitle, getAutoPipelineInsight, getConversationTimestamp } from "./conversationUtils";
+import { useConversationFilters } from "./hooks/useConversationFilters";
 
 export function ConversationsPage() {
   const { t } = useI18n();
@@ -374,57 +60,15 @@ export function ConversationsPage() {
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedId, setSelectedId] = useState<number | null>(() => Number(searchParams.get("conversation")) || null);
-  const savedState = getSavedConversationsFilterState();
-  const isFilterUrlPresent = !![
-    "status",
-    "bot",
-    "channel",
-    "assigned_to",
-    "priority",
-    "unread",
-    "handoff_required",
-    "bot_enabled",
-    "search",
-    "preset",
-    "sort",
-  ].find((key) => searchParams.get(key));
-  const [activePreset, setActivePreset] = useState<InboxPreset>(() => {
-    const presetFromUrl = searchParams.get("preset");
-    if (isValidPreset(presetFromUrl)) return presetFromUrl;
-    if (!isFilterUrlPresent && savedState?.preset) return savedState.preset;
-    return "all";
-  });
-  const [sortBy, setSortBy] = useState<InboxSort>(() => {
-    const sortFromUrl = searchParams.get("sort");
-    if (sortFromUrl === "latest" || sortFromUrl === "unread" || sortFromUrl === "first_response") return sortFromUrl;
-    if (savedState?.sortBy) return savedState.sortBy;
-    return "latest";
+  const { activePreset, applyFilters, filters, normalizedFilters, sortBy } = useConversationFilters({
+    searchParams,
+    setSearchParams,
+    selectedId,
   });
   const [bulkMode, setBulkMode] = useState(false);
   const [mobileThreadOpen, setMobileThreadOpen] = useState(() => Boolean(searchParams.get("conversation")));
   const [inspectorOpen, setInspectorOpen] = useState(true);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [filters, setFilters] = useState<InboxFilters>(() => {
-    const base: InboxFilters = {
-      status: searchParams.get("status") || "",
-      bot: searchParams.get("bot") || savedState?.filters?.bot || undefined,
-      channel: searchParams.get("channel") || savedState?.filters?.channel || undefined,
-      assigned_to: searchParams.get("assigned_to") || savedState?.filters?.assigned_to || undefined,
-      priority: searchParams.get("priority") || savedState?.filters?.priority || undefined,
-      unread: searchParams.get("unread") || undefined,
-      handoff_required: searchParams.get("handoff_required") || undefined,
-      bot_enabled: searchParams.get("bot_enabled") || undefined,
-      search: searchParams.get("search") || undefined,
-    };
-    const presetFromUrl = searchParams.get("preset");
-    if (!isFilterUrlPresent && isValidPreset(presetFromUrl) && presetFromUrl !== "custom") {
-      return getPresetFilters(presetFromUrl, base);
-    }
-    if (!isFilterUrlPresent && savedState?.preset) {
-      return getPresetFilters(savedState.preset, base);
-    }
-    return base;
-  });
   const [draft, setDraft] = useState("");
   const [quickRepliesOpen, setQuickRepliesOpen] = useState(false);
   const [quickReplySearch, setQuickReplySearch] = useState("");
@@ -460,81 +104,6 @@ export function ConversationsPage() {
     if (!message) return;
     showNotification({ message, tone });
   }
-
-  function persistFilterState(nextFilters: InboxFilters, preset: InboxPreset, nextSort?: InboxSort) {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(
-      CONVERSATIONS_PRESET_STORAGE_KEY,
-      JSON.stringify({
-        preset,
-        sortBy: nextSort || sortBy,
-        filters: nextFilters,
-      }),
-    );
-  }
-
-  function applyFilters(nextFilters: InboxFilters, preset: InboxPreset = activePreset, nextSortBy?: InboxSort, replaceHistory = true) {
-    setFilters(nextFilters);
-    setActivePreset(preset);
-    if (nextSortBy) {
-      setSortBy(nextSortBy);
-    }
-    persistFilterState(nextFilters, preset, nextSortBy);
-
-    const params = new URLSearchParams();
-    if (selectedId) params.set("conversation", String(selectedId));
-    if (searchParams.get("page") && searchParams.get("page") !== "1") {
-      params.set("page", searchParams.get("page") || "");
-    }
-
-    Object.entries(nextFilters).forEach(([key, value]) => {
-      if (value) params.set(key, String(value));
-    });
-    params.set("sort", nextSortBy || sortBy);
-    if (preset !== "custom") params.set("preset", preset);
-
-    setSearchParams(params, { replace: replaceHistory });
-  }
-
-  useEffect(() => {
-    const hasFilterQuery = !![
-      "status",
-      "bot",
-      "channel",
-      "assigned_to",
-      "priority",
-      "unread",
-      "handoff_required",
-      "bot_enabled",
-      "search",
-      "sort",
-      "preset",
-    ].find((key) => searchParams.get(key));
-    if (!hasFilterQuery) return;
-
-    const nextFilters: InboxFilters = {
-      status: searchParams.get("status") || "",
-      bot: searchParams.get("bot") || undefined,
-      channel: searchParams.get("channel") || undefined,
-      assigned_to: searchParams.get("assigned_to") || undefined,
-      priority: searchParams.get("priority") || undefined,
-      unread: searchParams.get("unread") || undefined,
-      handoff_required: searchParams.get("handoff_required") || undefined,
-      bot_enabled: searchParams.get("bot_enabled") || undefined,
-      search: searchParams.get("search") || undefined,
-    };
-
-    const nextSort: InboxSort = (searchParams.get("sort") as InboxSort) || "latest";
-    const presetFromUrl = searchParams.get("preset");
-
-    if (presetFromUrl && isValidPreset(presetFromUrl)) {
-      setActivePreset(presetFromUrl);
-    }
-    setSortBy((prev) => (nextSort === "latest" || nextSort === "unread" || nextSort === "first_response" ? nextSort : prev));
-    setFilters(nextFilters);
-  }, [searchParams]);
-
-  const normalizedFilters = useMemo(() => normalizeFilters(filters), [filters]);
 
   const summary = useQuery({
     queryKey: ["inbox-summary", businessId],
@@ -715,8 +284,8 @@ export function ConversationsPage() {
   ], [bots.data, t]);
 
   const localizedChannelOptions = useMemo(() => channelOptions.map((option) => ({
-    ...option,
-    label: option.value ? option.label : t("conversations.allChannels"),
+    value: option.value,
+    label: "labelKey" in option ? t(option.labelKey) : option.label,
   })), [t]);
 
   const localizedPriorityOptions = useMemo(() => priorityOptions.map((option) => ({
@@ -945,7 +514,7 @@ export function ConversationsPage() {
 
   const suggestMutation = useMutation({
     mutationFn: (conversationId: number) => {
-      if (!canSuggestAi) throw new Error("Your role cannot generate AI replies.");
+      if (!canSuggestAi) throw new Error(t("conversations.aiReplyForbidden"));
       return inboxApi.suggestReply(conversationId);
     },
     onSuccess: (data) => {
@@ -956,7 +525,7 @@ export function ConversationsPage() {
 
   const qualifyMutation = useMutation({
     mutationFn: (conversationId: number) => {
-      if (!canSuggestAiPipeline) throw new Error("Your role cannot preview CRM pipeline suggestions.");
+      if (!canSuggestAiPipeline) throw new Error(t("conversations.aiPipelinePreviewForbidden"));
       return inboxApi.qualifyConversation(conversationId);
     },
     onSuccess: async (result) => {
@@ -1053,7 +622,7 @@ export function ConversationsPage() {
 
   const runPipelineMutation = useMutation({
     mutationFn: (payload: { conversationId: number; dealTitle?: string }) => {
-      if (!canRunAiPipeline) throw new Error("Your role cannot execute CRM pipeline actions.");
+      if (!canRunAiPipeline) throw new Error(t("conversations.aiPipelineRunForbidden"));
       return inboxApi.runPipeline(payload);
     },
     onSuccess: async (result) => {
@@ -1253,249 +822,74 @@ export function ConversationsPage() {
           inspectorOpen ? "xl:grid-cols-[310px_minmax(620px,1fr)_300px] 2xl:grid-cols-[310px_minmax(720px,1fr)_300px]" : "xl:grid-cols-[310px_minmax(0,1fr)]",
         )}
       >
-        <WorkQueueListPane mobileDetailOpen={mobileThreadOpen}>
-          <ConversationQueueFilters
-            filters={filters}
-            sortBy={sortBy}
-            hasActiveFilters={hasActiveFilters}
-            activeFilterSummary={activeFilterSummary}
-            queueOptions={queueFilterOptions}
-            ownerOptions={ownerFilterOptions}
-            agentOptions={agentFilterOptions}
-            channelOptions={localizedChannelOptions}
-            priorityOptions={localizedPriorityOptions}
-            statusOptions={localizedStatusOptions}
-            sortOptions={localizedSortOptions}
-            labels={{
-              filters: t("conversations.filters"),
-              advancedFilters: t("conversations.advancedFilters"),
-              resetFilters: t("conversations.resetFilters"),
-              agent: t("conversations.agent"),
-              channel: t("conversations.channel"),
-              priority: t("conversations.priority"),
-              status: t("conversations.status"),
-              bot: t("conversations.bot"),
-              sort: t("conversations.sort"),
-              noFilter: t("conversations.noFilter"),
-              botEnabled: t("conversations.botActive"),
-              botPaused: t("conversations.botPaused"),
-            }}
-            onQueueChange={handleQueueChange}
-            onOwnerChange={handleOwnerChange}
-            onFilterChange={updateFilters}
-            onSortChange={handleSortChange}
-            onReset={resetConversationFilters}
-          />
+        <ConversationListPane
+          mobileThreadOpen={mobileThreadOpen}
+          filters={filters}
+          sortBy={sortBy}
+          hasActiveFilters={hasActiveFilters}
+          activeFilterSummary={activeFilterSummary}
+          queueFilterOptions={queueFilterOptions}
+          ownerFilterOptions={ownerFilterOptions}
+          agentFilterOptions={agentFilterOptions}
+          channelOptions={localizedChannelOptions}
+          priorityOptions={localizedPriorityOptions}
+          statusOptions={localizedStatusOptions}
+          sortOptions={localizedSortOptions}
+          onQueueChange={handleQueueChange}
+          onOwnerChange={handleOwnerChange}
+          onFilterChange={updateFilters}
+          onSortChange={handleSortChange}
+          onReset={resetConversationFilters}
+          items={items}
+          sortedItems={sortedItems}
+          selectedId={selected?.id}
+          loading={conversations.isLoading}
+          bulkMode={bulkMode}
+          selectedIds={selectedIds}
+          onSelectVisible={selectVisibleConversations}
+          onResetBulk={resetBulkSelection}
+          onBulkAction={(action) => bulkMutation.mutate(action)}
+          bulkPending={bulkMutation.isPending}
+          onToggleBulkId={toggleBulkId}
+          onSelectConversation={selectConversation}
+          t={t}
+        />
 
-          {items.length ? (
-            <div className="border-b border-slate-100 px-3 py-2">
-              {!bulkMode ? (
-                <button type="button" className="text-xs font-black text-brand-600" onClick={selectVisibleConversations}>
-                  {t("conversations.selectMultiple")}
-                </button>
-              ) : (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-black text-midnight">{t("conversations.selectedCount", { count: selectedIds.length })}</p>
-                    <button type="button" className="text-sm font-black text-slate-400" onClick={resetBulkSelection}>
-                      {t("common.cancel")}
-                    </button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button className="h-8 rounded-lg px-3 text-xs" variant="secondary" disabled={!selectedIds.length} onClick={() => bulkMutation.mutate("markRead")} isLoading={bulkMutation.isPending}>
-                      {t("conversations.markRead")}
-                    </Button>
-                    <Button className="h-8 rounded-lg px-3 text-xs" variant="secondary" disabled={!selectedIds.length} onClick={() => bulkMutation.mutate("assign")} isLoading={bulkMutation.isPending}>
-                      {t("conversations.take")}
-                    </Button>
-                    <Button className="h-8 rounded-lg px-3 text-xs" variant="secondary" disabled={!selectedIds.length} onClick={() => bulkMutation.mutate("pauseBot")} isLoading={bulkMutation.isPending}>
-                      {t("conversations.pause")}
-                    </Button>
-                    <Button className="h-8 rounded-lg px-3 text-xs" variant="secondary" disabled={!selectedIds.length} onClick={() => bulkMutation.mutate("handoff")} isLoading={bulkMutation.isPending}>
-                      {t("conversations.operator")}
-                    </Button>
-                    <Button className="h-8 rounded-lg px-3 text-xs" variant="secondary" disabled={!selectedIds.length} onClick={() => bulkMutation.mutate("close")} isLoading={bulkMutation.isPending}>
-                      {t("common.close")}
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : null}
-
-          <div className="min-h-0 flex-1 overflow-y-auto pb-28 lg:pb-0">
-            {conversations.isLoading ? <div className="p-5"><LoadingState label={t("conversations.loadingDialogs")} /></div> : null}
-            {!conversations.isLoading && !items.length ? (
-              <div className="p-5">
-                <EmptyState title={t("conversations.emptyTitle")} description={t("conversations.emptyText")} />
-              </div>
-            ) : null}
-            {sortedItems.map((conversation) => (
-              <ConversationItem
-                key={conversation.id}
-                conversation={conversation}
-                active={conversation.id === selected?.id}
-                selectable={bulkMode}
-                selectedForBulk={selectedIds.includes(conversation.id)}
-                onToggleSelected={() => toggleBulkId(conversation.id)}
-                onClick={() => selectConversation(conversation.id)}
-                t={t}
-              />
-            ))}
-          </div>
-        </WorkQueueListPane>
-
-        <WorkQueueDetailPane mobileDetailOpen={mobileThreadOpen} closeLabel={t("common.close")} onMobileClose={() => setMobileThreadOpen(false)}>
-          {!selected ? (
-            <div className="grid flex-1 place-items-center p-8">
-              <div className="text-center">
-                <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-xl bg-white text-brand-600 shadow-sm">
-                  <MessageSquare aria-hidden="true" size={26} />
-                </div>
-                <p className="text-2xl font-black text-slate-400">{t("conversations.selectDialog")}</p>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div className="border-b border-slate-200 bg-white px-4 py-3">
-                <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h2 className="truncate text-lg font-black text-midnight">{conversationTitle(selected, t)}</h2>
-                    </div>
-                    <div className="mt-1.5 flex flex-wrap gap-1.5">
-                      <Pill className="bg-blue-50 text-blue-700 ring-blue-200">{channelLabel(selected.channel, t)}</Pill>
-                      {selected.bot_enabled ? <Pill className="bg-emerald-50 text-emerald-700 ring-emerald-200">{t("conversations.botActive")}</Pill> : <Pill className="bg-slate-100 text-slate-600 ring-slate-200">{t("conversations.botPaused")}</Pill>}
-                      {selected.handoff_required ? <Pill className="bg-amber-50 text-amber-700 ring-amber-200">{t("conversations.needsOperator")}</Pill> : null}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Tooltip label={t("conversations.assignTooltip")}>
-                      <Button className="h-9 rounded-lg px-3 text-xs" variant="secondary" disabled={!selected} onClick={() => assignMutation.mutate(selected.id)} isLoading={assignMutation.isPending} aria-label={t("conversations.takeDialog")}>
-                        <UserCheck size={16} /> {t("conversations.takeDialog")}
-                      </Button>
-                    </Tooltip>
-                    <Tooltip label={selected.bot_enabled ? t("conversations.pauseBotTooltip") : t("conversations.enableBotTooltip")}>
-                      <Button
-                        className="h-9 rounded-lg px-3 text-xs"
-                        variant="secondary"
-                        disabled={!selected}
-                        onClick={() => toggleBotMutation.mutate({ conversationId: selected.id, botEnabled: !selected.bot_enabled })}
-                        isLoading={toggleBotMutation.isPending}
-                        aria-label={selected.bot_enabled ? t("conversations.pauseBot") : t("conversations.enableBot")}
-                      >
-                        {selected.bot_enabled ? <PauseCircle size={16} /> : <PlayCircle size={16} />}
-                        {selected.bot_enabled ? t("conversations.pauseBot") : t("conversations.enableBot")}
-                      </Button>
-                    </Tooltip>
-                    {selected.status === "closed" ? (
-                      <Tooltip label={t("conversations.reopenTooltip")}>
-                        <Button className="h-9 rounded-lg px-3 text-xs" variant="secondary" onClick={() => reopenMutation.mutate(selected.id)} isLoading={reopenMutation.isPending} aria-label={t("conversations.openDialog")}>
-                          <PlayCircle size={16} /> {t("common.open")}
-                        </Button>
-                      </Tooltip>
-                    ) : (
-                      <Tooltip label={t("conversations.closeTooltip")}>
-                        <Button
-                          className="h-9 rounded-lg px-3 text-xs"
-                          variant="secondary"
-                          onClick={() => closeMutation.mutate({ conversationId: selected.id, reason: "closed_from_inbox" })}
-                          isLoading={closeMutation.isPending}
-                          aria-label={t("conversations.closeDialog")}
-                        >
-                          <CheckCheck size={16} /> {t("common.close")}
-                        </Button>
-                      </Tooltip>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div ref={messageScrollRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-[linear-gradient(180deg,#fbfcff_0%,#fff7f2_100%)] p-5 pb-28 lg:pb-5">
-                {messages.isLoading ? <LoadingState label={t("conversations.loadingHistory")} /> : null}
-                {canLoadMoreMessages ? (
-                  <Button
-                    type="button"
-                    className="h-8 min-h-8 rounded-lg px-3 text-xs"
-                    variant="secondary"
-                    onClick={() => messages.fetchNextPage()}
-                    isLoading={messages.isFetchingNextPage}
-                  >
-                    Загрузить ранее
-                  </Button>
-                ) : null}
-                {!messages.isLoading && !messageList.length ? (
-                  <EmptyState title={t("conversations.noMessagesTitle")} description={t("conversations.noMessagesText")} />
-                ) : null}
-                {messageList.length ? (
-                  <div className="sticky top-0 z-10 flex justify-center">
-                    <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-black text-slate-500 shadow-sm ring-1 ring-slate-200">{t("common.today")}</span>
-                  </div>
-                ) : null}
-                {messageList.map((message) => (
-                  <MessageBubble
-                    key={message.id}
-                    message={message}
-                    t={t}
-                    onRetry={(failedMessage) => retryMessageMutation.mutate({ conversationId: selected.id, messageId: failedMessage.id })}
-                  />
-                ))}
-                <div ref={messageEndRef} aria-hidden="true" />
-              </div>
-
-              <div className="border-t border-slate-200 bg-white p-3">
-                {selected.status === "closed" ? (
-                  <div className="mb-3 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">
-                    {t("conversations.closedReplyNotice")}
-                  </div>
-                ) : null}
-                <div className="flex items-end gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
-                  <button type="button" className="mb-1 grid h-8 w-8 shrink-0 place-items-center rounded-lg text-slate-400 hover:bg-slate-50 hover:text-midnight" title={t("conversations.attachFile")}>
-                    <Paperclip size={16} />
-                  </button>
-                  <button
-                    type="button"
-                    className="mb-1 inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-xs font-black text-slate-500 hover:bg-slate-50 hover:text-midnight disabled:cursor-not-allowed disabled:opacity-50"
-                    disabled={selected.status === "closed"}
-                    onClick={() => {
-                      setQuickReplySearch("");
-                      setQuickRepliesOpen(true);
-                    }}
-                    title={t("conversations.quickReplies")}
-                  >
-                    <Tags size={15} /> {t("conversations.quickRepliesButton")}
-                  </button>
-                  <textarea
-                    ref={composerRef}
-                    rows={1}
-                    className="max-h-28 min-h-10 min-w-0 flex-1 resize-none bg-transparent py-2 text-sm outline-none placeholder:text-slate-400"
-                    disabled={selected.status === "closed" || sendMutation.isPending}
-                    placeholder={t("conversations.replyPlaceholder")}
-                    value={draft}
-                    onChange={(event) => {
-                      setDraft(event.target.value);
-                      window.requestAnimationFrame(resizeComposer);
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) sendReply();
-                    }}
-                  />
-                  <Button
-                    variant="ai"
-                    className="h-10 shrink-0 rounded-lg px-4 text-sm"
-                    disabled={selected.status === "closed" || !draft.trim()}
-                    isLoading={sendMutation.isPending}
-                    onClick={sendReply}
-                    title={t("conversations.send")}
-                  >
-                    {t("conversations.send")}
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
-        </WorkQueueDetailPane>
+        <ConversationThreadPane
+          selected={selected}
+          mobileThreadOpen={mobileThreadOpen}
+          onMobileClose={() => setMobileThreadOpen(false)}
+          messageScrollRef={messageScrollRef}
+          messageEndRef={messageEndRef}
+          messagesLoading={messages.isLoading}
+          messageList={messageList}
+          canLoadMoreMessages={canLoadMoreMessages}
+          isFetchingNextPage={messages.isFetchingNextPage}
+          onLoadMoreMessages={() => { void messages.fetchNextPage(); }}
+          onRetryMessage={(failedMessage) => {
+            if (!selected) return;
+            retryMessageMutation.mutate({ conversationId: selected.id, messageId: failedMessage.id });
+          }}
+          draft={draft}
+          composerRef={composerRef}
+          sendPending={sendMutation.isPending}
+          onDraftChange={setDraft}
+          onResizeComposer={resizeComposer}
+          onOpenQuickReplies={() => {
+            setQuickReplySearch("");
+            setQuickRepliesOpen(true);
+          }}
+          onSendReply={sendReply}
+          onAssign={() => selected && assignMutation.mutate(selected.id)}
+          assignPending={assignMutation.isPending}
+          onToggleBot={() => selected && toggleBotMutation.mutate({ conversationId: selected.id, botEnabled: !selected.bot_enabled })}
+          toggleBotPending={toggleBotMutation.isPending}
+          onCloseConversation={() => selected && closeMutation.mutate({ conversationId: selected.id, reason: "closed_from_inbox" })}
+          closePending={closeMutation.isPending}
+          onReopenConversation={() => selected && reopenMutation.mutate(selected.id)}
+          reopenPending={reopenMutation.isPending}
+          t={t}
+        />
 
         <aside className={cn("hidden min-h-0 flex-col gap-3 overflow-y-auto border-l border-slate-200 bg-white p-3 xl:flex", !inspectorOpen && "xl:hidden")}>
           {selected ? (

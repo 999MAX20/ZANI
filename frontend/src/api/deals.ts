@@ -24,6 +24,7 @@ export type DealListParams = {
   unassigned?: boolean;
   ordering?: string;
   client_ids?: Id[] | string;
+  lead_ids?: Id[] | string;
 };
 
 export type DealBoardParams = DealListParams & {

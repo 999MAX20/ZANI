@@ -48,7 +48,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
         id: `lead-${lead.id}`,
         label: client?.full_name || t("leads.leadFallback", { id: lead.id }),
         hint: [t("command.typeLead"), client?.phone, service?.name].filter(Boolean).join(" · "),
-        to: `/app/leads?lead=${lead.id}`,
+        to: `/app/leads/${lead.id}`,
         icon: Search,
         priority: 5,
       };

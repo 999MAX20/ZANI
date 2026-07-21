@@ -7,6 +7,7 @@ from django.conf import settings
 from rest_framework.exceptions import PermissionDenied
 
 from apps.core.production_rules import is_safe_public_https_url
+from apps.integrations.bot_channel_credentials import get_instagram_access_token
 from apps.integrations.models import IntegrationEventLog
 from apps.integrations.providers.base import BaseChannelProvider
 
@@ -119,7 +120,7 @@ class InstagramProvider(BaseInstagramAdapter):
 
     def validate_credentials(self, channel):
         config = channel.config_json or {}
-        access_token = config.get("access_token", "")
+        access_token = get_instagram_access_token(channel)
         instagram_user_id = config.get("instagram_user_id") or channel.external_id
         safe_payload = {
             "mode": config.get("provider_mode") or "mock",
@@ -167,7 +168,7 @@ class InstagramProvider(BaseInstagramAdapter):
 
     def _send_meta_message(self, channel, recipient_id, text, payload=None):
         config = channel.config_json or {}
-        access_token = config.get("access_token", "")
+        access_token = get_instagram_access_token(channel)
         instagram_user_id = config.get("instagram_user_id") or channel.external_id
         event_payload = {
             "recipient_id": recipient_id,

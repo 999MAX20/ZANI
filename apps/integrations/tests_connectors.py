@@ -287,7 +287,7 @@ class BusinessConnectorFoundationTests(TestCase):
             format="json",
         )
 
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 404)
 
     def test_owner_can_create_whatsapp_request_with_provider_decision(self):
         self.api.force_authenticate(self.owner)
@@ -332,7 +332,7 @@ class BusinessConnectorFoundationTests(TestCase):
             format="json",
         )
 
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 404)
 
     def test_whatsapp_request_rejects_provider_secrets(self):
         self.api.force_authenticate(self.owner)
@@ -601,6 +601,39 @@ class BusinessConnectorFoundationTests(TestCase):
 
         self.assertEqual(second_event_response.status_code, 201)
         self.assertEqual(BusinessEvent.objects.filter(connector_id=connector_response.data["id"]).count(), 3)
+
+    def test_operator_cannot_run_connector_mock_sync(self):
+        connector = BusinessConnector.objects.create(
+            business=self.business,
+            provider=BusinessConnector.Providers.KASPI,
+            name="Kaspi connector request",
+            capability=BusinessConnector.Capabilities.FINANCE,
+            auth_type=BusinessConnector.AuthTypes.CONNECTOR,
+            created_by=self.owner,
+        )
+        self.api.force_authenticate(self.operator)
+
+        response = self.api.post(f"/api/business-connectors/{connector.id}/mock-sync/", format="json")
+
+        self.assertEqual(response.status_code, 404)
+        self.assertFalse(BusinessEvent.objects.filter(connector=connector).exists())
+
+    @override_settings(ALLOW_DEMO_MERCHANT_FLOWS=False)
+    def test_connector_mock_sync_is_disabled_when_demo_flows_are_not_allowed(self):
+        connector = BusinessConnector.objects.create(
+            business=self.business,
+            provider=BusinessConnector.Providers.KASPI,
+            name="Kaspi connector request",
+            capability=BusinessConnector.Capabilities.FINANCE,
+            auth_type=BusinessConnector.AuthTypes.CONNECTOR,
+            created_by=self.owner,
+        )
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(f"/api/business-connectors/{connector.id}/mock-sync/", format="json")
+
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(BusinessEvent.objects.filter(connector=connector).exists())
 
     def test_kaspi_mock_events_are_read_only_visibility_events(self):
         events = build_kaspi_mock_events(prefix="clinic")

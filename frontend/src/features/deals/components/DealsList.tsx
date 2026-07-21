@@ -99,7 +99,7 @@ export function DealsList({
                 <td className="border-b border-slate-100 px-3 py-2 text-slate-600">{deal.clientEntity?.full_name || t("deals.clientMissing")}</td>
                 <td className="border-b border-slate-100 px-3 py-2"><DealAmount value={deal.amount} currency={deal.currency} /></td>
                 <td className="border-b border-slate-100 px-3 py-2"><DealStageBadge stage={deal.stageEntity} fallback={t("deals.noStage")} /></td>
-                <td className="border-b border-slate-100 px-3 py-2"><DealRiskIndicator deal={deal} compact /></td>
+                <td className="border-b border-slate-100 px-3 py-2"><DealRiskIndicator deal={deal} compact t={t} /></td>
                 <td className="border-b border-slate-100 px-3 py-2 text-slate-500">{formatDate(deal.created_at)}</td>
               </tr>
             ))}

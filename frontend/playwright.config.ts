@@ -21,7 +21,7 @@ export default defineConfig({
   webServer: [
     {
       command: "node e2e/django-e2e.mjs serve",
-      url: "http://127.0.0.1:8000/api/auth/me/",
+      url: "http://127.0.0.1:8000/health/",
       reuseExistingServer: true,
       timeout: 120_000,
     },

@@ -10,6 +10,7 @@ import { Input } from "../../../../components/ui/Input";
 import { useNotification } from "../../../../components/notifications/NotificationProvider";
 import { useI18n } from "../../../../lib/i18n";
 import type { BusinessConnector, Id } from "../../../../types";
+import { merchantSafeIntegrationError } from "../../utils";
 
 export function MoySkladInlineSetup({
   businessId,
@@ -26,7 +27,7 @@ export function MoySkladInlineSetup({
   const [accessToken, setAccessToken] = useState("");
   const [entities, setEntities] = useState<string[]>(Array.isArray(connector?.config_json?.entities) ? connector?.config_json?.entities as string[] : ["products", "stock", "sales", "clients"]);
   const [pageSize, setPageSize] = useState(String(connector?.config_json?.page_size || "50"));
-  const [showAccessSetup, setShowAccessSetup] = useState(Boolean(connector?.config_json?.access_token_configured));
+  const [showAccessSetup, setShowAccessSetup] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   function setNotice(message: string | null) {
@@ -58,7 +59,7 @@ export function MoySkladInlineSetup({
   const testConnection = useMutation({
     mutationFn: () => businessConnectorsApi.moyskladTestConnection(Number(connector?.id)),
     onSuccess: (data) => {
-      setNotice(data.ok ? t("integrations.moysklad.connectionChecked") : data.reason || t("integrations.moysklad.connectionCheckFailed"));
+      setNotice(data.ok ? (data.mock ? t("integrations.mock.connectionChecked") : t("integrations.moysklad.connectionChecked")) : data.reason || t("integrations.moysklad.connectionCheckFailed"));
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
       queryClient.invalidateQueries({ queryKey: ["moysklad-status", connector?.id] });
     },
@@ -67,7 +68,7 @@ export function MoySkladInlineSetup({
   const syncData = useMutation({
     mutationFn: () => businessConnectorsApi.moyskladSync(Number(connector?.id)),
     onSuccess: (data) => {
-      setNotice(data.ok ? t("integrations.moysklad.dataLoaded", { count: data.events.length }) : data.reason || t("integrations.moysklad.dataLoadFailed"));
+      setNotice(data.ok ? (data.mock ? t("integrations.mock.syncLoaded", { count: data.events.length }) : t("integrations.moysklad.dataLoaded", { count: data.events.length })) : data.reason || t("integrations.moysklad.dataLoadFailed"));
       queryClient.invalidateQueries({ queryKey: ["business-events"] });
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
       queryClient.invalidateQueries({ queryKey: ["connector-sync-runs"] });
@@ -81,10 +82,11 @@ export function MoySkladInlineSetup({
 
   const error = saveConfig.error || testConnection.error || syncData.error || status.error;
   const tokenConfigured = Boolean(status.data?.access_token_configured || connector?.config_json?.access_token_configured);
+  const runsInMockMode = status.data ? !status.data.moysklad_enabled : false;
 
   return (
     <div className="w-full space-y-4 rounded-card border border-slate-200 bg-slate-50 p-4">
-      {error ? <ErrorState message={getApiErrorMessage(error)} /> : null}
+      {error ? <ErrorState message={merchantSafeIntegrationError(getApiErrorMessage(error), t)} /> : null}
 
       <div className="grid gap-2 sm:grid-cols-3">
         <div className="rounded-2xl bg-white p-3">
@@ -93,13 +95,18 @@ export function MoySkladInlineSetup({
         </div>
         <div className="rounded-2xl bg-white p-3">
           <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">{t("integrations.setupMetric.mode")}</p>
-          <p className="mt-1 text-sm font-black text-midnight">{t("integrations.setupMetric.readOnly")}</p>
+          <p className="mt-1 text-sm font-black text-midnight">{runsInMockMode ? t("integrations.setupMetric.demoReadOnly") : t("integrations.setupMetric.readOnly")}</p>
         </div>
         <div className="rounded-2xl bg-white p-3">
           <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">{t("integrations.moysklad.inventory")}</p>
           <p className="mt-1 text-sm font-black text-midnight">{status.data?.last_sync_at ? t("integrations.moysklad.loadedBefore") : t("integrations.setupMetric.notYet")}</p>
         </div>
       </div>
+      {runsInMockMode ? (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold leading-5 text-amber-800">
+          {t("integrations.mock.providerDisabledNotice")}
+        </div>
+      ) : null}
 
       {!showAccessSetup ? (
         <div className="rounded-card border border-blue-100 bg-blue-50 p-4">
@@ -145,9 +152,11 @@ export function MoySkladInlineSetup({
       ) : null}
 
       <div className="grid gap-3 md:grid-cols-3">
-        <Button type="button" disabled={!canManage || (!accessToken.trim() && !connector)} isLoading={saveConfig.isPending} onClick={() => saveConfig.mutate()}>
-          <ShieldCheck size={16} /> {connector ? t("integrations.setupAction.saveAccess") : t("integrations.moysklad.connect")}
-        </Button>
+        {showAccessSetup || showAdvanced ? (
+          <Button type="button" disabled={!canManage || (!accessToken.trim() && !connector)} isLoading={saveConfig.isPending} onClick={() => saveConfig.mutate()}>
+            <ShieldCheck size={16} /> {connector ? t("integrations.setupAction.saveAccess") : t("integrations.moysklad.connect")}
+          </Button>
+        ) : null}
         <Button type="button" variant="secondary" disabled={!canManage || !connector || !tokenConfigured} isLoading={testConnection.isPending} onClick={() => testConnection.mutate()}>
           <RefreshCw size={16} /> {t("integrations.card.check")}
         </Button>

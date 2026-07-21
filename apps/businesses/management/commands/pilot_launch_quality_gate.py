@@ -30,6 +30,8 @@ class Command(BaseCommand):
         parser.add_argument("--owner-password", default="DemoOwner123!")
         parser.add_argument("--manager-email", default="demo-manager@zani.local")
         parser.add_argument("--manager-password", default="DemoManager123!")
+        parser.add_argument("--operator-email", default="demo-operator@zani.local")
+        parser.add_argument("--operator-password", default="DemoOperator123!")
 
     def handle(self, *args, **options):
         business = Business.objects.filter(landing_id=options["landing_id"]).first()
@@ -52,10 +54,12 @@ class Command(BaseCommand):
         platform = GateUser("platform admin", options["platform_email"], options["platform_password"])
         owner = GateUser("demo owner", options["owner_email"], options["owner_password"])
         manager = GateUser("demo manager", options["manager_email"], options["manager_password"])
+        operator = GateUser("demo operator", options["operator_email"], options["operator_password"])
 
         platform_token = self._login(platform)
         owner_token = self._login(owner)
         manager_token = self._login(manager)
+        operator_token = self._login(operator)
 
         self._check_authenticated("platform overview", "/api/platform/overview/", platform_token)
         self._check_authenticated("owner me", "/api/auth/me/", owner_token)
@@ -67,6 +71,9 @@ class Command(BaseCommand):
         self._check_authenticated("owner analytics", f"/api/analytics/owner-dashboard/?business={business.id}", owner_token)
         self._check_authenticated("manager me", "/api/auth/me/", manager_token)
         self._check_authenticated("manager tasks", "/api/tasks/", manager_token)
+        self._check_authenticated("operator me", "/api/auth/me/", operator_token)
+        self._check_authenticated("operator tasks", "/api/tasks/", operator_token)
+        self._check_authenticated("operator inbox summary", "/api/inbox/conversations/summary/", operator_token)
 
         self.stdout.write(self.style.SUCCESS("Pilot launch quality gate passed."))
         self.stdout.write(f"Business: {business.id} / {business.name}")

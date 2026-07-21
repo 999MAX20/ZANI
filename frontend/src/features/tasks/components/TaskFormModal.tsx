@@ -114,7 +114,7 @@ export function TaskFormModal({
     return {
       value: String(conversation.id),
       label,
-      description: [conversation.channel, conversation.status, lastMessage].filter(Boolean).join(" В· "),
+      description: [conversation.channel, conversation.status, lastMessage].filter(Boolean).join(" · "),
       searchText: [label, conversation.external_user_id, conversation.channel, conversation.status, lastMessage].filter(Boolean).join(" "),
     };
   });

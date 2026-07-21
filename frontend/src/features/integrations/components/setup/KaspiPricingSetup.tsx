@@ -10,6 +10,7 @@ import { useNotification } from "../../../../components/notifications/Notificati
 import { ErrorState } from "../../../../components/ui/StateViews";
 import { cn } from "../../../../lib/cn";
 import { useI18n } from "../../../../lib/i18n";
+import { merchantSafeIntegrationError } from "../../utils";
 import type { Id } from "../../../../types";
 
 type Translate = ReturnType<typeof useI18n>["t"];
@@ -85,7 +86,7 @@ export function KaspiPricingInlineSetup({ businessId, canManage }: { businessId:
 
   return (
     <div className="w-full space-y-4 rounded-card border border-slate-200 bg-slate-50 p-4">
-      {error ? <ErrorState message={getApiErrorMessage(error)} /> : null}
+      {error ? <ErrorState message={merchantSafeIntegrationError(getApiErrorMessage(error), t)} /> : null}
 
       <div className="rounded-card border border-amber-200 bg-amber-50 p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -157,7 +158,7 @@ export function KaspiPricingInlineSetup({ businessId, canManage }: { businessId:
             <p className="mt-1 text-sm font-semibold text-slate-600">
               {Number(latestLog.old_price).toLocaleString("ru-KZ")} ₸ → {Number(latestLog.new_price).toLocaleString("ru-KZ")} ₸ · {readableStatus(latestLog.status, t)}
             </p>
-            {latestLog.error ? <p className="mt-1 text-xs font-semibold text-red-600">{latestLog.error}</p> : null}
+            {latestLog.error ? <p className="mt-1 text-xs font-semibold text-red-600">{merchantSafeIntegrationError(latestLog.error, t)}</p> : null}
           </div>
         ) : (
           <p className="mt-3 rounded-2xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-500">{t("integrations.kaspiPricing.noChanges")}</p>

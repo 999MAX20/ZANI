@@ -261,6 +261,10 @@ def create_automation_task(
     assignee=None,
     due_at=None,
     source_payload=None,
+    source: str = "automation",
+    activity_text: str | None = None,
+    notification_text: str | None = None,
+    notification_priority: str | None = None,
 ) -> Task:
     title = (title or "").strip()
     if not title:
@@ -295,16 +299,16 @@ def create_automation_task(
         event_type=ActivityEvents.TASK_CREATED,
         instance=task,
         category="task",
-        source="automation",
-        text=f"Automation created task: {task.title}",
+        source=source,
+        text=activity_text or f"Automation created task: {task.title}",
         metadata={
-            "source": "automation",
+            "source": source,
             "source_entity_type": entity.__class__.__name__ if entity is not None else "",
             "source_entity_id": str(getattr(entity, "pk", "") or ""),
             "trigger_type": (source_payload or {}).get("trigger_type", ""),
         },
     )
-    create_task_notification(task, f"Automation created task: {task.title}")
+    create_task_notification(task, notification_text or f"Automation created task: {task.title}", priority=notification_priority)
     return task
 
 

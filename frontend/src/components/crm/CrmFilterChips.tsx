@@ -22,6 +22,9 @@ export function CrmFilterChips<TValue extends string>({
   onClearAll,
   className,
   ariaLabel,
+  activeFiltersLabel,
+  clearAllLabel,
+  filtersLabel,
 }: {
   value: TValue;
   options: Array<FilterOption<TValue>>;
@@ -34,6 +37,9 @@ export function CrmFilterChips<TValue extends string>({
   children?: ReactNode;
   className?: string;
   ariaLabel: string;
+  activeFiltersLabel?: string;
+  clearAllLabel?: string;
+  filtersLabel?: string;
 }) {
   return (
     <CrmControlBar
@@ -48,6 +54,9 @@ export function CrmFilterChips<TValue extends string>({
       actions={children}
       className={className}
       ariaLabel={ariaLabel}
+      activeFiltersLabel={activeFiltersLabel}
+      clearAllLabel={clearAllLabel}
+      filtersLabel={filtersLabel}
     />
   );
 }

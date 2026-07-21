@@ -47,6 +47,25 @@ PAID_BETA_SUPPORT_GRANT_FLOW_TESTED=False
 
 Set them to `True` only after the check passed on staging/production-like infrastructure.
 
+Production must also keep demo/mock merchant flows disabled:
+
+```env
+ALLOW_DEMO_MERCHANT_FLOWS=False
+```
+
 ## Rule
 
 If `paid_beta_gate_check --fail-on-blockers` fails, Zani is not ready for paid beta. Do not work around this by disabling checks. Fix the blocker or consciously keep the product in pilot/demo mode.
+
+## Controlled Pilot Boundary
+
+Passing local controlled-pilot QA is not the same as paid beta readiness.
+
+For local/dev controlled pilot checks without production credentials:
+
+```bash
+python manage.py prepare_pilot_demo --reset
+python manage.py pilot_launch_quality_gate
+```
+
+These commands prove that the demo merchant, owner, manager, operator, public lead form, CRM APIs, inbox summary, pilot readiness endpoint and basic analytics are reachable on mock/dev data. They do not prove staging smoke, browser E2E against deployed infrastructure, Redis/Celery runtime, object storage, Sentry, email, backup/restore or real provider rollback readiness.

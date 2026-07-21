@@ -33,20 +33,20 @@ export function MobileClientCards({
                 <p className="mt-1 truncate text-xs font-medium text-slate-500">{row.client.phone || row.client.email || t("clients.noContacts")}</p>
               </div>
             </div>
-            <ClientStatusBadge status={row.status} />
+            <ClientStatusBadge status={row.status} t={t} />
           </button>
 
           <dl className="mt-4 space-y-2 text-sm">
             <div className="flex justify-between gap-4">
-              <dt className="text-slate-500">Источник</dt>
+              <dt className="text-slate-500">{t("clients.source")}</dt>
               <dd className="font-semibold text-slate-800">{sourceLabel(row.client.source, t)}</dd>
             </div>
             <div className="flex justify-between gap-4">
-              <dt className="text-slate-500">Последний контакт</dt>
-              <dd className="text-right font-semibold text-slate-800">{row.lastContactAt ? formatDateTime(row.lastContactAt) : "Нет контакта"}</dd>
+              <dt className="text-slate-500">{t("clients.lastContact")}</dt>
+              <dd className="text-right font-semibold text-slate-800">{row.lastContactAt ? formatDateTime(row.lastContactAt) : t("clients.noContact")}</dd>
             </div>
             <div className="flex justify-between gap-4">
-              <dt className="text-slate-500">Следующий шаг</dt>
+              <dt className="text-slate-500">{t("clients.nextStep")}</dt>
               <dd className="text-right font-semibold text-slate-800">{row.nextStep.title}</dd>
             </div>
           </dl>
@@ -58,10 +58,10 @@ export function MobileClientCards({
               disabled={!row.client.phone}
               onClick={() => row.client.phone && window.open(`tel:${row.client.phone}`, "_self")}
             >
-              <Phone size={16} /> Позвонить
+              <Phone size={16} /> {t("clients.call")}
             </Button>
             <Button type="button" variant="secondary" className="min-h-11 flex-1" onClick={() => onSelectClient(row.client.id)}>
-              Подробнее
+              {t("clients.details")}
             </Button>
           </div>
         </article>

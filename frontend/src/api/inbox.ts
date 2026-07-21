@@ -69,6 +69,9 @@ export type InboxFilters = {
   handoff_required?: string;
   search?: string;
   q?: string;
+  client_ids?: Id[] | string;
+  lead_ids?: Id[] | string;
+  deal_ids?: Id[] | string;
 };
 
 export type PaginatedInboxMessageResponse = PaginatedResponse<InboxMessage> & {

@@ -12,6 +12,21 @@ ZANI должен выглядеть как светлая, плотная и р
 
 `Clean Business CRM + AI Accent`
 
+### 2026-07-16 Visual Direction Update
+
+The current color and background source of truth is `docs/design-system.md`.
+
+The authenticated CRM direction is now:
+
+```txt
+Warm Premium CRM
+Warm ivory workspace + copper-orange actions + plum AI accent
+```
+
+This update supersedes the earlier blue-primary color direction below. The previous page structure and operational-density rules still apply: authenticated CRM screens must stay compact, useful, role-aware, and free from decorative/marketing blocks.
+
+The key background rule is: normal CRM pages should show one stable viewport/layout background and one primary work-surface background. Extra muted or semantic backgrounds are allowed only for real grouping, selected/active states, alerts, AI blocks, or status indicators.
+
 Это означает:
 
 - интерфейс в первую очередь помогает работать с клиентами, лидами, сделками, календарем и сообщениями;

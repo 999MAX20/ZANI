@@ -4,6 +4,8 @@ This is the working execution checklist for bringing ZANI's CRM layer to a compl
 
 Rule for Codex: when a task is actually completed and verified, change `[ ]` to `[x]` in this file in the same PR/change set. Do not mark work complete based only on intent or partial implementation.
 
+Status update 2026-07-16: phases 0-13 are closed at their current verified scope. The unchecked boxes in "Definition Of Done" below are reusable acceptance criteria for future mechanics, not unfinished checklist items. Treat this file as a historical implementation record unless a new bounded phase is explicitly added.
+
 ## Definition Of Done For Every CRM Mechanic
 
 A CRM mechanic is done only when all relevant items are true:
@@ -230,7 +232,7 @@ Phase 3 pass 1 notes, 2026-07-04:
 - Deal action endpoints now explicitly call backend permission checks before moving stage, marking won/lost or reopening.
 - Deal owner validation now requires owner to be an active member of the deal business.
 - Tests added for foreign owner rejection, foreign stage rejection and manager permission denial on an unowned deal.
-- Still open: persistent stage transition history model/snapshots, full amount/value change tracking, value-change activity, complete summary metric hardening and drawer polishing.
+- Historical remaining at this pass: persistent stage transition history, value tracking/activity, summary hardening and drawer polishing were handled by later Phase 3 passes below.
 - Verification passed:
   - `DATABASE_URL=sqlite:///db.sqlite3 .venv\Scripts\python.exe manage.py test apps.crm.tests --keepdb --verbosity=1` passed, 19 tests OK.
   - `DATABASE_URL=sqlite:///db.sqlite3 .venv\Scripts\python.exe manage.py test apps.clients.tests apps.leads.tests_forms apps.leads.tests_crm_light apps.crm.tests apps.scheduling.tests apps.tasks.tests apps.core.tests_tenant_isolation --keepdb --verbosity=1` passed, 126 tests OK.
@@ -246,7 +248,7 @@ Phase 3 pass 2 notes, 2026-07-09:
 - `apply_deal_stage` now writes one history row for real stage/status transitions, so `move-stage`, `mark-won`, `mark-lost` and `reopen` share the same persistent transition trace.
 - Admin registration was added for deal stage history to support operational debugging.
 - Focused tests now assert history creation and amount snapshots for stage move, won, lost and reopen flows.
-- Still open: standalone value-change activity, broader amount/value change tracking, deal summary metric hardening and deal drawer polishing.
+- Historical remaining at this pass: value-change activity/tracking, summary hardening and drawer polishing were handled by later Phase 3 passes below.
 - Verification passed:
   - `DATABASE_URL=sqlite:///db.sqlite3 .venv\Scripts\python.exe manage.py test apps.crm.tests --keepdb --verbosity=1` passed, 19 tests OK.
   - `DATABASE_URL=sqlite:///db.sqlite3 .venv\Scripts\python.exe manage.py migrate` applied `crm.0007_dealstagehistory`.
@@ -265,7 +267,7 @@ Phase 3 pass 3 notes, 2026-07-09:
 - Deal value changes now write `deal_value_changed` activity events and `deal_value` audit metadata.
 - Non-value deal updates do not create value history or value-change activity.
 - Focused tests cover happy path amount update, no-op non-value update, permission denial for unowned manager update, tenant isolation for cross-business update, and final amount tracking during mark-won.
-- Still open: deal summary metric hardening and deal drawer polishing.
+- Historical remaining at this pass: deal summary metric hardening and deal drawer polishing were handled by later Phase 3 passes below.
 - Verification passed:
   - `DATABASE_URL=sqlite:///db.sqlite3 .venv\Scripts\python.exe manage.py test apps.crm.tests --keepdb --verbosity=1` passed, 23 tests OK.
   - `DATABASE_URL=sqlite:///db.sqlite3 .venv\Scripts\python.exe manage.py migrate` applied `crm.0008_dealvaluehistory`.
@@ -1172,7 +1174,7 @@ Goal: prove that the product works as a CRM system, not only as separate endpoin
 ## Baseline Risks To Track
 
 - [x] Some source docs currently display mojibake text in this Windows shell; verify file encodings before editing Russian copy.
-- [x] Local git metadata is currently unusable: `.git` exists, but `git status --short --branch` returns `fatal: not a git repository (or any of the parent directories): .git`, so normal branch/PR workflow cannot be performed locally until repo metadata is restored.
+- [x] Historical local blocker: git metadata was previously unusable in this workspace. Current documentation reconciliation can read `git status`; keep this note only as prior-run context if the branch/PR workflow fails again.
 - [x] Several frontend pages are oversized and should be decomposed before adding more behavior.
 - [x] Provider integrations need per-provider live/mock verification before being called production-ready.
 - [x] AI value depends on real CRM/BusinessEvent data; empty demo data can make AI look less useful than the architecture allows.

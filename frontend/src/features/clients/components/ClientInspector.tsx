@@ -72,8 +72,8 @@ function TimelineRow({
   );
 }
 
-function DealsTab({ row }: { row: ClientTableRow }) {
-  if (!row.deals.length) return <div className="p-4"><EmptyState text="Сделок пока нет." /></div>;
+function DealsTab({ row, t }: { row: ClientTableRow; t: Translate }) {
+  if (!row.deals.length) return <div className="p-4"><EmptyState text={t("clients.noDeals")} /></div>;
   return (
     <div className="space-y-2 p-4">
       {row.deals.map((deal) => (
@@ -92,25 +92,25 @@ function DealsTab({ row }: { row: ClientTableRow }) {
   );
 }
 
-function TasksTab({ row }: { row: ClientTableRow }) {
-  if (!row.tasks.length) return <div className="p-4"><EmptyState text="Активных задач нет." /></div>;
+function TasksTab({ row, t }: { row: ClientTableRow; t: Translate }) {
+  if (!row.tasks.length) return <div className="p-4"><EmptyState text={t("clients.noActiveTasks")} /></div>;
   return (
     <div className="space-y-2 p-4">
       {row.tasks.map((task) => (
         <div key={task.id} className="rounded-lg border border-slate-200 bg-white p-3">
           <div className="flex items-start justify-between gap-3">
             <p className="min-w-0 text-sm font-bold text-slate-950">{task.title}</p>
-            {priorityLabel(task.priority) ? <TagPill className="bg-blue-50 text-blue-700">{priorityLabel(task.priority)}</TagPill> : null}
+            {priorityLabel(task.priority, t) ? <TagPill className="bg-blue-50 text-blue-700">{priorityLabel(task.priority, t)}</TagPill> : null}
           </div>
-          <p className="mt-2 text-xs font-semibold text-slate-500">{task.due_at ? formatDateTime(task.due_at) : "Без срока"}</p>
+          <p className="mt-2 text-xs font-semibold text-slate-500">{task.due_at ? formatDateTime(task.due_at) : t("tasks.dueNone")}</p>
         </div>
       ))}
     </div>
   );
 }
 
-function FilesTab() {
-  return <div className="p-4"><EmptyState text="Файлы пока не добавлены." /></div>;
+function FilesTab({ t }: { t: Translate }) {
+  return <div className="p-4"><EmptyState text={t("clients.noFiles")} /></div>;
 }
 
 export function ClientInspector({
@@ -169,7 +169,7 @@ export function ClientInspector({
     ...row.conversations.slice(0, 2).map((conversation) => ({
       key: `conversation-${conversation.id}`,
       icon: Phone,
-      title: conversation.last_message?.direction === "outbound" ? "Исходящий контакт" : "Входящий контакт",
+      title: conversation.last_message?.direction === "outbound" ? t("clients.outboundContact") : t("clients.inboundContact"),
       meta: formatDateTime(conversation.last_message_at || conversation.updated_at),
     })),
     ...row.leads.slice(0, 2).map((lead) => ({
@@ -187,6 +187,9 @@ export function ClientInspector({
       badge: <StatusBadge status={appointment.status} />,
     })),
   ].slice(0, 4);
+  const clientNextStepText = latestLead || latestAppointment
+    ? t("clients.crmNextStepWithActivity")
+    : t("clients.crmNextStepNeedsContact");
 
   function toggleFavorite() {
     setFavoriteClientIds((current) => {
@@ -209,7 +212,7 @@ export function ClientInspector({
                 <button
                   type="button"
                   className={isFavorite ? "text-indigo-600 transition hover:text-indigo-700" : "text-slate-500 transition hover:text-slate-700"}
-                  aria-label="Избранное"
+                  aria-label={t("clients.favorite")}
                   aria-pressed={isFavorite}
                   onClick={toggleFavorite}
                 >
@@ -217,7 +220,7 @@ export function ClientInspector({
                 </button>
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                <ClientStatusBadge status={row.status} />
+                <ClientStatusBadge status={row.status} t={t} />
                 <span className="text-xs font-medium text-slate-500">{formatDate(client.created_at)}</span>
               </div>
             </div>
@@ -227,12 +230,12 @@ export function ClientInspector({
           </button>
         </div>
 
-        <div role="tablist" aria-label="Карточка клиента" className="mt-1.5 grid grid-cols-4 gap-1 border-b border-slate-200 text-center text-xs font-semibold text-slate-500">
+        <div role="tablist" aria-label={t("clients.card")} className="mt-1.5 grid grid-cols-4 gap-1 border-b border-slate-200 text-center text-xs font-semibold text-slate-500">
           {[
-            { label: "Обзор", id: "overview", onClick: onOpenOverview },
-            { label: `Сделки ${row.deals.length}`, id: "deals", onClick: onOpenDeals },
-            { label: `Задачи ${row.tasks.length}`, id: "tasks", onClick: onOpenTasks },
-            { label: "Файлы", id: "files", onClick: onOpenFiles },
+            { label: t("clients.tabOverview"), id: "overview", onClick: onOpenOverview },
+            { label: t("clients.tabDeals", { count: row.deals.length }), id: "deals", onClick: onOpenDeals },
+            { label: t("clients.tabTasks", { count: row.tasks.length }), id: "tasks", onClick: onOpenTasks },
+            { label: t("clients.tabFiles"), id: "files", onClick: onOpenFiles },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -279,13 +282,13 @@ export function ClientInspector({
         </div>
       </div>
 
-      {activeTab === "deals" ? <DealsTab row={row} /> : null}
-      {activeTab === "tasks" ? <TasksTab row={row} /> : null}
-      {activeTab === "files" ? <FilesTab /> : null}
+      {activeTab === "deals" ? <DealsTab row={row} t={t} /> : null}
+      {activeTab === "tasks" ? <TasksTab row={row} t={t} /> : null}
+      {activeTab === "files" ? <FilesTab t={t} /> : null}
       {activeTab === "overview" ? (
         <>
       <DetailSection
-        title="Контакты"
+        title={t("clients.contacts")}
         action={
           <div className="flex items-center gap-1">
             <button type="button" onClick={onEdit} className="grid h-7 min-h-7 w-7 min-w-7 place-items-center rounded-md text-slate-500 transition hover:bg-slate-100 hover:text-slate-900" aria-label={t("clients.edit")}>
@@ -316,7 +319,7 @@ export function ClientInspector({
         </div>
       </DetailSection>
 
-      <DetailSection title="Теги" action={<button type="button" onClick={onAddTag} className="grid h-7 min-h-7 w-7 min-w-7 place-items-center text-slate-500 transition hover:text-slate-900" aria-label={t("clients.addTag")}><Plus size={15} /></button>}>
+      <DetailSection title={t("clients.tags")} action={<button type="button" onClick={onAddTag} className="grid h-7 min-h-7 w-7 min-w-7 place-items-center text-slate-500 transition hover:text-slate-900" aria-label={t("clients.addTag")}><Plus size={15} /></button>}>
         {row.tags.length ? (
           <div className="flex flex-wrap gap-2">
             {row.tags.slice(0, 6).map((tag) => (
@@ -328,7 +331,7 @@ export function ClientInspector({
         )}
       </DetailSection>
 
-      <DetailSection title="Последняя сделка" action={<ChevronDown size={16} className="text-slate-500" />}>
+      <DetailSection title={t("clients.latestDeal")} action={<ChevronDown size={16} className="text-slate-500" />}>
         {latestDeal ? (
           <div>
             <div className="flex items-center justify-between gap-3">
@@ -339,32 +342,32 @@ export function ClientInspector({
               <div className="h-1 rounded-full bg-blue-600" style={{ width: `${Math.max(12, Math.min(100, latestDeal.probability || 35))}%` }} />
             </div>
             <div className="mt-1.5 flex justify-between text-xs font-medium text-slate-500">
-              <span>{latestDeal.status === "open" ? "Переговоры" : latestDeal.status}</span>
+              <span>{latestDeal.status === "open" ? t("deals.statusOpen") : latestDeal.status}</span>
               <span>{formatDate(latestDeal.updated_at)}</span>
             </div>
           </div>
         ) : (
-          <MutedEmpty text={`Сделок пока нет. Открыто: ${money(openDealValue)}`} />
+          <MutedEmpty text={t("clients.noDealsOpenValue", { value: money(openDealValue) })} />
         )}
       </DetailSection>
 
-      <DetailSection title="Следующая задача" icon={ClipboardList}>
+      <DetailSection title={t("clients.nextTask")} icon={ClipboardList}>
         {mainTask ? (
           <div className="rounded-lg bg-slate-50 px-2.5 py-2">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-slate-950">{mainTask.title}</p>
-                <p className="mt-0.5 text-xs font-medium text-slate-500">{mainTask.due_at ? formatDateTime(mainTask.due_at) : "Без срока"}</p>
+                <p className="mt-0.5 text-xs font-medium text-slate-500">{mainTask.due_at ? formatDateTime(mainTask.due_at) : t("tasks.dueNone")}</p>
               </div>
-              {priorityLabel(mainTask.priority) ? <TagPill className="bg-blue-50 text-blue-700">{priorityLabel(mainTask.priority)}</TagPill> : null}
+              {priorityLabel(mainTask.priority, t) ? <TagPill className="bg-blue-50 text-blue-700">{priorityLabel(mainTask.priority, t)}</TagPill> : null}
             </div>
           </div>
         ) : (
-          <MutedEmpty text="Активных задач нет." />
+          <MutedEmpty text={t("clients.noActiveTasks")} />
         )}
       </DetailSection>
 
-      <DetailSection title="История" action={<button type="button" onClick={onFullCard} className="text-xs font-semibold text-blue-600 transition hover:text-blue-700">Смотреть все</button>}>
+      <DetailSection title={t("clients.history")} action={<button type="button" onClick={onFullCard} className="text-xs font-semibold text-blue-600 transition hover:text-blue-700">{t("clients.viewAll")}</button>}>
         <div className="space-y-2">
           {historyItems.map((item) => (
             <TimelineRow key={item.key} icon={item.icon} title={item.title} meta={item.meta} badge={item.badge} />
@@ -374,16 +377,16 @@ export function ClientInspector({
       </DetailSection>
 
       <div className="px-4 pb-3">
-        <div className="rounded-xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-blue-50 p-2">
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-2">
           <div className="flex items-start gap-2.5">
-            <Sparkles size={15} className="mt-0.5 shrink-0 text-indigo-600" />
+            <ClipboardList size={15} className="mt-0.5 shrink-0 text-slate-600" />
             <div className="min-w-0">
-              <p className="text-sm font-bold text-indigo-950">AI-подсказка</p>
-              <p className="mt-0.5 text-xs leading-4 text-indigo-900">
-                {latestLead || latestAppointment ? "Клиент уже взаимодействовал с CRM. Проверьте следующий шаг и контакт." : "Клиент давно не получал предложение. Рекомендуется связаться сегодня."}
+              <p className="text-sm font-bold text-slate-950">{t("clients.crmNextStepTitle")}</p>
+              <p className="mt-0.5 text-xs leading-4 text-slate-700">
+                {clientNextStepText}
               </p>
-              <Button type="button" size="sm" className="mt-1 h-7 min-h-7 bg-indigo-600 px-2.5 text-xs hover:bg-indigo-700" onClick={onFullCard}>
-                Связаться сейчас
+              <Button type="button" size="sm" variant="secondary" className="mt-1 h-7 min-h-7 px-2.5 text-xs" onClick={onFullCard}>
+                {t("clients.crmNextStepAction")}
               </Button>
             </div>
           </div>

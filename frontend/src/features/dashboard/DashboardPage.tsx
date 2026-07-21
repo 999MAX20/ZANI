@@ -108,6 +108,7 @@ export function DashboardPage() {
         ownerBrief={ownerBrief.data}
         ownerBriefError={ownerBrief.error}
         isOwnerBriefLoading={ownerBrief.isLoading}
+        canViewAiAnalyst={canViewAiAnalyst}
         aiStatus={aiStatus.data}
       />
     );

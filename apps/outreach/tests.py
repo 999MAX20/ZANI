@@ -3,9 +3,12 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APITestCase
 
 from apps.accounts.models import User
+from apps.activities.models import ActivityEvent
 from apps.activities.services import create_activity_event
 from apps.businesses.models import Business, BusinessMember
 from apps.clients.models import Client
+from apps.core.models import AuditLog
+from apps.integrations.models import BusinessEvent
 from apps.notifications.models import Notification
 from apps.outreach.consent import payload_has_explicit_consent, record_inbound_consent
 from apps.outreach.models import OutreachCampaign, OutreachConsent, OutreachRecipient, OutreachTemplate
@@ -168,6 +171,64 @@ class OutreachCampaignTests(APITestCase):
                 channel=Notification.Channels.SYSTEM,
                 category=Notification.Categories.OUTREACH,
                 text__contains="запущена",
+            ).exists()
+        )
+
+    def test_campaign_cancel_uses_service_and_records_lifecycle_outputs(self):
+        campaign = OutreachCampaign.objects.create(
+            business=self.business,
+            name="Cancel me",
+            channel=OutreachCampaign.Channels.TELEGRAM,
+            audience_type=OutreachCampaign.AudienceTypes.ALL_CLIENTS,
+            message_text="Здравствуйте, {client_name}!",
+        )
+        self.client.post(f"/api/outreach/campaigns/{campaign.id}/prepare/")
+        self.client.post(f"/api/outreach/campaigns/{campaign.id}/launch/")
+        recipient = OutreachRecipient.objects.get(campaign=campaign)
+        notification = recipient.notification
+
+        response = self.client.post(
+            f"/api/outreach/campaigns/{campaign.id}/cancel/",
+            {"reason": "Campaign changed"},
+            format="json",
+        )
+
+        campaign.refresh_from_db()
+        recipient.refresh_from_db()
+        notification.refresh_from_db()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["campaign"]["status"], OutreachCampaign.Statuses.CANCELLED)
+        self.assertEqual(response.data["cancelled_recipients"], 1)
+        self.assertEqual(response.data["cancelled_notifications"], 1)
+        self.assertEqual(campaign.status, OutreachCampaign.Statuses.CANCELLED)
+        self.assertIsNotNone(campaign.finished_at)
+        self.assertEqual(recipient.status, OutreachRecipient.Statuses.CANCELLED)
+        self.assertEqual(recipient.error_code, "cancelled")
+        self.assertEqual(notification.status, Notification.Statuses.CANCELLED)
+        self.assertTrue(
+            ActivityEvent.objects.filter(
+                business=self.business,
+                event_type="outreach_cancelled",
+                entity_type="OutreachCampaign",
+                entity_id=str(campaign.id),
+                actor=self.owner,
+            ).exists()
+        )
+        event = BusinessEvent.objects.get(
+            business=self.business,
+            source="outreach",
+            event_type="outreach.campaign_cancelled",
+            external_id=f"outreach:campaign:{campaign.id}:cancelled",
+        )
+        self.assertEqual(event.payload_json["campaign_id"], campaign.id)
+        self.assertEqual(event.payload_json["cancelled_recipients"], 1)
+        self.assertTrue(
+            AuditLog.objects.filter(
+                business=self.business,
+                actor=self.owner,
+                entity_type="OutreachCampaign",
+                entity_id=str(campaign.id),
+                metadata__event_type="outreach_cancelled",
             ).exists()
         )
 
@@ -339,6 +400,7 @@ class OutreachCampaignTests(APITestCase):
             )
             update_campaign_response = self.client.patch(f"/api/outreach/campaigns/{campaign.id}/", {"name": "Changed"}, format="json")
             launch_response = self.client.post(f"/api/outreach/campaigns/{campaign.id}/launch/")
+            cancel_response = self.client.post(f"/api/outreach/campaigns/{campaign.id}/cancel/")
             create_template_response = self.client.post(
                 "/api/outreach/templates/",
                 {
@@ -365,6 +427,7 @@ class OutreachCampaignTests(APITestCase):
             self.assertIn(create_campaign_response.status_code, {403, 404})
             self.assertIn(update_campaign_response.status_code, {403, 404})
             self.assertIn(launch_response.status_code, {403, 404})
+            self.assertIn(cancel_response.status_code, {403, 404})
             self.assertIn(create_template_response.status_code, {403, 404})
             self.assertIn(update_template_response.status_code, {403, 404})
             self.assertIn(update_consent_response.status_code, {403, 404})
@@ -605,6 +668,7 @@ class OutreachCampaignTests(APITestCase):
 
         detail_response = self.client.get(f"/api/outreach/campaigns/{campaign.id}/")
         stats_response = self.client.get(f"/api/outreach/campaigns/{campaign.id}/stats/")
+        cancel_response = self.client.post(f"/api/outreach/campaigns/{campaign.id}/cancel/")
         import_response = self.client.post(
             "/api/outreach/consents/bulk-import/",
             {
@@ -618,6 +682,7 @@ class OutreachCampaignTests(APITestCase):
 
         self.assertEqual(detail_response.status_code, 404)
         self.assertEqual(stats_response.status_code, 404)
+        self.assertEqual(cancel_response.status_code, 404)
         self.assertEqual(import_response.status_code, 400)
         self.assertFalse(OutreachConsent.objects.filter(business=other_business).exists())
 

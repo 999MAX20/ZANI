@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "check:i18n": "node scripts/check-i18n.mjs",
+    "check:bundle": "node scripts/check-bundle.mjs",
     "build": "npm run check:i18n && tsc -b && vite build && vite build --config widget/vite.config.ts",
     "preview": "vite preview --host 0.0.0.0",
     "audit:visual": "node scripts/visual-audit.mjs",

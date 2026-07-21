@@ -32,12 +32,13 @@ PILOT_API_CHECKS = [
     "GET /health/",
     "GET /health/db/",
     "GET /ready/",
-    "POST /api/auth/token/ as platform/owner/manager",
+    "POST /api/auth/token/ as platform/owner/manager/operator",
     "GET /api/auth/me/ as owner",
     "GET /api/pilot/readiness/ as owner",
     "GET /api/leads/, /api/clients/, /api/tasks/ as owner",
     "GET /api/inbox/conversations/summary/ as owner",
     "GET /api/analytics/owner-dashboard/ as owner",
+    "GET /api/tasks/ and /api/inbox/conversations/summary/ as operator",
     "GET /api/platform/overview/ as platform admin",
     "GET /api/public/forms/<public_id>/ without auth",
 ]
@@ -65,6 +66,8 @@ class Command(BaseCommand):
         parser.add_argument("--owner-password", default="DemoOwner123!")
         parser.add_argument("--manager-email", default="demo-manager@zani.local")
         parser.add_argument("--manager-password", default="DemoManager123!")
+        parser.add_argument("--operator-email", default="demo-operator@zani.local")
+        parser.add_argument("--operator-password", default="DemoOperator123!")
         parser.add_argument("--frontend-url", default="http://localhost:5173")
         parser.add_argument("--backend-url", default="http://127.0.0.1:8000")
         parser.add_argument("--reset", action="store_true", help="Reset and reseed the demo merchant before printing launch credentials.")
@@ -93,6 +96,10 @@ class Command(BaseCommand):
             options["manager_email"],
             "--manager-password",
             options["manager_password"],
+            "--operator-email",
+            options["operator_email"],
+            "--operator-password",
+            options["operator_password"],
             *(["--reset"] if options["reset"] else []),
             *(["--show-passwords"] if options["show_passwords"] else []),
             stdout=seed_stdout,
@@ -115,6 +122,7 @@ class Command(BaseCommand):
         self.stdout.write(f"Platform admin: {options['platform_email']} / {self._display_password(options['platform_password'], options['show_passwords'])}")
         self.stdout.write(f"Demo owner:     {options['owner_email']} / {self._display_password(options['owner_password'], options['show_passwords'])}")
         self.stdout.write(f"Demo manager:   {options['manager_email']} / {self._display_password(options['manager_password'], options['show_passwords'])}")
+        self.stdout.write(f"Demo operator:  {options['operator_email']} / {self._display_password(options['operator_password'], options['show_passwords'])}")
         self.stdout.write("-" * 72)
         self.stdout.write("DEMO MERCHANT")
         self.stdout.write(f"Business: {business.id} / {business.name} / {business.slug}")
@@ -153,10 +161,11 @@ class Command(BaseCommand):
             self.stdout.write(f"- {options['frontend_url']}{route}")
         self.stdout.write("-" * 72)
         self.stdout.write("SMOKE PATH")
-        self.stdout.write("1. Login as Platform admin → /platform → overview/merchants/support workflow.")
-        self.stdout.write("2. Login as Demo owner → dashboard → leads → inbox → AI action → integrations.")
-        self.stdout.write("3. Login as Demo manager → assigned leads/tasks/inbox handoff.")
-        self.stdout.write("4. Optional: submit a public landing form using the lead_form public_id.")
+        self.stdout.write("1. Login as Platform admin -> /platform -> overview/merchants/support workflow.")
+        self.stdout.write("2. Login as Demo owner -> dashboard -> leads -> inbox -> AI action -> integrations.")
+        self.stdout.write("3. Login as Demo manager -> assigned leads/tasks/inbox handoff.")
+        self.stdout.write("4. Login as Demo operator -> task queue/inbox handoff.")
+        self.stdout.write("5. Optional: submit a public landing form using the lead_form public_id.")
         self.stdout.write("-" * 72)
         self.stdout.write("PILOT SAFE PROMISES — CAN SHOW")
         for item in CAN_SHOW:

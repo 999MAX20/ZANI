@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from apps.bots.models import Bot, BotChannel
 from apps.core.production_rules import is_safe_public_https_url
+from apps.integrations.bot_channel_credentials import store_instagram_access_token
 from apps.integrations.models import BusinessConnector
 
 
@@ -73,7 +74,7 @@ def complete_instagram_oauth(*, business, user, code, state, redirect_uri, page_
         {
             "provider_mode": "meta_graph",
             "instagram_user_id": ig_user_id,
-            "access_token": page_token,
+            "access_token_configured": True,
             "page_id": str(page.get("id") or ""),
             "username": ig_account.get("username") or "",
             "auth_mode": "meta_oauth",
@@ -83,6 +84,7 @@ def complete_instagram_oauth(*, business, user, code, state, redirect_uri, page_
     channel.status = BotChannel.Statuses.ACTIVE
     channel.config_json = config
     channel.save(update_fields=["external_id", "status", "config_json", "updated_at"])
+    store_instagram_access_token(channel, page_token)
 
     connector, _ = BusinessConnector.objects.get_or_create(
         business=business,

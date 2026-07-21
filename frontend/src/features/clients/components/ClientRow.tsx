@@ -55,7 +55,7 @@ export const ClientRow = memo(function ClientRow({
           type="checkbox"
           checked={checked}
           readOnly
-          aria-label={`Выбрать ${row.client.full_name}`}
+          aria-label={t("clients.selectClient", { name: row.client.full_name })}
           className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
           onClick={(event) => {
             event.stopPropagation();
@@ -81,14 +81,14 @@ export const ClientRow = memo(function ClientRow({
         </td>
       ) : null}
       <td role="gridcell" className="overflow-hidden px-2 py-2">
-        <ClientStatusBadge status={row.status} />
+        <ClientStatusBadge status={row.status} t={t} />
       </td>
       {visibleColumns.has("manager") ? (
         <td role="gridcell" className="overflow-hidden px-2 py-2">
-          {row.manager === "Не назначен" ? (
+          {!row.managerUserId ? (
             <div className="flex min-w-0 items-center gap-2 text-slate-400">
               <UserX size={16} className="shrink-0" />
-              <span className="truncate text-sm font-medium">Не назначен</span>
+              <span className="truncate text-sm font-medium">{t("clients.unassigned")}</span>
             </div>
           ) : (
             <div className="flex min-w-0 items-center gap-2">
@@ -101,11 +101,11 @@ export const ClientRow = memo(function ClientRow({
         </td>
       ) : null}
       <td role="gridcell" className="overflow-hidden px-2 py-2">
-        <p className="truncate text-sm font-medium text-slate-700">{row.lastContactAt ? formatDateTime(row.lastContactAt) : "Нет контакта"}</p>
+        <p className="truncate text-sm font-medium text-slate-700">{row.lastContactAt ? formatDateTime(row.lastContactAt) : t("clients.noContact")}</p>
       </td>
       <td role="gridcell" className="overflow-hidden px-2 py-2">
         <p className="truncate text-sm font-medium text-slate-700">{row.nextStep.title}</p>
-        <p className="mt-0.5 text-xs font-medium text-slate-500">{row.nextStep.date ? formatDate(row.nextStep.date) : "Сегодня"}</p>
+        <p className="mt-0.5 text-xs font-medium text-slate-500">{row.nextStep.date ? formatDate(row.nextStep.date) : t("common.today")}</p>
       </td>
       <td role="gridcell" className="w-[92px] px-2 py-2 text-right">
         <div className="flex items-center justify-end gap-1">
@@ -148,7 +148,7 @@ export const ClientRow = memo(function ClientRow({
               event.stopPropagation();
               onSelect();
             }}
-            aria-label="Действия"
+            aria-label={t("clients.actions")}
           >
             <MoreHorizontal size={18} />
           </button>

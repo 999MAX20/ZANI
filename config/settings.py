@@ -37,6 +37,7 @@ SECRET_KEY = env("SECRET_KEY", default="change-me-in-production")
 DEBUG = env("DEBUG")
 ENVIRONMENT = env("ENVIRONMENT", default="development")
 IS_PRODUCTION_LIKE_ENVIRONMENT = ENVIRONMENT in {"production", "staging"}
+ALLOW_DEMO_MERCHANT_FLOWS = env.bool("ALLOW_DEMO_MERCHANT_FLOWS", default=ENVIRONMENT != "production")
 ALLOWED_HOSTS = env("ALLOWED_HOSTS", default=["*"])
 CORS_ALLOWED_ORIGINS = env("CORS_ALLOWED_ORIGINS", default=[])
 CORS_ALLOW_CREDENTIALS = env("CORS_ALLOW_CREDENTIALS")

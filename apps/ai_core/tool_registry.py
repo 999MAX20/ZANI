@@ -4,12 +4,19 @@ from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
 from apps.ai_core.models import AIToolCallLog
+from apps.activities.services import create_activity_event
+from apps.activities.taxonomy import ActivityEvents
+from apps.automations.engine import run_automations_for_event
+from apps.automations.models import AutomationRule
+from apps.businesses.access import Actions, Resources, assert_can
 from apps.clients.models import Client
 from apps.crm.models import Deal, PipelineStage
+from apps.crm.services import ensure_default_pipeline
 from apps.leads.models import Lead
 from apps.tasks.models import Task
-from apps.notifications.models import Notification
 from apps.integrations.sanitization import sanitize_error_text
+from apps.leads.services import create_deal_from_lead
+from apps.tasks.services import create_automation_task
 
 
 @dataclass(frozen=True)
@@ -36,6 +43,19 @@ def registered_tools():
 def tool_requires_approval(tool_name):
     tool = TOOLS.get(tool_name)
     return bool(tool and tool.requires_confirmation)
+
+
+def assert_tool_execution_allowed(log, user):
+    permission = {
+        "create_client": (Resources.CLIENTS, Actions.CREATE),
+        "create_lead": (Resources.LEADS, Actions.CREATE),
+        "create_task": (Resources.TASKS, Actions.CREATE),
+        "create_deal": (Resources.DEALS, Actions.CREATE),
+    }.get(log.tool_name)
+    if permission is None:
+        return None
+    resource, action = permission
+    return assert_can(user, log.business, resource, action, obj=log)
 
 
 def suggest_tool_calls(*, business, user, conversation=None, message=""):
@@ -98,6 +118,18 @@ def _execute_create_client(log, user):
         phone=log.input_json.get("phone", ""),
         email=log.input_json.get("email", ""),
         source=Client.Sources.MANUAL,
+        source_detail="ai_tool",
+        source_context_json={"tool_call_id": log.id, "tool_name": log.tool_name},
+    )
+    create_activity_event(
+        business=log.business,
+        client=client,
+        actor=user if user and user.is_authenticated else None,
+        event_type=ActivityEvents.CLIENT_CREATED,
+        instance=client,
+        source="ai_tool",
+        text="Client created from approved AI tool.",
+        metadata={"tool_call_id": log.id, "tool_name": log.tool_name},
     )
     return {"client_id": client.id}
 
@@ -114,6 +146,18 @@ def _execute_create_lead(log, user):
             business=log.business,
             full_name=conversation.external_user_id if conversation else "AI suggested client",
             source=Client.Sources.MANUAL,
+            source_detail="ai_tool",
+            source_context_json={"tool_call_id": log.id, "tool_name": log.tool_name},
+        )
+        create_activity_event(
+            business=log.business,
+            client=client,
+            actor=user if user and user.is_authenticated else None,
+            event_type=ActivityEvents.CLIENT_CREATED,
+            instance=client,
+            source="ai_tool",
+            text="Client created from approved AI tool.",
+            metadata={"tool_call_id": log.id, "tool_name": log.tool_name},
         )
     lead = Lead.objects.create(
         business=log.business,
@@ -121,6 +165,22 @@ def _execute_create_lead(log, user):
         source=_source_from_conversation(conversation),
         message=log.input_json.get("message") or _last_message_text(conversation),
         responsible_user=user if user and user.is_authenticated else None,
+    )
+    create_activity_event(
+        business=log.business,
+        client=client,
+        actor=user if user and user.is_authenticated else None,
+        event_type=ActivityEvents.LEAD_CREATED,
+        instance=lead,
+        source="ai_tool",
+        text="Lead created from approved AI tool.",
+        metadata={"tool_call_id": log.id, "tool_name": log.tool_name},
+    )
+    run_automations_for_event(
+        business=log.business,
+        trigger_type=AutomationRule.TriggerTypes.LEAD_CREATED,
+        entity=lead,
+        payload={"trigger_type": AutomationRule.TriggerTypes.LEAD_CREATED, "lead_id": lead.id, "source": "ai_tool"},
     )
     if conversation and not conversation.lead_id:
         conversation.lead = lead
@@ -139,31 +199,29 @@ def _execute_create_task(log, user):
     recommendation = log.input_json.get("recommendation") or log.input_json.get("reason")
     if recommendation and recommendation not in description:
         description = f"{description}\n\nAI recommendation: {recommendation}".strip()
-    task = Task.objects.create(
+    title = log.input_json.get("title") or "AI suggested follow-up"
+    task = create_automation_task(
         business=log.business,
-        title=log.input_json.get("title") or "AI suggested follow-up",
+        title=title,
         description=description,
-        client=conversation.client if conversation else None,
-        lead=conversation.lead if conversation else None,
-        conversation=conversation,
+        entity=conversation,
         assignee=assignee,
-        created_by=user if user and user.is_authenticated else None,
         priority=log.input_json.get("priority") or Task.Priorities.NORMAL,
+        actor=user if user and user.is_authenticated else None,
         due_at=due_at,
-        reminder_at=reminder_at,
+        source_payload={"trigger_type": "ai_tool", "tool_call_id": log.id, "tool_name": log.tool_name},
+        source="ai_tool",
+        activity_text=f"AI created task: {title}",
+        notification_text=f"AI создал задачу: {title}",
+        notification_priority=(
+            "high"
+            if (log.input_json.get("priority") or Task.Priorities.NORMAL) in {Task.Priorities.HIGH, Task.Priorities.URGENT}
+            else None
+        ),
     )
-    Notification.objects.create(
-        business=log.business,
-        recipient=task.assignee,
-        client=task.client,
-        channel=Notification.Channels.SYSTEM,
-        category=Notification.Categories.TASKS,
-        priority=Notification.Priorities.HIGH if task.priority in {Task.Priorities.HIGH, Task.Priorities.URGENT} else Notification.Priorities.NORMAL,
-        text=f"AI создал задачу: {task.title}",
-        send_at=timezone.now(),
-        action_url=f"/app/tasks?task={task.id}",
-        action_label="Открыть задачу",
-    )
+    if reminder_at:
+        task.reminder_at = reminder_at
+        task.save(update_fields=["reminder_at", "updated_at"])
     return {
         "task_id": task.id,
         "assignee_id": task.assignee_id,
@@ -179,19 +237,40 @@ def _execute_create_deal(log, user):
     client = conversation.client if conversation else None
     if client is None:
         raise ValueError("A client is required to create a deal.")
-    stage = PipelineStage.objects.filter(business=log.business).order_by("pipeline_id", "order").first()
+    if conversation and conversation.lead_id:
+        result = create_deal_from_lead(
+            lead=conversation.lead,
+            actor=user,
+            amount=log.input_json.get("amount") or 0,
+            title=log.input_json.get("title") or "",
+        )
+        return {"deal_id": result.deal.id, "created": result.created}
+    pipeline = ensure_default_pipeline(log.business)
+    stage = PipelineStage.objects.filter(business=log.business, pipeline=pipeline, is_won=False, is_lost=False).order_by("order", "id").first()
     if stage is None:
         raise ValueError("A pipeline stage is required to create a deal.")
     deal = Deal.objects.create(
         business=log.business,
         client=client,
-        lead=conversation.lead if conversation else None,
+        lead=None,
         pipeline=stage.pipeline,
         stage=stage,
         title=log.input_json.get("title") or f"Deal: {client.full_name}",
         amount=log.input_json.get("amount") or 0,
         owner=user if user and user.is_authenticated else None,
         source="ai_tool",
+        probability=stage.probability,
+        stage_entered_at=timezone.now(),
+    )
+    create_activity_event(
+        business=log.business,
+        client=client,
+        actor=user if user and user.is_authenticated else None,
+        event_type=ActivityEvents.DEAL_CREATED,
+        instance=deal,
+        source="ai_tool",
+        text="Deal created from approved AI tool.",
+        metadata={"tool_call_id": log.id, "tool_name": log.tool_name},
     )
     return {"deal_id": deal.id}
 

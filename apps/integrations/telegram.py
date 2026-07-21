@@ -8,6 +8,7 @@ from apps.billing.usage import increment_usage
 from apps.bots.inbox_service import register_bot_message
 from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
 from apps.conversations.auto_pipeline import maybe_run_auto_pipeline
+from apps.integrations.message_idempotency import create_inbound_message_once, find_existing_inbound_message
 from apps.integrations.models import IntegrationEventLog
 from apps.integrations.crm_mapping import record_message_received_event
 from apps.integrations.providers import get_provider, parse_webhook, send_message, verify_webhook
@@ -68,32 +69,25 @@ def save_telegram_inbound_message(update, provided_secret):
     conversation.updated_at = timezone.now()
     conversation.save(update_fields=["updated_at"])
 
-    if external_message_id:
-        existing_message = BotMessage.objects.filter(
-            conversation=conversation,
-            direction=BotMessage.Directions.INBOUND,
-            external_message_id=external_message_id,
-        ).first()
-        if existing_message:
-            IntegrationEventLog.objects.create(
-                business=conversation.business,
-                provider=BotChannel.Channels.TELEGRAM,
-                channel=BotChannel.Channels.TELEGRAM,
-                direction=IntegrationEventLog.Directions.INBOUND,
-                payload_json={
-                    "update": safe_update,
-                    "conversation_id": conversation.id,
-                    "message_id": existing_message.id,
-                    "duplicate": True,
-                },
-                status=IntegrationEventLog.Statuses.PROCESSED,
-            )
-            return conversation, existing_message
+    existing_message = find_existing_inbound_message(conversation, external_message_id)
+    if existing_message:
+        IntegrationEventLog.objects.create(
+            business=conversation.business,
+            provider=BotChannel.Channels.TELEGRAM,
+            channel=BotChannel.Channels.TELEGRAM,
+            direction=IntegrationEventLog.Directions.INBOUND,
+            payload_json={
+                "update": safe_update,
+                "conversation_id": conversation.id,
+                "message_id": existing_message.id,
+                "duplicate": True,
+            },
+            status=IntegrationEventLog.Statuses.PROCESSED,
+        )
+        return conversation, existing_message
 
-    message = BotMessage.objects.create(
+    message, created_message = create_inbound_message_once(
         conversation=conversation,
-        direction=BotMessage.Directions.INBOUND,
-        sender_type=BotMessage.SenderTypes.CLIENT,
         text=parsed["text"],
         external_message_id=external_message_id,
         payload_json={
@@ -105,6 +99,21 @@ def save_telegram_inbound_message(update, provided_secret):
         },
         status=BotMessage.Statuses.RECEIVED,
     )
+    if not created_message:
+        IntegrationEventLog.objects.create(
+            business=conversation.business,
+            provider=BotChannel.Channels.TELEGRAM,
+            channel=BotChannel.Channels.TELEGRAM,
+            direction=IntegrationEventLog.Directions.INBOUND,
+            payload_json={
+                "update": safe_update,
+                "conversation_id": conversation.id,
+                "message_id": message.id,
+                "duplicate": True,
+            },
+            status=IntegrationEventLog.Statuses.PROCESSED,
+        )
+        return conversation, message
     register_bot_message(message)
     handle_appointment_followup_reply(
         business=conversation.business,

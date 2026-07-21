@@ -47,7 +47,7 @@ class ClientViewSet(TenantModelViewSet):
     @action(detail=True, methods=["get"], url_path="crm-card")
     def crm_card(self, request, pk=None):
         client = self.get_object()
-        return Response(client_crm_card(client))
+        return Response(client_crm_card(client, actor=request.user))
 
     @action(detail=True, methods=["post"])
     def archive(self, request, pk=None):

@@ -37,13 +37,16 @@ class PilotDemoSeedCommandTests(TestCase):
         business = Business.objects.get(landing_id="demo-test-landing-001")
         owner = User.objects.get(email="demo-owner@test.local")
         manager = User.objects.get(email="demo-manager@test.local")
+        operator = User.objects.get(email="demo-operator@zani.local")
 
         self.assertEqual(business.owner, owner)
         self.assertEqual(business.status, Business.Statuses.TRIAL)
         self.assertTrue(owner.check_password("DemoOwner123!"))
         self.assertTrue(manager.check_password("DemoManager123!"))
+        self.assertTrue(operator.check_password("DemoOperator123!"))
         self.assertTrue(BusinessMember.objects.filter(business=business, user=owner, role=BusinessMember.Roles.OWNER).exists())
         self.assertTrue(BusinessMember.objects.filter(business=business, user=manager, role=BusinessMember.Roles.MANAGER).exists())
+        self.assertTrue(BusinessMember.objects.filter(business=business, user=operator, role=BusinessMember.Roles.OPERATOR).exists())
         self.assertTrue(Subscription.objects.filter(business=business, status=Subscription.Statuses.TRIAL).exists())
         self.assertTrue(LeadForm.objects.filter(business=business, landing_id="demo-test-landing-001", is_active=True).exists())
         self.assertGreaterEqual(Service.objects.filter(business=business).count(), 3)
@@ -68,6 +71,7 @@ class PilotDemoSeedCommandTests(TestCase):
         self.assertTrue(Task.objects.filter(business=business, title__icontains="необработанными").exists())
         self.assertTrue(AIToolCallLog.objects.filter(business=business, tool_name="create_task", status=AIToolCallLog.Statuses.EXECUTED).exists())
         self.assertTrue(Notification.objects.filter(business=business, category="tasks").exists())
+        self.assertTrue(Task.objects.filter(business=business, assignee=operator, title__icontains="pilot-чат").exists())
         self.assertGreaterEqual(QuickReplyTemplate.objects.filter(business=business, is_active=True).count(), 3)
 
         # The reset command must be safe to run repeatedly after leads, clients,
@@ -150,8 +154,10 @@ class PilotDemoSeedCommandTests(TestCase):
         text = output.getvalue()
         self.assertIn("Owner login: demo-output-owner@test.local / [hidden; pass --show-passwords to print]", text)
         self.assertIn("Manager login: demo-output-manager@test.local / [hidden; pass --show-passwords to print]", text)
+        self.assertIn("Operator login: demo-operator@zani.local / [hidden; pass --show-passwords to print]", text)
         self.assertNotIn("DemoOwner123!", text)
         self.assertNotIn("DemoManager123!", text)
+        self.assertNotIn("DemoOperator123!", text)
 
     def test_seed_pilot_demo_can_explicitly_print_passwords(self):
         output = StringIO()
@@ -171,6 +177,7 @@ class PilotDemoSeedCommandTests(TestCase):
         text = output.getvalue()
         self.assertIn("Owner login: demo-show-owner@test.local / DemoOwner123!", text)
         self.assertIn("Manager login: demo-show-manager@test.local / DemoManager123!", text)
+        self.assertIn("Operator login: demo-operator@zani.local / DemoOperator123!", text)
 
 
 class PilotDemoLaunchCommandTests(TestCase):
@@ -193,6 +200,7 @@ class PilotDemoLaunchCommandTests(TestCase):
         business = Business.objects.get(landing_id="launch-demo-001")
         owner = User.objects.get(email="launch-owner@test.local")
         manager = User.objects.get(email="launch-manager@test.local")
+        operator = User.objects.get(email="demo-operator@zani.local")
 
         self.assertTrue(platform.is_platform_user)
         self.assertTrue(platform.is_superuser)
@@ -201,6 +209,8 @@ class PilotDemoLaunchCommandTests(TestCase):
         self.assertEqual(business.owner, owner)
         self.assertTrue(owner.check_password("DemoOwner123!"))
         self.assertTrue(manager.check_password("DemoManager123!"))
+        self.assertTrue(operator.check_password("DemoOperator123!"))
+        self.assertTrue(BusinessMember.objects.filter(business=business, user=operator, role=BusinessMember.Roles.OPERATOR).exists())
         self.assertTrue(LeadForm.objects.filter(business=business, is_active=True).exists())
         self.assertGreaterEqual(Lead.objects.filter(business=business).count(), 3)
         self.assertGreaterEqual(BotConversation.objects.filter(business=business).count(), 1)
@@ -249,9 +259,11 @@ class PilotDemoLaunchCommandTests(TestCase):
         self.assertIn("Platform admin: platform-output@test.local / [hidden; pass --show-passwords to print]", text)
         self.assertIn("Demo owner:     output-owner@test.local / [hidden; pass --show-passwords to print]", text)
         self.assertIn("Demo manager:   output-manager@test.local / [hidden; pass --show-passwords to print]", text)
+        self.assertIn("Demo operator:  demo-operator@zani.local / [hidden; pass --show-passwords to print]", text)
         self.assertNotIn("Platform123!", text)
         self.assertNotIn("DemoOwner123!", text)
         self.assertNotIn("DemoManager123!", text)
+        self.assertNotIn("DemoOperator123!", text)
 
     def test_prepare_pilot_demo_can_explicitly_print_passwords(self):
         output = StringIO()
@@ -274,6 +286,7 @@ class PilotDemoLaunchCommandTests(TestCase):
         self.assertIn("Platform admin: platform-show@test.local / Platform123!", text)
         self.assertIn("Demo owner:     show-owner@test.local / DemoOwner123!", text)
         self.assertIn("Demo manager:   show-manager@test.local / DemoManager123!", text)
+        self.assertIn("Demo operator:  demo-operator@zani.local / DemoOperator123!", text)
 
     def test_pilot_launch_quality_gate_checks_prepared_demo(self):
         call_command(
@@ -304,4 +317,7 @@ class PilotDemoLaunchCommandTests(TestCase):
 
         text = output.getvalue()
         self.assertIn("Pilot launch quality gate passed.", text)
+        self.assertIn("[PASS] login: demo operator", text)
+        self.assertIn("[PASS] operator tasks", text)
+        self.assertIn("[PASS] operator inbox summary", text)
         self.assertIn("Lead form public_id:", text)

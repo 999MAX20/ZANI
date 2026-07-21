@@ -11,6 +11,7 @@ import { Input } from "../../../../components/ui/Input";
 import { useNotification } from "../../../../components/notifications/NotificationProvider";
 import { useI18n } from "../../../../lib/i18n";
 import type { Bot, BotChannel, Id } from "../../../../types";
+import { merchantSafeIntegrationError } from "../../utils";
 import { MessengerSetupShell } from "./IntegrationSetupUi";
 import { loadFacebookSdk, parseWhatsAppEmbeddedSignupMessage, type WhatsAppEmbeddedSignupCallback } from "./metaCallbacks";
 
@@ -214,7 +215,7 @@ export function WhatsAppInlineSetup({
   if (!channel) {
     return (
       <div className="w-full space-y-3">
-        {error ? <ErrorState message={getApiErrorMessage(error)} /> : null}
+        {error ? <ErrorState message={merchantSafeIntegrationError(getApiErrorMessage(error), t)} /> : null}
         <Button type="button" disabled={!canManage} isLoading={ensureChannel.isPending} onClick={() => ensureChannel.mutate()}>
           <Send size={16} /> {t("integrations.whatsapp.createChannel")}
         </Button>
@@ -229,7 +230,7 @@ export function WhatsAppInlineSetup({
       description={t("integrations.whatsapp.inlineDescription")}
       status={connectionStatus}
       statusTone={connectionTone}
-      error={error ? <ErrorState message={getApiErrorMessage(error)} /> : null}
+      error={error ? <ErrorState message={merchantSafeIntegrationError(getApiErrorMessage(error), t)} /> : null}
       canManage={canManage}
       inboxChannel="whatsapp"
       channelToggleVisible={credentialsConfigured}

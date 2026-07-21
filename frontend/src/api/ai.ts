@@ -27,14 +27,6 @@ export type AIAssistantStatusResponse = {
   cheap_model: string;
 };
 
-export type PublicLandingAssistantResponse = {
-  answer: string;
-  is_mock: boolean;
-  provider: string;
-  model: string;
-  tokens_used: number;
-};
-
 export type AIAnalystSource = {
   id: string;
   event_id: Id;
@@ -125,13 +117,6 @@ export type AIOwnerDailyBriefResponse = {
 };
 
 export const aiApi = {
-  publicLandingAssistant: async ({ message, section }: { message: string; section?: string }) => {
-    const { data } = await apiClient.post<PublicLandingAssistantResponse>("/api/public/landing/assistant/", {
-      message,
-      section,
-    });
-    return data;
-  },
   assistantStatus: async (business: Id) => {
     const { data } = await apiClient.get<AIAssistantStatusResponse>("/api/ai/assistant/status/", {
       params: { business },

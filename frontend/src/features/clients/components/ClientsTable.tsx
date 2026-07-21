@@ -104,16 +104,16 @@ export function ClientsTable({
       <div
         ref={scrollRef}
         className="hidden min-h-0 flex-1 overflow-y-auto overflow-x-hidden md:block"
-        aria-label="Область прокрутки таблицы клиентов"
+        aria-label={t("clients.tableScrollArea")}
       >
         <table
           role="grid"
-          aria-label="Список клиентов"
+          aria-label={t("clients.tableAriaLabel")}
           aria-describedby="clients-table-description"
           className="w-full table-fixed border-separate border-spacing-0 text-sm"
         >
           <caption id="clients-table-description" className="sr-only">
-            Таблица клиентов с фильтрацией. Нажмите Enter или пробел на строке, чтобы выбрать клиента.
+            {t("clients.tableDescription")}
           </caption>
           <thead className="sticky top-0 z-10">
             <tr role="row" className="h-10 border-b border-slate-200 bg-white text-left text-xs font-semibold text-slate-600">
@@ -124,15 +124,15 @@ export function ClientsTable({
                   readOnly
                   onClick={toggleAllPageRows}
                   className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                  aria-label="Выбрать все на странице"
+                  aria-label={t("clients.selectAllPage")}
                 />
               </th>
-              <th role="columnheader" className="w-[32%] px-2 py-2">Клиент</th>
-              {visibleColumns.has("source") ? <th role="columnheader" className="w-[12%] px-2 py-2">Источник</th> : null}
-              <th role="columnheader" className="w-[12%] px-2 py-2">Статус</th>
-              {visibleColumns.has("manager") ? <th role="columnheader" className="w-[15%] px-2 py-2">Менеджер</th> : null}
-              <th role="columnheader" className="w-[15%] px-2 py-2">Последний контакт</th>
-              <th role="columnheader" className="px-2 py-2">Следующий шаг</th>
+              <th role="columnheader" className="w-[32%] px-2 py-2">{t("clients.client")}</th>
+              {visibleColumns.has("source") ? <th role="columnheader" className="w-[12%] px-2 py-2">{t("clients.source")}</th> : null}
+              <th role="columnheader" className="w-[12%] px-2 py-2">{t("clients.status")}</th>
+              {visibleColumns.has("manager") ? <th role="columnheader" className="w-[15%] px-2 py-2">{t("clients.manager")}</th> : null}
+              <th role="columnheader" className="w-[15%] px-2 py-2">{t("clients.lastContact")}</th>
+              <th role="columnheader" className="px-2 py-2">{t("clients.nextStep")}</th>
               <th role="columnheader" className="w-[92px] px-2 py-2 text-right"></th>
             </tr>
           </thead>
@@ -175,6 +175,10 @@ export function ClientsTable({
         onPageSizeChange={(nextPageSize) => {
           onPageSizeChange(nextPageSize);
         }}
+        rangeLabel={t("pagination.range", { from: totalClients === 0 ? 0 : (page - 1) * pageSize + 1, to: Math.min(totalClients, page * pageSize), total: totalClients })}
+        previousLabel={t("pagination.previous")}
+        nextLabel={t("pagination.next")}
+        pageSizeLabel={(size) => t("pagination.pageSize", { size })}
       />
     </CrmDataTable>
   );

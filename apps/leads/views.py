@@ -350,7 +350,7 @@ class LeadViewSet(TenantModelViewSet):
     @action(detail=True, methods=["get"], url_path="crm-card")
     def crm_card(self, request, pk=None):
         lead = self.get_object()
-        return Response(lead_crm_card(lead))
+        return Response(lead_crm_card(lead, actor=request.user))
 
     @action(detail=False, methods=["post"], url_path="check-duplicates")
     def check_duplicates(self, request):

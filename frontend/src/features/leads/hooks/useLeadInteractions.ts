@@ -1,4 +1,5 @@
 import { useEffect, type Dispatch, type SetStateAction } from "react";
+import { useNavigate } from "react-router-dom";
 
 import type { CrmDrawerEntity } from "../../../components/crm/CrmEntityDrawer";
 import type { Client, Id, Lead, Service, TeamMember } from "../../../types";
@@ -44,6 +45,8 @@ export function useLeadInteractions({
   setShortcutsOpen: (open: boolean) => void;
   setSelectedLeadIds: Dispatch<SetStateAction<Id[]>>;
 }) {
+  const navigate = useNavigate();
+
   useEffect(() => {
     setCreateOpen(searchParams.get("create") === "1");
   }, [searchParams, setCreateOpen]);
@@ -61,12 +64,9 @@ export function useLeadInteractions({
 
   function openLead(lead: Lead) {
     setSelectedId(lead.id);
-    setDrawerEntity({ type: "lead", id: lead.id });
+    setDrawerEntity(null);
     setContextMenu(null);
-    const next = new URLSearchParams(searchParams);
-    next.set("lead", String(lead.id));
-    next.delete("create");
-    setSearchParams(next, { replace: true });
+    navigate(`/app/leads/${lead.id}`);
   }
 
   function closeDrawer() {

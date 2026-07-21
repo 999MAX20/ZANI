@@ -13,6 +13,8 @@ from apps.core.permissions import IsTenantMember, accessible_businesses, platfor
 
 def _parse_query_id_list(query_params, key: str) -> list[int]:
     raw_values = list(query_params.getlist(key)) if hasattr(query_params, "getlist") else []
+    if hasattr(query_params, "getlist"):
+        raw_values.extend(query_params.getlist(f"{key}[]"))
     if not raw_values:
         value = query_params.get(key)
         if value:

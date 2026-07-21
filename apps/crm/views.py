@@ -118,6 +118,9 @@ class DealViewSet(TenantModelViewSet):
         client_ids = self.parse_query_id_list("client_ids")
         if client_ids:
             queryset = queryset.filter(client_id__in=client_ids)
+        lead_ids = self.parse_query_id_list("lead_ids")
+        if lead_ids:
+            queryset = queryset.filter(lead_id__in=lead_ids)
         pipeline = params.get("pipeline")
         if pipeline:
             queryset = queryset.filter(pipeline_id=pipeline)
@@ -265,7 +268,7 @@ class DealViewSet(TenantModelViewSet):
     @action(detail=True, methods=["get"], url_path="crm-card")
     def crm_card(self, request, pk=None):
         deal = self.get_object()
-        return Response(deal_crm_card(deal))
+        return Response(deal_crm_card(deal, actor=request.user))
 
     @action(detail=False, methods=["get"])
     def summary(self, request):

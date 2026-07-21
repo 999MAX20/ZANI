@@ -36,6 +36,8 @@ class Command(BaseCommand):
         parser.add_argument("--owner-password", default="DemoOwner123!")
         parser.add_argument("--manager-email", default="demo-manager@zani.local")
         parser.add_argument("--manager-password", default="DemoManager123!")
+        parser.add_argument("--operator-email", default="demo-operator@zani.local")
+        parser.add_argument("--operator-password", default="DemoOperator123!")
         parser.add_argument("--reset", action="store_true", help="Delete existing demo business for this landing id before seeding.")
         parser.add_argument("--show-passwords", action="store_true", help="Print demo passwords in command output.")
 
@@ -59,7 +61,22 @@ class Command(BaseCommand):
         )
         business = result.business
         owner = result.owner
-        manager = self._ensure_manager(business, options["manager_email"], options["manager_password"])
+        manager = self._ensure_staff_user(
+            business,
+            email=options["manager_email"],
+            password=options["manager_password"],
+            user_role=User.Roles.BUSINESS_MANAGER,
+            member_role=BusinessMember.Roles.MANAGER,
+            full_name="Demo Manager",
+        )
+        operator = self._ensure_staff_user(
+            business,
+            email=options["operator_email"],
+            password=options["operator_password"],
+            user_role=User.Roles.BUSINESS_OPERATOR,
+            member_role=BusinessMember.Roles.OPERATOR,
+            full_name="Demo Operator",
+        )
         services = self._ensure_services(business)
         create_demo_data(business, actor=owner)
         self._ensure_connectors(business, owner)
@@ -67,15 +84,17 @@ class Command(BaseCommand):
         self._ensure_demo_leads(result.lead_form, manager)
         self._ensure_inbox(business, manager)
         self._ensure_ai_action(business, owner, manager)
+        self._ensure_operator_work(business, owner, operator)
         self._ensure_quick_replies(business)
 
         self.stdout.write(self.style.SUCCESS("ZANI pilot demo seeded."))
         self.stdout.write(f"Business: {business.id} / {business.name} / {business.slug}")
         self.stdout.write(f"Owner login: {options['owner_email']} / {self._display_password(options['owner_password'], options['show_passwords'])}")
         self.stdout.write(f"Manager login: {options['manager_email']} / {self._display_password(options['manager_password'], options['show_passwords'])}")
+        self.stdout.write(f"Operator login: {options['operator_email']} / {self._display_password(options['operator_password'], options['show_passwords'])}")
         self.stdout.write(f"Landing form public_id: {result.lead_form.public_id}")
         self.stdout.write(f"Services: {len(services)}")
-        self.stdout.write("Smoke path: login as owner → dashboard → leads → inbox → AI action task.")
+        self.stdout.write("Smoke path: login as owner -> dashboard -> leads -> inbox -> AI action task -> operator task queue.")
 
     def _display_password(self, password: str, show_passwords: bool) -> str:
         if show_passwords:
@@ -107,29 +126,30 @@ class Command(BaseCommand):
             # together with the business.
             business.delete()
 
-    def _ensure_manager(self, business: Business, email: str, password: str):
-        username = self._unique_username(email.split("@")[0] or "demo-manager")
-        manager, _ = User.objects.get_or_create(
+    def _ensure_staff_user(self, business: Business, *, email: str, password: str, user_role: str, member_role: str, full_name: str):
+        username = self._unique_username(email.split("@")[0] or "demo-user")
+        user, _ = User.objects.get_or_create(
             email=email,
             defaults={
                 "username": username,
-                "role": User.Roles.BUSINESS_MANAGER,
-                "full_name": "Demo Manager",
+                "role": user_role,
+                "full_name": full_name,
                 "is_active": True,
             },
         )
-        manager.username = manager.username or self._unique_username(email.split("@")[0] or "demo-manager")
-        manager.role = User.Roles.BUSINESS_MANAGER
-        manager.full_name = manager.full_name or "Demo Manager"
-        manager.is_active = True
-        manager.set_password(password)
-        manager.save(update_fields=["username", "role", "full_name", "is_active", "password"])
+        user.username = user.username or self._unique_username(email.split("@")[0] or "demo-user")
+        user.role = user_role
+        user.full_name = user.full_name or full_name
+        user.is_active = True
+        user.set_password(password)
+        user.save(update_fields=["username", "role", "full_name", "is_active", "password"])
+        business_role = business.roles.filter(preset_key=member_role, is_active=True).first()
         BusinessMember.objects.update_or_create(
             business=business,
-            user=manager,
-            defaults={"role": BusinessMember.Roles.MANAGER, "is_active": True},
+            user=user,
+            defaults={"role": member_role, "business_role": business_role, "is_active": True},
         )
-        return manager
+        return user
 
     def _unique_username(self, base: str) -> str:
         slug = slugify(base) or "demo-manager"
@@ -306,6 +326,22 @@ class Command(BaseCommand):
             category="tasks",
             text="AI создал демо-задачу: связаться с необработанными заявками.",
             defaults={"priority": Notification.Priorities.HIGH, "status": Notification.Statuses.PENDING, "send_at": timezone.now(), "action_url": f"/app/tasks?task={task.id}", "action_label": "Открыть задачу"},
+        )
+
+    def _ensure_operator_work(self, business: Business, owner, operator):
+        conversation = BotConversation.objects.filter(business=business, assigned_to__isnull=False).order_by("-updated_at").first()
+        Task.objects.update_or_create(
+            business=business,
+            title="Оператор: ответить на pilot-чат",
+            defaults={
+                "description": "Pilot task for the operator role: review the assigned inbox handoff and keep the client response flow moving.",
+                "conversation": conversation,
+                "assignee": operator,
+                "created_by": owner,
+                "priority": Task.Priorities.NORMAL,
+                "status": Task.Statuses.OPEN,
+                "due_at": timezone.now() + timezone.timedelta(hours=3),
+            },
         )
 
     def _ensure_quick_replies(self, business: Business):

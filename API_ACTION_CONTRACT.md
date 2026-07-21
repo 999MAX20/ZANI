@@ -1,10 +1,12 @@
 # API Action Contract
 
-Last updated: 2026-06-19
+Last updated: 2026-07-16
 
 Purpose: keep frontend and backend aligned on which fields are regular CRUD fields and which fields are state-machine fields that must only change through action endpoints/services.
 
 This document is a working source of truth for CRM/frontend integration. If a field is listed as protected, frontend must not send it in generic `POST`, `PUT` or `PATCH` payloads. Backend serializers reject protected writes where the entity has a guarded state contract.
+
+Current sync note 2026-07-16: refreshed against the current DRF router/actions for CRM, inbox, tasks, AI, onboarding, bot channels and integrations. Runtime code remains the final source of truth when this document and implementation differ.
 
 ## General Rules
 
@@ -149,9 +151,15 @@ Protected generic write fields:
 
 Action endpoints:
 
+- `PATCH /api/tasks/{id}/update-details/`
+  - Use for editable task details while task is open/in-progress.
+  - Allowed body: descriptive fields, due date, priority and valid related objects/assignee.
+  - Backend writes audit/activity for changed fields.
 - `POST /api/tasks/{id}/start/`
 - `POST /api/tasks/{id}/complete/`
 - `POST /api/tasks/{id}/cancel/`
+  - Required body: `reason`.
+- `POST /api/tasks/{id}/undo-cancel/`
 - `POST /api/tasks/{id}/reopen/`
 - `POST /api/tasks/{id}/snooze/`
   - Required body: `snoozed_until`.
@@ -165,9 +173,18 @@ Action endpoints:
 - `POST /api/tasks/{id}/add-comment/`
   - Required body: `text`.
 - `GET /api/tasks/{id}/comments/`
+- `DELETE /api/tasks/{id}/comments/{comment_id}/`
 - `POST /api/tasks/{id}/archive/`
   - Optional body: `reason`.
 - `POST /api/tasks/{id}/restore/`
+
+Read/helper endpoints:
+
+- `GET /api/tasks/summary/`
+- `GET /api/tasks/templates/?business=<id>`
+- `GET /api/tasks/workload/?business=<id>`
+
+Frontend rule: use `update-details` for task detail edits that need audit/activity consistency. Use `templates` only to prefill a user-confirmed create/update form; templates do not create tasks by themselves.
 
 ## Clients
 
@@ -326,6 +343,47 @@ Action endpoints:
 
 Frontend rule: use `preview` before `create-manual` in automation builder.
 
+## AI
+
+Resources:
+
+- `/api/ai/request-logs/`
+- `/api/ai/knowledge-items/`
+- `/api/ai/agent-profiles/`
+- `/api/ai/approval-requests/`
+
+AI action/helper endpoints:
+
+- `GET /api/ai/assistant/status/`
+  - Required query: `business`.
+- `POST /api/ai/assistant/chat/`
+  - Required body: `business`, `message`.
+  - Returns answer, provider/mode metadata, `log_id` and CRM context summary.
+- `GET /api/ai/analyst/brief/`
+  - Required query: `business`.
+- `GET /api/ai/owner-brief/daily/`
+  - Required query: `business`.
+- `POST /api/ai/tools/suggest/`
+  - Required body: `business`.
+  - Optional body: `conversation`, `message`.
+- `POST /api/ai/tools/{log_id}/execute/`
+  - Required body for approval-gated tools: `approval_id`.
+- `POST /api/ai/approval-requests/{id}/approve/`
+  - Optional body: `reason`.
+- `POST /api/ai/approval-requests/{id}/reject/`
+  - Optional body: `reason`.
+
+Protected `ApprovalRequest` generic write fields:
+
+- `status`
+- `requested_by`
+- `approved_by`
+- `approved_at`
+- `rejected_by`
+- `rejected_at`
+
+Frontend rule: AI can suggest actions, but critical mutating tools must be executed only through `tools/{log_id}/execute/` with a matching approved `ApprovalRequest` when the tool requires approval. Do not directly mutate CRM state from AI UI.
+
 ## Billing
 
 Resource: `/api/billing/current-subscription/`
@@ -381,11 +439,43 @@ Action/helper endpoints:
 
 Frontend rule: submissions and submission errors are operational records. Admin UI may read them, but public form submission should only use public endpoints.
 
+## Onboarding And Platform Setup
+
+Onboarding action/helper endpoints:
+
+- `GET /api/onboarding/templates/`
+- `GET /api/onboarding/status/`
+  - Required query: `business`.
+- `POST /api/onboarding/apply-template/`
+  - Required body: `business`, template identifier.
+- `POST /api/onboarding/demo-data/`
+  - Required body: `business`.
+  - Only valid when demo merchant flows are enabled by environment.
+- `POST /api/onboarding/setup-channel/`
+  - Required body: `business`, channel/setup fields.
+- `POST /api/onboarding/first-message/`
+  - Required body: `business`.
+
+Platform helper endpoint:
+
+- `GET /api/platform/ping/`
+- `GET /api/platform/overview/`
+- `GET /api/platform/operations-health/`
+- `GET /api/platform/merchants/`
+- `GET /api/platform/merchants/{business_id}/`
+- `POST /api/platform/merchants/{business_id}/support-actions/`
+- `POST /api/platform/activate-landing/`
+
+Platform frontend rule: platform operations endpoints are internal/support surfaces, not daily merchant CRM pages. Keep them out of role-scoped merchant navigation unless the user has platform-level access.
+
+Frontend rule: onboarding may apply templates and demo/setup actions, but production merchant UI must clearly distinguish demo/mock flows from live business data.
+
 ## Conversations And Inbox
 
 Primary CRM inbox resource:
 
 - `/api/inbox/conversations/`
+- `/api/bot-conversations/`
 
 Important action endpoints:
 
@@ -400,6 +490,11 @@ Important action endpoints:
 - `POST /api/inbox/conversations/{id}/reopen/`
 - `POST /api/inbox/conversations/{id}/suggest-reply/`
 - `POST /api/inbox/conversations/{id}/create-task/`
+- `POST /api/inbox/conversations/{id}/create-appointment/`
+  - Required body: `service`, `start_at`.
+  - Optional body: `resource`, `notes`.
+- `POST /api/inbox/conversations/{id}/qualify/`
+  - Creates a no-mutation AI qualification preview for the latest conversation state.
 - `POST /api/inbox/conversations/{id}/run-pipeline/`
 - `POST /api/inbox/conversations/{id}/link-lead/`
 - `POST /api/inbox/conversations/{id}/link-client/`
@@ -407,8 +502,9 @@ Important action endpoints:
 - `POST /api/inbox/conversations/{id}/create-lead/`
 - `POST /api/inbox/conversations/{id}/link-deal/`
 - `POST /api/inbox/conversations/{id}/create-deal/`
+- `POST /api/bot-conversations/{id}/suggest-reply/`
 
-Frontend rule: inbox is action-heavy. Avoid mutating bot/conversation state directly from generic bot endpoints unless the UI is an admin settings screen.
+Frontend rule: inbox is action-heavy. Avoid mutating bot/conversation state directly from generic bot endpoints unless the UI is an admin settings screen. AI-driven `run-pipeline` must respect the backend confirmation policy; when the policy requires a fresh qualification preview, call `qualify` first and show the user what will happen before mutation.
 
 ## Integrations
 
@@ -419,6 +515,7 @@ Connector resources:
 - `/api/business-events/`
 - `/api/connector-sync-runs/`
 - `/api/integration-event-logs/`
+- `/api/bot-channels/`
 
 Logs and sync runs are read-only API resources. Connector status changes should come from connector action endpoints/services.
 
@@ -434,8 +531,8 @@ Important action endpoints:
 - `POST /api/business-connectors/whatsapp-embedded-signup/complete/`
 - `POST /api/business-connectors/instagram-oauth/start/`
 - `POST /api/business-connectors/instagram-oauth/complete/`
-- `POST /api/business-connectors/{id}/enable/`
-- `POST /api/business-connectors/{id}/disable/`
+- `POST /api/business-connectors/{id}/connect/`
+- `POST /api/business-connectors/{id}/disconnect/`
 - `POST /api/business-connectors/{id}/health-check/`
 - `GET /api/business-connectors/{id}/kaspi-status/`
 - `GET /api/business-connectors/{id}/moysklad-status/`
@@ -451,6 +548,21 @@ Important action endpoints:
 - `POST /api/business-connectors/{id}/ozon-sync/`
 - `POST /api/business-connectors/{id}/events/`
 - `POST /api/business-connectors/{id}/mock-sync/`
+- `POST /api/connector-sync-runs/{id}/retry/`
+
+Bot channel provider actions:
+
+- `POST /api/bot-channels/{id}/telegram-config/`
+- `POST /api/bot-channels/{id}/set-telegram-webhook/`
+- `GET /api/bot-channels/{id}/telegram-status/`
+- `POST /api/bot-channels/{id}/telegram-test-connection/`
+- `POST /api/bot-channels/{id}/sync-telegram-updates/`
+- `POST /api/bot-channels/{id}/whatsapp-config/`
+- `POST /api/bot-channels/{id}/whatsapp-test-connection/`
+- `GET /api/bot-channels/{id}/whatsapp-status/`
+- `POST /api/bot-channels/{id}/instagram-config/`
+- `POST /api/bot-channels/{id}/instagram-test-connection/`
+- `GET /api/bot-channels/{id}/instagram-status/`
 
 API token and webhook actions:
 
@@ -459,7 +571,7 @@ API token and webhook actions:
 - `POST /api/webhook-endpoints/{id}/test-delivery/`
 - `POST /api/webhook-deliveries/{id}/retry/`
 
-Frontend rule: never display or store raw credential values after submission. Use masked values and connector status endpoints.
+Frontend rule: never display or store raw credential values after submission. Use masked values and connector/bot-channel status endpoints. Provider credentials belong in connector credential/provider service layers; UI should show safe status, setup state and recovery actions, not raw tokens, webhook secrets or provider payloads.
 
 ## Analytics
 

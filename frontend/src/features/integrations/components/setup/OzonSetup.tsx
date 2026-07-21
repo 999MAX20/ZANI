@@ -10,6 +10,7 @@ import { Input } from "../../../../components/ui/Input";
 import { useNotification } from "../../../../components/notifications/NotificationProvider";
 import { useI18n } from "../../../../lib/i18n";
 import type { BusinessConnector, Id } from "../../../../types";
+import { merchantSafeIntegrationError } from "../../utils";
 
 export function OzonInlineSetup({
   businessId,
@@ -28,7 +29,7 @@ export function OzonInlineSetup({
   const [entities, setEntities] = useState<string[]>(Array.isArray(connector?.config_json?.entities) ? connector?.config_json?.entities as string[] : ["fbs_postings", "fbo_postings", "stocks"]);
   const [syncDays, setSyncDays] = useState(String(connector?.config_json?.sync_days || "7"));
   const [limit, setLimit] = useState(String(connector?.config_json?.limit || "50"));
-  const [showAccessSetup, setShowAccessSetup] = useState(Boolean(connector?.config_json?.client_id_configured && connector?.config_json?.api_key_configured));
+  const [showAccessSetup, setShowAccessSetup] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   function setNotice(message: string | null) {
@@ -63,7 +64,7 @@ export function OzonInlineSetup({
   const testConnection = useMutation({
     mutationFn: () => businessConnectorsApi.ozonTestConnection(Number(connector?.id)),
     onSuccess: (data) => {
-      setNotice(data.ok ? t("integrations.ozon.connectionChecked") : data.reason || t("integrations.ozon.connectionCheckFailed"));
+      setNotice(data.ok ? (data.mock ? t("integrations.mock.connectionChecked") : t("integrations.ozon.connectionChecked")) : data.reason || t("integrations.ozon.connectionCheckFailed"));
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
       queryClient.invalidateQueries({ queryKey: ["ozon-status", connector?.id] });
     },
@@ -72,7 +73,7 @@ export function OzonInlineSetup({
   const syncData = useMutation({
     mutationFn: () => businessConnectorsApi.ozonSync(Number(connector?.id)),
     onSuccess: (data) => {
-      setNotice(data.ok ? t("integrations.ozon.dataLoaded", { count: data.events.length }) : data.reason || t("integrations.ozon.dataLoadFailed"));
+      setNotice(data.ok ? (data.mock ? t("integrations.mock.syncLoaded", { count: data.events.length }) : t("integrations.ozon.dataLoaded", { count: data.events.length })) : data.reason || t("integrations.ozon.dataLoadFailed"));
       queryClient.invalidateQueries({ queryKey: ["business-events"] });
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
       queryClient.invalidateQueries({ queryKey: ["connector-sync-runs"] });
@@ -86,10 +87,11 @@ export function OzonInlineSetup({
 
   const error = saveConfig.error || testConnection.error || syncData.error || status.error;
   const accessConfigured = Boolean((status.data?.client_id_configured && status.data?.api_key_configured) || (connector?.config_json?.client_id_configured && connector?.config_json?.api_key_configured));
+  const runsInMockMode = status.data ? !status.data.ozon_enabled : false;
 
   return (
     <div className="w-full space-y-4 rounded-card border border-slate-200 bg-slate-50 p-4">
-      {error ? <ErrorState message={getApiErrorMessage(error)} /> : null}
+      {error ? <ErrorState message={merchantSafeIntegrationError(getApiErrorMessage(error), t)} /> : null}
 
       <div className="grid gap-2 sm:grid-cols-3">
         <div className="rounded-2xl bg-white p-3">
@@ -98,13 +100,18 @@ export function OzonInlineSetup({
         </div>
         <div className="rounded-2xl bg-white p-3">
           <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">{t("integrations.setupMetric.mode")}</p>
-          <p className="mt-1 text-sm font-black text-midnight">{t("integrations.setupMetric.readOnly")}</p>
+          <p className="mt-1 text-sm font-black text-midnight">{runsInMockMode ? t("integrations.setupMetric.demoReadOnly") : t("integrations.setupMetric.readOnly")}</p>
         </div>
         <div className="rounded-2xl bg-white p-3">
           <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">{t("integrations.ozon.data")}</p>
           <p className="mt-1 text-sm font-black text-midnight">FBS/FBO/stock</p>
         </div>
       </div>
+      {runsInMockMode ? (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold leading-5 text-amber-800">
+          {t("integrations.mock.providerDisabledNotice")}
+        </div>
+      ) : null}
 
       {!showAccessSetup ? (
         <div className="rounded-card border border-blue-100 bg-blue-50 p-4">
@@ -162,9 +169,11 @@ export function OzonInlineSetup({
       ) : null}
 
       <div className="grid gap-3 md:grid-cols-3">
-        <Button type="button" disabled={!canManage || ((!clientId.trim() || !apiKey.trim()) && !connector)} isLoading={saveConfig.isPending} onClick={() => saveConfig.mutate()}>
-          <ShieldCheck size={16} /> {connector ? t("integrations.setupAction.saveAccess") : t("integrations.ozon.connect")}
-        </Button>
+        {showAccessSetup || showAdvanced ? (
+          <Button type="button" disabled={!canManage || ((!clientId.trim() || !apiKey.trim()) && !connector)} isLoading={saveConfig.isPending} onClick={() => saveConfig.mutate()}>
+            <ShieldCheck size={16} /> {connector ? t("integrations.setupAction.saveAccess") : t("integrations.ozon.connect")}
+          </Button>
+        ) : null}
         <Button type="button" variant="secondary" disabled={!canManage || !connector || !accessConfigured} isLoading={testConnection.isPending} onClick={() => testConnection.mutate()}>
           <RefreshCw size={16} /> {t("integrations.card.check")}
         </Button>

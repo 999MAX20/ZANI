@@ -514,7 +514,8 @@ function EntityLinkChip({ href, children }: { href: string; children: React.Reac
 }
 
 function TaskActivityRow({ event }: { event: ActivityEvent }) {
-  const details = activityDetails(event);
+  const { t } = useI18n();
+  const details = activityDetails(event, t);
   return (
     <div className="flex gap-3 rounded-2xl bg-slate-50 p-3">
       <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-white text-brand-600">
@@ -537,28 +538,28 @@ function TaskActivityRow({ event }: { event: ActivityEvent }) {
   );
 }
 
-function activityDetails(event: ActivityEvent) {
+function activityDetails(event: ActivityEvent, t: ReturnType<typeof useI18n>["t"]) {
   const metadata = event.metadata || {};
   const fields = metadata.fields;
   if (!fields || typeof fields !== "object" || Array.isArray(fields)) return [];
   return Object.keys(fields)
     .slice(0, 4)
-    .map((field) => fieldLabel(field));
+    .map((field) => fieldLabel(field, t));
 }
 
-function fieldLabel(field: string) {
+function fieldLabel(field: string, t: ReturnType<typeof useI18n>["t"]) {
   const labels: Record<string, string> = {
-    title: "Название",
-    description: "Описание",
-    priority: "Приоритет",
-    due_at: "Срок",
-    reminder_at: "Напоминание",
-    assignee: "Исполнитель",
-    client: "Клиент",
-    lead: "Заявка",
-    deal: "Сделка",
-    appointment: "Запись",
-    conversation: "Conversation",
+    title: t("tasks.title"),
+    description: t("tasks.description"),
+    priority: t("tasks.priority"),
+    due_at: t("tasks.dueAt"),
+    reminder_at: t("tasks.reminderAt"),
+    assignee: t("tasks.assignee"),
+    client: t("common.client"),
+    lead: t("tasks.lead"),
+    deal: t("tasks.deal"),
+    appointment: t("tasks.appointment"),
+    conversation: t("nav.conversations"),
   };
   return labels[field] || field;
 }

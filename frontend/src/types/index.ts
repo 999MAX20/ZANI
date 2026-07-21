@@ -1290,6 +1290,19 @@ export type Note = {
 
 export type CrmEntityType = "client" | "lead" | "deal" | "appointment";
 
+export type CrmCardActionDetail = {
+  id: string;
+  label_key: string;
+  resource: string;
+  action: string;
+  allowed: boolean;
+  scope: "none" | "own" | "team" | "business" | string;
+  reason: string;
+  requires_reason: boolean;
+  destructive: boolean;
+  confirmation: "none" | "confirm" | "reason" | string;
+};
+
 export type Tag = {
   id: Id;
   business: Id;
@@ -1343,6 +1356,7 @@ export type CrmCardPayload = {
     id: Id;
   } | null;
   available_actions?: string[];
+  available_action_details?: CrmCardActionDetail[];
   meta?: {
     related_counts: {
       leads: number;

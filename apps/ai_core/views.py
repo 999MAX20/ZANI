@@ -23,7 +23,7 @@ from apps.ai_core.serializers import (
     BusinessKnowledgeItemSerializer,
 )
 from apps.ai_core.services import run_ai_request
-from apps.ai_core.tool_registry import execute_tool_call, registered_tools, suggest_tool_calls, tool_requires_approval
+from apps.ai_core.tool_registry import assert_tool_execution_allowed, execute_tool_call, registered_tools, suggest_tool_calls, tool_requires_approval
 from apps.businesses.access import Actions, Resources, assert_can
 from apps.core.permissions import user_can_access_business
 from apps.core.viewsets import TenantModelViewSet
@@ -80,7 +80,14 @@ class ApprovalRequestViewSet(TenantModelViewSet):
         action_type = serializer.validated_data.get("action_type")
         resource = _resource_for_approval_action(action_type)
         assert_can(self.request.user, business, resource, Actions.SUGGEST)
-        approval = serializer.save(requested_by=self.request.user if self.request.user.is_authenticated else None)
+        approval = serializer.save(
+            requested_by=self.request.user if self.request.user.is_authenticated else None,
+            status=ApprovalRequest.Statuses.PENDING,
+            approved_by=None,
+            approved_at=None,
+            rejected_by=None,
+            rejected_at=None,
+        )
         audit_approval_request_created(self.request, approval)
 
     @action(detail=True, methods=["post"])
@@ -285,6 +292,28 @@ class AIToolExecuteView(APIView):
             if error_response is not None:
                 return error_response
 
+        try:
+            assert_tool_execution_allowed(log, request.user)
+        except PermissionDenied as exc:
+            audit_ai_tool_execution(
+                request,
+                log,
+                status="permission_denied",
+                error=str(exc),
+                extra_metadata={
+                    "approval_id": approval.id if approval else None,
+                    "approval_required": bool(approval),
+                },
+            )
+            return Response(
+                {
+                    "detail": str(exc),
+                    "approval_required": bool(approval),
+                    "approval_status": "permission_denied",
+                    "tool_call": AIToolCallLogSerializer(log).data,
+                },
+                status=403,
+            )
         log = execute_tool_call(log, request.user)
         if approval and log.status == AIToolCallLog.Statuses.EXECUTED:
             approval.status = ApprovalRequest.Statuses.EXECUTED

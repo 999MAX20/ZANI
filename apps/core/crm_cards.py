@@ -3,6 +3,8 @@ from django.db.models import Q
 from apps.activities.models import ActivityEvent, Note, TaggedObject
 from apps.activities.serializers import ActivityEventSerializer, NoteSerializer, TaggedObjectSerializer
 from apps.bots.models import BotConversation
+from apps.businesses.access import Actions, Resources, can
+from apps.businesses.models import RolePermission
 from apps.clients.models import Client
 from apps.clients.serializers import ClientSerializer
 from apps.conversations.inbox_serializers import InboxConversationSerializer
@@ -22,6 +24,51 @@ from apps.tasks.serializers import TaskSerializer
 RELATED_LIMIT = 25
 TIMELINE_LIMIT = 50
 NOTES_LIMIT = 50
+
+
+ACTION_DEFINITIONS = {
+    "client": {
+        "create_lead": (Resources.LEADS, Actions.CREATE),
+        "create_deal": (Resources.DEALS, Actions.CREATE),
+        "create_appointment": (Resources.APPOINTMENTS, Actions.CREATE),
+        "create_task": (Resources.TASKS, Actions.CREATE),
+        "add_note": (Resources.CLIENTS, Actions.UPDATE),
+        "merge": (Resources.CLIENTS, Actions.DELETE),
+    },
+    "lead": {
+        "take": (Resources.LEADS, Actions.UPDATE),
+        "contacted": (Resources.LEADS, Actions.UPDATE),
+        "create_deal": (Resources.DEALS, Actions.CREATE),
+        "create_appointment": (Resources.APPOINTMENTS, Actions.CREATE),
+        "close": (Resources.LEADS, Actions.UPDATE),
+        "lost": (Resources.LEADS, Actions.UPDATE),
+        "reopen": (Resources.LEADS, Actions.UPDATE),
+        "assign": (Resources.LEADS, Actions.UPDATE),
+        "add_note": (Resources.LEADS, Actions.UPDATE),
+        "create_task": (Resources.TASKS, Actions.CREATE),
+    },
+    "deal": {
+        "create_task": (Resources.TASKS, Actions.CREATE),
+        "create_appointment": (Resources.APPOINTMENTS, Actions.CREATE),
+        "add_note": (Resources.DEALS, Actions.UPDATE),
+        "won": (Resources.DEALS, Actions.UPDATE),
+        "lost": (Resources.DEALS, Actions.UPDATE),
+        "reopen": (Resources.DEALS, Actions.UPDATE),
+    },
+    "appointment": {
+        "add_note": (Resources.APPOINTMENTS, Actions.UPDATE),
+        "confirm": (Resources.APPOINTMENTS, Actions.UPDATE),
+        "cancel": (Resources.APPOINTMENTS, Actions.UPDATE),
+        "reschedule": (Resources.APPOINTMENTS, Actions.UPDATE),
+        "complete": (Resources.APPOINTMENTS, Actions.UPDATE),
+        "no_show": (Resources.APPOINTMENTS, Actions.UPDATE),
+        "repeat": (Resources.APPOINTMENTS, Actions.CREATE),
+    },
+}
+
+REASON_ACTIONS = {"lost", "cancel", "no_show"}
+CONFIRM_ACTIONS = {"close", "won", "reopen", "complete"}
+DESTRUCTIVE_ACTIONS = {"merge"}
 
 
 def _empty_q():
@@ -101,6 +148,18 @@ def _primary_entity_payload(*, client=None, lead=None, deal=None, appointment=No
     return None
 
 
+def _primary_entity_context(*, client=None, lead=None, deal=None, appointment=None):
+    if appointment is not None:
+        return "appointment", appointment
+    if deal is not None:
+        return "deal", deal
+    if lead is not None:
+        return "lead", lead
+    if client is not None:
+        return "client", client
+    return "", None
+
+
 def _lead_actions(lead, deals):
     if lead is None:
         return []
@@ -163,6 +222,45 @@ def _available_actions(*, client=None, lead=None, deal=None, appointment=None, d
     return []
 
 
+def _action_confirmation(action_id):
+    if action_id in REASON_ACTIONS:
+        return "reason"
+    if action_id in CONFIRM_ACTIONS or action_id in DESTRUCTIVE_ACTIONS:
+        return "confirm"
+    return "none"
+
+
+def _available_action_details(action_ids, *, business, actor=None, entity_type="", entity=None):
+    definitions = ACTION_DEFINITIONS.get(entity_type, {})
+    details = []
+    for action_id in action_ids:
+        resource, permission_action = definitions.get(action_id, ("", ""))
+        if resource and permission_action and actor is not None:
+            permission = can(actor, business, resource, permission_action, obj=entity)
+            allowed = permission.allowed
+            scope = permission.scope
+            reason = permission.reason
+        else:
+            allowed = True
+            scope = RolePermission.Scopes.BUSINESS
+            reason = ""
+        details.append(
+            {
+                "id": action_id,
+                "label_key": f"crm.actions.{action_id}",
+                "resource": resource,
+                "action": permission_action,
+                "allowed": allowed,
+                "scope": scope,
+                "reason": reason,
+                "requires_reason": action_id in REASON_ACTIONS,
+                "destructive": action_id in DESTRUCTIVE_ACTIONS,
+                "confirmation": _action_confirmation(action_id),
+            }
+        )
+    return details
+
+
 def _tags_payload(business, entity_refs):
     if not entity_refs:
         return []
@@ -200,7 +298,7 @@ def _consent_summary_payload(business, client):
     return rows
 
 
-def build_crm_card_payload(*, business, client=None, lead=None, deal=None, appointment=None):
+def build_crm_card_payload(*, business, actor=None, client=None, lead=None, deal=None, appointment=None):
     if client is None and lead is not None:
         client = lead.client
     if client is None and deal is not None:
@@ -305,10 +403,18 @@ def build_crm_card_payload(*, business, client=None, lead=None, deal=None, appoi
     }
     primary_entity = _primary_entity_payload(client=client, lead=lead, deal=deal, appointment=appointment)
     available_actions = _available_actions(client=client, lead=lead, deal=deal, appointment=appointment, deals=deals)
+    action_entity_type, action_entity = _primary_entity_context(client=client, lead=lead, deal=deal, appointment=appointment)
 
     return {
         "primary_entity": primary_entity,
         "available_actions": available_actions,
+        "available_action_details": _available_action_details(
+            available_actions,
+            business=business,
+            actor=actor,
+            entity_type=action_entity_type,
+            entity=action_entity,
+        ),
         "meta": {
             "related_counts": related_counts,
             "limits": {
@@ -350,17 +456,17 @@ def build_crm_card_payload(*, business, client=None, lead=None, deal=None, appoi
     }
 
 
-def client_crm_card(client: Client):
-    return build_crm_card_payload(business=client.business, client=client)
+def client_crm_card(client: Client, *, actor=None):
+    return build_crm_card_payload(business=client.business, actor=actor, client=client)
 
 
-def lead_crm_card(lead: Lead):
-    return build_crm_card_payload(business=lead.business, lead=lead)
+def lead_crm_card(lead: Lead, *, actor=None):
+    return build_crm_card_payload(business=lead.business, actor=actor, lead=lead)
 
 
-def deal_crm_card(deal: Deal):
-    return build_crm_card_payload(business=deal.business, deal=deal)
+def deal_crm_card(deal: Deal, *, actor=None):
+    return build_crm_card_payload(business=deal.business, actor=actor, deal=deal)
 
 
-def appointment_crm_card(appointment: Appointment):
-    return build_crm_card_payload(business=appointment.business, appointment=appointment)
+def appointment_crm_card(appointment: Appointment, *, actor=None):
+    return build_crm_card_payload(business=appointment.business, actor=actor, appointment=appointment)

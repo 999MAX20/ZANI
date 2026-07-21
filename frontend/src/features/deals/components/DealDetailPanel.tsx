@@ -88,7 +88,7 @@ export function DealDetailPanel({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <StatusPill status={deal.status} />
+              <StatusPill status={deal.status} t={t} />
               <DealStageBadge stage={deal.stageEntity} fallback={t("deals.noStage")} />
             </div>
             <h2 className="mt-3 truncate text-2xl font-black tracking-tight text-midnight">{deal.title}</h2>
@@ -116,11 +116,11 @@ export function DealDetailPanel({
             </Button>
           </div>
         </div>
-        <nav className="mt-4 grid grid-cols-3 rounded-lg bg-slate-100 p-1" aria-label="Разделы сделки">
+        <nav className="mt-4 grid grid-cols-3 rounded-lg bg-slate-100 p-1" aria-label={t("deals.sections")}>
           {[
-            ["overview", "Обзор"],
-            ["activities", "Активности"],
-            ["history", "История"],
+            ["overview", t("deals.tabOverview")],
+            ["activities", t("deals.tabActivities")],
+            ["history", t("deals.tabHistory")],
           ].map(([value, label]) => (
             <button key={value} type="button" className={cn("rounded-md px-3 py-2 text-sm font-bold transition", tab === value ? "bg-white text-blue-700 shadow-sm" : "text-slate-600")} onClick={() => setTab(value as DealDetailTab)}>
               {label}
@@ -146,7 +146,7 @@ export function DealDetailPanel({
               )}
               <div className="mt-3 flex flex-wrap gap-2">
                 <Button size="sm" variant="secondary" onClick={() => onAddTask(deal)}><Plus size={14} /> {t("deals.add")}</Button>
-                <Button size="sm" variant="ghost">Отложить</Button>
+                <Button size="sm" variant="ghost">{t("deals.snooze")}</Button>
               </div>
             </PanelBlock>
 
@@ -168,7 +168,7 @@ export function DealDetailPanel({
               </div>
             </PanelBlock>
 
-            <PanelBlock title="Сделка" icon={ClipboardList}>
+            <PanelBlock title={t("deals.deal")} icon={ClipboardList}>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <p className="text-xs font-black uppercase text-slate-400">{t("deals.amount")}</p>
@@ -190,7 +190,7 @@ export function DealDetailPanel({
               </div>
             </PanelBlock>
 
-            <PanelBlock title="Воронка" icon={CalendarClock}>
+            <PanelBlock title={t("deals.pipeline")} icon={CalendarClock}>
               <Select value={String(deal.stage)} onChange={(event) => onStageChange(deal, Number(event.target.value))} options={stages.map((stage) => ({ value: String(stage.id), label: stage.name }))} />
               <div className="mt-4 flex items-center gap-1 overflow-x-auto">
                 {stages.map((stage) => <span key={stage.id} className={cn("h-2 min-w-12 rounded-full", stage.order <= (deal.stageEntity?.order || 0) ? "bg-blue-600" : "bg-slate-200")} />)}
@@ -205,9 +205,9 @@ export function DealDetailPanel({
             </PanelBlock>
 
             <PanelBlock title={t("deals.dealRisk")} icon={CalendarClock}>
-              <DealRiskIndicator deal={deal} />
+              <DealRiskIndicator deal={deal} t={t} />
               <p className="mt-2 text-sm leading-6 text-slate-600">{riskText}</p>
-              <Button variant="ghost" size="sm" className="mt-2">Показать рекомендации</Button>
+              <Button variant="ghost" size="sm" className="mt-2">{t("deals.showRecommendations")}</Button>
             </PanelBlock>
           </div>
         ) : null}
@@ -244,7 +244,7 @@ export function DealDetailPanel({
         {tab === "history" ? (
           <PanelBlock title={t("deals.timeline")} icon={CalendarClock}>
             <DealTimeline events={timeline} emptyText={t("deals.emptyDealHistory")} />
-            <textarea className="mt-4 min-h-24 w-full rounded-lg border border-slate-200 bg-white p-3 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100" placeholder="Добавить комментарий" />
+            <textarea className="mt-4 min-h-24 w-full rounded-lg border border-slate-200 bg-white p-3 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100" placeholder={t("deals.commentPlaceholder")} />
             <p className="mt-3 text-sm text-slate-500">{selectedLead ? t("deals.leadLine", { value: `#${selectedLead.id} · ${selectedLead.status}` }) : t("deals.notLinked")}</p>
           </PanelBlock>
         ) : null}

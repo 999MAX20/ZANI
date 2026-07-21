@@ -1375,25 +1375,15 @@ python manage.py migrate
 cd frontend && npm run build
 ```
 
-### Этап 2.1 — Public Website Shell
+### Этап 2.1 — Auth Entry Shell
 
-Статус: **готово**.
+Статус: **обновлено**.
 
-Добавлено:
+Текущее поведение:
 
-- Публичный `PublicLayout` внутри frontend.
-- Публичные страницы без обязательной авторизации:
-  - `/`
-  - `/pricing`
-  - `/bots`
-  - `/crm`
-  - `/contacts`
-- CTA:
-  - открыть CRM;
-  - подключить CRM;
-  - связаться;
-  - посмотреть тарифы.
-- Merchant CRM перенесена на `/dashboard`.
+- `/` показывает экран входа для неавторизованных пользователей.
+- `/pricing`, `/bots`, `/crm`, `/contacts` перенаправляют на `/login`.
+- Merchant CRM находится в `/app`.
 - Merchant nested routes:
   - `/dashboard/leads`
   - `/dashboard/clients`
@@ -1538,8 +1528,8 @@ cd frontend && npm run build
 
 Важно:
 
-- Публичная страница `/bots` остается частью website shell.
-- Merchant bots находятся в `/dashboard/bots`, чтобы не ломать публичный сайт.
+- Публичная страница `/bots` отключена и перенаправляет на `/login`.
+- Merchant bots находятся в `/app/bots`.
 
 Проверено:
 
@@ -3514,7 +3504,6 @@ apps/
 
 config/            # Django settings, urls, celery config
 frontend/          # React + TypeScript app
-  src/features/public/ # Public Zani website shell
 plan/              # Product/implementation roadmap prompts
 ```
 
@@ -3589,12 +3578,9 @@ Vite проксирует `/api` на `http://localhost:8000`.
 
 Frontend routes:
 
-- `/` — public home.
-- `/pricing` — public pricing shell.
-- `/bots` — public bots shell.
-- `/crm` — public CRM shell.
-- `/contacts` — public contacts shell.
-- `/dashboard` — Merchant CRM dashboard.
+- `/` — login screen for unauthenticated users.
+- `/pricing`, `/bots`, `/crm`, `/contacts` — redirect to `/login`.
+- `/app` — Merchant CRM dashboard.
 - `/platform` — Platform Admin overview.
 - `/platform/merchants` — Platform Admin merchants table.
 
@@ -5271,7 +5257,7 @@ cd frontend && npm run build
 
 - Re-ran the full backend/frontend validation after all pilot frontend/core polish work.
 - Browser-checked the main route groups with local running services:
-  - public: `/`, `/pricing`, `/bots`, `/crm`, `/contacts`;
+  - auth entry: `/`, `/login`;
   - platform: `/platform`, `/platform/merchants`, `/platform/settings`;
   - merchant: `/dashboard`, `/dashboard/leads`, `/dashboard/deals`, `/dashboard/clients`, `/dashboard/tasks`, `/dashboard/calendar`, `/dashboard/conversations`, `/dashboard/bots`, `/dashboard/integrations`, `/dashboard/analytics`, `/dashboard/settings`, `/dashboard/pilot-readiness`.
 - Verified role routing:

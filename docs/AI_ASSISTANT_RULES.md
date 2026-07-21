@@ -82,6 +82,8 @@ Low-risk actions may be automatic only if the business has explicitly enabled th
 
 Critical mutating AI tool calls that create or change CRM records must require an approved `ApprovalRequest` linked to the exact `AIToolCallLog` before execution. Missing, mismatched, expired or unapproved approvals must stop execution and write an audit attempt.
 
+Approval creation is not a decision. New `ApprovalRequest` records must always start as `pending`; `approved`, `rejected`, `expired` and `executed` states are server-side transitions only. Even after a matching approval is present, mutating AI tools must still pass the user's underlying CRM permission such as `clients:create`, `leads:create`, `tasks:create` or `deals:create`.
+
 Conversation CRM pipeline confirmation modes:
 
 - `suggest_only`: AI stores qualification and suggested next action only. It must not create client, lead, deal, task or appointment records.
@@ -113,6 +115,10 @@ Owner-facing AI analyst output should be concise and action-oriented:
 - risk or confidence note.
 
 Avoid generic motivational text and unsupported claims.
+
+Authenticated CRM UI must not label deterministic local guidance as an AI insight. If a card is produced from local counts, entity presence or simple status checks, label it as a CRM hint, next step or operational recommendation. Use AI labels and AI visual treatment only when the output comes from an AI/backend recommendation path with permission-scoped source data or an explicit no-data/provider-unavailable state.
+
+Dashboard and assistant AI surfaces must expose source IDs or source chips for source-backed recommendations. When the backend AI brief is unavailable, forbidden by role, still loading, missing source data or backed by an unready provider, the UI must show that state directly instead of substituting confident local advice.
 
 ## Logging And Cost
 

@@ -36,9 +36,16 @@ class CrmCardEndpointTests(TestCase):
             password="pass",
             role=User.Roles.BUSINESS_OWNER,
         )
+        self.support_user = User.objects.create_user(
+            username="crm-card-support",
+            email="crm-card-support@example.com",
+            password="pass",
+            role=User.Roles.BUSINESS_OPERATOR,
+        )
         self.business = Business.objects.create(owner=self.owner, name="CRM Card Clinic", slug="crm-card-clinic")
         self.other_business = Business.objects.create(owner=self.other_owner, name="Other CRM Card", slug="other-crm-card")
         BusinessMember.objects.create(business=self.business, user=self.owner, role=BusinessMember.Roles.OWNER)
+        BusinessMember.objects.create(business=self.business, user=self.support_user, role=BusinessMember.Roles.SUPPORT)
         BusinessMember.objects.create(business=self.other_business, user=self.other_owner, role=BusinessMember.Roles.OWNER)
 
         self.client = Client.objects.create(
@@ -149,12 +156,49 @@ class CrmCardEndpointTests(TestCase):
         self.assertEqual(len(response.data["notes"]), 1)
         self.assertEqual(response.data["primary_entity"], {"type": "client", "id": self.client.id})
         self.assertIn("create_deal", response.data["available_actions"])
+        action_details = {item["id"]: item for item in response.data["available_action_details"]}
+        self.assertEqual(set(action_details), set(response.data["available_actions"]))
+        self.assertTrue(action_details["create_deal"]["allowed"])
+        self.assertEqual(action_details["create_deal"]["resource"], "deals")
+        self.assertEqual(action_details["create_deal"]["action"], "create")
+        self.assertEqual(action_details["create_deal"]["scope"], "business")
+        self.assertEqual(action_details["merge"]["confirmation"], "confirm")
+        self.assertTrue(action_details["merge"]["destructive"])
         self.assertEqual(response.data["meta"]["related_counts"]["leads"], 1)
         self.assertFalse(response.data["meta"]["has_more"]["timeline"])
         consents = {item["channel"]: item for item in response.data["consents"]}
         self.assertEqual(consents[OutreachConsent.Channels.WHATSAPP]["status"], OutreachConsent.Statuses.OPTED_IN)
         self.assertEqual(consents[OutreachConsent.Channels.WHATSAPP]["source"], "lead_form")
         self.assertEqual(consents[OutreachConsent.Channels.TELEGRAM]["status"], OutreachConsent.Statuses.UNKNOWN)
+
+    def test_client_crm_card_action_details_are_user_scoped(self):
+        self.api.force_authenticate(self.support_user)
+
+        response = self.api.get(f"/api/clients/{self.client.id}/crm-card/")
+
+        self.assertEqual(response.status_code, 200)
+        action_details = {item["id"]: item for item in response.data["available_action_details"]}
+        self.assertFalse(action_details["create_task"]["allowed"])
+        self.assertEqual(action_details["create_task"]["resource"], "tasks")
+        self.assertEqual(action_details["create_task"]["action"], "create")
+        self.assertEqual(action_details["create_task"]["scope"], "none")
+        self.assertEqual(action_details["create_task"]["reason"], "Permission denied.")
+        self.assertFalse(action_details["merge"]["allowed"])
+        self.assertTrue(action_details["merge"]["destructive"])
+
+    def test_lead_crm_card_action_details_expose_reason_actions(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.get(f"/api/leads/{self.lead.id}/crm-card/")
+
+        self.assertEqual(response.status_code, 200)
+        action_details = {item["id"]: item for item in response.data["available_action_details"]}
+        self.assertTrue(action_details["lost"]["allowed"])
+        self.assertEqual(action_details["lost"]["resource"], "leads")
+        self.assertEqual(action_details["lost"]["action"], "update")
+        self.assertTrue(action_details["lost"]["requires_reason"])
+        self.assertFalse(action_details["lost"]["destructive"])
+        self.assertEqual(action_details["lost"]["confirmation"], "reason")
 
     def test_crm_card_endpoints_exist_for_core_entities(self):
         self.api.force_authenticate(self.owner)

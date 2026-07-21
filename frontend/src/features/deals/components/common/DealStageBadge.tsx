@@ -1,5 +1,6 @@
 import { cn } from "../../../../lib/cn";
 import type { PipelineStage } from "../../../../types";
+import type { Translate } from "../../types";
 
 export function DealStageBadge({ stage, fallback }: { stage?: PipelineStage; fallback: string }) {
   return (
@@ -10,8 +11,8 @@ export function DealStageBadge({ stage, fallback }: { stage?: PipelineStage; fal
   );
 }
 
-export function StatusPill({ status }: { status: "open" | "won" | "lost" }) {
-  const label = status === "won" ? "Успешно" : status === "lost" ? "Потеряна" : "Открыта";
+export function StatusPill({ status, t }: { status: "open" | "won" | "lost"; t: Translate }) {
+  const label = status === "won" ? t("deals.statusWon") : status === "lost" ? t("deals.statusLost") : t("deals.statusOpen");
   return (
     <span
       className={cn(

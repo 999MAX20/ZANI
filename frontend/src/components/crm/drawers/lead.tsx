@@ -109,7 +109,7 @@ export function LeadDrawerContent({ data, entity }: { data: CrmCardPayload; enti
               <p className="mt-1 text-sm font-semibold text-slate-600">{lead.recommended_action || openTasks[0]?.title || t("crmCard.snapshotNoTasks")}</p>
             </div>
             {data.deals.length ? (
-              <Button type="button" variant="secondary" size="sm" onClick={() => window.location.assign(`/app/deals?deal=${data.deals[0].id}`)}>
+              <Button type="button" variant="secondary" size="sm" onClick={() => window.location.assign(`/app/deals/${data.deals[0].id}`)}>
                 {data.deals[0].title}
               </Button>
             ) : null}

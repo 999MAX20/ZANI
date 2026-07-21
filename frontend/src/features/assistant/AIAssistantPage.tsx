@@ -382,6 +382,18 @@ export function AIAssistantPage() {
         <div className="mb-4"><ErrorState message={getApiErrorMessage(briefMutation.error || memoryMutation.error || analystBrief.error)} /></div>
       ) : null}
 
+      {aiStatus.data && !aiStatus.data.ready ? (
+        <div className="mb-4 rounded-card border border-amber-100 bg-amber-50 p-4 text-sm font-semibold leading-6 text-amber-800">
+          <div className="flex items-start gap-3">
+            <AlertTriangle size={18} className="mt-0.5 shrink-0" />
+            <div>
+              <p className="font-black">{t("aiAssistant.providerUnavailableTitle")}</p>
+              <p className="mt-1">{t("aiAssistant.providerUnavailableText")}</p>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="space-y-5">
           <Card className="overflow-hidden">

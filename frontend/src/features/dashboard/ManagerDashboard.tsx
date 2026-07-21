@@ -133,7 +133,7 @@ export function ManagerDashboard({
       <section className="mt-5 grid gap-4 xl:grid-cols-3">
         <WorkListCard eyebrow={t("dashboard.queue")} title={t("dashboard.leadsToAnswer")} href="/app/leads">
           {queueLeads.length ? queueLeads.map((lead) => (
-            <Surface key={lead.id} as={Link} to={`/app/leads?lead=${lead.id}`} padding="sm" interactive className="block rounded-xl">
+            <Surface key={lead.id} as={Link} to={`/app/leads/${lead.id}`} padding="sm" interactive className="block rounded-xl">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="truncate font-bold text-midnight">{lead.title || t("dashboard.leadNumber", { id: lead.id })}</p>
@@ -146,7 +146,7 @@ export function ManagerDashboard({
             const client = clients.find((item) => item.id === lead.client);
             const service = services.find((item) => item.id === lead.service);
             return (
-              <Surface key={lead.id} as={Link} to="/app/leads" padding="sm" interactive className="block rounded-xl">
+              <Surface key={lead.id} as={Link} to={`/app/leads/${lead.id}`} padding="sm" interactive className="block rounded-xl">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="truncate font-bold text-midnight">{client?.full_name || t("dashboard.leadNumber", { id: lead.id })}</p>

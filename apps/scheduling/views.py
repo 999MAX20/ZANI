@@ -238,6 +238,9 @@ class AppointmentViewSet(TenantModelViewSet):
         client_ids = self.parse_query_id_list("client_ids")
         if client_ids:
             queryset = queryset.filter(client_id__in=client_ids)
+        lead_ids = self.parse_query_id_list("lead_ids")
+        if lead_ids:
+            queryset = queryset.filter(lead_id__in=lead_ids)
         return queryset
 
     def perform_create(self, serializer):
@@ -390,4 +393,4 @@ class AppointmentViewSet(TenantModelViewSet):
     @action(detail=True, methods=["get"], url_path="crm-card")
     def crm_card(self, request, pk=None):
         appointment = self.get_object()
-        return Response(appointment_crm_card(appointment))
+        return Response(appointment_crm_card(appointment, actor=request.user))

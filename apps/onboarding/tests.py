@@ -1,4 +1,4 @@
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
 from apps.accounts.models import User
@@ -87,6 +87,33 @@ class OnboardingTests(TestCase):
         self.assertTrue(Task.objects.filter(business=self.business, deal__isnull=False, appointment__isnull=False).exists())
         self.assertTrue(Appointment.objects.filter(business=self.business).exists())
         self.assertGreaterEqual(response.data["completed"], 8)
+        self.assertTrue(response.data["demo"])
+        self.assertEqual(response.data["mode"], "demo")
+
+    def test_operator_cannot_create_demo_data(self):
+        self.api.force_authenticate(self.operator)
+
+        response = self.api.post("/api/onboarding/demo-data/", {"business": self.business.id}, format="json")
+
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(Client.objects.filter(business=self.business).exists())
+
+    def test_other_merchant_cannot_create_demo_data(self):
+        self.api.force_authenticate(self.other_owner)
+
+        response = self.api.post("/api/onboarding/demo-data/", {"business": self.business.id}, format="json")
+
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(Client.objects.filter(business=self.business).exists())
+
+    @override_settings(ALLOW_DEMO_MERCHANT_FLOWS=False)
+    def test_demo_data_is_disabled_when_demo_flows_are_not_allowed(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post("/api/onboarding/demo-data/", {"business": self.business.id}, format="json")
+
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(Client.objects.filter(business=self.business).exists())
 
     def test_owner_can_setup_first_website_channel(self):
         self.api.force_authenticate(self.owner)

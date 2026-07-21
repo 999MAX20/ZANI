@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 from django.core.management import call_command
 from django.core.management.base import CommandError
+from django.db import IntegrityError
 from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
@@ -414,7 +415,8 @@ class TelegramIntegrationSkeletonTests(TestCase):
         self.assertTrue(config_response.data["token_configured"])
         channel_response = self.api.get(f"/api/bot-channels/{self.channel.id}/")
         self.assertEqual(channel_response.status_code, 200)
-        self.assertEqual(channel_response.data["config_json"]["bot_token"], "configured")
+        self.assertNotIn("bot_token", channel_response.data["config_json"])
+        self.assertTrue(channel_response.data["config_json"]["token_configured"])
         self.assertEqual(channel_response.data["config_json"]["webhook_secret"], "configured")
         self.assertNotIn("secret-token", str(channel_response.data))
         self.assertEqual(status_response.status_code, 200)
@@ -437,6 +439,10 @@ class TelegramIntegrationSkeletonTests(TestCase):
         self.assertEqual(connector.config_json["bot_channel_id"], self.channel.id)
         self.assertNotIn("secret-token", str(connector.config_json))
         self.assertNotIn("merchant-secret-P9k_L4m-Q8r_T2v-W6x_Y3z-A7b_C5d", str(connector.config_json))
+        credential = ConnectorCredential.objects.get(connector=connector, key="bot_token")
+        self.assertEqual(decrypt_credential_value(credential.encrypted_value), "123456:secret-token")
+        self.channel.refresh_from_db()
+        self.assertNotIn("bot_token", self.channel.config_json)
 
     def test_telegram_channel_config_service_syncs_connector_without_leaking_token(self):
         result = bot_services.configure_telegram_channel(
@@ -462,6 +468,34 @@ class TelegramIntegrationSkeletonTests(TestCase):
         self.assertTrue(connector.config_json["webhook_secret_configured"])
         self.assertNotIn("service-secret-token", str(connector.config_json))
         self.assertNotIn("service-secret-P9k_L4m-Q8r_T2v-W6x_Y3z-A7b_C5d", str(connector.config_json))
+        credential = ConnectorCredential.objects.get(connector=connector, key="bot_token")
+        self.assertEqual(decrypt_credential_value(credential.encrypted_value), "123456:service-secret-token")
+        self.channel.refresh_from_db()
+        self.assertNotIn("bot_token", self.channel.config_json)
+
+    def test_bot_message_external_delivery_has_database_idempotency_constraint(self):
+        conversation = BotConversation.objects.create(
+            business=self.business,
+            bot=self.bot,
+            channel=BotConversation.Channels.TELEGRAM,
+            external_user_id="777",
+        )
+        BotMessage.objects.create(
+            conversation=conversation,
+            direction=BotMessage.Directions.INBOUND,
+            sender_type=BotMessage.SenderTypes.CLIENT,
+            text="Первое",
+            external_message_id="telegram-duplicate",
+        )
+
+        with self.assertRaises(IntegrityError):
+            BotMessage.objects.create(
+                conversation=conversation,
+                direction=BotMessage.Directions.INBOUND,
+                sender_type=BotMessage.SenderTypes.CLIENT,
+                text="Дубль",
+                external_message_id="telegram-duplicate",
+            )
 
     def test_merchant_cannot_configure_weak_telegram_webhook_secret(self):
         self.api.force_authenticate(self.owner)
@@ -676,6 +710,33 @@ class WhatsAppIntegrationFoundationTests(TestCase):
         self.assertEqual(event.external_id, "wamid.1")
         self.assertEqual(event.payload_json["conversation_id"], conversation.id)
         self.assertEqual(event.payload_json["message_id"], message.id)
+
+    def test_whatsapp_webhook_is_idempotent_for_repeated_message(self):
+        payload = {
+            "message_id": "wamid.replay.1",
+            "from": {"phone": "+77015550101", "name": "Client"},
+            "text": "Повтор WhatsApp",
+        }
+
+        first_response = self.api.post(
+            "/api/integrations/whatsapp/webhook/",
+            payload,
+            format="json",
+            HTTP_X_ZANI_WHATSAPP_SECRET="whatsapp-secret",
+        )
+        second_response = self.api.post(
+            "/api/integrations/whatsapp/webhook/",
+            payload,
+            format="json",
+            HTTP_X_ZANI_WHATSAPP_SECRET="whatsapp-secret",
+        )
+
+        self.assertEqual(first_response.status_code, 200)
+        self.assertEqual(second_response.status_code, 200)
+        self.assertEqual(BotConversation.objects.count(), 1)
+        self.assertEqual(BotMessage.objects.count(), 1)
+        self.assertTrue(IntegrationEventLog.objects.filter(provider="whatsapp", payload_json__duplicate=True).exists())
+        self.assertEqual(BusinessEvent.objects.filter(source=BusinessConnector.Providers.WHATSAPP, event_type="message.received").count(), 1)
 
     @override_settings(WHATSAPP_WEBHOOK_SECRET="", WHATSAPP_APP_SECRET="")
     def test_whatsapp_webhook_rejects_missing_route_without_single_channel_fallback(self):
@@ -1314,6 +1375,48 @@ class InstagramIntegrationFoundationTests(TestCase):
         self.assertEqual(event.external_id, "mid.1")
         self.assertEqual(event.payload_json["conversation_id"], conversation.id)
 
+    @override_settings(INSTAGRAM_APP_SECRET="app-secret")
+    def test_instagram_webhook_is_idempotent_for_repeated_message(self):
+        payload = {
+            "object": "instagram",
+            "entry": [
+                {
+                    "id": "ig-123",
+                    "messaging": [
+                        {
+                            "sender": {"id": "client-ig-1"},
+                            "recipient": {"id": "ig-123"},
+                            "message": {"mid": "mid.replay.1", "text": "Повтор Instagram"},
+                        }
+                    ],
+                }
+            ],
+        }
+        raw_payload = json.dumps(payload).encode("utf-8")
+        signature = "sha256=" + hmac.new(b"app-secret", raw_payload, hashlib.sha256).hexdigest()
+
+        first_response = self.api.generic(
+            "POST",
+            "/api/integrations/instagram/webhook/",
+            raw_payload,
+            content_type="application/json",
+            HTTP_X_HUB_SIGNATURE_256=signature,
+        )
+        second_response = self.api.generic(
+            "POST",
+            "/api/integrations/instagram/webhook/",
+            raw_payload,
+            content_type="application/json",
+            HTTP_X_HUB_SIGNATURE_256=signature,
+        )
+
+        self.assertEqual(first_response.status_code, 200)
+        self.assertEqual(second_response.status_code, 200)
+        self.assertEqual(BotConversation.objects.count(), 1)
+        self.assertEqual(BotMessage.objects.count(), 1)
+        self.assertTrue(IntegrationEventLog.objects.filter(provider="instagram", payload_json__duplicate=True).exists())
+        self.assertEqual(BusinessEvent.objects.filter(source=BusinessConnector.Providers.INSTAGRAM, event_type="message.received").count(), 1)
+
     @override_settings(INSTAGRAM_APP_SECRET="", META_APP_SECRET="")
     def test_instagram_webhook_rejects_missing_account_id_without_single_channel_fallback(self):
         response = self.api.post(
@@ -1368,13 +1471,18 @@ class InstagramIntegrationFoundationTests(TestCase):
         self.assertTrue(test_response.data["mock"])
         self.assertIn("/api/integrations/instagram/webhook/", status_response.data["webhook_url"])
         channel_response = self.api.get(f"/api/bot-channels/{self.channel.id}/")
-        self.assertEqual(channel_response.data["config_json"]["access_token"], "configured")
+        self.assertNotIn("access_token", channel_response.data["config_json"])
+        self.assertTrue(channel_response.data["config_json"]["access_token_configured"])
         self.assertNotIn("instagram-access-token", str(channel_response.data))
         connector = BusinessConnector.objects.get(business=self.business, provider=BusinessConnector.Providers.INSTAGRAM, name="Instagram")
         self.assertEqual(connector.status, BusinessConnector.Statuses.CONNECTED)
         self.assertTrue(connector.config_json["access_token_configured"])
         self.assertTrue(connector.config_json["instagram_user_id_configured"])
         self.assertNotIn("instagram-access-token", str(connector.config_json))
+        credential = ConnectorCredential.objects.get(connector=connector, key="access_token")
+        self.assertEqual(decrypt_credential_value(credential.encrypted_value), "instagram-access-token")
+        self.channel.refresh_from_db()
+        self.assertNotIn("access_token", self.channel.config_json)
 
     @override_settings(INSTAGRAM_ENABLED=True, INSTAGRAM_GRAPH_BASE_URL="https://127.0.0.1")
     def test_instagram_provider_rejects_private_graph_base_url_without_network_call(self):
@@ -1473,8 +1581,11 @@ class InstagramIntegrationFoundationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         channel = BotChannel.objects.get(id=response.data["channel_id"])
         self.assertEqual(channel.external_id, "ig-oauth-1")
-        self.assertEqual(channel.config_json["access_token"], "page-token")
+        self.assertNotIn("access_token", channel.config_json)
+        self.assertTrue(channel.config_json["access_token_configured"])
         connector = BusinessConnector.objects.get(business=self.business, provider=BusinessConnector.Providers.INSTAGRAM, name="Instagram")
         self.assertEqual(connector.status, BusinessConnector.Statuses.CONNECTED)
         self.assertTrue(connector.config_json["access_token_configured"])
         self.assertNotIn("page-token", str(response.data["connector"]["config_json"]))
+        credential = ConnectorCredential.objects.get(connector=connector, key="access_token")
+        self.assertEqual(decrypt_credential_value(credential.encrypted_value), "page-token")

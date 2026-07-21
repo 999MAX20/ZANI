@@ -7,6 +7,7 @@ import { Button } from "../../../components/ui/Button";
 import { ErrorState } from "../../../components/ui/StateViews";
 import { useI18n } from "../../../lib/i18n";
 import type { BusinessConnector, ConnectorCapability, Id } from "../../../types";
+import { merchantSafeIntegrationError } from "../utils";
 
 function availabilityLabel(availability: string, t: (key: string) => string) {
   return t(`integrations.availability.${availability}`) || availability;
@@ -162,7 +163,7 @@ export function ConnectorCard({
       {connector?.last_error ? (
         <div className="mt-4 flex gap-2 rounded-control border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
           <AlertTriangle className="mt-0.5 shrink-0" size={16} />
-          <span>{connector.last_error}</span>
+          <span>{merchantSafeIntegrationError(connector.last_error, t)}</span>
         </div>
       ) : null}
 
@@ -232,7 +233,7 @@ export function ConnectorCard({
               </div>
             </>
           )}
-          {error ? <ErrorState message={getApiErrorMessage(error)} /> : null}
+          {error ? <ErrorState message={merchantSafeIntegrationError(getApiErrorMessage(error), t)} /> : null}
         </div>
       ) : (
         <p className="mt-5 rounded-control bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">

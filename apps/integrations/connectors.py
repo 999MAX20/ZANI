@@ -325,34 +325,19 @@ def connector_has_active_credentials(connector):
         config = connector.config_json or {}
         bot_channel_id = config.get("bot_channel_id")
         if bot_channel_id:
-            from apps.bots.models import BotChannel
-
-            return BotChannel.objects.filter(
-                id=bot_channel_id,
-                channel=BotChannel.Channels.TELEGRAM,
-            ).exclude(config_json__bot_token="").exists()
+            return connector.credentials.filter(key="bot_token").exists()
         return bool(config.get("token_configured"))
     if connector.provider == BusinessConnector.Providers.WHATSAPP:
         config = connector.config_json or {}
         bot_channel_id = config.get("bot_channel_id")
         if bot_channel_id:
-            from apps.bots.models import BotChannel
-
-            return BotChannel.objects.filter(
-                id=bot_channel_id,
-                channel=BotChannel.Channels.WHATSAPP,
-            ).exclude(config_json__access_token="").exclude(config_json__phone_number_id="").exists()
+            return connector.credentials.filter(key="access_token").exists() and bool(config.get("phone_number_id_configured"))
         return bool(config.get("access_token_configured") and config.get("phone_number_id_configured"))
     if connector.provider == BusinessConnector.Providers.INSTAGRAM:
         config = connector.config_json or {}
         bot_channel_id = config.get("bot_channel_id")
         if bot_channel_id:
-            from apps.bots.models import BotChannel
-
-            return BotChannel.objects.filter(
-                id=bot_channel_id,
-                channel=BotChannel.Channels.INSTAGRAM,
-            ).exclude(config_json__access_token="").exclude(config_json__instagram_user_id="").exists()
+            return connector.credentials.filter(key="access_token").exists() and bool(config.get("instagram_user_id_configured"))
         return bool(config.get("access_token_configured") and config.get("instagram_user_id_configured"))
 
     now = timezone.now()

@@ -16,6 +16,33 @@
 - Если задача user-facing, она не считается завершенной без reachable UI/API flow.
 - Если найден unrelated baseline failure, его нужно зафиксировать и не прятать в summary.
 
+## Current Readiness Snapshot
+
+Update 2026-07-16: all numbered audit items below are closed at their current verified scope. This file is now a closed audit record, not the active remaining-work tracker. New product/technical work should be tracked in `actual_docs/CRM_TECHNICAL_MAP_AND_VERTICAL_MODES.md`, `CRM_PRODUCTION_LAYER_PLAN.md`, relevant docs and `API_ACTION_CONTRACT.md`.
+
+Update 2026-07-14: если не учитывать боевой `.env`, реальные креды сторонних сервисов и включение внешних production-интеграций, ZANI сейчас примерно на **75-80% готов** как база для controlled pilot / MVP CRM.
+
+Проверенные локальные gates из последнего readiness-прохода:
+
+- CRM E2E business flows: `apps.core.tests_business_flows_e2e` passed.
+- AI core: `apps.ai_core` tests passed.
+- Integrations and bots: scoped integration/bot tests passed separately after the broad parallel run hit a startup/timeout conflict.
+- Frontend production build: `cd frontend && npm run build` passed.
+- Django structural checks and migration dry-run passed in the latest audited scope.
+
+Готовность по зонам:
+
+- CRM core: **80-85%**. Leads, clients, deals, tasks, calendar, inbox, activity/audit, roles и tenant isolation уже имеют сильную основу.
+- AI layer: **65-70%**. Source-grounded owner brief, no-data states и approval-gated execution уже есть, но approval creation и AI tool execution нужно усилить до безопасного merchant trust уровня.
+- Integrations без live credentials: **70-75%**. Provider/service layers, BusinessEvents и masking уже есть, но bot secrets и inbound idempotency требуют production-grade cleanup.
+- Frontend: **70-75%**. Основные страницы и API wiring есть, но pilot UX, empty/error states и bundle hygiene ещё требуют фокусной полировки.
+- Tests: **около 80%** для local/dev confidence. Controlled pilot выглядит реалистичным; paid beta всё ещё требует production gates из `docs/paid-beta-gate.md`.
+
+Текущее product decision:
+
+- Ближайшая разработка должна сфокусироваться на **AI safety + connector credential/idempotency hardening + controlled pilot scenario QA**.
+- Не начинать heavy ERP, full data warehouse, marketplace write-back, payments или большие новые модули, пока pilot path не станет безопасным и гладким.
+
 ## P0/P1 Critical Product And Security Fixes
 
 ### 1. Align legacy AI route permissions with `/app` routes
@@ -157,6 +184,68 @@ Completion note 2026-07-14:
 - checks skipped: full `scripts/codex_verify.sh`, because this was a bounded backend integrations refactor on Windows and the scoped integration/bot/API gate plus Django structural checks covered the task; frontend build, because no frontend files or UI contracts changed.
 - baseline failures: none observed.
 
+### 3.1 Move Telegram/Instagram bot secrets into credential storage and harden inbound message idempotency
+
+- [x] Перенести Telegram bot tokens и Instagram access tokens из `BotChannel.config_json` в существующий connector credential layer.
+- [x] В `config_json` channel/connector оставлять только безопасные флаги и metadata: `token_configured`, `access_token_configured`, provider mode, external account ids.
+- [x] Добавить или усилить database-level deduplication для inbound provider messages, где есть `external_message_id`.
+
+Problem:
+
+- Для WhatsApp уже есть credential-helper behavior, но у Telegram и Instagram ещё остаются пути, где raw provider secrets могут жить в `BotChannel.config_json`.
+- Sanitized serializers снижают риск утечки, но production-grade хранение не должно полагаться только на masking raw JSON fields.
+- Telegram/WhatsApp/Instagram webhook handlers проверяют дубли в коде, но inbound message idempotency должна быть защищена ещё и database constraint или эквивалентной service-level guarantee.
+
+Affected area:
+
+- permissions: yes, потому что connector setup остаётся role-gated;
+- notifications: possible, потому что duplicate inbound messages могут создавать duplicate follow-up work;
+- BusinessEvent: yes, потому что duplicate messages могут создавать duplicate CRM/business events;
+- AI: yes, потому что AI recommendations могут ссылаться на connector/message events;
+- migrations/env: yes, вероятно нужны migration/backfill и обновление credential storage.
+
+Files:
+
+- `apps/bots/models.py`
+- `apps/bots/services.py`
+- `apps/bots/serializers.py`
+- `apps/integrations/providers/telegram.py`
+- `apps/integrations/providers/instagram.py`
+- `apps/integrations/telegram.py`
+- `apps/integrations/instagram.py`
+- `apps/integrations/models.py`
+- `apps/integrations/services.py`
+- `docs/CONNECTOR_BLUEPRINT.md`
+- `docs/integrations.md`
+- `docs/provider-rollout.md`
+
+Expected changes:
+
+- Telegram setup сохраняет `bot_token` через `ConnectorCredential` или общий credential helper, а не в raw channel JSON.
+- Instagram setup/OAuth сохраняет access tokens через тот же credential layer и удаляет legacy raw token fields из channel JSON.
+- Backfill/migration сохраняет уже настроенные local/dev channels без раскрытия secrets в API responses.
+- Provider status/test/send flows читают credentials через helper functions.
+- Webhook message creation становится idempotent при повторной provider delivery.
+- Merchant-facing setup показывает простые configured/error/action-required states, а не raw credentials.
+
+Test gate:
+
+- Migration generated and applied.
+- Telegram setup test доказывает, что raw token не сохраняется в channel `config_json`, а masked API response остаётся safe.
+- Instagram setup/OAuth test доказывает, что raw access token хранится в credential storage и удаляется из channel `config_json`.
+- Replayed Telegram/WhatsApp/Instagram inbound payload с тем же `external_message_id` не создаёт duplicate messages, BusinessEvents или tasks.
+- Permission denial and tenant isolation tests for credential setup/status.
+- `.\.venv\Scripts\python.exe -m pytest apps\integrations\tests.py apps\integrations\tests_connectors.py apps\bots\tests.py -q`
+- `.\.venv\Scripts\python.exe manage.py check`
+- `.\.venv\Scripts\python.exe manage.py makemigrations --check --dry-run`
+
+Completion note 2026-07-14:
+
+- affected area: permissions yes via existing integration setup gates; notifications yes because replayed inbound messages no longer duplicate inbox side effects; BusinessEvent yes because provider message replay is DB/service-idempotent; AI yes because AI-facing connector/message events no longer duplicate; migrations/env yes, added `bots.0008_botmessage_unique_bot_message_external_delivery`, no new env variables.
+- checks run: `.\.venv\Scripts\python.exe -m pytest apps\integrations\tests.py::TelegramIntegrationSkeletonTests apps\integrations\tests.py::WhatsAppIntegrationFoundationTests apps\integrations\tests.py::InstagramIntegrationFoundationTests -q`; `.\.venv\Scripts\python.exe -m pytest apps\bots\tests.py::InboxBackendTests::test_bot_message_api_updates_inbox_timestamps_and_unread_counter apps\bots\tests.py::InboxBackendTests::test_assigned_inbound_chat_notification_only_goes_to_assignee apps\bots\tests.py::InboxBackendTests::test_inbox_messages_assign_handoff_and_mark_read_actions_work -q`; `.\.venv\Scripts\python.exe -m pytest apps\integrations\tests.py apps\integrations\tests_connectors.py apps\bots\tests.py -q`; `.\.venv\Scripts\python.exe manage.py check`; `.\.venv\Scripts\python.exe manage.py makemigrations --check --dry-run`; `.\.venv\Scripts\python.exe manage.py migrate`.
+- checks skipped: full `scripts/codex_verify.sh`, because this was a bounded backend integration/security task on Windows and the scoped integration/bot gate plus Django structural/migration checks covered the affected area; frontend build, because no frontend files or UI contracts changed.
+- baseline failures: none observed; one first run of the full scoped pytest gate timed out at 3 minutes and was rerun with a longer timeout, then passed.
+
 ## P1 CRM Lifecycle And Business Logic Hardening
 
 ### 4. Normalize lead/deal/task lifecycle transitions through services
@@ -253,7 +342,7 @@ Completion note 2026-07-14:
 
 ### 6. Harden outreach campaign lifecycle
 
-- [ ] Move campaign cancellation and recipient state changes out of views into outreach service actions.
+- [x] Move campaign cancellation and recipient state changes out of views into outreach service actions.
 
 Problem:
 
@@ -286,11 +375,18 @@ Test gate:
 - Tenant isolation.
 - BusinessEvent/activity assertion where applicable.
 
+Completion note 2026-07-14:
+
+- affected area: permissions yes through existing outreach role gates and tenant-scoped viewset lookup; notifications yes because cancel now cancels pending outreach notifications; BusinessEvent/activity yes through `outreach_cancelled` activity and `outreach.campaign_cancelled` BusinessEvent; AI indirect because source-grounded AI can cite outreach events instead of inferred state; migrations/env no.
+- checks run: `.\.venv\Scripts\python.exe -m pytest apps\outreach\tests.py -q`; `.\.venv\Scripts\python.exe manage.py check`; `.\.venv\Scripts\python.exe manage.py makemigrations --check --dry-run`.
+- checks skipped: full `scripts/codex_verify.sh`, because this was a bounded backend outreach lifecycle service-boundary change and the focused outreach suite plus Django structural/migration checks covered the affected area; frontend build, because no frontend files or UI contracts changed.
+- baseline failures: none observed.
+
 ## P1 AI Trust And Source Grounding
 
 ### 7. Remove or rename fake/local "AI" hints in CRM UI
 
-- [ ] Replace deterministic local `AI-подсказка` UI copy with source-grounded backend AI insight or rename it to a non-AI CRM hint.
+- [x] Replace deterministic local `AI-подсказка` UI copy with source-grounded backend AI insight or rename it to a non-AI CRM hint.
 
 Problem:
 
@@ -322,9 +418,17 @@ Test gate:
 - Frontend build.
 - Focused UI test or manual check for client with data and client without data.
 
+Completion note 2026-07-14:
+
+- affected area: permissions no; notifications no; BusinessEvent no; AI yes through UI trust/copy boundaries; migrations/env no.
+- checks run: `npm run build` from `frontend` (`check:i18n`, `tsc -b`, app Vite build and widget build passed); static grep for fake/local authenticated CRM labels found remaining AI-hint wording only under public/marketing `frontend/src/features/public/ZaniExperience.tsx`.
+- manual check: reviewed `ClientInspector` data/no-data branches in code; the card now renders a neutral CRM next-step for clients with a lead/appointment and an explicit follow-up check for clients without recent lead/appointment data.
+- checks skipped: backend tests and migration checks, because this was frontend copy/UI trust plus docs only; Playwright/browser smoke, because no browser runtime check was required for this narrow label/card change after the production frontend build passed.
+- baseline failures: none observed. Build emitted existing bundle-size/plugin timing warnings only.
+
 ### 8. Make AI assistant source/no-data states consistently visible
 
-- [ ] Audit all AI surfaces and ensure they never invent business facts when source data is missing.
+- [x] Audit all AI surfaces and ensure they never invent business facts when source data is missing.
 
 Problem:
 
@@ -358,11 +462,74 @@ Test gate:
 - Frontend build.
 - Manual UI check with empty business and seeded business.
 
+Completion note 2026-07-14:
+
+- affected area: permissions yes through existing AI Analyst/Assistant gates and role-aware dashboard visibility; notifications no; BusinessEvent no; AI yes; migrations/env no.
+- checks run: `.\.venv\Scripts\python.exe -m pytest apps\ai_core\tests.py -q` (`31 passed`); `npm run build` from `frontend` (`check:i18n`, `tsc -b`, app Vite build and widget build passed); `git diff --check` for touched AI/dashboard/i18n/docs files.
+- manual check: reviewed dashboard owner brief states in code for seeded/source-backed recommendations, no-data, loading, backend error, no-access and provider-not-ready branches; reviewed AI Assistant provider-not-ready warning and existing analyst `SourceChips`/no-source-data state.
+- checks skipped: full `scripts/codex_verify.sh`, because this was a bounded AI/frontend trust pass and the focused AI tests plus frontend build covered the listed acceptance gate; Playwright/browser smoke, because no route loading or critical mutation flow changed.
+- baseline failures: none observed. The first focused AI pytest run timed out at 124s before reporting results; the same command was rerun with a longer timeout and passed. Frontend build emitted existing bundle-size/plugin timing warnings only.
+
+### 8.1 Harden AI approval creation and mutating tool execution
+
+- [x] Сделать `ApprovalRequest.status` и decision fields read-only на create/update API paths.
+- [x] Принудительно создавать новые approval requests только в `pending`, независимо от client payload.
+- [x] Добавить regression coverage для malicious create payloads вроде `status=approved`.
+- [x] Провести mutating AI tools через CRM domain services вместо direct model creation там, где важны lifecycle, permissions, audit, activity или notifications.
+
+Problem:
+
+- Critical AI mutations уже approval-gated на execution time, но approval creation тоже должен отвергать client-controlled state.
+- Direct `Client.objects.create`, `Lead.objects.create`, `Task.objects.create` или `Deal.objects.create` внутри AI tool execution может обходить зрелое domain-service behavior.
+- AI должен оставаться optional and controlled; tool не должен становиться скрытым shortcut вокруг CRM lifecycle rules.
+
+Affected area:
+
+- permissions: yes;
+- notifications: possible, because service-backed create/update flows may emit notifications;
+- BusinessEvent: possible, depending on the AI action;
+- AI: yes;
+- migrations/env: no unless model constraints are added.
+
+Files:
+
+- `apps/ai_core/serializers.py`
+- `apps/ai_core/views.py`
+- `apps/ai_core/tool_registry.py`
+- `apps/ai_core/tests.py`
+- relevant CRM services/selectors for client, lead, task and deal actions
+- `docs/AI_ASSISTANT_RULES.md`
+
+Expected changes:
+
+- API clients не могут создать уже approved/executed approval request.
+- Approval approve/reject/expire/execute state changes остаются server-side actions with audit.
+- Mutating AI tools переиспользуют existing domain services или получают small service wrappers там, где безопасного service ещё нет.
+- AI-created CRM records сохраняют tenant isolation, backend permissions, activity/audit и follow-up behavior.
+- Tool execution output остаётся source-grounded и не раскрывает secret/raw payload data.
+
+Test gate:
+
+- AI approval create with `status=approved` всё равно создаёт `pending` или safely rejects field.
+- Missing, mismatched, expired или unapproved approvals всё ещё блокируют mutating tool execution.
+- Approved mutating tool path создаёт records через domain-safe behavior и пишет audit.
+- Permission denial and tenant isolation coverage for changed tool paths.
+- `.\.venv\Scripts\python.exe -m pytest apps\ai_core\tests.py -q`
+- Add scoped CRM tests for any domain service touched by AI tool execution.
+- `.\.venv\Scripts\python.exe manage.py check`
+
+Completion note 2026-07-14:
+
+- affected area: permissions yes through underlying `clients:create`, `leads:create`, `tasks:create`, `deals:create` checks before AI tool execution; notifications yes for AI-created tasks through routed task notifications; BusinessEvent/activity/audit yes through AI tool audit plus client/lead/deal/task activity; AI yes; migrations/env no.
+- checks run: `.\.venv\Scripts\python.exe -m pytest apps\ai_core\tests.py -q` (`31 passed`); `.\.venv\Scripts\python.exe -m pytest apps\tasks\tests.py -q` (`35 passed`); `.\.venv\Scripts\python.exe manage.py test apps.core.tests_business_flows_e2e -v 2` (`8 passed`); `.\.venv\Scripts\python.exe manage.py check`; `.\.venv\Scripts\python.exe manage.py makemigrations --check --dry-run`.
+- checks skipped: frontend build, because this was backend-only AI/CRM execution hardening with no frontend files or API response contract changes requiring UI rebuild; full `scripts/codex_verify.sh`, because the task was bounded and the focused AI, task, E2E, Django check and migration drift gates passed on Windows.
+- baseline failures: none observed. Expected negative-path warnings appeared during E2E for forbidden/bad-request scenarios.
+
 ## P1 UX And Product Simplicity
 
 ### 9. Move authenticated hardcoded copy into i18n
 
-- [ ] Remove hardcoded Russian/English copy from authenticated CRM UI components.
+- [x] Remove hardcoded Russian/English copy from authenticated CRM UI components.
 
 Problem:
 
@@ -400,9 +567,18 @@ Test gate:
 - `cd frontend && npm run build`
 - Manual language switch smoke check for touched screens.
 
+Progress 2026-07-15:
+
+- moved visible authenticated CRM copy in shared CRM controls, client workspace, deal detail/list widgets, task drawer/form labels, conversations load-more/channel filters, settings billing/custom-field controls and CRM drawer deal empty state into i18n-backed strings;
+- added synchronized `en` / `ru` / `kk` keys for the touched UI and kept dictionary parity green;
+- removed decorative AI-style wording from the touched client inspector next-step block and kept it as an operational CRM next action;
+- checks passed: `cd frontend && npm run build`; `git diff --check`; Cyrillic visible-copy scan for `frontend/src/components/crm`, `frontend/src/features/clients`, `frontend/src/features/deals`, `frontend/src/features/tasks`, `frontend/src/features/settings`, `frontend/src/features/conversations`;
+- scan notes: remaining Cyrillic hits are non-visible implementation details only: `SettingsPage.tsx` slug regex and `DealsPage.tsx` localized placeholder selector;
+- manual language-switch smoke passed with a temporary Playwright spec on the standard local Django/Vite harness: `npx playwright test e2e/tmp-language-smoke.spec.ts --project=desktop-chromium --reporter=line --timeout=90000` (`1 passed`, 15 route/language assertions across clients, deals, tasks, conversations and settings for `ru` / `kk` / `en`); the temporary spec was removed after the successful run.
+
 ### 10. Hide technical setup complexity from daily merchant workflows
 
-- [ ] Review settings/integrations/developer surfaces and separate daily CRM workflows from technical admin/setup flows.
+- [x] Review settings/integrations/developer surfaces and separate daily CRM workflows from technical admin/setup flows.
 
 Problem:
 
@@ -437,9 +613,17 @@ Test gate:
 - Frontend build.
 - Manual check for owner/admin and regular staff permissions.
 
+Completion note 2026-07-16:
+
+- affected area: permissions yes through existing integrations manage/view gates and role-disabled controls; notifications no; BusinessEvent no; AI possible through safer connector status/error wording; migrations/env no.
+- changes: integration cards and setup modals now keep default daily flows focused on provider value, status, check/sync/request actions and safe recovery text; generic account/key/webhook setup is hidden behind owner/admin/support manual fallback; marketplace/data access-key fields no longer auto-open when credentials are already saved; provider errors in integration UI are mapped to merchant-safe messages instead of raw provider/debug text; docs now record the merchant UI boundary.
+- checks run: `npm run build` from `frontend` (`check:i18n`, `tsc -b`, app Vite build and widget build passed); temporary Playwright role smoke `npx playwright test e2e/tmp-integration-simplicity.spec.ts --project=desktop-chromium --reporter=line --timeout=90000` (`2 passed`) checked owner simple setup/manual fallback and operator non-exposure of technical setup controls; the temporary spec was removed after the successful run.
+- checks skipped: backend tests and migration checks, because this was frontend/docs-only UX separation with no backend behavior, model or API contract change; full `scripts/codex_verify.sh`, because the bounded frontend build plus role smoke covered the listed acceptance gate on Windows.
+- baseline warnings: frontend build still reports existing oversized `i18n`/`layout` chunk warnings and plugin timing warnings; Playwright webserver logs still show the existing local JWT HMAC key length warning and React Router future flag warnings.
+
 ### 11. Gate platform placeholders and demo/mock flows
 
-- [ ] Ensure platform placeholder pages and demo/mock endpoints are not presented as production merchant functionality.
+- [x] Ensure platform placeholder pages and demo/mock endpoints are not presented as production merchant functionality.
 
 Problem:
 
@@ -472,14 +656,159 @@ Test gate:
 - Frontend build.
 - Backend tests for demo endpoint permissions if changed.
 
+Completion note 2026-07-16:
+
+- affected area: permissions yes through demo-data/settings access, mock-sync integration manage access, platform route role smoke and the new `ALLOW_DEMO_MERCHANT_FLOWS` environment gate; notifications no; BusinessEvent yes only by preventing mock-sync event creation when demo flows are disabled or unauthorized; AI no; migrations/env yes through a settings/env-template flag with no database migration.
+- changes: production defaults now disable demo/mock merchant flows via `ALLOW_DEMO_MERCHANT_FLOWS=False`; onboarding demo-data returns explicit `demo: true` and `mode: "demo"`; demo-data and connector mock-sync cannot run when demo flows are disabled; platform placeholder pages are marked as internal platform-only and not merchant production functionality; Kaspi/MoySklad/Wildberries/Ozon setup notices and mode badges now distinguish demo/mock check/sync results from live provider connections.
+- checks run: targeted backend pytest for onboarding demo-data and connector mock-sync permission/feature-flag coverage (`14 passed`); `manage.py check`; `manage.py makemigrations --check --dry-run`; `cd frontend && npm run build`; focused Playwright platform route smoke (`2 passed`) for platform admin workspace access and merchant redirect; `git diff --check`.
+- checks skipped: full `scripts/codex_verify.sh`, because this bounded item touched a narrow demo/mock/platform boundary and the scoped backend, migration, frontend build and route-smoke gates covered the listed acceptance criteria.
+- baseline warnings: frontend build still reports existing oversized `i18n`/`layout` chunk warnings and plugin timing warnings; Playwright webserver logs still show the existing local JWT HMAC key length warning and React Router future flag warnings.
+
+### 11.1 Run controlled pilot scenario QA on mock/dev data
+
+- [x] Создать или обновить deterministic pilot merchant dataset, который не требует production credentials.
+- [x] Пройти полный owner/operator/manager path: от lead capture до dashboard/analytics/AI recommendation.
+- [x] Задокументировать blockers, которые мешают реальному SMB pilot даже если исключить live providers и production env.
+
+Completion note 2026-07-14:
+
+- `seed_pilot_demo` / `prepare_pilot_demo` now create owner, manager and operator pilot logins. The operator gets a real task-queue item, and `pilot_launch_quality_gate` logs in as operator and checks operator tasks + inbox summary in addition to platform/owner/manager checks.
+- `prepare_pilot_demo --reset` and `pilot_launch_quality_gate` passed locally on SQLite with safe mock/dev settings. The launch pack prints owner/manager/operator smoke paths without Windows-incompatible `→` stdout characters.
+- Backend E2E flow gate passed for dashboard -> lead -> client/deal/appointment/task -> inbox AI qualification -> integration BusinessEvent timeline -> AI approval/tool execution/audit.
+- Mobile Playwright owner and manager route smokes passed separately after removing duplicate E2E prepare from the spec and changing the Django webServer health probe from unauthorized `/api/auth/me/` to `/health/`.
+- Remaining controlled-pilot blockers excluding live providers/prod env: no critical blocker found in the verified local/dev path. Follow-ups remain: polish pilot-critical UX in 11.2, frontend bundle/performance hygiene in 12.1, and production/paid-beta infrastructure gates in `docs/paid-beta-gate.md`.
+
+Problem:
+
+- Unit и scoped E2E tests доказывают важные invariants, но продукту всё ещё нужен один цельный merchant journey, который ощущается usable end-to-end.
+- Без controlled pilot script разработка может продолжать полировать отдельные страницы и пропустить friction между dashboard, leads, inbox, tasks, calendar, integrations и AI.
+
+Affected area:
+
+- permissions: yes;
+- notifications: yes;
+- BusinessEvent: yes;
+- AI: yes;
+- migrations/env: no, unless seed helpers require data-shape changes.
+
+Files:
+
+- `apps/core/tests_business_flows_e2e.py`
+- `frontend/e2e/*`
+- `frontend/src/features/dashboard/*`
+- `frontend/src/features/leads/*`
+- `frontend/src/features/conversations/*`
+- `frontend/src/features/tasks/*`
+- `frontend/src/features/calendar/*`
+- `frontend/src/features/integrations/*`
+- `frontend/src/features/assistant/*`
+- `docs/testing.md`
+- `docs/paid-beta-gate.md`
+
+Expected changes:
+
+- Repeatable local/dev pilot dataset покрывает owner, manager и operator roles.
+- Pilot flow проверяет: dashboard -> lead -> client/deal/appointment/task -> inbox activity -> integration health event -> AI recommendation/approval -> audit/timeline.
+- Empty/error states проверены для new business и seeded business.
+- Любой mock/dev provider state ясно помечен и не может быть перепутан с live production integration.
+- Итогом становится короткая pilot readiness note с remaining product blockers.
+
+Test gate:
+
+- `.\.venv\Scripts\python.exe -m pytest apps\core\tests_business_flows_e2e.py -q`
+- `cd frontend && npm run build`
+- Browser/Playwright smoke for owner and manager daily routes, если browser runtime available.
+- Manual pilot checklist for seeded mock/dev business, если full browser automation unavailable.
+
+### 11.2 Polish pilot-critical UX on Leads, Inbox, Dashboard and Settings
+
+- [x] Проверить четыре pilot-critical screens на real data states, empty states, forbidden states и next actions.
+- [x] Убрать или переписать authenticated-app copy, которая объясняет ZANI вместо того, чтобы помогать merchant действовать.
+- [x] Убедиться, что owner/manager/operator видят role-appropriate actions без technical connector noise в daily work.
+
+Completion note 2026-07-15:
+
+- Leads already exposes a real empty state with create/import next actions, table/mobile rows include responsible/operational fields, and existing lifecycle/duplicate/conversion UI remains API-backed; no new lead behavior was required in this pass.
+- Inbox permission-denial text for AI reply generation, CRM pipeline preview and CRM pipeline execution now comes from i18n instead of hardcoded English strings, while existing handoff, CRM link/create, task and AI preview buttons remain disabled/permission-aware.
+- Dashboard owner AI surfaces were reviewed against the existing source-grounded/no-data/provider-unavailable states; no fallback pseudo-AI copy was added.
+- Settings billing copy was moved into i18n, and the operator E2E smoke now asserts the settings forbidden state does not expose billing/developer/API/webhook/payload/provider technical noise.
+- checks run: `cd frontend && npm run build`; `cd frontend && npx playwright test --project=desktop-chromium -g "operator sees restricted sections as forbidden"`; `cd frontend && npx playwright test --project=mobile-chromium -g "mobile (owner|manager) smoke"`; `git diff --check`; targeted `rg` for removed hardcoded Settings/Inbox copy.
+- checks skipped: backend tests and migration drift check, because this was frontend/i18n/E2E UX polish with no backend code, schema or API contract changes; full `scripts/codex_verify.sh`, because the required gate for this bounded pilot-critical UX pass was frontend build plus role visibility smoke.
+- baseline notes: Playwright logs still show existing local warnings (`React Router Future Flag`, short local JWT secret warning, occasional SQLite `database is locked` during concurrent local E2E requests), but the targeted tests passed and no acceptance criterion remained unproven.
+
+Problem:
+
+- Текущая foundation уже достаточно сильная для controlled pilot work, но perceived product quality будет решаться на daily surfaces.
+- Pilot user не должен понимать implementation concepts вроде webhooks, provider payloads, mock mode internals или AI plumbing.
+
+Affected area:
+
+- permissions: yes;
+- notifications: possible;
+- BusinessEvent: possible through connector/dashboard states;
+- AI: yes for dashboard/assistant cards;
+- migrations/env: no.
+
+Files:
+
+- `frontend/src/features/leads/LeadsPage.tsx`
+- `frontend/src/features/conversations/ConversationsPage.tsx`
+- `frontend/src/features/dashboard/DashboardPage.tsx`
+- `frontend/src/features/dashboard/OwnerDashboard.tsx`
+- `frontend/src/features/settings/SettingsPage.tsx`
+- `frontend/src/features/integrations/*`
+- `frontend/src/lib/i18n/*`
+- `docs/design-system.md`
+
+Expected changes:
+
+- Leads: clear next action, owner/responsible visibility, duplicate/conversion/action states.
+- Inbox: clear handoff/AI preview/CRM link/task/appointment actions без скрытия source context.
+- Dashboard: operational metrics, overdue/unanswered/stalled/connector states и source-grounded AI cards.
+- Settings: team/roles/business setup понятен; developer/provider setup отделён от everyday CRM usage.
+
+Test gate:
+
+- `cd frontend && npm run build`
+- Manual smoke для owner, manager и operator role visibility.
+- Manual empty-state and forbidden-state check for touched screens.
+
 ## P2 Architecture Bottlenecks
 
 ### 12. Split large frontend page files into feature modules
 
-- [ ] Split `SettingsPage.tsx` into sections/components/hooks.
-- [ ] Split `ConversationsPage.tsx` into inbox list, thread, composer, filters and hooks.
-- [ ] Split `AIAgentsPage.tsx` into agent list, config, runtime status, approvals and provider setup.
-- [ ] Split `CalendarPage.tsx` into calendar shell, appointment drawer, resource filters and availability logic.
+- [x] Split `SettingsPage.tsx` into sections/components/hooks.
+- [x] Split `ConversationsPage.tsx` into inbox list, thread, composer, filters and hooks.
+- [x] Split `AIAgentsPage.tsx` into agent list, config, runtime status, approvals and provider setup.
+- [x] Split `CalendarPage.tsx` into calendar shell, appointment drawer, resource filters and availability logic.
+
+Progress note 2026-07-16:
+
+- `SettingsPage.tsx` split into settings config, shared utility helpers, section navigation hook/component, and billing/usage section components.
+- Verification completed: `cd frontend && npm run build`; `cd frontend && npx playwright test --project=desktop-chromium -g "operator sees restricted sections as forbidden" --reporter=line --timeout=90000`; `git diff --check`.
+- Skipped: backend tests and migrations because this was a frontend-only refactor with no API/model changes.
+- Remaining at this checkpoint: split `CalendarPage.tsx`.
+
+Progress note 2026-07-16:
+
+- `ConversationsPage.tsx` split into conversation constants/types/utils, filter-state hook, inbox list pane, thread pane, composer, item/message primitives, and shared conversation primitives.
+- Verification completed: `cd frontend && npm run build`; `cd frontend && npx playwright test --project=desktop-chromium -g "business owner can use core merchant CRM pages" --reporter=line --timeout=90000`; `git diff --check`.
+- Skipped: backend tests and migrations because this was a frontend-only refactor with no API/model changes.
+- Remaining at this checkpoint: split `CalendarPage.tsx`.
+
+Progress note 2026-07-16:
+
+- `AIAgentsPage.tsx` split into agent page orchestration, shared AI-agent types/utils, shared UI primitives, profile/config section, actions/approval section, runtime/test section, knowledge section, and provider setup section.
+- Verification completed: `cd frontend && npm run build`; `cd frontend && npx playwright test --project=desktop-chromium -g "desktop sidebar links render without 404" --reporter=line --timeout=90000`; `git diff --check`.
+- Skipped: backend tests and migrations because this was a frontend-only refactor with no API/model changes.
+- Remaining at this checkpoint: split `CalendarPage.tsx`.
+
+Progress note 2026-07-16:
+
+- `CalendarPage.tsx` split into shared calendar constants/types/utils, availability/date helpers, calendar toolbar shell, resource/status filter components, picker, appointment/task preview cards, month inspector panel, and appointment drawer panel.
+- Verification completed: `cd frontend && npm run build`; `cd frontend && npx playwright test --project=desktop-chromium -g "calendar deep link selects appointment and lifecycle action works" --reporter=line --timeout=90000`; `git diff --check`.
+- Skipped: backend tests and migrations because this was a frontend-only refactor with no API/model changes.
+- Remaining in this item: none; section 12 is complete.
 
 Problem:
 
@@ -505,12 +834,73 @@ Test gate:
 - `cd frontend && npm run build`
 - Focused manual smoke check for each split page.
 
+### 12.1 Frontend bundle and performance hygiene
+
+- [x] Проверить production build output на oversized chunks, особенно i18n/layout/shared UI и authenticated page bundles.
+- [x] Не позволять i18n dictionaries и heavy page modules раздувать first authenticated load.
+- [x] Добавить lightweight bundle/performance note в frontend verification workflow.
+
+Completion note 2026-07-16:
+
+- affected area: permissions no; notifications no; BusinessEvent no; AI no direct impact; migrations/env no.
+- baseline evidence: previous production build emitted an oversized shared `i18n-*.js` chunk around 954.57 kB and a large shared `layout-*.js` chunk around 475.74 kB, so every first load risked carrying all language dictionaries and authenticated shell code too early.
+- changes made: `AppLayout` and `PlatformLayout` are lazy route shell chunks; i18n now loads the active language dictionary dynamically instead of statically importing `ru`, `kk`, and `en`; Vite manual chunking no longer forces dictionaries into one shared i18n chunk; `npm run check:bundle` was added to record largest JS chunks after production build; `docs/testing.md` now documents frontend bundle hygiene checks.
+- after evidence: production build now emits separate language chunks (`ru` about 352.18 kB, `kk` about 352.89 kB, `en` about 248.25 kB) and `app-shell` about 472.67 kB; `npm run check:bundle` reported no JS chunk above 500 kB before gzip.
+- checks run: `cd frontend && npm run build`; `cd frontend && npm run check:bundle`; `cd frontend && npx playwright test --project=desktop-chromium -g "desktop sidebar links render without 404" --reporter=line --timeout=90000`; `git diff --check`.
+- checks skipped: backend tests and migration checks, because this was a frontend-only bundle/routing/i18n hygiene task with no API/model/schema changes.
+- baseline warnings: Playwright webserver logs still show existing local `InsecureKeyLengthWarning` and React Router v7 future flag warnings; they did not fail the route-loading smoke.
+
+Problem:
+
+- Frontend уже собирается, но pilot readiness зависит ещё и от perceived speed.
+- Large shared chunks могут сделать каждый daily CRM route медленным по ощущениям, даже если backend APIs healthy.
+
+Affected area:
+
+- permissions: no;
+- notifications: no;
+- BusinessEvent: no;
+- AI: no direct impact;
+- migrations/env: no.
+
+Files:
+
+- `frontend/vite.config.ts`
+- `frontend/src/app/router.tsx`
+- `frontend/src/lib/i18n.tsx`
+- `frontend/src/lib/i18n/*`
+- `frontend/src/components/layout/*`
+- `frontend/src/features/*`
+- `frontend/package.json`
+
+Expected changes:
+
+- Build output имеет понятную chunk grouping и без obvious avoidable giant shared chunk.
+- Lazy routes не тащат heavy authenticated pages в unrelated first loads.
+- i18n chunking остаётся корректным для `ru`, `kk`, `en` и проходит dictionary parity checks.
+- Functional UI behavior changes не смешиваются с pure bundle hygiene, если это не требуется.
+
+Test gate:
+
+- `cd frontend && npm run build`
+- Record relevant build output/chunk observations in completion note.
+- Manual smoke for login/app shell, если chunking меняет route loading behavior.
+
 ### 13. Split large backend views/services where business boundaries are clear
 
-- [ ] Split integrations view/service boundaries.
-- [ ] Split bots provider actions.
-- [ ] Split conversation inbox view helpers.
-- [ ] Keep scheduling service readable by extracting cohesive helpers only where it reduces complexity.
+- [x] Split integrations view/service boundaries.
+- [x] Split bots provider actions.
+- [x] Split conversation inbox view helpers.
+- [x] Keep scheduling service readable by extracting cohesive helpers only where it reduces complexity.
+
+Completion note 2026-07-16:
+
+- affected area: permissions yes, limited to preserving integration manage denial as tenant-safe 404 for connector create/request; notifications no behavior change; BusinessEvent no behavior change; AI no behavior change, conversation qualification preview guard only moved to helper; migrations/env no.
+- changes made: extracted marketplace connector config/status/test/sync HTTP helpers into `apps/integrations/view_actions.py`; extracted Telegram/WhatsApp/Instagram bot-channel action helpers into `apps/bots/channel_actions.py`; extracted inbox summary/filter/message pagination/AI-preview helpers into `apps/conversations/inbox_helpers.py`; extracted scheduling availability and working-hours slot helpers into `apps/scheduling/availability.py` while keeping backwards-compatible imports through `apps.scheduling.services`.
+- permission note: focused tests exposed that operator connector create/request returned `403` instead of the expected tenant-safe `404`; `BusinessConnectorViewSet` now applies a connector-specific manage-or-not-found guard for those create/request paths.
+- checks run: `py_compile` for touched backend modules; `DATABASE_URL=sqlite:///db.sqlite3 ... .venv\Scripts\python.exe manage.py check`; `DATABASE_URL=sqlite:///db.sqlite3 ... .venv\Scripts\python.exe manage.py makemigrations --check --dry-run`; focused regression tests for the two failed connector denial cases; `DATABASE_URL=sqlite:///db.sqlite3 ... .venv\Scripts\python.exe -m pytest apps\integrations\tests_connectors.py apps\integrations\tests.py apps\bots\tests.py apps\scheduling\tests.py apps\core\tests_work_queues.py -q` (`195 passed`); `git diff --check`.
+- checks skipped: frontend build and Playwright, because this phase changed backend Python boundaries only and did not alter frontend assets or routes.
+- known baseline: repository had substantial pre-existing dirty changes from earlier phases; this phase only touched backend boundary files and the current plan/docs.
 
 Problem:
 
@@ -541,7 +931,14 @@ Test gate:
 
 ### 14. Reconcile CRM roadmap/status docs with implemented behavior
 
-- [ ] Update `CRM_PRODUCTION_LAYER_PLAN.md` so old "remaining" notes do not conflict with completed phase notes.
+- [x] Update `CRM_PRODUCTION_LAYER_PLAN.md` so old "remaining" notes do not conflict with completed phase notes.
+
+Completion note 2026-07-16:
+
+- affected area: permissions no; notifications no; BusinessEvent no; AI no; migrations/env no.
+- changes made: added a roadmap status hygiene note to `CRM_PRODUCTION_LAYER_PLAN.md`; converted old phase-local `Осталось` sections into `Current follow-up after completed phase` or historical notes; clarified that lead lifecycle, conversion, activity/audit, automation and E2E items were advanced by later verified phases; replaced the obsolete page-by-page near-term priority list with the current provider readiness / controlled-pilot / production-like QA priorities; marked early deal `Still open` notes in `CRM_IMPLEMENTATION_TASKS.md` as historical because later Phase 3 passes closed them.
+- verification: grep confirmed no remaining `Still open:`, `Осталось:` or stale `Статус: следующий` wording in `CRM_PRODUCTION_LAYER_PLAN.md` / `CRM_IMPLEMENTATION_TASKS.md`; `git diff --check -- CRM_PRODUCTION_LAYER_PLAN.md CRM_IMPLEMENTATION_TASKS.md CRM_AUDIT_REQUIRED_CHANGES.md` passed.
+- checks skipped: backend tests, migration checks, frontend build and Playwright because this was documentation-only status reconciliation with no code, schema, API, UI route or runtime behavior changes.
 
 Problem:
 
@@ -574,7 +971,7 @@ Test gate:
 
 ### 15. Document provider live/mock readiness matrix
 
-- [ ] Create or update a provider readiness matrix for all integrations and bot channels.
+- [x] Create or update a provider readiness matrix for all integrations and bot channels.
 
 Problem:
 
@@ -604,18 +1001,29 @@ Test gate:
 
 - Documentation review only.
 
-## Recommended Execution Order
+Completion note 2026-07-16:
 
-1. Legacy AI route permission alignment.
-2. Appointment reply lifecycle service fix.
-3. Provider action service refactor for integrations and bots.
-4. Source-grounded AI UI cleanup.
-5. Authenticated i18n cleanup.
-6. Resource to User mapping.
-7. Technical setup UX simplification.
-8. Large file split work.
-9. Provider readiness docs.
-10. CRM roadmap/status reconciliation.
+- Added `docs/provider-rollout.md` provider readiness matrix with required columns: provider, channel/type, live/mock status, required env/setup, setup owner, test coverage and user-visible status.
+- Matrix separates Website/forms, Excel/CSV, Telegram, WhatsApp, Instagram/Meta, Kaspi, MoySklad, Wildberries/WB, Ozon, transactional email, OpenRouter/OpenAI, 1C and future providers.
+- Clarified in `docs/integrations.md` that merchant UI/provider cards must use the readiness matrix as source of truth and must not advertise WhatsApp, Instagram/Meta, Kaspi, MoySklad, Wildberries/WB or Ozon as generally production-ready before provider gates pass.
+- Added `docs/CONNECTOR_BLUEPRINT.md` production checklist items for readiness documentation and merchant-facing live/beta/pilot/request/mock labels.
+- Verification: `git diff --check -- docs/provider-rollout.md docs/integrations.md docs/CONNECTOR_BLUEPRINT.md` passed; `rg` confirmed all required provider rows/status references are present.
+- Skipped backend/frontend tests because this phase changed documentation only and has no runtime behavior, migration, UI build or provider-call impact.
+
+## Closed Audit Status And Follow-Up Sources
+
+Audit checklist status as of 2026-07-16:
+
+1. Items 1-15 are completed at the current verified scope.
+2. This document should not be used as an active backlog unless a new audit item is explicitly added.
+3. The old recommended execution order is superseded by completion notes inside each item and the current source-of-truth docs.
+
+Remaining product/production risks are not unchecked audit tasks:
+
+- live provider credentials and per-provider rollout gates still depend on `docs/provider-rollout.md`, `docs/integrations.md` and environment readiness;
+- production-like merchant data QA still needs to be run for realistic calendar, task, client, deal, inbox and AI daily workflows;
+- dentistry-first launch mode is not implemented yet and needs the product profile/capability layer described in `actual_docs/CRM_TECHNICAL_MAP_AND_VERTICAL_MODES.md`;
+- API/frontend work must keep `API_ACTION_CONTRACT.md` aligned with actual action endpoints.
 
 ## Current Audit Notes
 

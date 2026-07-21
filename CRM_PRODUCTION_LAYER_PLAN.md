@@ -1,6 +1,6 @@
 # CRM Production Layer Plan
 
-Дата обновления: 2026-06-23
+Last updated: 2026-07-16
 
 Цель: довести CRM до production-уровня слоями по всему продукту, а не полировать одну страницу изолированно. Этот документ является текущим source-of-truth для CRM hardening.
 
@@ -16,7 +16,23 @@ domain invariants -> state machines -> audit/activity -> API contracts -> fronte
 
 ## 2. Текущее Состояние
 
+### Backend Boundaries
+
+Update 2026-07-16: App 2.0 workspace related data strategy is implemented at the API-contract layer. Full entity workspaces should use CRM card payloads for first load/counts/previews/actions, then reuse existing paginated list APIs for deep tabs instead of adding duplicate related endpoints. Deals now support `lead_ids`; appointments support `lead_ids`; tasks support `client_ids`, `lead_ids`, `deal_ids`, `appointment_ids` and `conversation_ids` with conversation-linked task inclusion for client/lead/deal filters; inbox conversations support `client_ids`, `lead_ids` and `deal_ids`. The shared ID parser accepts comma-separated ids and frontend `ids[]` arrays. Workspace related filter tests, task/inbox/CRM-card regressions, Django check, migration drift check and frontend build passed.
+
+Update 2026-07-16: CRM card actions are now user-scoped for App 2.0 workspace readiness. The card builder preserves legacy `available_actions` string ids and adds `available_action_details` with stable id, label key, permission resource/action, allowed flag, scope, denial reason, reason-required flag, destructive flag and confirmation mode. Client, lead, deal and appointment CRM card endpoints pass the current actor into the contract. Backend CRM card tests, cross-entity E2E regression, Django check, migration drift check and frontend build passed.
+
+Update 2026-07-16: Phase 13 backend boundary split is complete at the current scope. Marketplace connector config/status/test/sync HTTP helpers now live in `apps/integrations/view_actions.py`, bot-channel provider actions live in `apps/bots/channel_actions.py`, inbox summary/filter/message pagination/AI-preview helpers live in `apps/conversations/inbox_helpers.py`, and scheduling working-hours/availability logic lives in `apps/scheduling/availability.py` while preserving existing imports through `apps.scheduling.services`. Connector create/request denial remains tenant-safe with `404` for roles without integration manage access. Django check, migration drift check and focused integrations/bots/scheduling/inbox tests passed.
+
+### Roadmap Status Hygiene
+
+Update 2026-07-16: `CRM_IMPLEMENTATION_TASKS.md` phases 0-13 and `CRM_AUDIT_REQUIRED_CHANGES.md` items 1-15 are closed at their current verified scope. Historical "remaining" notes below are follow-up risk/QA notes, not active unchecked checklist work. New product work now belongs in the current product/technical map (`actual_docs/CRM_TECHNICAL_MAP_AND_VERTICAL_MODES.md`), this production plan, the relevant docs, and `API_ACTION_CONTRACT.md`.
+
 ### Integrations
+
+Update 2026-07-16: Demo/mock merchant flows are now gated by `ALLOW_DEMO_MERCHANT_FLOWS`; production env templates keep it disabled. Onboarding demo-data responses explicitly declare demo mode, connector mock-sync cannot create BusinessEvents when the demo-flow gate is off, platform placeholder pages are marked internal-only, and marketplace connector setup notices distinguish mock/demo check/sync success from live provider connections. Focused backend tests, Django checks, migration drift check, frontend build and platform route smoke passed for this scope.
+
+Update 2026-07-16: Merchant integration UI now keeps daily workflows out of connector-console mode. Default cards and setup modals show provider value, status, safe check/sync/request actions and merchant-safe recovery messages; account IDs, access keys, webhook verification values and advanced import/provider knobs stay behind owner/admin/support fallback controls. Frontend build and a focused owner/operator Playwright role smoke passed for this scope.
 
 Update 2026-07-14: Provider-specific setup, status, test, sync and OAuth actions are no longer implemented directly in `BusinessConnectorViewSet` or `BotChannelViewSet`. Business connector orchestration now lives in `apps.integrations.services`, bot-channel Telegram/WhatsApp/Instagram orchestration lives in `apps.bots.services`, and DRF viewsets keep the HTTP/serializer/permission boundary. Focused integration and bot API tests passed for the current scope.
 
@@ -54,7 +70,7 @@ Update 2026-07-09: Phase 6 pass 1 hardened appointment lifecycle as a CRM mechan
 - internal responsible-user appointment notifications;
 - mobile agenda with appointments, tasks and day actions.
 
-Осталось:
+Current follow-up after completed phase:
 
 - final QA on production-like merchant data.
 
@@ -88,12 +104,14 @@ Update 2026-07-09: Phase 7 pass 1 added first-class task-to-conversation linking
 - pagination foundation и backend indexes;
 - тесты на ключевые task scenarios.
 
-Осталось:
+Current follow-up after completed phase:
 
 - проверить список задач на 500-2000 записей;
 - расширить E2E smoke.
 
 ### Conversations
+
+Update 2026-07-16: Manual inbox `create-task` is now service-backed at the conversation domain boundary. `InboxConversationViewSet.create_task` delegates to `apps.conversations.services.create_task_from_conversation`, preserving title/default title, client/lead/deal/conversation links, assignee/creator, priority, due date and timeline activity. Focused inbox task tests cover happy path, default title, permission denial and tenant isolation; CRM card and cross-entity E2E regression tests passed.
 
 Update 2026-07-09: Phase 5 pass 8 completed the current Conversations -> CRM pipeline checklist. Work queues now include unread and handoff SLA-overdue conversation queues, inbox summary exposes SLA-overdue counts and urgent next actions, and conversation queue items include SLA due/overdue metadata. Phase 5 is complete at the current scope; deeper UI polish for appointment creation can continue in Scheduling.
 
@@ -121,17 +139,17 @@ Update 2026-07-09: Phase 5 pass 1 hardened the inbox action/activity layer. Manu
 - CRM-действия: связать клиента/лид/сделку, создать задачу;
 - app header освобожден от лишней кнопки ответа клиенту.
 
-Осталось:
+Current follow-up after completed phase:
 
-- deeper UI polish for inline appointment creation from conversations can continue in Phase 6 scheduling work.
+- deeper inline appointment UX can continue only if product needs richer scheduling inside the inbox; backend appointment creation from conversations is already available and covered by the current CRM flow.
 
 ### Leads
 
 Update 2026-07-14: Lead appointment-created lifecycle transitions are centralized in `apps.leads.services`. Lead API create-appointment, scheduling service `create_appointment_from_lead`, inbox conversation appointment creation and auto-booking now call the same lead lifecycle helper instead of assigning `lead.status`/`lead.service` directly. The helper validates allowed transitions and same-business service/resource/appointment links, writes taxonomy-backed lead activity/audit metadata, preserves responsible-user notification routing and emits the lead status automation trigger. Focused tests cover happy path, permission denial, tenant-related service rejection, invalid closed-lead no-side-effect behavior and backend E2E CRM flows.
 
-Update 2026-07-04: Phase 1 UI alignment and Phase 2 lead lifecycle are complete. Leads now have service-backed lifecycle actions with explicit allowed transitions, protected generic update paths for lifecycle/archive fields, lost-reason enforcement, active business member validation, lead -> client, lead -> deal, lead -> appointment and lead -> follow-up task API contracts, activity/audit coverage for key actions, normalized phone/email duplicate detection through the client identity layer, and focused backend tests for lifecycle, permission denial, tenant isolation and conversion flows. Still open for later phases: frontend E2E for lead -> appointment -> task and lead -> deal, and deeper automation/BusinessEvent mapping.
+Update 2026-07-04: Phase 1 UI alignment and Phase 2 lead lifecycle are complete. Leads now have service-backed lifecycle actions with explicit allowed transitions, protected generic update paths for lifecycle/archive fields, lost-reason enforcement, active business member validation, lead -> client, lead -> deal, lead -> appointment and lead -> follow-up task API contracts, activity/audit coverage for key actions, normalized phone/email duplicate detection through the client identity layer, and focused backend tests for lifecycle, permission denial, tenant isolation and conversion flows. Historical follow-ups from this pass were later advanced by the Phase 8 activity/audit mapping, Phase 10 automation runtime, Phase 13 cross-entity E2E gates and 2026-07-15 pilot-critical UX polish.
 
-Статус: следующий основной frontend/backend слой.
+Статус: Phase 1/2 lead lifecycle foundation is complete at current scope; remaining lead work is production-like QA or future UX refinement, not an unimplemented lifecycle foundation.
 
 Сделано:
 
@@ -139,13 +157,11 @@ Update 2026-07-04: Phase 1 UI alignment and Phase 2 lead lifecycle are complete.
 - lead drawer foundation;
 - фильтры и pagination foundation.
 
-Осталось:
+Historical remaining notes, superseded or narrowed by later phases:
 
-- убрать лишние вложенные containers;
-- привести страницу к единому CRM table pattern;
-- закрепить lead lifecycle service;
-- проверить conversion lead -> client/deal/appointment;
-- сделать actions auditable and activity-backed.
+- unified CRM table/list and drawer work continued through later page-splitting and pilot UX passes;
+- lead lifecycle service and lead conversion contracts are service-backed and covered by focused backend/E2E checks;
+- lead activity/audit and automation coverage was advanced by Phase 8 and Phase 10.
 
 ### Clients
 
@@ -170,7 +186,7 @@ Update 2026-07-09: Phase 4 pass 1 validated and closed the client identity, dedu
 - client source attribution fields and lead form source context copy;
 - CRM card outreach consent summary.
 
-Осталось:
+Current follow-up after completed phase:
 
 - broader browser/manual smoke once Browser runtime input is available again;
 - deeper consent-management UX inside the client drawer, if merchant roles need inline opt-in/out editing beyond the existing outreach consent import/API workflow.
@@ -189,10 +205,10 @@ Update 2026-07-04: Phase 3 pass 1 is complete. Deals now have explicit backend p
 
 Status: Phase 3 deal production layer checklist is complete at current scope.
 
-Осталось:
+Current follow-up after completed phase:
 
-- frontend E2E beyond the manual drawer smoke;
-- deeper automation/BusinessEvent mapping for deal lifecycle;
+- frontend E2E baseline exists through Phase 13; expand full-browser deal coverage only when deal UI behavior changes;
+- deeper automation/BusinessEvent mapping for deal lifecycle remains a product-extension follow-up beyond the current domain foundation;
 - pipeline configuration UX for merchant-facing setup.
 
 ## 3. Non-Negotiable CRM Invariants
@@ -287,11 +303,25 @@ Update 2026-07-09: Phase 9 pass 3 aligned AI analyst source citations with sourc
 
 Update 2026-07-10: Phase 9 pass 4 completed the AI layer over real CRM data. ZANI now has a deterministic source-grounded owner daily brief and next-best-action API over stale leads, overdue tasks, unanswered conversations, stalled deals and failed connectors. Recommendations cite real CRM/connector sources, no-data states are explicit, owner dashboard consumes the live brief, AI request log responses mask secret-like data, and critical mutating AI tools require a matching approved `ApprovalRequest` before execution while read-only tools continue to audit execution.
 
+Update 2026-07-14: AI approval creation and tool execution were hardened. `ApprovalRequest` create/update API paths no longer accept client-controlled decision state, new approvals start as `pending`, and malicious `status=approved` payloads remain unable to execute critical tools. Mutating AI tools now re-check the underlying CRM create permission before execution and AI-created task records go through the task service so routed notifications/activity remain consistent. Client, lead and deal AI tool paths now write source-tagged activity metadata, and lead creation emits the normal lead-created automation trigger.
+
+Update 2026-07-14: Authenticated CRM UI copy was tightened so deterministic local hints are not presented as AI insight. The client inspector now shows a neutral CRM next-step card sourced from the selected client's leads/appointments, and local calendar/deal/inbox hint labels no longer use visible AI wording unless a future surface is connected to source-grounded AI/backend recommendation data.
+
+Update 2026-07-14: AI source/no-data presentation was tightened on authenticated owner and assistant surfaces. Owner dashboard no longer falls back to local pseudo-AI recommendations when the backend owner brief is unavailable; it now shows loading, no-data, unavailable or no-access states explicitly. Source-backed owner brief recommendations expose their backend `source_ids`, and AI Assistant shows a visible provider-not-ready warning when the live provider is disabled or unconfigured.
+
 ### Layer 3.6: Automation Runtime
 
 Update 2026-07-13: Phase 10 completed the current automation runtime layer. CRM automations now run through business-scoped `AutomationRun` records with idempotency, retry/cancel controls, per-business noisy-rule protection and an owner-facing run detail drawer. Supported triggers are lead created/status changed, deal stage changed, appointment cancelled/completed, task overdue and conversation unread. Supported safe actions are create task, create notification, assign user, add note, create follow-up and wait. Mutating actions execute through CRM/task/activity/notification domain services instead of direct view or model mutations, and tests cover service-emitted triggers, idempotency, retry, cancellation, permission denial and throttling.
 
+### Outreach
+
+Update 2026-07-14: Outreach campaign cancellation is now service-backed. `POST /api/outreach/campaigns/{id}/cancel/` delegates to `apps.outreach.services.cancel_campaign`, which cancels queued/pending recipients, cancels pending outreach notifications, records campaign activity, writes an audit lifecycle row and emits a source-grounded `BusinessEvent` for `outreach.campaign_cancelled`. Tests cover owner happy path, non-outreach role denial and cross-tenant hidden access.
+
 ### Layer 4: E2E Business Flows
+
+Update 2026-07-15: Pilot-critical UX polish for Leads, Inbox, Dashboard and Settings is complete at the current scope. Leads already exposes real empty-state next actions and operational lead rows; Inbox now uses localized role-denial messages for AI reply, AI CRM preview and AI CRM execution attempts; owner dashboard AI states were reviewed against source-grounded/no-data/provider-unavailable behavior; Settings billing copy was moved into i18n, and the operator Playwright smoke asserts the forbidden settings surface does not expose billing/developer/API/webhook/payload/provider technical noise. Frontend build, operator settings smoke, mobile owner/manager smoke and diff hygiene passed.
+
+Update 2026-07-14: Controlled pilot QA was tightened around the existing pilot launch package. `seed_pilot_demo` and `prepare_pilot_demo` now include owner, manager and operator logins; the operator receives a real task-queue item, and `pilot_launch_quality_gate` logs in as the operator and verifies operator task and inbox-summary reachability. `docs/testing.md` now defines the Windows-safe controlled pilot QA gate and manual fallback, while `docs/paid-beta-gate.md` keeps the boundary clear: local mock/dev pilot green is not paid-beta readiness.
 
 Update 2026-07-13: Phase 13 is complete at the current CRM scope. `apps/core/tests_business_flows_e2e.py` now proves the main cross-entity CRM flows through authenticated API contracts: owner login/dashboard/lead assignment, lead -> client -> appointment -> task, lead -> deal -> won/lost, inbox AI qualification -> lead/task, duplicate warning -> merge dry-run -> merge, appointment reschedule/cancel/no-show, integration BusinessEvent -> CRM timeline and AI suggestion -> approval -> tool execution -> audit. Mobile Playwright smoke now covers both owner and manager daily CRM routes with deterministic seed users from `prepare_e2e_smoke_data`. AI-created tasks suggested from a conversation now keep the originating `BotConversation` link.
 
@@ -314,8 +344,11 @@ Remaining follow-up after Phase 13:
 
 ## 5. Ближайший Приоритет
 
-1. Завершить stabilization checkpoint.
-2. Привести `Leads` к единому CRM table + drawer pattern.
-3. Затем `Deals`.
-4. Затем `Clients`.
-5. После этого провести cross-entity E2E hardening.
+The old page-by-page priority list above has been superseded by completed phase notes, the closed audit checklist and the current product/technical map. Current near-term priorities are:
+
+1. Keep the provider live/mock readiness matrix current and make merchant-facing connector labels follow it.
+2. Keep `API_ACTION_CONTRACT.md` synchronized with actual DRF router/actions before frontend work uses an endpoint.
+3. Run production-like merchant data QA for calendar, tasks, client/deal/inbox daily workflows and AI source-grounded summaries.
+4. Implement the dentistry-first product profile/capability layer before promising a dentistry workspace where Deals are disabled by default.
+5. Expand full-browser E2E only when UI behavior changes; backend cross-entity gates already cover core CRM invariants.
+6. Continue provider rollout only through readiness gates, rollback notes and support-visible status.

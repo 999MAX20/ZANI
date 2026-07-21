@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 
 import type { Client, Id, Task } from "../../../types";
-import type { ClientKpi, ClientTableRow, ClientTag } from "../types";
+import type { ClientKpi, ClientTableRow, ClientTag, Translate } from "../types";
 
 export function useClientRows({
   clients,
@@ -9,11 +9,13 @@ export function useClientRows({
   currentUserId,
   totalOverride,
   serverSummary,
+  t,
 }: {
   clients: Client[];
   tagsByClient: Record<string, ClientTag[]>;
   currentUserId?: Id | null;
   totalOverride?: number;
+  t: Translate;
   serverSummary?: {
     total: number;
     active: number;
@@ -55,11 +57,11 @@ export function useClientRows({
           date: client.next_step_date || null,
           priority: (client.next_step_priority || "normal") as Task["priority"],
         },
-        manager: latestManagerId ? `Менеджер ${latestManagerId}` : "Не назначен",
+        manager: latestManagerId ? t("clients.managerWithId", { id: latestManagerId }) : "",
         managerUserId: isMine ? currentUserId || null : (latestManagerId ? Number(latestManagerId) : null),
       };
     });
-  }, [clients, currentUserId, tagsByClient]);
+  }, [clients, currentUserId, t, tagsByClient]);
 
   const rows = useMemo(() => {
     return tableRows;

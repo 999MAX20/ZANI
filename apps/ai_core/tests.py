@@ -7,7 +7,8 @@ from apps.ai_core.ai_client import AIClientError, generate_text, resolve_model
 from apps.ai_core.models import AIToolCallLog, AIRequestLog, AgentProfile, ApprovalRequest, BusinessKnowledgeItem
 from apps.bots.models import Bot, BotConversation, BotMessage
 from apps.ai_core.services import run_ai_request
-from apps.businesses.models import Business, BusinessMember
+from apps.businesses.access import Actions, Resources
+from apps.businesses.models import Business, BusinessMember, BusinessRole, RolePermission
 from apps.clients.models import Client
 from apps.crm.models import Deal, Pipeline, PipelineStage
 from apps.core.models import AuditLog
@@ -644,6 +645,54 @@ class AICoreFoundationTests(TestCase):
         self.assertEqual(notification.action_label, "Открыть задачу")
         self.assertEqual(response.data["output_json"]["assignee_id"], self.owner.id)
 
+    def test_ai_tool_execute_requires_underlying_crm_create_permission(self):
+        limited_user = User.objects.create_user(
+            username="ai-limited-executor",
+            email="ai-limited-executor@example.com",
+            password="pass",
+            role=User.Roles.STAFF,
+        )
+        ai_executor_role = BusinessRole.objects.create(business=self.business, name="AI executor without task create")
+        RolePermission.objects.create(
+            business_role=ai_executor_role,
+            resource=Resources.AI_PIPELINE,
+            action=Actions.EXECUTE,
+            scope=RolePermission.Scopes.BUSINESS,
+        )
+        BusinessMember.objects.create(
+            business=self.business,
+            user=limited_user,
+            role=BusinessMember.Roles.STAFF,
+            business_role=ai_executor_role,
+        )
+        log = AIToolCallLog.objects.create(
+            business=self.business,
+            user=limited_user,
+            tool_name="create_task",
+            input_json={"title": "Should not be created"},
+        )
+        approval = self.approved_tool_request(log, user=self.owner)
+        self.api.force_authenticate(limited_user)
+
+        response = self.api.post(f"/api/ai/tools/{log.id}/execute/", {"approval_id": approval.id}, format="json")
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data["approval_status"], "permission_denied")
+        self.assertEqual(Task.objects.count(), 0)
+        log.refresh_from_db()
+        self.assertEqual(log.status, AIToolCallLog.Statuses.SUGGESTED)
+        self.assertTrue(
+            AuditLog.objects.filter(
+                business=self.business,
+                actor=limited_user,
+                entity_type="AIToolCallLog",
+                entity_id=str(log.id),
+                metadata__kind="ai_tool_execution",
+                metadata__status="permission_denied",
+                metadata__approval_id=approval.id,
+            ).exists()
+        )
+
     def test_ai_tool_execute_rejects_foreign_business_access(self):
         log = AIToolCallLog.objects.create(
             business=self.other_business,
@@ -737,6 +786,64 @@ class AICoreFoundationTests(TestCase):
                 metadata__reason="Looks safe",
             ).exists()
         )
+
+    def test_approval_request_create_cannot_seed_approved_status_or_decision_fields(self):
+        log = AIToolCallLog.objects.create(
+            business=self.business,
+            user=self.owner,
+            tool_name="create_task",
+            input_json={"title": "Blocked malicious approval"},
+        )
+        self.api.force_authenticate(self.owner)
+
+        create_response = self.api.post(
+            "/api/ai/approval-requests/",
+            {
+                "business": self.business.id,
+                "action_type": ApprovalRequest.ActionTypes.AI_PIPELINE,
+                "ai_tool_call_log": log.id,
+                "payload": {"tool_call_id": log.id, "tool_name": log.tool_name},
+                "status": ApprovalRequest.Statuses.APPROVED,
+                "approved_by": self.owner.id,
+                "approved_at": timezone.now().isoformat(),
+            },
+            format="json",
+        )
+
+        self.assertEqual(create_response.status_code, 201)
+        approval = ApprovalRequest.objects.get(ai_tool_call_log=log)
+        self.assertEqual(approval.status, ApprovalRequest.Statuses.PENDING)
+        self.assertIsNone(approval.approved_by)
+        self.assertIsNone(approval.approved_at)
+
+        execute_response = self.api.post(f"/api/ai/tools/{log.id}/execute/", {"approval_id": approval.id}, format="json")
+
+        self.assertEqual(execute_response.status_code, 403)
+        self.assertEqual(execute_response.data["approval_status"], "approval_not_approved")
+        self.assertEqual(Task.objects.count(), 0)
+
+    def test_approval_request_rejects_foreign_ai_tool_call_log(self):
+        foreign_log = AIToolCallLog.objects.create(
+            business=self.other_business,
+            user=self.other_owner,
+            tool_name="create_task",
+            input_json={"title": "Foreign tool call"},
+        )
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            "/api/ai/approval-requests/",
+            {
+                "business": self.business.id,
+                "action_type": ApprovalRequest.ActionTypes.AI_PIPELINE,
+                "ai_tool_call_log": foreign_log.id,
+                "payload": {"tool_call_id": foreign_log.id},
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(ApprovalRequest.objects.count(), 0)
 
     def test_approval_request_reject_writes_audit(self):
         approval = ApprovalRequest.objects.create(

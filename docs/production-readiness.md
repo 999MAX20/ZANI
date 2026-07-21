@@ -24,6 +24,7 @@ Required env values by environment:
 | --- | --- | --- | --- |
 | `DEBUG` | `True` | `False` | `False` |
 | `ENVIRONMENT` | `development` | `staging` | `production` |
+| `ALLOW_DEMO_MERCHANT_FLOWS` | `True` | `True` for QA/test data | `False` |
 | `SECRET_KEY` | local random | strong secret | strong secret |
 | `DATABASE_URL` | SQLite/local Postgres | managed Postgres | managed Postgres |
 | `REDIS_URL` | local/Docker Redis | managed Redis | managed Redis |
@@ -40,6 +41,7 @@ Required env values by environment:
 SECRET_KEY=<32-plus-byte-random-secret>
 DEBUG=False
 ENVIRONMENT=production
+ALLOW_DEMO_MERCHANT_FLOWS=False
 RELEASE=<git-sha-or-release-tag>
 LOG_LEVEL=INFO
 ALLOWED_HOSTS=api.zani.example

@@ -3,6 +3,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 from apps.bots.models import BotChannel
 from apps.core.production_rules import is_safe_public_https_url, redact_url_for_display
+from apps.integrations.bot_channel_credentials import has_telegram_bot_token
 from apps.integrations.providers.telegram import TelegramProvider
 
 
@@ -29,13 +30,14 @@ class Command(BaseCommand):
             return
 
         config = channel.config_json or {}
-        checks.append(self._check("bot_token_saved", bool(config.get("bot_token")), "Paste the BotFather token into the Telegram connector."))
+        token_configured = has_telegram_bot_token(channel)
+        checks.append(self._check("bot_token_saved", token_configured, "Paste the BotFather token into the Telegram connector."))
         checks.append(self._check("webhook_secret_saved", bool(config.get("webhook_secret")), "Save/generate a webhook secret before setting Telegram webhook."))
         checks.append(self._check("channel_active", channel.status == BotChannel.Statuses.ACTIVE, "Set Telegram channel status to active."))
         checks.append(self._check("bot_active", channel.bot.status == "active", "Set the bot status to active."))
 
         provider = TelegramProvider()
-        token_result = provider.validate_token(channel) if config.get("bot_token") else {"ok": False, "reason": "Token is missing."}
+        token_result = provider.validate_token(channel) if token_configured else {"ok": False, "reason": "Token is missing."}
         checks.append(self._check("telegram_get_me", bool(token_result.get("ok") and not token_result.get("mock")), token_result.get("reason") or token_result.get("bot", {}).get("username") or "Telegram getMe must return ok=true."))
 
         public_url = (options.get("public_url") or "").strip()
@@ -66,7 +68,7 @@ class Command(BaseCommand):
                 "bot_id": channel.bot_id,
                 "business_id": channel.bot.business_id,
                 "status": channel.status,
-                "token_configured": bool(config.get("bot_token")),
+                "token_configured": token_configured,
                 "webhook_secret_configured": bool(config.get("webhook_secret")),
             },
             telegram_get_me={
@@ -85,7 +87,11 @@ class Command(BaseCommand):
         queryset = BotChannel.objects.select_related("bot", "bot__business").filter(channel=BotChannel.Channels.TELEGRAM)
         if channel_id:
             return queryset.filter(id=channel_id).first()
-        return queryset.exclude(config_json__bot_token="").order_by("-updated_at", "-id").first()
+        configured_channel_ids = []
+        for channel in queryset.order_by("-updated_at", "-id"):
+            if has_telegram_bot_token(channel):
+                configured_channel_ids.append(channel.id)
+        return queryset.filter(id__in=configured_channel_ids).order_by("-updated_at", "-id").first()
 
     def _webhook_url(self, public_url):
         value = redact_url_for_display(public_url).rstrip("/")

@@ -2,8 +2,9 @@ import { AlertTriangle, CircleCheck } from "lucide-react";
 
 import { cn } from "../../../../lib/cn";
 import type { DealRow } from "../../types";
+import type { Translate } from "../../types";
 
-export function DealRiskIndicator({ deal, compact = false }: { deal: Pick<DealRow, "riskLevel" | "riskPercent">; compact?: boolean }) {
+export function DealRiskIndicator({ deal, compact = false, t }: { deal: Pick<DealRow, "riskLevel" | "riskPercent">; compact?: boolean; t: Translate }) {
   const high = deal.riskLevel === "high";
   const medium = deal.riskLevel === "medium";
   return (
@@ -16,7 +17,7 @@ export function DealRiskIndicator({ deal, compact = false }: { deal: Pick<DealRo
       )}
     >
       {high || medium ? <AlertTriangle size={13} /> : <CircleCheck size={13} />}
-      {compact ? `${deal.riskPercent}%` : high ? `Высокий риск ${deal.riskPercent}%` : medium ? `Контроль ${deal.riskPercent}%` : `Норма ${deal.riskPercent}%`}
+      {compact ? `${deal.riskPercent}%` : high ? t("deals.riskHighWithPercent", { percent: deal.riskPercent }) : medium ? t("deals.riskControlWithPercent", { percent: deal.riskPercent }) : t("deals.riskNormalWithPercent", { percent: deal.riskPercent })}
     </span>
   );
 }

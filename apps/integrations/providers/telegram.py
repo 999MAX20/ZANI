@@ -7,6 +7,7 @@ from rest_framework.exceptions import PermissionDenied
 
 from apps.core.production_rules import is_local_or_private_hostname
 from apps.core.security_config import has_strong_shared_secret
+from apps.integrations.bot_channel_credentials import get_telegram_bot_token
 from apps.integrations.models import IntegrationEventLog
 from apps.integrations.providers.base import BaseChannelProvider
 
@@ -88,7 +89,7 @@ class TelegramProvider(BaseChannelProvider):
 
     def send_message(self, channel, recipient_id, text, payload=None):
         business = channel.bot.business
-        token = channel.config_json.get("bot_token", "")
+        token = get_telegram_bot_token(channel)
         event_payload = {"recipient_id": recipient_id, "text": text, **(payload or {})}
         if not settings.TELEGRAM_ENABLED:
             self.log_event(
@@ -146,7 +147,7 @@ class TelegramProvider(BaseChannelProvider):
 
     def validate_token(self, channel):
         business = channel.bot.business
-        token = channel.config_json.get("bot_token", "")
+        token = get_telegram_bot_token(channel)
         safe_payload = {"token_configured": bool(token)}
         if not token:
             return {
@@ -205,7 +206,7 @@ class TelegramProvider(BaseChannelProvider):
 
     def get_updates(self, channel, *, offset=None, limit=20):
         business = channel.bot.business
-        token = channel.config_json.get("bot_token", "")
+        token = get_telegram_bot_token(channel)
         safe_payload = {"token_configured": bool(token), "offset": offset, "limit": limit}
         if not settings.TELEGRAM_ENABLED:
             self.log_event(
@@ -264,7 +265,7 @@ class TelegramProvider(BaseChannelProvider):
 
     def set_webhook(self, channel, webhook_url):
         business = channel.bot.business
-        token = channel.config_json.get("bot_token", "")
+        token = get_telegram_bot_token(channel)
         webhook_secret = channel.config_json.get("webhook_secret", "")
         safe_payload = {
             "webhook_url": webhook_url,

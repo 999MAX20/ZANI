@@ -1,8 +1,6 @@
 import { Suspense, lazy } from "react";
 import { Navigate, RouterProvider, createBrowserRouter, useLocation } from "react-router-dom";
 
-import { AppLayout } from "../components/layout/AppLayout";
-import { PlatformLayout } from "../components/layout/PlatformLayout";
 import { PermissionGate } from "../components/auth/PermissionGate";
 import { RouteErrorBoundary } from "../components/ui/RouteErrorBoundary";
 import { ForbiddenState, LoadingState } from "../components/ui/StateViews";
@@ -10,12 +8,12 @@ import { useAuth } from "../features/auth/AuthProvider";
 import { LoginPage } from "../features/auth/LoginPage";
 import { PlatformPlaceholderPage, platformPages } from "../features/platform/PlatformPlaceholderPage";
 import { NotFoundPage } from "../features/pilot/NotFoundPage";
-import { PublicLayout } from "../features/public/PublicLayout";
-import { PublicBotsPage, PublicContactsPage, PublicCrmPage, PublicHomePage, PublicPricingPage } from "../features/public/PublicPages";
 import { useActiveBusiness } from "../hooks/useBusiness";
 import { useI18n } from "../lib/i18n";
 import { permissionForbiddenMessage } from "../lib/permissions";
 
+const AppLayout = lazy(() => import("../components/layout/AppLayout").then((module) => ({ default: module.AppLayout })));
+const PlatformLayout = lazy(() => import("../components/layout/PlatformLayout").then((module) => ({ default: module.PlatformLayout })));
 const InviteAcceptPage = lazy(() => import("../features/auth/InviteAcceptPage").then((module) => ({ default: module.InviteAcceptPage })));
 const SignupPage = lazy(() => import("../features/auth/SignupPage").then((module) => ({ default: module.SignupPage })));
 const ForgotPasswordPage = lazy(() => import("../features/auth/ForgotPasswordPage").then((module) => ({ default: module.ForgotPasswordPage })));
@@ -23,8 +21,11 @@ const ResetPasswordPage = lazy(() => import("../features/auth/ResetPasswordPage"
 const DashboardPage = lazy(() => import("../features/dashboard/DashboardPage").then((module) => ({ default: module.DashboardPage })));
 const AccountPage = lazy(() => import("../features/account/AccountPage").then((module) => ({ default: module.AccountPage })));
 const LeadsPage = lazy(() => import("../features/leads/LeadsPage").then((module) => ({ default: module.LeadsPage })));
+const LeadWorkspacePage = lazy(() => import("../features/leads/LeadWorkspacePage").then((module) => ({ default: module.LeadWorkspacePage })));
 const DealsPage = lazy(() => import("../features/deals/DealsPage").then((module) => ({ default: module.DealsPage })));
+const DealWorkspacePage = lazy(() => import("../features/deals/DealWorkspacePage").then((module) => ({ default: module.DealWorkspacePage })));
 const ClientsPage = lazy(() => import("../features/clients/ClientsPage").then((module) => ({ default: module.ClientsPage })));
+const ClientWorkspacePage = lazy(() => import("../features/clients/ClientWorkspacePage").then((module) => ({ default: module.ClientWorkspacePage })));
 const TasksPage = lazy(() => import("../features/tasks/TasksPage").then((module) => ({ default: module.TasksPage })));
 const CalendarPage = lazy(() => import("../features/calendar/CalendarPage").then((module) => ({ default: module.CalendarPage })));
 const ConversationsPage = lazy(() => import("../features/conversations/ConversationsPage").then((module) => ({ default: module.ConversationsPage })));
@@ -110,8 +111,11 @@ const merchantChildren = [
   { path: "dashboard", element: <PageLoader><DashboardPage /></PageLoader> },
   { path: "account", element: <PageLoader><AccountPage /></PageLoader> },
   { path: "leads", resource: "leads", element: <PageLoader><LeadsPage /></PageLoader> },
+  { path: "leads/:id", resource: "leads", element: <PageLoader><LeadWorkspacePage /></PageLoader> },
   { path: "deals", resource: "deals", element: <PageLoader><DealsPage /></PageLoader> },
+  { path: "deals/:id", resource: "deals", element: <PageLoader><DealWorkspacePage /></PageLoader> },
   { path: "clients", resource: "clients", element: <PageLoader><ClientsPage /></PageLoader> },
+  { path: "clients/:id", resource: "clients", element: <PageLoader><ClientWorkspacePage /></PageLoader> },
   { path: "tasks", resource: "tasks", element: <PageLoader><TasksPage /></PageLoader> },
   { path: "calendar", resource: "appointments", element: <PageLoader><CalendarPage /></PageLoader> },
   { path: "conversations", resource: "conversations", element: <PageLoader><ConversationsPage /></PageLoader> },
@@ -166,16 +170,17 @@ const legacyMerchantRoutes = [
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <PublicLayout />,
     errorElement: <RouteErrorBoundary />,
-    children: [
-      { index: true, element: <PublicHomePage /> },
-      { path: "pricing", element: <PublicPricingPage /> },
-      { path: "bots", element: <PublicBotsPage /> },
-      { path: "crm", element: <PublicCrmPage /> },
-      { path: "contacts", element: <PublicContactsPage /> },
-    ],
+    element: (
+      <PublicRoute>
+        <LoginPage />
+      </PublicRoute>
+    ),
   },
+  { path: "/pricing", element: <Navigate to="/login" replace />, errorElement: <RouteErrorBoundary /> },
+  { path: "/bots", element: <Navigate to="/login" replace />, errorElement: <RouteErrorBoundary /> },
+  { path: "/crm", element: <Navigate to="/login" replace />, errorElement: <RouteErrorBoundary /> },
+  { path: "/contacts", element: <Navigate to="/login" replace />, errorElement: <RouteErrorBoundary /> },
   {
     path: "/login",
     errorElement: <RouteErrorBoundary />,
@@ -226,7 +231,7 @@ const router = createBrowserRouter([
     errorElement: <RouteErrorBoundary />,
     element: (
       <PlatformRoute>
-        <PlatformLayout />
+        <PageLoader><PlatformLayout /></PageLoader>
       </PlatformRoute>
     ),
     children: [
@@ -247,7 +252,7 @@ const router = createBrowserRouter([
     errorElement: <RouteErrorBoundary />,
     element: (
       <MerchantRoute>
-        <AppLayout />
+        <PageLoader><AppLayout /></PageLoader>
       </MerchantRoute>
     ),
     children: merchantChildren.map(({ resource, permissionAction, element, ...route }) => ({
@@ -269,7 +274,7 @@ const router = createBrowserRouter([
     errorElement: <RouteErrorBoundary />,
     element: (
       <MerchantRoute>
-        <AppLayout />
+        <PageLoader><AppLayout /></PageLoader>
       </MerchantRoute>
     ),
     children: [

@@ -141,7 +141,10 @@ def create_demo_data(business: Business, actor=None):
             "due_at": timezone.now() + timedelta(hours=2),
         },
     )
-    return get_onboarding_status(business)
+    status = get_onboarding_status(business)
+    status["mode"] = "demo"
+    status["demo"] = True
+    return status
 
 
 @transaction.atomic

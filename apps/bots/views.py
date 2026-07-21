@@ -1,30 +1,26 @@
 from apps.bots.ai import suggest_bot_reply
+from apps.bots.channel_actions import (
+    configure_instagram_action,
+    configure_telegram_action,
+    configure_whatsapp_action,
+    instagram_status_action,
+    set_telegram_webhook_action,
+    sync_telegram_updates_action,
+    telegram_status_action,
+    test_instagram_connection_action,
+    test_telegram_connection_action,
+    test_whatsapp_connection_action,
+    whatsapp_status_action,
+)
 from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
 from apps.bots.serializers import (
     BotChannelSerializer,
     BotConversationSerializer,
     BotMessageSerializer,
     BotSerializer,
-    InstagramChannelConfigSerializer,
     PublicWebsiteChatChannelSerializer,
     PublicWebsiteChatConversationCreateSerializer,
     PublicWebsiteChatMessageCreateSerializer,
-    TelegramChannelConfigSerializer,
-    TelegramSetWebhookSerializer,
-    WhatsAppChannelConfigSerializer,
-)
-from apps.bots.services import (
-    configure_instagram_channel,
-    configure_telegram_channel,
-    configure_whatsapp_channel,
-    instagram_channel_status,
-    set_telegram_channel_webhook,
-    sync_telegram_channel_updates,
-    telegram_channel_status,
-    test_instagram_channel_connection,
-    test_telegram_channel_connection,
-    test_whatsapp_channel_connection,
-    whatsapp_channel_status,
 )
 from apps.automations.engine import run_automations_for_event
 from apps.automations.models import AutomationRule
@@ -55,89 +51,49 @@ class BotChannelViewSet(TenantModelViewSet):
     serializer_class = BotChannelSerializer
     business_lookup = "bot__business"
 
-    def _get_telegram_channel(self):
-        channel = self.get_object()
-        if channel.channel != BotChannel.Channels.TELEGRAM:
-            raise PermissionDenied("This action is only available for Telegram channels.")
-        return channel
-
-    def _get_whatsapp_channel(self):
-        channel = self.get_object()
-        if channel.channel != BotChannel.Channels.WHATSAPP:
-            raise PermissionDenied("This action is only available for WhatsApp channels.")
-        return channel
-
-    def _get_instagram_channel(self):
-        channel = self.get_object()
-        if channel.channel != BotChannel.Channels.INSTAGRAM:
-            raise PermissionDenied("This action is only available for Instagram channels.")
-        return channel
-
     @action(detail=True, methods=["post"], url_path="telegram-config")
     def telegram_config(self, request, pk=None):
-        channel = self._get_telegram_channel()
-        serializer = TelegramChannelConfigSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        return Response(configure_telegram_channel(channel, serializer.validated_data))
+        return Response(configure_telegram_action(self, request))
 
     @action(detail=True, methods=["post"], url_path="set-telegram-webhook")
     def set_telegram_webhook(self, request, pk=None):
-        channel = self._get_telegram_channel()
-        serializer = TelegramSetWebhookSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        return Response(set_telegram_channel_webhook(channel, serializer.validated_data["webhook_url"]))
+        return Response(set_telegram_webhook_action(self, request))
 
     @action(detail=True, methods=["get"], url_path="telegram-status")
     def telegram_status(self, request, pk=None):
-        channel = self._get_telegram_channel()
-        webhook_url = request.build_absolute_uri("/api/integrations/telegram/webhook/")
-        return Response(telegram_channel_status(channel, webhook_url))
+        return Response(telegram_status_action(self, request))
 
     @action(detail=True, methods=["post"], url_path="telegram-test-connection")
     def telegram_test_connection(self, request, pk=None):
-        channel = self._get_telegram_channel()
-        return Response(test_telegram_channel_connection(channel))
+        return Response(test_telegram_connection_action(self))
 
     @action(detail=True, methods=["post"], url_path="sync-telegram-updates")
     def sync_telegram_updates(self, request, pk=None):
-        channel = self._get_telegram_channel()
-        return Response(sync_telegram_channel_updates(channel, limit=20))
+        return Response(sync_telegram_updates_action(self))
 
     @action(detail=True, methods=["post"], url_path="whatsapp-config")
     def whatsapp_config(self, request, pk=None):
-        channel = self._get_whatsapp_channel()
-        serializer = WhatsAppChannelConfigSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        return Response(configure_whatsapp_channel(channel, serializer.validated_data))
+        return Response(configure_whatsapp_action(self, request))
 
     @action(detail=True, methods=["post"], url_path="whatsapp-test-connection")
     def whatsapp_test_connection(self, request, pk=None):
-        channel = self._get_whatsapp_channel()
-        return Response(test_whatsapp_channel_connection(channel))
+        return Response(test_whatsapp_connection_action(self))
 
     @action(detail=True, methods=["get"], url_path="whatsapp-status")
     def whatsapp_status(self, request, pk=None):
-        channel = self._get_whatsapp_channel()
-        webhook_url = request.build_absolute_uri("/api/integrations/whatsapp/webhook/")
-        return Response(whatsapp_channel_status(channel, webhook_url))
+        return Response(whatsapp_status_action(self, request))
 
     @action(detail=True, methods=["post"], url_path="instagram-config")
     def instagram_config(self, request, pk=None):
-        channel = self._get_instagram_channel()
-        serializer = InstagramChannelConfigSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        return Response(configure_instagram_channel(channel, serializer.validated_data))
+        return Response(configure_instagram_action(self, request))
 
     @action(detail=True, methods=["post"], url_path="instagram-test-connection")
     def instagram_test_connection(self, request, pk=None):
-        channel = self._get_instagram_channel()
-        return Response(test_instagram_channel_connection(channel))
+        return Response(test_instagram_connection_action(self))
 
     @action(detail=True, methods=["get"], url_path="instagram-status")
     def instagram_status(self, request, pk=None):
-        channel = self._get_instagram_channel()
-        webhook_url = request.build_absolute_uri("/api/integrations/instagram/webhook/")
-        return Response(instagram_channel_status(channel, webhook_url))
+        return Response(instagram_status_action(self, request))
 
 
 class BotConversationViewSet(TenantModelViewSet):

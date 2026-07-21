@@ -87,11 +87,23 @@ class ApprovalRequestSerializer(serializers.ModelSerializer):
         read_only_fields = [
             "created_at",
             "updated_at",
+            "requested_by",
+            "status",
             "approved_by",
             "approved_at",
             "rejected_by",
             "rejected_at",
         ]
+
+    def validate(self, attrs):
+        business = attrs.get("business") or getattr(self.instance, "business", None)
+        ai_request_log = attrs.get("ai_request_log") if "ai_request_log" in attrs else getattr(self.instance, "ai_request_log", None)
+        ai_tool_call_log = attrs.get("ai_tool_call_log") if "ai_tool_call_log" in attrs else getattr(self.instance, "ai_tool_call_log", None)
+        if ai_request_log and business and ai_request_log.business_id != business.id:
+            raise serializers.ValidationError({"ai_request_log": "AI request log must belong to the selected business."})
+        if ai_tool_call_log and business and ai_tool_call_log.business_id != business.id:
+            raise serializers.ValidationError({"ai_tool_call_log": "AI tool call must belong to the selected business."})
+        return attrs
 
     def to_representation(self, instance):
         data = super().to_representation(instance)

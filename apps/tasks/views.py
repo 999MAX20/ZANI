@@ -75,7 +75,19 @@ class TaskViewSet(TenantModelViewSet):
         )
         client_ids = self.parse_query_id_list("client_ids")
         if client_ids:
-            queryset = queryset.filter(client_id__in=client_ids)
+            queryset = queryset.filter(Q(client_id__in=client_ids) | Q(conversation__client_id__in=client_ids)).distinct()
+        lead_ids = self.parse_query_id_list("lead_ids")
+        if lead_ids:
+            queryset = queryset.filter(Q(lead_id__in=lead_ids) | Q(conversation__lead_id__in=lead_ids)).distinct()
+        deal_ids = self.parse_query_id_list("deal_ids")
+        if deal_ids:
+            queryset = queryset.filter(Q(deal_id__in=deal_ids) | Q(conversation__deal_id__in=deal_ids)).distinct()
+        appointment_ids = self.parse_query_id_list("appointment_ids")
+        if appointment_ids:
+            queryset = queryset.filter(appointment_id__in=appointment_ids)
+        conversation_ids = self.parse_query_id_list("conversation_ids")
+        if conversation_ids:
+            queryset = queryset.filter(conversation_id__in=conversation_ids)
         status_filter = self.request.query_params.get("status")
         priority_filter = self.request.query_params.get("priority")
         assignee_filter = self.request.query_params.get("assignee")

@@ -15,6 +15,7 @@ import { cn } from "../../../lib/cn";
 import { useI18n } from "../../../lib/i18n";
 import type { Bot, BotChannel, BusinessConnector, ConnectorCapability, Id } from "../../../types";
 import { providerCatalog, type ProviderKey } from "../config/providerCatalog";
+import { merchantSafeIntegrationError } from "../utils";
 import { ImportPanel } from "./ImportPanel";
 import { LogoMark, ToggleSwitch } from "./setup/IntegrationSetupUi";
 import { TelegramInlineSetup } from "./setup/TelegramSetup";
@@ -111,10 +112,7 @@ function deriveProviderStatus({
 }
 
 function readableConnectorError(message: string, t: Translate) {
-  if (message.toLowerCase().includes("credentials are missing or expired")) {
-    return t("integrations.card.credentialsExpired");
-  }
-  return message;
+  return merchantSafeIntegrationError(message, t);
 }
 
 export function ProviderCard({
@@ -141,6 +139,7 @@ export function ProviderCard({
   const [apiKey, setApiKey] = useState("");
   const [accountId, setAccountId] = useState("");
   const [webhookSecret, setWebhookSecret] = useState("");
+  const [manualSetupOpen, setManualSetupOpen] = useState(false);
   const isPricingProvider = provider.provider === "kaspi_pricing";
   const status = isPricingProvider ? "setup_required" : deriveProviderStatus({ capability, channel, connector });
   const title = providerTitle(provider.provider, t, capability);
@@ -357,7 +356,7 @@ export function ProviderCard({
         ) : null
       ) : null}
 
-      {error ? <div className="mt-2"><ErrorState message={getApiErrorMessage(error)} /></div> : null}
+      {error ? <div className="mt-2"><ErrorState message={merchantSafeIntegrationError(getApiErrorMessage(error), t)} /></div> : null}
     </>
   );
 
@@ -402,14 +401,27 @@ export function ProviderCard({
                   {t("integrations.card.websiteNoExtraData")}
                 </div>
               ) : (
-                <>
-                  <Input label={t("integrations.card.accountId")} value={accountId} onChange={(event) => setAccountId(event.target.value)} placeholder={t("integrations.card.accountIdPlaceholder")} />
-                  <Input label={t("integrations.card.accessKey")} value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder={t("integrations.card.accessKeyPlaceholder")} type="password" autoComplete="off" />
-                  <Input label={t("integrations.card.webhookSecret")} value={webhookSecret} onChange={(event) => setWebhookSecret(event.target.value)} placeholder={t("common.optional")} type="password" autoComplete="off" />
-                </>
+                <div className="space-y-3">
+                  <div className="rounded-control border border-blue-100 bg-blue-50 p-3">
+                    <p className="text-sm font-black text-blue-950">{t("integrations.card.simpleSetupTitle")}</p>
+                    <p className="mt-1 text-sm font-semibold leading-6 text-blue-800">{t("integrations.card.simpleSetupText")}</p>
+                  </div>
+                  {canManage ? (
+                    <button type="button" className="text-sm font-black text-brand-700" onClick={() => setManualSetupOpen((value) => !value)}>
+                      {manualSetupOpen ? t("integrations.setup.hideManualSetup") : t("integrations.card.manualSupportSetup")}
+                    </button>
+                  ) : null}
+                  {manualSetupOpen && canManage ? (
+                    <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-3">
+                      <Input label={t("integrations.card.accountId")} value={accountId} onChange={(event) => setAccountId(event.target.value)} placeholder={t("integrations.card.accountIdPlaceholder")} />
+                      <Input label={t("integrations.card.accessKey")} value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder={t("integrations.card.accessKeyPlaceholder")} type="password" autoComplete="off" />
+                      <Input label={t("integrations.card.webhookSecret")} value={webhookSecret} onChange={(event) => setWebhookSecret(event.target.value)} placeholder={t("common.optional")} type="password" autoComplete="off" />
+                    </div>
+                  ) : null}
+                </div>
               )}
               <div className="flex flex-wrap gap-2">
-                {provider.provider !== "website" ? (
+                {provider.provider !== "website" && manualSetupOpen ? (
                   <Button type="button" disabled={!canManage || (!apiKey.trim() && !accountId.trim())} isLoading={saveGenericConfig.isPending} onClick={() => saveGenericConfig.mutate()}>
                     <ShieldCheck size={16} /> {t("common.save")}
                   </Button>

@@ -1,4 +1,17 @@
 export { CrmWorkspaceGrid, CrmWorkspacePage } from "./CrmWorkspacePage";
+export {
+  EntitySecondaryButton,
+  EntityWorkspaceAside,
+  EntityWorkspaceAvatar,
+  EntityWorkspaceBody,
+  EntityWorkspaceHeader,
+  EntityWorkspaceLinkButton,
+  EntityWorkspaceMain,
+  EntityWorkspaceMetric,
+  EntityWorkspaceMetrics,
+  EntityWorkspaceRoot,
+  EntityWorkspaceSection,
+} from "./EntityWorkspace";
 export { CrmControlBar } from "./CrmControlBar";
 export type { CrmActiveFilter, CrmControlTab } from "./CrmControlBar";
 export { CrmFilterChips } from "./CrmFilterChips";

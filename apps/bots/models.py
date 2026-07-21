@@ -141,6 +141,13 @@ class BotMessage(models.Model):
 
     class Meta:
         ordering = ["created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["conversation", "direction", "external_message_id"],
+                condition=~models.Q(external_message_id=""),
+                name="unique_bot_message_external_delivery",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.direction}: {self.text[:50]}"

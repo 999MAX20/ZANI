@@ -1,10 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { execFileSync } from "node:child_process";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 
-const currentDir = path.dirname(fileURLToPath(import.meta.url));
-const rootDir = path.resolve(currentDir, "../..");
 const password = process.env.E2E_PASSWORD || "ZaniTest123!";
 const apiBaseURL = process.env.E2E_API_BASE_URL || "http://127.0.0.1:8000";
 
@@ -21,18 +16,6 @@ type TokenPayload = {
 };
 
 const tokenCache = new Map<string, TokenPayload>();
-
-test.beforeAll(() => {
-  if (process.env.E2E_SKIP_LOCAL_SETUP === "true") {
-    return;
-  }
-
-  execFileSync(
-    "node",
-    [path.join(currentDir, "django-e2e.mjs"), "prepare"],
-    { cwd: path.join(rootDir, "frontend"), env: process.env, stdio: "inherit" },
-  );
-});
 
 test("mobile manager smoke: daily CRM routes are reachable", async ({ page, isMobile }) => {
   test.skip(!isMobile, "Mobile manager smoke runs only in the mobile project.");
@@ -910,6 +893,9 @@ test("operator sees restricted sections as forbidden", async ({ page }) => {
 
   await expect(page.getByText("Раздел скрыт настройками доступа")).toBeVisible();
   await expect(page.getByText(/роль|access/i)).toBeVisible();
+  await expect(page.getByText(/Billing|Биллинг|Биллинг/i)).toHaveCount(0);
+  await expect(page.getByText(/API and events|API и события|API және оқиғалар/i)).toHaveCount(0);
+  await expect(page.getByText(/webhook|payload|provider/i)).toHaveCount(0);
 });
 
 test("mobile owner smoke: dashboard, bottom nav and more drawer are reachable", async ({ page, isMobile }) => {

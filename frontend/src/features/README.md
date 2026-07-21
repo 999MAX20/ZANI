@@ -26,13 +26,8 @@
 
 - `platform` — protected Platform Admin placeholder pages and separate layout.
 
-## Implemented Public Website
-
-- `public` — public Zani website shell for `/`, `/pricing`, `/bots`, `/crm`, `/contacts`.
-
 ## Implemented Billing Foundation
 
-- Public pricing loads plans from `/api/billing/plans/`.
 - Merchant settings displays `/api/billing/current-subscription/`.
 
 ## Implemented Merchant CRM UI Upgrade
@@ -46,7 +41,6 @@
 
 - Merchant bots live at `/app/bots`.
 - Bot detail placeholder lives at `/app/bots/:id`.
-- Public website `/bots` remains separate from Merchant CRM.
 - API clients exist for bots, bot channels, bot conversations and bot messages.
 
 ## Implemented Website Chat Widget Foundation

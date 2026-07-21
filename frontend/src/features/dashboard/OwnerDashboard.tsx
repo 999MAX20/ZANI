@@ -46,6 +46,7 @@ type OwnerDashboardProps = {
   ownerBrief?: AIOwnerDailyBriefResponse;
   ownerBriefError?: unknown;
   isOwnerBriefLoading?: boolean;
+  canViewAiAnalyst: boolean;
   aiStatus?: AIAssistantStatusResponse;
 };
 
@@ -243,11 +244,12 @@ function InsightListCard({
   meta,
 }: {
   title: string;
-  items: Array<{ tone: "green" | "amber" | "red" | "blue"; title: string; text: string }>;
+  items: Array<{ tone: "green" | "amber" | "red" | "blue"; title: string; text: string; sourceIds?: string[] }>;
   footer: string;
   href: string;
   meta?: string;
 }) {
+  const { t } = useI18n();
   const toneClass = {
     green: "bg-emerald-500",
     amber: "bg-amber-500",
@@ -271,6 +273,11 @@ function InsightListCard({
             <div className="min-w-0">
               <p className="text-sm font-semibold text-midnight">{item.title}</p>
               <p className="mt-0.5 text-xs leading-5 text-slate-500">{item.text}</p>
+              {item.sourceIds?.length ? (
+                <p className="mt-2 rounded-md bg-slate-50 px-2 py-1 text-[11px] font-bold text-slate-500">
+                  {t("dashboard.ownerBriefSourceIds", { ids: item.sourceIds.join(", ") })}
+                </p>
+              ) : null}
             </div>
           </div>
         ))}
@@ -353,7 +360,7 @@ function NewLeadsCard({ leads, clients, services }: { leads: Lead[]; clients: Cl
           const client = clients.find((item) => item.id === lead.client);
           const service = services.find((item) => item.id === lead.service);
           return (
-            <Link key={lead.id} to={`/app/leads?lead=${lead.id}`} className="flex items-center gap-3 rounded-lg p-2 transition hover:bg-slate-50">
+            <Link key={lead.id} to={`/app/leads/${lead.id}`} className="flex items-center gap-3 rounded-lg p-2 transition hover:bg-slate-50">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary-100 text-sm font-bold text-brand-700">{initials(client?.full_name)}</span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-semibold text-midnight">{client?.full_name || t("dashboard.leadNumber", { id: lead.id })}</span>
@@ -391,6 +398,7 @@ export function OwnerDashboard({
   ownerBrief,
   ownerBriefError,
   isOwnerBriefLoading,
+  canViewAiAnalyst,
   aiStatus,
 }: OwnerDashboardProps) {
   const { t } = useI18n();
@@ -405,35 +413,27 @@ export function OwnerDashboard({
   const salesCount = todayAppointmentsCount || appointments.filter((appointment) => appointment.status === "completed").length;
   const visibleChats = noAnswerLeads.slice(0, 2);
   const averageCheck = salesCount ? Math.round((revenue || 0) / Math.max(1, salesCount)) : 15960;
-  const fallbackAiSummaryItems = [
-    {
-      tone: "amber" as const,
-      title: t("dashboard.aiNewLeadsWaiting", { count: unassignedCount || newLeadsCount }),
-      text: t("dashboard.aiNewLeadsWaitingText"),
-    },
-    {
-      tone: "red" as const,
-      title: t("dashboard.aiOverdueTasks", { count: overdueTasks }),
-      text: t("dashboard.aiOverdueTasksText"),
-    },
-    {
-      tone: "blue" as const,
-      title: t("dashboard.aiConversionBelow"),
-      text: t("dashboard.aiConversionBelowText"),
-    },
-  ];
   const ownerBriefItems = ownerBrief?.recommendations.slice(0, 4).map((recommendation) => ({
     tone: recommendation.priority === "high" ? "red" as const : recommendation.priority === "medium" ? "amber" as const : "blue" as const,
     title: recommendation.label,
     text: recommendation.description,
+    sourceIds: recommendation.source_ids,
   })) || [];
   const aiSummaryItems = ownerBrief
     ? ownerBrief.summary.no_data
       ? [{ tone: "blue" as const, title: t("dashboard.ownerBriefNoDataTitle"), text: t("dashboard.ownerBriefNoDataText") }]
-      : ownerBriefItems
-    : fallbackAiSummaryItems;
-  const aiSummaryHref = ownerBrief?.recommendations[0]?.href || "/app/integrations";
-  const aiSummaryFooter = ownerBrief?.recommendations[0] ? t("dashboard.openPrioritySource") : t("dashboard.aiBrief.missingAction");
+      : ownerBriefItems.length
+        ? ownerBriefItems
+        : [{ tone: "blue" as const, title: t("dashboard.ownerBriefNoDataTitle"), text: t("dashboard.ownerBriefNoDataText") }]
+    : isOwnerBriefLoading
+      ? [{ tone: "blue" as const, title: t("dashboard.ownerBriefLoadingTitle"), text: t("dashboard.ownerBriefLoadingText") }]
+      : ownerBriefError
+        ? [{ tone: "amber" as const, title: t("dashboard.ownerBriefUnavailableTitle"), text: t("dashboard.ownerBriefUnavailableText") }]
+        : canViewAiAnalyst
+          ? [{ tone: "blue" as const, title: t("dashboard.ownerBriefNoDataTitle"), text: t("dashboard.ownerBriefNoDataText") }]
+          : [{ tone: "amber" as const, title: t("dashboard.ownerBriefNoAccessTitle"), text: t("dashboard.ownerBriefNoAccessText") }];
+  const aiSummaryHref = ownerBrief?.recommendations[0]?.href || (canViewAiAnalyst ? "/app/ai-assistant" : "/app/settings/team");
+  const aiSummaryFooter = ownerBrief?.recommendations[0] ? t("dashboard.openPrioritySource") : canViewAiAnalyst ? t("dashboard.openAiAnalyst") : t("dashboard.openTeamSettings");
   const providerMode = aiStatus?.mode === "live" ? t("aiAssistant.modeLive") : t("aiAssistant.modeMock");
   const providerLabel = aiStatus
     ? t("dashboard.aiProviderStatus", { provider: aiStatus.provider, mode: providerMode })
@@ -492,6 +492,11 @@ export function OwnerDashboard({
             {ownerBrief?.summary.no_data ? (
               <p className="mt-3 rounded-lg border border-amber-100 bg-amber-50 p-3 text-xs font-semibold leading-5 text-amber-800">
                 {ownerBrief.summary.no_data_reason || t("dashboard.ownerBriefNoDataText")}
+              </p>
+            ) : null}
+            {aiStatus && !aiStatus.ready ? (
+              <p className="mt-3 rounded-lg border border-amber-100 bg-amber-50 p-3 text-xs font-semibold leading-5 text-amber-800">
+                {t("dashboard.aiProviderUnavailable")}
               </p>
             ) : null}
             <div className="mt-5 grid gap-3 sm:grid-cols-3">

@@ -75,23 +75,23 @@ export function compareDescDate(a: string | null | undefined, b: string | null |
   return bTs - aTs;
 }
 
-export function statusMeta(status: ClientTableRow["status"]) {
+export function statusMeta(status: ClientTableRow["status"], t: Translate) {
   const map = {
-    active: { label: "Активный", className: "bg-emerald-50 text-emerald-700 before:bg-emerald-500" },
-    new: { label: "Новый", className: "bg-indigo-50 text-indigo-700 before:bg-indigo-500" },
+    active: { label: t("clients.statusActive"), className: "bg-emerald-50 text-emerald-700 before:bg-emerald-500" },
+    new: { label: t("clients.statusNew"), className: "bg-indigo-50 text-indigo-700 before:bg-indigo-500" },
     vip: { label: "VIP", className: "bg-purple-50 text-purple-700 before:bg-purple-500" },
-    no_reply: { label: "Без ответа", className: "bg-orange-50 text-orange-700 before:bg-orange-500" },
-    archived: { label: "Архив", className: "bg-slate-100 text-slate-600 before:bg-slate-400" },
+    no_reply: { label: t("clients.statusNoReply"), className: "bg-orange-50 text-orange-700 before:bg-orange-500" },
+    archived: { label: t("clients.archive"), className: "bg-slate-100 text-slate-600 before:bg-slate-400" },
   } satisfies Record<ClientTableRow["status"], { label: string; className: string }>;
   return map[status];
 }
 
-export function priorityLabel(priority?: Task["priority"]) {
+export function priorityLabel(priority: Task["priority"] | undefined, t: Translate) {
   const labels: Record<Task["priority"], string> = {
-    low: "Низкий",
-    normal: "Обычный",
-    high: "Высокий",
-    urgent: "Срочный",
+    low: t("notification.priority.low"),
+    normal: t("notification.priority.normal"),
+    high: t("notification.priority.high"),
+    urgent: t("notification.priority.urgent"),
   };
   return priority ? labels[priority] : null;
 }

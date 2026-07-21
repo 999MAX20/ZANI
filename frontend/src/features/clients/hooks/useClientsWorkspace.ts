@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { clientsApi } from "../../../api/clients";
 import { unwrapList } from "../../../api/client";
@@ -25,6 +25,7 @@ export function useClientsWorkspace({
   t: Translate;
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [createOpen, setCreateOpen] = useState(false);
   const [segmentOpen, setSegmentOpen] = useState(false);
   const [tagOpen, setTagOpen] = useState(false);
@@ -117,8 +118,12 @@ export function useClientsWorkspace({
 
   const openClientCard = useCallback((clientId: number, initialTab: CrmCardTab = "overview") => {
     setSelectedClientId(clientId);
+    if (initialTab === "overview") {
+      navigate(`/app/clients/${clientId}`);
+      return;
+    }
     setDrawerEntity({ type: "client", id: clientId, initialTab });
-  }, []);
+  }, [navigate]);
 
   const closeClientCard = useCallback(() => {
     setDrawerEntity(null);
@@ -190,6 +195,7 @@ export function useClientsWorkspace({
     currentUserId,
     totalOverride: totalClients,
     serverSummary,
+    t,
   });
 
   const selectedRow = rows.find((row) => row.client.id === selectedClientId) || null;

@@ -12,9 +12,15 @@ export type TaskListParams = {
   search?: string;
   due?: "past" | "today" | "none" | "future" | string;
   relation?: "client" | "lead" | "deal" | "appointment" | "conversation" | "none" | string;
+  client_ids?: Id[] | string;
+  lead_ids?: Id[] | string;
+  deal_ids?: Id[] | string;
+  appointment_ids?: Id[] | string;
+  conversation_ids?: Id[] | string;
   due_from?: string;
   due_to?: string;
   page?: number;
+  page_size?: number;
   ordering?: "smart" | "priority" | "-priority" | "due_at" | "-due_at" | "updated_at" | "-updated_at" | "created_at" | "-created_at" | string;
 };
 

@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { dealsApi } from "../../api/deals";
 import { CrmEntityDrawer, type CrmDrawerEntity } from "../../components/crm/CrmEntityDrawer";
@@ -35,10 +35,11 @@ export function DealsPage() {
   const showUndoToast = useUndoToast();
   const showNotification = useNotification();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { filters, updateFilters, resetFilters } = useDealFilters();
   const { business, data, isLoading, summary, boardHasMoreByStage, boardIsFetchingMore, loadMoreBoardDeals } = useDeals(filters);
-  const { activePipeline, activeStages, rows } = useDealMetrics(data, filters);
+  const { activePipeline, activeStages, rows } = useDealMetrics(data, filters, t);
   const sortedRows = useMemo(() => {
     return [...rows].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
   }, [rows]);
@@ -141,6 +142,11 @@ export function DealsPage() {
     setSearchParams(next, { replace: true });
   }
 
+  function openDealWorkspace(deal: Deal) {
+    setDrawerEntity(null);
+    navigate(`/app/deals/${deal.id}`);
+  }
+
   function closeDrawer() {
     setDrawerEntity(null);
     const next = new URLSearchParams(searchParams);
@@ -187,7 +193,7 @@ export function DealsPage() {
                 stages={activeStages}
                 selectedDealId={selection.selectedDealId}
                 selectedIds={selection.selectedIds}
-                onOpen={openDealDrawer}
+                onOpen={openDealWorkspace}
                 onCheck={(deal) => selection.toggleSelected(deal.id)}
                 onSelectAll={selection.selectAll}
                 onCreate={() => actions.setCreateOpen(true)}

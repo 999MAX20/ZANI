@@ -10,6 +10,9 @@ from apps.activities.segments import evaluate_segment_queryset
 from apps.activities.services import create_activity_event
 from apps.businesses.models import BusinessMember
 from apps.clients.models import Client
+from apps.core.audit import write_audit_log
+from apps.core.models import AuditLog
+from apps.integrations.connectors import normalize_business_event
 from apps.integrations.sanitization import sanitize_error_payload, sanitize_error_text
 from apps.notifications.models import Notification
 from apps.notifications.routing import create_role_notification
@@ -302,6 +305,77 @@ def launch_campaign(campaign):
         )
 
     return {"notifications": created, "send_at": send_at}
+
+
+@transaction.atomic
+def cancel_campaign(campaign, *, request=None, reason=""):
+    if campaign.status == OutreachCampaign.Statuses.SENT:
+        raise ValueError("Sent campaigns cannot be cancelled.")
+
+    previous_status = campaign.status
+    cancellable_statuses = [
+        OutreachRecipient.Statuses.QUEUED,
+        OutreachRecipient.Statuses.PENDING,
+    ]
+    recipients = campaign.recipients.filter(
+        business=campaign.business,
+        status__in=cancellable_statuses,
+    )
+    notification_ids = list(recipients.exclude(notification_id__isnull=True).values_list("notification_id", flat=True))
+    cancelled_recipients = recipients.update(
+        status=OutreachRecipient.Statuses.CANCELLED,
+        error_code="cancelled",
+        skipped_reason=reason or "Campaign cancelled.",
+        updated_at=timezone.now(),
+    )
+    cancelled_notifications = Notification.objects.filter(
+        business=campaign.business,
+        id__in=notification_ids,
+        status=Notification.Statuses.PENDING,
+    ).update(status=Notification.Statuses.CANCELLED, updated_at=timezone.now())
+
+    campaign.status = OutreachCampaign.Statuses.CANCELLED
+    campaign.finished_at = timezone.now()
+    campaign.save(update_fields=["status", "finished_at", "updated_at"])
+
+    metadata = {
+        "previous_status": previous_status,
+        "new_status": campaign.status,
+        "cancelled_recipients": cancelled_recipients,
+        "cancelled_notifications": cancelled_notifications,
+        "reason": reason or "",
+        "actor_id": getattr(getattr(request, "user", None), "id", None),
+    }
+    _write_campaign_activity(campaign, "outreach_cancelled", metadata, actor=getattr(request, "user", None))
+    normalize_business_event(
+        business=campaign.business,
+        source="outreach",
+        event_type="outreach.campaign_cancelled",
+        external_id=f"outreach:campaign:{campaign.id}:cancelled",
+        payload={
+            "campaign_id": campaign.id,
+            "campaign_name": campaign.name,
+            "channel": campaign.channel,
+            **metadata,
+        },
+    )
+    write_audit_log(
+        request,
+        AuditLog.Actions.UPDATE,
+        campaign,
+        business=campaign.business,
+        metadata={"kind": "lifecycle", "event_type": "outreach_cancelled", **metadata},
+    )
+    _notify_outreach_team(
+        campaign,
+        text=f"Рассылка «{campaign.name}» отменена: отменено получателей {cancelled_recipients}.",
+        priority=Notification.Priorities.NORMAL,
+    )
+    return {
+        "previous_status": previous_status,
+        "cancelled_recipients": cancelled_recipients,
+        "cancelled_notifications": cancelled_notifications,
+    }
 
 
 @transaction.atomic
@@ -609,11 +683,12 @@ def _delivery_reason(result):
     return ""
 
 
-def _write_campaign_activity(campaign, event_type, metadata):
+def _write_campaign_activity(campaign, event_type, metadata, *, actor=None):
     create_activity_event(
         business=campaign.business,
         event_type=event_type,
         instance=campaign,
+        actor=actor if getattr(actor, "id", None) else None,
         category="automation",
         source="outreach",
         text=f"Рассылка «{campaign.name}»: {event_type}",

@@ -174,6 +174,10 @@ class BotMessageSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = ["created_at"]
+        extra_kwargs = {
+            "external_message_id": {"required": False, "allow_blank": True},
+        }
+        validators = []
 
     def create(self, validated_data):
         message = super().create(validated_data)

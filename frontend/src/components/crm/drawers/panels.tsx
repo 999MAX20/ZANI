@@ -444,6 +444,7 @@ export function EntityAttachmentsPanel({ data, entity }: { data: CrmCardPayload;
 }
 
 export function EntityDealsPanel({ data }: { data: CrmCardPayload }) {
+  const { t } = useI18n();
   return (
     <div className="space-y-3">
       {data.deals.length ? (
@@ -458,7 +459,7 @@ export function EntityDealsPanel({ data }: { data: CrmCardPayload }) {
           </div>
         ))
       ) : (
-        <EmptyBlock title="Сделок пока нет" text="Сделок пока нет." />
+        <EmptyBlock title={t("crmCard.noDeals")} text={t("crmCard.noDealsText")} />
       )}
     </div>
   );

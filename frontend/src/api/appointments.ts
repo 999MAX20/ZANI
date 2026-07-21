@@ -30,6 +30,7 @@ export type AppointmentListParams = {
   resource?: Id | "";
   status?: Appointment["status"] | "";
   client_ids?: Id[] | string;
+  lead_ids?: Id[] | string;
   page?: number;
   page_size?: number;
 };

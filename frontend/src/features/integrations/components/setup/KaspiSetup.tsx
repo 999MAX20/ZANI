@@ -11,6 +11,7 @@ import { Select } from "../../../../components/ui/Select";
 import { useNotification } from "../../../../components/notifications/NotificationProvider";
 import { useI18n } from "../../../../lib/i18n";
 import type { BusinessConnector, Id } from "../../../../types";
+import { merchantSafeIntegrationError } from "../../utils";
 
 export function KaspiInlineSetup({
   businessId,
@@ -29,7 +30,7 @@ export function KaspiInlineSetup({
   const [orderState, setOrderState] = useState(String(connector?.config_json?.order_state || "ARCHIVE"));
   const [syncDays, setSyncDays] = useState(String(connector?.config_json?.sync_days || "14"));
   const [pageSize, setPageSize] = useState(String(connector?.config_json?.page_size || "20"));
-  const [showAccessSetup, setShowAccessSetup] = useState(Boolean(connector?.config_json?.api_token_configured));
+  const [showAccessSetup, setShowAccessSetup] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   function setNotice(message: string | null) {
@@ -63,7 +64,7 @@ export function KaspiInlineSetup({
   const testConnection = useMutation({
     mutationFn: () => businessConnectorsApi.kaspiTestConnection(Number(connector?.id)),
     onSuccess: (data) => {
-      setNotice(data.ok ? t("integrations.kaspi.connectionChecked") : data.reason || t("integrations.kaspi.connectionCheckFailed"));
+      setNotice(data.ok ? (data.mock ? t("integrations.mock.connectionChecked") : t("integrations.kaspi.connectionChecked")) : data.reason || t("integrations.kaspi.connectionCheckFailed"));
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
       queryClient.invalidateQueries({ queryKey: ["kaspi-status", connector?.id] });
     },
@@ -72,7 +73,7 @@ export function KaspiInlineSetup({
   const syncOrders = useMutation({
     mutationFn: () => businessConnectorsApi.kaspiSyncOrders(Number(connector?.id)),
     onSuccess: (data) => {
-      setNotice(data.ok ? t("integrations.kaspi.ordersLoaded", { count: data.events.length }) : data.reason || t("integrations.kaspi.ordersLoadFailed"));
+      setNotice(data.ok ? (data.mock ? t("integrations.mock.syncLoaded", { count: data.events.length }) : t("integrations.kaspi.ordersLoaded", { count: data.events.length })) : data.reason || t("integrations.kaspi.ordersLoadFailed"));
       queryClient.invalidateQueries({ queryKey: ["business-events"] });
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
       queryClient.invalidateQueries({ queryKey: ["connector-sync-runs"] });
@@ -82,10 +83,11 @@ export function KaspiInlineSetup({
 
   const error = saveConfig.error || testConnection.error || syncOrders.error || status.error;
   const tokenConfigured = Boolean(status.data?.api_token_configured || connector?.config_json?.api_token_configured);
+  const runsInMockMode = status.data ? !status.data.kaspi_enabled : false;
 
   return (
     <div className="w-full space-y-4 rounded-card border border-slate-200 bg-slate-50 p-4">
-      {error ? <ErrorState message={getApiErrorMessage(error)} /> : null}
+      {error ? <ErrorState message={merchantSafeIntegrationError(getApiErrorMessage(error), t)} /> : null}
 
       <div className="grid gap-2 sm:grid-cols-3">
         <div className="rounded-2xl bg-white p-3">
@@ -94,13 +96,18 @@ export function KaspiInlineSetup({
         </div>
         <div className="rounded-2xl bg-white p-3">
           <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">{t("integrations.setupMetric.mode")}</p>
-          <p className="mt-1 text-sm font-black text-midnight">{t("integrations.setupMetric.readOnly")}</p>
+          <p className="mt-1 text-sm font-black text-midnight">{runsInMockMode ? t("integrations.setupMetric.demoReadOnly") : t("integrations.setupMetric.readOnly")}</p>
         </div>
         <div className="rounded-2xl bg-white p-3">
           <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">{t("integrations.kaspi.orders")}</p>
           <p className="mt-1 text-sm font-black text-midnight">{status.data?.last_sync_at ? t("integrations.kaspi.ordersLoadedBefore") : t("integrations.setupMetric.notYet")}</p>
         </div>
       </div>
+      {runsInMockMode ? (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold leading-5 text-amber-800">
+          {t("integrations.mock.providerDisabledNotice")}
+        </div>
+      ) : null}
 
       {!showAccessSetup ? (
         <div className="rounded-card border border-blue-100 bg-blue-50 p-4">
@@ -149,9 +156,11 @@ export function KaspiInlineSetup({
       </div>
 
       <div className="grid gap-3 md:grid-cols-3">
-        <Button type="button" disabled={!canManage || (!apiToken.trim() && !merchantId.trim() && !connector)} isLoading={saveConfig.isPending} onClick={() => saveConfig.mutate()}>
-          <ShieldCheck size={16} /> {connector ? t("integrations.setupAction.saveAccess") : t("integrations.kaspi.connect")}
-        </Button>
+        {showAccessSetup || showAdvanced ? (
+          <Button type="button" disabled={!canManage || (!apiToken.trim() && !merchantId.trim() && !connector)} isLoading={saveConfig.isPending} onClick={() => saveConfig.mutate()}>
+            <ShieldCheck size={16} /> {connector ? t("integrations.setupAction.saveAccess") : t("integrations.kaspi.connect")}
+          </Button>
+        ) : null}
         <Button type="button" variant="secondary" disabled={!canManage || !connector || !tokenConfigured} isLoading={testConnection.isPending} onClick={() => testConnection.mutate()}>
           <RefreshCw size={16} /> {t("integrations.card.check")}
         </Button>

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Bell, CalendarCheck2, CalendarClock, ChevronDown, Copy, Send, ShieldAlert, ShieldCheck, SlidersHorizontal } from "lucide-react";
+import { Bell, CalendarCheck2, CalendarClock, Copy, Send, ShieldAlert, ShieldCheck, SlidersHorizontal } from "lucide-react";
 
 import { billingApi } from "../../api/billing";
 import { appointmentMessageSettingsApi } from "../../api/appointments";
@@ -23,93 +23,40 @@ import { useActiveBusiness } from "../../hooks/useBusiness";
 import { hasPermission, permissionResourceLabel } from "../../lib/permissions";
 import { useI18n } from "../../lib/i18n";
 import { useAuth } from "../auth/AuthProvider";
-import type { AppointmentMessageSetting, Business, BusinessInvitation, BusinessMembershipSummary, BusinessRole, CrmEntityType, CustomFieldDefinition, Id, Notification, NotificationPreference, QuickReplyTemplate, RolePermission } from "../../types";
-
-const teamRoleOptions = [
-  { value: "owner" },
-  { value: "admin" },
-  { value: "manager" },
-  { value: "operator" },
-  { value: "marketer" },
-  { value: "accountant" },
-  { value: "support" },
-  { value: "staff" },
-];
-
-const accessGroups = [
-  { key: "sales", resources: ["leads", "deals"] },
-  { key: "clients", resources: ["clients"] },
-  { key: "chats", resources: ["conversations"] },
-  { key: "calendar", resources: ["appointments"] },
-  { key: "tasks", resources: ["tasks"] },
-  { key: "analytics", resources: ["analytics"] },
-  { key: "settings", resources: ["settings"] },
-  { key: "export", resources: ["billing"] },
-  { key: "security", resources: ["team", "audit_logs"] },
-];
-
-const visibilityOptions = [
-  { value: "own" },
-  { value: "team" },
-  { value: "business" },
-];
-
-const roleGuideKeys = ["manager", "operator", "staff", "accountant"] as const;
-const settingsGroupOrder = ["business", "team", "communication", "setup", "advanced"] as const;
-
-type SettingsGroupKey = (typeof settingsGroupOrder)[number];
-
-type SettingsSectionConfig = { id: string; group?: SettingsGroupKey; resource: string; action?: string };
-
-const settingsSections: SettingsSectionConfig[] = [
-  { id: "business-profile", group: "business", resource: "settings", action: "update" },
-  { id: "team-access", group: "team", resource: "team", action: "view" },
-  { id: "roles", group: "team", resource: "team", action: "manage" },
-  { id: "security-center", group: "team", resource: "audit_logs", action: "view" },
-  { id: "appointment-messages", resource: "settings", action: "update" },
-  { id: "notification-preferences", group: "communication", resource: "notifications", action: "view" },
-  { id: "quick-replies", group: "communication", resource: "conversations", action: "view" },
-  { id: "billing", group: "setup", resource: "billing", action: "view" },
-  { id: "usage", group: "setup", resource: "billing", action: "view" },
-  { id: "custom-fields", group: "advanced", resource: "settings", action: "update" },
-];
-
-const settingsSectionGroupFallback: Record<string, SettingsGroupKey> = {
-  "appointment-messages": "communication",
-};
-
-const appointmentScenarioLabels: Record<AppointmentMessageSetting["scenario"], { titleKey: string; descriptionKey: string }> = {
-  confirmation: {
-    titleKey: "settings.appointmentMessages.scenario.confirmation",
-    descriptionKey: "settings.appointmentMessages.scenario.confirmation.text",
-  },
-  reminder: {
-    titleKey: "settings.appointmentMessages.scenario.reminder",
-    descriptionKey: "settings.appointmentMessages.scenario.reminder.text",
-  },
-  thank_you: {
-    titleKey: "settings.appointmentMessages.scenario.thankYou",
-    descriptionKey: "settings.appointmentMessages.scenario.thankYou.text",
-  },
-};
-
-const appointmentChannelOptions = [
-  { value: "auto", labelKey: "settings.appointmentMessages.channel.auto" },
-  { value: "telegram", labelKey: "settings.appointmentMessages.channel.telegram" },
-  { value: "whatsapp", labelKey: "settings.appointmentMessages.channel.whatsapp" },
-  { value: "email", labelKey: "settings.appointmentMessages.channel.email" },
-  { value: "sms", labelKey: "settings.appointmentMessages.channel.sms" },
-  { value: "system", labelKey: "settings.appointmentMessages.channel.system" },
-];
-
-const notificationCategories: Array<{ category: Notification["category"]; titleKey: string; descriptionKey: string }> = [
-  { category: "sales", titleKey: "settings.notifications.category.sales", descriptionKey: "settings.notifications.category.sales.text" },
-  { category: "tasks", titleKey: "settings.notifications.category.tasks", descriptionKey: "settings.notifications.category.tasks.text" },
-  { category: "outreach", titleKey: "settings.notifications.category.outreach", descriptionKey: "settings.notifications.category.outreach.text" },
-  { category: "ai_alerts", titleKey: "settings.notifications.category.aiAlerts", descriptionKey: "settings.notifications.category.aiAlerts.text" },
-  { category: "system", titleKey: "settings.notifications.category.system", descriptionKey: "settings.notifications.category.system.text" },
-  { category: "finance", titleKey: "settings.notifications.category.finance", descriptionKey: "settings.notifications.category.finance.text" },
-];
+import type { AppointmentMessageSetting, Business, BusinessInvitation, BusinessMembershipSummary, CrmEntityType, CustomFieldDefinition, Id, Notification, NotificationPreference, QuickReplyTemplate, RolePermission } from "../../types";
+import { SettingsNavigation } from "./components/SettingsNavigation";
+import { useSettingsSectionNavigation } from "./hooks/useSettingsSectionNavigation";
+import { BillingSection } from "./sections/BillingSection";
+import { UsageSection } from "./sections/UsageSection";
+import {
+  accessGroups,
+  appointmentChannelOptions,
+  appointmentScenarioLabels,
+  notificationCategories,
+  roleGuideKeys,
+  settingsGroupOrder,
+  settingsSectionGroupFallback,
+  settingsSections,
+  teamRoleOptions,
+  visibilityOptions,
+} from "./settingsConfig";
+import {
+  auditEventTitle,
+  customFieldSummary,
+  entityLabel,
+  formatMetric,
+  formatPrice,
+  groupLevel,
+  loginStatusLabel,
+  parseRoleList,
+  riskClass,
+  riskLabel,
+  roleSummary,
+  roleVisibility,
+  slugify,
+  translatedVisibilityDescription,
+  translatedVisibilityLabel,
+} from "./settingsUtils";
 
 export function SettingsPage() {
   const { t, language } = useI18n();
@@ -117,14 +64,6 @@ export function SettingsPage() {
   const queryClient = useQueryClient();
   const { business, isLoading } = useActiveBusiness();
   const { user } = useAuth();
-  const [activeSettingsSection, setActiveSettingsSection] = useState(() => window.location.hash.replace("#", "") || "business-profile");
-  const [openSettingsGroups, setOpenSettingsGroups] = useState<Record<SettingsGroupKey, boolean>>({
-    business: true,
-    team: true,
-    communication: true,
-    setup: true,
-    advanced: false,
-  });
   const canViewBilling = hasPermission(user, business?.id, "billing", "view");
   const canManageBilling = hasPermission(user, business?.id, "billing", "manage");
   const canViewTeam = hasPermission(user, business?.id, "team", "view");
@@ -157,7 +96,14 @@ export function SettingsPage() {
       }),
     [business?.id, canManageConversations, canManageSettings, canManageTeam, canViewAudit, canViewBilling, canViewNotifications, canViewTeam, user],
   );
-  const allowedSettingsSectionIds = useMemo(() => new Set(allowedSettingsSections.map((section) => section.id)), [allowedSettingsSections]);
+  const {
+    activeSettingsSection,
+    allowedSettingsSectionIds,
+    openSettingsGroups,
+    setActiveSettingsSection,
+    setOpenSettingsGroups,
+    settingsSectionClass,
+  } = useSettingsSectionNavigation(allowedSettingsSections);
   const subscription = useQuery({
     queryKey: ["current-subscription"],
     queryFn: billingApi.currentSubscription,
@@ -306,25 +252,6 @@ export function SettingsPage() {
     setSelectedPlanId(current.requested_plan ? String(current.requested_plan) : current.plan?.id ? String(current.plan.id) : "");
   }, [business?.address, business?.invoice_email, business?.legal_name, business?.tax_id, subscription.data]);
 
-  useEffect(() => {
-    function handleHashChange() {
-      setActiveSettingsSection(window.location.hash.replace("#", "") || "business-profile");
-      window.setTimeout(() => window.scrollTo({ top: 0, behavior: "instant" }), 0);
-    }
-
-    handleHashChange();
-    window.addEventListener("hashchange", handleHashChange);
-    return () => window.removeEventListener("hashchange", handleHashChange);
-  }, []);
-  useEffect(() => {
-    if (!allowedSettingsSections.length) return;
-    if (allowedSettingsSectionIds.has(activeSettingsSection)) return;
-    const nextSection = allowedSettingsSections[0].id;
-    setActiveSettingsSection(nextSection);
-    if (window.location.hash.replace("#", "") !== nextSection) {
-      window.location.hash = nextSection;
-    }
-  }, [activeSettingsSection, allowedSettingsSectionIds, allowedSettingsSections]);
   const [editingQuickReplyId, setEditingQuickReplyId] = useState<number | null>(null);
   const [quickReplyEditForm, setQuickReplyEditForm] = useState({
     title: "",
@@ -620,8 +547,6 @@ export function SettingsPage() {
   const appointmentMessageValue = <K extends keyof AppointmentMessageSetting>(setting: AppointmentMessageSetting, key: K): AppointmentMessageSetting[K] => {
     return (appointmentMessageDrafts[Number(setting.id)]?.[key] as AppointmentMessageSetting[K] | undefined) ?? setting[key];
   };
-  const settingsSectionClass = (id: string, className = "mb-5 scroll-mt-24") => `${className} ${activeSettingsSection === id && allowedSettingsSectionIds.has(id) ? "" : "hidden"}`;
-
   function updateMemberRole(memberId: number, roleKey: BusinessMembershipSummary["role"]) {
     if (roleKey === "owner") return;
     const role = roles.find((item) => item.preset_key === roleKey);
@@ -688,64 +613,15 @@ export function SettingsPage() {
       </section>
       {mutation.error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(mutation.error)} /></div> : null}
       <div className="grid gap-4 xl:grid-cols-[260px_minmax(0,1fr)]">
-        <aside className="xl:sticky xl:top-20 xl:self-start">
-          <Card className="rounded-card border-slate-200 shadow-card">
-            <CardBody className="p-2">
-              <Select
-                className="min-h-10 rounded-control xl:hidden"
-                value={activeSettingsSection}
-                onChange={(event) => {
-                  setActiveSettingsSection(event.target.value);
-                  window.location.hash = event.target.value;
-                }}
-                options={translatedSettingsSections.map((section) => ({ value: section.id, label: section.label }))}
-              />
-              <div className="hidden xl:block">
-                <div className="mb-2 px-2 py-1">
-                  <p className="text-sm font-black text-midnight">{t("settings.navigationTitle")}</p>
-                </div>
-                <nav className="space-y-1.5">
-                  {translatedSettingsGroups.map((groupItem) => {
-                    const groupOpen = openSettingsGroups[groupItem.key];
-                    const hasActiveSection = groupItem.sections.some((section) => section.id === activeSettingsSection);
-                    return (
-                      <div key={groupItem.key} className="rounded-control border border-slate-200 bg-white p-1">
-                        <button
-                          type="button"
-                          className="flex min-h-8 w-full items-center justify-between gap-3 rounded-lg px-2.5 text-left text-[11px] font-black uppercase tracking-[0.14em] text-slate-500 transition hover:bg-slate-50 hover:text-midnight"
-                          onClick={() => setOpenSettingsGroups((current) => ({ ...current, [groupItem.key]: !current[groupItem.key] }))}
-                          aria-expanded={groupOpen}
-                        >
-                          <span>{groupItem.label}</span>
-                          <ChevronDown size={16} className={`transition-transform ${groupOpen ? "rotate-180" : ""}`} />
-                        </button>
-                        {groupOpen || hasActiveSection ? (
-                          <div className="mt-1 space-y-1">
-                            {groupItem.sections.map((section) => {
-                              const active = section.id === activeSettingsSection;
-                              return (
-                                <a
-                                  key={section.id}
-                                  href={`#${section.id}`}
-                                  className={`block rounded-lg px-2.5 py-2 text-sm font-bold transition ${
-                                    active ? "bg-slate-950 text-white shadow-sm" : "text-slate-600 hover:bg-slate-50 hover:text-midnight"
-                                  }`}
-                                  onClick={() => setActiveSettingsSection(section.id)}
-                                >
-                                  {section.label}
-                                </a>
-                              );
-                            })}
-                          </div>
-                        ) : null}
-                      </div>
-                    );
-                  })}
-                </nav>
-              </div>
-            </CardBody>
-          </Card>
-        </aside>
+        <SettingsNavigation
+          activeSettingsSection={activeSettingsSection}
+          navigationTitle={t("settings.navigationTitle")}
+          openSettingsGroups={openSettingsGroups}
+          setActiveSettingsSection={setActiveSettingsSection}
+          setOpenSettingsGroups={setOpenSettingsGroups}
+          translatedSettingsGroups={translatedSettingsGroups}
+          translatedSettingsSections={translatedSettingsSections}
+        />
         <div className="min-w-0">
       <Card id="business-profile" className={settingsSectionClass("business-profile")}>
         <CardBody>
@@ -869,7 +745,7 @@ export function SettingsPage() {
               </p>
             </div>
             <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
-              {user?.memberships?.[0]?.role || "role"} · {user?.effective_permissions?.[String(business?.id || "")]?.length || 0} {t("settings.permissions")}
+              {user?.memberships?.[0]?.role || "role"} В· {user?.effective_permissions?.[String(business?.id || "")]?.length || 0} {t("settings.permissions")}
             </div>
           </div>
           {updateMemberMutation.error || departmentMutation.error ? (
@@ -942,7 +818,7 @@ export function SettingsPage() {
                     <div>
                       <p className="text-lg font-black text-midnight">{selectedMember.user.full_name || selectedMember.user.email}</p>
                       <p className="mt-1 text-sm text-slate-500">
-                        {selectedMember.user.email} · {translatedTeamRoleOptions.find((role) => role.value === selectedMember.role)?.label || selectedMember.business_role_name || selectedRole?.name || t("settings.role.staff")}
+                        {selectedMember.user.email} В· {translatedTeamRoleOptions.find((role) => role.value === selectedMember.role)?.label || selectedMember.business_role_name || selectedRole?.name || t("settings.role.staff")}
                       </p>
                     </div>
                     <span className={selectedMember.is_active ? "rounded-full bg-green-50 px-3 py-1.5 text-xs font-bold text-green-700" : "rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-500"}>
@@ -1055,7 +931,7 @@ export function SettingsPage() {
                         <div>
                           <p className="font-bold text-midnight">{invitation.full_name || invitation.email}</p>
                           <p className="text-xs text-slate-500">
-                            {invitation.email} · {translatedTeamRoleOptions.find((role) => role.value === invitation.role)?.label || invitation.role} · {t(`status.${invitation.status}`)}
+                            {invitation.email} В· {translatedTeamRoleOptions.find((role) => role.value === invitation.role)?.label || invitation.role} В· {t(`status.${invitation.status}`)}
                           </p>
                         </div>
                         <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-3 sm:flex sm:flex-wrap">
@@ -1158,7 +1034,7 @@ export function SettingsPage() {
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="font-bold text-midnight">{auditEventTitle(log.action, log.entity_type, t)}</p>
-                          <p className="mt-1 text-xs text-slate-500">{log.actor_email || "system"} · {new Date(log.created_at).toLocaleString(locale)}</p>
+                          <p className="mt-1 text-xs text-slate-500">{log.actor_email || "system"} В· {new Date(log.created_at).toLocaleString(locale)}</p>
                         </div>
                         <span className={riskClass(log.risk_level)}>{riskLabel(log.risk_level, t)}</span>
                       </div>
@@ -1175,7 +1051,7 @@ export function SettingsPage() {
                       <div key={item.id} className="flex items-center justify-between rounded-2xl bg-slate-50 px-3 py-2">
                         <div>
                           <p className="text-sm font-bold text-midnight">{item.email || item.user_email}</p>
-                          <p className="text-xs text-slate-500">{item.ip_address || t("settings.noIp")} · {new Date(item.created_at).toLocaleString(locale)}</p>
+                          <p className="text-xs text-slate-500">{item.ip_address || t("settings.noIp")} В· {new Date(item.created_at).toLocaleString(locale)}</p>
                         </div>
                         <span className={item.status === "success" ? "text-xs font-bold text-green-700" : "text-xs font-bold text-red-700"}>{loginStatusLabel(item.status, t)}</span>
                       </div>
@@ -1189,7 +1065,7 @@ export function SettingsPage() {
                     {(supportGrants.data || []).slice(0, 4).map((grant) => (
                       <div key={grant.id} className="rounded-2xl bg-slate-50 px-3 py-2">
                         <p className="text-sm font-bold text-midnight">{grant.user_email}</p>
-                        <p className="text-xs text-slate-500">{grant.is_active ? t("settings.active") : t("settings.inactive")} · {t("settings.until")} {new Date(grant.expires_at).toLocaleString(locale)}</p>
+                        <p className="text-xs text-slate-500">{grant.is_active ? t("settings.active") : t("settings.inactive")} В· {t("settings.until")} {new Date(grant.expires_at).toLocaleString(locale)}</p>
                       </div>
                     ))}
                     {!supportGrants.isLoading && !supportGrants.data?.length ? <p className="text-sm text-slate-500">{t("settings.noSupportGrants")}</p> : null}
@@ -1447,7 +1323,7 @@ export function SettingsPage() {
                           <p className="font-bold text-midnight">{t(`settings.accessGroup.${group.key}`)}</p>
                           <p className="mt-1 text-sm leading-6 text-slate-500">{t(`settings.accessGroup.${group.key}.text`)}</p>
                           <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
-                            {group.resources.map((resource) => permissionResourceLabel(resource, t)).join(" · ")}
+                            {group.resources.map((resource) => permissionResourceLabel(resource, t)).join(" В· ")}
                           </p>
                         </div>
                         <div className="flex flex-wrap gap-2">
@@ -1473,119 +1349,36 @@ export function SettingsPage() {
           ) : null}
         </CardBody>
       </Card>
-      <Card id="billing" className={settingsSectionClass("billing")}>
-        <CardBody>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">{t("settings.currentPlan")}</p>
-              <h2 className="mt-2 text-2xl font-semibold text-midnight">
-                {subscription.isLoading ? t("settings.loading") : currentPlan?.name || t("settings.noPlan")}
-              </h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                {hasSubscription
-                  ? `${formatPrice(currentPlan?.monthly_price, t, locale)} · ${t("settings.status")}: ${subscription.data?.status}`
-                  : t("settings.billingNoSubscription")}
-              </p>
-              {subscription.data?.requested_plan ? (
-                <p className="mt-2 text-sm font-bold text-amber-700">Запрошена смена тарифа #{subscription.data.requested_plan}</p>
-              ) : null}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button type="button" variant="secondary" disabled={!canManageBilling || !subscription.data || subscription.data.status === "paused"} onClick={() => billingStatusMutation.mutate("pause")} isLoading={billingStatusMutation.isPending}>
-                Пауза
-              </Button>
-              <Button type="button" variant="secondary" disabled={!canManageBilling || !subscription.data || subscription.data.status === "active"} onClick={() => billingStatusMutation.mutate("resume")} isLoading={billingStatusMutation.isPending}>
-                Возобновить
-              </Button>
-              <Button type="button" variant="danger" disabled={!canManageBilling || !subscription.data || subscription.data.status === "cancelled"} onClick={() => billingStatusMutation.mutate("cancel")} isLoading={billingStatusMutation.isPending}>
-                Отменить
-              </Button>
-            </div>
-          </div>
-          {billingSettingsMutation.error || planChangeMutation.error || billingStatusMutation.error ? (
-            <div className="mt-4"><ErrorState message={getApiErrorMessage(billingSettingsMutation.error || planChangeMutation.error || billingStatusMutation.error)} /></div>
-          ) : null}
-          <div className="mt-5 grid gap-4 xl:grid-cols-[1fr_0.8fr]">
-            <form
-              className="rounded-card border border-slate-200 bg-slate-50 p-4"
-              onSubmit={(event) => {
-                event.preventDefault();
-                billingSettingsMutation.mutate();
-              }}
-            >
-              <h3 className="font-black text-midnight">Счета и оплата</h3>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <Input label="Email для счетов" value={billingSettingsForm.billing_email} onChange={(event) => setBillingSettingsForm({ ...billingSettingsForm, billing_email: event.target.value })} />
-                <Select
-                  label="Способ оплаты"
-                  value={billingSettingsForm.payment_method}
-                  onChange={(event) => setBillingSettingsForm({ ...billingSettingsForm, payment_method: event.target.value })}
-                  options={[
-                    { value: "", label: "Не выбран" },
-                    { value: "invoice", label: "Счёт на оплату" },
-                    { value: "card", label: "Банковская карта" },
-                    { value: "bank_transfer", label: "Банковский перевод" },
-                  ]}
-                />
-                <Input label="Получатель счёта" value={billingSettingsForm.invoice_name} onChange={(event) => setBillingSettingsForm({ ...billingSettingsForm, invoice_name: event.target.value })} />
-                <Input label="БИН / ИИН" value={billingSettingsForm.invoice_tax_id} onChange={(event) => setBillingSettingsForm({ ...billingSettingsForm, invoice_tax_id: event.target.value })} />
-                <Input className="sm:col-span-2" label="Юридический адрес" value={billingSettingsForm.invoice_address} onChange={(event) => setBillingSettingsForm({ ...billingSettingsForm, invoice_address: event.target.value })} />
-              </div>
-              <div className="mt-4">
-                <Button type="submit" disabled={!canManageBilling || !subscription.data} isLoading={billingSettingsMutation.isPending}>Сохранить биллинг</Button>
-              </div>
-            </form>
-            <div className="rounded-card border border-slate-200 bg-white p-4">
-              <h3 className="font-black text-midnight">Тариф</h3>
-              <p className="mt-1 text-sm leading-6 text-slate-500">Смена тарифа фиксируется как запрос, чтобы поддержка могла проверить оплату и лимиты.</p>
-              <div className="mt-4 grid gap-3">
-                <Select
-                  label="Новый тариф"
-                  value={selectedPlanId}
-                  onChange={(event) => setSelectedPlanId(event.target.value)}
-                  options={(plans.data || []).map((plan) => ({ value: String(plan.id), label: `${plan.name} · ${formatPrice(plan.monthly_price, t, locale)}` }))}
-                />
-                <Button type="button" disabled={!canManageBilling || !selectedPlanId || selectedPlanId === String(currentPlan?.id || "")} onClick={() => planChangeMutation.mutate(Number(selectedPlanId))} isLoading={planChangeMutation.isPending}>
-                  Запросить смену тарифа
-                </Button>
-              </div>
-            </div>
-          </div>
-        </CardBody>
-      </Card>
-      <Card id="usage" className={settingsSectionClass("usage")}>
-        <CardBody>
-          <div className="mb-4">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">{t("settings.usageEyebrow")}</p>
-            <h2 className="mt-2 text-2xl font-semibold text-midnight">{t("settings.usageTitle")}</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-              {t("settings.usageText")}
-            </p>
-          </div>
-          <div className="grid gap-3 md:grid-cols-4">
-            {(entitlements.data || usage.data || []).map((item) => {
-              const percent = item.limit ? Math.min(100, Math.round((item.value / item.limit) * 100)) : 0;
-              return (
-                <div key={item.metric} className="rounded-card bg-slate-50 p-4">
-                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{formatMetric(item.metric, t)}</p>
-                  <p className="mt-2 text-2xl font-black text-midnight">
-                    {item.value}
-                    <span className="text-sm font-semibold text-slate-400"> / {item.limit ?? "∞"}</span>
-                  </p>
-                  <div className="mt-3 h-2 rounded-full bg-white">
-                    <div className="h-2 rounded-full bg-ai-gradient" style={{ width: `${item.limit ? percent : 8}%` }} />
-                  </div>
-                  {item.is_over_limit ? <p className="mt-2 text-xs font-semibold text-red-600">{t("settings.limitReached")}</p> : null}
-                  {"remaining" in item && item.remaining !== null ? <p className="mt-2 text-xs font-semibold text-slate-500">{t("settings.remaining", { count: item.remaining })}</p> : null}
-                </div>
-              );
-            })}
-            {!entitlements.isLoading && !usage.isLoading && !entitlements.data?.length && !usage.data?.length ? (
-              <p className="text-sm text-slate-500">{t("settings.noUsage")}</p>
-            ) : null}
-          </div>
-        </CardBody>
-      </Card>
+      <BillingSection
+        billingSettingsForm={billingSettingsForm}
+        canManageBilling={canManageBilling}
+        className={settingsSectionClass("billing")}
+        currentPlan={currentPlan}
+        error={billingSettingsMutation.error || planChangeMutation.error || billingStatusMutation.error}
+        formatPrice={formatPrice}
+        hasSubscription={hasSubscription}
+        isBillingStatusPending={billingStatusMutation.isPending}
+        isPlanChangePending={planChangeMutation.isPending}
+        isSavingBillingSettings={billingSettingsMutation.isPending}
+        locale={locale}
+        onRequestPlanChange={(plan) => planChangeMutation.mutate(plan)}
+        onSaveBillingSettings={() => billingSettingsMutation.mutate()}
+        onSubscriptionStatusAction={(action) => billingStatusMutation.mutate(action)}
+        plans={plans.data || []}
+        selectedPlanId={selectedPlanId}
+        setBillingSettingsForm={setBillingSettingsForm}
+        setSelectedPlanId={setSelectedPlanId}
+        subscription={subscription.data}
+        subscriptionIsLoading={subscription.isLoading}
+        t={t}
+      />
+      <UsageSection
+        className={settingsSectionClass("usage")}
+        formatMetric={formatMetric}
+        isLoading={entitlements.isLoading || usage.isLoading}
+        items={entitlements.data || usage.data || []}
+        t={t}
+      />
       <Card id="custom-fields" className={settingsSectionClass("custom-fields")}>
         <CardBody>
           <div className="mb-4">
@@ -1696,11 +1489,11 @@ export function SettingsPage() {
                     <div className="flex flex-wrap gap-4 text-sm font-semibold text-slate-700">
                       <label className="flex items-center gap-2">
                         <input type="checkbox" checked={customFieldEditForm.is_required} onChange={(event) => setCustomFieldEditForm({ ...customFieldEditForm, is_required: event.target.checked })} />
-                        Обязательное
+                        {t("settings.customFieldRequired")}
                       </label>
                       <label className="flex items-center gap-2">
                         <input type="checkbox" checked={customFieldEditForm.is_active} onChange={(event) => setCustomFieldEditForm({ ...customFieldEditForm, is_active: event.target.checked })} />
-                        Активное
+                        {t("settings.customFieldActive")}
                       </label>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -1721,9 +1514,9 @@ export function SettingsPage() {
                     </div>
                     <details className="mt-3">
                       <summary className="cursor-pointer text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{t("settings.technicalDetails")}</summary>
-                      <p className="mt-2 rounded-2xl bg-white px-3 py-2 text-xs font-semibold text-slate-500">{field.entity_type} · {field.field_type} · {field.key} · #{field.sort_order}</p>
+                      <p className="mt-2 rounded-2xl bg-white px-3 py-2 text-xs font-semibold text-slate-500">{field.entity_type} В· {field.field_type} В· {field.key} В· #{field.sort_order}</p>
                       <p className="mt-2 text-xs font-semibold text-slate-500">
-                        View: {Array.isArray(field.permissions_json?.view_roles) && field.permissions_json.view_roles.length ? field.permissions_json.view_roles.join(", ") : "all"} · Edit: {Array.isArray(field.permissions_json?.edit_roles) && field.permissions_json.edit_roles.length ? field.permissions_json.edit_roles.join(", ") : "all"}
+                        View: {Array.isArray(field.permissions_json?.view_roles) && field.permissions_json.view_roles.length ? field.permissions_json.view_roles.join(", ") : "all"} В· Edit: {Array.isArray(field.permissions_json?.edit_roles) && field.permissions_json.edit_roles.length ? field.permissions_json.edit_roles.join(", ") : "all"}
                       </p>
                     </details>
                     <div className="mt-4 flex flex-wrap gap-2">
@@ -1756,129 +1549,4 @@ export function SettingsPage() {
       </div>
     </>
   );
-}
-
-function slugify(value: string) {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9а-яё]+/gi, "_")
-    .replace(/^_+|_+$/g, "")
-    .slice(0, 64);
-}
-
-function parseRoleList(value: string) {
-  return value
-    .split(",")
-    .map((role) => role.trim())
-    .filter(Boolean);
-}
-
-function formatMetric(metric: string, t: Translate) {
-  const labels: Record<string, string> = {
-    ai_requests: t("settings.metric.ai_requests"),
-    bot_messages: t("settings.metric.bot_messages"),
-    users: t("settings.metric.users"),
-    bots: t("settings.metric.bots"),
-    automations: t("settings.metric.automations"),
-    conversations: t("settings.metric.conversations"),
-    storage_mb: t("settings.metric.storage_mb"),
-  };
-  return labels[metric] || metric;
-}
-
-function formatPrice(value: string | undefined, t: Translate, locale: string) {
-  if (!value) return t("settings.noPrice");
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) return value;
-  if (numeric === 0) return t("settings.freePrice");
-  return t("settings.monthPrice", { amount: numeric.toLocaleString(locale) });
-}
-
-function roleVisibility(role: BusinessRole) {
-  const allowedScopes = role.permissions
-    .filter((permission) => permission.is_allowed)
-    .map((permission) => permission.scope);
-  if (allowedScopes.includes("business")) return "business";
-  if (allowedScopes.includes("team")) return "team";
-  if (allowedScopes.includes("own")) return "own";
-  return "none";
-}
-
-type Translate = (key: string, vars?: Record<string, string | number>) => string;
-
-function translatedVisibilityLabel(scope: string, t: Translate) {
-  if (scope === "business" || scope === "team" || scope === "own") return t(`settings.visibility.${scope}`);
-  return t("settings.noAccess");
-}
-
-function translatedVisibilityDescription(scope: string, t: Translate) {
-  if (scope === "business" || scope === "team" || scope === "own") return t(`settings.visibility.${scope}.text`);
-  return t("settings.noAccessText");
-}
-
-function roleSummary(role: BusinessRole, t: Translate) {
-  const visibleResources = Array.from(
-    new Set(role.permissions.filter((permission) => permission.is_allowed).map((permission) => permission.resource)),
-  );
-  if (!visibleResources.length) return t("settings.roleSummaryNone");
-  const names = visibleResources.slice(0, 4).map((resource) => permissionResourceLabel(resource, t));
-  const extra = visibleResources.length > names.length ? ` +${visibleResources.length - names.length}` : "";
-  return t("settings.roleSummary", { names: `${names.join(", ")}${extra}` });
-}
-
-function entityLabel(entity: string, t: Translate) {
-  if (entity === "clients") return t("settings.entity.clients");
-  if (entity === "leads") return t("settings.lead");
-  if (entity === "deals") return t("settings.deal");
-  if (entity === "sales") return t("settings.entity.sales");
-  if (entity === "catalog") return t("settings.entity.catalog");
-  return entity;
-}
-
-function auditEventTitle(action: string, entityType: string, t: Translate) {
-  const actionKey = action === "create" || action === "update" || action === "delete" || action === "export" || action === "login" ? action : "change";
-  const entityKey = entityType === "BusinessRole" || entityType === "BusinessMembership" || entityType === "ImportJob" || entityType === "LeadForm" ? entityType : "record";
-  return t("settings.auditEventTitle", {
-    action: t(`settings.auditAction.${actionKey}`),
-    entity: t(`settings.auditEntity.${entityKey}`),
-  });
-}
-
-function riskLabel(risk: string, t: Translate) {
-  if (risk === "low" || risk === "medium" || risk === "high" || risk === "critical") return t(`settings.risk.${risk}`);
-  return t("settings.risk.low");
-}
-
-function loginStatusLabel(status: string, t: Translate) {
-  if (status === "success") return t("settings.loginStatus.success");
-  if (status === "failed") return t("settings.loginStatus.failed");
-  return status;
-}
-
-function customFieldSummary(field: CustomFieldDefinition, t: Translate) {
-  return t("settings.customFieldSummary", {
-    entity: t(`settings.customFieldEntity.${field.entity_type}`),
-    type: t(`settings.customFieldType.${field.field_type}`),
-  });
-}
-
-function groupLevel(role: BusinessRole, resources: string[]) {
-  const permissions = role.permissions.filter((permission) => resources.includes(permission.resource));
-  if (!permissions.length || permissions.every((permission) => !permission.is_allowed)) return "none";
-  const scopes = permissions.filter((permission) => permission.is_allowed).map((permission) => permission.scope);
-  if (scopes.includes("business")) return "business";
-  if (scopes.includes("team")) return "team";
-  if (scopes.includes("own")) return "own";
-  return "none";
-}
-
-function riskClass(risk: string) {
-  const classes: Record<string, string> = {
-    low: "rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600",
-    medium: "rounded-full bg-amber-50 px-2.5 py-1 text-xs font-black text-amber-700",
-    high: "rounded-full bg-orange-50 px-2.5 py-1 text-xs font-black text-orange-700",
-    critical: "rounded-full bg-red-50 px-2.5 py-1 text-xs font-black text-red-700",
-  };
-  return classes[risk] || classes.low;
 }

@@ -15,15 +15,20 @@ export function PlatformPlaceholderPage({ titleKey, eyebrowKey, descriptionKey, 
 
   return (
     <div className="space-y-5">
-      <section className="glass-panel rounded-[2rem] p-6 sm:p-8">
+      <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">{t(eyebrowKey)}</p>
             <h1 className="mt-3 text-4xl font-semibold tracking-tight text-midnight sm:text-5xl">{t(titleKey)}</h1>
             <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">{t(descriptionKey)}</p>
           </div>
-          <div className="rounded-3xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
-            {t("platform.placeholder.accessLayerActive")}
+          <div className="flex flex-wrap gap-2">
+            <div className="rounded-3xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+              {t("platform.placeholder.accessLayerActive")}
+            </div>
+            <div className="rounded-3xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+              {t("platform.placeholder.internalOnly")}
+            </div>
           </div>
         </div>
       </section>
@@ -32,13 +37,16 @@ export function PlatformPlaceholderPage({ titleKey, eyebrowKey, descriptionKey, 
         <Card>
           <CardBody className="p-6">
             <div className="flex items-start gap-4">
-              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-ai-gradient text-white shadow-glow">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-slate-900 text-white">
                 <ShieldCheck size={23} />
               </div>
               <div>
                 <h2 className="text-xl font-semibold tracking-tight text-midnight">{t("platform.placeholder.placeholderOnly")}</h2>
                 <p className="mt-2 leading-7 text-slate-600">
                   {t("platform.placeholder.placeholderText")}
+                </p>
+                <p className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold leading-6 text-amber-800">
+                  {t("platform.placeholder.notMerchantFeature")}
                 </p>
               </div>
             </div>

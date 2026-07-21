@@ -1,0 +1,591 @@
+[
+  {
+    "route": "/app",
+    "file": "C:\\Users\\user\\Desktop\\ZANI-main\\output\\playwright\\ui-audit-live\\desktop-app-dashboard.png",
+    "metrics": {
+      "path": "/login",
+      "viewport": "1440x950",
+      "scroll": "1440x950",
+      "overflow": false,
+      "visibleButtons": 8,
+      "visibleInputs": 3,
+      "tableRows": 0,
+      "cards": 0,
+      "headings": [
+        "ZANI",
+        "auth.noAccount",
+        "auth.loginHeroPrefix auth.loginHeroTime",
+        "auth.featureCrmTitle",
+        "auth.featureAiTitle",
+        "auth.featureBotsTitle",
+        "auth.featureIntegrationsTitle",
+        "Войти в Zani"
+      ],
+      "navLabels": [],
+      "mainText": "auth.backToSite ZANI auth.brandTagline auth.noAccount auth.create RU KK EN auth.loginHeroPrefix auth.loginHeroTime auth.loginHeroText auth.featureCrmTitle auth.featureCrmText auth.featureAiTitle auth.featureAiText auth.featureBotsTitle auth.featureBotsText ZANI Главная Клиенты Сделки Боты Аналитика auth.previewWelcome auth.previewScanned auth.previewNewLeads 248 +24% auth.previewBookings 32 +18% auth.previewRevenue 2 450 800 ₸ +32% auth.previewPipeline Войти в Zani auth.signInAppCopy G Google скоро  Apple скоро auth.emailDivider Email Пароль Забыли пароль? Зарегистрировать бизнес Войти"
+    },
+    "errors": [],
+    "badResponses": [
+      "400 http://127.0.0.1:5173/api/auth/token/refresh/",
+      "400 http://127.0.0.1:5173/api/auth/token/refresh/"
+    ]
+  },
+  {
+    "route": "/app/leads",
+    "file": "C:\\Users\\user\\Desktop\\ZANI-main\\output\\playwright\\ui-audit-live\\desktop-leads.png",
+    "metrics": {
+      "path": "/login",
+      "viewport": "1440x950",
+      "scroll": "1440x950",
+      "overflow": false,
+      "visibleButtons": 8,
+      "visibleInputs": 3,
+      "tableRows": 0,
+      "cards": 0,
+      "headings": [
+        "ZANI",
+        "auth.noAccount",
+        "auth.loginHeroPrefix auth.loginHeroTime",
+        "auth.featureCrmTitle",
+        "auth.featureAiTitle",
+        "auth.featureBotsTitle",
+        "auth.featureIntegrationsTitle",
+        "Войти в Zani"
+      ],
+      "navLabels": [],
+      "mainText": "auth.backToSite ZANI auth.brandTagline auth.noAccount auth.create RU KK EN auth.loginHeroPrefix auth.loginHeroTime auth.loginHeroText auth.featureCrmTitle auth.featureCrmText auth.featureAiTitle auth.featureAiText auth.featureBotsTitle auth.featureBotsText ZANI Главная Клиенты Сделки Боты Аналитика auth.previewWelcome auth.previewScanned auth.previewNewLeads 248 +24% auth.previewBookings 32 +18% auth.previewRevenue 2 450 800 ₸ +32% auth.previewPipeline Войти в Zani auth.signInAppCopy G Google скоро  Apple скоро auth.emailDivider Email Пароль Забыли пароль? Зарегистрировать бизнес Войти"
+    },
+    "errors": [],
+    "badResponses": [
+      "400 http://127.0.0.1:5173/api/auth/token/refresh/",
+      "400 http://127.0.0.1:5173/api/auth/token/refresh/"
+    ]
+  },
+  {
+    "route": "/app/deals",
+    "file": "C:\\Users\\user\\Desktop\\ZANI-main\\output\\playwright\\ui-audit-live\\desktop-deals.png",
+    "metrics": {
+      "path": "/login",
+      "viewport": "1440x950",
+      "scroll": "1440x950",
+      "overflow": false,
+      "visibleButtons": 8,
+      "visibleInputs": 3,
+      "tableRows": 0,
+      "cards": 0,
+      "headings": [
+        "ZANI",
+        "auth.noAccount",
+        "auth.loginHeroPrefix auth.loginHeroTime",
+        "auth.featureCrmTitle",
+        "auth.featureAiTitle",
+        "auth.featureBotsTitle",
+        "auth.featureIntegrationsTitle",
+        "Войти в Zani"
+      ],
+      "navLabels": [],
+      "mainText": "auth.backToSite ZANI auth.brandTagline auth.noAccount auth.create RU KK EN auth.loginHeroPrefix auth.loginHeroTime auth.loginHeroText auth.featureCrmTitle auth.featureCrmText auth.featureAiTitle auth.featureAiText auth.featureBotsTitle auth.featureBotsText ZANI Главная Клиенты Сделки Боты Аналитика auth.previewWelcome auth.previewScanned auth.previewNewLeads 248 +24% auth.previewBookings 32 +18% auth.previewRevenue 2 450 800 ₸ +32% auth.previewPipeline Войти в Zani auth.signInAppCopy G Google скоро  Apple скоро auth.emailDivider Email Пароль Забыли пароль? Зарегистрировать бизнес Войти"
+    },
+    "errors": [],
+    "badResponses": [
+      "400 http://127.0.0.1:5173/api/auth/token/refresh/",
+      "400 http://127.0.0.1:5173/api/auth/token/refresh/"
+    ]
+  },
+  {
+    "route": "/app/clients",
+    "file": "C:\\Users\\user\\Desktop\\ZANI-main\\output\\playwright\\ui-audit-live\\desktop-clients.png",
+    "metrics": {
+      "path": "/login",
+      "viewport": "1440x950",
+      "scroll": "1440x950",
+      "overflow": false,
+      "visibleButtons": 8,
+      "visibleInputs": 3,
+      "tableRows": 0,
+      "cards": 0,
+      "headings": [
+        "ZANI",
+        "auth.noAccount",
+        "auth.loginHeroPrefix auth.loginHeroTime",
+        "auth.featureCrmTitle",
+        "auth.featureAiTitle",
+        "auth.featureBotsTitle",
+        "auth.featureIntegrationsTitle",
+        "Войти в Zani"
+      ],
+      "navLabels": [],
+      "mainText": "auth.backToSite ZANI auth.brandTagline auth.noAccount auth.create RU KK EN auth.loginHeroPrefix auth.loginHeroTime auth.loginHeroText auth.featureCrmTitle auth.featureCrmText auth.featureAiTitle auth.featureAiText auth.featureBotsTitle auth.featureBotsText ZANI Главная Клиенты Сделки Боты Аналитика auth.previewWelcome auth.previewScanned auth.previewNewLeads 248 +24% auth.previewBookings 32 +18% auth.previewRevenue 2 450 800 ₸ +32% auth.previewPipeline Войти в Zani auth.signInAppCopy G Google скоро  Apple скоро auth.emailDivider Email Пароль Забыли пароль? Зарегистрировать бизнес Войти"
+    },
+    "errors": [],
+    "badResponses": [
+      "400 http://127.0.0.1:5173/api/auth/token/refresh/",
+      "400 http://127.0.0.1:5173/api/auth/token/refresh/"
+    ]
+  },
+  {
+    "route": "/app/tasks",
+    "file": "C:\\Users\\user\\Desktop\\ZANI-main\\output\\playwright\\ui-audit-live\\desktop-tasks.png",
+    "metrics": {
+      "path": "/login",
+      "viewport": "1440x950",
+      "scroll": "1440x950",
+      "overflow": false,
+      "visibleButtons": 8,
+      "visibleInputs": 3,
+      "tableRows": 0,
+      "cards": 0,
+      "headings": [
+        "ZANI",
+        "auth.noAccount",
+        "auth.loginHeroPrefix auth.loginHeroTime",
+        "auth.featureCrmTitle",
+        "auth.featureAiTitle",
+        "auth.featureBotsTitle",
+        "auth.featureIntegrationsTitle",
+        "Войти в Zani"
+      ],
+      "navLabels": [],
+      "mainText": "auth.backToSite ZANI auth.brandTagline auth.noAccount auth.create RU KK EN auth.loginHeroPrefix auth.loginHeroTime auth.loginHeroText auth.featureCrmTitle auth.featureCrmText auth.featureAiTitle auth.featureAiText auth.featureBotsTitle auth.featureBotsText ZANI Главная Клиенты Сделки Боты Аналитика auth.previewWelcome auth.previewScanned auth.previewNewLeads 248 +24% auth.previewBookings 32 +18% auth.previewRevenue 2 450 800 ₸ +32% auth.previewPipeline Войти в Zani auth.signInAppCopy G Google скоро  Apple скоро auth.emailDivider Email Пароль Забыли пароль? Зарегистрировать бизнес Войти"
+    },
+    "errors": [],
+    "badResponses": [
+      "400 http://127.0.0.1:5173/api/auth/token/refresh/",
+      "400 http://127.0.0.1:5173/api/auth/token/refresh/"
+    ]
+  },
+  {
+    "route": "/app/calendar",
+    "file": "C:\\Users\\user\\Desktop\\ZANI-main\\output\\playwright\\ui-audit-live\\desktop-calendar.png",
+    "metrics": {
+      "path": "/login",
+      "viewport": "1440x950",
+      "scroll": "1440x950",
+      "overflow": false,
+      "visibleButtons": 8,
+      "visibleInputs": 3,
+      "tableRows": 0,
+      "cards": 0,
+      "headings": [
+        "ZANI",
+        "auth.noAccount",
+        "auth.loginHeroPrefix auth.loginHeroTime",
+        "auth.featureCrmTitle",
+        "auth.featureAiTitle",
+        "auth.featureBotsTitle",
+        "auth.featureIntegrationsTitle",
+        "Войти в Zani"
+      ],
+      "navLabels": [],
+      "mainText": "auth.backToSite ZANI auth.brandTagline auth.noAccount auth.create RU KK EN auth.loginHeroPrefix auth.loginHeroTime auth.loginHeroText auth.featureCrmTitle auth.featureCrmText auth.featureAiTitle auth.featureAiText auth.featureBotsTitle auth.featureBotsText ZANI Главная Клиенты Сделки Боты Аналитика auth.previewWelcome auth.previewScanned auth.previewNewLeads 248 +24% auth.previewBookings 32 +18% auth.previewRevenue 2 450 800 ₸ +32% auth.previewPipeline Войти в Zani auth.signInAppCopy G Google скоро  Apple скоро auth.emailDivider Email Пароль Забыли пароль? Зарегистрировать бизнес Войти"
+    },
+    "errors": [],
+    "badResponses": [
+      "400 http://127.0.0.1:5173/api/auth/token/refresh/",
+      "400 http://127.0.0.1:5173/api/auth/token/refresh/"
+    ]
+  },
+  {
+    "route": "/app/conversations",
+    "file": "C:\\Users\\user\\Desktop\\ZANI-main\\output\\playwright\\ui-audit-live\\desktop-conversations.png",
+    "metrics": {
+      "path": "/login",
+      "viewport": "1440x950",
+      "scroll": "1440x950",
+      "overflow": false,
+      "visibleButtons": 8,
+      "visibleInputs": 3,
+      "tableRows": 0,
+      "cards": 0,
+      "headings": [
+        "ZANI",
+        "auth.noAccount",
+        "auth.loginHeroPrefix auth.loginHeroTime",
+        "auth.featureCrmTitle",
+        "auth.featureAiTitle",
+        "auth.featureBotsTitle",
+        "auth.featureIntegrationsTitle",
+        "Войти в Zani"
+      ],
+      "navLabels": [],
+      "mainText": "auth.backToSite ZANI auth.brandTagline auth.noAccount auth.create RU KK EN auth.loginHeroPrefix auth.loginHeroTime auth.loginHeroText auth.featureCrmTitle auth.featureCrmText auth.featureAiTitle auth.featureAiText auth.featureBotsTitle auth.featureBotsText ZANI Главная Клиенты Сделки Боты Аналитика auth.previewWelcome auth.previewScanned auth.previewNewLeads 248 +24% auth.previewBookings 32 +18% auth.previewRevenue 2 450 800 ₸ +32% auth.previewPipeline Войти в Zani auth.signInAppCopy G Google скоро  Apple скоро auth.emailDivider Email Пароль Забыли пароль? Зарегистрировать бизнес Войти"
+    },
+    "errors": [],
+    "badResponses": [
+      "400 http://127.0.0.1:5173/api/auth/token/refresh/",
+      "400 http://127.0.0.1:5173/api/auth/token/refresh/"
+    ]
+  },
+  {
+    "route": "/app/integrations",
+    "file": "C:\\Users\\user\\Desktop\\ZANI-main\\output\\playwright\\ui-audit-live\\desktop-integrations.png",
+    "metrics": {
+      "path": "/login",
+      "viewport": "1440x950",
+      "scroll": "1440x950",
+      "overflow": false,
+      "visibleButtons": 8,
+      "visibleInputs": 3,
+      "tableRows": 0,
+      "cards": 0,
+      "headings": [
+        "ZANI",
+        "auth.noAccount",
+        "auth.loginHeroPrefix auth.loginHeroTime",
+        "auth.featureCrmTitle",
+        "auth.featureAiTitle",
+        "auth.featureBotsTitle",
+        "auth.featureIntegrationsTitle",
+        "Войти в Zani"
+      ],
+      "navLabels": [],
+      "mainText": "auth.backToSite ZANI auth.brandTagline auth.noAccount auth.create RU KK EN auth.loginHeroPrefix auth.loginHeroTime auth.loginHeroText auth.featureCrmTitle auth.featureCrmText auth.featureAiTitle auth.featureAiText auth.featureBotsTitle auth.featureBotsText ZANI Главная Клиенты Сделки Боты Аналитика auth.previewWelcome auth.previewScanned auth.previewNewLeads 248 +24% auth.previewBookings 32 +18% auth.previewRevenue 2 450 800 ₸ +32% auth.previewPipeline Войти в Zani auth.signInAppCopy G Google скоро  Apple скоро auth.emailDivider Email Пароль Забыли пароль? Зарегистрировать бизнес Войти"
+    },
+    "errors": [],
+    "badResponses": [
+      "400 http://127.0.0.1:5173/api/auth/token/refresh/",
+      "400 http://127.0.0.1:5173/api/auth/token/refresh/"
+    ]
+  },
+  {
+    "route": "/app/analytics",
+    "file": "C:\\Users\\user\\Desktop\\ZANI-main\\output\\playwright\\ui-audit-live\\desktop-analytics.png",
+    "metrics": {
+      "path": "/login",
+      "viewport": "1440x950",
+      "scroll": "1440x950",
+      "overflow": false,
+      "visibleButtons": 8,
+      "visibleInputs": 3,
+      "tableRows": 0,
+      "cards": 0,
+      "headings": [
+        "ZANI",
+        "auth.noAccount",
+        "auth.loginHeroPrefix auth.loginHeroTime",
+        "auth.featureCrmTitle",
+        "auth.featureAiTitle",
+        "auth.featureBotsTitle",
+        "auth.featureIntegrationsTitle",
+        "Войти в Zani"
+      ],
+      "navLabels": [],
+      "mainText": "auth.backToSite ZANI auth.brandTagline auth.noAccount auth.create RU KK EN auth.loginHeroPrefix auth.loginHeroTime auth.loginHeroText auth.featureCrmTitle auth.featureCrmText auth.featureAiTitle auth.featureAiText auth.featureBotsTitle auth.featureBotsText ZANI Главная Клиенты Сделки Боты Аналитика auth.previewWelcome auth.previewScanned auth.previewNewLeads 248 +24% auth.previewBookings 32 +18% auth.previewRevenue 2 450 800 ₸ +32% auth.previewPipeline Войти в Zani auth.signInAppCopy G Google скоро  Apple скоро auth.emailDivider Email Пароль Забыли пароль? Зарегистрировать бизнес Войти"
+    },
+    "errors": [],
+    "badResponses": [
+      "400 http://127.0.0.1:5173/api/auth/token/refresh/",
+      "400 http://127.0.0.1:5173/api/auth/token/refresh/"
+    ]
+  },
+  {
+    "route": "/app/settings",
+    "file": "C:\\Users\\user\\Desktop\\ZANI-main\\output\\playwright\\ui-audit-live\\desktop-settings.png",
+    "metrics": {
+      "path": "/login",
+      "viewport": "1440x950",
+      "scroll": "1440x950",
+      "overflow": false,
+      "visibleButtons": 8,
+      "visibleInputs": 3,
+      "tableRows": 0,
+      "cards": 0,
+      "headings": [
+        "ZANI",
+        "auth.noAccount",
+        "auth.loginHeroPrefix auth.loginHeroTime",
+        "auth.featureCrmTitle",
+        "auth.featureAiTitle",
+        "auth.featureBotsTitle",
+        "auth.featureIntegrationsTitle",
+        "Войти в Zani"
+      ],
+      "navLabels": [],
+      "mainText": "auth.backToSite ZANI auth.brandTagline auth.noAccount auth.create RU KK EN auth.loginHeroPrefix auth.loginHeroTime auth.loginHeroText auth.featureCrmTitle auth.featureCrmText auth.featureAiTitle auth.featureAiText auth.featureBotsTitle auth.featureBotsText ZANI Главная Клиенты Сделки Боты Аналитика auth.previewWelcome auth.previewScanned auth.previewNewLeads 248 +24% auth.previewBookings 32 +18% auth.previewRevenue 2 450 800 ₸ +32% auth.previewPipeline Войти в Zani auth.signInAppCopy G Google скоро  Apple скоро auth.emailDivider Email Пароль Забыли пароль? Зарегистрировать бизнес Войти"
+    },
+    "errors": [],
+    "badResponses": [
+      "400 http://127.0.0.1:5173/api/auth/token/refresh/",
+      "400 http://127.0.0.1:5173/api/auth/token/refresh/"
+    ]
+  },
+  {
+    "route": "/app/ai-assistant",
+    "file": "C:\\Users\\user\\Desktop\\ZANI-main\\output\\playwright\\ui-audit-live\\desktop-ai-assistant.png",
+    "metrics": {
+      "path": "/login",
+      "viewport": "1440x950",
+      "scroll": "1440x950",
+      "overflow": false,
+      "visibleButtons": 8,
+      "visibleInputs": 3,
+      "tableRows": 0,
+      "cards": 0,
+      "headings": [
+        "ZANI",
+        "auth.noAccount",
+        "auth.loginHeroPrefix auth.loginHeroTime",
+        "auth.featureCrmTitle",
+        "auth.featureAiTitle",
+        "auth.featureBotsTitle",
+        "auth.featureIntegrationsTitle",
+        "Войти в Zani"
+      ],
+      "navLabels": [],
+      "mainText": "auth.backToSite ZANI auth.brandTagline auth.noAccount auth.create RU KK EN auth.loginHeroPrefix auth.loginHeroTime auth.loginHeroText auth.featureCrmTitle auth.featureCrmText auth.featureAiTitle auth.featureAiText auth.featureBotsTitle auth.featureBotsText ZANI Главная Клиенты Сделки Боты Аналитика auth.previewWelcome auth.previewScanned auth.previewNewLeads 248 +24% auth.previewBookings 32 +18% auth.previewRevenue 2 450 800 ₸ +32% auth.previewPipeline Войти в Zani auth.signInAppCopy G Google скоро  Apple скоро auth.emailDivider Email Пароль Забыли пароль? Зарегистрировать бизнес Войти"
+    },
+    "errors": [],
+    "badResponses": [
+      "400 http://127.0.0.1:5173/api/auth/token/refresh/",
+      "400 http://127.0.0.1:5173/api/auth/token/refresh/"
+    ]
+  },
+  {
+    "route": "/app/automations",
+    "file": "C:\\Users\\user\\Desktop\\ZANI-main\\output\\playwright\\ui-audit-live\\desktop-automations.png",
+    "metrics": {
+      "path": "/login",
+      "viewport": "1440x950",
+      "scroll": "1440x950",
+      "overflow": false,
+      "visibleButtons": 8,
+      "visibleInputs": 3,
+      "tableRows": 0,
+      "cards": 0,
+      "headings": [
+        "ZANI",
+        "auth.noAccount",
+        "auth.loginHeroPrefix auth.loginHeroTime",
+        "auth.featureCrmTitle",
+        "auth.featureAiTitle",
+        "auth.featureBotsTitle",
+        "auth.featureIntegrationsTitle",
+        "Войти в Zani"
+      ],
+      "navLabels": [],
+      "mainText": "auth.backToSite ZANI auth.brandTagline auth.noAccount auth.create RU KK EN auth.loginHeroPrefix auth.loginHeroTime auth.loginHeroText auth.featureCrmTitle auth.featureCrmText auth.featureAiTitle auth.featureAiText auth.featureBotsTitle auth.featureBotsText ZANI Главная Клиенты Сделки Боты Аналитика auth.previewWelcome auth.previewScanned auth.previewNewLeads 248 +24% auth.previewBookings 32 +18% auth.previewRevenue 2 450 800 ₸ +32% auth.previewPipeline Войти в Zani auth.signInAppCopy G Google скоро  Apple скоро auth.emailDivider Email Пароль Забыли пароль? Зарегистрировать бизнес Войти"
+    },
+    "errors": [],
+    "badResponses": [
+      "400 http://127.0.0.1:5173/api/auth/token/refresh/",
+      "400 http://127.0.0.1:5173/api/auth/token/refresh/"
+    ]
+  },
+  {
+    "route": "/app",
+    "file": "C:\\Users\\user\\Desktop\\ZANI-main\\output\\playwright\\ui-audit-live\\mobile-app-dashboard.png",
+    "metrics": {
+      "path": "/login",
+      "viewport": "393x852",
+      "scroll": "393x852",
+      "overflow": false,
+      "visibleButtons": 7,
+      "visibleInputs": 3,
+      "tableRows": 0,
+      "cards": 0,
+      "headings": [
+        "ZANI",
+        "auth.noAccount",
+        "auth.loginHeroPrefix auth.loginHeroTime",
+        "auth.featureCrmTitle",
+        "auth.featureAiTitle",
+        "auth.featureBotsTitle",
+        "auth.featureIntegrationsTitle",
+        "Войти в Zani"
+      ],
+      "navLabels": [],
+      "mainText": "ZANI auth.brandTagline auth.create RU KK EN auth.loginHeroPrefix auth.loginHeroTime auth.loginHeroText Войти в Zani G Google скоро  Apple скоро auth.emailDivider Email Пароль Забыли пароль? Зарегистрировать бизнес Войти"
+    },
+    "errors": [],
+    "badResponses": [
+      "400 http://127.0.0.1:5173/api/auth/token/refresh/",
+      "400 http://127.0.0.1:5173/api/auth/token/refresh/"
+    ]
+  },
+  {
+    "route": "/app/leads",
+    "file": "C:\\Users\\user\\Desktop\\ZANI-main\\output\\playwright\\ui-audit-live\\mobile-leads.png",
+    "metrics": {
+      "path": "/login",
+      "viewport": "393x852",
+      "scroll": "393x852",
+      "overflow": false,
+      "visibleButtons": 7,
+      "visibleInputs": 3,
+      "tableRows": 0,
+      "cards": 0,
+      "headings": [
+        "ZANI",
+        "auth.noAccount",
+        "auth.loginHeroPrefix auth.loginHeroTime",
+        "auth.featureCrmTitle",
+        "auth.featureAiTitle",
+        "auth.featureBotsTitle",
+        "auth.featureIntegrationsTitle",
+        "Войти в Zani"
+      ],
+      "navLabels": [],
+      "mainText": "ZANI auth.brandTagline auth.create RU KK EN auth.loginHeroPrefix auth.loginHeroTime auth.loginHeroText Войти в Zani G Google скоро  Apple скоро auth.emailDivider Email Пароль Забыли пароль? Зарегистрировать бизнес Войти"
+    },
+    "errors": [],
+    "badResponses": [
+      "429 http://127.0.0.1:5173/api/auth/token/refresh/",
+      "429 http://127.0.0.1:5173/api/auth/token/refresh/"
+    ]
+  },
+  {
+    "route": "/app/conversations",
+    "file": "C:\\Users\\user\\Desktop\\ZANI-main\\output\\playwright\\ui-audit-live\\mobile-conversations.png",
+    "metrics": {
+      "path": "/login",
+      "viewport": "393x852",
+      "scroll": "393x852",
+      "overflow": false,
+      "visibleButtons": 7,
+      "visibleInputs": 3,
+      "tableRows": 0,
+      "cards": 0,
+      "headings": [
+        "ZANI",
+        "auth.noAccount",
+        "auth.loginHeroPrefix auth.loginHeroTime",
+        "auth.featureCrmTitle",
+        "auth.featureAiTitle",
+        "auth.featureBotsTitle",
+        "auth.featureIntegrationsTitle",
+        "Войти в Zani"
+      ],
+      "navLabels": [],
+      "mainText": "ZANI auth.brandTagline auth.create RU KK EN auth.loginHeroPrefix auth.loginHeroTime auth.loginHeroText Войти в Zani G Google скоро  Apple скоро auth.emailDivider Email Пароль Забыли пароль? Зарегистрировать бизнес Войти"
+    },
+    "errors": [],
+    "badResponses": [
+      "429 http://127.0.0.1:5173/api/auth/token/refresh/",
+      "429 http://127.0.0.1:5173/api/auth/token/refresh/"
+    ]
+  },
+  {
+    "route": "/app/clients",
+    "file": "C:\\Users\\user\\Desktop\\ZANI-main\\output\\playwright\\ui-audit-live\\mobile-clients.png",
+    "metrics": {
+      "path": "/login",
+      "viewport": "393x852",
+      "scroll": "393x852",
+      "overflow": false,
+      "visibleButtons": 7,
+      "visibleInputs": 3,
+      "tableRows": 0,
+      "cards": 0,
+      "headings": [
+        "ZANI",
+        "auth.noAccount",
+        "auth.loginHeroPrefix auth.loginHeroTime",
+        "auth.featureCrmTitle",
+        "auth.featureAiTitle",
+        "auth.featureBotsTitle",
+        "auth.featureIntegrationsTitle",
+        "Войти в Zani"
+      ],
+      "navLabels": [],
+      "mainText": "ZANI auth.brandTagline auth.create RU KK EN auth.loginHeroPrefix auth.loginHeroTime auth.loginHeroText Войти в Zani G Google скоро  Apple скоро auth.emailDivider Email Пароль Забыли пароль? Зарегистрировать бизнес Войти"
+    },
+    "errors": [],
+    "badResponses": [
+      "429 http://127.0.0.1:5173/api/auth/token/refresh/",
+      "429 http://127.0.0.1:5173/api/auth/token/refresh/"
+    ]
+  },
+  {
+    "route": "/app/tasks",
+    "file": "C:\\Users\\user\\Desktop\\ZANI-main\\output\\playwright\\ui-audit-live\\mobile-tasks.png",
+    "metrics": {
+      "path": "/login",
+      "viewport": "393x852",
+      "scroll": "393x852",
+      "overflow": false,
+      "visibleButtons": 7,
+      "visibleInputs": 3,
+      "tableRows": 0,
+      "cards": 0,
+      "headings": [
+        "ZANI",
+        "auth.noAccount",
+        "auth.loginHeroPrefix auth.loginHeroTime",
+        "auth.featureCrmTitle",
+        "auth.featureAiTitle",
+        "auth.featureBotsTitle",
+        "auth.featureIntegrationsTitle",
+        "Войти в Zani"
+      ],
+      "navLabels": [],
+      "mainText": "ZANI auth.brandTagline auth.create RU KK EN auth.loginHeroPrefix auth.loginHeroTime auth.loginHeroText Войти в Zani G Google скоро  Apple скоро auth.emailDivider Email Пароль Забыли пароль? Зарегистрировать бизнес Войти"
+    },
+    "errors": [],
+    "badResponses": [
+      "429 http://127.0.0.1:5173/api/auth/token/refresh/",
+      "429 http://127.0.0.1:5173/api/auth/token/refresh/"
+    ]
+  },
+  {
+    "route": "/app/calendar",
+    "file": "C:\\Users\\user\\Desktop\\ZANI-main\\output\\playwright\\ui-audit-live\\mobile-calendar.png",
+    "metrics": {
+      "path": "/login",
+      "viewport": "393x852",
+      "scroll": "393x852",
+      "overflow": false,
+      "visibleButtons": 7,
+      "visibleInputs": 3,
+      "tableRows": 0,
+      "cards": 0,
+      "headings": [
+        "ZANI",
+        "auth.noAccount",
+        "auth.loginHeroPrefix auth.loginHeroTime",
+        "auth.featureCrmTitle",
+        "auth.featureAiTitle",
+        "auth.featureBotsTitle",
+        "auth.featureIntegrationsTitle",
+        "Войти в Zani"
+      ],
+      "navLabels": [],
+      "mainText": "ZANI auth.brandTagline auth.create RU KK EN auth.loginHeroPrefix auth.loginHeroTime auth.loginHeroText Войти в Zani G Google скоро  Apple скоро auth.emailDivider Email Пароль Забыли пароль? Зарегистрировать бизнес Войти"
+    },
+    "errors": [],
+    "badResponses": [
+      "429 http://127.0.0.1:5173/api/auth/token/refresh/",
+      "429 http://127.0.0.1:5173/api/auth/token/refresh/"
+    ]
+  },
+  {
+    "route": "/app/settings",
+    "file": "C:\\Users\\user\\Desktop\\ZANI-main\\output\\playwright\\ui-audit-live\\mobile-settings.png",
+    "metrics": {
+      "path": "/login",
+      "viewport": "393x852",
+      "scroll": "393x852",
+      "overflow": false,
+      "visibleButtons": 7,
+      "visibleInputs": 3,
+      "tableRows": 0,
+      "cards": 0,
+      "headings": [
+        "ZANI",
+        "auth.noAccount",
+        "auth.loginHeroPrefix auth.loginHeroTime",
+        "auth.featureCrmTitle",
+        "auth.featureAiTitle",
+        "auth.featureBotsTitle",
+        "auth.featureIntegrationsTitle",
+        "Войти в Zani"
+      ],
+      "navLabels": [],
+      "mainText": "ZANI auth.brandTagline auth.create RU KK EN auth.loginHeroPrefix auth.loginHeroTime auth.loginHeroText Войти в Zani G Google скоро  Apple скоро auth.emailDivider Email Пароль Забыли пароль? Зарегистрировать бизнес Войти"
+    },
+    "errors": [],
+    "badResponses": [
+      "429 http://127.0.0.1:5173/api/auth/token/refresh/",
+      "429 http://127.0.0.1:5173/api/auth/token/refresh/"
+    ]
+  }
+]

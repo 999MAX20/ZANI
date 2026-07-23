@@ -141,6 +141,31 @@ test("client, lead, deal, appointment, conversation and task workspaces render e
   const businessId = me.businesses?.[0]?.id;
   expect(businessId).toBeTruthy();
 
+  const capabilitiesResponse = await page.request.get(
+    `${apiBaseURL}/api/business-capabilities/`,
+    { headers },
+  );
+  expect(capabilitiesResponse.ok()).toBeTruthy();
+  const capabilitiesPayload = await capabilitiesResponse.json();
+  const capabilities = Array.isArray(capabilitiesPayload)
+    ? capabilitiesPayload
+    : capabilitiesPayload.results || [];
+  const dealsCapability = capabilities.find(
+    (candidate: { business?: number; module_key?: string }) =>
+      candidate.business === businessId && candidate.module_key === "deals",
+  );
+  expect(dealsCapability).toBeTruthy();
+  if (!dealsCapability.is_enabled) {
+    const capabilityResponse = await page.request.patch(
+      `${apiBaseURL}/api/business-capabilities/${dealsCapability.id}/`,
+      {
+        headers,
+        data: { is_enabled: true },
+      },
+    );
+    expect(capabilityResponse.ok()).toBeTruthy();
+  }
+
   const clientResponse = await page.request.post(`${apiBaseURL}/api/clients/`, {
     headers,
     data: {
@@ -261,7 +286,20 @@ test("client, lead, deal, appointment, conversation and task workspaces render e
   const existingBots = Array.isArray(botsPayload)
     ? botsPayload
     : botsPayload.results || [];
-  let bot = existingBots[0];
+  let bot = existingBots.find(
+    (candidate: { status?: string }) => candidate.status === "active",
+  );
+  if (!bot && existingBots[0]) {
+    const botResponse = await page.request.patch(
+      `${apiBaseURL}/api/bots/${existingBots[0].id}/`,
+      {
+        headers,
+        data: { status: "active" },
+      },
+    );
+    expect(botResponse.ok()).toBeTruthy();
+    bot = await botResponse.json();
+  }
   if (!bot) {
     const botResponse = await page.request.post(`${apiBaseURL}/api/bots/`, {
       headers,
@@ -276,43 +314,78 @@ test("client, lead, deal, appointment, conversation and task workspaces render e
     bot = await botResponse.json();
   }
 
-  const conversationResponse = await page.request.post(
+  const channelsResponse = await page.request.get(
+    `${apiBaseURL}/api/bot-channels/`,
+    { headers },
+  );
+  expect(channelsResponse.ok()).toBeTruthy();
+  const channelsPayload = await channelsResponse.json();
+  const existingChannels = Array.isArray(channelsPayload)
+    ? channelsPayload
+    : channelsPayload.results || [];
+  let websiteChannel = existingChannels.find(
+    (candidate: { bot?: number; channel?: string }) =>
+      candidate.bot === bot.id && candidate.channel === "website",
+  );
+  if (websiteChannel && !["active", "draft"].includes(websiteChannel.status)) {
+    const channelResponse = await page.request.patch(
+      `${apiBaseURL}/api/bot-channels/${websiteChannel.id}/`,
+      {
+        headers,
+        data: { status: "active" },
+      },
+    );
+    expect(channelResponse.ok()).toBeTruthy();
+    websiteChannel = await channelResponse.json();
+  }
+  if (!websiteChannel) {
+    const channelResponse = await page.request.post(
+      `${apiBaseURL}/api/bot-channels/`,
+      {
+        headers,
+        data: {
+          bot: bot.id,
+          channel: "website",
+          status: "active",
+          external_id: `workspace-website-${unique}`,
+        },
+      },
+    );
+    expect(channelResponse.ok()).toBeTruthy();
+    websiteChannel = await channelResponse.json();
+  }
+
+  const publicConversationResponse = await page.request.post(
+    `${apiBaseURL}/api/public/website-chat/${websiteChannel.public_token}/conversations/`,
+    {
+      data: {
+        full_name: client.full_name,
+        phone: client.phone,
+        email: client.email,
+        message: `E2E workspace conversation message ${unique}`,
+        external_user_id: `workspace-visitor-${unique}`,
+      },
+    },
+  );
+  expect(publicConversationResponse.ok()).toBeTruthy();
+  const publicConversation = await publicConversationResponse.json();
+
+  const conversationsResponse = await page.request.get(
     `${apiBaseURL}/api/bot-conversations/`,
     {
       headers,
-      data: {
-        business: businessId,
-        bot: bot.id,
-        channel: "website",
-        external_user_id: `workspace-visitor-${unique}`,
-        client: client.id,
-        lead: lead.id,
-        deal: deal.id,
-        priority: "high",
-        bot_enabled: true,
-        handoff_required: true,
-        handoff_reason: "E2E workspace handoff",
-      },
     },
   );
-  expect(conversationResponse.ok()).toBeTruthy();
-  const conversation = await conversationResponse.json();
-
-  const messageResponse = await page.request.post(
-    `${apiBaseURL}/api/bot-messages/`,
-    {
-      headers,
-      data: {
-        conversation: conversation.id,
-        direction: "inbound",
-        sender_type: "client",
-        text: `E2E workspace conversation message ${unique}`,
-        payload_json: { source: "entity_workspace_e2e" },
-        status: "received",
-      },
-    },
+  expect(conversationsResponse.ok()).toBeTruthy();
+  const conversationsPayload = await conversationsResponse.json();
+  const conversations = Array.isArray(conversationsPayload)
+    ? conversationsPayload
+    : conversationsPayload.results || [];
+  const conversation = conversations.find(
+    (candidate: { public_id?: string }) =>
+      candidate.public_id === publicConversation.conversation_id,
   );
-  expect(messageResponse.ok()).toBeTruthy();
+  expect(conversation).toBeTruthy();
 
   const taskResponse = await page.request.post(`${apiBaseURL}/api/tasks/`, {
     headers,

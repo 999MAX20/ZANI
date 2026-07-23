@@ -64,6 +64,18 @@ class TeamAccessTests(TestCase):
             business_permissions,
         )
 
+    def test_auth_me_does_not_rewrite_valid_owner_membership(self):
+        original_updated_at = self.owner_member.updated_at
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.get("/api/auth/me/")
+
+        self.assertEqual(response.status_code, 200)
+        self.owner_member.refresh_from_db()
+        self.assertEqual(self.owner_member.role, BusinessMember.Roles.OWNER)
+        self.assertEqual(self.owner_member.business_role.preset_key, BusinessMember.Roles.OWNER)
+        self.assertEqual(self.owner_member.updated_at, original_updated_at)
+
     def test_auth_me_repairs_owner_membership_when_role_is_wrong(self):
         accountant_role = BusinessRole.objects.get(business=self.business, preset_key=BusinessMember.Roles.ACCOUNTANT)
         self.owner_member.role = BusinessMember.Roles.ACCOUNTANT

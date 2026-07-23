@@ -208,15 +208,35 @@ def ensure_owner_memberships_for_user(user):
         return
     owned_businesses = Business.objects.filter(owner=user).only("id")
     for business in owned_businesses:
-        BusinessMember.objects.update_or_create(
-            business=business,
-            user=user,
-            defaults={
-                "role": BusinessMember.Roles.OWNER,
-                "business_role": owner_business_role(business),
-                "is_active": True,
-            },
+        membership = (
+            BusinessMember.objects.select_related("business_role")
+            .filter(business=business, user=user)
+            .first()
         )
+        expected_role = owner_business_role(business)
+        if membership is None:
+            BusinessMember.objects.create(
+                business=business,
+                user=user,
+                role=BusinessMember.Roles.OWNER,
+                business_role=expected_role,
+                is_active=True,
+            )
+            continue
+
+        update_fields = []
+        if membership.role != BusinessMember.Roles.OWNER:
+            membership.role = BusinessMember.Roles.OWNER
+            update_fields.append("role")
+        if membership.business_role_id != getattr(expected_role, "id", None):
+            membership.business_role = expected_role
+            update_fields.append("business_role")
+        if not membership.is_active:
+            membership.is_active = True
+            update_fields.append("is_active")
+        if update_fields:
+            update_fields.append("updated_at")
+            membership.save(update_fields=update_fields)
 
 
 def role_allows(role, resource, action):

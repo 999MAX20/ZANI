@@ -45,9 +45,11 @@ export function LeadLostModal({
           onSubmit();
         }}
       >
-        <div className="rounded-3xl bg-slate-50 p-4">
-          <p className="font-black text-midnight">{leadTitle}</p>
-          <p className="mt-1 text-sm font-semibold text-slate-500">{leadMessage || labels.noComment}</p>
+        <div className="rounded-card bg-surface-muted p-4">
+          <p className="font-bold text-zani-text">{leadTitle}</p>
+          <p className="mt-1 text-sm font-semibold text-zani-muted">
+            {leadMessage || labels.noComment}
+          </p>
         </div>
         <Select
           label={labels.reasonType}
@@ -58,8 +60,20 @@ export function LeadLostModal({
             ...reasons.map((item) => ({ value: item, label: item })),
           ]}
         />
-        <Input label={labels.comment} value={reason} onChange={(event) => onReasonChange(event.target.value)} required />
-        <Button type="submit" variant="danger" isLoading={isLoading} disabled={!reason}>{labels.submit}</Button>
+        <Input
+          label={labels.comment}
+          value={reason}
+          onChange={(event) => onReasonChange(event.target.value)}
+          required
+        />
+        <Button
+          type="submit"
+          variant="danger"
+          isLoading={isLoading}
+          disabled={!reason}
+        >
+          {labels.submit}
+        </Button>
       </form>
     </Modal>
   );

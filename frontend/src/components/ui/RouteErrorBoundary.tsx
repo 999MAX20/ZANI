@@ -27,7 +27,7 @@ export function RouteErrorBoundary() {
   }, [error]);
 
   return (
-    <div className="min-h-screen bg-app-gradient px-4 py-8 text-slate-900 sm:px-8">
+    <div className="min-h-screen bg-zani-bg px-4 py-8 text-zani-ink sm:px-8">
       <div className="mx-auto max-w-3xl">
         <ErrorState
           message={getRouteErrorMessage(error, t)}

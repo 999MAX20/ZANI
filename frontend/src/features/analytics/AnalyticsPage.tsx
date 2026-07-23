@@ -1,12 +1,14 @@
-import { AlertTriangle, CalendarCheck, CheckCircle2, Download, Flame, MessageSquareText, PlugZap, ShieldAlert, TrendingDown, TrendingUp, Users } from "lucide-react";
+﻿import { AlertTriangle, CalendarCheck, CheckCircle2, Download, Flame, MessageSquareText, PlugZap, ShieldAlert, TrendingDown, TrendingUp, Users } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 
 import { analyticsApi } from "../../api/analytics";
 import { asArray, getApiErrorMessage } from "../../api/client";
 import { PageAiHints, type PageAiHint } from "../../components/ai/PageAiHints";
-import { Card, CardBody } from "../../components/ui/Card";
+import { Badge } from "../../components/ui/Badge";
+import { Card, CardBody, Surface } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
+import { PageHeader } from "../../components/ui/PageHeader";
 import { ErrorState, LoadingState } from "../../components/ui/StateViews";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { useActiveBusiness } from "../../hooks/useBusiness";
@@ -17,14 +19,14 @@ import type { LucideIcon } from "lucide-react";
 
 function Stat({ label, value, hint, icon: Icon }: { label: string; value: number | string; hint?: string; icon: typeof Flame }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_4px_20px_rgba(0,47,108,0.04)]">
-        <div className="mb-7 grid h-10 w-10 place-items-center rounded-xl bg-slate-100 text-midnight">
+    <Surface padding="lg">
+        <div className="mb-5 grid h-10 w-10 place-items-center rounded-control bg-surface-muted text-brand-700">
           <Icon size={18} />
         </div>
-        <p className="text-sm font-semibold uppercase text-slate-700">{label}</p>
-        <p className="mt-4 text-3xl font-bold tracking-tight text-midnight">{value}</p>
-        {hint ? <p className="mt-2 text-sm font-semibold text-slate-500">{hint}</p> : null}
-    </div>
+        <p className="text-sm font-semibold uppercase text-zani-subtle">{label}</p>
+        <p className="mt-3 text-3xl font-bold tracking-tight text-zani-text">{value}</p>
+        {hint ? <p className="mt-2 text-sm font-semibold text-zani-subtle">{hint}</p> : null}
+    </Surface>
   );
 }
 
@@ -139,30 +141,30 @@ export function AnalyticsPage() {
 
   return (
     <>
-      <section className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-midnight md:text-3xl">{t("analytics.title")}</h1>
-          <p className="mt-1 max-w-2xl text-base leading-6 text-slate-600">{t("analytics.description")}</p>
-        </div>
-        <Button
-          variant="secondary"
-          onClick={() => exportMutation.mutate({ business: business.id, report: "manager_performance" })}
-          isLoading={exportMutation.isPending}
-        >
-          <Download size={16} />
-          {t("analytics.teamCsv")}
-        </Button>
-      </section>
+      <PageHeader
+        title={t("analytics.title")}
+        description={t("analytics.description")}
+        actions={
+          <Button
+            variant="secondary"
+            onClick={() => exportMutation.mutate({ business: business.id, report: "manager_performance" })}
+            isLoading={exportMutation.isPending}
+          >
+            <Download size={16} />
+            {t("analytics.teamCsv")}
+          </Button>
+        }
+      />
 
-      <section className="mb-8 rounded-2xl border border-blue-200 bg-white p-6 shadow-[0_4px_20px_rgba(0,47,108,0.04)] [background:linear-gradient(120deg,#fff_0%,#fff_55%,#eef2ff_100%)]">
+      <section className="mb-6 rounded-card border border-ai-100 bg-ai-50 p-5 shadow-card">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-start gap-4">
-            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-violet-50 text-violet-700 shadow-[0_0_18px_rgba(124,58,237,0.12)]">
+            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-control bg-surface-card text-ai-700 shadow-sm">
               <TrendingUp size={22} />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-midnight">{t("analytics.smartReportTitle")}</h2>
-              <p className="mt-1 max-w-4xl text-base leading-7 text-slate-700">
+              <h2 className="text-lg font-bold text-zani-text">{t("analytics.smartReportTitle")}</h2>
+              <p className="mt-1 max-w-4xl text-base font-semibold leading-7 text-zani-subtle">
                 {topSource
                   ? t("analytics.smartReportText", { source: topSource.source, conversion })
                   : t("analytics.smartReportNoSource")}
@@ -188,12 +190,12 @@ export function AnalyticsPage() {
       <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_1fr]">
         <Card>
           <CardBody>
-            <h2 className="text-lg font-semibold text-midnight">{t("analytics.leadSources")}</h2>
-            <div className="mt-4 divide-y divide-slate-100">
+            <h2 className="text-lg font-semibold text-zani-ink">{t("analytics.leadSources")}</h2>
+            <div className="mt-4 divide-y divide-zani-border">
               {(sourceRows.length ? sourceRows : [{ source: t("analytics.noData"), count: 0 }]).map(({ source, count }) => (
                 <div key={source} className="flex items-center justify-between py-3">
-                  <span className="font-medium text-slate-700">{source}</span>
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-600">{count}</span>
+                  <span className="font-medium text-zani-text">{source}</span>
+                  <Badge variant="neutral">{count}</Badge>
                 </div>
               ))}
             </div>
@@ -202,8 +204,8 @@ export function AnalyticsPage() {
 
         <Card>
           <CardBody>
-            <h2 className="text-lg font-semibold text-midnight">{t("dashboard.attention")}</h2>
-            <div className="mt-4 divide-y divide-slate-100">
+            <h2 className="text-lg font-semibold text-zani-ink">{t("dashboard.attention")}</h2>
+            <div className="mt-4 divide-y divide-zani-border">
               {[
                 [t("dashboard.newLeads"), dashboard?.new_leads || 0],
                 [t("dashboard.openTasks"), dashboard?.open_tasks || 0],
@@ -214,10 +216,10 @@ export function AnalyticsPage() {
               ].map(([label, count]) => (
                 <div key={label} className="flex items-center justify-between py-3">
                   <div>
-                    <p className="font-medium text-slate-700">{label}</p>
-                    <p className="text-xs text-slate-400">{t("analytics.openSectionHint")}</p>
+                    <p className="font-medium text-zani-subtle">{label}</p>
+                    <p className="text-xs text-zani-muted">{t("analytics.openSectionHint")}</p>
                   </div>
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-600">{count}</span>
+                  <Badge variant={Number(count) > 0 ? "warning" : "neutral"}>{count}</Badge>
                 </div>
               ))}
             </div>
@@ -230,8 +232,8 @@ export function AnalyticsPage() {
           <CardBody>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-midnight">{t("analytics.operationalReports")}</h2>
-                <p className="mt-1 text-sm leading-6 text-slate-500">{t("analytics.operationalReportsText")}</p>
+                <h2 className="text-lg font-semibold text-zani-ink">{t("analytics.operationalReports")}</h2>
+                <p className="mt-1 text-sm leading-6 text-zani-subtle">{t("analytics.operationalReportsText")}</p>
               </div>
               <Button
                 variant="secondary"
@@ -247,25 +249,25 @@ export function AnalyticsPage() {
             {reportSummary.error ? <div className="mt-4"><ErrorState message={getApiErrorMessage(reportSummary.error)} /></div> : null}
             {report ? (
               <div className="mt-5 grid gap-4 lg:grid-cols-4">
-                <div className="rounded-card border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{t("analytics.repeatRate")}</p>
-                  <p className="mt-2 text-3xl font-black text-midnight">{report.retention_ltv.repeat_rate}%</p>
-                  <p className="mt-1 text-sm text-slate-500">{t("analytics.repeatClientsCount", { count: report.retention_ltv.repeat_clients })}</p>
+                <div className="rounded-card border border-zani-border bg-surface-muted p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zani-muted">{t("analytics.repeatRate")}</p>
+                  <p className="mt-2 text-3xl font-semibold text-zani-ink">{report.retention_ltv.repeat_rate}%</p>
+                  <p className="mt-1 text-sm text-zani-subtle">{t("analytics.repeatClientsCount", { count: report.retention_ltv.repeat_clients })}</p>
                 </div>
-                <div className="rounded-card border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{t("analytics.ltvEstimate")}</p>
-                  <p className="mt-2 text-3xl font-black text-midnight">{report.retention_ltv.ltv_estimate}</p>
-                  <p className="mt-1 text-sm text-slate-500">{report.retention_ltv.data_quality}</p>
+                <div className="rounded-card border border-zani-border bg-surface-muted p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zani-muted">{t("analytics.ltvEstimate")}</p>
+                  <p className="mt-2 text-3xl font-semibold text-zani-ink">{report.retention_ltv.ltv_estimate}</p>
+                  <p className="mt-1 text-sm text-zani-subtle">{report.retention_ltv.data_quality}</p>
                 </div>
-                <div className="rounded-card border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{t("analytics.openDeals")}</p>
-                  <p className="mt-2 text-3xl font-black text-midnight">{report.funnel_velocity.open_deals}</p>
-                  <p className="mt-1 text-sm text-slate-500">{t("analytics.wonLost")}: {report.funnel_velocity.won_deals}/{report.funnel_velocity.lost_deals}</p>
+                <div className="rounded-card border border-zani-border bg-surface-muted p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zani-muted">{t("analytics.openDeals")}</p>
+                  <p className="mt-2 text-3xl font-semibold text-zani-ink">{report.funnel_velocity.open_deals}</p>
+                  <p className="mt-1 text-sm text-zani-subtle">{t("analytics.wonLost")}: {report.funnel_velocity.won_deals}/{report.funnel_velocity.lost_deals}</p>
                 </div>
-                <div className="rounded-card border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{t("analytics.appointmentRate")}</p>
-                  <p className="mt-2 text-3xl font-black text-midnight">{crmFunnel?.appointments.completion_rate ?? 0}%</p>
-                  <p className="mt-1 text-sm text-slate-500">{t("analytics.noShowRate")}: {crmFunnel?.appointments.no_show_rate ?? 0}%</p>
+                <div className="rounded-card border border-zani-border bg-surface-muted p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zani-muted">{t("analytics.appointmentRate")}</p>
+                  <p className="mt-2 text-3xl font-semibold text-zani-ink">{crmFunnel?.appointments.completion_rate ?? 0}%</p>
+                  <p className="mt-1 text-sm text-zani-subtle">{t("analytics.noShowRate")}: {crmFunnel?.appointments.no_show_rate ?? 0}%</p>
                 </div>
               </div>
             ) : null}
@@ -274,20 +276,20 @@ export function AnalyticsPage() {
 
         <Card>
           <CardBody>
-            <h2 className="text-lg font-semibold text-midnight">{t("analytics.scheduledReports")}</h2>
-            <p className="mt-1 text-sm leading-6 text-slate-500">{t("analytics.scheduledReportsText")}</p>
+            <h2 className="text-lg font-semibold text-zani-ink">{t("analytics.scheduledReports")}</h2>
+            <p className="mt-1 text-sm leading-6 text-zani-subtle">{t("analytics.scheduledReportsText")}</p>
             <div className="mt-4 space-y-3">
               {(scheduledReports.data || []).map((item) => (
-                <div key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                <div key={item.id} className="rounded-2xl border border-zani-border bg-surface-muted p-3">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="font-bold text-midnight">{item.name}</p>
+                    <p className="font-bold text-zani-ink">{item.name}</p>
                     <StatusBadge status={item.frequency} />
                   </div>
-                  <p className="mt-1 text-xs text-slate-500">{item.recipients_json.join(", ") || t("analytics.noRecipients")}</p>
+                  <p className="mt-1 text-xs text-zani-subtle">{item.recipients_json.join(", ") || t("analytics.noRecipients")}</p>
                 </div>
               ))}
               {!scheduledReports.data?.length ? (
-                <div className="rounded-2xl bg-slate-50 p-3 text-sm font-semibold text-slate-500">{t("analytics.noSchedules")}</div>
+                <div className="rounded-2xl bg-surface-muted p-3 text-sm font-semibold text-zani-subtle">{t("analytics.noSchedules")}</div>
               ) : null}
             </div>
           </CardBody>
@@ -298,7 +300,7 @@ export function AnalyticsPage() {
         <Card>
           <CardBody>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <h2 className="text-lg font-semibold text-midnight">{t("analytics.sourceRoi")}</h2>
+              <h2 className="text-lg font-semibold text-zani-ink">{t("analytics.sourceRoi")}</h2>
               <Button
                 variant="ghost"
                 className="rounded-full"
@@ -309,12 +311,12 @@ export function AnalyticsPage() {
                 {t("analytics.teamCsv")}
               </Button>
             </div>
-            <div className="mt-4 divide-y divide-slate-100">
+            <div className="mt-4 divide-y divide-zani-border">
               {(report?.source_roi?.length ? report.source_roi : []).map((row) => (
                 <div key={row.source} className="grid gap-3 py-3 md:grid-cols-[1fr_repeat(4,120px)] md:items-center">
                   <div>
-                    <p className="font-medium text-slate-700">{row.source}</p>
-                    <p className="text-xs text-slate-400">{row.roi_status}</p>
+                    <p className="font-medium text-zani-subtle">{row.source}</p>
+                    <p className="text-xs text-zani-muted">{row.roi_status}</p>
                   </div>
                   <MiniMetric label={t("nav.leads")} value={row.leads} />
                   <MiniMetric label={t("nav.appointments")} value={row.appointments} />
@@ -322,7 +324,7 @@ export function AnalyticsPage() {
                   <MiniMetric label={t("dashboard.revenue")} value={row.revenue_estimate} />
                 </div>
               ))}
-              {!report?.source_roi?.length ? <p className="py-3 text-sm text-slate-500">{t("analytics.sourcesEmpty")}</p> : null}
+              {!report?.source_roi?.length ? <p className="py-3 text-sm text-zani-subtle">{t("analytics.sourcesEmpty")}</p> : null}
             </div>
           </CardBody>
         </Card>
@@ -331,38 +333,38 @@ export function AnalyticsPage() {
       <div className="mt-6 grid gap-6 xl:grid-cols-2">
         <Card>
           <CardBody>
-            <h2 className="text-lg font-semibold text-midnight">{t("analytics.dealFunnel")}</h2>
+            <h2 className="text-lg font-semibold text-zani-ink">{t("analytics.dealFunnel")}</h2>
             <div className="mt-4 space-y-3">
               {(report?.funnel_velocity.deal_stages || []).map((stage) => (
-                <div key={stage.stage} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                <div key={stage.stage} className="rounded-2xl border border-zani-border bg-surface-muted p-3">
                   <div className="flex items-center justify-between">
-                    <p className="font-semibold text-midnight">{stage.stage}</p>
-                    <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-600">{stage.count}</span>
+                    <p className="font-semibold text-zani-ink">{stage.stage}</p>
+                    <span className="rounded-full bg-surface-card px-2.5 py-1 text-xs font-bold text-zani-subtle">{stage.count}</span>
                   </div>
-                  <p className="mt-1 text-xs text-slate-500">{t("analytics.probability")} {stage.avg_probability}% · {t("analytics.avgDays")} {stage.avg_days_in_stage ?? "-"}</p>
+                  <p className="mt-1 text-xs text-zani-subtle">{t("analytics.probability")} {stage.avg_probability}% В· {t("analytics.avgDays")} {stage.avg_days_in_stage ?? "-"}</p>
                 </div>
               ))}
-              {!report?.funnel_velocity.deal_stages.length ? <p className="text-sm text-slate-500">{t("analytics.dealsEmpty")}</p> : null}
+              {!report?.funnel_velocity.deal_stages.length ? <p className="text-sm text-zani-subtle">{t("analytics.dealsEmpty")}</p> : null}
             </div>
           </CardBody>
         </Card>
 
         <Card>
           <CardBody>
-            <h2 className="text-lg font-semibold text-midnight">{t("analytics.servicesByBookings")}</h2>
-            <div className="mt-4 divide-y divide-slate-100">
+            <h2 className="text-lg font-semibold text-zani-ink">{t("analytics.servicesByBookings")}</h2>
+            <div className="mt-4 divide-y divide-zani-border">
               {(services.data || []).map((service) => (
                 <div key={service.id} className="flex items-center justify-between py-3">
                   <div>
-                    <p className="font-medium text-slate-700">{service.name}</p>
-                    <p className="text-xs text-slate-400">{service.duration_minutes} {t("appointment.minutes")}</p>
+                    <p className="font-medium text-zani-subtle">{service.name}</p>
+                    <p className="text-xs text-zani-muted">{service.duration_minutes} {t("appointment.minutes")}</p>
                   </div>
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-600">
+                  <span className="rounded-full bg-surface-muted px-3 py-1 text-sm font-semibold text-zani-subtle">
                     {appointmentList.filter((appointment) => appointment.service === service.id).length}
                   </span>
                 </div>
               ))}
-              {!services.data?.length ? <p className="py-3 text-sm text-slate-500">{t("services.emptyTitle")}</p> : null}
+              {!services.data?.length ? <p className="py-3 text-sm text-zani-subtle">{t("services.emptyTitle")}</p> : null}
             </div>
           </CardBody>
         </Card>
@@ -374,8 +376,8 @@ export function AnalyticsPage() {
             <Users size={20} />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-midnight">{t("analytics.teamPerformance")}</h2>
-            <p className="text-sm text-slate-500">{t("analytics.teamPerformanceText")}</p>
+            <h2 className="text-xl font-bold text-zani-ink">{t("analytics.teamPerformance")}</h2>
+            <p className="text-sm text-zani-subtle">{t("analytics.teamPerformanceText")}</p>
           </div>
         </div>
         {teamPerformance.isLoading ? <LoadingState label={t("analytics.loadingTeam")} /> : null}
@@ -384,8 +386,8 @@ export function AnalyticsPage() {
             <CardBody className="flex items-start gap-3">
               <ShieldAlert className="mt-1 text-amber-600" size={22} />
               <div>
-                <h3 className="font-bold text-midnight">{t("analytics.teamHidden")}</h3>
-                <p className="mt-1 text-sm leading-6 text-slate-500">
+                <h3 className="font-bold text-zani-ink">{t("analytics.teamHidden")}</h3>
+                <p className="mt-1 text-sm leading-6 text-zani-subtle">
                   {getApiErrorMessage(teamPerformance.error) || t("analytics.teamHiddenText")}
                 </p>
               </div>
@@ -407,20 +409,20 @@ export function AnalyticsPage() {
               <Card>
                 <CardBody>
                   <div className="mb-4 flex items-center justify-between">
-                    <h3 className="font-bold text-midnight">{t("analytics.employees")}</h3>
+                    <h3 className="font-bold text-zani-ink">{t("analytics.employees")}</h3>
                     <StatusBadge status={teamPerformance.data.scope} />
                   </div>
                   <div className="space-y-3">
                     {teamPerformanceMembers.map((member) => (
-                      <div key={member.user.id} className="rounded-card border border-slate-200 bg-slate-50 p-4">
+                      <div key={member.user.id} className="rounded-card border border-zani-border bg-surface-muted p-4">
                         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                           <div>
-                            <p className="font-bold text-midnight">{member.user.full_name || member.user.email}</p>
-                            <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">{member.role}</p>
+                            <p className="font-bold text-zani-ink">{member.user.full_name || member.user.email}</p>
+                            <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-zani-muted">{member.role}</p>
                             <div className="mt-2 flex flex-wrap gap-2">
                               {asArray<{ id: string | number; name: string; is_lead: boolean }>(member.teams).map((team) => (
-                                <span key={team.id} className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-500">
-                                  {team.name}{team.is_lead ? ` · ${t("analytics.teamLead")}` : ""}
+                                <span key={team.id} className="rounded-full bg-surface-card px-2.5 py-1 text-xs font-bold text-zani-subtle">
+                                  {team.name}{team.is_lead ? ` В· ${t("analytics.teamLead")}` : ""}
                                 </span>
                               ))}
                             </div>
@@ -433,7 +435,7 @@ export function AnalyticsPage() {
                             <MiniMetric label={t("nav.tasks")} value={member.tasks_overdue} danger={member.tasks_overdue > 0} />
                           </div>
                         </div>
-                        <div className="mt-3 grid gap-2 text-xs font-semibold text-slate-500 md:grid-cols-4">
+                        <div className="mt-3 grid gap-2 text-xs font-semibold text-zani-subtle md:grid-cols-4">
                           <span>{t("analytics.avgResponse")}: {member.avg_response_time_minutes ?? "-"} {t("analytics.minutesShort")}</span>
                           <span>{t("analytics.handoffOverdue")}: {member.overdue_handoffs}</span>
                           <span>{t("analytics.missedChats")}: {member.missed_chat_handoffs}</span>
@@ -445,14 +447,14 @@ export function AnalyticsPage() {
                         </div>
                       </div>
                     ))}
-                    {!teamPerformanceMembers.length ? <p className="text-sm text-slate-500">{t("analytics.noEmployees")}</p> : null}
+                    {!teamPerformanceMembers.length ? <p className="text-sm text-zani-subtle">{t("analytics.noEmployees")}</p> : null}
                   </div>
                 </CardBody>
               </Card>
 
               <Card>
                 <CardBody>
-                  <h3 className="font-bold text-midnight">{t("analytics.actionList")}</h3>
+                  <h3 className="font-bold text-zani-ink">{t("analytics.actionList")}</h3>
                   <div className="mt-4 space-y-3">
                     {teamPerformanceActions.map((action) => (
                       <Link
@@ -463,9 +465,9 @@ export function AnalyticsPage() {
                         <div className="flex items-center justify-between gap-3">
                           <div>
                             <p className={action.severity === "critical" ? "font-semibold text-red-900" : "font-semibold text-amber-900"}>{action.title}</p>
-                            <p className="mt-1 text-xs leading-5 text-slate-600">{action.description}</p>
+                            <p className="mt-1 text-xs leading-5 text-zani-subtle">{action.description}</p>
                           </div>
-                          <span className={action.severity === "critical" ? "rounded-full bg-white px-2.5 py-1 text-xs font-bold text-red-700" : "rounded-full bg-white px-2.5 py-1 text-xs font-bold text-amber-700"}>{action.count}</span>
+                          <span className={action.severity === "critical" ? "rounded-full bg-surface-card px-2.5 py-1 text-xs font-bold text-red-700" : "rounded-full bg-surface-card px-2.5 py-1 text-xs font-bold text-amber-700"}>{action.count}</span>
                         </div>
                       </Link>
                     ))}
@@ -474,18 +476,18 @@ export function AnalyticsPage() {
                     ) : null}
                   </div>
 
-                  <h3 className="mt-6 font-bold text-midnight">{t("analytics.teamTab")}</h3>
+                  <h3 className="mt-6 font-bold text-zani-ink">{t("analytics.teamTab")}</h3>
                   <div className="mt-4 space-y-3">
                     {teamPerformanceTeams.map((team) => (
-                      <div key={team.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                      <div key={team.id} className="rounded-2xl border border-zani-border bg-surface-muted p-3">
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <p className="font-semibold text-midnight">{team.name}</p>
-                            <p className="mt-1 text-xs text-slate-500">{t("analytics.membersCount", { count: team.members_count })} · {t("analytics.lostRate")} {team.lost_rate}%</p>
+                            <p className="font-semibold text-zani-ink">{team.name}</p>
+                            <p className="mt-1 text-xs text-zani-subtle">{t("analytics.membersCount", { count: team.members_count })} В· {t("analytics.lostRate")} {team.lost_rate}%</p>
                           </div>
-                          <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-600">{t("analytics.leadsCount", { count: team.assigned_leads })}</span>
+                          <span className="rounded-full bg-surface-card px-2.5 py-1 text-xs font-bold text-zani-subtle">{t("analytics.leadsCount", { count: team.assigned_leads })}</span>
                         </div>
-                        <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-semibold text-slate-500">
+                        <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-semibold text-zani-subtle">
                           <span>{t("analytics.slaOverdueShort")}: {team.sla_overdue_deals}</span>
                           <span>{t("analytics.handoff")}: {team.overdue_handoffs}</span>
                           <span>{t("nav.tasks")}: {team.tasks_overdue}</span>
@@ -494,7 +496,7 @@ export function AnalyticsPage() {
                       </div>
                     ))}
                     {!teamPerformanceTeams.length ? (
-                      <div className="rounded-2xl bg-slate-50 p-3 text-sm font-semibold text-slate-500">{t("analytics.noTeams")}</div>
+                      <div className="rounded-2xl bg-surface-muted p-3 text-sm font-semibold text-zani-subtle">{t("analytics.noTeams")}</div>
                     ) : null}
                   </div>
                 </CardBody>
@@ -509,9 +511,9 @@ export function AnalyticsPage() {
 
 function MiniMetric({ label, value, danger }: { label: string; value: number | string; danger?: boolean }) {
   return (
-    <div className={danger ? "rounded-2xl bg-red-50 px-3 py-2 text-red-700" : "rounded-2xl bg-white px-3 py-2 text-slate-600"}>
+    <div className={danger ? "rounded-control bg-[var(--zani-danger-soft)] px-3 py-2 text-zani-danger" : "rounded-control bg-surface-muted px-3 py-2 text-zani-subtle"}>
       <p className="text-[11px] font-bold uppercase tracking-[0.12em] opacity-70">{label}</p>
-      <p className="mt-1 text-lg font-black">{value}</p>
+      <p className="mt-1 text-lg font-bold">{value}</p>
     </div>
   );
 }

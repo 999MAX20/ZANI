@@ -25,23 +25,23 @@ const NotificationContext = createContext<((options: NotificationOptions) => voi
 const toneStyles: Record<NotificationTone, { icon: typeof Info; iconClassName: string; className: string }> = {
   success: {
     icon: CheckCircle2,
-    iconClassName: "text-emerald-600",
-    className: "border-emerald-100 bg-emerald-50/95 text-emerald-950",
+    iconClassName: "text-zani-success",
+    className: "border-[rgba(21,128,61,0.18)] bg-[var(--zani-success-soft)] text-zani-text",
   },
   info: {
     icon: Info,
     iconClassName: "text-brand-600",
-    className: "border-brand-100 bg-brand-50/95 text-slate-950",
+    className: "border-brand-100 bg-brand-50 text-zani-text",
   },
   warning: {
     icon: AlertTriangle,
-    iconClassName: "text-amber-600",
-    className: "border-amber-100 bg-amber-50/95 text-amber-950",
+    iconClassName: "text-zani-warning",
+    className: "border-[rgba(183,121,31,0.22)] bg-[var(--zani-warning-soft)] text-zani-text",
   },
   danger: {
     icon: XCircle,
-    iconClassName: "text-red-600",
-    className: "border-red-100 bg-red-50/95 text-red-950",
+    iconClassName: "text-zani-danger",
+    className: "border-[rgba(194,65,12,0.2)] bg-[var(--zani-danger-soft)] text-zani-text",
   },
 };
 
@@ -62,7 +62,7 @@ function NotificationCard({ item, onDismiss }: { item: NotificationItem; onDismi
   return (
     <div
       className={cn(
-        "pointer-events-auto flex w-[min(360px,calc(100vw-2rem))] items-start gap-3 rounded-card border px-4 py-3 text-sm font-semibold shadow-panel backdrop-blur transition hover:-translate-y-0.5 hover:shadow-premium",
+        "pointer-events-auto flex w-[min(360px,calc(100vw-2rem))] items-start gap-3 rounded-card border px-4 py-3 text-sm font-semibold shadow-panel backdrop-blur transition",
         style.className,
       )}
       onMouseEnter={() => setIsHovered(true)}
@@ -78,7 +78,7 @@ function NotificationCard({ item, onDismiss }: { item: NotificationItem; onDismi
             type="button"
             size="sm"
             variant="secondary"
-            className="mt-2 h-8 bg-white/90"
+            className="mt-2 h-8"
             isLoading={isActing}
             onClick={async () => {
               setIsActing(true);
@@ -93,7 +93,7 @@ function NotificationCard({ item, onDismiss }: { item: NotificationItem; onDismi
       </div>
       <button
         type="button"
-        className="grid h-7 w-7 shrink-0 place-items-center rounded-control text-slate-400 transition hover:bg-white/70 hover:text-slate-800"
+        className="zani-focus-ring grid h-7 w-7 shrink-0 place-items-center rounded-control text-zani-faint transition hover:bg-surface-card hover:text-zani-text"
         aria-label={t("common.close")}
         onClick={() => onDismiss(item.id)}
       >

@@ -43,7 +43,7 @@ export function UndoToastProvider({ children }: { children: React.ReactNode }) {
       {children}
       {item ? (
         <ToastSurface
-          className="text-sm font-bold text-slate-700"
+          className="text-sm font-bold text-zani-text"
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
@@ -65,7 +65,7 @@ export function UndoToastProvider({ children }: { children: React.ReactNode }) {
           </Button>
           <button
             type="button"
-            className="rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            className="zani-focus-ring rounded-control p-1 text-zani-faint transition hover:bg-surface-muted hover:text-zani-text"
             aria-label={t("common.close")}
             onClick={() => setItem(null)}
           >

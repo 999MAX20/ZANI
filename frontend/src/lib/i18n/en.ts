@@ -13,39 +13,49 @@ export const en: Record<string, string> = {
   "account.noBusiness": "No business selected",
   "account.profileEyebrow": "Profile",
   "account.profileTitle": "How the team sees you",
-  "account.profileText": "These details belong to the user, not the business. They are available to every employee regardless of company settings permissions.",
+  "account.profileText":
+    "These details belong to the user, not the business. They are available to every employee regardless of company settings permissions.",
   "account.fullName": "Name",
   "account.phone": "Phone",
   "account.saveProfile": "Save profile",
   "account.saved": "Profile updated.",
   "account.preferencesEyebrow": "Preferences",
   "account.preferencesTitle": "Interface",
-  "account.preferencesText": "Personal workspace preferences. They do not change business settings or team roles.",
+  "account.preferencesText":
+    "Personal workspace preferences. They do not change business settings or team roles.",
   "account.businessAccessTitle": "Access in the current business",
-  "account.businessAccessText": "Your role: {role}. Business sections are shown according to assigned permissions.",
-  "account.businessAccessEmpty": "No active role was found for the current business.",
+  "account.businessAccessText":
+    "Your role: {role}. Business sections are shown according to assigned permissions.",
+  "account.businessAccessEmpty":
+    "No active role was found for the current business.",
   "account.timezone": "Time zone",
   "account.startPage": "Start page",
   "account.connectedEyebrow": "Connections",
   "account.connectedTitle": "External sign-in accounts",
-  "account.connectedText": "Google and Apple accounts linked to your user are shown here.",
+  "account.connectedText":
+    "Google and Apple accounts linked to your user are shown here.",
   "account.verified": "Verified",
   "account.notVerified": "Not verified",
-  "account.noConnectedAccounts": "No external accounts are connected yet. Access currently works through email and password.",
+  "account.noConnectedAccounts":
+    "No external accounts are connected yet. Access currently works through email and password.",
   "account.loginHistoryEyebrow": "Security",
   "account.loginHistoryTitle": "Recent sign-ins",
-  "account.loginHistoryText": "Only sign-in events for your user. The business security log remains in business settings.",
+  "account.loginHistoryText":
+    "Only sign-in events for your user. The business security log remains in business settings.",
   "account.noLoginHistory": "No sign-in history yet.",
   "account.noIp": "No IP recorded",
   "account.noDevice": "device not detected",
   "account.notificationsEyebrow": "Personal notifications",
   "account.notificationsTitle": "What to show you",
-  "account.notificationsText": "Disabling a category hides normal noise only for your account. Urgent system events may still be delivered.",
-  "account.notificationsNoBusiness": "Select a business to configure workspace notifications.",
+  "account.notificationsText":
+    "Disabling a category hides normal noise only for your account. Urgent system events may still be delivered.",
+  "account.notificationsNoBusiness":
+    "Select a business to configure workspace notifications.",
   "account.businessRequired": "An active business is required.",
   "account.securityEyebrow": "Security",
   "account.securityTitle": "Password",
-  "account.securityText": "Changing the password applies only to your account. Team roles and access are managed in business settings.",
+  "account.securityText":
+    "Changing the password applies only to your account. Team roles and access are managed in business settings.",
   "account.currentPassword": "Current password",
   "account.newPassword": "New password",
   "account.confirmPassword": "Repeat password",
@@ -114,22 +124,29 @@ export const en: Record<string, string> = {
   "header.statusActive": "Status: Active",
   "sidebar.subtitle": "Business control panel",
   "sidebar.commandCenter": "Business under control",
-  "sidebar.commandCenterText": "Leads, bookings and tasks live in one operating panel.",
+  "sidebar.commandCenterText":
+    "Leads, bookings and tasks live in one operating panel.",
   "sidebar.safeMode": "Secure access",
-  "sidebar.safeModeText": "Sections are shown by employee role and business permissions.",
+  "sidebar.safeModeText":
+    "Sections are shown by employee role and business permissions.",
   "sidebar.roleSurface.owner.title": "Owner control mode",
-  "sidebar.roleSurface.owner.text": "Money, team, connections, analytics and business settings are available.",
+  "sidebar.roleSurface.owner.text":
+    "Money, team, connections, analytics and business settings are available.",
   "sidebar.roleSurface.manager.title": "Manager work mode",
-  "sidebar.roleSurface.manager.text": "Clients, leads, deals, tasks and messages are shown without extra management sections.",
+  "sidebar.roleSurface.manager.text":
+    "Clients, leads, deals, tasks and messages are shown without extra management sections.",
   "sidebar.roleSurface.operator.title": "Operations mode",
-  "sidebar.roleSurface.operator.text": "Focus on inbound requests, replies, assignment and urgent actions.",
+  "sidebar.roleSurface.operator.text":
+    "Focus on inbound requests, replies, assignment and urgent actions.",
   "sidebar.roleSurface.staff.title": "Limited work access",
-  "sidebar.roleSurface.staff.text": "Only sections and actions allowed by the owner are shown.",
+  "sidebar.roleSurface.staff.text":
+    "Only sections and actions allowed by the owner are shown.",
   "sidebar.collapse": "Collapse menu",
   "sidebar.expand": "Expand menu",
   "auth.badge": "AI CRM for SMB",
   "auth.headline": "A business workspace that helps the team move faster.",
-  "auth.copy": "Manage leads, clients, bookings and conversations in one clear interface.",
+  "auth.copy":
+    "Manage leads, clients, bookings and conversations in one clear interface.",
   "auth.fastFollowup": "Fast response",
   "auth.fastFollowupText": "Reminders for replies",
   "auth.smartBooking": "Smart booking",
@@ -149,12 +166,14 @@ export const en: Record<string, string> = {
   "auth.googleSoon": "Google soon",
   "auth.appleSoon": "Apple soon",
   "auth.socialNotConfigured": "Social sign-in is not configured yet.",
-  "auth.socialFailed": "Social sign-in failed. Try again or use email and password.",
+  "auth.socialFailed":
+    "Social sign-in failed. Try again or use email and password.",
   "auth.forgotPassword": "Forgot password?",
   "auth.registerBusiness": "Register a business",
   "invite.checking": "Checking invitation...",
   "invite.eyebrow": "CRM invitation",
-  "invite.description": "Set a password for sign-in. After confirmation you will enter the CRM with the role assigned by the business owner.",
+  "invite.description":
+    "Set a password for sign-in. After confirmation you will enter the CRM with the role assigned by the business owner.",
   "invite.inactive": "Invitation is no longer active: {status}.",
   "invite.email": "Email",
   "invite.name": "Name",
@@ -178,7 +197,8 @@ export const en: Record<string, string> = {
   "common.language": "Language",
   "common.openNavigation": "Open navigation",
   "passwordReset.requestTitle": "Password recovery",
-  "passwordReset.requestText": "Enter the account email. We will prepare a password reset link.",
+  "passwordReset.requestText":
+    "Enter the account email. We will prepare a password reset link.",
   "passwordReset.deliveryChannel": "Delivery channel",
   "passwordReset.manualChannel": "Copy manually",
   "passwordReset.getLink": "Get link",
@@ -200,10 +220,12 @@ export const en: Record<string, string> = {
   "passwordReset.backToLogin": "Back to sign in",
   "signup.badge": "Zani for small business",
   "signup.headline": "Launch CRM without a long setup.",
-  "signup.copy": "We create the owner, business and base roles in one step. Invite employees later from team settings.",
+  "signup.copy":
+    "We create the owner, business and base roles in one step. Invite employees later from team settings.",
   "signup.eyebrow": "Director registration",
   "signup.title": "Company and first access",
-  "signup.text": "Only key data. Everything else can be filled in later in settings.",
+  "signup.text":
+    "Only key data. Everything else can be filled in later in settings.",
   "signup.accountSection": "Director access",
   "signup.businessSection": "Business",
   "signup.yourName": "Your name",
@@ -214,8 +236,10 @@ export const en: Record<string, string> = {
   "signup.businessType": "Business niche",
   "signup.city": "City",
   "signup.cityOptional": "City (optional)",
-  "signup.nextText": "After sign-in, Zani will guide you through services, schedule, employees and the first lead channel.",
-  "signup.startNote": "We create only the owner and workspace. Employees, roles, integrations and schedule can be configured calmly after sign-in.",
+  "signup.nextText":
+    "After sign-in, Zani will guide you through services, schedule, employees and the first lead channel.",
+  "signup.startNote":
+    "We create only the owner and workspace. Employees, roles, integrations and schedule can be configured calmly after sign-in.",
   "signup.submit": "Create workspace",
   "signup.hasAccess": "Already have access?",
   "businessType.beauty": "Beauty / salon / barbershop",
@@ -226,7 +250,8 @@ export const en: Record<string, string> = {
   "businessType.sauna": "Sauna / bathhouse",
   "businessType.other": "Other",
   "dashboard.title": "Business dashboard",
-  "dashboard.description": "Sales, leads, bookings and team actions on one screen.",
+  "dashboard.description":
+    "Sales, leads, bookings and team actions on one screen.",
   "dashboard.newLead": "New lead",
   "dashboard.aiPlan": "Day plan",
   "dashboard.revenue": "Revenue",
@@ -264,7 +289,8 @@ export const en: Record<string, string> = {
   "dashboard.staleDeals": "Deals without movement",
   "dashboard.staleDealsText": "{count} deals need review.",
   "dashboard.teamDataEmpty": "No team data yet",
-  "dashboard.teamDataEmptyText": "Assign owners in leads and tasks to see employee KPI.",
+  "dashboard.teamDataEmptyText":
+    "Assign owners in leads and tasks to see employee KPI.",
   "dashboard.connectMoreData": "Connect more data for accurate insights",
   "dashboard.ownerUrgentActions": "Urgent actions",
   "dashboard.aiNavigator": "AI Navigator",
@@ -313,12 +339,16 @@ export const en: Record<string, string> = {
   "dashboard.newLeadsCount": "new leads",
   "dashboard.moneyUnderControl": "Money under control",
   "dashboard.myActiveLeads": "My active leads",
-  "dashboard.ownerHeroHint": "Estimate from completed bookings and uploaded sales.",
+  "dashboard.ownerHeroHint":
+    "Estimate from completed bookings and uploaded sales.",
   "dashboard.managerHeroHint": "tasks in progress · focus on fast replies",
-  "dashboard.ownerHeroCopy": "The main screen shows money, demand and urgent actions without CRM noise.",
-  "dashboard.managerHeroCopy": "Your work screen: leads, tasks and bookings that move clients to purchase.",
+  "dashboard.ownerHeroCopy":
+    "The main screen shows money, demand and urgent actions without CRM noise.",
+  "dashboard.managerHeroCopy":
+    "Your work screen: leads, tasks and bookings that move clients to purchase.",
   "dashboard.setupScore": "Business setup score",
-  "dashboard.setupScoreText": "Zani sees your business at {score}%. More connected sources and directories make CRM recommendations more accurate.",
+  "dashboard.setupScoreText":
+    "Zani sees your business at {score}%. More connected sources and directories make CRM recommendations more accurate.",
   "dashboard.quickLead": "New lead",
   "dashboard.quickBooking": "Booking",
   "dashboard.quickDialogs": "Dialogs",
@@ -349,13 +379,15 @@ export const en: Record<string, string> = {
   "dashboard.zaniRecommendations": "ZANI recommendations",
   "dashboard.businessActivated": "Your landing page is active",
   "dashboard.acceptsLeads": "{business} is already receiving leads in ZANI",
-  "dashboard.trialCopy": "Your gifted month of extended access is active. No extra payment is needed now.",
+  "dashboard.trialCopy":
+    "Your gifted month of extended access is active. No extra payment is needed now.",
   "dashboard.activeUntil": "Access is active until {date}.",
   "dashboard.openLanding": "Open landing",
   "dashboard.connectData": "Connect data",
   "dashboard.source": "Source",
   "dashboard.connectNext": "What to connect next",
-  "dashboard.connectNextHint": "Modules not production-ready are marked as beta, soon or by request.",
+  "dashboard.connectNextHint":
+    "Modules not production-ready are marked as beta, soon or by request.",
   "dashboard.openQuickStart": "Open quick start",
   "dashboard.statusConnected": "connected",
   "dashboard.statusConnect": "connect",
@@ -383,27 +415,41 @@ export const en: Record<string, string> = {
   "dashboard.taskEscalation.critical": "Critical",
   "dashboard.noOpenTasks": "No open tasks",
   "dashboard.noOpenTasksText": "Follow-up tasks will appear here.",
-  "dashboard.noBusiness": "Business has not been created yet. Open settings and add the first business to start.",
-  "dashboard.moduleWhatsapp": "Connect a channel so leads and conversations flow into one client history.",
+  "dashboard.noBusiness":
+    "Business has not been created yet. Open settings and add the first business to start.",
+  "dashboard.moduleWhatsapp":
+    "Connect a channel so leads and conversations flow into one client history.",
   "dashboard.moduleAiBot": "AI bot",
-  "dashboard.moduleAiBotText": "Draft AI scenario for first replies and lead qualification.",
+  "dashboard.moduleAiBotText":
+    "Draft AI scenario for first replies and lead qualification.",
   "dashboard.moduleTeam": "Team",
-  "dashboard.moduleTeamText": "Invite the team and configure roles before assigning leads.",
-  "dashboard.moduleServicesText": "The directory is required for bookings, pricing and clear analytics.",
+  "dashboard.moduleTeamText":
+    "Invite the team and configure roles before assigning leads.",
+  "dashboard.moduleServicesText":
+    "The directory is required for bookings, pricing and clear analytics.",
   "dashboard.moduleSales": "Sales",
-  "dashboard.moduleSalesText": "Pipeline is ready. First leads will enter CRM automatically.",
-  "dashboard.moduleImportText": "Import your current clients and leads without manual transfer.",
-  "dashboard.module1cText": "Financial and client data export is connected through support.",
+  "dashboard.moduleSalesText":
+    "Pipeline is ready. First leads will enter CRM automatically.",
+  "dashboard.moduleImportText":
+    "Import your current clients and leads without manual transfer.",
+  "dashboard.module1cText":
+    "Financial and client data export is connected through support.",
   "dashboard.moduleWarehouse": "MoySklad / warehouse",
-  "dashboard.moduleWarehouseText": "Warehouse integrations are planned after pilot CRM logic.",
+  "dashboard.moduleWarehouseText":
+    "Warehouse integrations are planned after pilot CRM logic.",
   "dashboard.managerTitle": "My workday",
-  "dashboard.ownerPageDescription": "Money, demand and urgent actions on the first screen.",
-  "dashboard.managerPageDescription": "Leads, tasks and bookings without management noise.",
-  "dashboard.loadingCoreData": "Loading fresh CRM data. The main screen is already available.",
-  "dashboard.ownerAnalyticsError": "Owner analytics failed to load. Core CRM sections are available, and metrics will refresh when the API recovers.",
+  "dashboard.ownerPageDescription":
+    "Money, demand and urgent actions on the first screen.",
+  "dashboard.managerPageDescription":
+    "Leads, tasks and bookings without management noise.",
+  "dashboard.loadingCoreData":
+    "Loading fresh CRM data. The main screen is already available.",
+  "dashboard.ownerAnalyticsError":
+    "Owner analytics failed to load. Core CRM sections are available, and metrics will refresh when the API recovers.",
   "dashboard.operatorWorkspace": "Operator workspace",
   "dashboard.operatorFocus": "Focus on client processing",
-  "dashboard.operatorFocusText": "This role hides management and finance blocks. Main actions: answer chats, process leads, create bookings and close follow-ups.",
+  "dashboard.operatorFocusText":
+    "This role hides management and finance blocks. Main actions: answer chats, process leads, create bookings and close follow-ups.",
   "dashboard.leadsLabel": "leads",
   "dashboard.chatsLabel": "chats",
   "dashboard.tasksLabel": "tasks",
@@ -419,35 +465,48 @@ export const en: Record<string, string> = {
   "dashboard.finishQuickStart": "Finish quick start",
   "dashboard.crmReadiness": "CRM readiness: {progress}%.",
   "dashboard.checkPilotReadiness": "Check pilot readiness",
-  "dashboard.pilotReadinessText": "CRM, import, chat, AI, integrations and smoke path in one checklist.",
+  "dashboard.pilotReadinessText":
+    "CRM, import, chat, AI, integrations and smoke path in one checklist.",
   "dashboard.attention.new_leads.title": "New leads",
-  "dashboard.attention.new_leads.text": "{count} leads are waiting for processing.",
+  "dashboard.attention.new_leads.text":
+    "{count} leads are waiting for processing.",
   "dashboard.attention.overdue_tasks.title": "Overdue tasks",
   "dashboard.attention.overdue_tasks.text": "{count} tasks are overdue.",
   "dashboard.attention.connector_errors.title": "Integration issues",
-  "dashboard.attention.connector_errors.text": "{count} connectors need review.",
+  "dashboard.attention.connector_errors.text":
+    "{count} connectors need review.",
   "dashboard.attention.connector_pending.title": "Connection requests",
-  "dashboard.attention.connector_pending.text": "{count} connections are waiting for setup.",
+  "dashboard.attention.connector_pending.text":
+    "{count} connections are waiting for setup.",
   "dashboard.attention.sales_data.title": "No sales data",
-  "dashboard.attention.sales_data.text": "Upload Excel/CSV or connect a read-only source.",
+  "dashboard.attention.sales_data.text":
+    "Upload Excel/CSV or connect a read-only source.",
   "dashboard.latestBusinessEvents": "Latest business events",
-  "dashboard.latestBusinessEventsText": "Imported sales, products, stock and connector events without heavy BI.",
-  "dashboard.connectorHealth": "Connected: {connected} · pending: {pending} · errors: {error}",
+  "dashboard.latestBusinessEventsText":
+    "Imported sales, products, stock and connector events without heavy BI.",
+  "dashboard.connectorHealth":
+    "Connected: {connected} · pending: {pending} · errors: {error}",
   "dashboard.latestLeads": "Latest leads",
   "dashboard.noLeads": "No leads yet",
-  "dashboard.noLeadsText": "Create the first lead manually or connect a lead source in the next stage.",
+  "dashboard.noLeadsText":
+    "Create the first lead manually or connect a lead source in the next stage.",
   "dashboard.goLeads": "Go to leads",
   "dashboard.upcomingBookings": "Upcoming bookings",
   "dashboard.noBookings": "No bookings yet",
-  "dashboard.noBookingsText": "The first booking will appear here and in calendar.",
+  "dashboard.noBookingsText":
+    "The first booking will appear here and in calendar.",
   "dashboard.clientBase": "Client base",
   "dashboard.clientsInCrm": "{count} clients in CRM.",
   "dashboard.quickStart": "Quick start",
-  "dashboard.quickStartText": "Add a service, resource and working hours, then create the first booking from a lead.",
-  "dashboard.revenueExactText": "Based on uploaded sales and completed bookings.",
-  "dashboard.revenueEstimateText": "Estimate from completed bookings; upload sales for an accurate view.",
+  "dashboard.quickStartText":
+    "Add a service, resource and working hours, then create the first booking from a lead.",
+  "dashboard.revenueExactText":
+    "Based on uploaded sales and completed bookings.",
+  "dashboard.revenueEstimateText":
+    "Estimate from completed bookings; upload sales for an accurate view.",
   "dashboard.revenueMissingValue": "No data",
-  "dashboard.revenueMissingHint": "Connect sales or import Excel/CSV so ZANI can show real money.",
+  "dashboard.revenueMissingHint":
+    "Connect sales or import Excel/CSV so ZANI can show real money.",
   "dashboard.revenueMissingShort": "Connect sales for an accurate view.",
   "dashboard.aiBrief.eyebrow": "AI brief",
   "dashboard.aiBrief.title": "What ZANI sees today",
@@ -456,25 +515,32 @@ export const en: Record<string, string> = {
   "dashboard.aiBrief.overdueText": "{count} tasks need action today.",
   "dashboard.aiBrief.openTasks": "Open tasks",
   "dashboard.aiBrief.leadsTitle": "New leads need a response",
-  "dashboard.aiBrief.leadsText": "{count} leads should be processed before clients are lost.",
+  "dashboard.aiBrief.leadsText":
+    "{count} leads should be processed before clients are lost.",
   "dashboard.aiBrief.openLeads": "Open leads",
   "dashboard.aiBrief.bookingsTitle": "Check today's bookings",
   "dashboard.aiBrief.bookingsText": "{count} bookings are scheduled for today.",
   "dashboard.aiBrief.openCalendar": "Open calendar",
   "dashboard.aiBrief.salesTitle": "No money data yet",
-  "dashboard.aiBrief.salesText": "Connect sales or import Excel/CSV so ZANI can explain revenue.",
+  "dashboard.aiBrief.salesText":
+    "Connect sales or import Excel/CSV so ZANI can explain revenue.",
   "dashboard.aiBrief.connectSales": "Connect data",
   "dashboard.aiBrief.setupTitle": "Business setup is incomplete",
-  "dashboard.aiBrief.setupText": "ZANI sees {score}% of the business. Finish quick start for accurate hints.",
+  "dashboard.aiBrief.setupText":
+    "ZANI sees {score}% of the business. Finish quick start for accurate hints.",
   "dashboard.aiBrief.openSetup": "Quick start",
   "dashboard.aiBrief.missingTitle": "Not enough data",
-  "dashboard.aiBrief.missingText": "Add leads, clients, bookings or connect data sources.",
+  "dashboard.aiBrief.missingText":
+    "Add leads, clients, bookings or connect data sources.",
   "dashboard.aiBrief.missingAction": "Connect sources",
-  "dashboard.ownerSignalText": "Unassigned leads: {leads}. Chats without reply: {chats}. Business readiness: {setup}%, conversion: {conversion}%.",
-  "dashboard.ownerReadinessLine": "Business readiness {setup}% · conversion {conversion}%",
+  "dashboard.ownerSignalText":
+    "Unassigned leads: {leads}. Chats without reply: {chats}. Business readiness: {setup}%, conversion: {conversion}%.",
+  "dashboard.ownerReadinessLine":
+    "Business readiness {setup}% · conversion {conversion}%",
   "dashboard.stitchSubtitle": "Here is the state of your business.",
   "dashboard.smartTitle": "ZANI SMART INTELLIGENCE",
-  "dashboard.smartSummary": "ZANI noticed important signals: leads need a response, some conversations are waiting, and stalled deals should be checked today.",
+  "dashboard.smartSummary":
+    "ZANI noticed important signals: leads need a response, some conversations are waiting, and stalled deals should be checked today.",
   "dashboard.smartPrimaryAction": "Fix response time",
   "dashboard.smartSecondaryAction": "Review deals",
   "dashboard.integrationStatus": "Integrations",
@@ -500,34 +566,43 @@ export const en: Record<string, string> = {
   "dashboard.allLeads": "All leads",
   "dashboard.warehouse": "Warehouse",
   "dashboard.aiRevenueGrowth": "Revenue is growing for the 3rd day",
-  "dashboard.aiRevenueGrowthText": "Good pace. Keep the momentum and check repeat sales.",
+  "dashboard.aiRevenueGrowthText":
+    "Good pace. Keep the momentum and check repeat sales.",
   "dashboard.aiNewLeadsWaiting": "{count} new leads are waiting",
-  "dashboard.aiNewLeadsWaitingText": "A fast response improves conversion chances.",
+  "dashboard.aiNewLeadsWaitingText":
+    "A fast response improves conversion chances.",
   "dashboard.aiOverdueTasks": "{count} tasks are overdue",
   "dashboard.aiOverdueTasksText": "Close critical tasks today.",
   "dashboard.aiConversionBelow": "Conversion is below target",
-  "dashboard.aiConversionBelowText": "Check deal stages and the next step for active leads.",
+  "dashboard.aiConversionBelowText":
+    "Check deal stages and the next step for active leads.",
   "dashboard.openPrioritySource": "Open priority source",
   "dashboard.ownerBriefSources": "{count} sources",
   "dashboard.ownerBriefError": "AI daily brief is temporarily unavailable.",
   "dashboard.ownerBriefNoDataTitle": "Not enough source data",
-  "dashboard.ownerBriefNoDataText": "No visible CRM or connector records need attention yet.",
+  "dashboard.ownerBriefNoDataText":
+    "No visible CRM or connector records need attention yet.",
   "dashboard.ownerBriefLoadingTitle": "Collecting sources",
-  "dashboard.ownerBriefLoadingText": "Checking visible leads, tasks, conversations, deals and integrations for the AI brief.",
+  "dashboard.ownerBriefLoadingText":
+    "Checking visible leads, tasks, conversations, deals and integrations for the AI brief.",
   "dashboard.ownerBriefUnavailableTitle": "AI brief unavailable",
-  "dashboard.ownerBriefUnavailableText": "Recommendations are not shown without a verified backend AI response. Try again later or open AI Analyst.",
+  "dashboard.ownerBriefUnavailableText":
+    "Recommendations are not shown without a verified backend AI response. Try again later or open AI Analyst.",
   "dashboard.ownerBriefNoAccessTitle": "AI brief is unavailable for this role",
-  "dashboard.ownerBriefNoAccessText": "Recommendations are hidden because the current role cannot access AI Analyst.",
+  "dashboard.ownerBriefNoAccessText":
+    "Recommendations are hidden because the current role cannot access AI Analyst.",
   "dashboard.ownerBriefSourceIds": "Sources: {ids}",
   "dashboard.openAiAnalyst": "Open AI Analyst",
   "dashboard.openTeamSettings": "Open team settings",
-  "dashboard.aiProviderUnavailable": "The live AI provider is not ready or not configured. ZANI will not show unverified AI answers; source-grounded CRM states remain visible.",
+  "dashboard.aiProviderUnavailable":
+    "The live AI provider is not ready or not configured. ZANI will not show unverified AI answers; source-grounded CRM states remain visible.",
   "dashboard.aiProviderStatus": "AI provider: {provider} · {mode}",
   "header.notifications": "Notifications",
   "header.notificationsSummary": "{due} need attention now · {urgent} urgent",
   "header.markAllRead": "Mark all read",
   "header.openTasks": "Open tasks",
-  "header.noNotifications": "No notifications yet. Booking reminders and CRM events will appear here.",
+  "header.noNotifications":
+    "No notifications yet. Booking reminders and CRM events will appear here.",
   "header.chatToastTitle": "New message",
   "header.chatToastText": "There are unread messages in chats: {count}.",
   "header.openMessages": "Open messages",
@@ -545,10 +620,12 @@ export const en: Record<string, string> = {
   "search.placeholder.clients": "Search clients: name, phone, email...",
   "search.placeholder.leads": "Search leads: client, phone, request...",
   "search.placeholder.deals": "Search deals: title, client, source...",
-  "search.placeholder.conversations": "Search conversations: client, phone, message...",
+  "search.placeholder.conversations":
+    "Search conversations: client, phone, message...",
   "search.placeholder.calendar": "Search bookings: client, service, staff...",
   "search.placeholder.tasks": "Search tasks: title, client, deadline...",
-  "search.placeholder.integrations": "Search integrations: Telegram, Kaspi, 1C...",
+  "search.placeholder.integrations":
+    "Search integrations: Telegram, Kaspi, 1C...",
   "search.placeholder.timeline": "Search events: type, client, action...",
   "search.noMeta": "No extra data",
   "search.empty": "Nothing found in CRM data.",
@@ -587,19 +664,23 @@ export const en: Record<string, string> = {
   "errorBoundary.unknown": "Unknown interface error.",
   "errorBoundary.eyebrow": "Interface error",
   "errorBoundary.title": "We caught the issue and kept control.",
-  "errorBoundary.text": "Refresh the page or return to dashboard. If the issue repeats, send it to support with the current action.",
+  "errorBoundary.text":
+    "Refresh the page or return to dashboard. If the issue repeats, send it to support with the current action.",
   "errorBoundary.reload": "Refresh",
   "errorBoundary.home": "Home",
-  "pricing.description": "Floor price, recommendation 1 ₸ below the competitor and safe application through approval.",
+  "pricing.description":
+    "Floor price, recommendation 1 ₸ below the competitor and safe application through approval.",
   "pricing.safetyTitle": "Pricing agent safety",
   "pricing.agentStopped": "Stopped: {reason}",
   "pricing.noReason": "no reason",
-  "pricing.agentActive": "Agent is active. Emergency stop instantly blocks price application.",
+  "pricing.agentActive":
+    "Agent is active. Emergency stop instantly blocks price application.",
   "pricing.openSignals": "Open signals: {count}",
   "pricing.resume": "Resume",
   "pricing.stopAgent": "Stop agent",
   "pricing.catalogTitle": "Products from integrations",
-  "pricing.catalogText": "ZANI collects products from Kaspi, MoiSklad, 1C, Excel/CSV, Ozon and Wildberries.",
+  "pricing.catalogText":
+    "ZANI collects products from Kaspi, MoiSklad, 1C, Excel/CSV, Ozon and Wildberries.",
   "pricing.refreshCatalog": "Refresh products",
   "pricing.bulkMinPrice": "Shared floor",
   "pricing.step": "Step",
@@ -614,13 +695,15 @@ export const en: Record<string, string> = {
   "pricing.connectedProducts": "Already connected",
   "pricing.loadingCatalog": "Collecting products",
   "pricing.selectItem": "Select {name}",
-  "pricing.catalogItemMeta": "{source} · SKU {sku} · price {price} · stock {stock}",
+  "pricing.catalogItemMeta":
+    "{source} · SKU {sku} · price {price} · stock {stock}",
   "pricing.noData": "no data",
   "pricing.ruleMode": "rule: {mode}",
   "pricing.notConnected": "not connected",
   "pricing.minPrice": "Do not go below",
   "pricing.createRule": "Create rule",
-  "pricing.emptyCatalog": "Connect or sync a product source, then click “Refresh products”.",
+  "pricing.emptyCatalog":
+    "Connect or sync a product source, then click “Refresh products”.",
   "pricing.newRule": "New rule",
   "pricing.name": "Name",
   "pricing.currentPrice": "Current price",
@@ -638,16 +721,21 @@ export const en: Record<string, string> = {
   "pricing.loadingRules": "Loading rules",
   "pricing.selectRule": "Select {name}",
   "pricing.ruleMeta": "SKU {sku} · current {current} · floor {min}",
-  "pricing.manualCompetitorPrice": "Competitor price, if manual input is needed",
+  "pricing.manualCompetitorPrice":
+    "Competitor price, if manual input is needed",
   "pricing.collectPrices": "Collect prices",
   "pricing.calculate": "Calculate",
   "pricing.apply": "Apply",
   "pricing.competitor": "competitor",
-  "pricing.foundPrice": "Found price: {price} · {competitor} · position {position}",
-  "pricing.recommendationLine": "Recommendation: {price} · {reason} · status {status}",
+  "pricing.foundPrice":
+    "Found price: {price} · {competitor} · position {position}",
+  "pricing.recommendationLine":
+    "Recommendation: {price} · {reason} · status {status}",
   "pricing.autopilot": "Autopilot",
-  "pricing.autopilotEnabledText": "Enabled. ZANI can apply safe recommendations in the scheduled cycle.",
-  "pricing.autopilotCheckText": "Before enabling, ZANI checks the floor, daily limit and monitoring availability.",
+  "pricing.autopilotEnabledText":
+    "Enabled. ZANI can apply safe recommendations in the scheduled cycle.",
+  "pricing.autopilotCheckText":
+    "Before enabling, ZANI checks the floor, daily limit and monitoring availability.",
   "pricing.stop": "Stop",
   "pricing.enableAutopilot": "Enable autopilot",
   "pricing.minPriceValue": "Floor: {price}",
@@ -658,7 +746,8 @@ export const en: Record<string, string> = {
   "pricing.kaspiWriteFlag": "Kaspi write: through flag",
   "pricing.confirmedAt": "Confirmed: {date}",
   "pricing.historyTitle": "Price history",
-  "pricing.historyText": "All price-change attempts: simulations, queues, blocks and errors.",
+  "pricing.historyText":
+    "All price-change attempts: simulations, queues, blocks and errors.",
   "pricing.recordsCount": "{count} records",
   "pricing.historySearchPlaceholder": "Name or SKU",
   "pricing.allStatuses": "All statuses",
@@ -668,18 +757,23 @@ export const en: Record<string, string> = {
   "pricing.changeStatus.blocked": "Blocked",
   "pricing.changeStatus.failed": "Error",
   "pricing.loadingHistory": "Loading price history",
-  "pricing.emptyHistory": "No history yet. Calculate and apply a recommendation to see a record.",
-  "outreach.defaultMessage": "Hello, {client_name}! We have nearby available booking times. Reply to this message and a manager will find a convenient slot.",
+  "pricing.emptyHistory":
+    "No history yet. Calculate and apply a recommendation to see a record.",
+  "outreach.defaultMessage":
+    "Hello, {client_name}! We have nearby available booking times. Reply to this message and a manager will find a convenient slot.",
   "outreach.defaultCampaignName": "New campaign",
   "outreach.defaultTemplateName": "New template",
   "outreach.loading": "Loading outreach...",
   "outreach.noBusiness": "No business selected.",
   "outreach.title": "Outreach",
-  "outreach.description": "Workspace for Telegram and WhatsApp campaigns: audience, recipient queue, launch and delivery statuses.",
+  "outreach.description":
+    "Workspace for Telegram and WhatsApp campaigns: audience, recipient queue, launch and delivery statuses.",
   "outreach.importConsents": "Import consents",
   "outreach.createCampaign": "Create campaign",
-  "outreach.importConsentRoleTitle": "Consent import is available to owner, admin or marketer.",
-  "outreach.createRoleTitle": "Campaign creation is available to owner, admin or marketer.",
+  "outreach.importConsentRoleTitle":
+    "Consent import is available to owner, admin or marketer.",
+  "outreach.createRoleTitle":
+    "Campaign creation is available to owner, admin or marketer.",
   "outreach.metric.campaigns": "Campaigns",
   "outreach.metric.active": "{count} active",
   "outreach.metric.queued": "In queues",
@@ -689,22 +783,27 @@ export const en: Record<string, string> = {
   "outreach.readiness.rolesTitle": "Roles and launch",
   "outreach.readiness.roleCanLaunch": "{role}: can launch",
   "outreach.readiness.roleReadOnly": "{role}: view only",
-  "outreach.readiness.rolesText": "Live bulk campaigns are launched by owner/admin/marketer. Preferences can hide regular noise, but high/urgent notifications always arrive.",
+  "outreach.readiness.rolesText":
+    "Live bulk campaigns are launched by owner/admin/marketer. Preferences can hide regular noise, but high/urgent notifications always arrive.",
   "outreach.readiness.appointmentTitle": "Booking auto messages",
   "outreach.readiness.appointmentValue": "{pending} queued · {failed} errors",
-  "outreach.readiness.appointmentText": "Confirmation 24 hours before, reminder 2 hours before and thank-you after a completed visit are created automatically.",
+  "outreach.readiness.appointmentText":
+    "Confirmation 24 hours before, reminder 2 hours before and thank-you after a completed visit are created automatically.",
   "outreach.readiness.safetyTitle": "Launch protection",
-  "outreach.readiness.safetyText": "Before launch, ZANI checks text, audience, opt-in, prepared queue, limits and WhatsApp template.",
+  "outreach.readiness.safetyText":
+    "Before launch, ZANI checks text, audience, opt-in, prepared queue, limits and WhatsApp template.",
   "outreach.checklistPassed": "Checklist passed",
   "outreach.checklistRequired": "Checklist required",
   "outreach.selectCampaign": "Select a campaign",
   "outreach.appointmentAutoEyebrow": "Automatic booking messages",
-  "outreach.appointmentAutoTitle": "Service scenarios work without manually launching an outreach campaign",
+  "outreach.appointmentAutoTitle":
+    "Service scenarios work without manually launching an outreach campaign",
   "outreach.count.pending": "Queue",
   "outreach.count.sent": "Sent",
   "outreach.count.failed": "Errors",
   "outreach.deliveryErrorsTitle": "Delivery errors",
-  "outreach.deliveryErrorsText": "Check the channel connection or retry sending after fixing the issue.",
+  "outreach.deliveryErrorsText":
+    "Check the channel connection or retry sending after fixing the issue.",
   "outreach.campaigns": "Campaigns",
   "outreach.status.draft": "Draft",
   "outreach.status.ready": "Ready",
@@ -720,7 +819,8 @@ export const en: Record<string, string> = {
   "outreach.audienceType.segment": "Client segment",
   "outreach.audienceType.manual": "Manual list",
   "outreach.emptyTitle": "No campaigns yet",
-  "outreach.emptyDescription": "Create the first campaign for Telegram or WhatsApp.",
+  "outreach.emptyDescription":
+    "Create the first campaign for Telegram or WhatsApp.",
   "outreach.channelCampaign": "{channel} campaign",
   "outreach.statusLine": "Status: {status}",
   "outreach.startLine": " · starts {date}",
@@ -728,7 +828,8 @@ export const en: Record<string, string> = {
   "outreach.launch": "Launch",
   "outreach.retry15": "Retry 15 min",
   "outreach.retryAll": "Retry all",
-  "outreach.readOnlyNotice": "Your role can monitor campaign and recipient statuses, but launch, consent import and error retry are locked. This protects clients from accidental bulk messages.",
+  "outreach.readOnlyNotice":
+    "Your role can monitor campaign and recipient statuses, but launch, consent import and error retry are locked. This protects clients from accidental bulk messages.",
   "outreach.stat.total": "Total",
   "outreach.stat.pending": "Pending",
   "outreach.stat.sent": "Sent",
@@ -746,13 +847,16 @@ export const en: Record<string, string> = {
   "outreach.audience": "Audience",
   "outreach.notNeeded": "Not needed",
   "outreach.messageText": "Message text",
-  "outreach.audiencePreview": "Total: {total} · eligible: {eligible} · suppression: {suppressed}.",
+  "outreach.audiencePreview":
+    "Total: {total} · eligible: {eligible} · suppression: {suppressed}.",
   "outreach.latestRecipients": "Latest recipients",
   "outreach.queueEmpty": "The queue will appear after campaign preparation.",
-  "outreach.selectCampaignDescription": "After creating a campaign, audience, queue and launch controls will appear here.",
+  "outreach.selectCampaignDescription":
+    "After creating a campaign, audience, queue and launch controls will appear here.",
   "outreach.newCampaign": "New campaign",
   "outreach.launchOrderTitle": "Launch order",
-  "outreach.launchOrderText": "Creating a campaign does not send messages. First save the campaign, then prepare the audience, check the checklist and only then launch sending.",
+  "outreach.launchOrderText":
+    "Creating a campaign does not send messages. First save the campaign, then prepare the audience, check the checklist and only then launch sending.",
   "outreach.nameLabel": "Name",
   "outreach.namePlaceholder": "Reminder about available slots",
   "outreach.noTemplate": "No template",
@@ -769,29 +873,49 @@ export const en: Record<string, string> = {
   "outreach.batchSize": "Batch per launch",
   "outreach.scheduledAt": "When to send",
   "outreach.message": "Message",
-  "outreach.templateVariables": "Template variables: {client_name}, {phone}, {email}, {business_name}, {channel}.",
-  "outreach.productionModeNotice": "Live mode: clients without opt-in or with opt-out will be skipped. WhatsApp launch is blocked until the template is marked approved.",
+  "outreach.templateVariables":
+    "Template variables: {client_name}, {phone}, {email}, {business_name}, {channel}.",
+  "outreach.productionModeNotice":
+    "Live mode: clients without opt-in or with opt-out will be skipped. WhatsApp launch is blocked until the template is marked approved.",
   "outreach.create": "Create",
   "outreach.consentSource": "Consent source",
-  "outreach.consentRowsPlaceholder": "+77010001010; consent from form\nclient@example.com; consent from website",
-  "outreach.consentImportNotice": "Import updates consents only for existing clients by phone, email or client_id. The file can contain phone, email, client_id, channel, status, source and note columns.",
+  "outreach.consentRowsPlaceholder":
+    "+77010001010; consent from form\nclient@example.com; consent from website",
+  "outreach.consentImportNotice":
+    "Import updates consents only for existing clients by phone, email or client_id. The file can contain phone, email, client_id, channel, status, source and note columns.",
   "outreach.importText": "Import text",
   "outreach.importFile": "Import file",
   "outreach.manualAudience": "Manual audience",
-  "outreach.manualAudienceText": "Selected: {count}. Only clients with a channel ID and allowed consent will enter the queue.",
+  "outreach.manualAudienceText":
+    "Selected: {count}. Only clients with a channel ID and allowed consent will enter the queue.",
   "outreach.clientSearch": "Search client",
   "outreach.noChannelId": "no channel ID",
   "outreach.selected": "selected",
   "outreach.clientsNotFound": "Clients not found.",
-  "outreach.launchBlockedChecklist": "Prepare the audience and pass the checklist first.",
-  "outreach.launchBlockedRole": "Launch is available to owner, admin or marketer.",
+  "outreach.auto": "Auto",
+  "outreach.failedCount": "{count} failed",
+  "outreach.deliveryRate": "Delivery rate",
+  "outreach.failureRate": "Failure rate",
+  "outreach.suppressionRate": "Suppression",
+  "outreach.whatsappTemplate": "WhatsApp template",
+  "outreach.whatsappTemplateName": "WhatsApp template name",
+  "outreach.templateStatus.draft": "Draft",
+  "outreach.templateStatus.pending": "Pending",
+  "outreach.templateStatus.approved": "Approved",
+  "outreach.templateStatus.rejected": "Rejected",
+  "outreach.launchBlockedChecklist":
+    "Prepare the audience and pass the checklist first.",
+  "outreach.launchBlockedRole":
+    "Launch is available to owner, admin or marketer.",
   "telegramSetup.tokenSaved": "Key saved. Now check the connection.",
   "telegramSetup.tokenCleared": "Key cleared.",
   "telegramSetup.connectionChecked": "Telegram connection checked.",
   "telegramSetup.connectionFailed": "Could not check Telegram connection.",
-  "telegramSetup.inboxConnected": "Incoming messages are connected. Message the bot as a client and check the conversation.",
+  "telegramSetup.inboxConnected":
+    "Incoming messages are connected. Message the bot as a client and check the conversation.",
   "telegramSetup.inboxFailed": "Could not connect incoming messages.",
-  "telegramSetup.description": "Connect Telegram to messages and automatic replies.",
+  "telegramSetup.description":
+    "Connect Telegram to messages and automatic replies.",
   "telegramSetup.key": "Key",
   "telegramSetup.saved": "Saved",
   "telegramSetup.needed": "Needed",
@@ -802,22 +926,26 @@ export const en: Record<string, string> = {
   "telegramSetup.connected": "Connected",
   "telegramSetup.notConnected": "Not connected",
   "telegramSetup.botKey": "Bot key",
-  "telegramSetup.botKeyText": "Create a bot in @BotFather, paste the key here and run a check. The key will not be shown again.",
+  "telegramSetup.botKeyText":
+    "Create a bot in @BotFather, paste the key here and run a check. The key will not be shown again.",
   "telegramSetup.botKeyPlaceholder": "Paste bot key",
   "telegramSetup.checkKey": "Check key",
   "telegramSetup.connectInbox": "Connect incoming",
-  "telegramSetup.readyNotice": "Telegram is ready. Send a message to the bot as a client and check the incoming conversation.",
+  "telegramSetup.readyNotice":
+    "Telegram is ready. Send a message to the bot as a client and check the incoming conversation.",
   "telegramSetup.latestEvents": "Latest events",
   "telegramSetup.noEvents": "No events yet.",
   "telegramSetup.addChannelFirst": "Add a Telegram channel for this bot first.",
   "developers.advanced": "Advanced",
   "developers.title": "Integration keys and events",
-  "developers.description": "Advanced layer for technical connections. Use it only together with a developer or ZANI support.",
+  "developers.description":
+    "Advanced layer for technical connections. Use it only together with a developer or ZANI support.",
   "developers.summary": "{tokens} keys · {webhooks} events",
   "developers.defaultTokenName": "CRM integration key",
   "developers.defaultWebhookName": "Production webhook",
   "developers.copyNow": "Copy the key now",
-  "developers.copyNowText": "The full key is shown only once. After closing, only the short prefix will remain visible.",
+  "developers.copyNowText":
+    "The full key is shown only once. After closing, only the short prefix will remain visible.",
   "developers.copied": "Copied",
   "developers.tokensTitle": "Integration keys",
   "developers.tokensText": "Minimum: read-only access to clients.",
@@ -840,9 +968,11 @@ export const en: Record<string, string> = {
   "developers.check": "Check",
   "developers.noWebhooks": "No external events configured yet.",
   "developers.deliveryTitle": "Delivery logs",
-  "developers.deliveryText": "Latest deliveries, provider responses and manual retry for failed events.",
+  "developers.deliveryText":
+    "Latest deliveries, provider responses and manual retry for failed events.",
   "developers.refresh": "Refresh",
-  "developers.noDeliveries": "No deliveries yet. Click “Check” on an external event.",
+  "developers.noDeliveries":
+    "No deliveries yet. Click “Check” on an external event.",
   "developers.attempts": "attempts",
   "developers.showPayload": "Show technical event data",
   "language.ru": "Russian",
@@ -850,11 +980,13 @@ export const en: Record<string, string> = {
   "language.en": "English",
   "bots.noBusiness": "Create a business in settings before connecting bots.",
   "bots.title": "AI bots",
-  "bots.description": "Product foundation for bots: configuration, channels and future conversations without real external integrations at this stage.",
+  "bots.description":
+    "Product foundation for bots: configuration, channels and future conversations without real external integrations at this stage.",
   "bots.create": "Create bot",
   "bots.websiteAssistantPlaceholder": "Website assistant",
   "bots.emptyTitle": "No bots yet",
-  "bots.emptyText": "Create the first bot to later connect website chat, Telegram, WhatsApp or Instagram channel.",
+  "bots.emptyText":
+    "Create the first bot to later connect website chat, Telegram, WhatsApp or Instagram channel.",
   "bots.defaultLanguage": "Default language",
   "bots.channels": "Channels",
   "bots.dialogs": "Dialogs",
@@ -866,18 +998,24 @@ export const en: Record<string, string> = {
   "botDetail.previewMessageDefault": "Hello, I want to book a consultation.",
   "botDetail.followUpDefault": "Thanks. What is the nearest available time?",
   "botDetail.telegramSaved": "Telegram connection saved.",
-  "botDetail.telegramSavedNoToken": "Saved, but the connection key is not configured yet.",
-  "botDetail.webhookMockSaved": "Message intake URL saved in safe preview mode: {reason}",
+  "botDetail.telegramSavedNoToken":
+    "Saved, but the connection key is not configured yet.",
+  "botDetail.webhookMockSaved":
+    "Message intake URL saved in safe preview mode: {reason}",
   "botDetail.webhookApplied": "Message intake URL applied.",
-  "botDetail.telegramStatus": "Status: {status}. Connection key: {token}. {error}",
+  "botDetail.telegramStatus":
+    "Status: {status}. Connection key: {token}. {error}",
   "botDetail.tokenConfigured": "configured",
   "botDetail.tokenMissing": "missing",
   "botDetail.telegramStatusError": "Error: {error}.",
-  "botDetail.previewCreated": "Conversation {conversation} created. Lead: {lead}. The message will appear in Messages.",
+  "botDetail.previewCreated":
+    "Conversation {conversation} created. Lead: {lead}. The message will appear in Messages.",
   "botDetail.leadNotCreated": "not created",
-  "botDetail.followUpCreated": "Message added to conversation {conversation}. Check Messages.",
+  "botDetail.followUpCreated":
+    "Message added to conversation {conversation}. Check Messages.",
   "botDetail.notFound": "Bot not found or unavailable.",
-  "botDetail.description": "Message channel setup for website, Telegram, WhatsApp and Instagram.",
+  "botDetail.description":
+    "Message channel setup for website, Telegram, WhatsApp and Instagram.",
   "botDetail.addWebsiteChannel": "Website channel",
   "botDetail.addTelegramChannel": "Telegram channel",
   "botDetail.addWhatsAppChannel": "WhatsApp channel",
@@ -886,18 +1024,22 @@ export const en: Record<string, string> = {
   "botDetail.status": "Status",
   "botDetail.channels": "Channels",
   "botDetail.messages": "Messages",
-  "botDetail.secretsSafe": "Connection secrets are stored safely and are not shown after saving.",
+  "botDetail.secretsSafe":
+    "Connection secrets are stored safely and are not shown after saving.",
   "botDetail.channel.website": "Website chat",
   "botDetail.channel.telegram": "Telegram",
   "botDetail.channel.whatsapp": "WhatsApp",
   "botDetail.channel.instagram": "Instagram",
   "botDetail.externalIdMissing": "External ID is not set",
   "botDetail.widgetCodeConfigured": "Widget code configured",
-  "botDetail.noChannels": "No channels yet. Add a website channel or messenger.",
+  "botDetail.noChannels":
+    "No channels yet. Add a website channel or messenger.",
   "botDetail.telegramTitle": "Telegram setup",
-  "botDetail.telegramDescription": "Telegram is connected through Integrations and support without exposing technical data to the owner.",
+  "botDetail.telegramDescription":
+    "Telegram is connected through Integrations and support without exposing technical data to the owner.",
   "botDetail.telegramSupportTitle": "Connect through Integrations",
-  "botDetail.telegramSupportText": "Check status here or open Integrations. Connection codes and technical setup are not needed for daily owner work.",
+  "botDetail.telegramSupportText":
+    "Check status here or open Integrations. Connection codes and technical setup are not needed for daily owner work.",
   "botDetail.botFatherToken": "BotFather key",
   "botDetail.webhookSecret": "Signature secret (advanced)",
   "botDetail.optional": "optional",
@@ -906,10 +1048,13 @@ export const en: Record<string, string> = {
   "botDetail.applyWebhook": "Apply URL",
   "botDetail.checkStatus": "Check status",
   "botDetail.openIntegrations": "Open Integrations",
-  "botDetail.statusSafe": "Status check does not expose the connection key and only shows safe status.",
-  "botDetail.addTelegramFirst": "Add a Telegram channel to configure the connection.",
+  "botDetail.statusSafe":
+    "Status check does not expose the connection key and only shows safe status.",
+  "botDetail.addTelegramFirst":
+    "Add a Telegram channel to configure the connection.",
   "botDetail.websitePreviewTitle": "Website chat check",
-  "botDetail.websitePreviewDescription": "Sends a message like a real website visitor would.",
+  "botDetail.websitePreviewDescription":
+    "Sends a message like a real website visitor would.",
   "botDetail.widgetInstallCode": "Widget install code",
   "botDetail.widgetCodeCopied": "Install code copied.",
   "botDetail.openInbox": "Open Messages",
@@ -917,28 +1062,37 @@ export const en: Record<string, string> = {
   "botDetail.phone": "Phone",
   "botDetail.message": "Message",
   "botDetail.createTestConversation": "Create conversation",
-  "botDetail.followUpStepTitle": "Step 2: send a second message into the same conversation",
+  "botDetail.followUpStepTitle":
+    "Step 2: send a second message into the same conversation",
   "botDetail.addFollowUp": "Add message",
-  "botDetail.addWebsiteFirst": "Add a website channel first. The message form will appear here after that.",
+  "botDetail.addWebsiteFirst":
+    "Add a website channel first. The message form will appear here after that.",
   "botDetail.previewResultTitle": "Check result",
-  "botDetail.previewResultDescription": "If the message includes a phone or email, ZANI creates a client and lead. After sending, open Messages: the conversation should be visible to a manager.",
+  "botDetail.previewResultDescription":
+    "If the message includes a phone or email, ZANI creates a client and lead. After sending, open Messages: the conversation should be visible to a manager.",
   "botDetail.noPreviewMessages": "No messages yet.",
   "botDetail.aiReplyTitle": "Suggested reply",
-  "botDetail.aiReplyDescription": "Prepares a draft from the latest conversation. The reply is not sent automatically.",
+  "botDetail.aiReplyDescription":
+    "Prepares a draft from the latest conversation. The reply is not sent automatically.",
   "botDetail.generate": "Prepare",
   "botDetail.emptyMessage": "Empty message",
-  "botDetail.noMessagesInLatest": "The latest conversation has no messages yet.",
-  "botDetail.createConversationFirst": "Create a website conversation first or receive a message from a channel.",
+  "botDetail.noMessagesInLatest":
+    "The latest conversation has no messages yet.",
+  "botDetail.createConversationFirst":
+    "Create a website conversation first or receive a message from a channel.",
   "botDetail.draftReplyTitle": "Draft reply",
-  "botDetail.draftReplyEmpty": "The reply draft will appear here. It will not be sent to the client without manager confirmation.",
+  "botDetail.draftReplyEmpty":
+    "The reply draft will appear here. It will not be sent to the client without manager confirmation.",
   "botDetail.draftMeta": "Draft #{id} · {mode} · messages used: {count}",
   "botDetail.mockMode": "preview mode",
   "botDetail.aiMode": "assistant reply",
   "whatsappSetup.savedNotice": "WhatsApp pilot prepared. Status: {status}.",
   "whatsappSetup.title": "WhatsApp connection",
-  "whatsappSetup.description": "The ZANI support team prepares the connection. The owner sees only status and clear actions.",
+  "whatsappSetup.description":
+    "The ZANI support team prepares the connection. The owner sees only status and clear actions.",
   "whatsappSetup.supportTitle": "Safe support-assisted setup",
-  "whatsappSetup.supportText": "We verify the number, message flow, and enable the channel without exposing technical keys in the workspace.",
+  "whatsappSetup.supportText":
+    "We verify the number, message flow, and enable the channel without exposing technical keys in the workspace.",
   "whatsappSetup.preparePilot": "Prepare pilot",
   "whatsappSetup.modePilot": "Pilot mode",
   "whatsappSetup.modeDisabled": "Disabled",
@@ -951,8 +1105,10 @@ export const en: Record<string, string> = {
   "whatsappSetup.lastEvent": "Last event",
   "whatsappSetup.none": "none",
   "whatsappSetup.testHistory": "Message history",
-  "whatsappSetup.emptyHistory": "History is empty. First inbound and outbound messages will appear here.",
-  "whatsappSetup.noChannel": "WhatsApp is not added yet. Request it in Integrations or contact ZANI support.",
+  "whatsappSetup.emptyHistory":
+    "History is empty. First inbound and outbound messages will appear here.",
+  "whatsappSetup.noChannel":
+    "WhatsApp is not added yet. Request it in Integrations or contact ZANI support.",
   "pilot.status.ready": "Ready",
   "pilot.status.needsAttention": "Needs attention",
   "pilot.status.missing": "Not configured",
@@ -960,15 +1116,18 @@ export const en: Record<string, string> = {
   "pilot.loading": "Checking pilot readiness...",
   "pilot.loadError": "Failed to load the checklist. Check business access.",
   "pilot.title": "Pilot readiness",
-  "pilot.description": "Control page before showing Zani to pilot customers: business, data, bot, messages, billing, assistant, import and integrations.",
+  "pilot.description":
+    "Control page before showing Zani to pilot customers: business, data, bot, messages, billing, assistant, import and integrations.",
   "pilot.refresh": "Refresh checklist",
   "pilot.noBusiness": "No business selected",
   "pilot.scoreTitle": "Pilot readiness:",
-  "pilot.scoreText": "{ready} of {total} items are ready. This page does not connect new external services — it shows whether the current workspace is ready for a clickable pilot.",
+  "pilot.scoreText":
+    "{ready} of {total} items are ready. This page does not connect new external services — it shows whether the current workspace is ready for a clickable pilot.",
   "pilot.progress": "Progress",
   "pilot.criticalGaps": "Critical gaps: {count}",
   "pilot.pathTitle": "Pilot preparation path",
-  "pilot.pathText": "Move from business basics to a live client scenario, without technical screens for the merchant.",
+  "pilot.pathText":
+    "Move from business basics to a live client scenario, without technical screens for the merchant.",
   "pilot.step1Title": "1. Business and team",
   "pilot.step1Text": "Profile, owner, operator, roles and access.",
   "pilot.step2Title": "2. CRM skeleton",
@@ -979,14 +1138,16 @@ export const en: Record<string, string> = {
   "pilot.step4Text": "Base import, integrations, billing and final check.",
   "pilot.toFixTitle": "What to finish before the pilot",
   "pilot.readyTitle": "All base pilot items are ready",
-  "pilot.readyText": "You can move to the final check of channels, messages and connections.",
+  "pilot.readyText":
+    "You can move to the final check of channels, messages and connections.",
   "pilot.smokeTitle": "Next manual check",
   "pilot.smoke1": "1. Log in as owner and open Home.",
   "pilot.smoke2": "2. Check Leads, Clients, Deals, Tasks, Calendar.",
   "pilot.smoke3": "3. Open Messages and check the conversation.",
   "pilot.smoke4": "4. Open Bots and make sure the website channel exists.",
   "pilot.smoke5": "5. Open Assistant and check the reply draft.",
-  "pilot.smoke6": "6. Open Integrations and make sure there are no dead-end buttons.",
+  "pilot.smoke6":
+    "6. Open Integrations and make sure there are no dead-end buttons.",
   "pilot.systemActionsTitle": "Next actions from system data",
   "notification.category.sales": "Sales",
   "notification.category.finance": "Finance",
@@ -1006,16 +1167,19 @@ export const en: Record<string, string> = {
   "notification.sent": "Sent",
   "notFound.eyebrow": "Pilot-safe route",
   "notFound.title": "This page is not connected yet",
-  "notFound.text": "ZANI does not send users into dead ends: this route is kept as a safe pilot placeholder. Return to the workspace and continue checking the main scenarios.",
+  "notFound.text":
+    "ZANI does not send users into dead ends: this route is kept as a safe pilot placeholder. Return to the workspace and continue checking the main scenarios.",
   "notFound.backWorkspace": "Back to workspace",
   "table.emptyDescription": "First records will appear here after creation.",
   "table.total": "Total: {count}",
   "table.records": "CRM records",
   "permissions.action.view": "view",
   "permissions.action.manage": "perform this action in",
-  "permissions.forbidden": "Your role does not have access to {action} “{resource}”. If you need it for work, ask the business owner to change your role or visibility scope in team settings.",
+  "permissions.forbidden":
+    "Your role does not have access to {action} “{resource}”. If you need it for work, ask the business owner to change your role or visibility scope in team settings.",
   "permissions.hiddenTitle": "Section hidden by access settings",
-  "permissions.hiddenText": "Access does not delete data; it only hides sections and actions from the employee role.",
+  "permissions.hiddenText":
+    "Access does not delete data; it only hides sections and actions from the employee role.",
   "permissions.resource.clients": "Clients",
   "permissions.resource.leads": "Leads",
   "permissions.resource.deals": "Deals",
@@ -1036,9 +1200,11 @@ export const en: Record<string, string> = {
   "permissions.resource.ai_outreach": "AI outreach",
   "permissions.resource.ai_automation": "AI automations",
   "calendar.title": "Business calendar",
-  "calendar.description": "Bookings, available slots and team load in one workspace.",
+  "calendar.description":
+    "Bookings, available slots and team load in one workspace.",
   "calendar.businessSchedule": "Business schedule",
-  "calendar.heroText": "Check the day, available slots and staff, then create bookings without extra navigation.",
+  "calendar.heroText":
+    "Check the day, available slots and staff, then create bookings without extra navigation.",
   "calendar.bookings": "Bookings",
   "calendar.confirmed": "Confirmed",
   "calendar.openSlots": "Open slots",
@@ -1047,9 +1213,12 @@ export const en: Record<string, string> = {
   "calendar.openDay": "Open day",
   "calendar.tasksToday": "Tasks",
   "calendar.aiHint": "Schedule hint",
-  "calendar.aiSetupText": "Clients, services and working hours are required for accurate bookings. Set up the base so the calendar can show real available slots.",
-  "calendar.aiBusyText": "Selected day has {count} bookings and {tasks} tasks. Check confirmations and do not leave clients without a next step.",
-  "calendar.aiFreeText": "Selected day has no bookings. Add a client into an available slot or process today's tasks: {tasks}.",
+  "calendar.aiSetupText":
+    "Clients, services and working hours are required for accurate bookings. Set up the base so the calendar can show real available slots.",
+  "calendar.aiBusyText":
+    "Selected day has {count} bookings and {tasks} tasks. Check confirmations and do not leave clients without a next step.",
+  "calendar.aiFreeText":
+    "Selected day has no bookings. Add a client into an available slot or process today's tasks: {tasks}.",
   "calendar.mobileAgenda": "Day agenda",
   "calendar.readiness": "Readiness",
   "calendar.readyClients": "Clients",
@@ -1059,7 +1228,8 @@ export const en: Record<string, string> = {
   "calendar.ready": "ready",
   "calendar.needsSetup": "set up",
   "calendar.completedToday": "{count} bookings completed today.",
-  "calendar.noCompletedYet": "Completed bookings will appear here after client work.",
+  "calendar.noCompletedYet":
+    "Completed bookings will appear here after client work.",
   "calendar.previousDay": "Previous day",
   "calendar.nextDay": "Next day",
   "calendar.previousMonth": "Previous month",
@@ -1070,7 +1240,8 @@ export const en: Record<string, string> = {
   "calendar.month": "Month",
   "calendar.newBooking": "New booking",
   "calendar.createdNotice": "Booking created and added to the calendar.",
-  "calendar.quickHoursApplied": "09:00-20:00 working hours applied. You can now create bookings in the calendar.",
+  "calendar.quickHoursApplied":
+    "09:00-20:00 working hours applied. You can now create bookings in the calendar.",
   "calendar.noBusiness": "Create a business in settings to open the calendar.",
   "calendar.noResource": "no resource",
   "calendar.lead": "Lead",
@@ -1092,13 +1263,16 @@ export const en: Record<string, string> = {
   "calendar.setupClient": "Add a client to create bookings",
   "calendar.setupService": "Add a service to calculate duration",
   "calendar.setupHoursTitle": "Working hours are not configured",
-  "calendar.setupHoursText": "The calendar cannot show available slots without working hours.",
+  "calendar.setupHoursText":
+    "The calendar cannot show available slots without working hours.",
   "calendar.applyQuickHours": "Apply 09:00-20:00",
   "calendar.configure": "Configure",
-  "calendar.setupResources": "Resources are optional, but they make scheduling more precise",
+  "calendar.setupResources":
+    "Resources are optional, but they make scheduling more precise",
   "calendar.daySchedule": "Day schedule",
   "calendar.plannedCount": "{count} bookings planned",
-  "calendar.freeDayHint": "The day is free. Click “New booking” to add a client to the schedule.",
+  "calendar.freeDayHint":
+    "The day is free. Click “New booking” to add a client to the schedule.",
   "calendar.availableSlot": "Available slot",
   "calendar.weekSchedule": "Week schedule",
   "calendar.weekHint": "Quick overview of bookings for the selected week.",
@@ -1106,21 +1280,26 @@ export const en: Record<string, string> = {
   "calendar.monthHint": "Compact daily load grid.",
   "calendar.free": "Free",
   "calendar.shortCount": "{count} bookings",
-  "calendar.loadingInline": "Loading calendar data: bookings, clients, services and working hours. You can already review the screen.",
+  "calendar.loadingInline":
+    "Loading calendar data: bookings, clients, services and working hours. You can already review the screen.",
   "calendar.loadingAppointments": "Loading bookings...",
   "appointment.selectResourceError": "Select a staff member or workplace",
   "appointment.selectSlotError": "Select an available slot",
   "appointment.needClientTitle": "Add a client first",
-  "appointment.needClientText": "Every booking is linked to a client. Create a client, then return to the calendar.",
+  "appointment.needClientText":
+    "Every booking is linked to a client. Create a client, then return to the calendar.",
   "appointment.goClients": "Go to clients",
   "appointment.needServiceTitle": "Add a service first",
-  "appointment.needServiceText": "Slots are calculated from service duration. Add at least one active service.",
+  "appointment.needServiceText":
+    "Slots are calculated from service duration. Add at least one active service.",
   "appointment.goServices": "Set up services",
   "appointment.resourceHintTitle": "Add staff for precise scheduling",
-  "appointment.resourceHintText": "For a salon, barbershop or clinic, a resource usually means a staff member, doctor, room or workplace.",
+  "appointment.resourceHintText":
+    "For a salon, barbershop or clinic, a resource usually means a staff member, doctor, room or workplace.",
   "appointment.goResources": "Go to resources",
   "appointment.resourceOptionalTitle": "Staff or room can be selected manually",
-  "appointment.resourceSelectedText": "Leave this field empty to create the booking against the business-wide schedule. Select a specific staff member, room or workplace only when needed.",
+  "appointment.resourceSelectedText":
+    "Leave this field empty to create the booking against the business-wide schedule. Select a specific staff member, room or workplace only when needed.",
   "appointment.client": "Client",
   "appointment.service": "Service",
   "appointment.resource": "Staff / resource",
@@ -1142,11 +1321,16 @@ export const en: Record<string, string> = {
   "appointment.noSlots": "No available slots",
   "appointment.selectTime": "Select time",
   "appointment.noSlotsForDate": "No available slots for {date}",
-  "appointment.noSlotsReason": "Check business or selected staff working hours. For a quick start, apply a daily 09:00-20:00 salon schedule.",
-  "appointment.noSlotsReasonMissingHours": "Working hours are not configured for this day. Set the week or apply the quick 09:00-20:00 schedule.",
-  "appointment.noSlotsReasonDayOff": "The selected day is marked as a day off. Change the schedule or choose another date.",
-  "appointment.noSlotsReasonTooShort": "The working window is shorter than the service duration. Extend working hours or choose another service.",
-  "appointment.noSlotsReasonBusy": "The schedule is configured, but all slots are already booked. Choose another date, time or resource.",
+  "appointment.noSlotsReason":
+    "Check business or selected staff working hours. For a quick start, apply a daily 09:00-20:00 salon schedule.",
+  "appointment.noSlotsReasonMissingHours":
+    "Working hours are not configured for this day. Set the week or apply the quick 09:00-20:00 schedule.",
+  "appointment.noSlotsReasonDayOff":
+    "The selected day is marked as a day off. Change the schedule or choose another date.",
+  "appointment.noSlotsReasonTooShort":
+    "The working window is shorter than the service duration. Extend working hours or choose another service.",
+  "appointment.noSlotsReasonBusy":
+    "The schedule is configured, but all slots are already booked. Choose another date, time or resource.",
   "appointment.workingWindow": "Working window: {start}-{end}",
   "appointment.reasonHours": "working hours are not configured for this day",
   "appointment.reasonResource": "selected staff may have a day off",
@@ -1174,8 +1358,10 @@ export const en: Record<string, string> = {
   "appointment.save": "Save booking",
   "appointment.create": "Create booking",
   "appointments.title": "Appointments",
-  "appointments.description": "Operational list of every booking: who is coming, what the staff member does and what status the client has.",
-  "appointments.noBusiness": "Create a business in settings to work with appointments.",
+  "appointments.description":
+    "Operational list of every booking: who is coming, what the staff member does and what status the client has.",
+  "appointments.noBusiness":
+    "Create a business in settings to work with appointments.",
   "appointments.create": "Create booking",
   "appointments.today": "Today",
   "appointments.todayHint": "what to check before the day starts",
@@ -1187,8 +1373,10 @@ export const en: Record<string, string> = {
   "appointments.resourcesHint": "staff or rooms in the schedule",
   "appointments.allStatuses": "All statuses",
   "appointments.emptyTitle": "No appointments yet",
-  "appointments.emptyFiltered": "No appointments match the selected filters. Change the date or status.",
-  "appointments.emptyText": "Create the first booking manually or from a lead so it appears in the list and calendar.",
+  "appointments.emptyFiltered":
+    "No appointments match the selected filters. Change the date or status.",
+  "appointments.emptyText":
+    "Create the first booking manually or from a lead so it appears in the list and calendar.",
   "appointments.dateTime": "Date/time",
   "appointments.actions": "Actions",
   "appointments.card": "Card",
@@ -1197,7 +1385,8 @@ export const en: Record<string, string> = {
   "appointments.archiveAction": "Archive",
   "appointments.repeatBooking": "Create repeat booking",
   "appointments.archiveReason": "Appointment archive reason",
-  "appointments.archiveReasonPlaceholder": "For example: client cancelled, duplicate booking",
+  "appointments.archiveReasonPlaceholder":
+    "For example: client cancelled, duplicate booking",
   "appointments.archiveReasonDefault": "Archived by manager",
   "appointments.editTitle": "Edit appointment",
   "appointments.reschedule": "Reschedule",
@@ -1206,26 +1395,35 @@ export const en: Record<string, string> = {
   "appointments.selectNewSlot": "Select a new time",
   "appointments.noSlots": "No available slots",
   "appointments.rescheduleReason": "Reschedule reason",
-  "appointments.rescheduleReasonPlaceholder": "For example: client asked for another time",
+  "appointments.rescheduleReasonPlaceholder":
+    "For example: client asked for another time",
   "appointments.rescheduledNotice": "Appointment rescheduled",
   "appointments.statusReasonTitle": "Appointment status reason",
   "appointments.statusReason": "Reason",
-  "appointments.statusReasonPlaceholder": "For example: client cancelled or did not arrive",
+  "appointments.statusReasonPlaceholder":
+    "For example: client cancelled or did not arrive",
+  "appointments.actionDone": "Appointment action completed",
   "workingHours.title": "Working hours",
-  "workingHours.description": "Business-wide schedule and separate weekly hours for staff, rooms or workplaces.",
-  "workingHours.noBusiness": "Create a business in settings to configure working hours.",
+  "workingHours.description":
+    "Business-wide schedule and separate weekly hours for staff, rooms or workplaces.",
+  "workingHours.noBusiness":
+    "Create a business in settings to configure working hours.",
   "workingHours.setupWeek": "Set up week",
   "workingHours.businessDays": "Business working days",
   "workingHours.resourceSchedules": "Individual schedules",
   "workingHours.daysOff": "Day-off rows",
   "workingHours.quickSetup": "Quick setup",
   "workingHours.quickTitle": "Apply a business-wide schedule quickly",
-  "workingHours.quickText": "Choose a template for the whole business. Use “Set up week” for individual staff schedules.",
+  "workingHours.quickText":
+    "Choose a template for the whole business. Use “Set up week” for individual staff schedules.",
   "workingHours.applyPreset": "Apply schedule",
-  "workingHours.savedNotice": "Weekly schedule saved. The calendar will refresh available slots.",
-  "workingHours.presetNotice": "Schedule applied: {count} days updated. The calendar can now show available slots.",
+  "workingHours.savedNotice":
+    "Weekly schedule saved. The calendar will refresh available slots.",
+  "workingHours.presetNotice":
+    "Schedule applied: {count} days updated. The calendar can now show available slots.",
   "workingHours.emptyTitle": "Working hours are not configured",
-  "workingHours.emptyText": "Set up the business week: working days, start time, end time and days off.",
+  "workingHours.emptyText":
+    "Set up the business week: working days, start time, end time and days off.",
   "workingHours.day": "Day",
   "workingHours.target": "Target",
   "workingHours.time": "Time",
@@ -1236,7 +1434,8 @@ export const en: Record<string, string> = {
   "workingHours.notConfigured": "Not configured",
   "workingHours.configuredDays": "{count}/7 working days",
   "workingHours.usesBusinessSchedule": "Uses business-wide schedule",
-  "workingHours.noResourcesText": "No staff, rooms or workplaces have been added yet. The business-wide schedule is enough to start.",
+  "workingHours.noResourcesText":
+    "No staff, rooms or workplaces have been added yet. The business-wide schedule is enough to start.",
   "workingHours.dayOff": "Day off",
   "workingHours.editWeek": "Edit week",
   "workingHours.weekTitle": "Weekly schedule",
@@ -1246,12 +1445,14 @@ export const en: Record<string, string> = {
   "workingHours.end": "End",
   "workingHours.saveSchedule": "Save schedule",
   "workingHours.formTitle": "Set up the whole week at once",
-  "workingHours.formText": "Business-wide hours apply to the entire business. Staff can have a separate week if they work differently.",
+  "workingHours.formText":
+    "Business-wide hours apply to the entire business. Staff can have a separate week if they work differently.",
   "workingHours.salonPreset": "Salon 09:00-20:00 every day",
   "workingHours.officePreset": "Office Mon-Fri 09:00-18:00",
   "workingHours.copyBusinessSchedule": "Copy business schedule",
   "workingHours.saveWeek": "Save weekly schedule",
-  "workingHours.invalidTime": "For a working day, end time must be later than start time.",
+  "workingHours.invalidTime":
+    "For a working day, end time must be later than start time.",
   "workingHours.preset.weekdays": "Mon-Fri 09:00-18:00",
   "workingHours.preset.weekendsOff": "Sat-Sun off",
   "workingHours.preset.daily": "Daily 09:00-20:00",
@@ -1259,7 +1460,8 @@ export const en: Record<string, string> = {
   "workingHours.preset.monSat": "Mon-Sat 09:00-18:00",
   "workingHours.preset.sunOff": "Sun off",
   "services.title": "Services",
-  "services.description": "Active business price list: what you sell, how long it takes and how often clients book it.",
+  "services.description":
+    "Active business price list: what you sell, how long it takes and how often clients book it.",
   "services.noBusiness": "Create a business in settings to manage services.",
   "services.add": "Add service",
   "services.active": "Active services",
@@ -1269,9 +1471,11 @@ export const en: Record<string, string> = {
   "services.usedInBookings": "Used in bookings",
   "services.usedInBookingsHint": "services already selected by clients",
   "services.logicTitle": "Service logic:",
-  "services.logicText": "every service needs a clear duration. It determines how much time the booking takes in the calendar.",
+  "services.logicText":
+    "every service needs a clear duration. It determines how much time the booking takes in the calendar.",
   "services.emptyTitle": "No services yet",
-  "services.emptyText": "Add services with duration and price so managers can create bookings quickly.",
+  "services.emptyText":
+    "Add services with duration and price so managers can create bookings quickly.",
   "services.name": "Name",
   "services.descriptionField": "Description",
   "services.duration": "Duration",
@@ -1280,17 +1484,23 @@ export const en: Record<string, string> = {
   "services.bookings": "Bookings",
   "services.editTitle": "Edit service",
   "services.formHintTitle": "Service affects calendar",
-  "services.formHintText": "The more accurate the duration, the more accurately Zani shows available slots and staff load.",
+  "services.formHintText":
+    "The more accurate the duration, the more accurately Zani shows available slots and staff load.",
   "services.templatesTitle": "Quick service setup",
-  "services.templatesText": "Pick a template, then adjust the name, price or duration for your business.",
+  "services.templatesText":
+    "Pick a template, then adjust the name, price or duration for your business.",
   "services.template.consultation.name": "Consultation",
-  "services.template.consultation.description": "Initial client consultation and next-step selection.",
+  "services.template.consultation.description":
+    "Initial client consultation and next-step selection.",
   "services.template.haircut.name": "Haircut",
-  "services.template.haircut.description": "Basic staff service with a fixed booking duration.",
+  "services.template.haircut.description":
+    "Basic staff service with a fixed booking duration.",
   "services.template.beautyProcedure.name": "Procedure",
-  "services.template.beautyProcedure.description": "Core salon or cabinet service with workspace preparation.",
+  "services.template.beautyProcedure.description":
+    "Core salon or cabinet service with workspace preparation.",
   "services.template.diagnostics.name": "Diagnostics",
-  "services.template.diagnostics.description": "Inspection, checkup or diagnostics before the main work.",
+  "services.template.diagnostics.description":
+    "Inspection, checkup or diagnostics before the main work.",
   "services.isActive": "Active",
   "services.save": "Save",
   "resources.title": "Team and resources",
@@ -1304,27 +1514,34 @@ export const en: Record<string, string> = {
   "resources.withSchedule": "With schedule",
   "resources.withScheduleHint": "have individual working hours",
   "resources.logicTitle": "Resource logic:",
-  "resources.logicText": "for a barbershop or salon, create each staff member as a separate resource. The calendar will show staff load and prevent double-booking one person.",
+  "resources.logicText":
+    "for a barbershop or salon, create each staff member as a separate resource. The calendar will show staff load and prevent double-booking one person.",
   "resources.templateMaster": "Staff member",
-  "resources.templateMasterText": "A stylist, barber, doctor or specialist clients can book.",
+  "resources.templateMasterText":
+    "A stylist, barber, doctor or specialist clients can book.",
   "resources.templateMasterName": "New staff member",
   "resources.templateChair": "Chair / workplace",
-  "resources.templateChairText": "A workplace, chair, table or equipment item with its own availability.",
+  "resources.templateChairText":
+    "A workplace, chair, table or equipment item with its own availability.",
   "resources.templateChairName": "Chair 1",
   "resources.templateRoom": "Room",
-  "resources.templateRoomText": "A room that cannot host two bookings at the same time.",
+  "resources.templateRoomText":
+    "A room that cannot host two bookings at the same time.",
   "resources.templateRoomName": "Room 1",
   "resources.templateBox": "Bay",
-  "resources.templateBoxText": "Auto service, detailing or work zone with its own schedule.",
+  "resources.templateBoxText":
+    "Auto service, detailing or work zone with its own schedule.",
   "resources.templateBoxName": "Bay 1",
   "resources.emptyTitle": "No staff or resources yet",
-  "resources.emptyText": "Add staff, rooms or workplaces so calendar bookings are precise.",
+  "resources.emptyText":
+    "Add staff, rooms or workplaces so calendar bookings are precise.",
   "resources.name": "Name",
   "resources.type": "Type",
   "resources.bookings": "Bookings",
   "resources.editTitle": "Edit resource",
   "resources.formHintTitle": "What counts as a resource",
-  "resources.formHintText": "In a salon it can be a stylist, barber or chair. In a clinic - a doctor or room. In auto service - a bay or lift.",
+  "resources.formHintText":
+    "In a salon it can be a stylist, barber or chair. In a clinic - a doctor or room. In auto service - a bay or lift.",
   "resources.namePlaceholder": "For example: Aliya, Barber 1, Chair 2",
   "resources.typeStaff": "Staff member",
   "resources.typeRoom": "Room",
@@ -1337,9 +1554,11 @@ export const en: Record<string, string> = {
   "resources.available": "Available for bookings",
   "resources.save": "Save",
   "clients.title": "Clients",
-  "clients.description": "Client base with lead history, bookings, tags and quick access to the profile.",
+  "clients.description":
+    "Client base with lead history, bookings, tags and quick access to the profile.",
   "clients.retentionTitle": "Smart retention analytics",
-  "clients.retentionText": "Review {count} clients without active leads, deals or bookings. Start with them so the base does not sit idle.",
+  "clients.retentionText":
+    "Review {count} clients without active leads, deals or bookings. Start with them so the base does not sit idle.",
   "clients.retentionAction": "Show clients",
   "clients.noBusiness": "Create a business in settings to work with clients.",
   "clients.segment": "Segment",
@@ -1363,8 +1582,10 @@ export const en: Record<string, string> = {
   "clients.allTags": "All tags",
   "clients.allSegments": "All segments",
   "clients.emptyTitle": "No clients yet",
-  "clients.emptyFiltered": "No clients match this query. Check name, phone or email.",
-  "clients.emptyText": "Add the first client to keep leads, bookings and communication history in one place.",
+  "clients.emptyFiltered":
+    "No clients match this query. Check name, phone or email.",
+  "clients.emptyText":
+    "Add the first client to keep leads, bookings and communication history in one place.",
   "clients.name": "Name",
   "clients.phone": "Phone",
   "clients.tags": "Tags",
@@ -1379,18 +1600,23 @@ export const en: Record<string, string> = {
   "clients.nextStepContact": "Contact",
   "clients.actions": "Client actions",
   "clients.listHintTitle": "Select a client",
-  "clients.listHintText": "The client profile opens history, leads, bookings, tasks and quick actions without losing the list.",
+  "clients.listHintText":
+    "The client profile opens history, leads, bookings, tasks and quick actions without losing the list.",
   "clients.tagPrompt": "Tag name",
   "clients.tag": "Tag",
   "clients.archiveReason": "Client archive reason",
   "clients.aiInactiveTitle": "Some clients have no activity",
-  "clients.aiInactiveDesc": "{count} clients are not linked to leads or bookings yet. Segment them for follow-up.",
+  "clients.aiInactiveDesc":
+    "{count} clients are not linked to leads or bookings yet. Segment them for follow-up.",
   "clients.aiLinkedTitle": "Client base is linked to events",
-  "clients.aiLinkedDesc": "Clients have leads or bookings, so ZANI can explain interaction history more accurately.",
+  "clients.aiLinkedDesc":
+    "Clients have leads or bookings, so ZANI can explain interaction history more accurately.",
   "clients.aiTagsTitle": "Add client tags",
-  "clients.aiTagsDesc": "Tags help separate repeat, hot and risky clients without complex CRM logic.",
+  "clients.aiTagsDesc":
+    "Tags help separate repeat, hot and risky clients without complex CRM logic.",
   "clients.aiSegmentsTitle": "Segmentation is active",
-  "clients.aiSegmentsDesc": "{count} clients have tags. Use segments for quick actions.",
+  "clients.aiSegmentsDesc":
+    "{count} clients have tags. Use segments for quick actions.",
   "clients.editTitle": "Edit client",
   "clients.createSegment": "Create client segment",
   "clients.segmentName": "Segment name",
@@ -1418,7 +1644,8 @@ export const en: Record<string, string> = {
   "clients.unassigned": "Unassigned",
   "clients.selectClient": "Select {name}",
   "clients.details": "Details",
-  "clients.duplicateError": "Could not check duplicates. You can save and verify later.",
+  "clients.duplicateError":
+    "Could not check duplicates. You can save and verify later.",
   "clients.sourceManual": "Manual",
   "clients.sourceWebsite": "Website",
   "clients.sourceParser": "Parser",
@@ -1427,7 +1654,8 @@ export const en: Record<string, string> = {
   "clients.save": "Save",
   "clients.createAnyway": "Create anyway",
   "clients.profileTitle": "Client profile",
-  "clients.profileDescription": "Client list on the left, working profile on the right: lead, deal, booking and message history plus quick actions.",
+  "clients.profileDescription":
+    "Client list on the left, working profile on the right: lead, deal, booking and message history plus quick actions.",
   "clients.filterAllWithCount": "All {count}",
   "clients.filterNewWithCount": "New {count}",
   "clients.filterNoReplyWithCount": "No reply {count}",
@@ -1467,20 +1695,27 @@ export const en: Record<string, string> = {
   "clients.history": "Client history",
   "clients.leadFallback": "Lead #{id}",
   "clients.bookingFallback": "Booking #{id}",
-  "clients.emptyHistory": "History is empty yet. Link the client to a lead, deal or booking.",
+  "clients.emptyHistory":
+    "History is empty yet. Link the client to a lead, deal or booking.",
   "clients.crmNextStepTitle": "CRM next step",
-  "clients.crmNextStepWithActivity": "This client is already linked to a lead or booking. Check the nearest action and contact details.",
-  "clients.crmNextStepNeedsContact": "This client has no recent lead or booking. Check whether a follow-up is needed today.",
+  "clients.crmNextStepWithActivity":
+    "This client is already linked to a lead or booking. Check the nearest action and contact details.",
+  "clients.crmNextStepNeedsContact":
+    "This client has no recent lead or booking. Check whether a follow-up is needed today.",
   "clients.crmNextStepAction": "Open card",
   "clients.archiveClient": "Archive client",
-  "clients.archiveConfirmText": "Client \"{name}\" will be archived. Data will be kept and can be restored.",
+  "clients.archiveConfirmText":
+    "Client {name} will be archived. Data will be kept and can be restored.",
   "clients.noticeArchived": "Client archived.",
-  "clients.archiveReasonPlaceholder": "For example: duplicate, outdated contact",
+  "clients.archiveReasonPlaceholder":
+    "For example: duplicate, outdated contact",
   "clients.mergePreviewTitle": "Merge check",
-  "clients.mergePreviewWarning": "Review which data will be transferred before merging clients.",
+  "clients.mergePreviewWarning":
+    "Review which data will be transferred before merging clients.",
   "clients.mergePreviewPolicy": "Merge policy",
   "clients.mergeConfirm": "Merge clients",
-  "clients.mergePreviewConfirm": "Related records found before merge: {count}. Continue?",
+  "clients.mergePreviewConfirm":
+    "Related records found before merge: {count}. Continue?",
   "clients.source": "Source",
   "clients.sourceDetail": "Source detail",
   "clients.sourceAttribution": "Source attribution",
@@ -1492,7 +1727,8 @@ export const en: Record<string, string> = {
   "clients.consentUnknown": "Not set",
   "clients.manager": "Manager",
   "clients.columns": "Columns",
-  "clients.tableHint": "Core data is in the list, details are in the card on the right",
+  "clients.tableHint":
+    "Core data is in the list, details are in the card on the right",
   "clients.selectedCount": "Selected: {count}",
   "clients.openSelected": "Open selected",
   "clients.clearSelection": "Clear selection",
@@ -1503,7 +1739,8 @@ export const en: Record<string, string> = {
   "clients.clearSearch": "Clear search",
   "clients.tableScrollArea": "Client table scroll area",
   "clients.tableAriaLabel": "Client list",
-  "clients.tableDescription": "Filtered client table. Press Enter or Space on a row to select a client.",
+  "clients.tableDescription":
+    "Filtered client table. Press Enter or Space on a row to select a client.",
   "clients.selectAllPage": "Select all on this page",
   "clients.contacts": "Contacts",
   "clients.favorite": "Favorite",
@@ -1535,14 +1772,17 @@ export const en: Record<string, string> = {
   "crmCard.leadNumber": "Lead #{id}",
   "crmCard.call": "Call",
   "crmCard.snapshotNext": "Next action",
-  "crmCard.snapshotNoTasks": "No open task. Create the next step if the client needs action.",
+  "crmCard.snapshotNoTasks":
+    "No open task. Create the next step if the client needs action.",
   "crmCard.snapshotHistory": "Latest event",
   "crmCard.snapshotMessages": "Latest message",
   "crmCard.attachments": "Attachments",
   "crmCard.noAttachments": "Files from messages and cards will appear here.",
-  "crmCard.attachmentsText": "Upload photos, contracts, invoices and other documents related to this CRM card.",
+  "crmCard.attachmentsText":
+    "Upload photos, contracts, invoices and other documents related to this CRM card.",
   "crmCard.dropFilesTitle": "Drop files here or choose from your computer",
-  "crmCard.dropFilesText": "Images and documents are supported. File access follows this CRM entity permissions.",
+  "crmCard.dropFilesText":
+    "Images and documents are supported. File access follows this CRM entity permissions.",
   "crmCard.uploadSelected": "Upload {count}",
   "crmCard.removeFile": "Remove file",
   "crmCard.addAttachment": "Add",
@@ -1561,7 +1801,8 @@ export const en: Record<string, string> = {
   "crmCard.probability": "Probability",
   "crmCard.closeDate": "Close date",
   "crmCard.quickEdit": "Quick edit",
-  "crmCard.quickEditText": "Status and working note can be changed directly from the CRM card.",
+  "crmCard.quickEditText":
+    "Status and working note can be changed directly from the CRM card.",
   "crmCard.saveError": "Could not save card changes.",
   "crmCard.leadStatus": "Lead status",
   "crmCard.dealStatus": "Deal status",
@@ -1572,8 +1813,10 @@ export const en: Record<string, string> = {
   "crmCard.noDeals": "No deals yet",
   "crmCard.noDealsText": "Linked deals will appear in this CRM card.",
   "crmCard.emptyTimeline": "Timeline is empty",
-  "crmCard.emptyTimelineText": "Manager, automation and communication actions will appear here.",
-  "crmCard.timelineVisibleCount": "Showing {visible} of {total} timeline events.",
+  "crmCard.emptyTimelineText":
+    "Manager, automation and communication actions will appear here.",
+  "crmCard.timelineVisibleCount":
+    "Showing {visible} of {total} timeline events.",
   "crmCard.timelineHasMore": "More events are available in the full history.",
   "crmCard.timelineCategoryCrm": "CRM",
   "crmCard.timelineCategoryMessage": "Message",
@@ -1606,8 +1849,15 @@ export const en: Record<string, string> = {
   "crmCard.timelineFieldSourceEvent": "Source event",
   "crmCard.timelineFieldTarget": "Target",
   "crmCard.timelineFieldEntity": "Entity",
+  "crmCard.timelineEvent.lead_taken_in_work": "Lead taken into work",
+  "crmCard.timelineEvent.lead_created": "Lead created",
+  "crmCard.timelineEvent.message_received": "Message received",
+  "crmCard.timelineEvent.task_created": "Task created",
+  "crmCard.timelineEvent.appointment_created": "Booking created",
+  "crmCard.timelineEvent.deal_created_from_lead": "Deal created from lead",
   "crmCard.quickTask": "Quick task",
-  "crmCard.quickTaskText": "Create the next step directly from the client or lead card.",
+  "crmCard.quickTaskText":
+    "Create the next step directly from the client or lead card.",
   "crmCard.taskPlaceholder": "For example: call back today",
   "crmCard.createTask": "Create task",
   "crmCard.taskError": "Could not create task.",
@@ -1616,23 +1866,27 @@ export const en: Record<string, string> = {
   "crmCard.noTasksText": "Client tasks will be visible here.",
   "crmCard.unread": "Unread",
   "crmCard.noDialogs": "No conversations",
-  "crmCard.noDialogsText": "WhatsApp, Telegram, Instagram and web-chat will be collected in this tab.",
+  "crmCard.noDialogsText":
+    "WhatsApp, Telegram, Instagram and web-chat will be collected in this tab.",
   "crmCard.comment": "Comment",
   "crmCard.commentText": "Internal note will be saved in the card timeline.",
-  "crmCard.commentPlaceholder": "For example: client asks to call back in the evening",
+  "crmCard.commentPlaceholder":
+    "For example: client asks to call back in the evening",
   "crmCard.addComment": "Add comment",
   "crmCard.commentError": "Could not add comment.",
   "crmCard.noNotes": "No notes",
   "crmCard.noNotesText": "Internal team comments will be stored here.",
   "crmCard.customFields": "Custom fields",
-  "crmCard.customFieldsText": "Fields are configured in the additional fields section.",
+  "crmCard.customFieldsText":
+    "Fields are configured in the additional fields section.",
   "crmCard.saveFields": "Save fields",
   "crmCard.no": "No",
   "crmCard.yes": "Yes",
   "crmCard.notSelected": "Not selected",
   "crmCard.loadError": "Could not load CRM card.",
   "tasks.title": "Tasks",
-  "tasks.description": "Follow-ups for clients, leads and bookings without losing context.",
+  "tasks.description":
+    "Follow-ups for clients, leads and bookings without losing context.",
   "tasks.noBusiness": "Create a business in settings to work with tasks.",
   "tasks.quickTask": "Quick task",
   "tasks.template": "Task template",
@@ -1676,22 +1930,28 @@ export const en: Record<string, string> = {
   "tasks.complete": "Complete",
   "tasks.cancel": "Cancel",
   "tasks.cancelConfirmTitle": "Cancel task?",
-  "tasks.cancelConfirmText": "The task will be closed as cancelled. The reason will be saved in CRM history.",
+  "tasks.cancelConfirmText":
+    "The task will be closed as cancelled. The reason will be saved in CRM history.",
   "tasks.cancelReasonLabel": "Cancellation reason",
-  "tasks.cancelReasonPlaceholder": "For example: client declined, task is no longer relevant...",
+  "tasks.cancelReasonPlaceholder":
+    "For example: client declined, task is no longer relevant...",
   "tasks.cancelledNotice": "Task cancelled.",
   "tasks.undoCancelNotice": "Task cancellation undone.",
   "tasks.reopen": "Reopen",
   "tasks.emptyTitle": "No tasks yet",
-  "tasks.emptyText": "Create a follow-up task and link it to a client, lead or booking.",
+  "tasks.emptyText":
+    "Create a follow-up task and link it to a client, lead or booking.",
   "tasks.emptyFilteredTitle": "No tasks match the current filters",
-  "tasks.emptyFilteredText": "Change filters or the search query to see more tasks.",
+  "tasks.emptyFilteredText":
+    "Change filters or the search query to see more tasks.",
   "tasks.emptyTodayTitle": "No tasks for today",
   "tasks.emptyTodayText": "Tasks with today's due date will appear here.",
   "tasks.emptyOverdueTitle": "No overdue tasks",
-  "tasks.emptyOverdueText": "All urgent tasks are closed or moved. New overdue work will appear here.",
+  "tasks.emptyOverdueText":
+    "All urgent tasks are closed or moved. New overdue work will appear here.",
   "tasks.emptyTeamTitle": "No team tasks",
-  "tasks.emptyTeamText": "Tasks assigned to the team or watched by teammates will appear in this list.",
+  "tasks.emptyTeamText":
+    "Tasks assigned to the team or watched by teammates will appear in this list.",
   "tasks.visibleCount": "Showing {visible} of {total}",
   "tasks.loadMore": "Load more",
   "tasks.moreActions": "Task actions",
@@ -1714,7 +1974,7 @@ export const en: Record<string, string> = {
   "tasks.bucketSelectedMeta": "{count} tasks in the selected category",
   "tasks.backToBuckets": "Back to categories",
   "tasks.searchResults": "Search results",
-  "tasks.searchResultsMeta": "\"{query}\" · {count} found",
+  "tasks.searchResultsMeta": "{query} · {count} found",
   "tasks.allTasks": "All tasks",
   "tasks.allTasksMeta": "{count} tasks total",
   "tasks.workloadTitle": "Workload",
@@ -1746,14 +2006,18 @@ export const en: Record<string, string> = {
   "tasks.tableAssignee": "Assignee",
   "tasks.tableActivity": "Activity",
   "tasks.aiOverdueTitle": "There are overdue tasks",
-  "tasks.aiOverdueDesc": "{count} tasks are overdue. Close them first to avoid losing clients.",
+  "tasks.aiOverdueDesc":
+    "{count} tasks are overdue. Close them first to avoid losing clients.",
   "tasks.aiOpenOverdue": "Open",
   "tasks.aiNoOverdueTitle": "No overdue tasks",
-  "tasks.aiNoOverdueDesc": "The team is keeping commitments under control. Check today's tasks.",
+  "tasks.aiNoOverdueDesc":
+    "The team is keeping commitments under control. Check today's tasks.",
   "tasks.aiPriorityTitle": "Urgent actions exist",
-  "tasks.aiPriorityDesc": "{count} high-priority tasks should be handled before normal work.",
+  "tasks.aiPriorityDesc":
+    "{count} high-priority tasks should be handled before normal work.",
   "tasks.aiPlanTitle": "Task plan is calm",
-  "tasks.aiPlanDesc": "No high-priority tasks. You can distribute work by time and responsible person.",
+  "tasks.aiPlanDesc":
+    "No high-priority tasks. You can distribute work by time and responsible person.",
   "tasks.create": "Create task",
   "tasks.edit": "Edit",
   "tasks.editTitle": "Edit task",
@@ -1782,12 +2046,17 @@ export const en: Record<string, string> = {
   "tasks.drawerCommentsTab": "Comments",
   "tasks.drawerHistoryTab": "History",
   "tasks.taskSummary": "Task state",
-  "tasks.statusOpenHint": "The task has been created and is waiting to be started.",
-  "tasks.statusInProgressHint": "The task is in progress. The next expected action is completion or cancellation with a reason.",
-  "tasks.statusDoneHint": "The task is complete. Reopen it if it needs another pass.",
-  "tasks.statusCancelledHint": "The task is cancelled. The cancellation reason is saved in CRM history.",
+  "tasks.statusOpenHint":
+    "The task has been created and is waiting to be started.",
+  "tasks.statusInProgressHint":
+    "The task is in progress. The next expected action is completion or cancellation with a reason.",
+  "tasks.statusDoneHint":
+    "The task is complete. Reopen it if it needs another pass.",
+  "tasks.statusCancelledHint":
+    "The task is cancelled. The cancellation reason is saved in CRM history.",
   "tasks.links": "Linked entities",
-  "tasks.noLinkedEntities": "The task is not linked to a client, lead, deal, booking or conversation yet.",
+  "tasks.noLinkedEntities":
+    "The task is not linked to a client, lead, deal, booking or conversation yet.",
   "tasks.dates": "Dates",
   "tasks.completedAt": "Completed",
   "tasks.cancelledAt": "Cancelled",
@@ -1799,10 +2068,12 @@ export const en: Record<string, string> = {
   "tasks.addComment": "Add comment",
   "tasks.deleteComment": "Delete comment",
   "tasks.deleteCommentConfirmTitle": "Delete comment?",
-  "tasks.deleteCommentConfirmText": "The comment will disappear from the task card. A deletion event will remain in history.",
+  "tasks.deleteCommentConfirmText":
+    "The comment will disappear from the task card. A deletion event will remain in history.",
   "conversations.eyebrow": "Unified inbox",
   "conversations.title": "Messages",
-  "conversations.description": "All requests from website, Telegram, WhatsApp and future channels in one workspace.",
+  "conversations.description":
+    "All requests from website, Telegram, WhatsApp and future channels in one workspace.",
   "conversations.noMessages": "No messages",
   "conversations.selectDialog": "Select a conversation",
   "conversations.noMessagesShort": "No messages yet",
@@ -1823,18 +2094,25 @@ export const en: Record<string, string> = {
   "conversations.systemBotEnabled": "Bot enabled.",
   "conversations.systemClosed": "Conversation closed by manager.",
   "conversations.systemReopened": "Conversation returned to work.",
-  "conversations.aiMockDraftReady": "AI prepared a test draft and inserted it into the reply field.",
-  "conversations.aiDraftReady": "AI prepared a draft and inserted it into the reply field.",
+  "conversations.aiMockDraftReady":
+    "AI prepared a test draft and inserted it into the reply field.",
+  "conversations.aiDraftReady":
+    "AI prepared a draft and inserted it into the reply field.",
   "conversations.aiReplyForbidden": "Your role cannot generate AI replies.",
-  "conversations.aiPipelinePreviewForbidden": "Your role cannot preview CRM pipeline suggestions.",
-  "conversations.aiPipelineRunForbidden": "Your role cannot execute CRM pipeline actions.",
-  "conversations.replySaved": "Manager reply saved in the conversation. Real channel sending will be connected separately.",
+  "conversations.aiPipelinePreviewForbidden":
+    "Your role cannot preview CRM pipeline suggestions.",
+  "conversations.aiPipelineRunForbidden":
+    "Your role cannot execute CRM pipeline actions.",
+  "conversations.replySaved":
+    "Manager reply saved in the conversation. Real channel sending will be connected separately.",
   "conversations.noDialogSelected": "No conversation selected.",
   "conversations.fileUploaded": "File uploaded: {name}",
   "conversations.taskCreated": "Task created: {title}",
-  "conversations.duplicateClientFound": "Similar client found: {list}. Link existing client or confirm manual creation later.",
+  "conversations.duplicateClientFound":
+    "Similar client found: {list}. Link existing client or confirm manual creation later.",
   "conversations.clientCreated": "Client created: {name}",
-  "conversations.clientAlreadyLinked": "Conversation is already linked to a client.",
+  "conversations.clientAlreadyLinked":
+    "Conversation is already linked to a client.",
   "conversations.clientLinked": "Existing client linked to conversation.",
   "conversations.leadLinked": "Lead #{id} linked to conversation.",
   "conversations.dealCreated": "Deal created: {title}",
@@ -1852,10 +2130,14 @@ export const en: Record<string, string> = {
   "conversations.requiresReply": "need reply",
   "conversations.myWork": "my queue",
   "conversations.aiTriageTitle": "Message hint",
-  "conversations.aiTriageHandoff": "{count} conversations need a manager. Start there so clients do not wait too long for the bot.",
-  "conversations.aiTriageUnread": "{count} conversations are still unread. Reply to hot requests and new clients first.",
-  "conversations.aiTriageStable": "No critical conversations right now. Check new messages and keep processing the queue.",
-  "conversations.aiTriageMissing": "Not enough inbox data yet. Connect a channel or wait for first messages.",
+  "conversations.aiTriageHandoff":
+    "{count} conversations need a manager. Start there so clients do not wait too long for the bot.",
+  "conversations.aiTriageUnread":
+    "{count} conversations are still unread. Reply to hot requests and new clients first.",
+  "conversations.aiTriageStable":
+    "No critical conversations right now. Check new messages and keep processing the queue.",
+  "conversations.aiTriageMissing":
+    "Not enough inbox data yet. Connect a channel or wait for first messages.",
   "conversations.advancedFilters": "Advanced filters",
   "conversations.advancedCrmLinks": "Advanced CRM links",
   "conversations.senderAi": "AI",
@@ -1880,17 +2162,21 @@ export const en: Record<string, string> = {
   "conversations.resetFilters": "Reset filters",
   "conversations.loadingInbox": "Loading inbox...",
   "conversations.emptyTitle": "No conversations yet",
-  "conversations.emptyText": "New website and Telegram requests will appear here automatically.",
+  "conversations.emptyText":
+    "New website and Telegram requests will appear here automatically.",
   "conversations.pauseBot": "Pause bot",
   "conversations.enableBot": "Enable bot",
   "conversations.closedFromInbox": "Closed from inbox",
-  "conversations.selectDialogText": "Messages from the selected client will appear in this feed.",
+  "conversations.selectDialogText":
+    "Messages from the selected client will appear in this feed.",
   "conversations.loadingMessages": "Loading messages...",
   "conversations.noMessagesTitle": "No messages yet",
-  "conversations.noMessagesText": "When a client writes to a connected channel, history will be here.",
+  "conversations.noMessagesText":
+    "When a client writes to a connected channel, history will be here.",
   "conversations.quickReplies": "Quick replies...",
   "conversations.noTemplates": "No templates for this channel.",
-  "conversations.closedNotice": "Conversation is closed. Click “Reopen” to write the client again.",
+  "conversations.closedNotice":
+    "Conversation is closed. Click “Reopen” to write the client again.",
   "conversations.attachFile": "Attach file",
   "conversations.closedComposer": "Conversation is closed. Reopen it to reply.",
   "conversations.replyPlaceholder": "Write a reply to the client...",
@@ -1902,9 +2188,12 @@ export const en: Record<string, string> = {
   "conversations.crmLink": "CRM link",
   "conversations.leadNotLinked": "Lead is not linked",
   "conversations.dealNotLinked": "Deal is not linked",
-  "conversations.crmContextLinked": "Conversation is already linked to CRM context.",
-  "conversations.crmContextText": "Create or link a client, lead and deal without leaving inbox.",
-  "conversations.noFiles": "No files yet. Attach a contract, receipt, photo or document from composer.",
+  "conversations.crmContextLinked":
+    "Conversation is already linked to CRM context.",
+  "conversations.crmContextText":
+    "Create or link a client, lead and deal without leaving inbox.",
+  "conversations.noFiles":
+    "No files yet. Attach a contract, receipt, photo or document from composer.",
   "conversations.bot": "Bot",
   "conversations.active": "Active",
   "conversations.paused": "Paused",
@@ -1919,7 +2208,8 @@ export const en: Record<string, string> = {
   "conversations.linkDealById": "Link deal by ID",
   "conversations.link": "Link",
   "conversations.aiDraft": "AI draft",
-  "conversations.aiDraftText": "Click “Suggest reply” to get a draft directly in composer. Auto-send is disabled.",
+  "conversations.aiDraftText":
+    "Click “Suggest reply” to get a draft directly in composer. Auto-send is disabled.",
   "conversations.selectContext": "Select a conversation to see CRM context.",
   "conversations.followUpTaskTitle": "Follow up: {title}",
   "conversations.clientIdPlaceholder": "Client ID",
@@ -1940,7 +2230,8 @@ export const en: Record<string, string> = {
   "conversations.taskCreatedShort": "Task created.",
   "conversations.pipelineAiSuffix": " Hint: {intent}, {confidence}%.",
   "conversations.pipelineUpdated": "Client links updated: {created}.{ai}",
-  "conversations.pipelineAlreadyLinked": "Conversation is already linked to a client and deal.{ai}",
+  "conversations.pipelineAlreadyLinked":
+    "Conversation is already linked to a client and deal.{ai}",
   "conversations.bulkDone": "Done: processed {count} conversations.",
   "conversations.pipelineDealTitle": "Deal: {title}",
   "conversations.attention": "Attention",
@@ -1976,20 +2267,26 @@ export const en: Record<string, string> = {
   "conversations.clientId": "Client #{id}",
   "conversations.leadId": "Lead #{id}",
   "conversations.dealId": "Deal #{id}",
-  "conversations.assignTooltip": "Assign this conversation to yourself so it is clear who replies to the client.",
+  "conversations.assignTooltip":
+    "Assign this conversation to yourself so it is clear who replies to the client.",
   "conversations.takeDialog": "Take conversation",
   "conversations.assign": "Assign",
   "conversations.pauseBotTooltip": "Pause the bot in this conversation.",
-  "conversations.enableBotTooltip": "Enable the bot again for this conversation.",
-  "conversations.handoffTooltip": "Hand the conversation to a human and disable automatic bot processing.",
+  "conversations.enableBotTooltip":
+    "Enable the bot again for this conversation.",
+  "conversations.handoffTooltip":
+    "Hand the conversation to a human and disable automatic bot processing.",
   "conversations.handoffToOperator": "Handoff to operator",
-  "conversations.reopenTooltip": "Return the closed conversation to work and allow manager replies again.",
+  "conversations.reopenTooltip":
+    "Return the closed conversation to work and allow manager replies again.",
   "conversations.openDialog": "Open conversation",
-  "conversations.closeTooltip": "Close the conversation after processing. History remains available in the client card.",
+  "conversations.closeTooltip":
+    "Close the conversation after processing. History remains available in the client card.",
   "conversations.closeDialog": "Close conversation",
   "conversations.loadingHistory": "Loading history",
   "conversations.loadEarlier": "Load earlier",
-  "conversations.closedReplyNotice": "Conversation is closed. Open it to reply.",
+  "conversations.closedReplyNotice":
+    "Conversation is closed. Open it to reply.",
   "conversations.send": "Send",
   "conversations.newContact": "New",
   "conversations.channel": "Channel",
@@ -2000,7 +2297,8 @@ export const en: Record<string, string> = {
   "conversations.replyHint": "Reply hint",
   "conversations.intentLine": "Intent: {intent}.",
   "conversations.confidenceLine": "Confidence {confidence}%.",
-  "conversations.assistantDraftHelp": "Assistant can prepare a reply draft and update client links.",
+  "conversations.assistantDraftHelp":
+    "Assistant can prepare a reply draft and update client links.",
   "conversations.prepareDraftFallback": "Prepare a reply draft for the client.",
   "conversations.prepareReply": "Prepare reply",
   "conversations.newMessage": "New message",
@@ -2026,7 +2324,8 @@ export const en: Record<string, string> = {
   "conversations.quickRepliesButton": "Replies",
   "conversations.quickRepliesTitle": "Quick replies",
   "conversations.quickRepliesSearch": "Search reply template...",
-  "conversations.noQuickRepliesText": "Create quick reply templates for frequent messages.",
+  "conversations.noQuickRepliesText":
+    "Create quick reply templates for frequent messages.",
   "conversations.messageStatusReceived": "received",
   "conversations.messageStatusQueued": "queued",
   "conversations.messageStatusSent": "sent",
@@ -2039,21 +2338,26 @@ export const en: Record<string, string> = {
   "conversations.linkDealTitle": "Link deal",
   "conversations.linkSearchPlaceholder": "Search by name, phone, or title...",
   "conversations.noLinkCandidates": "No matches found",
-  "conversations.noLinkCandidatesText": "Change the query or create a new entity from the inspector.",
+  "conversations.noLinkCandidatesText":
+    "Change the query or create a new entity from the inspector.",
   "conversations.clientLinkedShort": "Client linked.",
   "conversations.leadLinkedShort": "Lead linked.",
   "conversations.dealLinkedShort": "Deal linked.",
   "conversations.createTaskTitle": "Create task from conversation",
   "conversations.dialogState": "Conversation state",
   "conversations.crmAutomation": "CRM automation",
-  "conversations.crmAutomationFallback": "Run automation to update CRM links for this conversation.",
+  "conversations.crmAutomationFallback":
+    "Run automation to update CRM links for this conversation.",
   "conversations.showInspector": "Show context",
   "conversations.hideInspector": "Hide context",
   "analytics.title": "Analytics",
-  "analytics.description": "Key CRM metrics without overloaded charts or decorative insights.",
+  "analytics.description":
+    "Key CRM metrics without overloaded charts or decorative insights.",
   "analytics.smartReportTitle": "Intelligent report",
-  "analytics.smartReportText": "{source} is currently the most visible lead source. Lead-to-booking conversion is {conversion}%. Check the channel-to-lead link before optimizing spend.",
-  "analytics.smartReportNoSource": "Lead source is not defined yet. Connect channels and wait for first events so ZANI can show the priority.",
+  "analytics.smartReportText":
+    "{source} is currently the most visible lead source. Lead-to-booking conversion is {conversion}%. Check the channel-to-lead link before optimizing spend.",
+  "analytics.smartReportNoSource":
+    "Lead source is not defined yet. Connect channels and wait for first events so ZANI can show the priority.",
   "analytics.smartReportAction": "Optimize",
   "analytics.noBusiness": "Create a business in settings to view analytics.",
   "analytics.loadError": "Could not load owner analytics.",
@@ -2074,27 +2378,38 @@ export const en: Record<string, string> = {
   "analytics.appointmentRate": "Appointment rate",
   "analytics.aiOpenSources": "Open sources",
   "analytics.aiCard.overdue_tasks.title": "Overdue tasks need action",
-  "analytics.aiCard.overdue_tasks.description": "{value} overdue task(s), grounded by {sources} task source(s).",
-  "analytics.aiCard.unanswered_conversations.title": "Customers are waiting in inbox",
-  "analytics.aiCard.unanswered_conversations.description": "{value} conversation(s) are unread or require handoff, grounded by {sources} conversation source(s).",
+  "analytics.aiCard.overdue_tasks.description":
+    "{value} overdue task(s), grounded by {sources} task source(s).",
+  "analytics.aiCard.unanswered_conversations.title":
+    "Customers are waiting in inbox",
+  "analytics.aiCard.unanswered_conversations.description":
+    "{value} conversation(s) are unread or require handoff, grounded by {sources} conversation source(s).",
   "analytics.aiCard.failed_connectors.title": "Connector health is degraded",
-  "analytics.aiCard.failed_connectors.description": "{value} connector(s) are in failed or error state, grounded by {sources} connector source(s).",
+  "analytics.aiCard.failed_connectors.description":
+    "{value} connector(s) are in failed or error state, grounded by {sources} connector source(s).",
   "analytics.aiCard.appointment_no_show_rate.title": "No-show rate is high",
-  "analytics.aiCard.appointment_no_show_rate.description": "No-show rate is {value}%, grounded by {sources} appointment source(s).",
-  "analytics.aiCard.lead_to_deal_missing.title": "Leads are not turning into deals",
-  "analytics.aiCard.lead_to_deal_missing.description": "{value} visible lead(s) have no linked deal conversion yet.",
+  "analytics.aiCard.appointment_no_show_rate.description":
+    "No-show rate is {value}%, grounded by {sources} appointment source(s).",
+  "analytics.aiCard.lead_to_deal_missing.title":
+    "Leads are not turning into deals",
+  "analytics.aiCard.lead_to_deal_missing.description":
+    "{value} visible lead(s) have no linked deal conversion yet.",
   "analytics.aiCard.crm_operating_norm.title": "CRM operations look stable",
-  "analytics.aiCard.crm_operating_norm.description": "Current operational metrics show no urgent CRM reporting alerts.",
+  "analytics.aiCard.crm_operating_norm.description":
+    "Current operational metrics show no urgent CRM reporting alerts.",
   "analytics.aiCard.no_operational_data.title": "No operational data yet",
-  "analytics.aiCard.no_operational_data.description": "Connect channels or import data so ZANI can build sourced CRM insights.",
+  "analytics.aiCard.no_operational_data.description":
+    "Connect channels or import data so ZANI can build sourced CRM insights.",
   "analytics.aiCard.default.title": "CRM metric insight",
-  "analytics.aiCard.default.description": "This insight is grounded in {sources} source(s).",
+  "analytics.aiCard.default.description":
+    "This insight is grounded in {sources} source(s).",
   "analytics.leadSources": "Lead sources",
   "analytics.noData": "No data",
   "analytics.overdueTasks": "Overdue tasks",
   "analytics.openSectionHint": "Open the matching CRM section to process it.",
   "analytics.operationalReports": "Operational reports",
-  "analytics.operationalReportsText": "Source ROI, funnel, repeat rate and team. No heavy BI, but exports are available.",
+  "analytics.operationalReportsText":
+    "Source ROI, funnel, repeat rate and team. No heavy BI, but exports are available.",
   "analytics.loadingReports": "Preparing reports...",
   "analytics.repeatClientsCount": "{count} repeat clients",
   "analytics.repeatRate": "Repeat rate",
@@ -2102,21 +2417,28 @@ export const en: Record<string, string> = {
   "analytics.openDeals": "Open deals",
   "analytics.wonLost": "Won/Lost",
   "analytics.scheduledReports": "Scheduled reports",
-  "analytics.scheduledReportsText": "Report schedule model is ready. Email delivery will be connected through notification/queue layer.",
+  "analytics.scheduledReportsText":
+    "Report schedule model is ready. Email delivery will be connected through notification/queue layer.",
   "analytics.noRecipients": "No recipients set",
-  "analytics.noSchedules": "No schedules yet. They can be created through API or future report settings UI.",
+  "analytics.noSchedules":
+    "No schedules yet. They can be created through API or future report settings UI.",
   "analytics.sourcesEmpty": "Sources will appear after the first leads.",
   "analytics.aiTopSourceTitle": "Main lead source",
-  "analytics.aiTopSourceDesc": "{source} generated {count} leads. Check the processing quality for this channel.",
+  "analytics.aiTopSourceDesc":
+    "{source} generated {count} leads. Check the processing quality for this channel.",
   "analytics.aiMissingSourcesTitle": "Sources are not visible yet",
-  "analytics.aiMissingSourcesDesc": "Not enough leads with sources. Connect channels or import data so ZANI can explain demand.",
+  "analytics.aiMissingSourcesDesc":
+    "Not enough leads with sources. Connect channels or import data so ZANI can explain demand.",
   "analytics.aiNoShowTitle": "No-shows exist",
-  "analytics.aiNoShowDesc": "{count} clients did not arrive. Check reminders and booking confirmation.",
+  "analytics.aiNoShowDesc":
+    "{count} clients did not arrive. Check reminders and booking confirmation.",
   "analytics.aiNoShowClearTitle": "No no-shows",
-  "analytics.aiNoShowClearDesc": "Current data shows bookings are passing without no-show losses.",
+  "analytics.aiNoShowClearDesc":
+    "Current data shows bookings are passing without no-show losses.",
   "analytics.aiDataQualityTitle": "Data quality",
   "analytics.aiSalesDataTitle": "Sales are not connected",
-  "analytics.aiSalesDataDesc": "Without sales, ZANI will not make revenue or LTV conclusions.",
+  "analytics.aiSalesDataDesc":
+    "Without sales, ZANI will not make revenue or LTV conclusions.",
   "analytics.aiConnectData": "Connect data",
   "analytics.sourceRoi": "Source ROI",
   "analytics.teamCsv": "Team CSV",
@@ -2126,10 +2448,12 @@ export const en: Record<string, string> = {
   "analytics.dealsEmpty": "Deals will appear after pipeline setup.",
   "analytics.servicesByBookings": "Services by bookings",
   "analytics.teamPerformance": "Team performance",
-  "analytics.teamPerformanceText": "Team quality control without heavy BI: leads, handoff, deals and tasks.",
+  "analytics.teamPerformanceText":
+    "Team quality control without heavy BI: leads, handoff, deals and tasks.",
   "analytics.loadingTeam": "Loading team metrics...",
   "analytics.teamHidden": "Team analytics hidden",
-  "analytics.teamHiddenText": "This section is available to owner, admin, department lead or a user with analytics.view permission.",
+  "analytics.teamHiddenText":
+    "This section is available to owner, admin, department lead or a user with analytics.view permission.",
   "analytics.assignedLeads": "Assigned leads",
   "analytics.lostLeads": "Lost leads",
   "analytics.overdueHandoffs": "Waiting for manager",
@@ -2154,9 +2478,11 @@ export const en: Record<string, string> = {
   "analytics.handoff": "Manager handoff",
   "analytics.noTeams": "Teams will appear after department setup.",
   "settings.title": "Settings",
-  "settings.description": "Business, team, access and system settings for Zani.",
+  "settings.description":
+    "Business, team, access and system settings for Zani.",
   "settings.navigationTitle": "Settings sections",
-  "settings.navigationText": "Open a group and jump to the needed block without scanning the whole page.",
+  "settings.navigationText":
+    "Open a group and jump to the needed block without scanning the whole page.",
   "settings.enabled": "Enabled",
   "settings.disabled": "Disabled",
   "settings.section.appointment-messages": "Auto messages",
@@ -2181,7 +2507,8 @@ export const en: Record<string, string> = {
   "settings.group.advanced": "Advanced",
   "settings.appointmentMessagesEyebrow": "Bookings",
   "settings.appointmentMessagesTitle": "Booking auto messages",
-  "settings.appointmentMessagesText": "Confirmation, reminder and post-visit message. Variables are available in the text: {client_name}, {service_name}, {date}, {time}.",
+  "settings.appointmentMessagesText":
+    "Confirmation, reminder and post-visit message. Variables are available in the text: {client_name}, {service_name}, {date}, {time}.",
   "settings.appointmentMessagesLoading": "Loading message scenarios...",
   "settings.appointmentMessages.offsetBefore": "Minutes before booking",
   "settings.appointmentMessages.offsetAfter": "Minutes after visit",
@@ -2195,35 +2522,48 @@ export const en: Record<string, string> = {
   "settings.appointmentMessages.channel.sms": "SMS",
   "settings.appointmentMessages.channel.system": "Inside CRM",
   "settings.appointmentMessages.scenario.confirmation": "Booking confirmation",
-  "settings.appointmentMessages.scenario.confirmation.text": "Message the client before the visit to reduce no-shows and catch cancellations or rescheduling early.",
+  "settings.appointmentMessages.scenario.confirmation.text":
+    "Message the client before the visit to reduce no-shows and catch cancellations or rescheduling early.",
   "settings.appointmentMessages.scenario.reminder": "Pre-visit reminder",
-  "settings.appointmentMessages.scenario.reminder.text": "A short message a few hours before the booking with service, time, specialist and address.",
+  "settings.appointmentMessages.scenario.reminder.text":
+    "A short message a few hours before the booking with service, time, specialist and address.",
   "settings.appointmentMessages.scenario.thankYou": "After service completion",
-  "settings.appointmentMessages.scenario.thankYou.text": "Thank-you after a completed visit, repeat booking or a soft feedback request.",
+  "settings.appointmentMessages.scenario.thankYou.text":
+    "Thank-you after a completed visit, repeat booking or a soft feedback request.",
   "settings.notificationsEyebrow": "Notifications",
   "settings.notificationsTitle": "Personal noise settings",
-  "settings.notificationsText": "Turn off regular in-app notifications by category. Critical high/urgent events, delivery errors and important actions will still be shown.",
+  "settings.notificationsText":
+    "Turn off regular in-app notifications by category. Critical high/urgent events, delivery errors and important actions will still be shown.",
   "settings.notificationsDisabledCount": "{count} disabled",
   "settings.notifications.category.sales": "Sales and bookings",
-  "settings.notifications.category.sales.text": "Leads, deals, confirmations and client replies about bookings.",
+  "settings.notifications.category.sales.text":
+    "Leads, deals, confirmations and client replies about bookings.",
   "settings.notifications.category.tasks": "Tasks",
-  "settings.notifications.category.tasks.text": "Assignments, overdue work and actions that require manual handling.",
+  "settings.notifications.category.tasks.text":
+    "Assignments, overdue work and actions that require manual handling.",
   "settings.notifications.category.outreach": "Outreach",
-  "settings.notifications.category.outreach.text": "Campaign preparation, launch, completion, opt-out and campaign errors.",
+  "settings.notifications.category.outreach.text":
+    "Campaign preparation, launch, completion, opt-out and campaign errors.",
   "settings.notifications.category.aiAlerts": "AI recommendations",
-  "settings.notifications.category.aiAlerts.text": "AI Analyst recommendations and service connection suggestions.",
+  "settings.notifications.category.aiAlerts.text":
+    "AI Analyst recommendations and service connection suggestions.",
   "settings.notifications.category.system": "System",
-  "settings.notifications.category.system.text": "Technical events, delivery errors and integration status.",
+  "settings.notifications.category.system.text":
+    "Technical events, delivery errors and integration status.",
   "settings.notifications.category.finance": "Finance",
-  "settings.notifications.category.finance.text": "Payments, invoices, plans and finance events.",
+  "settings.notifications.category.finance.text":
+    "Payments, invoices, plans and finance events.",
   "settings.teamEyebrow": "Team and access",
   "settings.teamTitle": "Employees and access",
-  "settings.teamText": "Owner and admin see the full business. Manager works with sales, operator answers chats, accountant and marketer only get their own sections.",
+  "settings.teamText":
+    "Owner and admin see the full business. Manager works with sales, operator answers chats, accountant and marketer only get their own sections.",
   "settings.permissions": "permissions",
   "settings.accessTitle": "Clear permission setup",
-  "settings.accessText": "Select an employee, assign a role and verify visibility. New employees safely start as Staff.",
+  "settings.accessText":
+    "Select an employee, assign a role and verify visibility. New employees safely start as Staff.",
   "settings.roleGuideTitle": "Which role to invite",
-  "settings.roleGuideText": "Pick the employee type in one click. The role can be changed later and advanced permissions can be tuned separately.",
+  "settings.roleGuideText":
+    "Pick the employee type in one click. The role can be changed later and advanced permissions can be tuned separately.",
   "settings.memberStep": "1. Employee",
   "settings.roleStep": "2. Role",
   "settings.visibilityStep": "3. Visibility",
@@ -2231,24 +2571,32 @@ export const en: Record<string, string> = {
   "settings.noAccessText": "This role does not get access to working data.",
   "settings.active": "Active",
   "settings.inactive": "Disabled",
-  "settings.teamEmpty": "Team will appear after employees are added to the business.",
+  "settings.teamEmpty":
+    "Team will appear after employees are added to the business.",
   "settings.inviteTitle": "Invite employee",
-  "settings.inviteText": "The employee gets a link, sets a password and signs in with the selected role. Until delivery APIs are connected, you can open WhatsApp, Telegram or email with prepared text.",
+  "settings.inviteText":
+    "The employee gets a link, sets a password and signs in with the selected role. Until delivery APIs are connected, you can open WhatsApp, Telegram or email with prepared text.",
   "settings.loginEmail": "Login email",
-  "settings.loginEmailHelp": "Email is used as the employee login. The invite link can be sent through WhatsApp, Telegram, email or copied manually.",
+  "settings.loginEmailHelp":
+    "Email is used as the employee login. The invite link can be sent through WhatsApp, Telegram, email or copied manually.",
   "settings.fullName": "Name",
   "settings.fullNamePlaceholder": "Aliya Ivanova",
   "settings.role": "Role",
   "settings.delivery": "Send via",
-  "settings.deliveryHelp.whatsapp": "Opens WhatsApp with prepared invite text. The phone is only used to deliver the link.",
-  "settings.deliveryHelp.telegram": "Opens Telegram share with prepared text. Username is kept as the employee contact.",
-  "settings.deliveryHelp.email": "Opens the email client with a prepared message. Real sending is connected through a notification provider.",
-  "settings.deliveryHelp.manual": "Creates a link that can be shared through any channel.",
+  "settings.deliveryHelp.whatsapp":
+    "Opens WhatsApp with prepared invite text. The phone is only used to deliver the link.",
+  "settings.deliveryHelp.telegram":
+    "Opens Telegram share with prepared text. Username is kept as the employee contact.",
+  "settings.deliveryHelp.email":
+    "Opens the email client with a prepared message. Real sending is connected through a notification provider.",
+  "settings.deliveryHelp.manual":
+    "Creates a link that can be shared through any channel.",
   "settings.copyLink": "Copy link",
   "settings.whatsappPhone": "WhatsApp phone",
   "settings.createInvite": "Create invitation",
   "settings.inviteCreatedTitle": "Invitation created",
-  "settings.inviteCreatedText": "{email} can sign in as {role}. Send the link now or copy it manually.",
+  "settings.inviteCreatedText":
+    "{email} can sign in as {role}. Send the link now or copy it manually.",
   "settings.sendInviteNow": "Send now",
   "settings.send": "Send",
   "settings.copy": "Copy",
@@ -2256,7 +2604,8 @@ export const en: Record<string, string> = {
   "settings.revoke": "Revoke",
   "settings.noInvites": "No active invitations yet.",
   "settings.inviteSubject": "Invitation to Zani CRM",
-  "settings.inviteMessage": "You have been invited to Zani CRM. Open the link and set a password: {url}",
+  "settings.inviteMessage":
+    "You have been invited to Zani CRM. Open the link and set a password: {url}",
   "settings.role.owner": "Owner",
   "settings.role.admin": "Director",
   "settings.role.manager": "Sales manager",
@@ -2266,16 +2615,25 @@ export const en: Record<string, string> = {
   "settings.role.support": "Support",
   "settings.role.staff": "Staff",
   "settings.currentRole": "Current role",
-  "settings.roleDescription.owner": "Full control over business, employees, finance, analytics and settings.",
-  "settings.roleDescription.admin": "Operational director access to team, CRM, analytics, integrations and automations without transferring business ownership.",
-  "settings.roleDescription.manager": "Works with leads, deals, clients, tasks and sales calendar.",
-  "settings.roleDescription.operator": "Answers chats, handles inbound requests and creates leads without management sections.",
-  "settings.roleDescription.marketer": "Marketing, sources, segments, forms and communications without finance control.",
-  "settings.roleDescription.accountant": "Finance data, sales, imports and exports without chat or lead management.",
-  "settings.roleDescription.support": "Client help and operational checks without owner-management access.",
-  "settings.roleDescription.staff": "Basic access for a specialist or employee: own tasks, bookings and work context.",
+  "settings.roleDescription.owner":
+    "Full control over business, employees, finance, analytics and settings.",
+  "settings.roleDescription.admin":
+    "Operational director access to team, CRM, analytics, integrations and automations without transferring business ownership.",
+  "settings.roleDescription.manager":
+    "Works with leads, deals, clients, tasks and sales calendar.",
+  "settings.roleDescription.operator":
+    "Answers chats, handles inbound requests and creates leads without management sections.",
+  "settings.roleDescription.marketer":
+    "Marketing, sources, segments, forms and communications without finance control.",
+  "settings.roleDescription.accountant":
+    "Finance data, sales, imports and exports without chat or lead management.",
+  "settings.roleDescription.support":
+    "Client help and operational checks without owner-management access.",
+  "settings.roleDescription.staff":
+    "Basic access for a specialist or employee: own tasks, bookings and work context.",
   "settings.visibility.own": "Own only",
-  "settings.visibility.own.text": "Employee sees only objects assigned to them.",
+  "settings.visibility.own.text":
+    "Employee sees only objects assigned to them.",
   "settings.visibility.team": "Own team",
   "settings.visibility.team.text": "Best for a team lead or senior manager.",
   "settings.visibility.business": "Whole business",
@@ -2287,15 +2645,18 @@ export const en: Record<string, string> = {
   "settings.developerConnections": "Advanced developer connections",
   "settings.automationsEyebrow": "Advanced section",
   "settings.automationsTitle": "Automations",
-  "settings.automationsText": "Ready rules and templates reduce routine work without overloading the daily interface.",
+  "settings.automationsText":
+    "Ready rules and templates reduce routine work without overloading the daily interface.",
   "settings.securityEyebrow": "Security center",
   "settings.securityTitle": "Audit and access control",
-  "settings.securityText": "The owner sees critical actions: export, archiving, roles, support access and team account logins.",
+  "settings.securityText":
+    "The owner sees critical actions: export, archiving, roles, support access and team account logins.",
   "settings.highRisk": "Risk",
   "settings.failedLogins": "Failed",
   "settings.support": "Support",
   "settings.securityHidden": "Security center is hidden for your role",
-  "settings.securityHiddenText": "Requires audit_logs.view access or owner/director role.",
+  "settings.securityHiddenText":
+    "Requires audit_logs.view access or owner/director role.",
   "settings.riskEvents": "Latest risk events",
   "settings.events": "events",
   "settings.noAuditEvents": "No audit events yet.",
@@ -2306,7 +2667,8 @@ export const en: Record<string, string> = {
   "settings.noSupportGrants": "No active grants.",
   "settings.quickRepliesEyebrow": "Quick replies",
   "settings.quickRepliesTitle": "Quick reply templates",
-  "settings.quickRepliesText": "Short replies for inbox composer: manager selects a template, text is inserted into draft and is not sent automatically.",
+  "settings.quickRepliesText":
+    "Short replies for inbox composer: manager selects a template, text is inserted into draft and is not sent automatically.",
   "settings.templateTitle": "Title",
   "settings.channel": "Channel",
   "settings.channel.all": "All",
@@ -2323,16 +2685,21 @@ export const en: Record<string, string> = {
   "settings.enable": "Enable",
   "settings.disable": "Disable",
   "settings.delete": "Delete",
-  "settings.noQuickReplies": "No quick replies yet. Add a greeting, clarification or consultation booking text.",
+  "settings.noQuickReplies":
+    "No quick replies yet. Add a greeting, clarification or consultation booking text.",
   "settings.rolesEyebrow": "Simple roles",
   "settings.rolesTitle": "Permissions without a complex matrix",
-  "settings.rolesText": "The first screen shows the business meaning of a role. Technical actions are only opened in advanced mode.",
+  "settings.rolesText":
+    "The first screen shows the business meaning of a role. Technical actions are only opened in advanced mode.",
   "settings.hideAdvanced": "Hide advanced",
   "settings.openAdvanced": "Open advanced",
-  "settings.noRoles": "Role presets will appear after migration or business creation.",
+  "settings.noRoles":
+    "Role presets will appear after migration or business creation.",
   "settings.advancedFor": "Advanced: {name}",
-  "settings.advancedText": "Use this block rarely: changing a group level changes role permissions for every employee with this preset.",
-  "settings.roleSummaryNone": "This role sees nothing. Useful only for temporary blocking.",
+  "settings.advancedText":
+    "Use this block rarely: changing a group level changes role permissions for every employee with this preset.",
+  "settings.roleSummaryNone":
+    "This role sees nothing. Useful only for temporary blocking.",
   "settings.roleSummary": "Access: {names}.",
   "settings.accessGroup.sales": "Sales",
   "settings.accessGroup.sales.text": "Leads, deals and commercial work.",
@@ -2347,37 +2714,49 @@ export const en: Record<string, string> = {
   "settings.accessGroup.analytics": "Analytics",
   "settings.accessGroup.analytics.text": "Reports, team and business metrics.",
   "settings.accessGroup.settings": "Settings",
-  "settings.accessGroup.settings.text": "Business, services, resources and working hours.",
+  "settings.accessGroup.settings.text":
+    "Business, services, resources and working hours.",
   "settings.accessGroup.export": "Export",
   "settings.accessGroup.export.text": "Data exports and preparation.",
   "settings.accessGroup.security": "Security",
   "settings.accessGroup.security.text": "Team, roles and access audit.",
   "settings.operationsEyebrow": "Operational setup",
   "settings.operationsTitle": "Services, resources and working hours",
-  "settings.operationsText": "These sections are hidden from the main menu, but available here as one business setup center.",
+  "settings.operationsText":
+    "These sections are hidden from the main menu, but available here as one business setup center.",
   "settings.operations.services.title": "Services",
-  "settings.operations.services.text": "Service name, duration, price and active state.",
+  "settings.operations.services.text":
+    "Service name, duration, price and active state.",
   "settings.operations.resources.title": "Resources",
-  "settings.operations.resources.text": "Employees, rooms, halls, bays and equipment used for bookings.",
+  "settings.operations.resources.text":
+    "Employees, rooms, halls, bays and equipment used for bookings.",
   "settings.operations.working-hours.title": "Working hours",
-  "settings.operations.working-hours.text": "Working time for the business and individual resources.",
+  "settings.operations.working-hours.text":
+    "Working time for the business and individual resources.",
   "settings.operations.orderTitle": "Recommended order",
-  "settings.operations.orderStep1": "1. Add services first: booking duration and price are based on them.",
-  "settings.operations.orderStep2": "2. Add staff, rooms or workspaces when bookings depend on a specific resource.",
-  "settings.operations.orderStep3": "3. Set the general schedule, then add individual weeks only where they are really needed.",
+  "settings.operations.orderStep1":
+    "1. Add services first: booking duration and price are based on them.",
+  "settings.operations.orderStep2":
+    "2. Add staff, rooms or workspaces when bookings depend on a specific resource.",
+  "settings.operations.orderStep3":
+    "3. Set the general schedule, then add individual weeks only where they are really needed.",
   "settings.openSection": "Open section",
   "settings.schedulingCenter": "Scheduling center",
   "settings.dataToolsEyebrow": "Import and export",
   "settings.dataToolsTitle": "Move from Excel, amoCRM or Bitrix24",
-  "settings.dataToolsText": "Import does not create data silently: first we show mapping preview and possible duplicates, then the owner confirms upload.",
+  "settings.dataToolsText":
+    "Import does not create data silently: first we show mapping preview and possible duplicates, then the owner confirms upload.",
   "settings.dataTool.import": "Upload file",
   "settings.dataTool.importText": "Check CSV/XLSX before creating records.",
   "settings.dataTool.export": "Export data",
-  "settings.dataTool.exportText": "Download a section according to access rights.",
+  "settings.dataTool.exportText":
+    "Download a section according to access rights.",
   "settings.dataTool.manual": "Enter manually",
-  "settings.dataTool.manualText": "Add a sale or catalog item without integration.",
+  "settings.dataTool.manualText":
+    "Add a sale or catalog item without integration.",
   "settings.importTitle": "Data import",
-  "settings.importText": "CSV/XLSX for clients, sales and product/service catalog. Before confirmation we show preview, mapping, duplicates and row errors.",
+  "settings.importText":
+    "CSV/XLSX for clients, sales and product/service catalog. Before confirmation we show preview, mapping, duplicates and row errors.",
   "settings.entity.clients": "Clients",
   "settings.entity.sales": "Sales",
   "settings.entity.catalog": "Products/services",
@@ -2395,19 +2774,23 @@ export const en: Record<string, string> = {
   "settings.importUpdated": "Updated",
   "settings.importSkipped": "Skipped",
   "settings.importErrors": "Errors",
-  "settings.importHistoryEmpty": "Import history will appear after the first file upload.",
+  "settings.importHistoryEmpty":
+    "Import history will appear after the first file upload.",
   "settings.exportTitle": "Export",
-  "settings.exportText": "Export checks access rights and saves the action history.",
+  "settings.exportText":
+    "Export checks access rights and saves the action history.",
   "settings.exportEntity": "Export: {entity}",
   "settings.manualSaleTitle": "Add sale manually",
-  "settings.manualSaleText": "If connections are not ready yet, the owner can enter a sale manually. These records will be included in revenue.",
+  "settings.manualSaleText":
+    "If connections are not ready yet, the owner can enter a sale manually. These records will be included in revenue.",
   "settings.number": "Number",
   "settings.amount": "Amount",
   "settings.client": "Client",
   "settings.item": "Item",
   "settings.saveSale": "Save sale",
   "settings.catalogTitle": "Add product or service",
-  "settings.catalogText": "Services automatically enter the CRM catalog. Products are stored as catalog events for future inventory.",
+  "settings.catalogText":
+    "Services automatically enter the CRM catalog. Products are stored as catalog events for future inventory.",
   "settings.type": "Type",
   "settings.service": "Service",
   "settings.product": "Product",
@@ -2417,9 +2800,11 @@ export const en: Record<string, string> = {
   "settings.saveCatalogItem": "Save item",
   "settings.leadFormsEyebrow": "Lead capture",
   "settings.leadFormsTitle": "Lead forms",
-  "settings.leadFormsText": "Public forms create a client and lead, save UTM tags, check duplicates and trigger the new-lead automation.",
+  "settings.leadFormsText":
+    "Public forms create a client and lead, save UTM tags, check duplicates and trigger the new-lead automation.",
   "settings.formInstallTitle": "Website install",
-  "settings.formInstallText": "Copy the code or pass it to a developer. A short form preview is shown below.",
+  "settings.formInstallText":
+    "Copy the code or pass it to a developer. A short form preview is shown below.",
   "settings.copyEmbed": "Copy code",
   "settings.noLeadFormsTitle": "No forms yet",
   "settings.formPreviewTitle": "The first form will look like this",
@@ -2428,7 +2813,8 @@ export const en: Record<string, string> = {
   "settings.submissions": "submissions",
   "settings.paused": "Paused",
   "settings.embedCode": "Embed code",
-  "settings.noLeadForms": "No forms yet. Create the first form for a website or landing page.",
+  "settings.noLeadForms":
+    "No forms yet. Create the first form for a website or landing page.",
   "settings.latestSubmissions": "Latest submissions",
   "settings.lead": "Lead",
   "settings.deal": "Deal",
@@ -2438,10 +2824,12 @@ export const en: Record<string, string> = {
   "settings.loading": "Loading...",
   "settings.noPlan": "No plan assigned",
   "settings.status": "status",
-  "settings.billingNoSubscription": "Billing foundation is connected, but this business has no subscription yet.",
+  "settings.billingNoSubscription":
+    "Billing foundation is connected, but this business has no subscription yet.",
   "settings.paymentsNotConnected": "Payments are not connected",
   "settings.billingReadOnlyTitle": "Plan is read-only",
-  "settings.billingReadOnlyText": "The current plan and limits are already visible. Online payments will be enabled as a separate safe step, so there are no unfinished payment actions here.",
+  "settings.billingReadOnlyText":
+    "The current plan and limits are already visible. Online payments will be enabled as a separate safe step, so there are no unfinished payment actions here.",
   "settings.billingPaymentsTitle": "Invoices and payment",
   "settings.billingEmail": "Billing email",
   "settings.paymentMethod": "Payment method",
@@ -2454,7 +2842,8 @@ export const en: Record<string, string> = {
   "settings.invoiceAddress": "Legal address",
   "settings.saveBilling": "Save billing",
   "settings.planTitle": "Plan",
-  "settings.planChangeText": "Plan changes are saved as a request so support can check payment and limits.",
+  "settings.planChangeText":
+    "Plan changes are saved as a request so support can check payment and limits.",
   "settings.newPlan": "New plan",
   "settings.requestPlanChange": "Request plan change",
   "settings.requestedPlan": "Plan change requested #{id}",
@@ -2463,10 +2852,12 @@ export const en: Record<string, string> = {
   "settings.cancelSubscription": "Cancel",
   "settings.usageEyebrow": "Usage",
   "settings.usageTitle": "Limits and usage",
-  "settings.usageText": "See how many users, messages, conversations and automations are already in use.",
+  "settings.usageText":
+    "See how many users, messages, conversations and automations are already in use.",
   "settings.limitReached": "Limit reached",
   "settings.remaining": "Remaining: {count}",
-  "settings.noUsage": "Usage will appear after the first messages, conversations and assistant requests.",
+  "settings.noUsage":
+    "Usage will appear after the first messages, conversations and assistant requests.",
   "settings.metric.ai_requests": "AI requests",
   "settings.metric.bot_messages": "Bot messages",
   "settings.metric.users": "Users",
@@ -2479,9 +2870,12 @@ export const en: Record<string, string> = {
   "settings.monthPrice": "{amount} ₸/mo",
   "settings.customFieldsEyebrow": "Custom fields",
   "settings.customFieldsTitle": "CRM custom fields",
-  "settings.customFieldsText": "Add a field to a client, lead, deal or booking card without complex setup.",
-  "settings.customFieldsGuardTitle": "Add only fields the team will actually use",
-  "settings.customFieldsGuardText": "Extra fields make cards harder to scan and slow the team down. Start with one field, validate the workflow, then expand the structure.",
+  "settings.customFieldsText":
+    "Add a field to a client, lead, deal or booking card without complex setup.",
+  "settings.customFieldsGuardTitle":
+    "Add only fields the team will actually use",
+  "settings.customFieldsGuardText":
+    "Extra fields make cards harder to scan and slow the team down. Start with one field, validate the workflow, then expand the structure.",
   "settings.customFieldSummary": "{entity} · {type}",
   "settings.customFieldRequired": "Required",
   "settings.customFieldActive": "Active",
@@ -2500,7 +2894,8 @@ export const en: Record<string, string> = {
   "settings.customFieldType.url": "Link",
   "settings.technicalDetails": "Technical details",
   "settings.developerTitle": "API and events",
-  "settings.developerText": "This section is only for integrations and developers. It stays in advanced settings so the daily team interface remains focused.",
+  "settings.developerText":
+    "This section is only for integrations and developers. It stays in advanced settings so the daily team interface remains focused.",
   "settings.noIp": "IP not saved",
   "settings.auditEventTitle": "{action}: {entity}",
   "settings.auditAction.create": "Created",
@@ -2522,7 +2917,8 @@ export const en: Record<string, string> = {
   "settings.loginStatus.failed": "Failed",
   "settings.entity": "Entity",
   "settings.options": "Options",
-  "settings.noCustomFields": "No custom fields yet. Start with one client field.",
+  "settings.noCustomFields":
+    "No custom fields yet. Start with one client field.",
   "businessForm.name": "Name",
   "businessForm.slugRequired": "Enter slug",
   "businessForm.type": "Business niche",
@@ -2533,9 +2929,11 @@ export const en: Record<string, string> = {
   "businessForm.save": "Save settings",
   "leadForm.selectClientError": "Select a client",
   "leadForm.needClientTitle": "Add a client first",
-  "leadForm.needClientText": "A lead must be linked to a person or company so you can create a booking, task and communication history later.",
+  "leadForm.needClientText":
+    "A lead must be linked to a person or company so you can create a booking, task and communication history later.",
   "leadForm.serviceLaterTitle": "You can add a service later",
-  "leadForm.serviceLaterText": "But a service is required for bookings and slots: it defines duration and makes demand analytics clearer.",
+  "leadForm.serviceLaterText":
+    "But a service is required for bookings and slots: it defines duration and makes demand analytics clearer.",
   "leadForm.relatedTitle": "Similar client or active history found",
   "leadForm.relatedCount": "The selected client already has leads: {count}.",
   "leadForm.relatedText": "Check the history before creating a new lead.",
@@ -2566,14 +2964,17 @@ export const en: Record<string, string> = {
   "resources.nameRequired": "Enter resource name",
   "services.nameRequired": "Enter service name",
   "aiAssistant.title": "AI assistant",
-  "aiAssistant.description": "The operating assistant uses the current business context: leads, clients, bookings and the knowledge base.",
+  "aiAssistant.description":
+    "The operating assistant uses the current business context: leads, clients, bookings and the knowledge base.",
   "aiNavigator.title": "AI Navigator",
-  "aiNavigator.description": "A smart business-signal layer: it analyzes only this workspace data and shows what needs attention.",
+  "aiNavigator.description":
+    "A smart business-signal layer: it analyzes only this workspace data and shows what needs attention.",
   "aiNavigator.refreshBrief": "Refresh brief",
   "aiNavigator.todayBrief": "Today AI brief",
   "aiNavigator.businessUnderControl": "Your business is under control.",
   "aiNavigator.workspaceSignals": "Workspace signals",
-  "aiNavigator.factBasedNotice": "The navigator does not invent facts: it uses only this workspace's leads, clients, tasks, deals, conversations and connected data.",
+  "aiNavigator.factBasedNotice":
+    "The navigator does not invent facts: it uses only this workspace's leads, clients, tasks, deals, conversations and connected data.",
   "aiNavigator.generatedFromCabinet": "Generated from workspace data",
   "aiNavigator.metric.leadsToday": "Leads today",
   "aiNavigator.metric.appointments": "Bookings today",
@@ -2582,14 +2983,22 @@ export const en: Record<string, string> = {
   "aiNavigator.summaryEyebrow": "Brief",
   "aiNavigator.summaryTitle": "What is happening today",
   "aiNavigator.noExternalData": "No external guesses",
-  "aiNavigator.summary.leadsToday": "Leads created today: {count}. Check response speed and lead source.",
-  "aiNavigator.summary.noNewLeads": "No new leads yet today. If this is unusual, check acquisition channels.",
-  "aiNavigator.summary.appointmentsToday": "Active bookings today: {count}. The team should track schedule and statuses.",
-  "aiNavigator.summary.noAppointments": "No active bookings today. There is not enough schedule data for a workload conclusion.",
-  "aiNavigator.summary.overdueTasks": "Overdue tasks: {count}. This can slow client processing.",
-  "aiNavigator.summary.noOverdueTasks": "No overdue tasks. Operations look calm.",
-  "aiNavigator.summary.staleLeads": "Leads without movement for 2+ hours: {count}. Process these first.",
-  "aiNavigator.summary.noStaleLeads": "No leads are clearly stuck for more than 2 hours.",
+  "aiNavigator.summary.leadsToday":
+    "Leads created today: {count}. Check response speed and lead source.",
+  "aiNavigator.summary.noNewLeads":
+    "No new leads yet today. If this is unusual, check acquisition channels.",
+  "aiNavigator.summary.appointmentsToday":
+    "Active bookings today: {count}. The team should track schedule and statuses.",
+  "aiNavigator.summary.noAppointments":
+    "No active bookings today. There is not enough schedule data for a workload conclusion.",
+  "aiNavigator.summary.overdueTasks":
+    "Overdue tasks: {count}. This can slow client processing.",
+  "aiNavigator.summary.noOverdueTasks":
+    "No overdue tasks. Operations look calm.",
+  "aiNavigator.summary.staleLeads":
+    "Leads without movement for 2+ hours: {count}. Process these first.",
+  "aiNavigator.summary.noStaleLeads":
+    "No leads are clearly stuck for more than 2 hours.",
   "aiNavigator.aiInterpretation": "AI interpretation from facts",
   "aiNavigator.attentionEyebrow": "Signals",
   "aiNavigator.attentionTitle": "What needs attention",
@@ -2601,57 +3010,81 @@ export const en: Record<string, string> = {
   "aiNavigator.openIntegrations": "Connect data",
   "aiNavigator.openDashboard": "Go home",
   "aiNavigator.insight.leadDrop.title": "Leads are down {percent}%",
-  "aiNavigator.insight.leadDrop.text": "Today: {today}, yesterday: {yesterday}. This is a workspace fact, not a market assumption.",
+  "aiNavigator.insight.leadDrop.text":
+    "Today: {today}, yesterday: {yesterday}. This is a workspace fact, not a market assumption.",
   "aiNavigator.insight.staleLeads.title": "{count} leads are waiting",
-  "aiNavigator.insight.staleLeads.text": "Leads in new/in_progress status have had no movement for more than 2 hours.",
+  "aiNavigator.insight.staleLeads.text":
+    "Leads in new/in_progress status have had no movement for more than 2 hours.",
   "aiNavigator.insight.handoff.title": "{count} conversations need a human",
-  "aiNavigator.insight.handoff.text": "Clients are waiting for a reply or the bot handed off the conversation.",
+  "aiNavigator.insight.handoff.text":
+    "Clients are waiting for a reply or the bot handed off the conversation.",
   "aiNavigator.insight.overdueTasks.title": "{count} overdue tasks",
-  "aiNavigator.insight.overdueTasks.text": "Overdue tasks may slow leads and deals.",
+  "aiNavigator.insight.overdueTasks.text":
+    "Overdue tasks may slow leads and deals.",
   "aiNavigator.insight.stuckDeals.title": "{count} deals are stuck",
-  "aiNavigator.insight.stuckDeals.text": "Open deals have had no movement for more than 48 hours or have overdue SLA.",
+  "aiNavigator.insight.stuckDeals.text":
+    "Open deals have had no movement for more than 48 hours or have overdue SLA.",
   "aiNavigator.insight.notEnough.title": "Not enough data for deep conclusions",
-  "aiNavigator.insight.notEnough.text": "Connect sources, import sales or accumulate lead history.",
+  "aiNavigator.insight.notEnough.text":
+    "Connect sources, import sales or accumulate lead history.",
   "aiNavigator.insight.stable.title": "No critical signals",
-  "aiNavigator.insight.stable.text": "Available data shows no clear risks. Keep tracking leads, tasks and conversations.",
+  "aiNavigator.insight.stable.text":
+    "Available data shows no clear risks. Keep tracking leads, tasks and conversations.",
   "aiNavigator.dataPolicyTitle": "Only this business data",
-  "aiNavigator.dataPolicyText": "ZANI AI does not use other companies' data, search the internet or make conclusions without facts.",
+  "aiNavigator.dataPolicyText":
+    "ZANI AI does not use other companies' data, search the internet or make conclusions without facts.",
   "aiNavigator.roleHelpTitle": "Role-based guidance",
-  "aiNavigator.roleHelpText": "Owners see business control, managers see next work actions.",
-  "aiNavigator.ownerHelp": "For owners: risks, drops, overdue work, team and channels.",
-  "aiNavigator.managerHelp": "For managers: who to reply to, which leads to process, what to close first.",
+  "aiNavigator.roleHelpText":
+    "Owners see business control, managers see next work actions.",
+  "aiNavigator.ownerHelp":
+    "For owners: risks, drops, overdue work, team and channels.",
+  "aiNavigator.managerHelp":
+    "For managers: who to reply to, which leads to process, what to close first.",
   "aiNavigator.integrationInsightsTitle": "Integration insights",
-  "aiNavigator.integrationInsightsText": "AI Analyst reads recent integration events, cites sources and suggests only verifiable actions.",
-  "aiNavigator.emptyIntegrationInsights": "There are no BusinessEvent records to analyze yet. Connect a channel or import data on the integrations page.",
-  "aiNavigator.noSourceDataState": "No source records are visible for this role yet. Connect a channel, import data, or wait for CRM activity.",
+  "aiNavigator.integrationInsightsText":
+    "AI Analyst reads recent integration events, cites sources and suggests only verifiable actions.",
+  "aiNavigator.emptyIntegrationInsights":
+    "There are no BusinessEvent records to analyze yet. Connect a channel or import data on the integrations page.",
+  "aiNavigator.noSourceDataState":
+    "No source records are visible for this role yet. Connect a channel, import data, or wait for CRM activity.",
   "aiNavigator.suggestedActions": "Suggested actions",
   "aiNavigator.prompt.dailySummary": "Create a short ZANI business brief.",
-  "aiNavigator.prompt.factOnly": "Use only the facts below. Do not add external data, market context, competitors or unverified causes.",
-  "aiNavigator.prompt.insufficientData": "If there are not enough facts, state directly: not enough data for a conclusion.",
+  "aiNavigator.prompt.factOnly":
+    "Use only the facts below. Do not add external data, market context, competitors or unverified causes.",
+  "aiNavigator.prompt.insufficientData":
+    "If there are not enough facts, state directly: not enough data for a conclusion.",
   "aiNavigator.prompt.workspaceFacts": "Workspace facts: {facts}",
   "aiAssistant.chatTitle": "Assistant chat",
   "aiAssistant.historyTitle": "Request history",
   "aiAssistant.historySubtitle": "Latest questions in this session",
-  "aiAssistant.emptyHistoryText": "History will appear after the first AI question.",
+  "aiAssistant.emptyHistoryText":
+    "History will appear after the first AI question.",
   "aiAssistant.addMemoryFact": "Memory fact",
   "aiAssistant.dailyBrief": "Daily brief",
   "aiAssistant.dailyBriefPrompt": "Create a short CRM daily brief.",
   "aiAssistant.defaultQuestion": "What needs attention today?",
   "aiAssistant.defaultNextAction": "What should we do next?",
-  "aiAssistant.noBusiness": "Create a business in settings to use AI Assistant.",
-  "aiAssistant.heroFallback": "Ask AI what needs attention in the business today.",
-  "aiAssistant.mockModeText": "Safe preview mode is enabled: data is not sent to external services.",
-  "aiAssistant.liveModeText": "The answer is built from the isolated CRM context of the current business.",
+  "aiAssistant.noBusiness":
+    "Create a business in settings to use AI Assistant.",
+  "aiAssistant.heroFallback":
+    "Ask AI what needs attention in the business today.",
+  "aiAssistant.mockModeText":
+    "Safe preview mode is enabled: data is not sent to external services.",
+  "aiAssistant.liveModeText":
+    "The answer is built from the isolated CRM context of the current business.",
   "aiAssistant.providerChecking": "Checking AI provider...",
-  "aiAssistant.providerStatus": "Provider: {provider} · mode: {mode} · model: {model}",
+  "aiAssistant.providerStatus":
+    "Provider: {provider} · mode: {mode} · model: {model}",
   "aiAssistant.providerUnavailableTitle": "AI provider is not ready",
-  "aiAssistant.providerUnavailableText": "Live answers are disabled or the key is not configured. Use only source-grounded CRM states and explicit no-data hints.",
+  "aiAssistant.providerUnavailableText":
+    "Live answers are disabled or the key is not configured. Use only source-grounded CRM states and explicit no-data hints.",
   "aiAssistant.modeLive": "live",
   "aiAssistant.metricNewLeads": "New leads",
   "aiAssistant.metricOpenAppointments": "Open bookings",
   "aiAssistant.metricClients": "Clients",
   "aiAssistant.businessMemory": "Business memory",
-  "aiAssistant.activeFactsSummary": "Active facts: {count}. AI uses them as context: services, rules, tone of voice and business specifics.",
+  "aiAssistant.activeFactsSummary":
+    "Active facts: {count}. AI uses them as context: services, rules, tone of voice and business specifics.",
   "aiAssistant.questionLabel": "AI question",
   "aiAssistant.questionPlaceholder": "Example: who should we message today?",
   "aiAssistant.ask": "Ask AI",
@@ -2661,14 +3094,18 @@ export const en: Record<string, string> = {
   "aiAssistant.add": "Add",
   "aiAssistant.active": "active",
   "aiAssistant.off": "off",
-  "aiAssistant.emptyMemoryText": "Add 3-5 facts: how to speak with clients, which services to promote, what not to promise, when to hand off to a manager.",
+  "aiAssistant.emptyMemoryText":
+    "Add 3-5 facts: how to speak with clients, which services to promote, what not to promise, when to hand off to a manager.",
   "aiAssistant.taskFlowTitle": "AI -> task -> calendar",
-  "aiAssistant.taskFlowText": "AI suggests an action, and the owner confirms task creation.",
+  "aiAssistant.taskFlowText":
+    "AI suggests an action, and the owner confirms task creation.",
   "aiAssistant.actionFallback": "AI suggested action",
   "aiAssistant.actionStatus": "Status: {status} · tool: {tool}",
-  "aiAssistant.taskCreated": "The task was created and added to the work list. ID: {id}",
+  "aiAssistant.taskCreated":
+    "The task was created and added to the work list. ID: {id}",
   "aiAssistant.createTask": "Create task",
-  "aiAssistant.emptyActionsText": "Click \"Create actions\" so AI prepares a confirmable task. No task is created without confirmation.",
+  "aiAssistant.emptyActionsText":
+    'Click "Create actions" so AI prepares a confirmable task. No task is created without confirmation.',
   "aiAssistant.run": "Run",
   "aiAssistant.historyMeta": "Answer #{id} · {mode}",
   "aiAssistant.modeMock": "test mode",
@@ -2679,12 +3116,14 @@ export const en: Record<string, string> = {
   "aiAssistant.namePlaceholder": "Example: Client booking rule",
   "aiAssistant.categoryLabel": "Category",
   "aiAssistant.contentLabel": "What AI should remember",
-  "aiAssistant.contentPlaceholder": "Example: if a client asks about price, first clarify the service and convenient time, then offer a booking.",
+  "aiAssistant.contentPlaceholder":
+    "Example: if a client asks about price, first clarify the service and convenient time, then offer a booking.",
   "aiAssistant.useInContext": "Use in AI context",
   "aiAssistant.saveMemory": "Save memory",
   "aiAssistant.quick.attention": "What needs attention today?",
   "aiAssistant.quick.firstClient": "Which client should we message first?",
-  "aiAssistant.quick.managerPlan": "Create a short action plan for the manager.",
+  "aiAssistant.quick.managerPlan":
+    "Create a short action plan for the manager.",
   "aiAssistant.quick.risks": "What risks exist across leads and bookings?",
   "aiAssistant.memory.category.business": "About business",
   "aiAssistant.memory.category.sales": "Sales",
@@ -2693,20 +3132,26 @@ export const en: Record<string, string> = {
   "aiAssistant.memory.category.tone": "Tone of voice",
   "aiAssistant.memory.category.policy": "Rules",
   "aiAgents.defaultName": "Zani assistant",
-  "aiAgents.defaultRoleDescription": "Qualify leads and help managers reply faster.",
-  "aiAgents.defaultSystemPrompt": "Be concise, helpful and do not promise unavailable slots.",
-  "aiAgents.defaultRules": "Do not send messages automatically.\nEscalate complex questions to a manager.",
-  "aiAgents.defaultEscalation": "Pricing dispute\nMedical or legal question\nUnhappy client",
+  "aiAgents.defaultRoleDescription":
+    "Qualify leads and help managers reply faster.",
+  "aiAgents.defaultSystemPrompt":
+    "Be concise, helpful and do not promise unavailable slots.",
+  "aiAgents.defaultRules":
+    "Do not send messages automatically.\nEscalate complex questions to a manager.",
+  "aiAgents.defaultEscalation":
+    "Pricing dispute\nMedical or legal question\nUnhappy client",
   "aiAgents.loading": "Loading AI agents...",
   "aiAgents.noBusiness": "Create a business to configure AI agents.",
   "aiAgents.eyebrow": "Agent profiles",
   "aiAgents.title": "AI agents",
-  "aiAgents.description": "Create an AI sales manager: define communication style, knowledge, channels and the actions it may perform.",
+  "aiAgents.description":
+    "Create an AI sales manager: define communication style, knowledge, channels and the actions it may perform.",
   "aiAgents.newProfile": "New profile",
   "aiAgents.profiles": "Profiles",
   "aiAgents.profilesCount": "{count} profiles",
   "aiAgents.emptyTitle": "No profiles yet",
-  "aiAgents.emptyDescription": "Create the first agent profile for a bot or the whole business.",
+  "aiAgents.emptyDescription":
+    "Create the first agent profile for a bot or the whole business.",
   "aiAgents.businessDefault": "Business default",
   "aiAgents.editTitle": "Edit agent profile",
   "aiAgents.createTitle": "Create agent profile",
@@ -2719,10 +3164,12 @@ export const en: Record<string, string> = {
   "aiAgents.systemPrompt": "Main instruction",
   "aiAgents.rules": "Rules",
   "aiAgents.escalationRules": "Escalation rules",
-  "aiAgents.toolsPlaceholder": "Agent actions are enabled only after manager confirmation.",
+  "aiAgents.toolsPlaceholder":
+    "Agent actions are enabled only after manager confirmation.",
   "aiAgents.saveProfile": "Save profile",
   "aiAgents.createProfile": "Create profile",
-  "aiAgents.note": "The reply draft is prepared from the active agent profile. Automatic sending is not enabled.",
+  "aiAgents.note":
+    "The reply draft is prepared from the active agent profile. Automatic sending is not enabled.",
   "aiAgents.profileSuffix": "profile",
   "aiAgents.defaultNewAgentName": "New AI agent",
   "aiAgents.section.overview": "Overview",
@@ -2758,7 +3205,8 @@ export const en: Record<string, string> = {
   "aiAgents.testTitle": "Test and launch agent",
   "aiAgents.showAdvanced": "Show advanced",
   "aiAgents.hideAdvanced": "Hide advanced",
-  "aiAgents.sidebarEmpty": "Create the first AI agent, then connect channels and set behavior.",
+  "aiAgents.sidebarEmpty":
+    "Create the first AI agent, then connect channels and set behavior.",
   "aiAgents.firstLaunch": "First launch",
   "aiAgents.firstLaunchTitle": "Set up the agent step by step",
   "aiAgents.openMessages": "Open messages",
@@ -2767,7 +3215,8 @@ export const en: Record<string, string> = {
   "aiAgents.agentNamePlaceholder": "Example: sales agent",
   "aiAgents.createAgent": "Create agent",
   "aiAgents.emptyAgentsTitle": "Create the first AI agent",
-  "aiAgents.emptyAgentsText": "The agent helps reply to clients, use company knowledge and pass complex questions to a manager.",
+  "aiAgents.emptyAgentsText":
+    "The agent helps reply to clients, use company knowledge and pass complex questions to a manager.",
   "aiAgents.statusLabel": "Status",
   "aiAgents.status.active": "Active",
   "aiAgents.status.paused": "Paused",
@@ -2780,7 +3229,8 @@ export const en: Record<string, string> = {
   "aiAgents.channelsMetric": "Channels",
   "aiAgents.messagesMetric": "Messages",
   "aiAgents.nextSetup": "Next step",
-  "aiAgents.overviewText": "Check agent status, connect the needed channels and test a reply draft in messages.",
+  "aiAgents.overviewText":
+    "Check agent status, connect the needed channels and test a reply draft in messages.",
   "aiAgents.openChannels": "Open channels",
   "aiAgents.testMessages": "Check messages",
   "aiAgents.generalSettings": "General settings",
@@ -2788,7 +3238,8 @@ export const en: Record<string, string> = {
   "aiAgents.pauseAgent": "Pause",
   "aiAgents.activateAgent": "Activate",
   "aiAgents.instructionTitle": "Agent instruction",
-  "aiAgents.instructionText": "Role, tone of voice, rules and manager escalation conditions.",
+  "aiAgents.instructionText":
+    "Role, tone of voice, rules and manager escalation conditions.",
   "aiAgents.profileName": "Profile name",
   "aiAgents.tone.friendly": "Friendly",
   "aiAgents.tone.expert": "Expert",
@@ -2803,59 +3254,77 @@ export const en: Record<string, string> = {
   "aiAgents.client": "Client",
   "aiAgents.reply": "Reply",
   "aiAgents.emptyMessage": "Empty message",
-  "aiAgents.noDialogs": "No dialogs yet. Connect a channel and send the first message.",
+  "aiAgents.noDialogs":
+    "No dialogs yet. Connect a channel and send the first message.",
   "aiAgents.draftReply": "Reply draft",
-  "aiAgents.draftReplyEmpty": "The agent reply draft will appear here after preparation.",
+  "aiAgents.draftReplyEmpty":
+    "The agent reply draft will appear here after preparation.",
   "aiAgents.responseMode": "Reply mode",
   "aiAgents.responseMode.quality": "Maximum quality",
   "aiAgents.responseMode.fast": "Fast mode",
   "aiAgents.responseMode.economy": "Economy mode",
   "aiAgents.responseFreedom": "Reply freedom: {value}",
   "aiAgents.control.handoffTitle": "Pass complex questions to a manager",
-  "aiAgents.control.handoffText": "The agent stops replying when a person is needed.",
+  "aiAgents.control.handoffText":
+    "The agent stops replying when a person is needed.",
   "aiAgents.control.confirmTitle": "Confirm actions",
-  "aiAgents.control.confirmText": "Tasks, deals and important changes require confirmation.",
+  "aiAgents.control.confirmText":
+    "Tasks, deals and important changes require confirmation.",
   "aiAgents.control.privacyTitle": "Do not reveal internal data",
-  "aiAgents.control.privacyText": "The agent does not show service fields or internal notes to clients.",
+  "aiAgents.control.privacyText":
+    "The agent does not show service fields or internal notes to clients.",
   "aiAgents.control.pipelineTitle": "Requests and manager handoff",
-  "aiAgents.control.pipelineText": "Choose what the agent may do after a dialog: qualify a client, create a lead, assign a task or prepare a deal.",
+  "aiAgents.control.pipelineText":
+    "Choose what the agent may do after a dialog: qualify a client, create a lead, assign a task or prepare a deal.",
   "aiAgents.control.mode": "What to do after a dialog",
   "aiAgents.control.mode.off": "Off",
   "aiAgents.control.mode.triage": "Only evaluate the request",
   "aiAgents.control.mode.leadTask": "Create lead and task",
   "aiAgents.control.mode.draftDeal": "Prepare draft deal",
   "aiAgents.control.maxReplyChars": "Maximum auto-reply length",
-  "aiAgents.control.leadConfidence": "How sure the agent must be to create a lead: {value}",
-  "aiAgents.control.dealConfidence": "How sure the agent must be to prepare a deal: {value}",
+  "aiAgents.control.leadConfidence":
+    "How sure the agent must be to create a lead: {value}",
+  "aiAgents.control.dealConfidence":
+    "How sure the agent must be to prepare a deal: {value}",
   "aiAgents.control.advancedTitle": "Advanced limits",
-  "aiAgents.control.advancedText": "Usually you do not need to change these. Use them if the agent creates too many leads or writes replies that are too long.",
+  "aiAgents.control.advancedText":
+    "Usually you do not need to change these. Use them if the agent creates too many leads or writes replies that are too long.",
   "aiAgents.control.reviewFallbackTitle": "Review uncertain decisions",
-  "aiAgents.control.reviewFallbackText": "If AI used fallback or is not confident, the dialog stays for manager review.",
+  "aiAgents.control.reviewFallbackText":
+    "If AI used fallback or is not confident, the dialog stays for manager review.",
   "aiAgents.control.appointmentTitle": "Create appointment",
-  "aiAgents.control.appointmentText": "The agent can create an appointment only from a confirmed available slot.",
+  "aiAgents.control.appointmentText":
+    "The agent can create an appointment only from a confirmed available slot.",
   "aiAgents.control.autoReplyTitle": "Send reply automatically",
-  "aiAgents.control.autoReplyText": "The reply is sent to the client only after the auto pipeline passes its guards.",
+  "aiAgents.control.autoReplyText":
+    "The reply is sent to the client only after the auto pipeline passes its guards.",
   "aiAgents.functions.leadTitle": "Create lead",
-  "aiAgents.functions.leadText": "The agent can suggest a new lead from a dialog.",
+  "aiAgents.functions.leadText":
+    "The agent can suggest a new lead from a dialog.",
   "aiAgents.functions.taskTitle": "Create task",
-  "aiAgents.functions.taskText": "The agent can suggest a manager task after a conversation.",
+  "aiAgents.functions.taskText":
+    "The agent can suggest a manager task after a conversation.",
   "aiAgents.functions.dealTitle": "Update deal",
   "aiAgents.functions.dealText": "The agent can suggest the next deal status.",
   "aiAgents.functions.managerTitle": "Pass to manager",
-  "aiAgents.functions.managerText": "The agent can stop the flow and pass the dialog to a person.",
+  "aiAgents.functions.managerText":
+    "The agent can stop the flow and pass the dialog to a person.",
   "aiAgents.functions.enabled": "Allowed",
   "aiAgents.functions.disabled": "Off",
   "aiAgents.functions.save": "Save actions",
   "aiAgents.knowledgeCompany": "Company knowledge base",
-  "aiAgents.knowledgeCompanyText": "Connect facts, rules, FAQs and instructions so the agent replies more accurately.",
+  "aiAgents.knowledgeCompanyText":
+    "Connect facts, rules, FAQs and instructions so the agent replies more accurately.",
   "aiAgents.openKnowledge": "Open knowledge",
   "aiAgents.knowledgeAccess": "Agent access",
-  "aiAgents.knowledgeAccessText": "You can choose specific knowledge sources for the agent here.",
+  "aiAgents.knowledgeAccessText":
+    "You can choose specific knowledge sources for the agent here.",
   "aiAgents.knowledge.add": "Add knowledge",
   "aiAgents.knowledge.active": "In context",
   "aiAgents.knowledge.off": "Off",
   "aiAgents.knowledge.emptyTitle": "Knowledge base is empty",
-  "aiAgents.knowledge.emptyText": "Add company facts, rules, prices, FAQ or constraints so the agent can use them in replies.",
+  "aiAgents.knowledge.emptyText":
+    "Add company facts, rules, prices, FAQ or constraints so the agent can use them in replies.",
   "aiAgents.knowledge.editTitle": "Edit knowledge",
   "aiAgents.knowledge.newTitle": "New knowledge",
   "aiAgents.knowledge.title": "Title",
@@ -2863,26 +3332,35 @@ export const en: Record<string, string> = {
   "aiAgents.knowledge.content": "Content",
   "aiAgents.knowledge.useInContext": "Use in agent context",
   "aiAgents.knowledge.template.prices": "Prices and services",
-  "aiAgents.knowledge.template.pricesContent": "List core services, prices, what is included and which conditions the agent should clarify with the client.",
+  "aiAgents.knowledge.template.pricesContent":
+    "List core services, prices, what is included and which conditions the agent should clarify with the client.",
   "aiAgents.knowledge.template.schedule": "Schedule and address",
-  "aiAgents.knowledge.template.scheduleContent": "Add address, working hours, contact methods, directions and when managers reply to clients.",
+  "aiAgents.knowledge.template.scheduleContent":
+    "Add address, working hours, contact methods, directions and when managers reply to clients.",
   "aiAgents.knowledge.template.booking": "Booking rules",
-  "aiAgents.knowledge.template.bookingContent": "Describe how clients book, what to clarify, when prepayment is required and how rescheduling works.",
+  "aiAgents.knowledge.template.bookingContent":
+    "Describe how clients book, what to clarify, when prepayment is required and how rescheduling works.",
   "aiAgents.knowledge.template.faq": "Common questions",
-  "aiAgents.knowledge.template.faqContent": "Add popular client questions and short correct answers for the agent.",
+  "aiAgents.knowledge.template.faqContent":
+    "Add popular client questions and short correct answers for the agent.",
   "aiAgents.dataSources": "Agent data sources",
-  "aiAgents.dataSourcesText": "Connections are configured in Integrations, and here the agent gets access to connected data.",
+  "aiAgents.dataSourcesText":
+    "Connections are configured in Integrations, and here the agent gets access to connected data.",
   "aiAgents.openIntegrations": "Open connections",
   "aiAgents.integrations.crmTitle": "Clients and deals",
   "aiAgents.integrations.crmText": "Client, lead, task and deal data.",
   "aiAgents.integrations.stockTitle": "Stock and catalog",
-  "aiAgents.integrations.stockText": "Stock, prices and products from connected sources.",
+  "aiAgents.integrations.stockText":
+    "Stock, prices and products from connected sources.",
   "aiAgents.integrations.marketplacesTitle": "Marketplaces",
-  "aiAgents.integrations.marketplacesText": "Orders and events from Kaspi, Ozon and Wildberries.",
+  "aiAgents.integrations.marketplacesText":
+    "Orders and events from Kaspi, Ozon and Wildberries.",
   "aiAgents.integrations.calendarTitle": "Calendar",
-  "aiAgents.integrations.calendarText": "Available slots, bookings and manager tasks.",
+  "aiAgents.integrations.calendarText":
+    "Available slots, bookings and manager tasks.",
   "aiAgents.channel.website": "Website",
-  "aiAgents.channel.websiteText": "Connect the agent to a form or chat on the website.",
+  "aiAgents.channel.websiteText":
+    "Connect the agent to a form or chat on the website.",
   "aiAgents.channel.telegramText": "Connect the agent to Telegram.",
   "aiAgents.channel.whatsappText": "Connect the agent to WhatsApp.",
   "aiAgents.channel.instagramText": "Connect the agent to Instagram.",
@@ -2893,75 +3371,130 @@ export const en: Record<string, string> = {
   "aiAgents.connection": "Connection",
   "aiAgents.connectionTitle": "Connection: {title}",
   "aiAgents.websiteSetupTitle": "Website channel",
-  "aiAgents.websiteSetupText": "The chat connects agent {name} to the website and sends inbound requests to messages.",
-  "aiAgents.websiteSetupEmpty": "Connect the website channel to get the installation code.",
+  "aiAgents.websiteSetupText":
+    "The chat connects agent {name} to the website and sends inbound requests to messages.",
+  "aiAgents.websiteSetupEmpty":
+    "Connect the website channel to get the installation code.",
   "aiAgents.qualityAdvanced": "Advanced: speed and reply quality",
-  "aiAgents.qualityAdvancedText": "Most merchants can leave this unchanged. Use it only when you want a faster or higher-quality reply mode.",
+  "aiAgents.qualityAdvancedText":
+    "Most merchants can leave this unchanged. Use it only when you want a faster or higher-quality reply mode.",
   "aiAgents.launchChecklist": "Launch readiness",
-  "aiAgents.launchChecklistText": "Before enabling the agent, check profile, channel, knowledge and a test reply.",
+  "aiAgents.launchChecklistText":
+    "Before enabling the agent, check profile, channel, knowledge and a test reply.",
   "aiAgents.launchControlTitle": "Launch agent",
-  "aiAgents.launchControlText": "Enable the agent after checking profile, knowledge, channel and a test dialog.",
+  "aiAgents.launchControlText":
+    "Enable the agent after checking profile, knowledge, channel and a test dialog.",
   "aiAgents.checklist.profile": "Profile is filled",
-  "aiAgents.checklist.profileText": "The agent knows its role, tone and handoff rules.",
+  "aiAgents.checklist.profileText":
+    "The agent knows its role, tone and handoff rules.",
   "aiAgents.checklist.channel": "Channel is connected",
-  "aiAgents.checklist.channelText": "Clients can message the agent through the website or a messenger.",
+  "aiAgents.checklist.channelText":
+    "Clients can message the agent through the website or a messenger.",
   "aiAgents.checklist.knowledge": "Knowledge is added",
-  "aiAgents.checklist.knowledgeText": "The agent can answer from company facts instead of inventing details.",
+  "aiAgents.checklist.knowledgeText":
+    "The agent can answer from company facts instead of inventing details.",
   "aiAgents.checklist.test": "Reply is tested",
-  "aiAgents.checklist.testText": "Check at least one realistic client question before launch.",
-  "aiAgents.onboarding.profile.helpTitle": "Start with your manager's personality",
-  "aiAgents.onboarding.profile.helpText": "Name, language, communication style and rules affect every agent reply.",
-  "aiAgents.onboarding.profile.recommendation": "Recommendation: start with a friendly sales tone and short rules instead of complex prompts.",
-  "aiAgents.onboarding.channels.helpTitle": "Choose where the agent talks to clients",
-  "aiAgents.onboarding.channels.helpText": "Channels connect the agent to the website and messengers. All inbound dialogs appear in the unified Inbox.",
-  "aiAgents.onboarding.channels.recommendation": "Recommendation: connect website or Telegram first for testing, then WhatsApp and Instagram.",
-  "aiAgents.onboarding.knowledge.helpTitle": "Add the knowledge the agent sells from",
-  "aiAgents.onboarding.knowledge.helpText": "The agent needs facts: services, prices, schedule, address, booking rules, limits and common questions.",
-  "aiAgents.onboarding.knowledge.recommendation": "Recommendation: start with 5-7 short knowledge records instead of one large instruction.",
-  "aiAgents.onboarding.actions.helpTitle": "Decide what the agent may do without a manager",
-  "aiAgents.onboarding.actions.helpText": "These settings control leads, tasks, deals, appointments and automatic replies.",
-  "aiAgents.onboarding.actions.recommendation": "Recommendation: allow leads and tasks first; enable deals and auto-replies after testing.",
+  "aiAgents.checklist.testText":
+    "Check at least one realistic client question before launch.",
+  "aiAgents.onboarding.profile.helpTitle":
+    "Start with your manager's personality",
+  "aiAgents.onboarding.profile.helpText":
+    "Name, language, communication style and rules affect every agent reply.",
+  "aiAgents.onboarding.profile.recommendation":
+    "Recommendation: start with a friendly sales tone and short rules instead of complex prompts.",
+  "aiAgents.onboarding.channels.helpTitle":
+    "Choose where the agent talks to clients",
+  "aiAgents.onboarding.channels.helpText":
+    "Channels connect the agent to the website and messengers. All inbound dialogs appear in the unified Inbox.",
+  "aiAgents.onboarding.channels.recommendation":
+    "Recommendation: connect website or Telegram first for testing, then WhatsApp and Instagram.",
+  "aiAgents.onboarding.knowledge.helpTitle":
+    "Add the knowledge the agent sells from",
+  "aiAgents.onboarding.knowledge.helpText":
+    "The agent needs facts: services, prices, schedule, address, booking rules, limits and common questions.",
+  "aiAgents.onboarding.knowledge.recommendation":
+    "Recommendation: start with 5-7 short knowledge records instead of one large instruction.",
+  "aiAgents.onboarding.actions.helpTitle":
+    "Decide what the agent may do without a manager",
+  "aiAgents.onboarding.actions.helpText":
+    "These settings control leads, tasks, deals, appointments and automatic replies.",
+  "aiAgents.onboarding.actions.recommendation":
+    "Recommendation: allow leads and tasks first; enable deals and auto-replies after testing.",
   "aiAgents.onboarding.test.helpTitle": "Test the agent before launch",
-  "aiAgents.onboarding.test.helpText": "The test shows how the agent sees a dialog and what reply it prepares.",
-  "aiAgents.onboarding.test.recommendation": "Recommendation: test price, booking, discount and unhappy-client questions.",
-  "aiAgents.hint.agentName": "What it is: the AI manager name in the cabinet. How it helps: your team understands which agent handles sales or support. Recommendation: name it by role, for example Sales agent.",
-  "aiAgents.hint.agentLanguage": "What it is: the main reply language. How it helps: the agent keeps one communication style. Recommendation: use the language most clients use.",
-  "aiAgents.hint.agentStatus": "Active enables the agent; Pause stops it. Before activation, test replies and check knowledge.",
-  "aiAgents.hint.profileName": "Internal behavior profile name. You can keep the default if the agent has one scenario.",
-  "aiAgents.hint.tone": "Tone sets reply style. For sales use Friendly or Sales; for support use Support.",
-  "aiAgents.hint.role": "Describe the agent in plain language: sales manager, booking administrator or support assistant.",
-  "aiAgents.hint.systemPrompt": "Main instruction for every reply. Avoid long technical prompts; use 2-4 clear rules.",
-  "aiAgents.hint.rules": "Rules the agent must always follow: do not promise discounts, clarify service, keep replies short.",
-  "aiAgents.hint.escalation": "When the agent should call a person: complaint, price dispute, legal question or unusual request.",
-  "aiAgents.hint.responseMode": "Choose the balance of quality and speed. Start with fast or quality mode and avoid frequent changes.",
-  "aiAgents.hint.temperature": "Higher values make wording freer. For sales we recommend 0.3-0.5 for stable replies.",
-  "aiAgents.hint.pipelineMode": "Mode defines what the agent does with the dialog in CRM. Start safely with Lead and task.",
-  "aiAgents.hint.maxReplyChars": "Limits auto-reply length. Recommendation: 500-900 characters for a concise client reply.",
-  "aiAgents.hint.leadConfidence": "Minimum confidence for creating a lead. Higher threshold means fewer automatic mistakes.",
-  "aiAgents.hint.dealConfidence": "Minimum confidence for a draft deal. Recommendation: keep it higher than the lead threshold.",
-  "aiAgents.hint.launchReady": "The basic data is ready. Before enabling, ask the agent 2-3 real client questions.",
-  "aiAgents.hint.launchNotReady": "Before launch, add knowledge and connect at least one active channel.",
-  "aiAgents.hint.tool.create_lead": "Enable almost always: a lead captures client interest and prevents lost requests.",
-  "aiAgents.hint.tool.create_task": "Useful for the team: the agent creates a manager task after an important dialog.",
-  "aiAgents.hint.tool.create_deal": "Enable when sales stages are clear and the agent was tested on real questions.",
-  "aiAgents.hint.tool.handoff_to_manager": "Keep enabled: the agent can stop and pass complex dialogs to a person.",
-  "aiAgents.hint.channel.website": "Connect first if clients leave requests on the website. This is the simplest test channel.",
-  "aiAgents.hint.channel.telegram": "Connect if clients often write in Telegram. A bot token is required.",
-  "aiAgents.hint.channel.whatsapp": "Connect for sales and booking. Check templates and consent before auto-replies.",
-  "aiAgents.hint.channel.instagram": "Connect if inbound leads come from Instagram Direct.",
-  "aiAgents.hint.knowledgeTitle": "Short knowledge name: Prices, Schedule, Booking rules, FAQ.",
-  "aiAgents.hint.knowledgeCategory": "Category keeps knowledge organized. For example: sales, service, policy, faq.",
-  "aiAgents.hint.knowledgeContent": "Write concrete facts: prices, limits, address, booking terms. More precise text means fewer invented details.",
-  "aiAgents.hint.knowledgeActive": "When enabled, this knowledge is included in the agent reply context.",
+  "aiAgents.onboarding.test.helpText":
+    "The test shows how the agent sees a dialog and what reply it prepares.",
+  "aiAgents.onboarding.test.recommendation":
+    "Recommendation: test price, booking, discount and unhappy-client questions.",
+  "aiAgents.hint.agentName":
+    "What it is: the AI manager name in the cabinet. How it helps: your team understands which agent handles sales or support. Recommendation: name it by role, for example Sales agent.",
+  "aiAgents.hint.agentLanguage":
+    "What it is: the main reply language. How it helps: the agent keeps one communication style. Recommendation: use the language most clients use.",
+  "aiAgents.hint.agentStatus":
+    "Active enables the agent; Pause stops it. Before activation, test replies and check knowledge.",
+  "aiAgents.hint.profileName":
+    "Internal behavior profile name. You can keep the default if the agent has one scenario.",
+  "aiAgents.hint.tone":
+    "Tone sets reply style. For sales use Friendly or Sales; for support use Support.",
+  "aiAgents.hint.role":
+    "Describe the agent in plain language: sales manager, booking administrator or support assistant.",
+  "aiAgents.hint.systemPrompt":
+    "Main instruction for every reply. Avoid long technical prompts; use 2-4 clear rules.",
+  "aiAgents.hint.rules":
+    "Rules the agent must always follow: do not promise discounts, clarify service, keep replies short.",
+  "aiAgents.hint.escalation":
+    "When the agent should call a person: complaint, price dispute, legal question or unusual request.",
+  "aiAgents.hint.responseMode":
+    "Choose the balance of quality and speed. Start with fast or quality mode and avoid frequent changes.",
+  "aiAgents.hint.temperature":
+    "Higher values make wording freer. For sales we recommend 0.3-0.5 for stable replies.",
+  "aiAgents.hint.pipelineMode":
+    "Mode defines what the agent does with the dialog in CRM. Start safely with Lead and task.",
+  "aiAgents.hint.maxReplyChars":
+    "Limits auto-reply length. Recommendation: 500-900 characters for a concise client reply.",
+  "aiAgents.hint.leadConfidence":
+    "Minimum confidence for creating a lead. Higher threshold means fewer automatic mistakes.",
+  "aiAgents.hint.dealConfidence":
+    "Minimum confidence for a draft deal. Recommendation: keep it higher than the lead threshold.",
+  "aiAgents.hint.launchReady":
+    "The basic data is ready. Before enabling, ask the agent 2-3 real client questions.",
+  "aiAgents.hint.launchNotReady":
+    "Before launch, add knowledge and connect at least one active channel.",
+  "aiAgents.hint.tool.create_lead":
+    "Enable almost always: a lead captures client interest and prevents lost requests.",
+  "aiAgents.hint.tool.create_task":
+    "Useful for the team: the agent creates a manager task after an important dialog.",
+  "aiAgents.hint.tool.create_deal":
+    "Enable when sales stages are clear and the agent was tested on real questions.",
+  "aiAgents.hint.tool.handoff_to_manager":
+    "Keep enabled: the agent can stop and pass complex dialogs to a person.",
+  "aiAgents.hint.channel.website":
+    "Connect first if clients leave requests on the website. This is the simplest test channel.",
+  "aiAgents.hint.channel.telegram":
+    "Connect if clients often write in Telegram. A bot token is required.",
+  "aiAgents.hint.channel.whatsapp":
+    "Connect for sales and booking. Check templates and consent before auto-replies.",
+  "aiAgents.hint.channel.instagram":
+    "Connect if inbound leads come from Instagram Direct.",
+  "aiAgents.hint.knowledgeTitle":
+    "Short knowledge name: Prices, Schedule, Booking rules, FAQ.",
+  "aiAgents.hint.knowledgeCategory":
+    "Category keeps knowledge organized. For example: sales, service, policy, faq.",
+  "aiAgents.hint.knowledgeContent":
+    "Write concrete facts: prices, limits, address, booking terms. More precise text means fewer invented details.",
+  "aiAgents.hint.knowledgeActive":
+    "When enabled, this knowledge is included in the agent reply context.",
   "automations.title": "Automations",
-  "automations.description": "Simple mode: ready automation templates, rule toggles and run logs without a complex builder.",
+  "automations.description":
+    "Simple mode: ready automation templates, rule toggles and run logs without a complex builder.",
   "automations.noBusiness": "Create a business in settings to use automations.",
   "automations.advancedBuilder": "Advanced builder",
   "automations.advancedTitle": "Advanced setup",
-  "automations.advancedText": "Use the builder only for complex flows with conditions, delays and multiple actions.",
+  "automations.advancedText":
+    "Use the builder only for complex flows with conditions, delays and multiple actions.",
   "automations.backToSettings": "Back to settings",
   "automations.createRule": "Create rule",
-  "automations.saveError": "Could not save automation. Check access and rule data.",
+  "automations.saveError":
+    "Could not save automation. Check access and rule data.",
   "automations.templatesTitle": "Quick start templates",
   "automations.actionCount": "{count} action",
   "automations.addDraft": "Add draft",
@@ -2969,7 +3502,8 @@ export const en: Record<string, string> = {
   "automations.disable": "Disable",
   "automations.rulesTitle": "Active and draft rules",
   "automations.emptyTitle": "No automations yet",
-  "automations.emptyDescription": "Start with one simple rule: new lead, manager task or booking reminder.",
+  "automations.emptyDescription":
+    "Start with one simple rule: new lead, manager task or booking reminder.",
   "automations.runsTitle": "Run log",
   "automations.entity": "entity",
   "automations.attempt": "attempt {current}/{max}",
@@ -2994,7 +3528,8 @@ export const en: Record<string, string> = {
   "automations.saveDraft": "Save draft",
   "automations.previewRequired": "Check the rule first, then save it.",
   "automations.previewFailed": "Check failed. Review the rule fields.",
-  "automations.ruleNotSaved": "Rule was not saved. Check it first and fix validation issues.",
+  "automations.ruleNotSaved":
+    "Rule was not saved. Check it first and fix validation issues.",
   "automations.name": "Name",
   "automations.trigger": "Trigger",
   "automations.descriptionLabel": "Description",
@@ -3005,12 +3540,14 @@ export const en: Record<string, string> = {
   "automations.removeCondition": "Remove condition",
   "automations.fieldPlaceholder": "field, e.g. source",
   "automations.expectedValue": "expected value",
-  "automations.noConditionsHint": "Without conditions, the rule will run on every selected trigger.",
+  "automations.noConditionsHint":
+    "Without conditions, the rule will run on every selected trigger.",
   "automations.actions": "Actions",
   "automations.addAction": "Add action",
   "automations.removeAction": "Remove action",
   "automations.delaySeconds": "delay seconds",
-  "automations.configPlaceholder": "{\"title\":\"Contact the client\",\"priority\":\"high\"}",
+  "automations.configPlaceholder":
+    '{"title":"Contact the client","priority":"high"}',
   "automations.previewOk": "Check passed: {name}",
   "automations.previewMeta": "{conditions} conditions · {actions} actions",
   "automations.testPreview": "Check rule",
@@ -3037,17 +3574,20 @@ export const en: Record<string, string> = {
   "ai.widget.title": "AI business assistant",
   "ai.widget.subtitle": "Recommendations for today",
   "ai.widget.priority": "Priority brief",
-  "ai.widget.brief": "Today you should process new leads and confirm upcoming bookings.",
+  "ai.widget.brief":
+    "Today you should process new leads and confirm upcoming bookings.",
   "ai.widget.apply": "Apply hint",
   "ai.widget.applied": "Hint applied",
   "ai.widget.smartReply": "Smart reply",
-  "ai.widget.reply": "Hello! We have an available slot today at 12:00. Should I reserve it for you?",
+  "ai.widget.reply":
+    "Hello! We have an available slot today at 12:00. Should I reserve it for you?",
   "ai.widget.placeholder": "Ask what to do next...",
   "ai.suggestion.1": "Reply to the client and offer the nearest slots",
   "ai.suggestion.2": "Some leads have waited more than 2 hours",
   "ai.suggestion.3": "WhatsApp brings more bookings than the website",
   "leads.title": "Lead pipeline",
-  "leads.description": "A single table for incoming leads: search, sources, AI signals, statuses and the next step.",
+  "leads.description":
+    "A single table for incoming leads: search, sources, AI signals, statuses and the next step.",
   "leads.new": "New lead",
   "leads.search": "Search by client, phone or message...",
   "leads.allSources": "All sources",
@@ -3066,13 +3606,19 @@ export const en: Record<string, string> = {
   "leads.queueSearch": "Search by name, phone or request",
   "leads.loading": "Loading leads",
   "leads.emptyTitle": "No leads yet",
-  "leads.emptyText": "New leads from forms, messages and manual entry will appear in this queue.",
+  "leads.emptyText":
+    "New leads from forms, messages and manual entry will appear in this queue.",
+  "leads.emptyFilteredTitle": "No leads match the current filters",
+  "leads.emptyFilteredText":
+    "Reset filters or change the search query to see more leads.",
   "leads.createFirstLead": "Create first lead",
   "leads.setupIntegrations": "Set up integrations",
   "leads.incomingTitle": "Incoming opportunities",
-  "leads.incomingDescription": "Review and assign {count} active leads for today.",
+  "leads.incomingDescription":
+    "Review and assign {count} active leads for today.",
   "leads.aiPriorityTitle": "AI Intelligence priority",
-  "leads.aiPriorityText": "Priority: {name} has a high deal probability based on past interactions and current signals.",
+  "leads.aiPriorityText":
+    "Priority: {name} has a high deal probability based on past interactions and current signals.",
   "leads.takeAction": "Take action",
   "leads.statNew": "New",
   "leads.statWaiting": "Waiting",
@@ -3088,7 +3634,8 @@ export const en: Record<string, string> = {
   "leads.nextStepBook": "Book",
   "leads.nextStepReview": "Review",
   "leads.noMatchingLeads": "No leads found",
-  "leads.noMatchingLeadsText": "Change the filter or connect a new lead source.",
+  "leads.noMatchingLeadsText":
+    "Change the filter or connect a new lead source.",
   "leads.columnNew": "New",
   "leads.columnNewHint": "Needs fast response",
   "leads.columnContacted": "Contacted",
@@ -3110,12 +3657,14 @@ export const en: Record<string, string> = {
   "leads.book": "Book",
   "leads.intelligence": "Lead analysis",
   "leads.create": "Create lead",
-  "leads.aiSummary": "The client is interested. Offer the nearest slot and a quick WhatsApp follow-up.",
+  "leads.aiSummary":
+    "The client is interested. Offer the nearest slot and a quick WhatsApp follow-up.",
   "leads.totalLeads": "Total leads",
   "leads.newToday": "New today",
   "leads.metricDeltaWeek": "{count} in list",
   "leads.conversionMetric": "Conversion {value}%",
-  "leads.aiBannerText": "Priority: {lead}. Check the request, owner and next step before the client is lost.",
+  "leads.aiBannerText":
+    "Priority: {lead}. Check the request, owner and next step before the client is lost.",
   "leads.weeklyDelta": "+{count} this week",
   "leads.tableLead": "Lead",
   "leads.tablePhone": "Phone",
@@ -3139,7 +3688,8 @@ export const en: Record<string, string> = {
   "leads.aiReply": "AI reply",
   "leads.bookFromLead": "Create booking from lead",
   "leads.commandTitle": "Lead command center",
-  "leads.commandText": "Answer new requests first, then move the client to a booking or deal.",
+  "leads.commandText":
+    "Answer new requests first, then move the client to a booking or deal.",
   "leads.metricNew": "New",
   "leads.metricActive": "In progress",
   "leads.metricBooked": "Booked",
@@ -3181,10 +3731,12 @@ export const en: Record<string, string> = {
   "leads.archiveReason": "Lead archive reason",
   "leads.archiveReasonPlaceholder": "For example: duplicate, outdated lead",
   "leads.archiveConfirmTitle": "Archive lead?",
-  "leads.archiveConfirmText": "Leads to archive: {count}. Data will be kept and can be restored.",
+  "leads.archiveConfirmText":
+    "Leads to archive: {count}. Data will be kept and can be restored.",
   "leads.lostReason": "Why was the lead lost?",
   "leads.lostReasonRequired": "Specify the rejection reason.",
-  "leads.appointmentSelectionRequired": "Lead, service or slot is not selected.",
+  "leads.appointmentSelectionRequired":
+    "Lead, service or slot is not selected.",
   "leads.noBusiness": "Create a business in settings to work with leads.",
   "leads.noticeCreated": "Lead created.",
   "leads.noticeTaken": "Lead taken into work.",
@@ -3196,18 +3748,24 @@ export const en: Record<string, string> = {
   "leads.noticeAssigned": "Lead assigned to you.",
   "leads.noticeNextActionCreated": "Next action created.",
   "leads.actionDone": "Lead action completed.",
-  "leads.aiDraftReady": "AI prepared a short reply. Real sending will be connected through Conversations API.",
-  "leads.appointmentCreated": "Booking created from lead. The lead is updated and the booking will appear in calendar.",
+  "leads.aiDraftReady":
+    "AI prepared a short reply. Real sending will be connected through Conversations API.",
+  "leads.appointmentCreated":
+    "Booking created from lead. The lead is updated and the booking will appear in calendar.",
   "leads.aiNewTitle": "New leads need a response",
-  "leads.aiNewDesc": "{count} new leads are waiting for the first response. This is the main client-loss risk.",
+  "leads.aiNewDesc":
+    "{count} new leads are waiting for the first response. This is the main client-loss risk.",
   "leads.aiOpenNew": "Process",
   "leads.aiCalmTitle": "No unprocessed new leads",
-  "leads.aiCalmDesc": "Check active leads and move clients toward a booking or deal.",
+  "leads.aiCalmDesc":
+    "Check active leads and move clients toward a booking or deal.",
   "leads.aiActiveTitle": "Leads are in progress",
-  "leads.aiActiveDesc": "{count} leads are already in conversation. Check where the next step is needed.",
+  "leads.aiActiveDesc":
+    "{count} leads are already in conversation. Check where the next step is needed.",
   "leads.aiReviewPipeline": "Review",
   "leads.aiDataTitle": "Connect lead sources",
-  "leads.aiDataDesc": "When WhatsApp, Telegram or the site are connected, ZANI can show bottlenecks more accurately.",
+  "leads.aiDataDesc":
+    "When WhatsApp, Telegram or the site are connected, ZANI can show bottlenecks more accurately.",
   "leads.aiConnectSources": "Connect",
   "leads.nextActionContactClient": "Contact the client",
   "leads.nextActionQualifyNeed": "Qualify the need",
@@ -3296,13 +3854,15 @@ export const en: Record<string, string> = {
   "leads.noticeArchived": "Archived: {count}",
   "leads.noticeStatusUpdated": "Lead status updated.",
   "leads.statusUpdated": "Status changed",
-  "leads.useActionForStatus": "This status can only be changed through a business action.",
+  "leads.useActionForStatus":
+    "This status can only be changed through a business action.",
   "leads.undo": "Undo",
   "leads.redo": "Redo",
   "leads.actionUndone": "Action undone.",
   "leads.actionRedone": "Action redone.",
   "leads.internalNotes": "Internal notes",
-  "leads.notePlaceholder": "Write a private note for the team. You can use @name.",
+  "leads.notePlaceholder":
+    "Write a private note for the team. You can use @name.",
   "leads.addNote": "Add",
   "leads.noteAdded": "Note added.",
   "leads.attachFiles": "Attach files",
@@ -3317,19 +3877,26 @@ export const en: Record<string, string> = {
   "leads.aiConversationSummary": "AI summary",
   "leads.aiIntent": "Intent",
   "leads.aiNextBestAction": "Action",
-  "leads.aiNoDialogSummary": "No dialog yet. The score uses source, status and time without response.",
-  "leads.aiRecommendationStale": "The lead is stale. Contact the client today or close the loss reason.",
-  "leads.aiRecommendationAssign": "Assign an owner and make the first contact as soon as possible.",
-  "leads.aiRecommendationCallFast": "Similar requests convert best when called within the first 15 minutes.",
-  "leads.aiRecommendationQualify": "Qualify the need and offer a concrete next step.",
+  "leads.aiNoDialogSummary":
+    "No dialog yet. The score uses source, status and time without response.",
+  "leads.aiRecommendationStale":
+    "The lead is stale. Contact the client today or close the loss reason.",
+  "leads.aiRecommendationAssign":
+    "Assign an owner and make the first contact as soon as possible.",
+  "leads.aiRecommendationCallFast":
+    "Similar requests convert best when called within the first 15 minutes.",
+  "leads.aiRecommendationQualify":
+    "Qualify the need and offer a concrete next step.",
   "leads.staleLeadTitle": "Stale lead",
-  "leads.staleLeadText": "No actions for more than 3 days. Contact the client or decide the status.",
+  "leads.staleLeadText":
+    "No actions for more than 3 days. Contact the client or decide the status.",
   "leads.duplicatesTitle": "Possible duplicates",
   "leads.duplicatesText": "Similar clients found: {count}",
   "leads.mergeDuplicate": "Merge",
   "leads.duplicatesMerged": "Duplicates merged.",
   "leads.aiAutomationTitle": "AI and automation",
-  "leads.aiAutomationText": "Scoring, stale leads and smart assignment run on current CRM data.",
+  "leads.aiAutomationText":
+    "Scoring, stale leads and smart assignment run on current CRM data.",
   "leads.sortByHeat": "Sort by heat",
   "leads.assignmentWorkload": "By workload",
   "leads.assignmentRoundRobin": "Round-robin",
@@ -3353,15 +3920,20 @@ export const en: Record<string, string> = {
   "leads.templateGreeting": "/greeting",
   "leads.templatePrice": "/price",
   "leads.templateBooking": "/booking",
-  "leads.templateGreetingText": "Hello, {{name}}! Thanks for your request. When is it convenient to discuss {{service}}?",
-  "leads.templatePriceText": "Hello, {{name}}! I will confirm the details for {{service}} and send the price.",
-  "leads.templateBookingText": "Hello, {{name}}! I can offer the nearest time for {{service}}. Which day works for you?",
+  "leads.templateGreetingText":
+    "Hello, {{name}}! Thanks for your request. When is it convenient to discuss {{service}}?",
+  "leads.templatePriceText":
+    "Hello, {{name}}! I will confirm the details for {{service}} and send the price.",
+  "leads.templateBookingText":
+    "Hello, {{name}}! I can offer the nearest time for {{service}}. Which day works for you?",
   "leads.mobileSwipeHint": "Swipe: left archive, right take",
   "leads.offlineMode": "Offline mode: showing the last saved leads.",
   "leads.offlinePending": "Pending sync: {count}",
-  "leads.offlineQueued": "Action saved and will sync when the connection returns.",
+  "leads.offlineQueued":
+    "Action saved and will sync when the connection returns.",
   "leads.offlineSynced": "Synced actions: {count}",
-  "leads.offlineFilesSkipped": "Files cannot be saved offline. Attach them after the connection returns.",
+  "leads.offlineFilesSkipped":
+    "Files cannot be saved offline. Attach them after the connection returns.",
   "leads.voiceRecord": "Voice",
   "leads.voiceStop": "Stop",
   "leads.voiceNoteAttached": "Voice note attached.",
@@ -3396,11 +3968,13 @@ export const en: Record<string, string> = {
   "deals.stageMeta": "{probability}% probability · SLA {sla} min",
   "deals.requiredFields": "Required fields: {fields}",
   "deals.paymentAmountPrompt": "What is the payment amount?",
-  "deals.lostReasonPrompt": "Why did the client reject or why was the deal lost?",
+  "deals.lostReasonPrompt":
+    "Why did the client reject or why was the deal lost?",
   "deals.stageLostReasonPrompt": "Why was the deal lost?",
   "deals.noBusiness": "Create a business in settings to work with deals.",
   "deals.saveError": "Could not save the deal, move stage or run the action.",
-  "deals.noPipeline": "Create a pipeline and stages via API or Django Admin first. This protects CRM from chaotic statuses.",
+  "deals.noPipeline":
+    "Create a pipeline and stages via API or Django Admin first. This protects CRM from chaotic statuses.",
   "deals.activePipeline": "active pipeline",
   "deals.openDeals": "Open",
   "deals.inWork": "active deals",
@@ -3408,17 +3982,22 @@ export const en: Record<string, string> = {
   "deals.closedPaid": "closed payments",
   "deals.risks": "Risks",
   "deals.aiPipelineHint": "Deal hint",
-  "deals.aiOverdueText": "{count} deals are past SLA. Check the delay reason and assign the next step.",
-  "deals.aiNoNextTaskText": "{count} open deals have no next task. Add an action so deals do not stall.",
-  "deals.aiStableText": "No critical deal risks right now. Keep moving the pipeline through the nearest tasks.",
+  "deals.aiOverdueText":
+    "{count} deals are past SLA. Check the delay reason and assign the next step.",
+  "deals.aiNoNextTaskText":
+    "{count} open deals have no next task. Add an action so deals do not stall.",
+  "deals.aiStableText":
+    "No critical deal risks right now. Keep moving the pipeline through the nearest tasks.",
   "deals.allStages": "All stages",
   "deals.nextAction": "Next step",
   "deals.searchPlaceholder": "Search by deal, client or source...",
   "deals.pipelineValue": "Pipeline value",
   "deals.dropHere": "Drop deals here",
   "deals.createModalTitle": "Create deal",
-  "deals.clientRequired": "A deal needs a client. Create a client, then return to the pipeline.",
-  "deals.stageRequired": "A deal needs at least one pipeline stage. Configure the pipeline in admin or via API.",
+  "deals.clientRequired":
+    "A deal needs a client. Create a client, then return to the pipeline.",
+  "deals.stageRequired":
+    "A deal needs at least one pipeline stage. Configure the pipeline in admin or via API.",
   "deals.titlePlaceholder": "Deal title",
   "deals.clientSelect": "Client",
   "deals.firstStage": "First stage",
@@ -3431,7 +4010,8 @@ export const en: Record<string, string> = {
   "deals.leadLabel": "Lead",
   "deals.notLinked": "not linked",
   "deals.aiNextAction": "AI next action",
-  "deals.aiNextActionText": "Check the nearest task, then offer the client one concrete next step. AI execution stays confirmation-only.",
+  "deals.aiNextActionText":
+    "Check the nearest task, then offer the client one concrete next step. AI execution stays confirmation-only.",
   "deals.tasks": "Tasks",
   "deals.noTasks": "No tasks for this deal.",
   "deals.conversations": "Conversations",
@@ -3439,10 +4019,13 @@ export const en: Record<string, string> = {
   "deals.noConversations": "No client conversations yet.",
   "deals.noTimeline": "Deal history will appear after manager actions.",
   "deals.salesTitle": "Sales",
-  "deals.salesDescription": "Deals, clients, conversations and nearest steps in one working screen.",
+  "deals.salesDescription":
+    "Deals, clients, conversations and nearest steps in one working screen.",
   "deals.aiPriorityTitle": "AI Intelligence priority",
-  "deals.aiPriorityText": "Review {deal}: client {client}, amount {amount}. ZANI sees a stall risk and recommends assigning the next step.",
-  "deals.aiPriorityEmpty": "There are no critical deals right now. Keep the pipeline moving by nearest tasks.",
+  "deals.aiPriorityText":
+    "Review {deal}: client {client}, amount {amount}. ZANI sees a stall risk and recommends assigning the next step.",
+  "deals.aiPriorityEmpty":
+    "There are no critical deals right now. Keep the pipeline moving by nearest tasks.",
   "deals.takeAction": "Take action",
   "deals.filters": "Filters",
   "deals.filterMine": "Mine",
@@ -3469,12 +4052,14 @@ export const en: Record<string, string> = {
   "deals.delete": "Delete",
   "deals.archive": "Archive",
   "deals.archiveSelectedTitle": "Archive selected deals",
-  "deals.archiveSelectedText": "Deals to archive: {count}. Data will be preserved and can be restored.",
+  "deals.archiveSelectedText":
+    "Deals to archive: {count}. Data will be preserved and can be restored.",
   "deals.archiveReason": "Archive reason",
   "deals.archiveReasonPlaceholder": "For example: duplicate, outdated deal",
   "deals.archiveReasonDefault": "Archived by manager",
   "deals.noticeArchived": "Archived deals: {count}",
   "deals.noticeRestored": "Restored deals: {count}",
+  "deals.actionDone": "Deal action completed.",
   "deals.more": "More",
   "deals.confirmDeleteSelected": "Delete selected deals?",
   "deals.hidePriority": "Hide priority",
@@ -3491,8 +4076,10 @@ export const en: Record<string, string> = {
   "deals.noStage": "No stage",
   "deals.noPlan": "No plan",
   "deals.defaultNextAction": "Contact the client",
-  "deals.stageGuard": "Assign a clear next step to the responsible person before moving the deal to the next stage.",
-  "deals.saveChangeError": "Could not save the change. Check the data and try again.",
+  "deals.stageGuard":
+    "Assign a clear next step to the responsible person before moving the deal to the next stage.",
+  "deals.saveChangeError":
+    "Could not save the change. Check the data and try again.",
   "deals.metricOpenPipeline": "Open pipeline",
   "deals.metricOpenPipelineHint": "{count} deals in progress",
   "deals.metricWon": "Won",
@@ -3515,7 +4102,8 @@ export const en: Record<string, string> = {
   "deals.stageFilterLabel": "Deal stage filter",
   "deals.listTitle": "Deal list",
   "deals.notFoundTitle": "No deals found",
-  "deals.notFoundText": "Change the filter or create a new deal from a lead/client.",
+  "deals.notFoundText":
+    "Change the filter or create a new deal from a lead/client.",
   "deals.overdue": "Overdue",
   "deals.success": "Success",
   "deals.lost": "Lost",
@@ -3523,26 +4111,33 @@ export const en: Record<string, string> = {
   "deals.nearestStep": "Nearest step",
   "deals.add": "Add",
   "deals.snooze": "Snooze",
-  "deals.noMoveWithoutNext": "This deal should not move forward without an assigned next action.",
-  "deals.noNearestStepText": "The deal has no nearest step. Assign a task so the client is not lost.",
+  "deals.noMoveWithoutNext":
+    "This deal should not move forward without an assigned next action.",
+  "deals.noNearestStepText":
+    "The deal has no nearest step. Assign a task so the client is not lost.",
   "deals.leadLine": "Lead: {value}",
   "deals.closing": "Closing",
   "deals.notSet": "Not set",
-  "deals.lostReasonAfterClose": "The loss reason will appear after the deal is closed.",
+  "deals.lostReasonAfterClose":
+    "The loss reason will appear after the deal is closed.",
   "deals.pipeline": "Pipeline",
   "deals.responsible": "Responsible",
   "deals.selectedDeal": "Selected deal",
   "deals.noSelectedDeal": "Select a deal in the pipeline",
-  "deals.noSelectedDealText": "Compact card, next action and quick controls will appear here.",
+  "deals.noSelectedDealText":
+    "Compact card, next action and quick controls will appear here.",
   "deals.forecast": "Closing forecast",
   "deals.forecastPeriod": "This month",
   "deals.expectedRevenue": "Expected revenue",
   "deals.activity": "Activity",
   "deals.allEvents": "All events",
   "deals.aiSuggestion": "Suggestion",
-  "deals.aiSuggestionStable": "No critical deals right now. Keep the pipeline moving by nearest tasks.",
-  "deals.aiSuggestionNoTasks": "Assign a next step to deals without tasks so they do not stall in the pipeline.",
-  "deals.aiSuggestionOverdue": "Review overdue deals and set a clear next action for the responsible person.",
+  "deals.aiSuggestionStable":
+    "No critical deals right now. Keep the pipeline moving by nearest tasks.",
+  "deals.aiSuggestionNoTasks":
+    "Assign a next step to deals without tasks so they do not stall in the pipeline.",
+  "deals.aiSuggestionOverdue":
+    "Review overdue deals and set a clear next action for the responsible person.",
   "deals.aiHighChance": "High closing chance for {count} deals worth {amount}",
   "deals.allHints": "See all hints",
   "deals.moreDeals": "{count} more deals",
@@ -3566,7 +4161,8 @@ export const en: Record<string, string> = {
   "deals.emptyDealHistory": "Deal history is empty yet.",
   "deals.commentPlaceholder": "Add a comment",
   "deals.selectDeal": "Select a deal",
-  "deals.selectDealText": "Client, nearest step, messages and history will appear on the right.",
+  "deals.selectDealText":
+    "Client, nearest step, messages and history will appear on the right.",
   "deals.needClientFirst": "A client is required first.",
   "deals.selectClient": "Select client",
   "deals.closeAsWon": "Close as won",
@@ -3598,12 +4194,14 @@ export const en: Record<string, string> = {
   "channel.instagram": "Instagram",
   "channel.manual": "Manual",
   "timeline.title": "Activity timeline",
-  "timeline.description": "Unified client history: CRM, messages, bookings, tasks and automations.",
+  "timeline.description":
+    "Unified client history: CRM, messages, bookings, tasks and automations.",
   "timeline.search": "Search events",
   "timeline.noBusiness": "Create a business in settings to open the timeline.",
   "timeline.noClient": "No client",
   "timeline.emptyTitle": "No events yet",
-  "timeline.emptyText": "When a client submits a lead, sends a message or gets a booking, the history will appear here.",
+  "timeline.emptyText":
+    "When a client submits a lead, sends a message or gets a booking, the history will appear here.",
   "platform.title": "Platform",
   "platform.admin": "Platform Admin",
   "platform.controlCenter": "Control center",
@@ -3632,7 +4230,8 @@ export const en: Record<string, string> = {
   "platform.overview.error": "Could not load platform dashboard.",
   "platform.overview.eyebrow": "Platform control",
   "platform.overview.title": "Zani overview",
-  "platform.overview.description": "Real platform product metrics without the merchant CRM sidebar or internal dev tools.",
+  "platform.overview.description":
+    "Real platform product metrics without the merchant CRM sidebar or internal dev tools.",
   "platform.overview.totalMerchants": "Total merchants",
   "platform.overview.activeMerchants": "Active merchants",
   "platform.overview.trialMerchants": "Trial merchants",
@@ -3641,25 +4240,30 @@ export const en: Record<string, string> = {
   "platform.overview.bots": "Bots",
   "platform.overview.attentionMerchants": "Team action needed",
   "platform.overview.formErrors": "Form errors / 30d",
-  "platform.overview.handoffConversations": "Conversations waiting for operator",
+  "platform.overview.handoffConversations":
+    "Conversations waiting for operator",
   "platform.overview.newLeads": "New leads / 30d",
   "platform.overview.mrr": "MRR estimate",
-  "platform.overview.mrrText": "Estimate based on active subscriptions and plan monthly_price. Payment provider is not added at this stage.",
+  "platform.overview.mrrText":
+    "Estimate based on active subscriptions and plan monthly_price. Payment provider is not added at this stage.",
   "platform.overview.conversations": "Conversations / 30d",
   "platform.overview.aiRequests": "AI requests / 30d",
   "platform.overview.activeChannels": "Active channels",
   "platform.overview.errorsTitle": "Operational signals",
-  "platform.overview.errorsText": "Current platform overview errors: {errors}. Pilot signals: {connectors} integrations need attention, {merchants} merchants have no sales data.",
+  "platform.overview.errorsText":
+    "Current platform overview errors: {errors}. Pilot signals: {connectors} integrations need attention, {merchants} merchants have no sales data.",
   "platform.common.noName": "No name",
   "platform.common.unknown": "unknown",
   "platform.merchants.loading": "Loading merchants...",
   "platform.merchants.error": "Could not load merchants.",
   "platform.merchants.eyebrow": "Pilot merchants",
   "platform.merchants.title": "Merchants",
-  "platform.merchants.description": "Platform businesses with plan, pilot health, operational signals and a safe support workflow without internal CRM data access.",
+  "platform.merchants.description":
+    "Platform businesses with plan, pilot health, operational signals and a safe support workflow without internal CRM data access.",
   "platform.merchants.search": "Search merchants",
   "platform.merchants.emptyTitle": "No merchants found",
-  "platform.merchants.emptyText": "Change the search query or check that businesses exist.",
+  "platform.merchants.emptyText":
+    "Change the search query or check that businesses exist.",
   "platform.merchants.merchant": "Merchant",
   "platform.merchants.owner": "Owner",
   "platform.merchants.status": "Status",
@@ -3685,25 +4289,31 @@ export const en: Record<string, string> = {
   "platform.operations.error": "Could not load operations health.",
   "platform.operations.eyebrow": "Support operations",
   "platform.operations.title": "Operations health",
-  "platform.operations.description": "One panel for support: what broke for a merchant, where the queue is, which provider should not be enabled and what needs attention.",
+  "platform.operations.description":
+    "One panel for support: what broke for a merchant, where the queue is, which provider should not be enabled and what needs attention.",
   "platform.operations.critical": "Critical blockers",
   "platform.operations.warnings": "Warnings",
   "platform.operations.supportGrants": "Active support grants",
   "platform.operations.connectorWorkItems": "Connector work items",
   "platform.operations.queueRuntime": "Queue runtime",
-  "platform.operations.queueRuntimeText": "Celery/Redis readiness and failed background work.",
+  "platform.operations.queueRuntimeText":
+    "Celery/Redis readiness and failed background work.",
   "platform.operations.pending": "Pending",
   "platform.operations.running": "Running",
   "platform.operations.failed": "Failed",
   "platform.operations.configured": "configured",
   "platform.operations.notConfigured": "not configured",
   "platform.operations.none": "none",
-  "platform.operations.broker": "Broker: {broker} · Inline automations: {inline} · Queues: {queues}",
+  "platform.operations.broker":
+    "Broker: {broker} · Inline automations: {inline} · Queues: {queues}",
   "platform.operations.productionGates": "Production gates",
-  "platform.operations.productionGatesText": "The most important blockers from production readiness and backup readiness.",
-  "platform.operations.noProductionBlockers": "No critical production blockers.",
+  "platform.operations.productionGatesText":
+    "The most important blockers from production readiness and backup readiness.",
+  "platform.operations.noProductionBlockers":
+    "No critical production blockers.",
   "platform.operations.providerRollout": "Provider rollout",
-  "platform.operations.providerRolloutText": "Safe order for enabling external providers.",
+  "platform.operations.providerRolloutText":
+    "Safe order for enabling external providers.",
   "platform.operations.enabled": "Enabled: {value}",
   "platform.operations.connectorQueue": "Connector queue",
   "platform.operations.noConnectorRequests": "No connector requests.",
@@ -3712,11 +4322,13 @@ export const en: Record<string, string> = {
   "platform.operations.noFailedAutomationRuns": "No failed automation runs.",
   "platform.operations.integrationFailures": "Integration failures",
   "platform.operations.noBusiness": "No business",
-  "platform.operations.noFailedIntegrationEvents": "No failed integration events.",
+  "platform.operations.noFailedIntegrationEvents":
+    "No failed integration events.",
   "platform.merchantDetail.loading": "Loading merchant support view...",
   "platform.merchantDetail.error": "Could not open merchant support view.",
   "platform.merchantDetail.eyebrow": "Platform support",
-  "platform.merchantDetail.description": "Safe platform zone: operational status and support workflow are visible, but internal merchant CRM data is not exposed.",
+  "platform.merchantDetail.description":
+    "Safe platform zone: operational status and support workflow are visible, but internal merchant CRM data is not exposed.",
   "platform.merchantDetail.snapshot": "Merchant snapshot",
   "platform.merchantDetail.owner": "Owner",
   "platform.merchantDetail.landing": "Landing",
@@ -3725,9 +4337,11 @@ export const en: Record<string, string> = {
   "platform.merchantDetail.crmOperations": "CRM operations",
   "platform.merchantDetail.leadsLine": "Leads: {leads} · new: {new}",
   "platform.merchantDetail.clientsLine": "Clients: {clients} · tasks: {tasks}",
-  "platform.merchantDetail.inboxLine": "Inbox: {unread} unread · {handoff} handoff",
+  "platform.merchantDetail.inboxLine":
+    "Inbox: {unread} unread · {handoff} handoff",
   "platform.merchantDetail.dataSources": "Data sources",
-  "platform.merchantDetail.connectorsLine": "Connectors: {ok} ok · {pending} request · {failed} fail",
+  "platform.merchantDetail.connectorsLine":
+    "Connectors: {ok} ok · {pending} request · {failed} fail",
   "platform.merchantDetail.formsLine": "Forms: {forms} · errors: {errors}",
   "platform.merchantDetail.salesEventsLine": "Sales events: {events}",
   "platform.merchantDetail.pilotHealth": "Pilot health",
@@ -3737,127 +4351,163 @@ export const en: Record<string, string> = {
   "platform.merchantDetail.priority": "priority {priority}",
   "platform.merchantDetail.emptyWorkflow": "Support workflow is empty.",
   "platform.merchantDetail.noNextSteps": "No next steps",
-  "platform.merchantDetail.noNextStepsText": "The pilot can be monitored without urgent intervention.",
+  "platform.merchantDetail.noNextStepsText":
+    "The pilot can be monitored without urgent intervention.",
   "platform.merchantDetail.logSupportAction": "Log support action",
   "platform.merchantDetail.actionSupportNote": "Support note",
   "platform.merchantDetail.actionMerchantCall": "Merchant call",
   "platform.merchantDetail.actionSetupHelp": "Setup help",
   "platform.merchantDetail.actionRiskReview": "Risk review",
-  "platform.merchantDetail.notePlaceholder": "Short result of a call, check or merchant support action",
-  "platform.merchantDetail.noteTextarea": "Example: helped connect a form, next step is to upload sales CSV.",
+  "platform.merchantDetail.notePlaceholder":
+    "Short result of a call, check or merchant support action",
+  "platform.merchantDetail.noteTextarea":
+    "Example: helped connect a form, next step is to upload sales CSV.",
   "platform.merchantDetail.saveAction": "Save action",
   "platform.merchantDetail.refresh": "Refresh",
   "platform.merchantDetail.noRecentActions": "No support actions recorded yet.",
   "platform.placeholder.accessLayerActive": "Access layer active",
   "platform.placeholder.internalOnly": "Internal platform-only route",
   "platform.placeholder.placeholderOnly": "Placeholder only",
-  "platform.placeholder.placeholderText": "This page intentionally has no real business logic. It fixes a separate Platform Admin interface and protected routes without adding extra public modules.",
-  "platform.placeholder.notMerchantFeature": "This is not shown as production merchant functionality.",
+  "platform.placeholder.placeholderText":
+    "This page intentionally has no real business logic. It fixes a separate Platform Admin interface and protected routes without adding extra public modules.",
+  "platform.placeholder.notMerchantFeature":
+    "This is not shown as production merchant functionality.",
   "platform.placeholder.readiness": "Readiness",
   "platform.placeholder.nextRoadmapStep": "Next roadmap step",
-  "platform.placeholder.nextRoadmapText": "Real platform modules will appear only in later isolated stages.",
+  "platform.placeholder.nextRoadmapText":
+    "Real platform modules will appear only in later isolated stages.",
   "platform.placeholder.stageControlled": "Stage controlled",
   "platform.placeholder.overview.title": "Platform overview",
   "platform.placeholder.overview.eyebrow": "Stage 1.2",
-  "platform.placeholder.overview.description": "A separate protected layout for platform owners. For now this is an interface shell without real operational logic.",
+  "platform.placeholder.overview.description":
+    "A separate protected layout for platform owners. For now this is an interface shell without real operational logic.",
   "platform.placeholder.overview.status1": "PlatformRoute protects the page",
-  "platform.placeholder.overview.status2": "Merchant sidebar is not rendered here",
-  "platform.placeholder.overview.status3": "Foundation is ready for future modules",
+  "platform.placeholder.overview.status2":
+    "Merchant sidebar is not rendered here",
+  "platform.placeholder.overview.status3":
+    "Foundation is ready for future modules",
   "platform.placeholder.merchants.title": "Merchants",
   "platform.placeholder.merchants.eyebrow": "Future operations",
-  "platform.placeholder.merchants.description": "Future merchant management area. Real merchants API and dashboards are not added at this stage.",
+  "platform.placeholder.merchants.description":
+    "Future merchant management area. Real merchants API and dashboards are not added at this stage.",
   "platform.placeholder.merchants.status1": "Route exists",
   "platform.placeholder.merchants.status2": "No merchant API added",
   "platform.placeholder.merchants.status3": "Ready for a later platform module",
   "platform.placeholder.prospects.title": "Prospects",
   "platform.placeholder.prospects.eyebrow": "Internal tools boundary",
-  "platform.placeholder.prospects.description": "Future prospects/internal tools area. Parser, scraping and outreach do not belong to the public product core.",
+  "platform.placeholder.prospects.description":
+    "Future prospects/internal tools area. Parser, scraping and outreach do not belong to the public product core.",
   "platform.placeholder.prospects.status1": "Route exists",
   "platform.placeholder.prospects.status2": "No prospects models added",
   "platform.placeholder.prospects.status3": "Internal tools boundary preserved",
   "platform.placeholder.landings.title": "Landings",
   "platform.placeholder.landings.eyebrow": "Pilot boundary",
-  "platform.placeholder.landings.description": "Future demo landing and customer page area. For now this is a safe placeholder.",
+  "platform.placeholder.landings.description":
+    "Future demo landing and customer page area. For now this is a safe placeholder.",
   "platform.placeholder.landings.status1": "Route exists",
   "platform.placeholder.landings.status2": "No landing generator added",
   "platform.placeholder.landings.status3": "Safe for pilot navigation",
   "platform.placeholder.outreach.title": "Outreach",
   "platform.placeholder.outreach.eyebrow": "Manual pilot process",
-  "platform.placeholder.outreach.description": "Future manual touches and sales status area. Mass outreach and parser remain internal developer tools.",
+  "platform.placeholder.outreach.description":
+    "Future manual touches and sales status area. Mass outreach and parser remain internal developer tools.",
   "platform.placeholder.outreach.status1": "Route exists",
   "platform.placeholder.outreach.status2": "No outreach automation added",
   "platform.placeholder.outreach.status3": "Internal tools boundary preserved",
   "platform.placeholder.billing.title": "Billing",
   "platform.placeholder.billing.eyebrow": "Subscription foundation later",
-  "platform.placeholder.billing.description": "Future platform plans and subscriptions area. Real payments and billing API will be added in a separate stage.",
+  "platform.placeholder.billing.description":
+    "Future platform plans and subscriptions area. Real payments and billing API will be added in a separate stage.",
   "platform.placeholder.billing.status1": "Route exists",
   "platform.placeholder.billing.status2": "No payment logic added",
   "platform.placeholder.billing.status3": "No subscription models added",
   "platform.placeholder.analytics.title": "Platform analytics",
   "platform.placeholder.analytics.eyebrow": "Insights later",
-  "platform.placeholder.analytics.description": "Future platform analytics. Charts, MRR and operational dashboards are intentionally not implemented at this stage.",
+  "platform.placeholder.analytics.description":
+    "Future platform analytics. Charts, MRR and operational dashboards are intentionally not implemented at this stage.",
   "platform.placeholder.analytics.status1": "Route exists",
   "platform.placeholder.analytics.status2": "No charts added",
   "platform.placeholder.analytics.status3": "No analytics API added",
   "platform.placeholder.settings.title": "Platform settings",
   "platform.placeholder.settings.eyebrow": "Configuration later",
-  "platform.placeholder.settings.description": "Future platform settings area. For now this is only a protected placeholder for the next iteration.",
+  "platform.placeholder.settings.description":
+    "Future platform settings area. For now this is only a protected placeholder for the next iteration.",
   "platform.placeholder.settings.status1": "Route exists",
   "platform.placeholder.settings.status2": "Access protected",
   "platform.placeholder.settings.status3": "No product settings changed",
   "integrations.guide.importTitle": "Import your base",
-  "integrations.guide.importText": "Start with clients, leads, sales or catalog through Excel/CSV.",
+  "integrations.guide.importText":
+    "Start with clients, leads, sales or catalog through Excel/CSV.",
   "integrations.guide.openImport": "Open import",
   "integrations.guide.startImport": "Start with import",
   "integrations.guide.channelsTitle": "Enable inbound channels",
-  "integrations.guide.channelsText": "Website chat and Telegram send first requests straight to the inbox.",
+  "integrations.guide.channelsText":
+    "Website chat and Telegram send first requests straight to the inbox.",
   "integrations.guide.checkChannels": "Check channels",
   "integrations.guide.connectChannel": "Connect channel",
   "integrations.guide.whatsappTitle": "Request WhatsApp setup",
-  "integrations.guide.whatsappText": "WhatsApp and Instagram are connected honestly: by request, without a fake auto-connect.",
+  "integrations.guide.whatsappText":
+    "WhatsApp and Instagram are connected honestly: by request, without a fake auto-connect.",
   "integrations.guide.requestCreated": "Request created",
   "integrations.guide.fillRequest": "Fill request",
   "integrations.guide.demoSyncTitle": "Check demo sync",
-  "integrations.guide.demoSyncText": "Kaspi, 1C, inventory and marketplaces are safely checked with demo events for now.",
+  "integrations.guide.demoSyncText":
+    "Kaspi, 1C, inventory and marketplaces are safely checked with demo events for now.",
   "integrations.guide.openDataConnectors": "Open data connectors",
   "integrations.guide.eyebrow": "Integration onboarding",
   "integrations.guide.title": "Connect capabilities in order",
-  "integrations.guide.description": "The owner sees a clear route, not an API catalog: data first, then inbound channels, then requests for external services.",
+  "integrations.guide.description":
+    "The owner sees a clear route, not an API catalog: data first, then inbound channels, then requests for external services.",
   "integrations.guide.activeConnections": "Active connections",
   "integrations.group.messages": "Channels",
-  "integrations.group.messagesText": "Connect the AI agent to the channels where customers write to your company.",
+  "integrations.group.messagesText":
+    "Connect the AI agent to the channels where customers write to your company.",
   "integrations.group.data": "Accounting and inventory",
-  "integrations.group.dataText": "Fact sources for the AI analyst: sales, inventory, catalog and documents.",
+  "integrations.group.dataText":
+    "Fact sources for the AI analyst: sales, inventory, catalog and documents.",
   "integrations.group.marketplace": "Marketplaces",
-  "integrations.group.marketplaceText": "Orders, payments, inventory and pricing risks across external platforms.",
+  "integrations.group.marketplaceText":
+    "Orders, payments, inventory and pricing risks across external platforms.",
   "integrations.group.system": "System sources",
-  "integrations.group.systemText": "Additional data import methods and service channels.",
+  "integrations.group.systemText":
+    "Additional data import methods and service channels.",
   "integrations.provider.website": "Website",
-  "integrations.provider.websiteUse": "Website chat and forms go straight to messages and leads.",
+  "integrations.provider.websiteUse":
+    "Website chat and forms go straight to messages and leads.",
   "integrations.provider.telegram": "Telegram",
-  "integrations.provider.telegramUse": "Customer dialogs and fast manager replies.",
+  "integrations.provider.telegramUse":
+    "Customer dialogs and fast manager replies.",
   "integrations.provider.whatsapp": "WhatsApp",
-  "integrations.provider.whatsappUse": "WhatsApp Business messages in one work window.",
+  "integrations.provider.whatsappUse":
+    "WhatsApp Business messages in one work window.",
   "integrations.provider.instagram": "Instagram",
-  "integrations.provider.instagramUse": "Direct requests are routed to managers.",
+  "integrations.provider.instagramUse":
+    "Direct requests are routed to managers.",
   "integrations.provider.excelCsv": "Excel / CSV",
-  "integrations.provider.excelCsvUse": "Fast import of clients, sales and catalog data.",
+  "integrations.provider.excelCsvUse":
+    "Fast import of clients, sales and catalog data.",
   "integrations.provider.oneC": "1C",
-  "integrations.provider.oneCUse": "Sales, invoices, inventory and directories.",
+  "integrations.provider.oneCUse":
+    "Sales, invoices, inventory and directories.",
   "integrations.provider.moysklad": "MoySklad",
-  "integrations.provider.moyskladUse": "Inventory, stock levels and product catalog.",
+  "integrations.provider.moyskladUse":
+    "Inventory, stock levels and product catalog.",
   "integrations.provider.kaspi": "Kaspi",
   "integrations.provider.kaspiUse": "Orders, payments and business data.",
   "integrations.provider.kaspiPricing": "Kaspi Pricing",
-  "integrations.provider.kaspiPricingUse": "Pricing agent: competitor monitoring, thresholds and autopilot.",
+  "integrations.provider.kaspiPricingUse":
+    "Pricing agent: competitor monitoring, thresholds and autopilot.",
   "integrations.provider.wildberries": "Wildberries",
   "integrations.provider.wildberriesUse": "Orders, SKU, inventory and returns.",
   "integrations.provider.ozon": "Ozon",
-  "integrations.provider.ozonUse": "FBS/FBO shipments, inventory and cancellations.",
+  "integrations.provider.ozonUse":
+    "FBS/FBO shipments, inventory and cancellations.",
   "integrations.provider.googleSheets": "Google Sheets",
-  "integrations.provider.googleSheetsUse": "Recurring spreadsheet import without development work.",
+  "integrations.provider.googleSheetsUse":
+    "Recurring spreadsheet import without development work.",
   "integrations.provider.email": "Email",
-  "integrations.provider.emailUse": "Notifications, inbound email and fallback.",
+  "integrations.provider.emailUse":
+    "Notifications, inbound email and fallback.",
   "integrations.status.active": "Active",
   "integrations.status.connected": "Connected",
   "integrations.status.draft": "Draft",
@@ -3897,21 +4547,26 @@ export const en: Record<string, string> = {
   "integrations.import.salesHelp": "Creates sales events for analytics.",
   "integrations.import.catalog": "Products, services and inventory",
   "integrations.import.catalogShort": "Catalog",
-  "integrations.import.catalogHelp": "Creates services and catalog or inventory events.",
+  "integrations.import.catalogHelp":
+    "Creates services and catalog or inventory events.",
   "integrations.import.chooseFile": "Choose a CSV or XLSX file.",
-  "integrations.import.panelDescription": "Upload a file with clients, leads, sales or catalog items. ZANI checks it first and shows a preview.",
+  "integrations.import.panelDescription":
+    "Upload a file with clients, leads, sales or catalog items. ZANI checks it first and shows a preview.",
   "integrations.import.eyebrow": "Excel / CSV connector",
   "integrations.import.title": "Import real data",
-  "integrations.import.description": "Upload CSV/XLSX, check column mapping, preview and row errors, then confirm import. Data stays scoped to the current business.",
+  "integrations.import.description":
+    "Upload CSV/XLSX, check column mapping, preview and row errors, then confirm import. Data stays scoped to the current business.",
   "integrations.import.downloadTemplate": "Download template",
   "integrations.import.template": "Template",
   "integrations.import.checkFile": "Check file",
   "integrations.import.preview": "Preview",
   "integrations.import.noFile": "No file uploaded yet",
   "integrations.import.noFileSelected": "No file selected yet",
-  "integrations.import.noFileSelectedText": "Upload a file to see the preview and errors.",
+  "integrations.import.noFileSelectedText":
+    "Upload a file to see the preview and errors.",
   "integrations.import.fileMeta": "{entity} · {rows} rows · {status}",
-  "integrations.import.previewPlaceholder": "A preview of the first rows will appear here.",
+  "integrations.import.previewPlaceholder":
+    "A preview of the first rows will appear here.",
   "integrations.import.confirm": "Confirm import",
   "integrations.import.import": "Import",
   "integrations.import.fixFile": "Fix the file before importing",
@@ -3921,7 +4576,8 @@ export const en: Record<string, string> = {
   "integrations.import.noMapping": "No mapping found.",
   "integrations.import.duplicates": "Duplicates",
   "integrations.import.duplicatesFound": "Possible duplicates found",
-  "integrations.import.duplicatesDescription": "ZANI will not create a second card when a client is already found by phone or email.",
+  "integrations.import.duplicatesDescription":
+    "ZANI will not create a second card when a client is already found by phone or email.",
   "integrations.import.duplicatesCount": "{count} possible duplicates",
   "integrations.import.summaryRows": "Rows",
   "integrations.import.summaryCreated": "Created",
@@ -3930,8 +4586,10 @@ export const en: Record<string, string> = {
   "integrations.import.summaryErrors": "Errors",
   "integrations.import.summaryDuplicates": "Duplicates",
   "integrations.import.summaryImported": "Imported",
-  "integrations.import.previewEmpty": "Preview will appear after a file is uploaded.",
-  "integrations.import.previewAfterCheck": "Preview will appear after the file is checked.",
+  "integrations.import.previewEmpty":
+    "Preview will appear after a file is uploaded.",
+  "integrations.import.previewAfterCheck":
+    "Preview will appear after the file is checked.",
   "integrations.import.history": "Import history",
   "integrations.import.noImports": "No imports yet.",
   "integrations.import.status.uploaded": "Uploaded",
@@ -3940,47 +4598,64 @@ export const en: Record<string, string> = {
   "integrations.import.status.failed": "Error",
   "integrations.import.status.none": "No data",
   "integrations.website.previewName": "Test visitor",
-  "integrations.website.previewMessage": "Hello, I want to check available time.",
-  "integrations.website.followUpMessage": "Please tell me the nearest available slot.",
-  "integrations.website.conversationCreated": "Test conversation created. Lead #{lead}, client #{client}.",
-  "integrations.website.followUpAdded": "Follow-up message added to the same inbox conversation.",
+  "integrations.website.previewMessage":
+    "Hello, I want to check available time.",
+  "integrations.website.followUpMessage":
+    "Please tell me the nearest available slot.",
+  "integrations.website.conversationCreated":
+    "Test conversation created. Lead #{lead}, client #{client}.",
+  "integrations.website.followUpAdded":
+    "Follow-up message added to the same inbox conversation.",
   "integrations.website.snippetCopied": "Install code copied.",
   "integrations.website.title": "Website and landing chat",
   "integrations.website.eyebrow": "Website chat",
-  "integrations.website.description": "The website widget receives a request and creates a client, lead and inbox conversation. Technical keys are hidden: the owner sees only clear setup and message testing.",
+  "integrations.website.description":
+    "The website widget receives a request and creates a client, lead and inbox conversation. Technical keys are hidden: the owner sees only clear setup and message testing.",
   "integrations.website.openInbox": "Open inbox",
   "integrations.website.loading": "Checking website channel...",
-  "integrations.website.notConfiguredTitle": "Website channel is not created yet",
-  "integrations.website.notConfiguredText": "Create a website channel in bot settings or through quick start. Then install code copy and test message sending will appear here.",
+  "integrations.website.notConfiguredTitle":
+    "Website channel is not created yet",
+  "integrations.website.notConfiguredText":
+    "Create a website channel in bot settings or through quick start. Then install code copy and test message sending will appear here.",
   "integrations.website.openBots": "Open bots",
   "integrations.website.checkReadiness": "Check readiness",
   "integrations.website.channelStatus": "Website channel: {status}",
-  "integrations.website.readyText": "The widget is ready. Internal connection code is hidden so integrations do not become a technical panel.",
+  "integrations.website.readyText":
+    "The widget is ready. Internal connection code is hidden so integrations do not become a technical panel.",
   "integrations.website.copySnippet": "Copy install code",
-  "integrations.website.copyNotice": "Install code is copied to the clipboard and does not show the internal key on the CRM screen.",
+  "integrations.website.copyNotice":
+    "Install code is copied to the clipboard and does not show the internal key on the CRM screen.",
   "integrations.website.testTitle": "Test website message",
-  "integrations.website.testText": "Uses the public endpoint without authentication, like a real landing visitor.",
+  "integrations.website.testText":
+    "Uses the public endpoint without authentication, like a real landing visitor.",
   "integrations.website.name": "Name",
   "integrations.website.phone": "Phone",
   "integrations.website.message": "Message",
   "integrations.website.createDialog": "Create test conversation",
   "integrations.website.followUpTitle": "Message to the same conversation",
   "integrations.website.addMessage": "Add message",
-  "integrations.telegram.savedMock": "Settings saved. Check completed in safe demo mode: {reason}",
+  "integrations.telegram.savedMock":
+    "Settings saved. Check completed in safe demo mode: {reason}",
   "integrations.telegram.saved": "Telegram settings saved.",
-  "integrations.telegram.testMock": "Connection code saved, check completed in safe demo mode.",
+  "integrations.telegram.testMock":
+    "Connection code saved, check completed in safe demo mode.",
   "integrations.telegram.testOk": "Telegram connection checked successfully.",
   "integrations.telegram.testFailed": "Check failed: {reason}",
   "integrations.telegram.unknownError": "unknown error",
   "integrations.telegram.title": "Connect Telegram",
   "integrations.telegram.eyebrow": "Telegram beta connector",
   "integrations.telegram.openInbox": "Open Telegram inbox",
-  "integrations.telegram.description": "The first external pilot channel: Telegram messages land in the inbox. Setup is handled safely with support, without exposing secret connection data in daily work.",
+  "integrations.telegram.description":
+    "The first external pilot channel: Telegram messages land in the inbox. Setup is handled safely with support, without exposing secret connection data in daily work.",
   "integrations.telegram.ownerGuide": "Owner-friendly setup",
-  "integrations.telegram.step1": "1. Check the status and make sure the channel exists in ZANI.",
-  "integrations.telegram.step2": "2. Hand setup to support if external Telegram is not connected yet.",
-  "integrations.telegram.step3": "3. Support confirms channel readiness after setup.",
-  "integrations.telegram.step4": "4. Check the channel and open incoming messages.",
+  "integrations.telegram.step1":
+    "1. Check the status and make sure the channel exists in ZANI.",
+  "integrations.telegram.step2":
+    "2. Hand setup to support if external Telegram is not connected yet.",
+  "integrations.telegram.step3":
+    "3. Support confirms channel readiness after setup.",
+  "integrations.telegram.step4":
+    "4. Check the channel and open incoming messages.",
   "integrations.telegram.token": "Connection data",
   "integrations.telegram.tokenSaved": "Shared with support",
   "integrations.telegram.tokenMissing": "Waiting for setup",
@@ -3993,35 +4668,49 @@ export const en: Record<string, string> = {
   "integrations.telegram.lastInbound": "Last inbound",
   "integrations.telegram.lastOutbound": "Last outbound",
   "integrations.telegram.noEvents": "No events yet",
-  "integrations.telegram.betaNotice": "Real Telegram traffic is enabled only after support review, queues and monitoring are ready. For now this connection works safely as a beta foundation.",
+  "integrations.telegram.betaNotice":
+    "Real Telegram traffic is enabled only after support review, queues and monitoring are ready. For now this connection works safely as a beta foundation.",
   "integrations.telegram.supportSetupTitle": "Support-assisted connection",
-  "integrations.telegram.supportSetupText": "The owner sees channel status and checks. Secret connection data is not shown after saving and is not needed for daily work.",
+  "integrations.telegram.supportSetupText":
+    "The owner sees channel status and checks. Secret connection data is not shown after saving and is not needed for daily work.",
   "integrations.telegram.advancedSetup": "Advanced pilot setup",
-  "integrations.telegram.advancedSetupHelp": "Use this only if support asks for the connection code. ZANI stores it safely and does not show it again in the interface.",
+  "integrations.telegram.advancedSetupHelp":
+    "Use this only if support asks for the connection code. ZANI stores it safely and does not show it again in the interface.",
   "integrations.telegram.botFatherToken": "Telegram connection code",
-  "integrations.telegram.tokenReplacePlaceholder": "Code is already saved. Enter a new one only to replace it.",
+  "integrations.telegram.tokenReplacePlaceholder":
+    "Code is already saved. Enter a new one only to replace it.",
   "integrations.telegram.tokenPlaceholder": "Paste the BotFather code",
   "integrations.telegram.save": "Save",
   "integrations.telegram.testConnection": "Check connection",
-  "integrations.telegram.readOnly": "Your role can view the status but cannot change the Telegram connection.",
-  "integrations.telegram.channelCreated": "Channel created. Now paste the bot key.",
-  "integrations.telegram.tokenSavedNotice": "Key saved. Check the connection and enable incoming messages.",
+  "integrations.telegram.readOnly":
+    "Your role can view the status but cannot change the Telegram connection.",
+  "integrations.telegram.channelCreated":
+    "Channel created. Now paste the bot key.",
+  "integrations.telegram.tokenSavedNotice":
+    "Key saved. Check the connection and enable incoming messages.",
   "integrations.telegram.connectionChecked": "Connection checked.",
-  "integrations.telegram.connectionCheckFailed": "Could not check the connection.",
+  "integrations.telegram.connectionCheckFailed":
+    "Could not check the connection.",
   "integrations.telegram.inboundConnected": "Incoming messages connected.",
-  "integrations.telegram.inboundConnectFailed": "Could not connect incoming messages.",
+  "integrations.telegram.inboundConnectFailed":
+    "Could not connect incoming messages.",
   "integrations.telegram.createChannel": "Create Telegram channel",
-  "integrations.telegram.inlineDescription": "Connect the bot so ZANI can receive customer messages and send replies on behalf of your company.",
+  "integrations.telegram.inlineDescription":
+    "Connect the bot so ZANI can receive customer messages and send replies on behalf of your company.",
   "integrations.telegram.botKey": "Bot key",
-  "integrations.telegram.tokenSavedPrivate": "Key is saved privately. Paste a new one only to replace it.",
-  "integrations.telegram.tokenInstruction": "Paste the key issued by BotFather.",
+  "integrations.telegram.tokenSavedPrivate":
+    "Key is saved privately. Paste a new one only to replace it.",
+  "integrations.telegram.tokenInstruction":
+    "Paste the key issued by BotFather.",
   "integrations.telegram.tokenInputPlaceholder": "Paste the bot key",
   "integrations.telegram.saveKey": "Save key",
   "integrations.telegram.connectInbound": "Connect incoming",
   "integrations.request.title": "{provider}: connection request",
   "integrations.request.eyebrow": "{provider}: request-assisted setup",
-  "integrations.request.whatsappText": "We collect data for manual channel review. The real external connection is not enabled automatically.",
-  "integrations.request.instagramText": "We collect data for a future Meta-ready connection. Instagram password is not needed and is not requested.",
+  "integrations.request.whatsappText":
+    "We collect data for manual channel review. The real external connection is not enabled automatically.",
+  "integrations.request.instagramText":
+    "We collect data for a future Meta-ready connection. Instagram password is not needed and is not requested.",
   "integrations.request.companyName": "Company name",
   "integrations.request.whatsappNumber": "WhatsApp number",
   "integrations.request.contactPerson": "Contact person",
@@ -4035,53 +4724,80 @@ export const en: Record<string, string> = {
   "integrations.request.comment": "Comment",
   "integrations.request.update": "Update request",
   "integrations.request.submit": "Submit request",
-  "integrations.request.saved": "Request saved. Platform support will see it as a connector request.",
-  "integrations.data.kaspiDescription": "Read-only visibility: orders, sales and future analytics. No repricing or write-back.",
-  "integrations.data.oneCDescription": "In pilot, we work through files and the Excel/CSV pipeline. Full sync and accounting are not enabled.",
-  "integrations.data.googleSheetsDescription": "Request table import for clients, leads and sales. No background sync in pilot.",
-  "integrations.data.emailDescription": "Request email connection for leads and notifications. Transactional sending is connected separately.",
-  "integrations.data.moyskladDescription": "Request-ready foundation for inventory and catalog after the pilot.",
-  "integrations.data.wildberriesDescription": "Marketplace visibility roadmap: sales, SKUs, inventory and returns.",
-  "integrations.data.ozonDescription": "Marketplace visibility roadmap without write-back or price management.",
-  "integrations.data.yandexMarketDescription": "Future marketplace connector, currently only an interest request.",
+  "integrations.request.saved":
+    "Request saved. Platform support will see it as a connector request.",
+  "integrations.data.kaspiDescription":
+    "Read-only visibility: orders, sales and future analytics. No repricing or write-back.",
+  "integrations.data.oneCDescription":
+    "In pilot, we work through files and the Excel/CSV pipeline. Full sync and accounting are not enabled.",
+  "integrations.data.googleSheetsDescription":
+    "Request table import for clients, leads and sales. No background sync in pilot.",
+  "integrations.data.emailDescription":
+    "Request email connection for leads and notifications. Transactional sending is connected separately.",
+  "integrations.data.moyskladDescription":
+    "Request-ready foundation for inventory and catalog after the pilot.",
+  "integrations.data.wildberriesDescription":
+    "Marketplace visibility roadmap: sales, SKUs, inventory and returns.",
+  "integrations.data.ozonDescription":
+    "Marketplace visibility roadmap without write-back or price management.",
+  "integrations.data.yandexMarketDescription":
+    "Future marketplace connector, currently only an interest request.",
   "integrations.data.requestSaved": "{name}: request saved.",
-  "integrations.data.demoImported": "Demo import event recorded. This safely checks future sync without an external connection.",
+  "integrations.data.demoImported":
+    "Demo import event recorded. This safely checks future sync without an external connection.",
   "integrations.data.title": "Kaspi / 1C / inventory / marketplaces",
   "integrations.data.eyebrow": "Data connectors foundation",
   "integrations.instagram.username": "Instagram username",
-  "integrations.instagram.metaAccessReturned": "Meta returned Instagram access. Complete the connection.",
-  "integrations.instagram.channelCreated": "Channel created. Now connect Instagram through Meta.",
-  "integrations.instagram.accessSaved": "Instagram access saved privately. Now check the connection.",
-  "integrations.instagram.metaOpenFailed": "Could not open Meta connection. Contact ZANI support.",
+  "integrations.instagram.metaAccessReturned":
+    "Meta returned Instagram access. Complete the connection.",
+  "integrations.instagram.channelCreated":
+    "Channel created. Now connect Instagram through Meta.",
+  "integrations.instagram.accessSaved":
+    "Instagram access saved privately. Now check the connection.",
+  "integrations.instagram.metaOpenFailed":
+    "Could not open Meta connection. Contact ZANI support.",
   "integrations.instagram.connectedNotice": "Instagram connected.",
   "integrations.instagram.connectionChecked": "Instagram connection checked.",
-  "integrations.instagram.connectionCheckFailed": "Instagram access did not pass the check.",
+  "integrations.instagram.connectionCheckFailed":
+    "Instagram access did not pass the check.",
   "integrations.instagram.finishConnection": "Complete connection",
   "integrations.instagram.createChannel": "Create Instagram channel",
-  "integrations.instagram.inlineDescription": "Connect Instagram Direct through Meta so ZANI can receive messages and route dialogs to managers.",
+  "integrations.instagram.inlineDescription":
+    "Connect Instagram Direct through Meta so ZANI can receive messages and route dialogs to managers.",
   "integrations.instagram.accountId": "Instagram account ID",
   "integrations.instagram.idSaved": "ID already saved",
   "integrations.instagram.facebookPageId": "Facebook Page ID",
   "integrations.instagram.updateAccess": "Update access",
   "integrations.instagram.saveAccess": "Save access",
   "integrations.instagram.metaConnection": "Meta connection",
-  "integrations.instagram.metaDescription": "Sign in to Meta and choose the page linked to Instagram Business.",
+  "integrations.instagram.metaDescription":
+    "Sign in to Meta and choose the page linked to Instagram Business.",
   "integrations.instagram.connectWithMeta": "Connect through Meta",
-  "integrations.instagram.metaConfirmed": "Meta confirmed access. Complete the connection.",
+  "integrations.instagram.metaConfirmed":
+    "Meta confirmed access. Complete the connection.",
   "integrations.instagram.completeConnection": "Complete connection",
-  "integrations.whatsapp.metaDataReturned": "Meta returned connection data. Check the fields and complete the connection.",
-  "integrations.whatsapp.channelCreated": "Channel created. Now connect WhatsApp through Meta.",
-  "integrations.whatsapp.accessSaved": "WhatsApp access saved privately. Now check the connection.",
+  "integrations.whatsapp.metaDataReturned":
+    "Meta returned connection data. Check the fields and complete the connection.",
+  "integrations.whatsapp.channelCreated":
+    "Channel created. Now connect WhatsApp through Meta.",
+  "integrations.whatsapp.accessSaved":
+    "WhatsApp access saved privately. Now check the connection.",
   "integrations.whatsapp.connectionChecked": "WhatsApp connection checked.",
-  "integrations.whatsapp.connectionCheckFailed": "WhatsApp access did not pass the check.",
-  "integrations.whatsapp.metaOpenFailed": "Could not open Meta connection. Contact ZANI support.",
-  "integrations.whatsapp.metaAccessDenied": "Meta did not confirm access. Try connecting WhatsApp again.",
-  "integrations.whatsapp.metaConfirmed": "Meta confirmed access. Complete the connection.",
-  "integrations.whatsapp.metaFallbackOpened": "A fallback Meta connection window opened. Finish signing in and return to ZANI.",
+  "integrations.whatsapp.connectionCheckFailed":
+    "WhatsApp access did not pass the check.",
+  "integrations.whatsapp.metaOpenFailed":
+    "Could not open Meta connection. Contact ZANI support.",
+  "integrations.whatsapp.metaAccessDenied":
+    "Meta did not confirm access. Try connecting WhatsApp again.",
+  "integrations.whatsapp.metaConfirmed":
+    "Meta confirmed access. Complete the connection.",
+  "integrations.whatsapp.metaFallbackOpened":
+    "A fallback Meta connection window opened. Finish signing in and return to ZANI.",
   "integrations.whatsapp.connectedNotice": "WhatsApp connected.",
   "integrations.whatsapp.finishConnection": "Complete connection",
   "integrations.whatsapp.createChannel": "Create WhatsApp channel",
-  "integrations.whatsapp.inlineDescription": "Confirm Meta access so ZANI can receive and send messages through WhatsApp Business.",
+  "integrations.whatsapp.inlineDescription":
+    "Confirm Meta access so ZANI can receive and send messages through WhatsApp Business.",
   "integrations.whatsapp.phoneNumberId": "WhatsApp phone number ID",
   "integrations.whatsapp.phoneNumberIdSaved": "Phone number ID already saved",
   "integrations.whatsapp.businessAccountId": "Business account ID",
@@ -4089,7 +4805,8 @@ export const en: Record<string, string> = {
   "integrations.whatsapp.updateAccess": "Update access",
   "integrations.whatsapp.saveAccess": "Save access",
   "integrations.whatsapp.metaConnection": "Meta connection",
-  "integrations.whatsapp.metaDescription": "Sign in to Meta and choose your company WhatsApp Business account.",
+  "integrations.whatsapp.metaDescription":
+    "Sign in to Meta and choose your company WhatsApp Business account.",
   "integrations.whatsapp.connectWithMeta": "Connect through Meta",
   "integrations.whatsapp.completeConnection": "Complete connection",
   "integrations.setupMetric.access": "Access",
@@ -4098,17 +4815,22 @@ export const en: Record<string, string> = {
   "integrations.setupMetric.mode": "Mode",
   "integrations.setupMetric.readOnly": "Read only",
   "integrations.setupMetric.demoReadOnly": "Demo / read only",
-  "integrations.mock.providerDisabledNotice": "Provider traffic is disabled here. Checks and imports use demo events only and do not prove a live integration is connected.",
-  "integrations.mock.connectionChecked": "Checked in demo mode. No live provider request was sent.",
-  "integrations.mock.syncLoaded": "Demo events loaded: {count}. This does not mean the live provider is connected.",
+  "integrations.mock.providerDisabledNotice":
+    "Provider traffic is disabled here. Checks and imports use demo events only and do not prove a live integration is connected.",
+  "integrations.mock.connectionChecked":
+    "Checked in demo mode. No live provider request was sent.",
+  "integrations.mock.syncLoaded":
+    "Demo events loaded: {count}. This does not mean the live provider is connected.",
   "integrations.setupMetric.notYet": "Not yet",
   "integrations.setupAction.enterAccessKey": "Enter access key",
-  "integrations.setupAction.accessKeyReplacePlaceholder": "Access is already saved. Paste a new key only to replace it.",
+  "integrations.setupAction.accessKeyReplacePlaceholder":
+    "Access is already saved. Paste a new key only to replace it.",
   "integrations.setupAction.hideAdvanced": "Hide advanced settings",
   "integrations.setupAction.showAdvanced": "Advanced settings",
   "integrations.setupAction.syncDays": "Load period, days",
   "integrations.setupAction.saveAccess": "Save access",
-  "integrations.kaspi.accessSaved": "Kaspi connected. Access is saved privately, and orders can be loaded.",
+  "integrations.kaspi.accessSaved":
+    "Kaspi connected. Access is saved privately, and orders can be loaded.",
   "integrations.kaspi.connectionChecked": "Kaspi connection checked.",
   "integrations.kaspi.connectionCheckFailed": "Could not check Kaspi access.",
   "integrations.kaspi.ordersLoaded": "Orders loaded: {count} events.",
@@ -4116,9 +4838,11 @@ export const en: Record<string, string> = {
   "integrations.kaspi.orders": "Orders",
   "integrations.kaspi.ordersLoadedBefore": "Loaded before",
   "integrations.kaspi.connectionTitle": "Kaspi connection",
-  "integrations.kaspi.connectionDescription": "Kaspi currently connects through a seller access key. This is a temporary self-service path until official partner authorization is available.",
+  "integrations.kaspi.connectionDescription":
+    "Kaspi currently connects through a seller access key. This is a temporary self-service path until official partner authorization is available.",
   "integrations.kaspi.accessKey": "Kaspi access key",
-  "integrations.kaspi.accessKeyPlaceholder": "Paste the key from the Kaspi seller dashboard",
+  "integrations.kaspi.accessKeyPlaceholder":
+    "Paste the key from the Kaspi seller dashboard",
   "integrations.kaspi.merchantId": "Store ID",
   "integrations.kaspi.orderState.archive": "Archive / completed",
   "integrations.kaspi.orderState.new": "New",
@@ -4127,16 +4851,20 @@ export const en: Record<string, string> = {
   "integrations.kaspi.pageSize": "Order limit per load",
   "integrations.kaspi.connect": "Connect Kaspi",
   "integrations.kaspi.loadOrders": "Load orders",
-  "integrations.kaspi.readOnlyNotice": "ZANI only reads orders for analytics. Price changes, order acceptance and cancellations in Kaspi are disabled here.",
-  "integrations.moysklad.accessSaved": "MoySklad connected. Access is saved privately, and the connection can be checked.",
+  "integrations.kaspi.readOnlyNotice":
+    "ZANI only reads orders for analytics. Price changes, order acceptance and cancellations in Kaspi are disabled here.",
+  "integrations.moysklad.accessSaved":
+    "MoySklad connected. Access is saved privately, and the connection can be checked.",
   "integrations.moysklad.connectionChecked": "MoySklad connection checked.",
-  "integrations.moysklad.connectionCheckFailed": "Could not check MoySklad access.",
+  "integrations.moysklad.connectionCheckFailed":
+    "Could not check MoySklad access.",
   "integrations.moysklad.dataLoaded": "Data loaded: {count} events.",
   "integrations.moysklad.dataLoadFailed": "Could not load MoySklad data.",
   "integrations.moysklad.inventory": "Inventory",
   "integrations.moysklad.loadedBefore": "Loaded before",
   "integrations.moysklad.connectionTitle": "MoySklad connection",
-  "integrations.moysklad.connectionDescription": "Enter the MoySklad access key. ZANI stores it privately and uses it only to load data.",
+  "integrations.moysklad.connectionDescription":
+    "Enter the MoySklad access key. ZANI stores it privately and uses it only to load data.",
   "integrations.moysklad.accessKey": "MoySklad access key",
   "integrations.moysklad.accessKeyPlaceholder": "Paste the MoySklad access key",
   "integrations.moysklad.entity.products": "Products",
@@ -4146,18 +4874,22 @@ export const en: Record<string, string> = {
   "integrations.moysklad.pageSize": "Row limit per load",
   "integrations.moysklad.connect": "Connect MoySklad",
   "integrations.moysklad.loadData": "Load data",
-  "integrations.moysklad.readOnlyNotice": "ZANI only reads products, inventory, sales and counterparties. Document, price and inventory changes in MoySklad are disabled.",
-  "integrations.ozon.accessSaved": "Ozon connected. Access is saved privately, and the connection can be checked.",
+  "integrations.moysklad.readOnlyNotice":
+    "ZANI only reads products, inventory, sales and counterparties. Document, price and inventory changes in MoySklad are disabled.",
+  "integrations.ozon.accessSaved":
+    "Ozon connected. Access is saved privately, and the connection can be checked.",
   "integrations.ozon.connectionChecked": "Ozon connection checked.",
   "integrations.ozon.connectionCheckFailed": "Could not check Ozon access.",
   "integrations.ozon.dataLoaded": "Ozon data loaded: {count} events.",
   "integrations.ozon.dataLoadFailed": "Could not load Ozon data.",
   "integrations.ozon.data": "Data",
   "integrations.ozon.connectionTitle": "Ozon connection",
-  "integrations.ozon.connectionDescription": "Enter access details from the Ozon seller dashboard. ZANI uses them only to read shipments and inventory.",
+  "integrations.ozon.connectionDescription":
+    "Enter access details from the Ozon seller dashboard. ZANI uses them only to read shipments and inventory.",
   "integrations.ozon.enterAccess": "Enter access",
   "integrations.ozon.sellerId": "Ozon seller ID",
-  "integrations.ozon.sellerIdReplacePlaceholder": "ID is already saved. Enter a new one only to replace it.",
+  "integrations.ozon.sellerIdReplacePlaceholder":
+    "ID is already saved. Enter a new one only to replace it.",
   "integrations.ozon.sellerIdPlaceholder": "ID from the Ozon dashboard",
   "integrations.ozon.accessKey": "Ozon access key",
   "integrations.ozon.accessKeyPlaceholder": "Key from the Ozon dashboard",
@@ -4165,29 +4897,40 @@ export const en: Record<string, string> = {
   "integrations.ozon.limit": "Record limit per load",
   "integrations.ozon.connect": "Connect Ozon",
   "integrations.ozon.loadData": "Load data",
-  "integrations.ozon.readOnlyNotice": "ZANI does not update Ozon prices, inventory, product cards, fulfillment or order cancellations. This connection only loads data for reports.",
-  "integrations.wildberries.accessSaved": "Wildberries connected. Access is saved privately, and the connection can be checked.",
-  "integrations.wildberries.connectionChecked": "Wildberries connection checked.",
-  "integrations.wildberries.connectionCheckFailed": "Could not check Wildberries access.",
-  "integrations.wildberries.dataLoaded": "Wildberries data loaded: {count} events.",
+  "integrations.ozon.readOnlyNotice":
+    "ZANI does not update Ozon prices, inventory, product cards, fulfillment or order cancellations. This connection only loads data for reports.",
+  "integrations.wildberries.accessSaved":
+    "Wildberries connected. Access is saved privately, and the connection can be checked.",
+  "integrations.wildberries.connectionChecked":
+    "Wildberries connection checked.",
+  "integrations.wildberries.connectionCheckFailed":
+    "Could not check Wildberries access.",
+  "integrations.wildberries.dataLoaded":
+    "Wildberries data loaded: {count} events.",
   "integrations.wildberries.dataLoadFailed": "Could not load Wildberries data.",
   "integrations.wildberries.updateWindow": "WB update",
   "integrations.wildberries.updateWindowValue": "~30 minutes",
   "integrations.wildberries.connectionTitle": "Wildberries connection",
-  "integrations.wildberries.connectionDescription": "Enter the access key from the Wildberries seller dashboard. ZANI only reads orders and sales for analytics.",
+  "integrations.wildberries.connectionDescription":
+    "Enter the access key from the Wildberries seller dashboard. ZANI only reads orders and sales for analytics.",
   "integrations.wildberries.accessKey": "Wildberries access key",
-  "integrations.wildberries.accessKeyPlaceholder": "Paste the Wildberries access key",
+  "integrations.wildberries.accessKeyPlaceholder":
+    "Paste the Wildberries access key",
   "integrations.wildberries.entity.orders": "Orders",
   "integrations.wildberries.entity.sales": "Sales",
   "integrations.wildberries.entity.stocks": "Inventory",
-  "integrations.wildberries.stocksOptional": "Wildberries inventory is optional: the main workflow is orders and sales.",
+  "integrations.wildberries.stocksOptional":
+    "Wildberries inventory is optional: the main workflow is orders and sales.",
   "integrations.wildberries.connect": "Connect Wildberries",
   "integrations.wildberries.loadData": "Load data",
-  "integrations.wildberries.readOnlyNotice": "ZANI does not change Wildberries prices, product cards, shipments or orders. This connection only loads data for reports.",
-  "integrations.kaspiPricing.stoppedNotice": "Pricing agent stopped. Price application is blocked.",
+  "integrations.wildberries.readOnlyNotice":
+    "ZANI does not change Wildberries prices, product cards, shipments or orders. This connection only loads data for reports.",
+  "integrations.kaspiPricing.stoppedNotice":
+    "Pricing agent stopped. Price application is blocked.",
   "integrations.kaspiPricing.resumedNotice": "Pricing agent is active again.",
   "integrations.kaspiPricing.productTitle": "Separate ZANI product for pricing",
-  "integrations.kaspiPricing.productDescription": "The standard Kaspi connector only reads orders and business data. Kaspi Pricing manages price rules, thresholds, competitor monitoring and autopilot.",
+  "integrations.kaspiPricing.productDescription":
+    "The standard Kaspi connector only reads orders and business data. Kaspi Pricing manages price rules, thresholds, competitor monitoring and autopilot.",
   "integrations.kaspiPricing.openAgent": "Open agent",
   "integrations.kaspiPricing.rules": "Rules",
   "integrations.kaspiPricing.activeRules": "Active",
@@ -4195,14 +4938,18 @@ export const en: Record<string, string> = {
   "integrations.kaspiPricing.signals": "Signals",
   "integrations.kaspiPricing.agentStopped": "Agent stopped",
   "integrations.kaspiPricing.agentReady": "Agent ready",
-  "integrations.kaspiPricing.priceApplyBlocked": "Price application is blocked.",
-  "integrations.kaspiPricing.emergencyStopDescription": "Emergency stop is available separately from the standard Kaspi integration.",
+  "integrations.kaspiPricing.priceApplyBlocked":
+    "Price application is blocked.",
+  "integrations.kaspiPricing.emergencyStopDescription":
+    "Emergency stop is available separately from the standard Kaspi integration.",
   "integrations.kaspiPricing.resume": "Resume",
   "integrations.kaspiPricing.stopAgent": "Stop agent",
   "integrations.kaspiPricing.latestChange": "Latest change",
   "integrations.kaspiPricing.history": "History",
-  "integrations.kaspiPricing.noChanges": "No changes yet. Create a rule and calculate a recommendation.",
-  "integrations.data.description": "A lightweight layer for future integrations: request, status and safe demo import check. No ERP, realtime full sync, write-back, repricing or accounting logic.",
+  "integrations.kaspiPricing.noChanges":
+    "No changes yet. Create a rule and calculate a recommendation.",
+  "integrations.data.description":
+    "A lightweight layer for future integrations: request, status and safe demo import check. No ERP, realtime full sync, write-back, repricing or accounting logic.",
   "integrations.data.commentPlaceholder": "Request comment",
   "integrations.data.status.request": "Available by request",
   "integrations.data.update": "Update",
@@ -4210,37 +4957,50 @@ export const en: Record<string, string> = {
   "integrations.data.checkDemoImport": "Check demo import",
   "integrations.page.loading": "Loading integrations...",
   "integrations.page.noBusinessTitle": "No business selected",
-  "integrations.page.noBusinessDescription": "Create a business to connect channels and external services.",
+  "integrations.page.noBusinessDescription":
+    "Create a business to connect channels and external services.",
   "integrations.page.title": "Business connections",
-  "integrations.page.description": "ZANI pilot connector map: self-service channels, request connections, plan upsell modules and roadmap without dead-end buttons.",
+  "integrations.page.description":
+    "ZANI pilot connector map: self-service channels, request connections, plan upsell modules and roadmap without dead-end buttons.",
   "integrations.page.safeTokenNotice": "No technical tokens in CRM",
   "integrations.page.includedTitle": "Included",
-  "integrations.page.includedText": "Can be enabled in pilot without an external provider.",
+  "integrations.page.includedText":
+    "Can be enabled in pilot without an external provider.",
   "integrations.page.requestTitle": "By request",
-  "integrations.page.requestText": "We create an interest card but do not promise auto-connect.",
+  "integrations.page.requestText":
+    "We create an interest card but do not promise auto-connect.",
   "integrations.page.roadmapTitle": "Soon / Roadmap",
   "integrations.page.roadmapText": "Shown as future value and upsell.",
   "integrations.page.connectedTitle": "Connected",
-  "integrations.page.connectedText": "Active connectors for the current business.",
-  "integrations.page.searchPlaceholder": "Find connector: WhatsApp, Excel, Kaspi...",
+  "integrations.page.connectedText":
+    "Active connectors for the current business.",
+  "integrations.page.searchPlaceholder":
+    "Find connector: WhatsApp, Excel, Kaspi...",
   "integrations.page.allStatuses": "All statuses",
   "integrations.page.selfServiceTitle": "Self-service",
   "integrations.page.upgradeTitle": "Higher plan",
   "integrations.page.allGroups": "All areas",
   "integrations.page.reset": "Reset",
-  "integrations.page.resultsMeta": "Found: {found} of {total}. In pilot, the owner sees what can be connected now, what needs a request and what is a future module.",
+  "integrations.page.resultsMeta":
+    "Found: {found} of {total}. In pilot, the owner sees what can be connected now, what needs a request and what is a future module.",
   "integrations.page.noResultsTitle": "No connectors found",
-  "integrations.page.noResultsDescription": "Reset filters or try another search query.",
+  "integrations.page.noResultsDescription":
+    "Reset filters or try another search query.",
   "integrations.overview.title": "Connections",
-  "integrations.overview.description": "Connect external services for data, sales and operations. AI agent communication channels are configured inside the agent card.",
+  "integrations.overview.description":
+    "Connect external services for data, sales and operations. AI agent communication channels are configured inside the agent card.",
   "integrations.overview.openAnalysis": "Open analysis",
-  "integrations.overview.agentChannelsTitle": "Communication channels moved to AI agents",
-  "integrations.overview.agentChannelsText": "WhatsApp, Telegram, Instagram and website chat connect to a specific AI manager. This makes it clear where the agent replies and which channels are enabled.",
+  "integrations.overview.agentChannelsTitle":
+    "Communication channels moved to AI agents",
+  "integrations.overview.agentChannelsText":
+    "WhatsApp, Telegram, Instagram and website chat connect to a specific AI manager. This makes it clear where the agent replies and which channels are enabled.",
   "integrations.overview.openAgentChannels": "Open agent channels",
   "integrations.overview.recommendedTitle": "Recommended integration",
-  "integrations.overview.recommendedText": "Start with {provider}: it gives ZANI more request context and reduces manual handling.",
+  "integrations.overview.recommendedText":
+    "Start with {provider}: it gives ZANI more request context and reduces manual handling.",
   "integrations.overview.connectNow": "Show connection",
-  "integrations.overview.searchPlaceholder": "Search: website, Telegram, Kaspi...",
+  "integrations.overview.searchPlaceholder":
+    "Search: website, Telegram, Kaspi...",
   "integrations.overview.allGroups": "All areas",
   "integrations.overview.status.all": "All statuses",
   "integrations.overview.status.connected": "Connected",
@@ -4251,12 +5011,17 @@ export const en: Record<string, string> = {
   "integrations.overview.emptyTitle": "Nothing found",
   "integrations.overview.emptyText": "Reset filters or try another query.",
   "integrations.overview.guideTitle": "Connection order",
-  "integrations.overview.guideMeta": "{connected} connected · {setup} need setup",
-  "integrations.overview.guideStep1": "1. Configure communication channels in AI agents, where it is clear which agent replies to customers.",
-  "integrations.overview.guideStep2": "2. Add Excel/CSV, inventory or marketplaces so analytics can see sales and stock.",
-  "integrations.overview.guideStep3": "3. Keep this page focused on services that provide business data or support operations.",
+  "integrations.overview.guideMeta":
+    "{connected} connected · {setup} need setup",
+  "integrations.overview.guideStep1":
+    "1. Configure communication channels in AI agents, where it is clear which agent replies to customers.",
+  "integrations.overview.guideStep2":
+    "2. Add Excel/CSV, inventory or marketplaces so analytics can see sales and stock.",
+  "integrations.overview.guideStep3":
+    "3. Keep this page focused on services that provide business data or support operations.",
   "integrations.overview.simpleTitle": "No overload",
-  "integrations.overview.simpleText": "Each card shows a clear status and one main action. Manual keys and extra fields open only inside the setup for that service.",
+  "integrations.overview.simpleText":
+    "Each card shows a clear status and one main action. Manual keys and extra fields open only inside the setup for that service.",
   "integrations.availability.included": "Included",
   "integrations.availability.upgrade": "Higher plan",
   "integrations.availability.request": "By request",
@@ -4272,13 +5037,18 @@ export const en: Record<string, string> = {
   "integrations.merchantStatus.setup_required": "Needs setup",
   "integrations.merchantStatus.pending_request": "Connecting by request",
   "integrations.merchantStatus.coming_soon": "Soon",
-  "integrations.merchantStatus.unavailable_on_plan": "Unavailable on current plan",
+  "integrations.merchantStatus.unavailable_on_plan":
+    "Unavailable on current plan",
   "integrations.merchantStatus.error": "Connection error",
   "integrations.merchantStatus.disconnected": "Disconnected",
-  "integrations.connectorHint.selfService": "Can be enabled in pilot without an external provider. This is a safe self-service connector.",
-  "integrations.connectorHint.request": "The button creates a connection request inside ZANI. The real connection is handled manually by the ZANI team.",
-  "integrations.connectorHint.upgrade": "Available on {plan} plan or higher. We show an honest upsell without a broken button.",
-  "integrations.connectorHint.roadmap": "Shown as a future capability without promising a production-ready connection.",
+  "integrations.connectorHint.selfService":
+    "Can be enabled in pilot without an external provider. This is a safe self-service connector.",
+  "integrations.connectorHint.request":
+    "The button creates a connection request inside ZANI. The real connection is handled manually by the ZANI team.",
+  "integrations.connectorHint.upgrade":
+    "Available on {plan} plan or higher. We show an honest upsell without a broken button.",
+  "integrations.connectorHint.roadmap":
+    "Shown as a future capability without promising a production-ready connection.",
   "integrations.capability.communications": "Communications",
   "integrations.capability.sales": "Sales",
   "integrations.capability.calendar": "Calendar",
@@ -4288,27 +5058,37 @@ export const en: Record<string, string> = {
   "integrations.capability.custom": "Custom",
   "integrations.group.messaging.eyebrow": "Messages",
   "integrations.group.messaging.title": "Communication channels",
-  "integrations.group.messaging.text": "WhatsApp, Telegram, Instagram and other inbound channels for leads and conversations.",
+  "integrations.group.messaging.text":
+    "WhatsApp, Telegram, Instagram and other inbound channels for leads and conversations.",
   "integrations.group.imports.eyebrow": "Import",
   "integrations.group.imports.title": "Files and tables",
-  "integrations.group.imports.text": "Excel, CSV and spreadsheets for quickly moving clients, sales and catalog data.",
+  "integrations.group.imports.text":
+    "Excel, CSV and spreadsheets for quickly moving clients, sales and catalog data.",
   "integrations.group.sales.eyebrow": "Sales",
   "integrations.group.sales.title": "Marketplaces and sales",
-  "integrations.group.sales.text": "Read-only visibility for orders, sales and events without replacing external systems.",
+  "integrations.group.sales.text":
+    "Read-only visibility for orders, sales and events without replacing external systems.",
   "integrations.group.website.eyebrow": "Website",
   "integrations.group.website.title": "Website and widgets",
-  "integrations.group.website.text": "Widget, forms and website requests inside one ZANI cabinet.",
+  "integrations.group.website.text":
+    "Widget, forms and website requests inside one ZANI cabinet.",
   "integrations.group.accounting.eyebrow": "Accounting",
   "integrations.group.accounting.title": "Finance, stock and accounting",
-  "integrations.group.accounting.text": "Lightweight visibility from 1C, MoySklad and inventory sources.",
+  "integrations.group.accounting.text":
+    "Lightweight visibility from 1C, MoySklad and inventory sources.",
   "integrations.bots.eyebrow": "Reply automation",
   "integrations.bots.title": "ZANI chatbots",
-  "integrations.bots.description": "Channels receive messages and leads. ZANI chatbots help answer frequent questions, collect requests and hand conversations to managers.",
-  "integrations.bots.safeNotice": "No API keys, webhooks or technical settings for merchants",
+  "integrations.bots.description":
+    "Channels receive messages and leads. ZANI chatbots help answer frequent questions, collect requests and hand conversations to managers.",
+  "integrations.bots.safeNotice":
+    "No API keys, webhooks or technical settings for merchants",
   "integrations.bots.cardTitle": "ZANI {channel} bot",
-  "integrations.bots.whatsappText": "Automatically replies to clients, accepts requests and hands WhatsApp conversations to managers.",
-  "integrations.bots.telegramText": "Accepts Telegram requests, collects contact details and helps a manager join faster.",
-  "integrations.bots.instagramText": "Prepares Instagram requests for processing: quick replies, lead capture and manager handoff.",
+  "integrations.bots.whatsappText":
+    "Automatically replies to clients, accepts requests and hands WhatsApp conversations to managers.",
+  "integrations.bots.telegramText":
+    "Accepts Telegram requests, collects contact details and helps a manager join faster.",
+  "integrations.bots.instagramText":
+    "Prepares Instagram requests for processing: quick replies, lead capture and manager handoff.",
   "integrations.bots.state.needs_channel": "Connect the channel first",
   "integrations.bots.state.setup_required": "Setup required",
   "integrations.bots.state.active": "Bot active",
@@ -4328,49 +5108,71 @@ export const en: Record<string, string> = {
   "integrations.action.continueSetup": "Continue setup",
   "integrations.action.create": "Create connection",
   "integrations.action.disconnect": "Disconnect",
-  "integrations.setupMessage.connected": "The channel is active. New requests and events will go to Inbox, CRM, analytics and automations.",
-  "integrations.setupMessage.needsAttention": "Connection was created and is waiting for setup or manual review by the ZANI team.",
-  "integrations.setupMessage.disabled": "The channel is disabled. It can be restored after setup or support request.",
+  "integrations.setupMessage.connected":
+    "The channel is active. New requests and events will go to Inbox, CRM, analytics and automations.",
+  "integrations.setupMessage.needsAttention":
+    "Connection was created and is waiting for setup or manual review by the ZANI team.",
+  "integrations.setupMessage.disabled":
+    "The channel is disabled. It can be restored after setup or support request.",
   "integrations.card.businessValue": "Business value",
   "integrations.card.plan": "Plan",
   "integrations.card.connection": "Connection",
   "integrations.card.ownerAction": "Owner next step",
-  "integrations.card.requestNotice": "Clicking creates a connection request. It does not enable the external service automatically.",
-  "integrations.card.roadmapNotice": "The button is intentionally disabled: this connector is shown as a future capability or plan upsell without a false ready-connection promise.",
-  "integrations.card.pendingNotice": "Connection was created but still needs setup or review. For request connectors this is a normal pilot status.",
-  "integrations.card.connectedNotice": "Connection is active. Data from this channel is used in CRM, Inbox, analytics and automations.",
-  "integrations.card.readOnly": "Your role can view integrations but cannot manage connections.",
-  "integrations.card.credentialsExpired": "Access is not connected or has expired.",
+  "integrations.card.requestNotice":
+    "Clicking creates a connection request. It does not enable the external service automatically.",
+  "integrations.card.roadmapNotice":
+    "The button is intentionally disabled: this connector is shown as a future capability or plan upsell without a false ready-connection promise.",
+  "integrations.card.pendingNotice":
+    "Connection was created but still needs setup or review. For request connectors this is a normal pilot status.",
+  "integrations.card.connectedNotice":
+    "Connection is active. Data from this channel is used in CRM, Inbox, analytics and automations.",
+  "integrations.card.readOnly":
+    "Your role can view integrations but cannot manage connections.",
+  "integrations.card.credentialsExpired":
+    "Access is not connected or has expired.",
   "integrations.card.latestRun": "Latest sync",
   "integrations.card.noRuns": "No sync runs yet.",
   "integrations.card.retryRun": "Retry",
-  "integrations.card.kaspiPricingSeparateSetup": "Kaspi Pricing opens in a separate setup window.",
-  "integrations.card.kaspiPricingNoGenericConfig": "Kaspi Pricing does not use the generic connector setup.",
+  "integrations.card.kaspiPricingSeparateSetup":
+    "Kaspi Pricing opens in a separate setup window.",
+  "integrations.card.kaspiPricingNoGenericConfig":
+    "Kaspi Pricing does not use the generic connector setup.",
   "integrations.card.connectionSaved": "Connection details saved.",
   "integrations.card.configure": "Configure",
   "integrations.card.connect": "Connect",
   "integrations.card.disableChannel": "{title}: disable",
   "integrations.card.enableChannel": "{title}: enable",
-  "integrations.card.websiteFlipTitle": "Do not lose website leads after the first click.",
-  "integrations.card.websiteFlipText": "ZANI receives form requests and sends them straight to messages.",
+  "integrations.card.websiteFlipTitle":
+    "Do not lose website leads after the first click.",
+  "integrations.card.websiteFlipText":
+    "ZANI receives form requests and sends them straight to messages.",
   "integrations.card.websiteFlow": "Website → Messages → Leads",
   "integrations.card.connectionTitle": "Connection: {title}",
-  "integrations.card.websiteNoExtraData": "Website chat connects through the channel key. No additional data is required.",
+  "integrations.card.websiteNoExtraData":
+    "Website chat connects through the channel key. No additional data is required.",
   "integrations.card.accountId": "Account ID",
   "integrations.card.accountIdPlaceholder": "Account, store or dashboard ID",
   "integrations.card.accessKey": "Access key",
   "integrations.card.accessKeyPlaceholder": "Paste the access key",
-  "integrations.card.accessKeyReplacePlaceholder": "Key is already saved. Paste a new one only to replace it.",
+  "integrations.card.accessKeyReplacePlaceholder":
+    "Key is already saved. Paste a new one only to replace it.",
   "integrations.card.webhookSecret": "Verification key",
   "integrations.card.simpleSetupTitle": "Simple setup path",
-  "integrations.card.simpleSetupText": "Create a request or check the connection status here. Account IDs, keys and webhook values stay in the support/admin fallback.",
+  "integrations.card.simpleSetupText":
+    "Create a request or check the connection status here. Account IDs, keys and webhook values stay in the support/admin fallback.",
   "integrations.card.manualSupportSetup": "Manual support setup",
-  "integrations.error.actionRequired": "Connection needs attention. Check the setup status or ask the business owner to reconnect it.",
-  "integrations.error.webhookSetup": "Inbound messages are not ready yet. Ask the owner or ZANI support to finish the webhook/setup check.",
-  "integrations.error.permission": "Your role can view this connection but cannot change its setup.",
-  "integrations.error.rateLimit": "The provider is temporarily limiting requests. Try again later or ask support to review the connection.",
-  "integrations.error.providerUnavailable": "The provider did not respond. Try the check again later; no CRM data was changed.",
-  "integrations.error.supportReview": "This connection needs support review before it can be enabled for daily work.",
+  "integrations.error.actionRequired":
+    "Connection needs attention. Check the setup status or ask the business owner to reconnect it.",
+  "integrations.error.webhookSetup":
+    "Inbound messages are not ready yet. Ask the owner or ZANI support to finish the webhook/setup check.",
+  "integrations.error.permission":
+    "Your role can view this connection but cannot change its setup.",
+  "integrations.error.rateLimit":
+    "The provider is temporarily limiting requests. Try again later or ask support to review the connection.",
+  "integrations.error.providerUnavailable":
+    "The provider did not respond. Try the check again later; no CRM data was changed.",
+  "integrations.error.supportReview":
+    "This connection needs support review before it can be enabled for daily work.",
   "integrations.card.check": "Check",
   "integrations.card.requestConnection": "Request connection",
   "integrations.setup.needHelp": "Need help connecting?",
@@ -4430,6 +5232,8 @@ export const en: Record<string, string> = {
   "status.support": "Support",
   "conversations.previewQualification": "Preview",
   "conversations.previewRequired": "Run AI preview first",
-  "conversations.crmAutomationPreviewFallback": "Preview the AI qualification before updating CRM links.",
-  "conversations.qualificationPreviewReady": "AI preview ready: {intent}, {confidence}%.",
+  "conversations.crmAutomationPreviewFallback":
+    "Preview the AI qualification before updating CRM links.",
+  "conversations.qualificationPreviewReady":
+    "AI preview ready: {intent}, {confidence}%.",
 };

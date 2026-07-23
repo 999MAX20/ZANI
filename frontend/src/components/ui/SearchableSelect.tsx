@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { cn } from "../../lib/cn";
 import { useI18n } from "../../lib/i18n";
+import { PopoverSurface } from "./Overlay";
 
 export type SearchableSelectOption = {
   value: string;
@@ -70,20 +71,30 @@ export function SearchableSelect({
 
   return (
     <label ref={wrapperRef} className={cn("relative block", className)}>
-      {label ? <span className="mb-2 block text-sm font-bold text-slate-700">{label}</span> : null}
+      {label ? <span className="mb-2 block text-sm font-semibold text-zani-subtle">{label}</span> : null}
       <button
         type="button"
         disabled={disabled}
-        className="flex min-h-11 w-full items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-sm font-bold text-slate-800 shadow-sm outline-none transition hover:border-brand-200 hover:bg-slate-50 focus:border-brand-500 focus:ring-4 focus:ring-brand-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+        className="zani-focus-ring flex min-h-11 w-full items-center justify-between gap-3 rounded-control border border-zani-border bg-surface-card px-3 py-2 text-left text-sm font-semibold text-zani-text shadow-sm transition hover:border-brand-100 hover:bg-surface-warm disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-zani-faint"
         onClick={() => setOpen((state) => !state)}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            setOpen(false);
+            setQuery("");
+          }
+          if (event.key === "ArrowDown" || event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            setOpen(true);
+          }
+        }}
       >
-        <span className={cn("min-w-0 truncate", !selectedOption && "text-slate-400")}>
+        <span className={cn("min-w-0 truncate", !selectedOption && "text-zani-faint")}>
           {selectedOption?.label || displayPlaceholder}
         </span>
         <span className="flex shrink-0 items-center gap-1">
           {value ? (
             <span
-              className="grid h-6 w-6 place-items-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+              className="grid h-6 w-6 place-items-center rounded-control text-zani-faint transition hover:bg-surface-muted hover:text-zani-text"
               onClick={(event) => {
                 event.stopPropagation();
                 selectValue("");
@@ -92,15 +103,15 @@ export function SearchableSelect({
               <X size={14} />
             </span>
           ) : null}
-          <ChevronDown size={17} className={cn("text-slate-400 transition", open && "rotate-180 text-brand-600")} />
+          <ChevronDown size={17} className={cn("text-zani-faint transition", open && "rotate-180 text-brand-600")} />
         </span>
       </button>
 
       {open ? (
-        <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-premium">
-          <div className="border-b border-slate-100 p-2">
+        <PopoverSurface className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden">
+          <div className="border-b border-zani-border p-2">
             <div className="relative">
-              <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zani-faint" />
               <input
                 ref={inputRef}
                 value={query}
@@ -115,7 +126,7 @@ export function SearchableSelect({
                     selectValue(filteredOptions[0].value);
                   }
                 }}
-                className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm font-semibold text-midnight outline-none transition placeholder:text-slate-400 focus:border-brand-500 focus:ring-4 focus:ring-brand-100"
+                className="zani-focus-ring h-10 w-full rounded-control border border-zani-border bg-surface-card pl-9 pr-3 text-sm font-semibold text-zani-text placeholder:text-zani-faint"
                 placeholder={t("common.search")}
               />
             </div>
@@ -123,10 +134,13 @@ export function SearchableSelect({
           <div className="max-h-72 overflow-y-auto p-1">
             <button
               type="button"
-              className={cn("flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-bold transition", !value ? "bg-brand-50 text-brand-700" : "text-slate-700 hover:bg-slate-50")}
+              className={cn(
+                "flex w-full items-center justify-between gap-3 rounded-control px-3 py-2.5 text-left text-sm font-semibold transition",
+                !value ? "bg-brand-50 text-brand-700" : "text-zani-subtle hover:bg-surface-muted hover:text-zani-text",
+              )}
               onClick={() => selectValue("")}
             >
-              <span className="min-w-0 truncate">{emptyLabel || displayPlaceholder}</span>
+              <span className="min-w-0 overflow-hidden break-words leading-5 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">{emptyLabel || displayPlaceholder}</span>
               {!value ? <Check size={16} className="shrink-0" /> : null}
             </button>
             {filteredOptions.map((option) => {
@@ -136,22 +150,22 @@ export function SearchableSelect({
                   key={option.value}
                   type="button"
                   className={cn(
-                    "flex w-full items-start justify-between gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-bold transition",
-                    isSelected ? "bg-brand-50 text-brand-700" : "text-slate-700 hover:bg-slate-50",
+                    "flex w-full items-start justify-between gap-3 rounded-control px-3 py-2.5 text-left text-sm font-semibold transition",
+                    isSelected ? "bg-brand-50 text-brand-700" : "text-zani-subtle hover:bg-surface-muted hover:text-zani-text",
                   )}
                   onClick={() => selectValue(option.value)}
                 >
                   <span className="min-w-0">
-                    <span className="block truncate">{option.label}</span>
-                    {option.description ? <span className="mt-0.5 block truncate text-xs font-semibold text-slate-400">{option.description}</span> : null}
+                    <span className="block overflow-hidden break-words leading-5 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">{option.label}</span>
+                    {option.description ? <span className="mt-0.5 block overflow-hidden break-words text-xs font-semibold leading-4 text-zani-faint [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">{option.description}</span> : null}
                   </span>
                   {isSelected ? <Check size={16} className="mt-0.5 shrink-0" /> : null}
                 </button>
               );
             })}
-            {!filteredOptions.length ? <p className="px-3 py-4 text-sm font-semibold text-slate-500">{t("common.noResults")}</p> : null}
+            {!filteredOptions.length ? <p className="px-3 py-4 text-sm font-semibold text-zani-faint">{t("common.noResults")}</p> : null}
           </div>
-        </div>
+        </PopoverSurface>
       ) : null}
     </label>
   );

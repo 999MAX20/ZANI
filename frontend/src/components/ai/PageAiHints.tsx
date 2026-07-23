@@ -29,12 +29,12 @@ export function PageAiHints({ items, className }: PageAiHintsProps) {
     <Card className={className}>
       <CardBody>
         <div className="mb-4 flex items-center gap-2">
-          <span className="grid h-9 w-9 place-items-center rounded-2xl bg-ai-gradient text-white shadow-glow">
+          <span className="grid h-9 w-9 place-items-center rounded-control bg-ai-600 text-white shadow-soft">
             <Sparkles size={17} />
           </span>
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-ai-700">{t("aiHints.eyebrow")}</p>
-            <h2 className="text-lg font-black text-midnight">{t("aiHints.title")}</h2>
+            <p className="text-xs font-semibold text-ai-700">{t("aiHints.eyebrow")}</p>
+            <h2 className="text-lg font-semibold text-zani-ink">{t("aiHints.title")}</h2>
           </div>
         </div>
         <div className="grid gap-3">

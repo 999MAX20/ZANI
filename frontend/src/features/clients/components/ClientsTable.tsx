@@ -2,7 +2,13 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { useRef, useState } from "react";
 import { MousePointer2, X } from "lucide-react";
 
-import { CrmDataTable, CrmPagination, CRM_TABLE_CONTENT_CLASS, CRM_TABLE_EMBEDDED_CLASS, CRM_TABLE_ROW_HEIGHT } from "../../../components/crm";
+import {
+  CrmDataTable,
+  CrmPagination,
+  CRM_TABLE_CONTENT_CLASS,
+  CRM_TABLE_EMBEDDED_CLASS,
+  CRM_TABLE_ROW_HEIGHT,
+} from "../../../components/crm";
 import type { ClientTableColumn, ClientTableRow, Translate } from "../types";
 import { ClientRow } from "./ClientRow";
 
@@ -10,22 +16,26 @@ export function ClientsTable({
   rows,
   selectedClientId,
   onSelectClient,
+  onOpenClient,
   totalClients,
   page,
   pageSize,
   onPageChange,
   onPageSizeChange,
+  hasFilters,
   visibleColumns,
   t,
 }: {
   rows: ClientTableRow[];
   selectedClientId: number | null;
   onSelectClient: (id: number) => void;
+  onOpenClient: (id: number) => void;
   totalClients: number;
   page: number;
   pageSize: number;
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: number) => void;
+  hasFilters: boolean;
   visibleColumns: Set<ClientTableColumn>;
   t: Translate;
 }) {
@@ -41,9 +51,14 @@ export function ClientsTable({
 
   const virtualItems = rowVirtualizer.getVirtualItems();
   const topPadding = virtualItems[0]?.start || 0;
-  const bottomPadding = Math.max(0, rowVirtualizer.getTotalSize() - (virtualItems[virtualItems.length - 1]?.end || 0));
+  const bottomPadding = Math.max(
+    0,
+    rowVirtualizer.getTotalSize() -
+      (virtualItems[virtualItems.length - 1]?.end || 0),
+  );
   const colSpan = 6 + visibleColumns.size;
-  const allPageRowsChecked = rows.length > 0 && rows.every((row) => checkedRows.has(row.client.id));
+  const allPageRowsChecked =
+    rows.length > 0 && rows.every((row) => checkedRows.has(row.client.id));
   const firstCheckedRow = rows.find((row) => checkedRows.has(row.client.id));
 
   function toggleRowCheck(clientId: number) {
@@ -81,8 +96,10 @@ export function ClientsTable({
               </span>
               <button
                 type="button"
-                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-                onClick={() => firstCheckedRow && onSelectClient(firstCheckedRow.client.id)}
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-zani-border bg-surface-card px-3 text-xs font-semibold text-zani-text transition hover:bg-surface-warm"
+                onClick={() =>
+                  firstCheckedRow && onOpenClient(firstCheckedRow.client.id)
+                }
                 disabled={!firstCheckedRow}
               >
                 <MousePointer2 size={14} />
@@ -90,7 +107,7 @@ export function ClientsTable({
               </button>
               <button
                 type="button"
-                className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold text-zani-muted transition hover:bg-surface-muted hover:text-zani-text"
                 onClick={clearCheckedRows}
               >
                 <X size={14} />
@@ -116,28 +133,54 @@ export function ClientsTable({
             {t("clients.tableDescription")}
           </caption>
           <thead className="sticky top-0 z-10">
-            <tr role="row" className="h-10 border-b border-slate-200 bg-white text-left text-xs font-semibold text-slate-600">
+            <tr
+              role="row"
+              className="h-10 border-b border-zani-border bg-surface-muted text-left text-xs font-semibold text-zani-muted"
+            >
               <th role="columnheader" className="w-10 px-3 py-2">
                 <input
                   type="checkbox"
                   checked={allPageRowsChecked}
                   readOnly
                   onClick={toggleAllPageRows}
-                  className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  className="h-4 w-4 rounded border-zani-border text-brand-600 focus:ring-brand-500"
                   aria-label={t("clients.selectAllPage")}
                 />
               </th>
-              <th role="columnheader" className="w-[32%] px-2 py-2">{t("clients.client")}</th>
-              {visibleColumns.has("source") ? <th role="columnheader" className="w-[12%] px-2 py-2">{t("clients.source")}</th> : null}
-              <th role="columnheader" className="w-[12%] px-2 py-2">{t("clients.status")}</th>
-              {visibleColumns.has("manager") ? <th role="columnheader" className="w-[15%] px-2 py-2">{t("clients.manager")}</th> : null}
-              <th role="columnheader" className="w-[15%] px-2 py-2">{t("clients.lastContact")}</th>
-              <th role="columnheader" className="px-2 py-2">{t("clients.nextStep")}</th>
-              <th role="columnheader" className="w-[92px] px-2 py-2 text-right"></th>
+              <th role="columnheader" className="w-[32%] px-2 py-2">
+                {t("clients.client")}
+              </th>
+              {visibleColumns.has("source") ? (
+                <th role="columnheader" className="w-[12%] px-2 py-2">
+                  {t("clients.source")}
+                </th>
+              ) : null}
+              <th role="columnheader" className="w-[12%] px-2 py-2">
+                {t("clients.status")}
+              </th>
+              {visibleColumns.has("manager") ? (
+                <th role="columnheader" className="w-[15%] px-2 py-2">
+                  {t("clients.manager")}
+                </th>
+              ) : null}
+              <th role="columnheader" className="w-[15%] px-2 py-2">
+                {t("clients.lastContact")}
+              </th>
+              <th role="columnheader" className="px-2 py-2">
+                {t("clients.nextStep")}
+              </th>
+              <th
+                role="columnheader"
+                className="w-[92px] px-2 py-2 text-right"
+              ></th>
             </tr>
           </thead>
           <tbody>
-            {topPadding ? <tr><td colSpan={colSpan} style={{ height: topPadding }} /></tr> : null}
+            {topPadding ? (
+              <tr>
+                <td colSpan={colSpan} style={{ height: topPadding }} />
+              </tr>
+            ) : null}
             {virtualItems.map((virtualRow) => {
               const row = rows[virtualRow.index];
               if (!row) return null;
@@ -149,20 +192,29 @@ export function ClientsTable({
                   checked={checkedRows.has(row.client.id)}
                   visibleColumns={visibleColumns}
                   onSelect={() => onSelectClient(row.client.id)}
+                  onOpen={() => onOpenClient(row.client.id)}
                   onToggleCheck={() => toggleRowCheck(row.client.id)}
                   t={t}
                 />
               );
             })}
-            {bottomPadding ? <tr><td colSpan={colSpan} style={{ height: bottomPadding }} /></tr> : null}
+            {bottomPadding ? (
+              <tr>
+                <td colSpan={colSpan} style={{ height: bottomPadding }} />
+              </tr>
+            ) : null}
           </tbody>
         </table>
       </div>
 
       {!rows.length ? (
         <div className="px-6 py-12 text-center">
-          <p className="font-bold text-slate-900">{t("clients.notFoundTitle")}</p>
-          <p className="mt-1 text-sm text-slate-500">{t("clients.notFoundText")}</p>
+          <p className="font-bold text-zani-text">
+            {hasFilters ? t("clients.notFoundTitle") : t("clients.emptyTitle")}
+          </p>
+          <p className="mt-1 text-sm text-zani-muted">
+            {hasFilters ? t("clients.emptyFiltered") : t("clients.emptyText")}
+          </p>
         </div>
       ) : null}
 
@@ -175,7 +227,11 @@ export function ClientsTable({
         onPageSizeChange={(nextPageSize) => {
           onPageSizeChange(nextPageSize);
         }}
-        rangeLabel={t("pagination.range", { from: totalClients === 0 ? 0 : (page - 1) * pageSize + 1, to: Math.min(totalClients, page * pageSize), total: totalClients })}
+        rangeLabel={t("pagination.range", {
+          from: totalClients === 0 ? 0 : (page - 1) * pageSize + 1,
+          to: Math.min(totalClients, page * pageSize),
+          total: totalClients,
+        })}
         previousLabel={t("pagination.previous")}
         nextLabel={t("pagination.next")}
         pageSizeLabel={(size) => t("pagination.pageSize", { size })}

@@ -21,6 +21,7 @@ import { Link } from "react-router-dom";
 import { aiApi, businessKnowledgeApi, type AIAnalystSource } from "../../api/ai";
 import type { BusinessKnowledgeItem, Id } from "../../types";
 import { getApiErrorMessage } from "../../api/client";
+import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { Card, CardBody } from "../../components/ui/Card";
 import { Input } from "../../components/ui/Input";
@@ -383,11 +384,11 @@ export function AIAssistantPage() {
       ) : null}
 
       {aiStatus.data && !aiStatus.data.ready ? (
-        <div className="mb-4 rounded-card border border-amber-100 bg-amber-50 p-4 text-sm font-semibold leading-6 text-amber-800">
+        <div className="mb-4 rounded-card border border-[rgba(183,121,31,0.22)] bg-[var(--zani-warning-soft)] p-4 text-sm font-semibold leading-6 text-zani-warning">
           <div className="flex items-start gap-3">
             <AlertTriangle size={18} className="mt-0.5 shrink-0" />
             <div>
-              <p className="font-black">{t("aiAssistant.providerUnavailableTitle")}</p>
+              <p className="font-bold">{t("aiAssistant.providerUnavailableTitle")}</p>
               <p className="mt-1">{t("aiAssistant.providerUnavailableText")}</p>
             </div>
           </div>
@@ -400,18 +401,18 @@ export function AIAssistantPage() {
             <CardBody className="p-4 sm:p-5">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="max-w-3xl">
-                  <div className="inline-flex items-center gap-2 rounded-full bg-ai-50 px-3 py-1.5 text-xs font-black uppercase tracking-[0.16em] text-ai-700">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-ai-50 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-ai-700">
                     <Sparkles size={15} />
                     {t("aiNavigator.todayBrief")}
                   </div>
-                  <h2 className="mt-3 text-2xl font-black leading-tight tracking-tight text-midnight sm:text-3xl">
+                  <h2 className="mt-3 text-2xl font-bold leading-tight tracking-tight text-zani-text sm:text-3xl">
                     {t("aiNavigator.workspaceSignals")}
                   </h2>
-                  <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-zani-subtle">
                     {t("aiNavigator.factBasedNotice")}
                   </p>
                 </div>
-                <div className="rounded-2xl bg-slate-50 p-3 text-sm font-bold text-slate-600">
+                <div className="rounded-card bg-surface-muted p-3 text-sm font-bold text-zani-subtle">
                   {isDataLoading ? t("common.loading") : t("aiNavigator.generatedFromCabinet")}
                 </div>
               </div>
@@ -429,25 +430,25 @@ export function AIAssistantPage() {
             <CardBody className="p-5 sm:p-6">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">{t("aiNavigator.summaryEyebrow")}</p>
-                  <h2 className="mt-2 text-2xl font-black text-midnight">{t("aiNavigator.summaryTitle")}</h2>
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-700">{t("aiNavigator.summaryEyebrow")}</p>
+                  <h2 className="mt-2 text-2xl font-bold text-zani-text">{t("aiNavigator.summaryTitle")}</h2>
                 </div>
-                <span className="rounded-full bg-slate-50 px-3 py-1.5 text-xs font-black text-slate-500">
+                <Badge variant="neutral">
                   {t("aiNavigator.noExternalData")}
-                </span>
+                </Badge>
               </div>
               <div className="mt-5 grid gap-3">
                 {navigatorData.summary.map((item, index) => (
-                  <div key={item} className="flex items-start gap-3 rounded-card border border-slate-200 bg-slate-50 p-4">
+                  <div key={item} className="flex items-start gap-3 rounded-card border border-zani-border bg-surface-muted p-4">
                     <span className={`mt-1 h-3 w-3 rounded-full ${aiInsightDotClass(index === 0 ? "info" : index === 1 ? "good" : index === 2 ? "warning" : "critical")}`} />
-                    <p className="text-sm font-semibold leading-6 text-slate-700">{item}</p>
+                    <p className="text-sm font-semibold leading-6 text-zani-text">{item}</p>
                   </div>
                 ))}
               </div>
               {aiBrief ? (
                 <div className="mt-5 rounded-card border border-brand-100 bg-brand-50 p-4">
-                  <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">{t("aiNavigator.aiInterpretation")}</p>
-                  <p className="mt-2 whitespace-pre-wrap text-sm font-semibold leading-7 text-slate-700">{aiBrief}</p>
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-700">{t("aiNavigator.aiInterpretation")}</p>
+                  <p className="mt-2 whitespace-pre-wrap text-sm font-semibold leading-7 text-zani-text">{aiBrief}</p>
                 </div>
               ) : null}
             </CardBody>
@@ -457,9 +458,9 @@ export function AIAssistantPage() {
             <CardBody className="p-5 sm:p-6">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-700">BusinessEvent AI</p>
-                  <h2 className="mt-2 text-2xl font-black text-midnight">{t("aiNavigator.integrationInsightsTitle")}</h2>
-                  <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-ai-700">BusinessEvent AI</p>
+                  <h2 className="mt-2 text-2xl font-bold text-zani-text">{t("aiNavigator.integrationInsightsTitle")}</h2>
+                  <p className="mt-1 text-sm font-semibold leading-6 text-zani-subtle">
                     {t("aiNavigator.integrationInsightsText")}
                   </p>
                 </div>
@@ -469,25 +470,32 @@ export function AIAssistantPage() {
               </div>
 
               <div className="mt-5 grid gap-3">
+                {!canViewAnalyst ? (
+                  <p className="rounded-card border border-[rgba(183,121,31,0.22)] bg-[var(--zani-warning-soft)] p-4 text-sm font-semibold leading-6 text-zani-warning">
+                    {t("permissions.forbidden", {
+                      resource: t("permissions.resource.ai_analyst"),
+                    })}
+                  </p>
+                ) : null}
                 {!analystBrief.isLoading && analystHasNoSourceData ? (
-                  <p className="rounded-card border border-amber-100 bg-amber-50 p-4 text-sm font-semibold leading-6 text-amber-800">
+                  <p className="rounded-card border border-[rgba(183,121,31,0.22)] bg-[var(--zani-warning-soft)] p-4 text-sm font-semibold leading-6 text-zani-warning">
                     {t("aiNavigator.noSourceDataState")}
                   </p>
                 ) : null}
                 {(analystBrief.data?.insights || []).map((insight) => (
-                  <div key={insight.id} className="rounded-card border border-slate-200 bg-slate-50 p-4">
+                  <div key={insight.id} className="rounded-card border border-zani-border bg-surface-muted p-4">
                     <div className="flex items-start gap-3">
                       <span className={`mt-1 h-3 w-3 rounded-full ${aiInsightDotClass(insight.severity)}`} />
                       <div className="min-w-0 flex-1">
-                        <p className="font-black text-midnight">{insight.title}</p>
-                        <p className="mt-1 text-sm font-semibold leading-6 text-slate-600">{insight.summary}</p>
+                        <p className="font-bold text-zani-text">{insight.title}</p>
+                        <p className="mt-1 text-sm font-semibold leading-6 text-zani-subtle">{insight.summary}</p>
                         <SourceChips sourceIds={insight.source_ids} sourcesById={analystSourcesById} />
                       </div>
                     </div>
                   </div>
                 ))}
-                {!analystBrief.isLoading && !(analystBrief.data?.insights || []).length ? (
-                  <p className="rounded-card bg-slate-50 p-4 text-sm font-semibold leading-6 text-slate-500">
+                {canViewAnalyst && !analystBrief.isLoading && !(analystBrief.data?.insights || []).length ? (
+                  <p className="rounded-card bg-surface-muted p-4 text-sm font-semibold leading-6 text-zani-subtle">
                     {t("aiNavigator.emptyIntegrationInsights")}
                   </p>
                 ) : null}
@@ -495,20 +503,20 @@ export function AIAssistantPage() {
 
               {(analystBrief.data?.actions || []).length ? (
                 <div className="mt-5">
-                  <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{t("aiNavigator.suggestedActions")}</p>
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-zani-faint">{t("aiNavigator.suggestedActions")}</p>
                   <div className="mt-3 grid gap-3">
                     {(analystBrief.data?.actions || []).map((action) => (
-                      <div key={action.id} className="rounded-card border border-slate-200 bg-white p-4 shadow-sm">
+                      <div key={action.id} className="rounded-card border border-zani-border bg-surface-card p-4 shadow-sm">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                           <div className="min-w-0">
-                            <span className="rounded-full bg-violet-50 px-2 py-1 text-[10px] font-black uppercase text-violet-700">
+                            <Badge variant="ai" size="sm">
                               {action.priority}
-                            </span>
-                            <p className="mt-2 font-black text-midnight">{action.label}</p>
-                            <p className="mt-1 text-sm font-semibold leading-6 text-slate-600">{action.description}</p>
+                            </Badge>
+                            <p className="mt-2 font-bold text-zani-text">{action.label}</p>
+                            <p className="mt-1 text-sm font-semibold leading-6 text-zani-subtle">{action.description}</p>
                             <SourceChips sourceIds={action.source_ids} sourcesById={analystSourcesById} />
                           </div>
-                          <Link to={action.href} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-black text-midnight transition hover:bg-white hover:shadow-card">
+                          <Link to={action.href} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-control border border-zani-border bg-surface-card px-3 py-2 text-sm font-bold text-zani-text transition hover:border-brand-100 hover:bg-surface-warm hover:shadow-card">
                             {t("common.open")} <ExternalLink size={15} />
                           </Link>
                         </div>
@@ -524,12 +532,12 @@ export function AIAssistantPage() {
             <CardBody className="p-5 sm:p-6">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-[0.16em] text-red-500">{t("aiNavigator.attentionEyebrow")}</p>
-                  <h2 className="mt-2 text-2xl font-black text-midnight">{t("aiNavigator.attentionTitle")}</h2>
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-zani-danger">{t("aiNavigator.attentionEyebrow")}</p>
+                  <h2 className="mt-2 text-2xl font-bold text-zani-text">{t("aiNavigator.attentionTitle")}</h2>
                 </div>
-                <span className="rounded-full bg-slate-50 px-3 py-1.5 text-xs font-black text-slate-500">
+                <Badge variant="neutral">
                   {t("aiNavigator.itemsCount", { count: navigatorData.insights.length })}
-                </span>
+                </Badge>
               </div>
               <div className="mt-5 grid gap-3">
                 {navigatorData.insights.map((insight) => (
@@ -552,15 +560,15 @@ export function AIAssistantPage() {
           {canUseAssistant ? <Card>
             <CardBody>
               <div className="flex items-start gap-3">
-                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-slate-50 text-brand-700">
+                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-control bg-ai-50 text-ai-700">
                   <Cpu size={20} />
                 </div>
                 <div>
-                  <p className="font-black text-midnight">{t("aiNavigator.dataPolicyTitle")}</p>
-                  <p className="mt-1 text-sm leading-6 text-slate-500">{t("aiNavigator.dataPolicyText")}</p>
+                  <p className="font-bold text-zani-text">{t("aiNavigator.dataPolicyTitle")}</p>
+                  <p className="mt-1 text-sm leading-6 text-zani-subtle">{t("aiNavigator.dataPolicyText")}</p>
                 </div>
               </div>
-              <div className="mt-4 rounded-2xl bg-slate-50 p-3 text-xs font-bold leading-5 text-slate-500">
+              <div className="mt-4 rounded-control bg-surface-muted p-3 text-xs font-bold leading-5 text-zani-subtle">
                 {providerLabel}
               </div>
             </CardBody>
@@ -569,17 +577,17 @@ export function AIAssistantPage() {
           <Card>
             <CardBody>
               <div className="flex items-center gap-3">
-                <div className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-50 text-emerald-700">
+                <div className="grid h-11 w-11 place-items-center rounded-control bg-[var(--zani-success-soft)] text-zani-success">
                   <Users size={20} />
                 </div>
                 <div>
-                  <p className="font-black text-midnight">{t("aiNavigator.roleHelpTitle")}</p>
-                  <p className="text-sm text-slate-500">{t("aiNavigator.roleHelpText")}</p>
+                  <p className="font-bold text-zani-text">{t("aiNavigator.roleHelpTitle")}</p>
+                  <p className="text-sm text-zani-subtle">{t("aiNavigator.roleHelpText")}</p>
                 </div>
               </div>
               <div className="mt-4 space-y-2">
-                <p className="rounded-2xl bg-slate-50 p-3 text-sm font-semibold text-slate-600">{t("aiNavigator.ownerHelp")}</p>
-                <p className="rounded-2xl bg-slate-50 p-3 text-sm font-semibold text-slate-600">{t("aiNavigator.managerHelp")}</p>
+                <p className="rounded-control bg-surface-muted p-3 text-sm font-semibold text-zani-subtle">{t("aiNavigator.ownerHelp")}</p>
+                <p className="rounded-control bg-surface-muted p-3 text-sm font-semibold text-zani-subtle">{t("aiNavigator.managerHelp")}</p>
               </div>
             </CardBody>
           </Card>
@@ -587,18 +595,18 @@ export function AIAssistantPage() {
           <Card>
             <CardBody>
               <div className="mb-4 flex items-start gap-3 rounded-card border border-brand-100 bg-brand-50 p-4">
-                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white text-brand-700 shadow-sm">
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-control bg-surface-card text-brand-700 shadow-sm">
                   <BookOpenText size={19} />
                 </div>
                 <div>
-                  <p className="font-bold text-midnight">{t("aiAssistant.businessMemory")}</p>
-                  <p className="mt-1 text-sm leading-6 text-slate-600">
+                  <p className="font-bold text-zani-text">{t("aiAssistant.businessMemory")}</p>
+                  <p className="mt-1 text-sm leading-6 text-zani-subtle">
                     {t("aiAssistant.activeFactsSummary", { count: activeMemoryItems.length })}
                   </p>
                 </div>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <h2 className="text-lg font-black text-midnight">{t("aiAssistant.memoryTitle")}</h2>
+                <h2 className="text-lg font-bold text-zani-text">{t("aiAssistant.memoryTitle")}</h2>
                 <Button variant="ghost" size="sm" onClick={() => { setEditingMemory(undefined); setMemoryDraft(emptyMemoryDraft); setMemoryOpen(true); }}>
                   <Plus size={15} />{t("aiAssistant.add")}
                 </Button>
@@ -609,21 +617,21 @@ export function AIAssistantPage() {
                     key={item.id}
                     type="button"
                     onClick={() => { setEditingMemory(item); setMemoryDraft(memoryDraftFromItem(item)); setMemoryOpen(true); }}
-                    className="w-full rounded-card border border-slate-200 bg-slate-50 p-4 text-left transition hover:bg-white hover:shadow-card"
+                    className="w-full rounded-card border border-zani-border bg-surface-muted p-4 text-left transition hover:border-brand-100 hover:bg-surface-warm hover:shadow-card"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="truncate font-bold text-midnight">{item.title}</p>
-                        <p className="mt-1 line-clamp-2 text-sm leading-6 text-slate-500">{item.content}</p>
+                        <p className="truncate font-bold text-zani-text">{item.title}</p>
+                        <p className="mt-1 line-clamp-2 text-sm leading-6 text-zani-subtle">{item.content}</p>
                       </div>
-                      <span className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-black uppercase ${item.is_active ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+                      <Badge variant={item.is_active ? "success" : "neutral"} size="sm" className="shrink-0">
                         {item.is_active ? t("aiAssistant.active") : t("aiAssistant.off")}
-                      </span>
+                      </Badge>
                     </div>
                   </button>
                 ))}
                 {!memory.data?.length ? (
-                  <p className="rounded-card bg-slate-50 p-4 text-sm leading-6 text-slate-500">
+                  <p className="rounded-card bg-surface-muted p-4 text-sm leading-6 text-zani-subtle">
                     {t("aiAssistant.emptyMemoryText")}
                   </p>
                 ) : null}
@@ -661,7 +669,7 @@ export function AIAssistantPage() {
             placeholder={t("aiAssistant.contentPlaceholder")}
             required
           />
-          <label className="flex items-center gap-3 rounded-card border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-700">
+          <label className="flex items-center gap-3 rounded-card border border-zani-border bg-surface-muted p-4 text-sm font-semibold text-zani-text">
             <input
               type="checkbox"
               checked={memoryDraft.is_active}
@@ -680,9 +688,9 @@ export function AIAssistantPage() {
 
 function MetricTile({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-card border border-slate-200 bg-slate-50 p-4">
-      <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{label}</p>
-      <p className="mt-3 text-3xl font-black text-midnight">{value}</p>
+    <div className="rounded-card border border-zani-border bg-surface-muted p-4">
+      <p className="text-xs font-bold uppercase tracking-[0.14em] text-zani-faint">{label}</p>
+      <p className="mt-3 text-3xl font-bold text-zani-text">{value}</p>
     </div>
   );
 }
@@ -702,7 +710,7 @@ function SourceChips({
         return (
           <span
             key={sourceId}
-            className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[11px] font-black text-slate-500 ring-1 ring-slate-100"
+            className="inline-flex items-center gap-1.5 rounded-full bg-surface-card px-2.5 py-1 text-[11px] font-bold text-zani-subtle ring-1 ring-zani-border"
             title={source ? `${source.label} - ${source.summary}` : sourceId}
           >
             <DatabaseZap size={12} />

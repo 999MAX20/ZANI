@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+﻿import { ReactNode } from "react";
 
 import { cn } from "../../lib/cn";
 
@@ -13,7 +13,7 @@ export function CrmInspector({
 }) {
   if (!open) return null;
   return (
-    <aside className={cn("hidden min-h-0 w-full overflow-hidden rounded-card border-x border-slate-200 bg-white lg:block", className)}>
+    <aside className={cn("hidden min-h-0 w-full overflow-hidden rounded-card border-x border-zani-border bg-surface-card lg:block", className)}>
       {children}
     </aside>
   );

@@ -4,8 +4,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 
 import { automationRulesApi, automationRunsApi } from "../../api/automations";
+import { Badge, type BadgeVariant } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
-import { Card, CardBody } from "../../components/ui/Card";
+import { Card, CardBody, Surface } from "../../components/ui/Card";
 import { Input } from "../../components/ui/Input";
 import { Modal } from "../../components/ui/Modal";
 import { PageHeader } from "../../components/ui/PageHeader";
@@ -88,6 +89,20 @@ function canRetryRun(run: AutomationRun) {
   return run.status === "failed" || run.status === "cancelled";
 }
 
+function runStatusVariant(status?: string): BadgeVariant {
+  if (["succeeded", "completed", "processed"].includes(status || "")) return "success";
+  if (["pending", "queued", "running"].includes(status || "")) return "warning";
+  if (["failed", "error", "cancelled", "blocked"].includes(status || "")) return "danger";
+  return "neutral";
+}
+
+function runStatusLabel(status: string | undefined, t: (key: string) => string) {
+  if (!status) return "-";
+  const statusKey = status === "completed" ? "status.completed" : `integrations.status.${status}`;
+  const label = t(statusKey);
+  return label === statusKey ? status : label;
+}
+
 export function AutomationsPage() {
   const { t, language } = useI18n();
   const queryClient = useQueryClient();
@@ -113,6 +128,11 @@ export function AutomationsPage() {
   const triggers = triggerKeys.map((item) => ({ value: item.value, label: t(item.labelKey) }));
   const actionOptions = actionOptionKeys.map((item) => ({ value: item.value, label: t(item.labelKey) }));
   const locale = localeByLanguage[language];
+  const ruleList = automationRules.data || [];
+  const runList = runs.data || [];
+  const activeRuleCount = ruleList.filter((rule) => rule.is_active).length;
+  const failedRunCount = runList.filter((run) => ["failed", "error", "cancelled", "blocked"].includes(run.status)).length;
+  const retryableRunCount = runList.filter(canRetryRun).length;
 
   const mutation = useMutation({
     mutationFn: (payload: Partial<AutomationRule>) => automationRulesApi.create(payload),
@@ -213,12 +233,27 @@ export function AutomationsPage() {
         <div className="mb-4"><ErrorState message={t("automations.saveError")} /></div>
       ) : null}
 
-      <details className="mb-6 rounded-card border border-slate-200 bg-white p-4 shadow-card">
-        <summary className="cursor-pointer text-sm font-black uppercase tracking-[0.16em] text-slate-500">
+      <section className="mb-5 grid gap-3 sm:grid-cols-3">
+        <Surface padding="sm" variant="muted">
+          <p className="text-xs font-semibold text-zani-faint">{t("automations.rulesTitle")}</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums text-zani-text">{activeRuleCount}/{ruleList.length}</p>
+        </Surface>
+        <Surface padding="sm" variant="muted">
+          <p className="text-xs font-semibold text-zani-faint">{t("automations.runsTitle")}</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums text-zani-text">{runList.length}</p>
+        </Surface>
+        <Surface padding="sm" variant={failedRunCount ? "danger" : "muted"}>
+          <p className="text-xs font-semibold text-zani-faint">{t("automations.retry")}</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums text-zani-text">{retryableRunCount}</p>
+        </Surface>
+      </section>
+
+      <details className="mb-6 rounded-card border border-zani-border bg-surface-card p-4 shadow-card">
+        <summary className="cursor-pointer text-sm font-bold uppercase tracking-[0.14em] text-zani-subtle">
           {t("automations.advancedTitle")}
         </summary>
         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="max-w-2xl text-sm leading-6 text-slate-500">{t("automations.advancedText")}</p>
+          <p className="max-w-2xl text-sm leading-6 text-zani-subtle">{t("automations.advancedText")}</p>
           <Button type="button" variant="secondary" onClick={() => setAdvancedOpen(true)}>
             <Settings2 size={18} />
             {t("automations.advancedBuilder")}
@@ -229,7 +264,7 @@ export function AutomationsPage() {
       <div className="mb-6">
         <div className="mb-3 flex items-center gap-2">
           <ClipboardCheck size={20} className="text-brand-700" />
-          <h2 className="text-xl font-bold text-midnight">{t("automations.templatesTitle")}</h2>
+          <h2 className="text-xl font-bold text-zani-text">{t("automations.templatesTitle")}</h2>
         </div>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {(templates.data || []).map((template) => (
@@ -239,10 +274,10 @@ export function AutomationsPage() {
                   <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700">
                     {triggers.find((item) => item.value === template.trigger_type)?.label || template.trigger_type}
                   </span>
-                  <span className="text-xs font-bold text-slate-400">{t("automations.actionCount", { count: template.actions.length })}</span>
+                  <span className="text-xs font-bold text-zani-faint">{t("automations.actionCount", { count: template.actions.length })}</span>
                 </div>
-                <h3 className="text-lg font-bold text-midnight">{template.name}</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-500">{template.description}</p>
+                <h3 className="text-lg font-bold text-zani-text">{template.name}</h3>
+                <p className="mt-2 text-sm leading-6 text-zani-subtle">{template.description}</p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Button
                     variant="secondary"
@@ -266,23 +301,23 @@ export function AutomationsPage() {
 
       <div className="mb-3 flex items-center gap-2">
         <Workflow size={20} className="text-brand-700" />
-        <h2 className="text-xl font-bold text-midnight">{t("automations.rulesTitle")}</h2>
+        <h2 className="text-xl font-bold text-zani-text">{t("automations.rulesTitle")}</h2>
       </div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {(automationRules.data || []).map((rule) => (
+        {ruleList.map((rule) => (
           <Card key={rule.id}>
             <CardBody>
               <div className="mb-5 flex items-center justify-between">
-                <div className="grid h-12 w-12 place-items-center rounded-2xl bg-slate-100 text-midnight">
+                <div className="grid h-12 w-12 place-items-center rounded-control bg-surface-muted text-brand-700">
                   <Workflow size={22} />
                 </div>
-                <span className={`rounded-full px-3 py-1 text-xs font-bold ${rule.is_active ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+                <Badge variant={rule.is_active ? "success" : "neutral"}>
                   {rule.is_active ? t("status.active") : t("status.draft")}
-                </span>
+                </Badge>
               </div>
-              <h2 className="text-lg font-semibold text-midnight">{rule.name}</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-500">{triggers.find((item) => item.value === rule.trigger_type)?.label || rule.trigger_type}</p>
-              {rule.description ? <p className="mt-3 text-sm leading-6 text-slate-500">{rule.description}</p> : null}
+              <h2 className="text-lg font-semibold text-zani-text">{rule.name}</h2>
+              <p className="mt-2 text-sm leading-6 text-zani-subtle">{triggers.find((item) => item.value === rule.trigger_type)?.label || rule.trigger_type}</p>
+              {rule.description ? <p className="mt-3 text-sm leading-6 text-zani-subtle">{rule.description}</p> : null}
               <div className="mt-4 flex flex-wrap gap-2">
                 <Button
                   variant={rule.is_active ? "secondary" : "primary"}
@@ -295,7 +330,7 @@ export function AutomationsPage() {
             </CardBody>
           </Card>
         ))}
-        {!automationRules.data?.length ? (
+        {!ruleList.length ? (
           <EmptyState
             title={t("automations.emptyTitle")}
             description={t("automations.emptyDescription")}
@@ -305,20 +340,22 @@ export function AutomationsPage() {
       </div>
 
       <div className="mt-6">
-        <h2 className="text-xl font-bold text-midnight">{t("automations.runsTitle")}</h2>
-        <div className="mt-3 overflow-hidden rounded-card border border-slate-200 bg-white">
-        {(runs.data || []).slice(0, 8).map((run) => (
-            <div key={run.id} className="grid gap-2 border-b border-slate-200 px-4 py-3 text-sm last:border-b-0 md:grid-cols-[1fr_110px_160px_auto]">
+        <h2 className="text-xl font-bold text-zani-text">{t("automations.runsTitle")}</h2>
+        <div className="mt-3 overflow-hidden rounded-card border border-zani-border bg-surface-card shadow-card">
+        {runList.slice(0, 8).map((run) => (
+            <div key={run.id} className="grid gap-2 border-b border-zani-border px-4 py-3 text-sm last:border-b-0 md:grid-cols-[1fr_120px_160px_auto]">
               <div>
-                <p className="font-bold text-midnight">{triggers.find((item) => item.value === run.trigger_type)?.label || run.trigger_type}</p>
-                <p className="text-xs text-slate-500">
+                <p className="font-bold text-zani-text">{triggers.find((item) => item.value === run.trigger_type)?.label || run.trigger_type}</p>
+                <p className="text-xs font-semibold leading-5 text-zani-subtle">
                   {run.entity_type || t("automations.entity")} #{run.entity_id || "-"} · {t("automations.attempt", { current: run.attempts || 0, max: run.max_attempts || 3 })}
                   {run.next_retry_at ? ` · ${t("automations.retryAt", { date: new Date(run.next_retry_at).toLocaleString(locale) })}` : ""}
                   {run.error ? ` · ${run.error}` : ""}
                 </p>
               </div>
-              <span className="font-semibold text-slate-600">{run.status}</span>
-              <span className="text-xs font-semibold text-slate-400">{new Date(run.created_at).toLocaleString(locale)}</span>
+              <Badge variant={runStatusVariant(run.status)}>
+                {runStatusLabel(run.status, t)}
+              </Badge>
+              <span className="text-xs font-semibold text-zani-faint">{new Date(run.created_at).toLocaleString(locale)}</span>
               <div className="flex flex-wrap gap-2">
                 <Button variant="ghost" className="min-h-8 px-3 py-1 text-xs" onClick={() => setSelectedRun(run)}>
                   <Eye size={14} />{t("automations.details")}
@@ -346,7 +383,7 @@ export function AutomationsPage() {
               </div>
             </div>
           ))}
-          {!runs.data?.length ? <div className="px-4 py-5 text-sm text-slate-500">{t("automations.noRuns")}</div> : null}
+          {!runList.length ? <div className="px-4 py-5 text-sm font-semibold text-zani-subtle">{t("automations.noRuns")}</div> : null}
         </div>
       </div>
 
@@ -355,44 +392,48 @@ export function AutomationsPage() {
           <div className="space-y-4 text-sm">
             <div className="grid gap-3 md:grid-cols-2">
               <div>
-                <p className="text-xs font-bold uppercase text-slate-400">{t("automations.status")}</p>
-                <p className="mt-1 font-semibold text-midnight">{selectedRun.status}</p>
+                <p className="text-xs font-bold uppercase text-zani-faint">{t("automations.status")}</p>
+                <div className="mt-1">
+                  <Badge variant={runStatusVariant(selectedRun.status)}>
+                    {runStatusLabel(selectedRun.status, t)}
+                  </Badge>
+                </div>
               </div>
               <div>
-                <p className="text-xs font-bold uppercase text-slate-400">{t("automations.runRule")}</p>
-                <p className="mt-1 font-semibold text-midnight">{selectedRun.rule_name || selectedRun.rule || "-"}</p>
+                <p className="text-xs font-bold uppercase text-zani-faint">{t("automations.runRule")}</p>
+                <p className="mt-1 font-semibold text-zani-text">{selectedRun.rule_name || selectedRun.rule || "-"}</p>
               </div>
               <div>
-                <p className="text-xs font-bold uppercase text-slate-400">{t("automations.runEntity")}</p>
-                <p className="mt-1 font-semibold text-midnight">{selectedRun.entity_type || "-"} #{selectedRun.entity_id || "-"}</p>
+                <p className="text-xs font-bold uppercase text-zani-faint">{t("automations.runEntity")}</p>
+                <p className="mt-1 font-semibold text-zani-text">{selectedRun.entity_type || "-"} #{selectedRun.entity_id || "-"}</p>
               </div>
               <div>
-                <p className="text-xs font-bold uppercase text-slate-400">{t("automations.attempts")}</p>
-                <p className="mt-1 font-semibold text-midnight">{t("automations.attempt", { current: selectedRun.attempts || 0, max: selectedRun.max_attempts || 3 })}</p>
+                <p className="text-xs font-bold uppercase text-zani-faint">{t("automations.attempts")}</p>
+                <p className="mt-1 font-semibold text-zani-text">{t("automations.attempt", { current: selectedRun.attempts || 0, max: selectedRun.max_attempts || 3 })}</p>
               </div>
             </div>
             <div className="grid gap-3 md:grid-cols-3">
               <div>
-                <p className="text-xs font-bold uppercase text-slate-400">{t("automations.runCreated")}</p>
-                <p className="mt-1 text-slate-600">{new Date(selectedRun.created_at).toLocaleString(locale)}</p>
+                <p className="text-xs font-bold uppercase text-zani-faint">{t("automations.runCreated")}</p>
+                <p className="mt-1 text-zani-subtle">{new Date(selectedRun.created_at).toLocaleString(locale)}</p>
               </div>
               <div>
-                <p className="text-xs font-bold uppercase text-slate-400">{t("automations.runStarted")}</p>
-                <p className="mt-1 text-slate-600">{selectedRun.started_at ? new Date(selectedRun.started_at).toLocaleString(locale) : "-"}</p>
+                <p className="text-xs font-bold uppercase text-zani-faint">{t("automations.runStarted")}</p>
+                <p className="mt-1 text-zani-subtle">{selectedRun.started_at ? new Date(selectedRun.started_at).toLocaleString(locale) : "-"}</p>
               </div>
               <div>
-                <p className="text-xs font-bold uppercase text-slate-400">{t("automations.runFinished")}</p>
-                <p className="mt-1 text-slate-600">{selectedRun.finished_at ? new Date(selectedRun.finished_at).toLocaleString(locale) : "-"}</p>
+                <p className="text-xs font-bold uppercase text-zani-faint">{t("automations.runFinished")}</p>
+                <p className="mt-1 text-zani-subtle">{selectedRun.finished_at ? new Date(selectedRun.finished_at).toLocaleString(locale) : "-"}</p>
               </div>
             </div>
             {selectedRun.error ? <ErrorState message={`${t("automations.runError")}: ${selectedRun.error}`} /> : null}
             <div>
-              <p className="mb-2 text-xs font-bold uppercase text-slate-400">{t("automations.runPayload")}</p>
-              <pre className="max-h-48 overflow-auto rounded-card bg-slate-950 p-3 text-xs text-slate-100">{formatJson(selectedRun.payload)}</pre>
+              <p className="mb-2 text-xs font-bold uppercase text-zani-muted">{t("automations.runPayload")}</p>
+              <pre className="max-h-48 overflow-auto rounded-card bg-zani-ink p-3 text-xs text-surface-card">{formatJson(selectedRun.payload)}</pre>
             </div>
             <div>
-              <p className="mb-2 text-xs font-bold uppercase text-slate-400">{t("automations.runResults")}</p>
-              <pre className="max-h-48 overflow-auto rounded-card bg-slate-950 p-3 text-xs text-slate-100">{formatJson(selectedRun.action_results || [])}</pre>
+              <p className="mb-2 text-xs font-bold uppercase text-zani-muted">{t("automations.runResults")}</p>
+              <pre className="max-h-48 overflow-auto rounded-card bg-zani-ink p-3 text-xs text-surface-card">{formatJson(selectedRun.action_results || [])}</pre>
             </div>
             <div className="flex flex-wrap gap-2">
               {canRetryRun(selectedRun) ? (
@@ -456,15 +497,15 @@ export function AutomationsPage() {
               value={advancedForm.priority}
               onChange={(event) => setAdvancedForm({ ...advancedForm, priority: Number(event.target.value) })}
             />
-            <label className="flex items-end gap-2 pb-3 text-sm font-semibold text-slate-700">
+            <label className="flex items-end gap-2 pb-3 text-sm font-semibold text-zani-subtle">
               <input type="checkbox" checked={advancedForm.is_active} onChange={(event) => setAdvancedForm({ ...advancedForm, is_active: event.target.checked })} />
               {t("automations.enableAfterSave")}
             </label>
           </div>
 
-          <div className="rounded-card border border-slate-200 bg-slate-50 p-4">
+          <Surface variant="muted" className="p-4">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <h3 className="font-bold text-midnight">{t("automations.conditions")}</h3>
+              <h3 className="font-bold text-zani-ink">{t("automations.conditions")}</h3>
               <Button
                 type="button"
                 variant="secondary"
@@ -496,13 +537,13 @@ export function AutomationsPage() {
                   </Button>
                 </div>
               ))}
-              {!conditions.length ? <p className="text-sm text-slate-500">{t("automations.noConditionsHint")}</p> : null}
+              {!conditions.length ? <p className="text-sm text-zani-subtle">{t("automations.noConditionsHint")}</p> : null}
             </div>
-          </div>
+          </Surface>
 
-          <div className="rounded-card border border-slate-200 bg-slate-50 p-4">
+          <Surface variant="muted" className="p-4">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <h3 className="font-bold text-midnight">{t("automations.actions")}</h3>
+              <h3 className="font-bold text-zani-ink">{t("automations.actions")}</h3>
               <Button
                 type="button"
                 variant="secondary"
@@ -513,7 +554,7 @@ export function AutomationsPage() {
             </div>
             <div className="space-y-3">
               {actions.map((action, index) => (
-                <div key={`${action.action_type}-${index}`} className="rounded-2xl border border-slate-200 bg-white p-3">
+                <div key={`${action.action_type}-${index}`} className="rounded-card border border-zani-border bg-surface-card p-3">
                   <div className="grid gap-2 md:grid-cols-[1fr_150px_auto]">
                     <Select
                       value={action.action_type}
@@ -542,7 +583,7 @@ export function AutomationsPage() {
                 </div>
               ))}
             </div>
-          </div>
+          </Surface>
 
           {preview ? (
             <div className="rounded-card border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">

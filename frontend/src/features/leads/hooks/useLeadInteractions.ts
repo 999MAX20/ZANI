@@ -59,8 +59,9 @@ export function useLeadInteractions({
   useEffect(() => {
     const leadId = Number(searchParams.get("lead"));
     if (!Number.isFinite(leadId) || leadId <= 0) return;
-    setDrawerEntity({ type: "lead", id: leadId });
-  }, [searchParams, setDrawerEntity]);
+    setDrawerEntity(null);
+    navigate(`/app/leads/${leadId}`, { replace: true });
+  }, [navigate, searchParams, setDrawerEntity]);
 
   function openLead(lead: Lead) {
     setSelectedId(lead.id);

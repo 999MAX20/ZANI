@@ -6,12 +6,12 @@ import { Button } from "../../../components/ui/Button";
 import { Card, CardBody } from "../../../components/ui/Card";
 import { Input } from "../../../components/ui/Input";
 import { Select } from "../../../components/ui/Select";
+import { ToggleSwitch } from "../../../components/ui/Switch";
 import { useI18n } from "../../../lib/i18n";
 import { cn } from "../../../lib/cn";
 import type { AgentProfile, Bot as BotType } from "../../../types";
 import type { AgentFormState, AutoPipelineMode } from "../aiAgentsTypes";
 import { autoPipelineFromSettings, defaultAllowedTools } from "../aiAgentsUtils";
-import { ToggleSwitch } from "../../integrations/components/setup/IntegrationSetupUi";
 import { HelpCard, FieldHint } from "./AIAgentsShared";
 export function AgentActionsSection({
   bot,
@@ -106,6 +106,7 @@ function ControlSection({ bot, updateBot, canManage }: { bot: BotType; updateBot
                 checked={Boolean(config[key as keyof typeof config])}
                 disabled={!canManage || config.mode === "off"}
                 label={title}
+                tone="ai"
                 onChange={(next) => setConfig((current) => ({ ...current, [key]: next }))}
               />
             </div>
@@ -203,7 +204,7 @@ function FunctionsSection({
             <FieldHint>{t(`aiAgents.hint.tool.${key}`)}</FieldHint>
             <div className="mt-4 flex items-center justify-between gap-3">
               <span className="text-sm font-black text-slate-600">{enabled ? t("aiAgents.functions.enabled") : t("aiAgents.functions.disabled")}</span>
-              <ToggleSwitch checked={enabled} disabled={!canManage} label={title} onChange={(next) => toggleTool(key, next)} />
+              <ToggleSwitch checked={enabled} disabled={!canManage} label={title} tone="ai" onChange={(next) => toggleTool(key, next)} />
             </div>
           </CardBody>
         </Card>

@@ -1,4 +1,4 @@
-import { UserRound, X } from "lucide-react";
+﻿import { UserRound, X } from "lucide-react";
 
 import type { CrmCardPayload } from "../../../types";
 import { cn } from "../../../lib/cn";
@@ -14,17 +14,17 @@ export function CrmEntityHeader({ data, entity, titleId, onClose }: { data?: Crm
   const activeStatus = entity.type === "client" ? undefined : data?.deal?.status || data?.appointment?.status || data?.lead?.status;
 
   return (
-    <div className="sticky top-0 z-10 border-b border-slate-100 bg-white/88 px-5 py-4 backdrop-blur-xl sm:px-7">
+    <div className="sticky top-0 z-10 border-b border-zani-border bg-surface-card/95 px-5 py-4 backdrop-blur-xl sm:px-7">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="mb-2 flex flex-wrap items-center gap-2">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-ai-gradient text-white shadow-glow">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-card bg-ai-gradient text-white shadow-glow">
               <UserRound size={18} />
             </span>
             {activeStatus ? <StatusBadge status={activeStatus} /> : null}
           </div>
-          <h2 id={titleId} className="truncate text-2xl font-black tracking-tight text-midnight">{getDrawerTitle(data, t, entity)}</h2>
-          <p className="mt-1 text-sm text-slate-500">{getDrawerSubtitle(data, t)}</p>
+          <h2 id={titleId} className="truncate text-2xl font-semibold tracking-tight text-zani-ink">{getDrawerTitle(data, t, entity)}</h2>
+          <p className="mt-1 text-sm text-zani-muted">{getDrawerSubtitle(data, t)}</p>
         </div>
         <Button type="button" variant="ghost" className="h-12 w-12 shrink-0 rounded-full px-0" onClick={onClose} aria-label={t("crmCard.close")}>
           <X size={28} strokeWidth={2.4} />
@@ -54,14 +54,14 @@ export function CrmEntityTabs({ active, onChange, data }: { active: CrmCardTab; 
             key={tab.id}
             type="button"
             className={cn(
-              "flex shrink-0 items-center gap-2 rounded-2xl px-4 py-2 text-sm font-bold transition",
-              active === tab.id ? "bg-midnight text-white shadow-premium" : "bg-white/70 text-slate-500 hover:bg-white hover:text-midnight",
+              "flex shrink-0 items-center gap-2 rounded-card px-4 py-2 text-sm font-bold transition",
+              active === tab.id ? "bg-brand-500 text-white shadow-premium" : "bg-surface-card text-zani-muted hover:bg-surface-card hover:text-zani-ink",
             )}
             onClick={() => onChange(tab.id)}
           >
             <span>{t(tab.labelKey)}</span>
             {typeof count === "number" ? (
-              <span className={cn("min-w-5 rounded-full px-1.5 py-0.5 text-center text-[11px] font-black", active === tab.id ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500")}>
+              <span className={cn("min-w-5 rounded-full px-1.5 py-0.5 text-center text-[11px] font-semibold", active === tab.id ? "bg-surface-card/20 text-white" : "bg-surface-muted text-zani-muted")}>
                 {count}
               </span>
             ) : null}

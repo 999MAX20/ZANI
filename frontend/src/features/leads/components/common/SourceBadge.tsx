@@ -14,14 +14,22 @@ function SourceIcon({ source }: { source: string }) {
 
 export function SourceBadge({ source, t }: { source: string; t: Translate }) {
   const sourceTone: Record<string, string> = {
-    whatsapp: "bg-emerald-50 text-emerald-700 ring-emerald-100",
-    telegram: "bg-sky-50 text-sky-700 ring-sky-100",
-    instagram: "bg-pink-50 text-pink-700 ring-pink-100",
-    website: "bg-slate-50 text-slate-700 ring-slate-200",
-    landing: "bg-violet-50 text-violet-700 ring-violet-100",
+    whatsapp:
+      "bg-[var(--zani-success-soft)] text-zani-success ring-[rgba(21,128,61,0.18)]",
+    telegram:
+      "bg-[var(--zani-info-soft)] text-zani-info ring-[rgba(14,116,144,0.18)]",
+    instagram: "bg-ai-50 text-ai-700 ring-ai-100",
+    website: "bg-surface-muted text-zani-muted ring-zani-border",
+    landing: "bg-brand-50 text-brand-700 ring-brand-100",
   };
   return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-bold ring-1", sourceTone[source] || "bg-slate-50 text-slate-600 ring-slate-200")}>
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-bold ring-1",
+        sourceTone[source] ||
+          "bg-surface-muted text-zani-muted ring-zani-border",
+      )}
+    >
       <SourceIcon source={source} />
       {getSourceLabel(source, t)}
     </span>

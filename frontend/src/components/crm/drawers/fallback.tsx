@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+﻿import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CalendarClock, CheckCircle2, ClipboardList, Mail, MessageCircle, Phone, Tags, UserRound, WalletCards } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -54,7 +54,7 @@ function ClientCardContent({ data, entity }: { data: CrmCardPayload; entity: Crm
           {data.tags.map((item) => (
             <span
               key={item.id}
-              className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-black"
+              className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold"
               style={{ backgroundColor: `${item.tag_color || "#2563eb"}18`, color: item.tag_color || "#2563eb" }}
             >
               <Tags size={13} /> {item.tag_name}
@@ -68,7 +68,7 @@ function ClientCardContent({ data, entity }: { data: CrmCardPayload; entity: Crm
         <SummaryItem icon={WalletCards} label={t("nav.deals")} value={data.deals.length} />
         <SummaryItem icon={CalendarClock} label={t("nav.appointments")} value={data.appointments.length} />
       </div>
-      {client?.notes ? <div className={`${drawerSoftSurfaceClass} text-sm leading-6 text-slate-600`}>{client.notes}</div> : null}
+      {client?.notes ? <div className={`${drawerSoftSurfaceClass} text-sm leading-6 text-zani-subtle`}>{client.notes}</div> : null}
       <EntityAttachmentsPanel data={data} entity={entity} />
     </div>
   );
@@ -81,11 +81,11 @@ function LeadCardContent({ lead }: { lead: Lead | null }) {
   return (
     <div className={drawerSurfaceClass}>
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h3 className="font-black text-midnight">{t("crmCard.leadNumber", { id: lead.id })}</h3>
+        <h3 className="font-semibold text-zani-ink">{t("crmCard.leadNumber", { id: lead.id })}</h3>
         <StatusBadge status={lead.status} />
       </div>
-      <p className="text-sm leading-6 text-slate-600">{lead.message || t("crmCard.noLeadMessage")}</p>
-      <p className="mt-3 text-xs font-semibold text-slate-400">{lead.source} · {formatDateTime(lead.created_at)}</p>
+      <p className="text-sm leading-6 text-zani-subtle">{lead.message || t("crmCard.noLeadMessage")}</p>
+      <p className="mt-3 text-xs font-semibold text-zani-faint">{lead.source} В· {formatDateTime(lead.created_at)}</p>
     </div>
   );
 }
@@ -97,7 +97,7 @@ function DealCardContent({ deal }: { deal: Deal | null }) {
   return (
     <div className={drawerSurfaceClass}>
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h3 className="font-black text-midnight">{deal.title}</h3>
+        <h3 className="font-semibold text-zani-ink">{deal.title}</h3>
         <StatusBadge status={deal.status} />
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
@@ -105,7 +105,7 @@ function DealCardContent({ deal }: { deal: Deal | null }) {
         <SummaryItem icon={CheckCircle2} label={t("crmCard.probability")} value={`${deal.probability}%`} />
         <SummaryItem icon={CalendarClock} label={t("crmCard.closeDate")} value={formatDateTime(deal.expected_close_at)} />
       </div>
-      {deal.notes ? <p className="mt-4 text-sm leading-6 text-slate-600">{deal.notes}</p> : null}
+      {deal.notes ? <p className="mt-4 text-sm leading-6 text-zani-subtle">{deal.notes}</p> : null}
     </div>
   );
 }
@@ -117,11 +117,11 @@ function AppointmentCardContent({ appointment }: { appointment: Appointment | nu
   return (
     <div className={drawerPrimarySurfaceClass}>
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h3 className="font-black text-midnight">{t("crmCard.appointmentNumber", { id: appointment.id })}</h3>
+        <h3 className="font-semibold text-zani-ink">{t("crmCard.appointmentNumber", { id: appointment.id })}</h3>
         <StatusBadge status={appointment.status} />
       </div>
-      <p className="text-sm font-semibold text-slate-700">{formatDateTime(appointment.start_at)} - {formatDateTime(appointment.end_at)}</p>
-      {appointment.notes ? <p className="mt-3 text-sm leading-6 text-slate-600">{appointment.notes}</p> : null}
+      <p className="text-sm font-semibold text-zani-text">{formatDateTime(appointment.start_at)} - {formatDateTime(appointment.end_at)}</p>
+      {appointment.notes ? <p className="mt-3 text-sm leading-6 text-zani-subtle">{appointment.notes}</p> : null}
     </div>
   );
 }
@@ -193,8 +193,8 @@ function EntityInlineEditPanel({ data, entity }: { data: CrmCardPayload; entity:
       <div className={drawerSurfaceClass}>
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h3 className="font-black text-midnight">{t("crmCard.quickEdit")}</h3>
-            <p className="mt-1 text-sm leading-6 text-slate-500">{t("crmCard.quickEditText")}</p>
+            <h3 className="font-semibold text-zani-ink">{t("crmCard.quickEdit")}</h3>
+            <p className="mt-1 text-sm leading-6 text-zani-muted">{t("crmCard.quickEditText")}</p>
           </div>
           <Button type="button" variant="secondary" isLoading={mutation.isPending} onClick={() => mutation.mutate()}>
             {t("clients.save")}

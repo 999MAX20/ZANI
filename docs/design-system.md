@@ -10,7 +10,7 @@ The desired visual direction is:
 
 ```txt
 Warm Premium CRM
-Warm ivory workspace + copper-orange actions + plum AI accent
+Warm ivory workspace + saturated orange actions + plum AI accent
 ```
 
 This direction applies to the authenticated app. Public landing pages are intentionally out of scope for this document until the landing system is redesigned separately.
@@ -48,11 +48,11 @@ Text Muted:         #8A7B70
 ### Brand / Primary Actions
 
 ```txt
-Brand Primary:      #D96718
-Primary Hover:      #B84F0B
-Primary Pressed:    #8F3A08
-Primary Soft:       #FFF0E4
-Focus Ring:         rgba(217, 103, 24, 0.22)
+Brand Primary:      #FF7A1A
+Primary Hover:      #F06400
+Primary Pressed:    #C84D00
+Primary Soft:       #FFF1E6
+Focus Ring:         rgba(255, 122, 26, 0.24)
 ```
 
 Use orange for:
@@ -647,13 +647,23 @@ Toast/notification:
 
 Sidebar item:
 
-- min-height 40px expanded, 44px touch-heavy/mobile;
+- min-height 36-40px expanded on desktop, 44px touch-heavy/mobile;
 - radius 10-12px;
-- icon 18-20px;
+- icon 18px desktop, 20px mobile/touch-heavy;
 - active state uses Primary Soft + Brand text + optional left indicator;
 - inactive uses Text Secondary;
 - hover uses Surface Warm or Primary Soft at low intensity;
 - badge/counter uses semantic color only when the count is urgent or error-related.
+
+Desktop sidebar compaction:
+
+- desktop sidebar should be route-first and compact, not a branding panel;
+- remove the large product logo/title/subtitle block from the normal desktop sidebar;
+- keep only the page links and compact route groups in the main scroll path;
+- item typography should use 13px / 20px or 14px / 20px depending on density;
+- item vertical padding should stay tight enough that the normal owner/manager route set fits with minimal scrolling;
+- expanded width should be just wide enough for readable route labels, not a wide control panel;
+- rare profile, support, technical and system actions should not dominate the primary navigation area.
 
 Mobile navigation:
 

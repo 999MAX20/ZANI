@@ -50,7 +50,7 @@ export function MobileNav({ open, onOpen, onClose }: { open: boolean; onOpen: ()
   return (
     <>
       {open ? (
-        <div className="fixed inset-0 z-[80] bg-slate-950/42 backdrop-blur-md lg:hidden">
+        <div className="fixed inset-0 z-[80] bg-[rgba(23,18,15,0.38)] backdrop-blur-md lg:hidden">
           <button
             type="button"
             className="absolute inset-0 cursor-default"
@@ -59,8 +59,8 @@ export function MobileNav({ open, onOpen, onClose }: { open: boolean; onOpen: ()
           />
           <div className="relative h-full w-[min(390px,94vw)]">
             <div className="absolute right-3 top-3 z-[90]">
-              <Button variant="secondary" className="h-[52px] w-[52px] rounded-full border border-slate-100 bg-white px-0 shadow-premium" onClick={onClose} aria-label={t("sidebar.collapse")}>
-                <X size={30} strokeWidth={2.4} />
+              <Button variant="secondary" className="h-11 w-11 rounded-full border border-zani-border bg-surface-card px-0 shadow-premium" onClick={onClose} aria-label={t("sidebar.collapse")}>
+                <X size={22} strokeWidth={2.2} />
               </Button>
             </div>
             <Sidebar forceVisible mobileDrawer onNavigate={onClose} />
@@ -68,7 +68,7 @@ export function MobileNav({ open, onOpen, onClose }: { open: boolean; onOpen: ()
         </div>
       ) : null}
 
-      <nav className="fixed inset-x-2 bottom-2 z-[60] grid grid-cols-5 rounded-[1.7rem] border border-white/70 bg-white/96 p-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] shadow-premium backdrop-blur-2xl lg:hidden">
+      <nav className="fixed inset-x-2 bottom-2 z-[60] grid grid-cols-5 rounded-card border border-zani-border bg-surface-card/96 p-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] shadow-premium backdrop-blur-2xl lg:hidden">
         {visibleBottomItems.slice(0, 4).map((item) => {
           const Icon = item.icon;
           return (
@@ -78,15 +78,15 @@ export function MobileNav({ open, onOpen, onClose }: { open: boolean; onOpen: ()
               end={item.to === "/app"}
               className={({ isActive }) =>
                 cn(
-                  "flex min-h-[70px] flex-col items-center justify-center gap-1 rounded-2xl px-0.5 py-2 text-center text-[10px] font-black leading-none text-slate-500 transition active:scale-[0.98]",
-                  isActive && "bg-ai-gradient text-white shadow-glow",
+                  "zani-focus-ring flex min-h-14 flex-col items-center justify-center gap-1 rounded-control px-0.5 py-2 text-center text-[10px] font-semibold leading-none text-zani-faint transition active:scale-[0.98]",
+                  isActive && "bg-brand-500 text-white shadow-sm",
                 )
               }
             >
               <span className="relative">
                 <Icon size={26} strokeWidth={2.35} />
                 {item.to === "/app/conversations" && unreadMessages ? (
-                  <span className="absolute -right-3 -top-2 min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-black leading-none text-white ring-2 ring-white">
+                  <span className="absolute -right-3 -top-2 min-w-5 rounded-full bg-zani-danger px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white ring-2 ring-surface">
                     {unreadMessages > 99 ? "99+" : unreadMessages}
                   </span>
                 ) : null}
@@ -100,8 +100,8 @@ export function MobileNav({ open, onOpen, onClose }: { open: boolean; onOpen: ()
           onClick={onOpen}
           aria-label={t("mobile.more")}
           className={cn(
-            "flex min-h-[70px] flex-col items-center justify-center gap-1 rounded-2xl px-0.5 py-2 text-center text-[10px] font-black leading-none text-slate-500 transition hover:bg-slate-50 hover:text-midnight active:scale-[0.98]",
-            open && "bg-ai-gradient text-white shadow-glow",
+            "zani-focus-ring flex min-h-14 flex-col items-center justify-center gap-1 rounded-control px-0.5 py-2 text-center text-[10px] font-semibold leading-none text-zani-faint transition hover:bg-surface-muted hover:text-zani-text active:scale-[0.98]",
+            open && "bg-brand-500 text-white shadow-sm",
           )}
         >
           <MoreHorizontal size={26} strokeWidth={2.35} />

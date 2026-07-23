@@ -15,14 +15,13 @@ export function CrmEmptyState({
   className?: string;
 }) {
   return (
-    <div className={cn("rounded-card border border-dashed border-slate-200 bg-white px-8 py-12 text-center", className)}>
-      <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-slate-100 text-slate-500">
+    <div className={cn("rounded-card border border-dashed border-zani-border bg-surface-card px-8 py-12 text-center shadow-card", className)}>
+      <div className="mx-auto grid h-12 w-12 place-items-center rounded-card bg-surface-muted text-zani-subtle">
         <Inbox size={22} />
       </div>
-      <p className="mt-4 text-lg font-bold text-slate-900">{title}</p>
-      {description ? <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">{description}</p> : null}
+      <p className="mt-4 text-lg font-bold text-zani-text">{title}</p>
+      {description ? <p className="mx-auto mt-2 max-w-md text-sm text-zani-subtle">{description}</p> : null}
       {action ? <div className="mt-4 flex justify-center">{action}</div> : null}
     </div>
   );
 }
-

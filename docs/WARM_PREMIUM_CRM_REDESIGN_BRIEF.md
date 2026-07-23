@@ -12,14 +12,14 @@ ZANI should move toward a warm, premium, calm CRM interface:
 
 ```txt
 Warm Premium CRM
-Warm ivory workspace + copper-orange actions + plum AI accent
+Warm ivory workspace + saturated orange actions + plum AI accent
 ```
 
 The generated Settings / Team and Access concept was accepted as the target feeling:
 
 - mostly white and warm-white work surfaces;
 - calm app shell;
-- copper-orange only for meaningful actions and active states;
+- saturated orange only for meaningful actions and active states;
 - no blue-tinted layout background;
 - no background noise from several nested color planes;
 - clean, expensive SaaS typography and spacing;
@@ -69,7 +69,7 @@ Use the detailed token values from `docs/design-system.md`. The high-level rule 
 
 - warm ivory for the app background;
 - white or warm-white for primary surfaces;
-- copper-orange for brand and primary actions;
+- saturated orange for brand and primary actions;
 - plum/violet for AI;
 - green/amber/red/cyan only for semantic statuses.
 
@@ -77,7 +77,7 @@ Orange is approved and should stay. The issue to avoid is orange being used for 
 
 ## Orange Usage Rules
 
-Use copper-orange for:
+Use saturated orange for:
 
 - primary CTA buttons;
 - active sidebar item;
@@ -88,7 +88,7 @@ Use copper-orange for:
 - selected row indicator;
 - small brand marks.
 
-Do not use copper-orange for:
+Do not use saturated orange for:
 
 - all icons;
 - all KPIs;
@@ -134,11 +134,12 @@ Normal pages should show one stable app background and one primary work area. Th
 Each authenticated page should share the same app-level feeling as the approved Settings concept:
 
 - sidebar visually belongs to the same shell;
+- desktop sidebar is compact and route-first, without a large logo/title/subtitle block;
 - header visually belongs to the same shell;
 - main content uses calm white/warm-white surfaces;
 - inner blocks are not aggressively recolored;
 - rows and panels are separated by dividers and whitespace;
-- primary buttons are copper-orange;
+- primary buttons are saturated orange;
 - selected states are softly orange;
 - AI blocks are softly plum/violet;
 - statuses use semantic colors;
@@ -254,7 +255,7 @@ Core rule:
 Required button variants:
 
 ```txt
-primary     copper-orange CRM action
+primary     saturated orange CRM action
 secondary   neutral action
 ghost       low-emphasis toolbar/action
 outline     bordered neutral action
@@ -285,7 +286,7 @@ Switch rules:
 
 - use `role="switch"` and `aria-checked`;
 - default track 48px x 28px;
-- active ordinary setting uses copper-orange;
+- active ordinary setting uses saturated orange;
 - active AI setting may use plum/violet;
 - verified healthy connection state may use success green;
 - off state is neutral, not red;
@@ -307,7 +308,7 @@ Native browser select visuals should not appear in authenticated CRM pages.
 
 ### Tabs, Chips, And Filters
 
-Tabs and segmented controls should use a muted warm container with a clear active pill/underline. Active state uses copper-orange text/border or soft orange background. Counts remain neutral unless they represent a real semantic status.
+Tabs and segmented controls should use a muted warm container with a clear active pill/underline. Active state uses saturated orange text/border or soft orange background. Counts remain neutral unless they represent a real semantic status.
 
 Filter chips are interactive. Status badges are informational. Do not mix the two visually.
 
@@ -378,7 +379,7 @@ A page matches the new direction when:
 - it has one clear primary work surface;
 - it does not show three or four neutral backgrounds in the normal state;
 - nested cards are removed unless they represent real repeated entities or modal sections;
-- primary actions and active states use copper-orange;
+- primary actions and active states use saturated orange;
 - AI blocks use plum/violet;
 - status colors are semantic;
 - text contrast is comfortable;

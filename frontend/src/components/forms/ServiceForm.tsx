@@ -55,14 +55,14 @@ export function ServiceForm({ businessId, initial, onSubmit }: { businessId: Id;
 
   return (
     <form className="grid gap-4" onSubmit={form.handleSubmit((values) => onSubmit({ ...values, business: businessId, price_from: values.price_from || null }))}>
-      <div className="rounded-card border border-brand-100 bg-brand-50 p-4 text-sm text-slate-700">
-        <p className="font-bold text-midnight">{t("services.formHintTitle")}</p>
+      <div className="rounded-card border border-brand-100 bg-brand-50 p-4 text-sm text-zani-subtle">
+        <p className="font-semibold text-zani-ink">{t("services.formHintTitle")}</p>
         <p className="mt-1 leading-6">{t("services.formHintText")}</p>
       </div>
       {!initial ? (
-        <div className="rounded-card border border-slate-200 bg-white p-4">
-          <p className="text-sm font-black text-midnight">{t("services.templatesTitle")}</p>
-          <p className="mt-1 text-sm leading-6 text-slate-500">{t("services.templatesText")}</p>
+        <div className="rounded-card border border-zani-border bg-surface-card p-4 shadow-sm">
+          <p className="text-sm font-semibold text-zani-ink">{t("services.templatesTitle")}</p>
+          <p className="mt-1 text-sm leading-6 text-zani-muted">{t("services.templatesText")}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {serviceTemplates.map((template) => (
               <Button key={template.key} type="button" variant="secondary" onClick={() => applyTemplate(template)}>
@@ -78,8 +78,8 @@ export function ServiceForm({ businessId, initial, onSubmit }: { businessId: Id;
         <Input label={t("services.durationMinutes")} type="number" {...form.register("duration_minutes")} />
         <Input label={t("services.priceFrom")} type="number" step="0.01" {...form.register("price_from")} />
       </div>
-      <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
-        <input type="checkbox" className="h-4 w-4 rounded border-slate-300" {...form.register("is_active")} />
+      <label className="flex items-center gap-2 text-sm font-semibold text-zani-subtle">
+        <input type="checkbox" className="h-4 w-4 rounded border-zani-border accent-brand-500" {...form.register("is_active")} />
         {t("services.isActive")}
       </label>
       <Button type="submit" isLoading={form.formState.isSubmitting}>{t("services.save")}</Button>

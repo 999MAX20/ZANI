@@ -12,10 +12,10 @@ export type UiTone = "brand" | "ai" | "green" | "amber" | "red" | "slate";
 const toneClasses: Record<UiTone, string> = {
   brand: "bg-brand-50 text-brand-700 ring-brand-100",
   ai: "bg-ai-50 text-ai-700 ring-ai-100",
-  green: "bg-emerald-50 text-emerald-700 ring-emerald-100",
-  amber: "bg-amber-50 text-amber-700 ring-amber-100",
-  red: "bg-red-50 text-red-700 ring-red-100",
-  slate: "bg-slate-100 text-midnight ring-slate-200",
+  green: "bg-[var(--zani-success-soft)] text-zani-success ring-[rgba(21,128,61,0.18)]",
+  amber: "bg-[var(--zani-warning-soft)] text-zani-warning ring-[rgba(183,121,31,0.22)]",
+  red: "bg-[var(--zani-danger-soft)] text-zani-danger ring-[rgba(194,65,12,0.2)]",
+  slate: "bg-surface-muted text-zani-text ring-zani-border",
 };
 
 export function IconBubble({
@@ -54,9 +54,9 @@ export function MetricTile({
       <CardBody className="flex items-start gap-3">
         <IconBubble icon={icon} tone={tone} className="h-10 w-10 rounded-control" />
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-slate-500">{label}</p>
-          <p className="mt-1 text-2xl font-semibold tracking-tight text-midnight">{value}</p>
-          {hint ? <p className="mt-1 text-xs font-medium text-slate-400">{hint}</p> : null}
+          <p className="text-sm font-semibold text-zani-subtle">{label}</p>
+          <p className="mt-1 text-2xl font-semibold tracking-tight text-zani-ink">{value}</p>
+          {hint ? <p className="mt-1 text-xs font-medium text-zani-faint">{hint}</p> : null}
         </div>
       </CardBody>
     </Card>
@@ -85,11 +85,11 @@ export function ProductionKpiCard({
   const content = (
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0">
-        <p className="text-sm font-bold text-slate-500">{label}</p>
-        <p className="mt-2 truncate text-3xl font-black tracking-tight text-midnight">{value}</p>
+        <p className="text-sm font-bold text-zani-subtle">{label}</p>
+        <p className="mt-2 truncate text-3xl font-semibold tracking-tight text-zani-ink">{value}</p>
         <div className="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold">
           {trend ? <span className={cn("rounded-full px-2 py-1 ring-1", toneClasses[tone])}>{trend}</span> : null}
-          {hint ? <span className="text-slate-400">{hint}</span> : null}
+          {hint ? <span className="text-zani-faint">{hint}</span> : null}
         </div>
       </div>
       <IconBubble icon={icon} tone={tone} className="h-11 w-11" />
@@ -97,7 +97,7 @@ export function ProductionKpiCard({
   );
 
   const baseClassName = cn(
-    "rounded-card border border-slate-200 bg-white p-4 shadow-card transition-colors hover:border-brand-200",
+    "rounded-card border border-zani-border bg-surface-card p-4 shadow-card transition-colors hover:border-brand-100 hover:bg-surface-warm",
     className,
   );
 
@@ -117,7 +117,7 @@ export function SegmentedControl<T extends string>({
   className?: string;
 }) {
   return (
-    <div className={cn("inline-flex rounded-control border border-slate-200 bg-slate-50 p-1", className)}>
+    <div className={cn("inline-flex rounded-control bg-surface-muted p-1", className)}>
       {options.map((option) => {
         const active = option.value === value;
         return (
@@ -125,8 +125,8 @@ export function SegmentedControl<T extends string>({
             key={option.value}
             type="button"
             className={cn(
-              "min-h-8 rounded-control px-3 text-sm font-black transition",
-              active ? "bg-brand-600 text-white shadow-sm" : "text-slate-500 hover:bg-white hover:text-midnight",
+              "zani-focus-ring min-h-8 rounded-control px-3 text-sm font-semibold transition",
+              active ? "bg-surface-card text-brand-700 shadow-sm" : "text-zani-subtle hover:bg-surface-warm hover:text-zani-text",
             )}
             onClick={() => onChange(option.value)}
           >
@@ -159,16 +159,16 @@ export function FilterChips<T extends string>({
             key={option.value}
             type="button"
             className={cn(
-              "inline-flex min-h-9 shrink-0 items-center gap-2 rounded-control border px-3 text-sm font-bold transition",
+              "zani-focus-ring inline-flex min-h-9 shrink-0 items-center gap-2 rounded-control border px-3 text-sm font-semibold transition",
               active
-                ? "border-brand-200 bg-brand-50 text-brand-700"
-                : "border-slate-200 bg-white text-slate-600 hover:border-brand-100 hover:text-midnight",
+                ? "border-brand-100 bg-brand-50 text-brand-700"
+                : "border-zani-border bg-surface-card text-zani-subtle hover:border-brand-100 hover:bg-surface-warm hover:text-zani-text",
             )}
             onClick={() => onChange(option.value)}
           >
             {Icon ? <Icon size={16} /> : null}
             {option.label}
-            {typeof option.count === "number" ? <span className="rounded-control bg-white px-2 py-0.5 text-xs">{option.count}</span> : null}
+            {typeof option.count === "number" ? <span className="rounded-control bg-surface-muted px-2 py-0.5 text-xs text-zani-subtle">{option.count}</span> : null}
           </button>
         );
       })}
@@ -222,11 +222,11 @@ export function DetailPanel({
   if (!open) return null;
 
   return (
-    <aside className={cn("hidden h-full min-w-[22rem] max-w-[26rem] rounded-card border border-slate-200 bg-white shadow-card xl:block", className)}>
-      <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
+    <aside className={cn("hidden h-full min-w-[22rem] max-w-[26rem] rounded-card border border-zani-border bg-surface-card shadow-card xl:block", className)}>
+      <div className="flex min-h-16 items-start justify-between gap-3 border-b border-zani-border px-5 py-4">
         <div className="min-w-0">
-          <h2 className="truncate text-lg font-black text-midnight">{title}</h2>
-          {subtitle ? <p className="mt-1 truncate text-sm font-semibold text-slate-500">{subtitle}</p> : null}
+          <h2 className="truncate text-lg font-semibold text-zani-ink">{title}</h2>
+          {subtitle ? <p className="mt-1 truncate text-sm font-semibold text-zani-subtle">{subtitle}</p> : null}
         </div>
         <Button type="button" variant="ghost" size="icon" className="h-11 w-11 shrink-0" onClick={onClose} aria-label={t("common.close")}>
           <X size={23} strokeWidth={2.4} />
@@ -254,14 +254,14 @@ export function BottomSheet({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-slate-950/35 backdrop-blur-sm xl:hidden">
+    <div className="fixed inset-0 z-50 flex items-end bg-[rgba(23,18,15,0.46)] backdrop-blur-sm xl:hidden">
       <button className="absolute inset-0 cursor-default" type="button" aria-label={t("common.close")} onClick={onClose} />
-      <section className="relative max-h-[86dvh] w-full overflow-hidden rounded-t-[1.25rem] border border-slate-200 bg-white shadow-panel">
-        <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-slate-200" />
-        <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
+      <section className="relative max-h-[86dvh] w-full overflow-hidden rounded-t-[1.25rem] border border-zani-border bg-surface-card shadow-panel">
+        <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-surface-muted" />
+        <div className="flex min-h-16 items-start justify-between gap-3 border-b border-zani-border px-5 py-4">
           <div className="min-w-0">
-            <h2 className="truncate text-lg font-black text-midnight">{title}</h2>
-            {subtitle ? <p className="mt-1 truncate text-sm font-semibold text-slate-500">{subtitle}</p> : null}
+            <h2 className="truncate text-lg font-semibold text-zani-ink">{title}</h2>
+            {subtitle ? <p className="mt-1 truncate text-sm font-semibold text-zani-subtle">{subtitle}</p> : null}
           </div>
           <Button type="button" variant="ghost" size="icon" className="h-11 w-11 shrink-0" onClick={onClose} aria-label={t("common.close")}>
             <X size={23} strokeWidth={2.4} />
@@ -299,19 +299,19 @@ export function EntityListItem({
       {avatar ? <div className="shrink-0">{avatar}</div> : null}
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-center gap-2">
-          <p className="truncate font-black text-midnight">{title}</p>
+          <p className="truncate font-semibold text-zani-ink">{title}</p>
           {status}
         </div>
-        {subtitle ? <p className="mt-1 truncate text-sm font-semibold text-slate-500">{subtitle}</p> : null}
-        {meta ? <p className="mt-1 truncate text-xs font-semibold text-slate-400">{meta}</p> : null}
+        {subtitle ? <p className="mt-1 truncate text-sm font-semibold text-zani-subtle">{subtitle}</p> : null}
+        {meta ? <p className="mt-1 truncate text-xs font-semibold text-zani-faint">{meta}</p> : null}
       </div>
       {action ? <div className="shrink-0">{action}</div> : null}
     </>
   );
 
   const baseClassName = cn(
-    "flex min-h-[4.25rem] w-full items-center gap-3 rounded-card border bg-white px-3.5 py-3 text-left shadow-sm transition-colors",
-    selected ? "border-brand-200 bg-brand-50/60 ring-2 ring-brand-100" : "border-slate-200 hover:border-brand-100 hover:bg-slate-50",
+    "flex min-h-[4.25rem] w-full items-center gap-3 rounded-card border bg-surface-card px-3.5 py-3 text-left shadow-sm transition-colors",
+    selected ? "border-brand-100 bg-brand-50 ring-2 ring-brand-100" : "border-zani-border hover:border-brand-100 hover:bg-surface-warm",
     className,
   );
 

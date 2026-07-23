@@ -9,11 +9,11 @@
   --zani-surface-warm: #fffcf8;
   --zani-surface-muted: #f2ede6;
   --zani-surface-raised: rgba(255, 252, 248, 0.96);
-  --zani-brand: #d96718;
-  --zani-brand-hover: #b84f0b;
-  --zani-brand-strong: #8f3a08;
-  --zani-brand-soft: #fff0e4;
-  --zani-focus-ring: rgba(217, 103, 24, 0.22);
+  --zani-brand: #ff7a1a;
+  --zani-brand-hover: #f06400;
+  --zani-brand-strong: #c84d00;
+  --zani-brand-soft: #fff1e6;
+  --zani-focus-ring: rgba(255, 122, 26, 0.24);
   --zani-ai: #6f4cc3;
   --zani-ai-hover: #5e3cae;
   --zani-ai-soft: #f4f0ff;
@@ -21,7 +21,7 @@
   --zani-ai-end: #5e3cae;
   --zani-success: #15803d;
   --zani-success-soft: #ecfdf3;
-  --zani-warning: #b7791f;
+  --zani-warning: #975a16;
   --zani-warning-soft: #fff7e6;
   --zani-danger: #c2410c;
   --zani-danger-soft: #fff1ed;
@@ -32,7 +32,7 @@
   --zani-ink: #17120f;
   --zani-midnight: #17120f;
   --zani-muted: #5f554d;
-  --zani-muted-soft: #8a7b70;
+  --zani-muted-soft: #6b625a;
   --zani-border: #e6ddd2;
   --zani-shadow-soft: 0 1px 3px rgba(23, 18, 15, 0.06);
   --zani-shadow-elevated: 0 4px 12px rgba(23, 18, 15, 0.05);
@@ -87,7 +87,7 @@ select {
 }
 
 ::selection {
-  background: rgba(217, 103, 24, 0.18);
+  background: rgba(255, 122, 26, 0.18);
 }
 
 @layer components {
@@ -133,7 +133,7 @@ select {
 
   .zani-drawer-surface {
     border-left: 1px solid var(--zani-border);
-    background: var(--zani-bg);
+    background: var(--zani-surface);
     box-shadow: var(--zani-shadow-premium);
   }
 

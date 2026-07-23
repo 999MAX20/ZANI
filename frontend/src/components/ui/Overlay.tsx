@@ -31,7 +31,7 @@ function CloseButton({ onClose }: { onClose: () => void }) {
   return (
     <button
       type="button"
-      className="zani-touch-target inline-flex shrink-0 items-center justify-center rounded-control text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-100"
+      className="zani-focus-ring zani-touch-target inline-flex shrink-0 items-center justify-center rounded-control text-zani-faint transition hover:bg-surface-muted hover:text-zani-text"
       onClick={onClose}
       aria-label={t("common.close")}
     >
@@ -82,13 +82,13 @@ export function Dialog({
         )}
         onMouseDown={(event) => event.stopPropagation()}
       >
-        <header className="flex h-16 shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 sm:px-5">
-          <h2 id={titleId} className="min-w-0 truncate text-lg font-semibold text-midnight">
+        <header className="flex h-16 shrink-0 items-center justify-between gap-3 border-b border-zani-border bg-surface-card px-4 sm:px-5">
+          <h2 id={titleId} className="min-w-0 truncate text-lg font-semibold text-zani-ink">
             {title}
           </h2>
           <CloseButton onClose={onClose} />
         </header>
-        <div className={cn("min-h-0 flex-1 overflow-auto bg-slate-50 p-4 sm:p-5", bodyClassName)}>{children}</div>
+        <div className={cn("min-h-0 flex-1 overflow-auto bg-surface-warm p-4 sm:p-5", bodyClassName)}>{children}</div>
       </section>
     </div>,
     document.body,
@@ -125,7 +125,7 @@ export function Drawer({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className={cn("zani-drawer-surface ml-auto flex h-full w-full max-w-3xl flex-col overflow-hidden sm:rounded-l-[16px]", className)}
+        className={cn("zani-drawer-surface ml-auto flex h-full w-full max-w-[720px] flex-col overflow-hidden sm:rounded-l-[16px]", className)}
         onMouseDown={(event) => event.stopPropagation()}
       >
         {children}

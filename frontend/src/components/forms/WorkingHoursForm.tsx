@@ -63,8 +63,8 @@ export function WorkingHoursForm({
         <Input label={t("workingHours.start")} type="time" {...form.register("start_time")} />
         <Input label={t("workingHours.end")} type="time" {...form.register("end_time")} />
       </div>
-      <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
-        <input type="checkbox" className="h-4 w-4 rounded border-slate-300" {...form.register("is_day_off")} />
+      <label className="flex items-center gap-2 text-sm font-semibold text-zani-subtle">
+        <input type="checkbox" className="h-4 w-4 rounded border-zani-border accent-brand-500" {...form.register("is_day_off")} />
         {t("workingHours.dayOff")}
       </label>
       <Button type="submit" isLoading={form.formState.isSubmitting}>{t("workingHours.saveSchedule")}</Button>
@@ -166,8 +166,8 @@ export function WeeklyWorkingHoursForm({
         }
       }}
     >
-      <div className="rounded-card border border-brand-100 bg-brand-50 p-4 text-sm text-slate-700">
-        <p className="font-bold text-midnight">{t("workingHours.formTitle")}</p>
+      <div className="rounded-card border border-brand-100 bg-brand-50 p-4 text-sm text-zani-subtle">
+        <p className="font-semibold text-zani-ink">{t("workingHours.formTitle")}</p>
         <p className="mt-1 leading-6">
           {t("workingHours.formText")}
         </p>
@@ -200,15 +200,15 @@ export function WeeklyWorkingHoursForm({
           <Button type="button" variant="secondary" onClick={copyBusinessSchedule}>{t("workingHours.copyBusinessSchedule")}</Button>
         ) : null}
       </div>
-      {error ? <div className="rounded-card border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">{error}</div> : null}
+      {error ? <div className="rounded-card border border-[rgba(194,65,12,0.2)] bg-[var(--zani-danger-soft)] p-4 text-sm font-semibold text-zani-danger">{error}</div> : null}
       <div className="grid gap-3">
         {weekdays.map((weekday) => {
           const day = days.find((item) => item.weekday === weekday.value)!;
           return (
-            <div key={weekday.value} className="grid gap-3 rounded-card border border-slate-200 bg-white p-3 sm:grid-cols-[120px_1fr_1fr_140px] sm:items-center">
+            <div key={weekday.value} className="grid gap-3 rounded-card border border-zani-border bg-surface-card p-3 shadow-sm sm:grid-cols-[120px_1fr_1fr_140px] sm:items-center">
               <div>
-                <p className="font-bold text-midnight">{t(weekday.labelKey)}</p>
-                <p className="text-xs text-slate-400">{t(weekday.shortKey)}</p>
+                <p className="font-semibold text-zani-ink">{t(weekday.labelKey)}</p>
+                <p className="text-xs text-zani-faint">{t(weekday.shortKey)}</p>
               </div>
               <Input
                 label={t("workingHours.start")}
@@ -224,10 +224,10 @@ export function WeeklyWorkingHoursForm({
                 disabled={day.is_day_off}
                 onChange={(event) => updateDay(weekday.value, { end_time: event.target.value })}
               />
-              <label className="flex min-h-12 items-center gap-3 rounded-control bg-slate-50 px-3 text-sm font-bold text-slate-700 sm:pt-0">
+              <label className="flex min-h-12 items-center gap-3 rounded-control bg-surface-muted px-3 text-sm font-semibold text-zani-subtle sm:pt-0">
                 <input
                   type="checkbox"
-                  className="h-5 w-5 rounded border-slate-300"
+                  className="h-5 w-5 rounded border-zani-border accent-brand-500"
                   checked={day.is_day_off}
                   onChange={(event) => updateDay(weekday.value, { is_day_off: event.target.checked })}
                 />

@@ -1,14 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router-dom";
 
-import { CrmWorkspacePage } from "../../components/crm";
-import { CrmEntityDrawer, type CrmDrawerEntity } from "../../components/crm/CrmEntityDrawer";
+import { CrmWorkspaceGrid, CrmWorkspacePage } from "../../components/crm";
+import {
+  CrmEntityDrawer,
+  type CrmDrawerEntity,
+} from "../../components/crm/CrmEntityDrawer";
 import { useNotification } from "../../components/notifications/NotificationProvider";
 import { ErrorState, PageSkeleton } from "../../components/ui/StateViews";
 import { useI18n } from "../../lib/i18n";
 import type { Id, Lead, Task } from "../../types";
 import { LeadsActionOverlays } from "./components/LeadsActionOverlays";
 import { LeadsModals } from "./components/LeadsModals";
+import { LeadQuickInspector } from "./components/LeadQuickInspector";
 import { LeadsWorkspaceTable } from "./components/LeadsWorkspaceTable";
 import { leadTitle } from "./utils/leadFormat";
 import { useLeadActions } from "./hooks/useLeadActions";
@@ -24,12 +28,22 @@ export function LeadsPage() {
   const { t } = useI18n();
   const showNotification = useNotification();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [selectedId, setSelectedId] = useState<number | null>(() => Number(searchParams.get("lead")) || null);
-  const [createOpen, setCreateOpen] = useState(searchParams.get("create") === "1");
+  const [selectedId, setSelectedId] = useState<number | null>(
+    () => Number(searchParams.get("lead")) || null,
+  );
+  const [createOpen, setCreateOpen] = useState(
+    searchParams.get("create") === "1",
+  );
   const [appointmentOpen, setAppointmentOpen] = useState(false);
-  const [drawerEntity, setDrawerEntity] = useState<CrmDrawerEntity | null>(null);
+  const [drawerEntity, setDrawerEntity] = useState<CrmDrawerEntity | null>(
+    null,
+  );
   const [selectedLeadIds, setSelectedLeadIds] = useState<Id[]>([]);
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; lead: Lead } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    lead: Lead;
+  } | null>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [lostLead, setLostLead] = useState<Lead | null>(null);
   const [lostReason, setLostReason] = useState("");
@@ -41,12 +55,47 @@ export function LeadsPage() {
     priority: "normal" as Task["priority"],
   });
   const openCreateLead = useCallback(() => setCreateOpen(true), []);
-  const setNotice = useCallback((message: string | null, tone: "success" | "info" | "warning" | "danger" = "info") => {
-    if (!message) return;
-    showNotification({ message, tone });
-  }, [showNotification]);
-  const { filter, setFilter, source, setSource, search, setSearch, sortByAi, setSortByAi, page, setPage, pageSize, setPageSize, filterPresets, presetName, setPresetName, savedFiltersOpen, setSavedFiltersOpen, moreMenuOpen, setMoreMenuOpen, visibleColumns, setVisibleColumns, columnOrder, savePreset, applyPreset, shareView } = useLeadsTableState({ searchParams, t, onNotice: setNotice });
-  const toggleSavedFilters = useCallback(() => setSavedFiltersOpen((value) => !value), [setSavedFiltersOpen]);
+  const setNotice = useCallback(
+    (
+      message: string | null,
+      tone: "success" | "info" | "warning" | "danger" = "info",
+    ) => {
+      if (!message) return;
+      showNotification({ message, tone });
+    },
+    [showNotification],
+  );
+  const {
+    filter,
+    setFilter,
+    source,
+    setSource,
+    search,
+    setSearch,
+    sortByAi,
+    setSortByAi,
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    filterPresets,
+    presetName,
+    setPresetName,
+    savedFiltersOpen,
+    setSavedFiltersOpen,
+    moreMenuOpen,
+    setMoreMenuOpen,
+    visibleColumns,
+    setVisibleColumns,
+    columnOrder,
+    savePreset,
+    applyPreset,
+    shareView,
+  } = useLeadsTableState({ searchParams, t, onNotice: setNotice });
+  const toggleSavedFilters = useCallback(
+    () => setSavedFiltersOpen((value) => !value),
+    [setSavedFiltersOpen],
+  );
   const { pushHistory } = useLeadActionHistory({ t, onNotice: setNotice });
 
   useLeadsPageHeader({
@@ -55,7 +104,40 @@ export function LeadsPage() {
     onToggleFilters: toggleSavedFilters,
   });
 
-  const { business, clients, services, tasks, pageError, pageErrorMessage, isPageLoading, allLeads, rows, pageRows, totalLeadCount, pageCount, safePage, offlineQueue, enqueueOfflineAction, clientList, serviceList, resourceList, teamList, aiInsights, selected, selectedClient, selectedService, selectedNextTask, selectedDeals, selectedAppointments, selectedConversations, selectedAiInsight, filters, pageStart, pageEnd, visiblePages } = useLeadsWorkspaceData({
+  const {
+    business,
+    clients,
+    services,
+    tasks,
+    pageError,
+    pageErrorMessage,
+    isPageLoading,
+    allLeads,
+    rows,
+    pageRows,
+    totalLeadCount,
+    pageCount,
+    safePage,
+    offlineQueue,
+    enqueueOfflineAction,
+    clientList,
+    serviceList,
+    resourceList,
+    teamList,
+    aiInsights,
+    selected,
+    selectedClient,
+    selectedService,
+    selectedNextTask,
+    selectedDeals,
+    selectedAppointments,
+    selectedConversations,
+    selectedAiInsight,
+    filters,
+    pageStart,
+    pageEnd,
+    visiblePages,
+  } = useLeadsWorkspaceData({
     filter,
     source,
     search,
@@ -65,7 +147,8 @@ export function LeadsPage() {
     selectedId,
     t,
     setNotice,
-    showWarning: (message) => showNotification({ message, tone: "warning", durationMs: 8_000 }),
+    showWarning: (message) =>
+      showNotification({ message, tone: "warning", durationMs: 8_000 }),
   });
   const {
     leadMutation,
@@ -91,14 +174,15 @@ export function LeadsPage() {
     setNextActionOpen,
     setAppointmentOpen,
   });
-  const { assignSelected, contactSelected, archiveSelected, resetSelection } = useLeadBulkActions({
-    allLeads,
-    selectedLeadIds,
-    actionMutation,
-    bulkContactMutation,
-    requestArchiveLeads,
-    setSelectedLeadIds,
-  });
+  const { assignSelected, contactSelected, archiveSelected, resetSelection } =
+    useLeadBulkActions({
+      allLeads,
+      selectedLeadIds,
+      actionMutation,
+      bulkContactMutation,
+      requestArchiveLeads,
+      setSelectedLeadIds,
+    });
   const {
     openLead,
     closeDrawer,
@@ -132,85 +216,126 @@ export function LeadsPage() {
     if (page > pageCount) setPage(pageCount);
   }, [page, pageCount]);
 
+  const legacyLeadId = Number(searchParams.get("lead") || "");
+  if (Number.isFinite(legacyLeadId) && legacyLeadId > 0) {
+    return <Navigate to={`/app/leads/${legacyLeadId}`} replace />;
+  }
+
   if (!business) return <ErrorState message={t("leads.noBusiness")} />;
   if (isPageLoading) return <PageSkeleton />;
   if (pageError) return <ErrorState message={pageErrorMessage} />;
 
   return (
-    <CrmWorkspacePage className="h-auto min-h-[calc(100vh-5.5rem)] overflow-visible" contentClassName="flex-none gap-3" maxWidthClassName="max-w-[1520px]">
-      <LeadsWorkspaceTable
-        filters={filters}
-        filter={filter}
-        search={search}
-        source={source}
-        savedFiltersOpen={savedFiltersOpen}
-        filterPresets={filterPresets}
-        presetName={presetName}
-        moreMenuOpen={moreMenuOpen}
-        columnOrder={columnOrder}
-        visibleColumns={visibleColumns}
-        rows={rows}
-        pageRows={pageRows}
-        selected={selected}
-        selectedLeadIds={selectedLeadIds}
-        clientList={clientList}
-        serviceList={serviceList}
-        teamList={teamList}
-        aiInsights={aiInsights}
-        allLeads={allLeads}
-        safePage={safePage}
-        pageCount={pageCount}
-        pageSize={pageSize}
-        visiblePages={visiblePages}
-        pageStart={pageStart}
-        pageEnd={pageEnd}
-        totalLeadCount={totalLeadCount}
-        t={t}
-        onFilterChange={(nextFilter) => {
-          setFilter(nextFilter);
-          setPage(1);
-        }}
-        onSearchChange={(value) => {
-          setSearch(value);
-          setPage(1);
-        }}
-        onSourceChange={(value) => {
-          setSource(value);
-          setPage(1);
-        }}
-        onToggleSavedFilters={toggleSavedFilters}
-        onApplyPreset={(preset) => {
-          applyPreset(preset);
-          setSavedFiltersOpen(false);
-        }}
-        onPresetNameChange={setPresetName}
-        onSavePreset={savePreset}
-        onToggleMoreMenu={() => setMoreMenuOpen((value) => !value)}
-        onToggleColumn={(column) => setVisibleColumns((value) => ({ ...value, [column]: !value[column] }))}
-        onToggleSortByAi={() => setSortByAi((value) => !value)}
-        onExportCsv={() => exportRows("csv")}
-        onExportExcel={() => exportRows("excel")}
-        onShareView={shareView}
-        onOpenImport={() => { window.location.href = "/app/integrations"; }}
-        onOpenCreate={openCreateLead}
-        onOpenLead={openLead}
-        onToggleBulkLead={toggleBulkLead}
-        onToggleAllPageRows={toggleAllPageRows}
-        onAssignLead={(lead, userId) => actionMutation.mutate({ action: "assign", lead, user_id: userId })}
-        onCallLead={callLead}
-        onWhatsAppLead={whatsAppLead}
-        onOpenContextMenu={(event, lead) => {
-          event.preventDefault();
-          setContextMenu({ x: event.clientX, y: event.clientY, lead });
-        }}
-        onArchiveLead={(lead) => void requestArchiveLeads([lead])}
-        onTakeLead={(lead) => actionMutation.mutate({ action: "take", lead })}
-        onPageChange={setPage}
-        onPageSizeChange={(value) => {
-          setPageSize(value);
-          setPage(1);
-        }}
-      />
+    <CrmWorkspacePage
+      className="h-auto min-h-[calc(100vh-5.5rem)] overflow-visible"
+      contentClassName="flex-none gap-3"
+      maxWidthClassName="max-w-[1520px]"
+    >
+      <CrmWorkspaceGrid inspectorOpen={Boolean(selected)}>
+        <LeadsWorkspaceTable
+          filters={filters}
+          filter={filter}
+          search={search}
+          source={source}
+          savedFiltersOpen={savedFiltersOpen}
+          filterPresets={filterPresets}
+          presetName={presetName}
+          moreMenuOpen={moreMenuOpen}
+          columnOrder={columnOrder}
+          visibleColumns={visibleColumns}
+          rows={rows}
+          pageRows={pageRows}
+          selected={selected}
+          selectedLeadIds={selectedLeadIds}
+          clientList={clientList}
+          serviceList={serviceList}
+          teamList={teamList}
+          aiInsights={aiInsights}
+          allLeads={allLeads}
+          safePage={safePage}
+          pageCount={pageCount}
+          pageSize={pageSize}
+          visiblePages={visiblePages}
+          pageStart={pageStart}
+          pageEnd={pageEnd}
+          totalLeadCount={totalLeadCount}
+          t={t}
+          onFilterChange={(nextFilter) => {
+            setFilter(nextFilter);
+            setPage(1);
+          }}
+          onSearchChange={(value) => {
+            setSearch(value);
+            setPage(1);
+          }}
+          onSourceChange={(value) => {
+            setSource(value);
+            setPage(1);
+          }}
+          onToggleSavedFilters={toggleSavedFilters}
+          onApplyPreset={(preset) => {
+            applyPreset(preset);
+            setSavedFiltersOpen(false);
+          }}
+          onPresetNameChange={setPresetName}
+          onSavePreset={savePreset}
+          onToggleMoreMenu={() => setMoreMenuOpen((value) => !value)}
+          onToggleColumn={(column) =>
+            setVisibleColumns((value) => ({
+              ...value,
+              [column]: !value[column],
+            }))
+          }
+          onToggleSortByAi={() => setSortByAi((value) => !value)}
+          onExportCsv={() => exportRows("csv")}
+          onExportExcel={() => exportRows("excel")}
+          onShareView={shareView}
+          onOpenImport={() => {
+            window.location.href = "/app/integrations";
+          }}
+          onOpenCreate={openCreateLead}
+          onSelectLead={(lead) => {
+            setSelectedId(lead.id);
+            setDrawerEntity(null);
+            setContextMenu(null);
+          }}
+          onOpenLead={openLead}
+          onToggleBulkLead={toggleBulkLead}
+          onToggleAllPageRows={toggleAllPageRows}
+          onAssignLead={(lead, userId) =>
+            actionMutation.mutate({ action: "assign", lead, user_id: userId })
+          }
+          onCallLead={callLead}
+          onWhatsAppLead={whatsAppLead}
+          onOpenContextMenu={(event, lead) => {
+            event.preventDefault();
+            setContextMenu({ x: event.clientX, y: event.clientY, lead });
+          }}
+          onArchiveLead={(lead) => void requestArchiveLeads([lead])}
+          onTakeLead={(lead) => actionMutation.mutate({ action: "take", lead })}
+          onPageChange={setPage}
+          onPageSizeChange={(value) => {
+            setPageSize(value);
+            setPage(1);
+          }}
+        />
+
+        <LeadQuickInspector
+          lead={selected}
+          client={selectedClient}
+          service={selectedService}
+          aiInsight={selectedAiInsight}
+          related={{
+            deals: selectedDeals.length,
+            appointments: selectedAppointments.length,
+            conversations: selectedConversations.length,
+          }}
+          t={t}
+          onOpen={openLead}
+          onCall={callLead}
+          onWhatsApp={whatsAppLead}
+        />
+      </CrmWorkspaceGrid>
 
       <LeadsActionOverlays
         contextMenu={contextMenu}
@@ -255,15 +380,23 @@ export function LeadsPage() {
           setDrawerEntity({ type: "client", id });
         }}
         onCloseAppointment={() => setAppointmentOpen(false)}
-        onCreateAppointment={(payload) => appointmentMutation.mutateAsync(payload)}
+        onCreateAppointment={(payload) =>
+          appointmentMutation.mutateAsync(payload)
+        }
         onCloseNextAction={() => setNextActionOpen(false)}
         onNextActionDraftChange={setNextActionDraft}
-        onCreateNextAction={() => selected && nextActionMutation.mutate(selected)}
+        onCreateNextAction={() =>
+          selected && nextActionMutation.mutate(selected)
+        }
         onCloseLost={() => setLostLead(null)}
         onLostReasonChange={setLostReason}
         onSubmitLost={() => {
           if (!lostLead) return;
-          actionMutation.mutate({ action: "lost", lead: lostLead, lost_reason: lostReason });
+          actionMutation.mutate({
+            action: "lost",
+            lead: lostLead,
+            lost_reason: lostReason,
+          });
           setLostLead(null);
           setLostReason("");
         }}
@@ -273,4 +406,3 @@ export function LeadsPage() {
     </CrmWorkspacePage>
   );
 }
-

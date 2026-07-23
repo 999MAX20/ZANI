@@ -1,7 +1,16 @@
 import type { Task } from "../../types";
 import type { ClientTableRow, Translate } from "./types";
 
-export const CLIENT_SOURCE_VALUES = ["website", "landing", "telegram", "whatsapp", "instagram", "manual", "parser", "other"] as const;
+export const CLIENT_SOURCE_VALUES = [
+  "website",
+  "landing",
+  "telegram",
+  "whatsapp",
+  "instagram",
+  "manual",
+  "parser",
+  "other",
+] as const;
 export type ClientSourceValue = (typeof CLIENT_SOURCE_VALUES)[number];
 
 export function initials(name: string) {
@@ -59,14 +68,19 @@ export function latestDate(values: Array<string | null | undefined>) {
       const timestamp = parseClientDate(value);
       return timestamp === null ? null : { value, timestamp };
     })
-    .filter((item): item is { value: string; timestamp: number } => item !== null);
+    .filter(
+      (item): item is { value: string; timestamp: number } => item !== null,
+    );
 
   if (!parsed.length) return null;
   parsed.sort((a, b) => b.timestamp - a.timestamp);
   return parsed[0]?.value || null;
 }
 
-export function compareDescDate(a: string | null | undefined, b: string | null | undefined) {
+export function compareDescDate(
+  a: string | null | undefined,
+  b: string | null | undefined,
+) {
   const aTs = parseClientDate(a);
   const bTs = parseClientDate(b);
   if (aTs === null && bTs === null) return 0;
@@ -77,16 +91,36 @@ export function compareDescDate(a: string | null | undefined, b: string | null |
 
 export function statusMeta(status: ClientTableRow["status"], t: Translate) {
   const map = {
-    active: { label: t("clients.statusActive"), className: "bg-emerald-50 text-emerald-700 before:bg-emerald-500" },
-    new: { label: t("clients.statusNew"), className: "bg-indigo-50 text-indigo-700 before:bg-indigo-500" },
-    vip: { label: "VIP", className: "bg-purple-50 text-purple-700 before:bg-purple-500" },
-    no_reply: { label: t("clients.statusNoReply"), className: "bg-orange-50 text-orange-700 before:bg-orange-500" },
-    archived: { label: t("clients.archive"), className: "bg-slate-100 text-slate-600 before:bg-slate-400" },
-  } satisfies Record<ClientTableRow["status"], { label: string; className: string }>;
+    active: {
+      label: t("clients.statusActive"),
+      className:
+        "bg-[var(--zani-success-soft)] text-zani-success before:bg-zani-success",
+    },
+    new: {
+      label: t("clients.statusNew"),
+      className: "bg-brand-50 text-brand-700 before:bg-brand-600",
+    },
+    vip: { label: "VIP", className: "bg-ai-50 text-ai-700 before:bg-ai-700" },
+    no_reply: {
+      label: t("clients.statusNoReply"),
+      className:
+        "bg-[var(--zani-warning-soft)] text-zani-warning before:bg-zani-warning",
+    },
+    archived: {
+      label: t("clients.archive"),
+      className: "bg-surface-muted text-zani-muted before:bg-zani-muted",
+    },
+  } satisfies Record<
+    ClientTableRow["status"],
+    { label: string; className: string }
+  >;
   return map[status];
 }
 
-export function priorityLabel(priority: Task["priority"] | undefined, t: Translate) {
+export function priorityLabel(
+  priority: Task["priority"] | undefined,
+  t: Translate,
+) {
   const labels: Record<Task["priority"], string> = {
     low: t("notification.priority.low"),
     normal: t("notification.priority.normal"),

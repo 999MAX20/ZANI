@@ -1,5 +1,9 @@
 # ZANI App UI/UX Redesign Task
 
+Status note, 2026-07-21:
+
+This document is retained as historical UI/UX context. Active execution, checkboxes, verification notes and the current App 2.0 / WorkbenchLayout roadmap live in `actual_docs/APP_2_WORKBENCH_EXECUTION_ROADMAP.md`.
+
 Дата: 2026-07-16
 
 ## 1. Цель

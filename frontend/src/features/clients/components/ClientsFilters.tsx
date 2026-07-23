@@ -135,7 +135,7 @@ export function ClientsFilters({
       <div className="relative">
         <button
           type="button"
-          className="inline-grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+          className="zani-focus-ring inline-grid h-9 w-9 place-items-center rounded-control border border-zani-border bg-surface-card text-zani-subtle shadow-sm transition hover:border-brand-100 hover:bg-brand-50 hover:text-zani-text"
           onClick={() => setColumnsOpen((value) => !value)}
           aria-label={t("clients.columns")}
         >
@@ -144,12 +144,12 @@ export function ClientsFilters({
         {columnsOpen ? (
           <PopoverSurface className="absolute right-0 top-10 w-48 p-2">
             {columnOptions.map((column) => (
-              <label key={column.id} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+              <label key={column.id} className="flex cursor-pointer items-center gap-2 rounded-control px-2 py-2 text-sm font-medium text-zani-subtle hover:bg-surface-muted hover:text-zani-text">
                 <input
                   type="checkbox"
                   checked={visibleColumns.has(column.id)}
                   onChange={() => onToggleColumn(column.id)}
-                  className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  className="h-4 w-4 rounded border-zani-border text-brand-600 focus:ring-brand-500"
                 />
                 {column.label}
               </label>
@@ -158,10 +158,10 @@ export function ClientsFilters({
         ) : null}
       </div>
       {search ? (
-        <span className="inline-flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 text-sm text-slate-500">
-          <Search size={14} className="text-slate-400" />
+        <span className="inline-flex h-9 items-center gap-1 rounded-control border border-brand-100 bg-brand-50 px-2 text-sm font-semibold text-brand-700">
+          <Search size={14} className="text-brand-600" />
           <span className="max-w-40 truncate">{search}</span>
-          <button type="button" onClick={onClearSearch} className="ml-1 rounded-full p-1 text-slate-600 hover:bg-white" aria-label={t("clients.clearSearch")}>
+          <button type="button" onClick={onClearSearch} className="zani-focus-ring ml-1 rounded-full p-1 text-brand-600 hover:bg-surface-card" aria-label={t("clients.clearSearch")}>
             <X size={12} />
           </button>
         </span>

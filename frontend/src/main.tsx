@@ -5,6 +5,7 @@ import { AppProviders } from "./app/providers";
 import { AppRouter } from "./app/router";
 import { AppErrorBoundary } from "./components/ui/AppErrorBoundary";
 import { initFrontendMonitoring } from "./lib/monitoring";
+import "@fontsource-variable/manrope";
 import "./styles.css";
 
 initFrontendMonitoring();

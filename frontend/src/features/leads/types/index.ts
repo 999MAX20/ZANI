@@ -1,14 +1,36 @@
 import type { Id, Lead, Task } from "../../../types";
 
-export type LeadFilter = "all" | "new" | "hot" | "unanswered" | "mine" | "attention";
-export type LeadAction = "take" | "contacted" | "deal" | "closed" | "lost" | "reopen" | "assign";
+export type LeadFilter =
+  "all" | "new" | "hot" | "unanswered" | "mine" | "attention";
+export type LeadAction =
+  "take" | "contacted" | "deal" | "closed" | "lost" | "reopen" | "assign";
 export type LeadViewMode = "table" | "kanban";
-export type LeadColumnKey = "lead" | "phone" | "source" | "status" | "priority" | "manager" | "activity" | "next";
-export type Translate = (key: string, params?: Record<string, string | number>) => string;
+export type LeadColumnKey =
+  | "lead"
+  | "phone"
+  | "source"
+  | "status"
+  | "priority"
+  | "manager"
+  | "activity"
+  | "next";
+export type Translate = (
+  key: string,
+  params?: Record<string, string | number>,
+) => string;
 
 export type OfflineLeadAction =
   | { id: string; type: "note"; leadId: Id; text: string; createdAt: string }
-  | { id: string; type: "task"; leadId: Id; title: string; due_at: string; assignee: string; priority: Task["priority"]; createdAt: string };
+  | {
+      id: string;
+      type: "task";
+      leadId: Id;
+      title: string;
+      due_at: string;
+      assignee: string;
+      priority: Task["priority"];
+      createdAt: string;
+    };
 
 export type FilterPreset = {
   id: string;
@@ -58,9 +80,25 @@ export const LEAD_COLUMN_ORDER_KEY = "zani_leads_column_order";
 export const LEAD_OFFLINE_QUEUE_KEY = "zani_leads_offline_queue";
 export const LEAD_CACHE_KEY = "zani_leads_cache";
 
-export const leadFilters: LeadFilter[] = ["all", "new", "hot", "unanswered", "mine", "attention"];
+export const leadFilters: LeadFilter[] = [
+  "all",
+  "new",
+  "hot",
+  "unanswered",
+  "mine",
+  "attention",
+];
 export const leadViewModes: LeadViewMode[] = ["table", "kanban"];
-export const leadColumnOrder: LeadColumnKey[] = ["lead", "phone", "source", "status", "priority", "manager", "activity", "next"];
+export const leadColumnOrder: LeadColumnKey[] = [
+  "lead",
+  "phone",
+  "source",
+  "status",
+  "priority",
+  "manager",
+  "activity",
+  "next",
+];
 
 export const leadColumnWidths: Record<LeadColumnKey, string> = {
   lead: "minmax(220px,1.7fr)",
@@ -84,7 +122,14 @@ export const defaultVisibleColumns: Record<LeadColumnKey, boolean> = {
   next: true,
 };
 
-export const kanbanStatuses: Lead["status"][] = ["new", "contacted", "in_progress", "appointment_created", "closed", "lost"];
+export const kanbanStatuses: Lead["status"][] = [
+  "new",
+  "contacted",
+  "in_progress",
+  "appointment_created",
+  "closed",
+  "lost",
+];
 
 export const statusLabels: Record<Lead["status"], string> = {
   new: "leads.statusNew",
@@ -96,12 +141,14 @@ export const statusLabels: Record<Lead["status"], string> = {
 };
 
 export const statusClass: Record<Lead["status"], string> = {
-  new: "bg-amber-50 text-amber-700 ring-amber-200",
-  contacted: "bg-blue-50 text-blue-700 ring-blue-200",
-  in_progress: "bg-violet-50 text-violet-700 ring-violet-200",
-  appointment_created: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-  closed: "bg-slate-900 text-white ring-slate-900",
-  lost: "bg-red-50 text-red-700 ring-red-200",
+  new: "bg-[var(--zani-warning-soft)] text-zani-warning ring-[rgba(183,121,31,0.22)]",
+  contacted:
+    "bg-[var(--zani-info-soft)] text-zani-info ring-[rgba(14,116,144,0.18)]",
+  in_progress: "bg-ai-50 text-ai-700 ring-ai-100",
+  appointment_created:
+    "bg-[var(--zani-success-soft)] text-zani-success ring-[rgba(21,128,61,0.18)]",
+  closed: "bg-brand-50 text-brand-700 ring-brand-100",
+  lost: "bg-[var(--zani-danger-soft)] text-zani-danger ring-[rgba(194,65,12,0.2)]",
 };
 
 export const sourceLabels: Record<string, string> = {

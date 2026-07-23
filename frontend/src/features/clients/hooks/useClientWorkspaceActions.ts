@@ -32,39 +32,62 @@ export function useClientWorkspaceActions(clientId: Id | null) {
 
   const invalidateClient = async () => {
     await queryClient.invalidateQueries({ queryKey: ["clients"] });
-    await queryClient.invalidateQueries({ queryKey: ["crm-card", "client", clientId] });
+    await queryClient.invalidateQueries({
+      queryKey: ["crm-card", "client", clientId],
+    });
   };
 
   const saveClientMutation = useMutation({
-    mutationFn: (payload: Partial<Client>) => clientsApi.update({ id: clientId as Id, payload }),
+    mutationFn: (payload: Partial<Client>) =>
+      clientsApi.update({ id: clientId as Id, payload }),
     onSuccess: async () => {
       await invalidateClient();
       setEditOpen(false);
       showNotification({ message: t("common.saved"), tone: "success" });
     },
-    onError: (error) => showNotification({ message: getApiErrorMessage(error), tone: "danger" }),
+    onError: (error) =>
+      showNotification({ message: getApiErrorMessage(error), tone: "danger" }),
   });
 
   const addTagMutation = useMutation({
     mutationFn: async ({ tagName }: { tagName: string }) => {
-      if (!business?.id || !clientId) throw new Error(t("account.businessRequired"));
-      const existing = (tagsQuery.data || []).find((tag) => tag.name.toLowerCase() === tagName.toLowerCase());
-      const tag = existing || (await tagsApi.create({ business: business.id, name: tagName, color: "#2563eb", source: "manual" }));
-      return taggedObjectsApi.create({ business: business.id, tag: tag.id, entity_type: "client", entity_id: String(clientId) });
+      if (!business?.id || !clientId)
+        throw new Error(t("account.businessRequired"));
+      const existing = (tagsQuery.data || []).find(
+        (tag) => tag.name.toLowerCase() === tagName.toLowerCase(),
+      );
+      const tag =
+        existing ||
+        (await tagsApi.create({
+          business: business.id,
+          name: tagName,
+          color: "#FF7A1A",
+          source: "manual",
+        }));
+      return taggedObjectsApi.create({
+        business: business.id,
+        tag: tag.id,
+        entity_type: "client",
+        entity_id: String(clientId),
+      });
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["tags"] });
       await queryClient.invalidateQueries({ queryKey: ["tagged-objects"] });
-      await queryClient.invalidateQueries({ queryKey: ["crm-card", "client", clientId] });
+      await queryClient.invalidateQueries({
+        queryKey: ["crm-card", "client", clientId],
+      });
       setTagDraft("");
       setTagOpen(false);
       showNotification({ message: t("clients.addTag"), tone: "success" });
     },
-    onError: (error) => showNotification({ message: getApiErrorMessage(error), tone: "danger" }),
+    onError: (error) =>
+      showNotification({ message: getApiErrorMessage(error), tone: "danger" }),
   });
 
   const archiveMutation = useMutation({
-    mutationFn: ({ reason }: { reason: string }) => clientsApi.archive({ id: clientId as Id, reason }),
+    mutationFn: ({ reason }: { reason: string }) =>
+      clientsApi.archive({ id: clientId as Id, reason }),
     onSuccess: async () => {
       await invalidateClient();
       showUndoToast({
@@ -76,13 +99,16 @@ export function useClientWorkspaceActions(clientId: Id | null) {
       });
       navigate("/app/clients");
     },
-    onError: (error) => showNotification({ message: getApiErrorMessage(error), tone: "danger" }),
+    onError: (error) =>
+      showNotification({ message: getApiErrorMessage(error), tone: "danger" }),
   });
 
   async function requestArchiveClient(client: Client) {
     const result = await confirmAction({
       title: t("clients.archiveClient"),
-      description: t("clients.archiveConfirmText", { name: client.full_name || t("common.client") }),
+      description: t("clients.archiveConfirmText", {
+        name: client.full_name || t("common.client"),
+      }),
       confirmLabel: t("clients.archiveAction"),
       variant: "danger",
       reason: {

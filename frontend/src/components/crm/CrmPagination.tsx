@@ -43,7 +43,7 @@ export function CrmPagination({
   }
 
   return (
-    <footer className={cn("flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-600", className)}>
+    <footer className={cn("flex flex-wrap items-center justify-between gap-3 border-t border-zani-border px-4 py-3 text-sm font-semibold text-zani-subtle", className)}>
       <p>
         {rangeLabel || `Showing ${from}—${to} of ${total}`}
       </p>
@@ -52,16 +52,16 @@ export function CrmPagination({
           type="button"
           onClick={onPrev}
           disabled={page <= 1}
-          className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 hover:bg-slate-50"
+          className="zani-focus-ring rounded-control border border-zani-border bg-surface-card px-3 py-2 text-sm font-semibold text-zani-text transition hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-50"
         >
           {previousLabel}
         </button>
-        <span className="rounded-lg bg-slate-100 px-3 py-2">{page}/{totalPages}</span>
+        <span className="rounded-control bg-surface-muted px-3 py-2 text-zani-text">{page}/{totalPages}</span>
         <button
           type="button"
           onClick={onNext}
           disabled={page >= totalPages}
-          className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 hover:bg-slate-50"
+          className="zani-focus-ring rounded-control border border-zani-border bg-surface-card px-3 py-2 text-sm font-semibold text-zani-text transition hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-50"
         >
           {nextLabel}
         </button>

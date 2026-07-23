@@ -17,6 +17,7 @@ __pycache__/
 .coverage
 coverage.xml
 htmlcov/
+output/
 
 db.sqlite3
 media/

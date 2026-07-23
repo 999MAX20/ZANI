@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.db import DatabaseError
 from django.utils import timezone
 
 from apps.automations.models import AutomationRun
@@ -10,7 +11,6 @@ from apps.core.models import ExportJob, SupportAccessGrant
 from apps.core.production_audit import run_production_readiness_audit
 from apps.integrations.models import BusinessConnector, ConnectorSyncRun, IntegrationEventLog, WebhookDeliveryLog
 from apps.integrations.provider_rollout import run_provider_rollout_readiness_check
-from apps.integrations.sanitization import sanitize_error_text
 from apps.notifications.models import Notification
 
 
@@ -27,59 +27,57 @@ def _setting_enabled(value):
 
 
 def _latest_automation_failures(limit=8):
+    limit = _bounded_limit(limit)
     return [
         {
             "id": run.id,
             "business_id": run.business_id,
-            "business_name": run.business.name,
             "trigger_type": run.trigger_type,
             "entity_type": run.entity_type,
             "entity_id": run.entity_id,
             "status": run.status,
             "attempts": run.attempts,
             "max_attempts": run.max_attempts,
-            "error": sanitize_error_text(run.error),
             "created_at": run.created_at,
         }
-        for run in AutomationRun.objects.filter(status=AutomationRun.Statuses.FAILED).select_related("business")[:limit]
+        for run in AutomationRun.objects.filter(status=AutomationRun.Statuses.FAILED)[:limit]
     ]
 
 
 def _latest_integration_failures(limit=8):
+    limit = _bounded_limit(limit)
     return [
         {
             "id": log.id,
             "business_id": log.business_id,
-            "business_name": log.business.name if log.business else "",
             "provider": log.provider,
             "channel": log.channel,
             "direction": log.direction,
             "status": log.status,
-            "error": sanitize_error_text(log.error),
             "created_at": log.created_at,
         }
-        for log in IntegrationEventLog.objects.filter(status=IntegrationEventLog.Statuses.FAILED).select_related("business")[:limit]
+        for log in IntegrationEventLog.objects.filter(status=IntegrationEventLog.Statuses.FAILED)[:limit]
     ]
 
 
 def _latest_failed_webhooks(limit=8):
+    limit = _bounded_limit(limit)
     return [
         {
             "id": delivery.id,
             "business_id": delivery.business_id,
-            "business_name": delivery.business.name,
-            "endpoint_name": delivery.endpoint.name,
+            "endpoint_id": delivery.endpoint_id,
             "event_type": delivery.event_type,
             "status": delivery.status,
             "attempts": delivery.attempts,
-            "error": sanitize_error_text(delivery.error),
             "created_at": delivery.created_at,
         }
-        for delivery in WebhookDeliveryLog.objects.filter(status=WebhookDeliveryLog.Statuses.FAILED).select_related("business", "endpoint")[:limit]
+        for delivery in WebhookDeliveryLog.objects.filter(status=WebhookDeliveryLog.Statuses.FAILED)[:limit]
     ]
 
 
 def _connector_queue(limit=10):
+    limit = _bounded_limit(limit)
     queryset = (
         BusinessConnector.objects.filter(
             status__in=[
@@ -88,23 +86,22 @@ def _connector_queue(limit=10):
                 BusinessConnector.Statuses.EXPIRED_CREDENTIALS,
             ]
         )
-        .select_related("business", "created_by")
         .order_by("status", "-updated_at")
     )
     return [
         {
             "id": connector.id,
             "business_id": connector.business_id,
-            "business_name": connector.business.name,
             "provider": connector.provider,
-            "name": connector.name,
             "status": connector.status,
-            "last_error": sanitize_error_text(connector.last_error),
             "updated_at": connector.updated_at,
-            "created_by_email": connector.created_by.email if connector.created_by else None,
         }
         for connector in queryset[:limit]
     ]
+
+
+def _bounded_limit(limit):
+    return max(0, min(int(limit), 20))
 
 
 def _queue_summary():
@@ -140,6 +137,8 @@ def _queue_summary():
         + outbound_messages["retry_scheduled"]
         + outbound_messages["due_retry"]
     )
+    routing_critical = 1 if routing["status"] == "critical" else 0
+    routing_warning = 1 if routing["status"] == "warning" else 0
     return {
         "broker_configured": broker_url.startswith("redis://") or broker_url.startswith("rediss://"),
         "automation_inline": getattr(settings, "AUTOMATIONS_RUN_INLINE", True),
@@ -175,14 +174,72 @@ def _queue_summary():
             + stale_export_jobs
             + failed_syncs
             + failed_webhooks
-            + outbound_critical,
+            + outbound_critical
+            + routing_critical,
             retry_runs
             + retry_notifications
             + retry_ai_jobs
             + pending_export_jobs
             + due_notifications
-            + outbound_warning,
+            + outbound_warning
+            + routing_warning,
         ),
+    }
+
+
+def _database_status(*, available, error=None):
+    if available:
+        return {
+            "available": True,
+            "code": "ok",
+            "detail": "Database queries completed.",
+        }
+    return {
+        "available": False,
+        "code": "database_unavailable",
+        "detail": "Database is unavailable or its schema is not ready.",
+        "error_type": error.__class__.__name__ if error is not None else "DatabaseError",
+    }
+
+
+def _unavailable_queue_summary():
+    broker_url = getattr(settings, "CELERY_BROKER_URL", "")
+    routes = getattr(settings, "CELERY_TASK_ROUTES", {})
+    queues = sorted({route.get("queue") for route in routes.values() if route.get("queue")})
+    return {
+        "broker_configured": broker_url.startswith("redis://") or broker_url.startswith("rediss://"),
+        "automation_inline": getattr(settings, "AUTOMATIONS_RUN_INLINE", True),
+        "default_queue": getattr(settings, "CELERY_TASK_DEFAULT_QUEUE", "default"),
+        "queues": queues,
+        "automation_runs": {"pending": 0, "running": 0, "failed": 0, "retry_scheduled": 0},
+        "notifications": {"due": 0, "retry_scheduled": 0, "failed": 0},
+        "ai_jobs": {"retry_scheduled": 0, "failed": 0},
+        "export_jobs": {"pending": 0, "running": 0, "stale": 0, "failed": 0},
+        "failed_connector_syncs": 0,
+        "failed_webhook_deliveries": 0,
+        "outbound_messages": {
+            "available": False,
+            "queued": 0,
+            "retry_scheduled": 0,
+            "due_retry": 0,
+            "delivering": 0,
+            "stale_delivering": 0,
+            "failed": 0,
+            "oldest_pending_age_seconds": 0,
+            "oldest_due_retry_age_seconds": 0,
+        },
+        "routing": {
+            "available": False,
+            "active_policies": 0,
+            "automatic_policies": 0,
+            "unassigned": {},
+            "automatic_unassigned": {},
+            "active_sla_attention": 0,
+            "stale_sla_attention": 0,
+            "oldest_active_sla_age_seconds": 0,
+            "status": "critical",
+        },
+        "status": "critical",
     }
 
 
@@ -190,15 +247,35 @@ def platform_operations_health():
     production = run_production_readiness_audit()
     backup = run_backup_restore_readiness_check()
     providers = run_provider_rollout_readiness_check()
-    queue = _queue_summary()
-    active_support_grants = SupportAccessGrant.objects.filter(is_active=True, expires_at__gt=timezone.now()).count()
-    connector_queue = _connector_queue()
+    try:
+        queue = _queue_summary()
+        active_support_grants = SupportAccessGrant.objects.filter(is_active=True, expires_at__gt=timezone.now()).count()
+        connector_queue = _connector_queue()
+        work_queue = {
+            "connector_requests": connector_queue,
+            "failed_automation_runs": _latest_automation_failures(),
+            "failed_integration_events": _latest_integration_failures(),
+            "failed_webhook_deliveries": _latest_failed_webhooks(),
+        }
+        database = _database_status(available=True)
+    except DatabaseError as exc:
+        queue = _unavailable_queue_summary()
+        active_support_grants = 0
+        connector_queue = []
+        work_queue = {
+            "connector_requests": [],
+            "failed_automation_runs": [],
+            "failed_integration_events": [],
+            "failed_webhook_deliveries": [],
+        }
+        database = _database_status(available=False, error=exc)
 
     critical_count = (
         production["summary"]["fail"]
         + backup["summary"]["paid_beta_blockers"]
         + providers["summary"]["blocked"]
-        + (1 if queue["status"] == "critical" else 0)
+        + (1 if queue["status"] == "critical" and database["available"] else 0)
+        + (0 if database["available"] else 1)
     )
     warning_count = production["summary"]["warn"] + providers["summary"]["warning"]
 
@@ -212,8 +289,10 @@ def platform_operations_health():
             "warning": warning_count,
             "active_support_grants": active_support_grants,
             "connector_requests": len(connector_queue),
+            "database_available": database["available"],
         },
         "runtime": {
+            "database": database,
             "queue": queue,
             "production_readiness": {
                 "summary": production["summary"],
@@ -226,10 +305,5 @@ def platform_operations_health():
             },
             "provider_rollout": providers,
         },
-        "work_queue": {
-            "connector_requests": connector_queue,
-            "failed_automation_runs": _latest_automation_failures(),
-            "failed_integration_events": _latest_integration_failures(),
-            "failed_webhook_deliveries": _latest_failed_webhooks(),
-        },
+        "work_queue": work_queue,
     }

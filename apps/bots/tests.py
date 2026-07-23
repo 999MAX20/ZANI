@@ -1385,9 +1385,12 @@ class InboxBackendTests(TestCase):
 
         message.refresh_from_db()
         self.assertEqual(before["due_retry"], 1)
+        self.assertGreaterEqual(before["oldest_pending_age_seconds"], 0)
+        self.assertGreaterEqual(before["oldest_due_retry_age_seconds"], 0)
         self.assertEqual([item.id for item in processed], [message.id])
         self.assertEqual(message.status, BotMessage.Statuses.SENT)
         self.assertEqual(after["due_retry"], 0)
+        self.assertEqual(after["oldest_due_retry_age_seconds"], 0)
         self.assertNotIn("Sensitive customer message", str(before))
         self.assertNotIn("Sensitive customer message", str(after))
 

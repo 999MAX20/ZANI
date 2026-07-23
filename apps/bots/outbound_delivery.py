@@ -3,7 +3,7 @@ import json
 
 from django.conf import settings
 from django.db import IntegrityError, transaction
-from django.db.models import F, Q
+from django.db.models import F, Min, Q
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
@@ -367,17 +367,29 @@ def outbound_delivery_health():
         seconds=max(60, getattr(settings, "OUTBOUND_DELIVERY_STALE_LOCK_SECONDS", 900))
     )
     queryset = BotMessage.objects.filter(direction=BotMessage.Directions.OUTBOUND)
+    pending_queryset = queryset.filter(status__in=CLAIMABLE_STATUSES)
+    due_retry_queryset = queryset.filter(
+        status=BotMessage.Statuses.RETRY_SCHEDULED,
+        delivery_next_retry_at__lte=now,
+    )
+    oldest_pending_at = pending_queryset.aggregate(value=Min("created_at"))["value"]
+    oldest_due_retry_at = due_retry_queryset.aggregate(value=Min("delivery_next_retry_at"))["value"]
     return {
         "queued": queryset.filter(status=BotMessage.Statuses.QUEUED).count(),
         "retry_scheduled": queryset.filter(status=BotMessage.Statuses.RETRY_SCHEDULED).count(),
-        "due_retry": queryset.filter(
-            status=BotMessage.Statuses.RETRY_SCHEDULED,
-            delivery_next_retry_at__lte=now,
-        ).count(),
+        "due_retry": due_retry_queryset.count(),
         "delivering": queryset.filter(status=BotMessage.Statuses.DELIVERING).count(),
         "stale_delivering": queryset.filter(
             status=BotMessage.Statuses.DELIVERING,
             delivery_locked_at__lt=stale_before,
         ).count(),
         "failed": queryset.filter(status=BotMessage.Statuses.FAILED).count(),
+        "oldest_pending_age_seconds": _age_seconds(oldest_pending_at, now),
+        "oldest_due_retry_age_seconds": _age_seconds(oldest_due_retry_at, now),
     }
+
+
+def _age_seconds(value, now):
+    if value is None:
+        return 0
+    return max(0, int((now - value).total_seconds()))

@@ -177,7 +177,8 @@ class B2RoleQueueTests(TestCase):
             {"user_id": self.operator.id},
             format="json",
         )
-        self.assertEqual(denied.status_code, 400)
+        self.assertEqual(denied.status_code, 409)
+        self.assertEqual(denied.data["code"], "assignee_unavailable")
 
     def test_handoff_creates_immediate_manager_attention(self):
         conversation = BotConversation.objects.create(
@@ -488,4 +489,7 @@ class B2RoleQueueTests(TestCase):
 
         self.assertEqual(health["active_policies"], 1)
         self.assertEqual(health["unassigned"][RoutingPolicy.Resources.TASKS], 1)
+        self.assertEqual(health["automatic_unassigned"][RoutingPolicy.Resources.TASKS], 0)
+        self.assertEqual(health["oldest_active_sla_age_seconds"], 0)
+        self.assertEqual(health["status"], "healthy")
         self.assertNotIn("Sensitive customer task text", str(health))

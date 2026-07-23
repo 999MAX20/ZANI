@@ -169,6 +169,26 @@ Endpoints:
 
 Use `/ready/` for container/load balancer readiness.
 
+Operational release checks:
+
+```bash
+.venv/bin/python manage.py platform_operations_health_check
+.venv/bin/python manage.py platform_operations_health_check --format=json
+.venv/bin/python manage.py platform_operations_health_check --fail-on-critical
+```
+
+The operations report includes bounded queue counters for notifications,
+automations, AI jobs, exports, connectors/webhooks, outbound messages and
+routing/SLA attention. Outbound health includes retry/failure counts and oldest
+pending/due-retry age. Routing health includes automatic unassigned counts,
+active/stale SLA attention and oldest active incident age.
+
+The report intentionally excludes customer message/task text, merchant names,
+connector names, user email, credentials, raw provider payloads and raw
+exception text. When the database is unavailable or migrations are missing, the
+command returns a critical `database_unavailable` blocker with empty bounded
+queues instead of crashing. This blocker must never be treated as healthy.
+
 ## 6. Deployment Sequence
 
 1. Build backend image.
@@ -255,7 +275,7 @@ For a production release gate, run:
 ./scripts/production_release_check.sh
 ```
 
-This script runs Django system/deploy checks, migration drift checks, production readiness with `--fail-on-critical`, provider rollout with `--fail-on-blockers`, backup readiness with blocker failure, and dependency audit when `pip-audit` is installed.
+This script runs Django system/deploy checks, migration drift checks, production readiness with `--fail-on-critical`, provider rollout with `--fail-on-blockers`, backup readiness with blocker failure, and dependency audit when `pip-audit` is installed. Run `platform_operations_health_check --fail-on-critical` and `paid_beta_gate_check --fail-on-blockers` against the migrated target environment as separate runtime gates.
 
 Rate-limit details:
 

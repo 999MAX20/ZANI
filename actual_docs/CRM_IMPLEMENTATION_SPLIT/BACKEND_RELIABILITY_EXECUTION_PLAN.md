@@ -223,17 +223,50 @@ R4 verification evidence:
 
 Business outcome: readiness commands report actionable blockers instead of crashing, and the complete backend branch has a reproducible release gate.
 
-- [ ] make operations/paid-beta health checks tolerate an unmigrated or unavailable database with a structured blocker;
-- [ ] include outbound outbox lag/retry/failure health;
-- [ ] include routing/SLA escalation lag/failure health;
-- [ ] keep health payloads bounded and free of customer content;
-- [ ] update production and backend source-of-truth documentation;
-- [ ] update the old backend backlog so completed B0-B6 work is not shown as 145 open tasks;
-- [ ] run a clean SQLite migration;
-- [ ] run the complete Django suite;
-- [ ] run production readiness, provider rollout and paid-beta commands;
-- [ ] run diff hygiene and secret scan;
+- [x] make operations/paid-beta health checks tolerate an unmigrated or unavailable database with a structured blocker;
+- [x] include outbound outbox lag/retry/failure health;
+- [x] include routing/SLA escalation lag/failure health;
+- [x] keep health payloads bounded and free of customer content;
+- [x] update production and backend source-of-truth documentation;
+- [x] update the old backend backlog so completed B0-B6 work is not shown as 145 open tasks;
+- [x] run a clean SQLite migration;
+- [x] run the complete Django suite;
+- [x] run production readiness, provider rollout and paid-beta commands;
+- [x] run diff hygiene and secret scan;
 - [ ] commit and push the final sequential branches.
+
+R5 implementation notes:
+
+- unavailable or unmigrated databases produce a bounded `database_unavailable` blocker and empty operational queues instead of raw DB errors;
+- outbox health includes pending/retry/failure counts plus oldest pending and overdue-retry age;
+- routing health includes automatic unassigned counts, active/stale SLA attention, oldest incident age and a derived health status;
+- operations work queues are capped at 20 rows and omit customer text, merchant/connector names, email and raw exception/provider data;
+- no model migration, required environment variable, permission, notification, BusinessEvent or AI behavior changed;
+- `BACKEND_IMPLEMENTATION_PLAN.md` is now a closed B0-B6 summary rather than a misleading 145-item open backlog.
+
+R5 verification evidence:
+
+- operations and paid-beta failure-mode tests: `18 passed, 1 warning`;
+- focused outbox/routing health tests: `2 passed`;
+- clean SQLite migration from zero: passed through `bots.0010`, `businesses.0009` and `core.0010`;
+- complete Django suite: `459 passed, 7 warnings`;
+- `manage.py check`: passed;
+- `manage.py makemigrations --check --dry-run`: no changes detected;
+- production readiness: `6 pass`, `1 warn`, `10 fail`;
+- provider rollout: `7 ready`, `1 warning`, `0 blocked`, `2 enabled`;
+- backup readiness: `2 pass`, `3 fail`, `2 paid-beta blockers`;
+- migrated SQLite operations health: database available, routing healthy, outbox/routing counters available;
+- unmigrated SQLite operations health: structured `database_unavailable` blocker, no crash or raw DB error;
+- paid beta: `1 pass`, `10 fail`, correctly not allowed;
+- strict command exits: production `1`, provider rollout `0`, backup `1`, operations `1`, paid beta `1`;
+- `git diff --check`: passed;
+- high-confidence tracked-secret scan: `0` matches;
+- temporary migration databases were removed.
+
+Skipped:
+
+- frontend build and browser E2E were not run because this execution track is backend-only; paid-beta keeps browser/staging smoke explicitly blocked;
+- real PostgreSQL, Redis/Celery, S3, SMTP, Sentry, provider and restore/load tests require target infrastructure and remain unchecked below.
 
 External deployment gates that must remain visibly pending until real infrastructure exists:
 

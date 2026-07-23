@@ -1,7 +1,9 @@
 import json
 from io import StringIO
+from unittest.mock import patch
 
 from django.core.management import call_command, CommandError
+from django.db import OperationalError
 from django.utils import timezone
 from django.test import TestCase
 from rest_framework.test import APIClient
@@ -262,7 +264,10 @@ class PlatformOperationsDashboardTests(TestCase):
         self.assertEqual(response.data["runtime"]["queue"]["automation_runs"]["failed"], 1)
         self.assertEqual(len(response.data["work_queue"]["failed_automation_runs"]), 1)
         self.assertEqual(len(response.data["work_queue"]["failed_integration_events"]), 1)
-        self.assertEqual(response.data["work_queue"]["connector_requests"][0]["business_name"], self.business.name)
+        self.assertEqual(response.data["work_queue"]["connector_requests"][0]["business_id"], self.business.id)
+        self.assertTrue(response.data["runtime"]["database"]["available"])
+        self.assertIn("oldest_pending_age_seconds", response.data["runtime"]["queue"]["outbound_messages"])
+        self.assertIn("oldest_active_sla_age_seconds", response.data["runtime"]["queue"]["routing"])
 
     def test_platform_operations_health_redacts_secret_values(self):
         self.api.force_authenticate(self.platform)
@@ -275,7 +280,11 @@ class PlatformOperationsDashboardTests(TestCase):
         self.assertNotIn("raw-log-key", serialized)
         self.assertNotIn("raw-connector-token", serialized)
         self.assertNotIn("raw-webhook-token", serialized)
-        self.assertIn("[redacted]", serialized)
+        self.assertNotIn(self.business.name, serialized)
+        self.assertNotIn(self.client.full_name, serialized)
+        self.assertNotIn(self.client.phone, serialized)
+        self.assertNotIn("Landing forms", serialized)
+        self.assertNotIn(self.owner.email, serialized)
 
     def test_merchant_user_cannot_access_platform_operations_health(self):
         self.api.force_authenticate(self.owner)
@@ -298,6 +307,24 @@ class PlatformOperationsDashboardTests(TestCase):
         self.assertNotIn("raw-log-key", serialized)
         self.assertNotIn("raw-connector-token", serialized)
         self.assertNotIn("raw-webhook-token", serialized)
+
+    def test_operations_health_returns_safe_database_blocker_instead_of_crashing(self):
+        with patch(
+            "apps.core.operations_health._queue_summary",
+            side_effect=OperationalError("password=raw-db-password merchant=Pilot Merchant"),
+        ):
+            output = StringIO()
+            call_command("platform_operations_health_check", "--format=json", stdout=output)
+
+        payload = json.loads(output.getvalue())
+        self.assertEqual(payload["status"], "critical")
+        self.assertFalse(payload["summary"]["database_available"])
+        self.assertEqual(payload["runtime"]["database"]["code"], "database_unavailable")
+        self.assertFalse(payload["runtime"]["queue"]["outbound_messages"]["available"])
+        self.assertEqual(payload["work_queue"]["connector_requests"], [])
+        serialized = json.dumps(payload)
+        self.assertNotIn("raw-db-password", serialized)
+        self.assertNotIn("Pilot Merchant", serialized)
 
     def test_platform_operations_health_command_can_fail_on_critical(self):
         with self.assertRaises(CommandError):

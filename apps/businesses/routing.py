@@ -1,7 +1,8 @@
 from collections import Counter
 
+from django.conf import settings
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Min, Q
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
@@ -470,20 +471,59 @@ def _manager_recipients(policy):
 
 
 def routing_health():
+    now = timezone.now()
     active_policies = RoutingPolicy.objects.filter(is_active=True)
+    automatic_policies = active_policies.exclude(mode=RoutingPolicy.Modes.MANUAL)
     unassigned = {}
+    automatic_unassigned = {}
     for resource, config in RESOURCE_CONFIG.items():
         assignee_field = config["assignee_field"]
         unassigned[resource] = config["model"].objects.filter(
             config["active_filter"],
             **{f"{assignee_field}__isnull": True},
         ).count()
+        automatic_business_ids = automatic_policies.filter(
+            resource=resource,
+            team__isnull=True,
+        ).values_list("business_id", flat=True)
+        automatic_unassigned[resource] = config["model"].objects.filter(
+            config["active_filter"],
+            business_id__in=automatic_business_ids,
+            **{f"{assignee_field}__isnull": True},
+        ).count()
+    active_attention = SLAAttention.objects.filter(is_active=True)
+    oldest_attention_at = active_attention.aggregate(value=Min("first_detected_at"))["value"]
+    stale_seconds = max(
+        300,
+        getattr(settings, "ROUTING_SLA_HEALTH_CRITICAL_SECONDS", 3600),
+    )
+    stale_attention = active_attention.filter(
+        first_detected_at__lte=now - timezone.timedelta(seconds=stale_seconds)
+    ).count()
+    active_attention_count = active_attention.count()
+    automatic_unassigned_count = sum(automatic_unassigned.values())
+    if stale_attention:
+        status = "critical"
+    elif active_attention_count or automatic_unassigned_count:
+        status = "warning"
+    else:
+        status = "healthy"
     return {
         "active_policies": active_policies.count(),
-        "automatic_policies": active_policies.exclude(mode=RoutingPolicy.Modes.MANUAL).count(),
+        "automatic_policies": automatic_policies.count(),
         "unassigned": unassigned,
-        "active_sla_attention": SLAAttention.objects.filter(is_active=True).count(),
+        "automatic_unassigned": automatic_unassigned,
+        "active_sla_attention": active_attention_count,
+        "stale_sla_attention": stale_attention,
+        "oldest_active_sla_age_seconds": _age_seconds(oldest_attention_at, now),
+        "status": status,
     }
+
+
+def _age_seconds(value, now):
+    if value is None:
+        return 0
+    return max(0, int((now - value).total_seconds()))
 
 
 def run_routing_cycle(*, routing_limit=100, sla_limit=200):

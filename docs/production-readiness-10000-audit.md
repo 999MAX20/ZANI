@@ -1,5 +1,12 @@
 # Zani Production Readiness Audit For 10,000 Merchants
 
+Update 2026-07-23: repository runtime health now fails closed with a structured
+`database_unavailable` blocker when the database cannot be queried or the
+schema is not migrated. Operations health includes bounded outbox
+lag/retry/failure and routing/SLA attention counters without customer content.
+This improves diagnosability but does not replace managed PostgreSQL/Redis,
+restore drills, load tests, Sentry or target-environment evidence.
+
 Дата: 21.05.2026
 
 Цель: зафиксировать, что нужно довести до production-ready состояния перед ростом до 10 000 активных мерчантов, и дать проверяемый способ аудита окружения.

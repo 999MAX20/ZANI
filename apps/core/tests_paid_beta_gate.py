@@ -1,7 +1,9 @@
 from io import StringIO
+from unittest.mock import patch
 
 from django.core.management import call_command
 from django.core.management.base import CommandError
+from django.db import OperationalError
 from django.test import TestCase, override_settings
 
 from apps.core.paid_beta_gate import run_paid_beta_gate_check
@@ -86,3 +88,15 @@ class PaidBetaGateTests(TestCase):
         call_command("paid_beta_gate_check", "--format=json", stdout=output)
 
         self.assertIn('"allowed"', output.getvalue())
+
+    def test_paid_beta_returns_database_blocker_when_runtime_database_is_unavailable(self):
+        with patch(
+            "apps.core.operations_health._queue_summary",
+            side_effect=OperationalError("password=raw-db-password"),
+        ):
+            report = run_paid_beta_gate_check()
+
+        operations = next(item for item in report["items"] if item["key"] == "support.operations_health")
+        self.assertFalse(report["allowed"])
+        self.assertEqual(operations["status"], "fail")
+        self.assertNotIn("raw-db-password", str(report))

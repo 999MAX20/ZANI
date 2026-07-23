@@ -34,6 +34,12 @@ JSON output:
 - Platform Operations health is not critical;
 - no real provider is enabled without rollback path.
 
+Platform Operations health is database-aware. An unavailable database or
+missing schema is returned as a structured `database_unavailable` critical
+blocker; the paid-beta command remains executable and fails closed instead of
+crashing. Queue health must include outbound delivery lag/retries/failures and
+routing/SLA attention lag before the gate can be considered green.
+
 ## Manual Confirmation Env
 
 These variables must stay `False` until the corresponding operational check was completed:

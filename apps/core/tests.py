@@ -131,7 +131,8 @@ class LeadAppointmentActionTests(TestCase):
         second_response = self.api.post(reverse("lead-create-appointment", kwargs={"pk": second_lead.id}), payload, format="json")
 
         self.assertEqual(first_response.status_code, 201)
-        self.assertEqual(second_response.status_code, 400)
+        self.assertEqual(second_response.status_code, 409)
+        self.assertEqual(second_response.data["code"], "schedule_conflict")
 
 
 class PlatformAccessFoundationTests(TestCase):

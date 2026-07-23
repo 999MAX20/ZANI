@@ -13,7 +13,7 @@ from apps.accounts.models import User
 from apps.billing.entitlements import EntitlementMetrics, assert_entitlement_allows
 from apps.businesses.access import Actions, Resources, assert_can, can, ensure_default_roles
 from apps.businesses.capabilities import assert_resource_enabled, ensure_business_capabilities
-from apps.businesses.models import Business, BusinessCapability, BusinessInvitation, BusinessMember, BusinessRole, RolePermission, Team, TeamMember
+from apps.businesses.models import Business, BusinessCapability, BusinessInvitation, BusinessMember, BusinessRole, RolePermission, RoutingPolicy, Team, TeamMember
 from apps.businesses.serializers import (
     BusinessInvitationAcceptSerializer,
     BusinessInvitationSerializer,
@@ -23,6 +23,7 @@ from apps.businesses.serializers import (
     BusinessSerializer,
     PermissionCatalogSerializer,
     RolePermissionSerializer,
+    RoutingPolicySerializer,
     TeamMemberManagementSerializer,
     TeamMemberSerializer,
     TeamSerializer,
@@ -75,6 +76,17 @@ class BusinessMemberViewSet(TenantModelViewSet):
         business = serializer.validated_data["business"]
         assert_entitlement_allows(business, EntitlementMetrics.USERS)
         super().perform_create(serializer)
+
+
+class RoutingPolicyViewSet(TenantModelViewSet):
+    queryset = RoutingPolicy.objects.select_related(
+        "business",
+        "team",
+        "last_assigned_member",
+        "last_assigned_member__user",
+    )
+    serializer_class = RoutingPolicySerializer
+    access_resource = Resources.SETTINGS
 
 
 class TeamAccessMixin:

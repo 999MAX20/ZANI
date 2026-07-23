@@ -51,10 +51,12 @@ class ActivityEvents:
     TASK_WATCHER_ADDED = "task_watcher_added"
     TASK_COMMENT_ADDED = "task_comment_added"
     TASK_COMMENT_DELETED = "task_comment_deleted"
+    WORK_AUTO_REASSIGNED = "work_auto_reassigned"
 
     MESSAGE_RECEIVED = "message_received"
     MESSAGE_SENT = "message_sent"
     MESSAGE_RETRIED = "message_retried"
+    CONVERSATION_ASSIGNED = "conversation_assigned"
     CONVERSATION_QUALIFICATION_PREVIEWED = "conversation_qualification_previewed"
     CONVERSATION_CLIENT_LINKED = "conversation_client_linked"
     CONVERSATION_LEAD_LINKED = "conversation_lead_linked"
@@ -118,9 +120,11 @@ EVENT_LABELS = {
     ActivityEvents.TASK_WATCHER_ADDED: "Добавлен наблюдатель к задаче",
     ActivityEvents.TASK_COMMENT_ADDED: "Добавлен комментарий к задаче",
     ActivityEvents.TASK_COMMENT_DELETED: "Удалён комментарий к задаче",
+    ActivityEvents.WORK_AUTO_REASSIGNED: "Work item reassigned automatically",
     ActivityEvents.MESSAGE_RECEIVED: "Получено сообщение",
     ActivityEvents.MESSAGE_SENT: "Отправлено сообщение",
     ActivityEvents.MESSAGE_RETRIED: "Message retry requested",
+    ActivityEvents.CONVERSATION_ASSIGNED: "Conversation assigned",
     ActivityEvents.CONVERSATION_QUALIFICATION_PREVIEWED: "Conversation qualification previewed",
     ActivityEvents.CONVERSATION_CLIENT_LINKED: "Conversation linked to client",
     ActivityEvents.CONVERSATION_LEAD_LINKED: "Conversation linked to lead",
@@ -265,9 +269,21 @@ EVENT_DEFINITIONS = {
     ActivityEvents.TASK_WATCHER_ADDED: _define(ActivityEvents.TASK_WATCHER_ADDED, category=ActivityEvent.Categories.TASK, domain="tasks"),
     ActivityEvents.TASK_COMMENT_ADDED: _define(ActivityEvents.TASK_COMMENT_ADDED, category=ActivityEvent.Categories.TASK, domain="tasks"),
     ActivityEvents.TASK_COMMENT_DELETED: _define(ActivityEvents.TASK_COMMENT_DELETED, category=ActivityEvent.Categories.TASK, domain="tasks"),
+    ActivityEvents.WORK_AUTO_REASSIGNED: _define(
+        ActivityEvents.WORK_AUTO_REASSIGNED,
+        category=ActivityEvent.Categories.SYSTEM,
+        domain="routing",
+        audit_required=True,
+        important=True,
+    ),
     ActivityEvents.MESSAGE_RECEIVED: _define(ActivityEvents.MESSAGE_RECEIVED, category=ActivityEvent.Categories.MESSAGE, domain="conversations"),
     ActivityEvents.MESSAGE_SENT: _define(ActivityEvents.MESSAGE_SENT, category=ActivityEvent.Categories.MESSAGE, domain="conversations"),
     ActivityEvents.MESSAGE_RETRIED: _define(ActivityEvents.MESSAGE_RETRIED, category=ActivityEvent.Categories.MESSAGE, domain="conversations"),
+    ActivityEvents.CONVERSATION_ASSIGNED: _define(
+        ActivityEvents.CONVERSATION_ASSIGNED,
+        category=ActivityEvent.Categories.MESSAGE,
+        domain="conversations",
+    ),
     ActivityEvents.CONVERSATION_QUALIFICATION_PREVIEWED: _define(
         ActivityEvents.CONVERSATION_QUALIFICATION_PREVIEWED,
         category=ActivityEvent.Categories.MESSAGE,

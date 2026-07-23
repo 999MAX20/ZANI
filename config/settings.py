@@ -299,6 +299,9 @@ CRM_COMMAND_IDEMPOTENCY_PRUNE_INTERVAL_SECONDS = env.int(
     "CRM_COMMAND_IDEMPOTENCY_PRUNE_INTERVAL_SECONDS",
     default=3600,
 )
+ROUTING_RUNTIME_INTERVAL_SECONDS = env.int("ROUTING_RUNTIME_INTERVAL_SECONDS", default=60)
+ROUTING_RUNTIME_BATCH_SIZE = env.int("ROUTING_RUNTIME_BATCH_SIZE", default=100)
+ROUTING_SLA_BATCH_SIZE = env.int("ROUTING_SLA_BATCH_SIZE", default=200)
 NOTIFICATION_DELIVERY_BATCH_SIZE = env.int("NOTIFICATION_DELIVERY_BATCH_SIZE", default=100)
 NOTIFICATION_DELIVERY_INTERVAL_SECONDS = env.int("NOTIFICATION_DELIVERY_INTERVAL_SECONDS", default=60)
 AUTOMATION_RUNTIME_INTERVAL_SECONDS = env.int("AUTOMATION_RUNTIME_INTERVAL_SECONDS", default=30)
@@ -394,6 +397,14 @@ CELERY_BEAT_SCHEDULE.update(
             "task": "crm.prune_command_idempotency",
             "schedule": CRM_COMMAND_IDEMPOTENCY_PRUNE_INTERVAL_SECONDS,
             "kwargs": {"limit": 1000},
+        },
+        "routing-runtime": {
+            "task": "routing.process_cycle",
+            "schedule": ROUTING_RUNTIME_INTERVAL_SECONDS,
+            "kwargs": {
+                "routing_limit": ROUTING_RUNTIME_BATCH_SIZE,
+                "sla_limit": ROUTING_SLA_BATCH_SIZE,
+            },
         },
     }
 )

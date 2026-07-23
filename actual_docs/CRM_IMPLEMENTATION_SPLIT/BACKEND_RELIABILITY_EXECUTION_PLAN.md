@@ -131,17 +131,17 @@ R2 verification evidence:
 
 Business outcome: new work has an intentional queue or eligible owner, unavailable employees are skipped, and managers receive one actionable escalation when SLA expires.
 
-- [ ] define business routing policies `manual`, `round_robin` and `least_loaded`;
-- [ ] scope routing by business, resource and optional team;
-- [ ] select only active, available and role-eligible members;
-- [ ] make routing selection and assignment atomic;
-- [ ] preserve manual self-claim and manager reassignment;
-- [ ] support fallback reassignment policy without silently moving work by default;
-- [ ] add a periodic SLA attention scan for unassigned/stale work;
-- [ ] create idempotent manager escalation notifications;
-- [ ] record activity/audit for automatic assignment and reassignment;
-- [ ] expose bounded operational health counters;
-- [ ] cover owner, manager, operator, specialist, unavailable, team denial and tenant isolation scenarios.
+- [x] define business routing policies `manual`, `round_robin` and `least_loaded`;
+- [x] scope routing by business, resource and optional team;
+- [x] select only active, available and role-eligible members;
+- [x] make routing selection and assignment atomic;
+- [x] preserve manual self-claim and manager reassignment;
+- [x] support fallback reassignment policy without silently moving work by default;
+- [x] add a periodic SLA attention scan for unassigned/stale work;
+- [x] create idempotent manager escalation notifications;
+- [x] record activity/audit for automatic assignment and reassignment;
+- [x] expose bounded operational health counters;
+- [x] cover owner, manager, operator, specialist, unavailable, team denial and tenant isolation scenarios.
 
 Phase gate:
 
@@ -151,6 +151,25 @@ manage.py check
 makemigrations --check --dry-run
 git diff --check
 ```
+
+R3 implementation notes:
+
+- `manual` is the default and never reassigns unavailable work;
+- fallback reassignment requires `member_fallback` on the policy and an eligible same-business fallback member;
+- business-wide policies are processed by the periodic unassigned-work sweep;
+- team policies are selected explicitly through the routing service so multiple departments cannot race for the same unscoped item;
+- eligible roles can be narrowed per policy; default worker pools prioritize managers/operators/staff/doctors rather than routing normal work to owners;
+- an available owner is used only when an automatic business-wide policy has no eligible worker, preserving the solo-business workflow;
+- the SLA incident row is unique per business/resource/entity/reason and only a new or reopened incident emits manager notifications.
+
+R3 verification evidence:
+
+- focused role/routing/SLA tests: `13 passed`;
+- phase regression across roles, queues, business access, inbox and tasks: `139 passed`;
+- `manage.py check`: passed;
+- `manage.py makemigrations --check --dry-run`: no changes detected;
+- clean SQLite `manage.py migrate --noinput`: passed through `businesses.0009`;
+- `git diff --check`: passed.
 
 ## 7. Phase R4: Explicit Domain Error Taxonomy
 

@@ -4,11 +4,20 @@ from rest_framework.test import APIClient
 
 from apps.accounts.models import User
 from apps.activities.models import ActivityEvent
+from apps.activities.taxonomy import ActivityEvents
 from apps.bots.inbox_service import create_inbound_message_notifications
 from apps.bots.models import Bot, BotConversation, BotMessage
 from apps.businesses.access import ensure_default_roles
-from apps.businesses.models import Business, BusinessMember, BusinessRole, Team, TeamMember
+from apps.businesses.models import Business, BusinessMember, BusinessRole, RoutingPolicy, SLAAttention, Team, TeamMember
+from apps.businesses.routing import (
+    apply_fallback_reassignments,
+    route_unassigned_work,
+    route_work_item,
+    routing_health,
+    scan_sla_attention,
+)
 from apps.clients.models import Client
+from apps.core.models import AuditLog
 from apps.leads.models import Lead
 from apps.notifications.models import Notification
 from apps.tasks.models import Task
@@ -194,3 +203,289 @@ class B2RoleQueueTests(TestCase):
                 action_url=f"/app/conversations?conversation={conversation.id}",
             ).exists()
         )
+
+    def test_owner_can_manage_routing_policy_but_manager_cannot_change_it(self):
+        self.api.force_authenticate(self.owner)
+        created = self.api.post(
+            "/api/routing-policies/",
+            {
+                "business": self.business.id,
+                "resource": RoutingPolicy.Resources.CONVERSATIONS,
+                "mode": RoutingPolicy.Modes.ROUND_ROBIN,
+                "team": self.team.id,
+                "sla_minutes": 15,
+            },
+            format="json",
+        )
+
+        self.assertEqual(created.status_code, 201, created.data)
+        self.api.force_authenticate(self.manager)
+        listed = self.api.get("/api/routing-policies/", {"business": self.business.id})
+        denied = self.api.patch(
+            f"/api/routing-policies/{created.data['id']}/",
+            {"mode": RoutingPolicy.Modes.LEAST_LOADED},
+            format="json",
+        )
+
+        self.assertEqual(listed.status_code, 200)
+        self.assertEqual(listed.data["count"], 1)
+        self.assertEqual(denied.status_code, 403)
+
+        foreign_business = Business.objects.create(
+            owner=self.owner,
+            name="Foreign routing business",
+            slug="foreign-routing-business",
+        )
+        foreign_team = Team.objects.create(business=foreign_business, name="Foreign team")
+        self.api.force_authenticate(self.owner)
+        foreign_team_response = self.api.post(
+            "/api/routing-policies/",
+            {
+                "business": self.business.id,
+                "resource": RoutingPolicy.Resources.TASKS,
+                "mode": RoutingPolicy.Modes.ROUND_ROBIN,
+                "team": foreign_team.id,
+            },
+            format="json",
+        )
+        self.assertEqual(foreign_team_response.status_code, 400)
+
+    def test_round_robin_is_team_scoped_and_skips_unavailable_members(self):
+        policy = RoutingPolicy.objects.create(
+            business=self.business,
+            resource=RoutingPolicy.Resources.CONVERSATIONS,
+            mode=RoutingPolicy.Modes.ROUND_ROBIN,
+            team=self.team,
+        )
+        first = BotConversation.objects.create(
+            business=self.business,
+            bot=self.bot,
+            channel=BotConversation.Channels.WEBSITE,
+        )
+        second = BotConversation.objects.create(
+            business=self.business,
+            bot=self.bot,
+            channel=BotConversation.Channels.WEBSITE,
+        )
+        third = BotConversation.objects.create(
+            business=self.business,
+            bot=self.bot,
+            channel=BotConversation.Channels.WEBSITE,
+        )
+
+        first, first_changed = route_work_item(
+            first,
+            resource=RoutingPolicy.Resources.CONVERSATIONS,
+            team=self.team,
+        )
+        second, second_changed = route_work_item(
+            second,
+            resource=RoutingPolicy.Resources.CONVERSATIONS,
+            team=self.team,
+        )
+        self.operator_member.availability_status = BusinessMember.AvailabilityStatuses.UNAVAILABLE
+        self.operator_member.unavailable_until = timezone.now() + timezone.timedelta(hours=2)
+        self.operator_member.save(update_fields=["availability_status", "unavailable_until", "updated_at"])
+        third, third_changed = route_work_item(
+            third,
+            resource=RoutingPolicy.Resources.CONVERSATIONS,
+            team=self.team,
+        )
+
+        self.assertTrue(first_changed and second_changed and third_changed)
+        self.assertEqual(first.assigned_to, self.manager)
+        self.assertEqual(second.assigned_to, self.operator)
+        self.assertEqual(third.assigned_to, self.manager)
+        self.assertNotIn(self.specialist.id, {first.assigned_to_id, second.assigned_to_id, third.assigned_to_id})
+        policy.refresh_from_db()
+        self.assertEqual(policy.last_assigned_member, self.manager_member)
+
+    def test_least_loaded_routes_to_eligible_member_with_smallest_active_load(self):
+        policy = RoutingPolicy.objects.create(
+            business=self.business,
+            resource=RoutingPolicy.Resources.TASKS,
+            mode=RoutingPolicy.Modes.LEAST_LOADED,
+            team=self.other_team,
+        )
+        Task.objects.create(business=self.business, title="Specialist load 1", assignee=self.specialist)
+        Task.objects.create(business=self.business, title="Specialist load 2", assignee=self.specialist)
+        task = Task.objects.create(business=self.business, title="Route by load")
+
+        routed, changed = route_work_item(
+            task,
+            resource=RoutingPolicy.Resources.TASKS,
+            team=self.other_team,
+        )
+
+        self.assertTrue(changed)
+        self.assertEqual(routed.assignee, self.outsider)
+        self.assertEqual(policy.team.business, self.business)
+
+    def test_periodic_routing_assigns_default_policy_unassigned_work(self):
+        RoutingPolicy.objects.create(
+            business=self.business,
+            resource=RoutingPolicy.Resources.LEADS,
+            mode=RoutingPolicy.Modes.ROUND_ROBIN,
+        )
+        lead = Lead.objects.create(business=self.business, client=self.client)
+
+        result = route_unassigned_work(limit=10)
+
+        lead.refresh_from_db()
+        self.assertEqual(result, {"assigned": 1, "checked": 1})
+        self.assertIsNotNone(lead.responsible_user)
+        self.assertTrue(
+            ActivityEvent.objects.filter(
+                business=self.business,
+                entity_type="Lead",
+                entity_id=str(lead.id),
+                metadata__kind="automatic_assignment",
+            ).exists()
+        )
+        self.assertTrue(
+            AuditLog.objects.filter(
+                business=self.business,
+                entity_type="Lead",
+                entity_id=str(lead.id),
+                metadata__kind="automatic_assignment",
+            ).exists()
+        )
+
+    def test_automatic_policy_falls_back_to_available_owner_for_solo_business(self):
+        solo_owner = self._user("solo-owner@example.com", User.Roles.BUSINESS_OWNER)
+        solo_business = Business.objects.create(
+            owner=solo_owner,
+            name="Solo business",
+            slug="solo-business",
+        )
+        ensure_default_roles(solo_business)
+        BusinessMember.objects.create(
+            business=solo_business,
+            user=solo_owner,
+            role=BusinessMember.Roles.OWNER,
+            business_role=BusinessRole.objects.get(
+                business=solo_business,
+                preset_key=BusinessMember.Roles.OWNER,
+            ),
+        )
+        RoutingPolicy.objects.create(
+            business=solo_business,
+            resource=RoutingPolicy.Resources.TASKS,
+            mode=RoutingPolicy.Modes.ROUND_ROBIN,
+        )
+        task = Task.objects.create(business=solo_business, title="Solo owner task")
+
+        routed, changed = route_work_item(
+            task,
+            resource=RoutingPolicy.Resources.TASKS,
+        )
+
+        self.assertTrue(changed)
+        self.assertEqual(routed.assignee, solo_owner)
+
+    def test_fallback_reassignment_requires_explicit_policy_and_is_audited(self):
+        self.operator_member.availability_status = BusinessMember.AvailabilityStatuses.UNAVAILABLE
+        self.operator_member.unavailable_until = timezone.now() + timezone.timedelta(hours=2)
+        self.operator_member.fallback_member = self.manager_member
+        self.operator_member.save(
+            update_fields=["availability_status", "unavailable_until", "fallback_member", "updated_at"]
+        )
+        keep = BotConversation.objects.create(
+            business=self.business,
+            bot=self.bot,
+            channel=BotConversation.Channels.WEBSITE,
+            assigned_to=self.operator,
+        )
+        policy = RoutingPolicy.objects.create(
+            business=self.business,
+            resource=RoutingPolicy.Resources.CONVERSATIONS,
+            mode=RoutingPolicy.Modes.MANUAL,
+            unavailable_strategy=RoutingPolicy.UnavailableStrategies.KEEP_ASSIGNED,
+        )
+
+        first = apply_fallback_reassignments(limit=10)
+        keep.refresh_from_db()
+        self.assertEqual(first["reassigned"], 0)
+        self.assertEqual(keep.assigned_to, self.operator)
+
+        policy.unavailable_strategy = RoutingPolicy.UnavailableStrategies.MEMBER_FALLBACK
+        policy.save(update_fields=["unavailable_strategy", "updated_at"])
+        second = apply_fallback_reassignments(limit=10)
+        keep.refresh_from_db()
+
+        self.assertEqual(second["reassigned"], 1)
+        self.assertEqual(keep.assigned_to, self.manager)
+        self.assertTrue(
+            ActivityEvent.objects.filter(
+                business=self.business,
+                event_type=ActivityEvents.WORK_AUTO_REASSIGNED,
+                entity_id=str(keep.id),
+            ).exists()
+        )
+        self.assertTrue(
+            AuditLog.objects.filter(
+                business=self.business,
+                entity_type="BotConversation",
+                entity_id=str(keep.id),
+                metadata__kind="automatic_reassignment",
+            ).exists()
+        )
+
+    def test_sla_attention_notifies_managers_once_and_resolves(self):
+        policy = RoutingPolicy.objects.create(
+            business=self.business,
+            resource=RoutingPolicy.Resources.LEADS,
+            mode=RoutingPolicy.Modes.MANUAL,
+            sla_minutes=10,
+        )
+        lead = Lead.objects.create(business=self.business, client=self.client)
+        old = timezone.now() - timezone.timedelta(hours=1)
+        Lead.objects.filter(id=lead.id).update(created_at=old, updated_at=old)
+
+        first = scan_sla_attention(limit=20)
+        notification_count = Notification.objects.filter(
+            business=self.business,
+            action_url=f"/app/leads?lead={lead.id}",
+            priority=Notification.Priorities.HIGH,
+        ).count()
+        second = scan_sla_attention(limit=20)
+
+        self.assertEqual(first["detected"], 1)
+        self.assertEqual(first["notified"], 2)
+        self.assertEqual(second["notified"], 0)
+        self.assertEqual(
+            Notification.objects.filter(
+                business=self.business,
+                action_url=f"/app/leads?lead={lead.id}",
+                priority=Notification.Priorities.HIGH,
+            ).count(),
+            notification_count,
+        )
+        attention = SLAAttention.objects.get(policy=policy, entity_id=str(lead.id))
+        self.assertTrue(attention.is_active)
+
+        Lead.objects.filter(id=lead.id).update(
+            responsible_user=self.manager,
+            updated_at=timezone.now(),
+        )
+        resolved = scan_sla_attention(limit=20)
+        attention.refresh_from_db()
+        self.assertEqual(resolved["resolved"], 1)
+        self.assertFalse(attention.is_active)
+
+    def test_routing_health_is_bounded_and_contains_no_customer_text(self):
+        RoutingPolicy.objects.create(
+            business=self.business,
+            resource=RoutingPolicy.Resources.TASKS,
+            mode=RoutingPolicy.Modes.MANUAL,
+        )
+        Task.objects.create(
+            business=self.business,
+            title="Sensitive customer task text",
+        )
+
+        health = routing_health()
+
+        self.assertEqual(health["active_policies"], 1)
+        self.assertEqual(health["unassigned"][RoutingPolicy.Resources.TASKS], 1)
+        self.assertNotIn("Sensitive customer task text", str(health))

@@ -4,6 +4,7 @@ from django.utils import timezone
 from apps.automations.models import AutomationRun
 from apps.ai_core.models import AIJob
 from apps.bots.outbound_delivery import outbound_delivery_health
+from apps.businesses.routing import routing_health
 from apps.core.backup_readiness import run_backup_restore_readiness_check
 from apps.core.models import ExportJob, SupportAccessGrant
 from apps.core.production_audit import run_production_readiness_audit
@@ -132,6 +133,7 @@ def _queue_summary():
     failed_syncs = ConnectorSyncRun.objects.filter(status=ConnectorSyncRun.Statuses.FAILED).count()
     failed_webhooks = WebhookDeliveryLog.objects.filter(status=WebhookDeliveryLog.Statuses.FAILED).count()
     outbound_messages = outbound_delivery_health()
+    routing = routing_health()
     outbound_critical = outbound_messages["failed"] + outbound_messages["stale_delivering"]
     outbound_warning = (
         outbound_messages["queued"]
@@ -164,6 +166,7 @@ def _queue_summary():
         "failed_connector_syncs": failed_syncs,
         "failed_webhook_deliveries": failed_webhooks,
         "outbound_messages": outbound_messages,
+        "routing": routing,
         "status": _status_from_failures(
             failed_runs
             + failed_notifications

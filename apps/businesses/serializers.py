@@ -4,7 +4,18 @@ from rest_framework import serializers
 
 from apps.accounts.models import User
 from apps.businesses.access import PERMISSION_CATALOG
-from apps.businesses.models import Business, BusinessCapability, BusinessInvitation, BusinessMember, BusinessRole, RolePermission, RolePreset, Team, TeamMember
+from apps.businesses.models import (
+    Business,
+    BusinessCapability,
+    BusinessInvitation,
+    BusinessMember,
+    BusinessRole,
+    RolePermission,
+    RolePreset,
+    RoutingPolicy,
+    Team,
+    TeamMember,
+)
 
 
 class BusinessSerializer(serializers.ModelSerializer):
@@ -19,6 +30,65 @@ class BusinessCapabilitySerializer(serializers.ModelSerializer):
         model = BusinessCapability
         fields = ["id", "business", "module_key", "is_enabled", "configured_by", "created_at", "updated_at"]
         read_only_fields = ["business", "module_key", "configured_by", "created_at", "updated_at"]
+
+
+class RoutingPolicySerializer(serializers.ModelSerializer):
+    team_name = serializers.CharField(source="team.name", read_only=True)
+    last_assigned_user_id = serializers.IntegerField(source="last_assigned_member.user_id", read_only=True)
+
+    class Meta:
+        model = RoutingPolicy
+        fields = [
+            "id",
+            "business",
+            "resource",
+            "mode",
+            "team",
+            "team_name",
+            "unavailable_strategy",
+            "eligible_roles",
+            "sla_minutes",
+            "last_assigned_member",
+            "last_assigned_user_id",
+            "is_active",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "last_assigned_member",
+            "last_assigned_user_id",
+            "created_at",
+            "updated_at",
+        ]
+
+    def validate(self, attrs):
+        business = attrs.get("business") or getattr(self.instance, "business", None)
+        team = attrs.get("team") if "team" in attrs else getattr(self.instance, "team", None)
+        if self.instance is not None and business and business.id != self.instance.business_id:
+            raise serializers.ValidationError({"business": "Routing policy business cannot be changed."})
+        if team and business and team.business_id != business.id:
+            raise serializers.ValidationError({"team": "Routing team must belong to the selected business."})
+        if team and not team.is_active:
+            raise serializers.ValidationError({"team": "Routing team must be active."})
+        resource = attrs.get("resource") or getattr(self.instance, "resource", None)
+        eligible_roles = attrs.get("eligible_roles")
+        if eligible_roles is not None:
+            if not isinstance(eligible_roles, list) or any(not isinstance(role, str) for role in eligible_roles):
+                raise serializers.ValidationError({"eligible_roles": "Eligible roles must be a list of role keys."})
+            valid_roles = set(BusinessMember.Roles.values)
+            invalid = sorted(set(eligible_roles) - valid_roles)
+            if invalid:
+                raise serializers.ValidationError({"eligible_roles": f"Unsupported roles: {', '.join(invalid)}."})
+            from apps.businesses.assignment_policy import ELIGIBLE_ROLES
+
+            resource_roles = ELIGIBLE_ROLES.get(resource, set())
+            ineligible = sorted(set(eligible_roles) - resource_roles)
+            if ineligible:
+                raise serializers.ValidationError(
+                    {"eligible_roles": f"Roles are not eligible for {resource}: {', '.join(ineligible)}."}
+                )
+            attrs["eligible_roles"] = list(dict.fromkeys(eligible_roles))
+        return attrs
 
 
 class BusinessMemberSerializer(serializers.ModelSerializer):

@@ -27,6 +27,14 @@ ELIGIBLE_ROLES = {
         BusinessMember.Roles.SUPPORT,
         BusinessMember.Roles.STAFF,
     },
+    Resources.TASKS: {
+        BusinessMember.Roles.OWNER,
+        BusinessMember.Roles.ADMIN,
+        BusinessMember.Roles.MANAGER,
+        BusinessMember.Roles.OPERATOR,
+        BusinessMember.Roles.STAFF,
+        BusinessMember.Roles.DOCTOR,
+    },
 }
 
 

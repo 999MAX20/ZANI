@@ -37,6 +37,7 @@ from apps.businesses.views import (
     BusinessRoleViewSet,
     BusinessViewSet,
     RolePermissionViewSet,
+    RoutingPolicyViewSet,
     TeamMembershipViewSet,
     TeamMemberManagementViewSet,
     TeamViewSet,
@@ -98,6 +99,7 @@ router = DefaultRouter()
 router.register("businesses", BusinessViewSet, basename="business")
 router.register("business-members", BusinessMemberViewSet, basename="business-member")
 router.register("business-capabilities", BusinessCapabilityViewSet, basename="business-capability")
+router.register("routing-policies", RoutingPolicyViewSet, basename="routing-policy")
 router.register("team/members", TeamMemberManagementViewSet, basename="team-member")
 router.register("team/invitations", BusinessInvitationViewSet, basename="team-invitation")
 router.register("team/roles", BusinessRoleViewSet, basename="team-role")

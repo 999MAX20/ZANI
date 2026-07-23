@@ -236,6 +236,103 @@ class TeamMember(TimeStampedModel):
         return f"{self.member} in {self.team}"
 
 
+class RoutingPolicy(TimeStampedModel):
+    class Resources(models.TextChoices):
+        LEADS = "leads", "Leads"
+        CONVERSATIONS = "conversations", "Conversations"
+        TASKS = "tasks", "Tasks"
+
+    class Modes(models.TextChoices):
+        MANUAL = "manual", "Manual"
+        ROUND_ROBIN = "round_robin", "Round robin"
+        LEAST_LOADED = "least_loaded", "Least loaded"
+
+    class UnavailableStrategies(models.TextChoices):
+        KEEP_ASSIGNED = "keep_assigned", "Keep assigned"
+        MEMBER_FALLBACK = "member_fallback", "Use member fallback"
+
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name="routing_policies")
+    resource = models.CharField(max_length=32, choices=Resources.choices)
+    mode = models.CharField(max_length=32, choices=Modes.choices, default=Modes.MANUAL)
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, null=True, blank=True, related_name="routing_policies")
+    unavailable_strategy = models.CharField(
+        max_length=32,
+        choices=UnavailableStrategies.choices,
+        default=UnavailableStrategies.KEEP_ASSIGNED,
+    )
+    eligible_roles = models.JSONField(default=list, blank=True)
+    sla_minutes = models.PositiveIntegerField(default=30)
+    last_assigned_member = models.ForeignKey(
+        BusinessMember,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="last_used_by_routing_policies",
+    )
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["business_id", "resource", "team_id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["business", "resource"],
+                condition=Q(team__isnull=True),
+                name="unique_default_routing_policy",
+            ),
+            models.UniqueConstraint(
+                fields=["business", "resource", "team"],
+                condition=Q(team__isnull=False),
+                name="unique_team_routing_policy",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["business", "resource", "is_active"]),
+        ]
+
+    def __str__(self):
+        scope = self.team.name if self.team_id else "business"
+        return f"{self.business}: {self.resource}/{scope} ({self.mode})"
+
+
+class SLAAttention(TimeStampedModel):
+    class Reasons(models.TextChoices):
+        UNASSIGNED = "unassigned_sla", "Unassigned SLA"
+        STALE = "stale_sla", "Stale SLA"
+
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name="sla_attention_items")
+    policy = models.ForeignKey(
+        RoutingPolicy,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="sla_attention_items",
+    )
+    resource = models.CharField(max_length=32, choices=RoutingPolicy.Resources.choices)
+    entity_id = models.CharField(max_length=64)
+    reason = models.CharField(max_length=32, choices=Reasons.choices)
+    is_active = models.BooleanField(default=True)
+    first_detected_at = models.DateTimeField(default=timezone.now)
+    last_detected_at = models.DateTimeField(default=timezone.now)
+    notified_at = models.DateTimeField(null=True, blank=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-last_detected_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["business", "resource", "entity_id", "reason"],
+                name="unique_sla_attention_incident",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["business", "is_active", "last_detected_at"]),
+            models.Index(fields=["resource", "is_active", "last_detected_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.business_id}:{self.resource}:{self.entity_id}:{self.reason}"
+
+
 class BusinessInvitation(TimeStampedModel):
     class Statuses(models.TextChoices):
         PENDING = "pending", "Pending"

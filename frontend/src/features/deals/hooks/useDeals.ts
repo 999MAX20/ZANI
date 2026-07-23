@@ -96,7 +96,6 @@ export function useDeals(filters?: DealFiltersState) {
           snoozed_until: null,
           priority: deal.next_task_priority || "normal",
           status: "open",
-          recurrence_rule: "",
           completed_at: null,
           completed_by: null,
           created_at: deal.updated_at,

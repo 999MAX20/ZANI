@@ -90,9 +90,9 @@ export function useLeadInteractions({
     if (!phone) return;
     const service = getService(lead, serviceList);
     const text = template
-      ?.replace(/\{\{РёРјСЏ\}\}/g, client?.full_name || "")
+      ?.replace(/\{\{имя\}\}/g, client?.full_name || "")
       .replace(/\{\{name\}\}/g, client?.full_name || "")
-      .replace(/\{\{СѓСЃР»СѓРіР°\}\}/g, service?.name || "")
+      .replace(/\{\{услуга\}\}/g, service?.name || "")
       .replace(/\{\{service\}\}/g, service?.name || "");
     window.open(`https://wa.me/${phone}${text ? `?text=${encodeURIComponent(text)}` : ""}`, "_blank", "noopener,noreferrer");
   }

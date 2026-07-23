@@ -110,7 +110,6 @@ export function useDealActions({
       due_at: new Date(nextActionDraft.due_at).toISOString(),
       reminder_at: null,
       priority: nextActionDraft.priority,
-      recurrence_rule: "",
     });
   }
 

@@ -12,6 +12,7 @@ from apps.activities.taxonomy import ActivityEvents
 from apps.businesses.access import Actions, Resources, assert_can, scope_queryset
 from apps.businesses.models import Business
 from apps.core.audit import write_audit_log
+from apps.core.idempotency import IdempotentCRMCreateMixin
 from apps.core.models import AuditLog
 from apps.core.viewsets import TenantModelViewSet
 from apps.core.work_queues import overdue_tasks_queryset
@@ -34,7 +35,7 @@ from apps.tasks.services import (
 from apps.tasks.templates import task_templates_payload
 
 
-class TaskViewSet(TenantModelViewSet):
+class TaskViewSet(IdempotentCRMCreateMixin, TenantModelViewSet):
     queryset = Task.objects.select_related(
         "business",
         "client",

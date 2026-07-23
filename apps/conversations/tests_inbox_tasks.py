@@ -100,6 +100,29 @@ class InboxCreateTaskTests(TestCase):
             ).exists()
         )
 
+    def test_create_task_from_inbox_replays_idempotency_key(self):
+        self.api.force_authenticate(self.owner)
+        payload = {"title": "Call from inbox once", "priority": "high"}
+        headers = {"HTTP_IDEMPOTENCY_KEY": "inbox-task-once"}
+
+        first = self.api.post(
+            f"/api/inbox/conversations/{self.conversation.id}/create-task/",
+            payload,
+            format="json",
+            **headers,
+        )
+        replay = self.api.post(
+            f"/api/inbox/conversations/{self.conversation.id}/create-task/",
+            payload,
+            format="json",
+            **headers,
+        )
+
+        self.assertEqual(first.status_code, 201)
+        self.assertEqual(replay.status_code, 201)
+        self.assertEqual(replay.data["id"], first.data["id"])
+        self.assertEqual(Task.objects.filter(conversation=self.conversation, title=payload["title"]).count(), 1)
+
     def test_create_task_from_inbox_uses_default_title(self):
         self.api.force_authenticate(self.owner)
 

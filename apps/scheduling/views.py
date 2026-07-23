@@ -9,6 +9,7 @@ from rest_framework.response import Response
 
 from apps.businesses.access import Actions, Resources, assert_can
 from apps.core.crm_cards import appointment_crm_card
+from apps.core.idempotency import IdempotentCRMCreateMixin
 from apps.core.permissions import user_can_access_business
 from apps.core.viewsets import TenantModelViewSet
 from apps.businesses.models import Business
@@ -198,7 +199,7 @@ class AppointmentMessageSettingViewSet(TenantModelViewSet):
         return Response(serializer.data)
 
 
-class AppointmentViewSet(TenantModelViewSet):
+class AppointmentViewSet(IdempotentCRMCreateMixin, TenantModelViewSet):
     queryset = Appointment.objects.select_related("business", "client", "lead", "lead__responsible_user", "service", "resource", "resource__linked_user")
     serializer_class = AppointmentSerializer
 

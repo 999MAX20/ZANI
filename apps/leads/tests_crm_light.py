@@ -478,6 +478,76 @@ class LeadFlowQuickActionTests(TestCase):
             ).exists()
         )
 
+    def test_create_appointment_from_lead_replays_idempotency_key_without_side_effects(self):
+        service = Service.objects.create(business=self.business, name="Idempotent consultation", duration_minutes=60)
+        WorkingHours.objects.create(
+            business=self.business,
+            weekday=0,
+            start_time=time(9, 0),
+            end_time=time(18, 0),
+        )
+        payload = {"service": service.id, "start_at": "2026-05-11T10:00:00+05:00"}
+        headers = {"HTTP_IDEMPOTENCY_KEY": "lead-appointment-once"}
+
+        first = self.api.post(
+            f"/api/leads/{self.lead.id}/create-appointment/",
+            payload,
+            format="json",
+            **headers,
+        )
+        first_activity_count = ActivityEvent.objects.filter(
+            business=self.business,
+            event_type="appointment_created",
+            entity_id=str(first.data["id"]),
+        ).count()
+        replay = self.api.post(
+            f"/api/leads/{self.lead.id}/create-appointment/",
+            payload,
+            format="json",
+            **headers,
+        )
+
+        self.assertEqual(first.status_code, 201)
+        self.assertEqual(replay.status_code, 201)
+        self.assertEqual(replay.data["id"], first.data["id"])
+        self.assertEqual(Appointment.objects.filter(business=self.business, lead=self.lead).count(), 1)
+        self.assertGreater(first_activity_count, 0)
+        self.assertEqual(
+            ActivityEvent.objects.filter(
+                business=self.business,
+                event_type="appointment_created",
+                entity_id=str(first.data["id"]),
+            ).count(),
+            first_activity_count,
+        )
+
+    def test_create_appointment_rejects_idempotency_key_payload_mismatch(self):
+        service = Service.objects.create(business=self.business, name="Mismatch consultation", duration_minutes=60)
+        WorkingHours.objects.create(
+            business=self.business,
+            weekday=0,
+            start_time=time(9, 0),
+            end_time=time(18, 0),
+        )
+        headers = {"HTTP_IDEMPOTENCY_KEY": "lead-appointment-mismatch"}
+
+        first = self.api.post(
+            f"/api/leads/{self.lead.id}/create-appointment/",
+            {"service": service.id, "start_at": "2026-05-11T10:00:00+05:00"},
+            format="json",
+            **headers,
+        )
+        mismatch = self.api.post(
+            f"/api/leads/{self.lead.id}/create-appointment/",
+            {"service": service.id, "start_at": "2026-05-11T12:00:00+05:00"},
+            format="json",
+            **headers,
+        )
+
+        self.assertEqual(first.status_code, 201)
+        self.assertEqual(mismatch.status_code, 409)
+        self.assertEqual(Appointment.objects.filter(business=self.business, lead=self.lead).count(), 1)
+
     def test_manager_cannot_create_appointment_for_unassigned_lead(self):
         other_client = Client.objects.create(business=self.business, full_name="Other Lead Client")
         other_lead = Lead.objects.create(business=self.business, client=other_client, responsible_user=self.owner)
@@ -566,6 +636,40 @@ class LeadFlowQuickActionTests(TestCase):
                 entity_id=str(task.id),
                 metadata__kind="lead_follow_up",
             ).exists()
+        )
+
+    def test_create_follow_up_task_replays_idempotency_key_without_duplicate(self):
+        payload = {
+            "title": "Call idempotent lead",
+            "priority": Task.Priorities.HIGH,
+            "assignee": self.manager.id,
+        }
+        headers = {"HTTP_IDEMPOTENCY_KEY": "lead-task-once"}
+
+        first = self.api.post(
+            f"/api/leads/{self.lead.id}/create-task/",
+            payload,
+            format="json",
+            **headers,
+        )
+        replay = self.api.post(
+            f"/api/leads/{self.lead.id}/create-task/",
+            payload,
+            format="json",
+            **headers,
+        )
+
+        self.assertEqual(first.status_code, 201)
+        self.assertEqual(replay.status_code, 201)
+        self.assertEqual(replay.data["id"], first.data["id"])
+        self.assertEqual(Task.objects.filter(business=self.business, lead=self.lead).count(), 1)
+        self.assertEqual(
+            ActivityEvent.objects.filter(
+                business=self.business,
+                event_type="task_created",
+                entity_id=str(first.data["id"]),
+            ).count(),
+            1,
         )
 
     def test_create_follow_up_task_rejects_foreign_assignee(self):

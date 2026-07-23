@@ -97,6 +97,49 @@ class SupportAccessGrant(models.Model):
         return f"{self.user} support access to {self.business} until {self.expires_at}"
 
 
+class CRMCommandIdempotency(models.Model):
+    class Statuses(models.TextChoices):
+        PROCESSING = "processing", "Processing"
+        SUCCEEDED = "succeeded", "Succeeded"
+
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name="crm_command_idempotency_records")
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="crm_command_idempotency_records",
+    )
+    action = models.CharField(max_length=128)
+    idempotency_key = models.CharField(max_length=128)
+    request_hash = models.CharField(max_length=64)
+    status = models.CharField(max_length=32, choices=Statuses.choices, default=Statuses.PROCESSING)
+    claim_token = models.UUIDField(default=uuid.uuid4, editable=False)
+    attempts = models.PositiveIntegerField(default=1)
+    response_status = models.PositiveSmallIntegerField(default=200)
+    response_json = models.JSONField(default=dict, blank=True)
+    resource_type = models.CharField(max_length=128, blank=True)
+    resource_id = models.CharField(max_length=64, blank=True)
+    locked_at = models.DateTimeField(default=timezone.now)
+    expires_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["business", "actor", "action", "idempotency_key"],
+                name="unique_crm_command_idempotency_key",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["business", "created_at"]),
+            models.Index(fields=["status", "expires_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.business_id}:{self.actor_id}:{self.action}:{self.idempotency_key}"
+
+
 class LoginHistory(models.Model):
     class Statuses(models.TextChoices):
         SUCCESS = "success", "Success"

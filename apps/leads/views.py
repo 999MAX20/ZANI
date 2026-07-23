@@ -19,6 +19,7 @@ from apps.automations.models import AutomationRule
 from apps.businesses.access import Actions, Resources, assert_can
 from apps.core.audit import write_audit_log
 from apps.core.crm_cards import lead_crm_card
+from apps.core.idempotency import CRMCommandResult, run_idempotent_crm_command
 from apps.core.models import AuditLog
 from apps.core.viewsets import TenantModelViewSet
 from apps.core.work_queues import stale_leads_queryset
@@ -261,14 +262,32 @@ class LeadViewSet(TenantModelViewSet):
     def create_deal(self, request, pk=None):
         lead = self.get_object()
         assert_can(request.user, lead.business, Resources.DEALS, Actions.CREATE, obj=lead)
-        result = create_deal_from_lead(
-            lead=lead,
+        amount = request.data.get("amount") or 0
+        title = request.data.get("title") or ""
+
+        def operation():
+            result = create_deal_from_lead(
+                lead=lead,
+                actor=request.user,
+                amount=amount,
+                title=title,
+                request=request,
+            )
+            return CRMCommandResult(
+                data=DealSerializer(result.deal).data,
+                status_code=201 if result.created else 200,
+                resource=result.deal,
+            )
+
+        command = run_idempotent_crm_command(
+            business=lead.business,
             actor=request.user,
-            amount=request.data.get("amount") or 0,
-            title=request.data.get("title") or "",
-            request=request,
+            action="lead.create_deal",
+            idempotency_key=request.headers.get("Idempotency-Key", ""),
+            payload={"lead_id": lead.id, "amount": amount, "title": title},
+            operation=operation,
         )
-        return Response(DealSerializer(result.deal).data, status=201 if result.created else 200)
+        return Response(command.data, status=command.status_code)
 
     @action(detail=True, methods=["post"], url_path="add-note")
     def add_note(self, request, pk=None):
@@ -303,21 +322,40 @@ class LeadViewSet(TenantModelViewSet):
         assert_can(request.user, lead.business, Resources.APPOINTMENTS, Actions.CREATE, obj=lead)
         serializer = CreateAppointmentFromLeadSerializer(data=request.data, context={"lead": lead})
         serializer.is_valid(raise_exception=True)
-        appointment = create_appointment_from_lead_contract(
-            lead=lead,
+        def operation():
+            appointment = create_appointment_from_lead_contract(
+                lead=lead,
+                actor=request.user,
+                service=serializer.validated_data["service"],
+                start_at=serializer.validated_data["start_at"],
+                resource=serializer.validated_data.get("resource"),
+                request=request,
+            )
+            run_automations_for_event(
+                business=appointment.business,
+                trigger_type=AutomationRule.TriggerTypes.APPOINTMENT_CREATED,
+                entity=appointment,
+                payload={
+                    "trigger_type": AutomationRule.TriggerTypes.APPOINTMENT_CREATED,
+                    "appointment_id": appointment.id,
+                    "lead_id": lead.id,
+                },
+            )
+            return CRMCommandResult(
+                data=AppointmentSerializer(appointment).data,
+                status_code=201,
+                resource=appointment,
+            )
+
+        command = run_idempotent_crm_command(
+            business=lead.business,
             actor=request.user,
-            service=serializer.validated_data["service"],
-            start_at=serializer.validated_data["start_at"],
-            resource=serializer.validated_data.get("resource"),
-            request=request,
+            action="lead.create_appointment",
+            idempotency_key=request.headers.get("Idempotency-Key", ""),
+            payload={"lead_id": lead.id, **serializer.validated_data},
+            operation=operation,
         )
-        run_automations_for_event(
-            business=appointment.business,
-            trigger_type=AutomationRule.TriggerTypes.APPOINTMENT_CREATED,
-            entity=appointment,
-            payload={"trigger_type": AutomationRule.TriggerTypes.APPOINTMENT_CREATED, "appointment_id": appointment.id, "lead_id": lead.id},
-        )
-        return Response(AppointmentSerializer(appointment).data, status=201)
+        return Response(command.data, status=command.status_code)
 
     @action(detail=True, methods=["post"], url_path="create-task")
     def create_task(self, request, pk=None):
@@ -325,17 +363,32 @@ class LeadViewSet(TenantModelViewSet):
         assert_can(request.user, lead.business, Resources.TASKS, Actions.CREATE, obj=lead)
         serializer = CreateTaskFromLeadSerializer(data=request.data, context={"lead": lead})
         serializer.is_valid(raise_exception=True)
-        task = create_follow_up_task_from_lead(
-            lead=lead,
+        def operation():
+            task = create_follow_up_task_from_lead(
+                lead=lead,
+                actor=request.user,
+                title=serializer.validated_data["title"],
+                description=serializer.validated_data.get("description", ""),
+                priority=serializer.validated_data.get("priority") or "normal",
+                due_at=serializer.validated_data.get("due_at"),
+                assignee_id=serializer.validated_data.get("assignee"),
+                request=request,
+            )
+            return CRMCommandResult(
+                data=TaskSerializer(task).data,
+                status_code=201,
+                resource=task,
+            )
+
+        command = run_idempotent_crm_command(
+            business=lead.business,
             actor=request.user,
-            title=serializer.validated_data["title"],
-            description=serializer.validated_data.get("description", ""),
-            priority=serializer.validated_data.get("priority") or "normal",
-            due_at=serializer.validated_data.get("due_at"),
-            assignee_id=serializer.validated_data.get("assignee"),
-            request=request,
+            action="lead.create_task",
+            idempotency_key=request.headers.get("Idempotency-Key", ""),
+            payload={"lead_id": lead.id, **serializer.validated_data},
+            operation=operation,
         )
-        return Response(TaskSerializer(task).data, status=201)
+        return Response(command.data, status=command.status_code)
 
     @action(detail=True, methods=["get"], url_path="crm-card")
     def crm_card(self, request, pk=None):

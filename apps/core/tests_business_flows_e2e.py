@@ -13,7 +13,14 @@ from apps.bots.models import Bot, BotConversation, BotMessage
 from apps.businesses.access import ensure_default_roles
 from apps.businesses.models import Business, BusinessMember, BusinessRole
 from apps.clients.models import Client, ClientMergeLog
-from apps.core.models import AuditLog
+from apps.core.idempotency import (
+    CRMCommandConflict,
+    CRMCommandResult,
+    begin_crm_command,
+    prune_expired_crm_commands,
+    run_idempotent_crm_command,
+)
+from apps.core.models import AuditLog, CRMCommandIdempotency
 from apps.crm.models import Deal
 from apps.crm.services import ensure_default_pipeline
 from apps.integrations.connectors import normalize_business_event
@@ -109,6 +116,106 @@ class CrmBusinessFlowE2ETests(TestCase):
             phone=phone,
             source=Client.Sources.MANUAL,
         )
+
+    def test_command_claim_rejects_concurrent_processing_and_reclaims_stale_lock(self):
+        first = begin_crm_command(
+            business=self.business,
+            actor=self.owner,
+            action="test.concurrent",
+            idempotency_key="concurrent-key",
+            payload={"value": 1},
+        )
+
+        with self.assertRaises(CRMCommandConflict):
+            begin_crm_command(
+                business=self.business,
+                actor=self.owner,
+                action="test.concurrent",
+                idempotency_key="concurrent-key",
+                payload={"value": 1},
+            )
+
+        first.record.expires_at = timezone.now() - timezone.timedelta(seconds=1)
+        first.record.save(update_fields=["expires_at", "updated_at"])
+        reclaimed = begin_crm_command(
+            business=self.business,
+            actor=self.owner,
+            action="test.concurrent",
+            idempotency_key="concurrent-key",
+            payload={"value": 1},
+        )
+
+        self.assertNotEqual(reclaimed.record.claim_token, first.record.claim_token)
+        self.assertEqual(reclaimed.record.attempts, 2)
+
+    def test_command_keys_are_isolated_by_business_and_actor(self):
+        second_business = Business.objects.create(
+            owner=self.owner,
+            name="Owner second business",
+            slug="owner-second-business",
+        )
+        ensure_default_roles(second_business)
+        self._member(second_business, self.owner, BusinessMember.Roles.OWNER)
+
+        first = begin_crm_command(
+            business=self.business,
+            actor=self.owner,
+            action="test.isolation",
+            idempotency_key="shared-key",
+            payload={"value": 1},
+        )
+        second = begin_crm_command(
+            business=second_business,
+            actor=self.owner,
+            action="test.isolation",
+            idempotency_key="shared-key",
+            payload={"value": 1},
+        )
+        third = begin_crm_command(
+            business=self.business,
+            actor=self.manager,
+            action="test.isolation",
+            idempotency_key="shared-key",
+            payload={"value": 1},
+        )
+
+        self.assertEqual({first.record.id, second.record.id, third.record.id}, set(
+            CRMCommandIdempotency.objects.values_list("id", flat=True)
+        ))
+
+    def test_failed_command_can_retry_and_expired_results_are_pruned(self):
+        calls = {"count": 0}
+
+        def failing_operation():
+            calls["count"] += 1
+            raise ValueError("temporary failure")
+
+        with self.assertRaises(ValueError):
+            run_idempotent_crm_command(
+                business=self.business,
+                actor=self.owner,
+                action="test.retry",
+                idempotency_key="retry-key",
+                payload={"value": 1},
+                operation=failing_operation,
+            )
+        self.assertFalse(CRMCommandIdempotency.objects.filter(action="test.retry").exists())
+
+        result = run_idempotent_crm_command(
+            business=self.business,
+            actor=self.owner,
+            action="test.retry",
+            idempotency_key="retry-key",
+            payload={"value": 1},
+            operation=lambda: CRMCommandResult(data={"ok": True}, status_code=201),
+        )
+        record = CRMCommandIdempotency.objects.get(action="test.retry")
+        record.expires_at = timezone.now() - timezone.timedelta(seconds=1)
+        record.save(update_fields=["expires_at", "updated_at"])
+
+        self.assertEqual(result.data, {"ok": True})
+        self.assertEqual(prune_expired_crm_commands(), 1)
+        self.assertFalse(CRMCommandIdempotency.objects.filter(id=record.id).exists())
 
     def _api_create_lead(self, *, client=None, message="Need CRM help"):
         client = client or self._create_client()

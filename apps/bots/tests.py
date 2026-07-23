@@ -1746,6 +1746,67 @@ class InboxBackendTests(TestCase):
             ).exists()
         )
 
+    def test_inbox_create_appointment_replays_idempotency_key(self):
+        lead = Lead.objects.create(
+            business=self.business,
+            client=self.client,
+            source=Lead.Sources.WEBSITE,
+            responsible_user=self.manager,
+        )
+        self.conversation.lead = lead
+        self.conversation.assigned_to = self.manager
+        self.conversation.save(update_fields=["lead", "assigned_to", "updated_at"])
+        service = Service.objects.create(
+            business=self.business,
+            name="Inbox idempotent consultation",
+            duration_minutes=30,
+        )
+        start_at = (timezone.now() + timezone.timedelta(days=1)).replace(
+            hour=11,
+            minute=0,
+            second=0,
+            microsecond=0,
+        )
+        WorkingHours.objects.create(
+            business=self.business,
+            weekday=start_at.weekday(),
+            start_time=time(9, 0),
+            end_time=time(18, 0),
+            is_day_off=False,
+        )
+        self.api.force_authenticate(self.owner)
+        payload = {
+            "service_id": service.id,
+            "start_at": start_at.isoformat(),
+            "notes": "Book once",
+        }
+        headers = {"HTTP_IDEMPOTENCY_KEY": "inbox-appointment-once"}
+
+        first = self.api.post(
+            f"/api/inbox/conversations/{self.conversation.id}/create-appointment/",
+            payload,
+            format="json",
+            **headers,
+        )
+        replay = self.api.post(
+            f"/api/inbox/conversations/{self.conversation.id}/create-appointment/",
+            payload,
+            format="json",
+            **headers,
+        )
+
+        self.assertEqual(first.status_code, 201)
+        self.assertEqual(replay.status_code, 201)
+        self.assertEqual(replay.data["id"], first.data["id"])
+        self.assertEqual(
+            Appointment.objects.filter(
+                business=self.business,
+                lead=lead,
+                service=service,
+            ).count(),
+            1,
+        )
+
     def test_inbox_can_create_and_link_client_from_conversation(self):
         conversation = BotConversation.objects.create(
             business=self.business,

@@ -834,6 +834,32 @@ class CorePlatformTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data["fields"], ["is_archived"])
 
+    def test_direct_appointment_create_replays_idempotency_key(self):
+        api = APIClient()
+        api.force_authenticate(self.owner)
+        client = Client.objects.create(business=self.business, full_name="Idempotent appointment client")
+        service = Service.objects.create(business=self.business, name="Idempotent appointment", duration_minutes=60)
+        WorkingHours.objects.get_or_create(
+            business=self.business,
+            weekday=0,
+            defaults={"start_time": time(9, 0), "end_time": time(18, 0)},
+        )
+        payload = {
+            "business": self.business.id,
+            "client": client.id,
+            "service": service.id,
+            "start_at": "2026-05-11T11:00:00+05:00",
+        }
+        headers = {"HTTP_IDEMPOTENCY_KEY": "direct-appointment-once"}
+
+        first = api.post("/api/appointments/", payload, format="json", **headers)
+        replay = api.post("/api/appointments/", payload, format="json", **headers)
+
+        self.assertEqual(first.status_code, 201)
+        self.assertEqual(replay.status_code, 201)
+        self.assertEqual(replay.data["id"], first.data["id"])
+        self.assertEqual(Appointment.objects.filter(business=self.business, client=client).count(), 1)
+
     def test_apply_working_hours_preset_creates_weekdays_without_duplicates(self):
         api = APIClient()
         api.force_authenticate(self.owner)

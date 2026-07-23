@@ -96,6 +96,24 @@ class TasksAndNotificationsPolishTests(TestCase):
         self.assertEqual(my_tasks_response.status_code, 200)
         self.assertIn(task.id, {item["id"] for item in my_tasks_response.data["results"]})
 
+    def test_direct_task_create_replays_idempotency_key(self):
+        self.api.force_authenticate(self.owner)
+        payload = {
+            "business": self.business.id,
+            "title": "Create direct task once",
+            "client": self.client.id,
+            "assignee": self.owner.id,
+        }
+        headers = {"HTTP_IDEMPOTENCY_KEY": "direct-task-once"}
+
+        first = self.api.post("/api/tasks/", payload, format="json", **headers)
+        replay = self.api.post("/api/tasks/", payload, format="json", **headers)
+
+        self.assertEqual(first.status_code, 201)
+        self.assertEqual(replay.status_code, 201)
+        self.assertEqual(replay.data["id"], first.data["id"])
+        self.assertEqual(Task.objects.filter(business=self.business, title="Create direct task once").count(), 1)
+
     def test_task_api_rejects_nonblank_recurrence_rule(self):
         self.api.force_authenticate(self.owner)
 

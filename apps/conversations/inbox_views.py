@@ -60,6 +60,7 @@ from apps.conversations.inbox_helpers import (
 from apps.conversations.pipeline import run_conversation_pipeline, source_from_channel
 from apps.conversations.services import create_task_from_conversation
 from apps.core.permissions import accessible_businesses
+from apps.core.idempotency import CRMCommandResult, run_idempotent_crm_command
 from apps.crm.models import Deal
 from apps.crm.serializers import DealSerializer
 from apps.leads.models import Lead
@@ -280,15 +281,30 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
         serializer = InboxCreateTaskSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        task = create_task_from_conversation(
-            conversation=conversation,
+        def operation():
+            task = create_task_from_conversation(
+                conversation=conversation,
+                actor=request.user,
+                title=serializer.validated_data.get("title", ""),
+                description=serializer.validated_data.get("description", ""),
+                priority=serializer.validated_data.get("priority", Task.Priorities.NORMAL),
+                due_at=serializer.validated_data.get("due_at"),
+            )
+            return CRMCommandResult(
+                data=TaskSerializer(task).data,
+                status_code=status.HTTP_201_CREATED,
+                resource=task,
+            )
+
+        command = run_idempotent_crm_command(
+            business=conversation.business,
             actor=request.user,
-            title=serializer.validated_data.get("title", ""),
-            description=serializer.validated_data.get("description", ""),
-            priority=serializer.validated_data.get("priority", Task.Priorities.NORMAL),
-            due_at=serializer.validated_data.get("due_at"),
+            action="conversation.create_task",
+            idempotency_key=request.headers.get("Idempotency-Key", ""),
+            payload={"conversation_id": conversation.id, **serializer.validated_data},
+            operation=operation,
         )
-        return Response(TaskSerializer(task).data, status=status.HTTP_201_CREATED)
+        return Response(command.data, status=command.status_code)
 
     @action(detail=True, methods=["post"], url_path="create-appointment")
     def create_appointment(self, request, pk=None):
@@ -298,18 +314,33 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
         serializer = InboxCreateAppointmentSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        try:
-            appointment = create_appointment_from_conversation(
-                conversation=conversation,
-                service_id=serializer.validated_data["service_id"],
-                resource_id=serializer.validated_data.get("resource_id"),
-                start_at=serializer.validated_data["start_at"],
-                notes=serializer.validated_data.get("notes", ""),
-                actor=request.user,
+        def operation():
+            try:
+                appointment = create_appointment_from_conversation(
+                    conversation=conversation,
+                    service_id=serializer.validated_data["service_id"],
+                    resource_id=serializer.validated_data.get("resource_id"),
+                    start_at=serializer.validated_data["start_at"],
+                    notes=serializer.validated_data.get("notes", ""),
+                    actor=request.user,
+                )
+            except ValueError as exc:
+                raise ValidationError({"detail": str(exc)}) from exc
+            return CRMCommandResult(
+                data=AppointmentSerializer(appointment).data,
+                status_code=status.HTTP_201_CREATED,
+                resource=appointment,
             )
-        except ValueError as exc:
-            raise ValidationError({"detail": str(exc)}) from exc
-        return Response(AppointmentSerializer(appointment).data, status=status.HTTP_201_CREATED)
+
+        command = run_idempotent_crm_command(
+            business=conversation.business,
+            actor=request.user,
+            action="conversation.create_appointment",
+            idempotency_key=request.headers.get("Idempotency-Key", ""),
+            payload={"conversation_id": conversation.id, **serializer.validated_data},
+            operation=operation,
+        )
+        return Response(command.data, status=command.status_code)
 
     @action(detail=True, methods=["post"], url_path="qualify")
     def qualify(self, request, pk=None):

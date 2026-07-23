@@ -85,16 +85,16 @@ R1 verification evidence:
 
 Business outcome: repeated HTTP requests return the first result instead of creating duplicate appointments, tasks or other critical records.
 
-- [ ] add a tenant-scoped CRM command idempotency record/service;
-- [ ] accept and normalize `Idempotency-Key` on critical create actions;
-- [ ] bind a key to business, actor, action and canonical request fingerprint;
-- [ ] return the stored result for an exact replay;
-- [ ] reject key reuse with different arguments;
-- [ ] protect lead -> appointment creation;
-- [ ] protect lead -> follow-up task creation;
-- [ ] protect other critical create actions identified by the implementation audit;
-- [ ] expire or prune old command keys safely;
-- [ ] cover replay, mismatch, concurrent claim, permission denial and cross-tenant key isolation.
+- [x] add a tenant-scoped CRM command idempotency record/service;
+- [x] accept and normalize `Idempotency-Key` on critical create actions;
+- [x] bind a key to business, actor, action and canonical request fingerprint;
+- [x] return the stored result for an exact replay;
+- [x] reject key reuse with different arguments;
+- [x] protect lead -> appointment creation;
+- [x] protect lead -> follow-up task creation;
+- [x] protect other critical create actions identified by the implementation audit;
+- [x] expire or prune old command keys safely;
+- [x] cover replay, mismatch, concurrent claim, permission denial and cross-tenant key isolation.
 
 Phase gate:
 
@@ -104,6 +104,28 @@ manage.py check
 makemigrations --check --dry-run
 git diff --check
 ```
+
+Protected R2 create actions:
+
+- lead -> deal;
+- lead -> appointment;
+- lead -> follow-up task;
+- inbox conversation -> appointment;
+- inbox conversation -> task;
+- direct appointment create;
+- direct task create.
+
+Inbox client/lead/deal creation keeps its existing linked-entity replay behavior and was not given a redundant second implementation.
+
+R2 verification evidence:
+
+- phase regression including the documented gate plus inbox coverage: `120 passed, 2 warnings`;
+- targeted idempotency scenarios: `10 passed`;
+- compatibility sample for keyed and unkeyed direct creates: `4 passed`;
+- `manage.py check`: passed;
+- `manage.py makemigrations --check --dry-run`: no changes detected;
+- clean SQLite `manage.py migrate --noinput`: passed through `core.0010`;
+- `git diff --check`: passed.
 
 ## 6. Phase R3: Automatic Routing And SLA Escalation
 

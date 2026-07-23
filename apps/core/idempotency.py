@@ -10,20 +10,18 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.db import IntegrityError, models, transaction
 from django.db.models import F
 from django.utils import timezone
-from rest_framework.exceptions import APIException, PermissionDenied, ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 
 from apps.businesses.access import Actions, assert_can
 from apps.businesses.capabilities import assert_resource_enabled
 from apps.businesses.models import Business
+from apps.core.domain_errors import IdempotencyConflict
 from apps.core.models import CRMCommandIdempotency
 from apps.core.permissions import user_can_access_business
 
 
-class CRMCommandConflict(APIException):
-    status_code = 409
-    default_detail = "This command is already being processed."
-    default_code = "idempotency_conflict"
+CRMCommandConflict = IdempotencyConflict
 
 
 @dataclass(frozen=True)

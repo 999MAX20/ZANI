@@ -9,6 +9,7 @@ from apps.businesses.assignment_notifications import create_assignment_notificat
 from apps.businesses.access import Resources
 from apps.businesses.models import BusinessMember
 from apps.core.audit import write_audit_log
+from apps.core.domain_errors import InvalidTransition
 from apps.core.models import AuditLog
 from apps.notifications.models import Notification
 from apps.notifications.routing import MANAGER_ROLES, filter_notification_recipients, resolve_notification_recipients
@@ -48,7 +49,9 @@ TASK_AUDIT_EVENT_TYPES_BY_ACTION = {
 
 def assert_task_status(task: Task, allowed_statuses: set[str], action: str) -> None:
     if task.status not in allowed_statuses:
-        raise ValidationError({"status": f"Cannot {action} task with status '{task.status}'."})
+        raise InvalidTransition(
+            errors={"status": f"Cannot {action} a task in its current status."}
+        )
 
 
 def complete_task(*, task: Task, actor, request=None) -> Task:
@@ -112,7 +115,9 @@ def reopen_task(*, task: Task, actor, request=None) -> Task:
 
 def undo_cancel_task(*, task: Task, actor, request=None) -> Task:
     if task.status != Task.Statuses.CANCELLED:
-        raise ValidationError({"status": "Only cancelled tasks can be restored from cancellation."})
+        raise InvalidTransition(
+            errors={"status": "Only cancelled tasks can be restored from cancellation."}
+        )
 
     previous_cancel_log = (
         AuditLog.objects.filter(

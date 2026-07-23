@@ -10,6 +10,7 @@ from apps.businesses.assignment_notifications import create_assignment_notificat
 from apps.businesses.assignment_policy import assert_assignment_allowed
 from apps.businesses.access import Resources
 from apps.core.audit import write_audit_log
+from apps.core.domain_errors import InvalidTransition
 from apps.core.models import AuditLog
 from apps.crm.models import Deal, Pipeline, PipelineStage
 from apps.leads.models import Lead
@@ -98,7 +99,9 @@ def assign_lead(*, lead: Lead, actor, user_id=None, request=None) -> Lead:
 
 def take_lead_in_work(*, lead: Lead, actor, request=None) -> Lead:
     if lead.status not in {Lead.Statuses.NEW, Lead.Statuses.CONTACTED, Lead.Statuses.LOST}:
-        raise ValidationError({"status": "Only new, contacted or lost leads can be taken into work."})
+        raise InvalidTransition(
+            errors={"status": "Only new, contacted, or lost leads can be taken into work."}
+        )
     return apply_lead_status(
         lead=lead,
         actor=actor,
@@ -111,7 +114,9 @@ def take_lead_in_work(*, lead: Lead, actor, request=None) -> Lead:
 
 def mark_lead_contacted(*, lead: Lead, actor, request=None) -> Lead:
     if lead.status == Lead.Statuses.LOST:
-        raise ValidationError({"status": "Reopen lost lead before marking it contacted."})
+        raise InvalidTransition(
+            errors={"status": "Reopen the lost lead before marking it contacted."}
+        )
     return apply_lead_status(
         lead=lead,
         actor=actor,
@@ -150,7 +155,9 @@ def mark_lead_lost(*, lead: Lead, actor, lost_reason: str, request=None) -> Lead
 
 def reopen_lead(*, lead: Lead, actor, request=None) -> Lead:
     if lead.status not in {Lead.Statuses.LOST, Lead.Statuses.CLOSED}:
-        raise ValidationError({"status": "Only lost or closed leads can be reopened."})
+        raise InvalidTransition(
+            errors={"status": "Only lost or closed leads can be reopened."}
+        )
     target_status = lead.previous_status if lead.previous_status and lead.previous_status != Lead.Statuses.LOST else Lead.Statuses.IN_PROGRESS
     return apply_lead_status(
         lead=lead,
@@ -239,7 +246,9 @@ def apply_lead_status(
     previous_status = lead.status
     previous_lost_reason = lead.lost_reason
     if previous_status != status and status not in allowed_lead_status_transitions(previous_status):
-        raise ValidationError({"status": f"Cannot move lead from '{previous_status}' to '{status}'."})
+        raise InvalidTransition(
+            errors={"status": f"Cannot move lead from '{previous_status}' to '{status}'."}
+        )
     if service is not None and service.business_id != lead.business_id:
         raise ValidationError({"service": "Service must belong to lead business."})
     now = timezone.now()
@@ -342,8 +351,9 @@ def mark_lead_appointment_created(
     if appointment is not None and appointment.business_id != lead.business_id:
         raise ValidationError({"appointment": "Appointment must belong to lead business."})
     if not can_mark_lead_appointment_created(lead):
-        raise ValidationError(
-            {"status": f"Cannot move lead from '{lead.status}' to '{Lead.Statuses.APPOINTMENT_CREATED}'."}
+        raise InvalidTransition(
+            "Cannot move lead to appointment-created status from its current state.",
+            errors={"status": f"Cannot move lead from '{lead.status}' to '{Lead.Statuses.APPOINTMENT_CREATED}'."}
         )
 
     metadata = {
@@ -379,7 +389,10 @@ def create_appointment_from_lead_contract(*, lead: Lead, actor, service, start_a
     if resource and resource.business_id != lead.business_id:
         raise ValidationError({"resource": "Resource must belong to lead business."})
     if lead.status != Lead.Statuses.APPOINTMENT_CREATED and Lead.Statuses.APPOINTMENT_CREATED not in allowed_lead_status_transitions(lead.status):
-        raise ValidationError({"status": f"Cannot move lead from '{lead.status}' to '{Lead.Statuses.APPOINTMENT_CREATED}'."})
+        raise InvalidTransition(
+            "Cannot move lead to appointment-created status from its current state.",
+            errors={"status": f"Cannot move lead from '{lead.status}' to '{Lead.Statuses.APPOINTMENT_CREATED}'."}
+        )
 
     from apps.scheduling.services import create_appointment_from_lead
 

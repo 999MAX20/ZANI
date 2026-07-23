@@ -1,11 +1,21 @@
 from django.test import TestCase
 from django.utils import timezone
-from rest_framework.test import APIClient
+from rest_framework.test import APIClient, APIRequestFactory
 
 from apps.accounts.models import User
 from apps.businesses.access import ensure_default_roles
 from apps.businesses.models import Business, BusinessInvitation, BusinessMember, BusinessRole, Team, TeamMember
 from apps.clients.models import Client
+from apps.core.domain_errors import (
+    AssigneeUnavailable,
+    IdempotencyConflict,
+    InvalidTransition,
+    ModuleDisabled,
+    ProviderUnavailable,
+    ScheduleConflict,
+    TemporaryServiceFailure,
+)
+from apps.core.exceptions import SAFE_PERMISSION_DETAIL, api_exception_handler
 from apps.leads.models import Lead
 from apps.tasks.models import Task
 
@@ -89,8 +99,33 @@ class B3BackendContractTests(TestCase):
         self.api.force_authenticate(self.other_owner)
         denied = self.api.get("/api/onboarding/status/", {"business": self.business.id})
         self.assertEqual(denied.status_code, 403)
-        self.assertEqual(denied.data["code"], "tenant_access_denied")
+        self.assertEqual(denied.data["code"], "permission_denied")
+        self.assertEqual(denied.data["detail"], SAFE_PERMISSION_DETAIL)
+        self.assertNotIn(self.business.name, str(denied.data))
+        self.assertEqual(denied.data["errors"], {})
         self.assertTrue(denied.data["request_id"])
+
+    def test_domain_errors_have_explicit_codes_and_complete_safe_envelope(self):
+        request = APIRequestFactory().get("/")
+        request.correlation_id = "domain-error-42"
+        cases = (
+            (InvalidTransition(errors={"status": "Choose another action."}), 409, "invalid_transition"),
+            (ScheduleConflict(errors={"start_at": "Choose another slot."}), 409, "schedule_conflict"),
+            (AssigneeUnavailable(errors={"user_id": "Choose another member."}), 409, "assignee_unavailable"),
+            (ModuleDisabled(errors={"module": "deals"}), 403, "module_disabled"),
+            (IdempotencyConflict(), 409, "idempotency_conflict"),
+            (ProviderUnavailable(), 503, "provider_unavailable"),
+            (TemporaryServiceFailure(), 503, "temporary_service_failure"),
+        )
+
+        for exception, status_code, code in cases:
+            with self.subTest(code=code):
+                response = api_exception_handler(exception, {"request": request})
+                self.assertEqual(response.status_code, status_code)
+                self.assertEqual(response.data["code"], code)
+                self.assertEqual(response.data["request_id"], "domain-error-42")
+                self.assertTrue(response.data["detail"])
+                self.assertIn("errors", response.data)
 
     def test_invitation_acceptance_is_explicit_once_and_assigns_team(self):
         team = Team.objects.create(business=self.business, name="B3 Front desk")

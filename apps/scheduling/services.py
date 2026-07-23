@@ -10,6 +10,7 @@ from apps.automations.engine import run_automations_for_event
 from apps.automations.models import AutomationRule
 from apps.businesses.models import Business
 from apps.core.audit import infer_audit_category, infer_audit_risk, sanitize_audit_metadata, write_audit_log
+from apps.core.domain_errors import InvalidTransition
 from apps.core.models import AuditLog
 from apps.notifications.models import Notification
 from apps.scheduling.availability import (
@@ -235,9 +236,15 @@ def mark_appointment_no_show(*, appointment, actor, reason, request=None):
 def reschedule_appointment(*, appointment, actor, start_at, resource=None, reason="", request=None):
     Business.objects.select_for_update().get(pk=appointment.business_id)
     if appointment.is_archived:
-        raise ValueError("Archived appointment cannot be rescheduled.")
+        raise InvalidTransition(
+            "Archived appointments cannot be rescheduled.",
+            errors={"status": "Restore the appointment before rescheduling it."},
+        )
     if appointment.status in {Appointment.Statuses.CANCELLED, Appointment.Statuses.COMPLETED, Appointment.Statuses.NO_SHOW}:
-        raise ValueError("Terminal appointment cannot be rescheduled.")
+        raise InvalidTransition(
+            "Completed, cancelled, or missed appointments cannot be rescheduled.",
+            errors={"status": "Create a new appointment instead."},
+        )
     if resource and resource.business_id != appointment.business_id:
         raise ValueError("Resource must belong to the selected business.")
 
@@ -325,11 +332,17 @@ def apply_appointment_status(
     )
     previous_status = appointment.status
     if appointment.is_archived:
-        raise ValueError("Archived appointment cannot change lifecycle status.")
+        raise InvalidTransition(
+            "Archived appointments cannot change status.",
+            errors={"status": "Restore the appointment before changing its status."},
+        )
     if previous_status == status_value:
-        raise ValueError(f"Appointment already has status '{status_value}'.")
+        raise InvalidTransition(errors={"status": "The appointment already has the requested status."})
     if previous_status in TERMINAL_APPOINTMENT_STATUSES:
-        raise ValueError("Terminal appointment cannot change lifecycle status.")
+        raise InvalidTransition(
+            "Completed, cancelled, or missed appointments cannot change status.",
+            errors={"status": "Create or restore the appropriate follow-up record instead."},
+        )
 
     appointment.status = status_value
     appointment.save(update_fields=["status", "updated_at"])

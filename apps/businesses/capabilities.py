@@ -1,6 +1,5 @@
-from rest_framework.exceptions import PermissionDenied
-
 from apps.businesses.models import Business, BusinessCapability
+from apps.core.domain_errors import ModuleDisabled
 
 
 MODULE_REGISTRY = (
@@ -96,7 +95,7 @@ def resource_is_enabled(business, resource):
 def assert_resource_enabled(business, resource):
     module_key = module_for_resource(resource)
     if module_key and not is_module_enabled(business, module_key):
-        raise PermissionDenied(f"Module '{module_key}' is disabled for this business.")
+        raise ModuleDisabled(errors={"module": module_key})
 
 
 def capability_payload(business):

@@ -3,6 +3,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from apps.businesses.access import Actions, Resources, can, team_user_ids_for, user_is_business_owner
 from apps.businesses.models import BusinessMember, RolePermission
+from apps.core.domain_errors import AssigneeUnavailable
 
 
 ELIGIBLE_ROLES = {
@@ -60,7 +61,9 @@ def resolve_assignment_member(*, business, user, resource):
     if member is not None and eligible_roles and member.role not in eligible_roles:
         raise ValidationError({"user_id": "This member role is not eligible for the selected work item."})
     if member is not None and not member_is_available(member):
-        raise ValidationError({"user_id": "This member is currently unavailable. Select an available fallback."})
+        raise AssigneeUnavailable(
+            errors={"user_id": "Select an available member or configured fallback."}
+        )
     return member
 
 

@@ -727,7 +727,8 @@ class CorePlatformTests(TestCase):
             format="json",
         )
 
-        self.assertEqual(replay.status_code, 400)
+        self.assertEqual(replay.status_code, 409)
+        self.assertEqual(replay.data["code"], "invalid_transition")
         appointment.refresh_from_db()
         self.assertEqual(appointment.status, Appointment.Statuses.COMPLETED)
         self.assertEqual(Task.objects.filter(appointment=appointment).count(), 1)
@@ -1020,7 +1021,9 @@ class CorePlatformTests(TestCase):
             format="json",
         )
 
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.data["code"], "schedule_conflict")
+        self.assertIn("start_at", response.data["errors"])
         self.assertIn("outside working hours", str(response.data))
 
     def test_appointment_api_rejects_busy_slots(self):
@@ -1056,7 +1059,9 @@ class CorePlatformTests(TestCase):
             format="json",
         )
 
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.data["code"], "schedule_conflict")
+        self.assertIn("start_at", response.data["errors"])
         self.assertIn("not available", str(response.data))
 
     def test_appointment_api_filters_calendar_range_and_facets(self):
@@ -1222,7 +1227,8 @@ class CorePlatformTests(TestCase):
             format="json",
         )
 
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.data["code"], "schedule_conflict")
         self.assertIn("not available", str(response.data))
         appointment.refresh_from_db()
         self.assertEqual(appointment.start_at, first_start)
@@ -1253,7 +1259,8 @@ class CorePlatformTests(TestCase):
             format="json",
         )
 
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.data["code"], "schedule_conflict")
         self.assertIn("outside working hours", str(response.data))
         appointment.refresh_from_db()
         self.assertEqual(appointment.start_at, start_at)
@@ -1292,7 +1299,8 @@ class CorePlatformTests(TestCase):
             format="json",
         )
 
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.data["code"], "schedule_conflict")
         self.assertIn("outside working hours", str(response.data))
 
     def test_apply_working_hours_preset_rejects_unknown_key(self):

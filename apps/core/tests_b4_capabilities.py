@@ -95,6 +95,8 @@ class B4CapabilityTests(TestCase):
 
         self.assertEqual(hidden.status_code, 404)
         self.assertEqual(create_denied.status_code, 403)
+        self.assertEqual(create_denied.data["code"], "module_disabled")
+        self.assertEqual(create_denied.data["errors"], {"module": "deals"})
         self.assertEqual(enabled.status_code, 200)
         self.assertEqual(restored.status_code, 200)
         self.assertEqual(restored.data["id"], self.deal.id)

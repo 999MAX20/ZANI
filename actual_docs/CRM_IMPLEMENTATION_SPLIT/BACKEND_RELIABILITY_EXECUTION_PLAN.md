@@ -175,19 +175,19 @@ R3 verification evidence:
 
 Business outcome: the API returns stable machine-readable codes without guessing from English exception text.
 
-- [ ] add domain API exceptions with explicit codes;
-- [ ] preserve the shared `code`, `request_id`, `detail` and `errors` envelope;
-- [ ] add `invalid_transition`;
-- [ ] add `schedule_conflict`;
-- [ ] add `assignee_unavailable`;
-- [ ] add `module_disabled`;
-- [ ] add `idempotency_conflict`;
-- [ ] add `provider_unavailable`;
-- [ ] add `temporary_service_failure`;
-- [ ] keep tenant denials non-enumerable;
-- [ ] replace string-heuristic mappings in the changed critical paths;
-- [ ] document the backend code contract for the UI/UX workstream;
-- [ ] cover error code, field errors, request ID, safe detail and tenant denial behavior.
+- [x] add domain API exceptions with explicit codes;
+- [x] preserve the shared `code`, `request_id`, `detail` and `errors` envelope;
+- [x] add `invalid_transition`;
+- [x] add `schedule_conflict`;
+- [x] add `assignee_unavailable`;
+- [x] add `module_disabled`;
+- [x] add `idempotency_conflict`;
+- [x] add `provider_unavailable`;
+- [x] add `temporary_service_failure`;
+- [x] keep tenant denials non-enumerable;
+- [x] replace string-heuristic mappings in the changed critical paths;
+- [x] document the backend code contract for the UI/UX workstream;
+- [x] cover error code, field errors, request ID, safe detail and tenant denial behavior.
 
 Phase gate:
 
@@ -197,6 +197,27 @@ manage.py check
 makemigrations --check --dry-run
 git diff --check
 ```
+
+R4 implementation notes:
+
+- domain errors are defined in `apps/core/domain_errors.py` and are the only source of explicit lifecycle/provider conflict codes;
+- generic DRF validation remains `400 validation_error`, while domain state conflicts use `409`;
+- permission and not-found responses use sanitized fallback details and do not branch on tenant/business words;
+- serializer field keys remain at the top level for compatibility and are also available through `errors`;
+- provider and temporary-service exceptions are safe boundary primitives; raw provider exception text must not be passed into them;
+- no model, migration, notification, BusinessEvent, AI or environment behavior changed.
+
+R4 verification evidence:
+
+- formal phase gate: `110 passed, 7 subtests`;
+- explicit error-code contract and capabilities: `11 passed, 7 subtests`;
+- task lifecycle and unavailable assignee regression: `39 passed`;
+- appointment schedule/lifecycle regression: `40 passed`;
+- CRM idempotency service regression: `11 passed, 2 warnings`;
+- lead idempotency mismatch API regression: `1 passed`;
+- `manage.py check`: passed;
+- `manage.py makemigrations --check --dry-run`: no changes detected;
+- `git diff --check`: passed.
 
 ## 8. Phase R5: Production Gate Resilience And Final Verification
 

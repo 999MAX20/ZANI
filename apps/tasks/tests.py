@@ -498,10 +498,44 @@ class TasksAndNotificationsPolishTests(TestCase):
         cancel_done_response = self.api.post(f"/api/tasks/{done_task.id}/cancel/", {"reason": "No longer needed"}, format="json")
         snooze_cancelled_response = self.api.post(f"/api/tasks/{cancelled_task.id}/snooze/", {"snoozed_until": "2026-05-14T10:00:00+06:00"}, format="json")
 
-        self.assertEqual(start_done_response.status_code, 400)
-        self.assertEqual(complete_cancelled_response.status_code, 400)
-        self.assertEqual(cancel_done_response.status_code, 400)
-        self.assertEqual(snooze_cancelled_response.status_code, 400)
+        for response in (
+            start_done_response,
+            complete_cancelled_response,
+            cancel_done_response,
+            snooze_cancelled_response,
+        ):
+            self.assertEqual(response.status_code, 409)
+            self.assertEqual(response.data["code"], "invalid_transition")
+            self.assertIn("status", response.data["errors"])
+
+    def test_unavailable_assignee_returns_actionable_domain_error(self):
+        assignee = User.objects.create_user(
+            username="unavailable-task-assignee",
+            email="unavailable-task-assignee@example.com",
+            password="pass",
+            role=User.Roles.STAFF,
+        )
+        BusinessMember.objects.create(
+            business=self.business,
+            user=assignee,
+            role=BusinessMember.Roles.STAFF,
+            availability_status=BusinessMember.AvailabilityStatuses.UNAVAILABLE,
+            unavailable_until=timezone.now() + timezone.timedelta(hours=2),
+        )
+        task = Task.objects.create(business=self.business, title="Unavailable assignment", client=self.client)
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            f"/api/tasks/{task.id}/assign/",
+            {"user_id": assignee.id},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.data["code"], "assignee_unavailable")
+        self.assertIn("user_id", response.data["errors"])
+        task.refresh_from_db()
+        self.assertIsNone(task.assignee)
 
     def test_assign_endpoint_requires_explicit_user_id(self):
         task = Task.objects.create(business=self.business, title="Explicit assign task", client=self.client)

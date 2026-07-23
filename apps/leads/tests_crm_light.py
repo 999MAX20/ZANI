@@ -546,6 +546,7 @@ class LeadFlowQuickActionTests(TestCase):
 
         self.assertEqual(first.status_code, 201)
         self.assertEqual(mismatch.status_code, 409)
+        self.assertEqual(mismatch.data["code"], "idempotency_conflict")
         self.assertEqual(Appointment.objects.filter(business=self.business, lead=self.lead).count(), 1)
 
     def test_manager_cannot_create_appointment_for_unassigned_lead(self):

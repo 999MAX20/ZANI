@@ -1,6 +1,6 @@
 # API Action Contract
 
-Last updated: 2026-07-16
+Last updated: 2026-07-23
 
 Purpose: keep frontend and backend aligned on which fields are regular CRUD fields and which fields are state-machine fields that must only change through action endpoints/services.
 
@@ -16,6 +16,48 @@ Current sync note 2026-07-16: refreshed against the current DRF router/actions f
 - Use `POST /api/<resource>/<id>/restore/` for restore. Restore is restricted to owner/admin-level permissions for critical CRM records.
 - Do not write `created_at`, `updated_at`, `archived_at`, `archived_by`, system timestamps, runtime errors, provider payloads, delivery results or audit metadata from frontend.
 - Treat `400` with `{ "fields": [...] }` as a contract violation: switch to the listed action endpoint instead of retrying the generic update.
+
+## Error Envelope
+
+All DRF error responses use this stable shape:
+
+```json
+{
+  "code": "schedule_conflict",
+  "request_id": "request-correlation-id",
+  "detail": "The requested appointment time is not available.",
+  "errors": {
+    "start_at": "Select another available time."
+  }
+}
+```
+
+- `code` is the UI decision key. Do not branch on English `detail` text.
+- `request_id` is safe to show in support UI and must be included in incident reports.
+- `detail` is a safe user-facing fallback. Frontend localization may replace it by `code`.
+- `errors` contains field/action context and is `{}` when no safe structured context exists.
+- Existing serializer field keys can also remain at the top level for backward compatibility.
+
+Stable domain codes:
+
+| Code | HTTP | UI behavior |
+| --- | ---: | --- |
+| `validation_error` | 400 | Highlight fields from `errors`; do not retry unchanged input. |
+| `authentication_required` | 401 | Start the login/session recovery flow. |
+| `permission_denied` | 403 | Show a generic access message; do not reveal whether another tenant owns an object. |
+| `module_disabled` | 403 | Offer module enablement only to users allowed to manage settings. |
+| `not_found` | 404 | Show a generic missing/unavailable state. |
+| `invalid_transition` | 409 | Refresh the entity and show the allowed next action. |
+| `schedule_conflict` | 409 | Keep form data and ask the user to choose another slot. |
+| `assignee_unavailable` | 409 | Keep the work item and ask for another assignee/fallback. |
+| `idempotency_conflict` | 409 | Do not repeat the mutation with changed data under the same key. |
+| `rate_limited` | 429 | Retry only after the server-provided wait window. |
+| `provider_unavailable` | 503 | Preserve the draft and show provider-specific retry/status UI. |
+| `temporary_service_failure` | 503 | Preserve user input and allow a bounded retry. |
+
+`permission_denied` and `not_found` use sanitized details. Tenant names, object
+ownership, credentials, provider payloads, and raw exception text must not be
+included in the envelope.
 
 ## Core CRM
 

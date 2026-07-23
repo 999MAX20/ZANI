@@ -4,6 +4,7 @@ from zoneinfo import ZoneInfo
 from django.db import transaction
 from django.utils import timezone
 
+from apps.core.domain_errors import ScheduleConflict
 from apps.scheduling.models import Appointment, WorkingHours
 
 
@@ -147,13 +148,19 @@ def validate_appointment_availability(business, service, start_at, resource=None
 
     working_hours = _working_hours_for(business, local_start.date().weekday(), resource=resource)
     if not working_hours or working_hours.is_day_off:
-        raise ValueError("Requested appointment time is outside working hours.")
+        raise ScheduleConflict(
+            "The requested appointment time is outside working hours.",
+            errors={"start_at": "Select a time inside configured working hours."},
+        )
 
     day_start = timezone.make_aware(datetime.combine(local_start.date(), working_hours.start_time), tz)
     day_end = timezone.make_aware(datetime.combine(local_start.date(), working_hours.end_time), tz)
     local_end = end_at.astimezone(tz)
     if local_start < day_start or local_end > day_end:
-        raise ValueError("Requested appointment time is outside working hours.")
+        raise ScheduleConflict(
+            "The requested appointment time is outside working hours.",
+            errors={"start_at": "Select a time inside configured working hours."},
+        )
 
     busy_query = Appointment.objects.filter(
         business=business,
@@ -165,6 +172,8 @@ def validate_appointment_availability(business, service, start_at, resource=None
     if exclude_appointment:
         busy_query = busy_query.exclude(pk=exclude_appointment.pk)
     if busy_query.exists():
-        raise ValueError("Requested appointment time is not available.")
+        raise ScheduleConflict(
+            errors={"start_at": "Select another available time."}
+        )
 
     return end_at

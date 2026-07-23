@@ -50,5 +50,6 @@ __MACOSX/
 *.zip
 
 # Local scratch/artifacts
+output/
 troubles/
 useless/

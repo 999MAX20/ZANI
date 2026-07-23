@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+﻿import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Download, ExternalLink, FilePenLine, FileText, Image, MoreHorizontal, Paperclip, Share2, StickyNote, Upload, X, ZoomIn, ZoomOut } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -177,10 +177,10 @@ export function EntityAttachmentsPanel({ data, entity }: { data: CrmCardPayload;
     <div className={drawerSurfaceClass}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-400">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-zani-faint">
             <Paperclip size={14} /> {t("crmCard.attachments")}
           </div>
-          <p className="mt-1 text-sm font-semibold text-slate-500">{t("crmCard.attachmentsText")}</p>
+          <p className="mt-1 text-sm font-semibold text-zani-muted">{t("crmCard.attachmentsText")}</p>
         </div>
       </div>
       {data.attachments.length || selectedFiles.length ? (
@@ -217,13 +217,13 @@ export function EntityAttachmentsPanel({ data, entity }: { data: CrmCardPayload;
             appendFiles(event.dataTransfer.files);
           }}
           className={`mb-4 flex cursor-pointer flex-col items-center justify-center rounded-card border border-dashed px-4 py-5 text-center transition ${
-            isDragging ? "border-brand-300 bg-brand-50 text-brand-700" : "border-slate-200 bg-slate-50 text-slate-500 hover:border-brand-200 hover:bg-white"
+            isDragging ? "border-brand-300 bg-brand-50 text-brand-700" : "border-zani-border bg-surface-muted text-zani-muted hover:border-brand-200 hover:bg-surface-card"
           }`}
         >
-          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-white text-brand-600 shadow-sm">
+          <span className="grid h-10 w-10 place-items-center rounded-card bg-surface-card text-brand-600 shadow-sm">
             <Upload size={18} />
           </span>
-          <span className="mt-3 text-sm font-black text-midnight">{t("crmCard.dropFilesTitle")}</span>
+          <span className="mt-3 text-sm font-semibold text-zani-ink">{t("crmCard.dropFilesTitle")}</span>
           <span className="mt-1 max-w-md text-xs font-semibold leading-5">{t("crmCard.dropFilesText")}</span>
           <input
             id={inputId}
@@ -241,16 +241,16 @@ export function EntityAttachmentsPanel({ data, entity }: { data: CrmCardPayload;
       {selectedFiles.length ? (
         <div className="mb-4 space-y-2">
           {selectedFiles.map((file) => (
-            <div key={`${file.name}-${file.size}-${file.lastModified}`} className="flex items-center justify-between gap-3 rounded-control border border-slate-200 bg-white px-3 py-2">
-              <span className="flex min-w-0 items-center gap-2 text-sm font-semibold text-midnight">
-                {file.type.startsWith("image/") ? <Image size={15} className="shrink-0 text-brand-600" /> : <FileText size={15} className="shrink-0 text-slate-500" />}
+            <div key={`${file.name}-${file.size}-${file.lastModified}`} className="flex items-center justify-between gap-3 rounded-control border border-zani-border bg-surface-card px-3 py-2">
+              <span className="flex min-w-0 items-center gap-2 text-sm font-semibold text-zani-ink">
+                {file.type.startsWith("image/") ? <Image size={15} className="shrink-0 text-brand-600" /> : <FileText size={15} className="shrink-0 text-zani-muted" />}
                 <span className="truncate">{file.name}</span>
               </span>
-              <span className="flex shrink-0 items-center gap-2 text-xs font-semibold text-slate-500">
+              <span className="flex shrink-0 items-center gap-2 text-xs font-semibold text-zani-muted">
                 {formatAttachmentSize(file.size)}
                 <button
                   type="button"
-                  className="grid h-7 w-7 place-items-center rounded-md text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                  className="grid h-7 w-7 place-items-center rounded-md text-zani-faint transition hover:bg-red-50 hover:text-red-600"
                   onClick={() => setSelectedFiles((current) => current.filter((item) => item !== file))}
                   aria-label={t("crmCard.removeFile")}
                 >
@@ -267,22 +267,22 @@ export function EntityAttachmentsPanel({ data, entity }: { data: CrmCardPayload;
           {data.attachments.map((attachment) => (
             <div
               key={attachment.id}
-              className="relative flex min-w-0 items-center justify-between gap-3 rounded-card border border-slate-200 bg-slate-50 px-3 py-2.5 transition hover:border-brand-200 hover:bg-white"
+              className="relative flex min-w-0 items-center justify-between gap-3 rounded-card border border-zani-border bg-surface-muted px-3 py-2.5 transition hover:border-brand-200 hover:bg-surface-card"
             >
               <div className="flex min-w-0 items-center gap-3">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-brand-600 shadow-sm">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-control bg-surface-card text-brand-600 shadow-sm">
                   {attachment.content_type.startsWith("image/") ? <Image size={18} /> : <FileText size={18} />}
                 </span>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-black text-midnight">{attachment.original_name}</p>
-                  <p className="mt-0.5 truncate text-xs font-semibold text-slate-500">
-                    {attachmentTypeLabel(attachment)} · {formatAttachmentSize(attachment.size)} · {formatDateTime(attachment.created_at)}
+                  <p className="truncate text-sm font-semibold text-zani-ink">{attachment.original_name}</p>
+                  <p className="mt-0.5 truncate text-xs font-semibold text-zani-muted">
+                    {attachmentTypeLabel(attachment)} В· {formatAttachmentSize(attachment.size)} В· {formatDateTime(attachment.created_at)}
                   </p>
                 </div>
               </div>
               <button
                 type="button"
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-control border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-midnight"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-control border border-zani-border bg-surface-card text-zani-muted shadow-sm transition hover:bg-surface-muted hover:text-zani-ink"
                 onClick={() => setOpenAttachmentMenuId((current) => (current === attachment.id ? null : attachment.id))}
                 aria-label={t("crmCard.fileActions")}
               >
@@ -294,7 +294,7 @@ export function EntityAttachmentsPanel({ data, entity }: { data: CrmCardPayload;
                   <PopoverSurface className="absolute right-3 top-12 z-10 w-48 p-1">
                     <button
                       type="button"
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold text-zani-text transition hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-50"
                       disabled={!isPreviewableAttachment(attachment)}
                       onClick={() => {
                         setOpenAttachmentMenuId(null);
@@ -306,7 +306,7 @@ export function EntityAttachmentsPanel({ data, entity }: { data: CrmCardPayload;
                     </button>
                     <button
                       type="button"
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold text-zani-text transition hover:bg-surface-muted"
                       onClick={() => {
                         renameMutation.reset();
                         setOpenAttachmentMenuId(null);
@@ -319,7 +319,7 @@ export function EntityAttachmentsPanel({ data, entity }: { data: CrmCardPayload;
                     </button>
                     <button
                       type="button"
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold text-zani-text transition hover:bg-surface-muted"
                       onClick={() => {
                         setOpenAttachmentMenuId(null);
                         downloadAttachment(attachment);
@@ -330,7 +330,7 @@ export function EntityAttachmentsPanel({ data, entity }: { data: CrmCardPayload;
                     </button>
                     <button
                       type="button"
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold text-zani-text transition hover:bg-surface-muted"
                       onClick={() => {
                         setOpenAttachmentMenuId(null);
                         shareAttachment(attachment);
@@ -346,7 +346,7 @@ export function EntityAttachmentsPanel({ data, entity }: { data: CrmCardPayload;
           ))}
         </div>
       ) : (
-        <p className="text-sm leading-6 text-slate-500">{t("crmCard.noAttachments")}</p>
+        <p className="text-sm leading-6 text-zani-muted">{t("crmCard.noAttachments")}</p>
       )}
       <Dialog
         title={previewAttachment?.original_name || t("crmCard.previewFile")}
@@ -362,14 +362,14 @@ export function EntityAttachmentsPanel({ data, entity }: { data: CrmCardPayload;
         }}
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="text-sm font-semibold text-slate-500">
-            {previewAttachment ? `${attachmentTypeLabel(previewAttachment)} · ${formatAttachmentSize(previewAttachment.size)}` : null}
+          <div className="text-sm font-semibold text-zani-muted">
+            {previewAttachment ? `${attachmentTypeLabel(previewAttachment)} В· ${formatAttachmentSize(previewAttachment.size)}` : null}
           </div>
           <div className="flex items-center gap-2">
             <Button type="button" variant="secondary" size="sm" onClick={() => setPreviewScale((value) => Math.max(0.5, Number((value - 0.25).toFixed(2))))} aria-label={t("crmCard.zoomOut")}>
               <ZoomOut size={15} />
             </Button>
-            <button type="button" className="min-h-9 rounded-control border border-slate-200 bg-white px-3 text-xs font-black text-slate-600" onClick={() => setPreviewScale(1)}>
+            <button type="button" className="min-h-9 rounded-control border border-zani-border bg-surface-card px-3 text-xs font-semibold text-zani-subtle" onClick={() => setPreviewScale(1)}>
               {Math.round(previewScale * 100)}%
             </button>
             <Button type="button" variant="secondary" size="sm" onClick={() => setPreviewScale((value) => Math.min(3, Number((value + 0.25).toFixed(2))))} aria-label={t("crmCard.zoomIn")}>
@@ -377,13 +377,13 @@ export function EntityAttachmentsPanel({ data, entity }: { data: CrmCardPayload;
             </Button>
           </div>
         </div>
-        <div className="min-h-[62vh] overflow-auto rounded-card border border-slate-200 bg-slate-100 p-3">
+        <div className="min-h-[62vh] overflow-auto rounded-card border border-zani-border bg-surface-muted p-3">
           {previewAttachment?.content_type.startsWith("image/") ? (
             <div className="flex min-h-[62vh] items-start justify-center">
               <img
                 src={previewUrl}
                 alt={previewAttachment.original_name}
-                className="max-w-none rounded-card bg-white object-contain shadow-sm"
+                className="max-w-none rounded-card bg-surface-card object-contain shadow-sm"
                 style={{ width: `${previewScale * 100}%` }}
               />
             </div>
@@ -391,7 +391,7 @@ export function EntityAttachmentsPanel({ data, entity }: { data: CrmCardPayload;
             <iframe
               title={previewAttachment.original_name}
               src={`${previewUrl}#zoom=${Math.round(previewScale * 100)}`}
-              className="h-[72vh] w-full rounded-card border border-slate-200 bg-white"
+              className="h-[72vh] w-full rounded-card border border-zani-border bg-surface-card"
             />
           ) : null}
         </div>
@@ -451,11 +451,11 @@ export function EntityDealsPanel({ data }: { data: CrmCardPayload }) {
         data.deals.map((deal) => (
           <div key={deal.id} className={drawerSurfaceClass}>
             <div className="flex items-center justify-between gap-3">
-              <p className="font-bold text-midnight">{deal.title}</p>
+              <p className="font-bold text-zani-ink">{deal.title}</p>
               <StatusBadge status={deal.status} />
             </div>
-            <p className="mt-1 text-sm text-slate-500">#{deal.id} · {deal.amount || 0} {deal.currency}</p>
-            {deal.notes ? <p className="mt-3 text-sm leading-6 text-slate-600">{deal.notes}</p> : null}
+            <p className="mt-1 text-sm text-zani-muted">#{deal.id} В· {deal.amount || 0} {deal.currency}</p>
+            {deal.notes ? <p className="mt-3 text-sm leading-6 text-zani-subtle">{deal.notes}</p> : null}
           </div>
         ))
       ) : (
@@ -497,8 +497,8 @@ export function EntityTasksPanel({ data }: { data: CrmCardPayload }) {
   return (
     <div className="space-y-3">
       <div className={drawerSurfaceClass}>
-        <h3 className="font-black text-midnight">{t("crmCard.quickTask")}</h3>
-        <p className="mt-1 text-sm leading-6 text-slate-500">{t("crmCard.quickTaskText")}</p>
+        <h3 className="font-semibold text-zani-ink">{t("crmCard.quickTask")}</h3>
+        <p className="mt-1 text-sm leading-6 text-zani-muted">{t("crmCard.quickTaskText")}</p>
         <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto]">
           <Input value={taskTitle} onChange={(event) => setTaskTitle(event.target.value)} placeholder={t("crmCard.taskPlaceholder")} />
           <Button type="button" variant="secondary" isLoading={mutation.isPending} onClick={() => mutation.mutate()}>
@@ -510,11 +510,11 @@ export function EntityTasksPanel({ data }: { data: CrmCardPayload }) {
       {data.tasks.map((task) => (
         <div key={task.id} className={drawerSurfaceClass}>
           <div className="flex items-center justify-between gap-3">
-            <p className="font-bold text-midnight">{task.title}</p>
+            <p className="font-bold text-zani-ink">{task.title}</p>
             <StatusBadge status={task.status} />
           </div>
-          <p className="mt-1 text-xs text-slate-500">{task.priority} · {t("crmCard.deadline")} {formatDateTime(task.due_at)}</p>
-          {task.description ? <p className="mt-3 text-sm leading-6 text-slate-600">{task.description}</p> : null}
+          <p className="mt-1 text-xs text-zani-muted">{task.priority} В· {t("crmCard.deadline")} {formatDateTime(task.due_at)}</p>
+          {task.description ? <p className="mt-3 text-sm leading-6 text-zani-subtle">{task.description}</p> : null}
         </div>
       ))}
       {!data.tasks.length ? <EmptyBlock title={t("crmCard.noTasks")} text={t("crmCard.noTasksText")} /> : null}
@@ -530,19 +530,19 @@ export function EntityAppointmentsPanel({ data }: { data: CrmCardPayload }) {
         <div key={appointment.id} className={drawerSurfaceClass}>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="truncate font-bold text-midnight">{appointment.service_name || t("nav.appointments")}</p>
-              <p className="mt-1 text-xs font-semibold text-slate-500">
+              <p className="truncate font-bold text-zani-ink">{appointment.service_name || t("nav.appointments")}</p>
+              <p className="mt-1 text-xs font-semibold text-zani-muted">
                 {formatDateTime(appointment.start_at)}
                 {appointment.resource_name ? ` / ${appointment.resource_name}` : ""}
               </p>
             </div>
             <StatusBadge status={appointment.status} />
           </div>
-          <div className="mt-3 grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
+          <div className="mt-3 grid gap-2 text-sm text-zani-subtle sm:grid-cols-2">
             <p className="min-w-0 truncate font-semibold">{appointment.client_name || data.client?.full_name || t("deals.clientMissing")}</p>
             <p className="min-w-0 truncate font-semibold">{appointment.lead ? appointment.lead_title || t("crmCard.leadNumber", { id: appointment.lead }) : t("deals.notLinked")}</p>
           </div>
-          {appointment.notes ? <p className="mt-3 text-sm leading-6 text-slate-600">{appointment.notes}</p> : null}
+          {appointment.notes ? <p className="mt-3 text-sm leading-6 text-zani-subtle">{appointment.notes}</p> : null}
         </div>
       ))}
       {!data.appointments.length ? <EmptyBlock title={t("nav.appointments")} text={t("appointments.emptyText")} /> : null}
@@ -557,11 +557,11 @@ export function EntityConversationsPanel({ data }: { data: CrmCardPayload }) {
       {data.conversations.map((conversation) => (
         <div key={conversation.id} className={drawerSurfaceClass}>
           <div className="flex items-center justify-between gap-3">
-            <p className="font-bold text-midnight">{getChannelLabel(conversation.channel, t)}</p>
+            <p className="font-bold text-zani-ink">{getChannelLabel(conversation.channel, t)}</p>
             <StatusBadge status={conversation.status} />
           </div>
-          <p className="mt-1 text-xs text-slate-500">{t("crmCard.unread")}: {conversation.unread_count || 0} · {formatDateTime(conversation.last_message_at || conversation.updated_at)}</p>
-          {conversation.last_message?.text ? <p className="mt-3 text-sm leading-6 text-slate-600">{conversation.last_message.text}</p> : null}
+          <p className="mt-1 text-xs text-zani-muted">{t("crmCard.unread")}: {conversation.unread_count || 0} В· {formatDateTime(conversation.last_message_at || conversation.updated_at)}</p>
+          {conversation.last_message?.text ? <p className="mt-3 text-sm leading-6 text-zani-subtle">{conversation.last_message.text}</p> : null}
         </div>
       ))}
       {!data.conversations.length ? <EmptyBlock title={t("crmCard.noDialogs")} text={t("crmCard.noDialogsText")} /> : null}
@@ -601,8 +601,8 @@ export function EntityNotesPanel({ data, entity }: { data: CrmCardPayload; entit
   return (
     <div className="space-y-3">
       <div className={drawerSurfaceClass}>
-        <h3 className="font-black text-midnight">{t("crmCard.comment")}</h3>
-        <p className="mt-1 text-sm leading-6 text-slate-500">{t("crmCard.commentText")}</p>
+        <h3 className="font-semibold text-zani-ink">{t("crmCard.comment")}</h3>
+        <p className="mt-1 text-sm leading-6 text-zani-muted">{t("crmCard.commentText")}</p>
         <Textarea className="mt-3" value={text} onChange={(event) => setText(event.target.value)} placeholder={t("crmCard.commentPlaceholder")} />
         <div className="mt-3 flex justify-end">
           <Button type="button" variant="secondary" isLoading={mutation.isPending} onClick={() => mutation.mutate()}>
@@ -613,10 +613,10 @@ export function EntityNotesPanel({ data, entity }: { data: CrmCardPayload; entit
       </div>
       {data.notes.map((note) => (
         <div key={note.id} className={drawerSurfaceClass}>
-          <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-400">
-            <StickyNote size={14} /> Note · {formatDateTime(note.created_at)}
+          <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-zani-faint">
+            <StickyNote size={14} /> Note В· {formatDateTime(note.created_at)}
           </div>
-          <p className="text-sm leading-6 text-slate-700">{note.text}</p>
+          <p className="text-sm leading-6 text-zani-text">{note.text}</p>
         </div>
       ))}
       {!data.notes.length ? <EmptyBlock title={t("crmCard.noNotes")} text={t("crmCard.noNotesText")} /> : null}
@@ -659,8 +659,8 @@ export function EntityCustomFieldsPanel({ data, entity }: { data: CrmCardPayload
     <div className={drawerSurfaceClass}>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="font-black text-midnight">{t("crmCard.customFields")}</h3>
-          <p className="mt-1 text-sm text-slate-500">{t("crmCard.customFieldsText")}</p>
+          <h3 className="font-semibold text-zani-ink">{t("crmCard.customFields")}</h3>
+          <p className="mt-1 text-sm text-zani-muted">{t("crmCard.customFieldsText")}</p>
         </div>
         <Button type="button" variant="secondary" isLoading={mutation.isPending} onClick={() => mutation.mutate()}>
           {t("crmCard.saveFields")}

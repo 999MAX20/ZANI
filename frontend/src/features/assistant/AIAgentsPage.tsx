@@ -332,7 +332,7 @@ export function AIAgentsPage() {
         <div className="mb-5 flex flex-col gap-4 border-b border-slate-200 pb-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h2 className="text-2xl font-bold tracking-tight text-midnight md:text-3xl">{t(activeSectionMeta.titleKey)}</h2>
-            <div className="mt-3 flex flex-wrap items-center gap-2 text-sm font-bold text-slate-500">
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-sm font-bold text-zani-muted">
               <Link to="/app/ai-agents" className="hover:text-brand-700">{t("aiAgents.title")}</Link>
               {selectedBot ? (
                 <>

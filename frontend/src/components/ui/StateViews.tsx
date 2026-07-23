@@ -12,9 +12,9 @@ export function LoadingState({ label }: { label?: string }) {
       aria-busy="true"
       aria-live="polite"
       aria-label={resolvedLabel}
-      className="rounded-card border border-slate-200 bg-white p-4 shadow-card"
+      className="rounded-card border border-zani-border bg-surface-card p-4 shadow-card"
     >
-      <div className="flex items-center gap-3 text-sm font-semibold text-slate-600">
+      <div className="flex items-center gap-3 text-sm font-semibold text-zani-subtle">
         <Loader2 aria-hidden="true" className="animate-spin text-brand-600" size={18} />
         {resolvedLabel}
       </div>
@@ -31,7 +31,7 @@ export function ErrorState({ message, action }: { message: string; action?: Reac
   return (
     <div
       role="alert"
-      className="flex flex-col gap-3 rounded-card border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700 shadow-sm sm:flex-row sm:items-start sm:justify-between"
+      className="flex flex-col gap-3 rounded-card border border-[rgba(194,65,12,0.2)] bg-[var(--zani-danger-soft)] p-4 text-sm font-semibold text-zani-danger shadow-sm sm:flex-row sm:items-start sm:justify-between"
     >
       <div className="flex items-start gap-3">
         <AlertCircle aria-hidden="true" className="mt-0.5 shrink-0" size={18} />
@@ -53,16 +53,16 @@ export function ForbiddenState({
   return (
     <div
       role="alert"
-      className="rounded-card border border-amber-200 bg-amber-50 p-4 shadow-card"
+      className="rounded-card border border-[rgba(183,121,31,0.22)] bg-[var(--zani-warning-soft)] p-4 shadow-card"
     >
       <div className="flex items-start gap-4">
-        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-control bg-white text-amber-600 shadow-sm">
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-control bg-surface-card text-zani-warning shadow-sm">
           <ShieldAlert aria-hidden="true" size={22} />
         </div>
         <div>
-          <p className="text-lg font-black text-midnight">{title || t("permissions.hiddenTitle")}</p>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-amber-900/80">{message}</p>
-          <p className="mt-3 rounded-control bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-amber-700">
+          <p className="text-lg font-semibold text-zani-ink">{title || t("permissions.hiddenTitle")}</p>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-zani-subtle">{message}</p>
+          <p className="mt-3 rounded-control bg-surface-card px-3 py-2 text-xs font-semibold text-zani-warning">
             {t("permissions.hiddenText")}
           </p>
         </div>
@@ -81,19 +81,19 @@ export function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-card border border-dashed border-slate-200 bg-white p-6 text-center shadow-card">
-      <div className="mx-auto mb-3 grid h-11 w-11 place-items-center rounded-control bg-slate-100 text-slate-500">
+    <div className="rounded-card border border-dashed border-zani-border bg-surface-card p-6 text-center shadow-card">
+      <div className="mx-auto mb-3 grid h-11 w-11 place-items-center rounded-control bg-surface-muted text-zani-subtle">
         <Inbox aria-hidden="true" size={22} />
       </div>
-      <p className="text-base font-bold text-midnight">{title}</p>
-      {description ? <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">{description}</p> : null}
+      <p className="text-base font-semibold text-zani-ink">{title}</p>
+      {description ? <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zani-subtle">{description}</p> : null}
       {action ? <div className="mt-4 flex justify-center">{action}</div> : null}
     </div>
   );
 }
 
 export function SkeletonBlock({ className }: { className?: string }) {
-  return <div aria-hidden="true" className={cn("animate-pulse rounded-control bg-slate-100", className)} />;
+  return <div aria-hidden="true" className={cn("animate-pulse rounded-control bg-surface-muted", className)} />;
 }
 
 export function PageSkeleton() {

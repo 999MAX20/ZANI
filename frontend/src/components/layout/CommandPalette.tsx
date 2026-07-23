@@ -1,5 +1,5 @@
 import { Plus, Search, Settings, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useEntityData } from "../../hooks/useEntityData";
@@ -31,6 +31,16 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const { clients, leads, services } = useEntityData({ clients: true, leads: true, services: true });
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   const commands = useMemo(() => {
     const staticCommands = [
       { id: "create-lead", label: t("command.createLead"), hint: t("nav.leads"), to: "/app/leads?create=1", icon: Plus, priority: 20 },
@@ -79,18 +89,18 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
     .map((item) => item.command);
 
   return (
-    <div className="fixed inset-0 z-[80] bg-slate-950/35 p-4 backdrop-blur-sm" onClick={onClose}>
-      <div className="mx-auto mt-20 max-w-xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
-        <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3">
-          <Search size={18} className="text-slate-400" />
+    <div className="fixed inset-0 z-[80] bg-[rgba(23,18,15,0.35)] p-4 backdrop-blur-sm" onClick={onClose}>
+      <div className="mx-auto mt-20 max-w-xl overflow-hidden rounded-card border border-zani-border bg-surface-card shadow-premium" onClick={(event) => event.stopPropagation()}>
+        <div className="flex items-center gap-3 border-b border-zani-border px-4 py-3">
+          <Search size={18} className="text-zani-faint" />
           <input
             autoFocus
-            className="min-w-0 flex-1 bg-transparent text-sm font-bold text-midnight outline-none placeholder:text-slate-400"
+            className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-zani-ink outline-none placeholder:text-zani-faint"
             placeholder={t("command.placeholder")}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
-          <button type="button" className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 hover:bg-slate-50 hover:text-midnight" onClick={onClose}>
+          <button type="button" className="zani-focus-ring grid h-8 w-8 place-items-center rounded-control text-zani-faint hover:bg-surface-muted hover:text-zani-ink" onClick={onClose}>
             <X size={17} />
           </button>
         </div>
@@ -101,25 +111,25 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
               <button
                 key={command.id}
                 type="button"
-                className={cn("flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition", index === 0 ? "bg-brand-50" : "hover:bg-slate-50")}
+                className={cn("zani-focus-ring flex w-full items-center gap-3 rounded-control px-3 py-3 text-left transition", index === 0 ? "bg-brand-50" : "hover:bg-surface-muted")}
                 onClick={() => {
                   navigate(command.to);
                   onClose();
                   setQuery("");
                 }}
               >
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-brand-700 shadow-sm">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-control bg-surface-card text-brand-700 shadow-sm">
                   <Icon size={17} />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-black text-midnight">{command.label}</span>
-                  <span className="block truncate text-xs font-semibold text-slate-500">{command.hint}</span>
+                  <span className="block truncate text-sm font-semibold text-zani-ink">{command.label}</span>
+                  <span className="block truncate text-xs font-semibold text-zani-faint">{command.hint}</span>
                 </span>
-                <span className="shrink-0 rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-black text-slate-400">Cmd K</span>
+                <span className="shrink-0 rounded-control bg-surface-muted px-2 py-1 text-[11px] font-semibold text-zani-faint">Cmd K</span>
               </button>
             );
           }) : (
-            <p className="px-3 py-8 text-center text-sm font-semibold text-slate-500">{t("command.empty")}</p>
+            <p className="px-3 py-8 text-center text-sm font-semibold text-zani-faint">{t("command.empty")}</p>
           )}
         </div>
       </div>

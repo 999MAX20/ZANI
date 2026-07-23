@@ -5,11 +5,12 @@ import { Radio } from "lucide-react";
 import { botChannelsApi } from "../../../api/bots";
 import { Button } from "../../../components/ui/Button";
 import { Modal } from "../../../components/ui/Modal";
+import { ToggleSwitch } from "../../../components/ui/Switch";
 import { useI18n } from "../../../lib/i18n";
 import { cn } from "../../../lib/cn";
 import type { Bot as BotType, BotChannel, Id } from "../../../types";
 import { InstagramInlineSetup } from "../../integrations/components/setup/InstagramSetup";
-import { LogoMark, ToggleSwitch } from "../../integrations/components/setup/IntegrationSetupUi";
+import { LogoMark } from "../../integrations/components/setup/IntegrationSetupUi";
 import { TelegramInlineSetup } from "../../integrations/components/setup/TelegramSetup";
 import { WhatsAppInlineSetup } from "../../integrations/components/setup/WhatsAppSetup";
 import { channelStatus, channelStatusClass } from "../aiAgentsUtils";
@@ -95,6 +96,7 @@ function ChannelsSection({
                       disabled={!canManage}
                       isLoading={toggleChannel.isPending}
                       label={`${item.title}: ${connected ? t("aiAgents.disable") : t("aiAgents.enable")}`}
+                      tone="ai"
                       onChange={(checked) => toggleChannel.mutate({ channel, status: checked ? "active" : "paused" })}
                     />
                   ) : null}

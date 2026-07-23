@@ -28,11 +28,23 @@ export function DashboardPage() {
   });
   const { t } = useI18n();
   const { user } = useAuth();
-  const activeMembership = user?.memberships?.find((membership) => Number(membership.business) === Number(business?.id));
+  const activeMembership = user?.memberships?.find(
+    (membership) => Number(membership.business) === Number(business?.id),
+  );
   const businessRole = activeMembership?.role || user?.role || "staff";
   const isOwnerView = isOwnerDashboardRole(businessRole);
-  const canViewAiAnalyst = hasPermission(user, business?.id, "ai_analyst", "view");
-  const canViewAiAssistant = hasPermission(user, business?.id, "ai_assistant", "view");
+  const canViewAiAnalyst = hasPermission(
+    user,
+    business?.id,
+    "ai_analyst",
+    "view",
+  );
+  const canViewAiAssistant = hasPermission(
+    user,
+    business?.id,
+    "ai_assistant",
+    "view",
+  );
   const metrics = useQuery({
     queryKey: ["owner-dashboard", business?.id],
     queryFn: () => analyticsApi.ownerDashboard(business?.id),
@@ -63,27 +75,62 @@ export function DashboardPage() {
   const serviceList = services.data || [];
   const clientList = clients.data || [];
   const dashboard = metrics.data;
-  const isCoreDataLoading = clients.isLoading || leads.isLoading || appointments.isLoading || services.isLoading || tasks.isLoading;
-  const assignedTasks = taskList.filter((task) => task.status !== "done" && task.status !== "cancelled");
-  const pendingLeads = leadList.filter((lead) => ["new", "contacted", "in_progress"].includes(lead.status));
-  const todayAppointments = appointmentList.filter((appointment) => isTodayDate(appointment.start_at));
-  const closedLeadCount = leadList.filter((lead) => lead.status === "appointment_created" || lead.status === "closed").length;
-  const newLeadsCount = isOwnerView ? dashboard?.new_leads ?? pendingLeads.length : pendingLeads.length;
-  const todayAppointmentsCount = isOwnerView ? dashboard?.appointments_today ?? todayAppointments.length : todayAppointments.length;
-  const conversion = isOwnerView ? dashboard?.conversion_lead_to_appointment ?? (leadList.length ? Math.round((closedLeadCount / leadList.length) * 100) : 0) : 0;
-  const openTasks = isOwnerView ? dashboard?.open_tasks ?? assignedTasks.length : assignedTasks.length;
-  const overdueTasks = workQueues.data?.summary.overdue_tasks ?? dashboard?.overdue_tasks ?? assignedTasks.filter((task) => task.due_at && new Date(task.due_at) < new Date()).length;
+  const isCoreDataLoading =
+    clients.isLoading ||
+    leads.isLoading ||
+    appointments.isLoading ||
+    services.isLoading ||
+    tasks.isLoading;
+  const assignedTasks = taskList.filter(
+    (task) => task.status !== "done" && task.status !== "cancelled",
+  );
+  const pendingLeads = leadList.filter((lead) =>
+    ["new", "contacted", "in_progress"].includes(lead.status),
+  );
+  const todayAppointments = appointmentList.filter((appointment) =>
+    isTodayDate(appointment.start_at),
+  );
+  const closedLeadCount = leadList.filter(
+    (lead) => lead.status === "appointment_created" || lead.status === "closed",
+  ).length;
+  const newLeadsCount = isOwnerView
+    ? (dashboard?.new_leads ?? pendingLeads.length)
+    : pendingLeads.length;
+  const todayAppointmentsCount = isOwnerView
+    ? (dashboard?.appointments_today ?? todayAppointments.length)
+    : todayAppointments.length;
+  const conversion = isOwnerView
+    ? (dashboard?.conversion_lead_to_appointment ??
+      (leadList.length
+        ? Math.round((closedLeadCount / leadList.length) * 100)
+        : 0))
+    : 0;
+  const openTasks = isOwnerView
+    ? (dashboard?.open_tasks ?? assignedTasks.length)
+    : assignedTasks.length;
+  const overdueTasks =
+    workQueues.data?.summary.overdue_tasks ??
+    dashboard?.overdue_tasks ??
+    assignedTasks.filter(
+      (task) => task.due_at && new Date(task.due_at) < new Date(),
+    ).length;
   const revenue = Number(dashboard?.revenue_estimate || 0);
   const revenueHasData = Boolean(dashboard?.sales_events_count || revenue > 0);
   const setupItems = [
-    Boolean(business.landing_id || business.landing_domain || business.landing_preview_url),
+    Boolean(
+      business.landing_id ||
+      business.landing_domain ||
+      business.landing_preview_url,
+    ),
     serviceList.length > 0,
     clientList.length > 0,
     leadList.length > 0,
     appointmentList.length > 0,
     taskList.length > 0,
   ];
-  const setupScore = Math.round((setupItems.filter(Boolean).length / setupItems.length) * 100);
+  const setupScore = Math.round(
+    (setupItems.filter(Boolean).length / setupItems.length) * 100,
+  );
 
   if (isOwnerView) {
     return (

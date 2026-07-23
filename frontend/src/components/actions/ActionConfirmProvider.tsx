@@ -61,7 +61,7 @@ export function ActionConfirmProvider({ children }: { children: React.ReactNode 
       {children}
       {pending ? (
         <Dialog title={pending.title} open={Boolean(pending)} onClose={() => close({ confirmed: false })} size="sm" bodyClassName="space-y-4">
-          {pending.description ? <p className="text-sm leading-6 text-slate-600">{pending.description}</p> : null}
+          {pending.description ? <p className="text-sm leading-6 text-zani-subtle">{pending.description}</p> : null}
           {pending.reason ? (
             <Textarea
               label={pending.reason.label}
@@ -71,7 +71,7 @@ export function ActionConfirmProvider({ children }: { children: React.ReactNode 
               autoFocus
             />
           ) : null}
-          {isReasonInvalid ? <p className="text-xs font-bold text-red-600">{t("actions.reasonRequired", { count: minLength })}</p> : null}
+          {isReasonInvalid ? <p className="text-xs font-semibold text-zani-danger">{t("actions.reasonRequired", { count: minLength })}</p> : null}
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button type="button" variant="secondary" onClick={() => close({ confirmed: false })}>
               {pending.cancelLabel || t("common.cancel")}

@@ -16,7 +16,7 @@ export function CrmTableSurface({
 }) {
   return (
     <section className={cn(surfaceClass, "flex min-h-0 flex-1 flex-col overflow-hidden", className)}>
-      {filters ? <div className={cn("shrink-0 border-b border-slate-200 px-4 py-3", filtersClassName)}>{filters}</div> : null}
+      {filters ? <div className={cn("shrink-0 border-b border-zani-border bg-surface-card px-4 py-3", filtersClassName)}>{filters}</div> : null}
       {children}
     </section>
   );

@@ -64,7 +64,7 @@ export function CalendarToolbar({
   );
 
   return (
-    <section className="mb-4 rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+    <section className="mb-4 rounded-card border border-zani-border bg-zani-card p-3 shadow-sm">
       <div className="flex flex-col gap-3 2xl:flex-row 2xl:items-center 2xl:justify-between">
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="secondary" size="icon" className="h-10 w-10" onClick={() => onShiftDate(-1)} aria-label={t("calendar.previousDay")}>
@@ -88,7 +88,7 @@ export function CalendarToolbar({
           <Button variant="secondary" className="h-10 px-3" onClick={() => onDateChange(todayValue)}>
             {t("calendar.today")}
           </Button>
-          <div className="grid grid-cols-4 rounded-lg border border-slate-200 bg-slate-50 p-1">
+          <div className="grid grid-cols-4 rounded-control border border-zani-border bg-surface-muted p-1">
             {[
               { value: "day", label: t("calendar.day") },
               { value: "week", label: t("calendar.week") },
@@ -99,8 +99,8 @@ export function CalendarToolbar({
                 key={item.value}
                 type="button"
                 className={cn(
-                  "rounded-md px-3 py-2 text-xs font-black transition sm:text-sm",
-                  viewMode === item.value ? "bg-midnight text-white shadow-sm" : "text-slate-600 hover:bg-white hover:text-midnight",
+                  "rounded-control px-3 py-2 text-xs font-bold transition sm:text-sm",
+                  viewMode === item.value ? "bg-zani-card text-brand-700 shadow-sm" : "text-zani-muted hover:bg-surface-hover hover:text-zani-text",
                 )}
                 onClick={() => onViewModeChange(item.value as CalendarViewMode)}
               >
@@ -112,12 +112,12 @@ export function CalendarToolbar({
       </div>
 
       <details className="mt-3 lg:hidden">
-        <summary className="cursor-pointer list-none text-sm font-black text-midnight">
+        <summary className="cursor-pointer list-none text-sm font-bold text-zani-text">
           <span className="inline-flex items-center gap-2"><Filter size={18} />{t("calendar.filters")}</span>
         </summary>
         <div className="mt-3 grid gap-2 sm:grid-cols-3">{filterControls}</div>
       </details>
-      <div className="mt-3 hidden items-center gap-2 border-t border-slate-200 pt-3 lg:grid lg:grid-cols-[minmax(180px,0.8fr)_minmax(220px,1fr)_170px]">{filterControls}</div>
+      <div className="mt-3 hidden items-center gap-2 border-t border-zani-border pt-3 lg:grid lg:grid-cols-[minmax(180px,0.8fr)_minmax(220px,1fr)_170px]">{filterControls}</div>
     </section>
   );
 }

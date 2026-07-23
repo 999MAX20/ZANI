@@ -46,19 +46,19 @@ export function CalendarPicker({
         <CalendarDays size={18} />
       </Button>
       {open ? (
-        <div className="fixed inset-x-3 top-24 z-30 rounded-card border border-slate-200 bg-white p-4 shadow-premium sm:absolute sm:inset-auto sm:left-0 sm:top-14 sm:w-[340px]">
+        <div className="fixed inset-x-3 top-24 z-30 rounded-card border border-zani-border bg-zani-card p-4 shadow-premium sm:absolute sm:inset-auto sm:left-0 sm:top-14 sm:w-[340px]">
           <div className="mb-4 flex items-center justify-between">
             <Button variant="ghost" className="h-12 w-12 rounded-full px-0" onClick={() => shiftMonth(-1)} aria-label={labels.previousMonth}>
               <ChevronLeft size={22} />
             </Button>
-            <p className="font-semibold text-midnight">
+            <p className="font-semibold text-zani-text">
               {new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }).format(monthDate)}
             </p>
             <Button variant="ghost" className="h-12 w-12 rounded-full px-0" onClick={() => shiftMonth(1)} aria-label={labels.nextMonth}>
               <ChevronRight size={22} />
             </Button>
           </div>
-          <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold text-slate-400">
+          <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold text-zani-muted">
             {labels.weekdays.map((day) => (
               <div key={day} className="py-2">
                 {day}
@@ -80,12 +80,12 @@ export function CalendarPicker({
                     setOpen(false);
                   }}
                   className={cn(
-                    "h-11 rounded-2xl text-sm font-black transition disabled:pointer-events-none disabled:opacity-0",
+                    "h-11 rounded-control text-sm font-bold transition disabled:pointer-events-none disabled:opacity-0",
                     isSelected
                       ? "bg-brand-600 text-white shadow-card"
                       : isToday
                         ? "bg-brand-50 text-brand-700"
-                        : "text-slate-700 hover:bg-slate-100",
+                        : "text-zani-text hover:bg-surface-hover",
                   )}
                 >
                   {cell?.getDate()}

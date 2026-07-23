@@ -1,4 +1,4 @@
-import { Archive, CalendarClock, CheckCircle2, ClipboardList, Mail, MessageCircle, Pencil, Phone, ShieldCheck, Tag, Tags, WalletCards } from "lucide-react";
+﻿import { Archive, CalendarClock, CheckCircle2, ClipboardList, Mail, MessageCircle, Pencil, Phone, ShieldCheck, Tag, Tags, WalletCards } from "lucide-react";
 
 import { formatDateTime } from "../../../lib/format";
 import { useI18n } from "../../../lib/i18n";
@@ -45,14 +45,14 @@ export function ClientDrawerContent({ data, entity, actions }: { data: CrmCardPa
       <div className={drawerSurfaceClass}>
         <div className="min-w-0">
           <div className="mb-2 flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-500">{getChannelLabel(client.source, t)}</span>
-            {client.is_vip ? <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-black text-brand-700">VIP</span> : null}
-            {client.has_no_reply ? <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-black text-red-600">{t("conversations.noReply")}</span> : null}
+            <span className="rounded-full bg-surface-muted px-3 py-1 text-xs font-semibold text-zani-muted">{getChannelLabel(client.source, t)}</span>
+            {client.is_vip ? <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">VIP</span> : null}
+            {client.has_no_reply ? <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-600">{t("conversations.noReply")}</span> : null}
           </div>
-          <h3 className="truncate text-xl font-black text-midnight">{client.full_name}</h3>
-          <p className="mt-1 break-words text-sm font-semibold text-slate-500">{[client.phone, client.email].filter(Boolean).join(" · ") || t("crmCard.noContacts")}</p>
+          <h3 className="truncate text-xl font-semibold text-zani-ink">{client.full_name}</h3>
+          <p className="mt-1 break-words text-sm font-semibold text-zani-muted">{[client.phone, client.email].filter(Boolean).join(" В· ") || t("crmCard.noContacts")}</p>
         </div>
-        <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(132px,1fr))] gap-2 border-t border-slate-100 pt-4">
+        <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(132px,1fr))] gap-2 border-t border-zani-border pt-4">
           {actions?.onEdit ? (
             <Button variant="secondary" className="min-w-0 px-3" onClick={() => actions.onEdit?.(client)}>
               <Pencil className="shrink-0" size={16} />
@@ -89,21 +89,21 @@ export function ClientDrawerContent({ data, entity, actions }: { data: CrmCardPa
       <div className={drawerSurfaceClass}>
         <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">{t("crmCard.snapshotNext")}</p>
-            <p className="mt-1 text-sm font-semibold text-slate-600">{nextStep}</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zani-faint">{t("crmCard.snapshotNext")}</p>
+            <p className="mt-1 text-sm font-semibold text-zani-subtle">{nextStep}</p>
           </div>
-          {client.next_step_date ? <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-500">{formatDateTime(client.next_step_date)}</span> : null}
+          {client.next_step_date ? <span className="rounded-full bg-surface-muted px-3 py-1 text-xs font-semibold text-zani-muted">{formatDateTime(client.next_step_date)}</span> : null}
         </div>
-        <div className="grid gap-3 border-t border-slate-100 pt-4 md:grid-cols-2">
+        <div className="grid gap-3 border-t border-zani-border pt-4 md:grid-cols-2">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">{t("crmCard.snapshotHistory")}</p>
-            <p className="mt-2 text-sm font-semibold leading-6 text-slate-700">
-              {latestEvent ? `${latestEvent.text || latestEvent.event_type} · ${formatDateTime(latestEvent.created_at)}` : t("crmCard.emptyTimelineText")}
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zani-faint">{t("crmCard.snapshotHistory")}</p>
+            <p className="mt-2 text-sm font-semibold leading-6 text-zani-text">
+              {latestEvent ? `${latestEvent.text || latestEvent.event_type} В· ${formatDateTime(latestEvent.created_at)}` : t("crmCard.emptyTimelineText")}
             </p>
           </div>
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">{t("crmCard.snapshotMessages")}</p>
-            <p className="mt-2 text-sm font-semibold leading-6 text-slate-700">{latestConversation?.last_message?.text || t("crmCard.noDialogsText")}</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zani-faint">{t("crmCard.snapshotMessages")}</p>
+            <p className="mt-2 text-sm font-semibold leading-6 text-zani-text">{latestConversation?.last_message?.text || t("crmCard.noDialogsText")}</p>
           </div>
         </div>
       </div>
@@ -117,26 +117,26 @@ export function ClientDrawerContent({ data, entity, actions }: { data: CrmCardPa
 
       <div className="grid gap-3 lg:grid-cols-2">
         <div className={drawerSurfaceClass}>
-          <p className="mb-3 text-xs font-black uppercase tracking-[0.14em] text-slate-400">{t("clients.sourceAttribution")}</p>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-zani-faint">{t("clients.sourceAttribution")}</p>
           <div className="space-y-2">
             {attributionRows.map((item) => (
               <div key={item.label} className="flex items-start justify-between gap-3 text-sm">
-                <span className="font-semibold text-slate-500">{item.label}</span>
-                <span className="min-w-0 text-right font-bold text-midnight">{item.value}</span>
+                <span className="font-semibold text-zani-muted">{item.label}</span>
+                <span className="min-w-0 text-right font-bold text-zani-ink">{item.value}</span>
               </div>
             ))}
           </div>
         </div>
         <div className={drawerSurfaceClass}>
-          <p className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-slate-400"><ShieldCheck size={14} /> {t("clients.consentStatus")}</p>
+          <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-zani-faint"><ShieldCheck size={14} /> {t("clients.consentStatus")}</p>
           <div className="space-y-2">
             {consents.map((consent) => (
-              <div key={consent.channel} className="rounded-control bg-slate-50 px-3 py-2 text-sm">
+              <div key={consent.channel} className="rounded-control bg-surface-muted px-3 py-2 text-sm">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="font-semibold text-slate-600">{getChannelLabel(consent.channel, t)}</span>
-                  <span className="font-black text-midnight">{consentStatusLabel(consent.status, t)}</span>
+                  <span className="font-semibold text-zani-subtle">{getChannelLabel(consent.channel, t)}</span>
+                  <span className="font-semibold text-zani-ink">{consentStatusLabel(consent.status, t)}</span>
                 </div>
-                {consent.source ? <p className="mt-1 text-xs font-semibold text-slate-500">{consent.source}</p> : null}
+                {consent.source ? <p className="mt-1 text-xs font-semibold text-zani-muted">{consent.source}</p> : null}
               </div>
             ))}
           </div>
@@ -145,28 +145,28 @@ export function ClientDrawerContent({ data, entity, actions }: { data: CrmCardPa
 
       <div className="grid gap-3 lg:grid-cols-3">
         <div className={drawerSurfaceClass}>
-          <p className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-slate-400"><WalletCards size={14} /> {t("nav.deals")}</p>
-          <p className="font-bold text-midnight">{data.deals[0]?.title || "-"}</p>
-          <p className="mt-1 text-sm text-slate-500">{data.deals[0] ? `${Number(data.deals[0].amount || 0).toLocaleString("ru-RU")} ${data.deals[0].currency}` : t("crmCard.snapshotNoTasks")}</p>
+          <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-zani-faint"><WalletCards size={14} /> {t("nav.deals")}</p>
+          <p className="font-bold text-zani-ink">{data.deals[0]?.title || "-"}</p>
+          <p className="mt-1 text-sm text-zani-muted">{data.deals[0] ? `${Number(data.deals[0].amount || 0).toLocaleString("ru-RU")} ${data.deals[0].currency}` : t("crmCard.snapshotNoTasks")}</p>
         </div>
         <div className={drawerSurfaceClass}>
-          <p className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-slate-400"><CalendarClock size={14} /> {t("nav.appointments")}</p>
-          <p className="font-bold text-midnight">{data.appointments[0]?.service_name || data.appointments[0]?.service || "-"}</p>
-          <p className="mt-1 text-sm text-slate-500">{data.appointments[0] ? formatDateTime(data.appointments[0].start_at) : t("crmCard.noTasksText")}</p>
+          <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-zani-faint"><CalendarClock size={14} /> {t("nav.appointments")}</p>
+          <p className="font-bold text-zani-ink">{data.appointments[0]?.service_name || data.appointments[0]?.service || "-"}</p>
+          <p className="mt-1 text-sm text-zani-muted">{data.appointments[0] ? formatDateTime(data.appointments[0].start_at) : t("crmCard.noTasksText")}</p>
         </div>
         <div className={drawerSurfaceClass}>
-          <p className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-slate-400"><MessageCircle size={14} /> {t("crmCard.messages")}</p>
-          <p className="font-bold text-midnight">{latestConversation ? getChannelLabel(latestConversation.channel, t) : "-"}</p>
-          <p className="mt-1 text-sm text-slate-500">{latestConversation?.last_message_at ? formatDateTime(latestConversation.last_message_at) : t("crmCard.noDialogsText")}</p>
+          <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-zani-faint"><MessageCircle size={14} /> {t("crmCard.messages")}</p>
+          <p className="font-bold text-zani-ink">{latestConversation ? getChannelLabel(latestConversation.channel, t) : "-"}</p>
+          <p className="mt-1 text-sm text-zani-muted">{latestConversation?.last_message_at ? formatDateTime(latestConversation.last_message_at) : t("crmCard.noDialogsText")}</p>
         </div>
       </div>
 
       {data.tags.length ? (
         <div className={drawerSurfaceClass}>
-          <p className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-slate-400"><Tags size={14} /> {t("clients.tags")}</p>
+          <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-zani-faint"><Tags size={14} /> {t("clients.tags")}</p>
           <div className="flex flex-wrap gap-2">
             {data.tags.map((item) => (
-              <span key={item.id} className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-black" style={{ backgroundColor: `${item.tag_color || "#2563eb"}18`, color: item.tag_color || "#2563eb" }}>
+              <span key={item.id} className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold" style={{ backgroundColor: `${item.tag_color || "#2563eb"}18`, color: item.tag_color || "#2563eb" }}>
                 {item.tag_name}
               </span>
             ))}
@@ -174,8 +174,8 @@ export function ClientDrawerContent({ data, entity, actions }: { data: CrmCardPa
         </div>
       ) : null}
 
-      <div className={`${drawerSurfaceClass} text-sm leading-6 text-slate-700`}>
-        <p className="mb-2 text-xs font-black uppercase tracking-[0.14em] text-slate-400">{t("clients.notes")}</p>
+      <div className={`${drawerSurfaceClass} text-sm leading-6 text-zani-text`}>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-zani-faint">{t("clients.notes")}</p>
         {client.notes || t("crmCard.noNotesText")}
       </div>
       <EntityCustomFieldsPanel data={data} entity={entity} />

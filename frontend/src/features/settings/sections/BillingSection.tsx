@@ -22,7 +22,11 @@ type BillingSectionProps = {
   className: string;
   currentPlan?: SubscriptionPlan | null;
   error: unknown;
-  formatPrice: (value: string | undefined, t: Translate, locale: string) => string;
+  formatPrice: (
+    value: string | undefined,
+    t: Translate,
+    locale: string,
+  ) => string;
   hasSubscription: boolean;
   isBillingStatusPending: boolean;
   isPlanChangePending: boolean;
@@ -69,75 +73,187 @@ export function BillingSection({
       <CardBody>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">{t("settings.currentPlan")}</p>
-            <h2 className="mt-2 text-2xl font-semibold text-midnight">
-              {subscriptionIsLoading ? t("settings.loading") : currentPlan?.name || t("settings.noPlan")}
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">
+              {t("settings.currentPlan")}
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold text-zani-text">
+              {subscriptionIsLoading
+                ? t("settings.loading")
+                : currentPlan?.name || t("settings.noPlan")}
             </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-zani-subtle">
               {hasSubscription
                 ? `${formatPrice(currentPlan?.monthly_price, t, locale)} В· ${t("settings.status")}: ${subscription?.status}`
                 : t("settings.billingNoSubscription")}
             </p>
             {subscription?.requested_plan ? (
-              <p className="mt-2 text-sm font-bold text-amber-700">{t("settings.requestedPlan", { id: subscription.requested_plan })}</p>
+              <p className="mt-2 text-sm font-bold text-amber-700">
+                {t("settings.requestedPlan", {
+                  id: subscription.requested_plan,
+                })}
+              </p>
             ) : null}
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button type="button" variant="secondary" disabled={!canManageBilling || !subscription || subscription.status === "paused"} onClick={() => onSubscriptionStatusAction("pause")} isLoading={isBillingStatusPending}>
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={
+                !canManageBilling ||
+                !subscription ||
+                subscription.status === "paused"
+              }
+              onClick={() => onSubscriptionStatusAction("pause")}
+              isLoading={isBillingStatusPending}
+            >
               {t("settings.pauseSubscription")}
             </Button>
-            <Button type="button" variant="secondary" disabled={!canManageBilling || !subscription || subscription.status === "active"} onClick={() => onSubscriptionStatusAction("resume")} isLoading={isBillingStatusPending}>
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={
+                !canManageBilling ||
+                !subscription ||
+                subscription.status === "active"
+              }
+              onClick={() => onSubscriptionStatusAction("resume")}
+              isLoading={isBillingStatusPending}
+            >
               {t("settings.resumeSubscription")}
             </Button>
-            <Button type="button" variant="danger" disabled={!canManageBilling || !subscription || subscription.status === "cancelled"} onClick={() => onSubscriptionStatusAction("cancel")} isLoading={isBillingStatusPending}>
+            <Button
+              type="button"
+              variant="danger"
+              disabled={
+                !canManageBilling ||
+                !subscription ||
+                subscription.status === "cancelled"
+              }
+              onClick={() => onSubscriptionStatusAction("cancel")}
+              isLoading={isBillingStatusPending}
+            >
               {t("settings.cancelSubscription")}
             </Button>
           </div>
         </div>
         {error ? (
-          <div className="mt-4"><ErrorState message={getApiErrorMessage(error)} /></div>
+          <div className="mt-4">
+            <ErrorState message={getApiErrorMessage(error)} />
+          </div>
         ) : null}
         <div className="mt-5 grid gap-4 xl:grid-cols-[1fr_0.8fr]">
           <form
-            className="rounded-card border border-slate-200 bg-slate-50 p-4"
+            className="rounded-card border border-zani-border bg-surface-muted p-4"
             onSubmit={(event) => {
               event.preventDefault();
               onSaveBillingSettings();
             }}
           >
-            <h3 className="font-black text-midnight">{t("settings.billingPaymentsTitle")}</h3>
+            <h3 className="font-bold text-zani-text">
+              {t("settings.billingPaymentsTitle")}
+            </h3>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <Input label={t("settings.billingEmail")} value={billingSettingsForm.billing_email} onChange={(event) => setBillingSettingsForm({ ...billingSettingsForm, billing_email: event.target.value })} />
+              <Input
+                label={t("settings.billingEmail")}
+                value={billingSettingsForm.billing_email}
+                onChange={(event) =>
+                  setBillingSettingsForm({
+                    ...billingSettingsForm,
+                    billing_email: event.target.value,
+                  })
+                }
+              />
               <Select
                 label={t("settings.paymentMethod")}
                 value={billingSettingsForm.payment_method}
-                onChange={(event) => setBillingSettingsForm({ ...billingSettingsForm, payment_method: event.target.value })}
+                onChange={(event) =>
+                  setBillingSettingsForm({
+                    ...billingSettingsForm,
+                    payment_method: event.target.value,
+                  })
+                }
                 options={[
                   { value: "", label: t("settings.paymentMethod.empty") },
-                  { value: "invoice", label: t("settings.paymentMethod.invoice") },
+                  {
+                    value: "invoice",
+                    label: t("settings.paymentMethod.invoice"),
+                  },
                   { value: "card", label: t("settings.paymentMethod.card") },
-                  { value: "bank_transfer", label: t("settings.paymentMethod.bankTransfer") },
+                  {
+                    value: "bank_transfer",
+                    label: t("settings.paymentMethod.bankTransfer"),
+                  },
                 ]}
               />
-              <Input label={t("settings.invoiceName")} value={billingSettingsForm.invoice_name} onChange={(event) => setBillingSettingsForm({ ...billingSettingsForm, invoice_name: event.target.value })} />
-              <Input label={t("settings.invoiceTaxId")} value={billingSettingsForm.invoice_tax_id} onChange={(event) => setBillingSettingsForm({ ...billingSettingsForm, invoice_tax_id: event.target.value })} />
-              <Input className="sm:col-span-2" label={t("settings.invoiceAddress")} value={billingSettingsForm.invoice_address} onChange={(event) => setBillingSettingsForm({ ...billingSettingsForm, invoice_address: event.target.value })} />
+              <Input
+                label={t("settings.invoiceName")}
+                value={billingSettingsForm.invoice_name}
+                onChange={(event) =>
+                  setBillingSettingsForm({
+                    ...billingSettingsForm,
+                    invoice_name: event.target.value,
+                  })
+                }
+              />
+              <Input
+                label={t("settings.invoiceTaxId")}
+                value={billingSettingsForm.invoice_tax_id}
+                onChange={(event) =>
+                  setBillingSettingsForm({
+                    ...billingSettingsForm,
+                    invoice_tax_id: event.target.value,
+                  })
+                }
+              />
+              <Input
+                className="sm:col-span-2"
+                label={t("settings.invoiceAddress")}
+                value={billingSettingsForm.invoice_address}
+                onChange={(event) =>
+                  setBillingSettingsForm({
+                    ...billingSettingsForm,
+                    invoice_address: event.target.value,
+                  })
+                }
+              />
             </div>
             <div className="mt-4">
-              <Button type="submit" disabled={!canManageBilling || !subscription} isLoading={isSavingBillingSettings}>{t("settings.saveBilling")}</Button>
+              <Button
+                type="submit"
+                disabled={!canManageBilling || !subscription}
+                isLoading={isSavingBillingSettings}
+              >
+                {t("settings.saveBilling")}
+              </Button>
             </div>
           </form>
-          <div className="rounded-card border border-slate-200 bg-white p-4">
-            <h3 className="font-black text-midnight">{t("settings.planTitle")}</h3>
-            <p className="mt-1 text-sm leading-6 text-slate-500">{t("settings.planChangeText")}</p>
+          <div className="rounded-card border border-zani-border bg-surface-card p-4">
+            <h3 className="font-bold text-zani-text">
+              {t("settings.planTitle")}
+            </h3>
+            <p className="mt-1 text-sm leading-6 text-zani-subtle">
+              {t("settings.planChangeText")}
+            </p>
             <div className="mt-4 grid gap-3">
               <Select
                 label={t("settings.newPlan")}
                 value={selectedPlanId}
                 onChange={(event) => setSelectedPlanId(event.target.value)}
-                options={plans.map((plan) => ({ value: String(plan.id), label: `${plan.name} В· ${formatPrice(plan.monthly_price, t, locale)}` }))}
+                options={plans.map((plan) => ({
+                  value: String(plan.id),
+                  label: `${plan.name} В· ${formatPrice(plan.monthly_price, t, locale)}`,
+                }))}
               />
-              <Button type="button" disabled={!canManageBilling || !selectedPlanId || selectedPlanId === String(currentPlan?.id || "")} onClick={() => onRequestPlanChange(Number(selectedPlanId))} isLoading={isPlanChangePending}>
+              <Button
+                type="button"
+                disabled={
+                  !canManageBilling ||
+                  !selectedPlanId ||
+                  selectedPlanId === String(currentPlan?.id || "")
+                }
+                onClick={() => onRequestPlanChange(Number(selectedPlanId))}
+                isLoading={isPlanChangePending}
+              >
                 {t("settings.requestPlanChange")}
               </Button>
             </div>

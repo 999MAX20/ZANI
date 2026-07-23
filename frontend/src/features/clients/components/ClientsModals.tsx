@@ -1,6 +1,9 @@
 import type { UseMutationResult } from "@tanstack/react-query";
 
-import type { ClientMergeDryRun, ClientMergeResult } from "../../../api/clients";
+import type {
+  ClientMergeDryRun,
+  ClientMergeResult,
+} from "../../../api/clients";
 import type { Client, Id, Segment, Tag, TaggedObject } from "../../../types";
 import { ClientForm } from "../../../components/forms/ClientForm";
 import { Button } from "../../../components/ui/Button";
@@ -38,12 +41,24 @@ export function ClientsModals({
   createOpen: boolean;
   editing?: Client;
   mergePreview: ClientMergeDryRun | null;
-  mergeMutation: UseMutationResult<ClientMergeResult, Error, { targetId: number; duplicateId: number }>;
-  mergeDryRunMutation: UseMutationResult<ClientMergeDryRun, Error, { targetId: number; duplicateId: number }>;
+  mergeMutation: UseMutationResult<
+    ClientMergeResult,
+    Error,
+    { targetId: number; duplicateId: number }
+  >;
+  mergeDryRunMutation: UseMutationResult<
+    ClientMergeDryRun,
+    Error,
+    { targetId: number; duplicateId: number }
+  >;
   tagOpen: boolean;
   tagDraft: string;
   selectedClient: Client | null;
-  addTagMutation: UseMutationResult<TaggedObject, Error, { clientId: Id; tagName: string }>;
+  addTagMutation: UseMutationResult<
+    TaggedObject,
+    Error,
+    { clientId: Id; tagName: string }
+  >;
   segmentOpen: boolean;
   segmentDraft: SegmentDraft;
   tagList: Tag[];
@@ -60,7 +75,11 @@ export function ClientsModals({
 }) {
   return (
     <>
-      <Modal title={editing ? t("clients.editTitle") : t("clients.create")} open={createOpen} onClose={onCloseCreate}>
+      <Modal
+        title={editing ? t("clients.editTitle") : t("clients.create")}
+        open={createOpen}
+        onClose={onCloseCreate}
+      >
         <ClientForm
           businessId={businessId}
           initial={editing}
@@ -68,41 +87,68 @@ export function ClientsModals({
           onOpenClient={onOpenClient}
           onMergeDuplicate={(duplicateId) => {
             if (!editing) return Promise.resolve();
-            return mergeDryRunMutation.mutateAsync({ targetId: editing.id, duplicateId });
+            return mergeDryRunMutation.mutateAsync({
+              targetId: editing.id,
+              duplicateId,
+            });
           }}
         />
       </Modal>
 
-      <Modal title={t("clients.mergePreviewTitle")} open={Boolean(mergePreview)} onClose={onCloseMergePreview}>
+      <Modal
+        title={t("clients.mergePreviewTitle")}
+        open={Boolean(mergePreview)}
+        onClose={onCloseMergePreview}
+      >
         {mergePreview ? (
           <div className="space-y-4">
-            <div className="rounded-card border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
-              <p className="font-black">{t("clients.mergePreviewWarning")}</p>
+            <div className="rounded-card border border-[rgba(183,121,31,0.22)] bg-[var(--zani-warning-soft)] p-4 text-sm leading-6 text-zani-warning">
+              <p className="font-bold">{t("clients.mergePreviewWarning")}</p>
               <p className="mt-1">
                 {t("clients.mergePreviewPolicy")}: {mergePreview.policy}
               </p>
             </div>
-            <div className="rounded-card border border-slate-200 bg-white p-4">
-              <p className="font-black text-midnight">{mergePreview.duplicate.full_name || t("common.client")}</p>
-              <p className="mt-1 text-sm text-slate-500">{mergePreview.duplicate.phone || mergePreview.duplicate.email || t("clients.noContact")}</p>
+            <div className="rounded-card border border-zani-border bg-surface-card p-4">
+              <p className="font-bold text-zani-text">
+                {mergePreview.duplicate.full_name || t("common.client")}
+              </p>
+              <p className="mt-1 text-sm text-zani-muted">
+                {mergePreview.duplicate.phone ||
+                  mergePreview.duplicate.email ||
+                  t("clients.noContact")}
+              </p>
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
               {Object.entries(mergePreview.transferred).map(([key, value]) => (
-                <div key={key} className="flex items-center justify-between gap-3 rounded-control bg-slate-50 px-3 py-2 text-sm">
-                  <span className="font-semibold text-slate-600">{key.replace(/_/g, " ")}</span>
-                  <span className="font-black text-midnight">{value}</span>
+                <div
+                  key={key}
+                  className="flex items-center justify-between gap-3 rounded-control bg-surface-muted px-3 py-2 text-sm"
+                >
+                  <span className="font-semibold text-zani-muted">
+                    {key.replace(/_/g, " ")}
+                  </span>
+                  <span className="font-bold text-zani-text">{value}</span>
                 </div>
               ))}
             </div>
             <div className="flex justify-end gap-2">
-              <Button type="button" variant="secondary" onClick={onCloseMergePreview}>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={onCloseMergePreview}
+              >
                 {t("common.cancel")}
               </Button>
               <Button
                 type="button"
                 variant="danger"
                 isLoading={mergeMutation.isPending}
-                onClick={() => mergeMutation.mutate({ targetId: mergePreview.target_client_id, duplicateId: mergePreview.duplicate.id })}
+                onClick={() =>
+                  mergeMutation.mutate({
+                    targetId: mergePreview.target_client_id,
+                    duplicateId: mergePreview.duplicate.id,
+                  })
+                }
               >
                 {t("clients.mergeConfirm")}
               </Button>
@@ -121,19 +167,32 @@ export function ClientsModals({
             addTagMutation.mutate({ clientId: selectedClient.id, tagName });
           }}
         >
-          <Input label={t("clients.tagPrompt")} value={tagDraft} onChange={(event) => onTagDraftChange(event.target.value)} required />
+          <Input
+            label={t("clients.tagPrompt")}
+            value={tagDraft}
+            onChange={(event) => onTagDraftChange(event.target.value)}
+            required
+          />
           <div className="flex justify-end gap-2">
             <Button type="button" variant="secondary" onClick={onCloseTag}>
               {t("common.cancel")}
             </Button>
-            <Button type="submit" isLoading={addTagMutation.isPending} disabled={!tagDraft.trim()}>
+            <Button
+              type="submit"
+              isLoading={addTagMutation.isPending}
+              disabled={!tagDraft.trim()}
+            >
               {t("clients.addTag")}
             </Button>
           </div>
         </form>
       </Modal>
 
-      <Modal title={t("clients.createSegment")} open={segmentOpen} onClose={onCloseSegment}>
+      <Modal
+        title={t("clients.createSegment")}
+        open={segmentOpen}
+        onClose={onCloseSegment}
+      >
         <form
           className="space-y-4"
           onSubmit={(event) => {
@@ -141,12 +200,27 @@ export function ClientsModals({
             createSegmentMutation.mutate();
           }}
         >
-          <Input label={t("clients.segmentName")} value={segmentDraft.name} onChange={(event) => onSegmentDraftChange({ ...segmentDraft, name: event.target.value })} required />
+          <Input
+            label={t("clients.segmentName")}
+            value={segmentDraft.name}
+            onChange={(event) =>
+              onSegmentDraftChange({
+                ...segmentDraft,
+                name: event.target.value,
+              })
+            }
+            required
+          />
           <div className="grid gap-3 sm:grid-cols-2">
             <Select
               label={t("clients.field")}
               value={segmentDraft.field}
-              onChange={(event) => onSegmentDraftChange({ ...segmentDraft, field: event.target.value as SegmentDraft["field"] })}
+              onChange={(event) =>
+                onSegmentDraftChange({
+                  ...segmentDraft,
+                  field: event.target.value as SegmentDraft["field"],
+                })
+              }
               options={[
                 { value: "source", label: t("clients.source") },
                 { value: "tag", label: t("clients.tag") },
@@ -159,7 +233,12 @@ export function ClientsModals({
             <Select
               label={t("clients.condition")}
               value={segmentDraft.operator}
-              onChange={(event) => onSegmentDraftChange({ ...segmentDraft, operator: event.target.value as SegmentDraft["operator"] })}
+              onChange={(event) =>
+                onSegmentDraftChange({
+                  ...segmentDraft,
+                  operator: event.target.value as SegmentDraft["operator"],
+                })
+              }
               options={[
                 { value: "equals", label: t("clients.equals") },
                 { value: "contains", label: t("clients.contains") },
@@ -173,13 +252,37 @@ export function ClientsModals({
             <Select
               label={t("clients.value")}
               value={segmentDraft.value}
-              onChange={(event) => onSegmentDraftChange({ ...segmentDraft, value: event.target.value })}
-              options={[{ value: "", label: t("clients.selectTag") }, ...tagList.map((tag) => ({ value: String(tag.id), label: tag.name }))]}
+              onChange={(event) =>
+                onSegmentDraftChange({
+                  ...segmentDraft,
+                  value: event.target.value,
+                })
+              }
+              options={[
+                { value: "", label: t("clients.selectTag") },
+                ...tagList.map((tag) => ({
+                  value: String(tag.id),
+                  label: tag.name,
+                })),
+              ]}
             />
           ) : (
-            <Input label={t("clients.value")} value={segmentDraft.value} onChange={(event) => onSegmentDraftChange({ ...segmentDraft, value: event.target.value })} />
+            <Input
+              label={t("clients.value")}
+              value={segmentDraft.value}
+              onChange={(event) =>
+                onSegmentDraftChange({
+                  ...segmentDraft,
+                  value: event.target.value,
+                })
+              }
+            />
           )}
-          <Button type="submit" isLoading={createSegmentMutation.isPending} disabled={!segmentDraft.name}>
+          <Button
+            type="submit"
+            isLoading={createSegmentMutation.isPending}
+            disabled={!segmentDraft.name}
+          >
             {t("clients.saveSegment")}
           </Button>
         </form>

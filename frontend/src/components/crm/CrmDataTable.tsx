@@ -18,7 +18,7 @@ export function CrmDataTable({
 }) {
   return (
     <section className={cn(surfaceClass, "overflow-hidden", className)} style={style}>
-      {toolbar ? <div className="border-b border-slate-200 bg-white px-4 py-2">{toolbar}</div> : null}
+      {toolbar ? <div className="border-b border-zani-border bg-surface-card px-4 py-2">{toolbar}</div> : null}
       <div className={cn("min-h-0", contentClassName)}>{children}</div>
     </section>
   );

@@ -1,4 +1,12 @@
-import { Columns3, Download, Filter, Flame, Search, Share2, Upload } from "lucide-react";
+import {
+  Columns3,
+  Download,
+  Filter,
+  Flame,
+  Search,
+  Share2,
+  Upload,
+} from "lucide-react";
 
 import { Button } from "../../../components/ui/Button";
 import { Select } from "../../../components/ui/Select";
@@ -88,25 +96,35 @@ export function LeadsToolbar({
             key={item.value}
             type="button"
             className={cn(
-              "inline-flex h-9 shrink-0 items-center gap-2 rounded-control border px-3 text-sm font-black transition",
+              "inline-flex h-9 shrink-0 items-center gap-2 rounded-control border px-3 text-sm font-bold transition",
               filter === item.value
-                ? "border-brand-200 bg-brand-50 text-brand-700 shadow-sm"
-                : "border-slate-200 bg-white text-slate-600 hover:border-brand-200 hover:text-brand-700",
+                ? "border-brand-100 bg-brand-50 text-brand-700 shadow-sm"
+                : "border-zani-border bg-surface-card text-zani-muted hover:border-brand-100 hover:bg-surface-warm hover:text-zani-text",
             )}
             onClick={() => onFilterChange(item.value)}
           >
             <span>{item.label}</span>
-            <span className={cn("rounded-full px-2 py-0.5 text-xs", filter === item.value ? "bg-white text-brand-700" : "bg-slate-100 text-slate-500")}>
+            <span
+              className={cn(
+                "rounded-full px-2 py-0.5 text-xs",
+                filter === item.value
+                  ? "bg-surface-card text-brand-700"
+                  : "bg-surface-muted text-zani-muted",
+              )}
+            >
               {item.count}
             </span>
           </button>
         ))}
       </div>
-      <div className="grid gap-2 border-t border-slate-100 pt-3 xl:grid-cols-[minmax(260px,1fr)_minmax(160px,220px)_auto] xl:items-center">
+      <div className="grid gap-2 border-t border-zani-border pt-3 xl:grid-cols-[minmax(260px,1fr)_minmax(160px,220px)_auto] xl:items-center">
         <label className="relative block min-w-0">
-          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zani-muted"
+            size={18}
+          />
           <input
-            className="h-9 w-full rounded-control border border-slate-200 bg-white px-9 text-sm font-semibold text-midnight outline-none transition placeholder:text-slate-400 focus:border-brand-300 focus:ring-4 focus:ring-brand-50"
+            className="h-9 w-full rounded-control border border-zani-border bg-surface-card px-9 text-sm font-semibold text-zani-text outline-none transition placeholder:text-zani-muted focus:border-brand-300 focus:ring-4 focus:ring-[var(--zani-focus-ring)]"
             placeholder={labels.search}
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
@@ -120,60 +138,94 @@ export function LeadsToolbar({
           options={sourceOptions}
         />
         <div className="flex min-w-0 flex-wrap items-center justify-start gap-1.5 xl:justify-end">
-          <Button variant="secondary" size="sm" className="h-9 rounded-control px-3" onClick={onToggleSavedFilters}>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="h-9 rounded-control px-3"
+            onClick={onToggleSavedFilters}
+          >
             <Filter size={16} />
             {labels.filters}
           </Button>
-          <Button variant="secondary" size="sm" className="h-9 rounded-control px-3" onClick={onToggleMoreMenu}>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="h-9 rounded-control px-3"
+            onClick={onToggleMoreMenu}
+          >
             <Columns3 size={16} />
             {labels.columns}
           </Button>
-          <Button variant="secondary" size="sm" className="h-9 rounded-control px-3" onClick={onExportCsv}>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="h-9 rounded-control px-3"
+            onClick={onExportCsv}
+          >
             <Download size={16} />
             {labels.exportCsv}
           </Button>
-          <Button variant="secondary" size="sm" className="h-9 rounded-control px-3" onClick={onOpenImport}>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="h-9 rounded-control px-3"
+            onClick={onOpenImport}
+          >
             <Upload size={16} />
             {labels.import}
           </Button>
         </div>
       </div>
       {savedFiltersOpen ? (
-        <div className="mt-3 rounded-card border border-slate-200 bg-slate-50 p-3">
+        <div className="mt-3 rounded-card border border-zani-border bg-surface-muted p-3">
           <div className="flex min-w-0 items-center gap-2 overflow-x-auto pb-2">
-            {filterPresets.length ? filterPresets.map((preset) => (
-              <button
-                key={preset.id}
-                type="button"
-                className="shrink-0 rounded-control border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
-                onClick={() => onApplyPreset(preset)}
-              >
-                {preset.name}
-              </button>
-            )) : (
-              <span className="py-2 text-xs font-semibold text-slate-400">{labels.noSavedFilters}</span>
+            {filterPresets.length ? (
+              filterPresets.map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  className="shrink-0 rounded-control border border-zani-border bg-surface-card px-3 py-2 text-xs font-bold text-zani-text hover:border-brand-100 hover:bg-brand-50 hover:text-brand-700"
+                  onClick={() => onApplyPreset(preset)}
+                >
+                  {preset.name}
+                </button>
+              ))
+            ) : (
+              <span className="py-2 text-xs font-semibold text-zani-muted">
+                {labels.noSavedFilters}
+              </span>
             )}
           </div>
-          <div className="mt-2 flex gap-2 border-t border-slate-200 pt-3">
+          <div className="mt-2 flex gap-2 border-t border-zani-border pt-3">
             <input
-              className="h-9 min-w-0 flex-1 rounded-control border border-slate-200 bg-white px-3 text-sm font-semibold outline-none focus:border-brand-300"
+              className="h-9 min-w-0 flex-1 rounded-control border border-zani-border bg-surface-card px-3 text-sm font-semibold text-zani-text outline-none focus:border-brand-300 focus:ring-4 focus:ring-[var(--zani-focus-ring)]"
               placeholder={labels.filterPresetName}
               value={presetName}
               onChange={(event) => onPresetNameChange(event.target.value)}
             />
-            <Button variant="secondary" size="sm" className="shrink-0 rounded-control" onClick={onSavePreset}>{labels.saveFilter}</Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="shrink-0 rounded-control"
+              onClick={onSavePreset}
+            >
+              {labels.saveFilter}
+            </Button>
           </div>
         </div>
       ) : null}
       {moreMenuOpen ? (
-        <div className="mt-3 grid gap-3 rounded-card border border-slate-200 bg-slate-50 p-3 lg:grid-cols-[minmax(0,1fr)_auto]">
+        <div className="mt-3 grid gap-3 rounded-card border border-zani-border bg-surface-muted p-3 lg:grid-cols-[minmax(0,1fr)_auto]">
           <div className="min-w-0">
-            <div className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700">
+            <div className="mb-2 flex items-center gap-2 text-sm font-bold text-zani-text">
               <Columns3 size={16} /> {labels.columns}
             </div>
             <div className="flex min-w-0 flex-wrap gap-2">
               {columnOrder.map((column) => (
-                <label key={column} className="inline-flex h-8 cursor-pointer items-center gap-2 rounded-control border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 hover:border-brand-200">
+                <label
+                  key={column}
+                  className="inline-flex h-8 cursor-pointer items-center gap-2 rounded-control border border-zani-border bg-surface-card px-3 text-xs font-bold text-zani-text hover:border-brand-100 hover:bg-surface-warm"
+                >
                   <input
                     type="checkbox"
                     checked={visibleColumns[column]}
@@ -185,10 +237,38 @@ export function LeadsToolbar({
             </div>
           </div>
           <div className="flex flex-wrap items-start gap-2">
-            <Button variant="secondary" size="sm" className="rounded-control" onClick={onToggleSortByAi}><Flame size={15} /> {labels.sortByHeat}</Button>
-            <Button variant="secondary" size="sm" className="rounded-control" onClick={onExportCsv}><Download size={15} /> CSV</Button>
-            <Button variant="secondary" size="sm" className="rounded-control" onClick={onExportExcel}>{labels.exportExcel}</Button>
-            <Button variant="secondary" size="sm" className="rounded-control" onClick={onShareView}><Share2 size={15} /> {labels.shareView}</Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="rounded-control"
+              onClick={onToggleSortByAi}
+            >
+              <Flame size={15} /> {labels.sortByHeat}
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="rounded-control"
+              onClick={onExportCsv}
+            >
+              <Download size={15} /> CSV
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="rounded-control"
+              onClick={onExportExcel}
+            >
+              {labels.exportExcel}
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="rounded-control"
+              onClick={onShareView}
+            >
+              <Share2 size={15} /> {labels.shareView}
+            </Button>
           </div>
         </div>
       ) : null}

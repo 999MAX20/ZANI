@@ -88,10 +88,10 @@ export function Header({ onMenuClick, pageHeader }: { onMenuClick: () => void; p
     tasks: t("notification.category.tasks"),
   };
   const priorityClass: Record<string, string> = {
-    low: "bg-slate-50 text-slate-500",
+    low: "bg-surface-muted text-zani-faint",
     normal: "bg-brand-50 text-brand-700",
-    high: "bg-amber-50 text-amber-700",
-    urgent: "bg-red-50 text-red-700",
+    high: "bg-[var(--zani-warning-soft)] text-zani-warning",
+    urgent: "bg-[var(--zani-danger-soft)] text-zani-danger",
   };
   const priorityLabels: Record<string, string> = {
     low: t("notification.priority.low"),
@@ -199,14 +199,14 @@ export function Header({ onMenuClick, pageHeader }: { onMenuClick: () => void; p
   }, [showNotifications]);
 
   return (
-    <header className={`fixed left-0 right-0 top-0 z-50 border-b border-slate-200 bg-white/95 shadow-[0_1px_3px_rgba(0,0,0,0.06)] backdrop-blur-xl transition-transform duration-200 ease-out lg:left-[72px] ${headerVisible ? "translate-y-0" : "-translate-y-full"}`}>
-      <div className="grid h-16 grid-cols-[auto_1fr_auto] items-center gap-3 px-4 sm:px-6 lg:grid-cols-[260px_minmax(320px,560px)_auto]">
+    <header className={`fixed left-0 right-0 top-0 z-50 border-b border-zani-border bg-surface/92 shadow-soft backdrop-blur-xl transition-transform duration-200 ease-out lg:left-16 ${headerVisible ? "translate-y-0" : "-translate-y-full"}`}>
+      <div className="grid h-14 grid-cols-[auto_1fr_auto] items-center gap-3 px-3 sm:px-5 lg:grid-cols-[220px_minmax(320px,560px)_auto]">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-          <Button className="h-10 w-10 min-h-10 min-w-10 px-0 text-midnight lg:hidden" variant="ghost" onClick={onMenuClick} aria-label={t("sidebar.expand")}>
+          <Button className="h-10 w-10 min-h-10 min-w-10 px-0 text-zani-ink lg:hidden" variant="ghost" onClick={onMenuClick} aria-label={t("sidebar.expand")}>
             <Menu size={22} strokeWidth={2.2} />
           </Button>
           <div className="hidden min-w-0 items-center gap-4 lg:flex">
-            <span className="whitespace-nowrap border-b-2 border-brand-600 py-1 text-base font-bold text-midnight">{currentPageTitle}</span>
+            <span className="max-w-[220px] truncate text-sm font-semibold text-zani-text">{currentPageTitle}</span>
           </div>
           <div className={pageHeader ? "min-w-0 flex-1 lg:hidden" : "lg:hidden"}>
             <GlobalSearch />
@@ -224,7 +224,7 @@ export function Header({ onMenuClick, pageHeader }: { onMenuClick: () => void; p
                 <div className="relative" ref={filtersRef}>
                   <Button
                     variant={pageHeader.activeFilterCount ? "primary" : "secondary"}
-                    className="relative h-10 shrink-0 px-3"
+                    className="relative h-9 shrink-0 px-3"
                     onClick={() => setShowFilters((current) => !current)}
                     aria-label={pageHeader.filterLabel || t("calendar.filters")}
                     aria-expanded={showFilters}
@@ -232,23 +232,23 @@ export function Header({ onMenuClick, pageHeader }: { onMenuClick: () => void; p
                     <SlidersHorizontal size={17} />
                     <span className="hidden xl:inline">{pageHeader.filterLabel || t("calendar.filters")}</span>
                     {pageHeader.activeFilterCount ? (
-                      <span className="grid min-w-5 place-items-center rounded-full bg-white/90 px-1.5 py-0.5 text-[11px] font-black text-brand-700">
+                      <span className="grid min-w-5 place-items-center rounded-full bg-surface-card px-1.5 py-0.5 text-[11px] font-semibold text-brand-700">
                         {pageHeader.activeFilterCount}
                       </span>
                     ) : null}
                   </Button>
                   {showFilters ? (
-                    <div className="fixed inset-0 z-[80] bg-slate-950/25 backdrop-blur-[1px]">
+                    <div className="fixed inset-0 z-[80] bg-[rgba(23,18,15,0.28)] backdrop-blur-[1px]">
                       <button type="button" className="absolute inset-0 cursor-default" aria-label={t("common.close")} onClick={() => setShowFilters(false)} />
-                      <aside className="absolute bottom-0 right-0 top-0 flex w-[min(420px,calc(100vw-1rem))] flex-col border-l border-slate-200 bg-white shadow-premium">
-                        <div className="flex h-16 items-center justify-between gap-3 border-b border-slate-200 px-5">
-                          <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.12em] text-slate-500">
+                      <aside className="zani-drawer-surface absolute bottom-0 right-0 top-0 flex w-[min(420px,calc(100vw-1rem))] flex-col rounded-none border-y-0 border-r-0 shadow-premium">
+                        <div className="flex h-14 items-center justify-between gap-3 border-b border-zani-border px-5">
+                          <div className="flex items-center gap-2 text-xs font-semibold text-zani-subtle">
                             <SlidersHorizontal size={15} />
                             <span>{pageHeader.filterLabel || t("calendar.filters")}</span>
                           </div>
                           <button
                             type="button"
-                            className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-slate-400 transition hover:bg-slate-50 hover:text-slate-700"
+                            className="zani-focus-ring grid h-9 w-9 shrink-0 place-items-center rounded-control text-zani-faint transition hover:bg-surface-muted hover:text-zani-text"
                             onClick={() => setShowFilters(false)}
                             aria-label={t("common.close")}
                           >
@@ -264,7 +264,7 @@ export function Header({ onMenuClick, pageHeader }: { onMenuClick: () => void; p
               {pageHeader.secondaryActions?.map((action) => {
                 const Icon = action.icon;
                 return (
-                  <Button key={action.label} variant="secondary" size="icon" className="h-10 w-10 shrink-0" onClick={action.onClick} aria-label={action.label}>
+                  <Button key={action.label} variant="secondary" size="icon" className="h-9 w-9 shrink-0" onClick={action.onClick} aria-label={action.label}>
                     {Icon ? <Icon size={17} /> : null}
                   </Button>
                 );
@@ -275,23 +275,23 @@ export function Header({ onMenuClick, pageHeader }: { onMenuClick: () => void; p
           <div className="relative" ref={notificationsRef}>
             <Button
               variant="ghost"
-              className="relative h-12 w-12 min-h-12 min-w-12 rounded-xl px-0"
+              className="relative h-10 w-10 min-h-10 min-w-10 rounded-control px-0"
               aria-label={t("header.notifications")}
               onClick={() => setShowNotifications((current) => !current)}
             >
-              <Bell size={32} strokeWidth={2.4} />
+              <Bell size={20} strokeWidth={2.2} />
               {unreadCount ? (
-                <span className="absolute -right-1 -top-1 min-w-6 rounded-full bg-brand-600 px-1.5 py-0.5 text-[11px] font-bold text-white ring-2 ring-white">
+                <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-brand-600 px-1.5 py-0.5 text-[10px] font-semibold text-white ring-2 ring-surface">
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               ) : null}
             </Button>
             {showNotifications ? (
-              <div className="fixed inset-x-3 top-20 max-h-[76vh] overflow-y-auto rounded-xl border border-slate-200 bg-white p-4 text-sm shadow-premium sm:absolute sm:inset-auto sm:right-0 sm:top-12 sm:w-[26rem]">
+              <div className="fixed inset-x-3 top-16 max-h-[76vh] overflow-y-auto rounded-card border border-zani-border bg-surface-card p-4 text-sm shadow-premium sm:absolute sm:inset-auto sm:right-0 sm:top-11 sm:w-[26rem]">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-semibold text-midnight">{t("header.notifications")}</p>
-                    <p className="mt-0.5 text-xs text-slate-400">
+                    <p className="font-semibold text-zani-ink">{t("header.notifications")}</p>
+                    <p className="mt-0.5 text-xs text-zani-faint">
                       {t("header.notificationsSummary", {
                         due: notificationSummary.data?.due || 0,
                         urgent: notificationSummary.data?.urgent || 0,
@@ -305,19 +305,19 @@ export function Header({ onMenuClick, pageHeader }: { onMenuClick: () => void; p
                 <div className="mt-4 space-y-4">
                   {Object.entries(groupedNotifications).map(([category, items]) => (
                     <div key={category} className="space-y-2">
-                      <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{categoryLabels[category] || category}</p>
+                      <p className="text-xs font-semibold text-zani-faint">{categoryLabels[category] || category}</p>
                       {items.map((notification) => (
-                        <div key={notification.id} className={`rounded-2xl border p-3 ${notification.read_at ? "border-slate-100 bg-white/70" : "border-brand-100 bg-brand-50/45"}`}>
+                        <div key={notification.id} className={`rounded-card border p-3 ${notification.read_at ? "border-zani-border bg-surface-card" : "border-brand-100 bg-brand-50/45"}`}>
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
                               <div className="mb-1 flex flex-wrap items-center gap-2">
                                 {!notification.read_at ? <span className="h-2 w-2 rounded-full bg-brand-600" /> : null}
-                                <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase ${priorityClass[notification.priority] || priorityClass.normal}`}>
+                                <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${priorityClass[notification.priority] || priorityClass.normal}`}>
                                   {priorityLabels[notification.priority] || notification.priority}
                                 </span>
                               </div>
-                              <p className="line-clamp-2 font-semibold text-midnight">{notification.text}</p>
-                              <p className="mt-1 text-xs text-slate-500">
+                              <p className="line-clamp-2 font-semibold text-zani-ink">{notification.text}</p>
+                              <p className="mt-1 text-xs text-zani-faint">
                                 {notificationAudienceLabel(notification)} · {notification.client_name || "CRM"} · {formatDateTime(notification.send_at)}
                               </p>
                             </div>
@@ -350,7 +350,7 @@ export function Header({ onMenuClick, pageHeader }: { onMenuClick: () => void; p
                     </div>
                   ))}
                   {!latestNotifications.length ? (
-                    <p className="rounded-2xl bg-slate-50 p-4 leading-6 text-slate-500">
+                    <p className="rounded-card bg-surface-muted p-4 leading-6 text-zani-subtle">
                       {t("header.noNotifications")}
                     </p>
                   ) : null}
@@ -358,7 +358,7 @@ export function Header({ onMenuClick, pageHeader }: { onMenuClick: () => void; p
                 <Link
                   to="/app/tasks"
                   onClick={() => setShowNotifications(false)}
-                  className="mt-4 block rounded-2xl bg-slate-950 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-slate-800"
+                  className="zani-focus-ring mt-4 block rounded-control bg-brand-500 px-4 py-3 text-center text-sm font-semibold text-white ring-1 ring-brand-600/10 transition hover:bg-brand-600"
                 >
                   {t("header.openTasks")}
                 </Link>
@@ -366,19 +366,19 @@ export function Header({ onMenuClick, pageHeader }: { onMenuClick: () => void; p
             ) : null}
           </div>
           {chatToastOpen ? (
-            <div className="fixed right-4 top-24 z-[90] w-[min(360px,calc(100vw-2rem))] rounded-3xl border border-white/80 bg-white p-4 shadow-premium ring-1 ring-red-100">
+            <div className="fixed right-4 top-20 z-[90] w-[min(360px,calc(100vw-2rem))] rounded-card border border-zani-border bg-surface-card p-4 shadow-premium ring-1 ring-[rgba(194,65,12,0.16)]">
               <div className="flex items-start gap-3">
-                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-red-50 text-red-600">
+                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-card bg-[var(--zani-danger-soft)] text-zani-danger">
                   <MessageSquareText size={21} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-black text-midnight">{t("header.chatToastTitle")}</p>
-                  <p className="mt-1 text-sm font-semibold leading-5 text-slate-500">
+                  <p className="font-semibold text-zani-ink">{t("header.chatToastTitle")}</p>
+                  <p className="mt-1 text-sm font-semibold leading-5 text-zani-subtle">
                     {t("header.chatToastText", { count: unreadChatMessages > 99 ? "99+" : unreadChatMessages })}
                   </p>
                   <button
                     type="button"
-                    className="mt-3 rounded-2xl bg-slate-950 px-3 py-2 text-xs font-black text-white transition hover:bg-slate-800"
+                    className="zani-focus-ring mt-3 rounded-control bg-brand-500 px-3 py-2 text-xs font-semibold text-white ring-1 ring-brand-600/10 transition hover:bg-brand-600"
                     onClick={() => {
                       setChatToastOpen(false);
                       navigate("/app/conversations?unread=true");
@@ -389,7 +389,7 @@ export function Header({ onMenuClick, pageHeader }: { onMenuClick: () => void; p
                 </div>
                 <button
                   type="button"
-                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-slate-400 transition hover:bg-slate-50 hover:text-slate-700"
+                  className="zani-focus-ring grid h-8 w-8 shrink-0 place-items-center rounded-control text-zani-faint transition hover:bg-surface-muted hover:text-zani-text"
                   onClick={() => setChatToastOpen(false)}
                   aria-label={t("common.close")}
                 >
@@ -401,7 +401,7 @@ export function Header({ onMenuClick, pageHeader }: { onMenuClick: () => void; p
         </div>
       </div>
       {pageHeader?.activeFilters ? (
-        <div className="border-t border-slate-100 bg-white/95 px-4 py-1.5 sm:px-6">
+        <div className="border-t border-zani-border bg-surface/92 px-4 py-1.5 sm:px-6">
           <div className="flex min-w-0 items-center gap-2 overflow-x-auto pb-1">{pageHeader.activeFilters}</div>
         </div>
       ) : null}
@@ -413,7 +413,7 @@ function PrimaryPageAction({ action }: { action?: PageHeaderConfig["primaryActio
   if (!action) return null;
   const Icon = action.icon;
   return (
-    <Button className="h-10 shrink-0 bg-blue-600 px-4 hover:bg-blue-700" onClick={action.onClick}>
+    <Button className="h-9 shrink-0 px-4" onClick={action.onClick}>
       {Icon ? <Icon size={17} /> : null}
       {action.label}
     </Button>

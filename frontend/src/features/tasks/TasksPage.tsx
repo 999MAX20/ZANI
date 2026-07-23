@@ -1,18 +1,19 @@
 import { Plus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { Navigate, useNavigate } from "react-router-dom";
 
 import { getApiErrorMessage } from "../../api/client";
-import type { CrmDrawerEntity } from "../../components/crm/CrmEntityDrawer";
+import { CrmWorkspaceGrid, CrmWorkspacePage } from "../../components/crm";
 import { usePageHeader } from "../../components/layout/PageHeaderContext";
 import { Button } from "../../components/ui/Button";
 import { ErrorState, LoadingState } from "../../components/ui/StateViews";
 import { useI18n } from "../../lib/i18n";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useEntityData } from "../../hooks/useEntityData";
-import { TaskDrawer } from "./components/TaskDrawer";
 import { TaskFormModal } from "./components/TaskFormModal";
 import type { TaskTabFilter } from "./components/TaskHeaderFilters";
 import { TaskList } from "./components/TaskList";
+import { TaskQuickInspector } from "./components/TaskQuickInspector";
 import { useTaskActions } from "./hooks/useTaskActions";
 import { useTaskFilters } from "./hooks/useTaskFilters";
 import { useTaskQueries } from "./hooks/useTaskQueries";
@@ -21,19 +22,19 @@ import type { Task } from "../../types";
 
 export function TasksPage() {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const { setPageHeader } = usePageHeader();
   const { business } = useActiveBusiness();
-  const { appointments, botConversations, clients, deals, leads, services } = useEntityData({
-    appointments: true,
-    botConversations: true,
-    clients: true,
-    deals: true,
-    leads: true,
-    services: true,
-  });
+  const { appointments, botConversations, clients, deals, leads, services } =
+    useEntityData({
+      appointments: true,
+      botConversations: true,
+      clients: true,
+      deals: true,
+      leads: true,
+      services: true,
+    });
   const {
-    searchParams,
-    setSearchParams,
     searchFilter,
     taskIdParam,
     taskOrdering,
@@ -50,8 +51,14 @@ export function TasksPage() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [commentText, setCommentText] = useState("");
   const [form, setForm] = useState(emptyTaskForm);
-  const [drawerEntity, setDrawerEntity] = useState<CrmDrawerEntity | null>(null);
-  const { selectedTaskQuery, taskComments, taskActivity, tasksQuery, taskSummary, taskWorkload, teamMembers, taskTemplates, loadedTasks } = useTaskQueries({
+  const {
+    tasksQuery,
+    taskSummary,
+    taskWorkload,
+    teamMembers,
+    taskTemplates,
+    loadedTasks,
+  } = useTaskQueries({
     selectedTask,
     taskIdParam,
     taskListParams,
@@ -67,22 +74,16 @@ export function TasksPage() {
     setOpen(true);
   }, []);
 
-  const closeTaskDrawer = useCallback(() => {
-    setSelectedTask(null);
-    const next = new URLSearchParams(searchParams);
-    next.delete("task");
-    setSearchParams(next, { replace: true });
-  }, [searchParams, setSearchParams]);
-
-  const openTaskDrawer = useCallback(
+  const openTaskWorkspace = useCallback(
     (task: Task) => {
-      setSelectedTask(task);
-      const next = new URLSearchParams(searchParams);
-      next.set("task", String(task.id));
-      setSearchParams(next, { replace: true });
+      navigate(`/app/tasks/${task.id}`);
     },
-    [searchParams, setSearchParams],
+    [navigate],
   );
+
+  const selectTask = useCallback((task: Task) => {
+    setSelectedTask(task);
+  }, []);
 
   const {
     createMutation,
@@ -94,21 +95,15 @@ export function TasksPage() {
     assignToMeMutation,
     dueTodayMutation,
     dueTomorrowMutation,
-    watcherMutation,
-    snoozeMutation,
-    commentMutation,
-    deleteCommentMutation,
     requestCancelTask,
-    requestDeleteComment,
     submitTaskForm,
-    addSelectedTaskComment,
   } = useTaskActions({
     businessId: business?.id ?? 0,
     form,
     editingTask,
     selectedTask,
     commentText,
-    openTaskDrawer,
+    openTaskDrawer: openTaskWorkspace,
     setOpen,
     setEditingTask,
     setForm,
@@ -117,16 +112,19 @@ export function TasksPage() {
   });
 
   useEffect(() => {
-    const taskId = Number(searchParams.get("task") || "");
-    if (!taskId) return;
-    const task = loadedTasks.find((item) => item.id === taskId);
-    if (task && selectedTask?.id !== task.id) setSelectedTask(task);
-  }, [loadedTasks, searchParams, selectedTask?.id]);
-
-  useEffect(() => {
-    const task = selectedTaskQuery.data;
-    if (task && selectedTask?.id !== task.id) setSelectedTask(task);
-  }, [selectedTask?.id, selectedTaskQuery.data]);
+    if (!loadedTasks.length) {
+      if (selectedTask) setSelectedTask(null);
+      return;
+    }
+    const current = selectedTask
+      ? loadedTasks.find((task) => task.id === selectedTask.id)
+      : null;
+    if (current && current !== selectedTask) {
+      setSelectedTask(current);
+      return;
+    }
+    if (!current) setSelectedTask(loadedTasks[0]);
+  }, [loadedTasks, selectedTask]);
 
   useEffect(() => {
     setPageHeader({
@@ -145,13 +143,30 @@ export function TasksPage() {
   }, [openQuickTask, setPageHeader, t]);
 
   if (!business) return <ErrorState message={t("tasks.noBusiness")} />;
-  if (taskSummary.isLoading || taskWorkload.isLoading || tasksQuery.isLoading || taskTemplates.isLoading || clients.isLoading || leads.isLoading || deals.isLoading || appointments.isLoading || botConversations.isLoading || services.isLoading) return <LoadingState />;
-  if (taskSummary.error) return <ErrorState message={getApiErrorMessage(taskSummary.error)} />;
-  if (taskWorkload.error) return <ErrorState message={getApiErrorMessage(taskWorkload.error)} />;
-  if (tasksQuery.error) return <ErrorState message={getApiErrorMessage(tasksQuery.error)} />;
-  if (taskTemplates.error) return <ErrorState message={getApiErrorMessage(taskTemplates.error)} />;
-  if (botConversations.error) return <ErrorState message={getApiErrorMessage(botConversations.error)} />;
-  if (selectedTaskQuery.error) return <ErrorState message={getApiErrorMessage(selectedTaskQuery.error)} />;
+  if (taskIdParam) return <Navigate to={`/app/tasks/${taskIdParam}`} replace />;
+  if (
+    taskSummary.isLoading ||
+    taskWorkload.isLoading ||
+    tasksQuery.isLoading ||
+    taskTemplates.isLoading ||
+    clients.isLoading ||
+    leads.isLoading ||
+    deals.isLoading ||
+    appointments.isLoading ||
+    botConversations.isLoading ||
+    services.isLoading
+  )
+    return <LoadingState />;
+  if (taskSummary.error)
+    return <ErrorState message={getApiErrorMessage(taskSummary.error)} />;
+  if (taskWorkload.error)
+    return <ErrorState message={getApiErrorMessage(taskWorkload.error)} />;
+  if (tasksQuery.error)
+    return <ErrorState message={getApiErrorMessage(tasksQuery.error)} />;
+  if (taskTemplates.error)
+    return <ErrorState message={getApiErrorMessage(taskTemplates.error)} />;
+  if (botConversations.error)
+    return <ErrorState message={getApiErrorMessage(botConversations.error)} />;
 
   const visibleTasks = loadedTasks;
   const totalTasks = tasksQuery.data?.pages[0]?.count ?? visibleTasks.length;
@@ -164,30 +179,67 @@ export function TasksPage() {
 
   return (
     <>
-      <TaskList
-        tasks={visibleTasks}
-        totalCount={totalTasks}
-        summary={taskSummary.data}
-        workload={taskWorkload.data}
-        searchQuery={searchFilter}
-        onSearchChange={setSearchFilter}
-        emptyTitle={emptyState.title}
-        emptyDescription={emptyState.description}
-        filterState={taskFilterState}
-        filterActions={taskFilterActions}
-        activeFilterCount={activeFilterCount}
-        teamMembers={teamMembers.data || []}
-        onOpenTask={openTaskDrawer}
-        onOpenEntity={setDrawerEntity}
-        onCreateTask={openQuickTask}
-      />
-      {tasksQuery.hasNextPage ? (
-        <div className="mt-3 flex justify-center">
-          <Button variant="secondary" isLoading={tasksQuery.isFetchingNextPage} onClick={() => void tasksQuery.fetchNextPage()}>
-            {t("tasks.loadMore")}
-          </Button>
-        </div>
-      ) : null}
+      <CrmWorkspacePage maxWidthClassName="max-w-[1520px]">
+        <CrmWorkspaceGrid inspectorOpen={Boolean(selectedTask)}>
+          <main className="min-w-0 space-y-3">
+            <TaskList
+              tasks={visibleTasks}
+              selectedTaskId={selectedTask?.id ?? null}
+              totalCount={totalTasks}
+              summary={taskSummary.data}
+              workload={taskWorkload.data}
+              searchQuery={searchFilter}
+              onSearchChange={setSearchFilter}
+              emptyTitle={emptyState.title}
+              emptyDescription={emptyState.description}
+              filterState={taskFilterState}
+              filterActions={taskFilterActions}
+              activeFilterCount={activeFilterCount}
+              teamMembers={teamMembers.data || []}
+              onSelectTask={selectTask}
+              onOpenTask={openTaskWorkspace}
+              onOpenEntity={(entity) =>
+                navigate(`/app/${entity.type === "appointment" ? "calendar" : `${entity.type}s`}/${entity.id}`)
+              }
+              onCreateTask={openQuickTask}
+            />
+            {tasksQuery.hasNextPage ? (
+              <div className="flex justify-center">
+                <Button
+                  variant="secondary"
+                  isLoading={tasksQuery.isFetchingNextPage}
+                  onClick={() => void tasksQuery.fetchNextPage()}
+                >
+                  {t("tasks.loadMore")}
+                </Button>
+              </div>
+            ) : null}
+          </main>
+
+          <TaskQuickInspector
+            task={selectedTask}
+            t={t}
+            onOpen={openTaskWorkspace}
+            onOpenRelated={(path) => navigate(path)}
+            onStart={(task) => startMutation.mutate(task.id)}
+            onComplete={(task) => completeMutation.mutate(task.id)}
+            onCancel={(task) => void requestCancelTask(task)}
+            onReopen={(task) => reopenMutation.mutate(task.id)}
+            onAssignToMe={(task) => assignToMeMutation.mutate(task.id)}
+            onDueToday={(task) => dueTodayMutation.mutate(task.id)}
+            onDueTomorrow={(task) => dueTomorrowMutation.mutate(task.id)}
+            pending={{
+              start: startMutation.isPending,
+              complete: completeMutation.isPending,
+              cancel: cancelMutation.isPending,
+              reopen: reopenMutation.isPending,
+              assignToMe: assignToMeMutation.isPending,
+              dueToday: dueTodayMutation.isPending,
+              dueTomorrow: dueTomorrowMutation.isPending,
+            }}
+          />
+        </CrmWorkspaceGrid>
+      </CrmWorkspacePage>
 
       <TaskFormModal
         open={open}
@@ -211,58 +263,19 @@ export function TasksPage() {
         onFormChange={setForm}
         onSubmit={submitTaskForm}
       />
-
-      <TaskDrawer
-        task={selectedTask}
-        comments={taskComments.data || []}
-        commentsLoading={taskComments.isLoading}
-        activityEvents={taskActivity.data || []}
-        activityLoading={taskActivity.isLoading}
-        commentText={commentText}
-        teamMembers={teamMembers.data || []}
-        isAddingComment={commentMutation.isPending}
-        detailsErrorMessage={updateDetailsMutation.error ? getApiErrorMessage(updateDetailsMutation.error) : null}
-        drawerEntity={drawerEntity}
-        onCommentTextChange={setCommentText}
-        onAddComment={addSelectedTaskComment}
-        onClose={closeTaskDrawer}
-        onOpenEntity={setDrawerEntity}
-        onCloseEntity={() => setDrawerEntity(null)}
-        onStart={(task) => startMutation.mutate(task.id)}
-        onComplete={(task) => completeMutation.mutate(task.id)}
-        onCancel={(task) => void requestCancelTask(task)}
-        onReopen={(task) => reopenMutation.mutate(task.id)}
-        onDeleteComment={(task, comment) => void requestDeleteComment(task, comment)}
-        onUpdateDetails={(task, payload) => updateDetailsMutation.mutateAsync({ id: task.id, payload })}
-        onAssignToMe={(task) => assignToMeMutation.mutate(task.id)}
-        onWatch={(task) => watcherMutation.mutate({ id: task.id })}
-        onSnoozeTomorrow={(task) => {
-          const tomorrow = new Date();
-          tomorrow.setDate(tomorrow.getDate() + 1);
-          tomorrow.setHours(10, 0, 0, 0);
-          snoozeMutation.mutate({ id: task.id, snoozed_until: tomorrow.toISOString() });
-        }}
-        onDueToday={(task) => dueTodayMutation.mutate(task.id)}
-        onDueTomorrow={(task) => dueTomorrowMutation.mutate(task.id)}
-        pending={{
-          start: startMutation.isPending,
-          complete: completeMutation.isPending,
-          cancel: cancelMutation.isPending,
-          reopen: reopenMutation.isPending,
-          updateDetails: updateDetailsMutation.isPending,
-          assignToMe: assignToMeMutation.isPending,
-          watch: watcherMutation.isPending,
-          snooze: snoozeMutation.isPending,
-          dueToday: dueTodayMutation.isPending,
-          dueTomorrow: dueTomorrowMutation.isPending,
-          deleteComment: deleteCommentMutation.isPending,
-        }}
-      />
     </>
   );
 }
 
-function getTaskEmptyState({ tabFilter, hasFilters, t }: { tabFilter: TaskTabFilter; hasFilters: boolean; t: (key: string) => string }) {
+function getTaskEmptyState({
+  tabFilter,
+  hasFilters,
+  t,
+}: {
+  tabFilter: TaskTabFilter;
+  hasFilters: boolean;
+  t: (key: string) => string;
+}) {
   if (hasFilters) {
     return {
       title: t("tasks.emptyFilteredTitle"),

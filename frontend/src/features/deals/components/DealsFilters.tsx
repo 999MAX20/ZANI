@@ -112,7 +112,7 @@ export function DealsFilters({ filters, stages, teamMembers, quickCounts, onChan
           onChange={(event) => onChange({ search: event.target.value })}
           placeholder={t("deals.queueSearch")}
           leftIcon={<Search size={15} />}
-          rightIcon={filters.search ? <button type="button" onClick={() => onChange({ search: "" })} className="rounded-full p-1 text-slate-500 hover:bg-slate-100" aria-label={t("deals.clearSearch")}><X size={13} /></button> : null}
+          rightIcon={filters.search ? <button type="button" onClick={() => onChange({ search: "" })} className="rounded-full p-1 text-zani-faint hover:bg-surface-muted hover:text-zani-text" aria-label={t("deals.clearSearch")}><X size={13} /></button> : null}
           className="h-9 text-xs"
           aria-label={t("common.search")}
         />

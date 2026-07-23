@@ -93,6 +93,8 @@ const mobileDrawerSections = [
     id: "operations",
     titleKey: "nav.operations",
     items: [
+      { to: "/app", label: "nav.dashboard", icon: Home },
+      { to: "/app/leads", label: "nav.leads", icon: Inbox, resource: "leads" },
       { to: "/app/deals", label: "nav.deals", icon: KanbanSquare, resource: "deals" },
       { to: "/app/clients", label: "nav.clients", icon: Users, resource: "clients" },
       { to: "/app/tasks", label: "nav.tasks", icon: ListChecks, resource: "tasks" },
@@ -194,40 +196,38 @@ export function Sidebar({
       onMouseEnter={forceVisible ? undefined : onDesktopMouseEnter}
       onMouseLeave={forceVisible ? undefined : onDesktopMouseLeave}
       className={cn(
-        "relative z-[60] shrink-0 border-r border-slate-200 bg-white transition-[width,box-shadow,background-color,backdrop-filter] duration-200 ease-out",
-        forceVisible && "h-dvh max-h-dvh w-[min(390px,94vw)] bg-white/[0.97] shadow-premium backdrop-blur-2xl",
+        "relative z-[60] shrink-0 border-r border-zani-border bg-surface-card transition-[width,box-shadow,background-color,backdrop-filter] duration-200 ease-out",
+        forceVisible && "h-dvh max-h-dvh w-[min(360px,94vw)] bg-surface-card shadow-premium backdrop-blur-2xl",
         !forceVisible && cn(
-          "hidden bg-white/[0.88] backdrop-blur-2xl lg:fixed lg:inset-y-0 lg:left-0 lg:block",
-          isExpanded ? "lg:w-[260px] lg:bg-white/[0.97] lg:shadow-[18px_0_45px_rgba(17,24,39,0.12)] lg:backdrop-blur-2xl" : "lg:w-[72px]",
+          "hidden bg-surface-card/92 backdrop-blur-2xl lg:fixed lg:inset-y-0 lg:left-0 lg:block",
+          isExpanded ? "lg:w-[224px] lg:bg-surface-card lg:shadow-panel lg:backdrop-blur-2xl" : "lg:w-16",
         ),
         !forceVisible && "hidden lg:block",
       )}
     >
       <div className={cn("flex h-full min-h-0 flex-col", forceVisible && "min-h-dvh overflow-y-auto pb-8")}>
-        <div className={cn("py-8", isExpanded ? "px-6" : "px-3")}>
-          <div className="flex items-center gap-3">
-            <div className="relative grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary-gradient text-white shadow-glow">
+        <div className={cn("py-3", isExpanded ? "px-3" : "px-2")}>
+          <div className={cn("flex items-center", isExpanded ? "justify-start gap-2" : "justify-center")}>
+            <div className="relative grid h-9 w-9 shrink-0 place-items-center rounded-control bg-brand-500 text-white shadow-sm">
               <Sparkles size={20} />
-              <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-slate-100 bg-emerald-500" />
             </div>
             <div className={cn("min-w-0 transition-opacity duration-150", isExpanded ? "opacity-100" : "pointer-events-none hidden opacity-0")}>
-              <p className="truncate text-xl font-bold leading-6 text-midnight">{t("sidebar.product")}</p>
-              <p className="truncate text-sm text-slate-500">{t("sidebar.subtitle")}</p>
+              <p className="truncate text-sm font-semibold text-zani-text">{t("sidebar.product")}</p>
             </div>
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-2 no-scrollbar">
+        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-1.5 no-scrollbar">
           {visibleGroups.map((group) => {
             return (
             <section key={group.id}>
               {mobileDrawer ? <div
-                className="mb-1 flex min-h-7 w-full items-center justify-between rounded-lg px-4 text-left text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 transition-colors hover:bg-slate-200/70 hover:text-slate-600"
+                className="mb-1 flex min-h-7 w-full items-center justify-between rounded-control px-3 text-left text-[10px] font-semibold text-zani-faint transition-colors hover:bg-surface-muted hover:text-zani-subtle"
               >
                 <span>{t(group.titleKey)}</span>
               </div> : null}
 
-              <nav className="space-y-1">
+              <nav className="space-y-0.5">
                 {group.items.map((item) => {
                   const Icon = item.icon;
                   const childActive = item.children?.some((child) => isItemActive(location.pathname, child.to)) || false;
@@ -243,26 +243,26 @@ export function Sidebar({
                           onClick={() => setOpenGroups((value) => ({ ...value, [item.label]: !childrenOpen }))}
                           title={t(item.label)}
                           className={cn(
-                            "group relative flex min-h-[48px] w-full items-center gap-3 border-l-4 border-transparent px-4 py-3 text-sm font-medium text-slate-700 transition-colors duration-150",
+                            "zani-focus-ring group relative flex min-h-10 w-full items-center gap-2 rounded-control border-l-2 border-transparent px-3 py-2 text-xs font-semibold text-zani-subtle transition-colors duration-150",
                             !isExpanded && "justify-center px-0",
-                            "hover:bg-primary-50 hover:text-midnight",
-                            active && "border-brand-600 bg-primary-50 font-semibold text-midnight",
+                            "hover:bg-brand-50 hover:text-zani-text",
+                            active && "border-brand-600 bg-brand-50 text-zani-text",
                           )}
                         >
                           <span
                             className={cn(
-                              "grid h-6 w-6 shrink-0 place-items-center text-slate-500 transition-colors",
+                              "grid h-5 w-5 shrink-0 place-items-center text-zani-faint transition-colors",
                               active && "text-brand-600",
-                              !active && "group-hover:text-midnight",
+                              !active && "group-hover:text-zani-text",
                             )}
                           >
-                            <Icon size={21} strokeWidth={2.15} />
+                            <Icon size={18} strokeWidth={2.1} />
                           </span>
                           <span className={cn("min-w-0 truncate text-left transition-opacity duration-150", isExpanded ? "opacity-100" : "hidden opacity-0")}>{t(item.label)}</span>
-                          {isExpanded ? <ChevronDown size={16} className={cn("ml-auto text-slate-400 transition-transform", childrenOpen && "rotate-180")} /> : null}
+                          {isExpanded ? <ChevronDown size={16} className={cn("ml-auto text-zani-faint transition-transform", childrenOpen && "rotate-180")} /> : null}
                         </button>
                         {isExpanded && childrenOpen ? (
-                          <div className="ml-7 mt-1 space-y-1 border-l border-slate-100 pl-2">
+                          <div className="ml-6 mt-1 space-y-0.5 border-l border-zani-border pl-2">
                             {item.children?.map((child) => {
                               const ChildIcon = child.icon;
                               const childIsActive = isItemActive(location.pathname, child.to);
@@ -275,12 +275,12 @@ export function Sidebar({
                                   onFocus={() => prefetchRouteData(child.to!, queryClient, business?.id)}
                                   title={t(child.label)}
                                   className={cn(
-                                    "group relative flex min-h-[42px] items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition-colors duration-150",
-                                    "hover:bg-primary-50 hover:text-midnight",
-                                    childIsActive && "bg-primary-50 font-semibold text-midnight",
+                                    "zani-focus-ring group relative flex min-h-9 items-center gap-2 rounded-control px-2.5 py-1.5 text-xs font-semibold text-zani-subtle transition-colors duration-150",
+                                    "hover:bg-brand-50 hover:text-zani-text",
+                                    childIsActive && "bg-brand-50 text-zani-text",
                                   )}
                                 >
-                                  <ChildIcon size={18} strokeWidth={2.1} className={cn("shrink-0 text-slate-400", childIsActive && "text-brand-600")} />
+                                  <ChildIcon size={16} strokeWidth={2.1} className={cn("shrink-0 text-zani-faint", childIsActive && "text-brand-600")} />
                                   <span className="min-w-0 truncate">{t(child.label)}</span>
                                 </NavLink>
                               ) : null;
@@ -301,24 +301,24 @@ export function Sidebar({
                       onFocus={() => prefetchRouteData(item.to!, queryClient, business?.id)}
                       title={t(item.label)}
                       className={cn(
-                        "group relative flex min-h-[48px] items-center gap-3 border-l-4 border-transparent px-4 py-3 text-sm font-medium text-slate-700 transition-colors duration-150",
+                        "zani-focus-ring group relative flex min-h-10 items-center gap-2 rounded-control border-l-2 border-transparent px-3 py-2 text-xs font-semibold text-zani-subtle transition-colors duration-150",
                         !isExpanded && "justify-center px-0",
-                        "hover:bg-primary-50 hover:text-midnight",
-                        active && "border-brand-600 bg-primary-50 font-semibold text-midnight",
+                        "hover:bg-brand-50 hover:text-zani-text",
+                        active && "border-brand-600 bg-brand-50 text-zani-text",
                       )}
                     >
                       <span
                         className={cn(
-                          "grid h-6 w-6 shrink-0 place-items-center text-slate-500 transition-colors",
+                          "grid h-5 w-5 shrink-0 place-items-center text-zani-faint transition-colors",
                           active && "text-brand-600",
-                          !active && "group-hover:text-midnight",
+                          !active && "group-hover:text-zani-text",
                         )}
                       >
-                        <Icon size={21} strokeWidth={2.15} />
+                        <Icon size={18} strokeWidth={2.1} />
                       </span>
                       <span className={cn("min-w-0 truncate transition-opacity duration-150", isExpanded ? "opacity-100" : "hidden opacity-0")}>{t(item.label)}</span>
                       {item.to === "/app/conversations" && unreadMessages ? (
-                        <span className={cn("min-w-6 rounded-full bg-red-500 px-2 py-1 text-center text-[11px] font-black leading-none text-white shadow-sm", isExpanded ? "ml-auto" : "absolute right-1 top-1 px-1.5")}>
+                        <span className={cn("min-w-5 rounded-full bg-zani-danger px-1.5 py-0.5 text-center text-[10px] font-semibold leading-none text-white shadow-sm", isExpanded ? "ml-auto" : "absolute right-1 top-1 px-1")}>
                           {unreadMessages > 99 ? "99+" : unreadMessages}
                         </span>
                       ) : active && isExpanded ? <span className="ml-auto h-2 w-2 rounded-full bg-brand-500" /> : null}
@@ -332,23 +332,23 @@ export function Sidebar({
 
         </div>
 
-        <div className={cn("border-t border-slate-200", isExpanded ? "p-4" : "p-3")}>
+        <div className={cn("border-t border-zani-border", isExpanded ? "p-2" : "p-1.5")}>
           <NavLink
             to="/app/account"
             onClick={onNavigate}
             title={t("account.menuProfile")}
             className={({ isActive }) => cn(
-              "flex items-center gap-3 rounded-xl transition hover:bg-slate-200/70",
-              isExpanded ? "p-2" : "justify-center p-0",
-              isActive && "bg-slate-200/80",
+              "zani-focus-ring flex items-center gap-2 rounded-control transition hover:bg-surface-muted",
+              isExpanded ? "p-2" : "justify-center p-1",
+              isActive && "bg-surface-muted",
             )}
           >
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary-100 text-sm font-bold text-brand-700">
+            <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary-100 text-xs font-semibold text-brand-700">
               {(user?.full_name || user?.email || "Z").slice(0, 2).toUpperCase()}
             </div>
             <div className={cn("min-w-0 transition-opacity duration-150", isExpanded ? "opacity-100" : "hidden opacity-0")}>
-              <p className="truncate text-sm font-bold text-midnight">{user?.full_name || user?.email || t("sidebar.product")}</p>
-              <p className="truncate text-xs text-slate-500">{t("account.menuProfile")}</p>
+              <p className="truncate text-xs font-semibold text-midnight">{user?.full_name || user?.email || t("sidebar.product")}</p>
+              <p className="truncate text-[11px] text-zani-faint">{t("account.menuProfile")}</p>
             </div>
           </NavLink>
         </div>

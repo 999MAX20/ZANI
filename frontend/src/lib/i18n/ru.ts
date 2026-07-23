@@ -69,39 +69,49 @@ export const ru: Record<string, string> = {
   "account.noBusiness": "Бизнес не выбран",
   "account.profileEyebrow": "Профиль",
   "account.profileTitle": "Как вас видит команда",
-  "account.profileText": "Эти данные относятся к пользователю, а не к бизнесу. Они доступны всем сотрудникам независимо от прав на настройки компании.",
+  "account.profileText":
+    "Эти данные относятся к пользователю, а не к бизнесу. Они доступны всем сотрудникам независимо от прав на настройки компании.",
   "account.fullName": "Имя",
   "account.phone": "Телефон",
   "account.saveProfile": "Сохранить профиль",
   "account.saved": "Профиль обновлён.",
   "account.preferencesEyebrow": "Предпочтения",
   "account.preferencesTitle": "Интерфейс",
-  "account.preferencesText": "Персональные настройки рабочего места. Они не меняют настройки бизнеса и роли команды.",
+  "account.preferencesText":
+    "Персональные настройки рабочего места. Они не меняют настройки бизнеса и роли команды.",
   "account.businessAccessTitle": "Доступ в текущем бизнесе",
-  "account.businessAccessText": "Ваша роль: {role}. Бизнес-разделы показываются по назначенным правам.",
-  "account.businessAccessEmpty": "Для текущего бизнеса активная роль не найдена.",
+  "account.businessAccessText":
+    "Ваша роль: {role}. Бизнес-разделы показываются по назначенным правам.",
+  "account.businessAccessEmpty":
+    "Для текущего бизнеса активная роль не найдена.",
   "account.timezone": "Часовой пояс",
   "account.startPage": "Стартовая страница",
   "account.connectedEyebrow": "Подключения",
   "account.connectedTitle": "Вход через внешние аккаунты",
-  "account.connectedText": "Здесь показаны Google и Apple аккаунты, привязанные к вашему пользователю.",
+  "account.connectedText":
+    "Здесь показаны Google и Apple аккаунты, привязанные к вашему пользователю.",
   "account.verified": "Подтверждено",
   "account.notVerified": "Не подтверждено",
-  "account.noConnectedAccounts": "Внешние аккаунты пока не подключены. Сейчас доступ работает через email и пароль.",
+  "account.noConnectedAccounts":
+    "Внешние аккаунты пока не подключены. Сейчас доступ работает через email и пароль.",
   "account.loginHistoryEyebrow": "Безопасность",
   "account.loginHistoryTitle": "Последние входы",
-  "account.loginHistoryText": "Только события входа вашего пользователя. Бизнесовый журнал безопасности остается в настройках бизнеса.",
+  "account.loginHistoryText":
+    "Только события входа вашего пользователя. Бизнесовый журнал безопасности остается в настройках бизнеса.",
   "account.noLoginHistory": "История входов пока пуста.",
   "account.noIp": "IP не записан",
   "account.noDevice": "устройство не определено",
   "account.notificationsEyebrow": "Личные уведомления",
   "account.notificationsTitle": "Что показывать вам",
-  "account.notificationsText": "Отключение категории скрывает обычный шум только для вашего аккаунта. Срочные системные события всё равно могут приходить.",
-  "account.notificationsNoBusiness": "Выберите бизнес, чтобы настроить уведомления по рабочему пространству.",
+  "account.notificationsText":
+    "Отключение категории скрывает обычный шум только для вашего аккаунта. Срочные системные события всё равно могут приходить.",
+  "account.notificationsNoBusiness":
+    "Выберите бизнес, чтобы настроить уведомления по рабочему пространству.",
   "account.businessRequired": "Нужен активный бизнес.",
   "account.securityEyebrow": "Безопасность",
   "account.securityTitle": "Пароль",
-  "account.securityText": "Смена пароля применяется только к вашему аккаунту. Командные роли и доступы меняются в настройках бизнеса.",
+  "account.securityText":
+    "Смена пароля применяется только к вашему аккаунту. Командные роли и доступы меняются в настройках бизнеса.",
   "account.currentPassword": "Текущий пароль",
   "account.newPassword": "Новый пароль",
   "account.confirmPassword": "Повторите пароль",
@@ -111,22 +121,30 @@ export const ru: Record<string, string> = {
   "sidebar.product": "Zani",
   "sidebar.subtitle": "Панель управления бизнесом",
   "sidebar.commandCenter": "Бизнес под контролем",
-  "sidebar.commandCenterText": "Все заявки, записи и задачи собраны в одной рабочей панели.",
+  "sidebar.commandCenterText":
+    "Все заявки, записи и задачи собраны в одной рабочей панели.",
   "sidebar.safeMode": "Безопасный доступ",
-  "sidebar.safeModeText": "Разделы показываются по роли сотрудника и правам бизнеса.",
+  "sidebar.safeModeText":
+    "Разделы показываются по роли сотрудника и правам бизнеса.",
   "sidebar.roleSurface.owner.title": "Полный контроль владельца",
-  "sidebar.roleSurface.owner.text": "Доступны деньги, команда, подключения, аналитика и настройки бизнеса.",
+  "sidebar.roleSurface.owner.text":
+    "Доступны деньги, команда, подключения, аналитика и настройки бизнеса.",
   "sidebar.roleSurface.manager.title": "Рабочий режим менеджера",
-  "sidebar.roleSurface.manager.text": "Показываются клиенты, заявки, сделки, задачи и сообщения без лишних управленческих разделов.",
+  "sidebar.roleSurface.manager.text":
+    "Показываются клиенты, заявки, сделки, задачи и сообщения без лишних управленческих разделов.",
   "sidebar.roleSurface.operator.title": "Операционный режим",
-  "sidebar.roleSurface.operator.text": "Фокус на входящих обращениях, ответах, назначениях и срочных действиях.",
+  "sidebar.roleSurface.operator.text":
+    "Фокус на входящих обращениях, ответах, назначениях и срочных действиях.",
   "sidebar.roleSurface.staff.title": "Ограниченный рабочий доступ",
-  "sidebar.roleSurface.staff.text": "Показываются только разрешённые владельцем разделы и действия.",
+  "sidebar.roleSurface.staff.text":
+    "Показываются только разрешённые владельцем разделы и действия.",
   "sidebar.collapse": "Свернуть меню",
   "sidebar.expand": "Развернуть меню",
   "auth.badge": "ИИ-CRM для малого и среднего бизнеса",
-  "auth.headline": "Рабочий кабинет, который помогает бизнесу двигаться быстрее.",
-  "auth.copy": "Управляйте заявками, клиентами, записями и диалогами в одном понятном интерфейсе.",
+  "auth.headline":
+    "Рабочий кабинет, который помогает бизнесу двигаться быстрее.",
+  "auth.copy":
+    "Управляйте заявками, клиентами, записями и диалогами в одном понятном интерфейсе.",
   "auth.fastFollowup": "Быстрая реакция",
   "auth.fastFollowupText": "Напоминания, кому ответить",
   "auth.smartBooking": "Умная запись",
@@ -136,7 +154,8 @@ export const ru: Record<string, string> = {
   "auth.aiBubble": "ИИ нашёл горячие заявки и подготовил подсказки.",
   "auth.welcome": "С возвращением",
   "auth.signIn": "Войти в Zani",
-  "auth.signInCopy": "Откройте рабочий кабинет и продолжите работу с клиентами.",
+  "auth.signInCopy":
+    "Откройте рабочий кабинет и продолжите работу с клиентами.",
   "auth.email": "Email",
   "auth.password": "Пароль",
   "auth.submit": "Войти",
@@ -146,12 +165,14 @@ export const ru: Record<string, string> = {
   "auth.googleSoon": "Google скоро",
   "auth.appleSoon": "Apple скоро",
   "auth.socialNotConfigured": "Вход через соцсети пока не настроен.",
-  "auth.socialFailed": "Не удалось войти через провайдера. Попробуйте ещё раз или используйте email и пароль.",
+  "auth.socialFailed":
+    "Не удалось войти через провайдера. Попробуйте ещё раз или используйте email и пароль.",
   "auth.forgotPassword": "Забыли пароль?",
   "auth.registerBusiness": "Зарегистрировать бизнес",
   "invite.checking": "Проверяем приглашение...",
   "invite.eyebrow": "Приглашение в CRM",
-  "invite.description": "Задайте пароль для входа. После подтверждения вы попадёте в CRM с ролью, которую назначил владелец бизнеса.",
+  "invite.description":
+    "Задайте пароль для входа. После подтверждения вы попадёте в CRM с ролью, которую назначил владелец бизнеса.",
   "invite.inactive": "Приглашение уже не активно: {status}.",
   "invite.email": "Email",
   "invite.name": "Имя",
@@ -175,7 +196,8 @@ export const ru: Record<string, string> = {
   "common.language": "Язык",
   "common.openNavigation": "Открыть навигацию",
   "passwordReset.requestTitle": "Восстановление пароля",
-  "passwordReset.requestText": "Укажите email аккаунта. Мы подготовим ссылку для восстановления пароля.",
+  "passwordReset.requestText":
+    "Укажите email аккаунта. Мы подготовим ссылку для восстановления пароля.",
   "passwordReset.deliveryChannel": "Канал доставки",
   "passwordReset.manualChannel": "Скопировать вручную",
   "passwordReset.getLink": "Получить ссылку",
@@ -197,10 +219,12 @@ export const ru: Record<string, string> = {
   "passwordReset.backToLogin": "Вернуться ко входу",
   "signup.badge": "Zani для малого бизнеса",
   "signup.headline": "Запустите CRM без длинной настройки.",
-  "signup.copy": "Создаём владельца, бизнес и базовые роли за один шаг. Сотрудников потом пригласите из настроек команды.",
+  "signup.copy":
+    "Создаём владельца, бизнес и базовые роли за один шаг. Сотрудников потом пригласите из настроек команды.",
   "signup.eyebrow": "Регистрация директора",
   "signup.title": "Компания и первый доступ",
-  "signup.text": "Только ключевые данные. Остальное можно заполнить позже в настройках.",
+  "signup.text":
+    "Только ключевые данные. Остальное можно заполнить позже в настройках.",
   "signup.accountSection": "Доступ директора",
   "signup.businessSection": "Бизнес",
   "signup.yourName": "Ваше имя",
@@ -211,8 +235,10 @@ export const ru: Record<string, string> = {
   "signup.businessType": "Ниша",
   "signup.city": "Город",
   "signup.cityOptional": "Город (необязательно)",
-  "signup.nextText": "После входа Zani предложит быстрый старт: услуги, график, сотрудников и первый канал заявок.",
-  "signup.startNote": "Создаём только владельца и рабочее пространство. Сотрудников, роли, интеграции и график можно спокойно настроить после входа.",
+  "signup.nextText":
+    "После входа Zani предложит быстрый старт: услуги, график, сотрудников и первый канал заявок.",
+  "signup.startNote":
+    "Создаём только владельца и рабочее пространство. Сотрудников, роли, интеграции и график можно спокойно настроить после входа.",
   "signup.submit": "Создать кабинет",
   "signup.hasAccess": "Уже есть доступ?",
   "businessType.beauty": "Красота / салон / барбершоп",
@@ -223,7 +249,8 @@ export const ru: Record<string, string> = {
   "businessType.sauna": "Сауна / баня",
   "businessType.other": "Другое",
   "dashboard.title": "Рабочий стол бизнеса",
-  "dashboard.description": "Сводка по продажам, заявкам, записям и действиям команды. Всё важное на одном экране.",
+  "dashboard.description":
+    "Сводка по продажам, заявкам, записям и действиям команды. Всё важное на одном экране.",
   "dashboard.newLead": "Новая заявка",
   "dashboard.aiPlan": "План дня",
   "dashboard.revenue": "Выручка",
@@ -261,7 +288,8 @@ export const ru: Record<string, string> = {
   "dashboard.staleDeals": "Сделки без движения",
   "dashboard.staleDealsText": "{count} сделок требуют проверки.",
   "dashboard.teamDataEmpty": "Данных по команде пока нет",
-  "dashboard.teamDataEmptyText": "Назначьте ответственных в заявках и задачах, чтобы видеть KPI сотрудников.",
+  "dashboard.teamDataEmptyText":
+    "Назначьте ответственных в заявках и задачах, чтобы видеть KPI сотрудников.",
   "dashboard.connectMoreData": "Подключите больше данных для точных инсайтов",
   "dashboard.ownerUrgentActions": "Срочные действия",
   "dashboard.aiNavigator": "ИИ-навигатор",
@@ -310,12 +338,16 @@ export const ru: Record<string, string> = {
   "dashboard.newLeadsCount": "новых заявок",
   "dashboard.moneyUnderControl": "Деньги под контролем",
   "dashboard.myActiveLeads": "Мои активные заявки",
-  "dashboard.ownerHeroHint": "Оценка по завершённым записям и загруженным продажам.",
+  "dashboard.ownerHeroHint":
+    "Оценка по завершённым записям и загруженным продажам.",
   "dashboard.managerHeroHint": "задач в работе · фокус на быстрых ответах",
-  "dashboard.ownerHeroCopy": "Главный экран показывает деньги, спрос и срочные действия без лишнего CRM-шума.",
-  "dashboard.managerHeroCopy": "Ваш рабочий экран: заявки, задачи и записи, которые двигают клиентов к покупке.",
+  "dashboard.ownerHeroCopy":
+    "Главный экран показывает деньги, спрос и срочные действия без лишнего CRM-шума.",
+  "dashboard.managerHeroCopy":
+    "Ваш рабочий экран: заявки, задачи и записи, которые двигают клиентов к покупке.",
   "dashboard.setupScore": "Оценка настройки бизнеса",
-  "dashboard.setupScoreText": "Zani видит ваш бизнес на {score}%. Чем больше источников и справочников подключено, тем точнее CRM подсказывает следующие действия.",
+  "dashboard.setupScoreText":
+    "Zani видит ваш бизнес на {score}%. Чем больше источников и справочников подключено, тем точнее CRM подсказывает следующие действия.",
   "dashboard.quickLead": "Новая заявка",
   "dashboard.quickBooking": "Запись",
   "dashboard.quickDialogs": "Диалоги",
@@ -346,13 +378,15 @@ export const ru: Record<string, string> = {
   "dashboard.zaniRecommendations": "Рекомендации ZANI",
   "dashboard.businessActivated": "Ваш лендинг активирован",
   "dashboard.acceptsLeads": "{business} уже принимает заявки в ZANI",
-  "dashboard.trialCopy": "У вас открыт подарочный месяц расширенного доступа. Доплачивать сейчас не нужно.",
+  "dashboard.trialCopy":
+    "У вас открыт подарочный месяц расширенного доступа. Доплачивать сейчас не нужно.",
   "dashboard.activeUntil": "Доступ активен до {date}.",
   "dashboard.openLanding": "Открыть лендинг",
   "dashboard.connectData": "Подключить данные",
   "dashboard.source": "Источник",
   "dashboard.connectNext": "Что подключить дальше",
-  "dashboard.connectNextHint": "Модули без production-готовности помечены как beta, скоро или по заявке.",
+  "dashboard.connectNextHint":
+    "Модули без production-готовности помечены как beta, скоро или по заявке.",
   "dashboard.openQuickStart": "Открыть быстрый старт",
   "dashboard.statusConnected": "подключено",
   "dashboard.statusConnect": "подключить",
@@ -380,27 +414,41 @@ export const ru: Record<string, string> = {
   "dashboard.taskEscalation.critical": "Критично",
   "dashboard.noOpenTasks": "Нет открытых задач",
   "dashboard.noOpenTasksText": "Follow-up задачи появятся здесь.",
-  "dashboard.noBusiness": "Бизнес ещё не создан. Откройте настройки и добавьте первый бизнес, чтобы начать работу.",
-  "dashboard.moduleWhatsapp": "Подключите канал, чтобы заявки и переписка попадали в единую историю клиента.",
+  "dashboard.noBusiness":
+    "Бизнес ещё не создан. Откройте настройки и добавьте первый бизнес, чтобы начать работу.",
+  "dashboard.moduleWhatsapp":
+    "Подключите канал, чтобы заявки и переписка попадали в единую историю клиента.",
   "dashboard.moduleAiBot": "AI-бот",
-  "dashboard.moduleAiBotText": "Черновик AI-сценария для первичных ответов и квалификации лидов.",
+  "dashboard.moduleAiBotText":
+    "Черновик AI-сценария для первичных ответов и квалификации лидов.",
   "dashboard.moduleTeam": "Сотрудники",
-  "dashboard.moduleTeamText": "Пригласите команду и настройте роли перед раздачей заявок.",
-  "dashboard.moduleServicesText": "Справочник нужен для записей, стоимости и понятной аналитики.",
+  "dashboard.moduleTeamText":
+    "Пригласите команду и настройте роли перед раздачей заявок.",
+  "dashboard.moduleServicesText":
+    "Справочник нужен для записей, стоимости и понятной аналитики.",
   "dashboard.moduleSales": "Продажи",
-  "dashboard.moduleSalesText": "Воронка уже подготовлена. Первые заявки попадут в CRM автоматически.",
-  "dashboard.moduleImportText": "Импортируйте текущую базу клиентов и заявок без ручного переноса.",
-  "dashboard.module1cText": "Экспорт финансовых и клиентских данных подключается через поддержку.",
+  "dashboard.moduleSalesText":
+    "Воронка уже подготовлена. Первые заявки попадут в CRM автоматически.",
+  "dashboard.moduleImportText":
+    "Импортируйте текущую базу клиентов и заявок без ручного переноса.",
+  "dashboard.module1cText":
+    "Экспорт финансовых и клиентских данных подключается через поддержку.",
   "dashboard.moduleWarehouse": "МойСклад / склад",
-  "dashboard.moduleWarehouseText": "Складские интеграции запланированы после пилотной CRM-логики.",
+  "dashboard.moduleWarehouseText":
+    "Складские интеграции запланированы после пилотной CRM-логики.",
   "dashboard.managerTitle": "Мой рабочий день",
-  "dashboard.ownerPageDescription": "Деньги, спрос и срочные действия в одном первом экране.",
-  "dashboard.managerPageDescription": "Лиды, задачи и записи без управленческого шума.",
-  "dashboard.loadingCoreData": "Загружаем свежие данные CRM. Основной экран уже доступен.",
-  "dashboard.ownerAnalyticsError": "Не удалось загрузить аналитику владельца. Основные разделы CRM доступны, а метрики обновятся после восстановления API.",
+  "dashboard.ownerPageDescription":
+    "Деньги, спрос и срочные действия в одном первом экране.",
+  "dashboard.managerPageDescription":
+    "Лиды, задачи и записи без управленческого шума.",
+  "dashboard.loadingCoreData":
+    "Загружаем свежие данные CRM. Основной экран уже доступен.",
+  "dashboard.ownerAnalyticsError":
+    "Не удалось загрузить аналитику владельца. Основные разделы CRM доступны, а метрики обновятся после восстановления API.",
   "dashboard.operatorWorkspace": "Рабочее место оператора",
   "dashboard.operatorFocus": "Фокус на обработке клиентов",
-  "dashboard.operatorFocusText": "В этой роли скрыты управленческие и финансовые блоки. Основные действия: ответить в чате, обработать заявку, создать запись и закрыть follow-up.",
+  "dashboard.operatorFocusText":
+    "В этой роли скрыты управленческие и финансовые блоки. Основные действия: ответить в чате, обработать заявку, создать запись и закрыть follow-up.",
   "dashboard.leadsLabel": "заявок",
   "dashboard.chatsLabel": "чаты",
   "dashboard.tasksLabel": "задач",
@@ -408,7 +456,8 @@ export const ru: Record<string, string> = {
   "dashboard.checkBookingsToday": "Проверить записи на сегодня",
   "dashboard.bookingsInCalendar": "{count} записей в календаре.",
   "dashboard.openTeamTasks": "Открыть задачи команды",
-  "dashboard.openClientTasksCount": "{count} открытых задач по клиентам и follow-up.",
+  "dashboard.openClientTasksCount":
+    "{count} открытых задач по клиентам и follow-up.",
   "dashboard.checkLeadSources": "Проверить источники заявок",
   "dashboard.sources": "Источники",
   "dashboard.leadSourcesHint": "{source} показывают, откуда приходит спрос.",
@@ -416,35 +465,47 @@ export const ru: Record<string, string> = {
   "dashboard.finishQuickStart": "Завершить быстрый старт",
   "dashboard.crmReadiness": "Готовность CRM: {progress}%.",
   "dashboard.checkPilotReadiness": "Проверить готовность пилота",
-  "dashboard.pilotReadinessText": "CRM, импорт, чат, AI, интеграции и smoke path в одном чеклисте.",
+  "dashboard.pilotReadinessText":
+    "CRM, импорт, чат, AI, интеграции и smoke path в одном чеклисте.",
   "dashboard.attention.new_leads.title": "Новые заявки",
   "dashboard.attention.new_leads.text": "{count} заявок ждут обработки.",
   "dashboard.attention.overdue_tasks.title": "Просроченные задачи",
   "dashboard.attention.overdue_tasks.text": "{count} задач просрочено.",
   "dashboard.attention.connector_errors.title": "Проблемы интеграций",
-  "dashboard.attention.connector_errors.text": "{count} коннекторов требуют проверки.",
+  "dashboard.attention.connector_errors.text":
+    "{count} коннекторов требуют проверки.",
   "dashboard.attention.connector_pending.title": "Заявки на подключения",
-  "dashboard.attention.connector_pending.text": "{count} подключений ждут настройки.",
+  "dashboard.attention.connector_pending.text":
+    "{count} подключений ждут настройки.",
   "dashboard.attention.sales_data.title": "Нет данных продаж",
-  "dashboard.attention.sales_data.text": "Загрузите Excel/CSV или подключите read-only источник.",
+  "dashboard.attention.sales_data.text":
+    "Загрузите Excel/CSV или подключите read-only источник.",
   "dashboard.latestBusinessEvents": "Последние бизнес-события",
-  "dashboard.latestBusinessEventsText": "Импортированные продажи, товары, остатки и события коннекторов без тяжёлого BI.",
-  "dashboard.connectorHealth": "Подключено: {connected} · в работе: {pending} · ошибки: {error}",
+  "dashboard.latestBusinessEventsText":
+    "Импортированные продажи, товары, остатки и события коннекторов без тяжёлого BI.",
+  "dashboard.connectorHealth":
+    "Подключено: {connected} · в работе: {pending} · ошибки: {error}",
   "dashboard.latestLeads": "Последние заявки",
   "dashboard.noLeads": "Заявок пока нет",
-  "dashboard.noLeadsText": "Создайте первую заявку вручную или подключите источник заявок на следующем этапе.",
+  "dashboard.noLeadsText":
+    "Создайте первую заявку вручную или подключите источник заявок на следующем этапе.",
   "dashboard.goLeads": "Перейти к заявкам",
   "dashboard.upcomingBookings": "Ближайшие записи",
   "dashboard.noBookings": "Записей пока нет",
-  "dashboard.noBookingsText": "Когда появится первая запись, она будет видна здесь и в календаре.",
+  "dashboard.noBookingsText":
+    "Когда появится первая запись, она будет видна здесь и в календаре.",
   "dashboard.clientBase": "Клиентская база",
   "dashboard.clientsInCrm": "{count} клиентов в CRM.",
   "dashboard.quickStart": "Быстрый старт",
-  "dashboard.quickStartText": "Добавьте услугу, ресурс и рабочее время, затем создайте первую запись из заявки.",
-  "dashboard.revenueExactText": "По загруженным продажам и завершённым записям.",
-  "dashboard.revenueEstimateText": "Оценка по завершённым записям; загрузите продажи для точной картины.",
+  "dashboard.quickStartText":
+    "Добавьте услугу, ресурс и рабочее время, затем создайте первую запись из заявки.",
+  "dashboard.revenueExactText":
+    "По загруженным продажам и завершённым записям.",
+  "dashboard.revenueEstimateText":
+    "Оценка по завершённым записям; загрузите продажи для точной картины.",
   "dashboard.revenueMissingValue": "Нет данных",
-  "dashboard.revenueMissingHint": "Подключите продажи или импортируйте Excel/CSV, чтобы ZANI показывал реальные деньги.",
+  "dashboard.revenueMissingHint":
+    "Подключите продажи или импортируйте Excel/CSV, чтобы ZANI показывал реальные деньги.",
   "dashboard.revenueMissingShort": "Подключите продажи для точной картины.",
   "dashboard.aiBrief.eyebrow": "AI-сводка",
   "dashboard.aiBrief.title": "Что ZANI видит сегодня",
@@ -453,25 +514,32 @@ export const ru: Record<string, string> = {
   "dashboard.aiBrief.overdueText": "{count} задач требуют решения сегодня.",
   "dashboard.aiBrief.openTasks": "Открыть задачи",
   "dashboard.aiBrief.leadsTitle": "Новые заявки ждут реакции",
-  "dashboard.aiBrief.leadsText": "{count} заявок нужно обработать, чтобы не потерять клиентов.",
+  "dashboard.aiBrief.leadsText":
+    "{count} заявок нужно обработать, чтобы не потерять клиентов.",
   "dashboard.aiBrief.openLeads": "Открыть заявки",
   "dashboard.aiBrief.bookingsTitle": "Проверьте записи на сегодня",
   "dashboard.aiBrief.bookingsText": "{count} записей запланировано на сегодня.",
   "dashboard.aiBrief.openCalendar": "Открыть календарь",
   "dashboard.aiBrief.salesTitle": "Нет данных по деньгам",
-  "dashboard.aiBrief.salesText": "Подключите продажи или импортируйте Excel/CSV, чтобы ZANI объяснял выручку.",
+  "dashboard.aiBrief.salesText":
+    "Подключите продажи или импортируйте Excel/CSV, чтобы ZANI объяснял выручку.",
   "dashboard.aiBrief.connectSales": "Подключить данные",
   "dashboard.aiBrief.setupTitle": "Бизнес настроен не полностью",
-  "dashboard.aiBrief.setupText": "ZANI видит бизнес на {score}%. Завершите быстрый старт для точных подсказок.",
+  "dashboard.aiBrief.setupText":
+    "ZANI видит бизнес на {score}%. Завершите быстрый старт для точных подсказок.",
   "dashboard.aiBrief.openSetup": "Быстрый старт",
   "dashboard.aiBrief.missingTitle": "Недостаточно данных",
-  "dashboard.aiBrief.missingText": "Добавьте заявки, клиентов, записи или подключите источники данных.",
+  "dashboard.aiBrief.missingText":
+    "Добавьте заявки, клиентов, записи или подключите источники данных.",
   "dashboard.aiBrief.missingAction": "Подключить источники",
-  "dashboard.ownerSignalText": "Нераспределённые заявки: {leads}. Чаты без ответа: {chats}. Готовность бизнеса: {setup}%, конверсия: {conversion}%.",
-  "dashboard.ownerReadinessLine": "Готовность бизнеса {setup}% · конверсия {conversion}%",
+  "dashboard.ownerSignalText":
+    "Нераспределённые заявки: {leads}. Чаты без ответа: {chats}. Готовность бизнеса: {setup}%, конверсия: {conversion}%.",
+  "dashboard.ownerReadinessLine":
+    "Готовность бизнеса {setup}% · конверсия {conversion}%",
   "dashboard.stitchSubtitle": "Вот состояние вашего бизнеса.",
   "dashboard.smartTitle": "ZANI SMART ИНТЕЛЛЕКТ",
-  "dashboard.smartSummary": "ZANI заметил важные сигналы: лиды требуют реакции, часть диалогов ждёт ответа, а сделки без движения нужно проверить сегодня.",
+  "dashboard.smartSummary":
+    "ZANI заметил важные сигналы: лиды требуют реакции, часть диалогов ждёт ответа, а сделки без движения нужно проверить сегодня.",
   "dashboard.smartPrimaryAction": "Исправить время ответа",
   "dashboard.smartSecondaryAction": "Обзор сделок",
   "dashboard.integrationStatus": "Интеграции",
@@ -497,34 +565,43 @@ export const ru: Record<string, string> = {
   "dashboard.allLeads": "Все заявки",
   "dashboard.warehouse": "Склад",
   "dashboard.aiRevenueGrowth": "Выручка растёт 3-й день подряд",
-  "dashboard.aiRevenueGrowthText": "Хороший темп. Сохраните динамику и проверьте повторные продажи.",
+  "dashboard.aiRevenueGrowthText":
+    "Хороший темп. Сохраните динамику и проверьте повторные продажи.",
   "dashboard.aiNewLeadsWaiting": "{count} новых заявок ожидают обработки",
   "dashboard.aiNewLeadsWaitingText": "Быстрый ответ повышает шанс конверсии.",
   "dashboard.aiOverdueTasks": "{count} задач просрочены",
   "dashboard.aiOverdueTasksText": "Закройте критичные задачи сегодня.",
   "dashboard.aiConversionBelow": "Конверсия ниже нормы",
-  "dashboard.aiConversionBelowText": "Проверьте этапы сделки и следующий шаг по активным заявкам.",
+  "dashboard.aiConversionBelowText":
+    "Проверьте этапы сделки и следующий шаг по активным заявкам.",
   "dashboard.openPrioritySource": "Открыть главный источник",
   "dashboard.ownerBriefSources": "{count} источников",
   "dashboard.ownerBriefError": "AI-сводка дня временно недоступна.",
   "dashboard.ownerBriefNoDataTitle": "Недостаточно исходных данных",
-  "dashboard.ownerBriefNoDataText": "Пока нет видимых CRM-записей или подключений, требующих внимания.",
+  "dashboard.ownerBriefNoDataText":
+    "Пока нет видимых CRM-записей или подключений, требующих внимания.",
   "dashboard.ownerBriefLoadingTitle": "Собираем источники",
-  "dashboard.ownerBriefLoadingText": "Проверяем видимые заявки, задачи, диалоги, сделки и интеграции для AI-сводки.",
+  "dashboard.ownerBriefLoadingText":
+    "Проверяем видимые заявки, задачи, диалоги, сделки и интеграции для AI-сводки.",
   "dashboard.ownerBriefUnavailableTitle": "AI-сводка недоступна",
-  "dashboard.ownerBriefUnavailableText": "Не показываем рекомендации без проверенного ответа backend AI. Повторите позже или откройте AI Analyst.",
+  "dashboard.ownerBriefUnavailableText":
+    "Не показываем рекомендации без проверенного ответа backend AI. Повторите позже или откройте AI Analyst.",
   "dashboard.ownerBriefNoAccessTitle": "AI-сводка недоступна для роли",
-  "dashboard.ownerBriefNoAccessText": "Рекомендации скрыты, потому что у текущей роли нет доступа к AI Analyst.",
+  "dashboard.ownerBriefNoAccessText":
+    "Рекомендации скрыты, потому что у текущей роли нет доступа к AI Analyst.",
   "dashboard.ownerBriefSourceIds": "Источники: {ids}",
   "dashboard.openAiAnalyst": "Открыть AI Analyst",
   "dashboard.openTeamSettings": "Открыть настройки команды",
-  "dashboard.aiProviderUnavailable": "Live AI-провайдер не готов или не настроен. ZANI не будет выдавать неподтверждённые AI-ответы; source-grounded CRM-состояния остаются видимыми.",
+  "dashboard.aiProviderUnavailable":
+    "Live AI-провайдер не готов или не настроен. ZANI не будет выдавать неподтверждённые AI-ответы; source-grounded CRM-состояния остаются видимыми.",
   "dashboard.aiProviderStatus": "AI-провайдер: {provider} · {mode}",
   "header.notifications": "Уведомления",
-  "header.notificationsSummary": "{due} требуют внимания сейчас · {urgent} срочных",
+  "header.notificationsSummary":
+    "{due} требуют внимания сейчас · {urgent} срочных",
   "header.markAllRead": "Всё прочитано",
   "header.openTasks": "Открыть задачи",
-  "header.noNotifications": "Уведомлений пока нет. Напоминания по записям и CRM-события будут появляться здесь.",
+  "header.noNotifications":
+    "Уведомлений пока нет. Напоминания по записям и CRM-события будут появляться здесь.",
   "header.chatToastTitle": "Новое сообщение",
   "header.chatToastText": "В чатах есть непрочитанные сообщения: {count}.",
   "header.openMessages": "Открыть сообщения",
@@ -542,10 +619,12 @@ export const ru: Record<string, string> = {
   "search.placeholder.clients": "Поиск по клиентам: имя, телефон, email...",
   "search.placeholder.leads": "Поиск по заявкам: клиент, телефон, запрос...",
   "search.placeholder.deals": "Поиск по сделкам: название, клиент, источник...",
-  "search.placeholder.conversations": "Поиск по диалогам: клиент, телефон, сообщение...",
+  "search.placeholder.conversations":
+    "Поиск по диалогам: клиент, телефон, сообщение...",
   "search.placeholder.calendar": "Поиск по записям: клиент, услуга, мастер...",
   "search.placeholder.tasks": "Поиск по задачам: название, клиент, дедлайн...",
-  "search.placeholder.integrations": "Поиск по подключениям: Telegram, Kaspi, 1C...",
+  "search.placeholder.integrations":
+    "Поиск по подключениям: Telegram, Kaspi, 1C...",
   "search.placeholder.timeline": "Поиск по событиям: тип, клиент, действие...",
   "search.noMeta": "Нет дополнительных данных",
   "search.empty": "Ничего не найдено в данных CRM.",
@@ -584,19 +663,23 @@ export const ru: Record<string, string> = {
   "errorBoundary.unknown": "Неизвестная ошибка интерфейса.",
   "errorBoundary.eyebrow": "Ошибка интерфейса",
   "errorBoundary.title": "Мы поймали сбой и сохранили управление.",
-  "errorBoundary.text": "Обновите страницу или вернитесь на рабочий стол. Если ошибка повторится, передайте её в поддержку вместе с текущим действием.",
+  "errorBoundary.text":
+    "Обновите страницу или вернитесь на рабочий стол. Если ошибка повторится, передайте её в поддержку вместе с текущим действием.",
   "errorBoundary.reload": "Обновить",
   "errorBoundary.home": "На главную",
-  "pricing.description": "Пороговая цена, рекомендация на 1 ₸ ниже конкурента и безопасное применение через approval.",
+  "pricing.description":
+    "Пороговая цена, рекомендация на 1 ₸ ниже конкурента и безопасное применение через approval.",
   "pricing.safetyTitle": "Безопасность ценового агента",
   "pricing.agentStopped": "Остановлен: {reason}",
   "pricing.noReason": "без причины",
-  "pricing.agentActive": "Агент активен. Emergency stop мгновенно блокирует применение цен.",
+  "pricing.agentActive":
+    "Агент активен. Emergency stop мгновенно блокирует применение цен.",
   "pricing.openSignals": "Открытые сигналы: {count}",
   "pricing.resume": "Возобновить",
   "pricing.stopAgent": "Остановить агента",
   "pricing.catalogTitle": "Товары из интеграций",
-  "pricing.catalogText": "ZANI собирает товары из Kaspi, МойСклад, 1C, Excel/CSV, Ozon и Wildberries.",
+  "pricing.catalogText":
+    "ZANI собирает товары из Kaspi, МойСклад, 1C, Excel/CSV, Ozon и Wildberries.",
   "pricing.refreshCatalog": "Обновить товары",
   "pricing.bulkMinPrice": "Общий порог",
   "pricing.step": "Шаг",
@@ -611,13 +694,15 @@ export const ru: Record<string, string> = {
   "pricing.connectedProducts": "Уже подключены",
   "pricing.loadingCatalog": "Собираем товары",
   "pricing.selectItem": "Выбрать {name}",
-  "pricing.catalogItemMeta": "{source} · SKU {sku} · цена {price} · остаток {stock}",
+  "pricing.catalogItemMeta":
+    "{source} · SKU {sku} · цена {price} · остаток {stock}",
   "pricing.noData": "нет данных",
   "pricing.ruleMode": "правило: {mode}",
   "pricing.notConnected": "не подключен",
   "pricing.minPrice": "Не снижать ниже",
   "pricing.createRule": "Создать правило",
-  "pricing.emptyCatalog": "Подключите или синхронизируйте источник товаров, затем нажмите «Обновить товары».",
+  "pricing.emptyCatalog":
+    "Подключите или синхронизируйте источник товаров, затем нажмите «Обновить товары».",
   "pricing.newRule": "Новое правило",
   "pricing.name": "Название",
   "pricing.currentPrice": "Текущая цена",
@@ -640,11 +725,15 @@ export const ru: Record<string, string> = {
   "pricing.calculate": "Рассчитать",
   "pricing.apply": "Применить",
   "pricing.competitor": "конкурент",
-  "pricing.foundPrice": "Найдена цена: {price} · {competitor} · позиция {position}",
-  "pricing.recommendationLine": "Рекомендация: {price} · {reason} · статус {status}",
+  "pricing.foundPrice":
+    "Найдена цена: {price} · {competitor} · позиция {position}",
+  "pricing.recommendationLine":
+    "Рекомендация: {price} · {reason} · статус {status}",
   "pricing.autopilot": "Автопилот",
-  "pricing.autopilotEnabledText": "Включен. ZANI может применять безопасные рекомендации в плановом цикле.",
-  "pricing.autopilotCheckText": "Перед включением ZANI проверяет порог, дневной лимит и наличие мониторинга.",
+  "pricing.autopilotEnabledText":
+    "Включен. ZANI может применять безопасные рекомендации в плановом цикле.",
+  "pricing.autopilotCheckText":
+    "Перед включением ZANI проверяет порог, дневной лимит и наличие мониторинга.",
   "pricing.stop": "Остановить",
   "pricing.enableAutopilot": "Включить автопилот",
   "pricing.minPriceValue": "Порог: {price}",
@@ -655,7 +744,8 @@ export const ru: Record<string, string> = {
   "pricing.kaspiWriteFlag": "Запись в Kaspi: через флаг",
   "pricing.confirmedAt": "Подтверждено: {date}",
   "pricing.historyTitle": "История цен",
-  "pricing.historyText": "Все попытки изменения цен: симуляции, очереди, блокировки и ошибки.",
+  "pricing.historyText":
+    "Все попытки изменения цен: симуляции, очереди, блокировки и ошибки.",
   "pricing.recordsCount": "{count} записей",
   "pricing.historySearchPlaceholder": "Название или SKU",
   "pricing.allStatuses": "Все статусы",
@@ -665,18 +755,23 @@ export const ru: Record<string, string> = {
   "pricing.changeStatus.blocked": "Заблокировано",
   "pricing.changeStatus.failed": "Ошибка",
   "pricing.loadingHistory": "Загружаем историю цен",
-  "pricing.emptyHistory": "Истории пока нет. Рассчитайте и примените рекомендацию, чтобы увидеть запись.",
-  "outreach.defaultMessage": "Здравствуйте, {client_name}! Напоминаем, что у нас можно записаться на ближайшее свободное время. Ответьте на это сообщение, и менеджер подберет удобный слот.",
+  "pricing.emptyHistory":
+    "Истории пока нет. Рассчитайте и примените рекомендацию, чтобы увидеть запись.",
+  "outreach.defaultMessage":
+    "Здравствуйте, {client_name}! Напоминаем, что у нас можно записаться на ближайшее свободное время. Ответьте на это сообщение, и менеджер подберет удобный слот.",
   "outreach.defaultCampaignName": "Новая рассылка",
   "outreach.defaultTemplateName": "Новый шаблон",
   "outreach.loading": "Загружаем рассылки...",
   "outreach.noBusiness": "Бизнес не выбран.",
   "outreach.title": "Рассылки",
-  "outreach.description": "Рабочий центр для Telegram и WhatsApp кампаний: аудитория, очередь получателей, запуск и статусы доставки.",
+  "outreach.description":
+    "Рабочий центр для Telegram и WhatsApp кампаний: аудитория, очередь получателей, запуск и статусы доставки.",
   "outreach.importConsents": "Импорт согласий",
   "outreach.createCampaign": "Создать рассылку",
-  "outreach.importConsentRoleTitle": "Импорт согласий доступен владельцу, администратору или маркетологу.",
-  "outreach.createRoleTitle": "Создание рассылок доступно владельцу, администратору или маркетологу.",
+  "outreach.importConsentRoleTitle":
+    "Импорт согласий доступен владельцу, администратору или маркетологу.",
+  "outreach.createRoleTitle":
+    "Создание рассылок доступно владельцу, администратору или маркетологу.",
   "outreach.metric.campaigns": "Кампаний",
   "outreach.metric.active": "{count} активных",
   "outreach.metric.queued": "В очередях",
@@ -686,22 +781,28 @@ export const ru: Record<string, string> = {
   "outreach.readiness.rolesTitle": "Роли и запуск",
   "outreach.readiness.roleCanLaunch": "{role}: можно запускать",
   "outreach.readiness.roleReadOnly": "{role}: только просмотр",
-  "outreach.readiness.rolesText": "Боевые массовые рассылки запускают owner/admin/marketer. Preferences могут скрыть обычный шум, но high/urgent уведомления всегда доходят.",
+  "outreach.readiness.rolesText":
+    "Боевые массовые рассылки запускают owner/admin/marketer. Preferences могут скрыть обычный шум, но high/urgent уведомления всегда доходят.",
   "outreach.readiness.appointmentTitle": "Автосообщения записей",
-  "outreach.readiness.appointmentValue": "{pending} в очереди · {failed} ошибок",
-  "outreach.readiness.appointmentText": "Подтверждение за 24 часа, напоминание за 2 часа и спасибо после завершенного визита создаются автоматически.",
+  "outreach.readiness.appointmentValue":
+    "{pending} в очереди · {failed} ошибок",
+  "outreach.readiness.appointmentText":
+    "Подтверждение за 24 часа, напоминание за 2 часа и спасибо после завершенного визита создаются автоматически.",
   "outreach.readiness.safetyTitle": "Защита запуска",
-  "outreach.readiness.safetyText": "Перед запуском проверяются текст, аудитория, opt-in, подготовленная очередь, лимиты и WhatsApp template.",
+  "outreach.readiness.safetyText":
+    "Перед запуском проверяются текст, аудитория, opt-in, подготовленная очередь, лимиты и WhatsApp template.",
   "outreach.checklistPassed": "Checklist пройден",
   "outreach.checklistRequired": "Checklist обязателен",
   "outreach.selectCampaign": "Выберите кампанию",
   "outreach.appointmentAutoEyebrow": "Автоматические сообщения по записям",
-  "outreach.appointmentAutoTitle": "Сервисные сценарии работают без ручного запуска рассылки",
+  "outreach.appointmentAutoTitle":
+    "Сервисные сценарии работают без ручного запуска рассылки",
   "outreach.count.pending": "Очередь",
   "outreach.count.sent": "Ушло",
   "outreach.count.failed": "Ошибки",
   "outreach.deliveryErrorsTitle": "Ошибки отправки",
-  "outreach.deliveryErrorsText": "Проверьте подключение канала или повторите отправку после исправления.",
+  "outreach.deliveryErrorsText":
+    "Проверьте подключение канала или повторите отправку после исправления.",
   "outreach.campaigns": "Кампании",
   "outreach.status.draft": "Черновик",
   "outreach.status.ready": "Готова",
@@ -717,7 +818,8 @@ export const ru: Record<string, string> = {
   "outreach.audienceType.segment": "Сегмент клиентов",
   "outreach.audienceType.manual": "Ручной список",
   "outreach.emptyTitle": "Рассылок пока нет",
-  "outreach.emptyDescription": "Создайте первую кампанию для Telegram или WhatsApp.",
+  "outreach.emptyDescription":
+    "Создайте первую кампанию для Telegram или WhatsApp.",
   "outreach.channelCampaign": "{channel} рассылка",
   "outreach.statusLine": "Статус: {status}",
   "outreach.startLine": " · старт {date}",
@@ -725,7 +827,8 @@ export const ru: Record<string, string> = {
   "outreach.launch": "Запустить",
   "outreach.retry15": "Retry 15 мин",
   "outreach.retryAll": "Повторить все",
-  "outreach.readOnlyNotice": "Ваша роль может контролировать статус рассылок и получателей, но запуск, импорт согласий и повтор ошибок закрыты. Это защищает клиентов от случайных массовых сообщений.",
+  "outreach.readOnlyNotice":
+    "Ваша роль может контролировать статус рассылок и получателей, но запуск, импорт согласий и повтор ошибок закрыты. Это защищает клиентов от случайных массовых сообщений.",
   "outreach.stat.total": "Всего",
   "outreach.stat.pending": "В ожидании",
   "outreach.stat.sent": "Отправлено",
@@ -743,13 +846,16 @@ export const ru: Record<string, string> = {
   "outreach.audience": "Аудитория",
   "outreach.notNeeded": "Не нужен",
   "outreach.messageText": "Текст сообщения",
-  "outreach.audiencePreview": "Всего: {total} · можно отправить: {eligible} · suppression: {suppressed}.",
+  "outreach.audiencePreview":
+    "Всего: {total} · можно отправить: {eligible} · suppression: {suppressed}.",
   "outreach.latestRecipients": "Последние получатели",
   "outreach.queueEmpty": "Очередь появится после подготовки кампании.",
-  "outreach.selectCampaignDescription": "После создания рассылки здесь появятся аудитория, очередь и управление запуском.",
+  "outreach.selectCampaignDescription":
+    "После создания рассылки здесь появятся аудитория, очередь и управление запуском.",
   "outreach.newCampaign": "Новая рассылка",
   "outreach.launchOrderTitle": "Боевой порядок запуска",
-  "outreach.launchOrderText": "Создание кампании не отправляет сообщения. Сначала сохраните рассылку, затем подготовьте аудиторию, проверьте checklist и только после этого запускайте отправку.",
+  "outreach.launchOrderText":
+    "Создание кампании не отправляет сообщения. Сначала сохраните рассылку, затем подготовьте аудиторию, проверьте checklist и только после этого запускайте отправку.",
   "outreach.nameLabel": "Название",
   "outreach.namePlaceholder": "Напоминание о свободных окнах",
   "outreach.noTemplate": "Без шаблона",
@@ -766,29 +872,50 @@ export const ru: Record<string, string> = {
   "outreach.batchSize": "Batch за запуск",
   "outreach.scheduledAt": "Когда отправить",
   "outreach.message": "Сообщение",
-  "outreach.templateVariables": "Переменные шаблона: {client_name}, {phone}, {email}, {business_name}, {channel}.",
-  "outreach.productionModeNotice": "Боевой режим: клиенты без opt-in или с opt-out будут пропущены. WhatsApp запуск блокируется, пока template не отмечен как approved.",
+  "outreach.templateVariables":
+    "Переменные шаблона: {client_name}, {phone}, {email}, {business_name}, {channel}.",
+  "outreach.productionModeNotice":
+    "Боевой режим: клиенты без opt-in или с opt-out будут пропущены. WhatsApp запуск блокируется, пока template не отмечен как approved.",
   "outreach.create": "Создать",
   "outreach.consentSource": "Источник согласия",
-  "outreach.consentRowsPlaceholder": "+77010001010; согласие из анкеты\nclient@example.com; согласие из сайта",
-  "outreach.consentImportNotice": "Импорт обновляет согласия только у уже существующих клиентов по телефону, email или client_id. Файл может содержать колонки phone, email, client_id, channel, status, source, note.",
+  "outreach.consentRowsPlaceholder":
+    "+77010001010; согласие из анкеты\nclient@example.com; согласие из сайта",
+  "outreach.consentImportNotice":
+    "Импорт обновляет согласия только у уже существующих клиентов по телефону, email или client_id. Файл может содержать колонки phone, email, client_id, channel, status, source, note.",
   "outreach.importText": "Импортировать текст",
   "outreach.importFile": "Импортировать файл",
   "outreach.manualAudience": "Ручная аудитория",
-  "outreach.manualAudienceText": "Выбрано: {count}. В очередь попадут только клиенты с ID канала и разрешенным consent.",
+  "outreach.manualAudienceText":
+    "Выбрано: {count}. В очередь попадут только клиенты с ID канала и разрешенным consent.",
   "outreach.clientSearch": "Поиск клиента",
   "outreach.noChannelId": "нет ID канала",
   "outreach.selected": "выбран",
   "outreach.clientsNotFound": "Клиенты не найдены.",
-  "outreach.launchBlockedChecklist": "Сначала подготовьте аудиторию и пройдите checklist.",
-  "outreach.launchBlockedRole": "Запуск доступен владельцу, администратору или маркетологу.",
+  "outreach.auto": "Авто",
+  "outreach.failedCount": "{count} ошибок",
+  "outreach.deliveryRate": "Доставка",
+  "outreach.failureRate": "Ошибки",
+  "outreach.suppressionRate": "Пропуски",
+  "outreach.whatsappTemplate": "WhatsApp template",
+  "outreach.whatsappTemplateName": "Название WhatsApp template",
+  "outreach.templateStatus.draft": "Черновик",
+  "outreach.templateStatus.pending": "На проверке",
+  "outreach.templateStatus.approved": "Одобрен",
+  "outreach.templateStatus.rejected": "Отклонен",
+  "outreach.launchBlockedChecklist":
+    "Сначала подготовьте аудиторию и пройдите checklist.",
+  "outreach.launchBlockedRole":
+    "Запуск доступен владельцу, администратору или маркетологу.",
   "telegramSetup.tokenSaved": "Ключ сохранен. Теперь проверьте подключение.",
   "telegramSetup.tokenCleared": "Ключ очищен.",
   "telegramSetup.connectionChecked": "Подключение Telegram проверено.",
-  "telegramSetup.connectionFailed": "Не удалось проверить подключение Telegram.",
-  "telegramSetup.inboxConnected": "Входящие сообщения подключены. Напишите боту от лица клиента и проверьте диалог.",
+  "telegramSetup.connectionFailed":
+    "Не удалось проверить подключение Telegram.",
+  "telegramSetup.inboxConnected":
+    "Входящие сообщения подключены. Напишите боту от лица клиента и проверьте диалог.",
   "telegramSetup.inboxFailed": "Не удалось подключить входящие сообщения.",
-  "telegramSetup.description": "Подключение Telegram к сообщениям и автоматическим ответам.",
+  "telegramSetup.description":
+    "Подключение Telegram к сообщениям и автоматическим ответам.",
   "telegramSetup.key": "Ключ",
   "telegramSetup.saved": "Сохранен",
   "telegramSetup.needed": "Нужен",
@@ -799,22 +926,27 @@ export const ru: Record<string, string> = {
   "telegramSetup.connected": "Подключены",
   "telegramSetup.notConnected": "Не подключены",
   "telegramSetup.botKey": "Ключ бота",
-  "telegramSetup.botKeyText": "Создайте бота в @BotFather, вставьте ключ сюда и запустите проверку. Ключ не будет показан повторно.",
+  "telegramSetup.botKeyText":
+    "Создайте бота в @BotFather, вставьте ключ сюда и запустите проверку. Ключ не будет показан повторно.",
   "telegramSetup.botKeyPlaceholder": "Вставьте ключ бота",
   "telegramSetup.checkKey": "Проверить ключ",
   "telegramSetup.connectInbox": "Подключить входящие",
-  "telegramSetup.readyNotice": "Telegram готов. Отправьте сообщение боту от лица клиента и проверьте входящий диалог.",
+  "telegramSetup.readyNotice":
+    "Telegram готов. Отправьте сообщение боту от лица клиента и проверьте входящий диалог.",
   "telegramSetup.latestEvents": "Последние события",
   "telegramSetup.noEvents": "Событий пока нет.",
-  "telegramSetup.addChannelFirst": "Сначала добавьте канал Telegram для этого бота.",
+  "telegramSetup.addChannelFirst":
+    "Сначала добавьте канал Telegram для этого бота.",
   "developers.advanced": "Расширенно",
   "developers.title": "Ключи интеграций и события",
-  "developers.description": "Расширенный слой для технических подключений. Используйте его только вместе с разработчиком или поддержкой ZANI.",
+  "developers.description":
+    "Расширенный слой для технических подключений. Используйте его только вместе с разработчиком или поддержкой ZANI.",
   "developers.summary": "{tokens} ключей · {webhooks} событий",
   "developers.defaultTokenName": "Ключ CRM-интеграции",
   "developers.defaultWebhookName": "Рабочий webhook",
   "developers.copyNow": "Скопируйте ключ сейчас",
-  "developers.copyNowText": "Полный ключ показывается только один раз. После закрытия будет видна только короткая метка.",
+  "developers.copyNowText":
+    "Полный ключ показывается только один раз. После закрытия будет видна только короткая метка.",
   "developers.copied": "Скопировано",
   "developers.tokensTitle": "Ключи интеграций",
   "developers.tokensText": "Минимально: доступ только на чтение клиентов.",
@@ -828,7 +960,8 @@ export const ru: Record<string, string> = {
   "developers.revoke": "Отозвать",
   "developers.noTokens": "Ключей пока нет.",
   "developers.webhooksTitle": "Внешние события",
-  "developers.webhooksText": "Для теста можно использовать безопасный демо-адрес.",
+  "developers.webhooksText":
+    "Для теста можно использовать безопасный демо-адрес.",
   "developers.signatureSecret": "Секрет подписи",
   "developers.events": "События",
   "developers.addWebhook": "Добавить событие",
@@ -837,9 +970,11 @@ export const ru: Record<string, string> = {
   "developers.check": "Проверить",
   "developers.noWebhooks": "Внешние события пока не настроены.",
   "developers.deliveryTitle": "Журнал доставок",
-  "developers.deliveryText": "Последние доставки, ответы провайдера и ручной retry для failed событий.",
+  "developers.deliveryText":
+    "Последние доставки, ответы провайдера и ручной retry для failed событий.",
   "developers.refresh": "Обновить",
-  "developers.noDeliveries": "Доставок пока нет. Нажмите «Проверить» у внешнего события.",
+  "developers.noDeliveries":
+    "Доставок пока нет. Нажмите «Проверить» у внешнего события.",
   "developers.attempts": "попыток",
   "developers.showPayload": "Показать технические данные события",
   "language.ru": "Русский",
@@ -847,11 +982,13 @@ export const ru: Record<string, string> = {
   "language.en": "English",
   "bots.noBusiness": "Создайте бизнес в настройках, чтобы подключать ботов.",
   "bots.title": "AI-боты",
-  "bots.description": "Продуктовая основа ботов: конфигурация, каналы и будущие диалоги без реальных интеграций на этом этапе.",
+  "bots.description":
+    "Продуктовая основа ботов: конфигурация, каналы и будущие диалоги без реальных интеграций на этом этапе.",
   "bots.create": "Создать бота",
   "bots.websiteAssistantPlaceholder": "Сайт-помощник",
   "bots.emptyTitle": "Ботов пока нет",
-  "bots.emptyText": "Создайте первого бота, чтобы позже подключить website chat, Telegram, WhatsApp или Instagram канал.",
+  "bots.emptyText":
+    "Создайте первого бота, чтобы позже подключить website chat, Telegram, WhatsApp или Instagram канал.",
   "bots.defaultLanguage": "Язык по умолчанию",
   "bots.channels": "Каналы",
   "bots.dialogs": "Диалоги",
@@ -860,21 +997,28 @@ export const ru: Record<string, string> = {
   "bots.name": "Название",
   "bots.status": "Статус",
   "botDetail.previewNameDefault": "Посетитель сайта",
-  "botDetail.previewMessageDefault": "Здравствуйте, хочу записаться на консультацию.",
+  "botDetail.previewMessageDefault":
+    "Здравствуйте, хочу записаться на консультацию.",
   "botDetail.followUpDefault": "Спасибо! Подскажите ближайшее свободное время?",
   "botDetail.telegramSaved": "Telegram подключение сохранено.",
-  "botDetail.telegramSavedNoToken": "Сохранено, но код подключения ещё не указан.",
-  "botDetail.webhookMockSaved": "Адрес сохранён в безопасном режиме проверки: {reason}",
+  "botDetail.telegramSavedNoToken":
+    "Сохранено, но код подключения ещё не указан.",
+  "botDetail.webhookMockSaved":
+    "Адрес сохранён в безопасном режиме проверки: {reason}",
   "botDetail.webhookApplied": "Адрес приёма сообщений применён.",
-  "botDetail.telegramStatus": "Статус: {status}. Код подключения: {token}. {error}",
+  "botDetail.telegramStatus":
+    "Статус: {status}. Код подключения: {token}. {error}",
   "botDetail.tokenConfigured": "настроен",
   "botDetail.tokenMissing": "не указан",
   "botDetail.telegramStatusError": "Ошибка: {error}.",
-  "botDetail.previewCreated": "Диалог {conversation} создан. Заявка: {lead}. Сообщение появится в разделе сообщений.",
+  "botDetail.previewCreated":
+    "Диалог {conversation} создан. Заявка: {lead}. Сообщение появится в разделе сообщений.",
   "botDetail.leadNotCreated": "не создан",
-  "botDetail.followUpCreated": "Сообщение добавлено в диалог {conversation}. Проверьте раздел сообщений.",
+  "botDetail.followUpCreated":
+    "Сообщение добавлено в диалог {conversation}. Проверьте раздел сообщений.",
   "botDetail.notFound": "Бот не найден или недоступен.",
-  "botDetail.description": "Настройка каналов сообщений для сайта, Telegram, WhatsApp и Instagram.",
+  "botDetail.description":
+    "Настройка каналов сообщений для сайта, Telegram, WhatsApp и Instagram.",
   "botDetail.addWebsiteChannel": "Канал сайта",
   "botDetail.addTelegramChannel": "Канал Telegram",
   "botDetail.addWhatsAppChannel": "Канал WhatsApp",
@@ -883,18 +1027,22 @@ export const ru: Record<string, string> = {
   "botDetail.status": "Статус",
   "botDetail.channels": "Каналы",
   "botDetail.messages": "Сообщения",
-  "botDetail.secretsSafe": "Коды подключения хранятся безопасно и не показываются после сохранения.",
+  "botDetail.secretsSafe":
+    "Коды подключения хранятся безопасно и не показываются после сохранения.",
   "botDetail.channel.website": "Чат сайта",
   "botDetail.channel.telegram": "Telegram",
   "botDetail.channel.whatsapp": "WhatsApp",
   "botDetail.channel.instagram": "Instagram",
   "botDetail.externalIdMissing": "Внешний ID не задан",
   "botDetail.widgetCodeConfigured": "Код виджета настроен",
-  "botDetail.noChannels": "Каналов пока нет. Добавьте канал сайта или мессенджер.",
+  "botDetail.noChannels":
+    "Каналов пока нет. Добавьте канал сайта или мессенджер.",
   "botDetail.telegramTitle": "Настройка Telegram",
-  "botDetail.telegramDescription": "Telegram подключается через интеграции и поддержку без показа технических данных владельцу.",
+  "botDetail.telegramDescription":
+    "Telegram подключается через интеграции и поддержку без показа технических данных владельцу.",
   "botDetail.telegramSupportTitle": "Подключение через интеграции",
-  "botDetail.telegramSupportText": "Проверьте статус здесь или откройте раздел интеграций. Коды подключения и техническая настройка не нужны в ежедневной работе владельца.",
+  "botDetail.telegramSupportText":
+    "Проверьте статус здесь или откройте раздел интеграций. Коды подключения и техническая настройка не нужны в ежедневной работе владельца.",
   "botDetail.botFatherToken": "Код от BotFather",
   "botDetail.webhookSecret": "Секрет подписи (расширенно)",
   "botDetail.optional": "опционально",
@@ -903,10 +1051,13 @@ export const ru: Record<string, string> = {
   "botDetail.applyWebhook": "Применить адрес",
   "botDetail.checkStatus": "Проверить статус",
   "botDetail.openIntegrations": "Открыть интеграции",
-  "botDetail.statusSafe": "Проверка не раскрывает код подключения и показывает только безопасный статус.",
-  "botDetail.addTelegramFirst": "Добавьте канал Telegram, чтобы настроить подключение.",
+  "botDetail.statusSafe":
+    "Проверка не раскрывает код подключения и показывает только безопасный статус.",
+  "botDetail.addTelegramFirst":
+    "Добавьте канал Telegram, чтобы настроить подключение.",
   "botDetail.websitePreviewTitle": "Проверка чата сайта",
-  "botDetail.websitePreviewDescription": "Отправляет сообщение так, как это сделает посетитель сайта.",
+  "botDetail.websitePreviewDescription":
+    "Отправляет сообщение так, как это сделает посетитель сайта.",
   "botDetail.widgetInstallCode": "Код установки виджета",
   "botDetail.widgetCodeCopied": "Код установки скопирован.",
   "botDetail.openInbox": "Открыть сообщения",
@@ -914,28 +1065,36 @@ export const ru: Record<string, string> = {
   "botDetail.phone": "Телефон",
   "botDetail.message": "Сообщение",
   "botDetail.createTestConversation": "Создать диалог",
-  "botDetail.followUpStepTitle": "Шаг 2: отправить второе сообщение в тот же диалог",
+  "botDetail.followUpStepTitle":
+    "Шаг 2: отправить второе сообщение в тот же диалог",
   "botDetail.addFollowUp": "Добавить сообщение",
-  "botDetail.addWebsiteFirst": "Сначала добавьте канал сайта. После этого здесь появится форма сообщения.",
+  "botDetail.addWebsiteFirst":
+    "Сначала добавьте канал сайта. После этого здесь появится форма сообщения.",
   "botDetail.previewResultTitle": "Результат проверки",
-  "botDetail.previewResultDescription": "Если в сообщении указан телефон или email, ZANI создаёт клиента и заявку. После отправки откройте сообщения: диалог должен быть виден менеджеру.",
+  "botDetail.previewResultDescription":
+    "Если в сообщении указан телефон или email, ZANI создаёт клиента и заявку. После отправки откройте сообщения: диалог должен быть виден менеджеру.",
   "botDetail.noPreviewMessages": "Сообщений пока не было.",
   "botDetail.aiReplyTitle": "Черновик ответа",
-  "botDetail.aiReplyDescription": "Готовит черновик по последнему диалогу. Ответ не отправляется автоматически.",
+  "botDetail.aiReplyDescription":
+    "Готовит черновик по последнему диалогу. Ответ не отправляется автоматически.",
   "botDetail.generate": "Подготовить",
   "botDetail.emptyMessage": "Пустое сообщение",
   "botDetail.noMessagesInLatest": "В последнем диалоге пока нет сообщений.",
-  "botDetail.createConversationFirst": "Сначала создайте диалог с сайта или получите сообщение из канала.",
+  "botDetail.createConversationFirst":
+    "Сначала создайте диалог с сайта или получите сообщение из канала.",
   "botDetail.draftReplyTitle": "Черновик ответа",
-  "botDetail.draftReplyEmpty": "Здесь появится черновик ответа. Он не будет отправлен клиенту без подтверждения менеджера.",
+  "botDetail.draftReplyEmpty":
+    "Здесь появится черновик ответа. Он не будет отправлен клиенту без подтверждения менеджера.",
   "botDetail.draftMeta": "Черновик #{id} · {mode} · сообщений учтено: {count}",
   "botDetail.mockMode": "режим проверки",
   "botDetail.aiMode": "ответ ассистента",
   "whatsappSetup.savedNotice": "Пилот WhatsApp подготовлен. Статус: {status}.",
   "whatsappSetup.title": "WhatsApp подключение",
-  "whatsappSetup.description": "Подключение готовится через поддержку ZANI. Владелец видит только статус и понятные действия.",
+  "whatsappSetup.description":
+    "Подключение готовится через поддержку ZANI. Владелец видит только статус и понятные действия.",
   "whatsappSetup.supportTitle": "Безопасное подключение через поддержку",
-  "whatsappSetup.supportText": "Мы проверим номер, сценарий сообщений и включим канал без показа технических ключей в кабинете.",
+  "whatsappSetup.supportText":
+    "Мы проверим номер, сценарий сообщений и включим канал без показа технических ключей в кабинете.",
   "whatsappSetup.preparePilot": "Подготовить пилот",
   "whatsappSetup.modePilot": "Пилотный режим",
   "whatsappSetup.modeDisabled": "Отключено",
@@ -948,24 +1107,30 @@ export const ru: Record<string, string> = {
   "whatsappSetup.lastEvent": "Последнее событие",
   "whatsappSetup.none": "нет",
   "whatsappSetup.testHistory": "История сообщений",
-  "whatsappSetup.emptyHistory": "История пока пустая. Первые входящие и исходящие сообщения появятся здесь.",
-  "whatsappSetup.noChannel": "WhatsApp ещё не добавлен. Оставьте запрос в интеграциях или обратитесь в поддержку ZANI.",
+  "whatsappSetup.emptyHistory":
+    "История пока пустая. Первые входящие и исходящие сообщения появятся здесь.",
+  "whatsappSetup.noChannel":
+    "WhatsApp ещё не добавлен. Оставьте запрос в интеграциях или обратитесь в поддержку ZANI.",
   "pilot.status.ready": "Готово",
   "pilot.status.needsAttention": "Требует внимания",
   "pilot.status.missing": "Не настроено",
   "pilot.countShort": "{count} шт.",
   "pilot.loading": "Проверяем готовность пилота...",
-  "pilot.loadError": "Не удалось загрузить чеклист. Проверьте доступ к бизнесу.",
+  "pilot.loadError":
+    "Не удалось загрузить чеклист. Проверьте доступ к бизнесу.",
   "pilot.title": "Готовность к пилоту",
-  "pilot.description": "Контрольная страница перед показом Zani пилотным клиентам: бизнес, данные, бот, сообщения, оплата, ассистент, импорт и интеграции.",
+  "pilot.description":
+    "Контрольная страница перед показом Zani пилотным клиентам: бизнес, данные, бот, сообщения, оплата, ассистент, импорт и интеграции.",
   "pilot.refresh": "Обновить чеклист",
   "pilot.noBusiness": "Бизнес не выбран",
   "pilot.scoreTitle": "Пилотная готовность:",
-  "pilot.scoreText": "Готово {ready} из {total} пунктов. Эта страница не подключает новые внешние сервисы — она показывает, насколько текущий workspace готов к кликабельному пилоту.",
+  "pilot.scoreText":
+    "Готово {ready} из {total} пунктов. Эта страница не подключает новые внешние сервисы — она показывает, насколько текущий workspace готов к кликабельному пилоту.",
   "pilot.progress": "Прогресс",
   "pilot.criticalGaps": "Критичных пробелов: {count}",
   "pilot.pathTitle": "Путь подготовки пилота",
-  "pilot.pathText": "Идём от базы бизнеса к живому клиентскому сценарию, без технических экранов для мерчанта.",
+  "pilot.pathText":
+    "Идём от базы бизнеса к живому клиентскому сценарию, без технических экранов для мерчанта.",
   "pilot.step1Title": "1. Бизнес и команда",
   "pilot.step1Text": "Профиль, владелец, оператор, роли и доступы.",
   "pilot.step2Title": "2. CRM-скелет",
@@ -976,14 +1141,16 @@ export const ru: Record<string, string> = {
   "pilot.step4Text": "Импорт базы, интеграции, оплата и финальная проверка.",
   "pilot.toFixTitle": "Что добить перед пилотом",
   "pilot.readyTitle": "Все базовые пункты пилота готовы",
-  "pilot.readyText": "Можно переходить к финальной проверке каналов, сообщений и подключений.",
+  "pilot.readyText":
+    "Можно переходить к финальной проверке каналов, сообщений и подключений.",
   "pilot.smokeTitle": "Следующая ручная проверка",
   "pilot.smoke1": "1. Войти как владелец и открыть главную.",
   "pilot.smoke2": "2. Проверить Leads, Clients, Deals, Tasks, Calendar.",
   "pilot.smoke3": "3. Открыть сообщения и проверить диалог.",
   "pilot.smoke4": "4. Открыть ботов и убедиться, что канал сайта есть.",
   "pilot.smoke5": "5. Открыть ассистента и проверить черновик ответа.",
-  "pilot.smoke6": "6. Открыть Integrations и убедиться, что нет тупиковых кнопок.",
+  "pilot.smoke6":
+    "6. Открыть Integrations и убедиться, что нет тупиковых кнопок.",
   "pilot.systemActionsTitle": "Следующие действия по данным системы",
   "notification.category.sales": "Продажи",
   "notification.category.finance": "Финансы",
@@ -1003,16 +1170,19 @@ export const ru: Record<string, string> = {
   "notification.sent": "Отправлено",
   "notFound.eyebrow": "Безопасный пилотный маршрут",
   "notFound.title": "Страница пока не подключена",
-  "notFound.text": "Мы не ведём пользователя в тупик: этот маршрут сохранён как безопасная пилотная заглушка. Вернитесь в рабочий кабинет и продолжайте проверку основных сценариев.",
+  "notFound.text":
+    "Мы не ведём пользователя в тупик: этот маршрут сохранён как безопасная пилотная заглушка. Вернитесь в рабочий кабинет и продолжайте проверку основных сценариев.",
   "notFound.backWorkspace": "Вернуться в кабинет",
   "table.emptyDescription": "Здесь появятся первые записи после создания.",
   "table.total": "Всего: {count}",
   "table.records": "Записи CRM",
   "permissions.action.view": "просмотр",
   "permissions.action.manage": "это действие",
-  "permissions.forbidden": "У вашей роли нет доступа на {action} раздела «{resource}». Если это нужно для работы, попросите владельца бизнеса изменить роль или область видимости в настройках команды.",
+  "permissions.forbidden":
+    "У вашей роли нет доступа на {action} раздела «{resource}». Если это нужно для работы, попросите владельца бизнеса изменить роль или область видимости в настройках команды.",
   "permissions.hiddenTitle": "Раздел скрыт настройками доступа",
-  "permissions.hiddenText": "Доступ не удаляет данные, он только скрывает разделы и действия от роли сотрудника.",
+  "permissions.hiddenText":
+    "Доступ не удаляет данные, он только скрывает разделы и действия от роли сотрудника.",
   "permissions.resource.clients": "Клиенты",
   "permissions.resource.leads": "Заявки",
   "permissions.resource.deals": "Сделки",
@@ -1033,9 +1203,11 @@ export const ru: Record<string, string> = {
   "permissions.resource.ai_outreach": "ИИ-рассылки",
   "permissions.resource.ai_automation": "ИИ-автоматизации",
   "calendar.title": "Календарь бизнеса",
-  "calendar.description": "Записи, свободные окна и загрузка команды в одном рабочем экране.",
+  "calendar.description":
+    "Записи, свободные окна и загрузка команды в одном рабочем экране.",
   "calendar.businessSchedule": "Расписание бизнеса",
-  "calendar.heroText": "Проверьте день, свободные окна, мастеров и создайте запись без лишних переходов.",
+  "calendar.heroText":
+    "Проверьте день, свободные окна, мастеров и создайте запись без лишних переходов.",
   "calendar.bookings": "Записи",
   "calendar.confirmed": "Подтверждены",
   "calendar.openSlots": "Свободные окна",
@@ -1044,9 +1216,12 @@ export const ru: Record<string, string> = {
   "calendar.openDay": "Открыть день",
   "calendar.tasksToday": "Задачи",
   "calendar.aiHint": "Подсказка по расписанию",
-  "calendar.aiSetupText": "Для точных записей нужны клиенты, услуги и график работы. Настройте базу, чтобы календарь показывал реальные свободные окна.",
-  "calendar.aiBusyText": "На выбранный день {count} записей и {tasks} задач. Проверьте подтверждения и не оставляйте клиентов без следующего шага.",
-  "calendar.aiFreeText": "На выбранный день записей нет. Можно поставить клиента в свободное окно или обработать задачи дня: {tasks}.",
+  "calendar.aiSetupText":
+    "Для точных записей нужны клиенты, услуги и график работы. Настройте базу, чтобы календарь показывал реальные свободные окна.",
+  "calendar.aiBusyText":
+    "На выбранный день {count} записей и {tasks} задач. Проверьте подтверждения и не оставляйте клиентов без следующего шага.",
+  "calendar.aiFreeText":
+    "На выбранный день записей нет. Можно поставить клиента в свободное окно или обработать задачи дня: {tasks}.",
   "calendar.mobileAgenda": "Agenda дня",
   "calendar.readiness": "Готовность",
   "calendar.readyClients": "Клиенты",
@@ -1056,7 +1231,8 @@ export const ru: Record<string, string> = {
   "calendar.ready": "готово",
   "calendar.needsSetup": "настроить",
   "calendar.completedToday": "Сегодня завершено записей: {count}.",
-  "calendar.noCompletedYet": "Завершённые записи появятся здесь после работы с клиентами.",
+  "calendar.noCompletedYet":
+    "Завершённые записи появятся здесь после работы с клиентами.",
   "calendar.previousDay": "Предыдущий день",
   "calendar.nextDay": "Следующий день",
   "calendar.previousMonth": "Предыдущий месяц",
@@ -1067,8 +1243,10 @@ export const ru: Record<string, string> = {
   "calendar.month": "Месяц",
   "calendar.newBooking": "Новая запись",
   "calendar.createdNotice": "Запись создана и появилась в календаре.",
-  "calendar.quickHoursApplied": "График 09:00-20:00 применён. Теперь можно создавать записи в календаре.",
-  "calendar.noBusiness": "Создайте бизнес в настройках, чтобы открыть календарь.",
+  "calendar.quickHoursApplied":
+    "График 09:00-20:00 применён. Теперь можно создавать записи в календаре.",
+  "calendar.noBusiness":
+    "Создайте бизнес в настройках, чтобы открыть календарь.",
   "calendar.noResource": "без ресурса",
   "calendar.lead": "Заявка",
   "calendar.dayCount": "{count} записей на выбранный день",
@@ -1089,13 +1267,16 @@ export const ru: Record<string, string> = {
   "calendar.setupClient": "Добавьте клиента, чтобы создавать записи",
   "calendar.setupService": "Добавьте услугу для расчёта длительности",
   "calendar.setupHoursTitle": "График работы не настроен",
-  "calendar.setupHoursText": "Без графика календарь не покажет свободные слоты.",
+  "calendar.setupHoursText":
+    "Без графика календарь не покажет свободные слоты.",
   "calendar.applyQuickHours": "Применить 09:00-20:00",
   "calendar.configure": "Настроить",
-  "calendar.setupResources": "Ресурсы опциональны, но помогают вести расписание точнее",
+  "calendar.setupResources":
+    "Ресурсы опциональны, но помогают вести расписание точнее",
   "calendar.daySchedule": "Расписание дня",
   "calendar.plannedCount": "{count} записей запланировано",
-  "calendar.freeDayHint": "День свободен. Нажмите «Новая запись», чтобы добавить клиента в расписание.",
+  "calendar.freeDayHint":
+    "День свободен. Нажмите «Новая запись», чтобы добавить клиента в расписание.",
   "calendar.availableSlot": "Свободное окно",
   "calendar.weekSchedule": "Неделя",
   "calendar.weekHint": "Быстрый обзор записей по выбранной неделе.",
@@ -1103,21 +1284,27 @@ export const ru: Record<string, string> = {
   "calendar.monthHint": "Компактная сетка загруженности по дням.",
   "calendar.free": "Свободно",
   "calendar.shortCount": "{count} записей",
-  "calendar.loadingInline": "Догружаем календарь: записи, клиентов, услуги и график. Экран уже можно просматривать.",
+  "calendar.loadingInline":
+    "Догружаем календарь: записи, клиентов, услуги и график. Экран уже можно просматривать.",
   "calendar.loadingAppointments": "Загружаем записи...",
   "appointment.selectResourceError": "Выберите мастера или рабочее место",
   "appointment.selectSlotError": "Выберите свободный слот",
   "appointment.needClientTitle": "Сначала нужен клиент",
-  "appointment.needClientText": "Запись всегда привязана к клиенту. Создайте клиента, затем вернитесь к календарю.",
+  "appointment.needClientText":
+    "Запись всегда привязана к клиенту. Создайте клиента, затем вернитесь к календарю.",
   "appointment.goClients": "Перейти к клиентам",
   "appointment.needServiceTitle": "Сначала нужна услуга",
-  "appointment.needServiceText": "Слоты считаются по длительности услуги. Добавьте хотя бы одну активную услугу.",
+  "appointment.needServiceText":
+    "Слоты считаются по длительности услуги. Добавьте хотя бы одну активную услугу.",
   "appointment.goServices": "Настроить услуги",
   "appointment.resourceHintTitle": "Добавьте мастера для точного расписания",
-  "appointment.resourceHintText": "Для салона, парикмахерской или клиники ресурс обычно означает мастера, врача, кабинет или рабочее место.",
+  "appointment.resourceHintText":
+    "Для салона, парикмахерской или клиники ресурс обычно означает мастера, врача, кабинет или рабочее место.",
   "appointment.goResources": "Перейти к ресурсам",
-  "appointment.resourceOptionalTitle": "Мастер или кабинет можно выбрать вручную",
-  "appointment.resourceSelectedText": "Если оставить поле пустым, запись создаётся по общему графику бизнеса. Если нужен конкретный мастер, кабинет или рабочее место, выберите его ниже.",
+  "appointment.resourceOptionalTitle":
+    "Мастер или кабинет можно выбрать вручную",
+  "appointment.resourceSelectedText":
+    "Если оставить поле пустым, запись создаётся по общему графику бизнеса. Если нужен конкретный мастер, кабинет или рабочее место, выберите его ниже.",
   "appointment.client": "Клиент",
   "appointment.service": "Услуга",
   "appointment.resource": "Мастер / ресурс",
@@ -1139,11 +1326,16 @@ export const ru: Record<string, string> = {
   "appointment.noSlots": "Нет свободных слотов",
   "appointment.selectTime": "Выберите время",
   "appointment.noSlotsForDate": "Нет свободных слотов на {date}",
-  "appointment.noSlotsReason": "Проверьте график бизнеса или выбранного мастера. Для быстрого старта можно применить салонный график: каждый день 09:00-20:00.",
-  "appointment.noSlotsReasonMissingHours": "На этот день не настроен рабочий график. Настройте неделю или примените быстрый график 09:00-20:00.",
-  "appointment.noSlotsReasonDayOff": "В выбранный день стоит выходной. Измените график или выберите другую дату.",
-  "appointment.noSlotsReasonTooShort": "Рабочее окно короче длительности услуги. Увеличьте рабочее время или выберите другую услугу.",
-  "appointment.noSlotsReasonBusy": "График настроен, но все окна уже заняты другими записями. Выберите другую дату, время или ресурс.",
+  "appointment.noSlotsReason":
+    "Проверьте график бизнеса или выбранного мастера. Для быстрого старта можно применить салонный график: каждый день 09:00-20:00.",
+  "appointment.noSlotsReasonMissingHours":
+    "На этот день не настроен рабочий график. Настройте неделю или примените быстрый график 09:00-20:00.",
+  "appointment.noSlotsReasonDayOff":
+    "В выбранный день стоит выходной. Измените график или выберите другую дату.",
+  "appointment.noSlotsReasonTooShort":
+    "Рабочее окно короче длительности услуги. Увеличьте рабочее время или выберите другую услугу.",
+  "appointment.noSlotsReasonBusy":
+    "График настроен, но все окна уже заняты другими записями. Выберите другую дату, время или ресурс.",
   "appointment.workingWindow": "Рабочее окно: {start}-{end}",
   "appointment.reasonHours": "на этот день не настроен рабочий график",
   "appointment.reasonResource": "у выбранного мастера может быть выходной",
@@ -1171,8 +1363,10 @@ export const ru: Record<string, string> = {
   "appointment.save": "Сохранить запись",
   "appointment.create": "Создать запись",
   "appointments.title": "Записи",
-  "appointments.description": "Операционный список всех записей: кто придёт, что делает мастер и какой статус у клиента.",
-  "appointments.noBusiness": "Создайте бизнес в настройках, чтобы работать с записями.",
+  "appointments.description":
+    "Операционный список всех записей: кто придёт, что делает мастер и какой статус у клиента.",
+  "appointments.noBusiness":
+    "Создайте бизнес в настройках, чтобы работать с записями.",
   "appointments.create": "Создать запись",
   "appointments.today": "Сегодня",
   "appointments.todayHint": "что стоит проверить до начала дня",
@@ -1184,8 +1378,10 @@ export const ru: Record<string, string> = {
   "appointments.resourcesHint": "мастера или кабинеты в расписании",
   "appointments.allStatuses": "Все статусы",
   "appointments.emptyTitle": "Записей пока нет",
-  "appointments.emptyFiltered": "По выбранным фильтрам записей нет. Измените дату или статус.",
-  "appointments.emptyText": "Создайте первую запись вручную или из заявки, чтобы она появилась в списке и календаре.",
+  "appointments.emptyFiltered":
+    "По выбранным фильтрам записей нет. Измените дату или статус.",
+  "appointments.emptyText":
+    "Создайте первую запись вручную или из заявки, чтобы она появилась в списке и календаре.",
   "appointments.dateTime": "Дата/время",
   "appointments.actions": "Действия",
   "appointments.card": "Карточка",
@@ -1194,7 +1390,8 @@ export const ru: Record<string, string> = {
   "appointments.archiveAction": "Архивировать",
   "appointments.repeatBooking": "Создать повторную запись",
   "appointments.archiveReason": "Причина архивации записи",
-  "appointments.archiveReasonPlaceholder": "Например: клиент отменил, дубль записи",
+  "appointments.archiveReasonPlaceholder":
+    "Например: клиент отменил, дубль записи",
   "appointments.archiveReasonDefault": "Архивировано менеджером",
   "appointments.editTitle": "Редактировать запись",
   "appointments.reschedule": "Перенести",
@@ -1203,26 +1400,35 @@ export const ru: Record<string, string> = {
   "appointments.selectNewSlot": "Выберите новое время",
   "appointments.noSlots": "Свободных слотов нет",
   "appointments.rescheduleReason": "Причина переноса",
-  "appointments.rescheduleReasonPlaceholder": "Например: клиент попросил другое время",
+  "appointments.rescheduleReasonPlaceholder":
+    "Например: клиент попросил другое время",
   "appointments.rescheduledNotice": "Запись перенесена",
   "appointments.statusReasonTitle": "Причина изменения статуса записи",
   "appointments.statusReason": "Причина",
-  "appointments.statusReasonPlaceholder": "Например: клиент отменил или не пришёл",
+  "appointments.statusReasonPlaceholder":
+    "Например: клиент отменил или не пришёл",
+  "appointments.actionDone": "Действие по записи выполнено",
   "workingHours.title": "График работы",
-  "workingHours.description": "Общее расписание бизнеса и отдельные недели мастеров, кабинетов или рабочих мест.",
-  "workingHours.noBusiness": "Создайте бизнес в настройках, чтобы настроить график.",
+  "workingHours.description":
+    "Общее расписание бизнеса и отдельные недели мастеров, кабинетов или рабочих мест.",
+  "workingHours.noBusiness":
+    "Создайте бизнес в настройках, чтобы настроить график.",
   "workingHours.setupWeek": "Настроить неделю",
   "workingHours.businessDays": "Рабочих дней бизнеса",
   "workingHours.resourceSchedules": "Индивидуальных графиков",
   "workingHours.daysOff": "Выходных строк",
   "workingHours.quickSetup": "Быстрая настройка",
   "workingHours.quickTitle": "Быстро применить общий график",
-  "workingHours.quickText": "Выберите шаблон для бизнеса целиком. Для отдельных мастеров используйте кнопку «Настроить неделю».",
+  "workingHours.quickText":
+    "Выберите шаблон для бизнеса целиком. Для отдельных мастеров используйте кнопку «Настроить неделю».",
   "workingHours.applyPreset": "Применить график",
-  "workingHours.savedNotice": "Недельный график сохранён. Календарь обновит свободные слоты.",
-  "workingHours.presetNotice": "График применён: обновлено {count} дней. Теперь календарь сможет показывать свободные слоты.",
+  "workingHours.savedNotice":
+    "Недельный график сохранён. Календарь обновит свободные слоты.",
+  "workingHours.presetNotice":
+    "График применён: обновлено {count} дней. Теперь календарь сможет показывать свободные слоты.",
   "workingHours.emptyTitle": "График не настроен",
-  "workingHours.emptyText": "Настройте неделю бизнеса: рабочие дни, время начала, время окончания и выходные.",
+  "workingHours.emptyText":
+    "Настройте неделю бизнеса: рабочие дни, время начала, время окончания и выходные.",
   "workingHours.day": "День",
   "workingHours.target": "Для кого",
   "workingHours.time": "Время",
@@ -1233,7 +1439,8 @@ export const ru: Record<string, string> = {
   "workingHours.notConfigured": "Не настроено",
   "workingHours.configuredDays": "{count}/7 рабочих дней",
   "workingHours.usesBusinessSchedule": "Работает по общему графику",
-  "workingHours.noResourcesText": "Сотрудники, кабинеты или рабочие места пока не добавлены. Для старта достаточно общего графика бизнеса.",
+  "workingHours.noResourcesText":
+    "Сотрудники, кабинеты или рабочие места пока не добавлены. Для старта достаточно общего графика бизнеса.",
   "workingHours.dayOff": "Выходной",
   "workingHours.editWeek": "Изменить неделю",
   "workingHours.weekTitle": "Недельный график",
@@ -1243,12 +1450,14 @@ export const ru: Record<string, string> = {
   "workingHours.end": "Конец",
   "workingHours.saveSchedule": "Сохранить график",
   "workingHours.formTitle": "Настройте всю неделю сразу",
-  "workingHours.formText": "Общий график используется для всего бизнеса. Для мастера можно задать отдельную неделю, если он работает иначе.",
+  "workingHours.formText":
+    "Общий график используется для всего бизнеса. Для мастера можно задать отдельную неделю, если он работает иначе.",
   "workingHours.salonPreset": "Салон 09:00-20:00 каждый день",
   "workingHours.officePreset": "Офис Пн-Пт 09:00-18:00",
   "workingHours.copyBusinessSchedule": "Скопировать график бизнеса",
   "workingHours.saveWeek": "Сохранить недельный график",
-  "workingHours.invalidTime": "Для рабочего дня время окончания должно быть позже времени начала.",
+  "workingHours.invalidTime":
+    "Для рабочего дня время окончания должно быть позже времени начала.",
   "workingHours.preset.weekdays": "Пн-Пт 09:00-18:00",
   "workingHours.preset.weekendsOff": "Сб-Вс выходной",
   "workingHours.preset.daily": "Ежедневно 09:00-20:00",
@@ -1256,8 +1465,10 @@ export const ru: Record<string, string> = {
   "workingHours.preset.monSat": "Пн-Сб 09:00-18:00",
   "workingHours.preset.sunOff": "Вс выходной",
   "services.title": "Услуги",
-  "services.description": "Активный прайс бизнеса: что продаём, сколько длится услуга и как часто её записывают.",
-  "services.noBusiness": "Создайте бизнес в настройках, чтобы управлять услугами.",
+  "services.description":
+    "Активный прайс бизнеса: что продаём, сколько длится услуга и как часто её записывают.",
+  "services.noBusiness":
+    "Создайте бизнес в настройках, чтобы управлять услугами.",
   "services.add": "Добавить услугу",
   "services.active": "Активные услуги",
   "services.activeHint": "доступны менеджерам и календарю",
@@ -1266,9 +1477,11 @@ export const ru: Record<string, string> = {
   "services.usedInBookings": "В записях",
   "services.usedInBookingsHint": "услуги, которые уже выбирали клиенты",
   "services.logicTitle": "Логика услуг:",
-  "services.logicText": "каждая услуга должна иметь понятную длительность. Именно она определяет, сколько времени займёт запись в календаре.",
+  "services.logicText":
+    "каждая услуга должна иметь понятную длительность. Именно она определяет, сколько времени займёт запись в календаре.",
   "services.emptyTitle": "Услуг пока нет",
-  "services.emptyText": "Добавьте услуги с длительностью и ценой, чтобы менеджеры могли быстро создавать записи.",
+  "services.emptyText":
+    "Добавьте услуги с длительностью и ценой, чтобы менеджеры могли быстро создавать записи.",
   "services.name": "Название",
   "services.descriptionField": "Описание",
   "services.duration": "Длительность",
@@ -1277,22 +1490,30 @@ export const ru: Record<string, string> = {
   "services.bookings": "Записей",
   "services.editTitle": "Редактировать услугу",
   "services.formHintTitle": "Услуга влияет на календарь",
-  "services.formHintText": "Чем точнее длительность, тем точнее Zani покажет свободные окна и загрузку мастеров.",
+  "services.formHintText":
+    "Чем точнее длительность, тем точнее Zani покажет свободные окна и загрузку мастеров.",
   "services.templatesTitle": "Быстрый старт услуги",
-  "services.templatesText": "Выберите шаблон, а затем поправьте название, цену или длительность под свой бизнес.",
+  "services.templatesText":
+    "Выберите шаблон, а затем поправьте название, цену или длительность под свой бизнес.",
   "services.template.consultation.name": "Консультация",
-  "services.template.consultation.description": "Первичная консультация клиента и подбор следующего шага.",
+  "services.template.consultation.description":
+    "Первичная консультация клиента и подбор следующего шага.",
   "services.template.haircut.name": "Стрижка",
-  "services.template.haircut.description": "Базовая услуга мастера с фиксированным временем записи.",
+  "services.template.haircut.description":
+    "Базовая услуга мастера с фиксированным временем записи.",
   "services.template.beautyProcedure.name": "Процедура",
-  "services.template.beautyProcedure.description": "Основная услуга салона или кабинета с подготовкой рабочего места.",
+  "services.template.beautyProcedure.description":
+    "Основная услуга салона или кабинета с подготовкой рабочего места.",
   "services.template.diagnostics.name": "Диагностика",
-  "services.template.diagnostics.description": "Осмотр, проверка или диагностика перед основной работой.",
+  "services.template.diagnostics.description":
+    "Осмотр, проверка или диагностика перед основной работой.",
   "services.isActive": "Активна",
   "services.save": "Сохранить",
   "resources.title": "Сотрудники и ресурсы",
-  "resources.description": "Мастера, сотрудники, кабинеты и рабочие места, к которым можно записывать клиентов.",
-  "resources.noBusiness": "Создайте бизнес в настройках, чтобы управлять ресурсами.",
+  "resources.description":
+    "Мастера, сотрудники, кабинеты и рабочие места, к которым можно записывать клиентов.",
+  "resources.noBusiness":
+    "Создайте бизнес в настройках, чтобы управлять ресурсами.",
   "resources.add": "Добавить мастера",
   "resources.active": "Активные ресурсы",
   "resources.activeHint": "доступны для записи в календаре",
@@ -1301,27 +1522,34 @@ export const ru: Record<string, string> = {
   "resources.withSchedule": "С графиком",
   "resources.withScheduleHint": "имеют отдельное расписание",
   "resources.logicTitle": "Логика ресурсов:",
-  "resources.logicText": "для парикмахерской обычно создают каждого мастера отдельным ресурсом. Тогда календарь покажет занятость по мастерам и не даст поставить две записи одному человеку на одно время.",
+  "resources.logicText":
+    "для парикмахерской обычно создают каждого мастера отдельным ресурсом. Тогда календарь покажет занятость по мастерам и не даст поставить две записи одному человеку на одно время.",
   "resources.templateMaster": "Мастер",
-  "resources.templateMasterText": "Парикмахер, барбер, врач или специалист, к которому записывают клиента.",
+  "resources.templateMasterText":
+    "Парикмахер, барбер, врач или специалист, к которому записывают клиента.",
   "resources.templateMasterName": "Новый мастер",
   "resources.templateChair": "Кресло / место",
-  "resources.templateChairText": "Рабочее место, кресло, стол или оборудование с отдельной занятостью.",
+  "resources.templateChairText":
+    "Рабочее место, кресло, стол или оборудование с отдельной занятостью.",
   "resources.templateChairName": "Кресло 1",
   "resources.templateRoom": "Кабинет",
-  "resources.templateRoomText": "Комната, которую нельзя занять двумя записями одновременно.",
+  "resources.templateRoomText":
+    "Комната, которую нельзя занять двумя записями одновременно.",
   "resources.templateRoomName": "Кабинет 1",
   "resources.templateBox": "Бокс",
-  "resources.templateBoxText": "Автосервис, детейлинг или рабочая зона с отдельным расписанием.",
+  "resources.templateBoxText":
+    "Автосервис, детейлинг или рабочая зона с отдельным расписанием.",
   "resources.templateBoxName": "Бокс 1",
   "resources.emptyTitle": "Мастера и ресурсы пока не добавлены",
-  "resources.emptyText": "Добавьте сотрудников, кабинеты или рабочие места, чтобы записи в календаре были точными.",
+  "resources.emptyText":
+    "Добавьте сотрудников, кабинеты или рабочие места, чтобы записи в календаре были точными.",
   "resources.name": "Название",
   "resources.type": "Тип",
   "resources.bookings": "Записей",
   "resources.editTitle": "Редактировать ресурс",
   "resources.formHintTitle": "Что считать ресурсом",
-  "resources.formHintText": "В салоне это мастер, барбер или кресло. В клинике - врач или кабинет. В автосервисе - бокс или подъёмник.",
+  "resources.formHintText":
+    "В салоне это мастер, барбер или кресло. В клинике - врач или кабинет. В автосервисе - бокс или подъёмник.",
   "resources.namePlaceholder": "Например: Алия, Барбер 1, Кресло 2",
   "resources.typeStaff": "Сотрудник / мастер",
   "resources.typeRoom": "Кабинет",
@@ -1334,11 +1562,14 @@ export const ru: Record<string, string> = {
   "resources.available": "Доступен для записи",
   "resources.save": "Сохранить",
   "clients.title": "Клиенты",
-  "clients.description": "База клиентов с историей заявок, записей, тегами и быстрым доступом к карточке.",
+  "clients.description":
+    "База клиентов с историей заявок, записей, тегами и быстрым доступом к карточке.",
   "clients.retentionTitle": "Умная аналитика удержания",
-  "clients.retentionText": "Проверьте {count} клиентов без активных заявок, сделок и записей. Начните с них, чтобы база не простаивала.",
+  "clients.retentionText":
+    "Проверьте {count} клиентов без активных заявок, сделок и записей. Начните с них, чтобы база не простаивала.",
   "clients.retentionAction": "Показать клиентов",
-  "clients.noBusiness": "Создайте бизнес в настройках, чтобы работать с клиентами.",
+  "clients.noBusiness":
+    "Создайте бизнес в настройках, чтобы работать с клиентами.",
   "clients.segment": "Сегмент",
   "clients.create": "Создать клиента",
   "clients.filters": "Фильтры",
@@ -1360,8 +1591,10 @@ export const ru: Record<string, string> = {
   "clients.allTags": "Все теги",
   "clients.allSegments": "Все сегменты",
   "clients.emptyTitle": "Клиентов пока нет",
-  "clients.emptyFiltered": "По этому запросу клиентов не найдено. Проверьте имя, телефон или email.",
-  "clients.emptyText": "Добавьте первого клиента, чтобы вести заявки, записи и историю общения в одном месте.",
+  "clients.emptyFiltered":
+    "По этому запросу клиентов не найдено. Проверьте имя, телефон или email.",
+  "clients.emptyText":
+    "Добавьте первого клиента, чтобы вести заявки, записи и историю общения в одном месте.",
   "clients.name": "Имя",
   "clients.phone": "Телефон",
   "clients.tags": "Теги",
@@ -1376,18 +1609,23 @@ export const ru: Record<string, string> = {
   "clients.nextStepContact": "Связаться",
   "clients.actions": "Действия клиента",
   "clients.listHintTitle": "Выберите клиента",
-  "clients.listHintText": "Карточка клиента откроет историю, заявки, записи, задачи и быстрые действия без потери списка.",
+  "clients.listHintText":
+    "Карточка клиента откроет историю, заявки, записи, задачи и быстрые действия без потери списка.",
   "clients.tagPrompt": "Название тега",
   "clients.tag": "Тег",
   "clients.archiveReason": "Причина архивации клиента",
   "clients.aiInactiveTitle": "Есть клиенты без активности",
-  "clients.aiInactiveDesc": "{count} клиентов пока не связаны с заявками или записями. Их можно сегментировать для повторного контакта.",
+  "clients.aiInactiveDesc":
+    "{count} клиентов пока не связаны с заявками или записями. Их можно сегментировать для повторного контакта.",
   "clients.aiLinkedTitle": "Клиентская база связана с событиями",
-  "clients.aiLinkedDesc": "У клиентов есть заявки или записи, поэтому ZANI может точнее объяснять историю взаимодействий.",
+  "clients.aiLinkedDesc":
+    "У клиентов есть заявки или записи, поэтому ZANI может точнее объяснять историю взаимодействий.",
   "clients.aiTagsTitle": "Добавьте теги клиентам",
-  "clients.aiTagsDesc": "Теги помогут отделять постоянных, горячих и рискованных клиентов без сложной CRM-логики.",
+  "clients.aiTagsDesc":
+    "Теги помогут отделять постоянных, горячих и рискованных клиентов без сложной CRM-логики.",
   "clients.aiSegmentsTitle": "Сегментация уже работает",
-  "clients.aiSegmentsDesc": "{count} клиентов имеют теги. Используйте сегменты для быстрых действий.",
+  "clients.aiSegmentsDesc":
+    "{count} клиентов имеют теги. Используйте сегменты для быстрых действий.",
   "clients.editTitle": "Редактировать клиента",
   "clients.createSegment": "Создать сегмент клиентов",
   "clients.segmentName": "Название сегмента",
@@ -1402,7 +1640,8 @@ export const ru: Record<string, string> = {
   "clients.selectTag": "Выберите тег",
   "clients.saveSegment": "Сохранить сегмент",
   "clients.duplicateTitle": "Похожий клиент уже есть в базе",
-  "clients.duplicateText": "Проверьте контакт перед созданием, чтобы не плодить дубли.",
+  "clients.duplicateText":
+    "Проверьте контакт перед созданием, чтобы не плодить дубли.",
   "clients.openExisting": "Открыть существующего клиента",
   "clients.mergeCurrent": "Объединить в текущего",
   "clients.noContact": "без контакта",
@@ -1415,7 +1654,8 @@ export const ru: Record<string, string> = {
   "clients.unassigned": "Не назначен",
   "clients.selectClient": "Выбрать {name}",
   "clients.details": "Подробнее",
-  "clients.duplicateError": "Не удалось проверить дубли. Можно сохранить и проверить позже.",
+  "clients.duplicateError":
+    "Не удалось проверить дубли. Можно сохранить и проверить позже.",
   "clients.sourceManual": "Вручную",
   "clients.sourceWebsite": "Сайт",
   "clients.sourceParser": "Parser",
@@ -1424,7 +1664,8 @@ export const ru: Record<string, string> = {
   "clients.save": "Сохранить",
   "clients.createAnyway": "Создать всё равно",
   "clients.profileTitle": "Профиль клиента",
-  "clients.profileDescription": "Список клиентов слева, рабочий профиль справа: история заявок, сделок, записей, сообщений и быстрые действия.",
+  "clients.profileDescription":
+    "Список клиентов слева, рабочий профиль справа: история заявок, сделок, записей, сообщений и быстрые действия.",
   "clients.filterAllWithCount": "Все {count}",
   "clients.filterNewWithCount": "Новые {count}",
   "clients.filterNoReplyWithCount": "Без ответа {count}",
@@ -1464,20 +1705,26 @@ export const ru: Record<string, string> = {
   "clients.history": "История клиента",
   "clients.leadFallback": "Заявка #{id}",
   "clients.bookingFallback": "Запись #{id}",
-  "clients.emptyHistory": "История пока пустая. Клиента можно связать с заявкой, сделкой или записью.",
+  "clients.emptyHistory":
+    "История пока пустая. Клиента можно связать с заявкой, сделкой или записью.",
   "clients.crmNextStepTitle": "Следующий шаг CRM",
-  "clients.crmNextStepWithActivity": "Клиент уже связан с заявкой или записью. Проверьте ближайшее действие и актуальность контакта.",
-  "clients.crmNextStepNeedsContact": "По клиенту нет свежей заявки или записи. Проверьте, нужен ли повторный контакт сегодня.",
+  "clients.crmNextStepWithActivity":
+    "Клиент уже связан с заявкой или записью. Проверьте ближайшее действие и актуальность контакта.",
+  "clients.crmNextStepNeedsContact":
+    "По клиенту нет свежей заявки или записи. Проверьте, нужен ли повторный контакт сегодня.",
   "clients.crmNextStepAction": "Открыть карточку",
   "clients.archiveClient": "Архивировать клиента",
-  "clients.archiveConfirmText": "Клиент «{name}» будет архивирован. Данные сохранятся и смогут быть восстановлены.",
+  "clients.archiveConfirmText":
+    "Клиент «{name}» будет архивирован. Данные сохранятся и смогут быть восстановлены.",
   "clients.noticeArchived": "Клиент архивирован.",
   "clients.archiveReasonPlaceholder": "Например: дубль, неактуальный контакт",
   "clients.mergePreviewTitle": "Проверка объединения",
-  "clients.mergePreviewWarning": "Проверьте, какие данные будут перенесены перед объединением клиентов.",
+  "clients.mergePreviewWarning":
+    "Проверьте, какие данные будут перенесены перед объединением клиентов.",
   "clients.mergePreviewPolicy": "Политика объединения",
   "clients.mergeConfirm": "Объединить клиентов",
-  "clients.mergePreviewConfirm": "Перед объединением найдено связанных записей: {count}. Продолжить?",
+  "clients.mergePreviewConfirm":
+    "Перед объединением найдено связанных записей: {count}. Продолжить?",
   "clients.source": "Источник",
   "clients.sourceDetail": "Детализация источника",
   "clients.sourceAttribution": "Атрибуция источника",
@@ -1500,7 +1747,8 @@ export const ru: Record<string, string> = {
   "clients.clearSearch": "Очистить поиск",
   "clients.tableScrollArea": "Область прокрутки таблицы клиентов",
   "clients.tableAriaLabel": "Список клиентов",
-  "clients.tableDescription": "Таблица клиентов с фильтрацией. Нажмите Enter или пробел на строке, чтобы выбрать клиента.",
+  "clients.tableDescription":
+    "Таблица клиентов с фильтрацией. Нажмите Enter или пробел на строке, чтобы выбрать клиента.",
   "clients.selectAllPage": "Выбрать все на странице",
   "clients.contacts": "Контакты",
   "clients.favorite": "Избранное",
@@ -1532,14 +1780,18 @@ export const ru: Record<string, string> = {
   "crmCard.leadNumber": "Заявка #{id}",
   "crmCard.call": "Позвонить",
   "crmCard.snapshotNext": "Следующее действие",
-  "crmCard.snapshotNoTasks": "Нет открытой задачи. Если клиент требует действия, создайте следующий шаг.",
+  "crmCard.snapshotNoTasks":
+    "Нет открытой задачи. Если клиент требует действия, создайте следующий шаг.",
   "crmCard.snapshotHistory": "Последнее событие",
   "crmCard.snapshotMessages": "Последнее сообщение",
   "crmCard.attachments": "Вложения",
-  "crmCard.noAttachments": "Файлы из сообщений и карточек будут доступны здесь.",
-  "crmCard.attachmentsText": "Загрузите фото, договоры, счета и другие документы, связанные с этой CRM-карточкой.",
+  "crmCard.noAttachments":
+    "Файлы из сообщений и карточек будут доступны здесь.",
+  "crmCard.attachmentsText":
+    "Загрузите фото, договоры, счета и другие документы, связанные с этой CRM-карточкой.",
   "crmCard.dropFilesTitle": "Перетащите файлы сюда или выберите на компьютере",
-  "crmCard.dropFilesText": "Поддерживаются изображения и документы. Доступ к файлам ограничен правами этой CRM-сущности.",
+  "crmCard.dropFilesText":
+    "Поддерживаются изображения и документы. Доступ к файлам ограничен правами этой CRM-сущности.",
   "crmCard.uploadSelected": "Загрузить {count}",
   "crmCard.removeFile": "Убрать файл",
   "crmCard.addAttachment": "Добавить",
@@ -1558,7 +1810,8 @@ export const ru: Record<string, string> = {
   "crmCard.probability": "Вероятность",
   "crmCard.closeDate": "Закрытие",
   "crmCard.quickEdit": "Быстрое редактирование",
-  "crmCard.quickEditText": "Статус и рабочая заметка меняются прямо из CRM-карточки.",
+  "crmCard.quickEditText":
+    "Статус и рабочая заметка меняются прямо из CRM-карточки.",
   "crmCard.saveError": "Не удалось сохранить изменения карточки.",
   "crmCard.leadStatus": "Статус заявки",
   "crmCard.dealStatus": "Статус сделки",
@@ -1569,8 +1822,10 @@ export const ru: Record<string, string> = {
   "crmCard.noDeals": "Сделок пока нет",
   "crmCard.noDealsText": "Связанные сделки появятся в этой CRM-карточке.",
   "crmCard.emptyTimeline": "История пока пустая",
-  "crmCard.emptyTimelineText": "Действия менеджеров, автоматизаций и коммуникаций появятся здесь.",
-  "crmCard.timelineVisibleCount": "Показано {visible} из {total} событий истории.",
+  "crmCard.emptyTimelineText":
+    "Действия менеджеров, автоматизаций и коммуникаций появятся здесь.",
+  "crmCard.timelineVisibleCount":
+    "Показано {visible} из {total} событий истории.",
   "crmCard.timelineHasMore": "Есть ещё события в полной истории.",
   "crmCard.timelineCategoryCrm": "CRM",
   "crmCard.timelineCategoryMessage": "Сообщение",
@@ -1603,34 +1858,47 @@ export const ru: Record<string, string> = {
   "crmCard.timelineFieldSourceEvent": "Источник события",
   "crmCard.timelineFieldTarget": "Цель",
   "crmCard.timelineFieldEntity": "Сущность",
+  "crmCard.timelineEvent.lead_taken_in_work": "Заявка взята в работу",
+  "crmCard.timelineEvent.lead_created": "Создана заявка",
+  "crmCard.timelineEvent.message_received": "Получено сообщение",
+  "crmCard.timelineEvent.task_created": "Создана задача",
+  "crmCard.timelineEvent.appointment_created": "Создана запись",
+  "crmCard.timelineEvent.deal_created_from_lead": "Сделка создана из заявки",
   "crmCard.quickTask": "Быстрая задача",
-  "crmCard.quickTaskText": "Создайте следующий шаг прямо из карточки клиента или заявки.",
+  "crmCard.quickTaskText":
+    "Создайте следующий шаг прямо из карточки клиента или заявки.",
   "crmCard.taskPlaceholder": "Например: перезвонить сегодня",
   "crmCard.createTask": "Создать задачу",
   "crmCard.taskError": "Не удалось создать задачу.",
   "crmCard.deadline": "дедлайн",
   "crmCard.noTasks": "Задач нет",
-  "crmCard.noTasksText": "Когда появится задача по клиенту, она будет видна в карточке.",
+  "crmCard.noTasksText":
+    "Когда появится задача по клиенту, она будет видна в карточке.",
   "crmCard.unread": "Непрочитано",
   "crmCard.noDialogs": "Диалогов нет",
-  "crmCard.noDialogsText": "WhatsApp, Telegram, Instagram и web-chat будут собираться в этой вкладке.",
+  "crmCard.noDialogsText":
+    "WhatsApp, Telegram, Instagram и web-chat будут собираться в этой вкладке.",
   "crmCard.comment": "Комментарий",
   "crmCard.commentText": "Внутренняя заметка сохранится в истории карточки.",
   "crmCard.commentPlaceholder": "Например: клиент просит перезвонить вечером",
   "crmCard.addComment": "Добавить комментарий",
   "crmCard.commentError": "Не удалось добавить комментарий.",
   "crmCard.noNotes": "Заметок нет",
-  "crmCard.noNotesText": "Внутренние комментарии команды будут храниться здесь.",
+  "crmCard.noNotesText":
+    "Внутренние комментарии команды будут храниться здесь.",
   "crmCard.customFields": "Дополнительные поля",
-  "crmCard.customFieldsText": "Поля настраиваются в разделе дополнительных полей.",
+  "crmCard.customFieldsText":
+    "Поля настраиваются в разделе дополнительных полей.",
   "crmCard.saveFields": "Сохранить поля",
   "crmCard.no": "Нет",
   "crmCard.yes": "Да",
   "crmCard.notSelected": "Не выбрано",
   "crmCard.loadError": "Не удалось загрузить CRM карточку.",
   "tasks.title": "Задачи",
-  "tasks.description": "Follow-up по клиентам, заявкам и записям без потери контекста.",
-  "tasks.noBusiness": "Создайте бизнес в настройках, чтобы работать с задачами.",
+  "tasks.description":
+    "Follow-up по клиентам, заявкам и записям без потери контекста.",
+  "tasks.noBusiness":
+    "Создайте бизнес в настройках, чтобы работать с задачами.",
   "tasks.quickTask": "Быстрая задача",
   "tasks.template": "Шаблон задачи",
   "tasks.noTemplate": "Без шаблона",
@@ -1673,22 +1941,29 @@ export const ru: Record<string, string> = {
   "tasks.complete": "Завершить",
   "tasks.cancel": "Отменить",
   "tasks.cancelConfirmTitle": "Отменить задачу?",
-  "tasks.cancelConfirmText": "Задача будет закрыта как отменённая. Причина сохранится в истории CRM.",
+  "tasks.cancelConfirmText":
+    "Задача будет закрыта как отменённая. Причина сохранится в истории CRM.",
   "tasks.cancelReasonLabel": "Причина отмены",
-  "tasks.cancelReasonPlaceholder": "Например: клиент отказался, задача больше не актуальна...",
+  "tasks.cancelReasonPlaceholder":
+    "Например: клиент отказался, задача больше не актуальна...",
   "tasks.cancelledNotice": "Задача отменена.",
   "tasks.undoCancelNotice": "Отмена задачи отменена.",
   "tasks.reopen": "Переоткрыть",
   "tasks.emptyTitle": "Задач пока нет",
-  "tasks.emptyText": "Создайте follow-up задачу и привяжите её к клиенту, заявке или записи.",
+  "tasks.emptyText":
+    "Создайте follow-up задачу и привяжите её к клиенту, заявке или записи.",
   "tasks.emptyFilteredTitle": "По текущим фильтрам задач нет",
-  "tasks.emptyFilteredText": "Измените фильтры или поисковый запрос, чтобы увидеть больше задач.",
+  "tasks.emptyFilteredText":
+    "Измените фильтры или поисковый запрос, чтобы увидеть больше задач.",
   "tasks.emptyTodayTitle": "На сегодня задач нет",
-  "tasks.emptyTodayText": "Когда появятся задачи с дедлайном на сегодня, они будут отображаться здесь.",
+  "tasks.emptyTodayText":
+    "Когда появятся задачи с дедлайном на сегодня, они будут отображаться здесь.",
   "tasks.emptyOverdueTitle": "Просроченных задач нет",
-  "tasks.emptyOverdueText": "Все срочные задачи закрыты или перенесены. Новые просрочки появятся в этом разделе.",
+  "tasks.emptyOverdueText":
+    "Все срочные задачи закрыты или перенесены. Новые просрочки появятся в этом разделе.",
   "tasks.emptyTeamTitle": "Командных задач нет",
-  "tasks.emptyTeamText": "Когда задачи будут назначены команде или добавлены наблюдатели, они появятся в этом списке.",
+  "tasks.emptyTeamText":
+    "Когда задачи будут назначены команде или добавлены наблюдатели, они появятся в этом списке.",
   "tasks.visibleCount": "Показано {visible} из {total}",
   "tasks.loadMore": "Показать ещё",
   "tasks.moreActions": "Действия задачи",
@@ -1743,14 +2018,18 @@ export const ru: Record<string, string> = {
   "tasks.tableAssignee": "Исполнитель",
   "tasks.tableActivity": "Активность",
   "tasks.aiOverdueTitle": "Есть просроченные задачи",
-  "tasks.aiOverdueDesc": "{count} задач уже просрочены. Закройте их первыми, чтобы не потерять клиента.",
+  "tasks.aiOverdueDesc":
+    "{count} задач уже просрочены. Закройте их первыми, чтобы не потерять клиента.",
   "tasks.aiOpenOverdue": "Открыть",
   "tasks.aiNoOverdueTitle": "Просрочек нет",
-  "tasks.aiNoOverdueDesc": "Команда держит обязательства под контролем. Проверьте задачи на сегодня.",
+  "tasks.aiNoOverdueDesc":
+    "Команда держит обязательства под контролем. Проверьте задачи на сегодня.",
   "tasks.aiPriorityTitle": "Есть срочные действия",
-  "tasks.aiPriorityDesc": "{count} задач с высоким приоритетом. Их стоит обработать до обычных задач.",
+  "tasks.aiPriorityDesc":
+    "{count} задач с высоким приоритетом. Их стоит обработать до обычных задач.",
   "tasks.aiPlanTitle": "План задач спокойный",
-  "tasks.aiPlanDesc": "Высоких приоритетов нет. Можно распределить задачи по времени и ответственным.",
+  "tasks.aiPlanDesc":
+    "Высоких приоритетов нет. Можно распределить задачи по времени и ответственным.",
   "tasks.create": "Создать задачу",
   "tasks.edit": "Изменить",
   "tasks.editTitle": "Редактировать задачу",
@@ -1780,11 +2059,15 @@ export const ru: Record<string, string> = {
   "tasks.drawerHistoryTab": "История",
   "tasks.taskSummary": "Состояние задачи",
   "tasks.statusOpenHint": "Задача создана и ждёт начала работы.",
-  "tasks.statusInProgressHint": "Задача в работе. Следующее ожидаемое действие — завершить или отменить с причиной.",
-  "tasks.statusDoneHint": "Задача завершена. Для повторной обработки её можно переоткрыть.",
-  "tasks.statusCancelledHint": "Задача отменена. Причина отмены сохраняется в истории CRM.",
+  "tasks.statusInProgressHint":
+    "Задача в работе. Следующее ожидаемое действие — завершить или отменить с причиной.",
+  "tasks.statusDoneHint":
+    "Задача завершена. Для повторной обработки её можно переоткрыть.",
+  "tasks.statusCancelledHint":
+    "Задача отменена. Причина отмены сохраняется в истории CRM.",
   "tasks.links": "Связанные сущности",
-  "tasks.noLinkedEntities": "Задача пока не привязана к клиенту, заявке, сделке, записи или диалогу.",
+  "tasks.noLinkedEntities":
+    "Задача пока не привязана к клиенту, заявке, сделке, записи или диалогу.",
   "tasks.dates": "Даты",
   "tasks.completedAt": "Завершена",
   "tasks.cancelledAt": "Отменена",
@@ -1796,10 +2079,12 @@ export const ru: Record<string, string> = {
   "tasks.addComment": "Добавить комментарий",
   "tasks.deleteComment": "Удалить комментарий",
   "tasks.deleteCommentConfirmTitle": "Удалить комментарий?",
-  "tasks.deleteCommentConfirmText": "Комментарий исчезнет из карточки задачи. В истории останется событие удаления.",
+  "tasks.deleteCommentConfirmText":
+    "Комментарий исчезнет из карточки задачи. В истории останется событие удаления.",
   "conversations.eyebrow": "Единый inbox",
   "conversations.title": "Сообщения",
-  "conversations.description": "Все обращения из сайта, Telegram, WhatsApp и будущих каналов в одном рабочем окне.",
+  "conversations.description":
+    "Все обращения из сайта, Telegram, WhatsApp и будущих каналов в одном рабочем окне.",
   "conversations.noMessages": "Нет сообщений",
   "conversations.selectDialog": "Выберите диалог",
   "conversations.noMessagesShort": "Пока нет сообщений",
@@ -1820,16 +2105,23 @@ export const ru: Record<string, string> = {
   "conversations.systemBotEnabled": "Бот включён.",
   "conversations.systemClosed": "Диалог закрыт менеджером.",
   "conversations.systemReopened": "Диалог возвращён в работу.",
-  "conversations.aiMockDraftReady": "AI подготовил тестовый черновик и вставил его в поле ответа.",
-  "conversations.aiDraftReady": "AI подготовил черновик и вставил его в поле ответа.",
-  "conversations.aiReplyForbidden": "Ваша роль не может генерировать AI-ответы.",
-  "conversations.aiPipelinePreviewForbidden": "Ваша роль не может просматривать AI-предложения по CRM-связям.",
-  "conversations.aiPipelineRunForbidden": "Ваша роль не может выполнять AI-действия с CRM-связями.",
-  "conversations.replySaved": "Ответ менеджера сохранён в диалоге. Реальная отправка в канал будет подключена отдельно.",
+  "conversations.aiMockDraftReady":
+    "AI подготовил тестовый черновик и вставил его в поле ответа.",
+  "conversations.aiDraftReady":
+    "AI подготовил черновик и вставил его в поле ответа.",
+  "conversations.aiReplyForbidden":
+    "Ваша роль не может генерировать AI-ответы.",
+  "conversations.aiPipelinePreviewForbidden":
+    "Ваша роль не может просматривать AI-предложения по CRM-связям.",
+  "conversations.aiPipelineRunForbidden":
+    "Ваша роль не может выполнять AI-действия с CRM-связями.",
+  "conversations.replySaved":
+    "Ответ менеджера сохранён в диалоге. Реальная отправка в канал будет подключена отдельно.",
   "conversations.noDialogSelected": "Диалог не выбран.",
   "conversations.fileUploaded": "Файл загружен: {name}",
   "conversations.taskCreated": "Задача создана: {title}",
-  "conversations.duplicateClientFound": "Найден похожий клиент: {list}. Привяжите существующего или подтвердите создание вручную позже.",
+  "conversations.duplicateClientFound":
+    "Найден похожий клиент: {list}. Привяжите существующего или подтвердите создание вручную позже.",
   "conversations.clientCreated": "Клиент создан: {name}",
   "conversations.clientAlreadyLinked": "Диалог уже связан с клиентом.",
   "conversations.clientLinked": "Существующий клиент связан с диалогом.",
@@ -1849,10 +2141,14 @@ export const ru: Record<string, string> = {
   "conversations.requiresReply": "требуют ответа",
   "conversations.myWork": "моя очередь",
   "conversations.aiTriageTitle": "Подсказка по сообщениям",
-  "conversations.aiTriageHandoff": "{count} диалогов требуют менеджера. Начните с них, чтобы клиенты не ждали бота слишком долго.",
-  "conversations.aiTriageUnread": "{count} диалогов ещё не прочитаны. Ответьте сначала горячим обращениям и новым клиентам.",
-  "conversations.aiTriageStable": "Критичных диалогов сейчас нет. Проверьте новые сообщения и продолжайте обработку по очереди.",
-  "conversations.aiTriageMissing": "Недостаточно данных по inbox. Подключите канал или дождитесь первых сообщений.",
+  "conversations.aiTriageHandoff":
+    "{count} диалогов требуют менеджера. Начните с них, чтобы клиенты не ждали бота слишком долго.",
+  "conversations.aiTriageUnread":
+    "{count} диалогов ещё не прочитаны. Ответьте сначала горячим обращениям и новым клиентам.",
+  "conversations.aiTriageStable":
+    "Критичных диалогов сейчас нет. Проверьте новые сообщения и продолжайте обработку по очереди.",
+  "conversations.aiTriageMissing":
+    "Недостаточно данных по inbox. Подключите канал или дождитесь первых сообщений.",
   "conversations.advancedFilters": "Расширенные фильтры",
   "conversations.advancedCrmLinks": "Расширенная CRM-связь",
   "conversations.senderAi": "AI",
@@ -1877,19 +2173,24 @@ export const ru: Record<string, string> = {
   "conversations.resetFilters": "Сбросить фильтры",
   "conversations.loadingInbox": "Загружаем inbox...",
   "conversations.emptyTitle": "Диалогов пока нет",
-  "conversations.emptyText": "Новые обращения с сайта и Telegram появятся здесь автоматически.",
+  "conversations.emptyText":
+    "Новые обращения с сайта и Telegram появятся здесь автоматически.",
   "conversations.pauseBot": "Остановить бота",
   "conversations.enableBot": "Включить бота",
   "conversations.closedFromInbox": "Закрыто из inbox",
-  "conversations.selectDialogText": "Сообщения выбранного клиента появятся в этой ленте.",
+  "conversations.selectDialogText":
+    "Сообщения выбранного клиента появятся в этой ленте.",
   "conversations.loadingMessages": "Загружаем сообщения...",
   "conversations.noMessagesTitle": "Сообщений пока нет",
-  "conversations.noMessagesText": "Когда клиент напишет в подключенный канал, история будет здесь.",
+  "conversations.noMessagesText":
+    "Когда клиент напишет в подключенный канал, история будет здесь.",
   "conversations.quickReplies": "Быстрые ответы...",
   "conversations.noTemplates": "Нет шаблонов для этого канала.",
-  "conversations.closedNotice": "Диалог закрыт. Нажмите «Вернуть», чтобы снова писать клиенту и продолжить обработку.",
+  "conversations.closedNotice":
+    "Диалог закрыт. Нажмите «Вернуть», чтобы снова писать клиенту и продолжить обработку.",
   "conversations.attachFile": "Прикрепить файл",
-  "conversations.closedComposer": "Диалог закрыт. Верните его в работу, чтобы ответить.",
+  "conversations.closedComposer":
+    "Диалог закрыт. Верните его в работу, чтобы ответить.",
   "conversations.replyPlaceholder": "Напишите ответ клиенту...",
   "conversations.saveManualReply": "Сохранить ручной ответ",
   "conversations.context": "Контекст",
@@ -1900,8 +2201,10 @@ export const ru: Record<string, string> = {
   "conversations.leadNotLinked": "Заявка не связана",
   "conversations.dealNotLinked": "Сделка не связана",
   "conversations.crmContextLinked": "Диалог уже привязан к CRM-контексту.",
-  "conversations.crmContextText": "Создайте или привяжите клиента, заявку и сделку без ухода из inbox.",
-  "conversations.noFiles": "Файлов пока нет. Прикрепите договор, чек, фото или документ из composer.",
+  "conversations.crmContextText":
+    "Создайте или привяжите клиента, заявку и сделку без ухода из inbox.",
+  "conversations.noFiles":
+    "Файлов пока нет. Прикрепите договор, чек, фото или документ из composer.",
   "conversations.bot": "Бот",
   "conversations.active": "Активен",
   "conversations.paused": "Пауза",
@@ -1916,7 +2219,8 @@ export const ru: Record<string, string> = {
   "conversations.linkDealById": "Привязать сделку по ID",
   "conversations.link": "Связать",
   "conversations.aiDraft": "AI-черновик",
-  "conversations.aiDraftText": "Нажмите «Подсказать ответ», чтобы получить черновик прямо в composer. Автоотправки здесь нет.",
+  "conversations.aiDraftText":
+    "Нажмите «Подсказать ответ», чтобы получить черновик прямо в composer. Автоотправки здесь нет.",
   "conversations.selectContext": "Выберите диалог, чтобы увидеть CRM-контекст.",
   "conversations.followUpTaskTitle": "Дожать: {title}",
   "conversations.clientIdPlaceholder": "ID клиента",
@@ -1937,7 +2241,8 @@ export const ru: Record<string, string> = {
   "conversations.taskCreatedShort": "Задача создана.",
   "conversations.pipelineAiSuffix": " Подсказка: {intent}, {confidence}%.",
   "conversations.pipelineUpdated": "Связи с клиентом обновлены: {created}.{ai}",
-  "conversations.pipelineAlreadyLinked": "Диалог уже связан с клиентом и сделкой.{ai}",
+  "conversations.pipelineAlreadyLinked":
+    "Диалог уже связан с клиентом и сделкой.{ai}",
   "conversations.bulkDone": "Готово: обработано {count} диалогов.",
   "conversations.pipelineDealTitle": "Сделка: {title}",
   "conversations.attention": "Внимание",
@@ -1973,20 +2278,25 @@ export const ru: Record<string, string> = {
   "conversations.clientId": "Клиент #{id}",
   "conversations.leadId": "Заявка #{id}",
   "conversations.dealId": "Сделка #{id}",
-  "conversations.assignTooltip": "Назначить этот диалог на себя, чтобы было понятно, кто отвечает клиенту.",
+  "conversations.assignTooltip":
+    "Назначить этот диалог на себя, чтобы было понятно, кто отвечает клиенту.",
   "conversations.takeDialog": "Взять диалог",
   "conversations.assign": "Назначить",
   "conversations.pauseBotTooltip": "Поставить бота на паузу в этом диалоге.",
   "conversations.enableBotTooltip": "Включить бота обратно для этого диалога.",
-  "conversations.handoffTooltip": "Передать диалог человеку и выключить автоматическую обработку ботом.",
+  "conversations.handoffTooltip":
+    "Передать диалог человеку и выключить автоматическую обработку ботом.",
   "conversations.handoffToOperator": "Передать оператору",
-  "conversations.reopenTooltip": "Вернуть закрытый диалог в работу и снова разрешить ответ менеджера.",
+  "conversations.reopenTooltip":
+    "Вернуть закрытый диалог в работу и снова разрешить ответ менеджера.",
   "conversations.openDialog": "Открыть диалог",
-  "conversations.closeTooltip": "Закрыть диалог после обработки. История останется доступной в карточке клиента.",
+  "conversations.closeTooltip":
+    "Закрыть диалог после обработки. История останется доступной в карточке клиента.",
   "conversations.closeDialog": "Закрыть диалог",
   "conversations.loadingHistory": "Загружаю историю",
   "conversations.loadEarlier": "Загрузить ранее",
-  "conversations.closedReplyNotice": "Диалог закрыт. Откройте его, чтобы ответить.",
+  "conversations.closedReplyNotice":
+    "Диалог закрыт. Откройте его, чтобы ответить.",
   "conversations.send": "Отправить",
   "conversations.newContact": "Новый",
   "conversations.channel": "Канал",
@@ -1997,8 +2307,10 @@ export const ru: Record<string, string> = {
   "conversations.replyHint": "Подсказка ответа",
   "conversations.intentLine": "Намерение: {intent}.",
   "conversations.confidenceLine": "Уверенность {confidence}%.",
-  "conversations.assistantDraftHelp": "Ассистент может подготовить черновик ответа и обновить связи с клиентом.",
-  "conversations.prepareDraftFallback": "Подготовьте черновик ответа для клиента.",
+  "conversations.assistantDraftHelp":
+    "Ассистент может подготовить черновик ответа и обновить связи с клиентом.",
+  "conversations.prepareDraftFallback":
+    "Подготовьте черновик ответа для клиента.",
   "conversations.prepareReply": "Подготовить ответ",
   "conversations.newMessage": "Новое сообщение",
   "conversations.avgResponseTime": "Среднее время ответа",
@@ -2023,7 +2335,8 @@ export const ru: Record<string, string> = {
   "conversations.quickRepliesButton": "Ответы",
   "conversations.quickRepliesTitle": "Быстрые ответы",
   "conversations.quickRepliesSearch": "Найти шаблон ответа...",
-  "conversations.noQuickRepliesText": "Создайте шаблоны быстрых ответов для часто повторяющихся сообщений.",
+  "conversations.noQuickRepliesText":
+    "Создайте шаблоны быстрых ответов для часто повторяющихся сообщений.",
   "conversations.messageStatusReceived": "получено",
   "conversations.messageStatusQueued": "в очереди",
   "conversations.messageStatusSent": "отправлено",
@@ -2034,25 +2347,32 @@ export const ru: Record<string, string> = {
   "conversations.linkClientTitle": "Привязать клиента",
   "conversations.linkLeadTitle": "Привязать заявку",
   "conversations.linkDealTitle": "Привязать сделку",
-  "conversations.linkSearchPlaceholder": "Найти по имени, телефону или названию...",
+  "conversations.linkSearchPlaceholder":
+    "Найти по имени, телефону или названию...",
   "conversations.noLinkCandidates": "Ничего не найдено",
-  "conversations.noLinkCandidatesText": "Измените запрос или создайте новую сущность из инспектора.",
+  "conversations.noLinkCandidatesText":
+    "Измените запрос или создайте новую сущность из инспектора.",
   "conversations.clientLinkedShort": "Клиент привязан.",
   "conversations.leadLinkedShort": "Заявка привязана.",
   "conversations.dealLinkedShort": "Сделка привязана.",
   "conversations.createTaskTitle": "Создать задачу из диалога",
   "conversations.dialogState": "Состояние диалога",
   "conversations.crmAutomation": "CRM автоматизация",
-  "conversations.crmAutomationFallback": "Запустите автоматизацию, чтобы обновить CRM-связи по этому диалогу.",
+  "conversations.crmAutomationFallback":
+    "Запустите автоматизацию, чтобы обновить CRM-связи по этому диалогу.",
   "conversations.showInspector": "Показать контекст",
   "conversations.hideInspector": "Скрыть контекст",
   "analytics.title": "Аналитика",
-  "analytics.description": "Ключевые CRM-метрики без перегруженных графиков и декоративных инсайтов.",
+  "analytics.description":
+    "Ключевые CRM-метрики без перегруженных графиков и декоративных инсайтов.",
   "analytics.smartReportTitle": "Интеллектуальный отчет",
-  "analytics.smartReportText": "{source} сейчас самый заметный источник заявок. Конверсия лидов в запись: {conversion}%. Проверьте связку канала и заявок перед оптимизацией расходов.",
-  "analytics.smartReportNoSource": "Источник заявок пока не определен. Подключите каналы и дождитесь первых событий, чтобы ZANI показал приоритет.",
+  "analytics.smartReportText":
+    "{source} сейчас самый заметный источник заявок. Конверсия лидов в запись: {conversion}%. Проверьте связку канала и заявок перед оптимизацией расходов.",
+  "analytics.smartReportNoSource":
+    "Источник заявок пока не определен. Подключите каналы и дождитесь первых событий, чтобы ZANI показал приоритет.",
   "analytics.smartReportAction": "Оптимизировать",
-  "analytics.noBusiness": "Создайте бизнес в настройках, чтобы видеть аналитику.",
+  "analytics.noBusiness":
+    "Создайте бизнес в настройках, чтобы видеть аналитику.",
   "analytics.loadError": "Не удалось загрузить аналитику владельца.",
   "analytics.needProcessing": "требуют обработки",
   "analytics.bookingsForDay": "записей на день",
@@ -2063,9 +2383,11 @@ export const ru: Record<string, string> = {
   "analytics.leadSources": "Источники заявок",
   "analytics.noData": "Нет данных",
   "analytics.overdueTasks": "Просроченные задачи",
-  "analytics.openSectionHint": "Откройте соответствующий раздел CRM для обработки.",
+  "analytics.openSectionHint":
+    "Откройте соответствующий раздел CRM для обработки.",
   "analytics.operationalReports": "Операционные отчёты",
-  "analytics.operationalReportsText": "Source ROI, воронка, повторность и команда. Без тяжёлого BI, но с экспортом.",
+  "analytics.operationalReportsText":
+    "Source ROI, воронка, повторность и команда. Без тяжёлого BI, но с экспортом.",
   "analytics.loadingReports": "Собираем отчёты...",
   "analytics.repeatClientsCount": "{count} повторных клиентов",
   "analytics.repeatRate": "Повторность",
@@ -2073,21 +2395,28 @@ export const ru: Record<string, string> = {
   "analytics.openDeals": "Открытые сделки",
   "analytics.wonLost": "Выиграно/потеряно",
   "analytics.scheduledReports": "Отчёты по расписанию",
-  "analytics.scheduledReportsText": "Модель расписаний готова. Отправка email будет подключаться через notification/queue слой.",
+  "analytics.scheduledReportsText":
+    "Модель расписаний готова. Отправка email будет подключаться через notification/queue слой.",
   "analytics.noRecipients": "Получатели не заданы",
-  "analytics.noSchedules": "Расписаний пока нет. Их можно создать через API или будущий UI настроек отчётов.",
+  "analytics.noSchedules":
+    "Расписаний пока нет. Их можно создать через API или будущий UI настроек отчётов.",
   "analytics.sourcesEmpty": "Источники появятся после первых заявок.",
   "analytics.aiTopSourceTitle": "Главный источник заявок",
-  "analytics.aiTopSourceDesc": "{source} дал {count} заявок. Проверьте качество обработки этого канала.",
+  "analytics.aiTopSourceDesc":
+    "{source} дал {count} заявок. Проверьте качество обработки этого канала.",
   "analytics.aiMissingSourcesTitle": "Источники пока не видны",
-  "analytics.aiMissingSourcesDesc": "Недостаточно заявок с источниками. Подключите каналы или импорт, чтобы ZANI объяснял спрос.",
+  "analytics.aiMissingSourcesDesc":
+    "Недостаточно заявок с источниками. Подключите каналы или импорт, чтобы ZANI объяснял спрос.",
   "analytics.aiNoShowTitle": "Есть неявки",
-  "analytics.aiNoShowDesc": "{count} клиентов не пришли. Проверьте напоминания и подтверждение записей.",
+  "analytics.aiNoShowDesc":
+    "{count} клиентов не пришли. Проверьте напоминания и подтверждение записей.",
   "analytics.aiNoShowClearTitle": "Неявок нет",
-  "analytics.aiNoShowClearDesc": "По текущим данным записи проходят без потерь на no-show.",
+  "analytics.aiNoShowClearDesc":
+    "По текущим данным записи проходят без потерь на no-show.",
   "analytics.aiDataQualityTitle": "Качество данных",
   "analytics.aiSalesDataTitle": "Продажи не подключены",
-  "analytics.aiSalesDataDesc": "Без продаж ZANI не будет делать выводы о выручке и LTV.",
+  "analytics.aiSalesDataDesc":
+    "Без продаж ZANI не будет делать выводы о выручке и LTV.",
   "analytics.aiConnectData": "Подключить данные",
   "analytics.sourceRoi": "ROI по источникам",
   "analytics.teamCsv": "CSV команды",
@@ -2097,10 +2426,12 @@ export const ru: Record<string, string> = {
   "analytics.dealsEmpty": "Сделки появятся после настройки pipeline.",
   "analytics.servicesByBookings": "Услуги по записям",
   "analytics.teamPerformance": "Эффективность команды",
-  "analytics.teamPerformanceText": "Контроль качества команды без тяжелого BI: лиды, handoff, сделки и задачи.",
+  "analytics.teamPerformanceText":
+    "Контроль качества команды без тяжелого BI: лиды, handoff, сделки и задачи.",
   "analytics.loadingTeam": "Загружаем показатели команды...",
   "analytics.teamHidden": "Командная аналитика скрыта",
-  "analytics.teamHiddenText": "Этот раздел доступен владельцу, администратору, руководителю отдела или пользователю с разрешением analytics.view.",
+  "analytics.teamHiddenText":
+    "Этот раздел доступен владельцу, администратору, руководителю отдела или пользователю с разрешением analytics.view.",
   "analytics.assignedLeads": "Назначенные лиды",
   "analytics.lostLeads": "Потерянные лиды",
   "analytics.overdueHandoffs": "Ждут менеджера",
@@ -2125,9 +2456,11 @@ export const ru: Record<string, string> = {
   "analytics.handoff": "Передача менеджеру",
   "analytics.noTeams": "Команды появятся после настройки отделов.",
   "settings.title": "Настройки",
-  "settings.description": "Бизнес, команда, доступы и системные настройки Zani.",
+  "settings.description":
+    "Бизнес, команда, доступы и системные настройки Zani.",
   "settings.navigationTitle": "Разделы настроек",
-  "settings.navigationText": "Откройте группу и перейдите к нужному блоку без прокрутки всей страницы.",
+  "settings.navigationText":
+    "Откройте группу и перейдите к нужному блоку без прокрутки всей страницы.",
   "settings.enabled": "Включено",
   "settings.disabled": "Выключено",
   "settings.section.appointment-messages": "Авто-сообщения",
@@ -2152,7 +2485,8 @@ export const ru: Record<string, string> = {
   "settings.group.advanced": "Расширенно",
   "settings.appointmentMessagesEyebrow": "Записи",
   "settings.appointmentMessagesTitle": "Авто-сообщения по записям",
-  "settings.appointmentMessagesText": "Подтверждение, напоминание и сообщение после визита. Переменные доступны в тексте: {client_name}, {service_name}, {date}, {time}.",
+  "settings.appointmentMessagesText":
+    "Подтверждение, напоминание и сообщение после визита. Переменные доступны в тексте: {client_name}, {service_name}, {date}, {time}.",
   "settings.appointmentMessagesLoading": "Загружаем сценарии сообщений...",
   "settings.appointmentMessages.offsetBefore": "За минут до записи",
   "settings.appointmentMessages.offsetAfter": "Через минут после визита",
@@ -2166,35 +2500,48 @@ export const ru: Record<string, string> = {
   "settings.appointmentMessages.channel.sms": "SMS",
   "settings.appointmentMessages.channel.system": "Внутри CRM",
   "settings.appointmentMessages.scenario.confirmation": "Подтверждение записи",
-  "settings.appointmentMessages.scenario.confirmation.text": "Сообщение клиенту до визита, чтобы снизить неявки и сразу поймать отмену или перенос.",
+  "settings.appointmentMessages.scenario.confirmation.text":
+    "Сообщение клиенту до визита, чтобы снизить неявки и сразу поймать отмену или перенос.",
   "settings.appointmentMessages.scenario.reminder": "Напоминание перед визитом",
-  "settings.appointmentMessages.scenario.reminder.text": "Короткое сообщение за несколько часов до записи с услугой, временем, мастером и адресом.",
+  "settings.appointmentMessages.scenario.reminder.text":
+    "Короткое сообщение за несколько часов до записи с услугой, временем, мастером и адресом.",
   "settings.appointmentMessages.scenario.thankYou": "После оказания услуги",
-  "settings.appointmentMessages.scenario.thankYou.text": "Спасибо после завершённого визита, повторная запись или мягкий запрос обратной связи.",
+  "settings.appointmentMessages.scenario.thankYou.text":
+    "Спасибо после завершённого визита, повторная запись или мягкий запрос обратной связи.",
   "settings.notificationsEyebrow": "Уведомления",
   "settings.notificationsTitle": "Личные настройки шума",
-  "settings.notificationsText": "Отключайте обычные in-app уведомления по категориям. Критичные high/urgent события, ошибки доставки и важные действия всё равно будут показаны.",
+  "settings.notificationsText":
+    "Отключайте обычные in-app уведомления по категориям. Критичные high/urgent события, ошибки доставки и важные действия всё равно будут показаны.",
   "settings.notificationsDisabledCount": "{count} отключено",
   "settings.notifications.category.sales": "Продажи и записи",
-  "settings.notifications.category.sales.text": "Заявки, сделки, подтверждения и ответы клиентов по записям.",
+  "settings.notifications.category.sales.text":
+    "Заявки, сделки, подтверждения и ответы клиентов по записям.",
   "settings.notifications.category.tasks": "Задачи",
-  "settings.notifications.category.tasks.text": "Назначения, просрочки и действия, которые требуют ручной работы.",
+  "settings.notifications.category.tasks.text":
+    "Назначения, просрочки и действия, которые требуют ручной работы.",
   "settings.notifications.category.outreach": "Рассылки",
-  "settings.notifications.category.outreach.text": "Подготовка кампаний, запуск, завершение, opt-out и ошибки кампаний.",
+  "settings.notifications.category.outreach.text":
+    "Подготовка кампаний, запуск, завершение, opt-out и ошибки кампаний.",
   "settings.notifications.category.aiAlerts": "ИИ-рекомендации",
-  "settings.notifications.category.aiAlerts.text": "Рекомендации AI Analyst и подсказки по подключению сервисов.",
+  "settings.notifications.category.aiAlerts.text":
+    "Рекомендации AI Analyst и подсказки по подключению сервисов.",
   "settings.notifications.category.system": "Системные",
-  "settings.notifications.category.system.text": "Технические события, ошибки доставки и состояние интеграций.",
+  "settings.notifications.category.system.text":
+    "Технические события, ошибки доставки и состояние интеграций.",
   "settings.notifications.category.finance": "Финансы",
-  "settings.notifications.category.finance.text": "Оплаты, счета, тарифы и финансовые события.",
+  "settings.notifications.category.finance.text":
+    "Оплаты, счета, тарифы и финансовые события.",
   "settings.teamEyebrow": "Команда и доступ",
   "settings.teamTitle": "Сотрудники и доступы",
-  "settings.teamText": "Владелец и администратор видят весь бизнес. Менеджер работает с продажами, оператор отвечает в чатах, а бухгалтер и маркетолог получают только свои разделы.",
+  "settings.teamText":
+    "Владелец и администратор видят весь бизнес. Менеджер работает с продажами, оператор отвечает в чатах, а бухгалтер и маркетолог получают только свои разделы.",
   "settings.permissions": "прав",
   "settings.accessTitle": "Понятная настройка прав",
-  "settings.accessText": "Выберите сотрудника, назначьте роль и проверьте область видимости. Новые сотрудники безопасно стартуют как «Сотрудник».",
+  "settings.accessText":
+    "Выберите сотрудника, назначьте роль и проверьте область видимости. Новые сотрудники безопасно стартуют как «Сотрудник».",
   "settings.roleGuideTitle": "Кого какой ролью приглашать",
-  "settings.roleGuideText": "Выберите тип сотрудника одним кликом. Роль можно изменить позже, а расширенные права настроить отдельно.",
+  "settings.roleGuideText":
+    "Выберите тип сотрудника одним кликом. Роль можно изменить позже, а расширенные права настроить отдельно.",
   "settings.memberStep": "1. Сотрудник",
   "settings.roleStep": "2. Роль",
   "settings.visibilityStep": "3. Видимость",
@@ -2202,24 +2549,32 @@ export const ru: Record<string, string> = {
   "settings.noAccessText": "Роль не получает доступ к рабочим данным.",
   "settings.active": "Активен",
   "settings.inactive": "Отключен",
-  "settings.teamEmpty": "Команда появится после добавления сотрудников к бизнесу.",
+  "settings.teamEmpty":
+    "Команда появится после добавления сотрудников к бизнесу.",
   "settings.inviteTitle": "Пригласить сотрудника",
-  "settings.inviteText": "Сотрудник получит ссылку, сам задаст пароль и войдет уже с выбранной ролью. До подключения API отправки можно открыть WhatsApp, Telegram или email с готовым текстом.",
+  "settings.inviteText":
+    "Сотрудник получит ссылку, сам задаст пароль и войдет уже с выбранной ролью. До подключения API отправки можно открыть WhatsApp, Telegram или email с готовым текстом.",
   "settings.loginEmail": "Email для входа",
-  "settings.loginEmailHelp": "Email нужен как логин сотрудника. Ссылку можно отправить через WhatsApp, Telegram, email или скопировать вручную.",
+  "settings.loginEmailHelp":
+    "Email нужен как логин сотрудника. Ссылку можно отправить через WhatsApp, Telegram, email или скопировать вручную.",
   "settings.fullName": "Имя",
   "settings.fullNamePlaceholder": "Алия Иванова",
   "settings.role": "Роль",
   "settings.delivery": "Куда отправить",
-  "settings.deliveryHelp.whatsapp": "Откроем WhatsApp с готовым текстом приглашения. Номер нужен только для отправки ссылки.",
-  "settings.deliveryHelp.telegram": "Откроем Telegram share с готовым текстом. Username нужен для учёта контакта сотрудника.",
-  "settings.deliveryHelp.email": "Откроем почтовый клиент с готовым письмом. Реальная отправка будет подключаться через notification provider.",
-  "settings.deliveryHelp.manual": "Создадим ссылку, которую можно передать любым удобным способом.",
+  "settings.deliveryHelp.whatsapp":
+    "Откроем WhatsApp с готовым текстом приглашения. Номер нужен только для отправки ссылки.",
+  "settings.deliveryHelp.telegram":
+    "Откроем Telegram share с готовым текстом. Username нужен для учёта контакта сотрудника.",
+  "settings.deliveryHelp.email":
+    "Откроем почтовый клиент с готовым письмом. Реальная отправка будет подключаться через notification provider.",
+  "settings.deliveryHelp.manual":
+    "Создадим ссылку, которую можно передать любым удобным способом.",
   "settings.copyLink": "Скопировать ссылку",
   "settings.whatsappPhone": "WhatsApp телефон",
   "settings.createInvite": "Создать приглашение",
   "settings.inviteCreatedTitle": "Приглашение создано",
-  "settings.inviteCreatedText": "{email} сможет войти как {role}. Отправьте ссылку сейчас или скопируйте её вручную.",
+  "settings.inviteCreatedText":
+    "{email} сможет войти как {role}. Отправьте ссылку сейчас или скопируйте её вручную.",
   "settings.sendInviteNow": "Отправить сейчас",
   "settings.send": "Отправить",
   "settings.copy": "Скопировать",
@@ -2227,7 +2582,8 @@ export const ru: Record<string, string> = {
   "settings.revoke": "Отозвать",
   "settings.noInvites": "Активных приглашений пока нет.",
   "settings.inviteSubject": "Приглашение в Zani CRM",
-  "settings.inviteMessage": "Вас пригласили в Zani CRM. Откройте ссылку и задайте пароль: {url}",
+  "settings.inviteMessage":
+    "Вас пригласили в Zani CRM. Откройте ссылку и задайте пароль: {url}",
   "settings.role.owner": "Владелец",
   "settings.role.admin": "Директор",
   "settings.role.manager": "Менеджер продаж",
@@ -2237,18 +2593,28 @@ export const ru: Record<string, string> = {
   "settings.role.support": "Поддержка",
   "settings.role.staff": "Сотрудник",
   "settings.currentRole": "Текущая роль",
-  "settings.roleDescription.owner": "Полный контроль бизнеса, сотрудников, финансов, аналитики и настроек.",
-  "settings.roleDescription.admin": "Операционный директор: команда, CRM, аналитика, интеграции и автоматизации без передачи владения бизнесом.",
-  "settings.roleDescription.manager": "Работа с заявками, сделками, клиентами, задачами и календарём продаж.",
-  "settings.roleDescription.operator": "Ответы в чатах, обработка входящих обращений и создание заявок без управленческих разделов.",
-  "settings.roleDescription.marketer": "Маркетинг, источники, сегменты, формы и коммуникации без финансового контроля.",
-  "settings.roleDescription.accountant": "Финансовые данные, продажи, импорт и выгрузки без управления чатами и лидами.",
-  "settings.roleDescription.support": "Помощь клиентам и операционные проверки без доступа к управлению владельцем.",
-  "settings.roleDescription.staff": "Базовый доступ для мастера или сотрудника: свои задачи, записи и рабочий контекст.",
+  "settings.roleDescription.owner":
+    "Полный контроль бизнеса, сотрудников, финансов, аналитики и настроек.",
+  "settings.roleDescription.admin":
+    "Операционный директор: команда, CRM, аналитика, интеграции и автоматизации без передачи владения бизнесом.",
+  "settings.roleDescription.manager":
+    "Работа с заявками, сделками, клиентами, задачами и календарём продаж.",
+  "settings.roleDescription.operator":
+    "Ответы в чатах, обработка входящих обращений и создание заявок без управленческих разделов.",
+  "settings.roleDescription.marketer":
+    "Маркетинг, источники, сегменты, формы и коммуникации без финансового контроля.",
+  "settings.roleDescription.accountant":
+    "Финансовые данные, продажи, импорт и выгрузки без управления чатами и лидами.",
+  "settings.roleDescription.support":
+    "Помощь клиентам и операционные проверки без доступа к управлению владельцем.",
+  "settings.roleDescription.staff":
+    "Базовый доступ для мастера или сотрудника: свои задачи, записи и рабочий контекст.",
   "settings.visibility.own": "Только своё",
-  "settings.visibility.own.text": "Сотрудник видит только назначенные ему объекты.",
+  "settings.visibility.own.text":
+    "Сотрудник видит только назначенные ему объекты.",
   "settings.visibility.team": "Своя команда",
-  "settings.visibility.team.text": "Подходит для тимлида или старшего менеджера.",
+  "settings.visibility.team.text":
+    "Подходит для тимлида или старшего менеджера.",
   "settings.visibility.business": "Весь бизнес",
   "settings.visibility.business.text": "Доступ ко всем объектам компании.",
   "settings.departments": "Отделы",
@@ -2258,15 +2624,18 @@ export const ru: Record<string, string> = {
   "settings.developerConnections": "Расширенные подключения для разработчика",
   "settings.automationsEyebrow": "Расширенный раздел",
   "settings.automationsTitle": "Автоматизации",
-  "settings.automationsText": "Готовые правила и шаблоны помогают убирать рутину без перегрузки ежедневного интерфейса.",
+  "settings.automationsText":
+    "Готовые правила и шаблоны помогают убирать рутину без перегрузки ежедневного интерфейса.",
   "settings.securityEyebrow": "Центр безопасности",
   "settings.securityTitle": "Аудит и контроль доступа",
-  "settings.securityText": "Владелец видит критичные действия: экспорт, архивирование, роли, support access и входы в аккаунты команды.",
+  "settings.securityText":
+    "Владелец видит критичные действия: экспорт, архивирование, роли, support access и входы в аккаунты команды.",
   "settings.highRisk": "Риск",
   "settings.failedLogins": "Ошибки",
   "settings.support": "Поддержка",
   "settings.securityHidden": "Центр безопасности скрыт для вашей роли",
-  "settings.securityHiddenText": "Нужен доступ audit_logs.view или роль владельца/директора.",
+  "settings.securityHiddenText":
+    "Нужен доступ audit_logs.view или роль владельца/директора.",
   "settings.riskEvents": "Последние риск-события",
   "settings.events": "событий",
   "settings.noAuditEvents": "Аудит-событий пока нет.",
@@ -2277,7 +2646,8 @@ export const ru: Record<string, string> = {
   "settings.noSupportGrants": "Активных грантов нет.",
   "settings.quickRepliesEyebrow": "Быстрые ответы",
   "settings.quickRepliesTitle": "Шаблоны быстрых ответов",
-  "settings.quickRepliesText": "Короткие ответы для inbox composer: менеджер выбирает шаблон, текст вставляется в черновик и не отправляется автоматически.",
+  "settings.quickRepliesText":
+    "Короткие ответы для inbox composer: менеджер выбирает шаблон, текст вставляется в черновик и не отправляется автоматически.",
   "settings.templateTitle": "Название",
   "settings.channel": "Канал",
   "settings.channel.all": "Все",
@@ -2294,16 +2664,21 @@ export const ru: Record<string, string> = {
   "settings.enable": "Включить",
   "settings.disable": "Отключить",
   "settings.delete": "Удалить",
-  "settings.noQuickReplies": "Пока нет быстрых ответов. Добавьте приветствие, уточнение или запись на консультацию.",
+  "settings.noQuickReplies":
+    "Пока нет быстрых ответов. Добавьте приветствие, уточнение или запись на консультацию.",
   "settings.rolesEyebrow": "Роли без перегруза",
   "settings.rolesTitle": "Права без сложной матрицы",
-  "settings.rolesText": "На первом экране показываем бизнес-смысл роли. Технические действия открываются только в advanced mode.",
+  "settings.rolesText":
+    "На первом экране показываем бизнес-смысл роли. Технические действия открываются только в advanced mode.",
   "settings.hideAdvanced": "Скрыть advanced",
   "settings.openAdvanced": "Открыть advanced",
-  "settings.noRoles": "Ролевые пресеты появятся после миграции или создания бизнеса.",
+  "settings.noRoles":
+    "Ролевые пресеты появятся после миграции или создания бизнеса.",
   "settings.advancedFor": "Advanced: {name}",
-  "settings.advancedText": "Используйте этот блок редко: изменение уровня группы меняет permissions роли для всех сотрудников с этим preset.",
-  "settings.roleSummaryNone": "Роль ничего не видит. Подходит только для временной блокировки.",
+  "settings.advancedText":
+    "Используйте этот блок редко: изменение уровня группы меняет permissions роли для всех сотрудников с этим preset.",
+  "settings.roleSummaryNone":
+    "Роль ничего не видит. Подходит только для временной блокировки.",
   "settings.roleSummary": "Доступ: {names}.",
   "settings.accessGroup.sales": "Продажи",
   "settings.accessGroup.sales.text": "Заявки, сделки и коммерческая работа.",
@@ -2316,7 +2691,8 @@ export const ru: Record<string, string> = {
   "settings.accessGroup.tasks": "Задачи",
   "settings.accessGroup.tasks.text": "Задачи, напоминания и follow-up.",
   "settings.accessGroup.analytics": "Аналитика",
-  "settings.accessGroup.analytics.text": "Отчеты, команда и показатели бизнеса.",
+  "settings.accessGroup.analytics.text":
+    "Отчеты, команда и показатели бизнеса.",
   "settings.accessGroup.settings": "Настройки",
   "settings.accessGroup.settings.text": "Бизнес, услуги, ресурсы и график.",
   "settings.accessGroup.export": "Экспорт",
@@ -2325,30 +2701,40 @@ export const ru: Record<string, string> = {
   "settings.accessGroup.security.text": "Команда, роли и аудит доступа.",
   "settings.operationsEyebrow": "Операционная настройка",
   "settings.operationsTitle": "Услуги, ресурсы и график",
-  "settings.operationsText": "Эти разделы скрыты из основного меню, но доступны здесь как единый центр настройки бизнеса.",
+  "settings.operationsText":
+    "Эти разделы скрыты из основного меню, но доступны здесь как единый центр настройки бизнеса.",
   "settings.operations.services.title": "Услуги",
-  "settings.operations.services.text": "Название, длительность, цена и активность услуг.",
+  "settings.operations.services.text":
+    "Название, длительность, цена и активность услуг.",
   "settings.operations.resources.title": "Ресурсы",
-  "settings.operations.resources.text": "Сотрудники, кабинеты, залы, боксы и оборудование для записи.",
+  "settings.operations.resources.text":
+    "Сотрудники, кабинеты, залы, боксы и оборудование для записи.",
   "settings.operations.working-hours.title": "График работы",
-  "settings.operations.working-hours.text": "Рабочее время бизнеса и отдельных ресурсов.",
+  "settings.operations.working-hours.text":
+    "Рабочее время бизнеса и отдельных ресурсов.",
   "settings.operations.orderTitle": "Рекомендуемый порядок",
-  "settings.operations.orderStep1": "1. Добавьте услуги: по ним считается длительность и цена записи.",
-  "settings.operations.orderStep2": "2. Добавьте мастеров, кабинеты или рабочие места, если записи зависят от конкретного ресурса.",
-  "settings.operations.orderStep3": "3. Настройте общий график и отдельные недели только там, где это действительно нужно.",
+  "settings.operations.orderStep1":
+    "1. Добавьте услуги: по ним считается длительность и цена записи.",
+  "settings.operations.orderStep2":
+    "2. Добавьте мастеров, кабинеты или рабочие места, если записи зависят от конкретного ресурса.",
+  "settings.operations.orderStep3":
+    "3. Настройте общий график и отдельные недели только там, где это действительно нужно.",
   "settings.openSection": "Открыть раздел",
   "settings.schedulingCenter": "Центр расписания",
   "settings.dataToolsEyebrow": "Импорт и экспорт",
   "settings.dataToolsTitle": "Переезд из Excel, amoCRM или Bitrix24",
-  "settings.dataToolsText": "Импорт не создаёт данные молча: сначала показываем mapping preview и возможные дубли, затем владелец подтверждает загрузку.",
+  "settings.dataToolsText":
+    "Импорт не создаёт данные молча: сначала показываем mapping preview и возможные дубли, затем владелец подтверждает загрузку.",
   "settings.dataTool.import": "Загрузить файл",
   "settings.dataTool.importText": "Проверить CSV/XLSX перед созданием данных.",
   "settings.dataTool.export": "Выгрузить данные",
   "settings.dataTool.exportText": "Скачать нужный раздел с учётом прав.",
   "settings.dataTool.manual": "Внести вручную",
-  "settings.dataTool.manualText": "Добавить продажу или позицию без интеграции.",
+  "settings.dataTool.manualText":
+    "Добавить продажу или позицию без интеграции.",
   "settings.importTitle": "Импорт данных",
-  "settings.importText": "CSV/XLSX для клиентов, продаж и справочника товаров/услуг. Перед подтверждением показываем preview, mapping, дубли и ошибки строк.",
+  "settings.importText":
+    "CSV/XLSX для клиентов, продаж и справочника товаров/услуг. Перед подтверждением показываем preview, mapping, дубли и ошибки строк.",
   "settings.entity.clients": "Клиенты",
   "settings.entity.sales": "Продажи",
   "settings.entity.catalog": "Товары/услуги",
@@ -2366,19 +2752,23 @@ export const ru: Record<string, string> = {
   "settings.importUpdated": "Обновлено",
   "settings.importSkipped": "Пропущено",
   "settings.importErrors": "Ошибки",
-  "settings.importHistoryEmpty": "История импорта появится после первой загрузки файла.",
+  "settings.importHistoryEmpty":
+    "История импорта появится после первой загрузки файла.",
   "settings.exportTitle": "Экспорт",
-  "settings.exportText": "Экспорт проверяет права доступа и сохраняет историю действия.",
+  "settings.exportText":
+    "Экспорт проверяет права доступа и сохраняет историю действия.",
   "settings.exportEntity": "Экспорт: {entity}",
   "settings.manualSaleTitle": "Добавить продажу вручную",
-  "settings.manualSaleText": "Если подключений ещё нет, владелец может внести продажу вручную. Эти данные попадут в выручку.",
+  "settings.manualSaleText":
+    "Если подключений ещё нет, владелец может внести продажу вручную. Эти данные попадут в выручку.",
   "settings.number": "Номер",
   "settings.amount": "Сумма",
   "settings.client": "Клиент",
   "settings.item": "Позиция",
   "settings.saveSale": "Сохранить продажу",
   "settings.catalogTitle": "Добавить товар или услугу",
-  "settings.catalogText": "Услуги автоматически попадают в справочник CRM. Товары пока сохраняются как события каталога для будущего склада.",
+  "settings.catalogText":
+    "Услуги автоматически попадают в справочник CRM. Товары пока сохраняются как события каталога для будущего склада.",
   "settings.type": "Тип",
   "settings.service": "Услуга",
   "settings.product": "Товар",
@@ -2388,9 +2778,11 @@ export const ru: Record<string, string> = {
   "settings.saveCatalogItem": "Сохранить позицию",
   "settings.leadFormsEyebrow": "Сбор заявок",
   "settings.leadFormsTitle": "Формы заявок",
-  "settings.leadFormsText": "Публичные формы создают клиента и заявку, сохраняют UTM-метки, проверяют дубли и запускают автоматизацию новой заявки.",
+  "settings.leadFormsText":
+    "Публичные формы создают клиента и заявку, сохраняют UTM-метки, проверяют дубли и запускают автоматизацию новой заявки.",
   "settings.formInstallTitle": "Установка на сайт",
-  "settings.formInstallText": "Скопируйте код или передайте его разработчику. Ниже показан короткий preview формы.",
+  "settings.formInstallText":
+    "Скопируйте код или передайте его разработчику. Ниже показан короткий preview формы.",
   "settings.copyEmbed": "Скопировать код",
   "settings.noLeadFormsTitle": "Форм пока нет",
   "settings.formPreviewTitle": "Так будет выглядеть первая форма",
@@ -2399,7 +2791,8 @@ export const ru: Record<string, string> = {
   "settings.submissions": "отправок",
   "settings.paused": "Пауза",
   "settings.embedCode": "Код вставки",
-  "settings.noLeadForms": "Форм пока нет. Создайте первую форму для сайта или лендинга.",
+  "settings.noLeadForms":
+    "Форм пока нет. Создайте первую форму для сайта или лендинга.",
   "settings.latestSubmissions": "Последние отправки",
   "settings.lead": "Заявка",
   "settings.deal": "Сделка",
@@ -2409,10 +2802,12 @@ export const ru: Record<string, string> = {
   "settings.loading": "Загрузка...",
   "settings.noPlan": "Тариф не назначен",
   "settings.status": "статус",
-  "settings.billingNoSubscription": "Billing foundation подключен, но подписка для бизнеса пока не создана.",
+  "settings.billingNoSubscription":
+    "Billing foundation подключен, но подписка для бизнеса пока не создана.",
   "settings.paymentsNotConnected": "Оплата не подключена",
   "settings.billingReadOnlyTitle": "Тариф в режиме просмотра",
-  "settings.billingReadOnlyText": "Текущий тариф и лимиты уже отображаются. Онлайн-оплата будет включена отдельным безопасным шагом, поэтому сейчас здесь нет незавершённых платёжных действий.",
+  "settings.billingReadOnlyText":
+    "Текущий тариф и лимиты уже отображаются. Онлайн-оплата будет включена отдельным безопасным шагом, поэтому сейчас здесь нет незавершённых платёжных действий.",
   "settings.billingPaymentsTitle": "Счета и оплата",
   "settings.billingEmail": "Email для счетов",
   "settings.paymentMethod": "Способ оплаты",
@@ -2425,7 +2820,8 @@ export const ru: Record<string, string> = {
   "settings.invoiceAddress": "Юридический адрес",
   "settings.saveBilling": "Сохранить биллинг",
   "settings.planTitle": "Тариф",
-  "settings.planChangeText": "Смена тарифа фиксируется как запрос, чтобы поддержка могла проверить оплату и лимиты.",
+  "settings.planChangeText":
+    "Смена тарифа фиксируется как запрос, чтобы поддержка могла проверить оплату и лимиты.",
   "settings.newPlan": "Новый тариф",
   "settings.requestPlanChange": "Запросить смену тарифа",
   "settings.requestedPlan": "Запрошена смена тарифа #{id}",
@@ -2434,10 +2830,12 @@ export const ru: Record<string, string> = {
   "settings.cancelSubscription": "Отменить",
   "settings.usageEyebrow": "Использование",
   "settings.usageTitle": "Лимиты и использование",
-  "settings.usageText": "Здесь видно, сколько пользователей, сообщений, диалогов и автоматизаций уже используется.",
+  "settings.usageText":
+    "Здесь видно, сколько пользователей, сообщений, диалогов и автоматизаций уже используется.",
   "settings.limitReached": "Лимит достигнут",
   "settings.remaining": "Осталось: {count}",
-  "settings.noUsage": "Статистика появится после первых сообщений, диалогов и запросов ассистента.",
+  "settings.noUsage":
+    "Статистика появится после первых сообщений, диалогов и запросов ассистента.",
   "settings.metric.ai_requests": "AI-запросы",
   "settings.metric.bot_messages": "Сообщения бота",
   "settings.metric.users": "Пользователи",
@@ -2450,9 +2848,12 @@ export const ru: Record<string, string> = {
   "settings.monthPrice": "{amount} ₸/мес",
   "settings.customFieldsEyebrow": "Дополнительные поля",
   "settings.customFieldsTitle": "Дополнительные поля CRM",
-  "settings.customFieldsText": "Добавьте поле для карточки клиента, заявки, сделки или записи без сложной настройки.",
-  "settings.customFieldsGuardTitle": "Добавляйте только поля, которые команда реально использует",
-  "settings.customFieldsGuardText": "Лишние поля усложняют карточки и снижают скорость работы. Начните с одного поля, проверьте сценарий и только потом расширяйте структуру.",
+  "settings.customFieldsText":
+    "Добавьте поле для карточки клиента, заявки, сделки или записи без сложной настройки.",
+  "settings.customFieldsGuardTitle":
+    "Добавляйте только поля, которые команда реально использует",
+  "settings.customFieldsGuardText":
+    "Лишние поля усложняют карточки и снижают скорость работы. Начните с одного поля, проверьте сценарий и только потом расширяйте структуру.",
   "settings.customFieldSummary": "{entity} · {type}",
   "settings.customFieldRequired": "Обязательное",
   "settings.customFieldActive": "Активное",
@@ -2471,7 +2872,8 @@ export const ru: Record<string, string> = {
   "settings.customFieldType.url": "Ссылка",
   "settings.technicalDetails": "Технические детали",
   "settings.developerTitle": "API и события",
-  "settings.developerText": "Этот раздел нужен только для интеграций и разработчиков. Обычной команде он скрыт в расширенных настройках, чтобы не перегружать рабочий интерфейс.",
+  "settings.developerText":
+    "Этот раздел нужен только для интеграций и разработчиков. Обычной команде он скрыт в расширенных настройках, чтобы не перегружать рабочий интерфейс.",
   "settings.noIp": "IP не сохранён",
   "settings.auditEventTitle": "{action}: {entity}",
   "settings.auditAction.create": "Создание",
@@ -2493,7 +2895,8 @@ export const ru: Record<string, string> = {
   "settings.loginStatus.failed": "Ошибка",
   "settings.entity": "Сущность",
   "settings.options": "Варианты",
-  "settings.noCustomFields": "Пока нет дополнительных полей. Начните с одного поля для клиента.",
+  "settings.noCustomFields":
+    "Пока нет дополнительных полей. Начните с одного поля для клиента.",
   "businessForm.name": "Название",
   "businessForm.slugRequired": "Введите slug",
   "businessForm.type": "Ниша бизнеса",
@@ -2504,9 +2907,11 @@ export const ru: Record<string, string> = {
   "businessForm.save": "Сохранить настройки",
   "leadForm.selectClientError": "Выберите клиента",
   "leadForm.needClientTitle": "Сначала добавьте клиента",
-  "leadForm.needClientText": "Заявка должна быть привязана к человеку или компании, чтобы потом создать запись, задачу и историю общения.",
+  "leadForm.needClientText":
+    "Заявка должна быть привязана к человеку или компании, чтобы потом создать запись, задачу и историю общения.",
   "leadForm.serviceLaterTitle": "Услугу можно добавить позже",
-  "leadForm.serviceLaterText": "Но для записи и слотов услуга нужна: по ней считается длительность и понятнее аналитика спроса.",
+  "leadForm.serviceLaterText":
+    "Но для записи и слотов услуга нужна: по ней считается длительность и понятнее аналитика спроса.",
   "leadForm.relatedTitle": "Есть похожий клиент или активная история",
   "leadForm.relatedCount": "У выбранного клиента уже есть заявок: {count}.",
   "leadForm.relatedText": "Проверьте историю перед созданием новой заявки.",
@@ -2537,14 +2942,17 @@ export const ru: Record<string, string> = {
   "resources.nameRequired": "Введите название ресурса",
   "services.nameRequired": "Введите название услуги",
   "aiAssistant.title": "ИИ-ассистент",
-  "aiAssistant.description": "Операционный помощник использует контекст текущего бизнеса: заявки, клиентов, записи и базу знаний.",
+  "aiAssistant.description":
+    "Операционный помощник использует контекст текущего бизнеса: заявки, клиентов, записи и базу знаний.",
   "aiNavigator.title": "ИИ-Навигатор",
-  "aiNavigator.description": "Система умных бизнес-сигналов: анализирует только данные текущего кабинета и подсказывает, что требует внимания.",
+  "aiNavigator.description":
+    "Система умных бизнес-сигналов: анализирует только данные текущего кабинета и подсказывает, что требует внимания.",
   "aiNavigator.refreshBrief": "Обновить сводку",
   "aiNavigator.todayBrief": "AI-сводка за сегодня",
   "aiNavigator.businessUnderControl": "Ваш бизнес под контролем.",
   "aiNavigator.workspaceSignals": "Сигналы по кабинету",
-  "aiNavigator.factBasedNotice": "Навигатор не фантазирует: он использует только заявки, клиентов, задачи, сделки, диалоги и подключённые данные этого кабинета.",
+  "aiNavigator.factBasedNotice":
+    "Навигатор не фантазирует: он использует только заявки, клиентов, задачи, сделки, диалоги и подключённые данные этого кабинета.",
   "aiNavigator.generatedFromCabinet": "Сформировано по данным кабинета",
   "aiNavigator.metric.leadsToday": "Заявки сегодня",
   "aiNavigator.metric.appointments": "Записи сегодня",
@@ -2553,14 +2961,22 @@ export const ru: Record<string, string> = {
   "aiNavigator.summaryEyebrow": "Коротко",
   "aiNavigator.summaryTitle": "Что происходит сегодня",
   "aiNavigator.noExternalData": "Без внешних догадок",
-  "aiNavigator.summary.leadsToday": "Сегодня создано заявок: {count}. Проверьте скорость обработки и источник заявок.",
-  "aiNavigator.summary.noNewLeads": "Сегодня новых заявок пока нет. Если обычно они есть, проверьте каналы привлечения.",
-  "aiNavigator.summary.appointmentsToday": "Активных записей на сегодня: {count}. Команда должна видеть расписание и статусы.",
-  "aiNavigator.summary.noAppointments": "На сегодня нет активных записей. Данных для вывода по загрузке расписания мало.",
-  "aiNavigator.summary.overdueTasks": "Просроченных задач: {count}. Это влияет на скорость обработки клиентов.",
-  "aiNavigator.summary.noOverdueTasks": "Просроченных задач нет. Операционный контур выглядит спокойно.",
-  "aiNavigator.summary.staleLeads": "Заявок без движения больше 2 часов: {count}. Их стоит обработать первыми.",
-  "aiNavigator.summary.noStaleLeads": "Нет заявок, которые явно зависли больше 2 часов.",
+  "aiNavigator.summary.leadsToday":
+    "Сегодня создано заявок: {count}. Проверьте скорость обработки и источник заявок.",
+  "aiNavigator.summary.noNewLeads":
+    "Сегодня новых заявок пока нет. Если обычно они есть, проверьте каналы привлечения.",
+  "aiNavigator.summary.appointmentsToday":
+    "Активных записей на сегодня: {count}. Команда должна видеть расписание и статусы.",
+  "aiNavigator.summary.noAppointments":
+    "На сегодня нет активных записей. Данных для вывода по загрузке расписания мало.",
+  "aiNavigator.summary.overdueTasks":
+    "Просроченных задач: {count}. Это влияет на скорость обработки клиентов.",
+  "aiNavigator.summary.noOverdueTasks":
+    "Просроченных задач нет. Операционный контур выглядит спокойно.",
+  "aiNavigator.summary.staleLeads":
+    "Заявок без движения больше 2 часов: {count}. Их стоит обработать первыми.",
+  "aiNavigator.summary.noStaleLeads":
+    "Нет заявок, которые явно зависли больше 2 часов.",
   "aiNavigator.aiInterpretation": "AI-интерпретация по фактам",
   "aiNavigator.attentionEyebrow": "Сигналы",
   "aiNavigator.attentionTitle": "Что требует внимания",
@@ -2572,33 +2988,50 @@ export const ru: Record<string, string> = {
   "aiNavigator.openIntegrations": "Подключить данные",
   "aiNavigator.openDashboard": "На главную",
   "aiNavigator.insight.leadDrop.title": "Заявок меньше на {percent}%",
-  "aiNavigator.insight.leadDrop.text": "Сегодня: {today}, вчера: {yesterday}. Это факт по текущему кабинету, без рыночных предположений.",
+  "aiNavigator.insight.leadDrop.text":
+    "Сегодня: {today}, вчера: {yesterday}. Это факт по текущему кабинету, без рыночных предположений.",
   "aiNavigator.insight.staleLeads.title": "{count} заявок ждут реакции",
-  "aiNavigator.insight.staleLeads.text": "Есть заявки в статусе new/in_progress без движения больше 2 часов.",
+  "aiNavigator.insight.staleLeads.text":
+    "Есть заявки в статусе new/in_progress без движения больше 2 часов.",
   "aiNavigator.insight.handoff.title": "{count} диалогов требуют человека",
-  "aiNavigator.insight.handoff.text": "Клиенты ждут ответа или бот передал диалог менеджеру.",
+  "aiNavigator.insight.handoff.text":
+    "Клиенты ждут ответа или бот передал диалог менеджеру.",
   "aiNavigator.insight.overdueTasks.title": "{count} просроченных задач",
-  "aiNavigator.insight.overdueTasks.text": "Задачи с истёкшим сроком могут тормозить заявки и сделки.",
+  "aiNavigator.insight.overdueTasks.text":
+    "Задачи с истёкшим сроком могут тормозить заявки и сделки.",
   "aiNavigator.insight.stuckDeals.title": "{count} сделок зависли",
-  "aiNavigator.insight.stuckDeals.text": "Есть открытые сделки без движения больше 48 часов или с просроченным SLA.",
-  "aiNavigator.insight.notEnough.title": "Недостаточно данных для глубоких выводов",
-  "aiNavigator.insight.notEnough.text": "Подключите источники, импортируйте продажи или накопите историю заявок.",
+  "aiNavigator.insight.stuckDeals.text":
+    "Есть открытые сделки без движения больше 48 часов или с просроченным SLA.",
+  "aiNavigator.insight.notEnough.title":
+    "Недостаточно данных для глубоких выводов",
+  "aiNavigator.insight.notEnough.text":
+    "Подключите источники, импортируйте продажи или накопите историю заявок.",
   "aiNavigator.insight.stable.title": "Критичных сигналов нет",
-  "aiNavigator.insight.stable.text": "По доступным данным нет явных рисков. Продолжайте отслеживать заявки, задачи и диалоги.",
+  "aiNavigator.insight.stable.text":
+    "По доступным данным нет явных рисков. Продолжайте отслеживать заявки, задачи и диалоги.",
   "aiNavigator.dataPolicyTitle": "Только данные этого бизнеса",
-  "aiNavigator.dataPolicyText": "ZANI AI не использует данные других компаний, не ищет информацию в интернете и не делает выводы без фактической базы.",
+  "aiNavigator.dataPolicyText":
+    "ZANI AI не использует данные других компаний, не ищет информацию в интернете и не делает выводы без фактической базы.",
   "aiNavigator.roleHelpTitle": "Подсказки по роли",
-  "aiNavigator.roleHelpText": "Владелец видит контроль бизнеса, менеджер — следующие рабочие действия.",
-  "aiNavigator.ownerHelp": "Владельцу: риски, падения, просрочки, команда и каналы.",
-  "aiNavigator.managerHelp": "Менеджеру: кому ответить, какие заявки обработать, что закрыть первым.",
+  "aiNavigator.roleHelpText":
+    "Владелец видит контроль бизнеса, менеджер — следующие рабочие действия.",
+  "aiNavigator.ownerHelp":
+    "Владельцу: риски, падения, просрочки, команда и каналы.",
+  "aiNavigator.managerHelp":
+    "Менеджеру: кому ответить, какие заявки обработать, что закрыть первым.",
   "aiNavigator.integrationInsightsTitle": "Инсайты по интеграциям",
-  "aiNavigator.integrationInsightsText": "AI Analyst читает последние события интеграций, цитирует источники и предлагает только подтверждаемые действия.",
-  "aiNavigator.emptyIntegrationInsights": "Пока нет BusinessEvent для анализа. Подключите канал или загрузите данные на странице подключений.",
-  "aiNavigator.noSourceDataState": "Для этой роли пока не видно исходных записей. Подключите канал, импортируйте данные или дождитесь CRM-активности.",
+  "aiNavigator.integrationInsightsText":
+    "AI Analyst читает последние события интеграций, цитирует источники и предлагает только подтверждаемые действия.",
+  "aiNavigator.emptyIntegrationInsights":
+    "Пока нет BusinessEvent для анализа. Подключите канал или загрузите данные на странице подключений.",
+  "aiNavigator.noSourceDataState":
+    "Для этой роли пока не видно исходных записей. Подключите канал, импортируйте данные или дождитесь CRM-активности.",
   "aiNavigator.suggestedActions": "Предлагаемые действия",
   "aiNavigator.prompt.dailySummary": "Сформируй короткую бизнес-сводку ZANI.",
-  "aiNavigator.prompt.factOnly": "Используй только факты ниже. Не добавляй внешние данные, рынок, конкурентов или неподтвержденные причины.",
-  "aiNavigator.prompt.insufficientData": "Если фактов недостаточно, прямо напиши: недостаточно данных для вывода.",
+  "aiNavigator.prompt.factOnly":
+    "Используй только факты ниже. Не добавляй внешние данные, рынок, конкурентов или неподтвержденные причины.",
+  "aiNavigator.prompt.insufficientData":
+    "Если фактов недостаточно, прямо напиши: недостаточно данных для вывода.",
   "aiNavigator.prompt.workspaceFacts": "Факты кабинета: {facts}",
   "aiAssistant.chatTitle": "Чат с ассистентом",
   "aiAssistant.historyTitle": "История запросов",
@@ -2609,20 +3042,27 @@ export const ru: Record<string, string> = {
   "aiAssistant.dailyBriefPrompt": "Сделай короткий daily brief по CRM.",
   "aiAssistant.defaultQuestion": "Что требует внимания сегодня?",
   "aiAssistant.defaultNextAction": "Что нужно сделать дальше?",
-  "aiAssistant.noBusiness": "Создайте бизнес в настройках, чтобы использовать AI Assistant.",
-  "aiAssistant.heroFallback": "Спросите AI, что требует внимания в бизнесе сегодня.",
-  "aiAssistant.mockModeText": "Сейчас включен безопасный режим проверки: данные не отправляются внешним сервисам.",
-  "aiAssistant.liveModeText": "Ответ построен на изолированном CRM-контексте текущего бизнеса.",
+  "aiAssistant.noBusiness":
+    "Создайте бизнес в настройках, чтобы использовать AI Assistant.",
+  "aiAssistant.heroFallback":
+    "Спросите AI, что требует внимания в бизнесе сегодня.",
+  "aiAssistant.mockModeText":
+    "Сейчас включен безопасный режим проверки: данные не отправляются внешним сервисам.",
+  "aiAssistant.liveModeText":
+    "Ответ построен на изолированном CRM-контексте текущего бизнеса.",
   "aiAssistant.providerChecking": "Проверяем AI-провайдера...",
-  "aiAssistant.providerStatus": "Провайдер: {provider} · режим: {mode} · модель: {model}",
+  "aiAssistant.providerStatus":
+    "Провайдер: {provider} · режим: {mode} · модель: {model}",
   "aiAssistant.providerUnavailableTitle": "AI-провайдер не готов",
-  "aiAssistant.providerUnavailableText": "Live-ответы временно отключены или ключ не настроен. Используйте только source-grounded CRM-состояния и явные no-data подсказки.",
+  "aiAssistant.providerUnavailableText":
+    "Live-ответы временно отключены или ключ не настроен. Используйте только source-grounded CRM-состояния и явные no-data подсказки.",
   "aiAssistant.modeLive": "реальный",
   "aiAssistant.metricNewLeads": "Новые заявки",
   "aiAssistant.metricOpenAppointments": "Открытые записи",
   "aiAssistant.metricClients": "Клиенты",
   "aiAssistant.businessMemory": "Память бизнеса",
-  "aiAssistant.activeFactsSummary": "Активных фактов: {count}. AI использует их как контекст: услуги, правила, тон общения и особенности бизнеса.",
+  "aiAssistant.activeFactsSummary":
+    "Активных фактов: {count}. AI использует их как контекст: услуги, правила, тон общения и особенности бизнеса.",
   "aiAssistant.questionLabel": "Вопрос AI",
   "aiAssistant.questionPlaceholder": "Например: кому написать сегодня?",
   "aiAssistant.ask": "Спросить AI",
@@ -2632,14 +3072,18 @@ export const ru: Record<string, string> = {
   "aiAssistant.add": "Добавить",
   "aiAssistant.active": "активно",
   "aiAssistant.off": "выкл.",
-  "aiAssistant.emptyMemoryText": "Добавьте 3-5 фактов: как общаться с клиентами, какие услуги продвигать, что нельзя обещать, когда передавать менеджеру.",
+  "aiAssistant.emptyMemoryText":
+    "Добавьте 3-5 фактов: как общаться с клиентами, какие услуги продвигать, что нельзя обещать, когда передавать менеджеру.",
   "aiAssistant.taskFlowTitle": "AI -> задача -> календарь",
-  "aiAssistant.taskFlowText": "AI предлагает действие, а владелец подтверждает создание задачи.",
+  "aiAssistant.taskFlowText":
+    "AI предлагает действие, а владелец подтверждает создание задачи.",
   "aiAssistant.actionFallback": "Действие от AI",
   "aiAssistant.actionStatus": "Статус: {status} · инструмент: {tool}",
-  "aiAssistant.taskCreated": "Задача создана и попала в рабочий список. ID: {id}",
+  "aiAssistant.taskCreated":
+    "Задача создана и попала в рабочий список. ID: {id}",
   "aiAssistant.createTask": "Создать задачу",
-  "aiAssistant.emptyActionsText": "Нажмите \"Создать действия\", чтобы AI подготовил подтверждаемую задачу. Без подтверждения задача не создается.",
+  "aiAssistant.emptyActionsText":
+    'Нажмите "Создать действия", чтобы AI подготовил подтверждаемую задачу. Без подтверждения задача не создается.',
   "aiAssistant.run": "Запустить",
   "aiAssistant.historyMeta": "Ответ #{id} · {mode}",
   "aiAssistant.modeMock": "тестовый режим",
@@ -2650,12 +3094,14 @@ export const ru: Record<string, string> = {
   "aiAssistant.namePlaceholder": "Например: Правило записи клиентов",
   "aiAssistant.categoryLabel": "Категория",
   "aiAssistant.contentLabel": "Что должен помнить AI",
-  "aiAssistant.contentPlaceholder": "Например: если клиент спрашивает цену, сначала уточнить услугу и удобное время, потом предложить запись.",
+  "aiAssistant.contentPlaceholder":
+    "Например: если клиент спрашивает цену, сначала уточнить услугу и удобное время, потом предложить запись.",
   "aiAssistant.useInContext": "Использовать в AI-контексте",
   "aiAssistant.saveMemory": "Сохранить память",
   "aiAssistant.quick.attention": "Что требует внимания сегодня?",
   "aiAssistant.quick.firstClient": "Кому из клиентов стоит написать первым?",
-  "aiAssistant.quick.managerPlan": "Сделай краткий план действий для менеджера.",
+  "aiAssistant.quick.managerPlan":
+    "Сделай краткий план действий для менеджера.",
   "aiAssistant.quick.risks": "Какие риски есть по заявкам и записям?",
   "aiAssistant.memory.category.business": "О бизнесе",
   "aiAssistant.memory.category.sales": "Продажи",
@@ -2664,20 +3110,26 @@ export const ru: Record<string, string> = {
   "aiAssistant.memory.category.tone": "Тон общения",
   "aiAssistant.memory.category.policy": "Правила",
   "aiAgents.defaultName": "Zani assistant",
-  "aiAgents.defaultRoleDescription": "Квалифицировать заявки и помогать менеджерам отвечать быстрее.",
-  "aiAgents.defaultSystemPrompt": "Отвечай кратко, полезно и не обещай недоступные окна.",
-  "aiAgents.defaultRules": "Не отправлять сообщения автоматически.\nПередавать сложные вопросы менеджеру.",
-  "aiAgents.defaultEscalation": "Спор по цене\nМедицинский или юридический вопрос\nНедовольный клиент",
+  "aiAgents.defaultRoleDescription":
+    "Квалифицировать заявки и помогать менеджерам отвечать быстрее.",
+  "aiAgents.defaultSystemPrompt":
+    "Отвечай кратко, полезно и не обещай недоступные окна.",
+  "aiAgents.defaultRules":
+    "Не отправлять сообщения автоматически.\nПередавать сложные вопросы менеджеру.",
+  "aiAgents.defaultEscalation":
+    "Спор по цене\nМедицинский или юридический вопрос\nНедовольный клиент",
   "aiAgents.loading": "Загружаем ИИ-агентов...",
   "aiAgents.noBusiness": "Создайте бизнес, чтобы настраивать ИИ-агентов.",
   "aiAgents.eyebrow": "Профили агентов",
   "aiAgents.title": "ИИ-агенты",
-  "aiAgents.description": "Создайте AI-менеджера по продажам: задайте стиль общения, знания, каналы и действия, которые он может выполнять.",
+  "aiAgents.description":
+    "Создайте AI-менеджера по продажам: задайте стиль общения, знания, каналы и действия, которые он может выполнять.",
   "aiAgents.newProfile": "Новый профиль",
   "aiAgents.profiles": "Профили",
   "aiAgents.profilesCount": "{count} профилей",
   "aiAgents.emptyTitle": "Профилей пока нет",
-  "aiAgents.emptyDescription": "Создайте первый профиль агента для бота или всего бизнеса.",
+  "aiAgents.emptyDescription":
+    "Создайте первый профиль агента для бота или всего бизнеса.",
   "aiAgents.businessDefault": "Бизнес по умолчанию",
   "aiAgents.editTitle": "Редактировать профиль агента",
   "aiAgents.createTitle": "Создать профиль агента",
@@ -2690,10 +3142,12 @@ export const ru: Record<string, string> = {
   "aiAgents.systemPrompt": "Главная инструкция",
   "aiAgents.rules": "Правила",
   "aiAgents.escalationRules": "Правила передачи менеджеру",
-  "aiAgents.toolsPlaceholder": "Действия агента включаются только после подтверждения менеджером.",
+  "aiAgents.toolsPlaceholder":
+    "Действия агента включаются только после подтверждения менеджером.",
   "aiAgents.saveProfile": "Сохранить профиль",
   "aiAgents.createProfile": "Создать профиль",
-  "aiAgents.note": "Черновик ответа создаётся по активному профилю агента. Автоматическая отправка не включается.",
+  "aiAgents.note":
+    "Черновик ответа создаётся по активному профилю агента. Автоматическая отправка не включается.",
   "aiAgents.profileSuffix": "профиль",
   "aiAgents.defaultNewAgentName": "Новый ИИ-агент",
   "aiAgents.section.overview": "Обзор",
@@ -2729,7 +3183,8 @@ export const ru: Record<string, string> = {
   "aiAgents.testTitle": "Тест и запуск агента",
   "aiAgents.showAdvanced": "Показать расширенное",
   "aiAgents.hideAdvanced": "Скрыть расширенное",
-  "aiAgents.sidebarEmpty": "Создайте первого ИИ-агента, затем подключите каналы и настройте поведение.",
+  "aiAgents.sidebarEmpty":
+    "Создайте первого ИИ-агента, затем подключите каналы и настройте поведение.",
   "aiAgents.firstLaunch": "Первый запуск",
   "aiAgents.firstLaunchTitle": "Настройте агента по шагам",
   "aiAgents.openMessages": "Открыть сообщения",
@@ -2738,7 +3193,8 @@ export const ru: Record<string, string> = {
   "aiAgents.agentNamePlaceholder": "Например: агент по продажам",
   "aiAgents.createAgent": "Создать агента",
   "aiAgents.emptyAgentsTitle": "Создайте первого ИИ-агента",
-  "aiAgents.emptyAgentsText": "Агент помогает отвечать клиентам, использовать знания компании и передавать сложные вопросы менеджеру.",
+  "aiAgents.emptyAgentsText":
+    "Агент помогает отвечать клиентам, использовать знания компании и передавать сложные вопросы менеджеру.",
   "aiAgents.statusLabel": "Статус",
   "aiAgents.status.active": "Активен",
   "aiAgents.status.paused": "Пауза",
@@ -2751,7 +3207,8 @@ export const ru: Record<string, string> = {
   "aiAgents.channelsMetric": "Каналы",
   "aiAgents.messagesMetric": "Сообщения",
   "aiAgents.nextSetup": "Следующий шаг",
-  "aiAgents.overviewText": "Проверьте статус агента, подключите нужные каналы и протестируйте черновик ответа в сообщениях.",
+  "aiAgents.overviewText":
+    "Проверьте статус агента, подключите нужные каналы и протестируйте черновик ответа в сообщениях.",
   "aiAgents.openChannels": "Открыть каналы",
   "aiAgents.testMessages": "Проверить сообщения",
   "aiAgents.generalSettings": "Общие настройки",
@@ -2759,7 +3216,8 @@ export const ru: Record<string, string> = {
   "aiAgents.pauseAgent": "Поставить на паузу",
   "aiAgents.activateAgent": "Активировать",
   "aiAgents.instructionTitle": "Инструкция агента",
-  "aiAgents.instructionText": "Роль, тон общения, правила и условия передачи менеджеру.",
+  "aiAgents.instructionText":
+    "Роль, тон общения, правила и условия передачи менеджеру.",
   "aiAgents.profileName": "Название профиля",
   "aiAgents.tone.friendly": "Дружелюбный",
   "aiAgents.tone.expert": "Экспертный",
@@ -2769,14 +3227,17 @@ export const ru: Record<string, string> = {
   "aiAgents.saveBehavior": "Сохранить поведение",
   "aiAgents.profileActive": "Профиль активен",
   "aiAgents.latestDialog": "Последний диалог",
-  "aiAgents.latestDialogText": "Проверка того, как агент видит контекст клиента.",
+  "aiAgents.latestDialogText":
+    "Проверка того, как агент видит контекст клиента.",
   "aiAgents.prepareReply": "Подготовить",
   "aiAgents.client": "Клиент",
   "aiAgents.reply": "Ответ",
   "aiAgents.emptyMessage": "Пустое сообщение",
-  "aiAgents.noDialogs": "Диалогов пока нет. Подключите канал и отправьте первое сообщение.",
+  "aiAgents.noDialogs":
+    "Диалогов пока нет. Подключите канал и отправьте первое сообщение.",
   "aiAgents.draftReply": "Черновик ответа",
-  "aiAgents.draftReplyEmpty": "Здесь появится черновик ответа агента после подготовки.",
+  "aiAgents.draftReplyEmpty":
+    "Здесь появится черновик ответа агента после подготовки.",
   "aiAgents.responseMode": "Режим ответов",
   "aiAgents.responseMode.quality": "Максимальное качество",
   "aiAgents.responseMode.fast": "Быстрый режим",
@@ -2785,48 +3246,64 @@ export const ru: Record<string, string> = {
   "aiAgents.control.handoffTitle": "Передавать сложные вопросы менеджеру",
   "aiAgents.control.handoffText": "Агент остановит ответ, когда нужен человек.",
   "aiAgents.control.confirmTitle": "Подтверждать действия",
-  "aiAgents.control.confirmText": "Создание задач, сделок и важных изменений требует подтверждения.",
+  "aiAgents.control.confirmText":
+    "Создание задач, сделок и важных изменений требует подтверждения.",
   "aiAgents.control.privacyTitle": "Не раскрывать внутренние данные",
-  "aiAgents.control.privacyText": "Агент не показывает клиенту служебные поля и внутренние заметки.",
+  "aiAgents.control.privacyText":
+    "Агент не показывает клиенту служебные поля и внутренние заметки.",
   "aiAgents.control.pipelineTitle": "Работа с заявками и менеджером",
-  "aiAgents.control.pipelineText": "Выберите, что агент может делать после диалога: только оценить клиента, создать заявку, поставить задачу или подготовить сделку.",
+  "aiAgents.control.pipelineText":
+    "Выберите, что агент может делать после диалога: только оценить клиента, создать заявку, поставить задачу или подготовить сделку.",
   "aiAgents.control.mode": "Что делать после диалога",
   "aiAgents.control.mode.off": "Выключено",
   "aiAgents.control.mode.triage": "Только оценить обращение",
   "aiAgents.control.mode.leadTask": "Создать заявку и задачу",
   "aiAgents.control.mode.draftDeal": "Подготовить черновик сделки",
   "aiAgents.control.maxReplyChars": "Максимальная длина автоответа",
-  "aiAgents.control.leadConfidence": "Насколько агент должен быть уверен для заявки: {value}",
-  "aiAgents.control.dealConfidence": "Насколько агент должен быть уверен для сделки: {value}",
+  "aiAgents.control.leadConfidence":
+    "Насколько агент должен быть уверен для заявки: {value}",
+  "aiAgents.control.dealConfidence":
+    "Насколько агент должен быть уверен для сделки: {value}",
   "aiAgents.control.advancedTitle": "Расширенные ограничения",
-  "aiAgents.control.advancedText": "Обычно менять не нужно. Эти настройки нужны, если агент слишком часто создает заявки или пишет слишком длинные ответы.",
+  "aiAgents.control.advancedText":
+    "Обычно менять не нужно. Эти настройки нужны, если агент слишком часто создает заявки или пишет слишком длинные ответы.",
   "aiAgents.control.reviewFallbackTitle": "Проверять неуверенные решения",
-  "aiAgents.control.reviewFallbackText": "Если AI использовал fallback или не уверен, диалог останется на проверке менеджера.",
+  "aiAgents.control.reviewFallbackText":
+    "Если AI использовал fallback или не уверен, диалог останется на проверке менеджера.",
   "aiAgents.control.appointmentTitle": "Создавать запись",
-  "aiAgents.control.appointmentText": "Агент может создать запись только из подтвержденного свободного слота.",
+  "aiAgents.control.appointmentText":
+    "Агент может создать запись только из подтвержденного свободного слота.",
   "aiAgents.control.autoReplyTitle": "Автоматически отправлять ответ",
-  "aiAgents.control.autoReplyText": "Ответ отправляется клиенту только после прохождения ограничений автопайплайна.",
+  "aiAgents.control.autoReplyText":
+    "Ответ отправляется клиенту только после прохождения ограничений автопайплайна.",
   "aiAgents.functions.leadTitle": "Создать заявку",
-  "aiAgents.functions.leadText": "Агент может предложить новую заявку из диалога.",
+  "aiAgents.functions.leadText":
+    "Агент может предложить новую заявку из диалога.",
   "aiAgents.functions.taskTitle": "Создать задачу",
-  "aiAgents.functions.taskText": "Агент может предложить задачу менеджеру после общения.",
+  "aiAgents.functions.taskText":
+    "Агент может предложить задачу менеджеру после общения.",
   "aiAgents.functions.dealTitle": "Обновить сделку",
-  "aiAgents.functions.dealText": "Агент может предложить следующий статус сделки.",
+  "aiAgents.functions.dealText":
+    "Агент может предложить следующий статус сделки.",
   "aiAgents.functions.managerTitle": "Передать менеджеру",
-  "aiAgents.functions.managerText": "Агент может остановить сценарий и передать диалог человеку.",
+  "aiAgents.functions.managerText":
+    "Агент может остановить сценарий и передать диалог человеку.",
   "aiAgents.functions.enabled": "Разрешено",
   "aiAgents.functions.disabled": "Выключено",
   "aiAgents.functions.save": "Сохранить действия",
   "aiAgents.knowledgeCompany": "База знаний компании",
-  "aiAgents.knowledgeCompanyText": "Подключите факты, правила, FAQ и инструкции, чтобы агент отвечал точнее.",
+  "aiAgents.knowledgeCompanyText":
+    "Подключите факты, правила, FAQ и инструкции, чтобы агент отвечал точнее.",
   "aiAgents.openKnowledge": "Открыть базу",
   "aiAgents.knowledgeAccess": "Доступ агента",
-  "aiAgents.knowledgeAccessText": "Здесь можно будет выбрать конкретные источники знаний для агента.",
+  "aiAgents.knowledgeAccessText":
+    "Здесь можно будет выбрать конкретные источники знаний для агента.",
   "aiAgents.knowledge.add": "Добавить знание",
   "aiAgents.knowledge.active": "В контексте",
   "aiAgents.knowledge.off": "Выключено",
   "aiAgents.knowledge.emptyTitle": "База знаний пуста",
-  "aiAgents.knowledge.emptyText": "Добавьте факты о компании, правила, цены, FAQ или ограничения, чтобы агент использовал их в ответах.",
+  "aiAgents.knowledge.emptyText":
+    "Добавьте факты о компании, правила, цены, FAQ или ограничения, чтобы агент использовал их в ответах.",
   "aiAgents.knowledge.editTitle": "Редактировать знание",
   "aiAgents.knowledge.newTitle": "Новое знание",
   "aiAgents.knowledge.title": "Название",
@@ -2834,26 +3311,35 @@ export const ru: Record<string, string> = {
   "aiAgents.knowledge.content": "Содержание",
   "aiAgents.knowledge.useInContext": "Использовать в контексте агента",
   "aiAgents.knowledge.template.prices": "Цены и услуги",
-  "aiAgents.knowledge.template.pricesContent": "Укажите основные услуги, цены, что входит в стоимость и какие условия нужно уточнить у клиента.",
+  "aiAgents.knowledge.template.pricesContent":
+    "Укажите основные услуги, цены, что входит в стоимость и какие условия нужно уточнить у клиента.",
   "aiAgents.knowledge.template.schedule": "График и адрес",
-  "aiAgents.knowledge.template.scheduleContent": "Укажите адрес, график работы, способы связи, как добраться и когда менеджер отвечает клиентам.",
+  "aiAgents.knowledge.template.scheduleContent":
+    "Укажите адрес, график работы, способы связи, как добраться и когда менеджер отвечает клиентам.",
   "aiAgents.knowledge.template.booking": "Правила записи",
-  "aiAgents.knowledge.template.bookingContent": "Опишите, как клиент записывается, что нужно уточнить, когда нужна предоплата и как переносить запись.",
+  "aiAgents.knowledge.template.bookingContent":
+    "Опишите, как клиент записывается, что нужно уточнить, когда нужна предоплата и как переносить запись.",
   "aiAgents.knowledge.template.faq": "Частые вопросы",
-  "aiAgents.knowledge.template.faqContent": "Добавьте популярные вопросы клиентов и короткие правильные ответы для агента.",
+  "aiAgents.knowledge.template.faqContent":
+    "Добавьте популярные вопросы клиентов и короткие правильные ответы для агента.",
   "aiAgents.dataSources": "Источники данных агента",
-  "aiAgents.dataSourcesText": "Подключения настраиваются в разделе интеграций, а здесь агент получает доступ к уже подключенным данным.",
+  "aiAgents.dataSourcesText":
+    "Подключения настраиваются в разделе интеграций, а здесь агент получает доступ к уже подключенным данным.",
   "aiAgents.openIntegrations": "Открыть подключения",
   "aiAgents.integrations.crmTitle": "Клиенты и сделки",
   "aiAgents.integrations.crmText": "Данные клиентов, заявок, задач и сделок.",
   "aiAgents.integrations.stockTitle": "Склад и каталог",
-  "aiAgents.integrations.stockText": "Остатки, цены и товары из подключенных источников.",
+  "aiAgents.integrations.stockText":
+    "Остатки, цены и товары из подключенных источников.",
   "aiAgents.integrations.marketplacesTitle": "Маркетплейсы",
-  "aiAgents.integrations.marketplacesText": "Заказы и события Kaspi, Ozon, Wildberries.",
+  "aiAgents.integrations.marketplacesText":
+    "Заказы и события Kaspi, Ozon, Wildberries.",
   "aiAgents.integrations.calendarTitle": "Календарь",
-  "aiAgents.integrations.calendarText": "Доступные слоты, записи и задачи менеджеров.",
+  "aiAgents.integrations.calendarText":
+    "Доступные слоты, записи и задачи менеджеров.",
   "aiAgents.channel.website": "Сайт",
-  "aiAgents.channel.websiteText": "Подключите агента к форме или чату на сайте.",
+  "aiAgents.channel.websiteText":
+    "Подключите агента к форме или чату на сайте.",
   "aiAgents.channel.telegramText": "Подключите агента к Telegram.",
   "aiAgents.channel.whatsappText": "Подключите агента к WhatsApp.",
   "aiAgents.channel.instagramText": "Подключите агента к Instagram.",
@@ -2864,75 +3350,131 @@ export const ru: Record<string, string> = {
   "aiAgents.connection": "Подключение",
   "aiAgents.connectionTitle": "Подключение: {title}",
   "aiAgents.websiteSetupTitle": "Канал сайта",
-  "aiAgents.websiteSetupText": "Чат подключает агента {name} к сайту и передает входящие обращения в сообщения.",
-  "aiAgents.websiteSetupEmpty": "Подключите канал сайта, чтобы получить код для установки.",
+  "aiAgents.websiteSetupText":
+    "Чат подключает агента {name} к сайту и передает входящие обращения в сообщения.",
+  "aiAgents.websiteSetupEmpty":
+    "Подключите канал сайта, чтобы получить код для установки.",
   "aiAgents.qualityAdvanced": "Дополнительно: скорость и качество ответов",
-  "aiAgents.qualityAdvancedText": "Обычно эти настройки можно не менять. Они нужны, если вы хотите выбрать более быстрый или более качественный режим ответа.",
+  "aiAgents.qualityAdvancedText":
+    "Обычно эти настройки можно не менять. Они нужны, если вы хотите выбрать более быстрый или более качественный режим ответа.",
   "aiAgents.launchChecklist": "Готовность к запуску",
-  "aiAgents.launchChecklistText": "Перед включением агента проверьте базовые шаги: профиль, канал, знания и тестовый ответ.",
+  "aiAgents.launchChecklistText":
+    "Перед включением агента проверьте базовые шаги: профиль, канал, знания и тестовый ответ.",
   "aiAgents.launchControlTitle": "Запуск агента",
-  "aiAgents.launchControlText": "Включайте агента после проверки профиля, знаний, канала и тестового диалога.",
+  "aiAgents.launchControlText":
+    "Включайте агента после проверки профиля, знаний, канала и тестового диалога.",
   "aiAgents.checklist.profile": "Профиль заполнен",
-  "aiAgents.checklist.profileText": "Агент знает свою роль, тон общения и правила передачи менеджеру.",
+  "aiAgents.checklist.profileText":
+    "Агент знает свою роль, тон общения и правила передачи менеджеру.",
   "aiAgents.checklist.channel": "Канал подключен",
-  "aiAgents.checklist.channelText": "Клиенты смогут писать агенту через сайт или мессенджер.",
+  "aiAgents.checklist.channelText":
+    "Клиенты смогут писать агенту через сайт или мессенджер.",
   "aiAgents.checklist.knowledge": "Знания добавлены",
-  "aiAgents.checklist.knowledgeText": "Агент сможет отвечать по фактам компании, а не придумывать детали.",
+  "aiAgents.checklist.knowledgeText":
+    "Агент сможет отвечать по фактам компании, а не придумывать детали.",
   "aiAgents.checklist.test": "Ответ протестирован",
-  "aiAgents.checklist.testText": "Проверьте хотя бы один реальный вопрос клиента перед запуском.",
-  "aiAgents.onboarding.profile.helpTitle": "Сначала создайте образ вашего менеджера",
-  "aiAgents.onboarding.profile.helpText": "Здесь задается имя, язык, стиль общения и правила. Эти настройки влияют на каждый ответ агента.",
-  "aiAgents.onboarding.profile.recommendation": "Рекомендация: начните с дружелюбного продажного тона и коротких правил без сложных промптов.",
-  "aiAgents.onboarding.channels.helpTitle": "Выберите, где агент будет общаться с клиентами",
-  "aiAgents.onboarding.channels.helpText": "Каналы подключают агента к сайту и мессенджерам. Все входящие диалоги попадают в общий Inbox.",
-  "aiAgents.onboarding.channels.recommendation": "Рекомендация: сначала подключите сайт или Telegram для теста, затем WhatsApp и Instagram.",
-  "aiAgents.onboarding.knowledge.helpTitle": "Добавьте знания, на которых агент будет продавать",
-  "aiAgents.onboarding.knowledge.helpText": "Агенту нужны факты: услуги, цены, график, адрес, правила записи, ограничения и частые вопросы.",
-  "aiAgents.onboarding.knowledge.recommendation": "Рекомендация: начните с 5-7 коротких записей вместо одной большой инструкции.",
-  "aiAgents.onboarding.actions.helpTitle": "Определите, что агенту можно делать без менеджера",
-  "aiAgents.onboarding.actions.helpText": "Эти настройки управляют заявками, задачами, сделками, записями и автоответами.",
-  "aiAgents.onboarding.actions.recommendation": "Рекомендация: сначала разрешите заявки и задачи, а сделки и автоответы включайте после тестов.",
+  "aiAgents.checklist.testText":
+    "Проверьте хотя бы один реальный вопрос клиента перед запуском.",
+  "aiAgents.onboarding.profile.helpTitle":
+    "Сначала создайте образ вашего менеджера",
+  "aiAgents.onboarding.profile.helpText":
+    "Здесь задается имя, язык, стиль общения и правила. Эти настройки влияют на каждый ответ агента.",
+  "aiAgents.onboarding.profile.recommendation":
+    "Рекомендация: начните с дружелюбного продажного тона и коротких правил без сложных промптов.",
+  "aiAgents.onboarding.channels.helpTitle":
+    "Выберите, где агент будет общаться с клиентами",
+  "aiAgents.onboarding.channels.helpText":
+    "Каналы подключают агента к сайту и мессенджерам. Все входящие диалоги попадают в общий Inbox.",
+  "aiAgents.onboarding.channels.recommendation":
+    "Рекомендация: сначала подключите сайт или Telegram для теста, затем WhatsApp и Instagram.",
+  "aiAgents.onboarding.knowledge.helpTitle":
+    "Добавьте знания, на которых агент будет продавать",
+  "aiAgents.onboarding.knowledge.helpText":
+    "Агенту нужны факты: услуги, цены, график, адрес, правила записи, ограничения и частые вопросы.",
+  "aiAgents.onboarding.knowledge.recommendation":
+    "Рекомендация: начните с 5-7 коротких записей вместо одной большой инструкции.",
+  "aiAgents.onboarding.actions.helpTitle":
+    "Определите, что агенту можно делать без менеджера",
+  "aiAgents.onboarding.actions.helpText":
+    "Эти настройки управляют заявками, задачами, сделками, записями и автоответами.",
+  "aiAgents.onboarding.actions.recommendation":
+    "Рекомендация: сначала разрешите заявки и задачи, а сделки и автоответы включайте после тестов.",
   "aiAgents.onboarding.test.helpTitle": "Проверьте агента перед запуском",
-  "aiAgents.onboarding.test.helpText": "Тест показывает, как агент видит диалог и какой ответ подготовит для клиента.",
-  "aiAgents.onboarding.test.recommendation": "Рекомендация: проверьте вопросы о цене, записи, скидке и недовольном клиенте.",
-  "aiAgents.hint.agentName": "Что это: имя AI-менеджера в кабинете. Как поможет: команде проще понимать, какой агент отвечает за продажи или поддержку. Рекомендация: называйте по роли, например «Агент продаж».",
-  "aiAgents.hint.agentLanguage": "Что это: основной язык ответов. Как поможет: агент будет держать один стиль общения. Рекомендация: используйте язык большинства клиентов.",
-  "aiAgents.hint.agentStatus": "Статус «Активен» включает агента, «Пауза» останавливает его работу. Перед активацией пройдите тест и проверьте знания.",
-  "aiAgents.hint.profileName": "Внутреннее название профиля поведения. Можно оставить стандартное, если у агента один сценарий.",
-  "aiAgents.hint.tone": "Тон задает стиль ответа. Для продаж обычно лучше «Дружелюбный» или «Продажи», для поддержки - «Поддержка».",
-  "aiAgents.hint.role": "Опишите простым языком, кем является агент: менеджер по продажам, администратор записи или помощник поддержки.",
-  "aiAgents.hint.systemPrompt": "Главная инструкция для всех ответов. Не пишите длинные технические промпты; лучше 2-4 понятных правила.",
-  "aiAgents.hint.rules": "Правила, которые агент должен соблюдать всегда: не обещать скидки, уточнять услугу, отвечать коротко.",
-  "aiAgents.hint.escalation": "Когда агент должен звать человека: жалоба, спор по цене, юридический вопрос, нестандартный запрос.",
-  "aiAgents.hint.responseMode": "Выберите баланс качества и скорости. Для старта оставьте быстрый или качественный режим без частых изменений.",
-  "aiAgents.hint.temperature": "Чем выше значение, тем свободнее формулировки. Для продаж рекомендуем 0.3-0.5, чтобы ответы были стабильными.",
-  "aiAgents.hint.pipelineMode": "Режим определяет, что агент делает с диалогом в CRM. Для старта безопаснее «Заявка и задача».",
-  "aiAgents.hint.maxReplyChars": "Ограничивает длину автоответа. Рекомендация: 500-900 символов, чтобы клиент получил короткий ответ.",
-  "aiAgents.hint.leadConfidence": "Минимальная уверенность для создания заявки. Чем выше порог, тем меньше автоматических ошибок.",
-  "aiAgents.hint.dealConfidence": "Минимальная уверенность для черновика сделки. Рекомендация: держать выше порога заявки.",
-  "aiAgents.hint.launchReady": "Базовые данные готовы. Перед включением задайте агенту 2-3 реальных вопроса клиента.",
-  "aiAgents.hint.launchNotReady": "Перед запуском добавьте знания и подключите хотя бы один активный канал.",
-  "aiAgents.hint.tool.create_lead": "Включайте почти всегда: заявка фиксирует интерес клиента и не дает потерять обращение.",
-  "aiAgents.hint.tool.create_task": "Полезно для команды: агент создаст задачу менеджеру после важного диалога.",
-  "aiAgents.hint.tool.create_deal": "Включайте, когда понятны этапы продаж и агент уже протестирован на реальных вопросах.",
-  "aiAgents.hint.tool.handoff_to_manager": "Должно быть включено: агент сможет остановиться и передать сложный диалог человеку.",
-  "aiAgents.hint.channel.website": "Подключите первым, если клиенты оставляют заявки на сайте. Это самый простой канал для теста.",
-  "aiAgents.hint.channel.telegram": "Подключайте, если клиенты часто пишут в Telegram. Нужен бот-токен.",
-  "aiAgents.hint.channel.whatsapp": "Подключайте для продаж и записи. Перед автоответами проверьте шаблоны и согласия.",
-  "aiAgents.hint.channel.instagram": "Подключайте, если входящие лиды идут из Instagram Direct.",
-  "aiAgents.hint.knowledgeTitle": "Короткое название знания: «Цены», «График», «Правила записи», «FAQ».",
-  "aiAgents.hint.knowledgeCategory": "Категория помогает держать знания в порядке. Например: sales, service, policy, faq.",
-  "aiAgents.hint.knowledgeContent": "Пишите конкретные факты: цены, ограничения, адрес, условия записи. Чем точнее текст, тем меньше выдумок.",
-  "aiAgents.hint.knowledgeActive": "Если включено, это знание попадет в контекст ответов агента.",
+  "aiAgents.onboarding.test.helpText":
+    "Тест показывает, как агент видит диалог и какой ответ подготовит для клиента.",
+  "aiAgents.onboarding.test.recommendation":
+    "Рекомендация: проверьте вопросы о цене, записи, скидке и недовольном клиенте.",
+  "aiAgents.hint.agentName":
+    "Что это: имя AI-менеджера в кабинете. Как поможет: команде проще понимать, какой агент отвечает за продажи или поддержку. Рекомендация: называйте по роли, например «Агент продаж».",
+  "aiAgents.hint.agentLanguage":
+    "Что это: основной язык ответов. Как поможет: агент будет держать один стиль общения. Рекомендация: используйте язык большинства клиентов.",
+  "aiAgents.hint.agentStatus":
+    "Статус «Активен» включает агента, «Пауза» останавливает его работу. Перед активацией пройдите тест и проверьте знания.",
+  "aiAgents.hint.profileName":
+    "Внутреннее название профиля поведения. Можно оставить стандартное, если у агента один сценарий.",
+  "aiAgents.hint.tone":
+    "Тон задает стиль ответа. Для продаж обычно лучше «Дружелюбный» или «Продажи», для поддержки - «Поддержка».",
+  "aiAgents.hint.role":
+    "Опишите простым языком, кем является агент: менеджер по продажам, администратор записи или помощник поддержки.",
+  "aiAgents.hint.systemPrompt":
+    "Главная инструкция для всех ответов. Не пишите длинные технические промпты; лучше 2-4 понятных правила.",
+  "aiAgents.hint.rules":
+    "Правила, которые агент должен соблюдать всегда: не обещать скидки, уточнять услугу, отвечать коротко.",
+  "aiAgents.hint.escalation":
+    "Когда агент должен звать человека: жалоба, спор по цене, юридический вопрос, нестандартный запрос.",
+  "aiAgents.hint.responseMode":
+    "Выберите баланс качества и скорости. Для старта оставьте быстрый или качественный режим без частых изменений.",
+  "aiAgents.hint.temperature":
+    "Чем выше значение, тем свободнее формулировки. Для продаж рекомендуем 0.3-0.5, чтобы ответы были стабильными.",
+  "aiAgents.hint.pipelineMode":
+    "Режим определяет, что агент делает с диалогом в CRM. Для старта безопаснее «Заявка и задача».",
+  "aiAgents.hint.maxReplyChars":
+    "Ограничивает длину автоответа. Рекомендация: 500-900 символов, чтобы клиент получил короткий ответ.",
+  "aiAgents.hint.leadConfidence":
+    "Минимальная уверенность для создания заявки. Чем выше порог, тем меньше автоматических ошибок.",
+  "aiAgents.hint.dealConfidence":
+    "Минимальная уверенность для черновика сделки. Рекомендация: держать выше порога заявки.",
+  "aiAgents.hint.launchReady":
+    "Базовые данные готовы. Перед включением задайте агенту 2-3 реальных вопроса клиента.",
+  "aiAgents.hint.launchNotReady":
+    "Перед запуском добавьте знания и подключите хотя бы один активный канал.",
+  "aiAgents.hint.tool.create_lead":
+    "Включайте почти всегда: заявка фиксирует интерес клиента и не дает потерять обращение.",
+  "aiAgents.hint.tool.create_task":
+    "Полезно для команды: агент создаст задачу менеджеру после важного диалога.",
+  "aiAgents.hint.tool.create_deal":
+    "Включайте, когда понятны этапы продаж и агент уже протестирован на реальных вопросах.",
+  "aiAgents.hint.tool.handoff_to_manager":
+    "Должно быть включено: агент сможет остановиться и передать сложный диалог человеку.",
+  "aiAgents.hint.channel.website":
+    "Подключите первым, если клиенты оставляют заявки на сайте. Это самый простой канал для теста.",
+  "aiAgents.hint.channel.telegram":
+    "Подключайте, если клиенты часто пишут в Telegram. Нужен бот-токен.",
+  "aiAgents.hint.channel.whatsapp":
+    "Подключайте для продаж и записи. Перед автоответами проверьте шаблоны и согласия.",
+  "aiAgents.hint.channel.instagram":
+    "Подключайте, если входящие лиды идут из Instagram Direct.",
+  "aiAgents.hint.knowledgeTitle":
+    "Короткое название знания: «Цены», «График», «Правила записи», «FAQ».",
+  "aiAgents.hint.knowledgeCategory":
+    "Категория помогает держать знания в порядке. Например: sales, service, policy, faq.",
+  "aiAgents.hint.knowledgeContent":
+    "Пишите конкретные факты: цены, ограничения, адрес, условия записи. Чем точнее текст, тем меньше выдумок.",
+  "aiAgents.hint.knowledgeActive":
+    "Если включено, это знание попадет в контекст ответов агента.",
   "automations.title": "Автоматизации",
-  "automations.description": "Простой режим: готовые шаблоны автоматизаций, включение правил и журнал запусков без сложного конструктора.",
-  "automations.noBusiness": "Создайте бизнес в настройках, чтобы работать с автоматизациями.",
+  "automations.description":
+    "Простой режим: готовые шаблоны автоматизаций, включение правил и журнал запусков без сложного конструктора.",
+  "automations.noBusiness":
+    "Создайте бизнес в настройках, чтобы работать с автоматизациями.",
   "automations.advancedBuilder": "Расширенный конструктор",
   "automations.advancedTitle": "Расширенная настройка",
-  "automations.advancedText": "Используйте конструктор только для сложных сценариев с условиями, задержками и несколькими действиями.",
+  "automations.advancedText":
+    "Используйте конструктор только для сложных сценариев с условиями, задержками и несколькими действиями.",
   "automations.backToSettings": "К настройкам",
   "automations.createRule": "Создать правило",
-  "automations.saveError": "Не удалось сохранить автоматизацию. Проверьте доступы и данные правила.",
+  "automations.saveError":
+    "Не удалось сохранить автоматизацию. Проверьте доступы и данные правила.",
   "automations.templatesTitle": "Шаблоны для быстрого старта",
   "automations.actionCount": "{count} действий",
   "automations.addDraft": "Добавить черновик",
@@ -2940,7 +3482,8 @@ export const ru: Record<string, string> = {
   "automations.disable": "Отключить",
   "automations.rulesTitle": "Активные и черновые правила",
   "automations.emptyTitle": "Автоматизаций пока нет",
-  "automations.emptyDescription": "Начните с одного простого правила: новая заявка, задача менеджеру или напоминание по записи.",
+  "automations.emptyDescription":
+    "Начните с одного простого правила: новая заявка, задача менеджеру или напоминание по записи.",
   "automations.runsTitle": "Журнал запусков",
   "automations.entity": "сущность",
   "automations.attempt": "попытка {current}/{max}",
@@ -2963,9 +3506,11 @@ export const ru: Record<string, string> = {
   "automations.ruleNamePlaceholder": "Название правила",
   "automations.descriptionPlaceholder": "Краткое описание",
   "automations.saveDraft": "Сохранить черновик",
-  "automations.previewRequired": "Сначала проверьте правило, затем сохраните его.",
+  "automations.previewRequired":
+    "Сначала проверьте правило, затем сохраните его.",
   "automations.previewFailed": "Проверка не прошла. Проверьте поля правила.",
-  "automations.ruleNotSaved": "Правило не сохранено. Сначала выполните проверку и исправьте ошибки.",
+  "automations.ruleNotSaved":
+    "Правило не сохранено. Сначала выполните проверку и исправьте ошибки.",
   "automations.name": "Название",
   "automations.trigger": "Событие",
   "automations.descriptionLabel": "Описание",
@@ -2976,12 +3521,14 @@ export const ru: Record<string, string> = {
   "automations.removeCondition": "Удалить условие",
   "automations.fieldPlaceholder": "поле, например source",
   "automations.expectedValue": "ожидаемое значение",
-  "automations.noConditionsHint": "Без условий правило сработает на каждое выбранное событие.",
+  "automations.noConditionsHint":
+    "Без условий правило сработает на каждое выбранное событие.",
   "automations.actions": "Действия",
   "automations.addAction": "Добавить действие",
   "automations.removeAction": "Удалить действие",
   "automations.delaySeconds": "задержка в секундах",
-  "automations.configPlaceholder": "{\"title\":\"Связаться с клиентом\",\"priority\":\"high\"}",
+  "automations.configPlaceholder":
+    '{"title":"Связаться с клиентом","priority":"high"}',
   "automations.previewOk": "Проверка пройдена: {name}",
   "automations.previewMeta": "{conditions} условий · {actions} действий",
   "automations.testPreview": "Проверить правило",
@@ -3008,17 +3555,20 @@ export const ru: Record<string, string> = {
   "ai.widget.title": "ИИ-помощник бизнеса",
   "ai.widget.subtitle": "Рекомендации на сегодня",
   "ai.widget.priority": "Приоритетная сводка",
-  "ai.widget.brief": "Сегодня стоит обработать новые заявки и подтвердить ближайшие записи.",
+  "ai.widget.brief":
+    "Сегодня стоит обработать новые заявки и подтвердить ближайшие записи.",
   "ai.widget.apply": "Применить подсказку",
   "ai.widget.applied": "Подсказка применена",
   "ai.widget.smartReply": "Умный ответ",
-  "ai.widget.reply": "Здравствуйте! Есть свободное окно сегодня в 12:00. Забронировать для вас?",
+  "ai.widget.reply":
+    "Здравствуйте! Есть свободное окно сегодня в 12:00. Забронировать для вас?",
   "ai.widget.placeholder": "Спросите, что делать дальше...",
   "ai.suggestion.1": "Ответить клиенту и предложить ближайшие окна",
   "ai.suggestion.2": "Есть заявки без контакта больше 2 часов",
   "ai.suggestion.3": "WhatsApp даёт больше записей, чем сайт",
   "leads.title": "Воронка заявок",
-  "leads.description": "Единая таблица входящих заявок: поиск, источники, AI-сигналы, статусы и следующий шаг.",
+  "leads.description":
+    "Единая таблица входящих заявок: поиск, источники, AI-сигналы, статусы и следующий шаг.",
   "leads.new": "Новая заявка",
   "leads.search": "Поиск по клиенту, телефону или сообщению...",
   "leads.allSources": "Все источники",
@@ -3037,13 +3587,19 @@ export const ru: Record<string, string> = {
   "leads.queueSearch": "Поиск по имени, телефону или запросу",
   "leads.loading": "Загружаю заявки",
   "leads.emptyTitle": "Заявок нет",
-  "leads.emptyText": "Новые заявки из форм, сообщений и ручного ввода появятся в этой очереди.",
+  "leads.emptyText":
+    "Новые заявки из форм, сообщений и ручного ввода появятся в этой очереди.",
+  "leads.emptyFilteredTitle": "По текущим фильтрам заявок нет",
+  "leads.emptyFilteredText":
+    "Сбросьте фильтры или измените поисковый запрос, чтобы увидеть больше заявок.",
   "leads.createFirstLead": "Создайте первый лид",
   "leads.setupIntegrations": "Настройте интеграции",
   "leads.incomingTitle": "Входящие возможности",
-  "leads.incomingDescription": "Проверьте и назначьте {count} активных лидов на сегодня.",
+  "leads.incomingDescription":
+    "Проверьте и назначьте {count} активных лидов на сегодня.",
   "leads.aiPriorityTitle": "Приоритет AI Интеллекта",
-  "leads.aiPriorityText": "Приоритет: {name} — высокая вероятность сделки на основе прошлых взаимодействий и текущих сигналов.",
+  "leads.aiPriorityText":
+    "Приоритет: {name} — высокая вероятность сделки на основе прошлых взаимодействий и текущих сигналов.",
   "leads.takeAction": "Принять меры",
   "leads.statNew": "Новые",
   "leads.statWaiting": "Ожидают",
@@ -3059,7 +3615,8 @@ export const ru: Record<string, string> = {
   "leads.nextStepBook": "Записать",
   "leads.nextStepReview": "Проверить",
   "leads.noMatchingLeads": "Заявки не найдены",
-  "leads.noMatchingLeadsText": "Измените фильтр или подключите новый источник заявок.",
+  "leads.noMatchingLeadsText":
+    "Измените фильтр или подключите новый источник заявок.",
   "leads.columnNew": "Новые",
   "leads.columnNewHint": "Нужна быстрая реакция",
   "leads.columnContacted": "Связались",
@@ -3076,17 +3633,20 @@ export const ru: Record<string, string> = {
   "leads.noLeadsInColumn": "Нет заявок",
   "leads.showMoreInColumn": "Показать еще {count}",
   "leads.aiNote": "Подсказка: ответьте клиенту в ближайшие 15 минут.",
-  "leads.aiCard": "предложить два ближайших свободных окна и уточнить удобный канал связи.",
+  "leads.aiCard":
+    "предложить два ближайших свободных окна и уточнить удобный канал связи.",
   "leads.open": "Открыть",
   "leads.book": "Записать",
   "leads.intelligence": "Разбор заявки",
   "leads.create": "Создать заявку",
-  "leads.aiSummary": "Клиент заинтересован. Лучше предложить ближайшее окно и быстрый ответ в WhatsApp.",
+  "leads.aiSummary":
+    "Клиент заинтересован. Лучше предложить ближайшее окно и быстрый ответ в WhatsApp.",
   "leads.totalLeads": "Всего лидов",
   "leads.newToday": "Новые сегодня",
   "leads.metricDeltaWeek": "{count} в списке",
   "leads.conversionMetric": "Конверсия {value}%",
-  "leads.aiBannerText": "Приоритет: {lead}. Проверьте запрос, ответственного и следующий шаг до потери клиента.",
+  "leads.aiBannerText":
+    "Приоритет: {lead}. Проверьте запрос, ответственного и следующий шаг до потери клиента.",
   "leads.weeklyDelta": "+{count} за неделю",
   "leads.tableLead": "Лид",
   "leads.tablePhone": "Телефон",
@@ -3110,7 +3670,8 @@ export const ru: Record<string, string> = {
   "leads.aiReply": "Ответ с ИИ",
   "leads.bookFromLead": "Создать запись из заявки",
   "leads.commandTitle": "Центр заявок",
-  "leads.commandText": "Сначала отвечаем новым обращениям, затем доводим клиента до записи или сделки.",
+  "leads.commandText":
+    "Сначала отвечаем новым обращениям, затем доводим клиента до записи или сделки.",
   "leads.metricNew": "Новые",
   "leads.metricActive": "В работе",
   "leads.metricBooked": "Записаны",
@@ -3152,11 +3713,13 @@ export const ru: Record<string, string> = {
   "leads.archiveReason": "Причина архивации заявки",
   "leads.archiveReasonPlaceholder": "Например: дубль, неактуальная заявка",
   "leads.archiveConfirmTitle": "Архивировать заявку?",
-  "leads.archiveConfirmText": "Будет архивировано заявок: {count}. Данные сохранятся и смогут быть восстановлены.",
+  "leads.archiveConfirmText":
+    "Будет архивировано заявок: {count}. Данные сохранятся и смогут быть восстановлены.",
   "leads.lostReason": "Почему заявка потеряна?",
   "leads.lostReasonRequired": "Укажите причину отказа.",
   "leads.appointmentSelectionRequired": "Не выбрана заявка, услуга или слот.",
-  "leads.noBusiness": "Создайте бизнес в настройках, чтобы работать с заявками.",
+  "leads.noBusiness":
+    "Создайте бизнес в настройках, чтобы работать с заявками.",
   "leads.noticeCreated": "Заявка создана.",
   "leads.noticeTaken": "Заявка взята в работу.",
   "leads.noticeContacted": "Статус обновлен: связались.",
@@ -3167,18 +3730,24 @@ export const ru: Record<string, string> = {
   "leads.noticeAssigned": "Заявка назначена на вас.",
   "leads.noticeNextActionCreated": "Следующее действие создано.",
   "leads.actionDone": "Действие по заявке выполнено.",
-  "leads.aiDraftReady": "AI подготовил короткий ответ для заявки. Реальная отправка будет подключена через Conversations API.",
-  "leads.appointmentCreated": "Запись создана из заявки. Заявка обновлена и запись появится в календаре.",
+  "leads.aiDraftReady":
+    "AI подготовил короткий ответ для заявки. Реальная отправка будет подключена через Conversations API.",
+  "leads.appointmentCreated":
+    "Запись создана из заявки. Заявка обновлена и запись появится в календаре.",
   "leads.aiNewTitle": "Новые заявки требуют реакции",
-  "leads.aiNewDesc": "{count} новых заявок сейчас ждут первого ответа. Это главный риск потери клиента.",
+  "leads.aiNewDesc":
+    "{count} новых заявок сейчас ждут первого ответа. Это главный риск потери клиента.",
   "leads.aiOpenNew": "Разобрать",
   "leads.aiCalmTitle": "Новых необработанных заявок нет",
-  "leads.aiCalmDesc": "Можно проверить активные заявки и довести клиентов до записи или сделки.",
+  "leads.aiCalmDesc":
+    "Можно проверить активные заявки и довести клиентов до записи или сделки.",
   "leads.aiActiveTitle": "Есть заявки в работе",
-  "leads.aiActiveDesc": "{count} заявок уже в диалоге. Проверьте, где нужен следующий шаг.",
+  "leads.aiActiveDesc":
+    "{count} заявок уже в диалоге. Проверьте, где нужен следующий шаг.",
   "leads.aiReviewPipeline": "Проверить",
   "leads.aiDataTitle": "Добавьте источники заявок",
-  "leads.aiDataDesc": "Когда подключены WhatsApp, Telegram или сайт, ZANI точнее показывает узкие места.",
+  "leads.aiDataDesc":
+    "Когда подключены WhatsApp, Telegram или сайт, ZANI точнее показывает узкие места.",
   "leads.aiConnectSources": "Подключить",
   "leads.nextActionContactClient": "Связаться с клиентом",
   "leads.nextActionQualifyNeed": "Квалифицировать потребность",
@@ -3267,13 +3836,15 @@ export const ru: Record<string, string> = {
   "leads.noticeArchived": "Архивировано: {count}",
   "leads.noticeStatusUpdated": "Статус заявки обновлен.",
   "leads.statusUpdated": "Статус изменен",
-  "leads.useActionForStatus": "Этот статус меняется только через бизнес-действие.",
+  "leads.useActionForStatus":
+    "Этот статус меняется только через бизнес-действие.",
   "leads.undo": "Отменить",
   "leads.redo": "Повторить",
   "leads.actionUndone": "Действие отменено.",
   "leads.actionRedone": "Действие повторено.",
   "leads.internalNotes": "Внутренние заметки",
-  "leads.notePlaceholder": "Напишите приватную заметку для команды. Можно использовать @имя.",
+  "leads.notePlaceholder":
+    "Напишите приватную заметку для команды. Можно использовать @имя.",
   "leads.addNote": "Добавить",
   "leads.noteAdded": "Заметка добавлена.",
   "leads.attachFiles": "Прикрепить файлы",
@@ -3288,19 +3859,26 @@ export const ru: Record<string, string> = {
   "leads.aiConversationSummary": "AI-сводка",
   "leads.aiIntent": "Намерение",
   "leads.aiNextBestAction": "Действие",
-  "leads.aiNoDialogSummary": "Диалога пока нет. Оценка построена по источнику, статусу и времени без ответа.",
-  "leads.aiRecommendationStale": "Лид завис. Свяжитесь с клиентом сегодня или закройте причину потери.",
-  "leads.aiRecommendationAssign": "Назначьте ответственного и сделайте первый контакт как можно быстрее.",
-  "leads.aiRecommendationCallFast": "Клиенты с похожим запросом лучше конвертируются при звонке в первые 15 минут.",
-  "leads.aiRecommendationQualify": "Уточните потребность и предложите следующий конкретный шаг.",
+  "leads.aiNoDialogSummary":
+    "Диалога пока нет. Оценка построена по источнику, статусу и времени без ответа.",
+  "leads.aiRecommendationStale":
+    "Лид завис. Свяжитесь с клиентом сегодня или закройте причину потери.",
+  "leads.aiRecommendationAssign":
+    "Назначьте ответственного и сделайте первый контакт как можно быстрее.",
+  "leads.aiRecommendationCallFast":
+    "Клиенты с похожим запросом лучше конвертируются при звонке в первые 15 минут.",
+  "leads.aiRecommendationQualify":
+    "Уточните потребность и предложите следующий конкретный шаг.",
   "leads.staleLeadTitle": "Лид завис",
-  "leads.staleLeadText": "Нет действий больше 3 дней. Нужен контакт или решение по статусу.",
+  "leads.staleLeadText":
+    "Нет действий больше 3 дней. Нужен контакт или решение по статусу.",
   "leads.duplicatesTitle": "Возможные дубли",
   "leads.duplicatesText": "Найдено похожих клиентов: {count}",
   "leads.mergeDuplicate": "Объединить",
   "leads.duplicatesMerged": "Дубли объединены.",
   "leads.aiAutomationTitle": "AI и автоматизация",
-  "leads.aiAutomationText": "Скоринг, зависшие лиды и автоназначение работают по текущим CRM-данным.",
+  "leads.aiAutomationText":
+    "Скоринг, зависшие лиды и автоназначение работают по текущим CRM-данным.",
   "leads.sortByHeat": "Сортировать по горячести",
   "leads.assignmentWorkload": "По загрузке",
   "leads.assignmentRoundRobin": "Round-robin",
@@ -3324,15 +3902,21 @@ export const ru: Record<string, string> = {
   "leads.templateGreeting": "/приветствие",
   "leads.templatePrice": "/стоимость",
   "leads.templateBooking": "/запись",
-  "leads.templateGreetingText": "Здравствуйте, {{имя}}! Спасибо за заявку. Подскажите, когда вам удобно обсудить {{услуга}}?",
-  "leads.templatePriceText": "Здравствуйте, {{имя}}! По услуге {{услуга}} уточню детали и отправлю стоимость.",
-  "leads.templateBookingText": "Здравствуйте, {{имя}}! Могу предложить ближайшее время для {{услуга}}. Какой день вам удобен?",
+  "leads.templateGreetingText":
+    "Здравствуйте, {{имя}}! Спасибо за заявку. Подскажите, когда вам удобно обсудить {{услуга}}?",
+  "leads.templatePriceText":
+    "Здравствуйте, {{имя}}! По услуге {{услуга}} уточню детали и отправлю стоимость.",
+  "leads.templateBookingText":
+    "Здравствуйте, {{имя}}! Могу предложить ближайшее время для {{услуга}}. Какой день вам удобен?",
   "leads.mobileSwipeHint": "Свайп: влево архив, вправо в работу",
-  "leads.offlineMode": "Оффлайн-режим: показываем последние сохранённые заявки.",
+  "leads.offlineMode":
+    "Оффлайн-режим: показываем последние сохранённые заявки.",
   "leads.offlinePending": "Ждёт синхронизации: {count}",
-  "leads.offlineQueued": "Действие сохранено и синхронизируется при появлении сети.",
+  "leads.offlineQueued":
+    "Действие сохранено и синхронизируется при появлении сети.",
   "leads.offlineSynced": "Синхронизировано действий: {count}",
-  "leads.offlineFilesSkipped": "Файлы нельзя сохранить оффлайн. Прикрепите их после восстановления сети.",
+  "leads.offlineFilesSkipped":
+    "Файлы нельзя сохранить оффлайн. Прикрепите их после восстановления сети.",
   "leads.voiceRecord": "Голос",
   "leads.voiceStop": "Стоп",
   "leads.voiceNoteAttached": "Голосовая заметка прикреплена.",
@@ -3369,9 +3953,12 @@ export const ru: Record<string, string> = {
   "deals.paymentAmountPrompt": "Какая сумма оплаты?",
   "deals.lostReasonPrompt": "Почему отказ / потеряли сделку?",
   "deals.stageLostReasonPrompt": "Почему сделка потеряна?",
-  "deals.noBusiness": "Создайте бизнес в настройках, чтобы работать со сделками.",
-  "deals.saveError": "Не удалось сохранить сделку, изменить стадию или выполнить действие.",
-  "deals.noPipeline": "Сначала создайте pipeline и стадии через API или Django Admin. Это защищает CRM от хаотичных статусов.",
+  "deals.noBusiness":
+    "Создайте бизнес в настройках, чтобы работать со сделками.",
+  "deals.saveError":
+    "Не удалось сохранить сделку, изменить стадию или выполнить действие.",
+  "deals.noPipeline":
+    "Сначала создайте pipeline и стадии через API или Django Admin. Это защищает CRM от хаотичных статусов.",
   "deals.activePipeline": "активная воронка",
   "deals.openDeals": "В работе",
   "deals.inWork": "активные сделки",
@@ -3379,17 +3966,22 @@ export const ru: Record<string, string> = {
   "deals.closedPaid": "закрытые оплаты",
   "deals.risks": "Риски",
   "deals.aiPipelineHint": "Подсказка по сделкам",
-  "deals.aiOverdueText": "{count} сделок просрочили SLA. Проверьте причину задержки и назначьте следующий шаг.",
-  "deals.aiNoNextTaskText": "У {count} открытых сделок нет следующей задачи. Добавьте действие, чтобы сделки не зависали.",
-  "deals.aiStableText": "Критичных рисков по сделкам сейчас нет. Продолжайте вести pipeline по ближайшим задачам.",
+  "deals.aiOverdueText":
+    "{count} сделок просрочили SLA. Проверьте причину задержки и назначьте следующий шаг.",
+  "deals.aiNoNextTaskText":
+    "У {count} открытых сделок нет следующей задачи. Добавьте действие, чтобы сделки не зависали.",
+  "deals.aiStableText":
+    "Критичных рисков по сделкам сейчас нет. Продолжайте вести pipeline по ближайшим задачам.",
   "deals.allStages": "Все стадии",
   "deals.nextAction": "Следующий шаг",
   "deals.searchPlaceholder": "Поиск по сделке, клиенту или источнику...",
   "deals.pipelineValue": "Стоимость pipeline",
   "deals.dropHere": "Перетащите сделки сюда",
   "deals.createModalTitle": "Создать сделку",
-  "deals.clientRequired": "Для сделки нужен клиент. Создайте клиента, затем вернитесь к pipeline.",
-  "deals.stageRequired": "Для сделки нужна хотя бы одна стадия pipeline. Настройте pipeline в админке или через API.",
+  "deals.clientRequired":
+    "Для сделки нужен клиент. Создайте клиента, затем вернитесь к pipeline.",
+  "deals.stageRequired":
+    "Для сделки нужна хотя бы одна стадия pipeline. Настройте pipeline в админке или через API.",
   "deals.titlePlaceholder": "Название сделки",
   "deals.clientSelect": "Клиент",
   "deals.firstStage": "Первая стадия",
@@ -3402,7 +3994,8 @@ export const ru: Record<string, string> = {
   "deals.leadLabel": "Заявка",
   "deals.notLinked": "не связана",
   "deals.aiNextAction": "Следующее действие AI",
-  "deals.aiNextActionText": "Проверьте ближайшую задачу, затем предложите клиенту один конкретный следующий шаг. AI execution остаётся только после подтверждения.",
+  "deals.aiNextActionText":
+    "Проверьте ближайшую задачу, затем предложите клиенту один конкретный следующий шаг. AI execution остаётся только после подтверждения.",
   "deals.tasks": "Задачи",
   "deals.noTasks": "Нет задач по сделке.",
   "deals.conversations": "Диалоги",
@@ -3410,10 +4003,13 @@ export const ru: Record<string, string> = {
   "deals.noConversations": "Диалогов клиента пока нет.",
   "deals.noTimeline": "История сделки появится после действий менеджера.",
   "deals.salesTitle": "Продажи",
-  "deals.salesDescription": "Сделки, клиенты, переписки и ближайшие шаги в одном рабочем экране.",
+  "deals.salesDescription":
+    "Сделки, клиенты, переписки и ближайшие шаги в одном рабочем экране.",
   "deals.aiPriorityTitle": "Приоритет AI Интеллекта",
-  "deals.aiPriorityText": "Проверьте сделку {deal}: клиент {client}, сумма {amount}. ZANI видит риск остановки и рекомендует назначить следующий шаг.",
-  "deals.aiPriorityEmpty": "Критичных сделок сейчас нет. Pipeline можно вести по ближайшим задачам.",
+  "deals.aiPriorityText":
+    "Проверьте сделку {deal}: клиент {client}, сумма {amount}. ZANI видит риск остановки и рекомендует назначить следующий шаг.",
+  "deals.aiPriorityEmpty":
+    "Критичных сделок сейчас нет. Pipeline можно вести по ближайшим задачам.",
   "deals.takeAction": "Принять меры",
   "deals.filters": "Фильтры",
   "deals.filterMine": "Мои",
@@ -3440,12 +4036,14 @@ export const ru: Record<string, string> = {
   "deals.delete": "Удалить",
   "deals.archive": "Архивировать",
   "deals.archiveSelectedTitle": "Архивировать выбранные сделки",
-  "deals.archiveSelectedText": "Будет архивировано сделок: {count}. Данные сохранятся и смогут быть восстановлены.",
+  "deals.archiveSelectedText":
+    "Будет архивировано сделок: {count}. Данные сохранятся и смогут быть восстановлены.",
   "deals.archiveReason": "Причина архивации",
   "deals.archiveReasonPlaceholder": "Например: дубль, неактуальная сделка",
   "deals.archiveReasonDefault": "Архивировано менеджером",
   "deals.noticeArchived": "Архивировано сделок: {count}",
   "deals.noticeRestored": "Восстановлено сделок: {count}",
+  "deals.actionDone": "Действие по сделке выполнено.",
   "deals.more": "Еще",
   "deals.confirmDeleteSelected": "Удалить выбранные сделки?",
   "deals.hidePriority": "Скрыть приоритет",
@@ -3462,8 +4060,10 @@ export const ru: Record<string, string> = {
   "deals.noStage": "Без этапа",
   "deals.noPlan": "План не задан",
   "deals.defaultNextAction": "Связаться с клиентом",
-  "deals.stageGuard": "Перед переводом сделки на следующий этап назначьте ответственному понятный следующий шаг.",
-  "deals.saveChangeError": "Не удалось сохранить изменение. Проверьте данные и попробуйте еще раз.",
+  "deals.stageGuard":
+    "Перед переводом сделки на следующий этап назначьте ответственному понятный следующий шаг.",
+  "deals.saveChangeError":
+    "Не удалось сохранить изменение. Проверьте данные и попробуйте еще раз.",
   "deals.metricOpenPipeline": "Открытая воронка",
   "deals.metricOpenPipelineHint": "{count} сделок в работе",
   "deals.metricWon": "Выиграно",
@@ -3486,7 +4086,8 @@ export const ru: Record<string, string> = {
   "deals.stageFilterLabel": "Фильтр этапов сделок",
   "deals.listTitle": "Список сделок",
   "deals.notFoundTitle": "Сделок не найдено",
-  "deals.notFoundText": "Измените фильтр или создайте новую сделку из заявки/клиента.",
+  "deals.notFoundText":
+    "Измените фильтр или создайте новую сделку из заявки/клиента.",
   "deals.overdue": "Просрочено",
   "deals.success": "Успешно",
   "deals.lost": "Потеряна",
@@ -3494,16 +4095,20 @@ export const ru: Record<string, string> = {
   "deals.nearestStep": "Ближайший шаг",
   "deals.add": "Добавить",
   "deals.snooze": "Отложить",
-  "deals.noMoveWithoutNext": "Эта сделка не должна двигаться дальше без назначенного следующего действия.",
-  "deals.noNearestStepText": "У сделки нет ближайшего шага. Назначьте задачу, чтобы не потерять клиента.",
+  "deals.noMoveWithoutNext":
+    "Эта сделка не должна двигаться дальше без назначенного следующего действия.",
+  "deals.noNearestStepText":
+    "У сделки нет ближайшего шага. Назначьте задачу, чтобы не потерять клиента.",
   "deals.leadLine": "Лид: {value}",
   "deals.closing": "Закрытие",
   "deals.notSet": "Не задано",
-  "deals.lostReasonAfterClose": "Причина потери появится после закрытия сделки.",
+  "deals.lostReasonAfterClose":
+    "Причина потери появится после закрытия сделки.",
   "deals.pipeline": "Воронка",
   "deals.responsible": "Ответственный",
   "deals.unassigned": "Не назначен",
-  "deals.chooseResponsible": "Выберите менеджера для ответственности за сделку.",
+  "deals.chooseResponsible":
+    "Выберите менеджера для ответственности за сделку.",
   "deals.dealRisk": "Риск сделки",
   "deals.riskHighWithPercent": "Высокий риск {percent}%",
   "deals.riskControlWithPercent": "Контроль {percent}%",
@@ -3511,16 +4116,20 @@ export const ru: Record<string, string> = {
   "deals.showRecommendations": "Показать рекомендации",
   "deals.selectedDeal": "Выбранная сделка",
   "deals.noSelectedDeal": "Выберите сделку в воронке",
-  "deals.noSelectedDealText": "Краткая карточка, next action и быстрые действия появятся здесь.",
+  "deals.noSelectedDealText":
+    "Краткая карточка, next action и быстрые действия появятся здесь.",
   "deals.forecast": "Прогноз закрытий",
   "deals.forecastPeriod": "На этот месяц",
   "deals.expectedRevenue": "Вероятный доход",
   "deals.activity": "Активность",
   "deals.allEvents": "Все события",
   "deals.aiSuggestion": "Подсказка",
-  "deals.aiSuggestionStable": "Критичных сделок сейчас нет. Держите pipeline по ближайшим задачам.",
-  "deals.aiSuggestionNoTasks": "Назначьте следующий шаг по сделкам без задач, чтобы они не зависали в воронке.",
-  "deals.aiSuggestionOverdue": "Проверьте просроченные сделки и зафиксируйте понятный next action для ответственного.",
+  "deals.aiSuggestionStable":
+    "Критичных сделок сейчас нет. Держите pipeline по ближайшим задачам.",
+  "deals.aiSuggestionNoTasks":
+    "Назначьте следующий шаг по сделкам без задач, чтобы они не зависали в воронке.",
+  "deals.aiSuggestionOverdue":
+    "Проверьте просроченные сделки и зафиксируйте понятный next action для ответственного.",
   "deals.aiHighChance": "Высокий шанс закрытия у {count} сделок на {amount}",
   "deals.allHints": "Смотреть все подсказки",
   "deals.moreDeals": "Еще {count} сделок",
@@ -3537,7 +4146,8 @@ export const ru: Record<string, string> = {
   "deals.emptyDealHistory": "История по сделке пока пустая.",
   "deals.commentPlaceholder": "Добавить комментарий",
   "deals.selectDeal": "Выберите сделку",
-  "deals.selectDealText": "Справа появятся клиент, ближайший шаг, сообщения и история.",
+  "deals.selectDealText":
+    "Справа появятся клиент, ближайший шаг, сообщения и история.",
   "deals.needClientFirst": "Сначала нужен клиент.",
   "deals.selectClient": "Выберите клиента",
   "deals.closeAsWon": "Закрыть как успешную",
@@ -3569,12 +4179,14 @@ export const ru: Record<string, string> = {
   "channel.instagram": "Instagram",
   "channel.manual": "Вручную",
   "timeline.title": "История действий",
-  "timeline.description": "Единая история клиента: CRM, сообщения, записи, задачи и автоматизации.",
+  "timeline.description":
+    "Единая история клиента: CRM, сообщения, записи, задачи и автоматизации.",
   "timeline.search": "Поиск по событиям",
   "timeline.noBusiness": "Создайте бизнес в настройках, чтобы открыть историю.",
   "timeline.noClient": "Без клиента",
   "timeline.emptyTitle": "Событий пока нет",
-  "timeline.emptyText": "Когда клиент оставит заявку, напишет сообщение или получит запись, история появится здесь.",
+  "timeline.emptyText":
+    "Когда клиент оставит заявку, напишет сообщение или получит запись, история появится здесь.",
   "platform.title": "Платформа",
   "platform.admin": "Админ платформы",
   "platform.controlCenter": "Центр управления",
@@ -3603,7 +4215,8 @@ export const ru: Record<string, string> = {
   "platform.overview.error": "Не удалось загрузить dashboard платформы.",
   "platform.overview.eyebrow": "Управление платформой",
   "platform.overview.title": "Обзор Zani",
-  "platform.overview.description": "Реальные продуктовые метрики платформы без merchant CRM sidebar и без internal dev tools.",
+  "platform.overview.description":
+    "Реальные продуктовые метрики платформы без merchant CRM sidebar и без internal dev tools.",
   "platform.overview.totalMerchants": "Всего мерчантов",
   "platform.overview.activeMerchants": "Активные мерчанты",
   "platform.overview.trialMerchants": "Пробные мерчанты",
@@ -3615,22 +4228,26 @@ export const ru: Record<string, string> = {
   "platform.overview.handoffConversations": "Диалоги ждут оператора",
   "platform.overview.newLeads": "Новые лиды / 30д",
   "platform.overview.mrr": "Оценка MRR",
-  "platform.overview.mrrText": "Оценка по активным подпискам и monthly_price тарифа. Payment provider на этом этапе не добавлен.",
+  "platform.overview.mrrText":
+    "Оценка по активным подпискам и monthly_price тарифа. Payment provider на этом этапе не добавлен.",
   "platform.overview.conversations": "Диалоги / 30д",
   "platform.overview.aiRequests": "AI-запросы / 30д",
   "platform.overview.activeChannels": "Активные каналы",
   "platform.overview.errorsTitle": "Операционные сигналы",
-  "platform.overview.errorsText": "Сейчас ошибок в platform overview: {errors}. Операционные сигналы пилота: {connectors} интеграций требуют внимания, {merchants} мерчей без данных продаж.",
+  "platform.overview.errorsText":
+    "Сейчас ошибок в platform overview: {errors}. Операционные сигналы пилота: {connectors} интеграций требуют внимания, {merchants} мерчей без данных продаж.",
   "platform.common.noName": "Без имени",
   "platform.common.unknown": "неизвестно",
   "platform.merchants.loading": "Загружаем мерчантов...",
   "platform.merchants.error": "Не удалось загрузить мерчантов.",
   "platform.merchants.eyebrow": "Пилотные мерчанты",
   "platform.merchants.title": "Мерчанты",
-  "platform.merchants.description": "Список бизнесов платформы: тариф, состояние пилота, операционные сигналы и безопасный support workflow без доступа к внутренним CRM-данным.",
+  "platform.merchants.description":
+    "Список бизнесов платформы: тариф, состояние пилота, операционные сигналы и безопасный support workflow без доступа к внутренним CRM-данным.",
   "platform.merchants.search": "Поиск по мерчантам",
   "platform.merchants.emptyTitle": "Мерчанты не найдены",
-  "platform.merchants.emptyText": "Измените поисковый запрос или проверьте, что бизнесы созданы.",
+  "platform.merchants.emptyText":
+    "Измените поисковый запрос или проверьте, что бизнесы созданы.",
   "platform.merchants.merchant": "Мерчант",
   "platform.merchants.owner": "Владелец",
   "platform.merchants.status": "Статус",
@@ -3656,38 +4273,46 @@ export const ru: Record<string, string> = {
   "platform.operations.error": "Не удалось загрузить состояние операций.",
   "platform.operations.eyebrow": "Операции поддержки",
   "platform.operations.title": "Состояние операций",
-  "platform.operations.description": "Единая панель для ответа на вопрос: что сломалось у мерча, где очередь, какой провайдер нельзя включать и что требует саппорта.",
+  "platform.operations.description":
+    "Единая панель для ответа на вопрос: что сломалось у мерча, где очередь, какой провайдер нельзя включать и что требует саппорта.",
   "platform.operations.critical": "Критичные блокеры",
   "platform.operations.warnings": "Предупреждения",
   "platform.operations.supportGrants": "Активные доступы поддержки",
   "platform.operations.connectorWorkItems": "Задачи по коннекторам",
   "platform.operations.queueRuntime": "Очереди и фоновые задачи",
-  "platform.operations.queueRuntimeText": "Готовность Celery/Redis и ошибки фоновой работы.",
+  "platform.operations.queueRuntimeText":
+    "Готовность Celery/Redis и ошибки фоновой работы.",
   "platform.operations.pending": "Ожидают",
   "platform.operations.running": "В работе",
   "platform.operations.failed": "Ошибки",
   "platform.operations.configured": "настроен",
   "platform.operations.notConfigured": "не настроен",
   "platform.operations.none": "нет",
-  "platform.operations.broker": "Broker: {broker} · Inline automations: {inline} · Queues: {queues}",
+  "platform.operations.broker":
+    "Broker: {broker} · Inline automations: {inline} · Queues: {queues}",
   "platform.operations.productionGates": "Production gates",
-  "platform.operations.productionGatesText": "Самые важные блокеры из production readiness и backup readiness.",
-  "platform.operations.noProductionBlockers": "Критичных production blockers нет.",
+  "platform.operations.productionGatesText":
+    "Самые важные блокеры из production readiness и backup readiness.",
+  "platform.operations.noProductionBlockers":
+    "Критичных production blockers нет.",
   "platform.operations.providerRollout": "Включение провайдеров",
-  "platform.operations.providerRolloutText": "Порядок безопасного включения внешних провайдеров.",
+  "platform.operations.providerRolloutText":
+    "Порядок безопасного включения внешних провайдеров.",
   "platform.operations.enabled": "Включен: {value}",
   "platform.operations.connectorQueue": "Очередь коннекторов",
   "platform.operations.noConnectorRequests": "Нет запросов по коннекторам.",
   "platform.operations.automationFailures": "Ошибки автоматизаций",
   "platform.operations.attempts": "попытки {attempts}/{max}",
-  "platform.operations.noFailedAutomationRuns": "Нет упавших запусков автоматизаций.",
+  "platform.operations.noFailedAutomationRuns":
+    "Нет упавших запусков автоматизаций.",
   "platform.operations.integrationFailures": "Ошибки интеграций",
   "platform.operations.noBusiness": "Без бизнеса",
   "platform.operations.noFailedIntegrationEvents": "Нет ошибок интеграций.",
   "platform.merchantDetail.loading": "Загружаем support view мерчанта...",
   "platform.merchantDetail.error": "Не удалось открыть support view мерчанта.",
   "platform.merchantDetail.eyebrow": "Поддержка платформы",
-  "platform.merchantDetail.description": "Безопасная platform-зона: видно операционный статус и support workflow, но не внутренние CRM-данные мерчанта.",
+  "platform.merchantDetail.description":
+    "Безопасная platform-зона: видно операционный статус и support workflow, но не внутренние CRM-данные мерчанта.",
   "platform.merchantDetail.snapshot": "Профиль мерчанта",
   "platform.merchantDetail.owner": "Владелец",
   "platform.merchantDetail.landing": "Лендинг",
@@ -3696,9 +4321,11 @@ export const ru: Record<string, string> = {
   "platform.merchantDetail.crmOperations": "CRM-операции",
   "platform.merchantDetail.leadsLine": "Лиды: {leads} · новые: {new}",
   "platform.merchantDetail.clientsLine": "Клиенты: {clients} · задачи: {tasks}",
-  "platform.merchantDetail.inboxLine": "Inbox: {unread} unread · {handoff} handoff",
+  "platform.merchantDetail.inboxLine":
+    "Inbox: {unread} unread · {handoff} handoff",
   "platform.merchantDetail.dataSources": "Источники данных",
-  "platform.merchantDetail.connectorsLine": "Коннекторы: {ok} ok · {pending} request · {failed} fail",
+  "platform.merchantDetail.connectorsLine":
+    "Коннекторы: {ok} ok · {pending} request · {failed} fail",
   "platform.merchantDetail.formsLine": "Формы: {forms} · ошибки: {errors}",
   "platform.merchantDetail.salesEventsLine": "Sales events: {events}",
   "platform.merchantDetail.pilotHealth": "Состояние пилота",
@@ -3708,111 +4335,144 @@ export const ru: Record<string, string> = {
   "platform.merchantDetail.priority": "приоритет {priority}",
   "platform.merchantDetail.emptyWorkflow": "Support workflow пока пустой.",
   "platform.merchantDetail.noNextSteps": "Следующих действий нет",
-  "platform.merchantDetail.noNextStepsText": "Пилот можно мониторить без срочного вмешательства.",
+  "platform.merchantDetail.noNextStepsText":
+    "Пилот можно мониторить без срочного вмешательства.",
   "platform.merchantDetail.logSupportAction": "Записать действие поддержки",
   "platform.merchantDetail.actionSupportNote": "Заметка поддержки",
   "platform.merchantDetail.actionMerchantCall": "Звонок мерчанту",
   "platform.merchantDetail.actionSetupHelp": "Помощь с настройкой",
   "platform.merchantDetail.actionRiskReview": "Проверка риска",
-  "platform.merchantDetail.notePlaceholder": "Краткий результат звонка, проверки или помощи мерчанту",
-  "platform.merchantDetail.noteTextarea": "Например: помогли подключить форму, следующий шаг — загрузить CSV продаж.",
+  "platform.merchantDetail.notePlaceholder":
+    "Краткий результат звонка, проверки или помощи мерчанту",
+  "platform.merchantDetail.noteTextarea":
+    "Например: помогли подключить форму, следующий шаг — загрузить CSV продаж.",
   "platform.merchantDetail.saveAction": "Записать действие",
   "platform.merchantDetail.refresh": "Обновить",
-  "platform.merchantDetail.noRecentActions": "Support actions пока не записаны.",
+  "platform.merchantDetail.noRecentActions":
+    "Support actions пока не записаны.",
   "platform.placeholder.accessLayerActive": "Access layer активен",
   "platform.placeholder.internalOnly": "Внутренний platform-only route",
   "platform.placeholder.placeholderOnly": "Только placeholder",
-  "platform.placeholder.placeholderText": "Эта страница намеренно не содержит реальной бизнес-логики. Здесь фиксируется отдельный Platform Admin интерфейс и защищённые routes без добавления лишних публичных модулей.",
-  "platform.placeholder.notMerchantFeature": "Это не показывается как production-функциональность для мерчанта.",
+  "platform.placeholder.placeholderText":
+    "Эта страница намеренно не содержит реальной бизнес-логики. Здесь фиксируется отдельный Platform Admin интерфейс и защищённые routes без добавления лишних публичных модулей.",
+  "platform.placeholder.notMerchantFeature":
+    "Это не показывается как production-функциональность для мерчанта.",
   "platform.placeholder.readiness": "Готовность",
   "platform.placeholder.nextRoadmapStep": "Следующий шаг roadmap",
-  "platform.placeholder.nextRoadmapText": "Реальные platform modules появляются только в следующих изолированных этапах.",
+  "platform.placeholder.nextRoadmapText":
+    "Реальные platform modules появляются только в следующих изолированных этапах.",
   "platform.placeholder.stageControlled": "Этап под контролем",
   "platform.placeholder.overview.title": "Обзор платформы",
   "platform.placeholder.overview.eyebrow": "Stage 1.2",
-  "platform.placeholder.overview.description": "Отдельная панель владельцев платформы с защищенным layout. Сейчас это интерфейсная оболочка без реальной операционной логики.",
+  "platform.placeholder.overview.description":
+    "Отдельная панель владельцев платформы с защищенным layout. Сейчас это интерфейсная оболочка без реальной операционной логики.",
   "platform.placeholder.overview.status1": "PlatformRoute защищает страницу",
-  "platform.placeholder.overview.status2": "Merchant sidebar здесь не отображается",
+  "platform.placeholder.overview.status2":
+    "Merchant sidebar здесь не отображается",
   "platform.placeholder.overview.status3": "Основа готова для будущих модулей",
   "platform.placeholder.merchants.title": "Мерчанты",
   "platform.placeholder.merchants.eyebrow": "Будущие операции",
-  "platform.placeholder.merchants.description": "Будущая зона управления мерчантами. На этом этапе реальные merchants API и dashboards не добавляются.",
+  "platform.placeholder.merchants.description":
+    "Будущая зона управления мерчантами. На этом этапе реальные merchants API и dashboards не добавляются.",
   "platform.placeholder.merchants.status1": "Маршрут существует",
   "platform.placeholder.merchants.status2": "Merchant API не добавлен",
-  "platform.placeholder.merchants.status3": "Готово для будущего platform module",
+  "platform.placeholder.merchants.status3":
+    "Готово для будущего platform module",
   "platform.placeholder.prospects.title": "Проспекты",
   "platform.placeholder.prospects.eyebrow": "Граница внутренних инструментов",
-  "platform.placeholder.prospects.description": "Будущая зона prospects/internal tools. Parser, scraping и outreach не входят в публичное ядро продукта.",
+  "platform.placeholder.prospects.description":
+    "Будущая зона prospects/internal tools. Parser, scraping и outreach не входят в публичное ядро продукта.",
   "platform.placeholder.prospects.status1": "Маршрут существует",
   "platform.placeholder.prospects.status2": "Prospects models не добавлены",
-  "platform.placeholder.prospects.status3": "Граница внутренних инструментов сохранена",
+  "platform.placeholder.prospects.status3":
+    "Граница внутренних инструментов сохранена",
   "platform.placeholder.landings.title": "Лендинги",
   "platform.placeholder.landings.eyebrow": "Граница пилота",
-  "platform.placeholder.landings.description": "Зона будущих демо-лендингов и клиентских посадочных страниц. Сейчас это безопасная заглушка.",
+  "platform.placeholder.landings.description":
+    "Зона будущих демо-лендингов и клиентских посадочных страниц. Сейчас это безопасная заглушка.",
   "platform.placeholder.landings.status1": "Маршрут существует",
   "platform.placeholder.landings.status2": "Генератор лендингов не добавлен",
   "platform.placeholder.landings.status3": "Безопасно для pilot navigation",
   "platform.placeholder.outreach.title": "Outreach",
   "platform.placeholder.outreach.eyebrow": "Ручной pilot process",
-  "platform.placeholder.outreach.description": "Будущая зона ручных касаний и статусов продаж. Массовый outreach и parser остаются internal developer tools.",
+  "platform.placeholder.outreach.description":
+    "Будущая зона ручных касаний и статусов продаж. Массовый outreach и parser остаются internal developer tools.",
   "platform.placeholder.outreach.status1": "Маршрут существует",
   "platform.placeholder.outreach.status2": "Outreach automation не добавлена",
-  "platform.placeholder.outreach.status3": "Граница внутренних инструментов сохранена",
+  "platform.placeholder.outreach.status3":
+    "Граница внутренних инструментов сохранена",
   "platform.placeholder.billing.title": "Биллинг",
   "platform.placeholder.billing.eyebrow": "Subscription foundation позже",
-  "platform.placeholder.billing.description": "Будущая зона тарифов и подписок платформы. Реальная оплата и billing API будут добавлены отдельным этапом.",
+  "platform.placeholder.billing.description":
+    "Будущая зона тарифов и подписок платформы. Реальная оплата и billing API будут добавлены отдельным этапом.",
   "platform.placeholder.billing.status1": "Маршрут существует",
   "platform.placeholder.billing.status2": "Payment logic не добавлена",
   "platform.placeholder.billing.status3": "Subscription models не добавлены",
   "platform.placeholder.analytics.title": "Аналитика платформы",
   "platform.placeholder.analytics.eyebrow": "Insights позже",
-  "platform.placeholder.analytics.description": "Будущая аналитика платформы. На этом этапе графики, MRR и operational dashboards намеренно не реализуются.",
+  "platform.placeholder.analytics.description":
+    "Будущая аналитика платформы. На этом этапе графики, MRR и operational dashboards намеренно не реализуются.",
   "platform.placeholder.analytics.status1": "Маршрут существует",
   "platform.placeholder.analytics.status2": "Графики не добавлены",
   "platform.placeholder.analytics.status3": "Analytics API не добавлен",
   "platform.placeholder.settings.title": "Настройки платформы",
   "platform.placeholder.settings.eyebrow": "Configuration позже",
-  "platform.placeholder.settings.description": "Будущая зона настроек платформы. Сейчас здесь только защищенный placeholder для следующей итерации.",
+  "platform.placeholder.settings.description":
+    "Будущая зона настроек платформы. Сейчас здесь только защищенный placeholder для следующей итерации.",
   "platform.placeholder.settings.status1": "Маршрут существует",
   "platform.placeholder.settings.status2": "Доступ защищён",
   "platform.placeholder.settings.status3": "Настройки продукта не изменены",
   "integrations.guide.importTitle": "Импортировать базу",
-  "integrations.guide.importText": "Начните с клиентов, заявок, продаж или каталога через Excel/CSV.",
+  "integrations.guide.importText":
+    "Начните с клиентов, заявок, продаж или каталога через Excel/CSV.",
   "integrations.guide.openImport": "Открыть импорт",
   "integrations.guide.startImport": "Начать с импорта",
   "integrations.guide.channelsTitle": "Включить входящие каналы",
-  "integrations.guide.channelsText": "Сайт-чат и Telegram дают первые заявки прямо во входящие.",
+  "integrations.guide.channelsText":
+    "Сайт-чат и Telegram дают первые заявки прямо во входящие.",
   "integrations.guide.checkChannels": "Проверить каналы",
   "integrations.guide.connectChannel": "Подключить канал",
   "integrations.guide.whatsappTitle": "Оставить заявку на WhatsApp",
-  "integrations.guide.whatsappText": "WhatsApp и Instagram подключаются честно: через заявку, без ложного автоматического включения.",
+  "integrations.guide.whatsappText":
+    "WhatsApp и Instagram подключаются честно: через заявку, без ложного автоматического включения.",
   "integrations.guide.requestCreated": "Заявка создана",
   "integrations.guide.fillRequest": "Заполнить заявку",
   "integrations.guide.demoSyncTitle": "Проверить демо-синхронизацию",
-  "integrations.guide.demoSyncText": "Kaspi, 1C, склад и маркетплейсы пока безопасно проверяются демо-событием.",
+  "integrations.guide.demoSyncText":
+    "Kaspi, 1C, склад и маркетплейсы пока безопасно проверяются демо-событием.",
   "integrations.guide.openDataConnectors": "Открыть коннекторы данных",
   "integrations.guide.eyebrow": "Подключение интеграций",
   "integrations.guide.title": "Подключайте возможности по порядку",
-  "integrations.guide.description": "Владелец видит не каталог API, а понятный маршрут: сначала данные, затем входящие каналы, потом заявки на внешние сервисы.",
+  "integrations.guide.description":
+    "Владелец видит не каталог API, а понятный маршрут: сначала данные, затем входящие каналы, потом заявки на внешние сервисы.",
   "integrations.guide.activeConnections": "Активные подключения",
   "integrations.group.messages": "Каналы",
-  "integrations.group.messagesText": "Подключите ИИ-агента к каналам, где клиенты пишут вашей компании.",
+  "integrations.group.messagesText":
+    "Подключите ИИ-агента к каналам, где клиенты пишут вашей компании.",
   "integrations.group.data": "Учёт и склад",
-  "integrations.group.dataText": "Источники фактов для ИИ-аналитика: продажи, остатки, каталог и документы.",
+  "integrations.group.dataText":
+    "Источники фактов для ИИ-аналитика: продажи, остатки, каталог и документы.",
   "integrations.group.marketplace": "Маркетплейсы",
-  "integrations.group.marketplaceText": "Заказы, оплаты, остатки и ценовые риски по внешним площадкам.",
+  "integrations.group.marketplaceText":
+    "Заказы, оплаты, остатки и ценовые риски по внешним площадкам.",
   "integrations.group.system": "Системные источники",
-  "integrations.group.systemText": "Дополнительные способы загрузки данных и служебные каналы.",
+  "integrations.group.systemText":
+    "Дополнительные способы загрузки данных и служебные каналы.",
   "integrations.provider.website": "Сайт",
-  "integrations.provider.websiteUse": "Чат и формы с сайта сразу попадают в сообщения и заявки.",
+  "integrations.provider.websiteUse":
+    "Чат и формы с сайта сразу попадают в сообщения и заявки.",
   "integrations.provider.telegram": "Telegram",
-  "integrations.provider.telegramUse": "Диалоги с клиентами и быстрые ответы менеджера.",
+  "integrations.provider.telegramUse":
+    "Диалоги с клиентами и быстрые ответы менеджера.",
   "integrations.provider.whatsapp": "WhatsApp",
-  "integrations.provider.whatsappUse": "Сообщения WhatsApp Business в одном рабочем окне.",
+  "integrations.provider.whatsappUse":
+    "Сообщения WhatsApp Business в одном рабочем окне.",
   "integrations.provider.instagram": "Instagram",
-  "integrations.provider.instagramUse": "Обращения из Direct переходят менеджерам.",
+  "integrations.provider.instagramUse":
+    "Обращения из Direct переходят менеджерам.",
   "integrations.provider.excelCsv": "Excel / CSV",
-  "integrations.provider.excelCsvUse": "Быстрая загрузка клиентов, продаж и каталога.",
+  "integrations.provider.excelCsvUse":
+    "Быстрая загрузка клиентов, продаж и каталога.",
   "integrations.provider.oneC": "1C",
   "integrations.provider.oneCUse": "Продажи, счета, остатки и справочники.",
   "integrations.provider.moysklad": "МойСклад",
@@ -3820,13 +4480,15 @@ export const ru: Record<string, string> = {
   "integrations.provider.kaspi": "Kaspi",
   "integrations.provider.kaspiUse": "Заказы, оплаты и бизнес-данные.",
   "integrations.provider.kaspiPricing": "Kaspi Pricing",
-  "integrations.provider.kaspiPricingUse": "Ценовой агент: мониторинг конкурентов, пороги и автопилот.",
+  "integrations.provider.kaspiPricingUse":
+    "Ценовой агент: мониторинг конкурентов, пороги и автопилот.",
   "integrations.provider.wildberries": "Wildberries",
   "integrations.provider.wildberriesUse": "Заказы, SKU, остатки и возвраты.",
   "integrations.provider.ozon": "Ozon",
   "integrations.provider.ozonUse": "FBS/FBO отправления, остатки и отмены.",
   "integrations.provider.googleSheets": "Google Sheets",
-  "integrations.provider.googleSheetsUse": "Регулярный импорт таблиц без разработки.",
+  "integrations.provider.googleSheetsUse":
+    "Регулярный импорт таблиц без разработки.",
   "integrations.provider.email": "Email",
   "integrations.provider.emailUse": "Уведомления, входящие письма и fallback.",
   "integrations.status.active": "Активно",
@@ -3868,21 +4530,26 @@ export const ru: Record<string, string> = {
   "integrations.import.salesHelp": "Создаёт события продаж для аналитики.",
   "integrations.import.catalog": "Товары, услуги и остатки",
   "integrations.import.catalogShort": "Каталог",
-  "integrations.import.catalogHelp": "Создаёт услуги и события каталога или остатков.",
+  "integrations.import.catalogHelp":
+    "Создаёт услуги и события каталога или остатков.",
   "integrations.import.chooseFile": "Выберите CSV или XLSX файл.",
-  "integrations.import.panelDescription": "Загрузите файл с клиентами, заявками, продажами или каталогом. ZANI сначала проверит файл и покажет предпросмотр.",
+  "integrations.import.panelDescription":
+    "Загрузите файл с клиентами, заявками, продажами или каталогом. ZANI сначала проверит файл и покажет предпросмотр.",
   "integrations.import.eyebrow": "Excel / CSV коннектор",
   "integrations.import.title": "Импорт реальных данных",
-  "integrations.import.description": "Загрузите CSV/XLSX, проверьте сопоставление колонок, предпросмотр, ошибки строк и только потом подтвердите импорт. Данные остаются в рамках текущего бизнеса.",
+  "integrations.import.description":
+    "Загрузите CSV/XLSX, проверьте сопоставление колонок, предпросмотр, ошибки строк и только потом подтвердите импорт. Данные остаются в рамках текущего бизнеса.",
   "integrations.import.downloadTemplate": "Скачать шаблон",
   "integrations.import.template": "Шаблон",
   "integrations.import.checkFile": "Проверить файл",
   "integrations.import.preview": "Предпросмотр",
   "integrations.import.noFile": "Файл ещё не загружен",
   "integrations.import.noFileSelected": "Файл ещё не выбран",
-  "integrations.import.noFileSelectedText": "Загрузите файл, чтобы увидеть предпросмотр и ошибки.",
+  "integrations.import.noFileSelectedText":
+    "Загрузите файл, чтобы увидеть предпросмотр и ошибки.",
   "integrations.import.fileMeta": "{entity} · {rows} строк · {status}",
-  "integrations.import.previewPlaceholder": "Здесь появится предпросмотр первых строк.",
+  "integrations.import.previewPlaceholder":
+    "Здесь появится предпросмотр первых строк.",
   "integrations.import.confirm": "Подтвердить импорт",
   "integrations.import.import": "Импортировать",
   "integrations.import.fixFile": "Файл нужно исправить перед импортом",
@@ -3892,7 +4559,8 @@ export const ru: Record<string, string> = {
   "integrations.import.noMapping": "Сопоставление не найдено.",
   "integrations.import.duplicates": "Дубли",
   "integrations.import.duplicatesFound": "Найдены возможные дубли",
-  "integrations.import.duplicatesDescription": "ZANI не создаст вторую карточку, если клиент уже найден по телефону или email.",
+  "integrations.import.duplicatesDescription":
+    "ZANI не создаст вторую карточку, если клиент уже найден по телефону или email.",
   "integrations.import.duplicatesCount": "{count} возможных дублей",
   "integrations.import.summaryRows": "Строк",
   "integrations.import.summaryCreated": "Создано",
@@ -3901,8 +4569,10 @@ export const ru: Record<string, string> = {
   "integrations.import.summaryErrors": "Ошибки",
   "integrations.import.summaryDuplicates": "Дубли",
   "integrations.import.summaryImported": "Импортировано",
-  "integrations.import.previewEmpty": "Предпросмотр появится после загрузки файла.",
-  "integrations.import.previewAfterCheck": "Предпросмотр появится после проверки файла.",
+  "integrations.import.previewEmpty":
+    "Предпросмотр появится после загрузки файла.",
+  "integrations.import.previewAfterCheck":
+    "Предпросмотр появится после проверки файла.",
   "integrations.import.history": "История импорта",
   "integrations.import.noImports": "Импортов пока нет.",
   "integrations.import.status.uploaded": "Загружен",
@@ -3911,47 +4581,63 @@ export const ru: Record<string, string> = {
   "integrations.import.status.failed": "Ошибка",
   "integrations.import.status.none": "Нет данных",
   "integrations.website.previewName": "Тестовый посетитель",
-  "integrations.website.previewMessage": "Здравствуйте, хочу узнать свободное время.",
-  "integrations.website.followUpMessage": "Подскажите, пожалуйста, ближайшее окно.",
-  "integrations.website.conversationCreated": "Тестовый диалог создан. Заявка #{lead}, клиент #{client}.",
-  "integrations.website.followUpAdded": "Дополнительное сообщение добавлено в тот же входящий диалог.",
+  "integrations.website.previewMessage":
+    "Здравствуйте, хочу узнать свободное время.",
+  "integrations.website.followUpMessage":
+    "Подскажите, пожалуйста, ближайшее окно.",
+  "integrations.website.conversationCreated":
+    "Тестовый диалог создан. Заявка #{lead}, клиент #{client}.",
+  "integrations.website.followUpAdded":
+    "Дополнительное сообщение добавлено в тот же входящий диалог.",
   "integrations.website.snippetCopied": "Код установки скопирован.",
   "integrations.website.title": "Чат сайта и лендингов",
   "integrations.website.eyebrow": "Сайт-чат",
-  "integrations.website.description": "Виджет сайта принимает обращение, создаёт клиента, заявку и диалог во входящих. Технические ключи скрыты: владелец видит только понятную установку и тест сообщения.",
+  "integrations.website.description":
+    "Виджет сайта принимает обращение, создаёт клиента, заявку и диалог во входящих. Технические ключи скрыты: владелец видит только понятную установку и тест сообщения.",
   "integrations.website.openInbox": "Открыть входящие",
   "integrations.website.loading": "Проверяем канал сайта...",
   "integrations.website.notConfiguredTitle": "Канал сайта пока не создан",
-  "integrations.website.notConfiguredText": "Создайте канал сайта в настройке бота или через быстрый старт. После этого здесь появятся кнопка копирования кода установки и тест отправки сообщения.",
+  "integrations.website.notConfiguredText":
+    "Создайте канал сайта в настройке бота или через быстрый старт. После этого здесь появятся кнопка копирования кода установки и тест отправки сообщения.",
   "integrations.website.openBots": "Открыть ботов",
   "integrations.website.checkReadiness": "Проверить готовность",
   "integrations.website.channelStatus": "Канал сайта: {status}",
-  "integrations.website.readyText": "Виджет готов. Внутренний код подключения скрыт, чтобы не превращать страницу интеграций в техническую панель.",
+  "integrations.website.readyText":
+    "Виджет готов. Внутренний код подключения скрыт, чтобы не превращать страницу интеграций в техническую панель.",
   "integrations.website.copySnippet": "Скопировать код установки",
-  "integrations.website.copyNotice": "Код установки копируется в буфер обмена и не отображает внутренний ключ на экране CRM.",
+  "integrations.website.copyNotice":
+    "Код установки копируется в буфер обмена и не отображает внутренний ключ на экране CRM.",
   "integrations.website.testTitle": "Тестовое сообщение с сайта",
-  "integrations.website.testText": "Использует публичный endpoint без авторизации, как реальный посетитель лендинга.",
+  "integrations.website.testText":
+    "Использует публичный endpoint без авторизации, как реальный посетитель лендинга.",
   "integrations.website.name": "Имя",
   "integrations.website.phone": "Телефон",
   "integrations.website.message": "Сообщение",
   "integrations.website.createDialog": "Создать тестовый диалог",
   "integrations.website.followUpTitle": "Сообщение в тот же диалог",
   "integrations.website.addMessage": "Добавить сообщение",
-  "integrations.telegram.savedMock": "Настройки сохранены. Проверка выполнена в безопасном демо-режиме: {reason}",
+  "integrations.telegram.savedMock":
+    "Настройки сохранены. Проверка выполнена в безопасном демо-режиме: {reason}",
   "integrations.telegram.saved": "Настройки Telegram сохранены.",
-  "integrations.telegram.testMock": "Код подключения сохранён, проверка выполнена в безопасном демо-режиме.",
+  "integrations.telegram.testMock":
+    "Код подключения сохранён, проверка выполнена в безопасном демо-режиме.",
   "integrations.telegram.testOk": "Telegram подключение успешно проверено.",
   "integrations.telegram.testFailed": "Проверка не прошла: {reason}",
   "integrations.telegram.unknownError": "неизвестная ошибка",
   "integrations.telegram.title": "Подключение Telegram",
   "integrations.telegram.eyebrow": "Telegram beta-коннектор",
   "integrations.telegram.openInbox": "Открыть Telegram Inbox",
-  "integrations.telegram.description": "Первый внешний канал для пилота: сообщения из Telegram попадают во входящие. Подключение выполняется безопасно через поддержку, без показа секретных данных в ежедневной работе.",
+  "integrations.telegram.description":
+    "Первый внешний канал для пилота: сообщения из Telegram попадают во входящие. Подключение выполняется безопасно через поддержку, без показа секретных данных в ежедневной работе.",
   "integrations.telegram.ownerGuide": "Понятная настройка для владельца",
-  "integrations.telegram.step1": "1. Нажмите проверку статуса и убедитесь, что канал создан в ZANI.",
-  "integrations.telegram.step2": "2. Передайте подключение поддержке, если внешний Telegram ещё не связан.",
-  "integrations.telegram.step3": "3. После настройки поддержка подтвердит готовность канала.",
-  "integrations.telegram.step4": "4. Проверьте канал и откройте входящие сообщения.",
+  "integrations.telegram.step1":
+    "1. Нажмите проверку статуса и убедитесь, что канал создан в ZANI.",
+  "integrations.telegram.step2":
+    "2. Передайте подключение поддержке, если внешний Telegram ещё не связан.",
+  "integrations.telegram.step3":
+    "3. После настройки поддержка подтвердит готовность канала.",
+  "integrations.telegram.step4":
+    "4. Проверьте канал и откройте входящие сообщения.",
   "integrations.telegram.token": "Данные подключения",
   "integrations.telegram.tokenSaved": "Переданы поддержке",
   "integrations.telegram.tokenMissing": "Ожидают настройки",
@@ -3964,35 +4650,49 @@ export const ru: Record<string, string> = {
   "integrations.telegram.lastInbound": "Последний входящий",
   "integrations.telegram.lastOutbound": "Последний исходящий",
   "integrations.telegram.noEvents": "Событий пока нет",
-  "integrations.telegram.betaNotice": "Реальный Telegram-трафик включается только после проверки поддержки, очередей и мониторинга. Сейчас подключение безопасно работает как beta foundation.",
+  "integrations.telegram.betaNotice":
+    "Реальный Telegram-трафик включается только после проверки поддержки, очередей и мониторинга. Сейчас подключение безопасно работает как beta foundation.",
   "integrations.telegram.supportSetupTitle": "Подключение через поддержку",
-  "integrations.telegram.supportSetupText": "Владелец видит статус и проверку канала. Секретные данные подключения не показываются после сохранения и не нужны для ежедневной работы.",
+  "integrations.telegram.supportSetupText":
+    "Владелец видит статус и проверку канала. Секретные данные подключения не показываются после сохранения и не нужны для ежедневной работы.",
   "integrations.telegram.advancedSetup": "Расширенная пилотная настройка",
-  "integrations.telegram.advancedSetupHelp": "Используйте только если поддержка попросила передать код подключения. ZANI сохранит его безопасно и больше не покажет в интерфейсе.",
+  "integrations.telegram.advancedSetupHelp":
+    "Используйте только если поддержка попросила передать код подключения. ZANI сохранит его безопасно и больше не покажет в интерфейсе.",
   "integrations.telegram.botFatherToken": "Код подключения Telegram",
-  "integrations.telegram.tokenReplacePlaceholder": "Код уже сохранён. Введите новый только для замены.",
+  "integrations.telegram.tokenReplacePlaceholder":
+    "Код уже сохранён. Введите новый только для замены.",
   "integrations.telegram.tokenPlaceholder": "Вставьте код из BotFather",
   "integrations.telegram.save": "Сохранить",
   "integrations.telegram.testConnection": "Проверить подключение",
-  "integrations.telegram.readOnly": "Ваша роль позволяет смотреть статус, но не менять Telegram подключение.",
-  "integrations.telegram.channelCreated": "Канал создан. Теперь вставьте ключ бота.",
-  "integrations.telegram.tokenSavedNotice": "Ключ сохранён. Проверьте подключение и включите входящие сообщения.",
+  "integrations.telegram.readOnly":
+    "Ваша роль позволяет смотреть статус, но не менять Telegram подключение.",
+  "integrations.telegram.channelCreated":
+    "Канал создан. Теперь вставьте ключ бота.",
+  "integrations.telegram.tokenSavedNotice":
+    "Ключ сохранён. Проверьте подключение и включите входящие сообщения.",
   "integrations.telegram.connectionChecked": "Подключение проверено.",
-  "integrations.telegram.connectionCheckFailed": "Не удалось проверить подключение.",
+  "integrations.telegram.connectionCheckFailed":
+    "Не удалось проверить подключение.",
   "integrations.telegram.inboundConnected": "Входящие сообщения подключены.",
-  "integrations.telegram.inboundConnectFailed": "Не удалось подключить входящие сообщения.",
+  "integrations.telegram.inboundConnectFailed":
+    "Не удалось подключить входящие сообщения.",
   "integrations.telegram.createChannel": "Создать канал Telegram",
-  "integrations.telegram.inlineDescription": "Подключите бота, чтобы ZANI принимал сообщения клиентов и отправлял ответы от имени вашей компании.",
+  "integrations.telegram.inlineDescription":
+    "Подключите бота, чтобы ZANI принимал сообщения клиентов и отправлял ответы от имени вашей компании.",
   "integrations.telegram.botKey": "Ключ бота",
-  "integrations.telegram.tokenSavedPrivate": "Ключ сохранён приватно. Вставьте новый только для замены.",
-  "integrations.telegram.tokenInstruction": "Вставьте ключ, который выдал BotFather.",
+  "integrations.telegram.tokenSavedPrivate":
+    "Ключ сохранён приватно. Вставьте новый только для замены.",
+  "integrations.telegram.tokenInstruction":
+    "Вставьте ключ, который выдал BotFather.",
   "integrations.telegram.tokenInputPlaceholder": "Вставьте ключ бота",
   "integrations.telegram.saveKey": "Сохранить ключ",
   "integrations.telegram.connectInbound": "Подключить входящие",
   "integrations.request.title": "{provider}: заявка на подключение",
   "integrations.request.eyebrow": "{provider}: подключение через заявку",
-  "integrations.request.whatsappText": "Собираем данные для ручной проверки канала. Реальное внешнее подключение не включается автоматически.",
-  "integrations.request.instagramText": "Собираем данные для будущего Meta-ready подключения. Пароль Instagram не нужен и не запрашивается.",
+  "integrations.request.whatsappText":
+    "Собираем данные для ручной проверки канала. Реальное внешнее подключение не включается автоматически.",
+  "integrations.request.instagramText":
+    "Собираем данные для будущего Meta-ready подключения. Пароль Instagram не нужен и не запрашивается.",
   "integrations.request.companyName": "Название компании",
   "integrations.request.whatsappNumber": "Номер WhatsApp",
   "integrations.request.contactPerson": "Контактное лицо",
@@ -4006,53 +4706,81 @@ export const ru: Record<string, string> = {
   "integrations.request.comment": "Комментарий",
   "integrations.request.update": "Обновить заявку",
   "integrations.request.submit": "Отправить заявку",
-  "integrations.request.saved": "Заявка сохранена. Поддержка платформы увидит её как запрос на подключение.",
-  "integrations.data.kaspiDescription": "Только просмотр: заказы, продажи и будущая аналитика. Без переоценки и обратной записи.",
-  "integrations.data.oneCDescription": "На пилоте работаем через файлы и Excel/CSV pipeline. Полную синхронизацию и бухгалтерию не включаем.",
-  "integrations.data.googleSheetsDescription": "Заявка на импорт таблиц для клиентов, заявок и продаж. Без фоновой синхронизации на пилоте.",
-  "integrations.data.emailDescription": "Заявка на подключение почты для заявок и уведомлений. Транзакционная отправка подключается отдельно.",
-  "integrations.data.moyskladDescription": "Основа для подключения остатков и каталога после пилота.",
-  "integrations.data.wildberriesDescription": "В плане развития: видимость продаж, SKU, остатков и возвратов.",
-  "integrations.data.ozonDescription": "В плане развития: видимость маркетплейса без обратной записи и управления ценами.",
-  "integrations.data.yandexMarketDescription": "Будущий коннектор маркетплейса, сейчас только заявка на интерес.",
+  "integrations.request.saved":
+    "Заявка сохранена. Поддержка платформы увидит её как запрос на подключение.",
+  "integrations.data.kaspiDescription":
+    "Только просмотр: заказы, продажи и будущая аналитика. Без переоценки и обратной записи.",
+  "integrations.data.oneCDescription":
+    "На пилоте работаем через файлы и Excel/CSV pipeline. Полную синхронизацию и бухгалтерию не включаем.",
+  "integrations.data.googleSheetsDescription":
+    "Заявка на импорт таблиц для клиентов, заявок и продаж. Без фоновой синхронизации на пилоте.",
+  "integrations.data.emailDescription":
+    "Заявка на подключение почты для заявок и уведомлений. Транзакционная отправка подключается отдельно.",
+  "integrations.data.moyskladDescription":
+    "Основа для подключения остатков и каталога после пилота.",
+  "integrations.data.wildberriesDescription":
+    "В плане развития: видимость продаж, SKU, остатков и возвратов.",
+  "integrations.data.ozonDescription":
+    "В плане развития: видимость маркетплейса без обратной записи и управления ценами.",
+  "integrations.data.yandexMarketDescription":
+    "Будущий коннектор маркетплейса, сейчас только заявка на интерес.",
   "integrations.data.requestSaved": "{name}: заявка сохранена.",
-  "integrations.data.demoImported": "Демо-событие импорта записано. Это безопасная проверка будущей синхронизации без внешнего подключения.",
+  "integrations.data.demoImported":
+    "Демо-событие импорта записано. Это безопасная проверка будущей синхронизации без внешнего подключения.",
   "integrations.data.title": "Kaspi / 1C / склад / маркетплейсы",
   "integrations.data.eyebrow": "Фундамент data-коннекторов",
   "integrations.instagram.username": "Instagram аккаунт",
-  "integrations.instagram.metaAccessReturned": "Meta вернула доступ Instagram. Завершите подключение.",
-  "integrations.instagram.channelCreated": "Канал создан. Теперь подключите Instagram через Meta.",
-  "integrations.instagram.accessSaved": "Доступ Instagram сохранён приватно. Теперь проверьте подключение.",
-  "integrations.instagram.metaOpenFailed": "Не удалось открыть подключение через Meta. Обратитесь в поддержку ZANI.",
+  "integrations.instagram.metaAccessReturned":
+    "Meta вернула доступ Instagram. Завершите подключение.",
+  "integrations.instagram.channelCreated":
+    "Канал создан. Теперь подключите Instagram через Meta.",
+  "integrations.instagram.accessSaved":
+    "Доступ Instagram сохранён приватно. Теперь проверьте подключение.",
+  "integrations.instagram.metaOpenFailed":
+    "Не удалось открыть подключение через Meta. Обратитесь в поддержку ZANI.",
   "integrations.instagram.connectedNotice": "Instagram подключен.",
-  "integrations.instagram.connectionChecked": "Instagram подключение проверено.",
-  "integrations.instagram.connectionCheckFailed": "Instagram доступ не прошёл проверку.",
+  "integrations.instagram.connectionChecked":
+    "Instagram подключение проверено.",
+  "integrations.instagram.connectionCheckFailed":
+    "Instagram доступ не прошёл проверку.",
   "integrations.instagram.finishConnection": "Завершите подключение",
   "integrations.instagram.createChannel": "Создать канал Instagram",
-  "integrations.instagram.inlineDescription": "Подключите Instagram Direct через Meta, чтобы ZANI принимал сообщения и передавал диалоги менеджерам.",
+  "integrations.instagram.inlineDescription":
+    "Подключите Instagram Direct через Meta, чтобы ZANI принимал сообщения и передавал диалоги менеджерам.",
   "integrations.instagram.accountId": "ID аккаунта Instagram",
   "integrations.instagram.idSaved": "ID уже сохранён",
   "integrations.instagram.facebookPageId": "ID страницы Facebook",
   "integrations.instagram.updateAccess": "Обновить доступ",
   "integrations.instagram.saveAccess": "Сохранить доступ",
   "integrations.instagram.metaConnection": "Подключение через Meta",
-  "integrations.instagram.metaDescription": "Войдите в Meta и выберите страницу, к которой привязан Instagram Business.",
+  "integrations.instagram.metaDescription":
+    "Войдите в Meta и выберите страницу, к которой привязан Instagram Business.",
   "integrations.instagram.connectWithMeta": "Подключить через Meta",
-  "integrations.instagram.metaConfirmed": "Meta подтвердила доступ. Завершите подключение.",
+  "integrations.instagram.metaConfirmed":
+    "Meta подтвердила доступ. Завершите подключение.",
   "integrations.instagram.completeConnection": "Завершить подключение",
-  "integrations.whatsapp.metaDataReturned": "Meta вернула данные подключения. Проверьте поля и завершите подключение.",
-  "integrations.whatsapp.channelCreated": "Канал создан. Теперь подключите WhatsApp через Meta.",
-  "integrations.whatsapp.accessSaved": "Доступ WhatsApp сохранён приватно. Теперь проверьте подключение.",
+  "integrations.whatsapp.metaDataReturned":
+    "Meta вернула данные подключения. Проверьте поля и завершите подключение.",
+  "integrations.whatsapp.channelCreated":
+    "Канал создан. Теперь подключите WhatsApp через Meta.",
+  "integrations.whatsapp.accessSaved":
+    "Доступ WhatsApp сохранён приватно. Теперь проверьте подключение.",
   "integrations.whatsapp.connectionChecked": "WhatsApp подключение проверено.",
-  "integrations.whatsapp.connectionCheckFailed": "WhatsApp доступ не прошёл проверку.",
-  "integrations.whatsapp.metaOpenFailed": "Не удалось открыть подключение через Meta. Обратитесь в поддержку ZANI.",
-  "integrations.whatsapp.metaAccessDenied": "Meta не подтвердила доступ. Попробуйте подключить WhatsApp ещё раз.",
-  "integrations.whatsapp.metaConfirmed": "Meta подтвердила доступ. Завершите подключение.",
-  "integrations.whatsapp.metaFallbackOpened": "Открылось резервное окно подключения Meta. Завершите вход и вернитесь в ZANI.",
+  "integrations.whatsapp.connectionCheckFailed":
+    "WhatsApp доступ не прошёл проверку.",
+  "integrations.whatsapp.metaOpenFailed":
+    "Не удалось открыть подключение через Meta. Обратитесь в поддержку ZANI.",
+  "integrations.whatsapp.metaAccessDenied":
+    "Meta не подтвердила доступ. Попробуйте подключить WhatsApp ещё раз.",
+  "integrations.whatsapp.metaConfirmed":
+    "Meta подтвердила доступ. Завершите подключение.",
+  "integrations.whatsapp.metaFallbackOpened":
+    "Открылось резервное окно подключения Meta. Завершите вход и вернитесь в ZANI.",
   "integrations.whatsapp.connectedNotice": "WhatsApp подключен.",
   "integrations.whatsapp.finishConnection": "Завершите подключение",
   "integrations.whatsapp.createChannel": "Создать канал WhatsApp",
-  "integrations.whatsapp.inlineDescription": "Подтвердите доступ в Meta, чтобы ZANI принимал и отправлял сообщения через WhatsApp Business.",
+  "integrations.whatsapp.inlineDescription":
+    "Подтвердите доступ в Meta, чтобы ZANI принимал и отправлял сообщения через WhatsApp Business.",
   "integrations.whatsapp.phoneNumberId": "ID номера WhatsApp",
   "integrations.whatsapp.phoneNumberIdSaved": "ID номера уже сохранён",
   "integrations.whatsapp.businessAccountId": "ID бизнес-аккаунта",
@@ -4060,7 +4788,8 @@ export const ru: Record<string, string> = {
   "integrations.whatsapp.updateAccess": "Обновить доступ",
   "integrations.whatsapp.saveAccess": "Сохранить доступ",
   "integrations.whatsapp.metaConnection": "Подключение через Meta",
-  "integrations.whatsapp.metaDescription": "Войдите в Meta и выберите WhatsApp Business аккаунт вашей компании.",
+  "integrations.whatsapp.metaDescription":
+    "Войдите в Meta и выберите WhatsApp Business аккаунт вашей компании.",
   "integrations.whatsapp.connectWithMeta": "Подключить через Meta",
   "integrations.whatsapp.completeConnection": "Завершить подключение",
   "integrations.setupMetric.access": "Доступ",
@@ -4069,27 +4798,35 @@ export const ru: Record<string, string> = {
   "integrations.setupMetric.mode": "Режим",
   "integrations.setupMetric.readOnly": "Только чтение",
   "integrations.setupMetric.demoReadOnly": "Demo / только чтение",
-  "integrations.mock.providerDisabledNotice": "Трафик к провайдеру здесь выключен. Проверки и импорт используют только demo-события и не подтверждают live-подключение.",
-  "integrations.mock.connectionChecked": "Проверено в demo-режиме. Live-запрос к провайдеру не отправлялся.",
-  "integrations.mock.syncLoaded": "Demo-события загружены: {count}. Это не означает, что live-провайдер подключён.",
+  "integrations.mock.providerDisabledNotice":
+    "Трафик к провайдеру здесь выключен. Проверки и импорт используют только demo-события и не подтверждают live-подключение.",
+  "integrations.mock.connectionChecked":
+    "Проверено в demo-режиме. Live-запрос к провайдеру не отправлялся.",
+  "integrations.mock.syncLoaded":
+    "Demo-события загружены: {count}. Это не означает, что live-провайдер подключён.",
   "integrations.setupMetric.notYet": "Ещё нет",
   "integrations.setupAction.enterAccessKey": "Ввести ключ доступа",
-  "integrations.setupAction.accessKeyReplacePlaceholder": "Доступ уже сохранён. Вставьте новый ключ только для замены.",
+  "integrations.setupAction.accessKeyReplacePlaceholder":
+    "Доступ уже сохранён. Вставьте новый ключ только для замены.",
   "integrations.setupAction.hideAdvanced": "Скрыть дополнительные настройки",
   "integrations.setupAction.showAdvanced": "Дополнительные настройки",
   "integrations.setupAction.syncDays": "Период загрузки, дней",
   "integrations.setupAction.saveAccess": "Сохранить доступ",
-  "integrations.kaspi.accessSaved": "Kaspi подключен. Доступ сохранён приватно, можно загрузить заказы.",
+  "integrations.kaspi.accessSaved":
+    "Kaspi подключен. Доступ сохранён приватно, можно загрузить заказы.",
   "integrations.kaspi.connectionChecked": "Подключение к Kaspi проверено.",
-  "integrations.kaspi.connectionCheckFailed": "Не удалось проверить доступ Kaspi.",
+  "integrations.kaspi.connectionCheckFailed":
+    "Не удалось проверить доступ Kaspi.",
   "integrations.kaspi.ordersLoaded": "Заказы загружены: {count} событий.",
   "integrations.kaspi.ordersLoadFailed": "Не удалось загрузить заказы.",
   "integrations.kaspi.orders": "Заказы",
   "integrations.kaspi.ordersLoadedBefore": "Загружались",
   "integrations.kaspi.connectionTitle": "Подключение Kaspi",
-  "integrations.kaspi.connectionDescription": "Сейчас Kaspi подключается через ключ доступа продавца. Это временный self-service путь до появления официальной авторизации партнёра.",
+  "integrations.kaspi.connectionDescription":
+    "Сейчас Kaspi подключается через ключ доступа продавца. Это временный self-service путь до появления официальной авторизации партнёра.",
   "integrations.kaspi.accessKey": "Ключ доступа Kaspi",
-  "integrations.kaspi.accessKeyPlaceholder": "Вставьте ключ из кабинета продавца Kaspi",
+  "integrations.kaspi.accessKeyPlaceholder":
+    "Вставьте ключ из кабинета продавца Kaspi",
   "integrations.kaspi.merchantId": "ID магазина",
   "integrations.kaspi.orderState.archive": "Архив / завершённые",
   "integrations.kaspi.orderState.new": "Новые",
@@ -4098,18 +4835,25 @@ export const ru: Record<string, string> = {
   "integrations.kaspi.pageSize": "Лимит заказов за раз",
   "integrations.kaspi.connect": "Подключить Kaspi",
   "integrations.kaspi.loadOrders": "Загрузить заказы",
-  "integrations.kaspi.readOnlyNotice": "ZANI только читает заказы для аналитики. Изменение цен, принятие и отмена заказов в Kaspi здесь отключены.",
-  "integrations.moysklad.accessSaved": "МойСклад подключен. Доступ сохранён приватно, можно проверить подключение.",
-  "integrations.moysklad.connectionChecked": "Подключение к МойСклад проверено.",
-  "integrations.moysklad.connectionCheckFailed": "Не удалось проверить доступ МойСклад.",
+  "integrations.kaspi.readOnlyNotice":
+    "ZANI только читает заказы для аналитики. Изменение цен, принятие и отмена заказов в Kaspi здесь отключены.",
+  "integrations.moysklad.accessSaved":
+    "МойСклад подключен. Доступ сохранён приватно, можно проверить подключение.",
+  "integrations.moysklad.connectionChecked":
+    "Подключение к МойСклад проверено.",
+  "integrations.moysklad.connectionCheckFailed":
+    "Не удалось проверить доступ МойСклад.",
   "integrations.moysklad.dataLoaded": "Данные загружены: {count} событий.",
-  "integrations.moysklad.dataLoadFailed": "Не удалось загрузить данные МойСклад.",
+  "integrations.moysklad.dataLoadFailed":
+    "Не удалось загрузить данные МойСклад.",
   "integrations.moysklad.inventory": "Склад",
   "integrations.moysklad.loadedBefore": "Загружался",
   "integrations.moysklad.connectionTitle": "Подключение МойСклад",
-  "integrations.moysklad.connectionDescription": "Введите ключ доступа из МойСклад. ZANI сохранит его приватно и будет использовать только для загрузки данных.",
+  "integrations.moysklad.connectionDescription":
+    "Введите ключ доступа из МойСклад. ZANI сохранит его приватно и будет использовать только для загрузки данных.",
   "integrations.moysklad.accessKey": "Ключ доступа МойСклад",
-  "integrations.moysklad.accessKeyPlaceholder": "Вставьте ключ доступа из МойСклад",
+  "integrations.moysklad.accessKeyPlaceholder":
+    "Вставьте ключ доступа из МойСклад",
   "integrations.moysklad.entity.products": "Товары",
   "integrations.moysklad.entity.stock": "Остатки",
   "integrations.moysklad.entity.sales": "Продажи",
@@ -4117,18 +4861,23 @@ export const ru: Record<string, string> = {
   "integrations.moysklad.pageSize": "Лимит строк за раз",
   "integrations.moysklad.connect": "Подключить МойСклад",
   "integrations.moysklad.loadData": "Загрузить данные",
-  "integrations.moysklad.readOnlyNotice": "ZANI только читает товары, остатки, продажи и контрагентов. Изменение документов, цен и остатков в МойСклад отключено.",
-  "integrations.ozon.accessSaved": "Ozon подключен. Доступ сохранён приватно, можно проверить подключение.",
+  "integrations.moysklad.readOnlyNotice":
+    "ZANI только читает товары, остатки, продажи и контрагентов. Изменение документов, цен и остатков в МойСклад отключено.",
+  "integrations.ozon.accessSaved":
+    "Ozon подключен. Доступ сохранён приватно, можно проверить подключение.",
   "integrations.ozon.connectionChecked": "Подключение к Ozon проверено.",
-  "integrations.ozon.connectionCheckFailed": "Не удалось проверить доступ Ozon.",
+  "integrations.ozon.connectionCheckFailed":
+    "Не удалось проверить доступ Ozon.",
   "integrations.ozon.dataLoaded": "Данные Ozon загружены: {count} событий.",
   "integrations.ozon.dataLoadFailed": "Не удалось загрузить данные Ozon.",
   "integrations.ozon.data": "Данные",
   "integrations.ozon.connectionTitle": "Подключение Ozon",
-  "integrations.ozon.connectionDescription": "Введите данные доступа из кабинета продавца Ozon. ZANI использует их только для чтения отправлений и остатков.",
+  "integrations.ozon.connectionDescription":
+    "Введите данные доступа из кабинета продавца Ozon. ZANI использует их только для чтения отправлений и остатков.",
   "integrations.ozon.enterAccess": "Ввести доступ",
   "integrations.ozon.sellerId": "ID продавца Ozon",
-  "integrations.ozon.sellerIdReplacePlaceholder": "ID уже сохранён. Введите новый только для замены.",
+  "integrations.ozon.sellerIdReplacePlaceholder":
+    "ID уже сохранён. Введите новый только для замены.",
   "integrations.ozon.sellerIdPlaceholder": "ID из кабинета Ozon",
   "integrations.ozon.accessKey": "Ключ доступа Ozon",
   "integrations.ozon.accessKeyPlaceholder": "Ключ из кабинета Ozon",
@@ -4136,29 +4885,41 @@ export const ru: Record<string, string> = {
   "integrations.ozon.limit": "Лимит записей за раз",
   "integrations.ozon.connect": "Подключить Ozon",
   "integrations.ozon.loadData": "Загрузить данные",
-  "integrations.ozon.readOnlyNotice": "ZANI не обновляет цены, остатки, карточки, сборку и отмену заказов Ozon. Подключение только загружает данные для отчётов.",
-  "integrations.wildberries.accessSaved": "Wildberries подключен. Доступ сохранён приватно, можно проверить подключение.",
-  "integrations.wildberries.connectionChecked": "Подключение к Wildberries проверено.",
-  "integrations.wildberries.connectionCheckFailed": "Не удалось проверить доступ Wildberries.",
-  "integrations.wildberries.dataLoaded": "Данные Wildberries загружены: {count} событий.",
-  "integrations.wildberries.dataLoadFailed": "Не удалось загрузить данные Wildberries.",
+  "integrations.ozon.readOnlyNotice":
+    "ZANI не обновляет цены, остатки, карточки, сборку и отмену заказов Ozon. Подключение только загружает данные для отчётов.",
+  "integrations.wildberries.accessSaved":
+    "Wildberries подключен. Доступ сохранён приватно, можно проверить подключение.",
+  "integrations.wildberries.connectionChecked":
+    "Подключение к Wildberries проверено.",
+  "integrations.wildberries.connectionCheckFailed":
+    "Не удалось проверить доступ Wildberries.",
+  "integrations.wildberries.dataLoaded":
+    "Данные Wildberries загружены: {count} событий.",
+  "integrations.wildberries.dataLoadFailed":
+    "Не удалось загрузить данные Wildberries.",
   "integrations.wildberries.updateWindow": "Обновление WB",
   "integrations.wildberries.updateWindowValue": "~30 минут",
   "integrations.wildberries.connectionTitle": "Подключение Wildberries",
-  "integrations.wildberries.connectionDescription": "Введите ключ доступа из кабинета продавца Wildberries. ZANI только читает заказы и продажи для аналитики.",
+  "integrations.wildberries.connectionDescription":
+    "Введите ключ доступа из кабинета продавца Wildberries. ZANI только читает заказы и продажи для аналитики.",
   "integrations.wildberries.accessKey": "Ключ доступа Wildberries",
-  "integrations.wildberries.accessKeyPlaceholder": "Вставьте ключ доступа из Wildberries",
+  "integrations.wildberries.accessKeyPlaceholder":
+    "Вставьте ключ доступа из Wildberries",
   "integrations.wildberries.entity.orders": "Заказы",
   "integrations.wildberries.entity.sales": "Продажи",
   "integrations.wildberries.entity.stocks": "Остатки",
-  "integrations.wildberries.stocksOptional": "Остатки Wildberries оставлены опционально: основной рабочий сценарий - заказы и продажи.",
+  "integrations.wildberries.stocksOptional":
+    "Остатки Wildberries оставлены опционально: основной рабочий сценарий - заказы и продажи.",
   "integrations.wildberries.connect": "Подключить Wildberries",
   "integrations.wildberries.loadData": "Загрузить данные",
-  "integrations.wildberries.readOnlyNotice": "ZANI не меняет цены, карточки, поставки и заказы Wildberries. Подключение только загружает данные для отчётов.",
-  "integrations.kaspiPricing.stoppedNotice": "Ценовой агент остановлен. Применение цен заблокировано.",
+  "integrations.wildberries.readOnlyNotice":
+    "ZANI не меняет цены, карточки, поставки и заказы Wildberries. Подключение только загружает данные для отчётов.",
+  "integrations.kaspiPricing.stoppedNotice":
+    "Ценовой агент остановлен. Применение цен заблокировано.",
   "integrations.kaspiPricing.resumedNotice": "Ценовой агент снова активен.",
   "integrations.kaspiPricing.productTitle": "Отдельный продукт ZANI для цен",
-  "integrations.kaspiPricing.productDescription": "Обычный Kaspi-коннектор только читает заказы и бизнес-данные. Kaspi Pricing управляет правилами цены, порогами, мониторингом конкурентов и автопилотом.",
+  "integrations.kaspiPricing.productDescription":
+    "Обычный Kaspi-коннектор только читает заказы и бизнес-данные. Kaspi Pricing управляет правилами цены, порогами, мониторингом конкурентов и автопилотом.",
   "integrations.kaspiPricing.openAgent": "Открыть агент",
   "integrations.kaspiPricing.rules": "Правила",
   "integrations.kaspiPricing.activeRules": "Активные",
@@ -4166,14 +4927,18 @@ export const ru: Record<string, string> = {
   "integrations.kaspiPricing.signals": "Сигналы",
   "integrations.kaspiPricing.agentStopped": "Агент остановлен",
   "integrations.kaspiPricing.agentReady": "Агент готов к работе",
-  "integrations.kaspiPricing.priceApplyBlocked": "Применение цен заблокировано.",
-  "integrations.kaspiPricing.emergencyStopDescription": "Emergency stop доступен отдельно от обычной Kaspi-интеграции.",
+  "integrations.kaspiPricing.priceApplyBlocked":
+    "Применение цен заблокировано.",
+  "integrations.kaspiPricing.emergencyStopDescription":
+    "Emergency stop доступен отдельно от обычной Kaspi-интеграции.",
   "integrations.kaspiPricing.resume": "Возобновить",
   "integrations.kaspiPricing.stopAgent": "Остановить агент",
   "integrations.kaspiPricing.latestChange": "Последнее изменение",
   "integrations.kaspiPricing.history": "История",
-  "integrations.kaspiPricing.noChanges": "Изменений пока нет. Создайте правило и рассчитайте рекомендацию.",
-  "integrations.data.description": "Лёгкий слой под будущие интеграции: заявка, статус и безопасная демо-проверка импорта. Без ERP, полной синхронизации в реальном времени, обратной записи, переоценки и бухгалтерской логики.",
+  "integrations.kaspiPricing.noChanges":
+    "Изменений пока нет. Создайте правило и рассчитайте рекомендацию.",
+  "integrations.data.description":
+    "Лёгкий слой под будущие интеграции: заявка, статус и безопасная демо-проверка импорта. Без ERP, полной синхронизации в реальном времени, обратной записи, переоценки и бухгалтерской логики.",
   "integrations.data.commentPlaceholder": "Комментарий к заявке",
   "integrations.data.status.request": "Можно запросить",
   "integrations.data.update": "Обновить",
@@ -4181,35 +4946,46 @@ export const ru: Record<string, string> = {
   "integrations.data.checkDemoImport": "Проверить демо-импорт",
   "integrations.page.loading": "Загружаем интеграции...",
   "integrations.page.noBusinessTitle": "Бизнес не выбран",
-  "integrations.page.noBusinessDescription": "Создайте бизнес, чтобы подключать каналы и внешние сервисы.",
+  "integrations.page.noBusinessDescription":
+    "Создайте бизнес, чтобы подключать каналы и внешние сервисы.",
   "integrations.page.title": "Подключения бизнеса",
-  "integrations.page.description": "Пилотная карта коннекторов ZANI: self-service каналы, request-подключения, тарифные upsell-модули и roadmap без кнопок в тупик.",
+  "integrations.page.description":
+    "Пилотная карта коннекторов ZANI: self-service каналы, request-подключения, тарифные upsell-модули и roadmap без кнопок в тупик.",
   "integrations.page.safeTokenNotice": "Без технических токенов в CRM",
   "integrations.page.includedTitle": "В тарифе",
-  "integrations.page.includedText": "Можно включать в пилоте без внешнего провайдера.",
+  "integrations.page.includedText":
+    "Можно включать в пилоте без внешнего провайдера.",
   "integrations.page.requestTitle": "По заявке",
-  "integrations.page.requestText": "Создаём карточку интереса, но не обещаем auto-connect.",
+  "integrations.page.requestText":
+    "Создаём карточку интереса, но не обещаем auto-connect.",
   "integrations.page.roadmapTitle": "Скоро / Roadmap",
   "integrations.page.roadmapText": "Показываем как будущую ценность и upsell.",
   "integrations.page.connectedTitle": "Подключено",
   "integrations.page.connectedText": "Активные коннекторы текущего бизнеса.",
-  "integrations.page.searchPlaceholder": "Найти коннектор: WhatsApp, Excel, Kaspi...",
+  "integrations.page.searchPlaceholder":
+    "Найти коннектор: WhatsApp, Excel, Kaspi...",
   "integrations.page.allStatuses": "Все статусы",
   "integrations.page.selfServiceTitle": "Самостоятельно",
   "integrations.page.upgradeTitle": "В тарифе выше",
   "integrations.page.allGroups": "Все направления",
   "integrations.page.reset": "Сбросить",
-  "integrations.page.resultsMeta": "Найдено: {found} из {total}. В пилоте владелец видит, что реально подключается сейчас, что требует заявки, а что является будущим модулем.",
+  "integrations.page.resultsMeta":
+    "Найдено: {found} из {total}. В пилоте владелец видит, что реально подключается сейчас, что требует заявки, а что является будущим модулем.",
   "integrations.page.noResultsTitle": "Коннекторы не найдены",
-  "integrations.page.noResultsDescription": "Сбросьте фильтры или попробуйте другой поисковый запрос.",
+  "integrations.page.noResultsDescription":
+    "Сбросьте фильтры или попробуйте другой поисковый запрос.",
   "integrations.overview.title": "Подключения",
-  "integrations.overview.description": "Подключайте внешние сервисы для данных, продаж и операций. Каналы общения ИИ-агента настраиваются отдельно в карточке агента.",
+  "integrations.overview.description":
+    "Подключайте внешние сервисы для данных, продаж и операций. Каналы общения ИИ-агента настраиваются отдельно в карточке агента.",
   "integrations.overview.openAnalysis": "Открыть анализ",
-  "integrations.overview.agentChannelsTitle": "Каналы общения теперь в ИИ-агентах",
-  "integrations.overview.agentChannelsText": "WhatsApp, Telegram, Instagram и чат сайта подключаются к конкретному ИИ-менеджеру. Так проще понять, где агент отвечает клиентам и какие каналы включены.",
+  "integrations.overview.agentChannelsTitle":
+    "Каналы общения теперь в ИИ-агентах",
+  "integrations.overview.agentChannelsText":
+    "WhatsApp, Telegram, Instagram и чат сайта подключаются к конкретному ИИ-менеджеру. Так проще понять, где агент отвечает клиентам и какие каналы включены.",
   "integrations.overview.openAgentChannels": "Открыть каналы агента",
   "integrations.overview.recommendedTitle": "Рекомендуемая интеграция",
-  "integrations.overview.recommendedText": "Начните с {provider}: это даст ZANI больше контекста по обращениям и сократит ручную обработку.",
+  "integrations.overview.recommendedText":
+    "Начните с {provider}: это даст ZANI больше контекста по обращениям и сократит ручную обработку.",
   "integrations.overview.connectNow": "Показать подключение",
   "integrations.overview.searchPlaceholder": "Поиск: сайт, Telegram, Kaspi...",
   "integrations.overview.allGroups": "Все направления",
@@ -4220,14 +4996,20 @@ export const ru: Record<string, string> = {
   "integrations.overview.status.planned": "Планируется",
   "integrations.overview.status.error": "Требует внимания",
   "integrations.overview.emptyTitle": "Ничего не найдено",
-  "integrations.overview.emptyText": "Сбросьте фильтры или попробуйте другой запрос.",
+  "integrations.overview.emptyText":
+    "Сбросьте фильтры или попробуйте другой запрос.",
   "integrations.overview.guideTitle": "Порядок подключения",
-  "integrations.overview.guideMeta": "{connected} подключено · {setup} требует настройки",
-  "integrations.overview.guideStep1": "1. Каналы общения подключайте в ИИ-агентах: там видно, какой агент отвечает клиентам.",
-  "integrations.overview.guideStep2": "2. Добавьте Excel/CSV, склад или маркетплейсы, чтобы аналитика видела продажи и остатки.",
-  "integrations.overview.guideStep3": "3. Здесь оставьте только сервисы, которые дают данные бизнесу или поддерживают операции.",
+  "integrations.overview.guideMeta":
+    "{connected} подключено · {setup} требует настройки",
+  "integrations.overview.guideStep1":
+    "1. Каналы общения подключайте в ИИ-агентах: там видно, какой агент отвечает клиентам.",
+  "integrations.overview.guideStep2":
+    "2. Добавьте Excel/CSV, склад или маркетплейсы, чтобы аналитика видела продажи и остатки.",
+  "integrations.overview.guideStep3":
+    "3. Здесь оставьте только сервисы, которые дают данные бизнесу или поддерживают операции.",
   "integrations.overview.simpleTitle": "Без перегруза",
-  "integrations.overview.simpleText": "Карточка показывает понятный статус и одно основное действие. Ручные ключи и дополнительные поля открываются только внутри настройки конкретного сервиса.",
+  "integrations.overview.simpleText":
+    "Карточка показывает понятный статус и одно основное действие. Ручные ключи и дополнительные поля открываются только внутри настройки конкретного сервиса.",
   "integrations.availability.included": "В тарифе",
   "integrations.availability.upgrade": "В тарифе выше",
   "integrations.availability.request": "По заявке",
@@ -4243,13 +5025,18 @@ export const ru: Record<string, string> = {
   "integrations.merchantStatus.setup_required": "Требует настройки",
   "integrations.merchantStatus.pending_request": "Подключается по заявке",
   "integrations.merchantStatus.coming_soon": "Скоро",
-  "integrations.merchantStatus.unavailable_on_plan": "Недоступно в текущем тарифе",
+  "integrations.merchantStatus.unavailable_on_plan":
+    "Недоступно в текущем тарифе",
   "integrations.merchantStatus.error": "Ошибка подключения",
   "integrations.merchantStatus.disconnected": "Отключено",
-  "integrations.connectorHint.selfService": "Можно включить в пилоте без внешнего провайдера. Это безопасный self-service коннектор.",
-  "integrations.connectorHint.request": "Кнопка создаёт заявку подключения внутри ZANI. Реальное подключение выполняет команда ZANI вручную.",
-  "integrations.connectorHint.upgrade": "Доступно на тарифе {plan} или выше. Сейчас показываем честный upsell без сломанной кнопки.",
-  "integrations.connectorHint.roadmap": "Показываем как будущую возможность, без обещания готового production-подключения.",
+  "integrations.connectorHint.selfService":
+    "Можно включить в пилоте без внешнего провайдера. Это безопасный self-service коннектор.",
+  "integrations.connectorHint.request":
+    "Кнопка создаёт заявку подключения внутри ZANI. Реальное подключение выполняет команда ZANI вручную.",
+  "integrations.connectorHint.upgrade":
+    "Доступно на тарифе {plan} или выше. Сейчас показываем честный upsell без сломанной кнопки.",
+  "integrations.connectorHint.roadmap":
+    "Показываем как будущую возможность, без обещания готового production-подключения.",
   "integrations.capability.communications": "Коммуникации",
   "integrations.capability.sales": "Продажи",
   "integrations.capability.calendar": "Календарь",
@@ -4259,27 +5046,37 @@ export const ru: Record<string, string> = {
   "integrations.capability.custom": "Кастом",
   "integrations.group.messaging.eyebrow": "Сообщения",
   "integrations.group.messaging.title": "Каналы общения",
-  "integrations.group.messaging.text": "WhatsApp, Telegram, Instagram и другие входящие каналы для заявок и диалогов.",
+  "integrations.group.messaging.text":
+    "WhatsApp, Telegram, Instagram и другие входящие каналы для заявок и диалогов.",
   "integrations.group.imports.eyebrow": "Импорт",
   "integrations.group.imports.title": "Файлы и таблицы",
-  "integrations.group.imports.text": "Excel, CSV и таблицы для быстрого переноса клиентской базы, продаж и каталога.",
+  "integrations.group.imports.text":
+    "Excel, CSV и таблицы для быстрого переноса клиентской базы, продаж и каталога.",
   "integrations.group.sales.eyebrow": "Продажи",
   "integrations.group.sales.title": "Маркетплейсы и продажи",
-  "integrations.group.sales.text": "Read-only видимость заказов, продаж и событий без замены внешних систем.",
+  "integrations.group.sales.text":
+    "Read-only видимость заказов, продаж и событий без замены внешних систем.",
   "integrations.group.website.eyebrow": "Сайт",
   "integrations.group.website.title": "Сайт и виджеты",
-  "integrations.group.website.text": "Виджет, формы и обращения с сайта в единый кабинет ZANI.",
+  "integrations.group.website.text":
+    "Виджет, формы и обращения с сайта в единый кабинет ZANI.",
   "integrations.group.accounting.eyebrow": "Учёт",
   "integrations.group.accounting.title": "Финансы, склад и учёт",
-  "integrations.group.accounting.text": "Лёгкая видимость данных из 1C, МойСклад и складских источников.",
+  "integrations.group.accounting.text":
+    "Лёгкая видимость данных из 1C, МойСклад и складских источников.",
   "integrations.bots.eyebrow": "Автоматизация ответов",
   "integrations.bots.title": "Чат-боты ZANI",
-  "integrations.bots.description": "Каналы принимают сообщения и заявки. Чат-боты ZANI помогают отвечать на частые вопросы, принимать заявки и передавать диалоги менеджерам.",
-  "integrations.bots.safeNotice": "Без API-ключей, webhook и технических настроек для мерчанта",
+  "integrations.bots.description":
+    "Каналы принимают сообщения и заявки. Чат-боты ZANI помогают отвечать на частые вопросы, принимать заявки и передавать диалоги менеджерам.",
+  "integrations.bots.safeNotice":
+    "Без API-ключей, webhook и технических настроек для мерчанта",
   "integrations.bots.cardTitle": "{channel}-бот ZANI",
-  "integrations.bots.whatsappText": "Автоматически отвечает клиентам, принимает заявки и передаёт WhatsApp-диалоги менеджерам.",
-  "integrations.bots.telegramText": "Принимает обращения из Telegram, собирает контактные данные и помогает менеджеру быстрее подключиться.",
-  "integrations.bots.instagramText": "Готовит Instagram-обращения к обработке: быстрые ответы, заявка и передача менеджеру.",
+  "integrations.bots.whatsappText":
+    "Автоматически отвечает клиентам, принимает заявки и передаёт WhatsApp-диалоги менеджерам.",
+  "integrations.bots.telegramText":
+    "Принимает обращения из Telegram, собирает контактные данные и помогает менеджеру быстрее подключиться.",
+  "integrations.bots.instagramText":
+    "Готовит Instagram-обращения к обработке: быстрые ответы, заявка и передача менеджеру.",
   "integrations.bots.state.needs_channel": "Сначала подключите канал",
   "integrations.bots.state.setup_required": "Требуется настройка",
   "integrations.bots.state.active": "Бот активен",
@@ -4299,49 +5096,71 @@ export const ru: Record<string, string> = {
   "integrations.action.continueSetup": "Продолжить настройку",
   "integrations.action.create": "Создать подключение",
   "integrations.action.disconnect": "Отключить",
-  "integrations.setupMessage.connected": "Канал активен. Новые обращения и события будут попадать в Inbox, CRM, аналитику и автоматизации.",
-  "integrations.setupMessage.needsAttention": "Подключение создано и ожидает настройки или ручной проверки команды ZANI.",
-  "integrations.setupMessage.disabled": "Канал отключён. Его можно вернуть после повторной настройки или обращения в поддержку.",
+  "integrations.setupMessage.connected":
+    "Канал активен. Новые обращения и события будут попадать в Inbox, CRM, аналитику и автоматизации.",
+  "integrations.setupMessage.needsAttention":
+    "Подключение создано и ожидает настройки или ручной проверки команды ZANI.",
+  "integrations.setupMessage.disabled":
+    "Канал отключён. Его можно вернуть после повторной настройки или обращения в поддержку.",
   "integrations.card.businessValue": "Что даёт бизнесу",
   "integrations.card.plan": "Тариф",
   "integrations.card.connection": "Подключение",
   "integrations.card.ownerAction": "Что делать владельцу",
-  "integrations.card.requestNotice": "Нажатие создаст заявку подключения. Это не включает внешний сервис автоматически.",
-  "integrations.card.roadmapNotice": "Кнопка отключена специально: коннектор показан как будущая возможность или тарифный upsell без ложного обещания готового подключения.",
-  "integrations.card.pendingNotice": "Подключение создано, но ещё требует настройки или проверки. Для request-коннекторов это нормальный пилотный статус.",
-  "integrations.card.connectedNotice": "Подключение активно. Данные из этого канала используются в CRM, Inbox, аналитике и автоматизациях.",
-  "integrations.card.readOnly": "Роль позволяет просматривать интеграции, но не управлять подключениями.",
+  "integrations.card.requestNotice":
+    "Нажатие создаст заявку подключения. Это не включает внешний сервис автоматически.",
+  "integrations.card.roadmapNotice":
+    "Кнопка отключена специально: коннектор показан как будущая возможность или тарифный upsell без ложного обещания готового подключения.",
+  "integrations.card.pendingNotice":
+    "Подключение создано, но ещё требует настройки или проверки. Для request-коннекторов это нормальный пилотный статус.",
+  "integrations.card.connectedNotice":
+    "Подключение активно. Данные из этого канала используются в CRM, Inbox, аналитике и автоматизациях.",
+  "integrations.card.readOnly":
+    "Роль позволяет просматривать интеграции, но не управлять подключениями.",
   "integrations.card.credentialsExpired": "Доступ не подключен или истёк.",
   "integrations.card.latestRun": "Последняя синхронизация",
   "integrations.card.noRuns": "Синхронизаций пока нет.",
   "integrations.card.retryRun": "Повторить",
-  "integrations.card.kaspiPricingSeparateSetup": "Kaspi Pricing открывается отдельным окном настройки.",
-  "integrations.card.kaspiPricingNoGenericConfig": "Kaspi Pricing не использует универсальную настройку подключения.",
+  "integrations.card.kaspiPricingSeparateSetup":
+    "Kaspi Pricing открывается отдельным окном настройки.",
+  "integrations.card.kaspiPricingNoGenericConfig":
+    "Kaspi Pricing не использует универсальную настройку подключения.",
   "integrations.card.connectionSaved": "Данные подключения сохранены.",
   "integrations.card.configure": "Настроить",
   "integrations.card.connect": "Подключить",
   "integrations.card.disableChannel": "{title}: выключить",
   "integrations.card.enableChannel": "{title}: включить",
-  "integrations.card.websiteFlipTitle": "Не теряйте заявки с сайта после первого клика.",
-  "integrations.card.websiteFlipText": "ZANI принимает заявки с формы и сразу передаёт их в сообщения.",
+  "integrations.card.websiteFlipTitle":
+    "Не теряйте заявки с сайта после первого клика.",
+  "integrations.card.websiteFlipText":
+    "ZANI принимает заявки с формы и сразу передаёт их в сообщения.",
   "integrations.card.websiteFlow": "Сайт → Сообщения → Заявки",
   "integrations.card.connectionTitle": "Подключение: {title}",
-  "integrations.card.websiteNoExtraData": "Чат сайта подключается через ключ канала. Дополнительные данные не требуются.",
+  "integrations.card.websiteNoExtraData":
+    "Чат сайта подключается через ключ канала. Дополнительные данные не требуются.",
   "integrations.card.accountId": "ID аккаунта",
-  "integrations.card.accountIdPlaceholder": "ID аккаунта, магазина или кабинета",
+  "integrations.card.accountIdPlaceholder":
+    "ID аккаунта, магазина или кабинета",
   "integrations.card.accessKey": "Ключ доступа",
   "integrations.card.accessKeyPlaceholder": "Вставьте ключ доступа",
-  "integrations.card.accessKeyReplacePlaceholder": "Ключ уже сохранён. Вставьте новый только для замены.",
+  "integrations.card.accessKeyReplacePlaceholder":
+    "Ключ уже сохранён. Вставьте новый только для замены.",
   "integrations.card.webhookSecret": "Проверочный ключ",
   "integrations.card.simpleSetupTitle": "Простое подключение",
-  "integrations.card.simpleSetupText": "Здесь можно создать заявку или проверить статус. ID аккаунтов, ключи и webhook остаются в ручной настройке для владельца или поддержки.",
+  "integrations.card.simpleSetupText":
+    "Здесь можно создать заявку или проверить статус. ID аккаунтов, ключи и webhook остаются в ручной настройке для владельца или поддержки.",
   "integrations.card.manualSupportSetup": "Ручная настройка для поддержки",
-  "integrations.error.actionRequired": "Подключение требует внимания. Проверьте статус настройки или попросите владельца переподключить его.",
-  "integrations.error.webhookSetup": "Входящие сообщения ещё не готовы. Владелец или поддержка ZANI должны завершить проверку webhook/setup.",
-  "integrations.error.permission": "Ваша роль может просматривать подключение, но не менять его настройку.",
-  "integrations.error.rateLimit": "Провайдер временно ограничил запросы. Повторите позже или попросите поддержку проверить подключение.",
-  "integrations.error.providerUnavailable": "Провайдер не ответил. Повторите проверку позже; данные CRM не были изменены.",
-  "integrations.error.supportReview": "Подключение требует проверки поддержки перед использованием в ежедневной работе.",
+  "integrations.error.actionRequired":
+    "Подключение требует внимания. Проверьте статус настройки или попросите владельца переподключить его.",
+  "integrations.error.webhookSetup":
+    "Входящие сообщения ещё не готовы. Владелец или поддержка ZANI должны завершить проверку webhook/setup.",
+  "integrations.error.permission":
+    "Ваша роль может просматривать подключение, но не менять его настройку.",
+  "integrations.error.rateLimit":
+    "Провайдер временно ограничил запросы. Повторите позже или попросите поддержку проверить подключение.",
+  "integrations.error.providerUnavailable":
+    "Провайдер не ответил. Повторите проверку позже; данные CRM не были изменены.",
+  "integrations.error.supportReview":
+    "Подключение требует проверки поддержки перед использованием в ежедневной работе.",
   "integrations.card.check": "Проверить",
   "integrations.card.requestConnection": "Запросить подключение",
   "integrations.setup.needHelp": "Нужна помощь с подключением?",
@@ -4401,8 +5220,10 @@ export const ru: Record<string, string> = {
   "status.support": "Поддержка",
   "conversations.previewQualification": "Оценить",
   "conversations.previewRequired": "Сначала запустите AI-оценку",
-  "conversations.crmAutomationPreviewFallback": "Сначала покажите AI-оценку, затем обновите CRM-связи.",
-  "conversations.qualificationPreviewReady": "AI-оценка готова: {intent}, {confidence}%.",
+  "conversations.crmAutomationPreviewFallback":
+    "Сначала покажите AI-оценку, затем обновите CRM-связи.",
+  "conversations.qualificationPreviewReady":
+    "AI-оценка готова: {intent}, {confidence}%.",
   "analytics.noShowRate": "No-show rate",
   "analytics.leadToDeal": "Lead to deal",
   "analytics.leadToDealHint": "leads converted to deals",
@@ -4414,19 +5235,29 @@ export const ru: Record<string, string> = {
   "analytics.appointmentRate": "Appointment rate",
   "analytics.aiOpenSources": "Open sources",
   "analytics.aiCard.overdue_tasks.title": "Overdue tasks need action",
-  "analytics.aiCard.overdue_tasks.description": "{value} overdue task(s), grounded by {sources} task source(s).",
-  "analytics.aiCard.unanswered_conversations.title": "Customers are waiting in inbox",
-  "analytics.aiCard.unanswered_conversations.description": "{value} conversation(s) are unread or require handoff, grounded by {sources} conversation source(s).",
+  "analytics.aiCard.overdue_tasks.description":
+    "{value} overdue task(s), grounded by {sources} task source(s).",
+  "analytics.aiCard.unanswered_conversations.title":
+    "Customers are waiting in inbox",
+  "analytics.aiCard.unanswered_conversations.description":
+    "{value} conversation(s) are unread or require handoff, grounded by {sources} conversation source(s).",
   "analytics.aiCard.failed_connectors.title": "Connector health is degraded",
-  "analytics.aiCard.failed_connectors.description": "{value} connector(s) are in failed or error state, grounded by {sources} connector source(s).",
+  "analytics.aiCard.failed_connectors.description":
+    "{value} connector(s) are in failed or error state, grounded by {sources} connector source(s).",
   "analytics.aiCard.appointment_no_show_rate.title": "No-show rate is high",
-  "analytics.aiCard.appointment_no_show_rate.description": "No-show rate is {value}%, grounded by {sources} appointment source(s).",
-  "analytics.aiCard.lead_to_deal_missing.title": "Leads are not turning into deals",
-  "analytics.aiCard.lead_to_deal_missing.description": "{value} visible lead(s) have no linked deal conversion yet.",
+  "analytics.aiCard.appointment_no_show_rate.description":
+    "No-show rate is {value}%, grounded by {sources} appointment source(s).",
+  "analytics.aiCard.lead_to_deal_missing.title":
+    "Leads are not turning into deals",
+  "analytics.aiCard.lead_to_deal_missing.description":
+    "{value} visible lead(s) have no linked deal conversion yet.",
   "analytics.aiCard.crm_operating_norm.title": "CRM operations look stable",
-  "analytics.aiCard.crm_operating_norm.description": "Current operational metrics show no urgent CRM reporting alerts.",
+  "analytics.aiCard.crm_operating_norm.description":
+    "Current operational metrics show no urgent CRM reporting alerts.",
   "analytics.aiCard.no_operational_data.title": "No operational data yet",
-  "analytics.aiCard.no_operational_data.description": "Connect channels or import data so ZANI can build sourced CRM insights.",
+  "analytics.aiCard.no_operational_data.description":
+    "Connect channels or import data so ZANI can build sourced CRM insights.",
   "analytics.aiCard.default.title": "CRM metric insight",
-  "analytics.aiCard.default.description": "This insight is grounded in {sources} source(s).",
+  "analytics.aiCard.default.description":
+    "This insight is grounded in {sources} source(s).",
 };

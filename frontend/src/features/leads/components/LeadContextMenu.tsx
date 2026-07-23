@@ -1,4 +1,10 @@
-import { CircleDot, MessageCircle, Phone, UserCheck, XCircle } from "lucide-react";
+import {
+  CircleDot,
+  MessageCircle,
+  Phone,
+  UserCheck,
+  XCircle,
+} from "lucide-react";
 
 import { PopoverSurface } from "../../../components/ui/Overlay";
 import type { Lead } from "../../../types";
@@ -35,7 +41,11 @@ export function LeadContextMenu({
   const items = [
     { label: labels.open, icon: CircleDot, onClick: () => onOpen(lead) },
     { label: labels.call, icon: Phone, onClick: () => onCall(lead) },
-    { label: labels.whatsApp, icon: MessageCircle, onClick: () => onWhatsApp(lead) },
+    {
+      label: labels.whatsApp,
+      icon: MessageCircle,
+      onClick: () => onWhatsApp(lead),
+    },
     { label: labels.assignToMe, icon: UserCheck, onClick: () => onTake(lead) },
     { label: labels.archive, icon: XCircle, onClick: () => onArchive(lead) },
   ];
@@ -53,7 +63,7 @@ export function LeadContextMenu({
             <button
               key={item.label}
               type="button"
-              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-midnight"
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-bold text-zani-text hover:bg-surface-warm"
               onClick={() => {
                 item.onClick();
                 onClose();

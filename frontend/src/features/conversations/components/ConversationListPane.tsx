@@ -110,33 +110,33 @@ export function ConversationListPane({
       />
 
       {items.length ? (
-        <div className="border-b border-slate-100 px-3 py-2">
+        <div className="border-b border-zani-border px-3 py-2">
           {!bulkMode ? (
-            <button type="button" className="text-xs font-black text-brand-600" onClick={onSelectVisible}>
+            <button type="button" className="text-xs font-bold text-brand-600" onClick={onSelectVisible}>
               {t("conversations.selectMultiple")}
             </button>
           ) : (
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-black text-midnight">{t("conversations.selectedCount", { count: selectedIds.length })}</p>
-                <button type="button" className="text-sm font-black text-slate-400" onClick={onResetBulk}>
+                <p className="text-sm font-bold text-zani-text">{t("conversations.selectedCount", { count: selectedIds.length })}</p>
+                <button type="button" className="text-sm font-bold text-zani-muted transition hover:text-zani-text" onClick={onResetBulk}>
                   {t("common.cancel")}
                 </button>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button className="h-8 rounded-lg px-3 text-xs" variant="secondary" disabled={!selectedIds.length} onClick={() => onBulkAction("markRead")} isLoading={bulkPending}>
+                <Button className="h-8 rounded-control px-3 text-xs" variant="secondary" disabled={!selectedIds.length} onClick={() => onBulkAction("markRead")} isLoading={bulkPending}>
                   {t("conversations.markRead")}
                 </Button>
-                <Button className="h-8 rounded-lg px-3 text-xs" variant="secondary" disabled={!selectedIds.length} onClick={() => onBulkAction("assign")} isLoading={bulkPending}>
+                <Button className="h-8 rounded-control px-3 text-xs" variant="secondary" disabled={!selectedIds.length} onClick={() => onBulkAction("assign")} isLoading={bulkPending}>
                   {t("conversations.take")}
                 </Button>
-                <Button className="h-8 rounded-lg px-3 text-xs" variant="secondary" disabled={!selectedIds.length} onClick={() => onBulkAction("pauseBot")} isLoading={bulkPending}>
+                <Button className="h-8 rounded-control px-3 text-xs" variant="secondary" disabled={!selectedIds.length} onClick={() => onBulkAction("pauseBot")} isLoading={bulkPending}>
                   {t("conversations.pause")}
                 </Button>
-                <Button className="h-8 rounded-lg px-3 text-xs" variant="secondary" disabled={!selectedIds.length} onClick={() => onBulkAction("handoff")} isLoading={bulkPending}>
+                <Button className="h-8 rounded-control px-3 text-xs" variant="secondary" disabled={!selectedIds.length} onClick={() => onBulkAction("handoff")} isLoading={bulkPending}>
                   {t("conversations.operator")}
                 </Button>
-                <Button className="h-8 rounded-lg px-3 text-xs" variant="secondary" disabled={!selectedIds.length} onClick={() => onBulkAction("close")} isLoading={bulkPending}>
+                <Button className="h-8 rounded-control px-3 text-xs" variant="secondary" disabled={!selectedIds.length} onClick={() => onBulkAction("close")} isLoading={bulkPending}>
                   {t("common.close")}
                 </Button>
               </div>

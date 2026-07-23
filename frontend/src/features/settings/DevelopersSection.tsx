@@ -1,5 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, KeyRound, RefreshCw, RotateCcw, Send, Webhook } from "lucide-react";
+import {
+  Copy,
+  KeyRound,
+  RefreshCw,
+  RotateCcw,
+  Send,
+  Webhook,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { developerApi } from "../../api/developers";
@@ -11,7 +18,11 @@ import { ErrorState } from "../../components/ui/StateViews";
 import { Textarea } from "../../components/ui/Textarea";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useI18n } from "../../lib/i18n";
-import type { ApiTokenCreateResponse, Id, WebhookDeliveryLog } from "../../types";
+import type {
+  ApiTokenCreateResponse,
+  Id,
+  WebhookDeliveryLog,
+} from "../../types";
 
 const defaultTokenScopes = "clients:read";
 const defaultWebhookEvents = "lead.created,appointment.created,system.test";
@@ -20,9 +31,13 @@ export function DevelopersSection() {
   const queryClient = useQueryClient();
   const { business } = useActiveBusiness();
   const { t } = useI18n();
-  const [tokenName, setTokenName] = useState(() => t("developers.defaultTokenName"));
+  const [tokenName, setTokenName] = useState(() =>
+    t("developers.defaultTokenName"),
+  );
   const [tokenScopes, setTokenScopes] = useState(defaultTokenScopes);
-  const [lastToken, setLastToken] = useState<ApiTokenCreateResponse | null>(null);
+  const [lastToken, setLastToken] = useState<ApiTokenCreateResponse | null>(
+    null,
+  );
   const [webhookForm, setWebhookForm] = useState({
     name: t("developers.defaultWebhookName"),
     url: "mock://success",
@@ -72,7 +87,8 @@ export function DevelopersSection() {
 
   const revokeTokenMutation = useMutation({
     mutationFn: developerApi.tokens.revoke,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["developer-api-tokens"] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["developer-api-tokens"] }),
   });
 
   const createWebhookMutation = useMutation({
@@ -95,15 +111,24 @@ export function DevelopersSection() {
 
   const testDeliveryMutation = useMutation({
     mutationFn: developerApi.webhooks.testDelivery,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["developer-webhook-deliveries"] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: ["developer-webhook-deliveries"],
+      }),
   });
 
   const retryDeliveryMutation = useMutation({
     mutationFn: developerApi.deliveries.retry,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["developer-webhook-deliveries"] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: ["developer-webhook-deliveries"],
+      }),
   });
 
-  const latestDeliveries = useMemo(() => (deliveries.data || []).slice(0, 8), [deliveries.data]);
+  const latestDeliveries = useMemo(
+    () => (deliveries.data || []).slice(0, 8),
+    [deliveries.data],
+  );
   const error =
     createTokenMutation.error ||
     rotateTokenMutation.error ||
@@ -126,39 +151,66 @@ export function DevelopersSection() {
       <CardBody>
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">{t("developers.advanced")}</p>
-            <h2 className="mt-2 text-2xl font-semibold text-midnight">{t("developers.title")}</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">
+              {t("developers.advanced")}
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold text-zani-text">
+              {t("developers.title")}
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-zani-subtle">
               {t("developers.description")}
             </p>
           </div>
-          <div className="rounded-control border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
-            {t("developers.summary", { tokens: tokens.data?.length || 0, webhooks: webhooks.data?.length || 0 })}
+          <div className="rounded-control border border-zani-border bg-surface-muted px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-zani-subtle">
+            {t("developers.summary", {
+              tokens: tokens.data?.length || 0,
+              webhooks: webhooks.data?.length || 0,
+            })}
           </div>
         </div>
-        {error ? <div className="mb-4"><ErrorState message={getApiErrorMessage(error)} /></div> : null}
+        {error ? (
+          <div className="mb-4">
+            <ErrorState message={getApiErrorMessage(error)} />
+          </div>
+        ) : null}
         {lastToken ? (
           <div className="mb-4 rounded-card border border-emerald-200 bg-emerald-50 p-4">
-            <p className="font-black text-emerald-900">{t("developers.copyNow")}</p>
-            <p className="mt-1 text-sm text-emerald-800">{t("developers.copyNowText")}</p>
+            <p className="font-semibold text-emerald-900">
+              {t("developers.copyNow")}
+            </p>
+            <p className="mt-1 text-sm text-emerald-800">
+              {t("developers.copyNowText")}
+            </p>
             <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-              <code className="min-w-0 flex-1 break-all rounded-control bg-white px-3 py-2 text-sm text-slate-700">{lastToken.token}</code>
-              <Button type="button" variant="secondary" onClick={() => copyText(lastToken.token, "token")}>
+              <code className="min-w-0 flex-1 break-all rounded-control bg-surface-card px-3 py-2 text-sm text-zani-text">
+                {lastToken.token}
+              </code>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => copyText(lastToken.token, "token")}
+              >
                 <Copy size={16} />
-                {lastCopied === "token" ? t("developers.copied") : t("common.copy")}
+                {lastCopied === "token"
+                  ? t("developers.copied")
+                  : t("common.copy")}
               </Button>
             </div>
           </div>
         ) : null}
         <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-          <div className="rounded-card border border-slate-200 bg-slate-50 p-4">
+          <div className="rounded-card border border-zani-border bg-surface-muted p-4">
             <div className="flex items-center gap-3">
-              <div className="grid h-11 w-11 place-items-center rounded-control bg-white text-brand-600">
+              <div className="grid h-11 w-11 place-items-center rounded-control bg-surface-card text-brand-600">
                 <KeyRound size={20} />
               </div>
               <div>
-                <h3 className="font-black text-midnight">{t("developers.tokensTitle")}</h3>
-                <p className="text-sm text-slate-500">{t("developers.tokensText")}</p>
+                <h3 className="font-bold text-zani-text">
+                  {t("developers.tokensTitle")}
+                </h3>
+                <p className="text-sm text-zani-subtle">
+                  {t("developers.tokensText")}
+                </p>
               </div>
             </div>
             <form
@@ -168,47 +220,93 @@ export function DevelopersSection() {
                 createTokenMutation.mutate();
               }}
             >
-              <Input label={t("developers.name")} value={tokenName} onChange={(event) => setTokenName(event.target.value)} required />
-              <Input label={t("developers.scopes")} value={tokenScopes} onChange={(event) => setTokenScopes(event.target.value)} placeholder="clients:read" required />
+              <Input
+                label={t("developers.name")}
+                value={tokenName}
+                onChange={(event) => setTokenName(event.target.value)}
+                required
+              />
+              <Input
+                label={t("developers.scopes")}
+                value={tokenScopes}
+                onChange={(event) => setTokenScopes(event.target.value)}
+                placeholder="clients:read"
+                required
+              />
               <Button type="submit" isLoading={createTokenMutation.isPending}>
                 {t("developers.createToken")}
               </Button>
             </form>
             <div className="mt-5 space-y-2">
               {(tokens.data || []).map((token) => (
-                <div key={token.id} className="rounded-control bg-white p-3">
+                <div
+                  key={token.id}
+                  className="rounded-control bg-surface-card p-3"
+                >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                      <p className="font-bold text-midnight">{token.name}</p>
-                      <p className="mt-1 text-xs text-slate-500">{token.token_prefix}... · {token.scopes_json.join(", ")}</p>
-                      <p className="mt-1 text-xs text-slate-400">{t("developers.lastUsed")} {formatDate(token.last_used_at)}</p>
+                      <p className="font-bold text-zani-text">{token.name}</p>
+                      <p className="mt-1 text-xs text-zani-subtle">
+                        {token.token_prefix}... / {token.scopes_json.join(", ")}
+                      </p>
+                      <p className="mt-1 text-xs text-zani-faint">
+                        {t("developers.lastUsed")}{" "}
+                        {formatDate(token.last_used_at)}
+                      </p>
                     </div>
-                    <span className={token.is_active ? "rounded-full bg-green-50 px-2.5 py-1 text-xs font-bold text-green-700" : "rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-500"}>
-                      {token.is_active ? t("developers.active") : t("developers.revoked")}
+                    <span
+                      className={
+                        token.is_active
+                          ? "rounded-full bg-green-50 px-2.5 py-1 text-xs font-bold text-green-700"
+                          : "rounded-full bg-surface-muted px-2.5 py-1 text-xs font-bold text-zani-subtle"
+                      }
+                    >
+                      {token.is_active
+                        ? t("developers.active")
+                        : t("developers.revoked")}
                     </span>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <Button type="button" variant="secondary" onClick={() => rotateTokenMutation.mutate(token.id)} isLoading={rotateTokenMutation.isPending}>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => rotateTokenMutation.mutate(token.id)}
+                      isLoading={rotateTokenMutation.isPending}
+                    >
                       <RotateCcw size={15} />
                       {t("developers.rotate")}
                     </Button>
-                    <Button type="button" variant="danger" onClick={() => revokeTokenMutation.mutate(token.id)} disabled={!token.is_active} isLoading={revokeTokenMutation.isPending}>
+                    <Button
+                      type="button"
+                      variant="danger"
+                      onClick={() => revokeTokenMutation.mutate(token.id)}
+                      disabled={!token.is_active}
+                      isLoading={revokeTokenMutation.isPending}
+                    >
                       {t("developers.revoke")}
                     </Button>
                   </div>
                 </div>
               ))}
-              {!tokens.isLoading && !tokens.data?.length ? <p className="text-sm text-slate-500">{t("developers.noTokens")}</p> : null}
+              {!tokens.isLoading && !tokens.data?.length ? (
+                <p className="text-sm text-zani-subtle">
+                  {t("developers.noTokens")}
+                </p>
+              ) : null}
             </div>
           </div>
-          <div className="rounded-card border border-slate-200 bg-white p-4">
+          <div className="rounded-card border border-zani-border bg-surface-card p-4">
             <div className="flex items-center gap-3">
-              <div className="grid h-11 w-11 place-items-center rounded-control bg-slate-50 text-brand-600">
+              <div className="grid h-11 w-11 place-items-center rounded-control bg-surface-muted text-brand-600">
                 <Webhook size={20} />
               </div>
               <div>
-                <h3 className="font-black text-midnight">{t("developers.webhooksTitle")}</h3>
-                <p className="text-sm text-slate-500">{t("developers.webhooksText")}</p>
+                <h3 className="font-bold text-zani-text">
+                  {t("developers.webhooksTitle")}
+                </h3>
+                <p className="text-sm text-zani-subtle">
+                  {t("developers.webhooksText")}
+                </p>
               </div>
             </div>
             <form
@@ -218,47 +316,114 @@ export function DevelopersSection() {
                 createWebhookMutation.mutate();
               }}
             >
-              <Input label={t("developers.name")} value={webhookForm.name} onChange={(event) => setWebhookForm({ ...webhookForm, name: event.target.value })} required />
-              <Input label={t("common.url")} value={webhookForm.url} onChange={(event) => setWebhookForm({ ...webhookForm, url: event.target.value })} required />
-              <Input label={t("developers.signatureSecret")} value={webhookForm.secret} onChange={(event) => setWebhookForm({ ...webhookForm, secret: event.target.value })} placeholder={t("common.optional")} />
-              <Input label={t("developers.events")} value={webhookForm.events} onChange={(event) => setWebhookForm({ ...webhookForm, events: event.target.value })} required />
+              <Input
+                label={t("developers.name")}
+                value={webhookForm.name}
+                onChange={(event) =>
+                  setWebhookForm({ ...webhookForm, name: event.target.value })
+                }
+                required
+              />
+              <Input
+                label={t("common.url")}
+                value={webhookForm.url}
+                onChange={(event) =>
+                  setWebhookForm({ ...webhookForm, url: event.target.value })
+                }
+                required
+              />
+              <Input
+                label={t("developers.signatureSecret")}
+                value={webhookForm.secret}
+                onChange={(event) =>
+                  setWebhookForm({ ...webhookForm, secret: event.target.value })
+                }
+                placeholder={t("common.optional")}
+              />
+              <Input
+                label={t("developers.events")}
+                value={webhookForm.events}
+                onChange={(event) =>
+                  setWebhookForm({ ...webhookForm, events: event.target.value })
+                }
+                required
+              />
               <div className="lg:col-span-2 flex flex-wrap gap-2">
-                <Button type="submit" isLoading={createWebhookMutation.isPending}>{t("developers.addWebhook")}</Button>
+                <Button
+                  type="submit"
+                  isLoading={createWebhookMutation.isPending}
+                >
+                  {t("developers.addWebhook")}
+                </Button>
                 {webhookForm.secret ? (
-                  <Button type="button" variant="secondary" onClick={() => copyText(webhookForm.secret, "secret")}>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => copyText(webhookForm.secret, "secret")}
+                  >
                     <Copy size={16} />
-                    {lastCopied === "secret" ? t("developers.copied") : t("developers.copySecret")}
+                    {lastCopied === "secret"
+                      ? t("developers.copied")
+                      : t("developers.copySecret")}
                   </Button>
                 ) : null}
               </div>
             </form>
             <div className="mt-5 space-y-3">
               {(webhooks.data || []).map((endpoint) => (
-                <div key={endpoint.id} className="rounded-control bg-slate-50 p-3">
+                <div
+                  key={endpoint.id}
+                  className="rounded-control bg-surface-muted p-3"
+                >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
-                      <p className="font-bold text-midnight">{endpoint.name}</p>
-                      <p className="mt-1 break-all text-xs text-slate-500">{endpoint.url}</p>
-                      <p className="mt-1 text-xs text-slate-400">{endpoint.events_json.join(", ") || t("developers.allEvents")}</p>
+                      <p className="font-bold text-zani-text">
+                        {endpoint.name}
+                      </p>
+                      <p className="mt-1 break-all text-xs text-zani-subtle">
+                        {endpoint.url}
+                      </p>
+                      <p className="mt-1 text-xs text-zani-faint">
+                        {endpoint.events_json.join(", ") ||
+                          t("developers.allEvents")}
+                      </p>
                     </div>
-                    <Button type="button" variant="secondary" onClick={() => testDeliveryMutation.mutate(endpoint.id)} isLoading={testDeliveryMutation.isPending}>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => testDeliveryMutation.mutate(endpoint.id)}
+                      isLoading={testDeliveryMutation.isPending}
+                    >
                       <Send size={15} />
                       {t("developers.check")}
                     </Button>
                   </div>
                 </div>
               ))}
-              {!webhooks.isLoading && !webhooks.data?.length ? <p className="text-sm text-slate-500">{t("developers.noWebhooks")}</p> : null}
+              {!webhooks.isLoading && !webhooks.data?.length ? (
+                <p className="text-sm text-zani-subtle">
+                  {t("developers.noWebhooks")}
+                </p>
+              ) : null}
             </div>
           </div>
         </div>
-        <div className="mt-5 rounded-card border border-slate-200 bg-white p-4">
+        <div className="mt-5 rounded-card border border-zani-border bg-surface-card p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
             <div>
-              <h3 className="font-black text-midnight">{t("developers.deliveryTitle")}</h3>
-              <p className="mt-1 text-sm text-slate-500">{t("developers.deliveryText")}</p>
+              <h3 className="font-bold text-zani-text">
+                {t("developers.deliveryTitle")}
+              </h3>
+              <p className="mt-1 text-sm text-zani-subtle">
+                {t("developers.deliveryText")}
+              </p>
             </div>
-            <Button type="button" variant="secondary" onClick={() => deliveries.refetch()} isLoading={deliveries.isFetching}>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => deliveries.refetch()}
+              isLoading={deliveries.isFetching}
+            >
               <RefreshCw size={15} />
               {t("developers.refresh")}
             </Button>
@@ -273,7 +438,11 @@ export function DevelopersSection() {
                 t={t}
               />
             ))}
-            {!deliveries.isLoading && !latestDeliveries.length ? <p className="rounded-control bg-slate-50 p-4 text-sm text-slate-500">{t("developers.noDeliveries")}</p> : null}
+            {!deliveries.isLoading && !latestDeliveries.length ? (
+              <p className="rounded-control bg-surface-muted p-4 text-sm text-zani-subtle">
+                {t("developers.noDeliveries")}
+              </p>
+            ) : null}
           </div>
         </div>
       </CardBody>
@@ -293,27 +462,49 @@ function DeliveryRow({
   t: (key: string, vars?: Record<string, string | number>) => string;
 }) {
   return (
-    <div className="rounded-control border border-slate-200 bg-slate-50 p-3">
+    <div className="rounded-control border border-zani-border bg-surface-muted p-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="font-bold text-midnight">{delivery.event_type} · {delivery.endpoint_name || `Endpoint #${delivery.endpoint}`}</p>
-          <p className="mt-1 text-xs text-slate-500">
-            {delivery.idempotency_key} · {t("developers.attempts")} {delivery.attempts} · HTTP {delivery.response_status || "-"} · {formatDate(delivery.created_at)}
+          <p className="font-bold text-zani-text">
+            {delivery.event_type} /{" "}
+            {delivery.endpoint_name || `Endpoint #${delivery.endpoint}`}
           </p>
-          {delivery.error ? <p className="mt-1 text-xs font-semibold text-red-600">{delivery.error}</p> : null}
+          <p className="mt-1 text-xs text-zani-subtle">
+            {delivery.idempotency_key} / {t("developers.attempts")}{" "}
+            {delivery.attempts} / HTTP {delivery.response_status || "-"} /{" "}
+            {formatDate(delivery.created_at)}
+          </p>
+          {delivery.error ? (
+            <p className="mt-1 text-xs font-semibold text-red-600">
+              {delivery.error}
+            </p>
+          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className={deliveryStatusClass(delivery.status)}>{delivery.status}</span>
+          <span className={deliveryStatusClass(delivery.status)}>
+            {delivery.status}
+          </span>
           {delivery.status === "failed" ? (
-            <Button type="button" variant="secondary" onClick={() => onRetry(delivery.id)} isLoading={isRetrying}>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => onRetry(delivery.id)}
+              isLoading={isRetrying}
+            >
               {t("common.retry")}
             </Button>
           ) : null}
         </div>
       </div>
-      <details className="mt-3 rounded-control bg-white px-3 py-2">
-        <summary className="cursor-pointer text-xs font-bold text-slate-500">{t("developers.showPayload")}</summary>
-        <Textarea className="mt-3 text-xs" value={JSON.stringify(delivery.payload_json, null, 2)} readOnly />
+      <details className="mt-3 rounded-control bg-surface-card px-3 py-2">
+        <summary className="cursor-pointer text-xs font-bold text-zani-subtle">
+          {t("developers.showPayload")}
+        </summary>
+        <Textarea
+          className="mt-3 text-xs"
+          value={JSON.stringify(delivery.payload_json, null, 2)}
+          readOnly
+        />
       </details>
     </div>
   );
@@ -333,9 +524,11 @@ function formatDate(value?: string | null) {
 
 function deliveryStatusClass(status: WebhookDeliveryLog["status"]) {
   const classes: Record<WebhookDeliveryLog["status"], string> = {
-    pending: "rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600",
-    sent: "rounded-full bg-green-50 px-2.5 py-1 text-xs font-black text-green-700",
-    failed: "rounded-full bg-red-50 px-2.5 py-1 text-xs font-black text-red-700",
+    pending:
+      "rounded-full bg-surface-card px-2.5 py-1 text-xs font-semibold text-zani-subtle",
+    sent: "rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700",
+    failed:
+      "rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700",
   };
   return classes[status];
 }

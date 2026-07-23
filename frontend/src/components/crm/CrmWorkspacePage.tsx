@@ -14,7 +14,7 @@ export function CrmWorkspacePage({
   maxWidthClassName?: string;
 }) {
   return (
-    <section className={cn("flex h-[calc(100vh-5.5rem)] min-h-[620px] w-full flex-col bg-[#f8fafc] px-3 py-2 sm:px-4", className)}>
+    <section className={cn("flex h-[calc(100vh-5.5rem)] min-h-[620px] w-full flex-col bg-surface px-3 py-3 sm:px-4", className)}>
       <div className={cn("mx-auto flex min-h-0 w-full flex-1 flex-col", maxWidthClassName, contentClassName)}>
         {children}
       </div>
@@ -26,7 +26,7 @@ export function CrmWorkspaceGrid({
   children,
   inspectorOpen,
   className,
-  inspectorColumnClassName = "clamp(340px,25vw,400px)",
+  inspectorColumnClassName = "clamp(320px,23vw,372px)",
 }: {
   children: ReactNode;
   inspectorOpen?: boolean;
@@ -37,7 +37,7 @@ export function CrmWorkspaceGrid({
 
   return (
     <div
-      className={cn("grid min-h-0 w-full flex-1 grid-cols-1 gap-3", inspectorOpen && "lg:grid-cols-[minmax(0,1fr)_var(--crm-inspector-column)]", className)}
+      className={cn("grid min-h-0 w-full flex-1 grid-cols-1 gap-4", inspectorOpen && "lg:grid-cols-[minmax(0,1fr)_var(--crm-inspector-column)]", className)}
       style={inspectorStyle}
     >
       {children}

@@ -90,7 +90,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   if (!dictionary) {
     return (
-      <div className="grid min-h-screen place-items-center bg-slate-50 text-sm font-bold text-slate-500">
+      <div className="grid min-h-screen place-items-center bg-zani-bg text-sm font-semibold text-zani-subtle">
         Zani
       </div>
     );

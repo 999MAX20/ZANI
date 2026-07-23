@@ -59,8 +59,8 @@ export const categoryConfig: Record<ActivityEvent["category"], TimelineCategoryC
   system: {
     icon: PlugZap,
     labelKey: "crmCard.timelineCategorySystem",
-    iconClassName: "bg-slate-100 text-slate-700",
-    badgeClassName: "bg-slate-100 text-slate-700",
+    iconClassName: "bg-surface-muted text-zani-text",
+    badgeClassName: "bg-surface-muted text-zani-text",
   },
 };
 
@@ -117,6 +117,13 @@ export function formatToken(value: string) {
     .replace(/\s+/g, " ")
     .trim()
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+export function formatTimelineEventText(event: Pick<ActivityEvent, "event_type" | "text">, t: Translate) {
+  const labelKey = `crmCard.timelineEvent.${event.event_type}`;
+  const translatedLabel = t(labelKey);
+  if (translatedLabel && translatedLabel !== labelKey) return translatedLabel;
+  return event.text || formatToken(event.event_type);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

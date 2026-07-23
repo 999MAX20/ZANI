@@ -13,39 +13,48 @@ export const kk: Record<string, string> = {
   "account.noBusiness": "Бизнес таңдалмаған",
   "account.profileEyebrow": "Профиль",
   "account.profileTitle": "Команда сізді қалай көреді",
-  "account.profileText": "Бұл деректер пайдаланушыға қатысты, бизнеске емес. Олар компания баптауларына құқығы жоқ қызметкерлерге де қолжетімді.",
+  "account.profileText":
+    "Бұл деректер пайдаланушыға қатысты, бизнеске емес. Олар компания баптауларына құқығы жоқ қызметкерлерге де қолжетімді.",
   "account.fullName": "Аты-жөні",
   "account.phone": "Телефон",
   "account.saveProfile": "Профильді сақтау",
   "account.saved": "Профиль жаңартылды.",
   "account.preferencesEyebrow": "Қалаулар",
   "account.preferencesTitle": "Интерфейс",
-  "account.preferencesText": "Жеке жұмыс орнының баптаулары. Олар бизнес баптаулары мен команда рөлдерін өзгертпейді.",
+  "account.preferencesText":
+    "Жеке жұмыс орнының баптаулары. Олар бизнес баптаулары мен команда рөлдерін өзгертпейді.",
   "account.businessAccessTitle": "Ағымдағы бизнестегі қолжетімділік",
-  "account.businessAccessText": "Сіздің рөліңіз: {role}. Бизнес бөлімдері берілген құқықтарға қарай көрсетіледі.",
+  "account.businessAccessText":
+    "Сіздің рөліңіз: {role}. Бизнес бөлімдері берілген құқықтарға қарай көрсетіледі.",
   "account.businessAccessEmpty": "Ағымдағы бизнес үшін белсенді рөл табылмады.",
   "account.timezone": "Уақыт белдеуі",
   "account.startPage": "Бастапқы бет",
   "account.connectedEyebrow": "Қосылымдар",
   "account.connectedTitle": "Сыртқы аккаунттар арқылы кіру",
-  "account.connectedText": "Мұнда пайдаланушыңызға байланыстырылған Google және Apple аккаунттары көрсетіледі.",
+  "account.connectedText":
+    "Мұнда пайдаланушыңызға байланыстырылған Google және Apple аккаунттары көрсетіледі.",
   "account.verified": "Расталған",
   "account.notVerified": "Расталмаған",
-  "account.noConnectedAccounts": "Сыртқы аккаунттар әлі қосылмаған. Қазір кіру email және құпиясөз арқылы жұмыс істейді.",
+  "account.noConnectedAccounts":
+    "Сыртқы аккаунттар әлі қосылмаған. Қазір кіру email және құпиясөз арқылы жұмыс істейді.",
   "account.loginHistoryEyebrow": "Қауіпсіздік",
   "account.loginHistoryTitle": "Соңғы кірулер",
-  "account.loginHistoryText": "Тек сіздің пайдаланушыңыздың кіру оқиғалары. Бизнес қауіпсіздік журналы бизнес баптауларында қалады.",
+  "account.loginHistoryText":
+    "Тек сіздің пайдаланушыңыздың кіру оқиғалары. Бизнес қауіпсіздік журналы бизнес баптауларында қалады.",
   "account.noLoginHistory": "Кіру тарихы әзірге бос.",
   "account.noIp": "IP жазылмаған",
   "account.noDevice": "құрылғы анықталмаған",
   "account.notificationsEyebrow": "Жеке хабарландырулар",
   "account.notificationsTitle": "Сізге нені көрсету керек",
-  "account.notificationsText": "Санатты өшіру тек сіздің аккаунтыңыздағы әдеттегі шуды жасырады. Шұғыл жүйелік оқиғалар бәрібір келуі мүмкін.",
-  "account.notificationsNoBusiness": "Жұмыс кеңістігі бойынша хабарландыруларды баптау үшін бизнесті таңдаңыз.",
+  "account.notificationsText":
+    "Санатты өшіру тек сіздің аккаунтыңыздағы әдеттегі шуды жасырады. Шұғыл жүйелік оқиғалар бәрібір келуі мүмкін.",
+  "account.notificationsNoBusiness":
+    "Жұмыс кеңістігі бойынша хабарландыруларды баптау үшін бизнесті таңдаңыз.",
   "account.businessRequired": "Белсенді бизнес қажет.",
   "account.securityEyebrow": "Қауіпсіздік",
   "account.securityTitle": "Құпиясөз",
-  "account.securityText": "Құпиясөзді өзгерту тек сіздің аккаунтыңызға қолданылады. Командалық рөлдер мен қолжетімділік бизнес баптауларында өзгереді.",
+  "account.securityText":
+    "Құпиясөзді өзгерту тек сіздің аккаунтыңызға қолданылады. Командалық рөлдер мен қолжетімділік бизнес баптауларында өзгереді.",
   "account.currentPassword": "Ағымдағы құпиясөз",
   "account.newPassword": "Жаңа құпиясөз",
   "account.confirmPassword": "Құпиясөзді қайталаңыз",
@@ -114,22 +123,29 @@ export const kk: Record<string, string> = {
   "header.statusActive": "Күйі: белсенді",
   "sidebar.subtitle": "Бизнесті басқару панелі",
   "sidebar.commandCenter": "Бизнес бақылауда",
-  "sidebar.commandCenterText": "Өтінімдер, жазбалар және тапсырмалар бір панельде.",
+  "sidebar.commandCenterText":
+    "Өтінімдер, жазбалар және тапсырмалар бір панельде.",
   "sidebar.safeMode": "Қауіпсіз қолжетімділік",
-  "sidebar.safeModeText": "Бөлімдер қызметкер рөлі мен бизнес құқықтарына қарай көрсетіледі.",
+  "sidebar.safeModeText":
+    "Бөлімдер қызметкер рөлі мен бизнес құқықтарына қарай көрсетіледі.",
   "sidebar.roleSurface.owner.title": "Иесінің толық бақылауы",
-  "sidebar.roleSurface.owner.text": "Ақша, команда, қосылымдар, аналитика және бизнес баптаулары қолжетімді.",
+  "sidebar.roleSurface.owner.text":
+    "Ақша, команда, қосылымдар, аналитика және бизнес баптаулары қолжетімді.",
   "sidebar.roleSurface.manager.title": "Менеджердің жұмыс режимі",
-  "sidebar.roleSurface.manager.text": "Клиенттер, өтінімдер, мәмілелер, тапсырмалар және хабарламалар артық басқару бөлімдерінсіз көрсетіледі.",
+  "sidebar.roleSurface.manager.text":
+    "Клиенттер, өтінімдер, мәмілелер, тапсырмалар және хабарламалар артық басқару бөлімдерінсіз көрсетіледі.",
   "sidebar.roleSurface.operator.title": "Операциялық режим",
-  "sidebar.roleSurface.operator.text": "Кіріс өтініштерге, жауаптарға, тағайындауларға және шұғыл әрекеттерге фокус.",
+  "sidebar.roleSurface.operator.text":
+    "Кіріс өтініштерге, жауаптарға, тағайындауларға және шұғыл әрекеттерге фокус.",
   "sidebar.roleSurface.staff.title": "Шектеулі жұмыс қолжетімі",
-  "sidebar.roleSurface.staff.text": "Тек иесі рұқсат берген бөлімдер мен әрекеттер көрсетіледі.",
+  "sidebar.roleSurface.staff.text":
+    "Тек иесі рұқсат берген бөлімдер мен әрекеттер көрсетіледі.",
   "sidebar.collapse": "Мәзірді жинау",
   "sidebar.expand": "Мәзірді ашу",
   "auth.badge": "ШОБ үшін ЖИ-CRM",
   "auth.headline": "Бизнестің жұмысын жылдамдататын басқару кабинеті.",
-  "auth.copy": "Өтінімдерді, клиенттерді, жазбаларды және диалогтарды бір түсінікті интерфейсте басқарыңыз.",
+  "auth.copy":
+    "Өтінімдерді, клиенттерді, жазбаларды және диалогтарды бір түсінікті интерфейсте басқарыңыз.",
   "auth.fastFollowup": "Жылдам жауап",
   "auth.fastFollowupText": "Кімге жауап беру керегін еске салады",
   "auth.smartBooking": "Ақылды жазба",
@@ -139,7 +155,8 @@ export const kk: Record<string, string> = {
   "auth.aiBubble": "ЖИ маңызды өтінімдерді тауып, кеңес дайындады.",
   "auth.welcome": "Қайта қош келдіңіз",
   "auth.signIn": "Zani жүйесіне кіру",
-  "auth.signInCopy": "Жұмыс кабинетіне кіріп, клиенттермен жұмысты жалғастырыңыз.",
+  "auth.signInCopy":
+    "Жұмыс кабинетіне кіріп, клиенттермен жұмысты жалғастырыңыз.",
   "auth.email": "Email",
   "auth.password": "Құпиясөз",
   "auth.submit": "Кіру",
@@ -149,12 +166,14 @@ export const kk: Record<string, string> = {
   "auth.googleSoon": "Google жақында",
   "auth.appleSoon": "Apple жақында",
   "auth.socialNotConfigured": "Әлеуметтік кіру әлі бапталмаған.",
-  "auth.socialFailed": "Провайдер арқылы кіру сәтсіз болды. Қайталап көріңіз немесе email мен құпиясөзді қолданыңыз.",
+  "auth.socialFailed":
+    "Провайдер арқылы кіру сәтсіз болды. Қайталап көріңіз немесе email мен құпиясөзді қолданыңыз.",
   "auth.forgotPassword": "Құпиясөзді ұмыттыңыз ба?",
   "auth.registerBusiness": "Бизнесті тіркеу",
   "invite.checking": "Шақыруды тексеріп жатырмыз...",
   "invite.eyebrow": "CRM шақыруы",
-  "invite.description": "Кіру үшін құпиясөз орнатыңыз. Растағаннан кейін бизнес иесі берген рөлмен CRM жүйесіне кіресіз.",
+  "invite.description":
+    "Кіру үшін құпиясөз орнатыңыз. Растағаннан кейін бизнес иесі берген рөлмен CRM жүйесіне кіресіз.",
   "invite.inactive": "Шақыру белсенді емес: {status}.",
   "invite.email": "Email",
   "invite.name": "Аты-жөні",
@@ -178,7 +197,8 @@ export const kk: Record<string, string> = {
   "common.language": "Тіл",
   "common.openNavigation": "Навигацияны ашу",
   "passwordReset.requestTitle": "Құпиясөзді қалпына келтіру",
-  "passwordReset.requestText": "Аккаунт email-ін енгізіңіз. Құпиясөзді қалпына келтіру сілтемесін дайындаймыз.",
+  "passwordReset.requestText":
+    "Аккаунт email-ін енгізіңіз. Құпиясөзді қалпына келтіру сілтемесін дайындаймыз.",
   "passwordReset.deliveryChannel": "Жеткізу арнасы",
   "passwordReset.manualChannel": "Қолмен көшіру",
   "passwordReset.getLink": "Сілтеме алу",
@@ -200,10 +220,12 @@ export const kk: Record<string, string> = {
   "passwordReset.backToLogin": "Кіруге оралу",
   "signup.badge": "Шағын бизнеске арналған Zani",
   "signup.headline": "CRM жүйесін ұзақ баптаусыз іске қосыңыз.",
-  "signup.copy": "Бір қадамда иесін, бизнесті және негізгі рөлдерді құрамыз. Қызметкерлерді кейін команда баптауларынан шақырасыз.",
+  "signup.copy":
+    "Бір қадамда иесін, бизнесті және негізгі рөлдерді құрамыз. Қызметкерлерді кейін команда баптауларынан шақырасыз.",
   "signup.eyebrow": "Директорды тіркеу",
   "signup.title": "Компания және алғашқы қолжетімділік",
-  "signup.text": "Тек негізгі деректер. Қалғанын кейін баптауларда толтыруға болады.",
+  "signup.text":
+    "Тек негізгі деректер. Қалғанын кейін баптауларда толтыруға болады.",
   "signup.accountSection": "Директор қолжетімділігі",
   "signup.businessSection": "Бизнес",
   "signup.yourName": "Сіздің атыңыз",
@@ -214,8 +236,10 @@ export const kk: Record<string, string> = {
   "signup.businessType": "Сала",
   "signup.city": "Қала",
   "signup.cityOptional": "Қала (міндетті емес)",
-  "signup.nextText": "Кіргеннен кейін Zani жылдам старт ұсынады: қызметтер, кесте, қызметкерлер және алғашқы өтінім арнасы.",
-  "signup.startNote": "Тек иені және жұмыс кеңістігін құрамыз. Қызметкерлерді, рөлдерді, интеграцияларды және кестені кіргеннен кейін баптай аласыз.",
+  "signup.nextText":
+    "Кіргеннен кейін Zani жылдам старт ұсынады: қызметтер, кесте, қызметкерлер және алғашқы өтінім арнасы.",
+  "signup.startNote":
+    "Тек иені және жұмыс кеңістігін құрамыз. Қызметкерлерді, рөлдерді, интеграцияларды және кестені кіргеннен кейін баптай аласыз.",
   "signup.submit": "Кабинет құру",
   "signup.hasAccess": "Қолжетімділік бар ма?",
   "businessType.beauty": "Сұлулық / салон / барбершоп",
@@ -226,7 +250,8 @@ export const kk: Record<string, string> = {
   "businessType.sauna": "Сауна / монша",
   "businessType.other": "Басқа",
   "dashboard.title": "Бизнес басқару панелі",
-  "dashboard.description": "Сату, өтінімдер, жазбалар және команда әрекеттері бір экранда.",
+  "dashboard.description":
+    "Сату, өтінімдер, жазбалар және команда әрекеттері бір экранда.",
   "dashboard.newLead": "Жаңа өтінім",
   "dashboard.aiPlan": "Күн жоспары",
   "dashboard.revenue": "Түсім",
@@ -264,7 +289,8 @@ export const kk: Record<string, string> = {
   "dashboard.staleDeals": "Қозғалыссыз мәмілелер",
   "dashboard.staleDealsText": "{count} мәмілені тексеру керек.",
   "dashboard.teamDataEmpty": "Команда деректері әзірге жоқ",
-  "dashboard.teamDataEmptyText": "Қызметкерлер KPI көру үшін өтінімдер мен тапсырмаларға жауаптыларды тағайындаңыз.",
+  "dashboard.teamDataEmptyText":
+    "Қызметкерлер KPI көру үшін өтінімдер мен тапсырмаларға жауаптыларды тағайындаңыз.",
   "dashboard.connectMoreData": "Дәл инсайттар үшін көбірек дерек қосыңыз",
   "dashboard.ownerUrgentActions": "Шұғыл әрекеттер",
   "dashboard.aiNavigator": "ЖИ-навигатор",
@@ -313,12 +339,16 @@ export const kk: Record<string, string> = {
   "dashboard.newLeadsCount": "жаңа өтінім",
   "dashboard.moneyUnderControl": "Ақша бақылауда",
   "dashboard.myActiveLeads": "Менің белсенді өтінімдерім",
-  "dashboard.ownerHeroHint": "Аяқталған жазбалар мен жүктелген сатылымдар бойынша баға.",
+  "dashboard.ownerHeroHint":
+    "Аяқталған жазбалар мен жүктелген сатылымдар бойынша баға.",
   "dashboard.managerHeroHint": "тапсырма жұмыста · фокус жылдам жауапта",
-  "dashboard.ownerHeroCopy": "Басты экран ақша, сұраныс және шұғыл әрекеттерді артық CRM-шусыз көрсетеді.",
-  "dashboard.managerHeroCopy": "Сіздің жұмыс экраныңыз: клиентті сатып алуға жақындататын өтінімдер, тапсырмалар және жазбалар.",
+  "dashboard.ownerHeroCopy":
+    "Басты экран ақша, сұраныс және шұғыл әрекеттерді артық CRM-шусыз көрсетеді.",
+  "dashboard.managerHeroCopy":
+    "Сіздің жұмыс экраныңыз: клиентті сатып алуға жақындататын өтінімдер, тапсырмалар және жазбалар.",
   "dashboard.setupScore": "Бизнесті баптау бағасы",
-  "dashboard.setupScoreText": "Zani бизнесіңізді {score}% деңгейінде көреді. Дереккөздер мен анықтамалықтар көп болған сайын CRM келесі әрекеттерді дәлірек ұсынады.",
+  "dashboard.setupScoreText":
+    "Zani бизнесіңізді {score}% деңгейінде көреді. Дереккөздер мен анықтамалықтар көп болған сайын CRM келесі әрекеттерді дәлірек ұсынады.",
   "dashboard.quickLead": "Жаңа өтінім",
   "dashboard.quickBooking": "Жазба",
   "dashboard.quickDialogs": "Диалогтар",
@@ -349,13 +379,15 @@ export const kk: Record<string, string> = {
   "dashboard.zaniRecommendations": "ZANI ұсыныстары",
   "dashboard.businessActivated": "Лендингіңіз іске қосылды",
   "dashboard.acceptsLeads": "{business} ZANI арқылы өтінім қабылдап жатыр",
-  "dashboard.trialCopy": "Сізге кеңейтілген қолжетімділіктің сыйлық айы ашылды. Қазір қосымша төлем қажет емес.",
+  "dashboard.trialCopy":
+    "Сізге кеңейтілген қолжетімділіктің сыйлық айы ашылды. Қазір қосымша төлем қажет емес.",
   "dashboard.activeUntil": "Қолжетімділік {date} дейін белсенді.",
   "dashboard.openLanding": "Лендингті ашу",
   "dashboard.connectData": "Деректерді қосу",
   "dashboard.source": "Дереккөз",
   "dashboard.connectNext": "Келесі не қосылады",
-  "dashboard.connectNextHint": "Production-дайын емес модульдер beta, жақында немесе сұраныс бойынша деп белгіленген.",
+  "dashboard.connectNextHint":
+    "Production-дайын емес модульдер beta, жақында немесе сұраныс бойынша деп белгіленген.",
   "dashboard.openQuickStart": "Жылдам бастауды ашу",
   "dashboard.statusConnected": "қосылған",
   "dashboard.statusConnect": "қосу",
@@ -375,7 +407,8 @@ export const kk: Record<string, string> = {
   "dashboard.noUrgentLeads": "Шұғыл өтінімдер жоқ",
   "dashboard.noUrgentLeadsText": "Жаңа өтінімдер осында пайда болады.",
   "dashboard.noBookingsToday": "Бүгінге жазбалар жоқ",
-  "dashboard.noBookingsTodayText": "Өтінімнен немесе күнтізбеден жазба жасаңыз.",
+  "dashboard.noBookingsTodayText":
+    "Өтінімнен немесе күнтізбеден жазба жасаңыз.",
   "dashboard.noDueDate": "Мерзімсіз",
   "dashboard.taskEscalation.none": "Қалыпты",
   "dashboard.taskEscalation.watch": "Бақылау",
@@ -383,27 +416,41 @@ export const kk: Record<string, string> = {
   "dashboard.taskEscalation.critical": "Критикалық",
   "dashboard.noOpenTasks": "Ашық тапсырмалар жоқ",
   "dashboard.noOpenTasksText": "Follow-up тапсырмалар осында пайда болады.",
-  "dashboard.noBusiness": "Бизнес әлі құрылмаған. Жұмысты бастау үшін баптаулардан бірінші бизнесті қосыңыз.",
-  "dashboard.moduleWhatsapp": "Өтінімдер мен хат алмасу клиенттің бірыңғай тарихына түсуі үшін арнаны қосыңыз.",
+  "dashboard.noBusiness":
+    "Бизнес әлі құрылмаған. Жұмысты бастау үшін баптаулардан бірінші бизнесті қосыңыз.",
+  "dashboard.moduleWhatsapp":
+    "Өтінімдер мен хат алмасу клиенттің бірыңғай тарихына түсуі үшін арнаны қосыңыз.",
   "dashboard.moduleAiBot": "AI-бот",
-  "dashboard.moduleAiBotText": "Алғашқы жауаптар мен лидтерді саралауға арналған AI-сценарий жобасы.",
+  "dashboard.moduleAiBotText":
+    "Алғашқы жауаптар мен лидтерді саралауға арналған AI-сценарий жобасы.",
   "dashboard.moduleTeam": "Қызметкерлер",
-  "dashboard.moduleTeamText": "Өтінімдерді бөлмес бұрын команданы шақырып, рөлдерді баптаңыз.",
-  "dashboard.moduleServicesText": "Анықтамалық жазба, баға және түсінікті аналитика үшін керек.",
+  "dashboard.moduleTeamText":
+    "Өтінімдерді бөлмес бұрын команданы шақырып, рөлдерді баптаңыз.",
+  "dashboard.moduleServicesText":
+    "Анықтамалық жазба, баға және түсінікті аналитика үшін керек.",
   "dashboard.moduleSales": "Сату",
-  "dashboard.moduleSalesText": "Воронка дайын. Алғашқы өтінімдер CRM-ге автоматты түседі.",
-  "dashboard.moduleImportText": "Қолмен көшірмей, ағымдағы клиенттер мен өтінімдер базасын импорттаңыз.",
-  "dashboard.module1cText": "Қаржы және клиент деректерін экспорттау қолдау арқылы қосылады.",
+  "dashboard.moduleSalesText":
+    "Воронка дайын. Алғашқы өтінімдер CRM-ге автоматты түседі.",
+  "dashboard.moduleImportText":
+    "Қолмен көшірмей, ағымдағы клиенттер мен өтінімдер базасын импорттаңыз.",
+  "dashboard.module1cText":
+    "Қаржы және клиент деректерін экспорттау қолдау арқылы қосылады.",
   "dashboard.moduleWarehouse": "МойСклад / қойма",
-  "dashboard.moduleWarehouseText": "Қойма интеграциялары пилоттық CRM логикасынан кейін жоспарланған.",
+  "dashboard.moduleWarehouseText":
+    "Қойма интеграциялары пилоттық CRM логикасынан кейін жоспарланған.",
   "dashboard.managerTitle": "Менің жұмыс күнім",
-  "dashboard.ownerPageDescription": "Ақша, сұраныс және шұғыл әрекеттер бір экранда.",
-  "dashboard.managerPageDescription": "Лидтер, тапсырмалар және жазбалар басқарушылық шусыз.",
-  "dashboard.loadingCoreData": "CRM деректері жаңартылып жатыр. Негізгі экран қазірдің өзінде қолжетімді.",
-  "dashboard.ownerAnalyticsError": "Ие аналитикасын жүктеу мүмкін болмады. Негізгі CRM бөлімдері қолжетімді, метрикалар API қалпына келгеннен кейін жаңарады.",
+  "dashboard.ownerPageDescription":
+    "Ақша, сұраныс және шұғыл әрекеттер бір экранда.",
+  "dashboard.managerPageDescription":
+    "Лидтер, тапсырмалар және жазбалар басқарушылық шусыз.",
+  "dashboard.loadingCoreData":
+    "CRM деректері жаңартылып жатыр. Негізгі экран қазірдің өзінде қолжетімді.",
+  "dashboard.ownerAnalyticsError":
+    "Ие аналитикасын жүктеу мүмкін болмады. Негізгі CRM бөлімдері қолжетімді, метрикалар API қалпына келгеннен кейін жаңарады.",
   "dashboard.operatorWorkspace": "Оператор жұмыс орны",
   "dashboard.operatorFocus": "Клиенттерді өңдеуге фокус",
-  "dashboard.operatorFocusText": "Бұл рөлде басқару және қаржы блоктары жасырылған. Негізгі әрекеттер: чатта жауап беру, өтінімді өңдеу, жазба жасау және follow-up жабу.",
+  "dashboard.operatorFocusText":
+    "Бұл рөлде басқару және қаржы блоктары жасырылған. Негізгі әрекеттер: чатта жауап беру, өтінімді өңдеу, жазба жасау және follow-up жабу.",
   "dashboard.leadsLabel": "өтінім",
   "dashboard.chatsLabel": "чаттар",
   "dashboard.tasksLabel": "тапсырма",
@@ -411,70 +458,92 @@ export const kk: Record<string, string> = {
   "dashboard.checkBookingsToday": "Бүгінгі жазбаларды тексеру",
   "dashboard.bookingsInCalendar": "Күнтізбеде {count} жазба.",
   "dashboard.openTeamTasks": "Команда тапсырмаларын ашу",
-  "dashboard.openClientTasksCount": "Клиенттер мен follow-up бойынша {count} ашық тапсырма.",
+  "dashboard.openClientTasksCount":
+    "Клиенттер мен follow-up бойынша {count} ашық тапсырма.",
   "dashboard.checkLeadSources": "Өтінім көздерін тексеру",
   "dashboard.sources": "Дереккөздер",
-  "dashboard.leadSourcesHint": "{source} сұраныстың қайдан келетінін көрсетеді.",
+  "dashboard.leadSourcesHint":
+    "{source} сұраныстың қайдан келетінін көрсетеді.",
   "dashboard.connectSalesData": "Сату деректерін қосу",
   "dashboard.finishQuickStart": "Жылдам бастауды аяқтау",
   "dashboard.crmReadiness": "CRM дайындығы: {progress}%.",
   "dashboard.checkPilotReadiness": "Пилот дайындығын тексеру",
-  "dashboard.pilotReadinessText": "CRM, импорт, чат, AI, интеграциялар және smoke path бір чеклистте.",
+  "dashboard.pilotReadinessText":
+    "CRM, импорт, чат, AI, интеграциялар және smoke path бір чеклистте.",
   "dashboard.attention.new_leads.title": "Жаңа өтінімдер",
   "dashboard.attention.new_leads.text": "{count} өтінім өңдеуді күтеді.",
   "dashboard.attention.overdue_tasks.title": "Мерзімі өткен тапсырмалар",
   "dashboard.attention.overdue_tasks.text": "{count} тапсырманың мерзімі өтті.",
   "dashboard.attention.connector_errors.title": "Интеграция мәселелері",
-  "dashboard.attention.connector_errors.text": "{count} коннектор тексеруді қажет етеді.",
+  "dashboard.attention.connector_errors.text":
+    "{count} коннектор тексеруді қажет етеді.",
   "dashboard.attention.connector_pending.title": "Қосу өтінімдері",
-  "dashboard.attention.connector_pending.text": "{count} қосылым баптауды күтеді.",
+  "dashboard.attention.connector_pending.text":
+    "{count} қосылым баптауды күтеді.",
   "dashboard.attention.sales_data.title": "Сату деректері жоқ",
-  "dashboard.attention.sales_data.text": "Excel/CSV жүктеңіз немесе read-only дереккөз қосыңыз.",
+  "dashboard.attention.sales_data.text":
+    "Excel/CSV жүктеңіз немесе read-only дереккөз қосыңыз.",
   "dashboard.latestBusinessEvents": "Соңғы бизнес оқиғалары",
-  "dashboard.latestBusinessEventsText": "Ауыр BI қоспай импортталған сатылымдар, тауарлар, қалдықтар және коннектор оқиғалары.",
-  "dashboard.connectorHealth": "Қосылған: {connected} · жұмыста: {pending} · қате: {error}",
+  "dashboard.latestBusinessEventsText":
+    "Ауыр BI қоспай импортталған сатылымдар, тауарлар, қалдықтар және коннектор оқиғалары.",
+  "dashboard.connectorHealth":
+    "Қосылған: {connected} · жұмыста: {pending} · қате: {error}",
   "dashboard.latestLeads": "Соңғы өтінімдер",
   "dashboard.noLeads": "Өтінімдер әзірге жоқ",
-  "dashboard.noLeadsText": "Бірінші өтінімді қолмен жасаңыз немесе келесі кезеңде өтінім көзін қосыңыз.",
+  "dashboard.noLeadsText":
+    "Бірінші өтінімді қолмен жасаңыз немесе келесі кезеңде өтінім көзін қосыңыз.",
   "dashboard.goLeads": "Өтінімдерге өту",
   "dashboard.upcomingBookings": "Жақын жазбалар",
   "dashboard.noBookings": "Жазбалар әзірге жоқ",
-  "dashboard.noBookingsText": "Бірінші жазба пайда болғанда, ол осында және күнтізбеде көрінеді.",
+  "dashboard.noBookingsText":
+    "Бірінші жазба пайда болғанда, ол осында және күнтізбеде көрінеді.",
   "dashboard.clientBase": "Клиенттер базасы",
   "dashboard.clientsInCrm": "CRM-де {count} клиент.",
   "dashboard.quickStart": "Жылдам бастау",
-  "dashboard.quickStartText": "Қызмет, ресурс және жұмыс уақытын қосып, өтінімнен бірінші жазба жасаңыз.",
-  "dashboard.revenueExactText": "Жүктелген сатылымдар мен аяқталған жазбалар бойынша.",
-  "dashboard.revenueEstimateText": "Аяқталған жазбалар бойынша баға; нақты көрініс үшін сатылымдарды жүктеңіз.",
+  "dashboard.quickStartText":
+    "Қызмет, ресурс және жұмыс уақытын қосып, өтінімнен бірінші жазба жасаңыз.",
+  "dashboard.revenueExactText":
+    "Жүктелген сатылымдар мен аяқталған жазбалар бойынша.",
+  "dashboard.revenueEstimateText":
+    "Аяқталған жазбалар бойынша баға; нақты көрініс үшін сатылымдарды жүктеңіз.",
   "dashboard.revenueMissingValue": "Дерек жоқ",
-  "dashboard.revenueMissingHint": "ZANI нақты ақшаны көрсетуі үшін сатылымдарды қосыңыз немесе Excel/CSV импорттаңыз.",
+  "dashboard.revenueMissingHint":
+    "ZANI нақты ақшаны көрсетуі үшін сатылымдарды қосыңыз немесе Excel/CSV импорттаңыз.",
   "dashboard.revenueMissingShort": "Нақты көрініс үшін сатылымдарды қосыңыз.",
   "dashboard.aiBrief.eyebrow": "AI-қорытынды",
   "dashboard.aiBrief.title": "ZANI бүгін нені көріп тұр",
   "dashboard.aiBrief.source": "Тек осы кабинеттің деректері",
   "dashboard.aiBrief.overdueTitle": "Мерзімі өткен тапсырмалар бар",
-  "dashboard.aiBrief.overdueText": "{count} тапсырма бүгін шешімді қажет етеді.",
+  "dashboard.aiBrief.overdueText":
+    "{count} тапсырма бүгін шешімді қажет етеді.",
   "dashboard.aiBrief.openTasks": "Тапсырмаларды ашу",
   "dashboard.aiBrief.leadsTitle": "Жаңа өтінімдер жауап күтеді",
-  "dashboard.aiBrief.leadsText": "{count} өтінімді өңдеу керек, әйтпесе клиент жоғалуы мүмкін.",
+  "dashboard.aiBrief.leadsText":
+    "{count} өтінімді өңдеу керек, әйтпесе клиент жоғалуы мүмкін.",
   "dashboard.aiBrief.openLeads": "Өтінімдерді ашу",
   "dashboard.aiBrief.bookingsTitle": "Бүгінгі жазбаларды тексеріңіз",
   "dashboard.aiBrief.bookingsText": "Бүгінге {count} жазба жоспарланған.",
   "dashboard.aiBrief.openCalendar": "Күнтізбені ашу",
   "dashboard.aiBrief.salesTitle": "Ақша бойынша дерек жоқ",
-  "dashboard.aiBrief.salesText": "ZANI түсімді түсіндіруі үшін сатылымдарды қосыңыз немесе Excel/CSV импорттаңыз.",
+  "dashboard.aiBrief.salesText":
+    "ZANI түсімді түсіндіруі үшін сатылымдарды қосыңыз немесе Excel/CSV импорттаңыз.",
   "dashboard.aiBrief.connectSales": "Деректерді қосу",
   "dashboard.aiBrief.setupTitle": "Бизнес толық бапталмаған",
-  "dashboard.aiBrief.setupText": "ZANI бизнесті {score}% деңгейінде көріп тұр. Дәл кеңестер үшін жылдам бастауды аяқтаңыз.",
+  "dashboard.aiBrief.setupText":
+    "ZANI бизнесті {score}% деңгейінде көріп тұр. Дәл кеңестер үшін жылдам бастауды аяқтаңыз.",
   "dashboard.aiBrief.openSetup": "Жылдам бастау",
   "dashboard.aiBrief.missingTitle": "Деректер жеткіліксіз",
-  "dashboard.aiBrief.missingText": "Өтінімдер, клиенттер, жазбалар қосыңыз немесе дереккөздерді қосыңыз.",
+  "dashboard.aiBrief.missingText":
+    "Өтінімдер, клиенттер, жазбалар қосыңыз немесе дереккөздерді қосыңыз.",
   "dashboard.aiBrief.missingAction": "Дереккөздерді қосу",
-  "dashboard.ownerSignalText": "Бөлінбеген өтінімдер: {leads}. Жауапсыз чаттар: {chats}. Бизнес дайындығы: {setup}%, конверсия: {conversion}%.",
-  "dashboard.ownerReadinessLine": "Бизнес дайындығы {setup}% · конверсия {conversion}%",
+  "dashboard.ownerSignalText":
+    "Бөлінбеген өтінімдер: {leads}. Жауапсыз чаттар: {chats}. Бизнес дайындығы: {setup}%, конверсия: {conversion}%.",
+  "dashboard.ownerReadinessLine":
+    "Бизнес дайындығы {setup}% · конверсия {conversion}%",
   "dashboard.stitchSubtitle": "Бұл - бизнесіңіздің ағымдағы жағдайы.",
   "dashboard.smartTitle": "ZANI SMART ИНТЕЛЛЕКТ",
-  "dashboard.smartSummary": "ZANI маңызды сигналдарды байқады: лидтер жауап күтеді, кейбір диалогтарға жауап берілмеген, ал қозғалыссыз мәмілелерді бүгін тексеру керек.",
+  "dashboard.smartSummary":
+    "ZANI маңызды сигналдарды байқады: лидтер жауап күтеді, кейбір диалогтарға жауап берілмеген, ал қозғалыссыз мәмілелерді бүгін тексеру керек.",
   "dashboard.smartPrimaryAction": "Жауап уақытын түзету",
   "dashboard.smartSecondaryAction": "Мәмілелерді шолу",
   "dashboard.integrationStatus": "Интеграциялар",
@@ -500,34 +569,43 @@ export const kk: Record<string, string> = {
   "dashboard.allLeads": "Барлық өтінімдер",
   "dashboard.warehouse": "Қойма",
   "dashboard.aiRevenueGrowth": "Түсім 3 күн қатарынан өсіп келеді",
-  "dashboard.aiRevenueGrowthText": "Жақсы қарқын. Динамиканы сақтап, қайталама сатылымдарды тексеріңіз.",
+  "dashboard.aiRevenueGrowthText":
+    "Жақсы қарқын. Динамиканы сақтап, қайталама сатылымдарды тексеріңіз.",
   "dashboard.aiNewLeadsWaiting": "{count} жаңа өтінім өңдеуді күтеді",
-  "dashboard.aiNewLeadsWaitingText": "Жылдам жауап конверсия мүмкіндігін арттырады.",
+  "dashboard.aiNewLeadsWaitingText":
+    "Жылдам жауап конверсия мүмкіндігін арттырады.",
   "dashboard.aiOverdueTasks": "{count} тапсырманың мерзімі өтті",
   "dashboard.aiOverdueTasksText": "Маңызды тапсырмаларды бүгін жабыңыз.",
   "dashboard.aiConversionBelow": "Конверсия нормадан төмен",
-  "dashboard.aiConversionBelowText": "Мәміле кезеңдерін және белсенді өтінімдердің келесі қадамын тексеріңіз.",
+  "dashboard.aiConversionBelowText":
+    "Мәміле кезеңдерін және белсенді өтінімдердің келесі қадамын тексеріңіз.",
   "dashboard.openPrioritySource": "Негізгі дереккөзді ашу",
   "dashboard.ownerBriefSources": "{count} дереккөз",
   "dashboard.ownerBriefError": "Күндік AI-қорытынды уақытша қолжетімсіз.",
   "dashboard.ownerBriefNoDataTitle": "Бастапқы деректер жеткіліксіз",
-  "dashboard.ownerBriefNoDataText": "Әзірге назар қажет ететін көрінетін CRM жазбалары немесе қосылымдар жоқ.",
+  "dashboard.ownerBriefNoDataText":
+    "Әзірге назар қажет ететін көрінетін CRM жазбалары немесе қосылымдар жоқ.",
   "dashboard.ownerBriefLoadingTitle": "Дереккөздер жиналып жатыр",
-  "dashboard.ownerBriefLoadingText": "AI-қорытынды үшін көрінетін өтінімдер, тапсырмалар, диалогтар, мәмілелер және интеграциялар тексеріліп жатыр.",
+  "dashboard.ownerBriefLoadingText":
+    "AI-қорытынды үшін көрінетін өтінімдер, тапсырмалар, диалогтар, мәмілелер және интеграциялар тексеріліп жатыр.",
   "dashboard.ownerBriefUnavailableTitle": "AI-қорытынды қолжетімсіз",
-  "dashboard.ownerBriefUnavailableText": "Backend AI жауабы расталмаса, ұсыныстар көрсетілмейді. Кейін қайталаңыз немесе AI Analyst ашыңыз.",
+  "dashboard.ownerBriefUnavailableText":
+    "Backend AI жауабы расталмаса, ұсыныстар көрсетілмейді. Кейін қайталаңыз немесе AI Analyst ашыңыз.",
   "dashboard.ownerBriefNoAccessTitle": "Бұл рөл үшін AI-қорытынды қолжетімсіз",
-  "dashboard.ownerBriefNoAccessText": "Ағымдағы рөлде AI Analyst қолжетімділігі жоқ болғандықтан, ұсыныстар жасырылды.",
+  "dashboard.ownerBriefNoAccessText":
+    "Ағымдағы рөлде AI Analyst қолжетімділігі жоқ болғандықтан, ұсыныстар жасырылды.",
   "dashboard.ownerBriefSourceIds": "Дереккөздер: {ids}",
   "dashboard.openAiAnalyst": "AI Analyst ашу",
   "dashboard.openTeamSettings": "Команда баптауларын ашу",
-  "dashboard.aiProviderUnavailable": "Live AI провайдері дайын емес немесе бапталмаған. ZANI расталмаған AI жауаптарын көрсетпейді; дереккөзге сүйенген CRM күйлері көрініп тұрады.",
+  "dashboard.aiProviderUnavailable":
+    "Live AI провайдері дайын емес немесе бапталмаған. ZANI расталмаған AI жауаптарын көрсетпейді; дереккөзге сүйенген CRM күйлері көрініп тұрады.",
   "dashboard.aiProviderStatus": "AI провайдері: {provider} · {mode}",
   "header.notifications": "Хабарламалар",
   "header.notificationsSummary": "{due} қазір назар қажет · {urgent} шұғыл",
   "header.markAllRead": "Барлығы оқылды",
   "header.openTasks": "Тапсырмаларды ашу",
-  "header.noNotifications": "Хабарламалар әзірге жоқ. Жазбалар мен CRM оқиғалары туралы ескертулер осында пайда болады.",
+  "header.noNotifications":
+    "Хабарламалар әзірге жоқ. Жазбалар мен CRM оқиғалары туралы ескертулер осында пайда болады.",
   "header.chatToastTitle": "Жаңа хабарлама",
   "header.chatToastText": "Чаттарда оқылмаған хабарламалар бар: {count}.",
   "header.openMessages": "Хабарламаларды ашу",
@@ -545,10 +623,12 @@ export const kk: Record<string, string> = {
   "search.placeholder.clients": "Клиенттерді іздеу: аты, телефон, email...",
   "search.placeholder.leads": "Өтінімдерді іздеу: клиент, телефон, сұраныс...",
   "search.placeholder.deals": "Мәмілелерді іздеу: атауы, клиент, дереккөз...",
-  "search.placeholder.conversations": "Диалогтарды іздеу: клиент, телефон, хабарлама...",
+  "search.placeholder.conversations":
+    "Диалогтарды іздеу: клиент, телефон, хабарлама...",
   "search.placeholder.calendar": "Жазбаларды іздеу: клиент, қызмет, маман...",
   "search.placeholder.tasks": "Тапсырмаларды іздеу: атауы, клиент, мерзім...",
-  "search.placeholder.integrations": "Қосылымдарды іздеу: Telegram, Kaspi, 1C...",
+  "search.placeholder.integrations":
+    "Қосылымдарды іздеу: Telegram, Kaspi, 1C...",
   "search.placeholder.timeline": "Оқиғаларды іздеу: түрі, клиент, әрекет...",
   "search.noMeta": "Қосымша деректер жоқ",
   "search.empty": "CRM деректерінен ештеңе табылмады.",
@@ -587,19 +667,23 @@ export const kk: Record<string, string> = {
   "errorBoundary.unknown": "Интерфейстің белгісіз қатесі.",
   "errorBoundary.eyebrow": "Интерфейс қатесі",
   "errorBoundary.title": "Қате ұсталды, басқару сақталды.",
-  "errorBoundary.text": "Бетті жаңартыңыз немесе басты экранға оралыңыз. Қате қайталанса, ағымдағы әрекетпен бірге қолдауға жіберіңіз.",
+  "errorBoundary.text":
+    "Бетті жаңартыңыз немесе басты экранға оралыңыз. Қате қайталанса, ағымдағы әрекетпен бірге қолдауға жіберіңіз.",
   "errorBoundary.reload": "Жаңарту",
   "errorBoundary.home": "Басты бет",
-  "pricing.description": "Шекті баға, бәсекелестен 1 ₸ төмен ұсыныс және approval арқылы қауіпсіз қолдану.",
+  "pricing.description":
+    "Шекті баға, бәсекелестен 1 ₸ төмен ұсыныс және approval арқылы қауіпсіз қолдану.",
   "pricing.safetyTitle": "Баға агентінің қауіпсіздігі",
   "pricing.agentStopped": "Тоқтатылды: {reason}",
   "pricing.noReason": "себепсіз",
-  "pricing.agentActive": "Агент белсенді. Emergency stop баға қолдануды бірден бұғаттайды.",
+  "pricing.agentActive":
+    "Агент белсенді. Emergency stop баға қолдануды бірден бұғаттайды.",
   "pricing.openSignals": "Ашық сигналдар: {count}",
   "pricing.resume": "Жалғастыру",
   "pricing.stopAgent": "Агентті тоқтату",
   "pricing.catalogTitle": "Интеграциялардан келген тауарлар",
-  "pricing.catalogText": "ZANI тауарларды Kaspi, МойСклад, 1C, Excel/CSV, Ozon және Wildberries көздерінен жинайды.",
+  "pricing.catalogText":
+    "ZANI тауарларды Kaspi, МойСклад, 1C, Excel/CSV, Ozon және Wildberries көздерінен жинайды.",
   "pricing.refreshCatalog": "Тауарларды жаңарту",
   "pricing.bulkMinPrice": "Жалпы шек",
   "pricing.step": "Қадам",
@@ -614,13 +698,15 @@ export const kk: Record<string, string> = {
   "pricing.connectedProducts": "Қосылған",
   "pricing.loadingCatalog": "Тауарлар жиналуда",
   "pricing.selectItem": "{name} таңдау",
-  "pricing.catalogItemMeta": "{source} · SKU {sku} · баға {price} · қалдық {stock}",
+  "pricing.catalogItemMeta":
+    "{source} · SKU {sku} · баға {price} · қалдық {stock}",
   "pricing.noData": "дерек жоқ",
   "pricing.ruleMode": "ереже: {mode}",
   "pricing.notConnected": "қосылмаған",
   "pricing.minPrice": "Төмен түсірмеу",
   "pricing.createRule": "Ереже жасау",
-  "pricing.emptyCatalog": "Тауар дереккөзін қосыңыз немесе синхрондап, кейін «Тауарларды жаңарту» басыңыз.",
+  "pricing.emptyCatalog":
+    "Тауар дереккөзін қосыңыз немесе синхрондап, кейін «Тауарларды жаңарту» басыңыз.",
   "pricing.newRule": "Жаңа ереже",
   "pricing.name": "Атауы",
   "pricing.currentPrice": "Ағымдағы баға",
@@ -638,16 +724,20 @@ export const kk: Record<string, string> = {
   "pricing.loadingRules": "Ережелер жүктелуде",
   "pricing.selectRule": "{name} таңдау",
   "pricing.ruleMeta": "SKU {sku} · ағымдағы {current} · шек {min}",
-  "pricing.manualCompetitorPrice": "Қажет болса, бәсекелес бағасын қолмен енгізу",
+  "pricing.manualCompetitorPrice":
+    "Қажет болса, бәсекелес бағасын қолмен енгізу",
   "pricing.collectPrices": "Бағаларды жинау",
   "pricing.calculate": "Есептеу",
   "pricing.apply": "Қолдану",
   "pricing.competitor": "бәсекелес",
-  "pricing.foundPrice": "Табылған баға: {price} · {competitor} · позиция {position}",
+  "pricing.foundPrice":
+    "Табылған баға: {price} · {competitor} · позиция {position}",
   "pricing.recommendationLine": "Ұсыныс: {price} · {reason} · статус {status}",
   "pricing.autopilot": "Автопилот",
-  "pricing.autopilotEnabledText": "Қосулы. ZANI жоспарлы циклде қауіпсіз ұсыныстарды қолдана алады.",
-  "pricing.autopilotCheckText": "Қоспас бұрын ZANI шекті, күндік лимитті және мониторинг барын тексереді.",
+  "pricing.autopilotEnabledText":
+    "Қосулы. ZANI жоспарлы циклде қауіпсіз ұсыныстарды қолдана алады.",
+  "pricing.autopilotCheckText":
+    "Қоспас бұрын ZANI шекті, күндік лимитті және мониторинг барын тексереді.",
   "pricing.stop": "Тоқтату",
   "pricing.enableAutopilot": "Автопилотты қосу",
   "pricing.minPriceValue": "Шек: {price}",
@@ -658,7 +748,8 @@ export const kk: Record<string, string> = {
   "pricing.kaspiWriteFlag": "Kaspi жазуы: флаг арқылы",
   "pricing.confirmedAt": "Расталды: {date}",
   "pricing.historyTitle": "Баға тарихы",
-  "pricing.historyText": "Бағаны өзгертудің барлық әрекеті: симуляциялар, кезектер, бұғаттаулар және қателер.",
+  "pricing.historyText":
+    "Бағаны өзгертудің барлық әрекеті: симуляциялар, кезектер, бұғаттаулар және қателер.",
   "pricing.recordsCount": "{count} жазба",
   "pricing.historySearchPlaceholder": "Атауы немесе SKU",
   "pricing.allStatuses": "Барлық статустар",
@@ -668,18 +759,23 @@ export const kk: Record<string, string> = {
   "pricing.changeStatus.blocked": "Бұғатталды",
   "pricing.changeStatus.failed": "Қате",
   "pricing.loadingHistory": "Баға тарихы жүктелуде",
-  "pricing.emptyHistory": "Тарих әзірге жоқ. Жазбаны көру үшін ұсынысты есептеп, қолданыңыз.",
-  "outreach.defaultMessage": "Сәлеметсіз бе, {client_name}! Жақын бос уақытқа жазылуға болатынын еске саламыз. Осы хабарламаға жауап беріңіз, менеджер ыңғайлы слот таңдайды.",
+  "pricing.emptyHistory":
+    "Тарих әзірге жоқ. Жазбаны көру үшін ұсынысты есептеп, қолданыңыз.",
+  "outreach.defaultMessage":
+    "Сәлеметсіз бе, {client_name}! Жақын бос уақытқа жазылуға болатынын еске саламыз. Осы хабарламаға жауап беріңіз, менеджер ыңғайлы слот таңдайды.",
   "outreach.defaultCampaignName": "Жаңа тарату",
   "outreach.defaultTemplateName": "Жаңа шаблон",
   "outreach.loading": "Таратылымдар жүктелуде...",
   "outreach.noBusiness": "Бизнес таңдалмаған.",
   "outreach.title": "Таратылымдар",
-  "outreach.description": "Telegram және WhatsApp кампанияларына арналған жұмыс орталығы: аудитория, алушылар кезегі, іске қосу және жеткізу статустары.",
+  "outreach.description":
+    "Telegram және WhatsApp кампанияларына арналған жұмыс орталығы: аудитория, алушылар кезегі, іске қосу және жеткізу статустары.",
   "outreach.importConsents": "Келісімдерді импорттау",
   "outreach.createCampaign": "Таратылым жасау",
-  "outreach.importConsentRoleTitle": "Келісім импорттау иеге, әкімшіге немесе маркетологқа қолжетімді.",
-  "outreach.createRoleTitle": "Таратылым жасау иеге, әкімшіге немесе маркетологқа қолжетімді.",
+  "outreach.importConsentRoleTitle":
+    "Келісім импорттау иеге, әкімшіге немесе маркетологқа қолжетімді.",
+  "outreach.createRoleTitle":
+    "Таратылым жасау иеге, әкімшіге немесе маркетологқа қолжетімді.",
   "outreach.metric.campaigns": "Кампаниялар",
   "outreach.metric.active": "{count} белсенді",
   "outreach.metric.queued": "Кезектерде",
@@ -689,22 +785,27 @@ export const kk: Record<string, string> = {
   "outreach.readiness.rolesTitle": "Рөлдер және іске қосу",
   "outreach.readiness.roleCanLaunch": "{role}: іске қоса алады",
   "outreach.readiness.roleReadOnly": "{role}: тек көру",
-  "outreach.readiness.rolesText": "Нақты жаппай таратылымдарды owner/admin/marketer іске қосады. Preferences әдеттегі шуды жасыра алады, бірақ high/urgent хабарламалар әрқашан жетеді.",
+  "outreach.readiness.rolesText":
+    "Нақты жаппай таратылымдарды owner/admin/marketer іске қосады. Preferences әдеттегі шуды жасыра алады, бірақ high/urgent хабарламалар әрқашан жетеді.",
   "outreach.readiness.appointmentTitle": "Жазба автохабарламалары",
   "outreach.readiness.appointmentValue": "{pending} кезекте · {failed} қате",
-  "outreach.readiness.appointmentText": "24 сағат бұрын растау, 2 сағат бұрын еске салу және визиттен кейінгі алғыс автоматты жасалады.",
+  "outreach.readiness.appointmentText":
+    "24 сағат бұрын растау, 2 сағат бұрын еске салу және визиттен кейінгі алғыс автоматты жасалады.",
   "outreach.readiness.safetyTitle": "Іске қосу қорғанысы",
-  "outreach.readiness.safetyText": "Іске қосар алдында мәтін, аудитория, opt-in, дайын кезек, лимиттер және WhatsApp template тексеріледі.",
+  "outreach.readiness.safetyText":
+    "Іске қосар алдында мәтін, аудитория, opt-in, дайын кезек, лимиттер және WhatsApp template тексеріледі.",
   "outreach.checklistPassed": "Checklist өтті",
   "outreach.checklistRequired": "Checklist міндетті",
   "outreach.selectCampaign": "Кампания таңдаңыз",
   "outreach.appointmentAutoEyebrow": "Жазбалар бойынша автоматты хабарламалар",
-  "outreach.appointmentAutoTitle": "Сервис сценарийлері таратылымды қолмен іске қоспай жұмыс істейді",
+  "outreach.appointmentAutoTitle":
+    "Сервис сценарийлері таратылымды қолмен іске қоспай жұмыс істейді",
   "outreach.count.pending": "Кезек",
   "outreach.count.sent": "Кетті",
   "outreach.count.failed": "Қателер",
   "outreach.deliveryErrorsTitle": "Жіберу қателері",
-  "outreach.deliveryErrorsText": "Арна қосылымын тексеріңіз немесе түзеткеннен кейін қайта жіберіңіз.",
+  "outreach.deliveryErrorsText":
+    "Арна қосылымын тексеріңіз немесе түзеткеннен кейін қайта жіберіңіз.",
   "outreach.campaigns": "Кампаниялар",
   "outreach.status.draft": "Жоба",
   "outreach.status.ready": "Дайын",
@@ -720,7 +821,8 @@ export const kk: Record<string, string> = {
   "outreach.audienceType.segment": "Клиент сегменті",
   "outreach.audienceType.manual": "Қолмен тізім",
   "outreach.emptyTitle": "Таратылымдар әлі жоқ",
-  "outreach.emptyDescription": "Telegram немесе WhatsApp үшін алғашқы кампанияны жасаңыз.",
+  "outreach.emptyDescription":
+    "Telegram немесе WhatsApp үшін алғашқы кампанияны жасаңыз.",
   "outreach.channelCampaign": "{channel} таратылымы",
   "outreach.statusLine": "Статус: {status}",
   "outreach.startLine": " · старт {date}",
@@ -728,7 +830,8 @@ export const kk: Record<string, string> = {
   "outreach.launch": "Іске қосу",
   "outreach.retry15": "Retry 15 мин",
   "outreach.retryAll": "Барлығын қайталау",
-  "outreach.readOnlyNotice": "Сіздің рөліңіз таратылымдар мен алушылар статусын бақылай алады, бірақ іске қосу, келісім импорты және қате қайталауы жабық. Бұл клиенттерді кездейсоқ жаппай хабарламадан қорғайды.",
+  "outreach.readOnlyNotice":
+    "Сіздің рөліңіз таратылымдар мен алушылар статусын бақылай алады, бірақ іске қосу, келісім импорты және қате қайталауы жабық. Бұл клиенттерді кездейсоқ жаппай хабарламадан қорғайды.",
   "outreach.stat.total": "Барлығы",
   "outreach.stat.pending": "Күтуде",
   "outreach.stat.sent": "Жіберілді",
@@ -746,13 +849,16 @@ export const kk: Record<string, string> = {
   "outreach.audience": "Аудитория",
   "outreach.notNeeded": "Қажет емес",
   "outreach.messageText": "Хабарлама мәтіні",
-  "outreach.audiencePreview": "Барлығы: {total} · жіберуге болады: {eligible} · suppression: {suppressed}.",
+  "outreach.audiencePreview":
+    "Барлығы: {total} · жіберуге болады: {eligible} · suppression: {suppressed}.",
   "outreach.latestRecipients": "Соңғы алушылар",
   "outreach.queueEmpty": "Кезек кампания дайындалғаннан кейін пайда болады.",
-  "outreach.selectCampaignDescription": "Таратылым жасалғаннан кейін мұнда аудитория, кезек және іске қосу басқаруы пайда болады.",
+  "outreach.selectCampaignDescription":
+    "Таратылым жасалғаннан кейін мұнда аудитория, кезек және іске қосу басқаруы пайда болады.",
   "outreach.newCampaign": "Жаңа таратылым",
   "outreach.launchOrderTitle": "Іске қосудың жұмыс тәртібі",
-  "outreach.launchOrderText": "Кампания жасау хабарлама жібермейді. Алдымен таратылымды сақтаңыз, аудиторияны дайындаңыз, checklist тексеріңіз, содан кейін ғана жіберуді іске қосыңыз.",
+  "outreach.launchOrderText":
+    "Кампания жасау хабарлама жібермейді. Алдымен таратылымды сақтаңыз, аудиторияны дайындаңыз, checklist тексеріңіз, содан кейін ғана жіберуді іске қосыңыз.",
   "outreach.nameLabel": "Атауы",
   "outreach.namePlaceholder": "Бос уақыт туралы еске салу",
   "outreach.noTemplate": "Шаблонсыз",
@@ -769,29 +875,50 @@ export const kk: Record<string, string> = {
   "outreach.batchSize": "Іске қосу batch",
   "outreach.scheduledAt": "Қашан жіберу",
   "outreach.message": "Хабарлама",
-  "outreach.templateVariables": "Шаблон айнымалылары: {client_name}, {phone}, {email}, {business_name}, {channel}.",
-  "outreach.productionModeNotice": "Жұмыс режимі: opt-in жоқ немесе opt-out клиенттер өткізіледі. WhatsApp іске қосуы template approved болғанша бұғатталады.",
+  "outreach.templateVariables":
+    "Шаблон айнымалылары: {client_name}, {phone}, {email}, {business_name}, {channel}.",
+  "outreach.productionModeNotice":
+    "Жұмыс режимі: opt-in жоқ немесе opt-out клиенттер өткізіледі. WhatsApp іске қосуы template approved болғанша бұғатталады.",
   "outreach.create": "Жасау",
   "outreach.consentSource": "Келісім дереккөзі",
-  "outreach.consentRowsPlaceholder": "+77010001010; анкета келісімі\nclient@example.com; сайт келісімі",
-  "outreach.consentImportNotice": "Импорт келісімдерді тек телефон, email немесе client_id бойынша бар клиенттерде жаңартады. Файлда phone, email, client_id, channel, status, source, note бағандары болуы мүмкін.",
+  "outreach.consentRowsPlaceholder":
+    "+77010001010; анкета келісімі\nclient@example.com; сайт келісімі",
+  "outreach.consentImportNotice":
+    "Импорт келісімдерді тек телефон, email немесе client_id бойынша бар клиенттерде жаңартады. Файлда phone, email, client_id, channel, status, source, note бағандары болуы мүмкін.",
   "outreach.importText": "Мәтінді импорттау",
   "outreach.importFile": "Файлды импорттау",
   "outreach.manualAudience": "Қолмен аудитория",
-  "outreach.manualAudienceText": "Таңдалды: {count}. Кезекке тек арна ID бар және consent рұқсаты бар клиенттер түседі.",
+  "outreach.manualAudienceText":
+    "Таңдалды: {count}. Кезекке тек арна ID бар және consent рұқсаты бар клиенттер түседі.",
   "outreach.clientSearch": "Клиент іздеу",
   "outreach.noChannelId": "арна ID жоқ",
   "outreach.selected": "таңдалды",
   "outreach.clientsNotFound": "Клиенттер табылмады.",
-  "outreach.launchBlockedChecklist": "Алдымен аудиторияны дайындап, checklist өтіңіз.",
-  "outreach.launchBlockedRole": "Іске қосу иеге, әкімшіге немесе маркетологқа қолжетімді.",
+  "outreach.auto": "Авто",
+  "outreach.failedCount": "{count} қате",
+  "outreach.deliveryRate": "Жеткізу",
+  "outreach.failureRate": "Қателер",
+  "outreach.suppressionRate": "Өткізу",
+  "outreach.whatsappTemplate": "WhatsApp template",
+  "outreach.whatsappTemplateName": "WhatsApp template атауы",
+  "outreach.templateStatus.draft": "Жоба",
+  "outreach.templateStatus.pending": "Тексеруде",
+  "outreach.templateStatus.approved": "Мақұлданған",
+  "outreach.templateStatus.rejected": "Қабылданбады",
+  "outreach.launchBlockedChecklist":
+    "Алдымен аудиторияны дайындап, checklist өтіңіз.",
+  "outreach.launchBlockedRole":
+    "Іске қосу иеге, әкімшіге немесе маркетологқа қолжетімді.",
   "telegramSetup.tokenSaved": "Кілт сақталды. Енді қосылымды тексеріңіз.",
   "telegramSetup.tokenCleared": "Кілт тазартылды.",
   "telegramSetup.connectionChecked": "Telegram қосылымы тексерілді.",
-  "telegramSetup.connectionFailed": "Telegram қосылымын тексеру мүмкін болмады.",
-  "telegramSetup.inboxConnected": "Кіріс хабарламалар қосылды. Клиент атынан ботқа хабарлама жазып, диалогты тексеріңіз.",
+  "telegramSetup.connectionFailed":
+    "Telegram қосылымын тексеру мүмкін болмады.",
+  "telegramSetup.inboxConnected":
+    "Кіріс хабарламалар қосылды. Клиент атынан ботқа хабарлама жазып, диалогты тексеріңіз.",
   "telegramSetup.inboxFailed": "Кіріс хабарламаларды қосу мүмкін болмады.",
-  "telegramSetup.description": "Telegram-ды хабарламаларға және автоматты жауаптарға қосу.",
+  "telegramSetup.description":
+    "Telegram-ды хабарламаларға және автоматты жауаптарға қосу.",
   "telegramSetup.key": "Кілт",
   "telegramSetup.saved": "Сақталды",
   "telegramSetup.needed": "Қажет",
@@ -802,22 +929,27 @@ export const kk: Record<string, string> = {
   "telegramSetup.connected": "Қосылған",
   "telegramSetup.notConnected": "Қосылмаған",
   "telegramSetup.botKey": "Бот кілті",
-  "telegramSetup.botKeyText": "@BotFather ішінде бот жасап, кілтті осында енгізіңіз және тексеруді іске қосыңыз. Кілт қайта көрсетілмейді.",
+  "telegramSetup.botKeyText":
+    "@BotFather ішінде бот жасап, кілтті осында енгізіңіз және тексеруді іске қосыңыз. Кілт қайта көрсетілмейді.",
   "telegramSetup.botKeyPlaceholder": "Бот кілтін енгізіңіз",
   "telegramSetup.checkKey": "Кілтті тексеру",
   "telegramSetup.connectInbox": "Кірісті қосу",
-  "telegramSetup.readyNotice": "Telegram дайын. Клиент атынан ботқа хабарлама жіберіп, кіріс диалогты тексеріңіз.",
+  "telegramSetup.readyNotice":
+    "Telegram дайын. Клиент атынан ботқа хабарлама жіберіп, кіріс диалогты тексеріңіз.",
   "telegramSetup.latestEvents": "Соңғы оқиғалар",
   "telegramSetup.noEvents": "Оқиғалар әзірге жоқ.",
-  "telegramSetup.addChannelFirst": "Алдымен осы ботқа Telegram арнасын қосыңыз.",
+  "telegramSetup.addChannelFirst":
+    "Алдымен осы ботқа Telegram арнасын қосыңыз.",
   "developers.advanced": "Кеңейтілген",
   "developers.title": "Интеграция кілттері және оқиғалар",
-  "developers.description": "Техникалық қосылымдарға арналған кеңейтілген қабат. Оны тек әзірлеушімен немесе ZANI қолдауымен бірге пайдаланыңыз.",
+  "developers.description":
+    "Техникалық қосылымдарға арналған кеңейтілген қабат. Оны тек әзірлеушімен немесе ZANI қолдауымен бірге пайдаланыңыз.",
   "developers.summary": "{tokens} кілт · {webhooks} оқиға",
   "developers.defaultTokenName": "CRM интеграция кілті",
   "developers.defaultWebhookName": "Жұмыс webhook",
   "developers.copyNow": "Кілтті қазір көшіріңіз",
-  "developers.copyNowText": "Толық кілт тек бір рет көрсетіледі. Жапқаннан кейін тек қысқа белгі көрінеді.",
+  "developers.copyNowText":
+    "Толық кілт тек бір рет көрсетіледі. Жапқаннан кейін тек қысқа белгі көрінеді.",
   "developers.copied": "Көшірілді",
   "developers.tokensTitle": "Интеграция кілттері",
   "developers.tokensText": "Минимум: клиенттерге тек оқу қолжетімі.",
@@ -831,7 +963,8 @@ export const kk: Record<string, string> = {
   "developers.revoke": "Қайтару",
   "developers.noTokens": "Кілттер әзірге жоқ.",
   "developers.webhooksTitle": "Сыртқы оқиғалар",
-  "developers.webhooksText": "Тест үшін қауіпсіз демо-мекенжайды қолдануға болады.",
+  "developers.webhooksText":
+    "Тест үшін қауіпсіз демо-мекенжайды қолдануға болады.",
   "developers.signatureSecret": "Қолтаңба құпиясы",
   "developers.events": "Оқиғалар",
   "developers.addWebhook": "Оқиға қосу",
@@ -840,9 +973,11 @@ export const kk: Record<string, string> = {
   "developers.check": "Тексеру",
   "developers.noWebhooks": "Сыртқы оқиғалар әзірге бапталмаған.",
   "developers.deliveryTitle": "Жеткізу журналы",
-  "developers.deliveryText": "Соңғы жеткізулер, провайдер жауаптары және failed оқиғаларына қолмен retry.",
+  "developers.deliveryText":
+    "Соңғы жеткізулер, провайдер жауаптары және failed оқиғаларына қолмен retry.",
   "developers.refresh": "Жаңарту",
-  "developers.noDeliveries": "Жеткізулер әзірге жоқ. Сыртқы оқиғада «Тексеру» басыңыз.",
+  "developers.noDeliveries":
+    "Жеткізулер әзірге жоқ. Сыртқы оқиғада «Тексеру» басыңыз.",
   "developers.attempts": "әрекет",
   "developers.showPayload": "Оқиғаның техникалық деректерін көрсету",
   "language.ru": "Русский",
@@ -850,11 +985,13 @@ export const kk: Record<string, string> = {
   "language.en": "English",
   "bots.noBusiness": "Боттарды қосу үшін баптауларда бизнес құрыңыз.",
   "bots.title": "AI-боттар",
-  "bots.description": "Боттардың өнімдік негізі: конфигурация, арналар және нақты интеграцияларсыз болашақ диалогтар.",
+  "bots.description":
+    "Боттардың өнімдік негізі: конфигурация, арналар және нақты интеграцияларсыз болашақ диалогтар.",
   "bots.create": "Бот құру",
   "bots.websiteAssistantPlaceholder": "Сайт көмекшісі",
   "bots.emptyTitle": "Боттар әзірге жоқ",
-  "bots.emptyText": "Кейін website chat, Telegram, WhatsApp немесе Instagram арнасын қосу үшін бірінші ботты құрыңыз.",
+  "bots.emptyText":
+    "Кейін website chat, Telegram, WhatsApp немесе Instagram арнасын қосу үшін бірінші ботты құрыңыз.",
   "bots.defaultLanguage": "Әдепкі тіл",
   "bots.channels": "Арналар",
   "bots.dialogs": "Диалогтар",
@@ -863,21 +1000,27 @@ export const kk: Record<string, string> = {
   "bots.name": "Атауы",
   "bots.status": "Статус",
   "botDetail.previewNameDefault": "Сайт келушісі",
-  "botDetail.previewMessageDefault": "Сәлеметсіз бе, консультацияға жазылғым келеді.",
+  "botDetail.previewMessageDefault":
+    "Сәлеметсіз бе, консультацияға жазылғым келеді.",
   "botDetail.followUpDefault": "Рақмет! Жақын бос уақытты айтыңызшы?",
   "botDetail.telegramSaved": "Telegram қосылымы сақталды.",
-  "botDetail.telegramSavedNoToken": "Сақталды, бірақ қосылу коды әлі көрсетілмеген.",
-  "botDetail.webhookMockSaved": "Мекенжай қауіпсіз тексеру режимінде сақталды: {reason}",
+  "botDetail.telegramSavedNoToken":
+    "Сақталды, бірақ қосылу коды әлі көрсетілмеген.",
+  "botDetail.webhookMockSaved":
+    "Мекенжай қауіпсіз тексеру режимінде сақталды: {reason}",
   "botDetail.webhookApplied": "Хабар қабылдау мекенжайы қолданылды.",
   "botDetail.telegramStatus": "Статус: {status}. Қосылу коды: {token}. {error}",
   "botDetail.tokenConfigured": "бапталған",
   "botDetail.tokenMissing": "көрсетілмеген",
   "botDetail.telegramStatusError": "Қате: {error}.",
-  "botDetail.previewCreated": "Диалог {conversation} жасалды. Өтінім: {lead}. Хабар хабарламалар бөлімінде пайда болады.",
+  "botDetail.previewCreated":
+    "Диалог {conversation} жасалды. Өтінім: {lead}. Хабар хабарламалар бөлімінде пайда болады.",
   "botDetail.leadNotCreated": "жасалмады",
-  "botDetail.followUpCreated": "Хабар диалог {conversation} ішіне қосылды. Хабарламалар бөлімін тексеріңіз.",
+  "botDetail.followUpCreated":
+    "Хабар диалог {conversation} ішіне қосылды. Хабарламалар бөлімін тексеріңіз.",
   "botDetail.notFound": "Бот табылмады немесе қолжетімсіз.",
-  "botDetail.description": "Сайт, Telegram, WhatsApp және Instagram хабарлама арналарын баптау.",
+  "botDetail.description":
+    "Сайт, Telegram, WhatsApp және Instagram хабарлама арналарын баптау.",
   "botDetail.addWebsiteChannel": "Сайт арнасы",
   "botDetail.addTelegramChannel": "Telegram арнасы",
   "botDetail.addWhatsAppChannel": "WhatsApp арнасы",
@@ -886,18 +1029,22 @@ export const kk: Record<string, string> = {
   "botDetail.status": "Статус",
   "botDetail.channels": "Арналар",
   "botDetail.messages": "Хабарлар",
-  "botDetail.secretsSafe": "Қосылу кодтары қауіпсіз сақталады және сақтаудан кейін көрсетілмейді.",
+  "botDetail.secretsSafe":
+    "Қосылу кодтары қауіпсіз сақталады және сақтаудан кейін көрсетілмейді.",
   "botDetail.channel.website": "Сайт чаты",
   "botDetail.channel.telegram": "Telegram",
   "botDetail.channel.whatsapp": "WhatsApp",
   "botDetail.channel.instagram": "Instagram",
   "botDetail.externalIdMissing": "Сыртқы ID көрсетілмеген",
   "botDetail.widgetCodeConfigured": "Виджет коды бапталған",
-  "botDetail.noChannels": "Арналар әлі жоқ. Сайт арнасын немесе мессенджерді қосыңыз.",
+  "botDetail.noChannels":
+    "Арналар әлі жоқ. Сайт арнасын немесе мессенджерді қосыңыз.",
   "botDetail.telegramTitle": "Telegram баптау",
-  "botDetail.telegramDescription": "Telegram интеграциялар және қолдау арқылы қосылады, иеге техникалық деректер көрсетілмейді.",
+  "botDetail.telegramDescription":
+    "Telegram интеграциялар және қолдау арқылы қосылады, иеге техникалық деректер көрсетілмейді.",
   "botDetail.telegramSupportTitle": "Интеграциялар арқылы қосу",
-  "botDetail.telegramSupportText": "Статусты осы жерден тексеріңіз немесе интеграциялар бөлімін ашыңыз. Қосу кодтары мен техникалық баптау иенің күнделікті жұмысына қажет емес.",
+  "botDetail.telegramSupportText":
+    "Статусты осы жерден тексеріңіз немесе интеграциялар бөлімін ашыңыз. Қосу кодтары мен техникалық баптау иенің күнделікті жұмысына қажет емес.",
   "botDetail.botFatherToken": "BotFather коды",
   "botDetail.webhookSecret": "Қолтаңба құпиясы (кеңейтілген)",
   "botDetail.optional": "міндетті емес",
@@ -906,8 +1053,10 @@ export const kk: Record<string, string> = {
   "botDetail.applyWebhook": "Мекенжайды қолдану",
   "botDetail.checkStatus": "Статусты тексеру",
   "botDetail.openIntegrations": "Интеграцияларды ашу",
-  "botDetail.statusSafe": "Тексеру қосылу кодын ашпайды және тек қауіпсіз статусты көрсетеді.",
-  "botDetail.addTelegramFirst": "Қосылымды баптау үшін Telegram арнасын қосыңыз.",
+  "botDetail.statusSafe":
+    "Тексеру қосылу кодын ашпайды және тек қауіпсіз статусты көрсетеді.",
+  "botDetail.addTelegramFirst":
+    "Қосылымды баптау үшін Telegram арнасын қосыңыз.",
   "botDetail.websitePreviewTitle": "Сайт чатын тексеру",
   "botDetail.websitePreviewDescription": "Сайт келушісі сияқты хабар жібереді.",
   "botDetail.widgetInstallCode": "Виджет орнату коды",
@@ -919,26 +1068,34 @@ export const kk: Record<string, string> = {
   "botDetail.createTestConversation": "Диалог жасау",
   "botDetail.followUpStepTitle": "2-қадам: сол диалогқа екінші хабар жіберу",
   "botDetail.addFollowUp": "Хабар қосу",
-  "botDetail.addWebsiteFirst": "Алдымен сайт арнасын қосыңыз. Содан кейін мұнда хабар формасы пайда болады.",
+  "botDetail.addWebsiteFirst":
+    "Алдымен сайт арнасын қосыңыз. Содан кейін мұнда хабар формасы пайда болады.",
   "botDetail.previewResultTitle": "Тексеру нәтижесі",
-  "botDetail.previewResultDescription": "Хабарда телефон немесе email болса, ZANI клиент пен өтінім жасайды. Жібергеннен кейін хабарламаларды ашыңыз: диалог менеджерге көрінуі керек.",
+  "botDetail.previewResultDescription":
+    "Хабарда телефон немесе email болса, ZANI клиент пен өтінім жасайды. Жібергеннен кейін хабарламаларды ашыңыз: диалог менеджерге көрінуі керек.",
   "botDetail.noPreviewMessages": "Хабарлар әлі жоқ.",
   "botDetail.aiReplyTitle": "Жауап черновигі",
-  "botDetail.aiReplyDescription": "Соңғы диалог бойынша черновик дайындайды. Жауап автоматты түрде жіберілмейді.",
+  "botDetail.aiReplyDescription":
+    "Соңғы диалог бойынша черновик дайындайды. Жауап автоматты түрде жіберілмейді.",
   "botDetail.generate": "Дайындау",
   "botDetail.emptyMessage": "Бос хабар",
   "botDetail.noMessagesInLatest": "Соңғы диалогта хабарлар әлі жоқ.",
-  "botDetail.createConversationFirst": "Алдымен сайттан диалог жасаңыз немесе арнадан хабар алыңыз.",
+  "botDetail.createConversationFirst":
+    "Алдымен сайттан диалог жасаңыз немесе арнадан хабар алыңыз.",
   "botDetail.draftReplyTitle": "Жауап черновигі",
-  "botDetail.draftReplyEmpty": "Мұнда жауап черновигі пайда болады. Ол менеджер растауынсыз клиентке жіберілмейді.",
-  "botDetail.draftMeta": "Черновик #{id} · {mode} · есепке алынған хабарлар: {count}",
+  "botDetail.draftReplyEmpty":
+    "Мұнда жауап черновигі пайда болады. Ол менеджер растауынсыз клиентке жіберілмейді.",
+  "botDetail.draftMeta":
+    "Черновик #{id} · {mode} · есепке алынған хабарлар: {count}",
   "botDetail.mockMode": "тексеру режимі",
   "botDetail.aiMode": "ассистент жауабы",
   "whatsappSetup.savedNotice": "WhatsApp пилоты дайындалды. Статус: {status}.",
   "whatsappSetup.title": "WhatsApp қосылымы",
-  "whatsappSetup.description": "Қосылымды ZANI қолдау қызметі дайындайды. Иесі тек статус пен түсінікті әрекеттерді көреді.",
+  "whatsappSetup.description":
+    "Қосылымды ZANI қолдау қызметі дайындайды. Иесі тек статус пен түсінікті әрекеттерді көреді.",
   "whatsappSetup.supportTitle": "Қауіпсіз қосу қолдау арқылы орындалады",
-  "whatsappSetup.supportText": "Біз нөмірді, хабарлама сценарийін тексеріп, техникалық кілттерді кабинетте көрсетпей арнаны қосамыз.",
+  "whatsappSetup.supportText":
+    "Біз нөмірді, хабарлама сценарийін тексеріп, техникалық кілттерді кабинетте көрсетпей арнаны қосамыз.",
   "whatsappSetup.preparePilot": "Пилотты дайындау",
   "whatsappSetup.modePilot": "Пилот режимі",
   "whatsappSetup.modeDisabled": "Өшірілген",
@@ -951,38 +1108,49 @@ export const kk: Record<string, string> = {
   "whatsappSetup.lastEvent": "Соңғы оқиға",
   "whatsappSetup.none": "жоқ",
   "whatsappSetup.testHistory": "Хабарламалар тарихы",
-  "whatsappSetup.emptyHistory": "Тарих әзірге бос. Алғашқы кіріс және шығыс хабарламалар осында пайда болады.",
-  "whatsappSetup.noChannel": "WhatsApp әлі қосылмаған. Интеграциялар бөлімінде сұрау қалдырыңыз немесе ZANI қолдау қызметіне жазыңыз.",
+  "whatsappSetup.emptyHistory":
+    "Тарих әзірге бос. Алғашқы кіріс және шығыс хабарламалар осында пайда болады.",
+  "whatsappSetup.noChannel":
+    "WhatsApp әлі қосылмаған. Интеграциялар бөлімінде сұрау қалдырыңыз немесе ZANI қолдау қызметіне жазыңыз.",
   "pilot.status.ready": "Дайын",
   "pilot.status.needsAttention": "Назар қажет",
   "pilot.status.missing": "Бапталмаған",
   "pilot.countShort": "{count} дана",
   "pilot.loading": "Пилот дайындығы тексерілуде...",
-  "pilot.loadError": "Чеклистті жүктеу мүмкін болмады. Бизнеске қолжетімділікті тексеріңіз.",
+  "pilot.loadError":
+    "Чеклистті жүктеу мүмкін болмады. Бизнеске қолжетімділікті тексеріңіз.",
   "pilot.title": "Пилотқа дайындық",
-  "pilot.description": "Zani-ді пилот клиенттерге көрсетудің алдындағы бақылау беті: бизнес, деректер, бот, хабарламалар, төлем, ассистент, импорт және интеграциялар.",
+  "pilot.description":
+    "Zani-ді пилот клиенттерге көрсетудің алдындағы бақылау беті: бизнес, деректер, бот, хабарламалар, төлем, ассистент, импорт және интеграциялар.",
   "pilot.refresh": "Чеклистті жаңарту",
   "pilot.noBusiness": "Бизнес таңдалмаған",
   "pilot.scoreTitle": "Пилот дайындығы:",
-  "pilot.scoreText": "{total} пункттің {ready} дайын. Бұл бет жаңа сыртқы сервистерді қоспайды — ағымдағы workspace кликабельді пилотқа қаншалық дайын екенін көрсетеді.",
+  "pilot.scoreText":
+    "{total} пункттің {ready} дайын. Бұл бет жаңа сыртқы сервистерді қоспайды — ағымдағы workspace кликабельді пилотқа қаншалық дайын екенін көрсетеді.",
   "pilot.progress": "Прогресс",
   "pilot.criticalGaps": "Критикалық олқылықтар: {count}",
   "pilot.pathTitle": "Пилотқа дайындық жолы",
-  "pilot.pathText": "Мерчантқа техникалық экрандарсыз, бизнес негізінен тірі клиент сценарийіне өтеміз.",
+  "pilot.pathText":
+    "Мерчантқа техникалық экрандарсыз, бизнес негізінен тірі клиент сценарийіне өтеміз.",
   "pilot.step1Title": "1. Бизнес және команда",
   "pilot.step1Text": "Профиль, иесі, оператор, рөлдер және қолжетім.",
   "pilot.step2Title": "2. CRM қаңқасы",
-  "pilot.step2Text": "Қызметтер, ресурстар, график, алғашқы өтінім және мәміле.",
+  "pilot.step2Text":
+    "Қызметтер, ресурстар, график, алғашқы өтінім және мәміле.",
   "pilot.step3Title": "3. Клиент сценарийі",
-  "pilot.step3Text": "Жазба, тапсырма, хабарламалар, сайт чаты және жауап черновигі.",
+  "pilot.step3Text":
+    "Жазба, тапсырма, хабарламалар, сайт чаты және жауап черновигі.",
   "pilot.step4Title": "4. Өсу және деректер",
-  "pilot.step4Text": "Базаны импорттау, интеграциялар, төлем және финалдық тексеріс.",
+  "pilot.step4Text":
+    "Базаны импорттау, интеграциялар, төлем және финалдық тексеріс.",
   "pilot.toFixTitle": "Пилотқа дейін түзету керек",
   "pilot.readyTitle": "Пилоттың негізгі пункттері дайын",
-  "pilot.readyText": "Арналар, хабарламалар және қосылымдар бойынша финалдық тексеріске өтуге болады.",
+  "pilot.readyText":
+    "Арналар, хабарламалар және қосылымдар бойынша финалдық тексеріске өтуге болады.",
   "pilot.smokeTitle": "Келесі қолмен тексеру",
   "pilot.smoke1": "1. Ие ретінде кіріп, басты бетті ашу.",
-  "pilot.smoke2": "2. Leads, Clients, Deals, Tasks, Calendar бөлімдерін тексеру.",
+  "pilot.smoke2":
+    "2. Leads, Clients, Deals, Tasks, Calendar бөлімдерін тексеру.",
   "pilot.smoke3": "3. Хабарламаларды ашып, диалогты тексеру.",
   "pilot.smoke4": "4. Боттарды ашып, сайт арнасы бар екеніне көз жеткізу.",
   "pilot.smoke5": "5. Ассистентті ашып, жауап черновигін тексеру.",
@@ -1006,16 +1174,20 @@ export const kk: Record<string, string> = {
   "notification.sent": "Жіберілді",
   "notFound.eyebrow": "Қауіпсіз пилоттық маршрут",
   "notFound.title": "Бет әлі қосылмаған",
-  "notFound.text": "Пайдаланушыны тұйық жолға жібермейміз: бұл маршрут қауіпсіз пилоттық бет ретінде сақталды. Жұмыс кабинетіне оралып, негізгі сценарийлерді тексеруді жалғастырыңыз.",
+  "notFound.text":
+    "Пайдаланушыны тұйық жолға жібермейміз: бұл маршрут қауіпсіз пилоттық бет ретінде сақталды. Жұмыс кабинетіне оралып, негізгі сценарийлерді тексеруді жалғастырыңыз.",
   "notFound.backWorkspace": "Кабинетке оралу",
-  "table.emptyDescription": "Алғашқы жазбалар жасалғаннан кейін осында пайда болады.",
+  "table.emptyDescription":
+    "Алғашқы жазбалар жасалғаннан кейін осында пайда болады.",
   "table.total": "Барлығы: {count}",
   "table.records": "CRM жазбалары",
   "permissions.action.view": "көруге",
   "permissions.action.manage": "осы әрекетке",
-  "permissions.forbidden": "Сіздің рөліңізде «{resource}» бөліміне {action} рұқсат жоқ. Бұл жұмыс үшін қажет болса, бизнес иесінен рөлді немесе көру аймағын команда баптауларында өзгертуді сұраңыз.",
+  "permissions.forbidden":
+    "Сіздің рөліңізде «{resource}» бөліміне {action} рұқсат жоқ. Бұл жұмыс үшін қажет болса, бизнес иесінен рөлді немесе көру аймағын команда баптауларында өзгертуді сұраңыз.",
   "permissions.hiddenTitle": "Бөлім қолжетім баптауларымен жасырылған",
-  "permissions.hiddenText": "Қолжетім деректерді жоймайды, тек бөлімдер мен әрекеттерді қызметкер рөлінен жасырады.",
+  "permissions.hiddenText":
+    "Қолжетім деректерді жоймайды, тек бөлімдер мен әрекеттерді қызметкер рөлінен жасырады.",
   "permissions.resource.clients": "Клиенттер",
   "permissions.resource.leads": "Өтінімдер",
   "permissions.resource.deals": "Мәмілелер",
@@ -1036,9 +1208,11 @@ export const kk: Record<string, string> = {
   "permissions.resource.ai_outreach": "AI тарату",
   "permissions.resource.ai_automation": "AI автоматизациялар",
   "calendar.title": "Бизнес күнтізбесі",
-  "calendar.description": "Жазбалар, бос уақыттар және команда жүктемесі бір жұмыс экранында.",
+  "calendar.description":
+    "Жазбалар, бос уақыттар және команда жүктемесі бір жұмыс экранында.",
   "calendar.businessSchedule": "Бизнес кестесі",
-  "calendar.heroText": "Күнді, бос уақыттарды, мамандарды тексеріп, жазбаны тез жасаңыз.",
+  "calendar.heroText":
+    "Күнді, бос уақыттарды, мамандарды тексеріп, жазбаны тез жасаңыз.",
   "calendar.bookings": "Жазбалар",
   "calendar.confirmed": "Расталды",
   "calendar.openSlots": "Бос уақыт",
@@ -1047,9 +1221,12 @@ export const kk: Record<string, string> = {
   "calendar.openDay": "Күнді ашу",
   "calendar.tasksToday": "Тапсырмалар",
   "calendar.aiHint": "Кесте бойынша кеңес",
-  "calendar.aiSetupText": "Дәл жазба үшін клиенттер, қызметтер және жұмыс кестесі керек. Күнтізбе нақты бос уақыттарды көрсетуі үшін базаны баптаңыз.",
-  "calendar.aiBusyText": "Таңдалған күнге {count} жазба және {tasks} тапсырма бар. Растауларды тексеріп, клиенттерді келесі қадамсыз қалдырмаңыз.",
-  "calendar.aiFreeText": "Таңдалған күнге жазба жоқ. Клиентті бос уақытқа қоюға немесе күн тапсырмаларын өңдеуге болады: {tasks}.",
+  "calendar.aiSetupText":
+    "Дәл жазба үшін клиенттер, қызметтер және жұмыс кестесі керек. Күнтізбе нақты бос уақыттарды көрсетуі үшін базаны баптаңыз.",
+  "calendar.aiBusyText":
+    "Таңдалған күнге {count} жазба және {tasks} тапсырма бар. Растауларды тексеріп, клиенттерді келесі қадамсыз қалдырмаңыз.",
+  "calendar.aiFreeText":
+    "Таңдалған күнге жазба жоқ. Клиентті бос уақытқа қоюға немесе күн тапсырмаларын өңдеуге болады: {tasks}.",
   "calendar.mobileAgenda": "Күн agenda",
   "calendar.readiness": "Дайындық",
   "calendar.readyClients": "Клиенттер",
@@ -1059,7 +1236,8 @@ export const kk: Record<string, string> = {
   "calendar.ready": "дайын",
   "calendar.needsSetup": "баптау",
   "calendar.completedToday": "Бүгін аяқталған жазбалар: {count}.",
-  "calendar.noCompletedYet": "Аяқталған жазбалар клиенттермен жұмыс біткен соң осында көрінеді.",
+  "calendar.noCompletedYet":
+    "Аяқталған жазбалар клиенттермен жұмыс біткен соң осында көрінеді.",
   "calendar.previousDay": "Алдыңғы күн",
   "calendar.nextDay": "Келесі күн",
   "calendar.previousMonth": "Алдыңғы ай",
@@ -1070,7 +1248,8 @@ export const kk: Record<string, string> = {
   "calendar.month": "Ай",
   "calendar.newBooking": "Жаңа жазба",
   "calendar.createdNotice": "Жазба жасалып, күнтізбеде пайда болды.",
-  "calendar.quickHoursApplied": "09:00-20:00 кестесі қолданылды. Енді күнтізбеде жазба жасауға болады.",
+  "calendar.quickHoursApplied":
+    "09:00-20:00 кестесі қолданылды. Енді күнтізбеде жазба жасауға болады.",
   "calendar.noBusiness": "Күнтізбені ашу үшін баптауларда бизнес жасаңыз.",
   "calendar.noResource": "ресурс жоқ",
   "calendar.lead": "Өтінім",
@@ -1092,13 +1271,16 @@ export const kk: Record<string, string> = {
   "calendar.setupClient": "Жазба жасау үшін клиент қосыңыз",
   "calendar.setupService": "Ұзақтықты есептеу үшін қызмет қосыңыз",
   "calendar.setupHoursTitle": "Жұмыс кестесі бапталмаған",
-  "calendar.setupHoursText": "Кестесіз күнтізбе бос уақыттарды көрсете алмайды.",
+  "calendar.setupHoursText":
+    "Кестесіз күнтізбе бос уақыттарды көрсете алмайды.",
   "calendar.applyQuickHours": "09:00-20:00 қолдану",
   "calendar.configure": "Баптау",
-  "calendar.setupResources": "Ресурстар міндетті емес, бірақ кестені дәлірек жүргізуге көмектеседі",
+  "calendar.setupResources":
+    "Ресурстар міндетті емес, бірақ кестені дәлірек жүргізуге көмектеседі",
   "calendar.daySchedule": "Күн кестесі",
   "calendar.plannedCount": "{count} жазба жоспарланған",
-  "calendar.freeDayHint": "Күн бос. Клиентті кестеге қосу үшін «Жаңа жазба» басыңыз.",
+  "calendar.freeDayHint":
+    "Күн бос. Клиентті кестеге қосу үшін «Жаңа жазба» басыңыз.",
   "calendar.availableSlot": "Бос уақыт",
   "calendar.weekSchedule": "Апта",
   "calendar.weekHint": "Таңдалған аптадағы жазбаларға қысқаша шолу.",
@@ -1106,21 +1288,27 @@ export const kk: Record<string, string> = {
   "calendar.monthHint": "Күндер бойынша жүктеменің ықшам торы.",
   "calendar.free": "Бос",
   "calendar.shortCount": "{count} жазба",
-  "calendar.loadingInline": "Күнтізбе жүктелуде: жазбалар, клиенттер, қызметтер және кесте. Экранды қазірдің өзінде көруге болады.",
+  "calendar.loadingInline":
+    "Күнтізбе жүктелуде: жазбалар, клиенттер, қызметтер және кесте. Экранды қазірдің өзінде көруге болады.",
   "calendar.loadingAppointments": "Жазбалар жүктелуде...",
   "appointment.selectResourceError": "Маманды немесе жұмыс орнын таңдаңыз",
   "appointment.selectSlotError": "Бос уақытты таңдаңыз",
   "appointment.needClientTitle": "Алдымен клиент қажет",
-  "appointment.needClientText": "Әр жазба клиентке байланысады. Клиентті қосып, күнтізбеге қайта оралыңыз.",
+  "appointment.needClientText":
+    "Әр жазба клиентке байланысады. Клиентті қосып, күнтізбеге қайта оралыңыз.",
   "appointment.goClients": "Клиенттерге өту",
   "appointment.needServiceTitle": "Алдымен қызмет қажет",
-  "appointment.needServiceText": "Бос уақыттар қызмет ұзақтығы бойынша есептеледі. Кемінде бір белсенді қызмет қосыңыз.",
+  "appointment.needServiceText":
+    "Бос уақыттар қызмет ұзақтығы бойынша есептеледі. Кемінде бір белсенді қызмет қосыңыз.",
   "appointment.goServices": "Қызметтерді баптау",
   "appointment.resourceHintTitle": "Дәл кесте үшін маман қосыңыз",
-  "appointment.resourceHintText": "Салон, шаштараз немесе клиникада ресурс көбіне маман, дәрігер, кабинет немесе жұмыс орны.",
+  "appointment.resourceHintText":
+    "Салон, шаштараз немесе клиникада ресурс көбіне маман, дәрігер, кабинет немесе жұмыс орны.",
   "appointment.goResources": "Ресурстарға өту",
-  "appointment.resourceOptionalTitle": "Маман немесе кабинетті қолмен таңдауға болады",
-  "appointment.resourceSelectedText": "Өрісті бос қалдырсаңыз, жазба бизнестің жалпы кестесі бойынша жасалады. Нақты маман, кабинет немесе жұмыс орны керек болса, төменде таңдаңыз.",
+  "appointment.resourceOptionalTitle":
+    "Маман немесе кабинетті қолмен таңдауға болады",
+  "appointment.resourceSelectedText":
+    "Өрісті бос қалдырсаңыз, жазба бизнестің жалпы кестесі бойынша жасалады. Нақты маман, кабинет немесе жұмыс орны керек болса, төменде таңдаңыз.",
   "appointment.client": "Клиент",
   "appointment.service": "Қызмет",
   "appointment.resource": "Маман / ресурс",
@@ -1142,11 +1330,16 @@ export const kk: Record<string, string> = {
   "appointment.noSlots": "Бос уақыт жоқ",
   "appointment.selectTime": "Уақытты таңдаңыз",
   "appointment.noSlotsForDate": "{date} күніне бос уақыт жоқ",
-  "appointment.noSlotsReason": "Бизнес немесе таңдалған маман кестесін тексеріңіз. Жылдам бастау үшін күн сайын 09:00-20:00 кестесін қолдануға болады.",
-  "appointment.noSlotsReasonMissingHours": "Бұл күнге жұмыс кестесі бапталмаған. Аптаны баптаңыз немесе 09:00-20:00 жылдам кестесін қолданыңыз.",
-  "appointment.noSlotsReasonDayOff": "Таңдалған күн демалыс болып тұр. Кестені өзгертіңіз немесе басқа күн таңдаңыз.",
-  "appointment.noSlotsReasonTooShort": "Жұмыс уақыты қызмет ұзақтығынан қысқа. Жұмыс уақытын ұзартыңыз немесе басқа қызмет таңдаңыз.",
-  "appointment.noSlotsReasonBusy": "Кесте бапталған, бірақ барлық уақыт басқа жазбалармен бос емес. Басқа күн, уақыт немесе ресурс таңдаңыз.",
+  "appointment.noSlotsReason":
+    "Бизнес немесе таңдалған маман кестесін тексеріңіз. Жылдам бастау үшін күн сайын 09:00-20:00 кестесін қолдануға болады.",
+  "appointment.noSlotsReasonMissingHours":
+    "Бұл күнге жұмыс кестесі бапталмаған. Аптаны баптаңыз немесе 09:00-20:00 жылдам кестесін қолданыңыз.",
+  "appointment.noSlotsReasonDayOff":
+    "Таңдалған күн демалыс болып тұр. Кестені өзгертіңіз немесе басқа күн таңдаңыз.",
+  "appointment.noSlotsReasonTooShort":
+    "Жұмыс уақыты қызмет ұзақтығынан қысқа. Жұмыс уақытын ұзартыңыз немесе басқа қызмет таңдаңыз.",
+  "appointment.noSlotsReasonBusy":
+    "Кесте бапталған, бірақ барлық уақыт басқа жазбалармен бос емес. Басқа күн, уақыт немесе ресурс таңдаңыз.",
   "appointment.workingWindow": "Жұмыс уақыты: {start}-{end}",
   "appointment.reasonHours": "бұл күнге жұмыс кестесі бапталмаған",
   "appointment.reasonResource": "таңдалған маманда демалыс болуы мүмкін",
@@ -1174,8 +1367,10 @@ export const kk: Record<string, string> = {
   "appointment.save": "Жазбаны сақтау",
   "appointment.create": "Жазба жасау",
   "appointments.title": "Жазбалар",
-  "appointments.description": "Барлық жазбалардың жұмыс тізімі: кім келеді, маман не істейді және клиент статусы қандай.",
-  "appointments.noBusiness": "Жазбалармен жұмыс істеу үшін баптауларда бизнес жасаңыз.",
+  "appointments.description":
+    "Барлық жазбалардың жұмыс тізімі: кім келеді, маман не істейді және клиент статусы қандай.",
+  "appointments.noBusiness":
+    "Жазбалармен жұмыс істеу үшін баптауларда бизнес жасаңыз.",
   "appointments.create": "Жазба жасау",
   "appointments.today": "Бүгін",
   "appointments.todayHint": "күн басталғанға дейін тексерілетіндер",
@@ -1187,8 +1382,10 @@ export const kk: Record<string, string> = {
   "appointments.resourcesHint": "кестедегі мамандар немесе кабинеттер",
   "appointments.allStatuses": "Барлық статустар",
   "appointments.emptyTitle": "Жазбалар әзірге жоқ",
-  "appointments.emptyFiltered": "Таңдалған сүзгілер бойынша жазба жоқ. Күнді немесе статусты өзгертіңіз.",
-  "appointments.emptyText": "Алғашқы жазбаны қолмен немесе өтінімнен жасаңыз, сонда ол тізімде және күнтізбеде пайда болады.",
+  "appointments.emptyFiltered":
+    "Таңдалған сүзгілер бойынша жазба жоқ. Күнді немесе статусты өзгертіңіз.",
+  "appointments.emptyText":
+    "Алғашқы жазбаны қолмен немесе өтінімнен жасаңыз, сонда ол тізімде және күнтізбеде пайда болады.",
   "appointments.dateTime": "Күні/уақыты",
   "appointments.actions": "Әрекеттер",
   "appointments.card": "Карточка",
@@ -1197,7 +1394,8 @@ export const kk: Record<string, string> = {
   "appointments.archiveAction": "Архивтеу",
   "appointments.repeatBooking": "Қайта жазба жасау",
   "appointments.archiveReason": "Жазбаны архивтеу себебі",
-  "appointments.archiveReasonPlaceholder": "Мысалы: клиент бас тартты, дубль жазба",
+  "appointments.archiveReasonPlaceholder":
+    "Мысалы: клиент бас тартты, дубль жазба",
   "appointments.archiveReasonDefault": "Менеджер архивтеді",
   "appointments.editTitle": "Жазбаны өңдеу",
   "appointments.reschedule": "Ауыстыру",
@@ -1206,13 +1404,17 @@ export const kk: Record<string, string> = {
   "appointments.selectNewSlot": "Жаңа уақытты таңдаңыз",
   "appointments.noSlots": "Бос уақыт жоқ",
   "appointments.rescheduleReason": "Ауыстыру себебі",
-  "appointments.rescheduleReasonPlaceholder": "Мысалы: клиент басқа уақыт сұрады",
+  "appointments.rescheduleReasonPlaceholder":
+    "Мысалы: клиент басқа уақыт сұрады",
   "appointments.rescheduledNotice": "Жазба ауыстырылды",
   "appointments.statusReasonTitle": "Жазба статусын өзгерту себебі",
   "appointments.statusReason": "Себеп",
-  "appointments.statusReasonPlaceholder": "Мысалы: клиент бас тартты немесе келмеді",
+  "appointments.statusReasonPlaceholder":
+    "Мысалы: клиент бас тартты немесе келмеді",
+  "appointments.actionDone": "Жазба бойынша әрекет орындалды",
   "workingHours.title": "Жұмыс кестесі",
-  "workingHours.description": "Бизнестің жалпы кестесі және мамандар, кабинеттер немесе жұмыс орындары үшін жеке апталар.",
+  "workingHours.description":
+    "Бизнестің жалпы кестесі және мамандар, кабинеттер немесе жұмыс орындары үшін жеке апталар.",
   "workingHours.noBusiness": "Кестені баптау үшін баптауларда бизнес жасаңыз.",
   "workingHours.setupWeek": "Аптаны баптау",
   "workingHours.businessDays": "Бизнестің жұмыс күндері",
@@ -1220,12 +1422,16 @@ export const kk: Record<string, string> = {
   "workingHours.daysOff": "Демалыс жолдары",
   "workingHours.quickSetup": "Жылдам баптау",
   "workingHours.quickTitle": "Жалпы кестені тез қолдану",
-  "workingHours.quickText": "Бүкіл бизнес үшін шаблон таңдаңыз. Жеке мамандар үшін «Аптаны баптау» батырмасын қолданыңыз.",
+  "workingHours.quickText":
+    "Бүкіл бизнес үшін шаблон таңдаңыз. Жеке мамандар үшін «Аптаны баптау» батырмасын қолданыңыз.",
   "workingHours.applyPreset": "Кестені қолдану",
-  "workingHours.savedNotice": "Апталық кесте сақталды. Күнтізбе бос уақыттарды жаңартады.",
-  "workingHours.presetNotice": "Кесте қолданылды: {count} күн жаңартылды. Енді күнтізбе бос уақыттарды көрсете алады.",
+  "workingHours.savedNotice":
+    "Апталық кесте сақталды. Күнтізбе бос уақыттарды жаңартады.",
+  "workingHours.presetNotice":
+    "Кесте қолданылды: {count} күн жаңартылды. Енді күнтізбе бос уақыттарды көрсете алады.",
   "workingHours.emptyTitle": "Кесте бапталмаған",
-  "workingHours.emptyText": "Бизнес аптасын баптаңыз: жұмыс күндері, басталу уақыты, аяқталу уақыты және демалыс күндері.",
+  "workingHours.emptyText":
+    "Бизнес аптасын баптаңыз: жұмыс күндері, басталу уақыты, аяқталу уақыты және демалыс күндері.",
   "workingHours.day": "Күн",
   "workingHours.target": "Кім үшін",
   "workingHours.time": "Уақыт",
@@ -1236,7 +1442,8 @@ export const kk: Record<string, string> = {
   "workingHours.notConfigured": "Бапталмаған",
   "workingHours.configuredDays": "{count}/7 жұмыс күні",
   "workingHours.usesBusinessSchedule": "Жалпы кесте бойынша жұмыс істейді",
-  "workingHours.noResourcesText": "Қызметкерлер, кабинеттер немесе жұмыс орындары әлі қосылмаған. Бастау үшін бизнестің жалпы кестесі жеткілікті.",
+  "workingHours.noResourcesText":
+    "Қызметкерлер, кабинеттер немесе жұмыс орындары әлі қосылмаған. Бастау үшін бизнестің жалпы кестесі жеткілікті.",
   "workingHours.dayOff": "Демалыс",
   "workingHours.editWeek": "Аптаны өзгерту",
   "workingHours.weekTitle": "Апталық кесте",
@@ -1246,12 +1453,14 @@ export const kk: Record<string, string> = {
   "workingHours.end": "Аяқталуы",
   "workingHours.saveSchedule": "Кестені сақтау",
   "workingHours.formTitle": "Бүкіл аптаны бірден баптаңыз",
-  "workingHours.formText": "Жалпы кесте бүкіл бизнес үшін қолданылады. Маман басқаша жұмыс істесе, оған жеке апта беруге болады.",
+  "workingHours.formText":
+    "Жалпы кесте бүкіл бизнес үшін қолданылады. Маман басқаша жұмыс істесе, оған жеке апта беруге болады.",
   "workingHours.salonPreset": "Салон 09:00-20:00 күн сайын",
   "workingHours.officePreset": "Офис Дс-Жм 09:00-18:00",
   "workingHours.copyBusinessSchedule": "Бизнес кестесін көшіру",
   "workingHours.saveWeek": "Апталық кестені сақтау",
-  "workingHours.invalidTime": "Жұмыс күні үшін аяқталу уақыты басталу уақытынан кейін болуы керек.",
+  "workingHours.invalidTime":
+    "Жұмыс күні үшін аяқталу уақыты басталу уақытынан кейін болуы керек.",
   "workingHours.preset.weekdays": "Дс-Жм 09:00-18:00",
   "workingHours.preset.weekendsOff": "Сб-Жк демалыс",
   "workingHours.preset.daily": "Күн сайын 09:00-20:00",
@@ -1259,7 +1468,8 @@ export const kk: Record<string, string> = {
   "workingHours.preset.monSat": "Дс-Сб 09:00-18:00",
   "workingHours.preset.sunOff": "Жк демалыс",
   "services.title": "Қызметтер",
-  "services.description": "Бизнестің белсенді прайсы: не сатамыз, қызмет қанша уақыт алады және оны қаншалықты жиі жазады.",
+  "services.description":
+    "Бизнестің белсенді прайсы: не сатамыз, қызмет қанша уақыт алады және оны қаншалықты жиі жазады.",
   "services.noBusiness": "Қызметтерді басқару үшін баптауларда бизнес жасаңыз.",
   "services.add": "Қызмет қосу",
   "services.active": "Белсенді қызметтер",
@@ -1269,9 +1479,11 @@ export const kk: Record<string, string> = {
   "services.usedInBookings": "Жазбаларда",
   "services.usedInBookingsHint": "клиенттер таңдаған қызметтер",
   "services.logicTitle": "Қызмет логикасы:",
-  "services.logicText": "әр қызметтің түсінікті ұзақтығы болуы керек. Ол күнтізбедегі жазба қанша уақыт алатынын анықтайды.",
+  "services.logicText":
+    "әр қызметтің түсінікті ұзақтығы болуы керек. Ол күнтізбедегі жазба қанша уақыт алатынын анықтайды.",
   "services.emptyTitle": "Қызметтер әзірге жоқ",
-  "services.emptyText": "Менеджерлер тез жазба жасай алуы үшін қызметтерді ұзақтығымен және бағасымен қосыңыз.",
+  "services.emptyText":
+    "Менеджерлер тез жазба жасай алуы үшін қызметтерді ұзақтығымен және бағасымен қосыңыз.",
   "services.name": "Атауы",
   "services.descriptionField": "Сипаттама",
   "services.duration": "Ұзақтығы",
@@ -1280,22 +1492,30 @@ export const kk: Record<string, string> = {
   "services.bookings": "Жазба",
   "services.editTitle": "Қызметті өңдеу",
   "services.formHintTitle": "Қызмет күнтізбеге әсер етеді",
-  "services.formHintText": "Ұзақтық неғұрлым нақты болса, Zani бос уақыттарды және мамандар жүктемесін соғұрлым дәл көрсетеді.",
+  "services.formHintText":
+    "Ұзақтық неғұрлым нақты болса, Zani бос уақыттарды және мамандар жүктемесін соғұрлым дәл көрсетеді.",
   "services.templatesTitle": "Қызметті жылдам бастау",
-  "services.templatesText": "Үлгіні таңдаңыз, кейін атауын, бағасын немесе ұзақтығын өз бизнесіңізге бейімдеңіз.",
+  "services.templatesText":
+    "Үлгіні таңдаңыз, кейін атауын, бағасын немесе ұзақтығын өз бизнесіңізге бейімдеңіз.",
   "services.template.consultation.name": "Кеңес беру",
-  "services.template.consultation.description": "Клиентпен алғашқы кеңес және келесі қадамды таңдау.",
+  "services.template.consultation.description":
+    "Клиентпен алғашқы кеңес және келесі қадамды таңдау.",
   "services.template.haircut.name": "Шаш қию",
-  "services.template.haircut.description": "Маманның тұрақты жазылу уақыты бар негізгі қызметі.",
+  "services.template.haircut.description":
+    "Маманның тұрақты жазылу уақыты бар негізгі қызметі.",
   "services.template.beautyProcedure.name": "Процедура",
-  "services.template.beautyProcedure.description": "Салонның немесе кабинеттің жұмыс орнын дайындаумен орындалатын негізгі қызметі.",
+  "services.template.beautyProcedure.description":
+    "Салонның немесе кабинеттің жұмыс орнын дайындаумен орындалатын негізгі қызметі.",
   "services.template.diagnostics.name": "Диагностика",
-  "services.template.diagnostics.description": "Негізгі жұмысқа дейінгі қарау, тексеру немесе диагностика.",
+  "services.template.diagnostics.description":
+    "Негізгі жұмысқа дейінгі қарау, тексеру немесе диагностика.",
   "services.isActive": "Белсенді",
   "services.save": "Сақтау",
   "resources.title": "Қызметкерлер мен ресурстар",
-  "resources.description": "Клиенттерді жазуға болатын мамандар, қызметкерлер, кабинеттер және жұмыс орындары.",
-  "resources.noBusiness": "Ресурстарды басқару үшін баптауларда бизнес жасаңыз.",
+  "resources.description":
+    "Клиенттерді жазуға болатын мамандар, қызметкерлер, кабинеттер және жұмыс орындары.",
+  "resources.noBusiness":
+    "Ресурстарды басқару үшін баптауларда бизнес жасаңыз.",
   "resources.add": "Маман қосу",
   "resources.active": "Белсенді ресурстар",
   "resources.activeHint": "күнтізбеде жазуға қолжетімді",
@@ -1304,27 +1524,34 @@ export const kk: Record<string, string> = {
   "resources.withSchedule": "Кестесі бар",
   "resources.withScheduleHint": "жеке кестесі бар",
   "resources.logicTitle": "Ресурс логикасы:",
-  "resources.logicText": "шаштаразда әр маманды жеке ресурс ретінде қосқан дұрыс. Сонда күнтізбе мамандардың бос еместігін көрсетіп, бір адамға бір уақытта екі жазба қоюға жол бермейді.",
+  "resources.logicText":
+    "шаштаразда әр маманды жеке ресурс ретінде қосқан дұрыс. Сонда күнтізбе мамандардың бос еместігін көрсетіп, бір адамға бір уақытта екі жазба қоюға жол бермейді.",
   "resources.templateMaster": "Маман",
-  "resources.templateMasterText": "Клиент жазылатын шаштараз, барбер, дәрігер немесе басқа маман.",
+  "resources.templateMasterText":
+    "Клиент жазылатын шаштараз, барбер, дәрігер немесе басқа маман.",
   "resources.templateMasterName": "Жаңа маман",
   "resources.templateChair": "Орындық / жұмыс орны",
-  "resources.templateChairText": "Жеке бос емес уақыты бар жұмыс орны, орындық, үстел немесе жабдық.",
+  "resources.templateChairText":
+    "Жеке бос емес уақыты бар жұмыс орны, орындық, үстел немесе жабдық.",
   "resources.templateChairName": "Орындық 1",
   "resources.templateRoom": "Кабинет",
-  "resources.templateRoomText": "Бір уақытта екі жазбамен бос болмауы тиіс бөлме.",
+  "resources.templateRoomText":
+    "Бір уақытта екі жазбамен бос болмауы тиіс бөлме.",
   "resources.templateRoomName": "Кабинет 1",
   "resources.templateBox": "Бокс",
-  "resources.templateBoxText": "Автосервис, детейлинг немесе жеке кестесі бар жұмыс аймағы.",
+  "resources.templateBoxText":
+    "Автосервис, детейлинг немесе жеке кестесі бар жұмыс аймағы.",
   "resources.templateBoxName": "Бокс 1",
   "resources.emptyTitle": "Мамандар мен ресурстар әлі қосылмаған",
-  "resources.emptyText": "Күнтізбедегі жазбалар дәл болуы үшін қызметкерлерді, кабинеттерді немесе жұмыс орындарын қосыңыз.",
+  "resources.emptyText":
+    "Күнтізбедегі жазбалар дәл болуы үшін қызметкерлерді, кабинеттерді немесе жұмыс орындарын қосыңыз.",
   "resources.name": "Атауы",
   "resources.type": "Түрі",
   "resources.bookings": "Жазба",
   "resources.editTitle": "Ресурсты өңдеу",
   "resources.formHintTitle": "Ресурс деген не",
-  "resources.formHintText": "Салонда бұл маман, барбер немесе орындық. Клиникада - дәрігер немесе кабинет. Автосервисте - бокс немесе көтергіш.",
+  "resources.formHintText":
+    "Салонда бұл маман, барбер немесе орындық. Клиникада - дәрігер немесе кабинет. Автосервисте - бокс немесе көтергіш.",
   "resources.namePlaceholder": "Мысалы: Әлия, Барбер 1, Орындық 2",
   "resources.typeStaff": "Қызметкер / маман",
   "resources.typeRoom": "Кабинет",
@@ -1337,11 +1564,14 @@ export const kk: Record<string, string> = {
   "resources.available": "Жазбаға қолжетімді",
   "resources.save": "Сақтау",
   "clients.title": "Клиенттер",
-  "clients.description": "Өтінімдер, жазбалар, тегтер және карточкаға жылдам өтуі бар клиенттер базасы.",
+  "clients.description":
+    "Өтінімдер, жазбалар, тегтер және карточкаға жылдам өтуі бар клиенттер базасы.",
   "clients.retentionTitle": "Ұстап қалу бойынша ақылды аналитика",
-  "clients.retentionText": "Белсенді өтінімі, мәмілесі және жазбасы жоқ {count} клиентті тексеріңіз. База бос тұрмауы үшін солардан бастаңыз.",
+  "clients.retentionText":
+    "Белсенді өтінімі, мәмілесі және жазбасы жоқ {count} клиентті тексеріңіз. База бос тұрмауы үшін солардан бастаңыз.",
   "clients.retentionAction": "Клиенттерді көрсету",
-  "clients.noBusiness": "Клиенттермен жұмыс істеу үшін баптауларда бизнес жасаңыз.",
+  "clients.noBusiness":
+    "Клиенттермен жұмыс істеу үшін баптауларда бизнес жасаңыз.",
   "clients.segment": "Сегмент",
   "clients.create": "Клиент қосу",
   "clients.filters": "Сүзгілер",
@@ -1363,8 +1593,10 @@ export const kk: Record<string, string> = {
   "clients.allTags": "Барлық тегтер",
   "clients.allSegments": "Барлық сегменттер",
   "clients.emptyTitle": "Клиенттер әзірге жоқ",
-  "clients.emptyFiltered": "Бұл сұраныс бойынша клиент табылмады. Атын, телефонын немесе email-ін тексеріңіз.",
-  "clients.emptyText": "Өтінімдер, жазбалар және байланыс тарихы бір жерде болуы үшін бірінші клиентті қосыңыз.",
+  "clients.emptyFiltered":
+    "Бұл сұраныс бойынша клиент табылмады. Атын, телефонын немесе email-ін тексеріңіз.",
+  "clients.emptyText":
+    "Өтінімдер, жазбалар және байланыс тарихы бір жерде болуы үшін бірінші клиентті қосыңыз.",
   "clients.name": "Аты",
   "clients.phone": "Телефон",
   "clients.tags": "Тегтер",
@@ -1379,18 +1611,23 @@ export const kk: Record<string, string> = {
   "clients.nextStepContact": "Байланысу",
   "clients.actions": "Клиент әрекеттері",
   "clients.listHintTitle": "Клиентті таңдаңыз",
-  "clients.listHintText": "Клиент карточкасы тарихты, өтінімдерді, жазбаларды, тапсырмаларды және жылдам әрекеттерді тізімді жоғалтпай ашады.",
+  "clients.listHintText":
+    "Клиент карточкасы тарихты, өтінімдерді, жазбаларды, тапсырмаларды және жылдам әрекеттерді тізімді жоғалтпай ашады.",
   "clients.tagPrompt": "Тег атауы",
   "clients.tag": "Тег",
   "clients.archiveReason": "Клиентті архивтеу себебі",
   "clients.aiInactiveTitle": "Белсенділігі жоқ клиенттер бар",
-  "clients.aiInactiveDesc": "{count} клиент әзірге өтінімдермен немесе жазбалармен байланыспаған. Оларды қайта байланыс үшін сегменттеуге болады.",
+  "clients.aiInactiveDesc":
+    "{count} клиент әзірге өтінімдермен немесе жазбалармен байланыспаған. Оларды қайта байланыс үшін сегменттеуге болады.",
   "clients.aiLinkedTitle": "Клиент базасы оқиғалармен байланысқан",
-  "clients.aiLinkedDesc": "Клиенттерде өтінімдер немесе жазбалар бар, сондықтан ZANI байланыс тарихын дәлірек түсіндіреді.",
+  "clients.aiLinkedDesc":
+    "Клиенттерде өтінімдер немесе жазбалар бар, сондықтан ZANI байланыс тарихын дәлірек түсіндіреді.",
   "clients.aiTagsTitle": "Клиенттерге тег қосыңыз",
-  "clients.aiTagsDesc": "Тегтер тұрақты, ыстық және тәуекелді клиенттерді күрделі CRM-логикасыз бөлуге көмектеседі.",
+  "clients.aiTagsDesc":
+    "Тегтер тұрақты, ыстық және тәуекелді клиенттерді күрделі CRM-логикасыз бөлуге көмектеседі.",
   "clients.aiSegmentsTitle": "Сегментация жұмыс істеп тұр",
-  "clients.aiSegmentsDesc": "{count} клиентте тег бар. Жылдам әрекеттер үшін сегменттерді пайдаланыңыз.",
+  "clients.aiSegmentsDesc":
+    "{count} клиентте тег бар. Жылдам әрекеттер үшін сегменттерді пайдаланыңыз.",
   "clients.editTitle": "Клиентті өңдеу",
   "clients.createSegment": "Клиенттер сегментін құру",
   "clients.segmentName": "Сегмент атауы",
@@ -1418,7 +1655,8 @@ export const kk: Record<string, string> = {
   "clients.unassigned": "Тағайындалмаған",
   "clients.selectClient": "{name} таңдау",
   "clients.details": "Толығырақ",
-  "clients.duplicateError": "Дубльдерді тексеру мүмкін болмады. Сақтап, кейін тексеруге болады.",
+  "clients.duplicateError":
+    "Дубльдерді тексеру мүмкін болмады. Сақтап, кейін тексеруге болады.",
   "clients.sourceManual": "Қолмен",
   "clients.sourceWebsite": "Сайт",
   "clients.sourceParser": "Parser",
@@ -1427,7 +1665,8 @@ export const kk: Record<string, string> = {
   "clients.save": "Сақтау",
   "clients.createAnyway": "Бәрібір жасау",
   "clients.profileTitle": "Клиент профилі",
-  "clients.profileDescription": "Сол жақта клиенттер тізімі, оң жақта жұмыс профилі: өтінімдер, мәмілелер, жазбалар, хабарламалар тарихы және жылдам әрекеттер.",
+  "clients.profileDescription":
+    "Сол жақта клиенттер тізімі, оң жақта жұмыс профилі: өтінімдер, мәмілелер, жазбалар, хабарламалар тарихы және жылдам әрекеттер.",
   "clients.filterAllWithCount": "Барлығы {count}",
   "clients.filterNewWithCount": "Жаңа {count}",
   "clients.filterNoReplyWithCount": "Жауапсыз {count}",
@@ -1441,7 +1680,8 @@ export const kk: Record<string, string> = {
   "clients.baseTitle": "Клиент базасы",
   "clients.baseHint": "Тізім панель ішінде айналады",
   "clients.notFoundTitle": "Клиенттер табылмады",
-  "clients.notFoundText": "Фильтрлерді өзгертіңіз немесе клиентті қолмен жасаңыз.",
+  "clients.notFoundText":
+    "Фильтрлерді өзгертіңіз немесе клиентті қолмен жасаңыз.",
   "clients.statusBookings": "Жазбалар",
   "clients.statusDeals": "Мәмілелер",
   "clients.statusLeads": "Өтінімдер",
@@ -1467,20 +1707,26 @@ export const kk: Record<string, string> = {
   "clients.history": "Клиент тарихы",
   "clients.leadFallback": "Өтінім #{id}",
   "clients.bookingFallback": "Жазба #{id}",
-  "clients.emptyHistory": "Тарих әзірге бос. Клиентті өтініммен, мәмілемен немесе жазбамен байланыстыруға болады.",
+  "clients.emptyHistory":
+    "Тарих әзірге бос. Клиентті өтініммен, мәмілемен немесе жазбамен байланыстыруға болады.",
   "clients.crmNextStepTitle": "CRM келесі қадамы",
-  "clients.crmNextStepWithActivity": "Клиент өтініммен немесе жазбамен байланысқан. Жақын әрекетті және байланыс деректерін тексеріңіз.",
-  "clients.crmNextStepNeedsContact": "Клиент бойынша жаңа өтінім немесе жазба жоқ. Бүгін қайта байланысу керек пе, тексеріңіз.",
+  "clients.crmNextStepWithActivity":
+    "Клиент өтініммен немесе жазбамен байланысқан. Жақын әрекетті және байланыс деректерін тексеріңіз.",
+  "clients.crmNextStepNeedsContact":
+    "Клиент бойынша жаңа өтінім немесе жазба жоқ. Бүгін қайта байланысу керек пе, тексеріңіз.",
   "clients.crmNextStepAction": "Карточканы ашу",
   "clients.archiveClient": "Клиентті архивтеу",
-  "clients.archiveConfirmText": "«{name}» клиенті архивтеледі. Деректер сақталады және қалпына келтіріледі.",
+  "clients.archiveConfirmText":
+    "«{name}» клиенті архивтеледі. Деректер сақталады және қалпына келтіріледі.",
   "clients.noticeArchived": "Клиент архивтелді.",
   "clients.archiveReasonPlaceholder": "Мысалы: дубль, өзекті емес контакт",
   "clients.mergePreviewTitle": "Біріктіруді тексеру",
-  "clients.mergePreviewWarning": "Клиенттерді біріктірмес бұрын қандай деректер көшірілетінін тексеріңіз.",
+  "clients.mergePreviewWarning":
+    "Клиенттерді біріктірмес бұрын қандай деректер көшірілетінін тексеріңіз.",
   "clients.mergePreviewPolicy": "Біріктіру саясаты",
   "clients.mergeConfirm": "Клиенттерді біріктіру",
-  "clients.mergePreviewConfirm": "Біріктіру алдында байланысты жазбалар табылды: {count}. Жалғастыру керек пе?",
+  "clients.mergePreviewConfirm":
+    "Біріктіру алдында байланысты жазбалар табылды: {count}. Жалғастыру керек пе?",
   "clients.source": "Дереккөз",
   "clients.sourceDetail": "Дереккөз мәліметі",
   "clients.sourceAttribution": "Дереккөз атрибуциясы",
@@ -1492,7 +1738,8 @@ export const kk: Record<string, string> = {
   "clients.consentUnknown": "Көрсетілмеген",
   "clients.manager": "Менеджер",
   "clients.columns": "Бағандар",
-  "clients.tableHint": "Негізгі деректер тізімде, толық ақпарат оң жақ карточкада",
+  "clients.tableHint":
+    "Негізгі деректер тізімде, толық ақпарат оң жақ карточкада",
   "clients.selectedCount": "Таңдалды: {count}",
   "clients.openSelected": "Таңдалғанды ашу",
   "clients.clearSelection": "Таңдауды алып тастау",
@@ -1503,7 +1750,8 @@ export const kk: Record<string, string> = {
   "clients.clearSearch": "Іздеуді тазарту",
   "clients.tableScrollArea": "Клиенттер кестесінің айналдыру аймағы",
   "clients.tableAriaLabel": "Клиенттер тізімі",
-  "clients.tableDescription": "Сүзгіленген клиенттер кестесі. Клиентті таңдау үшін жолда Enter немесе Space басыңыз.",
+  "clients.tableDescription":
+    "Сүзгіленген клиенттер кестесі. Клиентті таңдау үшін жолда Enter немесе Space басыңыз.",
   "clients.selectAllPage": "Осы беттегінің бәрін таңдау",
   "clients.contacts": "Контактілер",
   "clients.favorite": "Таңдаулы",
@@ -1535,14 +1783,19 @@ export const kk: Record<string, string> = {
   "crmCard.leadNumber": "Өтінім #{id}",
   "crmCard.call": "Қоңырау шалу",
   "crmCard.snapshotNext": "Келесі әрекет",
-  "crmCard.snapshotNoTasks": "Ашық тапсырма жоқ. Клиент бойынша әрекет керек болса, келесі қадам жасаңыз.",
+  "crmCard.snapshotNoTasks":
+    "Ашық тапсырма жоқ. Клиент бойынша әрекет керек болса, келесі қадам жасаңыз.",
   "crmCard.snapshotHistory": "Соңғы оқиға",
   "crmCard.snapshotMessages": "Соңғы хабарлама",
   "crmCard.attachments": "Файлдар",
-  "crmCard.noAttachments": "Хабарламалар мен карточкалардағы файлдар осында көрсетіледі.",
-  "crmCard.attachmentsText": "Осы CRM карточкасына қатысты фото, шарт, шот және басқа құжаттарды жүктеңіз.",
-  "crmCard.dropFilesTitle": "Файлдарды осында сүйреңіз немесе компьютерден таңдаңыз",
-  "crmCard.dropFilesText": "Суреттер мен құжаттарға қолдау бар. Файлдарға қолжетімділік осы CRM мәнінің құқықтарына бағынады.",
+  "crmCard.noAttachments":
+    "Хабарламалар мен карточкалардағы файлдар осында көрсетіледі.",
+  "crmCard.attachmentsText":
+    "Осы CRM карточкасына қатысты фото, шарт, шот және басқа құжаттарды жүктеңіз.",
+  "crmCard.dropFilesTitle":
+    "Файлдарды осында сүйреңіз немесе компьютерден таңдаңыз",
+  "crmCard.dropFilesText":
+    "Суреттер мен құжаттарға қолдау бар. Файлдарға қолжетімділік осы CRM мәнінің құқықтарына бағынады.",
   "crmCard.uploadSelected": "{count} жүктеу",
   "crmCard.removeFile": "Файлды алып тастау",
   "crmCard.addAttachment": "Қосу",
@@ -1561,7 +1814,8 @@ export const kk: Record<string, string> = {
   "crmCard.probability": "Ықтималдық",
   "crmCard.closeDate": "Жабылуы",
   "crmCard.quickEdit": "Жылдам өңдеу",
-  "crmCard.quickEditText": "Статус пен жұмыс ескертпесі CRM карточкасынан бірден өзгереді.",
+  "crmCard.quickEditText":
+    "Статус пен жұмыс ескертпесі CRM карточкасынан бірден өзгереді.",
   "crmCard.saveError": "Карточка өзгерістерін сақтау мүмкін болмады.",
   "crmCard.leadStatus": "Өтінім статусы",
   "crmCard.dealStatus": "Мәміле статусы",
@@ -1570,10 +1824,13 @@ export const kk: Record<string, string> = {
   "crmCard.open": "Ашық",
   "crmCard.won": "Жеңді",
   "crmCard.noDeals": "Мәмілелер әзірге жоқ",
-  "crmCard.noDealsText": "Байланысты мәмілелер осы CRM карточкасында пайда болады.",
+  "crmCard.noDealsText":
+    "Байланысты мәмілелер осы CRM карточкасында пайда болады.",
   "crmCard.emptyTimeline": "Тарих әзірге бос",
-  "crmCard.emptyTimelineText": "Менеджерлер, автоматтандырулар және коммуникациялар әрекеттері осында пайда болады.",
-  "crmCard.timelineVisibleCount": "Тарихтағы {total} оқиғаның {visible} көрсетілді.",
+  "crmCard.emptyTimelineText":
+    "Менеджерлер, автоматтандырулар және коммуникациялар әрекеттері осында пайда болады.",
+  "crmCard.timelineVisibleCount":
+    "Тарихтағы {total} оқиғаның {visible} көрсетілді.",
   "crmCard.timelineHasMore": "Толық тарихта тағы оқиғалар бар.",
   "crmCard.timelineCategoryCrm": "CRM",
   "crmCard.timelineCategoryMessage": "Хабарлама",
@@ -1606,17 +1863,26 @@ export const kk: Record<string, string> = {
   "crmCard.timelineFieldSourceEvent": "Бастапқы оқиға",
   "crmCard.timelineFieldTarget": "Мақсат",
   "crmCard.timelineFieldEntity": "Мән",
+  "crmCard.timelineEvent.lead_taken_in_work": "Өтінім жұмысқа алынды",
+  "crmCard.timelineEvent.lead_created": "Өтінім құрылды",
+  "crmCard.timelineEvent.message_received": "Хабарлама алынды",
+  "crmCard.timelineEvent.task_created": "Тапсырма құрылды",
+  "crmCard.timelineEvent.appointment_created": "Жазба құрылды",
+  "crmCard.timelineEvent.deal_created_from_lead": "Өтінімнен мәміле құрылды",
   "crmCard.quickTask": "Жылдам тапсырма",
-  "crmCard.quickTaskText": "Клиент немесе өтінім карточкасынан келесі қадам жасаңыз.",
+  "crmCard.quickTaskText":
+    "Клиент немесе өтінім карточкасынан келесі қадам жасаңыз.",
   "crmCard.taskPlaceholder": "Мысалы: бүгін қайта қоңырау шалу",
   "crmCard.createTask": "Тапсырма құру",
   "crmCard.taskError": "Тапсырма жасау мүмкін болмады.",
   "crmCard.deadline": "мерзім",
   "crmCard.noTasks": "Тапсырмалар жоқ",
-  "crmCard.noTasksText": "Клиент бойынша тапсырма пайда болса, ол карточкада көрінеді.",
+  "crmCard.noTasksText":
+    "Клиент бойынша тапсырма пайда болса, ол карточкада көрінеді.",
   "crmCard.unread": "Оқылмаған",
   "crmCard.noDialogs": "Диалогтар жоқ",
-  "crmCard.noDialogsText": "WhatsApp, Telegram, Instagram және web-chat осы бөлімде жиналады.",
+  "crmCard.noDialogsText":
+    "WhatsApp, Telegram, Instagram және web-chat осы бөлімде жиналады.",
   "crmCard.comment": "Пікір",
   "crmCard.commentText": "Ішкі ескертпе карточка тарихында сақталады.",
   "crmCard.commentPlaceholder": "Мысалы: клиент кешке қоңырау шалуды сұрады",
@@ -1632,8 +1898,10 @@ export const kk: Record<string, string> = {
   "crmCard.notSelected": "Таңдалмаған",
   "crmCard.loadError": "CRM карточкасын жүктеу мүмкін болмады.",
   "tasks.title": "Тапсырмалар",
-  "tasks.description": "Клиент, өтінім және жазба бойынша follow-up контекст жоғалтпай жүргізіледі.",
-  "tasks.noBusiness": "Тапсырмалармен жұмыс істеу үшін баптауларда бизнес жасаңыз.",
+  "tasks.description":
+    "Клиент, өтінім және жазба бойынша follow-up контекст жоғалтпай жүргізіледі.",
+  "tasks.noBusiness":
+    "Тапсырмалармен жұмыс істеу үшін баптауларда бизнес жасаңыз.",
   "tasks.quickTask": "Жылдам тапсырма",
   "tasks.template": "Тапсырма үлгісі",
   "tasks.noTemplate": "Үлгісіз",
@@ -1676,22 +1944,28 @@ export const kk: Record<string, string> = {
   "tasks.complete": "Аяқтау",
   "tasks.cancel": "Бас тарту",
   "tasks.cancelConfirmTitle": "Тапсырмадан бас тарту керек пе?",
-  "tasks.cancelConfirmText": "Тапсырма бас тартылған ретінде жабылады. Себебі CRM тарихында сақталады.",
+  "tasks.cancelConfirmText":
+    "Тапсырма бас тартылған ретінде жабылады. Себебі CRM тарихында сақталады.",
   "tasks.cancelReasonLabel": "Бас тарту себебі",
-  "tasks.cancelReasonPlaceholder": "Мысалы: клиент бас тартты, тапсырма енді өзекті емес...",
+  "tasks.cancelReasonPlaceholder":
+    "Мысалы: клиент бас тартты, тапсырма енді өзекті емес...",
   "tasks.cancelledNotice": "Тапсырмадан бас тартылды.",
   "tasks.undoCancelNotice": "Тапсырмадан бас тарту болдырылмады.",
   "tasks.reopen": "Қайта ашу",
   "tasks.emptyTitle": "Тапсырмалар әзірге жоқ",
-  "tasks.emptyText": "Follow-up тапсырмасын жасап, оны клиентке, өтінімге немесе жазбаға байланыстырыңыз.",
+  "tasks.emptyText":
+    "Follow-up тапсырмасын жасап, оны клиентке, өтінімге немесе жазбаға байланыстырыңыз.",
   "tasks.emptyFilteredTitle": "Ағымдағы сүзгілер бойынша тапсырма жоқ",
-  "tasks.emptyFilteredText": "Көбірек тапсырма көру үшін сүзгілерді немесе іздеу сұрауын өзгертіңіз.",
+  "tasks.emptyFilteredText":
+    "Көбірек тапсырма көру үшін сүзгілерді немесе іздеу сұрауын өзгертіңіз.",
   "tasks.emptyTodayTitle": "Бүгінге тапсырма жоқ",
   "tasks.emptyTodayText": "Бүгінгі мерзімі бар тапсырмалар осында көрсетіледі.",
   "tasks.emptyOverdueTitle": "Мерзімі өткен тапсырма жоқ",
-  "tasks.emptyOverdueText": "Барлық шұғыл тапсырмалар жабылған немесе ауыстырылған. Жаңа кешіккен тапсырмалар осында пайда болады.",
+  "tasks.emptyOverdueText":
+    "Барлық шұғыл тапсырмалар жабылған немесе ауыстырылған. Жаңа кешіккен тапсырмалар осында пайда болады.",
   "tasks.emptyTeamTitle": "Командалық тапсырмалар жоқ",
-  "tasks.emptyTeamText": "Командаға тағайындалған немесе бақылаушылар қосылған тапсырмалар осы тізімде пайда болады.",
+  "tasks.emptyTeamText":
+    "Командаға тағайындалған немесе бақылаушылар қосылған тапсырмалар осы тізімде пайда болады.",
   "tasks.visibleCount": "{total} ішінен {visible} көрсетілді",
   "tasks.loadMore": "Тағы көрсету",
   "tasks.moreActions": "Тапсырма әрекеттері",
@@ -1737,7 +2011,8 @@ export const kk: Record<string, string> = {
   "tasks.statInReview": "Жұмыста",
   "tasks.statInReviewText": "Жұмысқа алынған тапсырмалар.",
   "tasks.statBlocker": "Блокерлер",
-  "tasks.statBlockerText": "Назар аударуды қажет ететін мерзімі өткен тапсырмалар.",
+  "tasks.statBlockerText":
+    "Назар аударуды қажет ететін мерзімі өткен тапсырмалар.",
   "tasks.tableTask": "Тапсырма",
   "tasks.tableLink": "Байланыс",
   "tasks.tableStatus": "Күй",
@@ -1746,14 +2021,18 @@ export const kk: Record<string, string> = {
   "tasks.tableAssignee": "Орындаушы",
   "tasks.tableActivity": "Белсенділік",
   "tasks.aiOverdueTitle": "Мерзімі өткен тапсырмалар бар",
-  "tasks.aiOverdueDesc": "{count} тапсырма кешікті. Клиентті жоғалтпау үшін алдымен соларды жабыңыз.",
+  "tasks.aiOverdueDesc":
+    "{count} тапсырма кешікті. Клиентті жоғалтпау үшін алдымен соларды жабыңыз.",
   "tasks.aiOpenOverdue": "Ашу",
   "tasks.aiNoOverdueTitle": "Кешіккен тапсырма жоқ",
-  "tasks.aiNoOverdueDesc": "Команда міндеттемелерді бақылауда ұстап отыр. Бүгінгі тапсырмаларды тексеріңіз.",
+  "tasks.aiNoOverdueDesc":
+    "Команда міндеттемелерді бақылауда ұстап отыр. Бүгінгі тапсырмаларды тексеріңіз.",
   "tasks.aiPriorityTitle": "Шұғыл әрекеттер бар",
-  "tasks.aiPriorityDesc": "{count} тапсырманың басымдығы жоғары. Оларды әдеттегі тапсырмалардан бұрын орындаған дұрыс.",
+  "tasks.aiPriorityDesc":
+    "{count} тапсырманың басымдығы жоғары. Оларды әдеттегі тапсырмалардан бұрын орындаған дұрыс.",
   "tasks.aiPlanTitle": "Тапсырмалар жоспары тыныш",
-  "tasks.aiPlanDesc": "Жоғары басымдық жоқ. Тапсырмаларды уақыт пен жауапты адамдарға бөлуге болады.",
+  "tasks.aiPlanDesc":
+    "Жоғары басымдық жоқ. Тапсырмаларды уақыт пен жауапты адамдарға бөлуге болады.",
   "tasks.create": "Тапсырма құру",
   "tasks.edit": "Өзгерту",
   "tasks.editTitle": "Тапсырманы өңдеу",
@@ -1783,11 +2062,15 @@ export const kk: Record<string, string> = {
   "tasks.drawerHistoryTab": "Тарих",
   "tasks.taskSummary": "Тапсырма күйі",
   "tasks.statusOpenHint": "Тапсырма жасалды және жұмыстың басталуын күтеді.",
-  "tasks.statusInProgressHint": "Тапсырма жұмыста. Келесі әрекет — аяқтау немесе себебін көрсетіп бас тарту.",
-  "tasks.statusDoneHint": "Тапсырма аяқталды. Қайта өңдеу керек болса, оны қайта ашуға болады.",
-  "tasks.statusCancelledHint": "Тапсырмадан бас тартылды. Бас тарту себебі CRM тарихында сақталады.",
+  "tasks.statusInProgressHint":
+    "Тапсырма жұмыста. Келесі әрекет — аяқтау немесе себебін көрсетіп бас тарту.",
+  "tasks.statusDoneHint":
+    "Тапсырма аяқталды. Қайта өңдеу керек болса, оны қайта ашуға болады.",
+  "tasks.statusCancelledHint":
+    "Тапсырмадан бас тартылды. Бас тарту себебі CRM тарихында сақталады.",
   "tasks.links": "Байланысты нысандар",
-  "tasks.noLinkedEntities": "Тапсырма әзірге клиентке, өтінімге, мәмілеге, жазбаға немесе диалогқа байланыстырылмаған.",
+  "tasks.noLinkedEntities":
+    "Тапсырма әзірге клиентке, өтінімге, мәмілеге, жазбаға немесе диалогқа байланыстырылмаған.",
   "tasks.dates": "Күндер",
   "tasks.completedAt": "Аяқталды",
   "tasks.cancelledAt": "Бас тартылды",
@@ -1799,10 +2082,12 @@ export const kk: Record<string, string> = {
   "tasks.addComment": "Пікір қосу",
   "tasks.deleteComment": "Пікірді жою",
   "tasks.deleteCommentConfirmTitle": "Пікірді жою керек пе?",
-  "tasks.deleteCommentConfirmText": "Пікір тапсырма карточкасынан жоғалады. Тарихта жою оқиғасы қалады.",
+  "tasks.deleteCommentConfirmText":
+    "Пікір тапсырма карточкасынан жоғалады. Тарихта жою оқиғасы қалады.",
   "conversations.eyebrow": "Бірыңғай inbox",
   "conversations.title": "Хабарламалар",
-  "conversations.description": "Сайт, Telegram, WhatsApp және болашақ арналардан келген барлық өтініш бір жұмыс терезесінде.",
+  "conversations.description":
+    "Сайт, Telegram, WhatsApp және болашақ арналардан келген барлық өтініш бір жұмыс терезесінде.",
   "conversations.noMessages": "Хабарламалар жоқ",
   "conversations.selectDialog": "Диалог таңдаңыз",
   "conversations.noMessagesShort": "Әзірге хабарлама жоқ",
@@ -1823,16 +2108,21 @@ export const kk: Record<string, string> = {
   "conversations.systemBotEnabled": "Бот қосылды.",
   "conversations.systemClosed": "Диалогты менеджер жапты.",
   "conversations.systemReopened": "Диалог жұмысқа қайтарылды.",
-  "conversations.aiMockDraftReady": "AI тест черновик дайындап, жауап өрісіне қойды.",
+  "conversations.aiMockDraftReady":
+    "AI тест черновик дайындап, жауап өрісіне қойды.",
   "conversations.aiDraftReady": "AI черновик дайындап, жауап өрісіне қойды.",
   "conversations.aiReplyForbidden": "Бұл рөл AI-жауаптарын жасай алмайды.",
-  "conversations.aiPipelinePreviewForbidden": "Бұл рөл CRM байланыстары бойынша AI ұсыныстарын қарай алмайды.",
-  "conversations.aiPipelineRunForbidden": "Бұл рөл CRM байланыстары бойынша AI әрекеттерін орындай алмайды.",
-  "conversations.replySaved": "Менеджер жауабы диалогта сақталды. Арнаға нақты жіберу кейін қосылады.",
+  "conversations.aiPipelinePreviewForbidden":
+    "Бұл рөл CRM байланыстары бойынша AI ұсыныстарын қарай алмайды.",
+  "conversations.aiPipelineRunForbidden":
+    "Бұл рөл CRM байланыстары бойынша AI әрекеттерін орындай алмайды.",
+  "conversations.replySaved":
+    "Менеджер жауабы диалогта сақталды. Арнаға нақты жіберу кейін қосылады.",
   "conversations.noDialogSelected": "Диалог таңдалмаған.",
   "conversations.fileUploaded": "Файл жүктелді: {name}",
   "conversations.taskCreated": "Тапсырма жасалды: {title}",
-  "conversations.duplicateClientFound": "Ұқсас клиент табылды: {list}. Бар клиентті байланыстырыңыз немесе кейін қолмен растаңыз.",
+  "conversations.duplicateClientFound":
+    "Ұқсас клиент табылды: {list}. Бар клиентті байланыстырыңыз немесе кейін қолмен растаңыз.",
   "conversations.clientCreated": "Клиент жасалды: {name}",
   "conversations.clientAlreadyLinked": "Диалог клиентпен байланысқан.",
   "conversations.clientLinked": "Бар клиент диалогпен байланыстырылды.",
@@ -1852,10 +2142,14 @@ export const kk: Record<string, string> = {
   "conversations.requiresReply": "жауап күтеді",
   "conversations.myWork": "менің кезегім",
   "conversations.aiTriageTitle": "Хабарламалар бойынша кеңес",
-  "conversations.aiTriageHandoff": "{count} диалогқа менеджер керек. Клиенттер ботты ұзақ күтпеуі үшін осыдан бастаңыз.",
-  "conversations.aiTriageUnread": "{count} диалог әлі оқылмаған. Алдымен ыстық өтініштер мен жаңа клиенттерге жауап беріңіз.",
-  "conversations.aiTriageStable": "Қазір критикалық диалог жоқ. Жаңа хабарламаларды қарап, кезекпен өңдеуді жалғастырыңыз.",
-  "conversations.aiTriageMissing": "Inbox бойынша дерек жеткіліксіз. Арнаны қосыңыз немесе алғашқы хабарламаларды күтіңіз.",
+  "conversations.aiTriageHandoff":
+    "{count} диалогқа менеджер керек. Клиенттер ботты ұзақ күтпеуі үшін осыдан бастаңыз.",
+  "conversations.aiTriageUnread":
+    "{count} диалог әлі оқылмаған. Алдымен ыстық өтініштер мен жаңа клиенттерге жауап беріңіз.",
+  "conversations.aiTriageStable":
+    "Қазір критикалық диалог жоқ. Жаңа хабарламаларды қарап, кезекпен өңдеуді жалғастырыңыз.",
+  "conversations.aiTriageMissing":
+    "Inbox бойынша дерек жеткіліксіз. Арнаны қосыңыз немесе алғашқы хабарламаларды күтіңіз.",
   "conversations.advancedFilters": "Кеңейтілген сүзгілер",
   "conversations.advancedCrmLinks": "Кеңейтілген CRM байланысы",
   "conversations.senderAi": "AI",
@@ -1880,19 +2174,24 @@ export const kk: Record<string, string> = {
   "conversations.resetFilters": "Сүзгілерді тазарту",
   "conversations.loadingInbox": "Inbox жүктелуде...",
   "conversations.emptyTitle": "Диалогтар әзірге жоқ",
-  "conversations.emptyText": "Сайт пен Telegram-нан жаңа өтініштер осында автоматты түрде пайда болады.",
+  "conversations.emptyText":
+    "Сайт пен Telegram-нан жаңа өтініштер осында автоматты түрде пайда болады.",
   "conversations.pauseBot": "Ботты тоқтату",
   "conversations.enableBot": "Ботты қосу",
   "conversations.closedFromInbox": "Inbox арқылы жабылды",
-  "conversations.selectDialogText": "Таңдалған клиент хабарламалары осы лентада көрінеді.",
+  "conversations.selectDialogText":
+    "Таңдалған клиент хабарламалары осы лентада көрінеді.",
   "conversations.loadingMessages": "Хабарламалар жүктелуде...",
   "conversations.noMessagesTitle": "Хабарламалар әзірге жоқ",
-  "conversations.noMessagesText": "Клиент қосылған арнаға жазғанда, тарих осында болады.",
+  "conversations.noMessagesText":
+    "Клиент қосылған арнаға жазғанда, тарих осында болады.",
   "conversations.quickReplies": "Жылдам жауаптар...",
   "conversations.noTemplates": "Бұл арна үшін шаблон жоқ.",
-  "conversations.closedNotice": "Диалог жабық. Клиентке қайта жазу үшін «Қайтару» басыңыз.",
+  "conversations.closedNotice":
+    "Диалог жабық. Клиентке қайта жазу үшін «Қайтару» басыңыз.",
   "conversations.attachFile": "Файл тіркеу",
-  "conversations.closedComposer": "Диалог жабық. Жауап беру үшін оны жұмысқа қайтарыңыз.",
+  "conversations.closedComposer":
+    "Диалог жабық. Жауап беру үшін оны жұмысқа қайтарыңыз.",
   "conversations.replyPlaceholder": "Клиентке жауап жазыңыз...",
   "conversations.saveManualReply": "Қолмен жауапты сақтау",
   "conversations.context": "Контекст",
@@ -1903,8 +2202,10 @@ export const kk: Record<string, string> = {
   "conversations.leadNotLinked": "Өтінім байланыспаған",
   "conversations.dealNotLinked": "Мәміле байланыспаған",
   "conversations.crmContextLinked": "Диалог CRM контекстімен байланысқан.",
-  "conversations.crmContextText": "Inbox-тен шықпай клиент, өтінім және мәміле жасаңыз немесе байланыстырыңыз.",
-  "conversations.noFiles": "Файлдар әзірге жоқ. Келісім, чек, фото немесе құжатты composer арқылы тіркеңіз.",
+  "conversations.crmContextText":
+    "Inbox-тен шықпай клиент, өтінім және мәміле жасаңыз немесе байланыстырыңыз.",
+  "conversations.noFiles":
+    "Файлдар әзірге жоқ. Келісім, чек, фото немесе құжатты composer арқылы тіркеңіз.",
   "conversations.bot": "Бот",
   "conversations.active": "Белсенді",
   "conversations.paused": "Пауза",
@@ -1919,7 +2220,8 @@ export const kk: Record<string, string> = {
   "conversations.linkDealById": "Мәмілені ID арқылы байланыстыру",
   "conversations.link": "Байланыстыру",
   "conversations.aiDraft": "AI-черновик",
-  "conversations.aiDraftText": "Composer ішінде черновик алу үшін «Жауап ұсыну» басыңыз. Автожіберу жоқ.",
+  "conversations.aiDraftText":
+    "Composer ішінде черновик алу үшін «Жауап ұсыну» басыңыз. Автожіберу жоқ.",
   "conversations.selectContext": "CRM контекстін көру үшін диалог таңдаңыз.",
   "conversations.followUpTaskTitle": "Қайта байланысу: {title}",
   "conversations.clientIdPlaceholder": "Клиент ID",
@@ -1939,8 +2241,10 @@ export const kk: Record<string, string> = {
   "conversations.dealCreatedShort": "Мәміле жасалды.",
   "conversations.taskCreatedShort": "Тапсырма жасалды.",
   "conversations.pipelineAiSuffix": " Кеңес: {intent}, {confidence}%.",
-  "conversations.pipelineUpdated": "Клиентпен байланыстар жаңартылды: {created}.{ai}",
-  "conversations.pipelineAlreadyLinked": "Диалог клиентпен және мәмілемен байланысқан.{ai}",
+  "conversations.pipelineUpdated":
+    "Клиентпен байланыстар жаңартылды: {created}.{ai}",
+  "conversations.pipelineAlreadyLinked":
+    "Диалог клиентпен және мәмілемен байланысқан.{ai}",
   "conversations.bulkDone": "Дайын: {count} диалог өңделді.",
   "conversations.pipelineDealTitle": "Мәміле: {title}",
   "conversations.attention": "Назар",
@@ -1976,20 +2280,25 @@ export const kk: Record<string, string> = {
   "conversations.clientId": "Клиент #{id}",
   "conversations.leadId": "Өтінім #{id}",
   "conversations.dealId": "Мәміле #{id}",
-  "conversations.assignTooltip": "Клиентке кім жауап беретінін түсіну үшін диалогты өзіңізге тағайындаңыз.",
+  "conversations.assignTooltip":
+    "Клиентке кім жауап беретінін түсіну үшін диалогты өзіңізге тағайындаңыз.",
   "conversations.takeDialog": "Диалогты алу",
   "conversations.assign": "Тағайындау",
   "conversations.pauseBotTooltip": "Осы диалогта ботты паузаға қою.",
   "conversations.enableBotTooltip": "Осы диалогта ботты қайта қосу.",
-  "conversations.handoffTooltip": "Диалогты адамға беріп, боттың автоматты өңдеуін өшіру.",
+  "conversations.handoffTooltip":
+    "Диалогты адамға беріп, боттың автоматты өңдеуін өшіру.",
   "conversations.handoffToOperator": "Операторға беру",
-  "conversations.reopenTooltip": "Жабық диалогты жұмысқа қайтарып, менеджер жауабын қайта қосу.",
+  "conversations.reopenTooltip":
+    "Жабық диалогты жұмысқа қайтарып, менеджер жауабын қайта қосу.",
   "conversations.openDialog": "Диалогты ашу",
-  "conversations.closeTooltip": "Диалогты өңдеуден кейін жабу. Тарих клиент карточкасында қалады.",
+  "conversations.closeTooltip":
+    "Диалогты өңдеуден кейін жабу. Тарих клиент карточкасында қалады.",
   "conversations.closeDialog": "Диалогты жабу",
   "conversations.loadingHistory": "Тарих жүктелуде",
   "conversations.loadEarlier": "Бұрынғыны жүктеу",
-  "conversations.closedReplyNotice": "Диалог жабық. Жауап беру үшін оны ашыңыз.",
+  "conversations.closedReplyNotice":
+    "Диалог жабық. Жауап беру үшін оны ашыңыз.",
   "conversations.send": "Жіберу",
   "conversations.newContact": "Жаңа",
   "conversations.channel": "Арна",
@@ -2000,7 +2309,8 @@ export const kk: Record<string, string> = {
   "conversations.replyHint": "Жауап кеңесі",
   "conversations.intentLine": "Ниет: {intent}.",
   "conversations.confidenceLine": "Сенімділік {confidence}%.",
-  "conversations.assistantDraftHelp": "Ассистент жауап черновигін дайындап, клиент байланыстарын жаңарта алады.",
+  "conversations.assistantDraftHelp":
+    "Ассистент жауап черновигін дайындап, клиент байланыстарын жаңарта алады.",
   "conversations.prepareDraftFallback": "Клиентке жауап черновигін дайындаңыз.",
   "conversations.prepareReply": "Жауап дайындау",
   "conversations.newMessage": "Жаңа хабарлама",
@@ -2026,7 +2336,8 @@ export const kk: Record<string, string> = {
   "conversations.quickRepliesButton": "Жауаптар",
   "conversations.quickRepliesTitle": "Жылдам жауаптар",
   "conversations.quickRepliesSearch": "Жауап шаблонын іздеу...",
-  "conversations.noQuickRepliesText": "Жиі қайталанатын хабарламалар үшін жылдам жауап шаблондарын жасаңыз.",
+  "conversations.noQuickRepliesText":
+    "Жиі қайталанатын хабарламалар үшін жылдам жауап шаблондарын жасаңыз.",
   "conversations.messageStatusReceived": "алынды",
   "conversations.messageStatusQueued": "кезекте",
   "conversations.messageStatusSent": "жіберілді",
@@ -2037,23 +2348,29 @@ export const kk: Record<string, string> = {
   "conversations.linkClientTitle": "Клиентті байлау",
   "conversations.linkLeadTitle": "Өтінімді байлау",
   "conversations.linkDealTitle": "Мәмілені байлау",
-  "conversations.linkSearchPlaceholder": "Аты, телефон немесе атауы бойынша іздеу...",
+  "conversations.linkSearchPlaceholder":
+    "Аты, телефон немесе атауы бойынша іздеу...",
   "conversations.noLinkCandidates": "Ештеңе табылмады",
-  "conversations.noLinkCandidatesText": "Сұрауды өзгертіңіз немесе инспектордан жаңа сущность жасаңыз.",
+  "conversations.noLinkCandidatesText":
+    "Сұрауды өзгертіңіз немесе инспектордан жаңа сущность жасаңыз.",
   "conversations.clientLinkedShort": "Клиент байланыстырылды.",
   "conversations.leadLinkedShort": "Өтінім байланыстырылды.",
   "conversations.dealLinkedShort": "Мәміле байланыстырылды.",
   "conversations.createTaskTitle": "Диалогтан тапсырма жасау",
   "conversations.dialogState": "Диалог күйі",
   "conversations.crmAutomation": "CRM автоматизациясы",
-  "conversations.crmAutomationFallback": "Осы диалог бойынша CRM байланыстарын жаңарту үшін автоматизацияны іске қосыңыз.",
+  "conversations.crmAutomationFallback":
+    "Осы диалог бойынша CRM байланыстарын жаңарту үшін автоматизацияны іске қосыңыз.",
   "conversations.showInspector": "Контекстті көрсету",
   "conversations.hideInspector": "Контекстті жасыру",
   "analytics.title": "Аналитика",
-  "analytics.description": "Артық графиксіз және бос инсайтсыз негізгі CRM көрсеткіштері.",
+  "analytics.description":
+    "Артық графиксіз және бос инсайтсыз негізгі CRM көрсеткіштері.",
   "analytics.smartReportTitle": "Интеллектуалды есеп",
-  "analytics.smartReportText": "{source} қазір өтінімдердің ең көрнекті дереккөзі. Лидтен жазбаға конверсия: {conversion}%. Шығынды оңтайландырмас бұрын канал мен өтінім байланысын тексеріңіз.",
-  "analytics.smartReportNoSource": "Өтінім дереккөзі әлі анықталмаған. ZANI басымдықты көрсетуі үшін каналдарды қосып, алғашқы оқиғаларды күтіңіз.",
+  "analytics.smartReportText":
+    "{source} қазір өтінімдердің ең көрнекті дереккөзі. Лидтен жазбаға конверсия: {conversion}%. Шығынды оңтайландырмас бұрын канал мен өтінім байланысын тексеріңіз.",
+  "analytics.smartReportNoSource":
+    "Өтінім дереккөзі әлі анықталмаған. ZANI басымдықты көрсетуі үшін каналдарды қосып, алғашқы оқиғаларды күтіңіз.",
   "analytics.smartReportAction": "Оңтайландыру",
   "analytics.noBusiness": "Аналитиканы көру үшін баптауларда бизнес жасаңыз.",
   "analytics.loadError": "Иесінің аналитикасын жүктеу мүмкін болмады.",
@@ -2068,7 +2385,8 @@ export const kk: Record<string, string> = {
   "analytics.overdueTasks": "Мерзімі өткен тапсырмалар",
   "analytics.openSectionHint": "Өңдеу үшін CRM-нің тиісті бөліміне өтіңіз.",
   "analytics.operationalReports": "Операциялық есептер",
-  "analytics.operationalReportsText": "Source ROI, воронка, қайталану және команда. Ауыр BI жоқ, бірақ экспорт бар.",
+  "analytics.operationalReportsText":
+    "Source ROI, воронка, қайталану және команда. Ауыр BI жоқ, бірақ экспорт бар.",
   "analytics.loadingReports": "Есептер жиналуда...",
   "analytics.repeatClientsCount": "{count} қайталама клиент",
   "analytics.repeatRate": "Қайталану",
@@ -2076,21 +2394,29 @@ export const kk: Record<string, string> = {
   "analytics.openDeals": "Ашық мәмілелер",
   "analytics.wonLost": "Ұтылған/жоғалған",
   "analytics.scheduledReports": "Кестелік есептер",
-  "analytics.scheduledReportsText": "Кесте моделі дайын. Email жіберу notification/queue қабаты арқылы қосылады.",
+  "analytics.scheduledReportsText":
+    "Кесте моделі дайын. Email жіберу notification/queue қабаты арқылы қосылады.",
   "analytics.noRecipients": "Алушылар көрсетілмеген",
-  "analytics.noSchedules": "Кестелер әзірге жоқ. Оларды API немесе болашақ есеп баптаулары UI арқылы жасауға болады.",
-  "analytics.sourcesEmpty": "Дереккөздер алғашқы өтінімдерден кейін пайда болады.",
+  "analytics.noSchedules":
+    "Кестелер әзірге жоқ. Оларды API немесе болашақ есеп баптаулары UI арқылы жасауға болады.",
+  "analytics.sourcesEmpty":
+    "Дереккөздер алғашқы өтінімдерден кейін пайда болады.",
   "analytics.aiTopSourceTitle": "Негізгі өтінім көзі",
-  "analytics.aiTopSourceDesc": "{source} {count} өтінім берді. Осы арнаның өңдеу сапасын тексеріңіз.",
+  "analytics.aiTopSourceDesc":
+    "{source} {count} өтінім берді. Осы арнаның өңдеу сапасын тексеріңіз.",
   "analytics.aiMissingSourcesTitle": "Дереккөздер әлі көрінбейді",
-  "analytics.aiMissingSourcesDesc": "Дереккөзі бар өтінімдер жеткіліксіз. Сұранысты түсіндіру үшін арналарды немесе импортты қосыңыз.",
+  "analytics.aiMissingSourcesDesc":
+    "Дереккөзі бар өтінімдер жеткіліксіз. Сұранысты түсіндіру үшін арналарды немесе импортты қосыңыз.",
   "analytics.aiNoShowTitle": "Келмегендер бар",
-  "analytics.aiNoShowDesc": "{count} клиент келмеді. Еске салу мен жазбаны растауды тексеріңіз.",
+  "analytics.aiNoShowDesc":
+    "{count} клиент келмеді. Еске салу мен жазбаны растауды тексеріңіз.",
   "analytics.aiNoShowClearTitle": "Келмегендер жоқ",
-  "analytics.aiNoShowClearDesc": "Қазіргі дерек бойынша жазбалар no-show жоғалтусыз өтуде.",
+  "analytics.aiNoShowClearDesc":
+    "Қазіргі дерек бойынша жазбалар no-show жоғалтусыз өтуде.",
   "analytics.aiDataQualityTitle": "Дерек сапасы",
   "analytics.aiSalesDataTitle": "Сатылымдар қосылмаған",
-  "analytics.aiSalesDataDesc": "Сатылымдарсыз ZANI табыс пен LTV бойынша қорытынды жасамайды.",
+  "analytics.aiSalesDataDesc":
+    "Сатылымдарсыз ZANI табыс пен LTV бойынша қорытынды жасамайды.",
   "analytics.aiConnectData": "Деректерді қосу",
   "analytics.sourceRoi": "Дереккөздер ROI",
   "analytics.teamCsv": "Команда CSV",
@@ -2100,10 +2426,12 @@ export const kk: Record<string, string> = {
   "analytics.dealsEmpty": "Мәмілелер pipeline бапталғаннан кейін пайда болады.",
   "analytics.servicesByBookings": "Жазбалар бойынша қызметтер",
   "analytics.teamPerformance": "Команда тиімділігі",
-  "analytics.teamPerformanceText": "Ауыр BI жоқ команда сапасын бақылау: лидтер, handoff, мәмілелер және тапсырмалар.",
+  "analytics.teamPerformanceText":
+    "Ауыр BI жоқ команда сапасын бақылау: лидтер, handoff, мәмілелер және тапсырмалар.",
   "analytics.loadingTeam": "Команда көрсеткіштері жүктелуде...",
   "analytics.teamHidden": "Командалық аналитика жасырылған",
-  "analytics.teamHiddenText": "Бұл бөлім иеге, әкімшіге, бөлім басшысына немесе analytics.view рұқсаты бар пайдаланушыға қолжетімді.",
+  "analytics.teamHiddenText":
+    "Бұл бөлім иеге, әкімшіге, бөлім басшысына немесе analytics.view рұқсаты бар пайдаланушыға қолжетімді.",
   "analytics.assignedLeads": "Тағайындалған лидтер",
   "analytics.lostLeads": "Жоғалған лидтер",
   "analytics.overdueHandoffs": "Менеджерді күтеді",
@@ -2128,9 +2456,11 @@ export const kk: Record<string, string> = {
   "analytics.handoff": "Менеджерге беру",
   "analytics.noTeams": "Командалар бөлімдер бапталғаннан кейін пайда болады.",
   "settings.title": "Баптаулар",
-  "settings.description": "Zani бизнесі, командасы, рұқсаттары және жүйелік баптаулары.",
+  "settings.description":
+    "Zani бизнесі, командасы, рұқсаттары және жүйелік баптаулары.",
   "settings.navigationTitle": "Баптау бөлімдері",
-  "settings.navigationText": "Топты ашып, бүкіл бетті айналдырмай қажет блокқа өтіңіз.",
+  "settings.navigationText":
+    "Топты ашып, бүкіл бетті айналдырмай қажет блокқа өтіңіз.",
   "settings.enabled": "Қосулы",
   "settings.disabled": "Өшірулі",
   "settings.section.appointment-messages": "Авто-хабарламалар",
@@ -2155,49 +2485,65 @@ export const kk: Record<string, string> = {
   "settings.group.advanced": "Кеңейтілген",
   "settings.appointmentMessagesEyebrow": "Жазбалар",
   "settings.appointmentMessagesTitle": "Жазбалар бойынша авто-хабарламалар",
-  "settings.appointmentMessagesText": "Растау, еске салу және визиттен кейінгі хабарлама. Мәтінде айнымалылар қолжетімді: {client_name}, {service_name}, {date}, {time}.",
+  "settings.appointmentMessagesText":
+    "Растау, еске салу және визиттен кейінгі хабарлама. Мәтінде айнымалылар қолжетімді: {client_name}, {service_name}, {date}, {time}.",
   "settings.appointmentMessagesLoading": "Хабарлама сценарийлері жүктелуде...",
   "settings.appointmentMessages.offsetBefore": "Жазбаға дейінгі минут",
   "settings.appointmentMessages.offsetAfter": "Визиттен кейінгі минут",
   "settings.appointmentMessages.deliveryChannel": "Жеткізу арнасы",
   "settings.appointmentMessages.templateText": "Хабарлама мәтіні",
   "settings.appointmentMessages.saveScenario": "Сценарийді сақтау",
-  "settings.appointmentMessages.channel.auto": "Авто: клиенттің ең жақсы арнасы",
+  "settings.appointmentMessages.channel.auto":
+    "Авто: клиенттің ең жақсы арнасы",
   "settings.appointmentMessages.channel.telegram": "Telegram",
   "settings.appointmentMessages.channel.whatsapp": "WhatsApp",
   "settings.appointmentMessages.channel.email": "Email",
   "settings.appointmentMessages.channel.sms": "SMS",
   "settings.appointmentMessages.channel.system": "CRM ішінде",
   "settings.appointmentMessages.scenario.confirmation": "Жазбаны растау",
-  "settings.appointmentMessages.scenario.confirmation.text": "Клиентке визитке дейін жіберілетін хабарлама: келмей қалуды азайтып, бас тарту немесе ауыстыруды бірден анықтауға көмектеседі.",
+  "settings.appointmentMessages.scenario.confirmation.text":
+    "Клиентке визитке дейін жіберілетін хабарлама: келмей қалуды азайтып, бас тарту немесе ауыстыруды бірден анықтауға көмектеседі.",
   "settings.appointmentMessages.scenario.reminder": "Визит алдындағы еске салу",
-  "settings.appointmentMessages.scenario.reminder.text": "Жазбаға бірнеше сағат қалғанда қызмет, уақыт, маман және мекенжайы бар қысқа хабарлама.",
-  "settings.appointmentMessages.scenario.thankYou": "Қызмет көрсетілгеннен кейін",
-  "settings.appointmentMessages.scenario.thankYou.text": "Аяқталған визиттен кейін алғыс, қайта жазылу немесе жұмсақ кері байланыс сұрауы.",
+  "settings.appointmentMessages.scenario.reminder.text":
+    "Жазбаға бірнеше сағат қалғанда қызмет, уақыт, маман және мекенжайы бар қысқа хабарлама.",
+  "settings.appointmentMessages.scenario.thankYou":
+    "Қызмет көрсетілгеннен кейін",
+  "settings.appointmentMessages.scenario.thankYou.text":
+    "Аяқталған визиттен кейін алғыс, қайта жазылу немесе жұмсақ кері байланыс сұрауы.",
   "settings.notificationsEyebrow": "Хабарландырулар",
   "settings.notificationsTitle": "Жеке шу баптаулары",
-  "settings.notificationsText": "Санаттар бойынша әдеттегі in-app хабарландыруларды өшіріңіз. Критикалық high/urgent оқиғалар, жеткізу қателері және маңызды әрекеттер бәрібір көрсетіледі.",
+  "settings.notificationsText":
+    "Санаттар бойынша әдеттегі in-app хабарландыруларды өшіріңіз. Критикалық high/urgent оқиғалар, жеткізу қателері және маңызды әрекеттер бәрібір көрсетіледі.",
   "settings.notificationsDisabledCount": "{count} өшірулі",
   "settings.notifications.category.sales": "Сатылымдар және жазбалар",
-  "settings.notifications.category.sales.text": "Өтінімдер, мәмілелер, растаулар және клиенттердің жазба бойынша жауаптары.",
+  "settings.notifications.category.sales.text":
+    "Өтінімдер, мәмілелер, растаулар және клиенттердің жазба бойынша жауаптары.",
   "settings.notifications.category.tasks": "Тапсырмалар",
-  "settings.notifications.category.tasks.text": "Тағайындаулар, мерзімі өткендер және қолмен жұмысты қажет ететін әрекеттер.",
+  "settings.notifications.category.tasks.text":
+    "Тағайындаулар, мерзімі өткендер және қолмен жұмысты қажет ететін әрекеттер.",
   "settings.notifications.category.outreach": "Таратылымдар",
-  "settings.notifications.category.outreach.text": "Кампанияларды дайындау, іске қосу, аяқтау, opt-out және кампания қателері.",
+  "settings.notifications.category.outreach.text":
+    "Кампанияларды дайындау, іске қосу, аяқтау, opt-out және кампания қателері.",
   "settings.notifications.category.aiAlerts": "ЖИ ұсыныстары",
-  "settings.notifications.category.aiAlerts.text": "AI Analyst ұсыныстары және сервистерді қосу бойынша кеңестер.",
+  "settings.notifications.category.aiAlerts.text":
+    "AI Analyst ұсыныстары және сервистерді қосу бойынша кеңестер.",
   "settings.notifications.category.system": "Жүйелік",
-  "settings.notifications.category.system.text": "Техникалық оқиғалар, жеткізу қателері және интеграциялардың күйі.",
+  "settings.notifications.category.system.text":
+    "Техникалық оқиғалар, жеткізу қателері және интеграциялардың күйі.",
   "settings.notifications.category.finance": "Қаржы",
-  "settings.notifications.category.finance.text": "Төлемдер, шоттар, тарифтер және қаржылық оқиғалар.",
+  "settings.notifications.category.finance.text":
+    "Төлемдер, шоттар, тарифтер және қаржылық оқиғалар.",
   "settings.teamEyebrow": "Команда және қолжетімділік",
   "settings.teamTitle": "Қызметкерлер және рұқсаттар",
-  "settings.teamText": "Ие мен әкімші бүкіл бизнесті көреді. Менеджер сатумен жұмыс істейді, оператор чаттарға жауап береді, бухгалтер мен маркетолог тек өз бөлімдерін алады.",
+  "settings.teamText":
+    "Ие мен әкімші бүкіл бизнесті көреді. Менеджер сатумен жұмыс істейді, оператор чаттарға жауап береді, бухгалтер мен маркетолог тек өз бөлімдерін алады.",
   "settings.permissions": "рұқсат",
   "settings.accessTitle": "Рұқсаттарды түсінікті баптау",
-  "settings.accessText": "Қызметкерді таңдап, рөл беріңіз және көру аймағын тексеріңіз. Жаңа қызметкерлер қауіпсіз түрде «Қызметкер» ретінде бастайды.",
+  "settings.accessText":
+    "Қызметкерді таңдап, рөл беріңіз және көру аймағын тексеріңіз. Жаңа қызметкерлер қауіпсіз түрде «Қызметкер» ретінде бастайды.",
   "settings.roleGuideTitle": "Қай қызметкерге қандай рөл беру",
-  "settings.roleGuideText": "Қызметкер түрін бір басумен таңдаңыз. Рөлді кейін өзгертуге, ал кеңейтілген құқықтарды бөлек баптауға болады.",
+  "settings.roleGuideText":
+    "Қызметкер түрін бір басумен таңдаңыз. Рөлді кейін өзгертуге, ал кеңейтілген құқықтарды бөлек баптауға болады.",
   "settings.memberStep": "1. Қызметкер",
   "settings.roleStep": "2. Рөл",
   "settings.visibilityStep": "3. Көру аймағы",
@@ -2205,24 +2551,32 @@ export const kk: Record<string, string> = {
   "settings.noAccessText": "Рөл жұмыс деректеріне қол жеткізбейді.",
   "settings.active": "Белсенді",
   "settings.inactive": "Өшірілген",
-  "settings.teamEmpty": "Команда бизнеске қызметкерлер қосылғаннан кейін пайда болады.",
+  "settings.teamEmpty":
+    "Команда бизнеске қызметкерлер қосылғаннан кейін пайда болады.",
   "settings.inviteTitle": "Қызметкерді шақыру",
-  "settings.inviteText": "Қызметкер сілтеме алып, пароль қояды және таңдалған рөлмен кіреді. Жіберу API қосылғанға дейін WhatsApp, Telegram немесе email арқылы дайын мәтінді ашуға болады.",
+  "settings.inviteText":
+    "Қызметкер сілтеме алып, пароль қояды және таңдалған рөлмен кіреді. Жіберу API қосылғанға дейін WhatsApp, Telegram немесе email арқылы дайын мәтінді ашуға болады.",
   "settings.loginEmail": "Кіру email-ы",
-  "settings.loginEmailHelp": "Email қызметкердің логині ретінде керек. Сілтемені WhatsApp, Telegram, email арқылы жіберуге немесе қолмен көшіруге болады.",
+  "settings.loginEmailHelp":
+    "Email қызметкердің логині ретінде керек. Сілтемені WhatsApp, Telegram, email арқылы жіберуге немесе қолмен көшіруге болады.",
   "settings.fullName": "Аты",
   "settings.fullNamePlaceholder": "Әлия Иванова",
   "settings.role": "Рөл",
   "settings.delivery": "Қайда жіберу",
-  "settings.deliveryHelp.whatsapp": "Дайын шақыру мәтінімен WhatsApp ашылады. Нөмір тек сілтемені жіберу үшін қажет.",
-  "settings.deliveryHelp.telegram": "Дайын мәтінмен Telegram share ашылады. Username қызметкер контактісін есепке алу үшін керек.",
-  "settings.deliveryHelp.email": "Дайын хатпен пошта клиенті ашылады. Нақты жіберу notification provider арқылы қосылады.",
-  "settings.deliveryHelp.manual": "Кез келген ыңғайлы арнамен жіберуге болатын сілтеме жасалады.",
+  "settings.deliveryHelp.whatsapp":
+    "Дайын шақыру мәтінімен WhatsApp ашылады. Нөмір тек сілтемені жіберу үшін қажет.",
+  "settings.deliveryHelp.telegram":
+    "Дайын мәтінмен Telegram share ашылады. Username қызметкер контактісін есепке алу үшін керек.",
+  "settings.deliveryHelp.email":
+    "Дайын хатпен пошта клиенті ашылады. Нақты жіберу notification provider арқылы қосылады.",
+  "settings.deliveryHelp.manual":
+    "Кез келген ыңғайлы арнамен жіберуге болатын сілтеме жасалады.",
   "settings.copyLink": "Сілтемені көшіру",
   "settings.whatsappPhone": "WhatsApp телефоны",
   "settings.createInvite": "Шақыру жасау",
   "settings.inviteCreatedTitle": "Шақыру жасалды",
-  "settings.inviteCreatedText": "{email} {role} ретінде кіре алады. Сілтемені қазір жіберіңіз немесе қолмен көшіріңіз.",
+  "settings.inviteCreatedText":
+    "{email} {role} ретінде кіре алады. Сілтемені қазір жіберіңіз немесе қолмен көшіріңіз.",
   "settings.sendInviteNow": "Қазір жіберу",
   "settings.send": "Жіберу",
   "settings.copy": "Көшіру",
@@ -2230,7 +2584,8 @@ export const kk: Record<string, string> = {
   "settings.revoke": "Қайтарып алу",
   "settings.noInvites": "Белсенді шақырулар әзірге жоқ.",
   "settings.inviteSubject": "Zani CRM-ге шақыру",
-  "settings.inviteMessage": "Сізді Zani CRM-ге шақырды. Сілтемені ашып, пароль қойыңыз: {url}",
+  "settings.inviteMessage":
+    "Сізді Zani CRM-ге шақырды. Сілтемені ашып, пароль қойыңыз: {url}",
   "settings.role.owner": "Ие",
   "settings.role.admin": "Директор",
   "settings.role.manager": "Сату менеджері",
@@ -2240,36 +2595,51 @@ export const kk: Record<string, string> = {
   "settings.role.support": "Қолдау",
   "settings.role.staff": "Қызметкер",
   "settings.currentRole": "Ағымдағы рөл",
-  "settings.roleDescription.owner": "Бизнес, қызметкерлер, қаржы, аналитика және баптаулар бойынша толық бақылау.",
-  "settings.roleDescription.admin": "Операциялық директор: команда, CRM, аналитика, интеграциялар және автоматтандырулар, бизнес иелігін бермейді.",
-  "settings.roleDescription.manager": "Өтінімдер, мәмілелер, клиенттер, тапсырмалар және сату күнтізбесімен жұмыс.",
-  "settings.roleDescription.operator": "Чаттарға жауап беру, кіріс өтініштерді өңдеу және басқару бөлімдерінсіз өтінім жасау.",
-  "settings.roleDescription.marketer": "Маркетинг, дереккөздер, сегменттер, формалар және коммуникациялар, қаржы бақылауынсыз.",
-  "settings.roleDescription.accountant": "Қаржы деректері, сатылымдар, импорт және экспорт, чат пен лидтерді басқарусыз.",
-  "settings.roleDescription.support": "Клиенттерге көмек және операциялық тексерістер, иені басқару құқығынсыз.",
-  "settings.roleDescription.staff": "Маман немесе қызметкерге базалық қолжетімділік: өз тапсырмалары, жазбалары және жұмыс контексті.",
+  "settings.roleDescription.owner":
+    "Бизнес, қызметкерлер, қаржы, аналитика және баптаулар бойынша толық бақылау.",
+  "settings.roleDescription.admin":
+    "Операциялық директор: команда, CRM, аналитика, интеграциялар және автоматтандырулар, бизнес иелігін бермейді.",
+  "settings.roleDescription.manager":
+    "Өтінімдер, мәмілелер, клиенттер, тапсырмалар және сату күнтізбесімен жұмыс.",
+  "settings.roleDescription.operator":
+    "Чаттарға жауап беру, кіріс өтініштерді өңдеу және басқару бөлімдерінсіз өтінім жасау.",
+  "settings.roleDescription.marketer":
+    "Маркетинг, дереккөздер, сегменттер, формалар және коммуникациялар, қаржы бақылауынсыз.",
+  "settings.roleDescription.accountant":
+    "Қаржы деректері, сатылымдар, импорт және экспорт, чат пен лидтерді басқарусыз.",
+  "settings.roleDescription.support":
+    "Клиенттерге көмек және операциялық тексерістер, иені басқару құқығынсыз.",
+  "settings.roleDescription.staff":
+    "Маман немесе қызметкерге базалық қолжетімділік: өз тапсырмалары, жазбалары және жұмыс контексті.",
   "settings.visibility.own": "Тек өзінікі",
-  "settings.visibility.own.text": "Қызметкер тек өзіне тағайындалған объектілерді көреді.",
+  "settings.visibility.own.text":
+    "Қызметкер тек өзіне тағайындалған объектілерді көреді.",
   "settings.visibility.team": "Өз командасы",
   "settings.visibility.team.text": "Тимлид немесе аға менеджер үшін ыңғайлы.",
   "settings.visibility.business": "Бүкіл бизнес",
-  "settings.visibility.business.text": "Компанияның барлық объектілеріне қолжетімділік.",
+  "settings.visibility.business.text":
+    "Компанияның барлық объектілеріне қолжетімділік.",
   "settings.departments": "Бөлімдер",
   "settings.departmentPlaceholder": "Сату",
   "settings.members": "қызметкер",
   "settings.noDepartments": "Бөлімдер әзірге жоқ.",
-  "settings.developerConnections": "Әзірлеушіге арналған кеңейтілген қосылымдар",
+  "settings.developerConnections":
+    "Әзірлеушіге арналған кеңейтілген қосылымдар",
   "settings.automationsEyebrow": "Кеңейтілген бөлім",
   "settings.automationsTitle": "Автоматтандыру",
-  "settings.automationsText": "Дайын ережелер мен шаблондар күнделікті интерфейсті ауырлатпай, қайталанатын жұмысты азайтады.",
+  "settings.automationsText":
+    "Дайын ережелер мен шаблондар күнделікті интерфейсті ауырлатпай, қайталанатын жұмысты азайтады.",
   "settings.securityEyebrow": "Қауіпсіздік орталығы",
   "settings.securityTitle": "Аудит және қолжетімділікті бақылау",
-  "settings.securityText": "Ие экспорт, архивтеу, рөлдер, support access және команда аккаунттарына кіру сияқты маңызды әрекеттерді көреді.",
+  "settings.securityText":
+    "Ие экспорт, архивтеу, рөлдер, support access және команда аккаунттарына кіру сияқты маңызды әрекеттерді көреді.",
   "settings.highRisk": "Қауіп",
   "settings.failedLogins": "Қателер",
   "settings.support": "Қолдау",
-  "settings.securityHidden": "Қауіпсіздік орталығы сіздің рөліңіз үшін жасырылған",
-  "settings.securityHiddenText": "audit_logs.view рұқсаты немесе иесі/директор рөлі қажет.",
+  "settings.securityHidden":
+    "Қауіпсіздік орталығы сіздің рөліңіз үшін жасырылған",
+  "settings.securityHiddenText":
+    "audit_logs.view рұқсаты немесе иесі/директор рөлі қажет.",
   "settings.riskEvents": "Соңғы қауіп оқиғалары",
   "settings.events": "оқиға",
   "settings.noAuditEvents": "Аудит оқиғалары әзірге жоқ.",
@@ -2280,7 +2650,8 @@ export const kk: Record<string, string> = {
   "settings.noSupportGrants": "Белсенді гранттар жоқ.",
   "settings.quickRepliesEyebrow": "Жылдам жауаптар",
   "settings.quickRepliesTitle": "Жылдам жауап шаблондары",
-  "settings.quickRepliesText": "Inbox composer үшін қысқа жауаптар: менеджер шаблонды таңдайды, мәтін черновикке түседі және автоматты жіберілмейді.",
+  "settings.quickRepliesText":
+    "Inbox composer үшін қысқа жауаптар: менеджер шаблонды таңдайды, мәтін черновикке түседі және автоматты жіберілмейді.",
   "settings.templateTitle": "Атауы",
   "settings.channel": "Арна",
   "settings.channel.all": "Барлығы",
@@ -2297,53 +2668,71 @@ export const kk: Record<string, string> = {
   "settings.enable": "Қосу",
   "settings.disable": "Өшіру",
   "settings.delete": "Жою",
-  "settings.noQuickReplies": "Жылдам жауаптар әзірге жоқ. Сәлемдесу, нақтылау немесе консультацияға жазу мәтінін қосыңыз.",
+  "settings.noQuickReplies":
+    "Жылдам жауаптар әзірге жоқ. Сәлемдесу, нақтылау немесе консультацияға жазу мәтінін қосыңыз.",
   "settings.rolesEyebrow": "Жеңіл рөлдер",
   "settings.rolesTitle": "Күрделі матрицасыз құқықтар",
-  "settings.rolesText": "Бірінші экранда рөлдің бизнес-мағынасы көрсетіледі. Техникалық әрекеттер advanced режимде ғана ашылады.",
+  "settings.rolesText":
+    "Бірінші экранда рөлдің бизнес-мағынасы көрсетіледі. Техникалық әрекеттер advanced режимде ғана ашылады.",
   "settings.hideAdvanced": "Advanced жасыру",
   "settings.openAdvanced": "Advanced ашу",
-  "settings.noRoles": "Рөл пресеттері миграциядан немесе бизнес құрылғаннан кейін пайда болады.",
+  "settings.noRoles":
+    "Рөл пресеттері миграциядан немесе бизнес құрылғаннан кейін пайда болады.",
   "settings.advancedFor": "Advanced: {name}",
-  "settings.advancedText": "Бұл блокты сирек қолданыңыз: топ деңгейін өзгерту осы preset бар барлық қызметкерлердің permissions мәнін өзгертеді.",
-  "settings.roleSummaryNone": "Рөл ештеңе көрмейді. Уақытша бұғаттауға ғана жарайды.",
+  "settings.advancedText":
+    "Бұл блокты сирек қолданыңыз: топ деңгейін өзгерту осы preset бар барлық қызметкерлердің permissions мәнін өзгертеді.",
+  "settings.roleSummaryNone":
+    "Рөл ештеңе көрмейді. Уақытша бұғаттауға ғана жарайды.",
   "settings.roleSummary": "Қолжетім: {names}.",
   "settings.accessGroup.sales": "Сату",
-  "settings.accessGroup.sales.text": "Өтінімдер, мәмілелер және коммерциялық жұмыс.",
+  "settings.accessGroup.sales.text":
+    "Өтінімдер, мәмілелер және коммерциялық жұмыс.",
   "settings.accessGroup.clients": "Клиенттер",
-  "settings.accessGroup.clients.text": "Клиент карточкалары және клиент базасы.",
+  "settings.accessGroup.clients.text":
+    "Клиент карточкалары және клиент базасы.",
   "settings.accessGroup.chats": "Чаттар",
   "settings.accessGroup.chats.text": "Диалогтар, inbox және клиент жауаптары.",
   "settings.accessGroup.calendar": "Күнтізбе",
   "settings.accessGroup.calendar.text": "Жазбалар, кесте және қызметтер.",
   "settings.accessGroup.tasks": "Тапсырмалар",
-  "settings.accessGroup.tasks.text": "Тапсырмалар, еске салулар және follow-up.",
+  "settings.accessGroup.tasks.text":
+    "Тапсырмалар, еске салулар және follow-up.",
   "settings.accessGroup.analytics": "Аналитика",
-  "settings.accessGroup.analytics.text": "Есептер, команда және бизнес көрсеткіштері.",
+  "settings.accessGroup.analytics.text":
+    "Есептер, команда және бизнес көрсеткіштері.",
   "settings.accessGroup.settings": "Баптаулар",
-  "settings.accessGroup.settings.text": "Бизнес, қызметтер, ресурстар және график.",
+  "settings.accessGroup.settings.text":
+    "Бизнес, қызметтер, ресурстар және график.",
   "settings.accessGroup.export": "Экспорт",
   "settings.accessGroup.export.text": "Деректерді түсіру және дайындау.",
   "settings.accessGroup.security": "Қауіпсіздік",
   "settings.accessGroup.security.text": "Команда, рөлдер және қолжетім аудиті.",
   "settings.operationsEyebrow": "Операциялық баптау",
   "settings.operationsTitle": "Қызметтер, ресурстар және график",
-  "settings.operationsText": "Бұл бөлімдер негізгі мәзірден жасырылған, бірақ бизнес баптауының бір орталығы ретінде осында қолжетімді.",
+  "settings.operationsText":
+    "Бұл бөлімдер негізгі мәзірден жасырылған, бірақ бизнес баптауының бір орталығы ретінде осында қолжетімді.",
   "settings.operations.services.title": "Қызметтер",
-  "settings.operations.services.text": "Қызмет атауы, ұзақтығы, бағасы және белсенділігі.",
+  "settings.operations.services.text":
+    "Қызмет атауы, ұзақтығы, бағасы және белсенділігі.",
   "settings.operations.resources.title": "Ресурстар",
-  "settings.operations.resources.text": "Жазбаға арналған қызметкерлер, кабинеттер, залдар, бокстар және жабдық.",
+  "settings.operations.resources.text":
+    "Жазбаға арналған қызметкерлер, кабинеттер, залдар, бокстар және жабдық.",
   "settings.operations.working-hours.title": "Жұмыс графигі",
-  "settings.operations.working-hours.text": "Бизнес пен жеке ресурстардың жұмыс уақыты.",
+  "settings.operations.working-hours.text":
+    "Бизнес пен жеке ресурстардың жұмыс уақыты.",
   "settings.operations.orderTitle": "Ұсынылатын рет",
-  "settings.operations.orderStep1": "1. Қызметтерді қосыңыз: жазбаның ұзақтығы мен бағасы солар бойынша есептеледі.",
-  "settings.operations.orderStep2": "2. Жазба нақты ресурсқа байланысты болса, мамандарды, кабинеттерді немесе жұмыс орындарын қосыңыз.",
-  "settings.operations.orderStep3": "3. Жалпы кестені баптаңыз, ал жеке апталарды тек шынымен қажет жерде қосыңыз.",
+  "settings.operations.orderStep1":
+    "1. Қызметтерді қосыңыз: жазбаның ұзақтығы мен бағасы солар бойынша есептеледі.",
+  "settings.operations.orderStep2":
+    "2. Жазба нақты ресурсқа байланысты болса, мамандарды, кабинеттерді немесе жұмыс орындарын қосыңыз.",
+  "settings.operations.orderStep3":
+    "3. Жалпы кестені баптаңыз, ал жеке апталарды тек шынымен қажет жерде қосыңыз.",
   "settings.openSection": "Бөлімді ашу",
   "settings.schedulingCenter": "Кесте орталығы",
   "settings.dataToolsEyebrow": "Импорт және экспорт",
   "settings.dataToolsTitle": "Excel, amoCRM немесе Bitrix24-тен көшу",
-  "settings.dataToolsText": "Импорт деректерді үнсіз жасамайды: алдымен mapping preview, ықтимал дубльдер көрсетіледі, содан кейін ие жүктеуді растайды.",
+  "settings.dataToolsText":
+    "Импорт деректерді үнсіз жасамайды: алдымен mapping preview, ықтимал дубльдер көрсетіледі, содан кейін ие жүктеуді растайды.",
   "settings.dataTool.import": "Файл жүктеу",
   "settings.dataTool.importText": "Дерек жасамас бұрын CSV/XLSX тексеру.",
   "settings.dataTool.export": "Деректерді шығару",
@@ -2351,7 +2740,8 @@ export const kk: Record<string, string> = {
   "settings.dataTool.manual": "Қолмен енгізу",
   "settings.dataTool.manualText": "Интеграциясыз сатылым немесе позиция қосу.",
   "settings.importTitle": "Деректер импорты",
-  "settings.importText": "Клиенттер, сатылымдар және тауар/қызмет анықтамалығы үшін CSV/XLSX. Растау алдында preview, mapping, дубльдер және жол қателері көрсетіледі.",
+  "settings.importText":
+    "Клиенттер, сатылымдар және тауар/қызмет анықтамалығы үшін CSV/XLSX. Растау алдында preview, mapping, дубльдер және жол қателері көрсетіледі.",
   "settings.entity.clients": "Клиенттер",
   "settings.entity.sales": "Сатылымдар",
   "settings.entity.catalog": "Тауарлар/қызметтер",
@@ -2369,19 +2759,23 @@ export const kk: Record<string, string> = {
   "settings.importUpdated": "Жаңартылды",
   "settings.importSkipped": "Өткізілді",
   "settings.importErrors": "Қателер",
-  "settings.importHistoryEmpty": "Импорт тарихы алғашқы файл жүктелгеннен кейін пайда болады.",
+  "settings.importHistoryEmpty":
+    "Импорт тарихы алғашқы файл жүктелгеннен кейін пайда болады.",
   "settings.exportTitle": "Экспорт",
-  "settings.exportText": "Экспорт қолжетім құқықтарын тексеріп, әрекет тарихын сақтайды.",
+  "settings.exportText":
+    "Экспорт қолжетім құқықтарын тексеріп, әрекет тарихын сақтайды.",
   "settings.exportEntity": "Экспорт: {entity}",
   "settings.manualSaleTitle": "Сатылымды қолмен қосу",
-  "settings.manualSaleText": "Қосылымдар әлі жоқ болса, ие сатылымды қолмен енгізе алады. Бұл деректер түсімге қосылады.",
+  "settings.manualSaleText":
+    "Қосылымдар әлі жоқ болса, ие сатылымды қолмен енгізе алады. Бұл деректер түсімге қосылады.",
   "settings.number": "Нөмір",
   "settings.amount": "Сома",
   "settings.client": "Клиент",
   "settings.item": "Позиция",
   "settings.saveSale": "Сатылымды сақтау",
   "settings.catalogTitle": "Тауар немесе қызмет қосу",
-  "settings.catalogText": "Қызметтер CRM анықтамалығына автоматты түседі. Тауарлар болашақ қойма үшін каталог оқиғасы ретінде сақталады.",
+  "settings.catalogText":
+    "Қызметтер CRM анықтамалығына автоматты түседі. Тауарлар болашақ қойма үшін каталог оқиғасы ретінде сақталады.",
   "settings.type": "Түрі",
   "settings.service": "Қызмет",
   "settings.product": "Тауар",
@@ -2391,9 +2785,11 @@ export const kk: Record<string, string> = {
   "settings.saveCatalogItem": "Позицияны сақтау",
   "settings.leadFormsEyebrow": "Өтінім жинау",
   "settings.leadFormsTitle": "Өтінім формалары",
-  "settings.leadFormsText": "Жария формалар клиент пен өтінім жасайды, UTM белгілерін сақтайды, дубльдерді тексереді және жаңа өтінім автоматизациясын іске қосады.",
+  "settings.leadFormsText":
+    "Жария формалар клиент пен өтінім жасайды, UTM белгілерін сақтайды, дубльдерді тексереді және жаңа өтінім автоматизациясын іске қосады.",
   "settings.formInstallTitle": "Сайтқа орнату",
-  "settings.formInstallText": "Кодты көшіріңіз немесе әзірлеушіге беріңіз. Төменде форманың қысқа preview көрсетілген.",
+  "settings.formInstallText":
+    "Кодты көшіріңіз немесе әзірлеушіге беріңіз. Төменде форманың қысқа preview көрсетілген.",
   "settings.copyEmbed": "Кодты көшіру",
   "settings.noLeadFormsTitle": "Формалар әлі жоқ",
   "settings.formPreviewTitle": "Бірінші форма осылай көрінеді",
@@ -2402,7 +2798,8 @@ export const kk: Record<string, string> = {
   "settings.submissions": "жіберілім",
   "settings.paused": "Пауза",
   "settings.embedCode": "Ендіру коды",
-  "settings.noLeadForms": "Формалар әзірге жоқ. Сайт немесе лендинг үшін бірінші форманы жасаңыз.",
+  "settings.noLeadForms":
+    "Формалар әзірге жоқ. Сайт немесе лендинг үшін бірінші форманы жасаңыз.",
   "settings.latestSubmissions": "Соңғы жіберілімдер",
   "settings.lead": "Өтінім",
   "settings.deal": "Мәміле",
@@ -2412,10 +2809,12 @@ export const kk: Record<string, string> = {
   "settings.loading": "Жүктелуде...",
   "settings.noPlan": "Тариф тағайындалмаған",
   "settings.status": "статус",
-  "settings.billingNoSubscription": "Billing foundation қосылған, бірақ бизнеске жазылым әлі жасалмаған.",
+  "settings.billingNoSubscription":
+    "Billing foundation қосылған, бірақ бизнеске жазылым әлі жасалмаған.",
   "settings.paymentsNotConnected": "Төлем қосылмаған",
   "settings.billingReadOnlyTitle": "Тариф көру режимінде",
-  "settings.billingReadOnlyText": "Ағымдағы тариф пен лимиттер көрсетіледі. Онлайн төлем бөлек қауіпсіз қадаммен қосылады, сондықтан мұнда аяқталмаған төлем әрекеттері жоқ.",
+  "settings.billingReadOnlyText":
+    "Ағымдағы тариф пен лимиттер көрсетіледі. Онлайн төлем бөлек қауіпсіз қадаммен қосылады, сондықтан мұнда аяқталмаған төлем әрекеттері жоқ.",
   "settings.billingPaymentsTitle": "Шоттар және төлем",
   "settings.billingEmail": "Шоттарға арналған email",
   "settings.paymentMethod": "Төлем әдісі",
@@ -2428,7 +2827,8 @@ export const kk: Record<string, string> = {
   "settings.invoiceAddress": "Заңды мекенжай",
   "settings.saveBilling": "Биллингті сақтау",
   "settings.planTitle": "Тариф",
-  "settings.planChangeText": "Тариф ауыстыру сұрау ретінде сақталады, сонда қолдау төлем мен лимиттерді тексере алады.",
+  "settings.planChangeText":
+    "Тариф ауыстыру сұрау ретінде сақталады, сонда қолдау төлем мен лимиттерді тексере алады.",
   "settings.newPlan": "Жаңа тариф",
   "settings.requestPlanChange": "Тариф ауыстыруды сұрау",
   "settings.requestedPlan": "Тариф ауыстыру сұралды #{id}",
@@ -2437,10 +2837,12 @@ export const kk: Record<string, string> = {
   "settings.cancelSubscription": "Болдырмау",
   "settings.usageEyebrow": "Қолдану",
   "settings.usageTitle": "Лимиттер және қолдану",
-  "settings.usageText": "Мұнда пайдаланушылар, хабарламалар, диалогтар және автоматизациялар қанша қолданылғаны көрінеді.",
+  "settings.usageText":
+    "Мұнда пайдаланушылар, хабарламалар, диалогтар және автоматизациялар қанша қолданылғаны көрінеді.",
   "settings.limitReached": "Лимитке жетті",
   "settings.remaining": "Қалды: {count}",
-  "settings.noUsage": "Статистика алғашқы хабарламалар, диалогтар және ассистент сұрауларынан кейін пайда болады.",
+  "settings.noUsage":
+    "Статистика алғашқы хабарламалар, диалогтар және ассистент сұрауларынан кейін пайда болады.",
   "settings.metric.ai_requests": "AI-сұраулар",
   "settings.metric.bot_messages": "Бот хабарламалары",
   "settings.metric.users": "Пайдаланушылар",
@@ -2453,9 +2855,12 @@ export const kk: Record<string, string> = {
   "settings.monthPrice": "{amount} ₸/ай",
   "settings.customFieldsEyebrow": "Қосымша өрістер",
   "settings.customFieldsTitle": "CRM қосымша өрістері",
-  "settings.customFieldsText": "Күрделі баптаусыз клиент, өтінім, мәміле немесе жазба карточкасына өріс қосыңыз.",
-  "settings.customFieldsGuardTitle": "Команда нақты қолданатын өрістерді ғана қосыңыз",
-  "settings.customFieldsGuardText": "Артық өрістер карточкаларды күрделендіріп, жұмыс жылдамдығын төмендетеді. Бір өрістен бастап, сценарийді тексеріп, содан кейін құрылымды кеңейтіңіз.",
+  "settings.customFieldsText":
+    "Күрделі баптаусыз клиент, өтінім, мәміле немесе жазба карточкасына өріс қосыңыз.",
+  "settings.customFieldsGuardTitle":
+    "Команда нақты қолданатын өрістерді ғана қосыңыз",
+  "settings.customFieldsGuardText":
+    "Артық өрістер карточкаларды күрделендіріп, жұмыс жылдамдығын төмендетеді. Бір өрістен бастап, сценарийді тексеріп, содан кейін құрылымды кеңейтіңіз.",
   "settings.customFieldSummary": "{entity} · {type}",
   "settings.customFieldRequired": "Міндетті",
   "settings.customFieldActive": "Белсенді",
@@ -2474,7 +2879,8 @@ export const kk: Record<string, string> = {
   "settings.customFieldType.url": "Сілтеме",
   "settings.technicalDetails": "Техникалық мәліметтер",
   "settings.developerTitle": "API және оқиғалар",
-  "settings.developerText": "Бұл бөлім тек интеграциялар мен әзірлеушілерге керек. Күнделікті интерфейсті ауырлатпау үшін әдеттегі командадан кеңейтілген баптауларда жасырылған.",
+  "settings.developerText":
+    "Бұл бөлім тек интеграциялар мен әзірлеушілерге керек. Күнделікті интерфейсті ауырлатпау үшін әдеттегі командадан кеңейтілген баптауларда жасырылған.",
   "settings.noIp": "IP сақталмаған",
   "settings.auditEventTitle": "{action}: {entity}",
   "settings.auditAction.create": "Жасау",
@@ -2496,7 +2902,8 @@ export const kk: Record<string, string> = {
   "settings.loginStatus.failed": "Қате",
   "settings.entity": "Нысан",
   "settings.options": "Нұсқалар",
-  "settings.noCustomFields": "Қосымша өрістер әзірге жоқ. Клиент үшін бір өрістен бастаңыз.",
+  "settings.noCustomFields":
+    "Қосымша өрістер әзірге жоқ. Клиент үшін бір өрістен бастаңыз.",
   "businessForm.name": "Атауы",
   "businessForm.slugRequired": "Slug енгізіңіз",
   "businessForm.type": "Бизнес бағыты",
@@ -2507,9 +2914,11 @@ export const kk: Record<string, string> = {
   "businessForm.save": "Баптауларды сақтау",
   "leadForm.selectClientError": "Клиентті таңдаңыз",
   "leadForm.needClientTitle": "Алдымен клиентті қосыңыз",
-  "leadForm.needClientText": "Өтінім кейін жазба, тапсырма және байланыс тарихын құру үшін адамға немесе компанияға байланысуы керек.",
+  "leadForm.needClientText":
+    "Өтінім кейін жазба, тапсырма және байланыс тарихын құру үшін адамға немесе компанияға байланысуы керек.",
   "leadForm.serviceLaterTitle": "Қызметті кейін қосуға болады",
-  "leadForm.serviceLaterText": "Бірақ жазба мен бос слоттар үшін қызмет керек: ұзақтығы және сұраныс аналитикасы сол арқылы есептеледі.",
+  "leadForm.serviceLaterText":
+    "Бірақ жазба мен бос слоттар үшін қызмет керек: ұзақтығы және сұраныс аналитикасы сол арқылы есептеледі.",
   "leadForm.relatedTitle": "Ұқсас клиент немесе белсенді тарих бар",
   "leadForm.relatedCount": "Таңдалған клиентте өтінімдер бар: {count}.",
   "leadForm.relatedText": "Жаңа өтінім жасамас бұрын тарихты тексеріңіз.",
@@ -2540,14 +2949,17 @@ export const kk: Record<string, string> = {
   "resources.nameRequired": "Ресурс атауын енгізіңіз",
   "services.nameRequired": "Қызмет атауын енгізіңіз",
   "aiAssistant.title": "ЖИ көмекші",
-  "aiAssistant.description": "Операциялық көмекші ағымдағы бизнес контексін қолданады: өтінімдер, клиенттер, жазбалар және білім базасы.",
+  "aiAssistant.description":
+    "Операциялық көмекші ағымдағы бизнес контексін қолданады: өтінімдер, клиенттер, жазбалар және білім базасы.",
   "aiNavigator.title": "ЖИ-Навигатор",
-  "aiNavigator.description": "Ақылды бизнес-сигналдар жүйесі: тек осы кабинет деректерін талдап, неге назар аудару керегін көрсетеді.",
+  "aiNavigator.description":
+    "Ақылды бизнес-сигналдар жүйесі: тек осы кабинет деректерін талдап, неге назар аудару керегін көрсетеді.",
   "aiNavigator.refreshBrief": "Сводканы жаңарту",
   "aiNavigator.todayBrief": "Бүгінгі AI-сводка",
   "aiNavigator.businessUnderControl": "Бизнесіңіз бақылауда.",
   "aiNavigator.workspaceSignals": "Кабинет сигналдары",
-  "aiNavigator.factBasedNotice": "Навигатор ойдан шығармайды: тек осы кабинеттің өтінімдері, клиенттері, тапсырмалары, мәмілелері, диалогтары және қосылған деректерін қолданады.",
+  "aiNavigator.factBasedNotice":
+    "Навигатор ойдан шығармайды: тек осы кабинеттің өтінімдері, клиенттері, тапсырмалары, мәмілелері, диалогтары және қосылған деректерін қолданады.",
   "aiNavigator.generatedFromCabinet": "Кабинет деректері бойынша жасалды",
   "aiNavigator.metric.leadsToday": "Бүгінгі өтінімдер",
   "aiNavigator.metric.appointments": "Бүгінгі жазбалар",
@@ -2556,14 +2968,22 @@ export const kk: Record<string, string> = {
   "aiNavigator.summaryEyebrow": "Қысқаша",
   "aiNavigator.summaryTitle": "Бүгін не болып жатыр",
   "aiNavigator.noExternalData": "Сыртқы болжамсыз",
-  "aiNavigator.summary.leadsToday": "Бүгін құрылған өтінімдер: {count}. Өңдеу жылдамдығын және өтінім көзін тексеріңіз.",
-  "aiNavigator.summary.noNewLeads": "Бүгін әзірге жаңа өтінім жоқ. Әдетте өтінім болса, тарту арналарын тексеріңіз.",
-  "aiNavigator.summary.appointmentsToday": "Бүгінгі белсенді жазбалар: {count}. Команда кесте мен статустарды көруі керек.",
-  "aiNavigator.summary.noAppointments": "Бүгінге белсенді жазба жоқ. Кесте жүктемесі бойынша қорытындыға дерек аз.",
-  "aiNavigator.summary.overdueTasks": "Мерзімі өткен тапсырмалар: {count}. Бұл клиенттерді өңдеу жылдамдығына әсер етеді.",
-  "aiNavigator.summary.noOverdueTasks": "Мерзімі өткен тапсырма жоқ. Операциялық контур тыныш көрінеді.",
-  "aiNavigator.summary.staleLeads": "2 сағаттан көп қозғалыссыз өтінімдер: {count}. Алдымен соларды өңдеу керек.",
-  "aiNavigator.summary.noStaleLeads": "2 сағаттан көп тұрып қалған айқын өтінім жоқ.",
+  "aiNavigator.summary.leadsToday":
+    "Бүгін құрылған өтінімдер: {count}. Өңдеу жылдамдығын және өтінім көзін тексеріңіз.",
+  "aiNavigator.summary.noNewLeads":
+    "Бүгін әзірге жаңа өтінім жоқ. Әдетте өтінім болса, тарту арналарын тексеріңіз.",
+  "aiNavigator.summary.appointmentsToday":
+    "Бүгінгі белсенді жазбалар: {count}. Команда кесте мен статустарды көруі керек.",
+  "aiNavigator.summary.noAppointments":
+    "Бүгінге белсенді жазба жоқ. Кесте жүктемесі бойынша қорытындыға дерек аз.",
+  "aiNavigator.summary.overdueTasks":
+    "Мерзімі өткен тапсырмалар: {count}. Бұл клиенттерді өңдеу жылдамдығына әсер етеді.",
+  "aiNavigator.summary.noOverdueTasks":
+    "Мерзімі өткен тапсырма жоқ. Операциялық контур тыныш көрінеді.",
+  "aiNavigator.summary.staleLeads":
+    "2 сағаттан көп қозғалыссыз өтінімдер: {count}. Алдымен соларды өңдеу керек.",
+  "aiNavigator.summary.noStaleLeads":
+    "2 сағаттан көп тұрып қалған айқын өтінім жоқ.",
   "aiNavigator.aiInterpretation": "Фактілер бойынша AI-түсіндіру",
   "aiNavigator.attentionEyebrow": "Сигналдар",
   "aiNavigator.attentionTitle": "Неге назар аудару керек",
@@ -2575,57 +2995,81 @@ export const kk: Record<string, string> = {
   "aiNavigator.openIntegrations": "Деректерді қосу",
   "aiNavigator.openDashboard": "Басты бетке",
   "aiNavigator.insight.leadDrop.title": "Өтінімдер {percent}% азайды",
-  "aiNavigator.insight.leadDrop.text": "Бүгін: {today}, кеше: {yesterday}. Бұл нарықтық болжам емес, осы кабинеттегі факт.",
+  "aiNavigator.insight.leadDrop.text":
+    "Бүгін: {today}, кеше: {yesterday}. Бұл нарықтық болжам емес, осы кабинеттегі факт.",
   "aiNavigator.insight.staleLeads.title": "{count} өтінім жауап күтуде",
-  "aiNavigator.insight.staleLeads.text": "new/in_progress статусындағы өтінімдер 2 сағаттан көп қозғалыссыз тұр.",
+  "aiNavigator.insight.staleLeads.text":
+    "new/in_progress статусындағы өтінімдер 2 сағаттан көп қозғалыссыз тұр.",
   "aiNavigator.insight.handoff.title": "{count} диалог адамды қажет етеді",
-  "aiNavigator.insight.handoff.text": "Клиенттер жауап күтуде немесе бот диалогты менеджерге берді.",
+  "aiNavigator.insight.handoff.text":
+    "Клиенттер жауап күтуде немесе бот диалогты менеджерге берді.",
   "aiNavigator.insight.overdueTasks.title": "{count} мерзімі өткен тапсырма",
-  "aiNavigator.insight.overdueTasks.text": "Мерзімі өткен тапсырмалар өтінімдер мен мәмілелерді тежейді.",
+  "aiNavigator.insight.overdueTasks.text":
+    "Мерзімі өткен тапсырмалар өтінімдер мен мәмілелерді тежейді.",
   "aiNavigator.insight.stuckDeals.title": "{count} мәміле тұрып қалды",
-  "aiNavigator.insight.stuckDeals.text": "48 сағаттан көп қозғалыссыз немесе SLA мерзімі өткен ашық мәмілелер бар.",
+  "aiNavigator.insight.stuckDeals.text":
+    "48 сағаттан көп қозғалыссыз немесе SLA мерзімі өткен ашық мәмілелер бар.",
   "aiNavigator.insight.notEnough.title": "Терең қорытындыға дерек жеткіліксіз",
-  "aiNavigator.insight.notEnough.text": "Дерек көздерін қосыңыз, сатуды импорттаңыз немесе өтінім тарихын жинаңыз.",
+  "aiNavigator.insight.notEnough.text":
+    "Дерек көздерін қосыңыз, сатуды импорттаңыз немесе өтінім тарихын жинаңыз.",
   "aiNavigator.insight.stable.title": "Критикалық сигнал жоқ",
-  "aiNavigator.insight.stable.text": "Қолжетімді деректер бойынша айқын тәуекел жоқ. Өтінімдер, тапсырмалар және диалогтарды бақылауды жалғастырыңыз.",
+  "aiNavigator.insight.stable.text":
+    "Қолжетімді деректер бойынша айқын тәуекел жоқ. Өтінімдер, тапсырмалар және диалогтарды бақылауды жалғастырыңыз.",
   "aiNavigator.dataPolicyTitle": "Тек осы бизнес деректері",
-  "aiNavigator.dataPolicyText": "ZANI AI басқа компаниялардың деректерін қолданбайды, интернеттен іздемейді және фактісіз қорытынды жасамайды.",
+  "aiNavigator.dataPolicyText":
+    "ZANI AI басқа компаниялардың деректерін қолданбайды, интернеттен іздемейді және фактісіз қорытынды жасамайды.",
   "aiNavigator.roleHelpTitle": "Рөл бойынша кеңестер",
-  "aiNavigator.roleHelpText": "Иесі бизнес бақылауын көреді, менеджер келесі жұмыс әрекеттерін көреді.",
-  "aiNavigator.ownerHelp": "Иесіне: тәуекелдер, құлдырау, мерзімі өткендер, команда және арналар.",
-  "aiNavigator.managerHelp": "Менеджерге: кімге жауап беру, қай өтінімді өңдеу, нені бірінші жабу.",
+  "aiNavigator.roleHelpText":
+    "Иесі бизнес бақылауын көреді, менеджер келесі жұмыс әрекеттерін көреді.",
+  "aiNavigator.ownerHelp":
+    "Иесіне: тәуекелдер, құлдырау, мерзімі өткендер, команда және арналар.",
+  "aiNavigator.managerHelp":
+    "Менеджерге: кімге жауап беру, қай өтінімді өңдеу, нені бірінші жабу.",
   "aiNavigator.integrationInsightsTitle": "Интеграциялар бойынша инсайттар",
-  "aiNavigator.integrationInsightsText": "AI Analyst интеграциялардың соңғы оқиғаларын оқиды, дереккөздерді көрсетеді және тек расталатын әрекеттерді ұсынады.",
-  "aiNavigator.emptyIntegrationInsights": "Талдауға арналған BusinessEvent әзірге жоқ. Арнаны қосыңыз немесе қосылымдар бетінде деректерді жүктеңіз.",
-  "aiNavigator.noSourceDataState": "Бұл рөлге әзірге бастапқы жазбалар көрінбейді. Арнаны қосыңыз, деректерді импорттаңыз немесе CRM белсенділігін күтіңіз.",
+  "aiNavigator.integrationInsightsText":
+    "AI Analyst интеграциялардың соңғы оқиғаларын оқиды, дереккөздерді көрсетеді және тек расталатын әрекеттерді ұсынады.",
+  "aiNavigator.emptyIntegrationInsights":
+    "Талдауға арналған BusinessEvent әзірге жоқ. Арнаны қосыңыз немесе қосылымдар бетінде деректерді жүктеңіз.",
+  "aiNavigator.noSourceDataState":
+    "Бұл рөлге әзірге бастапқы жазбалар көрінбейді. Арнаны қосыңыз, деректерді импорттаңыз немесе CRM белсенділігін күтіңіз.",
   "aiNavigator.suggestedActions": "Ұсынылған әрекеттер",
   "aiNavigator.prompt.dailySummary": "ZANI бойынша қысқа бизнес-сводка жаса.",
-  "aiNavigator.prompt.factOnly": "Тек төмендегі фактілерді қолдан. Сыртқы деректерді, нарықты, бәсекелестерді немесе расталмаған себептерді қоспа.",
-  "aiNavigator.prompt.insufficientData": "Фактілер жеткіліксіз болса, тура жаз: қорытындыға дерек жеткіліксіз.",
+  "aiNavigator.prompt.factOnly":
+    "Тек төмендегі фактілерді қолдан. Сыртқы деректерді, нарықты, бәсекелестерді немесе расталмаған себептерді қоспа.",
+  "aiNavigator.prompt.insufficientData":
+    "Фактілер жеткіліксіз болса, тура жаз: қорытындыға дерек жеткіліксіз.",
   "aiNavigator.prompt.workspaceFacts": "Кабинет фактілері: {facts}",
   "aiAssistant.chatTitle": "Ассистент чаты",
   "aiAssistant.historyTitle": "Сұраулар тарихы",
   "aiAssistant.historySubtitle": "Осы сессиядағы соңғы сұрақтар",
-  "aiAssistant.emptyHistoryText": "AI-ға алғашқы сұрақ қойғаннан кейін тарих осында пайда болады.",
+  "aiAssistant.emptyHistoryText":
+    "AI-ға алғашқы сұрақ қойғаннан кейін тарих осында пайда болады.",
   "aiAssistant.addMemoryFact": "Жад фактісі",
   "aiAssistant.dailyBrief": "Күндік қысқаша",
   "aiAssistant.dailyBriefPrompt": "CRM бойынша қысқа daily brief жаса.",
   "aiAssistant.defaultQuestion": "Бүгін неге назар аудару керек?",
   "aiAssistant.defaultNextAction": "Әрі қарай не істеу керек?",
-  "aiAssistant.noBusiness": "AI Assistant қолдану үшін баптауларда бизнес жасаңыз.",
-  "aiAssistant.heroFallback": "AI-дан бүгін бизнесте неге назар аудару керегін сұраңыз.",
-  "aiAssistant.mockModeText": "Қазір қауіпсіз тексеру режимі қосылған: деректер сыртқы сервистерге жіберілмейді.",
-  "aiAssistant.liveModeText": "Жауап ағымдағы бизнестің оқшауланған CRM-контексіне негізделген.",
+  "aiAssistant.noBusiness":
+    "AI Assistant қолдану үшін баптауларда бизнес жасаңыз.",
+  "aiAssistant.heroFallback":
+    "AI-дан бүгін бизнесте неге назар аудару керегін сұраңыз.",
+  "aiAssistant.mockModeText":
+    "Қазір қауіпсіз тексеру режимі қосылған: деректер сыртқы сервистерге жіберілмейді.",
+  "aiAssistant.liveModeText":
+    "Жауап ағымдағы бизнестің оқшауланған CRM-контексіне негізделген.",
   "aiAssistant.providerChecking": "AI провайдері тексерілуде...",
-  "aiAssistant.providerStatus": "Провайдер: {provider} · режим: {mode} · модель: {model}",
+  "aiAssistant.providerStatus":
+    "Провайдер: {provider} · режим: {mode} · модель: {model}",
   "aiAssistant.providerUnavailableTitle": "AI провайдері дайын емес",
-  "aiAssistant.providerUnavailableText": "Live жауаптар өшірілген немесе кілт бапталмаған. Тек дереккөзге сүйенген CRM күйлерін және нақты no-data кеңестерін қолданыңыз.",
+  "aiAssistant.providerUnavailableText":
+    "Live жауаптар өшірілген немесе кілт бапталмаған. Тек дереккөзге сүйенген CRM күйлерін және нақты no-data кеңестерін қолданыңыз.",
   "aiAssistant.modeLive": "нақты",
   "aiAssistant.metricNewLeads": "Жаңа өтінімдер",
   "aiAssistant.metricOpenAppointments": "Ашық жазбалар",
   "aiAssistant.metricClients": "Клиенттер",
   "aiAssistant.businessMemory": "Бизнес жады",
-  "aiAssistant.activeFactsSummary": "Белсенді факт: {count}. AI оларды қызметтер, ережелер, сөйлесу тоны және бизнес ерекшеліктері ретінде қолданады.",
+  "aiAssistant.activeFactsSummary":
+    "Белсенді факт: {count}. AI оларды қызметтер, ережелер, сөйлесу тоны және бизнес ерекшеліктері ретінде қолданады.",
   "aiAssistant.questionLabel": "AI сұрағы",
   "aiAssistant.questionPlaceholder": "Мысалы: бүгін кімге жазу керек?",
   "aiAssistant.ask": "AI-дан сұрау",
@@ -2635,14 +3079,17 @@ export const kk: Record<string, string> = {
   "aiAssistant.add": "Қосу",
   "aiAssistant.active": "қосулы",
   "aiAssistant.off": "өшірулі",
-  "aiAssistant.emptyMemoryText": "3-5 факт қосыңыз: клиенттермен қалай сөйлесу, қандай қызметтерді ұсыну, нені уәде етпеу, қашан менеджерге беру.",
+  "aiAssistant.emptyMemoryText":
+    "3-5 факт қосыңыз: клиенттермен қалай сөйлесу, қандай қызметтерді ұсыну, нені уәде етпеу, қашан менеджерге беру.",
   "aiAssistant.taskFlowTitle": "AI -> тапсырма -> күнтізбе",
-  "aiAssistant.taskFlowText": "AI әрекет ұсынады, ал иесі тапсырма жасауды растайды.",
+  "aiAssistant.taskFlowText":
+    "AI әрекет ұсынады, ал иесі тапсырма жасауды растайды.",
   "aiAssistant.actionFallback": "AI ұсынған әрекет",
   "aiAssistant.actionStatus": "Статус: {status} · құрал: {tool}",
   "aiAssistant.taskCreated": "Тапсырма жұмыс тізіміне қосылды. ID: {id}",
   "aiAssistant.createTask": "Тапсырма жасау",
-  "aiAssistant.emptyActionsText": "\"Әрекеттер жасау\" батырмасын басыңыз, AI расталатын тапсырма дайындайды. Растаусыз тапсырма жасалмайды.",
+  "aiAssistant.emptyActionsText":
+    '"Әрекеттер жасау" батырмасын басыңыз, AI расталатын тапсырма дайындайды. Растаусыз тапсырма жасалмайды.',
   "aiAssistant.run": "Іске қосу",
   "aiAssistant.historyMeta": "Жауап #{id} · {mode}",
   "aiAssistant.modeMock": "тест режимі",
@@ -2653,7 +3100,8 @@ export const kk: Record<string, string> = {
   "aiAssistant.namePlaceholder": "Мысалы: Клиентті жазу ережесі",
   "aiAssistant.categoryLabel": "Санат",
   "aiAssistant.contentLabel": "AI нені есте сақтауы керек",
-  "aiAssistant.contentPlaceholder": "Мысалы: клиент баға сұраса, алдымен қызметті және ыңғайлы уақытты нақтылап, кейін жазба ұсыну.",
+  "aiAssistant.contentPlaceholder":
+    "Мысалы: клиент баға сұраса, алдымен қызметті және ыңғайлы уақытты нақтылап, кейін жазба ұсыну.",
   "aiAssistant.useInContext": "AI контексінде қолдану",
   "aiAssistant.saveMemory": "Жадты сақтау",
   "aiAssistant.quick.attention": "Бүгін неге назар аудару керек?",
@@ -2667,20 +3115,26 @@ export const kk: Record<string, string> = {
   "aiAssistant.memory.category.tone": "Сөйлесу тоны",
   "aiAssistant.memory.category.policy": "Ережелер",
   "aiAgents.defaultName": "Zani көмекшісі",
-  "aiAgents.defaultRoleDescription": "Өтінімдерді анықтап, менеджерлерге жылдам жауап беруге көмектесу.",
-  "aiAgents.defaultSystemPrompt": "Қысқа, пайдалы жауап бер және бос емес уақыттарды уәде етпе.",
-  "aiAgents.defaultRules": "Хабарламаларды автоматты түрде жібермеу.\nКүрделі сұрақтарды менеджерге беру.",
-  "aiAgents.defaultEscalation": "Баға дауы\nМедициналық немесе заң сұрағы\nРенжіген клиент",
+  "aiAgents.defaultRoleDescription":
+    "Өтінімдерді анықтап, менеджерлерге жылдам жауап беруге көмектесу.",
+  "aiAgents.defaultSystemPrompt":
+    "Қысқа, пайдалы жауап бер және бос емес уақыттарды уәде етпе.",
+  "aiAgents.defaultRules":
+    "Хабарламаларды автоматты түрде жібермеу.\nКүрделі сұрақтарды менеджерге беру.",
+  "aiAgents.defaultEscalation":
+    "Баға дауы\nМедициналық немесе заң сұрағы\nРенжіген клиент",
   "aiAgents.loading": "ЖИ агенттері жүктелуде...",
   "aiAgents.noBusiness": "ЖИ агенттерін баптау үшін бизнес жасаңыз.",
   "aiAgents.eyebrow": "Агент профильдері",
   "aiAgents.title": "ЖИ агенттері",
-  "aiAgents.description": "AI сату менеджерін жасаңыз: сөйлесу стилін, білімін, арналарын және орындай алатын әрекеттерін баптаңыз.",
+  "aiAgents.description":
+    "AI сату менеджерін жасаңыз: сөйлесу стилін, білімін, арналарын және орындай алатын әрекеттерін баптаңыз.",
   "aiAgents.newProfile": "Жаңа профиль",
   "aiAgents.profiles": "Профильдер",
   "aiAgents.profilesCount": "{count} профиль",
   "aiAgents.emptyTitle": "Профильдер әлі жоқ",
-  "aiAgents.emptyDescription": "Ботқа немесе бүкіл бизнеске алғашқы агент профилін жасаңыз.",
+  "aiAgents.emptyDescription":
+    "Ботқа немесе бүкіл бизнеске алғашқы агент профилін жасаңыз.",
   "aiAgents.businessDefault": "Бизнес бойынша әдепкі",
   "aiAgents.editTitle": "Агент профилін өңдеу",
   "aiAgents.createTitle": "Агент профилін жасау",
@@ -2693,10 +3147,12 @@ export const kk: Record<string, string> = {
   "aiAgents.systemPrompt": "Негізгі нұсқаулық",
   "aiAgents.rules": "Ережелер",
   "aiAgents.escalationRules": "Менеджерге беру ережелері",
-  "aiAgents.toolsPlaceholder": "Агент әрекеттері менеджер растағаннан кейін ғана қосылады.",
+  "aiAgents.toolsPlaceholder":
+    "Агент әрекеттері менеджер растағаннан кейін ғана қосылады.",
   "aiAgents.saveProfile": "Профильді сақтау",
   "aiAgents.createProfile": "Профиль жасау",
-  "aiAgents.note": "Жауап черновигі агенттің белсенді профилі бойынша дайындалады. Автоматты жіберу қосылмайды.",
+  "aiAgents.note":
+    "Жауап черновигі агенттің белсенді профилі бойынша дайындалады. Автоматты жіберу қосылмайды.",
   "aiAgents.profileSuffix": "профиль",
   "aiAgents.defaultNewAgentName": "Жаңа ЖИ агент",
   "aiAgents.section.overview": "Шолу",
@@ -2732,7 +3188,8 @@ export const kk: Record<string, string> = {
   "aiAgents.testTitle": "Агентті тестілеу және іске қосу",
   "aiAgents.showAdvanced": "Кеңейтілгенді көрсету",
   "aiAgents.hideAdvanced": "Кеңейтілгенді жасыру",
-  "aiAgents.sidebarEmpty": "Алғашқы ЖИ агентті жасап, арналарды қосып, мінез-құлқын баптаңыз.",
+  "aiAgents.sidebarEmpty":
+    "Алғашқы ЖИ агентті жасап, арналарды қосып, мінез-құлқын баптаңыз.",
   "aiAgents.firstLaunch": "Алғашқы іске қосу",
   "aiAgents.firstLaunchTitle": "Агентті қадам-қадаммен баптаңыз",
   "aiAgents.openMessages": "Хабарламаларды ашу",
@@ -2741,7 +3198,8 @@ export const kk: Record<string, string> = {
   "aiAgents.agentNamePlaceholder": "Мысалы: сату агенті",
   "aiAgents.createAgent": "Агент жасау",
   "aiAgents.emptyAgentsTitle": "Алғашқы ЖИ агентті жасаңыз",
-  "aiAgents.emptyAgentsText": "Агент клиенттерге жауап беруге, компания білімін қолдануға және күрделі сұрақтарды менеджерге беруге көмектеседі.",
+  "aiAgents.emptyAgentsText":
+    "Агент клиенттерге жауап беруге, компания білімін қолдануға және күрделі сұрақтарды менеджерге беруге көмектеседі.",
   "aiAgents.statusLabel": "Статус",
   "aiAgents.status.active": "Белсенді",
   "aiAgents.status.paused": "Пауза",
@@ -2754,7 +3212,8 @@ export const kk: Record<string, string> = {
   "aiAgents.channelsMetric": "Арналар",
   "aiAgents.messagesMetric": "Хабарламалар",
   "aiAgents.nextSetup": "Келесі қадам",
-  "aiAgents.overviewText": "Агент статусын тексеріп, қажет арналарды қосып, хабарламаларда жауап черновигін тексеріңіз.",
+  "aiAgents.overviewText":
+    "Агент статусын тексеріп, қажет арналарды қосып, хабарламаларда жауап черновигін тексеріңіз.",
   "aiAgents.openChannels": "Арналарды ашу",
   "aiAgents.testMessages": "Хабарламаларды тексеру",
   "aiAgents.generalSettings": "Жалпы баптаулар",
@@ -2762,7 +3221,8 @@ export const kk: Record<string, string> = {
   "aiAgents.pauseAgent": "Паузаға қою",
   "aiAgents.activateAgent": "Белсендіру",
   "aiAgents.instructionTitle": "Агент нұсқаулығы",
-  "aiAgents.instructionText": "Рөл, сөйлесу тоны, ережелер және менеджерге беру шарттары.",
+  "aiAgents.instructionText":
+    "Рөл, сөйлесу тоны, ережелер және менеджерге беру шарттары.",
   "aiAgents.profileName": "Профиль атауы",
   "aiAgents.tone.friendly": "Достық",
   "aiAgents.tone.expert": "Сарапшы",
@@ -2772,64 +3232,82 @@ export const kk: Record<string, string> = {
   "aiAgents.saveBehavior": "Мінез-құлықты сақтау",
   "aiAgents.profileActive": "Профиль белсенді",
   "aiAgents.latestDialog": "Соңғы диалог",
-  "aiAgents.latestDialogText": "Агент клиент контекстін қалай көретінін тексеру.",
+  "aiAgents.latestDialogText":
+    "Агент клиент контекстін қалай көретінін тексеру.",
   "aiAgents.prepareReply": "Дайындау",
   "aiAgents.client": "Клиент",
   "aiAgents.reply": "Жауап",
   "aiAgents.emptyMessage": "Бос хабарлама",
-  "aiAgents.noDialogs": "Диалогтар әлі жоқ. Арнаны қосып, алғашқы хабарламаны жіберіңіз.",
+  "aiAgents.noDialogs":
+    "Диалогтар әлі жоқ. Арнаны қосып, алғашқы хабарламаны жіберіңіз.",
   "aiAgents.draftReply": "Жауап черновигі",
-  "aiAgents.draftReplyEmpty": "Дайындағаннан кейін агенттің жауап черновигі осында пайда болады.",
+  "aiAgents.draftReplyEmpty":
+    "Дайындағаннан кейін агенттің жауап черновигі осында пайда болады.",
   "aiAgents.responseMode": "Жауап режимі",
   "aiAgents.responseMode.quality": "Ең жоғары сапа",
   "aiAgents.responseMode.fast": "Жылдам режим",
   "aiAgents.responseMode.economy": "Үнемді режим",
   "aiAgents.responseFreedom": "Жауап еркіндігі: {value}",
   "aiAgents.control.handoffTitle": "Күрделі сұрақтарды менеджерге беру",
-  "aiAgents.control.handoffText": "Адам қажет болғанда агент жауапты тоқтатады.",
+  "aiAgents.control.handoffText":
+    "Адам қажет болғанда агент жауапты тоқтатады.",
   "aiAgents.control.confirmTitle": "Әрекеттерді растау",
-  "aiAgents.control.confirmText": "Тапсырма, мәміле және маңызды өзгерістер растауды талап етеді.",
+  "aiAgents.control.confirmText":
+    "Тапсырма, мәміле және маңызды өзгерістер растауды талап етеді.",
   "aiAgents.control.privacyTitle": "Ішкі деректерді ашпау",
-  "aiAgents.control.privacyText": "Агент клиентке қызметтік өрістер мен ішкі жазбаларды көрсетпейді.",
+  "aiAgents.control.privacyText":
+    "Агент клиентке қызметтік өрістер мен ішкі жазбаларды көрсетпейді.",
   "aiAgents.control.pipelineTitle": "Өтінімдер және менеджерге беру",
-  "aiAgents.control.pipelineText": "Диалогтан кейін агент не істей алатынын таңдаңыз: клиентті бағалау, өтінім жасау, тапсырма қою немесе мәміле дайындау.",
+  "aiAgents.control.pipelineText":
+    "Диалогтан кейін агент не істей алатынын таңдаңыз: клиентті бағалау, өтінім жасау, тапсырма қою немесе мәміле дайындау.",
   "aiAgents.control.mode": "Диалогтан кейін не істеу керек",
   "aiAgents.control.mode.off": "Өшірулі",
   "aiAgents.control.mode.triage": "Тек өтінішті бағалау",
   "aiAgents.control.mode.leadTask": "Өтінім және тапсырма жасау",
   "aiAgents.control.mode.draftDeal": "Мәміле черновигін дайындау",
   "aiAgents.control.maxReplyChars": "Автожауаптың ең көп ұзындығы",
-  "aiAgents.control.leadConfidence": "Өтінім жасау үшін агент қаншалықты сенімді болуы керек: {value}",
-  "aiAgents.control.dealConfidence": "Мәміле дайындау үшін агент қаншалықты сенімді болуы керек: {value}",
+  "aiAgents.control.leadConfidence":
+    "Өтінім жасау үшін агент қаншалықты сенімді болуы керек: {value}",
+  "aiAgents.control.dealConfidence":
+    "Мәміле дайындау үшін агент қаншалықты сенімді болуы керек: {value}",
   "aiAgents.control.advancedTitle": "Кеңейтілген шектеулер",
-  "aiAgents.control.advancedText": "Әдетте өзгертудің қажеті жоқ. Агент тым көп өтінім жасаса немесе тым ұзақ жауап жазса қолданыңыз.",
+  "aiAgents.control.advancedText":
+    "Әдетте өзгертудің қажеті жоқ. Агент тым көп өтінім жасаса немесе тым ұзақ жауап жазса қолданыңыз.",
   "aiAgents.control.reviewFallbackTitle": "Сенімсіз шешімдерді тексеру",
-  "aiAgents.control.reviewFallbackText": "AI fallback қолданса немесе сенімсіз болса, диалог менеджер тексеруінде қалады.",
+  "aiAgents.control.reviewFallbackText":
+    "AI fallback қолданса немесе сенімсіз болса, диалог менеджер тексеруінде қалады.",
   "aiAgents.control.appointmentTitle": "Жазба жасау",
-  "aiAgents.control.appointmentText": "Агент тек расталған бос слоттан жазба жасай алады.",
+  "aiAgents.control.appointmentText":
+    "Агент тек расталған бос слоттан жазба жасай алады.",
   "aiAgents.control.autoReplyTitle": "Жауапты автоматты жіберу",
-  "aiAgents.control.autoReplyText": "Жауап клиентке автопайплайн шектеулерінен өткеннен кейін ғана жіберіледі.",
+  "aiAgents.control.autoReplyText":
+    "Жауап клиентке автопайплайн шектеулерінен өткеннен кейін ғана жіберіледі.",
   "aiAgents.functions.leadTitle": "Өтінім жасау",
   "aiAgents.functions.leadText": "Агент диалогтан жаңа өтінім ұсына алады.",
   "aiAgents.functions.taskTitle": "Тапсырма жасау",
-  "aiAgents.functions.taskText": "Агент сөйлесуден кейін менеджерге тапсырма ұсына алады.",
+  "aiAgents.functions.taskText":
+    "Агент сөйлесуден кейін менеджерге тапсырма ұсына алады.",
   "aiAgents.functions.dealTitle": "Мәмілені жаңарту",
   "aiAgents.functions.dealText": "Агент мәміленің келесі статусын ұсына алады.",
   "aiAgents.functions.managerTitle": "Менеджерге беру",
-  "aiAgents.functions.managerText": "Агент сценарийді тоқтатып, диалогты адамға бере алады.",
+  "aiAgents.functions.managerText":
+    "Агент сценарийді тоқтатып, диалогты адамға бере алады.",
   "aiAgents.functions.enabled": "Рұқсат",
   "aiAgents.functions.disabled": "Өшірулі",
   "aiAgents.functions.save": "Әрекеттерді сақтау",
   "aiAgents.knowledgeCompany": "Компания білім базасы",
-  "aiAgents.knowledgeCompanyText": "Агент дәлірек жауап беруі үшін фактілерді, ережелерді, FAQ және нұсқаулықтарды қосыңыз.",
+  "aiAgents.knowledgeCompanyText":
+    "Агент дәлірек жауап беруі үшін фактілерді, ережелерді, FAQ және нұсқаулықтарды қосыңыз.",
   "aiAgents.openKnowledge": "Базаны ашу",
   "aiAgents.knowledgeAccess": "Агент қолжетімділігі",
-  "aiAgents.knowledgeAccessText": "Мұнда агентке арналған нақты білім көздерін таңдауға болады.",
+  "aiAgents.knowledgeAccessText":
+    "Мұнда агентке арналған нақты білім көздерін таңдауға болады.",
   "aiAgents.knowledge.add": "Білім қосу",
   "aiAgents.knowledge.active": "Контексте",
   "aiAgents.knowledge.off": "Өшірулі",
   "aiAgents.knowledge.emptyTitle": "Білім базасы бос",
-  "aiAgents.knowledge.emptyText": "Агент жауаптарда қолдануы үшін компания фактілерін, ережелерді, бағаларды, FAQ немесе шектеулерді қосыңыз.",
+  "aiAgents.knowledge.emptyText":
+    "Агент жауаптарда қолдануы үшін компания фактілерін, ережелерді, бағаларды, FAQ немесе шектеулерді қосыңыз.",
   "aiAgents.knowledge.editTitle": "Білімді өңдеу",
   "aiAgents.knowledge.newTitle": "Жаңа білім",
   "aiAgents.knowledge.title": "Атауы",
@@ -2837,26 +3315,36 @@ export const kk: Record<string, string> = {
   "aiAgents.knowledge.content": "Мазмұны",
   "aiAgents.knowledge.useInContext": "Агент контекстінде қолдану",
   "aiAgents.knowledge.template.prices": "Бағалар және қызметтер",
-  "aiAgents.knowledge.template.pricesContent": "Негізгі қызметтерді, бағаларды, бағаға не кіретінін және клиенттен нені нақтылау керегін жазыңыз.",
+  "aiAgents.knowledge.template.pricesContent":
+    "Негізгі қызметтерді, бағаларды, бағаға не кіретінін және клиенттен нені нақтылау керегін жазыңыз.",
   "aiAgents.knowledge.template.schedule": "Кесте және мекенжай",
-  "aiAgents.knowledge.template.scheduleContent": "Мекенжайды, жұмыс уақытын, байланыс тәсілдерін, қалай жетуге болатынын және менеджер қашан жауап беретінін жазыңыз.",
+  "aiAgents.knowledge.template.scheduleContent":
+    "Мекенжайды, жұмыс уақытын, байланыс тәсілдерін, қалай жетуге болатынын және менеджер қашан жауап беретінін жазыңыз.",
   "aiAgents.knowledge.template.booking": "Жазылу ережелері",
-  "aiAgents.knowledge.template.bookingContent": "Клиент қалай жазылатынын, нені нақтылау керегін, қашан алдын ала төлем керек екенін және жазбаны қалай ауыстыруға болатынын сипаттаңыз.",
+  "aiAgents.knowledge.template.bookingContent":
+    "Клиент қалай жазылатынын, нені нақтылау керегін, қашан алдын ала төлем керек екенін және жазбаны қалай ауыстыруға болатынын сипаттаңыз.",
   "aiAgents.knowledge.template.faq": "Жиі сұрақтар",
-  "aiAgents.knowledge.template.faqContent": "Клиенттердің жиі сұрақтарын және агент қолданатын қысқа дұрыс жауаптарды қосыңыз.",
+  "aiAgents.knowledge.template.faqContent":
+    "Клиенттердің жиі сұрақтарын және агент қолданатын қысқа дұрыс жауаптарды қосыңыз.",
   "aiAgents.dataSources": "Агент дереккөздері",
-  "aiAgents.dataSourcesText": "Қосылымдар интеграциялар бөлімінде бапталады, ал мұнда агент қосылған деректерге қол жеткізеді.",
+  "aiAgents.dataSourcesText":
+    "Қосылымдар интеграциялар бөлімінде бапталады, ал мұнда агент қосылған деректерге қол жеткізеді.",
   "aiAgents.openIntegrations": "Қосылымдарды ашу",
   "aiAgents.integrations.crmTitle": "Клиенттер мен мәмілелер",
-  "aiAgents.integrations.crmText": "Клиенттер, өтінімдер, тапсырмалар және мәмілелер деректері.",
+  "aiAgents.integrations.crmText":
+    "Клиенттер, өтінімдер, тапсырмалар және мәмілелер деректері.",
   "aiAgents.integrations.stockTitle": "Қойма және каталог",
-  "aiAgents.integrations.stockText": "Қосылған көздерден қалдықтар, бағалар және тауарлар.",
+  "aiAgents.integrations.stockText":
+    "Қосылған көздерден қалдықтар, бағалар және тауарлар.",
   "aiAgents.integrations.marketplacesTitle": "Маркетплейстер",
-  "aiAgents.integrations.marketplacesText": "Kaspi, Ozon, Wildberries тапсырыстары мен оқиғалары.",
+  "aiAgents.integrations.marketplacesText":
+    "Kaspi, Ozon, Wildberries тапсырыстары мен оқиғалары.",
   "aiAgents.integrations.calendarTitle": "Күнтізбе",
-  "aiAgents.integrations.calendarText": "Бос уақыттар, жазбалар және менеджер тапсырмалары.",
+  "aiAgents.integrations.calendarText":
+    "Бос уақыттар, жазбалар және менеджер тапсырмалары.",
   "aiAgents.channel.website": "Сайт",
-  "aiAgents.channel.websiteText": "Агентті сайттағы формаға немесе чатқа қосыңыз.",
+  "aiAgents.channel.websiteText":
+    "Агентті сайттағы формаға немесе чатқа қосыңыз.",
   "aiAgents.channel.telegramText": "Агентті Telegram-ға қосыңыз.",
   "aiAgents.channel.whatsappText": "Агентті WhatsApp-қа қосыңыз.",
   "aiAgents.channel.instagramText": "Агентті Instagram-ға қосыңыз.",
@@ -2867,75 +3355,129 @@ export const kk: Record<string, string> = {
   "aiAgents.connection": "Қосылу",
   "aiAgents.connectionTitle": "Қосылу: {title}",
   "aiAgents.websiteSetupTitle": "Сайт арнасы",
-  "aiAgents.websiteSetupText": "Чат {name} агентін сайтқа қосып, кіріс өтініштерді хабарламаларға жібереді.",
+  "aiAgents.websiteSetupText":
+    "Чат {name} агентін сайтқа қосып, кіріс өтініштерді хабарламаларға жібереді.",
   "aiAgents.websiteSetupEmpty": "Орнату кодын алу үшін сайт арнасын қосыңыз.",
   "aiAgents.qualityAdvanced": "Қосымша: жауап жылдамдығы мен сапасы",
-  "aiAgents.qualityAdvancedText": "Көп жағдайда өзгертудің қажеті жоқ. Тек жылдамырақ немесе сапалырақ режим керек болса қолданыңыз.",
+  "aiAgents.qualityAdvancedText":
+    "Көп жағдайда өзгертудің қажеті жоқ. Тек жылдамырақ немесе сапалырақ режим керек болса қолданыңыз.",
   "aiAgents.launchChecklist": "Іске қосуға дайындық",
-  "aiAgents.launchChecklistText": "Агентті қоспас бұрын профильді, арнаны, білімді және тест жауабын тексеріңіз.",
+  "aiAgents.launchChecklistText":
+    "Агентті қоспас бұрын профильді, арнаны, білімді және тест жауабын тексеріңіз.",
   "aiAgents.launchControlTitle": "Агентті іске қосу",
-  "aiAgents.launchControlText": "Профильді, білімді, арнаны және тест диалогын тексергеннен кейін агентті қосыңыз.",
+  "aiAgents.launchControlText":
+    "Профильді, білімді, арнаны және тест диалогын тексергеннен кейін агентті қосыңыз.",
   "aiAgents.checklist.profile": "Профиль толтырылған",
-  "aiAgents.checklist.profileText": "Агент рөлін, тонын және менеджерге беру ережелерін біледі.",
+  "aiAgents.checklist.profileText":
+    "Агент рөлін, тонын және менеджерге беру ережелерін біледі.",
   "aiAgents.checklist.channel": "Арна қосылған",
-  "aiAgents.checklist.channelText": "Клиенттер сайт немесе мессенджер арқылы агентке жаза алады.",
+  "aiAgents.checklist.channelText":
+    "Клиенттер сайт немесе мессенджер арқылы агентке жаза алады.",
   "aiAgents.checklist.knowledge": "Білім қосылған",
-  "aiAgents.checklist.knowledgeText": "Агент ойдан шығармай, компания фактілеріне сүйеніп жауап береді.",
+  "aiAgents.checklist.knowledgeText":
+    "Агент ойдан шығармай, компания фактілеріне сүйеніп жауап береді.",
   "aiAgents.checklist.test": "Жауап тексерілген",
-  "aiAgents.checklist.testText": "Іске қоспас бұрын кемінде бір нақты клиент сұрағын тексеріңіз.",
+  "aiAgents.checklist.testText":
+    "Іске қоспас бұрын кемінде бір нақты клиент сұрағын тексеріңіз.",
   "aiAgents.onboarding.profile.helpTitle": "Алдымен менеджер бейнесін жасаңыз",
-  "aiAgents.onboarding.profile.helpText": "Аты, тілі, сөйлесу стилі және ережелері әр жауапқа әсер етеді.",
-  "aiAgents.onboarding.profile.recommendation": "Ұсыныс: күрделі промпт орнына достық сатылым тонын және қысқа ережелерді таңдаңыз.",
-  "aiAgents.onboarding.channels.helpTitle": "Агент клиенттермен қайда сөйлесетінін таңдаңыз",
-  "aiAgents.onboarding.channels.helpText": "Арналар агентті сайтқа және мессенджерлерге қосады. Барлық кіріс диалогтар ортақ Inbox-қа түседі.",
-  "aiAgents.onboarding.channels.recommendation": "Ұсыныс: тест үшін алдымен сайтты немесе Telegram-ды, кейін WhatsApp пен Instagram-ды қосыңыз.",
-  "aiAgents.onboarding.knowledge.helpTitle": "Агент сатылымда қолданатын білімді қосыңыз",
-  "aiAgents.onboarding.knowledge.helpText": "Агентке нақты фактілер керек: қызметтер, бағалар, кесте, мекенжай, жазылу ережелері, шектеулер және жиі сұрақтар.",
-  "aiAgents.onboarding.knowledge.recommendation": "Ұсыныс: бір үлкен нұсқаулық орнына 5-7 қысқа білім жазбасынан бастаңыз.",
-  "aiAgents.onboarding.actions.helpTitle": "Агент менеджерсіз не істей алатынын анықтаңыз",
-  "aiAgents.onboarding.actions.helpText": "Бұл баптаулар өтінім, тапсырма, мәміле, жазба және автожауапты басқарады.",
-  "aiAgents.onboarding.actions.recommendation": "Ұсыныс: алдымен өтінім мен тапсырманы қосыңыз; мәміле мен автожауапты тесттен кейін қосыңыз.",
+  "aiAgents.onboarding.profile.helpText":
+    "Аты, тілі, сөйлесу стилі және ережелері әр жауапқа әсер етеді.",
+  "aiAgents.onboarding.profile.recommendation":
+    "Ұсыныс: күрделі промпт орнына достық сатылым тонын және қысқа ережелерді таңдаңыз.",
+  "aiAgents.onboarding.channels.helpTitle":
+    "Агент клиенттермен қайда сөйлесетінін таңдаңыз",
+  "aiAgents.onboarding.channels.helpText":
+    "Арналар агентті сайтқа және мессенджерлерге қосады. Барлық кіріс диалогтар ортақ Inbox-қа түседі.",
+  "aiAgents.onboarding.channels.recommendation":
+    "Ұсыныс: тест үшін алдымен сайтты немесе Telegram-ды, кейін WhatsApp пен Instagram-ды қосыңыз.",
+  "aiAgents.onboarding.knowledge.helpTitle":
+    "Агент сатылымда қолданатын білімді қосыңыз",
+  "aiAgents.onboarding.knowledge.helpText":
+    "Агентке нақты фактілер керек: қызметтер, бағалар, кесте, мекенжай, жазылу ережелері, шектеулер және жиі сұрақтар.",
+  "aiAgents.onboarding.knowledge.recommendation":
+    "Ұсыныс: бір үлкен нұсқаулық орнына 5-7 қысқа білім жазбасынан бастаңыз.",
+  "aiAgents.onboarding.actions.helpTitle":
+    "Агент менеджерсіз не істей алатынын анықтаңыз",
+  "aiAgents.onboarding.actions.helpText":
+    "Бұл баптаулар өтінім, тапсырма, мәміле, жазба және автожауапты басқарады.",
+  "aiAgents.onboarding.actions.recommendation":
+    "Ұсыныс: алдымен өтінім мен тапсырманы қосыңыз; мәміле мен автожауапты тесттен кейін қосыңыз.",
   "aiAgents.onboarding.test.helpTitle": "Іске қоспас бұрын агентті тексеріңіз",
-  "aiAgents.onboarding.test.helpText": "Тест агент диалогты қалай көретінін және қандай жауап дайындайтынын көрсетеді.",
-  "aiAgents.onboarding.test.recommendation": "Ұсыныс: баға, жазылу, жеңілдік және ренжіген клиент сұрақтарын тексеріңіз.",
-  "aiAgents.hint.agentName": "Бұл кабинеттегі AI менеджер аты. Командаға агенттің сатылымға не қолдауға жауапты екенін түсінуге көмектеседі. Ұсыныс: рөл бойынша атаңыз, мысалы «Сату агенті».",
-  "aiAgents.hint.agentLanguage": "Бұл негізгі жауап тілі. Агент бір стильді сақтайды. Ұсыныс: клиенттердің көбі қолданатын тілді таңдаңыз.",
-  "aiAgents.hint.agentStatus": "«Белсенді» агентті қосады, «Пауза» тоқтатады. Қоспас бұрын жауаптарды және білімді тексеріңіз.",
-  "aiAgents.hint.profileName": "Мінез-құлық профилінің ішкі атауы. Бір сценарий болса, әдепкі атауды қалдыруға болады.",
-  "aiAgents.hint.tone": "Тон жауап стилін анықтайды. Сатылым үшін «Достық» немесе «Сату», қолдау үшін «Қолдау» таңдаңыз.",
-  "aiAgents.hint.role": "Агент кім екенін қарапайым тілмен жазыңыз: сату менеджері, жазба әкімшісі немесе қолдау көмекшісі.",
-  "aiAgents.hint.systemPrompt": "Барлық жауапқа арналған негізгі нұсқаулық. Ұзақ техникалық промпт емес, 2-4 түсінікті ереже жазыңыз.",
-  "aiAgents.hint.rules": "Агент әрдайым сақтайтын ережелер: жеңілдікті уәде етпеу, қызметті нақтылау, қысқа жауап беру.",
-  "aiAgents.hint.escalation": "Агент адамды қашан шақырады: шағым, баға дауы, заң сұрағы немесе ерекше өтініш.",
-  "aiAgents.hint.responseMode": "Сапа мен жылдамдық балансын таңдаңыз. Бастау үшін жылдам немесе сапалы режим жеткілікті.",
-  "aiAgents.hint.temperature": "Мән жоғары болса, жауап еркінірек болады. Сатылым үшін тұрақты жауапқа 0.3-0.5 ұсынамыз.",
-  "aiAgents.hint.pipelineMode": "Режим агент CRM-де диалогпен не істейтінін анықтайды. Бастау үшін «Өтінім және тапсырма» қауіпсіз.",
-  "aiAgents.hint.maxReplyChars": "Автожауап ұзындығын шектейді. Ұсыныс: клиентке қысқа жауап үшін 500-900 таңба.",
-  "aiAgents.hint.leadConfidence": "Өтінім жасауға ең төмен сенімділік. Шек жоғары болса, автоматты қателер азаяды.",
-  "aiAgents.hint.dealConfidence": "Мәміле черновигіне ең төмен сенімділік. Ұсыныс: өтінім шегінен жоғары ұстаңыз.",
-  "aiAgents.hint.launchReady": "Негізгі деректер дайын. Қоспас бұрын агентке 2-3 нақты клиент сұрағын қойып көріңіз.",
-  "aiAgents.hint.launchNotReady": "Іске қоспас бұрын білім қосып, кемінде бір белсенді арнаны қосыңыз.",
-  "aiAgents.hint.tool.create_lead": "Әдетте қосулы болсын: өтінім клиент қызығушылығын бекітеді.",
-  "aiAgents.hint.tool.create_task": "Командаға пайдалы: маңызды диалогтан кейін менеджерге тапсырма жасайды.",
-  "aiAgents.hint.tool.create_deal": "Сату кезеңдері түсінікті және агент нақты сұрақтарда тексерілгенде қосыңыз.",
-  "aiAgents.hint.tool.handoff_to_manager": "Қосулы қалдырыңыз: агент күрделі диалогты адамға бере алады.",
-  "aiAgents.hint.channel.website": "Клиенттер сайтта өтініш қалдырса, бірінші қосыңыз. Бұл ең оңай тест арнасы.",
-  "aiAgents.hint.channel.telegram": "Клиенттер Telegram-да жиі жазса қосыңыз. Bot token қажет.",
-  "aiAgents.hint.channel.whatsapp": "Сату және жазылу үшін қосыңыз. Автожауап алдында шаблондар мен келісімдерді тексеріңіз.",
-  "aiAgents.hint.channel.instagram": "Лидтер Instagram Direct арқылы келсе қосыңыз.",
-  "aiAgents.hint.knowledgeTitle": "Қысқа атау: Бағалар, Кесте, Жазылу ережелері, FAQ.",
-  "aiAgents.hint.knowledgeCategory": "Санат білімді реттейді. Мысалы: sales, service, policy, faq.",
-  "aiAgents.hint.knowledgeContent": "Нақты фактілерді жазыңыз: баға, шектеу, мекенжай, жазылу шарттары. Нақты мәтін ойдан шығаруды азайтады.",
-  "aiAgents.hint.knowledgeActive": "Қосулы болса, бұл білім агент жауабының контекстіне кіреді.",
+  "aiAgents.onboarding.test.helpText":
+    "Тест агент диалогты қалай көретінін және қандай жауап дайындайтынын көрсетеді.",
+  "aiAgents.onboarding.test.recommendation":
+    "Ұсыныс: баға, жазылу, жеңілдік және ренжіген клиент сұрақтарын тексеріңіз.",
+  "aiAgents.hint.agentName":
+    "Бұл кабинеттегі AI менеджер аты. Командаға агенттің сатылымға не қолдауға жауапты екенін түсінуге көмектеседі. Ұсыныс: рөл бойынша атаңыз, мысалы «Сату агенті».",
+  "aiAgents.hint.agentLanguage":
+    "Бұл негізгі жауап тілі. Агент бір стильді сақтайды. Ұсыныс: клиенттердің көбі қолданатын тілді таңдаңыз.",
+  "aiAgents.hint.agentStatus":
+    "«Белсенді» агентті қосады, «Пауза» тоқтатады. Қоспас бұрын жауаптарды және білімді тексеріңіз.",
+  "aiAgents.hint.profileName":
+    "Мінез-құлық профилінің ішкі атауы. Бір сценарий болса, әдепкі атауды қалдыруға болады.",
+  "aiAgents.hint.tone":
+    "Тон жауап стилін анықтайды. Сатылым үшін «Достық» немесе «Сату», қолдау үшін «Қолдау» таңдаңыз.",
+  "aiAgents.hint.role":
+    "Агент кім екенін қарапайым тілмен жазыңыз: сату менеджері, жазба әкімшісі немесе қолдау көмекшісі.",
+  "aiAgents.hint.systemPrompt":
+    "Барлық жауапқа арналған негізгі нұсқаулық. Ұзақ техникалық промпт емес, 2-4 түсінікті ереже жазыңыз.",
+  "aiAgents.hint.rules":
+    "Агент әрдайым сақтайтын ережелер: жеңілдікті уәде етпеу, қызметті нақтылау, қысқа жауап беру.",
+  "aiAgents.hint.escalation":
+    "Агент адамды қашан шақырады: шағым, баға дауы, заң сұрағы немесе ерекше өтініш.",
+  "aiAgents.hint.responseMode":
+    "Сапа мен жылдамдық балансын таңдаңыз. Бастау үшін жылдам немесе сапалы режим жеткілікті.",
+  "aiAgents.hint.temperature":
+    "Мән жоғары болса, жауап еркінірек болады. Сатылым үшін тұрақты жауапқа 0.3-0.5 ұсынамыз.",
+  "aiAgents.hint.pipelineMode":
+    "Режим агент CRM-де диалогпен не істейтінін анықтайды. Бастау үшін «Өтінім және тапсырма» қауіпсіз.",
+  "aiAgents.hint.maxReplyChars":
+    "Автожауап ұзындығын шектейді. Ұсыныс: клиентке қысқа жауап үшін 500-900 таңба.",
+  "aiAgents.hint.leadConfidence":
+    "Өтінім жасауға ең төмен сенімділік. Шек жоғары болса, автоматты қателер азаяды.",
+  "aiAgents.hint.dealConfidence":
+    "Мәміле черновигіне ең төмен сенімділік. Ұсыныс: өтінім шегінен жоғары ұстаңыз.",
+  "aiAgents.hint.launchReady":
+    "Негізгі деректер дайын. Қоспас бұрын агентке 2-3 нақты клиент сұрағын қойып көріңіз.",
+  "aiAgents.hint.launchNotReady":
+    "Іске қоспас бұрын білім қосып, кемінде бір белсенді арнаны қосыңыз.",
+  "aiAgents.hint.tool.create_lead":
+    "Әдетте қосулы болсын: өтінім клиент қызығушылығын бекітеді.",
+  "aiAgents.hint.tool.create_task":
+    "Командаға пайдалы: маңызды диалогтан кейін менеджерге тапсырма жасайды.",
+  "aiAgents.hint.tool.create_deal":
+    "Сату кезеңдері түсінікті және агент нақты сұрақтарда тексерілгенде қосыңыз.",
+  "aiAgents.hint.tool.handoff_to_manager":
+    "Қосулы қалдырыңыз: агент күрделі диалогты адамға бере алады.",
+  "aiAgents.hint.channel.website":
+    "Клиенттер сайтта өтініш қалдырса, бірінші қосыңыз. Бұл ең оңай тест арнасы.",
+  "aiAgents.hint.channel.telegram":
+    "Клиенттер Telegram-да жиі жазса қосыңыз. Bot token қажет.",
+  "aiAgents.hint.channel.whatsapp":
+    "Сату және жазылу үшін қосыңыз. Автожауап алдында шаблондар мен келісімдерді тексеріңіз.",
+  "aiAgents.hint.channel.instagram":
+    "Лидтер Instagram Direct арқылы келсе қосыңыз.",
+  "aiAgents.hint.knowledgeTitle":
+    "Қысқа атау: Бағалар, Кесте, Жазылу ережелері, FAQ.",
+  "aiAgents.hint.knowledgeCategory":
+    "Санат білімді реттейді. Мысалы: sales, service, policy, faq.",
+  "aiAgents.hint.knowledgeContent":
+    "Нақты фактілерді жазыңыз: баға, шектеу, мекенжай, жазылу шарттары. Нақты мәтін ойдан шығаруды азайтады.",
+  "aiAgents.hint.knowledgeActive":
+    "Қосулы болса, бұл білім агент жауабының контекстіне кіреді.",
   "automations.title": "Автоматтандыру",
-  "automations.description": "Қарапайым режим: дайын автоматтандыру шаблондары, ережелерді қосу және күрделі конструкторсыз іске қосу журналы.",
-  "automations.noBusiness": "Автоматтандырумен жұмыс істеу үшін баптауларда бизнес жасаңыз.",
+  "automations.description":
+    "Қарапайым режим: дайын автоматтандыру шаблондары, ережелерді қосу және күрделі конструкторсыз іске қосу журналы.",
+  "automations.noBusiness":
+    "Автоматтандырумен жұмыс істеу үшін баптауларда бизнес жасаңыз.",
   "automations.advancedBuilder": "Кеңейтілген конструктор",
   "automations.advancedTitle": "Кеңейтілген баптау",
-  "automations.advancedText": "Конструкторды шарттар, кідірістер және бірнеше әрекет бар күрделі сценарийлер үшін ғана қолданыңыз.",
+  "automations.advancedText":
+    "Конструкторды шарттар, кідірістер және бірнеше әрекет бар күрделі сценарийлер үшін ғана қолданыңыз.",
   "automations.backToSettings": "Баптауларға",
   "automations.createRule": "Ереже жасау",
-  "automations.saveError": "Автоматтандыруды сақтау мүмкін болмады. Қолжетімділік пен ереже деректерін тексеріңіз.",
+  "automations.saveError":
+    "Автоматтандыруды сақтау мүмкін болмады. Қолжетімділік пен ереже деректерін тексеріңіз.",
   "automations.templatesTitle": "Жылдам бастау шаблондары",
   "automations.actionCount": "{count} әрекет",
   "automations.addDraft": "Черновик қосу",
@@ -2943,7 +3485,8 @@ export const kk: Record<string, string> = {
   "automations.disable": "Өшіру",
   "automations.rulesTitle": "Белсенді және черновик ережелер",
   "automations.emptyTitle": "Автоматтандыру әлі жоқ",
-  "automations.emptyDescription": "Бір қарапайым ережеден бастаңыз: жаңа өтінім, менеджерге тапсырма немесе жазба бойынша еске салу.",
+  "automations.emptyDescription":
+    "Бір қарапайым ережеден бастаңыз: жаңа өтінім, менеджерге тапсырма немесе жазба бойынша еске салу.",
   "automations.runsTitle": "Іске қосу журналы",
   "automations.entity": "нысан",
   "automations.attempt": "әрекет {current}/{max}",
@@ -2962,13 +3505,16 @@ export const kk: Record<string, string> = {
   "automations.runError": "Қате",
   "automations.runPayload": "Payload",
   "automations.runResults": "Әрекет нәтижелері",
-  "automations.noRuns": "Іске қосулар әлі жоқ. Олар CRM оқиғаларынан кейін пайда болады.",
+  "automations.noRuns":
+    "Іске қосулар әлі жоқ. Олар CRM оқиғаларынан кейін пайда болады.",
   "automations.ruleNamePlaceholder": "Ереже атауы",
   "automations.descriptionPlaceholder": "Қысқаша сипаттама",
   "automations.saveDraft": "Черновикті сақтау",
-  "automations.previewRequired": "Алдымен ережені тексеріңіз, содан кейін сақтаңыз.",
+  "automations.previewRequired":
+    "Алдымен ережені тексеріңіз, содан кейін сақтаңыз.",
   "automations.previewFailed": "Тексеру өтпеді. Ереже өрістерін тексеріңіз.",
-  "automations.ruleNotSaved": "Ереже сақталмады. Алдымен тексеріп, қателерді түзетіңіз.",
+  "automations.ruleNotSaved":
+    "Ереже сақталмады. Алдымен тексеріп, қателерді түзетіңіз.",
   "automations.name": "Атауы",
   "automations.trigger": "Оқиға",
   "automations.descriptionLabel": "Сипаттама",
@@ -2979,12 +3525,14 @@ export const kk: Record<string, string> = {
   "automations.removeCondition": "Шартты жою",
   "automations.fieldPlaceholder": "өріс, мысалы source",
   "automations.expectedValue": "күтілетін мән",
-  "automations.noConditionsHint": "Шарт болмаса, ереже таңдалған оқиғаның әрқайсысында іске қосылады.",
+  "automations.noConditionsHint":
+    "Шарт болмаса, ереже таңдалған оқиғаның әрқайсысында іске қосылады.",
   "automations.actions": "Әрекеттер",
   "automations.addAction": "Әрекет қосу",
   "automations.removeAction": "Әрекетті жою",
   "automations.delaySeconds": "секундпен кідіріс",
-  "automations.configPlaceholder": "{\"title\":\"Клиентпен байланысу\",\"priority\":\"high\"}",
+  "automations.configPlaceholder":
+    '{"title":"Клиентпен байланысу","priority":"high"}',
   "automations.previewOk": "Тексеру сәтті: {name}",
   "automations.previewMeta": "{conditions} шарт · {actions} әрекет",
   "automations.testPreview": "Ережені тексеру",
@@ -3011,17 +3559,20 @@ export const kk: Record<string, string> = {
   "ai.widget.title": "Бизнеске ЖИ көмекші",
   "ai.widget.subtitle": "Бүгінгі ұсыныстар",
   "ai.widget.priority": "Маңызды қысқаша мәлімет",
-  "ai.widget.brief": "Бүгін жаңа өтінімдерді өңдеп, жақын жазбаларды растау керек.",
+  "ai.widget.brief":
+    "Бүгін жаңа өтінімдерді өңдеп, жақын жазбаларды растау керек.",
   "ai.widget.apply": "Ұсынысты қолдану",
   "ai.widget.applied": "Ұсыныс қолданылды",
   "ai.widget.smartReply": "Ақылды жауап",
-  "ai.widget.reply": "Сәлеметсіз бе! Бүгін 12:00-де бос уақыт бар. Сізге брондайын ба?",
+  "ai.widget.reply":
+    "Сәлеметсіз бе! Бүгін 12:00-де бос уақыт бар. Сізге брондайын ба?",
   "ai.widget.placeholder": "Әрі қарай не істеу керек екенін сұраңыз...",
   "ai.suggestion.1": "Клиентке жауап беріп, жақын бос уақыттарды ұсыныңыз",
   "ai.suggestion.2": "2 сағаттан көп жауапсыз тұрған өтінімдер бар",
   "ai.suggestion.3": "WhatsApp сайтқа қарағанда көбірек жазба береді",
   "leads.title": "Өтінімдер воронкасы",
-  "leads.description": "Кіріс өтінімдерге арналған бірыңғай кесте: іздеу, дереккөздер, AI сигналдары, статустар және келесі қадам.",
+  "leads.description":
+    "Кіріс өтінімдерге арналған бірыңғай кесте: іздеу, дереккөздер, AI сигналдары, статустар және келесі қадам.",
   "leads.new": "Жаңа өтінім",
   "leads.search": "Клиент, телефон немесе хабарлама бойынша іздеу...",
   "leads.allSources": "Барлық дереккөздер",
@@ -3040,13 +3591,19 @@ export const kk: Record<string, string> = {
   "leads.queueSearch": "Аты, телефоны немесе сұрауы бойынша іздеу",
   "leads.loading": "Өтінімдер жүктелуде",
   "leads.emptyTitle": "Өтінімдер жоқ",
-  "leads.emptyText": "Формалардан, хабарламалардан және қолмен енгізуден жаңа өтінімдер осы кезекте пайда болады.",
+  "leads.emptyText":
+    "Формалардан, хабарламалардан және қолмен енгізуден жаңа өтінімдер осы кезекте пайда болады.",
+  "leads.emptyFilteredTitle": "Ағымдағы сүзгілер бойынша өтінімдер жоқ",
+  "leads.emptyFilteredText":
+    "Көбірек өтінім көру үшін сүзгілерді тастаңыз немесе іздеу сұрауын өзгертіңіз.",
   "leads.createFirstLead": "Бірінші лидті жасаңыз",
   "leads.setupIntegrations": "Интеграцияларды баптаңыз",
   "leads.incomingTitle": "Кіріс мүмкіндіктер",
-  "leads.incomingDescription": "Бүгінге арналған {count} белсенді лидті тексеріп, тағайындаңыз.",
+  "leads.incomingDescription":
+    "Бүгінге арналған {count} белсенді лидті тексеріп, тағайындаңыз.",
   "leads.aiPriorityTitle": "AI Интеллект басымдығы",
-  "leads.aiPriorityText": "Басымдық: {name} — өткен өзара әрекеттер мен ағымдағы сигналдар негізінде мәміле ықтималдығы жоғары.",
+  "leads.aiPriorityText":
+    "Басымдық: {name} — өткен өзара әрекеттер мен ағымдағы сигналдар негізінде мәміле ықтималдығы жоғары.",
   "leads.takeAction": "Әрекет ету",
   "leads.statNew": "Жаңа",
   "leads.statWaiting": "Күтуде",
@@ -3062,7 +3619,8 @@ export const kk: Record<string, string> = {
   "leads.nextStepBook": "Жазу",
   "leads.nextStepReview": "Тексеру",
   "leads.noMatchingLeads": "Өтінімдер табылмады",
-  "leads.noMatchingLeadsText": "Фильтрді өзгертіңіз немесе жаңа өтінім көзін қосыңыз.",
+  "leads.noMatchingLeadsText":
+    "Фильтрді өзгертіңіз немесе жаңа өтінім көзін қосыңыз.",
   "leads.columnNew": "Жаңа",
   "leads.columnNewHint": "Жылдам жауап керек",
   "leads.columnContacted": "Байланысты",
@@ -3079,17 +3637,20 @@ export const kk: Record<string, string> = {
   "leads.noLeadsInColumn": "Өтінімдер жоқ",
   "leads.showMoreInColumn": "Тағы {count} көрсету",
   "leads.aiNote": "Кеңес: клиентке 15 минут ішінде жауап беріңіз.",
-  "leads.aiCard": "екі жақын бос уақытты ұсынып, ыңғайлы байланыс арнасын нақтылаңыз.",
+  "leads.aiCard":
+    "екі жақын бос уақытты ұсынып, ыңғайлы байланыс арнасын нақтылаңыз.",
   "leads.open": "Ашу",
   "leads.book": "Жазу",
   "leads.intelligence": "Өтінімді талдау",
   "leads.create": "Өтінім құру",
-  "leads.aiSummary": "Клиент қызығушылық танытты. Жақын уақыт пен WhatsApp арқылы жылдам жауап ұсыныңыз.",
+  "leads.aiSummary":
+    "Клиент қызығушылық танытты. Жақын уақыт пен WhatsApp арқылы жылдам жауап ұсыныңыз.",
   "leads.totalLeads": "Барлық лидтер",
   "leads.newToday": "Бүгін жаңалары",
   "leads.metricDeltaWeek": "Тізімде {count}",
   "leads.conversionMetric": "Конверсия {value}%",
-  "leads.aiBannerText": "Басымдық: {lead}. Клиентті жоғалтпас үшін сұранысты, жауапты адамды және келесі қадамды тексеріңіз.",
+  "leads.aiBannerText":
+    "Басымдық: {lead}. Клиентті жоғалтпас үшін сұранысты, жауапты адамды және келесі қадамды тексеріңіз.",
   "leads.weeklyDelta": "+{count} апта ішінде",
   "leads.tableLead": "Лид",
   "leads.tablePhone": "Телефон",
@@ -3113,7 +3674,8 @@ export const kk: Record<string, string> = {
   "leads.aiReply": "ЖИ жауабы",
   "leads.bookFromLead": "Өтінімнен жазба жасау",
   "leads.commandTitle": "Өтінімдер орталығы",
-  "leads.commandText": "Алдымен жаңа өтінімдерге жауап береміз, кейін клиентті жазбаға немесе мәмілеге жеткіземіз.",
+  "leads.commandText":
+    "Алдымен жаңа өтінімдерге жауап береміз, кейін клиентті жазбаға немесе мәмілеге жеткіземіз.",
   "leads.metricNew": "Жаңа",
   "leads.metricActive": "Жұмыста",
   "leads.metricBooked": "Жазылған",
@@ -3155,11 +3717,14 @@ export const kk: Record<string, string> = {
   "leads.archiveReason": "Өтінімді архивтеу себебі",
   "leads.archiveReasonPlaceholder": "Мысалы: дубль, өзекті емес өтінім",
   "leads.archiveConfirmTitle": "Өтінімді архивтеу керек пе?",
-  "leads.archiveConfirmText": "Архивтелетін өтінімдер: {count}. Деректер сақталады және қалпына келтіріледі.",
+  "leads.archiveConfirmText":
+    "Архивтелетін өтінімдер: {count}. Деректер сақталады және қалпына келтіріледі.",
   "leads.lostReason": "Өтінім неге жоғалды?",
   "leads.lostReasonRequired": "Бас тарту себебін көрсетіңіз.",
-  "leads.appointmentSelectionRequired": "Өтінім, қызмет немесе слот таңдалмаған.",
-  "leads.noBusiness": "Өтінімдермен жұмыс істеу үшін баптауларда бизнес жасаңыз.",
+  "leads.appointmentSelectionRequired":
+    "Өтінім, қызмет немесе слот таңдалмаған.",
+  "leads.noBusiness":
+    "Өтінімдермен жұмыс істеу үшін баптауларда бизнес жасаңыз.",
   "leads.noticeCreated": "Өтінім жасалды.",
   "leads.noticeTaken": "Өтінім жұмысқа алынды.",
   "leads.noticeContacted": "Статус жаңартылды: байланыс орнатылды.",
@@ -3170,18 +3735,24 @@ export const kk: Record<string, string> = {
   "leads.noticeAssigned": "Өтінім сізге тағайындалды.",
   "leads.noticeNextActionCreated": "Келесі әрекет жасалды.",
   "leads.actionDone": "Өтінім бойынша әрекет орындалды.",
-  "leads.aiDraftReady": "AI өтінімге қысқа жауап дайындады. Нақты жіберу Conversations API арқылы қосылады.",
-  "leads.appointmentCreated": "Өтінімнен жазба жасалды. Өтінім жаңартылды және жазба күнтізбеде пайда болады.",
+  "leads.aiDraftReady":
+    "AI өтінімге қысқа жауап дайындады. Нақты жіберу Conversations API арқылы қосылады.",
+  "leads.appointmentCreated":
+    "Өтінімнен жазба жасалды. Өтінім жаңартылды және жазба күнтізбеде пайда болады.",
   "leads.aiNewTitle": "Жаңа өтінімдерге жауап керек",
-  "leads.aiNewDesc": "{count} жаңа өтінім бірінші жауапты күтіп тұр. Бұл клиентті жоғалту қаупі.",
+  "leads.aiNewDesc":
+    "{count} жаңа өтінім бірінші жауапты күтіп тұр. Бұл клиентті жоғалту қаупі.",
   "leads.aiOpenNew": "Өңдеу",
   "leads.aiCalmTitle": "Өңделмеген жаңа өтінім жоқ",
-  "leads.aiCalmDesc": "Белсенді өтінімдерді тексеріп, клиентті жазбаға немесе мәмілеге жеткізуге болады.",
+  "leads.aiCalmDesc":
+    "Белсенді өтінімдерді тексеріп, клиентті жазбаға немесе мәмілеге жеткізуге болады.",
   "leads.aiActiveTitle": "Жұмыста өтінімдер бар",
-  "leads.aiActiveDesc": "{count} өтінім диалогта. Келесі қадам қажет жерді тексеріңіз.",
+  "leads.aiActiveDesc":
+    "{count} өтінім диалогта. Келесі қадам қажет жерді тексеріңіз.",
   "leads.aiReviewPipeline": "Тексеру",
   "leads.aiDataTitle": "Өтінім көздерін қосыңыз",
-  "leads.aiDataDesc": "WhatsApp, Telegram немесе сайт қосылса, ZANI әлсіз жерлерді дәлірек көрсетеді.",
+  "leads.aiDataDesc":
+    "WhatsApp, Telegram немесе сайт қосылса, ZANI әлсіз жерлерді дәлірек көрсетеді.",
   "leads.aiConnectSources": "Қосу",
   "leads.nextActionContactClient": "Клиентпен байланысу",
   "leads.nextActionQualifyNeed": "Қажеттілікті нақтылау",
@@ -3276,7 +3847,8 @@ export const kk: Record<string, string> = {
   "leads.actionUndone": "Әрекет болдырылмады.",
   "leads.actionRedone": "Әрекет қайталанды.",
   "leads.internalNotes": "Ішкі жазбалар",
-  "leads.notePlaceholder": "Командаға жеке жазба жазыңыз. @аты қолдануға болады.",
+  "leads.notePlaceholder":
+    "Командаға жеке жазба жазыңыз. @аты қолдануға болады.",
   "leads.addNote": "Қосу",
   "leads.noteAdded": "Жазба қосылды.",
   "leads.attachFiles": "Файлдарды тіркеу",
@@ -3291,19 +3863,26 @@ export const kk: Record<string, string> = {
   "leads.aiConversationSummary": "AI қысқаша мазмұны",
   "leads.aiIntent": "Ниет",
   "leads.aiNextBestAction": "Әрекет",
-  "leads.aiNoDialogSummary": "Диалог әзірге жоқ. Баға дереккөз, статус және жауапсыз уақыт бойынша жасалды.",
-  "leads.aiRecommendationStale": "Лид тоқтап тұр. Бүгін клиентпен байланысыңыз немесе жоғалту себебін жабыңыз.",
-  "leads.aiRecommendationAssign": "Жауапты адамды тағайындап, алғашқы байланысты тез жасаңыз.",
-  "leads.aiRecommendationCallFast": "Ұқсас сұраныстар алғашқы 15 минуттағы қоңырауда жақсы конверсия береді.",
-  "leads.aiRecommendationQualify": "Қажеттілікті нақтылап, келесі нақты қадам ұсыныңыз.",
+  "leads.aiNoDialogSummary":
+    "Диалог әзірге жоқ. Баға дереккөз, статус және жауапсыз уақыт бойынша жасалды.",
+  "leads.aiRecommendationStale":
+    "Лид тоқтап тұр. Бүгін клиентпен байланысыңыз немесе жоғалту себебін жабыңыз.",
+  "leads.aiRecommendationAssign":
+    "Жауапты адамды тағайындап, алғашқы байланысты тез жасаңыз.",
+  "leads.aiRecommendationCallFast":
+    "Ұқсас сұраныстар алғашқы 15 минуттағы қоңырауда жақсы конверсия береді.",
+  "leads.aiRecommendationQualify":
+    "Қажеттілікті нақтылап, келесі нақты қадам ұсыныңыз.",
   "leads.staleLeadTitle": "Лид тоқтап тұр",
-  "leads.staleLeadText": "3 күннен артық әрекет жоқ. Байланыс немесе статус бойынша шешім керек.",
+  "leads.staleLeadText":
+    "3 күннен артық әрекет жоқ. Байланыс немесе статус бойынша шешім керек.",
   "leads.duplicatesTitle": "Ықтимал дубльдер",
   "leads.duplicatesText": "Ұқсас клиенттер табылды: {count}",
   "leads.mergeDuplicate": "Біріктіру",
   "leads.duplicatesMerged": "Дубльдер біріктірілді.",
   "leads.aiAutomationTitle": "AI және автоматтандыру",
-  "leads.aiAutomationText": "Скоринг, тоқтап тұрған лидтер және авто-тағайындау ағымдағы CRM деректерімен жұмыс істейді.",
+  "leads.aiAutomationText":
+    "Скоринг, тоқтап тұрған лидтер және авто-тағайындау ағымдағы CRM деректерімен жұмыс істейді.",
   "leads.sortByHeat": "Маңыздылығы бойынша сұрыптау",
   "leads.assignmentWorkload": "Жүктеме бойынша",
   "leads.assignmentRoundRobin": "Round-robin",
@@ -3327,15 +3906,20 @@ export const kk: Record<string, string> = {
   "leads.templateGreeting": "/сәлемдесу",
   "leads.templatePrice": "/баға",
   "leads.templateBooking": "/жазылу",
-  "leads.templateGreetingText": "Сәлеметсіз бе, {{имя}}! Өтініміңізге рақмет. {{услуга}} туралы қашан сөйлесуге ыңғайлы?",
-  "leads.templatePriceText": "Сәлеметсіз бе, {{имя}}! {{услуга}} қызметі бойынша мәліметті нақтылап, бағасын жіберемін.",
-  "leads.templateBookingText": "Сәлеметсіз бе, {{имя}}! {{услуга}} үшін жақын уақыт ұсына аламын. Қай күн ыңғайлы?",
+  "leads.templateGreetingText":
+    "Сәлеметсіз бе, {{имя}}! Өтініміңізге рақмет. {{услуга}} туралы қашан сөйлесуге ыңғайлы?",
+  "leads.templatePriceText":
+    "Сәлеметсіз бе, {{имя}}! {{услуга}} қызметі бойынша мәліметті нақтылап, бағасын жіберемін.",
+  "leads.templateBookingText":
+    "Сәлеметсіз бе, {{имя}}! {{услуга}} үшін жақын уақыт ұсына аламын. Қай күн ыңғайлы?",
   "leads.mobileSwipeHint": "Свайп: солға архив, оңға жұмысқа алу",
   "leads.offlineMode": "Оффлайн-режим: соңғы сақталған өтінімдер көрсетіледі.",
   "leads.offlinePending": "Синхрондау күтуде: {count}",
-  "leads.offlineQueued": "Әрекет сақталды және байланыс келгенде синхрондалады.",
+  "leads.offlineQueued":
+    "Әрекет сақталды және байланыс келгенде синхрондалады.",
   "leads.offlineSynced": "Синхрондалған әрекеттер: {count}",
-  "leads.offlineFilesSkipped": "Файлдарды оффлайн сақтау мүмкін емес. Байланыс келген соң тіркеңіз.",
+  "leads.offlineFilesSkipped":
+    "Файлдарды оффлайн сақтау мүмкін емес. Байланыс келген соң тіркеңіз.",
   "leads.voiceRecord": "Дауыс",
   "leads.voiceStop": "Тоқтату",
   "leads.voiceNoteAttached": "Дауыстық жазба тіркелді.",
@@ -3372,9 +3956,12 @@ export const kk: Record<string, string> = {
   "deals.paymentAmountPrompt": "Төлем сомасы қандай?",
   "deals.lostReasonPrompt": "Неге бас тартты / мәміле жоғалды?",
   "deals.stageLostReasonPrompt": "Мәміле неге жоғалды?",
-  "deals.noBusiness": "Мәмілелермен жұмыс істеу үшін баптауларда бизнес жасаңыз.",
-  "deals.saveError": "Мәмілені сақтау, сатыны өзгерту немесе әрекетті орындау мүмкін болмады.",
-  "deals.noPipeline": "Алдымен API немесе Django Admin арқылы pipeline және сатыларды жасаңыз. Бұл CRM-ді ретсіз статустардан қорғайды.",
+  "deals.noBusiness":
+    "Мәмілелермен жұмыс істеу үшін баптауларда бизнес жасаңыз.",
+  "deals.saveError":
+    "Мәмілені сақтау, сатыны өзгерту немесе әрекетті орындау мүмкін болмады.",
+  "deals.noPipeline":
+    "Алдымен API немесе Django Admin арқылы pipeline және сатыларды жасаңыз. Бұл CRM-ді ретсіз статустардан қорғайды.",
   "deals.activePipeline": "белсенді воронка",
   "deals.openDeals": "Жұмыста",
   "deals.inWork": "белсенді мәмілелер",
@@ -3382,17 +3969,22 @@ export const kk: Record<string, string> = {
   "deals.closedPaid": "жабылған төлемдер",
   "deals.risks": "Тәуекелдер",
   "deals.aiPipelineHint": "Мәмілелер бойынша кеңес",
-  "deals.aiOverdueText": "{count} мәміледе SLA мерзімі өтті. Кідіріс себебін тексеріп, келесі қадамды қойыңыз.",
-  "deals.aiNoNextTaskText": "{count} ашық мәміледе келесі тапсырма жоқ. Мәмілелер тоқтап қалмауы үшін әрекет қосыңыз.",
-  "deals.aiStableText": "Қазір мәмілелер бойынша критикалық тәуекел жоқ. Pipeline-ды жақын тапсырмалар бойынша жүргізе беріңіз.",
+  "deals.aiOverdueText":
+    "{count} мәміледе SLA мерзімі өтті. Кідіріс себебін тексеріп, келесі қадамды қойыңыз.",
+  "deals.aiNoNextTaskText":
+    "{count} ашық мәміледе келесі тапсырма жоқ. Мәмілелер тоқтап қалмауы үшін әрекет қосыңыз.",
+  "deals.aiStableText":
+    "Қазір мәмілелер бойынша критикалық тәуекел жоқ. Pipeline-ды жақын тапсырмалар бойынша жүргізе беріңіз.",
   "deals.allStages": "Барлық сатылар",
   "deals.nextAction": "Келесі қадам",
   "deals.searchPlaceholder": "Мәміле, клиент немесе дереккөз бойынша іздеу...",
   "deals.pipelineValue": "Pipeline құны",
   "deals.dropHere": "Мәмілелерді осында жылжытыңыз",
   "deals.createModalTitle": "Мәміле құру",
-  "deals.clientRequired": "Мәміле үшін клиент қажет. Клиент жасап, pipeline-ға қайта оралыңыз.",
-  "deals.stageRequired": "Мәміле үшін кемінде бір pipeline сатысы қажет. Pipeline-ды админкада немесе API арқылы баптаңыз.",
+  "deals.clientRequired":
+    "Мәміле үшін клиент қажет. Клиент жасап, pipeline-ға қайта оралыңыз.",
+  "deals.stageRequired":
+    "Мәміле үшін кемінде бір pipeline сатысы қажет. Pipeline-ды админкада немесе API арқылы баптаңыз.",
   "deals.titlePlaceholder": "Мәміле атауы",
   "deals.clientSelect": "Клиент",
   "deals.firstStage": "Бірінші саты",
@@ -3405,18 +3997,23 @@ export const kk: Record<string, string> = {
   "deals.leadLabel": "Өтінім",
   "deals.notLinked": "байланбаған",
   "deals.aiNextAction": "AI келесі әрекеті",
-  "deals.aiNextActionText": "Ең жақын тапсырманы тексеріп, клиентке бір нақты келесі қадам ұсыныңыз. AI execution тек растаудан кейін іске қосылады.",
+  "deals.aiNextActionText":
+    "Ең жақын тапсырманы тексеріп, клиентке бір нақты келесі қадам ұсыныңыз. AI execution тек растаудан кейін іске қосылады.",
   "deals.tasks": "Тапсырмалар",
   "deals.noTasks": "Бұл мәміле бойынша тапсырма жоқ.",
   "deals.conversations": "Диалогтар",
   "deals.unread": "Оқылмаған: {count}",
   "deals.noConversations": "Клиент диалогтары әлі жоқ.",
-  "deals.noTimeline": "Мәміле тарихы менеджер әрекеттерінен кейін пайда болады.",
+  "deals.noTimeline":
+    "Мәміле тарихы менеджер әрекеттерінен кейін пайда болады.",
   "deals.salesTitle": "Сату",
-  "deals.salesDescription": "Мәмілелер, клиенттер, хат алмасулар және жақын қадамдар бір жұмыс экранында.",
+  "deals.salesDescription":
+    "Мәмілелер, клиенттер, хат алмасулар және жақын қадамдар бір жұмыс экранында.",
   "deals.aiPriorityTitle": "AI Интеллект басымдығы",
-  "deals.aiPriorityText": "{deal} мәмілесін тексеріңіз: клиент {client}, сома {amount}. ZANI тоқтап қалу қаупін көріп, келесі қадамды тағайындауды ұсынады.",
-  "deals.aiPriorityEmpty": "Қазір критикалық мәмілелер жоқ. Pipeline жақын тапсырмалар бойынша жүргізіледі.",
+  "deals.aiPriorityText":
+    "{deal} мәмілесін тексеріңіз: клиент {client}, сома {amount}. ZANI тоқтап қалу қаупін көріп, келесі қадамды тағайындауды ұсынады.",
+  "deals.aiPriorityEmpty":
+    "Қазір критикалық мәмілелер жоқ. Pipeline жақын тапсырмалар бойынша жүргізіледі.",
   "deals.takeAction": "Әрекет ету",
   "deals.filters": "Сүзгілер",
   "deals.filterMine": "Менің",
@@ -3443,12 +4040,14 @@ export const kk: Record<string, string> = {
   "deals.delete": "Жою",
   "deals.archive": "Архивтеу",
   "deals.archiveSelectedTitle": "Таңдалған мәмілелерді архивтеу",
-  "deals.archiveSelectedText": "Архивтелетін мәмілелер: {count}. Деректер сақталады және қалпына келтіруге болады.",
+  "deals.archiveSelectedText":
+    "Архивтелетін мәмілелер: {count}. Деректер сақталады және қалпына келтіруге болады.",
   "deals.archiveReason": "Архивтеу себебі",
   "deals.archiveReasonPlaceholder": "Мысалы: дубль, өзекті емес мәміле",
   "deals.archiveReasonDefault": "Менеджер архивтеді",
   "deals.noticeArchived": "Архивтелген мәмілелер: {count}",
   "deals.noticeRestored": "Қалпына келтірілген мәмілелер: {count}",
+  "deals.actionDone": "Мәміле бойынша әрекет орындалды.",
   "deals.more": "Тағы",
   "deals.confirmDeleteSelected": "Таңдалған мәмілелерді жою керек пе?",
   "deals.hidePriority": "Басымдықты жасыру",
@@ -3465,8 +4064,10 @@ export const kk: Record<string, string> = {
   "deals.noStage": "Саты жоқ",
   "deals.noPlan": "Жоспар жоқ",
   "deals.defaultNextAction": "Клиентпен байланысу",
-  "deals.stageGuard": "Мәмілені келесі сатыға өткізбес бұрын жауапты адамға түсінікті келесі қадам тағайындаңыз.",
-  "deals.saveChangeError": "Өзгерісті сақтау мүмкін болмады. Деректерді тексеріп, қайталап көріңіз.",
+  "deals.stageGuard":
+    "Мәмілені келесі сатыға өткізбес бұрын жауапты адамға түсінікті келесі қадам тағайындаңыз.",
+  "deals.saveChangeError":
+    "Өзгерісті сақтау мүмкін болмады. Деректерді тексеріп, қайталап көріңіз.",
   "deals.metricOpenPipeline": "Ашық воронка",
   "deals.metricOpenPipelineHint": "Жұмыста {count} мәміле",
   "deals.metricWon": "Ұтылды",
@@ -3489,7 +4090,8 @@ export const kk: Record<string, string> = {
   "deals.stageFilterLabel": "Мәміле сатыларының сүзгісі",
   "deals.listTitle": "Мәмілелер тізімі",
   "deals.notFoundTitle": "Мәмілелер табылмады",
-  "deals.notFoundText": "Фильтрді өзгертіңіз немесе өтінімнен/клиенттен жаңа мәміле жасаңыз.",
+  "deals.notFoundText":
+    "Фильтрді өзгертіңіз немесе өтінімнен/клиенттен жаңа мәміле жасаңыз.",
   "deals.overdue": "Мерзімі өтті",
   "deals.success": "Сәтті",
   "deals.lost": "Жоғалды",
@@ -3497,27 +4099,35 @@ export const kk: Record<string, string> = {
   "deals.nearestStep": "Жақын қадам",
   "deals.add": "Қосу",
   "deals.snooze": "Кейінге қалдыру",
-  "deals.noMoveWithoutNext": "Бұл мәміле тағайындалған келесі әрекетсіз әрі қарай қозғалмауы керек.",
-  "deals.noNearestStepText": "Мәміледе жақын қадам жоқ. Клиентті жоғалтпау үшін тапсырма тағайындаңыз.",
+  "deals.noMoveWithoutNext":
+    "Бұл мәміле тағайындалған келесі әрекетсіз әрі қарай қозғалмауы керек.",
+  "deals.noNearestStepText":
+    "Мәміледе жақын қадам жоқ. Клиентті жоғалтпау үшін тапсырма тағайындаңыз.",
   "deals.leadLine": "Лид: {value}",
   "deals.closing": "Жабылу",
   "deals.notSet": "Көрсетілмеген",
-  "deals.lostReasonAfterClose": "Жоғалту себебі мәміле жабылғаннан кейін пайда болады.",
+  "deals.lostReasonAfterClose":
+    "Жоғалту себебі мәміле жабылғаннан кейін пайда болады.",
   "deals.pipeline": "Воронка",
   "deals.responsible": "Жауапты",
   "deals.selectedDeal": "Таңдалған мәміле",
   "deals.noSelectedDeal": "Воронкадан мәміле таңдаңыз",
-  "deals.noSelectedDealText": "Қысқа карточка, келесі қадам және жылдам әрекеттер осы жерде пайда болады.",
+  "deals.noSelectedDealText":
+    "Қысқа карточка, келесі қадам және жылдам әрекеттер осы жерде пайда болады.",
   "deals.forecast": "Жабылу болжамы",
   "deals.forecastPeriod": "Осы айға",
   "deals.expectedRevenue": "Ықтимал табыс",
   "deals.activity": "Белсенділік",
   "deals.allEvents": "Барлық оқиғалар",
   "deals.aiSuggestion": "Кеңес",
-  "deals.aiSuggestionStable": "Қазір критикалық мәмілелер жоқ. Pipeline-ды жақын тапсырмалар бойынша жүргізіңіз.",
-  "deals.aiSuggestionNoTasks": "Воронкада тоқтап қалмауы үшін тапсырмасы жоқ мәмілелерге келесі қадам қойыңыз.",
-  "deals.aiSuggestionOverdue": "Мерзімі өткен мәмілелерді тексеріп, жауапты адамға нақты келесі қадам қойыңыз.",
-  "deals.aiHighChance": "{amount} сомасындағы {count} мәміленің жабылу ықтималдығы жоғары",
+  "deals.aiSuggestionStable":
+    "Қазір критикалық мәмілелер жоқ. Pipeline-ды жақын тапсырмалар бойынша жүргізіңіз.",
+  "deals.aiSuggestionNoTasks":
+    "Воронкада тоқтап қалмауы үшін тапсырмасы жоқ мәмілелерге келесі қадам қойыңыз.",
+  "deals.aiSuggestionOverdue":
+    "Мерзімі өткен мәмілелерді тексеріп, жауапты адамға нақты келесі қадам қойыңыз.",
+  "deals.aiHighChance":
+    "{amount} сомасындағы {count} мәміленің жабылу ықтималдығы жоғары",
   "deals.allHints": "Барлық кеңестерді көру",
   "deals.moreDeals": "Тағы {count} мәміле",
   "deals.previousMonthDelta": "+12% өткен аймен салыстырғанда",
@@ -3540,7 +4150,8 @@ export const kk: Record<string, string> = {
   "deals.emptyDealHistory": "Мәміле тарихы әзірге бос.",
   "deals.commentPlaceholder": "Пікір қосу",
   "deals.selectDeal": "Мәмілені таңдаңыз",
-  "deals.selectDealText": "Оң жақта клиент, жақын қадам, хабарламалар және тарих пайда болады.",
+  "deals.selectDealText":
+    "Оң жақта клиент, жақын қадам, хабарламалар және тарих пайда болады.",
   "deals.needClientFirst": "Алдымен клиент қажет.",
   "deals.selectClient": "Клиентті таңдаңыз",
   "deals.closeAsWon": "Сәтті деп жабу",
@@ -3572,12 +4183,14 @@ export const kk: Record<string, string> = {
   "channel.instagram": "Instagram",
   "channel.manual": "Қолмен",
   "timeline.title": "Әрекеттер тарихы",
-  "timeline.description": "Клиенттің бірыңғай тарихы: CRM, хабарламалар, жазбалар, тапсырмалар және автоматтандыру.",
+  "timeline.description":
+    "Клиенттің бірыңғай тарихы: CRM, хабарламалар, жазбалар, тапсырмалар және автоматтандыру.",
   "timeline.search": "Оқиғалар бойынша іздеу",
   "timeline.noBusiness": "Тарихты ашу үшін баптауларда бизнес құрыңыз.",
   "timeline.noClient": "Клиент жоқ",
   "timeline.emptyTitle": "Оқиғалар әзірге жоқ",
-  "timeline.emptyText": "Клиент өтінім қалдырса, хабарлама жазса немесе жазба алса, тарих осында пайда болады.",
+  "timeline.emptyText":
+    "Клиент өтінім қалдырса, хабарлама жазса немесе жазба алса, тарих осында пайда болады.",
   "platform.title": "Платформа",
   "platform.admin": "Платформа әкімшісі",
   "platform.controlCenter": "Басқару орталығы",
@@ -3606,7 +4219,8 @@ export const kk: Record<string, string> = {
   "platform.overview.error": "Платформа dashboard жүктелмеді.",
   "platform.overview.eyebrow": "Платформаны басқару",
   "platform.overview.title": "Zani шолуы",
-  "platform.overview.description": "Merchant CRM sidebar және internal dev tools жоқ нақты өнім метрикалары.",
+  "platform.overview.description":
+    "Merchant CRM sidebar және internal dev tools жоқ нақты өнім метрикалары.",
   "platform.overview.totalMerchants": "Барлық мерчанттар",
   "platform.overview.activeMerchants": "Белсенді мерчанттар",
   "platform.overview.trialMerchants": "Сынақ мерчанттар",
@@ -3618,22 +4232,26 @@ export const kk: Record<string, string> = {
   "platform.overview.handoffConversations": "Оператор күткен диалогтар",
   "platform.overview.newLeads": "Жаңа лидтер / 30к",
   "platform.overview.mrr": "MRR бағасы",
-  "platform.overview.mrrText": "Белсенді жазылымдар мен тарифтің monthly_price мәні бойынша бағалау. Payment provider бұл кезеңде қосылмаған.",
+  "platform.overview.mrrText":
+    "Белсенді жазылымдар мен тарифтің monthly_price мәні бойынша бағалау. Payment provider бұл кезеңде қосылмаған.",
   "platform.overview.conversations": "Диалогтар / 30к",
   "platform.overview.aiRequests": "AI-сұраулар / 30к",
   "platform.overview.activeChannels": "Белсенді арналар",
   "platform.overview.errorsTitle": "Операциялық сигналдар",
-  "platform.overview.errorsText": "Platform overview қателері: {errors}. Пилот сигналдары: {connectors} интеграция назар қажет етеді, {merchants} мерчантта сату деректері жоқ.",
+  "platform.overview.errorsText":
+    "Platform overview қателері: {errors}. Пилот сигналдары: {connectors} интеграция назар қажет етеді, {merchants} мерчантта сату деректері жоқ.",
   "platform.common.noName": "Аты жоқ",
   "platform.common.unknown": "белгісіз",
   "platform.merchants.loading": "Мерчанттар жүктелуде...",
   "platform.merchants.error": "Мерчанттарды жүктеу мүмкін болмады.",
   "platform.merchants.eyebrow": "Пилот мерчанттары",
   "platform.merchants.title": "Мерчанттар",
-  "platform.merchants.description": "Платформа бизнестерінің тізімі: тариф, пилот күйі, операциялық сигналдар және ішкі CRM деректеріне кірмейтін қауіпсіз support workflow.",
+  "platform.merchants.description":
+    "Платформа бизнестерінің тізімі: тариф, пилот күйі, операциялық сигналдар және ішкі CRM деректеріне кірмейтін қауіпсіз support workflow.",
   "platform.merchants.search": "Мерчанттарды іздеу",
   "platform.merchants.emptyTitle": "Мерчанттар табылмады",
-  "platform.merchants.emptyText": "Іздеу сұрауын өзгертіңіз немесе бизнестер құрылғанын тексеріңіз.",
+  "platform.merchants.emptyText":
+    "Іздеу сұрауын өзгертіңіз немесе бизнестер құрылғанын тексеріңіз.",
   "platform.merchants.merchant": "Мерчант",
   "platform.merchants.owner": "Иесі",
   "platform.merchants.status": "Күйі",
@@ -3659,38 +4277,46 @@ export const kk: Record<string, string> = {
   "platform.operations.error": "Операциялар күйін жүктеу мүмкін болмады.",
   "platform.operations.eyebrow": "Қолдау операциялары",
   "platform.operations.title": "Операциялар күйі",
-  "platform.operations.description": "Мерчантта не бұзылды, кезек қайда, қай провайдерді қосуға болмайды және не support қажет екенін көрсететін бірыңғай панель.",
+  "platform.operations.description":
+    "Мерчантта не бұзылды, кезек қайда, қай провайдерді қосуға болмайды және не support қажет екенін көрсететін бірыңғай панель.",
   "platform.operations.critical": "Критикалық блокерлер",
   "platform.operations.warnings": "Ескертулер",
   "platform.operations.supportGrants": "Белсенді қолдау рұқсаттары",
   "platform.operations.connectorWorkItems": "Коннектор тапсырмалары",
   "platform.operations.queueRuntime": "Кезектер және фондық тапсырмалар",
-  "platform.operations.queueRuntimeText": "Celery/Redis дайындығы және фондық жұмыс қателері.",
+  "platform.operations.queueRuntimeText":
+    "Celery/Redis дайындығы және фондық жұмыс қателері.",
   "platform.operations.pending": "Күтуде",
   "platform.operations.running": "Орындалуда",
   "platform.operations.failed": "Қателер",
   "platform.operations.configured": "бапталған",
   "platform.operations.notConfigured": "бапталмаған",
   "platform.operations.none": "жоқ",
-  "platform.operations.broker": "Broker: {broker} · Inline automations: {inline} · Queues: {queues}",
+  "platform.operations.broker":
+    "Broker: {broker} · Inline automations: {inline} · Queues: {queues}",
   "platform.operations.productionGates": "Production тексерістері",
-  "platform.operations.productionGatesText": "Production readiness және backup readiness ішіндегі ең маңызды блокерлер.",
-  "platform.operations.noProductionBlockers": "Критикалық production blockers жоқ.",
+  "platform.operations.productionGatesText":
+    "Production readiness және backup readiness ішіндегі ең маңызды блокерлер.",
+  "platform.operations.noProductionBlockers":
+    "Критикалық production blockers жоқ.",
   "platform.operations.providerRollout": "Провайдерлерді қосу",
-  "platform.operations.providerRolloutText": "Сыртқы провайдерлерді қауіпсіз қосу тәртібі.",
+  "platform.operations.providerRolloutText":
+    "Сыртқы провайдерлерді қауіпсіз қосу тәртібі.",
   "platform.operations.enabled": "Қосылған: {value}",
   "platform.operations.connectorQueue": "Коннекторлар кезегі",
   "platform.operations.noConnectorRequests": "Коннектор сұраулары жоқ.",
   "platform.operations.automationFailures": "Автоматизация қателері",
   "platform.operations.attempts": "әрекеттер {attempts}/{max}",
-  "platform.operations.noFailedAutomationRuns": "Қате аяқталған автоматизациялар жоқ.",
+  "platform.operations.noFailedAutomationRuns":
+    "Қате аяқталған автоматизациялар жоқ.",
   "platform.operations.integrationFailures": "Интеграция қателері",
   "platform.operations.noBusiness": "Бизнес жоқ",
   "platform.operations.noFailedIntegrationEvents": "Интеграция қателері жоқ.",
   "platform.merchantDetail.loading": "Мерчант support view жүктелуде...",
   "platform.merchantDetail.error": "Мерчант support view ашылмады.",
   "platform.merchantDetail.eyebrow": "Платформа қолдауы",
-  "platform.merchantDetail.description": "Қауіпсіз platform-аймақ: операциялық күй және support workflow көрінеді, бірақ мерчанттың ішкі CRM деректері көрінбейді.",
+  "platform.merchantDetail.description":
+    "Қауіпсіз platform-аймақ: операциялық күй және support workflow көрінеді, бірақ мерчанттың ішкі CRM деректері көрінбейді.",
   "platform.merchantDetail.snapshot": "Мерчант профилі",
   "platform.merchantDetail.owner": "Иесі",
   "platform.merchantDetail.landing": "Лендинг",
@@ -3698,10 +4324,13 @@ export const kk: Record<string, string> = {
   "platform.merchantDetail.noLandingId": "Landing id жоқ",
   "platform.merchantDetail.crmOperations": "CRM операциялары",
   "platform.merchantDetail.leadsLine": "Лидтер: {leads} · жаңа: {new}",
-  "platform.merchantDetail.clientsLine": "Клиенттер: {clients} · тапсырмалар: {tasks}",
-  "platform.merchantDetail.inboxLine": "Inbox: {unread} unread · {handoff} handoff",
+  "platform.merchantDetail.clientsLine":
+    "Клиенттер: {clients} · тапсырмалар: {tasks}",
+  "platform.merchantDetail.inboxLine":
+    "Inbox: {unread} unread · {handoff} handoff",
   "platform.merchantDetail.dataSources": "Дерек көздері",
-  "platform.merchantDetail.connectorsLine": "Коннекторлар: {ok} ok · {pending} request · {failed} fail",
+  "platform.merchantDetail.connectorsLine":
+    "Коннекторлар: {ok} ok · {pending} request · {failed} fail",
   "platform.merchantDetail.formsLine": "Формалар: {forms} · қателер: {errors}",
   "platform.merchantDetail.salesEventsLine": "Sales events: {events}",
   "platform.merchantDetail.pilotHealth": "Пилот күйі",
@@ -3711,125 +4340,163 @@ export const kk: Record<string, string> = {
   "platform.merchantDetail.priority": "басымдық {priority}",
   "platform.merchantDetail.emptyWorkflow": "Қолдау процесі әзірге бос.",
   "platform.merchantDetail.noNextSteps": "Келесі әрекеттер жоқ",
-  "platform.merchantDetail.noNextStepsText": "Пилотты шұғыл араласусыз бақылауға болады.",
+  "platform.merchantDetail.noNextStepsText":
+    "Пилотты шұғыл араласусыз бақылауға болады.",
   "platform.merchantDetail.logSupportAction": "Қолдау әрекетін жазу",
   "platform.merchantDetail.actionSupportNote": "Қолдау жазбасы",
   "platform.merchantDetail.actionMerchantCall": "Мерчантқа қоңырау",
   "platform.merchantDetail.actionSetupHelp": "Баптауға көмек",
   "platform.merchantDetail.actionRiskReview": "Тәуекелді тексеру",
-  "platform.merchantDetail.notePlaceholder": "Қоңырау, тексеріс немесе көмек нәтижесін қысқаша жазыңыз",
-  "platform.merchantDetail.noteTextarea": "Мысалы: форманы қосуға көмектестік, келесі қадам — сатылым CSV жүктеу.",
+  "platform.merchantDetail.notePlaceholder":
+    "Қоңырау, тексеріс немесе көмек нәтижесін қысқаша жазыңыз",
+  "platform.merchantDetail.noteTextarea":
+    "Мысалы: форманы қосуға көмектестік, келесі қадам — сатылым CSV жүктеу.",
   "platform.merchantDetail.saveAction": "Әрекетті жазу",
   "platform.merchantDetail.refresh": "Жаңарту",
-  "platform.merchantDetail.noRecentActions": "Қолдау әрекеттері әзірге жазылмаған.",
+  "platform.merchantDetail.noRecentActions":
+    "Қолдау әрекеттері әзірге жазылмаған.",
   "platform.placeholder.accessLayerActive": "Access layer белсенді",
   "platform.placeholder.internalOnly": "Ішкі platform-only route",
   "platform.placeholder.placeholderOnly": "Тек placeholder",
-  "platform.placeholder.placeholderText": "Бұл бетте әдейі нақты бизнес-логика жоқ. Мұнда бөлек Platform Admin интерфейсі және қорғалған routes бекітіледі.",
-  "platform.placeholder.notMerchantFeature": "Бұл merchant production функциясы ретінде көрсетілмейді.",
+  "platform.placeholder.placeholderText":
+    "Бұл бетте әдейі нақты бизнес-логика жоқ. Мұнда бөлек Platform Admin интерфейсі және қорғалған routes бекітіледі.",
+  "platform.placeholder.notMerchantFeature":
+    "Бұл merchant production функциясы ретінде көрсетілмейді.",
   "platform.placeholder.readiness": "Дайындық",
   "platform.placeholder.nextRoadmapStep": "Roadmap келесі қадамы",
-  "platform.placeholder.nextRoadmapText": "Нақты platform modules тек келесі оқшауланған кезеңдерде пайда болады.",
+  "platform.placeholder.nextRoadmapText":
+    "Нақты platform modules тек келесі оқшауланған кезеңдерде пайда болады.",
   "platform.placeholder.stageControlled": "Кезең бақылауда",
   "platform.placeholder.overview.title": "Платформа шолуы",
   "platform.placeholder.overview.eyebrow": "Stage 1.2",
-  "platform.placeholder.overview.description": "Қорғалған layout бар платформа иелерінің бөлек панелі. Қазір бұл нақты операциялық логикасыз интерфейс қабығы.",
+  "platform.placeholder.overview.description":
+    "Қорғалған layout бар платформа иелерінің бөлек панелі. Қазір бұл нақты операциялық логикасыз интерфейс қабығы.",
   "platform.placeholder.overview.status1": "PlatformRoute бетті қорғайды",
-  "platform.placeholder.overview.status2": "Merchant sidebar бұл жерде көрсетілмейді",
+  "platform.placeholder.overview.status2":
+    "Merchant sidebar бұл жерде көрсетілмейді",
   "platform.placeholder.overview.status3": "Негіз болашақ модульдерге дайын",
   "platform.placeholder.merchants.title": "Мерчанттар",
   "platform.placeholder.merchants.eyebrow": "Болашақ операциялар",
-  "platform.placeholder.merchants.description": "Мерчанттарды басқарудың болашақ аймағы. Бұл кезеңде нақты merchants API және dashboards қосылмайды.",
+  "platform.placeholder.merchants.description":
+    "Мерчанттарды басқарудың болашақ аймағы. Бұл кезеңде нақты merchants API және dashboards қосылмайды.",
   "platform.placeholder.merchants.status1": "Маршрут бар",
   "platform.placeholder.merchants.status2": "Merchant API қосылмаған",
-  "platform.placeholder.merchants.status3": "Болашақ platform module үшін дайын",
+  "platform.placeholder.merchants.status3":
+    "Болашақ platform module үшін дайын",
   "platform.placeholder.prospects.title": "Проспектер",
   "platform.placeholder.prospects.eyebrow": "Ішкі құралдар шекарасы",
-  "platform.placeholder.prospects.description": "Prospects/internal tools болашақ аймағы. Parser, scraping және outreach өнімнің ашық ядросына кірмейді.",
+  "platform.placeholder.prospects.description":
+    "Prospects/internal tools болашақ аймағы. Parser, scraping және outreach өнімнің ашық ядросына кірмейді.",
   "platform.placeholder.prospects.status1": "Маршрут бар",
   "platform.placeholder.prospects.status2": "Prospects models қосылмаған",
   "platform.placeholder.prospects.status3": "Ішкі құралдар шекарасы сақталған",
   "platform.placeholder.landings.title": "Лендингтер",
   "platform.placeholder.landings.eyebrow": "Пилот шекарасы",
-  "platform.placeholder.landings.description": "Болашақ demo landing және клиенттік беттер аймағы. Қазір бұл қауіпсіз placeholder.",
+  "platform.placeholder.landings.description":
+    "Болашақ demo landing және клиенттік беттер аймағы. Қазір бұл қауіпсіз placeholder.",
   "platform.placeholder.landings.status1": "Маршрут бар",
   "platform.placeholder.landings.status2": "Лендинг генераторы қосылмаған",
   "platform.placeholder.landings.status3": "Pilot navigation үшін қауіпсіз",
   "platform.placeholder.outreach.title": "Outreach",
   "platform.placeholder.outreach.eyebrow": "Қолмен pilot process",
-  "platform.placeholder.outreach.description": "Қолмен байланыс және сатылым статустарының болашақ аймағы. Жаппай outreach және parser internal developer tools болып қалады.",
+  "platform.placeholder.outreach.description":
+    "Қолмен байланыс және сатылым статустарының болашақ аймағы. Жаппай outreach және parser internal developer tools болып қалады.",
   "platform.placeholder.outreach.status1": "Маршрут бар",
   "platform.placeholder.outreach.status2": "Outreach automation қосылмаған",
   "platform.placeholder.outreach.status3": "Ішкі құралдар шекарасы сақталған",
   "platform.placeholder.billing.title": "Биллинг",
   "platform.placeholder.billing.eyebrow": "Subscription foundation кейін",
-  "platform.placeholder.billing.description": "Платформа тарифтері мен жазылымдарының болашақ аймағы. Нақты төлем және billing API бөлек кезеңде қосылады.",
+  "platform.placeholder.billing.description":
+    "Платформа тарифтері мен жазылымдарының болашақ аймағы. Нақты төлем және billing API бөлек кезеңде қосылады.",
   "platform.placeholder.billing.status1": "Маршрут бар",
   "platform.placeholder.billing.status2": "Payment logic қосылмаған",
   "platform.placeholder.billing.status3": "Subscription models қосылмаған",
   "platform.placeholder.analytics.title": "Платформа аналитикасы",
   "platform.placeholder.analytics.eyebrow": "Insights кейін",
-  "platform.placeholder.analytics.description": "Платформаның болашақ аналитикасы. Бұл кезеңде графиктер, MRR және operational dashboards әдейі іске асырылмайды.",
+  "platform.placeholder.analytics.description":
+    "Платформаның болашақ аналитикасы. Бұл кезеңде графиктер, MRR және operational dashboards әдейі іске асырылмайды.",
   "platform.placeholder.analytics.status1": "Маршрут бар",
   "platform.placeholder.analytics.status2": "Графиктер қосылмаған",
   "platform.placeholder.analytics.status3": "Analytics API қосылмаған",
   "platform.placeholder.settings.title": "Платформа баптаулары",
   "platform.placeholder.settings.eyebrow": "Configuration кейін",
-  "platform.placeholder.settings.description": "Платформа баптауларының болашақ аймағы. Қазір мұнда келесі итерацияға арналған қорғалған placeholder ғана бар.",
+  "platform.placeholder.settings.description":
+    "Платформа баптауларының болашақ аймағы. Қазір мұнда келесі итерацияға арналған қорғалған placeholder ғана бар.",
   "platform.placeholder.settings.status1": "Маршрут бар",
   "platform.placeholder.settings.status2": "Кіру қорғалған",
   "platform.placeholder.settings.status3": "Өнім баптаулары өзгермеген",
   "integrations.guide.importTitle": "Базаны импорттау",
-  "integrations.guide.importText": "Клиенттерден, өтінімдерден, сатылымдардан немесе каталогтан Excel/CSV арқылы бастаңыз.",
+  "integrations.guide.importText":
+    "Клиенттерден, өтінімдерден, сатылымдардан немесе каталогтан Excel/CSV арқылы бастаңыз.",
   "integrations.guide.openImport": "Импортты ашу",
   "integrations.guide.startImport": "Импорттан бастау",
   "integrations.guide.channelsTitle": "Кіріс арналарды қосу",
-  "integrations.guide.channelsText": "Сайт-чаты және Telegram алғашқы өтінімдерді бірден кіріс жәшігіне түсіреді.",
+  "integrations.guide.channelsText":
+    "Сайт-чаты және Telegram алғашқы өтінімдерді бірден кіріс жәшігіне түсіреді.",
   "integrations.guide.checkChannels": "Арналарды тексеру",
   "integrations.guide.connectChannel": "Арнаны қосу",
   "integrations.guide.whatsappTitle": "WhatsApp бойынша өтінім қалдыру",
-  "integrations.guide.whatsappText": "WhatsApp және Instagram адал қосылады: өтінім арқылы, жалған автоматты қосусыз.",
+  "integrations.guide.whatsappText":
+    "WhatsApp және Instagram адал қосылады: өтінім арқылы, жалған автоматты қосусыз.",
   "integrations.guide.requestCreated": "Өтінім жасалды",
   "integrations.guide.fillRequest": "Өтінімді толтыру",
   "integrations.guide.demoSyncTitle": "Демо-синхрондауды тексеру",
-  "integrations.guide.demoSyncText": "Kaspi, 1C, қойма және маркетплейстер әзірге демо-оқиғамен қауіпсіз тексеріледі.",
+  "integrations.guide.demoSyncText":
+    "Kaspi, 1C, қойма және маркетплейстер әзірге демо-оқиғамен қауіпсіз тексеріледі.",
   "integrations.guide.openDataConnectors": "Дерек коннекторларын ашу",
   "integrations.guide.eyebrow": "Интеграцияларды қосу",
   "integrations.guide.title": "Мүмкіндіктерді ретімен қосыңыз",
-  "integrations.guide.description": "Иесі API каталогын емес, түсінікті жолды көреді: алдымен деректер, кейін кіріс арналар, соңында сыртқы сервистерге өтінімдер.",
+  "integrations.guide.description":
+    "Иесі API каталогын емес, түсінікті жолды көреді: алдымен деректер, кейін кіріс арналар, соңында сыртқы сервистерге өтінімдер.",
   "integrations.guide.activeConnections": "Белсенді қосылымдар",
   "integrations.group.messages": "Арналар",
-  "integrations.group.messagesText": "Клиенттер компанияңызға жазатын арналарға ИИ-агентті қосыңыз.",
+  "integrations.group.messagesText":
+    "Клиенттер компанияңызға жазатын арналарға ИИ-агентті қосыңыз.",
   "integrations.group.data": "Есеп және қойма",
-  "integrations.group.dataText": "ИИ-аналитикке арналған факт көздері: сатылымдар, қалдықтар, каталог және құжаттар.",
+  "integrations.group.dataText":
+    "ИИ-аналитикке арналған факт көздері: сатылымдар, қалдықтар, каталог және құжаттар.",
   "integrations.group.marketplace": "Маркетплейстер",
-  "integrations.group.marketplaceText": "Сыртқы алаңдардағы тапсырыстар, төлемдер, қалдықтар және баға тәуекелдері.",
+  "integrations.group.marketplaceText":
+    "Сыртқы алаңдардағы тапсырыстар, төлемдер, қалдықтар және баға тәуекелдері.",
   "integrations.group.system": "Жүйелік көздер",
-  "integrations.group.systemText": "Деректерді жүктеудің қосымша тәсілдері және қызметтік арналар.",
+  "integrations.group.systemText":
+    "Деректерді жүктеудің қосымша тәсілдері және қызметтік арналар.",
   "integrations.provider.website": "Сайт",
-  "integrations.provider.websiteUse": "Сайт чаты мен формалары бірден хабарламалар мен өтінімдерге түседі.",
+  "integrations.provider.websiteUse":
+    "Сайт чаты мен формалары бірден хабарламалар мен өтінімдерге түседі.",
   "integrations.provider.telegram": "Telegram",
-  "integrations.provider.telegramUse": "Клиент диалогтары және менеджердің жылдам жауаптары.",
+  "integrations.provider.telegramUse":
+    "Клиент диалогтары және менеджердің жылдам жауаптары.",
   "integrations.provider.whatsapp": "WhatsApp",
-  "integrations.provider.whatsappUse": "WhatsApp Business хабарламалары бір жұмыс терезесінде.",
+  "integrations.provider.whatsappUse":
+    "WhatsApp Business хабарламалары бір жұмыс терезесінде.",
   "integrations.provider.instagram": "Instagram",
-  "integrations.provider.instagramUse": "Direct өтініштері менеджерлерге өтеді.",
+  "integrations.provider.instagramUse":
+    "Direct өтініштері менеджерлерге өтеді.",
   "integrations.provider.excelCsv": "Excel / CSV",
-  "integrations.provider.excelCsvUse": "Клиенттерді, сатылымдарды және каталогты жылдам жүктеу.",
+  "integrations.provider.excelCsvUse":
+    "Клиенттерді, сатылымдарды және каталогты жылдам жүктеу.",
   "integrations.provider.oneC": "1C",
-  "integrations.provider.oneCUse": "Сатылымдар, шоттар, қалдықтар және анықтамалықтар.",
+  "integrations.provider.oneCUse":
+    "Сатылымдар, шоттар, қалдықтар және анықтамалықтар.",
   "integrations.provider.moysklad": "МойСклад",
-  "integrations.provider.moyskladUse": "Қойма, қалдықтар және тауарлар каталогы.",
+  "integrations.provider.moyskladUse":
+    "Қойма, қалдықтар және тауарлар каталогы.",
   "integrations.provider.kaspi": "Kaspi",
-  "integrations.provider.kaspiUse": "Тапсырыстар, төлемдер және бизнес деректері.",
+  "integrations.provider.kaspiUse":
+    "Тапсырыстар, төлемдер және бизнес деректері.",
   "integrations.provider.kaspiPricing": "Kaspi Pricing",
-  "integrations.provider.kaspiPricingUse": "Баға агенті: бәсекелестерді бақылау, шектер және автопилот.",
+  "integrations.provider.kaspiPricingUse":
+    "Баға агенті: бәсекелестерді бақылау, шектер және автопилот.",
   "integrations.provider.wildberries": "Wildberries",
-  "integrations.provider.wildberriesUse": "Тапсырыстар, SKU, қалдықтар және қайтарымдар.",
+  "integrations.provider.wildberriesUse":
+    "Тапсырыстар, SKU, қалдықтар және қайтарымдар.",
   "integrations.provider.ozon": "Ozon",
-  "integrations.provider.ozonUse": "FBS/FBO жөнелтілімдері, қалдықтар және бас тартулар.",
+  "integrations.provider.ozonUse":
+    "FBS/FBO жөнелтілімдері, қалдықтар және бас тартулар.",
   "integrations.provider.googleSheets": "Google Sheets",
-  "integrations.provider.googleSheetsUse": "Әзірлеусіз кестелерді тұрақты импорттау.",
+  "integrations.provider.googleSheetsUse":
+    "Әзірлеусіз кестелерді тұрақты импорттау.",
   "integrations.provider.email": "Email",
   "integrations.provider.emailUse": "Хабарламалар, кіріс хаттар және fallback.",
   "integrations.status.active": "Белсенді",
@@ -3871,21 +4538,26 @@ export const kk: Record<string, string> = {
   "integrations.import.salesHelp": "Аналитика үшін сатылым оқиғаларын жасайды.",
   "integrations.import.catalog": "Тауарлар, қызметтер және қалдықтар",
   "integrations.import.catalogShort": "Каталог",
-  "integrations.import.catalogHelp": "Қызметтер мен каталог немесе қалдық оқиғаларын жасайды.",
+  "integrations.import.catalogHelp":
+    "Қызметтер мен каталог немесе қалдық оқиғаларын жасайды.",
   "integrations.import.chooseFile": "CSV немесе XLSX файл таңдаңыз.",
-  "integrations.import.panelDescription": "Клиенттер, өтінімдер, сатылымдар немесе каталог бар файлды жүктеңіз. ZANI алдымен файлды тексеріп, алдын ала көріністі көрсетеді.",
+  "integrations.import.panelDescription":
+    "Клиенттер, өтінімдер, сатылымдар немесе каталог бар файлды жүктеңіз. ZANI алдымен файлды тексеріп, алдын ала көріністі көрсетеді.",
   "integrations.import.eyebrow": "Excel / CSV коннекторы",
   "integrations.import.title": "Нақты деректерді импорттау",
-  "integrations.import.description": "CSV/XLSX жүктеп, колонкаларды сәйкестендіруді, алдын ала қарауды және жол қателерін тексеріңіз. Содан кейін ғана импортты растаңыз. Деректер ағымдағы бизнес шегінде қалады.",
+  "integrations.import.description":
+    "CSV/XLSX жүктеп, колонкаларды сәйкестендіруді, алдын ала қарауды және жол қателерін тексеріңіз. Содан кейін ғана импортты растаңыз. Деректер ағымдағы бизнес шегінде қалады.",
   "integrations.import.downloadTemplate": "Шаблонды жүктеу",
   "integrations.import.template": "Шаблон",
   "integrations.import.checkFile": "Файлды тексеру",
   "integrations.import.preview": "Алдын ала қарау",
   "integrations.import.noFile": "Файл әлі жүктелмеді",
   "integrations.import.noFileSelected": "Файл әлі таңдалмады",
-  "integrations.import.noFileSelectedText": "Алдын ала көрініс пен қателерді көру үшін файл жүктеңіз.",
+  "integrations.import.noFileSelectedText":
+    "Алдын ала көрініс пен қателерді көру үшін файл жүктеңіз.",
   "integrations.import.fileMeta": "{entity} · {rows} жол · {status}",
-  "integrations.import.previewPlaceholder": "Мұнда алғашқы жолдардың алдын ала көрінісі пайда болады.",
+  "integrations.import.previewPlaceholder":
+    "Мұнда алғашқы жолдардың алдын ала көрінісі пайда болады.",
   "integrations.import.confirm": "Импортты растау",
   "integrations.import.import": "Импорттау",
   "integrations.import.fixFile": "Импорт алдында файлды түзету керек",
@@ -3895,7 +4567,8 @@ export const kk: Record<string, string> = {
   "integrations.import.noMapping": "Сәйкестендіру табылмады.",
   "integrations.import.duplicates": "Дубльдер",
   "integrations.import.duplicatesFound": "Ықтимал дубльдер табылды",
-  "integrations.import.duplicatesDescription": "Клиент телефон немесе email бойынша табылса, ZANI екінші карточка жасамайды.",
+  "integrations.import.duplicatesDescription":
+    "Клиент телефон немесе email бойынша табылса, ZANI екінші карточка жасамайды.",
   "integrations.import.duplicatesCount": "{count} ықтимал дубль",
   "integrations.import.summaryRows": "Жолдар",
   "integrations.import.summaryCreated": "Жасалды",
@@ -3904,8 +4577,10 @@ export const kk: Record<string, string> = {
   "integrations.import.summaryErrors": "Қателер",
   "integrations.import.summaryDuplicates": "Дубльдер",
   "integrations.import.summaryImported": "Импортталды",
-  "integrations.import.previewEmpty": "Алдын ала қарау файл жүктелгеннен кейін пайда болады.",
-  "integrations.import.previewAfterCheck": "Алдын ала көрініс файл тексерілгеннен кейін пайда болады.",
+  "integrations.import.previewEmpty":
+    "Алдын ала қарау файл жүктелгеннен кейін пайда болады.",
+  "integrations.import.previewAfterCheck":
+    "Алдын ала көрініс файл тексерілгеннен кейін пайда болады.",
   "integrations.import.history": "Импорт тарихы",
   "integrations.import.noImports": "Әзірге импорт жоқ.",
   "integrations.import.status.uploaded": "Жүктелді",
@@ -3914,47 +4589,63 @@ export const kk: Record<string, string> = {
   "integrations.import.status.failed": "Қате",
   "integrations.import.status.none": "Дерек жоқ",
   "integrations.website.previewName": "Тест келуші",
-  "integrations.website.previewMessage": "Сәлеметсіз бе, бос уақытты білгім келеді.",
-  "integrations.website.followUpMessage": "Өтінемін, ең жақын бос уақытты айтыңызшы.",
-  "integrations.website.conversationCreated": "Тест диалог жасалды. Өтінім #{lead}, клиент #{client}.",
-  "integrations.website.followUpAdded": "Қосымша хабарлама сол кіріс диалогқа қосылды.",
+  "integrations.website.previewMessage":
+    "Сәлеметсіз бе, бос уақытты білгім келеді.",
+  "integrations.website.followUpMessage":
+    "Өтінемін, ең жақын бос уақытты айтыңызшы.",
+  "integrations.website.conversationCreated":
+    "Тест диалог жасалды. Өтінім #{lead}, клиент #{client}.",
+  "integrations.website.followUpAdded":
+    "Қосымша хабарлама сол кіріс диалогқа қосылды.",
   "integrations.website.snippetCopied": "Орнату коды көшірілді.",
   "integrations.website.title": "Сайт пен лендинг чаты",
   "integrations.website.eyebrow": "Сайт чаты",
-  "integrations.website.description": "Сайт виджеті өтінішті қабылдап, клиент, өтінім және кіріс диалог жасайды. Техникалық кілттер жасырылған: иесі тек түсінікті орнатуды және хабарлама тестін көреді.",
+  "integrations.website.description":
+    "Сайт виджеті өтінішті қабылдап, клиент, өтінім және кіріс диалог жасайды. Техникалық кілттер жасырылған: иесі тек түсінікті орнатуды және хабарлама тестін көреді.",
   "integrations.website.openInbox": "Кіріс жәшігін ашу",
   "integrations.website.loading": "Сайт арнасын тексеріп жатырмыз...",
   "integrations.website.notConfiguredTitle": "Сайт арнасы әлі жасалмаған",
-  "integrations.website.notConfiguredText": "Сайт арнасын бот баптауында немесе жылдам старт арқылы жасаңыз. Содан кейін мұнда орнату кодын көшіру және тест хабарлама жіберу пайда болады.",
+  "integrations.website.notConfiguredText":
+    "Сайт арнасын бот баптауында немесе жылдам старт арқылы жасаңыз. Содан кейін мұнда орнату кодын көшіру және тест хабарлама жіберу пайда болады.",
   "integrations.website.openBots": "Боттарды ашу",
   "integrations.website.checkReadiness": "Дайындықты тексеру",
   "integrations.website.channelStatus": "Сайт арнасы: {status}",
-  "integrations.website.readyText": "Виджет дайын. Интеграциялар бетін техникалық панельге айналдырмау үшін ішкі қосу коды жасырылған.",
+  "integrations.website.readyText":
+    "Виджет дайын. Интеграциялар бетін техникалық панельге айналдырмау үшін ішкі қосу коды жасырылған.",
   "integrations.website.copySnippet": "Орнату кодын көшіру",
-  "integrations.website.copyNotice": "Орнату коды буферге көшіріледі және CRM экранында ішкі кілтті көрсетпейді.",
+  "integrations.website.copyNotice":
+    "Орнату коды буферге көшіріледі және CRM экранында ішкі кілтті көрсетпейді.",
   "integrations.website.testTitle": "Сайттан тест хабарлама",
-  "integrations.website.testText": "Нақты лендинг келушісі сияқты авторизациясыз public endpoint қолданады.",
+  "integrations.website.testText":
+    "Нақты лендинг келушісі сияқты авторизациясыз public endpoint қолданады.",
   "integrations.website.name": "Аты",
   "integrations.website.phone": "Телефон",
   "integrations.website.message": "Хабарлама",
   "integrations.website.createDialog": "Тест диалог жасау",
   "integrations.website.followUpTitle": "Сол диалогқа хабарлама",
   "integrations.website.addMessage": "Хабарлама қосу",
-  "integrations.telegram.savedMock": "Баптаулар сақталды. Тексеру қауіпсіз демо-режимде орындалды: {reason}",
+  "integrations.telegram.savedMock":
+    "Баптаулар сақталды. Тексеру қауіпсіз демо-режимде орындалды: {reason}",
   "integrations.telegram.saved": "Telegram баптаулары сақталды.",
-  "integrations.telegram.testMock": "Қосу коды сақталды, тексеру қауіпсіз демо-режимде орындалды.",
+  "integrations.telegram.testMock":
+    "Қосу коды сақталды, тексеру қауіпсіз демо-режимде орындалды.",
   "integrations.telegram.testOk": "Telegram қосылымы сәтті тексерілді.",
   "integrations.telegram.testFailed": "Тексеру өтпеді: {reason}",
   "integrations.telegram.unknownError": "белгісіз қате",
   "integrations.telegram.title": "Telegram қосу",
   "integrations.telegram.eyebrow": "Telegram beta-коннекторы",
   "integrations.telegram.openInbox": "Telegram Inbox ашу",
-  "integrations.telegram.description": "Пилотқа арналған алғашқы сыртқы арна: Telegram хабарламалары кіріс жәшігіне түседі. Қосу қолдау арқылы қауіпсіз жасалады, күнделікті жұмыста құпия деректер көрсетілмейді.",
+  "integrations.telegram.description":
+    "Пилотқа арналған алғашқы сыртқы арна: Telegram хабарламалары кіріс жәшігіне түседі. Қосу қолдау арқылы қауіпсіз жасалады, күнделікті жұмыста құпия деректер көрсетілмейді.",
   "integrations.telegram.ownerGuide": "Иеге түсінікті баптау",
-  "integrations.telegram.step1": "1. Статусты тексеріп, арнаның ZANI ішінде жасалғанына көз жеткізіңіз.",
-  "integrations.telegram.step2": "2. Сыртқы Telegram әлі байланыспаса, қосуды қолдау командасына беріңіз.",
-  "integrations.telegram.step3": "3. Баптаудан кейін қолдау командасы арнаның дайын екенін растайды.",
-  "integrations.telegram.step4": "4. Арнаны тексеріп, кіріс хабарламаларды ашыңыз.",
+  "integrations.telegram.step1":
+    "1. Статусты тексеріп, арнаның ZANI ішінде жасалғанына көз жеткізіңіз.",
+  "integrations.telegram.step2":
+    "2. Сыртқы Telegram әлі байланыспаса, қосуды қолдау командасына беріңіз.",
+  "integrations.telegram.step3":
+    "3. Баптаудан кейін қолдау командасы арнаның дайын екенін растайды.",
+  "integrations.telegram.step4":
+    "4. Арнаны тексеріп, кіріс хабарламаларды ашыңыз.",
   "integrations.telegram.token": "Қосу деректері",
   "integrations.telegram.tokenSaved": "Қолдауға берілген",
   "integrations.telegram.tokenMissing": "Баптауды күтеді",
@@ -3967,35 +4658,49 @@ export const kk: Record<string, string> = {
   "integrations.telegram.lastInbound": "Соңғы кіріс",
   "integrations.telegram.lastOutbound": "Соңғы шығыс",
   "integrations.telegram.noEvents": "Оқиғалар әзірге жоқ",
-  "integrations.telegram.betaNotice": "Нақты Telegram трафигі қолдау тексеруі, кезектер және мониторинг дайын болғаннан кейін ғана қосылады. Қазір қосылым қауіпсіз beta foundation ретінде жұмыс істейді.",
+  "integrations.telegram.betaNotice":
+    "Нақты Telegram трафигі қолдау тексеруі, кезектер және мониторинг дайын болғаннан кейін ғана қосылады. Қазір қосылым қауіпсіз beta foundation ретінде жұмыс істейді.",
   "integrations.telegram.supportSetupTitle": "Қолдау арқылы қосу",
-  "integrations.telegram.supportSetupText": "Ие арна статусын және тексеруді көреді. Құпия қосылу деректері сақталғаннан кейін көрсетілмейді және күнделікті жұмысқа қажет емес.",
+  "integrations.telegram.supportSetupText":
+    "Ие арна статусын және тексеруді көреді. Құпия қосылу деректері сақталғаннан кейін көрсетілмейді және күнделікті жұмысқа қажет емес.",
   "integrations.telegram.advancedSetup": "Кеңейтілген пилоттық баптау",
-  "integrations.telegram.advancedSetupHelp": "Қолдау командасы қосу кодын сұраса ғана қолданыңыз. ZANI оны қауіпсіз сақтайды және интерфейсте қайта көрсетпейді.",
+  "integrations.telegram.advancedSetupHelp":
+    "Қолдау командасы қосу кодын сұраса ғана қолданыңыз. ZANI оны қауіпсіз сақтайды және интерфейсте қайта көрсетпейді.",
   "integrations.telegram.botFatherToken": "Telegram қосу коды",
-  "integrations.telegram.tokenReplacePlaceholder": "Код сақталған. Ауыстыру үшін ғана жаңа код енгізіңіз.",
+  "integrations.telegram.tokenReplacePlaceholder":
+    "Код сақталған. Ауыстыру үшін ғана жаңа код енгізіңіз.",
   "integrations.telegram.tokenPlaceholder": "BotFather кодын қойыңыз",
   "integrations.telegram.save": "Сақтау",
   "integrations.telegram.testConnection": "Қосылымды тексеру",
-  "integrations.telegram.readOnly": "Рөліңіз статусты көруге мүмкіндік береді, бірақ Telegram қосылымын өзгерте алмайды.",
-  "integrations.telegram.channelCreated": "Арна жасалды. Енді бот кілтін енгізіңіз.",
-  "integrations.telegram.tokenSavedNotice": "Кілт сақталды. Қосылымды тексеріп, кіріс хабарламаларды қосыңыз.",
+  "integrations.telegram.readOnly":
+    "Рөліңіз статусты көруге мүмкіндік береді, бірақ Telegram қосылымын өзгерте алмайды.",
+  "integrations.telegram.channelCreated":
+    "Арна жасалды. Енді бот кілтін енгізіңіз.",
+  "integrations.telegram.tokenSavedNotice":
+    "Кілт сақталды. Қосылымды тексеріп, кіріс хабарламаларды қосыңыз.",
   "integrations.telegram.connectionChecked": "Қосылым тексерілді.",
-  "integrations.telegram.connectionCheckFailed": "Қосылымды тексеру мүмкін болмады.",
+  "integrations.telegram.connectionCheckFailed":
+    "Қосылымды тексеру мүмкін болмады.",
   "integrations.telegram.inboundConnected": "Кіріс хабарламалар қосылды.",
-  "integrations.telegram.inboundConnectFailed": "Кіріс хабарламаларды қосу мүмкін болмады.",
+  "integrations.telegram.inboundConnectFailed":
+    "Кіріс хабарламаларды қосу мүмкін болмады.",
   "integrations.telegram.createChannel": "Telegram арнасын жасау",
-  "integrations.telegram.inlineDescription": "ZANI клиент хабарламаларын қабылдап, компанияңыз атынан жауап жіберуі үшін ботты қосыңыз.",
+  "integrations.telegram.inlineDescription":
+    "ZANI клиент хабарламаларын қабылдап, компанияңыз атынан жауап жіберуі үшін ботты қосыңыз.",
   "integrations.telegram.botKey": "Бот кілті",
-  "integrations.telegram.tokenSavedPrivate": "Кілт жеке сақталған. Ауыстыру үшін ғана жаңа кілт енгізіңіз.",
-  "integrations.telegram.tokenInstruction": "BotFather берген кілтті енгізіңіз.",
+  "integrations.telegram.tokenSavedPrivate":
+    "Кілт жеке сақталған. Ауыстыру үшін ғана жаңа кілт енгізіңіз.",
+  "integrations.telegram.tokenInstruction":
+    "BotFather берген кілтті енгізіңіз.",
   "integrations.telegram.tokenInputPlaceholder": "Бот кілтін енгізіңіз",
   "integrations.telegram.saveKey": "Кілтті сақтау",
   "integrations.telegram.connectInbound": "Кірісті қосу",
   "integrations.request.title": "{provider}: қосу өтінімі",
   "integrations.request.eyebrow": "{provider}: өтінім арқылы қосу",
-  "integrations.request.whatsappText": "Арнаны қолмен тексеру үшін деректер жинаймыз. Нақты сыртқы қосылым автоматты түрде қосылмайды.",
-  "integrations.request.instagramText": "Болашақ Meta-ready қосылымы үшін деректер жинаймыз. Instagram паролі қажет емес және сұралмайды.",
+  "integrations.request.whatsappText":
+    "Арнаны қолмен тексеру үшін деректер жинаймыз. Нақты сыртқы қосылым автоматты түрде қосылмайды.",
+  "integrations.request.instagramText":
+    "Болашақ Meta-ready қосылымы үшін деректер жинаймыз. Instagram паролі қажет емес және сұралмайды.",
   "integrations.request.companyName": "Компания атауы",
   "integrations.request.whatsappNumber": "WhatsApp нөмірі",
   "integrations.request.contactPerson": "Байланыс адамы",
@@ -4009,53 +4714,80 @@ export const kk: Record<string, string> = {
   "integrations.request.comment": "Пікір",
   "integrations.request.update": "Өтінімді жаңарту",
   "integrations.request.submit": "Өтінім жіберу",
-  "integrations.request.saved": "Өтінім сақталды. Платформа қолдауы оны қосу сұрауы ретінде көреді.",
-  "integrations.data.kaspiDescription": "Тек қарау: тапсырыстар, сатылымдар және болашақ аналитика. Бағаны қайта есептеу және кері жазу жоқ.",
-  "integrations.data.oneCDescription": "Пилотта файлдар және Excel/CSV pipeline арқылы жұмыс істейміз. Толық синхрондау мен бухгалтерияны қоспаймыз.",
-  "integrations.data.googleSheetsDescription": "Клиенттер, өтінімдер және сатылымдар үшін кесте импортын сұрау. Пилотта фондық синхрондау жоқ.",
-  "integrations.data.emailDescription": "Өтінімдер мен хабарламаларға пошта қосу сұрауы. Транзакциялық жіберу бөлек қосылады.",
-  "integrations.data.moyskladDescription": "Пилоттан кейін қалдықтар мен каталогты қосуға арналған негіз.",
-  "integrations.data.wildberriesDescription": "Даму жоспарында: сатылымдар, SKU, қалдықтар және қайтарымдар көрінісі.",
-  "integrations.data.ozonDescription": "Даму жоспарында: кері жазусыз және баға басқаруынсыз маркетплейс көрінісі.",
-  "integrations.data.yandexMarketDescription": "Болашақ маркетплейс коннекторы, қазір тек қызығушылық өтінімі.",
+  "integrations.request.saved":
+    "Өтінім сақталды. Платформа қолдауы оны қосу сұрауы ретінде көреді.",
+  "integrations.data.kaspiDescription":
+    "Тек қарау: тапсырыстар, сатылымдар және болашақ аналитика. Бағаны қайта есептеу және кері жазу жоқ.",
+  "integrations.data.oneCDescription":
+    "Пилотта файлдар және Excel/CSV pipeline арқылы жұмыс істейміз. Толық синхрондау мен бухгалтерияны қоспаймыз.",
+  "integrations.data.googleSheetsDescription":
+    "Клиенттер, өтінімдер және сатылымдар үшін кесте импортын сұрау. Пилотта фондық синхрондау жоқ.",
+  "integrations.data.emailDescription":
+    "Өтінімдер мен хабарламаларға пошта қосу сұрауы. Транзакциялық жіберу бөлек қосылады.",
+  "integrations.data.moyskladDescription":
+    "Пилоттан кейін қалдықтар мен каталогты қосуға арналған негіз.",
+  "integrations.data.wildberriesDescription":
+    "Даму жоспарында: сатылымдар, SKU, қалдықтар және қайтарымдар көрінісі.",
+  "integrations.data.ozonDescription":
+    "Даму жоспарында: кері жазусыз және баға басқаруынсыз маркетплейс көрінісі.",
+  "integrations.data.yandexMarketDescription":
+    "Болашақ маркетплейс коннекторы, қазір тек қызығушылық өтінімі.",
   "integrations.data.requestSaved": "{name}: өтінім сақталды.",
-  "integrations.data.demoImported": "Демо-импорт оқиғасы жазылды. Бұл сыртқы қосылымсыз болашақ синхрондауды қауіпсіз тексеру.",
+  "integrations.data.demoImported":
+    "Демо-импорт оқиғасы жазылды. Бұл сыртқы қосылымсыз болашақ синхрондауды қауіпсіз тексеру.",
   "integrations.data.title": "Kaspi / 1C / қойма / маркетплейстер",
   "integrations.data.eyebrow": "Дерек коннекторларының негізі",
   "integrations.instagram.username": "Instagram аккаунты",
-  "integrations.instagram.metaAccessReturned": "Meta Instagram доступын қайтарды. Қосуды аяқтаңыз.",
-  "integrations.instagram.channelCreated": "Арна жасалды. Енді Instagram-ды Meta арқылы қосыңыз.",
-  "integrations.instagram.accessSaved": "Instagram доступы жеке сақталды. Енді қосылымды тексеріңіз.",
-  "integrations.instagram.metaOpenFailed": "Meta арқылы қосуды ашу мүмкін болмады. ZANI қолдауына хабарласыңыз.",
+  "integrations.instagram.metaAccessReturned":
+    "Meta Instagram доступын қайтарды. Қосуды аяқтаңыз.",
+  "integrations.instagram.channelCreated":
+    "Арна жасалды. Енді Instagram-ды Meta арқылы қосыңыз.",
+  "integrations.instagram.accessSaved":
+    "Instagram доступы жеке сақталды. Енді қосылымды тексеріңіз.",
+  "integrations.instagram.metaOpenFailed":
+    "Meta арқылы қосуды ашу мүмкін болмады. ZANI қолдауына хабарласыңыз.",
   "integrations.instagram.connectedNotice": "Instagram қосылды.",
   "integrations.instagram.connectionChecked": "Instagram қосылымы тексерілді.",
-  "integrations.instagram.connectionCheckFailed": "Instagram доступы тексеруден өтпеді.",
+  "integrations.instagram.connectionCheckFailed":
+    "Instagram доступы тексеруден өтпеді.",
   "integrations.instagram.finishConnection": "Қосуды аяқтаңыз",
   "integrations.instagram.createChannel": "Instagram арнасын жасау",
-  "integrations.instagram.inlineDescription": "ZANI хабарламаларды қабылдап, диалогтарды менеджерлерге беруі үшін Instagram Direct-ті Meta арқылы қосыңыз.",
+  "integrations.instagram.inlineDescription":
+    "ZANI хабарламаларды қабылдап, диалогтарды менеджерлерге беруі үшін Instagram Direct-ті Meta арқылы қосыңыз.",
   "integrations.instagram.accountId": "Instagram аккаунт ID",
   "integrations.instagram.idSaved": "ID сақталған",
   "integrations.instagram.facebookPageId": "Facebook Page ID",
   "integrations.instagram.updateAccess": "Доступты жаңарту",
   "integrations.instagram.saveAccess": "Доступты сақтау",
   "integrations.instagram.metaConnection": "Meta арқылы қосу",
-  "integrations.instagram.metaDescription": "Meta-ға кіріп, Instagram Business байланысқан парақшаны таңдаңыз.",
+  "integrations.instagram.metaDescription":
+    "Meta-ға кіріп, Instagram Business байланысқан парақшаны таңдаңыз.",
   "integrations.instagram.connectWithMeta": "Meta арқылы қосу",
-  "integrations.instagram.metaConfirmed": "Meta доступты растады. Қосуды аяқтаңыз.",
+  "integrations.instagram.metaConfirmed":
+    "Meta доступты растады. Қосуды аяқтаңыз.",
   "integrations.instagram.completeConnection": "Қосуды аяқтау",
-  "integrations.whatsapp.metaDataReturned": "Meta қосу деректерін қайтарды. Өрістерді тексеріп, қосуды аяқтаңыз.",
-  "integrations.whatsapp.channelCreated": "Арна жасалды. Енді WhatsApp-ты Meta арқылы қосыңыз.",
-  "integrations.whatsapp.accessSaved": "WhatsApp доступы жеке сақталды. Енді қосылымды тексеріңіз.",
+  "integrations.whatsapp.metaDataReturned":
+    "Meta қосу деректерін қайтарды. Өрістерді тексеріп, қосуды аяқтаңыз.",
+  "integrations.whatsapp.channelCreated":
+    "Арна жасалды. Енді WhatsApp-ты Meta арқылы қосыңыз.",
+  "integrations.whatsapp.accessSaved":
+    "WhatsApp доступы жеке сақталды. Енді қосылымды тексеріңіз.",
   "integrations.whatsapp.connectionChecked": "WhatsApp қосылымы тексерілді.",
-  "integrations.whatsapp.connectionCheckFailed": "WhatsApp доступы тексеруден өтпеді.",
-  "integrations.whatsapp.metaOpenFailed": "Meta арқылы қосуды ашу мүмкін болмады. ZANI қолдауына хабарласыңыз.",
-  "integrations.whatsapp.metaAccessDenied": "Meta доступты растамады. WhatsApp-ты қайта қосып көріңіз.",
-  "integrations.whatsapp.metaConfirmed": "Meta доступты растады. Қосуды аяқтаңыз.",
-  "integrations.whatsapp.metaFallbackOpened": "Meta қосудың резервтік терезесі ашылды. Кіруді аяқтап, ZANI-ға оралыңыз.",
+  "integrations.whatsapp.connectionCheckFailed":
+    "WhatsApp доступы тексеруден өтпеді.",
+  "integrations.whatsapp.metaOpenFailed":
+    "Meta арқылы қосуды ашу мүмкін болмады. ZANI қолдауына хабарласыңыз.",
+  "integrations.whatsapp.metaAccessDenied":
+    "Meta доступты растамады. WhatsApp-ты қайта қосып көріңіз.",
+  "integrations.whatsapp.metaConfirmed":
+    "Meta доступты растады. Қосуды аяқтаңыз.",
+  "integrations.whatsapp.metaFallbackOpened":
+    "Meta қосудың резервтік терезесі ашылды. Кіруді аяқтап, ZANI-ға оралыңыз.",
   "integrations.whatsapp.connectedNotice": "WhatsApp қосылды.",
   "integrations.whatsapp.finishConnection": "Қосуды аяқтаңыз",
   "integrations.whatsapp.createChannel": "WhatsApp арнасын жасау",
-  "integrations.whatsapp.inlineDescription": "ZANI WhatsApp Business арқылы хабарламаларды қабылдап және жібере алуы үшін Meta доступын растаңыз.",
+  "integrations.whatsapp.inlineDescription":
+    "ZANI WhatsApp Business арқылы хабарламаларды қабылдап және жібере алуы үшін Meta доступын растаңыз.",
   "integrations.whatsapp.phoneNumberId": "WhatsApp нөмір ID",
   "integrations.whatsapp.phoneNumberIdSaved": "Нөмір ID сақталған",
   "integrations.whatsapp.businessAccountId": "Бизнес аккаунт ID",
@@ -4063,7 +4795,8 @@ export const kk: Record<string, string> = {
   "integrations.whatsapp.updateAccess": "Доступты жаңарту",
   "integrations.whatsapp.saveAccess": "Доступты сақтау",
   "integrations.whatsapp.metaConnection": "Meta арқылы қосу",
-  "integrations.whatsapp.metaDescription": "Meta-ға кіріп, компанияңыздың WhatsApp Business аккаунтын таңдаңыз.",
+  "integrations.whatsapp.metaDescription":
+    "Meta-ға кіріп, компанияңыздың WhatsApp Business аккаунтын таңдаңыз.",
   "integrations.whatsapp.connectWithMeta": "Meta арқылы қосу",
   "integrations.whatsapp.completeConnection": "Қосуды аяқтау",
   "integrations.setupMetric.access": "Доступ",
@@ -4072,27 +4805,35 @@ export const kk: Record<string, string> = {
   "integrations.setupMetric.mode": "Режим",
   "integrations.setupMetric.readOnly": "Тек оқу",
   "integrations.setupMetric.demoReadOnly": "Demo / тек оқу",
-  "integrations.mock.providerDisabledNotice": "Provider traffic бұл ортада өшірулі. Тексерулер мен импорт тек demo events қолданады және live integration қосылғанын дәлелдемейді.",
-  "integrations.mock.connectionChecked": "Demo режимде тексерілді. Live provider request жіберілген жоқ.",
-  "integrations.mock.syncLoaded": "Demo events жүктелді: {count}. Бұл live provider қосылғанын білдірмейді.",
+  "integrations.mock.providerDisabledNotice":
+    "Provider traffic бұл ортада өшірулі. Тексерулер мен импорт тек demo events қолданады және live integration қосылғанын дәлелдемейді.",
+  "integrations.mock.connectionChecked":
+    "Demo режимде тексерілді. Live provider request жіберілген жоқ.",
+  "integrations.mock.syncLoaded":
+    "Demo events жүктелді: {count}. Бұл live provider қосылғанын білдірмейді.",
   "integrations.setupMetric.notYet": "Әлі жоқ",
   "integrations.setupAction.enterAccessKey": "Доступ кілтін енгізу",
-  "integrations.setupAction.accessKeyReplacePlaceholder": "Доступ сақталған. Ауыстыру үшін ғана жаңа кілт енгізіңіз.",
+  "integrations.setupAction.accessKeyReplacePlaceholder":
+    "Доступ сақталған. Ауыстыру үшін ғана жаңа кілт енгізіңіз.",
   "integrations.setupAction.hideAdvanced": "Қосымша баптауларды жасыру",
   "integrations.setupAction.showAdvanced": "Қосымша баптаулар",
   "integrations.setupAction.syncDays": "Жүктеу кезеңі, күн",
   "integrations.setupAction.saveAccess": "Доступты сақтау",
-  "integrations.kaspi.accessSaved": "Kaspi қосылды. Доступ жеке сақталды, тапсырыстарды жүктеуге болады.",
+  "integrations.kaspi.accessSaved":
+    "Kaspi қосылды. Доступ жеке сақталды, тапсырыстарды жүктеуге болады.",
   "integrations.kaspi.connectionChecked": "Kaspi қосылымы тексерілді.",
-  "integrations.kaspi.connectionCheckFailed": "Kaspi доступын тексеру мүмкін болмады.",
+  "integrations.kaspi.connectionCheckFailed":
+    "Kaspi доступын тексеру мүмкін болмады.",
   "integrations.kaspi.ordersLoaded": "Тапсырыстар жүктелді: {count} оқиға.",
   "integrations.kaspi.ordersLoadFailed": "Тапсырыстарды жүктеу мүмкін болмады.",
   "integrations.kaspi.orders": "Тапсырыстар",
   "integrations.kaspi.ordersLoadedBefore": "Жүктелген",
   "integrations.kaspi.connectionTitle": "Kaspi қосу",
-  "integrations.kaspi.connectionDescription": "Қазір Kaspi сатушы доступ кілті арқылы қосылады. Бұл ресми partner authorization пайда болғанға дейінгі уақытша self-service жол.",
+  "integrations.kaspi.connectionDescription":
+    "Қазір Kaspi сатушы доступ кілті арқылы қосылады. Бұл ресми partner authorization пайда болғанға дейінгі уақытша self-service жол.",
   "integrations.kaspi.accessKey": "Kaspi доступ кілті",
-  "integrations.kaspi.accessKeyPlaceholder": "Kaspi сатушы кабинетіндегі кілтті енгізіңіз",
+  "integrations.kaspi.accessKeyPlaceholder":
+    "Kaspi сатушы кабинетіндегі кілтті енгізіңіз",
   "integrations.kaspi.merchantId": "Дүкен ID",
   "integrations.kaspi.orderState.archive": "Архив / аяқталған",
   "integrations.kaspi.orderState.new": "Жаңа",
@@ -4101,18 +4842,24 @@ export const kk: Record<string, string> = {
   "integrations.kaspi.pageSize": "Бір реттегі тапсырыс лимиті",
   "integrations.kaspi.connect": "Kaspi қосу",
   "integrations.kaspi.loadOrders": "Тапсырыстарды жүктеу",
-  "integrations.kaspi.readOnlyNotice": "ZANI аналитика үшін тапсырыстарды ғана оқиды. Мұнда Kaspi бағаларын өзгерту, тапсырысты қабылдау және бас тарту өшірілген.",
-  "integrations.moysklad.accessSaved": "МойСклад қосылды. Доступ жеке сақталды, қосылымды тексеруге болады.",
+  "integrations.kaspi.readOnlyNotice":
+    "ZANI аналитика үшін тапсырыстарды ғана оқиды. Мұнда Kaspi бағаларын өзгерту, тапсырысты қабылдау және бас тарту өшірілген.",
+  "integrations.moysklad.accessSaved":
+    "МойСклад қосылды. Доступ жеке сақталды, қосылымды тексеруге болады.",
   "integrations.moysklad.connectionChecked": "МойСклад қосылымы тексерілді.",
-  "integrations.moysklad.connectionCheckFailed": "МойСклад доступын тексеру мүмкін болмады.",
+  "integrations.moysklad.connectionCheckFailed":
+    "МойСклад доступын тексеру мүмкін болмады.",
   "integrations.moysklad.dataLoaded": "Деректер жүктелді: {count} оқиға.",
-  "integrations.moysklad.dataLoadFailed": "МойСклад деректерін жүктеу мүмкін болмады.",
+  "integrations.moysklad.dataLoadFailed":
+    "МойСклад деректерін жүктеу мүмкін болмады.",
   "integrations.moysklad.inventory": "Қойма",
   "integrations.moysklad.loadedBefore": "Жүктелген",
   "integrations.moysklad.connectionTitle": "МойСклад қосу",
-  "integrations.moysklad.connectionDescription": "МойСклад доступ кілтін енгізіңіз. ZANI оны жеке сақтап, тек деректерді жүктеу үшін қолданады.",
+  "integrations.moysklad.connectionDescription":
+    "МойСклад доступ кілтін енгізіңіз. ZANI оны жеке сақтап, тек деректерді жүктеу үшін қолданады.",
   "integrations.moysklad.accessKey": "МойСклад доступ кілті",
-  "integrations.moysklad.accessKeyPlaceholder": "МойСклад доступ кілтін енгізіңіз",
+  "integrations.moysklad.accessKeyPlaceholder":
+    "МойСклад доступ кілтін енгізіңіз",
   "integrations.moysklad.entity.products": "Тауарлар",
   "integrations.moysklad.entity.stock": "Қалдықтар",
   "integrations.moysklad.entity.sales": "Сатылымдар",
@@ -4120,18 +4867,23 @@ export const kk: Record<string, string> = {
   "integrations.moysklad.pageSize": "Бір реттегі жол лимиті",
   "integrations.moysklad.connect": "МойСклад қосу",
   "integrations.moysklad.loadData": "Деректерді жүктеу",
-  "integrations.moysklad.readOnlyNotice": "ZANI тек тауарларды, қалдықтарды, сатылымдарды және контрагенттерді оқиды. МойСклад ішінде құжаттарды, бағаларды және қалдықтарды өзгерту өшірілген.",
-  "integrations.ozon.accessSaved": "Ozon қосылды. Доступ жеке сақталды, қосылымды тексеруге болады.",
+  "integrations.moysklad.readOnlyNotice":
+    "ZANI тек тауарларды, қалдықтарды, сатылымдарды және контрагенттерді оқиды. МойСклад ішінде құжаттарды, бағаларды және қалдықтарды өзгерту өшірілген.",
+  "integrations.ozon.accessSaved":
+    "Ozon қосылды. Доступ жеке сақталды, қосылымды тексеруге болады.",
   "integrations.ozon.connectionChecked": "Ozon қосылымы тексерілді.",
-  "integrations.ozon.connectionCheckFailed": "Ozon доступын тексеру мүмкін болмады.",
+  "integrations.ozon.connectionCheckFailed":
+    "Ozon доступын тексеру мүмкін болмады.",
   "integrations.ozon.dataLoaded": "Ozon деректері жүктелді: {count} оқиға.",
   "integrations.ozon.dataLoadFailed": "Ozon деректерін жүктеу мүмкін болмады.",
   "integrations.ozon.data": "Деректер",
   "integrations.ozon.connectionTitle": "Ozon қосу",
-  "integrations.ozon.connectionDescription": "Ozon сатушы кабинетіндегі доступ деректерін енгізіңіз. ZANI оларды тек жөнелтілімдер мен қалдықтарды оқу үшін қолданады.",
+  "integrations.ozon.connectionDescription":
+    "Ozon сатушы кабинетіндегі доступ деректерін енгізіңіз. ZANI оларды тек жөнелтілімдер мен қалдықтарды оқу үшін қолданады.",
   "integrations.ozon.enterAccess": "Доступ енгізу",
   "integrations.ozon.sellerId": "Ozon сатушы ID",
-  "integrations.ozon.sellerIdReplacePlaceholder": "ID сақталған. Ауыстыру үшін ғана жаңасын енгізіңіз.",
+  "integrations.ozon.sellerIdReplacePlaceholder":
+    "ID сақталған. Ауыстыру үшін ғана жаңасын енгізіңіз.",
   "integrations.ozon.sellerIdPlaceholder": "Ozon кабинетіндегі ID",
   "integrations.ozon.accessKey": "Ozon доступ кілті",
   "integrations.ozon.accessKeyPlaceholder": "Ozon кабинетіндегі кілт",
@@ -4139,29 +4891,42 @@ export const kk: Record<string, string> = {
   "integrations.ozon.limit": "Бір реттегі жазба лимиті",
   "integrations.ozon.connect": "Ozon қосу",
   "integrations.ozon.loadData": "Деректерді жүктеу",
-  "integrations.ozon.readOnlyNotice": "ZANI Ozon бағаларын, қалдықтарын, карточкаларын, жинауды және тапсырыстан бас тартуды жаңартпайды. Қосу тек есептер үшін деректерді жүктейді.",
-  "integrations.wildberries.accessSaved": "Wildberries қосылды. Доступ жеке сақталды, қосылымды тексеруге болады.",
-  "integrations.wildberries.connectionChecked": "Wildberries қосылымы тексерілді.",
-  "integrations.wildberries.connectionCheckFailed": "Wildberries доступын тексеру мүмкін болмады.",
-  "integrations.wildberries.dataLoaded": "Wildberries деректері жүктелді: {count} оқиға.",
-  "integrations.wildberries.dataLoadFailed": "Wildberries деректерін жүктеу мүмкін болмады.",
+  "integrations.ozon.readOnlyNotice":
+    "ZANI Ozon бағаларын, қалдықтарын, карточкаларын, жинауды және тапсырыстан бас тартуды жаңартпайды. Қосу тек есептер үшін деректерді жүктейді.",
+  "integrations.wildberries.accessSaved":
+    "Wildberries қосылды. Доступ жеке сақталды, қосылымды тексеруге болады.",
+  "integrations.wildberries.connectionChecked":
+    "Wildberries қосылымы тексерілді.",
+  "integrations.wildberries.connectionCheckFailed":
+    "Wildberries доступын тексеру мүмкін болмады.",
+  "integrations.wildberries.dataLoaded":
+    "Wildberries деректері жүктелді: {count} оқиға.",
+  "integrations.wildberries.dataLoadFailed":
+    "Wildberries деректерін жүктеу мүмкін болмады.",
   "integrations.wildberries.updateWindow": "WB жаңартуы",
   "integrations.wildberries.updateWindowValue": "~30 минут",
   "integrations.wildberries.connectionTitle": "Wildberries қосу",
-  "integrations.wildberries.connectionDescription": "Wildberries сатушы кабинетіндегі доступ кілтін енгізіңіз. ZANI аналитика үшін тек тапсырыстар мен сатылымдарды оқиды.",
+  "integrations.wildberries.connectionDescription":
+    "Wildberries сатушы кабинетіндегі доступ кілтін енгізіңіз. ZANI аналитика үшін тек тапсырыстар мен сатылымдарды оқиды.",
   "integrations.wildberries.accessKey": "Wildberries доступ кілті",
-  "integrations.wildberries.accessKeyPlaceholder": "Wildberries доступ кілтін енгізіңіз",
+  "integrations.wildberries.accessKeyPlaceholder":
+    "Wildberries доступ кілтін енгізіңіз",
   "integrations.wildberries.entity.orders": "Тапсырыстар",
   "integrations.wildberries.entity.sales": "Сатылымдар",
   "integrations.wildberries.entity.stocks": "Қалдықтар",
-  "integrations.wildberries.stocksOptional": "Wildberries қалдықтары optional болып қалдырылды: негізгі жұмыс сценарийі - тапсырыстар мен сатылымдар.",
+  "integrations.wildberries.stocksOptional":
+    "Wildberries қалдықтары optional болып қалдырылды: негізгі жұмыс сценарийі - тапсырыстар мен сатылымдар.",
   "integrations.wildberries.connect": "Wildberries қосу",
   "integrations.wildberries.loadData": "Деректерді жүктеу",
-  "integrations.wildberries.readOnlyNotice": "ZANI Wildberries бағаларын, карточкаларын, жеткізілімдерін және тапсырыстарын өзгертпейді. Қосу тек есептер үшін деректерді жүктейді.",
-  "integrations.kaspiPricing.stoppedNotice": "Баға агенті тоқтатылды. Бағаларды қолдану бұғатталды.",
+  "integrations.wildberries.readOnlyNotice":
+    "ZANI Wildberries бағаларын, карточкаларын, жеткізілімдерін және тапсырыстарын өзгертпейді. Қосу тек есептер үшін деректерді жүктейді.",
+  "integrations.kaspiPricing.stoppedNotice":
+    "Баға агенті тоқтатылды. Бағаларды қолдану бұғатталды.",
   "integrations.kaspiPricing.resumedNotice": "Баға агенті қайта белсенді.",
-  "integrations.kaspiPricing.productTitle": "Бағаларға арналған бөлек ZANI өнімі",
-  "integrations.kaspiPricing.productDescription": "Қарапайым Kaspi коннекторы тек тапсырыстар мен бизнес деректерін оқиды. Kaspi Pricing баға ережелерін, шектерді, бәсекелестер мониторингін және автопилотты басқарады.",
+  "integrations.kaspiPricing.productTitle":
+    "Бағаларға арналған бөлек ZANI өнімі",
+  "integrations.kaspiPricing.productDescription":
+    "Қарапайым Kaspi коннекторы тек тапсырыстар мен бизнес деректерін оқиды. Kaspi Pricing баға ережелерін, шектерді, бәсекелестер мониторингін және автопилотты басқарады.",
   "integrations.kaspiPricing.openAgent": "Агентті ашу",
   "integrations.kaspiPricing.rules": "Ережелер",
   "integrations.kaspiPricing.activeRules": "Белсенді",
@@ -4169,14 +4934,18 @@ export const kk: Record<string, string> = {
   "integrations.kaspiPricing.signals": "Сигналдар",
   "integrations.kaspiPricing.agentStopped": "Агент тоқтатылды",
   "integrations.kaspiPricing.agentReady": "Агент жұмысқа дайын",
-  "integrations.kaspiPricing.priceApplyBlocked": "Бағаларды қолдану бұғатталды.",
-  "integrations.kaspiPricing.emergencyStopDescription": "Emergency stop қарапайым Kaspi интеграциясынан бөлек қолжетімді.",
+  "integrations.kaspiPricing.priceApplyBlocked":
+    "Бағаларды қолдану бұғатталды.",
+  "integrations.kaspiPricing.emergencyStopDescription":
+    "Emergency stop қарапайым Kaspi интеграциясынан бөлек қолжетімді.",
   "integrations.kaspiPricing.resume": "Жалғастыру",
   "integrations.kaspiPricing.stopAgent": "Агентті тоқтату",
   "integrations.kaspiPricing.latestChange": "Соңғы өзгеріс",
   "integrations.kaspiPricing.history": "Тарих",
-  "integrations.kaspiPricing.noChanges": "Әзірге өзгеріс жоқ. Ереже жасап, ұсынысты есептеңіз.",
-  "integrations.data.description": "Болашақ интеграциялар үшін жеңіл қабат: өтінім, статус және қауіпсіз демо-импорт тексеруі. ERP, нақты уақыттағы толық синхрондау, кері жазу, бағаны қайта есептеу және бухгалтерлік логика жоқ.",
+  "integrations.kaspiPricing.noChanges":
+    "Әзірге өзгеріс жоқ. Ереже жасап, ұсынысты есептеңіз.",
+  "integrations.data.description":
+    "Болашақ интеграциялар үшін жеңіл қабат: өтінім, статус және қауіпсіз демо-импорт тексеруі. ERP, нақты уақыттағы толық синхрондау, кері жазу, бағаны қайта есептеу және бухгалтерлік логика жоқ.",
   "integrations.data.commentPlaceholder": "Өтінімге пікір",
   "integrations.data.status.request": "Сұрауға болады",
   "integrations.data.update": "Жаңарту",
@@ -4184,35 +4953,48 @@ export const kk: Record<string, string> = {
   "integrations.data.checkDemoImport": "Демо-импортты тексеру",
   "integrations.page.loading": "Интеграциялар жүктелуде...",
   "integrations.page.noBusinessTitle": "Бизнес таңдалмаған",
-  "integrations.page.noBusinessDescription": "Арналар мен сыртқы сервистерді қосу үшін бизнес құрыңыз.",
+  "integrations.page.noBusinessDescription":
+    "Арналар мен сыртқы сервистерді қосу үшін бизнес құрыңыз.",
   "integrations.page.title": "Бизнес қосылымдары",
-  "integrations.page.description": "ZANI пилоттық коннектор картасы: self-service арналар, request-қосылымдар, тарифтік upsell модульдер және тұйық кнопкасыз roadmap.",
+  "integrations.page.description":
+    "ZANI пилоттық коннектор картасы: self-service арналар, request-қосылымдар, тарифтік upsell модульдер және тұйық кнопкасыз roadmap.",
   "integrations.page.safeTokenNotice": "CRM ішінде техникалық токендер жоқ",
   "integrations.page.includedTitle": "Тарифте бар",
-  "integrations.page.includedText": "Пилотта сыртқы провайдерсіз қосуға болады.",
+  "integrations.page.includedText":
+    "Пилотта сыртқы провайдерсіз қосуға болады.",
   "integrations.page.requestTitle": "Өтінім бойынша",
-  "integrations.page.requestText": "Қызығушылық карточкасын жасаймыз, бірақ auto-connect уәде етпейміз.",
+  "integrations.page.requestText":
+    "Қызығушылық карточкасын жасаймыз, бірақ auto-connect уәде етпейміз.",
   "integrations.page.roadmapTitle": "Жақында / Roadmap",
-  "integrations.page.roadmapText": "Болашақ құндылық және upsell ретінде көрсетеміз.",
+  "integrations.page.roadmapText":
+    "Болашақ құндылық және upsell ретінде көрсетеміз.",
   "integrations.page.connectedTitle": "Қосылған",
-  "integrations.page.connectedText": "Ағымдағы бизнестің белсенді коннекторлары.",
-  "integrations.page.searchPlaceholder": "Коннектор іздеу: WhatsApp, Excel, Kaspi...",
+  "integrations.page.connectedText":
+    "Ағымдағы бизнестің белсенді коннекторлары.",
+  "integrations.page.searchPlaceholder":
+    "Коннектор іздеу: WhatsApp, Excel, Kaspi...",
   "integrations.page.allStatuses": "Барлық статустар",
   "integrations.page.selfServiceTitle": "Өздігінен",
   "integrations.page.upgradeTitle": "Жоғары тарифте",
   "integrations.page.allGroups": "Барлық бағыттар",
   "integrations.page.reset": "Тазалау",
-  "integrations.page.resultsMeta": "Табылды: {found} / {total}. Пилотта иесі қазір не қосылатынын, не өтінім қажет ететінін және не болашақ модуль екенін көреді.",
+  "integrations.page.resultsMeta":
+    "Табылды: {found} / {total}. Пилотта иесі қазір не қосылатынын, не өтінім қажет ететінін және не болашақ модуль екенін көреді.",
   "integrations.page.noResultsTitle": "Коннекторлар табылмады",
-  "integrations.page.noResultsDescription": "Фильтрлерді тазалаңыз немесе басқа іздеу сұрауын көріңіз.",
+  "integrations.page.noResultsDescription":
+    "Фильтрлерді тазалаңыз немесе басқа іздеу сұрауын көріңіз.",
   "integrations.overview.title": "Қосылымдар",
-  "integrations.overview.description": "Деректер, сатылым және операциялар үшін сыртқы сервистерді қосыңыз. ИИ-агенттің байланыс арналары агент карточкасында бөлек бапталады.",
+  "integrations.overview.description":
+    "Деректер, сатылым және операциялар үшін сыртқы сервистерді қосыңыз. ИИ-агенттің байланыс арналары агент карточкасында бөлек бапталады.",
   "integrations.overview.openAnalysis": "Аналитиканы ашу",
-  "integrations.overview.agentChannelsTitle": "Байланыс арналары ИИ-агенттерге көшірілді",
-  "integrations.overview.agentChannelsText": "WhatsApp, Telegram, Instagram және сайт чаты нақты ИИ-менеджерге қосылады. Осылай агент қай жерде жауап беретінін және қай арналар қосулы екенін түсіну оңай.",
+  "integrations.overview.agentChannelsTitle":
+    "Байланыс арналары ИИ-агенттерге көшірілді",
+  "integrations.overview.agentChannelsText":
+    "WhatsApp, Telegram, Instagram және сайт чаты нақты ИИ-менеджерге қосылады. Осылай агент қай жерде жауап беретінін және қай арналар қосулы екенін түсіну оңай.",
   "integrations.overview.openAgentChannels": "Агент арналарын ашу",
   "integrations.overview.recommendedTitle": "Ұсынылатын интеграция",
-  "integrations.overview.recommendedText": "{provider} қызметінен бастаңыз: бұл ZANI-ге өтініштер бойынша көбірек контекст беріп, қолмен өңдеуді азайтады.",
+  "integrations.overview.recommendedText":
+    "{provider} қызметінен бастаңыз: бұл ZANI-ге өтініштер бойынша көбірек контекст беріп, қолмен өңдеуді азайтады.",
   "integrations.overview.connectNow": "Қосуды көрсету",
   "integrations.overview.searchPlaceholder": "Іздеу: сайт, Telegram, Kaspi...",
   "integrations.overview.allGroups": "Барлық бағыттар",
@@ -4223,14 +5005,20 @@ export const kk: Record<string, string> = {
   "integrations.overview.status.planned": "Жоспарда",
   "integrations.overview.status.error": "Назар қажет",
   "integrations.overview.emptyTitle": "Ештеңе табылмады",
-  "integrations.overview.emptyText": "Фильтрлерді тазалаңыз немесе басқа сұрау енгізіңіз.",
+  "integrations.overview.emptyText":
+    "Фильтрлерді тазалаңыз немесе басқа сұрау енгізіңіз.",
   "integrations.overview.guideTitle": "Қосу реті",
-  "integrations.overview.guideMeta": "{connected} қосылған · {setup} баптауды күтеді",
-  "integrations.overview.guideStep1": "1. Байланыс арналарын ИИ-агенттерде баптаңыз: онда клиенттерге қай агент жауап беретіні анық көрінеді.",
-  "integrations.overview.guideStep2": "2. Аналитика сатылымдар мен қалдықтарды көруі үшін Excel/CSV, қойма немесе маркетплейстерді қосыңыз.",
-  "integrations.overview.guideStep3": "3. Бұл бетте бизнеске дерек беретін немесе операцияны қолдайтын сервистер ғана қалады.",
+  "integrations.overview.guideMeta":
+    "{connected} қосылған · {setup} баптауды күтеді",
+  "integrations.overview.guideStep1":
+    "1. Байланыс арналарын ИИ-агенттерде баптаңыз: онда клиенттерге қай агент жауап беретіні анық көрінеді.",
+  "integrations.overview.guideStep2":
+    "2. Аналитика сатылымдар мен қалдықтарды көруі үшін Excel/CSV, қойма немесе маркетплейстерді қосыңыз.",
+  "integrations.overview.guideStep3":
+    "3. Бұл бетте бизнеске дерек беретін немесе операцияны қолдайтын сервистер ғана қалады.",
   "integrations.overview.simpleTitle": "Артық күрделілік жоқ",
-  "integrations.overview.simpleText": "Карточка түсінікті статус пен бір негізгі әрекетті көрсетеді. Қолмен енгізілетін кілттер және қосымша өрістер тек нақты сервистің баптауында ашылады.",
+  "integrations.overview.simpleText":
+    "Карточка түсінікті статус пен бір негізгі әрекетті көрсетеді. Қолмен енгізілетін кілттер және қосымша өрістер тек нақты сервистің баптауында ашылады.",
   "integrations.availability.included": "Тарифте бар",
   "integrations.availability.upgrade": "Жоғары тарифте",
   "integrations.availability.request": "Өтінім бойынша",
@@ -4246,13 +5034,18 @@ export const kk: Record<string, string> = {
   "integrations.merchantStatus.setup_required": "Баптау қажет",
   "integrations.merchantStatus.pending_request": "Өтінім бойынша қосылуда",
   "integrations.merchantStatus.coming_soon": "Жақында",
-  "integrations.merchantStatus.unavailable_on_plan": "Ағымдағы тарифте қолжетімсіз",
+  "integrations.merchantStatus.unavailable_on_plan":
+    "Ағымдағы тарифте қолжетімсіз",
   "integrations.merchantStatus.error": "Қосу қатесі",
   "integrations.merchantStatus.disconnected": "Өшірілген",
-  "integrations.connectorHint.selfService": "Пилотта сыртқы провайдерсіз қосуға болады. Бұл қауіпсіз self-service коннектор.",
-  "integrations.connectorHint.request": "Кнопка ZANI ішінде қосу өтінімін жасайды. Нақты қосуды ZANI командасы қолмен орындайды.",
-  "integrations.connectorHint.upgrade": "{plan} немесе жоғары тарифте қолжетімді. Қазір дайын емес кнопкасыз адал upsell көрсетеміз.",
-  "integrations.connectorHint.roadmap": "Дайын production-қосуды уәде етпей, болашақ мүмкіндік ретінде көрсетеміз.",
+  "integrations.connectorHint.selfService":
+    "Пилотта сыртқы провайдерсіз қосуға болады. Бұл қауіпсіз self-service коннектор.",
+  "integrations.connectorHint.request":
+    "Кнопка ZANI ішінде қосу өтінімін жасайды. Нақты қосуды ZANI командасы қолмен орындайды.",
+  "integrations.connectorHint.upgrade":
+    "{plan} немесе жоғары тарифте қолжетімді. Қазір дайын емес кнопкасыз адал upsell көрсетеміз.",
+  "integrations.connectorHint.roadmap":
+    "Дайын production-қосуды уәде етпей, болашақ мүмкіндік ретінде көрсетеміз.",
   "integrations.capability.communications": "Коммуникациялар",
   "integrations.capability.sales": "Сатылымдар",
   "integrations.capability.calendar": "Күнтізбе",
@@ -4262,27 +5055,37 @@ export const kk: Record<string, string> = {
   "integrations.capability.custom": "Кастом",
   "integrations.group.messaging.eyebrow": "Хабарламалар",
   "integrations.group.messaging.title": "Байланыс арналары",
-  "integrations.group.messaging.text": "WhatsApp, Telegram, Instagram және өтінімдер мен диалогтарға арналған басқа кіріс арналары.",
+  "integrations.group.messaging.text":
+    "WhatsApp, Telegram, Instagram және өтінімдер мен диалогтарға арналған басқа кіріс арналары.",
   "integrations.group.imports.eyebrow": "Импорт",
   "integrations.group.imports.title": "Файлдар және кестелер",
-  "integrations.group.imports.text": "Клиент базасын, сатылымдарды және каталогты жылдам көшіруге арналған Excel, CSV және кестелер.",
+  "integrations.group.imports.text":
+    "Клиент базасын, сатылымдарды және каталогты жылдам көшіруге арналған Excel, CSV және кестелер.",
   "integrations.group.sales.eyebrow": "Сатылымдар",
   "integrations.group.sales.title": "Маркетплейстер және сатылымдар",
-  "integrations.group.sales.text": "Сыртқы жүйелерді алмастырмай, тапсырыстар, сатылымдар және оқиғалар бойынша read-only көрініс.",
+  "integrations.group.sales.text":
+    "Сыртқы жүйелерді алмастырмай, тапсырыстар, сатылымдар және оқиғалар бойынша read-only көрініс.",
   "integrations.group.website.eyebrow": "Сайт",
   "integrations.group.website.title": "Сайт және виджеттер",
-  "integrations.group.website.text": "Виджет, формалар және сайттан түскен өтініштер ZANI кабинетінде.",
+  "integrations.group.website.text":
+    "Виджет, формалар және сайттан түскен өтініштер ZANI кабинетінде.",
   "integrations.group.accounting.eyebrow": "Есеп",
   "integrations.group.accounting.title": "Қаржы, қойма және есеп",
-  "integrations.group.accounting.text": "1C, МойСклад және қойма дереккөздерінен жеңіл көрініс.",
+  "integrations.group.accounting.text":
+    "1C, МойСклад және қойма дереккөздерінен жеңіл көрініс.",
   "integrations.bots.eyebrow": "Жауаптарды автоматтандыру",
   "integrations.bots.title": "ZANI чат-боттары",
-  "integrations.bots.description": "Арналар хабарламалар мен өтінімдерді қабылдайды. ZANI чат-боттары жиі сұрақтарға жауап беруге, өтінім қабылдауға және диалогтарды менеджерлерге беруге көмектеседі.",
-  "integrations.bots.safeNotice": "Мерчантқа API кілттері, webhook және техникалық баптаулар көрсетілмейді",
+  "integrations.bots.description":
+    "Арналар хабарламалар мен өтінімдерді қабылдайды. ZANI чат-боттары жиі сұрақтарға жауап беруге, өтінім қабылдауға және диалогтарды менеджерлерге беруге көмектеседі.",
+  "integrations.bots.safeNotice":
+    "Мерчантқа API кілттері, webhook және техникалық баптаулар көрсетілмейді",
   "integrations.bots.cardTitle": "ZANI {channel}-боты",
-  "integrations.bots.whatsappText": "Клиенттерге автоматты жауап береді, өтінім қабылдайды және WhatsApp диалогтарын менеджерлерге береді.",
-  "integrations.bots.telegramText": "Telegram өтініштерін қабылдайды, байланыс деректерін жинайды және менеджердің тез қосылуына көмектеседі.",
-  "integrations.bots.instagramText": "Instagram өтініштерін өңдеуге дайындайды: жылдам жауаптар, өтінім және менеджерге беру.",
+  "integrations.bots.whatsappText":
+    "Клиенттерге автоматты жауап береді, өтінім қабылдайды және WhatsApp диалогтарын менеджерлерге береді.",
+  "integrations.bots.telegramText":
+    "Telegram өтініштерін қабылдайды, байланыс деректерін жинайды және менеджердің тез қосылуына көмектеседі.",
+  "integrations.bots.instagramText":
+    "Instagram өтініштерін өңдеуге дайындайды: жылдам жауаптар, өтінім және менеджерге беру.",
   "integrations.bots.state.needs_channel": "Алдымен арнаны қосыңыз",
   "integrations.bots.state.setup_required": "Баптау қажет",
   "integrations.bots.state.active": "Бот белсенді",
@@ -4302,49 +5105,71 @@ export const kk: Record<string, string> = {
   "integrations.action.continueSetup": "Баптауды жалғастыру",
   "integrations.action.create": "Қосуды жасау",
   "integrations.action.disconnect": "Өшіру",
-  "integrations.setupMessage.connected": "Арна белсенді. Жаңа өтініштер мен оқиғалар Inbox, CRM, аналитика және автоматизацияға түседі.",
-  "integrations.setupMessage.needsAttention": "Қосу жасалды және баптауды немесе ZANI командасының қолмен тексеруін күтеді.",
-  "integrations.setupMessage.disabled": "Арна өшірілген. Қайта баптаудан немесе қолдау арқылы оны қайтаруға болады.",
+  "integrations.setupMessage.connected":
+    "Арна белсенді. Жаңа өтініштер мен оқиғалар Inbox, CRM, аналитика және автоматизацияға түседі.",
+  "integrations.setupMessage.needsAttention":
+    "Қосу жасалды және баптауды немесе ZANI командасының қолмен тексеруін күтеді.",
+  "integrations.setupMessage.disabled":
+    "Арна өшірілген. Қайта баптаудан немесе қолдау арқылы оны қайтаруға болады.",
   "integrations.card.businessValue": "Бизнеске пайдасы",
   "integrations.card.plan": "Тариф",
   "integrations.card.connection": "Қосу",
   "integrations.card.ownerAction": "Иесі не істеуі керек",
-  "integrations.card.requestNotice": "Басу қосу өтінімін жасайды. Бұл сыртқы сервисті автоматты түрде қоспайды.",
-  "integrations.card.roadmapNotice": "Кнопка әдейі өшірілген: коннектор дайын қосу уәдесінсіз болашақ мүмкіндік немесе тарифтік upsell ретінде көрсетілген.",
-  "integrations.card.pendingNotice": "Қосу жасалды, бірақ әлі баптау немесе тексеру қажет. Request-коннекторлар үшін бұл қалыпты пилоттық статус.",
-  "integrations.card.connectedNotice": "Қосу белсенді. Бұл арна деректері CRM, Inbox, аналитика және автоматизацияда қолданылады.",
-  "integrations.card.readOnly": "Рөл интеграцияларды көруге мүмкіндік береді, бірақ қосуды басқаруға рұқсат жоқ.",
-  "integrations.card.credentialsExpired": "Доступ қосылмаған немесе мерзімі өткен.",
+  "integrations.card.requestNotice":
+    "Басу қосу өтінімін жасайды. Бұл сыртқы сервисті автоматты түрде қоспайды.",
+  "integrations.card.roadmapNotice":
+    "Кнопка әдейі өшірілген: коннектор дайын қосу уәдесінсіз болашақ мүмкіндік немесе тарифтік upsell ретінде көрсетілген.",
+  "integrations.card.pendingNotice":
+    "Қосу жасалды, бірақ әлі баптау немесе тексеру қажет. Request-коннекторлар үшін бұл қалыпты пилоттық статус.",
+  "integrations.card.connectedNotice":
+    "Қосу белсенді. Бұл арна деректері CRM, Inbox, аналитика және автоматизацияда қолданылады.",
+  "integrations.card.readOnly":
+    "Рөл интеграцияларды көруге мүмкіндік береді, бірақ қосуды басқаруға рұқсат жоқ.",
+  "integrations.card.credentialsExpired":
+    "Доступ қосылмаған немесе мерзімі өткен.",
   "integrations.card.latestRun": "Соңғы синхрондау",
   "integrations.card.noRuns": "Синхрондау әлі жоқ.",
   "integrations.card.retryRun": "Қайталау",
-  "integrations.card.kaspiPricingSeparateSetup": "Kaspi Pricing бөлек баптау терезесінде ашылады.",
-  "integrations.card.kaspiPricingNoGenericConfig": "Kaspi Pricing әмбебап қосу баптауын қолданбайды.",
+  "integrations.card.kaspiPricingSeparateSetup":
+    "Kaspi Pricing бөлек баптау терезесінде ашылады.",
+  "integrations.card.kaspiPricingNoGenericConfig":
+    "Kaspi Pricing әмбебап қосу баптауын қолданбайды.",
   "integrations.card.connectionSaved": "Қосу деректері сақталды.",
   "integrations.card.configure": "Баптау",
   "integrations.card.connect": "Қосу",
   "integrations.card.disableChannel": "{title}: өшіру",
   "integrations.card.enableChannel": "{title}: қосу",
-  "integrations.card.websiteFlipTitle": "Сайттан келген өтінімдерді бірінші кликтен кейін жоғалтпаңыз.",
-  "integrations.card.websiteFlipText": "ZANI формадағы өтінімдерді қабылдап, бірден хабарламаларға жібереді.",
+  "integrations.card.websiteFlipTitle":
+    "Сайттан келген өтінімдерді бірінші кликтен кейін жоғалтпаңыз.",
+  "integrations.card.websiteFlipText":
+    "ZANI формадағы өтінімдерді қабылдап, бірден хабарламаларға жібереді.",
   "integrations.card.websiteFlow": "Сайт → Хабарламалар → Өтінімдер",
   "integrations.card.connectionTitle": "Қосу: {title}",
-  "integrations.card.websiteNoExtraData": "Сайт чаты арна кілті арқылы қосылады. Қосымша деректер қажет емес.",
+  "integrations.card.websiteNoExtraData":
+    "Сайт чаты арна кілті арқылы қосылады. Қосымша деректер қажет емес.",
   "integrations.card.accountId": "Аккаунт ID",
   "integrations.card.accountIdPlaceholder": "Аккаунт, дүкен немесе кабинет ID",
   "integrations.card.accessKey": "Доступ кілті",
   "integrations.card.accessKeyPlaceholder": "Доступ кілтін енгізіңіз",
-  "integrations.card.accessKeyReplacePlaceholder": "Кілт сақталған. Ауыстыру үшін ғана жаңа кілт енгізіңіз.",
+  "integrations.card.accessKeyReplacePlaceholder":
+    "Кілт сақталған. Ауыстыру үшін ғана жаңа кілт енгізіңіз.",
   "integrations.card.webhookSecret": "Тексеру кілті",
   "integrations.card.simpleSetupTitle": "Қарапайым қосу жолы",
-  "integrations.card.simpleSetupText": "Мұнда өтінім жасап немесе қосылым статусын тексеруге болады. Аккаунт ID, кілттер және webhook мәндері ие/қолдау үшін қолмен баптауда қалады.",
+  "integrations.card.simpleSetupText":
+    "Мұнда өтінім жасап немесе қосылым статусын тексеруге болады. Аккаунт ID, кілттер және webhook мәндері ие/қолдау үшін қолмен баптауда қалады.",
   "integrations.card.manualSupportSetup": "Қолдау үшін қолмен баптау",
-  "integrations.error.actionRequired": "Қосылым назар аударуды қажет етеді. Баптау статусын тексеріңіз немесе иеден қайта қосуды сұраңыз.",
-  "integrations.error.webhookSetup": "Кіріс хабарламалар әлі дайын емес. Ие немесе ZANI қолдауы webhook/setup тексерісін аяқтауы керек.",
-  "integrations.error.permission": "Рөліңіз қосылымды көруге мүмкіндік береді, бірақ баптауын өзгерте алмайды.",
-  "integrations.error.rateLimit": "Провайдер сұрауларды уақытша шектеді. Кейін қайталаңыз немесе қолдаудан тексеруді сұраңыз.",
-  "integrations.error.providerUnavailable": "Провайдер жауап бермеді. Кейін қайта тексеріңіз; CRM деректері өзгермеді.",
-  "integrations.error.supportReview": "Бұл қосылым күнделікті жұмысқа қосылар алдында қолдау тексерісін қажет етеді.",
+  "integrations.error.actionRequired":
+    "Қосылым назар аударуды қажет етеді. Баптау статусын тексеріңіз немесе иеден қайта қосуды сұраңыз.",
+  "integrations.error.webhookSetup":
+    "Кіріс хабарламалар әлі дайын емес. Ие немесе ZANI қолдауы webhook/setup тексерісін аяқтауы керек.",
+  "integrations.error.permission":
+    "Рөліңіз қосылымды көруге мүмкіндік береді, бірақ баптауын өзгерте алмайды.",
+  "integrations.error.rateLimit":
+    "Провайдер сұрауларды уақытша шектеді. Кейін қайталаңыз немесе қолдаудан тексеруді сұраңыз.",
+  "integrations.error.providerUnavailable":
+    "Провайдер жауап бермеді. Кейін қайта тексеріңіз; CRM деректері өзгермеді.",
+  "integrations.error.supportReview":
+    "Бұл қосылым күнделікті жұмысқа қосылар алдында қолдау тексерісін қажет етеді.",
   "integrations.card.check": "Тексеру",
   "integrations.card.requestConnection": "Қосу өтінімін жіберу",
   "integrations.setup.needHelp": "Қосуға көмек керек пе?",
@@ -4404,8 +5229,10 @@ export const kk: Record<string, string> = {
   "status.support": "Қолдау",
   "conversations.previewQualification": "Бағалау",
   "conversations.previewRequired": "Алдымен AI-бағалауды іске қосыңыз",
-  "conversations.crmAutomationPreviewFallback": "CRM байланыстарын жаңартпас бұрын AI-бағалауды көрсетіңіз.",
-  "conversations.qualificationPreviewReady": "AI-бағалау дайын: {intent}, {confidence}%.",
+  "conversations.crmAutomationPreviewFallback":
+    "CRM байланыстарын жаңартпас бұрын AI-бағалауды көрсетіңіз.",
+  "conversations.qualificationPreviewReady":
+    "AI-бағалау дайын: {intent}, {confidence}%.",
   "analytics.noShowRate": "No-show rate",
   "analytics.leadToDeal": "Lead to deal",
   "analytics.leadToDealHint": "leads converted to deals",
@@ -4417,19 +5244,29 @@ export const kk: Record<string, string> = {
   "analytics.appointmentRate": "Appointment rate",
   "analytics.aiOpenSources": "Open sources",
   "analytics.aiCard.overdue_tasks.title": "Overdue tasks need action",
-  "analytics.aiCard.overdue_tasks.description": "{value} overdue task(s), grounded by {sources} task source(s).",
-  "analytics.aiCard.unanswered_conversations.title": "Customers are waiting in inbox",
-  "analytics.aiCard.unanswered_conversations.description": "{value} conversation(s) are unread or require handoff, grounded by {sources} conversation source(s).",
+  "analytics.aiCard.overdue_tasks.description":
+    "{value} overdue task(s), grounded by {sources} task source(s).",
+  "analytics.aiCard.unanswered_conversations.title":
+    "Customers are waiting in inbox",
+  "analytics.aiCard.unanswered_conversations.description":
+    "{value} conversation(s) are unread or require handoff, grounded by {sources} conversation source(s).",
   "analytics.aiCard.failed_connectors.title": "Connector health is degraded",
-  "analytics.aiCard.failed_connectors.description": "{value} connector(s) are in failed or error state, grounded by {sources} connector source(s).",
+  "analytics.aiCard.failed_connectors.description":
+    "{value} connector(s) are in failed or error state, grounded by {sources} connector source(s).",
   "analytics.aiCard.appointment_no_show_rate.title": "No-show rate is high",
-  "analytics.aiCard.appointment_no_show_rate.description": "No-show rate is {value}%, grounded by {sources} appointment source(s).",
-  "analytics.aiCard.lead_to_deal_missing.title": "Leads are not turning into deals",
-  "analytics.aiCard.lead_to_deal_missing.description": "{value} visible lead(s) have no linked deal conversion yet.",
+  "analytics.aiCard.appointment_no_show_rate.description":
+    "No-show rate is {value}%, grounded by {sources} appointment source(s).",
+  "analytics.aiCard.lead_to_deal_missing.title":
+    "Leads are not turning into deals",
+  "analytics.aiCard.lead_to_deal_missing.description":
+    "{value} visible lead(s) have no linked deal conversion yet.",
   "analytics.aiCard.crm_operating_norm.title": "CRM operations look stable",
-  "analytics.aiCard.crm_operating_norm.description": "Current operational metrics show no urgent CRM reporting alerts.",
+  "analytics.aiCard.crm_operating_norm.description":
+    "Current operational metrics show no urgent CRM reporting alerts.",
   "analytics.aiCard.no_operational_data.title": "No operational data yet",
-  "analytics.aiCard.no_operational_data.description": "Connect channels or import data so ZANI can build sourced CRM insights.",
+  "analytics.aiCard.no_operational_data.description":
+    "Connect channels or import data so ZANI can build sourced CRM insights.",
   "analytics.aiCard.default.title": "CRM metric insight",
-  "analytics.aiCard.default.description": "This insight is grounded in {sources} source(s).",
+  "analytics.aiCard.default.description":
+    "This insight is grounded in {sources} source(s).",
 };

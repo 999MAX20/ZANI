@@ -1,12 +1,14 @@
 import { MoreHorizontal, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { appointmentsApi, type AppointmentCreatePayload } from "../../api/appointments";
+import {
+  appointmentsApi,
+  type AppointmentCreatePayload,
+} from "../../api/appointments";
 import { getApiErrorMessage } from "../../api/client";
 import { workingHoursApi } from "../../api/workingHours";
-import { CrmEntityDrawer, type CrmDrawerEntity } from "../../components/crm/CrmEntityDrawer";
 import { AppointmentForm } from "../../components/forms/AppointmentForm";
 import { AppointmentRescheduleForm } from "../../components/forms/AppointmentRescheduleForm";
 import { usePageHeader } from "../../components/layout/PageHeaderContext";
@@ -22,7 +24,13 @@ import { useI18n } from "../../lib/i18n";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useEntityData } from "../../hooks/useEntityData";
 import type { Appointment, Task } from "../../types";
-import { dayEndHour, dayStartHour, hourHeight, localeByLanguage, timelineHours } from "./calendarConstants";
+import {
+  dayEndHour,
+  dayStartHour,
+  hourHeight,
+  localeByLanguage,
+  timelineHours,
+} from "./calendarConstants";
 import type { CalendarResource, CalendarViewMode } from "./calendarTypes";
 import {
   formatCalendarDateTime,
@@ -47,29 +55,41 @@ import {
   toDateInputValue,
 } from "./calendarUtils";
 import { AppointmentDrawerPanel } from "./components/AppointmentDrawerPanel";
-import { CalendarAppointmentPreview, CalendarTaskPreview } from "./components/CalendarAppointmentCards";
-import { ActiveCalendarFilters, type ActiveCalendarFilterChip } from "./components/CalendarFilters";
+import {
+  CalendarAppointmentPreview,
+  CalendarTaskPreview,
+} from "./components/CalendarAppointmentCards";
+import {
+  ActiveCalendarFilters,
+  type ActiveCalendarFilterChip,
+} from "./components/CalendarFilters";
 import { CalendarToolbar } from "./components/CalendarToolbar";
 import { MonthInspectorPanel } from "./components/MonthInspectorPanel";
 
 export function CalendarPage() {
   const { t, language } = useI18n();
+  const navigate = useNavigate();
   const showNotification = useNotification();
   const { setPageHeader } = usePageHeader();
   const { business } = useActiveBusiness();
-  const { clients, services, resources, leads, workingHours, tasks } = useEntityData({
-    clients: true,
-    services: true,
-    resources: true,
-    leads: true,
-    workingHours: true,
-    tasks: true,
-  });
+  const { clients, services, resources, leads, workingHours, tasks } =
+    useEntityData({
+      clients: true,
+      services: true,
+      resources: true,
+      leads: true,
+      workingHours: true,
+      tasks: true,
+    });
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const fallbackToday = todayInTimeZone("Asia/Almaty");
-  const [date, setDate] = useState(() => getQueryDate(searchParams.get("date"), fallbackToday));
-  const [viewMode, setViewMode] = useState<CalendarViewMode>(() => getQueryView(searchParams.get("view")));
+  const [date, setDate] = useState(() =>
+    getQueryDate(searchParams.get("date"), fallbackToday),
+  );
+  const [viewMode, setViewMode] = useState<CalendarViewMode>(() =>
+    getQueryView(searchParams.get("view")),
+  );
   const [bookingOpen, setBookingOpen] = useState(false);
   const [bookingPrefill, setBookingPrefill] = useState<{
     client?: number | null;
@@ -81,24 +101,48 @@ export function CalendarPage() {
     hour?: number;
     source?: Appointment["source"];
   } | null>(null);
-  const [drawerEntity, setDrawerEntity] = useState<CrmDrawerEntity | null>(null);
-  const [serviceFilter, setServiceFilter] = useState(searchParams.get("service") || "");
-  const [resourceFilter, setResourceFilter] = useState(searchParams.get("resource") || "");
-  const [statusFilter, setStatusFilter] = useState(searchParams.get("status") || "");
+  const [serviceFilter, setServiceFilter] = useState(
+    searchParams.get("service") || "",
+  );
+  const [resourceFilter, setResourceFilter] = useState(
+    searchParams.get("resource") || "",
+  );
+  const [statusFilter, setStatusFilter] = useState(
+    searchParams.get("status") || "",
+  );
   const [search, setSearch] = useState(searchParams.get("search") || "");
-  const [selectedAppointmentId, setSelectedAppointmentId] = useState<number | null>(null);
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<
+    number | null
+  >(null);
   const [monthInspectorOpen, setMonthInspectorOpen] = useState(false);
-  const [rescheduleTarget, setRescheduleTarget] = useState<Appointment | null>(null);
-  const [statusReasonTarget, setStatusReasonTarget] = useState<{ appointment: Appointment; status: Appointment["status"] } | null>(null);
+  const [rescheduleTarget, setRescheduleTarget] = useState<Appointment | null>(
+    null,
+  );
+  const [statusReasonTarget, setStatusReasonTarget] = useState<{
+    appointment: Appointment;
+    status: Appointment["status"];
+  } | null>(null);
   const [statusReason, setStatusReason] = useState("");
   const [archiveTarget, setArchiveTarget] = useState<Appointment | null>(null);
   const [archiveReason, setArchiveReason] = useState("");
   const appointmentIdFromUrl = Number(searchParams.get("appointment")) || null;
   const searchParamsKey = searchParams.toString();
-  const calendarRange = useMemo(() => getCalendarRange(date, viewMode), [date, viewMode]);
+  const calendarRange = useMemo(
+    () => getCalendarRange(date, viewMode),
+    [date, viewMode],
+  );
 
   const appointments = useQuery({
-    queryKey: ["appointments", "calendar", business?.id, calendarRange.start, calendarRange.end, serviceFilter, resourceFilter, statusFilter],
+    queryKey: [
+      "appointments",
+      "calendar",
+      business?.id,
+      calendarRange.start,
+      calendarRange.end,
+      serviceFilter,
+      resourceFilter,
+      statusFilter,
+    ],
     queryFn: () =>
       appointmentsApi.list({
         business: business!.id,
@@ -118,7 +162,14 @@ export function CalendarPage() {
   });
 
   const dayAvailableSlots = useQuery({
-    queryKey: ["available-slots", "calendar-day", business?.id, serviceFilter, resourceFilter, date],
+    queryKey: [
+      "available-slots",
+      "calendar-day",
+      business?.id,
+      serviceFilter,
+      resourceFilter,
+      date,
+    ],
     queryFn: () =>
       appointmentsApi.availableSlots({
         business_id: business!.id,
@@ -147,27 +198,40 @@ export function CalendarPage() {
   }, [searchParamsKey]);
 
   useEffect(() => {
-    setSearchParams((current) => {
-      const next = new URLSearchParams(current);
-      next.set("date", date);
-      next.set("view", viewMode);
-      if (serviceFilter) next.set("service", serviceFilter);
-      else next.delete("service");
-      if (resourceFilter) next.set("resource", resourceFilter);
-      else next.delete("resource");
-      if (statusFilter) next.set("status", statusFilter);
-      else next.delete("status");
-      if (search.trim()) next.set("search", search.trim());
-      else next.delete("search");
-      if (next.toString() === current.toString()) return current;
-      return next;
-    }, { replace: true });
-  }, [date, resourceFilter, search, serviceFilter, setSearchParams, statusFilter, viewMode]);
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.set("date", date);
+        next.set("view", viewMode);
+        if (serviceFilter) next.set("service", serviceFilter);
+        else next.delete("service");
+        if (resourceFilter) next.set("resource", resourceFilter);
+        else next.delete("resource");
+        if (statusFilter) next.set("status", statusFilter);
+        else next.delete("status");
+        if (search.trim()) next.set("search", search.trim());
+        else next.delete("search");
+        if (next.toString() === current.toString()) return current;
+        return next;
+      },
+      { replace: true },
+    );
+  }, [
+    date,
+    resourceFilter,
+    search,
+    serviceFilter,
+    setSearchParams,
+    statusFilter,
+    viewMode,
+  ]);
 
   useEffect(() => {
     const appointment = deepLinkedAppointment.data;
     if (!appointment) return;
-    setDate(dateInTimeZone(appointment.start_at, business?.timezone || "Asia/Almaty"));
+    setDate(
+      dateInTimeZone(appointment.start_at, business?.timezone || "Asia/Almaty"),
+    );
     setSelectedAppointmentId(appointment.id);
     setViewMode("day");
   }, [business?.timezone, deepLinkedAppointment.data]);
@@ -177,31 +241,54 @@ export function CalendarPage() {
     queryClient.invalidateQueries({ queryKey: ["available-slots"] });
     queryClient.invalidateQueries({ queryKey: ["activity-events"] });
     queryClient.invalidateQueries({ queryKey: ["crm-card"] });
-    if (appointment) queryClient.invalidateQueries({ queryKey: ["crm-card", "appointment", appointment.id] });
+    if (appointment)
+      queryClient.invalidateQueries({
+        queryKey: ["crm-card", "appointment", appointment.id],
+      });
   }
 
-  function setNotice(message: string | null, tone: "success" | "info" | "warning" | "danger" = "success") {
+  function setNotice(
+    message: string | null,
+    tone: "success" | "info" | "warning" | "danger" = "success",
+  ) {
     if (!message) return;
     showNotification({ message, tone });
   }
 
   const mutation = useMutation({
-    mutationFn: (payload: AppointmentCreatePayload) => appointmentsApi.create(payload),
+    mutationFn: (payload: AppointmentCreatePayload) =>
+      appointmentsApi.create(payload),
     onSuccess: (appointment) => {
       refreshAppointmentData(appointment);
       setBookingOpen(false);
-      if (appointment.start_at) setDate(dateInTimeZone(appointment.start_at, business?.timezone || "Asia/Almaty"));
+      if (appointment.start_at)
+        setDate(
+          dateInTimeZone(
+            appointment.start_at,
+            business?.timezone || "Asia/Almaty",
+          ),
+        );
       setSelectedAppointmentId(appointment.id);
       setNotice(t("calendar.createdNotice"));
     },
   });
 
   const statusMutation = useMutation({
-    mutationFn: ({ id, status, reason }: { id: number; status: Appointment["status"]; reason?: string }) => {
+    mutationFn: ({
+      id,
+      status,
+      reason,
+    }: {
+      id: number;
+      status: Appointment["status"];
+      reason?: string;
+    }) => {
       if (status === "confirmed") return appointmentsApi.confirm(id);
-      if (status === "cancelled") return appointmentsApi.cancel(id, { reason: reason || "" });
+      if (status === "cancelled")
+        return appointmentsApi.cancel(id, { reason: reason || "" });
       if (status === "completed") return appointmentsApi.complete(id);
-      if (status === "no_show") return appointmentsApi.noShow(id, { reason: reason || "" });
+      if (status === "no_show")
+        return appointmentsApi.noShow(id, { reason: reason || "" });
       return appointmentsApi.get(id);
     },
     onSuccess: (appointment) => {
@@ -215,7 +302,12 @@ export function CalendarPage() {
     mutationFn: appointmentsApi.reschedule,
     onSuccess: (appointment) => {
       refreshAppointmentData(appointment);
-      setDate(dateInTimeZone(appointment.start_at, business?.timezone || "Asia/Almaty"));
+      setDate(
+        dateInTimeZone(
+          appointment.start_at,
+          business?.timezone || "Asia/Almaty",
+        ),
+      );
       setSelectedAppointmentId(appointment.id);
       setRescheduleTarget(null);
       setNotice(t("appointments.rescheduledNotice"));
@@ -223,7 +315,8 @@ export function CalendarPage() {
   });
 
   const archiveMutation = useMutation({
-    mutationFn: ({ id, reason }: { id: number; reason: string }) => appointmentsApi.archive({ id, reason }),
+    mutationFn: ({ id, reason }: { id: number; reason: string }) =>
+      appointmentsApi.archive({ id, reason }),
     onSuccess: (appointment) => {
       refreshAppointmentData(appointment);
       setArchiveTarget(null);
@@ -234,7 +327,11 @@ export function CalendarPage() {
   });
 
   const quickHoursMutation = useMutation({
-    mutationFn: () => workingHoursApi.applyPreset({ business: business!.id, preset: "daily_9_20" }),
+    mutationFn: () =>
+      workingHoursApi.applyPreset({
+        business: business!.id,
+        preset: "daily_9_20",
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["working-hours"] });
       queryClient.invalidateQueries({ queryKey: ["available-slots"] });
@@ -254,7 +351,11 @@ export function CalendarPage() {
     return () => setPageHeader(null);
   }, [date, setPageHeader, t]);
 
-  const actionError = statusMutation.error || quickHoursMutation.error || rescheduleMutation.error || archiveMutation.error;
+  const actionError =
+    statusMutation.error ||
+    quickHoursMutation.error ||
+    rescheduleMutation.error ||
+    archiveMutation.error;
   const actionErrorMessage = actionError ? getApiErrorMessage(actionError) : "";
 
   useEffect(() => {
@@ -271,14 +372,34 @@ export function CalendarPage() {
   const leadItems = leads.data || [];
   const workingHourItems = workingHours.data || [];
   const taskItems = (tasks.data || []) as Task[];
-  const isCalendarDataLoading = appointments.isLoading || clients.isLoading || services.isLoading || resources.isLoading || leads.isLoading || workingHours.isLoading;
+  const isCalendarDataLoading =
+    appointments.isLoading ||
+    clients.isLoading ||
+    services.isLoading ||
+    resources.isLoading ||
+    leads.isLoading ||
+    workingHours.isLoading;
   const locale = localeByLanguage[language];
-  const businessTimeZone = normalizeTimeZone(business.timezone || "Asia/Almaty");
+  const businessTimeZone = normalizeTimeZone(
+    business.timezone || "Asia/Almaty",
+  );
   const todayValue = todayInTimeZone(businessTimeZone);
-  const weekDays = [t("weekday.monShort"), t("weekday.tueShort"), t("weekday.wedShort"), t("weekday.thuShort"), t("weekday.friShort"), t("weekday.satShort"), t("weekday.sunShort")];
+  const weekDays = [
+    t("weekday.monShort"),
+    t("weekday.tueShort"),
+    t("weekday.wedShort"),
+    t("weekday.thuShort"),
+    t("weekday.friShort"),
+    t("weekday.satShort"),
+    t("weekday.sunShort"),
+  ];
   const clientById = new Map(clientItems.map((client) => [client.id, client]));
-  const serviceById = new Map(serviceItems.map((service) => [service.id, service]));
-  const resourceById = new Map(resourceItems.map((resource) => [resource.id, resource]));
+  const serviceById = new Map(
+    serviceItems.map((service) => [service.id, service]),
+  );
+  const resourceById = new Map(
+    resourceItems.map((resource) => [resource.id, resource]),
+  );
   const leadById = new Map(leadItems.map((lead) => [lead.id, lead]));
 
   const appointmentList = appointmentItems.filter((item) => {
@@ -288,10 +409,17 @@ export function CalendarPage() {
     const query = search.trim().toLowerCase();
     if (item.is_archived) return false;
     if (serviceFilter && item.service !== Number(serviceFilter)) return false;
-    if (resourceFilter && item.resource !== Number(resourceFilter)) return false;
+    if (resourceFilter && item.resource !== Number(resourceFilter))
+      return false;
     if (statusFilter && item.status !== statusFilter) return false;
     if (!query) return true;
-    return [client?.full_name, service?.name, resource?.name, item.source, item.notes]
+    return [
+      client?.full_name,
+      service?.name,
+      resource?.name,
+      item.source,
+      item.notes,
+    ]
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(query));
   });
@@ -300,25 +428,61 @@ export function CalendarPage() {
   const monthDates = getMonthDates(date);
   const dayAppointments = appointmentList
     .filter((item) => dateInTimeZone(item.start_at, businessTimeZone) === date)
-    .sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
+    .sort(
+      (a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime(),
+    );
   const weekKeys = new Set(weekDates.map(toDateInputValue));
   const weekAppointments = appointmentList
-    .filter((item) => weekKeys.has(dateInTimeZone(item.start_at, businessTimeZone)))
-    .sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
-  const dayTasks = taskItems.filter((task) => task.due_at && dateInTimeZone(task.due_at, businessTimeZone) === date && !["done", "cancelled"].includes(task.status));
-  const selectedAppointment = appointmentItems.find((appointment) => appointment.id === selectedAppointmentId && !appointment.is_archived) || null;
+    .filter((item) =>
+      weekKeys.has(dateInTimeZone(item.start_at, businessTimeZone)),
+    )
+    .sort(
+      (a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime(),
+    );
+  const dayTasks = taskItems.filter(
+    (task) =>
+      task.due_at &&
+      dateInTimeZone(task.due_at, businessTimeZone) === date &&
+      !["done", "cancelled"].includes(task.status),
+  );
+  const selectedAppointment =
+    appointmentItems.find(
+      (appointment) =>
+        appointment.id === selectedAppointmentId && !appointment.is_archived,
+    ) || null;
   const hasWorkingHours = Boolean(workingHourItems.length);
   const selectedResourceId = resourceFilter ? Number(resourceFilter) : null;
-  const selectedDayHours = getWorkingHoursFor(workingHourItems, getWeekday(date), selectedResourceId);
-  const confirmedCount = dayAppointments.filter((appointment) => appointment.status === "confirmed").length;
-  const openSlotsFallback = Math.max(0, timelineHours.length - dayAppointments.length);
-  const openSlotsCount = serviceFilter && dayAvailableSlots.data ? dayAvailableSlots.data.length : openSlotsFallback;
-  const openSlotsLabel = serviceFilter ? t("calendar.openSlots") : t("calendar.openSlotsEstimate");
+  const selectedDayHours = getWorkingHoursFor(
+    workingHourItems,
+    getWeekday(date),
+    selectedResourceId,
+  );
+  const confirmedCount = dayAppointments.filter(
+    (appointment) => appointment.status === "confirmed",
+  ).length;
+  const openSlotsFallback = Math.max(
+    0,
+    timelineHours.length - dayAppointments.length,
+  );
+  const openSlotsCount =
+    serviceFilter && dayAvailableSlots.data
+      ? dayAvailableSlots.data.length
+      : openSlotsFallback;
+  const openSlotsLabel = serviceFilter
+    ? t("calendar.openSlots")
+    : t("calendar.openSlotsEstimate");
   const timeZoneLabel = formatTimeZoneLabel(businessTimeZone);
-  const selectedResource = resourceFilter ? resourceById.get(Number(resourceFilter)) : null;
+  const selectedResource = resourceFilter
+    ? resourceById.get(Number(resourceFilter))
+    : null;
   const dayScheduleResource: CalendarResource = selectedResource
     ? { id: selectedResource.id, name: selectedResource.name }
-    : { id: null, name: resourceItems.length ? t("calendar.allResources") : t("calendar.businessSchedule") };
+    : {
+        id: null,
+        name: resourceItems.length
+          ? t("calendar.allResources")
+          : t("calendar.businessSchedule"),
+      };
 
   function shiftDate(days: number) {
     setDate(shiftDateValue(date, days));
@@ -330,18 +494,27 @@ export function CalendarPage() {
     setDate(dateInTimeZone(appointment.start_at, businessTimeZone));
   }
 
+  function openAppointmentWorkspace(appointment: Appointment) {
+    navigate(`/app/calendar/${appointment.id}`);
+  }
+
   function selectMonthDay(nextDate: string) {
     setDate(nextDate);
     setSelectedAppointmentId(null);
     setMonthInspectorOpen(true);
   }
 
-  function openBookingForDate(nextDate = date, hour?: number, resource?: number | null) {
+  function openBookingForDate(
+    nextDate = date,
+    hour?: number,
+    resource?: number | null,
+  ) {
     setBookingPrefill({
       date: nextDate,
       hour,
       service: serviceFilter ? Number(serviceFilter) : undefined,
-      resource: resource ?? (resourceFilter ? Number(resourceFilter) : undefined),
+      resource:
+        resource ?? (resourceFilter ? Number(resourceFilter) : undefined),
     });
     setBookingOpen(true);
   }
@@ -355,8 +528,13 @@ export function CalendarPage() {
   }
 
   function getAllowedStatusActions(appointment: Appointment) {
-    if (appointment.status === "created" || appointment.status === "rescheduled") return ["confirmed", "cancelled"] as Appointment["status"][];
-    if (appointment.status === "confirmed") return ["completed", "cancelled", "no_show"] as Appointment["status"][];
+    if (
+      appointment.status === "created" ||
+      appointment.status === "rescheduled"
+    )
+      return ["confirmed", "cancelled"] as Appointment["status"][];
+    if (appointment.status === "confirmed")
+      return ["completed", "cancelled", "no_show"] as Appointment["status"][];
     return [] as Appointment["status"][];
   }
 
@@ -380,13 +558,43 @@ export function CalendarPage() {
     return ["completed", "cancelled", "no_show"].includes(appointment.status);
   }
 
-  const serviceFilterOptions = serviceItems.map((service) => ({ value: String(service.id), label: service.name }));
-  const resourceFilterOptions = resourceItems.map((resource) => ({ value: String(resource.id), label: resource.name }));
+  const serviceFilterOptions = serviceItems.map((service) => ({
+    value: String(service.id),
+    label: service.name,
+  }));
+  const resourceFilterOptions = resourceItems.map((resource) => ({
+    value: String(resource.id),
+    label: resource.name,
+  }));
   const activeFilterChips = [
-    serviceFilter ? { key: "service", label: serviceById.get(Number(serviceFilter))?.name || t("calendar.allServices"), clear: () => setServiceFilter("") } : null,
-    resourceFilter ? { key: "resource", label: resourceById.get(Number(resourceFilter))?.name || t("calendar.allResources"), clear: () => setResourceFilter("") } : null,
-    statusFilter ? { key: "status", label: t(`status.${statusFilter}`), clear: () => setStatusFilter("") } : null,
-    search.trim() ? { key: "search", label: search.trim(), clear: () => setSearch("") } : null,
+    serviceFilter
+      ? {
+          key: "service",
+          label:
+            serviceById.get(Number(serviceFilter))?.name ||
+            t("calendar.allServices"),
+          clear: () => setServiceFilter(""),
+        }
+      : null,
+    resourceFilter
+      ? {
+          key: "resource",
+          label:
+            resourceById.get(Number(resourceFilter))?.name ||
+            t("calendar.allResources"),
+          clear: () => setResourceFilter(""),
+        }
+      : null,
+    statusFilter
+      ? {
+          key: "status",
+          label: t(`status.${statusFilter}`),
+          clear: () => setStatusFilter(""),
+        }
+      : null,
+    search.trim()
+      ? { key: "search", label: search.trim(), clear: () => setSearch("") }
+      : null,
   ].filter(Boolean) as ActiveCalendarFilterChip[];
 
   function clearAllFilters() {
@@ -420,15 +628,23 @@ export function CalendarPage() {
         t={t}
       />
 
-      {isCalendarDataLoading ? <div className="mb-4"><LoadingState label={t("calendar.loadingInline")} /></div> : null}
+      {isCalendarDataLoading ? (
+        <div className="mb-4">
+          <LoadingState label={t("calendar.loadingInline")} />
+        </div>
+      ) : null}
 
       <section className="space-y-4">
-        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm lg:hidden">
+        <div className="overflow-hidden rounded-card border border-zani-border bg-zani-card shadow-sm lg:hidden">
           <div className="p-4">
             <div className="min-w-0">
-              <p className="text-xs font-black uppercase text-slate-400">{t("calendar.mobileAgenda")}</p>
-              <p className="mt-1 truncate text-lg font-black text-midnight">{formatPickerDate(date, locale)}</p>
-              <p className="mt-1 text-sm font-bold text-slate-500">
+              <p className="text-xs font-bold uppercase text-zani-muted">
+                {t("calendar.mobileAgenda")}
+              </p>
+              <p className="mt-1 truncate text-lg font-bold text-zani-text">
+                {formatPickerDate(date, locale)}
+              </p>
+              <p className="mt-1 text-sm font-bold text-zani-muted">
                 {selectedDayHours && !selectedDayHours.is_day_off
                   ? `${selectedDayHours.start_time.slice(0, 5)}-${selectedDayHours.end_time.slice(0, 5)}`
                   : t("calendar.freeDay")}
@@ -436,30 +652,39 @@ export function CalendarPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 divide-x divide-slate-200 border-y border-slate-200 bg-slate-50">
+          <div className="grid grid-cols-3 divide-x divide-zani-border border-y border-zani-border bg-surface-muted">
             {[
               [t("calendar.bookings"), dayAppointments.length],
               [openSlotsLabel, openSlotsCount],
               [t("calendar.tasksToday"), dayTasks.length],
             ].map(([label, value]) => (
               <div key={label} className="min-w-0 px-3 py-2">
-                <p className="text-lg font-black text-midnight">{value}</p>
-                <p className="truncate text-[11px] font-black uppercase text-slate-400">{label}</p>
+                <p className="text-lg font-bold text-zani-text">{value}</p>
+                <p className="truncate text-[11px] font-bold uppercase text-zani-muted">
+                  {label}
+                </p>
               </div>
             ))}
           </div>
 
-          <div className="grid grid-cols-2 gap-2 border-b border-slate-100 p-3">
-            <Button type="button" className="w-full" onClick={() => openBookingForDate(date)}>
+          <div className="grid grid-cols-2 gap-2 border-b border-zani-border p-3">
+            <Button
+              type="button"
+              className="w-full"
+              onClick={() => openBookingForDate(date)}
+            >
               <Plus size={16} />
               {t("calendar.newBooking")}
             </Button>
-            <Link className="inline-flex min-h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-black text-midnight hover:bg-slate-50" to="/app/working-hours">
+            <Link
+              className="inline-flex min-h-10 items-center justify-center rounded-control border border-zani-border bg-zani-card px-3 py-2 text-xs font-bold text-zani-text hover:bg-surface-hover"
+              to="/app/working-hours"
+            >
               {t("appointment.openHours")}
             </Link>
           </div>
 
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-zani-border">
             {dayAppointments.map((appointment) => (
               <CalendarAppointmentPreview
                 key={appointment.id}
@@ -472,105 +697,219 @@ export function CalendarPage() {
                 locale={locale}
                 businessTimeZone={businessTimeZone}
                 onSelect={selectAppointment}
-                onOpenCard={(item) => setDrawerEntity({ type: "appointment", id: item.id })}
+                onOpenCard={openAppointmentWorkspace}
                 t={t}
               />
             ))}
             {dayTasks.map((task) => (
-              <CalendarTaskPreview key={task.id} task={task} locale={locale} businessTimeZone={businessTimeZone} t={t} />
+              <CalendarTaskPreview
+                key={task.id}
+                task={task}
+                locale={locale}
+                businessTimeZone={businessTimeZone}
+                t={t}
+              />
             ))}
             {!dayAppointments.length && !dayTasks.length ? (
-              <button type="button" className="w-full px-4 py-5 text-left text-sm font-bold leading-6 text-slate-500 transition hover:bg-brand-50 hover:text-brand-700" onClick={() => openBookingForDate(date)}>
+              <button
+                type="button"
+                className="w-full px-4 py-5 text-left text-sm font-bold leading-6 text-zani-muted transition hover:bg-brand-50 hover:text-brand-700"
+                onClick={() => openBookingForDate(date)}
+              >
                 {t("calendar.freeDayHint")}
               </button>
             ) : null}
           </div>
         </div>
 
-        <div className="hidden min-w-0 overflow-visible rounded-lg border border-slate-200 bg-white shadow-sm lg:block">
-          <ActiveCalendarFilters chips={activeFilterChips} onClearAll={clearAllFilters} t={t} />
+        <div className="hidden min-w-0 overflow-visible rounded-card border border-zani-border bg-zani-card shadow-sm lg:block">
+          <ActiveCalendarFilters
+            chips={activeFilterChips}
+            onClearAll={clearAllFilters}
+            t={t}
+          />
           {viewMode === "day" ? (
             <div className="overflow-y-visible">
               <div className="min-w-0">
-                <div className="sticky top-0 z-10 grid border-b border-slate-200 bg-white" style={{ gridTemplateColumns: "72px minmax(0, 1fr)" }}>
-                  <div className="bg-slate-50 p-3 text-xs font-black uppercase text-slate-400">{timeZoneLabel}</div>
-                    <div className="border-l border-slate-200 bg-white p-3 ">
-                      <div className="flex items-center gap-3">
-                        <div className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-lg text-xs font-black", getTone(0))}>{getInitials(dayScheduleResource.name)}</div>
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-black text-midnight">{t("calendar.daySchedule")}</p>
-                          <p className="text-xs font-bold text-slate-500">{formatWorkingHoursLabel(workingHourItems, date, dayScheduleResource.id, t("calendar.freeDay"))}</p>
-                        </div>
+                <div
+                  className="sticky top-0 z-10 grid border-b border-zani-border bg-zani-card"
+                  style={{ gridTemplateColumns: "72px minmax(0, 1fr)" }}
+                >
+                  <div className="bg-surface-muted p-3 text-xs font-bold uppercase text-zani-muted">
+                    {timeZoneLabel}
+                  </div>
+                  <div className="border-l border-zani-border bg-zani-card p-3">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={cn(
+                          "grid h-9 w-9 shrink-0 place-items-center rounded-control text-xs font-bold",
+                          getTone(0),
+                        )}
+                      >
+                        {getInitials(dayScheduleResource.name)}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-bold text-zani-text">
+                          {t("calendar.daySchedule")}
+                        </p>
+                        <p className="text-xs font-bold text-zani-muted">
+                          {formatWorkingHoursLabel(
+                            workingHourItems,
+                            date,
+                            dayScheduleResource.id,
+                            t("calendar.freeDay"),
+                          )}
+                        </p>
                       </div>
                     </div>
+                  </div>
                 </div>
-                <div className="relative grid" style={{ gridTemplateColumns: "72px minmax(0, 1fr)", height: `${(dayEndHour - dayStartHour) * hourHeight}px` }}>
-                  <div className="relative border-r border-slate-200 bg-slate-50">
+                <div
+                  className="relative grid"
+                  style={{
+                    gridTemplateColumns: "72px minmax(0, 1fr)",
+                    height: `${(dayEndHour - dayStartHour) * hourHeight}px`,
+                  }}
+                >
+                  <div className="relative border-r border-zani-border bg-surface-muted">
                     {timelineHours.slice(0, -1).map((hour) => (
-                      <div key={hour} className="absolute left-0 right-0 border-t border-slate-200 px-3 pt-2 text-xs font-bold text-slate-400" style={{ top: `${(hour - dayStartHour) * hourHeight}px` }}>
+                      <div
+                        key={hour}
+                        className="absolute left-0 right-0 border-t border-zani-border px-3 pt-2 text-xs font-bold text-zani-muted"
+                        style={{
+                          top: `${(hour - dayStartHour) * hourHeight}px`,
+                        }}
+                      >
                         {String(hour).padStart(2, "0")}:00
                       </div>
                     ))}
                   </div>
-                      <div className="relative border-l border-slate-200">
-                        {timelineHours.slice(0, -1).map((hour) => {
-                          const isWorking = isWorkingHourSlot(workingHourItems, date, hour, dayScheduleResource.id);
-                          return (
-                            <button
-                              key={hour}
-                              type="button"
-                              disabled={!isWorking}
-                              className={cn(
-                                "absolute left-0 right-0 border-t border-slate-200 text-left transition",
-                                isWorking ? "hover:bg-brand-50" : "cursor-not-allowed bg-slate-50 opacity-70",
+                  <div className="relative border-l border-zani-border">
+                    {timelineHours.slice(0, -1).map((hour) => {
+                      const isWorking = isWorkingHourSlot(
+                        workingHourItems,
+                        date,
+                        hour,
+                        dayScheduleResource.id,
+                      );
+                      return (
+                        <button
+                          key={hour}
+                          type="button"
+                          disabled={!isWorking}
+                          className={cn(
+                            "absolute left-0 right-0 border-t border-zani-border text-left transition",
+                            isWorking
+                              ? "hover:bg-brand-50"
+                              : "cursor-not-allowed bg-surface-muted opacity-70",
+                          )}
+                          style={{
+                            top: `${(hour - dayStartHour) * hourHeight}px`,
+                            height: `${hourHeight}px`,
+                          }}
+                          onClick={() =>
+                            isWorking &&
+                            openBookingForDate(
+                              date,
+                              hour,
+                              dayScheduleResource.id,
+                            )
+                          }
+                          aria-label={t("calendar.createAtHour", {
+                            hour: String(hour).padStart(2, "0"),
+                          })}
+                        />
+                      );
+                    })}
+                    {dayAppointments.map((appointment, index) => {
+                      const client = clientById.get(appointment.client);
+                      const service = serviceById.get(appointment.service);
+                      const resource = appointment.resource
+                        ? resourceById.get(appointment.resource)
+                        : null;
+                      const metrics = getAppointmentMetrics(
+                        appointment,
+                        businessTimeZone,
+                      );
+                      return (
+                        <button
+                          key={appointment.id}
+                          type="button"
+                          className={cn(
+                            "group absolute left-2 right-2 overflow-visible rounded-control border-l-4 border-t border-r border-b px-3 py-2 text-left shadow-sm transition hover:z-30 hover:shadow-md",
+                            getTone(index),
+                            selectedAppointment?.id === appointment.id &&
+                              "border-brand-500 bg-brand-50 shadow-md",
+                          )}
+                          style={{
+                            top: `${metrics.top + 6}px`,
+                            height: `${metrics.height - 8}px`,
+                          }}
+                          onClick={() => selectAppointment(appointment)}
+                          onDoubleClick={() =>
+                            openAppointmentWorkspace(appointment)
+                          }
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-xs font-bold leading-4">
+                              {formatTime(
+                                appointment.start_at,
+                                locale,
+                                businessTimeZone,
                               )}
-                              style={{ top: `${(hour - dayStartHour) * hourHeight}px`, height: `${hourHeight}px` }}
-                              onClick={() => isWorking && openBookingForDate(date, hour, dayScheduleResource.id)}
-                              aria-label={t("calendar.createAtHour", { hour: String(hour).padStart(2, "0") })}
-                            />
-                          );
-                        })}
-                        {dayAppointments.map((appointment, index) => {
-                          const client = clientById.get(appointment.client);
-                          const service = serviceById.get(appointment.service);
-                          const resource = appointment.resource ? resourceById.get(appointment.resource) : null;
-                          const metrics = getAppointmentMetrics(appointment, businessTimeZone);
-                          return (
-                            <button
-                              key={appointment.id}
-                              type="button"
-                              className={cn(
-                                "group absolute left-2 right-2 overflow-visible rounded-lg border-l-4 border-t border-r border-b px-3 py-2 text-left shadow-sm transition hover:z-30 hover:shadow-md",
-                                getTone(index),
-                                selectedAppointment?.id === appointment.id && "border-brand-500 bg-brand-50 shadow-md",
+                              -
+                              {formatTime(
+                                appointment.end_at,
+                                locale,
+                                businessTimeZone,
                               )}
-                              style={{ top: `${metrics.top + 6}px`, height: `${metrics.height - 8}px` }}
-                              onClick={() => selectAppointment(appointment)}
-                              onDoubleClick={() => setDrawerEntity({ type: "appointment", id: appointment.id })}
-                            >
-                              <div className="flex items-start justify-between gap-2">
-                                <p className="text-xs font-black leading-4">{formatTime(appointment.start_at, locale, businessTimeZone)}-{formatTime(appointment.end_at, locale, businessTimeZone)}</p>
-                                <MoreHorizontal size={14} className="shrink-0" />
+                            </p>
+                            <MoreHorizontal size={14} className="shrink-0" />
+                          </div>
+                          <p className="mt-1 truncate text-sm font-bold leading-4">
+                            {client?.full_name || t("common.client")}
+                          </p>
+                          {metrics.height > 62 ? (
+                            <p className="mt-1 truncate text-xs font-bold opacity-75">
+                              {service?.name || t("common.service")}
+                              {resource ? ` · ${resource.name}` : ""}
+                            </p>
+                          ) : null}
+                          <div className="pointer-events-none absolute left-0 top-[calc(100%+6px)] z-50 hidden w-72 rounded-card border border-zani-border bg-zani-card p-3 text-zani-text shadow-premium group-hover:block">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-bold text-zani-text">
+                                  {client?.full_name || t("common.client")}
+                                </p>
+                                <p className="mt-1 text-xs font-bold text-zani-muted">
+                                  {formatTime(
+                                    appointment.start_at,
+                                    locale,
+                                    businessTimeZone,
+                                  )}
+                                  -
+                                  {formatTime(
+                                    appointment.end_at,
+                                    locale,
+                                    businessTimeZone,
+                                  )}
+                                </p>
                               </div>
-                              <p className="mt-1 truncate text-sm font-black leading-4">{client?.full_name || t("common.client")}</p>
-                              {metrics.height > 62 ? <p className="mt-1 truncate text-xs font-bold opacity-75">{service?.name || t("common.service")}{resource ? ` · ${resource.name}` : ""}</p> : null}
-                              <div className="pointer-events-none absolute left-0 top-[calc(100%+6px)] z-50 hidden w-72 rounded-xl border border-slate-200 bg-white p-3 text-slate-700 shadow-premium group-hover:block">
-                                <div className="flex items-start justify-between gap-3">
-                                  <div className="min-w-0">
-                                    <p className="truncate text-sm font-black text-midnight">{client?.full_name || t("common.client")}</p>
-                                    <p className="mt-1 text-xs font-bold text-slate-500">{formatTime(appointment.start_at, locale, businessTimeZone)}-{formatTime(appointment.end_at, locale, businessTimeZone)}</p>
-                                  </div>
-                                  <StatusBadge status={appointment.status} />
-                                </div>
-                                <div className="mt-3 space-y-1 text-xs font-bold text-slate-500">
-                                  <p className="truncate">{service?.name || t("common.service")}</p>
-                                  <p className="truncate">{resource?.name || t("appointment.noResource")}</p>
-                                </div>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
+                              <StatusBadge status={appointment.status} />
+                            </div>
+                            <div className="mt-3 space-y-1 text-xs font-bold text-zani-muted">
+                              <p className="truncate">
+                                {service?.name || t("common.service")}
+                              </p>
+                              <p className="truncate">
+                                {resource?.name || t("appointment.noResource")}
+                              </p>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             </div>
@@ -579,66 +918,158 @@ export function CalendarPage() {
           {viewMode === "week" ? (
             <div className="overflow-x-auto overflow-y-visible">
               <div className="min-w-[980px]">
-                <div className="sticky top-0 z-10 grid border-b border-slate-200 bg-white" style={{ gridTemplateColumns: "72px repeat(7, minmax(128px, 1fr))" }}>
-                  <div className="bg-slate-50 p-3 text-xs font-black uppercase text-slate-400">{timeZoneLabel}</div>
+                <div
+                  className="sticky top-0 z-10 grid border-b border-zani-border bg-zani-card"
+                  style={{
+                    gridTemplateColumns: "72px repeat(7, minmax(128px, 1fr))",
+                  }}
+                >
+                  <div className="bg-surface-muted p-3 text-xs font-bold uppercase text-zani-muted">
+                    {timeZoneLabel}
+                  </div>
                   {weekDates.map((day) => {
                     const key = toDateInputValue(day);
                     return (
-                      <button key={key} type="button" className={cn("border-l border-slate-200 p-3 text-left", key === date ? "bg-brand-50" : "bg-white")} onClick={() => setDate(key)}>
-                        <p className="text-xs font-black uppercase text-slate-400">{weekDays[(day.getDay() + 6) % 7]}</p>
-                        <p className="mt-1 text-lg font-black text-midnight">{day.getDate()}</p>
+                      <button
+                        key={key}
+                        type="button"
+                        className={cn(
+                          "border-l border-zani-border p-3 text-left",
+                          key === date ? "bg-brand-50" : "bg-zani-card",
+                        )}
+                        onClick={() => setDate(key)}
+                      >
+                        <p className="text-xs font-bold uppercase text-zani-muted">
+                          {weekDays[(day.getDay() + 6) % 7]}
+                        </p>
+                        <p className="mt-1 text-lg font-bold text-zani-text">
+                          {day.getDate()}
+                        </p>
                       </button>
                     );
                   })}
                 </div>
-                <div className="relative grid" style={{ gridTemplateColumns: "72px repeat(7, minmax(128px, 1fr))", height: `${(dayEndHour - dayStartHour) * hourHeight}px` }}>
-                  <div className="relative border-r border-slate-200 bg-slate-50">
+                <div
+                  className="relative grid"
+                  style={{
+                    gridTemplateColumns: "72px repeat(7, minmax(128px, 1fr))",
+                    height: `${(dayEndHour - dayStartHour) * hourHeight}px`,
+                  }}
+                >
+                  <div className="relative border-r border-zani-border bg-surface-muted">
                     {timelineHours.slice(0, -1).map((hour) => (
-                      <div key={hour} className="absolute left-0 right-0 border-t border-slate-200 px-3 pt-2 text-xs font-bold text-slate-400" style={{ top: `${(hour - dayStartHour) * hourHeight}px` }}>
+                      <div
+                        key={hour}
+                        className="absolute left-0 right-0 border-t border-zani-border px-3 pt-2 text-xs font-bold text-zani-muted"
+                        style={{
+                          top: `${(hour - dayStartHour) * hourHeight}px`,
+                        }}
+                      >
                         {String(hour).padStart(2, "0")}:00
                       </div>
                     ))}
                   </div>
                   {weekDates.map((day) => {
                     const key = toDateInputValue(day);
-                    const items = weekAppointments.filter((appointment) => dateInTimeZone(appointment.start_at, businessTimeZone) === key);
+                    const items = weekAppointments.filter(
+                      (appointment) =>
+                        dateInTimeZone(
+                          appointment.start_at,
+                          businessTimeZone,
+                        ) === key,
+                    );
                     return (
-                      <div key={key} className={cn("relative border-l border-slate-200", key === date && "bg-brand-50")}>
+                      <div
+                        key={key}
+                        className={cn(
+                          "relative border-l border-zani-border",
+                          key === date && "bg-brand-50",
+                        )}
+                      >
                         {timelineHours.slice(0, -1).map((hour) => {
-                          const isWorking = isWorkingHourSlot(workingHourItems, key, hour, null);
+                          const isWorking = isWorkingHourSlot(
+                            workingHourItems,
+                            key,
+                            hour,
+                            null,
+                          );
                           return (
                             <button
                               key={hour}
                               type="button"
                               disabled={!isWorking}
                               className={cn(
-                                "absolute left-0 right-0 border-t border-slate-200 transition",
-                                isWorking ? "hover:bg-brand-50" : "cursor-not-allowed bg-slate-50 opacity-70",
+                                "absolute left-0 right-0 border-t border-zani-border transition",
+                                isWorking
+                                  ? "hover:bg-brand-50"
+                                  : "cursor-not-allowed bg-surface-muted opacity-70",
                               )}
-                              style={{ top: `${(hour - dayStartHour) * hourHeight}px`, height: `${hourHeight}px` }}
-                              onClick={() => isWorking && openBookingForDate(key, hour)}
-                              aria-label={t("calendar.createAtHour", { hour: String(hour).padStart(2, "0") })}
+                              style={{
+                                top: `${(hour - dayStartHour) * hourHeight}px`,
+                                height: `${hourHeight}px`,
+                              }}
+                              onClick={() =>
+                                isWorking && openBookingForDate(key, hour)
+                              }
+                              aria-label={t("calendar.createAtHour", {
+                                hour: String(hour).padStart(2, "0"),
+                              })}
                             />
                           );
                         })}
                         {items.map((appointment, index) => {
                           const client = clientById.get(appointment.client);
                           const service = serviceById.get(appointment.service);
-                          const metrics = getAppointmentMetrics(appointment, businessTimeZone);
+                          const metrics = getAppointmentMetrics(
+                            appointment,
+                            businessTimeZone,
+                          );
                           return (
                             <button
                               key={appointment.id}
                               type="button"
-                              className={cn("group absolute left-1 right-1 overflow-visible rounded-lg border-l-4 border-t border-r border-b px-2 py-1 text-left text-xs shadow-sm hover:z-30 hover:shadow-md", getTone(index), selectedAppointment?.id === appointment.id && "border-brand-500 bg-brand-50 shadow-md")}
-                              style={{ top: `${metrics.top + 4}px`, height: `${Math.max(34, metrics.height - 8)}px` }}
+                              className={cn(
+                                "group absolute left-1 right-1 overflow-visible rounded-control border-l-4 border-t border-r border-b px-2 py-1 text-left text-xs shadow-sm hover:z-30 hover:shadow-md",
+                                getTone(index),
+                                selectedAppointment?.id === appointment.id &&
+                                  "border-brand-500 bg-brand-50 shadow-md",
+                              )}
+                              style={{
+                                top: `${metrics.top + 4}px`,
+                                height: `${Math.max(34, metrics.height - 8)}px`,
+                              }}
                               onClick={() => selectAppointment(appointment)}
                             >
-                              <p className="font-black">{formatTime(appointment.start_at, locale, businessTimeZone)}</p>
-                              <p className="truncate font-bold">{client?.full_name || t("common.client")}</p>
-                              <div className="pointer-events-none absolute left-0 top-[calc(100%+6px)] z-50 hidden w-64 rounded-xl border border-slate-200 bg-white p-3 text-slate-700 shadow-premium group-hover:block">
-                                <p className="truncate text-sm font-black text-midnight">{client?.full_name || t("common.client")}</p>
-                                <p className="mt-1 text-xs font-bold text-slate-500">{formatTime(appointment.start_at, locale, businessTimeZone)}-{formatTime(appointment.end_at, locale, businessTimeZone)}</p>
-                                <p className="mt-2 truncate text-xs font-bold text-slate-500">{service?.name || t("common.service")}</p>
+                              <p className="font-bold">
+                                {formatTime(
+                                  appointment.start_at,
+                                  locale,
+                                  businessTimeZone,
+                                )}
+                              </p>
+                              <p className="truncate font-bold">
+                                {client?.full_name || t("common.client")}
+                              </p>
+                              <div className="pointer-events-none absolute left-0 top-[calc(100%+6px)] z-50 hidden w-64 rounded-card border border-zani-border bg-zani-card p-3 text-zani-text shadow-premium group-hover:block">
+                                <p className="truncate text-sm font-bold text-zani-text">
+                                  {client?.full_name || t("common.client")}
+                                </p>
+                                <p className="mt-1 text-xs font-bold text-zani-muted">
+                                  {formatTime(
+                                    appointment.start_at,
+                                    locale,
+                                    businessTimeZone,
+                                  )}
+                                  -
+                                  {formatTime(
+                                    appointment.end_at,
+                                    locale,
+                                    businessTimeZone,
+                                  )}
+                                </p>
+                                <p className="mt-2 truncate text-xs font-bold text-zani-muted">
+                                  {service?.name || t("common.service")}
+                                </p>
                               </div>
                             </button>
                           );
@@ -653,18 +1084,39 @@ export function CalendarPage() {
 
           {viewMode === "month" ? (
             <div className="overflow-hidden">
-              <div className="grid grid-cols-7 border-b border-slate-200">
-                {weekDays.map((day) => <div key={day} className="bg-slate-50 p-3 text-center text-xs font-black uppercase text-slate-400">{day}</div>)}
+              <div className="grid grid-cols-7 border-b border-zani-border">
+                {weekDays.map((day) => (
+                  <div
+                    key={day}
+                    className="bg-surface-muted p-3 text-center text-xs font-bold uppercase text-zani-muted"
+                  >
+                    {day}
+                  </div>
+                ))}
               </div>
-              <div className="grid grid-cols-7 bg-slate-200">
+              <div className="grid grid-cols-7 bg-zani-border">
                 {monthDates.map((day, index) => {
                   const key = day ? toDateInputValue(day) : `empty-${index}`;
-                  const items = day ? appointmentList.filter((appointment) => dateInTimeZone(appointment.start_at, businessTimeZone) === key) : [];
+                  const items = day
+                    ? appointmentList.filter(
+                        (appointment) =>
+                          dateInTimeZone(
+                            appointment.start_at,
+                            businessTimeZone,
+                          ) === key,
+                      )
+                    : [];
                   const isSelectedDay = day && key === date;
                   return (
                     <div
                       key={key}
-                      className={cn("relative min-h-28 bg-white p-3 text-left transition", !day && "bg-slate-50", isSelectedDay ? "bg-brand-50 ring-2 ring-inset ring-brand-500" : day && "hover:bg-brand-50")}
+                      className={cn(
+                        "relative min-h-28 bg-zani-card p-3 text-left transition",
+                        !day && "bg-surface-muted",
+                        isSelectedDay
+                          ? "bg-brand-50 ring-2 ring-inset ring-brand-500"
+                          : day && "hover:bg-brand-50",
+                      )}
                     >
                       {day ? (
                         <button
@@ -681,8 +1133,14 @@ export function CalendarPage() {
                       ) : null}
                       {day ? (
                         <div className="pointer-events-none relative z-10 flex items-center justify-between gap-2">
-                          <span className="text-sm font-black text-midnight">{day.getDate()}</span>
-                          {isSelectedDay ? <span className="rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-black uppercase text-brand-700">{t("calendar.selectedDay")}</span> : null}
+                          <span className="text-sm font-bold text-zani-text">
+                            {day.getDate()}
+                          </span>
+                          {isSelectedDay ? (
+                            <span className="rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-bold uppercase text-brand-700">
+                              {t("calendar.selectedDay")}
+                            </span>
+                          ) : null}
                         </div>
                       ) : null}
                       <div className="relative z-20 mt-2 space-y-1">
@@ -692,17 +1150,26 @@ export function CalendarPage() {
                             <button
                               key={appointment.id}
                               type="button"
-                              className="w-full truncate rounded-md border border-brand-100 bg-white px-2 py-1 text-left text-xs font-bold text-brand-700 shadow-sm transition hover:border-brand-300 hover:bg-brand-50"
+                              className="w-full truncate rounded-control border border-brand-100 bg-zani-card px-2 py-1 text-left text-xs font-bold text-brand-700 shadow-sm transition hover:border-brand-300 hover:bg-brand-50"
                               onClick={(event) => {
                                 event.stopPropagation();
                                 selectAppointment(appointment);
                               }}
                             >
-                              {formatTime(appointment.start_at, locale, businessTimeZone)} {client?.full_name || t("common.client")}
+                              {formatTime(
+                                appointment.start_at,
+                                locale,
+                                businessTimeZone,
+                              )}{" "}
+                              {client?.full_name || t("common.client")}
                             </button>
                           );
                         })}
-                        {items.length > 3 ? <p className="text-xs font-black text-slate-400">+{items.length - 3}</p> : null}
+                        {items.length > 3 ? (
+                          <p className="text-xs font-bold text-zani-muted">
+                            +{items.length - 3}
+                          </p>
+                        ) : null}
                       </div>
                     </div>
                   );
@@ -712,34 +1179,87 @@ export function CalendarPage() {
           ) : null}
 
           {viewMode === "list" ? (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-zani-border">
               {dayAppointments.map((appointment) => {
                 const client = clientById.get(appointment.client);
                 const service = serviceById.get(appointment.service);
-                const resource = appointment.resource ? resourceById.get(appointment.resource) : null;
+                const resource = appointment.resource
+                  ? resourceById.get(appointment.resource)
+                  : null;
                 return (
-                  <div key={appointment.id} className={cn("grid gap-3 p-4 transition hover:bg-slate-50 lg:grid-cols-[170px_minmax(0,1.2fr)_minmax(0,1fr)_180px]", selectedAppointment?.id === appointment.id && "bg-brand-50")}>
-                    <button type="button" className="text-left" onClick={() => selectAppointment(appointment)}>
-                      <p className="text-sm font-black text-midnight">{formatCalendarDateTime(appointment.start_at, locale, businessTimeZone)}</p>
-                      <p className="mt-1 text-xs font-bold text-slate-500">{formatTime(appointment.start_at, locale, businessTimeZone)}-{formatTime(appointment.end_at, locale, businessTimeZone)}</p>
+                  <div
+                    key={appointment.id}
+                    className={cn(
+                      "grid gap-3 p-4 transition hover:bg-surface-hover lg:grid-cols-[170px_minmax(0,1.2fr)_minmax(0,1fr)_180px]",
+                      selectedAppointment?.id === appointment.id &&
+                        "bg-brand-50",
+                    )}
+                  >
+                    <button
+                      type="button"
+                      className="text-left"
+                      onClick={() => selectAppointment(appointment)}
+                    >
+                      <p className="text-sm font-bold text-zani-text">
+                        {formatCalendarDateTime(
+                          appointment.start_at,
+                          locale,
+                          businessTimeZone,
+                        )}
+                      </p>
+                      <p className="mt-1 text-xs font-bold text-zani-muted">
+                        {formatTime(
+                          appointment.start_at,
+                          locale,
+                          businessTimeZone,
+                        )}
+                        -
+                        {formatTime(
+                          appointment.end_at,
+                          locale,
+                          businessTimeZone,
+                        )}
+                      </p>
                     </button>
-                    <button type="button" className="min-w-0 text-left" onClick={() => selectAppointment(appointment)}>
-                      <p className="truncate text-sm font-black text-midnight">{client?.full_name || t("common.client")}</p>
-                      <p className="mt-1 truncate text-xs font-bold text-slate-500">{service?.name || t("common.service")}</p>
+                    <button
+                      type="button"
+                      className="min-w-0 text-left"
+                      onClick={() => selectAppointment(appointment)}
+                    >
+                      <p className="truncate text-sm font-bold text-zani-text">
+                        {client?.full_name || t("common.client")}
+                      </p>
+                      <p className="mt-1 truncate text-xs font-bold text-zani-muted">
+                        {service?.name || t("common.service")}
+                      </p>
                     </button>
-                    <div className="min-w-0 text-sm font-bold text-slate-600">
-                      <p className="truncate">{resource?.name || t("calendar.noResource")}</p>
-                      <p className="mt-1 truncate text-xs text-slate-400">{appointment.source}</p>
+                    <div className="min-w-0 text-sm font-bold text-zani-muted">
+                      <p className="truncate">
+                        {resource?.name || t("calendar.noResource")}
+                      </p>
+                      <p className="mt-1 truncate text-xs text-zani-muted">
+                        {appointment.source}
+                      </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <StatusBadge status={appointment.status} />
-                      <Button variant="secondary" size="sm" onClick={() => setDrawerEntity({ type: "appointment", id: appointment.id })}>{t("appointments.card")}</Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => openAppointmentWorkspace(appointment)}
+                      >
+                        {t("appointments.card")}
+                      </Button>
                     </div>
                   </div>
                 );
               })}
               {!dayAppointments.length ? (
-                <button type="button" className="w-full p-8 text-left text-sm font-bold text-slate-500 transition hover:bg-brand-50 hover:text-brand-700" onClick={() => openBookingForDate(date)}>
+                <button
+                  type="button"
+                  className="w-full p-8 text-left text-sm font-bold text-zani-muted transition hover:bg-brand-50 hover:text-brand-700"
+                  onClick={() => openBookingForDate(date)}
+                >
                   {t("calendar.freeDayHint")}
                 </button>
               ) : null}
@@ -768,7 +1288,7 @@ export function CalendarPage() {
               setViewMode("day");
             }}
             onSelectAppointment={selectAppointment}
-            onOpenAppointmentCard={(appointment) => setDrawerEntity({ type: "appointment", id: appointment.id })}
+            onOpenAppointmentCard={openAppointmentWorkspace}
             t={t}
           />
         ) : null}
@@ -798,32 +1318,68 @@ export function CalendarPage() {
               statusMutation.mutate({ id: appointment.id, status });
             }}
             onReschedule={setRescheduleTarget}
-            onOpenCard={(appointment) => setDrawerEntity({ type: "appointment", id: appointment.id })}
+            onOpenCard={openAppointmentWorkspace}
             onArchive={setArchiveTarget}
             t={t}
           />
         ) : null}
       </section>
 
-      {mutation.error ? <div className="mt-4"><ErrorState message={getApiErrorMessage(mutation.error)} /></div> : null}
+      {mutation.error ? (
+        <div className="mt-4">
+          <ErrorState message={getApiErrorMessage(mutation.error)} />
+        </div>
+      ) : null}
 
-      <Modal title={t("calendar.newBooking")} open={bookingOpen} onClose={() => { setBookingOpen(false); setBookingPrefill(null); }}>
-        <AppointmentForm businessId={business.id} clients={clientItems} services={serviceItems} resources={resourceItems} leads={leadItems} prefill={bookingPrefill || { date }} onSubmit={(payload) => mutation.mutateAsync(payload)} timeZone={businessTimeZone} />
+      <Modal
+        title={t("calendar.newBooking")}
+        open={bookingOpen}
+        onClose={() => {
+          setBookingOpen(false);
+          setBookingPrefill(null);
+        }}
+      >
+        <AppointmentForm
+          businessId={business.id}
+          clients={clientItems}
+          services={serviceItems}
+          resources={resourceItems}
+          leads={leadItems}
+          prefill={bookingPrefill || { date }}
+          onSubmit={(payload) => mutation.mutateAsync(payload)}
+          timeZone={businessTimeZone}
+        />
       </Modal>
-      <Modal title={t("appointments.rescheduleTitle")} open={Boolean(rescheduleTarget)} onClose={() => setRescheduleTarget(null)}>
+      <Modal
+        title={t("appointments.rescheduleTitle")}
+        open={Boolean(rescheduleTarget)}
+        onClose={() => setRescheduleTarget(null)}
+      >
         {rescheduleTarget ? (
           <AppointmentRescheduleForm
             appointment={rescheduleTarget}
             businessId={business.id}
             resources={resourceItems}
             onCancel={() => setRescheduleTarget(null)}
-            onSubmit={(payload) => rescheduleMutation.mutateAsync({ id: rescheduleTarget.id, payload })}
+            onSubmit={(payload) =>
+              rescheduleMutation.mutateAsync({
+                id: rescheduleTarget.id,
+                payload,
+              })
+            }
             isSubmitting={rescheduleMutation.isPending}
             timeZone={businessTimeZone}
           />
         ) : null}
       </Modal>
-      <Modal title={t("appointments.statusReasonTitle")} open={Boolean(statusReasonTarget)} onClose={() => { setStatusReasonTarget(null); setStatusReason(""); }}>
+      <Modal
+        title={t("appointments.statusReasonTitle")}
+        open={Boolean(statusReasonTarget)}
+        onClose={() => {
+          setStatusReasonTarget(null);
+          setStatusReason("");
+        }}
+      >
         <div className="space-y-4">
           <Input
             label={t("appointments.statusReason")}
@@ -832,10 +1388,23 @@ export function CalendarPage() {
             placeholder={t("appointments.statusReasonPlaceholder")}
           />
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="secondary" onClick={() => { setStatusReasonTarget(null); setStatusReason(""); }}>{t("common.cancel")}</Button>
             <Button
               type="button"
-              variant={statusReasonTarget?.status === "cancelled" ? "danger" : "primary"}
+              variant="secondary"
+              onClick={() => {
+                setStatusReasonTarget(null);
+                setStatusReason("");
+              }}
+            >
+              {t("common.cancel")}
+            </Button>
+            <Button
+              type="button"
+              variant={
+                statusReasonTarget?.status === "cancelled"
+                  ? "danger"
+                  : "primary"
+              }
               isLoading={statusMutation.isPending}
               disabled={!statusReason.trim()}
               onClick={() => {
@@ -847,23 +1416,51 @@ export function CalendarPage() {
                 });
               }}
             >
-              {statusReasonTarget ? getAppointmentActionLabel(statusReasonTarget.status) : t("appointments.actions")}
+              {statusReasonTarget
+                ? getAppointmentActionLabel(statusReasonTarget.status)
+                : t("appointments.actions")}
             </Button>
           </div>
         </div>
       </Modal>
-      <Modal title={t("appointments.archive")} open={Boolean(archiveTarget)} onClose={() => { setArchiveTarget(null); setArchiveReason(""); }}>
+      <Modal
+        title={t("appointments.archive")}
+        open={Boolean(archiveTarget)}
+        onClose={() => {
+          setArchiveTarget(null);
+          setArchiveReason("");
+        }}
+      >
         <div className="space-y-4">
-          <Input label={t("appointments.archiveReason")} value={archiveReason} onChange={(event) => setArchiveReason(event.target.value)} placeholder={t("appointments.archiveReasonPlaceholder")} />
+          <Input
+            label={t("appointments.archiveReason")}
+            value={archiveReason}
+            onChange={(event) => setArchiveReason(event.target.value)}
+            placeholder={t("appointments.archiveReasonPlaceholder")}
+          />
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="secondary" onClick={() => { setArchiveTarget(null); setArchiveReason(""); }}>{t("common.cancel")}</Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setArchiveTarget(null);
+                setArchiveReason("");
+              }}
+            >
+              {t("common.cancel")}
+            </Button>
             <Button
               type="button"
               variant="danger"
               isLoading={archiveMutation.isPending}
               onClick={() => {
                 if (!archiveTarget) return;
-                archiveMutation.mutate({ id: archiveTarget.id, reason: archiveReason.trim() || t("appointments.archiveReasonDefault") });
+                archiveMutation.mutate({
+                  id: archiveTarget.id,
+                  reason:
+                    archiveReason.trim() ||
+                    t("appointments.archiveReasonDefault"),
+                });
               }}
             >
               {t("appointments.archive")}
@@ -871,7 +1468,6 @@ export function CalendarPage() {
           </div>
         </div>
       </Modal>
-      <CrmEntityDrawer entity={drawerEntity} onClose={() => setDrawerEntity(null)} />
     </>
   );
 }

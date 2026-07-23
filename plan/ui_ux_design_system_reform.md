@@ -20,7 +20,7 @@ The authenticated CRM direction is now:
 
 ```txt
 Warm Premium CRM
-Warm ivory workspace + copper-orange actions + plum AI accent
+Warm ivory workspace + saturated orange actions + plum AI accent
 ```
 
 This update supersedes the earlier blue-primary color direction below. The previous page structure and operational-density rules still apply: authenticated CRM screens must stay compact, useful, role-aware, and free from decorative/marketing blocks.

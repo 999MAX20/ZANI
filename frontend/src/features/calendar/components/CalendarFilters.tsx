@@ -83,20 +83,20 @@ export function ActiveCalendarFilters({
   if (!chips.length) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-slate-50 px-4 py-2">
-      <span className="text-[11px] font-black uppercase text-slate-400">{t("calendar.filters")}</span>
+    <div className="flex flex-wrap items-center gap-2 border-b border-zani-border bg-surface-muted px-4 py-2">
+      <span className="text-[11px] font-bold uppercase text-zani-muted">{t("calendar.filters")}</span>
       {chips.map((chip) => (
         <button
           key={chip.key}
           type="button"
-          className="inline-flex min-h-7 max-w-full items-center gap-2 rounded-lg border border-brand-100 bg-white px-2.5 py-1 text-xs font-black text-brand-700 transition hover:border-brand-200 hover:bg-brand-50"
+          className="inline-flex min-h-7 max-w-full items-center gap-2 rounded-control border border-brand-100 bg-zani-card px-2.5 py-1 text-xs font-bold text-brand-700 transition hover:border-brand-200 hover:bg-brand-50"
           onClick={chip.clear}
         >
           <span className="truncate">{chip.label}</span>
           <X size={13} />
         </button>
       ))}
-      <button type="button" className="min-h-7 rounded-lg px-2.5 py-1 text-xs font-black text-slate-500 transition hover:bg-white hover:text-midnight" onClick={onClearAll}>
+      <button type="button" className="min-h-7 rounded-control px-2.5 py-1 text-xs font-bold text-zani-muted transition hover:bg-zani-card hover:text-zani-text" onClick={onClearAll}>
         {t("conversations.resetFilters")}
       </button>
     </div>

@@ -1,26 +1,35 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { MessageCircle, Phone } from "lucide-react";
 import { useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { getApiErrorMessage } from "../../api/client";
 import { crmCardsApi } from "../../api/crmCards";
+import { dealsApi } from "../../api/deals";
 import { inboxApi } from "../../api/inbox";
 import { tasksApi } from "../../api/tasks";
 import {
-  CrmWorkspacePage,
+  CrmActionBar,
+  EntityWorkspaceEmptyState,
+  EntityWorkspaceErrorState,
   EntityWorkspaceAside,
   EntityWorkspaceAvatar,
   EntityWorkspaceBody,
   EntityWorkspaceHeader,
+  EntityWorkspaceLoadingState,
   EntityWorkspaceMain,
   EntityWorkspaceMetrics,
   EntityWorkspaceRoot,
 } from "../../components/crm";
 import { Button } from "../../components/ui/Button";
-import { EmptyState, ErrorState, LoadingState } from "../../components/ui/StateViews";
 import { useI18n } from "../../lib/i18n";
-import { ActionPanel, AppointmentsList, ConversationsList, TasksList, TimelineList } from "../clients/components/ClientWorkspaceSections";
+import { useNotification } from "../../components/notifications/NotificationProvider";
+import {
+  AppointmentsList,
+  ConversationsList,
+  TasksList,
+  TimelineList,
+} from "../clients/components/ClientWorkspaceSections";
 import {
   DealClientPanel,
   DealLinkedLeadPanel,
@@ -32,6 +41,7 @@ import {
 import { initials, money, stageProbability } from "./utils/dealHelpers";
 
 const RELATED_PAGE_SIZE = 8;
+const supportedDealActionIds = new Set(["won", "lost", "reopen"]);
 
 function asNumericId(value: string | undefined): number | null {
   const id = Number(value);
@@ -40,6 +50,8 @@ function asNumericId(value: string | undefined): number | null {
 
 export function DealWorkspacePage() {
   const { t } = useI18n();
+  const showNotification = useNotification();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { id: routeId } = useParams();
   const dealId = asNumericId(routeId);
@@ -51,7 +63,12 @@ export function DealWorkspacePage() {
   });
   const tasksQuery = useQuery({
     queryKey: ["tasks", "deal-workspace", dealId],
-    queryFn: () => tasksApi.listPage({ deal_ids: String(dealId), page_size: RELATED_PAGE_SIZE, status: "active" }),
+    queryFn: () =>
+      tasksApi.listPage({
+        deal_ids: String(dealId),
+        page_size: RELATED_PAGE_SIZE,
+        status: "active",
+      }),
     enabled: Boolean(dealId),
   });
   const conversationsQuery = useQuery({
@@ -59,9 +76,41 @@ export function DealWorkspacePage() {
     queryFn: () => inboxApi.listConversations({ deal_ids: String(dealId) }),
     enabled: Boolean(dealId),
   });
+  const lifecycleMutation = useMutation<
+    unknown,
+    Error,
+    { actionId: string; reason?: string }
+  >({
+    mutationFn: ({
+      actionId,
+      reason,
+    }: {
+      actionId: string;
+      reason?: string;
+    }) => {
+      if (!dealId) throw new Error(t("deals.notFoundTitle"));
+      if (actionId === "won") return dealsApi.markWon({ id: dealId });
+      if (actionId === "lost")
+        return dealsApi.markLost({ id: dealId, lost_reason: reason || "" });
+      if (actionId === "reopen") return dealsApi.reopen({ id: dealId });
+      throw new Error(actionId);
+    },
+    onSuccess: async () => {
+      showNotification({ message: t("deals.actionDone"), tone: "success" });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["crm-card", "deal", dealId],
+        }),
+        queryClient.invalidateQueries({ queryKey: ["deals"] }),
+        queryClient.invalidateQueries({ queryKey: ["activity-events"] }),
+      ]);
+    },
+  });
 
-  const pageError = cardQuery.error || tasksQuery.error || conversationsQuery.error;
-  const isLoading = cardQuery.isLoading || tasksQuery.isLoading || conversationsQuery.isLoading;
+  const pageError =
+    cardQuery.error || tasksQuery.error || conversationsQuery.error;
+  const isLoading =
+    cardQuery.isLoading || tasksQuery.isLoading || conversationsQuery.isLoading;
   const card = cardQuery.data;
   const deal = card?.deal;
   const client = card?.client || null;
@@ -69,101 +118,198 @@ export function DealWorkspacePage() {
   const related = useMemo(
     () => ({
       appointments: card?.appointments || [],
-      conversations: conversationsQuery.data?.results || card?.conversations || [],
+      conversations:
+        conversationsQuery.data?.results || card?.conversations || [],
       tasks: tasksQuery.data?.results || card?.tasks || [],
     }),
     [card, conversationsQuery.data, tasksQuery.data],
   );
 
-  if (!dealId) return <ErrorState message={t("deals.notFoundTitle")} />;
-  if (isLoading) return <CrmWorkspacePage><LoadingState /></CrmWorkspacePage>;
-  if (pageError) return <CrmWorkspacePage><ErrorState message={getApiErrorMessage(pageError)} /></CrmWorkspacePage>;
+  if (!dealId)
+    return <EntityWorkspaceErrorState message={t("deals.notFoundTitle")} />;
+  if (isLoading) return <EntityWorkspaceLoadingState />;
+  if (pageError)
+    return (
+      <EntityWorkspaceErrorState message={getApiErrorMessage(pageError)} />
+    );
   if (!deal) {
     return (
-      <CrmWorkspacePage>
-        <EmptyState title={t("deals.notFoundTitle")} description={t("deals.notFoundText")} />
-      </CrmWorkspacePage>
+      <EntityWorkspaceEmptyState
+        title={t("deals.notFoundTitle")}
+        description={t("deals.notFoundText")}
+      />
     );
   }
 
   const title = deal.title || `${t("deals.deal")} #${deal.id}`;
-  const subtitle = [client?.full_name || deal.client_name, deal.stage_name, deal.owner_name || t("deals.unassigned")].filter(Boolean).join(" / ");
+  const subtitle = [
+    client?.full_name || deal.client_name,
+    deal.stage_name,
+    deal.owner_name || t("deals.unassigned"),
+  ]
+    .filter(Boolean)
+    .join(" / ");
   const counts = card?.meta?.related_counts;
-  const phoneDigits = (client?.phone || deal.client_phone || "").replace(/\D/g, "");
+  const phoneDigits = (client?.phone || deal.client_phone || "").replace(
+    /\D/g,
+    "",
+  );
   const probability = stageProbability(deal);
+  const executableActions = (card?.available_action_details || []).filter(
+    (action) => supportedDealActionIds.has(action.id),
+  );
 
   return (
     <EntityWorkspaceRoot>
       <EntityWorkspaceHeader
         backLabel={t("common.back")}
         onBack={() => navigate("/app/deals")}
-        avatar={<EntityWorkspaceAvatar>{initials(title)}</EntityWorkspaceAvatar>}
+        avatar={
+          <EntityWorkspaceAvatar>{initials(title)}</EntityWorkspaceAvatar>
+        }
         title={title}
         subtitle={subtitle || `#${deal.id}`}
         status={deal.status}
         actions={
           <>
-              {client ? (
-                <Button type="button" variant="secondary" onClick={() => navigate(`/app/clients/${client.id}`)}>
-                  {t("leads.openClient")}
-                </Button>
-              ) : null}
-              {lead ? (
-                <Button type="button" variant="secondary" onClick={() => navigate(`/app/leads/${lead.id}`)}>
-                  {t("crmCard.leadNumber", { id: lead.id })}
-                </Button>
-              ) : null}
-              <Button type="button" variant="secondary" disabled={!phoneDigits} onClick={() => phoneDigits && window.open(`https://wa.me/${phoneDigits}`, "_blank", "noopener,noreferrer")}>
-                <MessageCircle size={16} />
-                {t("clients.openWhatsapp")}
+            {client ? (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => navigate(`/app/clients/${client.id}`)}
+              >
+                {t("leads.openClient")}
               </Button>
-              <Button type="button" disabled={!phoneDigits} onClick={() => phoneDigits && window.open(`tel:${phoneDigits}`, "_self")}>
-                <Phone size={16} />
-                {t("clients.call")}
+            ) : null}
+            {lead ? (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => navigate(`/app/leads/${lead.id}`)}
+              >
+                {t("crmCard.leadNumber", { id: lead.id })}
               </Button>
+            ) : null}
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={!phoneDigits}
+              onClick={() =>
+                phoneDigits &&
+                window.open(
+                  `https://wa.me/${phoneDigits}`,
+                  "_blank",
+                  "noopener,noreferrer",
+                )
+              }
+            >
+              <MessageCircle size={16} />
+              {t("clients.openWhatsapp")}
+            </Button>
+            <Button
+              type="button"
+              disabled={!phoneDigits}
+              onClick={() =>
+                phoneDigits && window.open(`tel:${phoneDigits}`, "_self")
+              }
+            >
+              <Phone size={16} />
+              {t("clients.call")}
+            </Button>
           </>
         }
       />
 
-        <EntityWorkspaceMetrics>
-          <DealWorkspaceMetric label={t("deals.amount")} value={money(deal.amount, deal.currency)} />
-          <DealWorkspaceMetric label={t("deals.probability")} value={`${probability}%`} />
-          <DealWorkspaceMetric label={t("nav.tasks")} value={counts?.tasks ?? related.tasks.length} />
-          <DealWorkspaceMetric label={t("crmCard.messages")} value={counts?.conversations ?? related.conversations.length} />
-          <DealWorkspaceMetric label={t("nav.calendar")} value={counts?.appointments ?? related.appointments.length} />
-        </EntityWorkspaceMetrics>
+      <EntityWorkspaceMetrics>
+        <DealWorkspaceMetric
+          label={t("deals.amount")}
+          value={money(deal.amount, deal.currency)}
+        />
+        <DealWorkspaceMetric
+          label={t("deals.probability")}
+          value={`${probability}%`}
+        />
+        <DealWorkspaceMetric
+          label={t("nav.tasks")}
+          value={counts?.tasks ?? related.tasks.length}
+        />
+        <DealWorkspaceMetric
+          label={t("crmCard.messages")}
+          value={counts?.conversations ?? related.conversations.length}
+        />
+        <DealWorkspaceMetric
+          label={t("nav.calendar")}
+          value={counts?.appointments ?? related.appointments.length}
+        />
+      </EntityWorkspaceMetrics>
 
-        <EntityWorkspaceBody>
-          <EntityWorkspaceAside>
-            <DealWorkspaceSection title={t("deals.client")} icon={dealWorkspaceIcons.client}>
-              <DealClientPanel deal={deal} client={client} />
-            </DealWorkspaceSection>
-            <DealWorkspaceSection title={t("deals.deal")} icon={dealWorkspaceIcons.deal}>
-              <DealOverviewPanel deal={deal} />
-            </DealWorkspaceSection>
-            <DealWorkspaceSection title={lead || deal.lead ? t("crmCard.leadNumber", { id: lead?.id || deal.lead || "" }) : t("nav.leads")} icon={dealWorkspaceIcons.lead}>
-              <DealLinkedLeadPanel lead={lead} />
-            </DealWorkspaceSection>
-            <DealWorkspaceSection title={t("clients.quickActions")} icon={dealWorkspaceIcons.actions}>
-              <ActionPanel actions={card?.available_action_details || []} />
-            </DealWorkspaceSection>
-          </EntityWorkspaceAside>
+      <EntityWorkspaceBody>
+        <EntityWorkspaceAside>
+          <DealWorkspaceSection
+            title={t("deals.client")}
+            icon={dealWorkspaceIcons.client}
+          >
+            <DealClientPanel deal={deal} client={client} />
+          </DealWorkspaceSection>
+          <DealWorkspaceSection
+            title={t("deals.deal")}
+            icon={dealWorkspaceIcons.deal}
+          >
+            <DealOverviewPanel deal={deal} />
+          </DealWorkspaceSection>
+          <DealWorkspaceSection
+            title={
+              lead || deal.lead
+                ? t("crmCard.leadNumber", { id: lead?.id || deal.lead || "" })
+                : t("nav.leads")
+            }
+            icon={dealWorkspaceIcons.lead}
+          >
+            <DealLinkedLeadPanel lead={lead} />
+          </DealWorkspaceSection>
+          <DealWorkspaceSection
+            title={t("clients.quickActions")}
+            icon={dealWorkspaceIcons.actions}
+          >
+            <CrmActionBar
+              actions={executableActions}
+              isPending={lifecycleMutation.isPending}
+              onExecute={(action, reason) =>
+                lifecycleMutation.mutate({ actionId: action.id, reason })
+              }
+            />
+          </DealWorkspaceSection>
+        </EntityWorkspaceAside>
 
-          <EntityWorkspaceMain>
-            <DealWorkspaceSection title={t("nav.tasks")} icon={dealWorkspaceIcons.tasks}>
-              <TasksList tasks={related.tasks} />
-            </DealWorkspaceSection>
-            <DealWorkspaceSection title={t("nav.calendar")} icon={dealWorkspaceIcons.appointments}>
-              <AppointmentsList appointments={related.appointments} />
-            </DealWorkspaceSection>
-            <DealWorkspaceSection title={t("crmCard.messages")} icon={dealWorkspaceIcons.conversations} className="lg:col-span-2">
-              <ConversationsList conversations={related.conversations} />
-            </DealWorkspaceSection>
-            <DealWorkspaceSection title={t("crmCard.timeline")} icon={dealWorkspaceIcons.timeline} className="lg:col-span-2">
-              <TimelineList cardTimeline={card?.timeline || []} />
-            </DealWorkspaceSection>
-          </EntityWorkspaceMain>
-        </EntityWorkspaceBody>
+        <EntityWorkspaceMain>
+          <DealWorkspaceSection
+            title={t("nav.tasks")}
+            icon={dealWorkspaceIcons.tasks}
+          >
+            <TasksList tasks={related.tasks} />
+          </DealWorkspaceSection>
+          <DealWorkspaceSection
+            title={t("nav.calendar")}
+            icon={dealWorkspaceIcons.appointments}
+          >
+            <AppointmentsList appointments={related.appointments} />
+          </DealWorkspaceSection>
+          <DealWorkspaceSection
+            title={t("crmCard.messages")}
+            icon={dealWorkspaceIcons.conversations}
+            className="lg:col-span-2"
+          >
+            <ConversationsList conversations={related.conversations} />
+          </DealWorkspaceSection>
+          <DealWorkspaceSection
+            title={t("crmCard.timeline")}
+            icon={dealWorkspaceIcons.timeline}
+            className="lg:col-span-2"
+          >
+            <TimelineList cardTimeline={card?.timeline || []} />
+          </DealWorkspaceSection>
+        </EntityWorkspaceMain>
+      </EntityWorkspaceBody>
     </EntityWorkspaceRoot>
   );
 }

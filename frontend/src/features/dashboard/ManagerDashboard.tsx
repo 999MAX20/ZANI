@@ -1,13 +1,26 @@
-import { CalendarCheck, Flame, ListChecks, MessageSquareText, Target, Users } from "lucide-react";
+import {
+  CalendarCheck,
+  Flame,
+  ListChecks,
+  MessageSquareText,
+  Target,
+  Users,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import { Card, CardBody, Surface } from "../../components/ui/Card";
-import { MetricTile } from "../../components/ui/Primitives";
+import type {
+  WorkQueueAppointmentItem,
+  WorkQueueLeadItem,
+  WorkQueueTaskItem,
+  WorkQueuesResponse,
+} from "../../api/workQueues";
+import { Surface } from "../../components/ui/Card";
+import { IconBubble, MetricTile } from "../../components/ui/Primitives";
 import { EmptyState } from "../../components/ui/StateViews";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { formatDateTime } from "../../lib/format";
 import { useI18n } from "../../lib/i18n";
-import type { WorkQueuesResponse } from "../../api/workQueues";
 import type { Appointment, Client, Lead, Service, Task } from "../../types";
 import { isTodayDate } from "./dashboardUtils";
 
@@ -30,34 +43,186 @@ function WorkListCard({
   title,
   href,
   children,
+  emptyTitle,
+  emptyDescription,
 }: {
   eyebrow: string;
   title: string;
   href: string;
-  children: React.ReactNode;
+  children: React.ReactNode[];
+  emptyTitle: string;
+  emptyDescription: string;
 }) {
   const { t } = useI18n();
+
   return (
-    <Card>
-      <CardBody>
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">{eyebrow}</p>
-            <h2 className="mt-1 text-lg font-black text-midnight">{title}</h2>
-          </div>
-          <Link to={href} className="text-sm font-black text-brand-700">{t("common.all")}</Link>
+    <Surface as="section" padding="lg">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-700">
+            {eyebrow}
+          </p>
+          <h2 className="mt-1 text-base font-bold text-zani-text">{title}</h2>
         </div>
-        <div className="mt-4 space-y-3">{children}</div>
-      </CardBody>
-    </Card>
+        <Link to={href} className="text-sm font-bold text-brand-700">
+          {t("common.all")}
+        </Link>
+      </div>
+      {children.length ? (
+        <div className="space-y-2">{children}</div>
+      ) : (
+        <EmptyState title={emptyTitle} description={emptyDescription} />
+      )}
+    </Surface>
   );
 }
 
-function taskEscalationClass(level: string) {
-  if (level === "critical") return "rounded-full bg-red-50 px-2 py-1 text-[10px] font-black uppercase text-red-700 ring-1 ring-red-200";
-  if (level === "escalate") return "rounded-full bg-amber-50 px-2 py-1 text-[10px] font-black uppercase text-amber-700 ring-1 ring-amber-200";
-  if (level === "watch") return "rounded-full bg-cyan-50 px-2 py-1 text-[10px] font-black uppercase text-cyan-700 ring-1 ring-cyan-200";
-  return "rounded-full bg-slate-100 px-2 py-1 text-[10px] font-black uppercase text-slate-600 ring-1 ring-slate-200";
+function SummaryLink({
+  href,
+  icon: Icon,
+  value,
+  label,
+  tone,
+}: {
+  href: string;
+  icon: LucideIcon;
+  value?: number;
+  label: string;
+  tone: "brand" | "ai" | "green" | "amber" | "slate";
+}) {
+  return (
+    <Surface
+      as={Link}
+      to={href}
+      variant="muted"
+      padding="none"
+      interactive
+      className="rounded-control px-4 py-3 text-center"
+    >
+      {typeof value === "number" ? (
+        <p className="text-2xl font-bold tabular-nums text-zani-text">
+          {value}
+        </p>
+      ) : (
+        <Icon className="mx-auto text-brand-600" size={22} />
+      )}
+      <p className="mt-1 text-xs font-bold text-zani-subtle">{label}</p>
+      <span
+        className={`mx-auto mt-2 block h-1 w-8 rounded-full ${toneDot(tone)}`}
+      />
+    </Surface>
+  );
+}
+
+function toneDot(tone: "brand" | "ai" | "green" | "amber" | "slate") {
+  if (tone === "ai") return "bg-ai-600";
+  if (tone === "green") return "bg-green-600";
+  if (tone === "amber") return "bg-amber-500";
+  if (tone === "brand") return "bg-brand-600";
+  return "bg-zani-border";
+}
+
+function LeadWorkRow({
+  lead,
+  client,
+  service,
+}: {
+  lead: Lead | WorkQueueLeadItem;
+  client?: Client;
+  service?: Service;
+}) {
+  const { t } = useI18n();
+  const title = "title" in lead ? lead.title : client?.full_name;
+  const subtitle =
+    "age_hours" in lead
+      ? `${lead.source} / ${lead.age_hours ? `${lead.age_hours}h` : t("dashboard.noMessage")}`
+      : `${service?.name || lead.source} / ${lead.message || t("dashboard.noMessage")}`;
+
+  return (
+    <Surface
+      key={lead.id}
+      as={Link}
+      to={`/app/leads/${lead.id}`}
+      padding="sm"
+      interactive
+      className="flex items-start justify-between gap-3 rounded-control"
+    >
+      <div className="min-w-0">
+        <p className="truncate font-bold text-zani-text">
+          {title || t("dashboard.leadNumber", { id: lead.id })}
+        </p>
+        <p className="mt-1 truncate text-xs font-semibold text-zani-subtle">
+          {subtitle}
+        </p>
+      </div>
+      <StatusBadge status={lead.status} size="sm" />
+    </Surface>
+  );
+}
+
+function AppointmentWorkRow({
+  appointment,
+  client,
+  service,
+}: {
+  appointment: Appointment | WorkQueueAppointmentItem;
+  client?: Client;
+  service?: Service;
+}) {
+  const { t } = useI18n();
+  const title = "title" in appointment ? appointment.title : client?.full_name;
+
+  return (
+    <Surface
+      key={appointment.id}
+      as={Link}
+      to={`/app/calendar/${appointment.id}`}
+      padding="sm"
+      interactive
+      className="flex items-start gap-3 rounded-control"
+    >
+      <IconBubble
+        icon={CalendarCheck}
+        tone="brand"
+        className="h-10 w-10 rounded-control"
+      />
+      <div className="min-w-0">
+        <p className="truncate font-bold text-zani-text">
+          {title || t("common.client")}
+        </p>
+        <p className="mt-1 truncate text-xs font-semibold text-zani-subtle">
+          {service?.name || t("common.service")} /{" "}
+          {formatDateTime(appointment.start_at)}
+        </p>
+      </div>
+    </Surface>
+  );
+}
+
+function TaskWorkRow({ task }: { task: Task | WorkQueueTaskItem }) {
+  const { t } = useI18n();
+  const href = "href" in task ? task.href : `/app/tasks/${task.id}`;
+  const escalationLevel =
+    "escalation_level" in task ? task.escalation_level : task.priority;
+
+  return (
+    <Surface
+      key={task.id}
+      as={Link}
+      to={href}
+      padding="sm"
+      interactive
+      className="flex items-start justify-between gap-3 rounded-control"
+    >
+      <div className="min-w-0">
+        <p className="truncate font-bold text-zani-text">{task.title}</p>
+        <p className="mt-1 truncate text-xs font-semibold text-zani-subtle">
+          {task.due_at ? formatDateTime(task.due_at) : t("dashboard.noDueDate")}
+        </p>
+      </div>
+      <StatusBadge status={escalationLevel} size="sm" />
+    </Surface>
+  );
 }
 
 export function ManagerDashboard({
@@ -74,9 +239,15 @@ export function ManagerDashboard({
   workQueues,
 }: ManagerDashboardProps) {
   const { t } = useI18n();
-  const urgentLeads = leads.filter((lead) => ["new", "in_progress", "contacted"].includes(lead.status)).slice(0, 4);
-  const todayAppointments = appointments.filter((appointment) => isTodayDate(appointment.start_at)).slice(0, 4);
-  const openTaskItems = tasks.filter((task) => task.status !== "done" && task.status !== "cancelled").slice(0, 4);
+  const urgentLeads = leads
+    .filter((lead) => ["new", "in_progress", "contacted"].includes(lead.status))
+    .slice(0, 4);
+  const todayAppointments = appointments
+    .filter((appointment) => isTodayDate(appointment.start_at))
+    .slice(0, 4);
+  const openTaskItems = tasks
+    .filter((task) => task.status !== "done" && task.status !== "cancelled")
+    .slice(0, 4);
   const queueLeads = workQueues?.queues.stale_leads || [];
   const queueAppointments = [
     ...(workQueues?.queues.appointment_confirmations || []),
@@ -84,137 +255,163 @@ export function ManagerDashboard({
   ].slice(0, 4);
   const queueTasks = workQueues?.queues.overdue_tasks || [];
   const leadAttentionCount = workQueues?.summary.stale_leads ?? newLeadsCount;
-  const appointmentAttentionCount = workQueues?.summary.appointment_confirmations ?? todayAppointmentsCount;
+  const appointmentAttentionCount =
+    workQueues?.summary.appointment_confirmations ?? todayAppointmentsCount;
   const taskAttentionCount = workQueues?.summary.overdue_tasks ?? openTasks;
-  const taskEscalationLabel = (level: string) => {
-    const key = `dashboard.taskEscalation.${level}`;
-    const label = t(key);
-    return label === key ? level : label;
-  };
 
   return (
-    <div className="pb-6">
+    <div className="space-y-5 pb-6">
       {isCoreDataLoading ? (
-        <Surface className="mb-5 border-cyan-100 px-5 py-4 text-sm font-semibold text-slate-600" padding="none">
+        <Surface
+          className="border-brand-100 px-5 py-4 text-sm font-semibold text-zani-subtle"
+          padding="none"
+        >
           {t("dashboard.loadingCoreData")}
         </Surface>
       ) : null}
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricTile label={t("dashboard.newLeads")} value={leadAttentionCount} hint={t("dashboard.needProcess")} icon={Flame} tone="amber" />
-        <MetricTile label={t("dashboard.appointments")} value={appointmentAttentionCount} hint={t("common.today")} icon={CalendarCheck} tone="brand" />
-        <MetricTile label={t("nav.clients")} value={clients.length} hint={t("dashboard.inCrmBase")} icon={Users} tone="green" />
-        <MetricTile label={t("nav.tasks")} value={taskAttentionCount} hint={overdueTasks ? `${t("dashboard.overdueCount")}: ${overdueTasks}` : t("dashboard.openFollowups")} icon={ListChecks} />
+        <MetricTile
+          label={t("dashboard.newLeads")}
+          value={leadAttentionCount}
+          hint={t("dashboard.needProcess")}
+          icon={Flame}
+          tone="amber"
+        />
+        <MetricTile
+          label={t("dashboard.appointments")}
+          value={appointmentAttentionCount}
+          hint={t("common.today")}
+          icon={CalendarCheck}
+          tone="brand"
+        />
+        <MetricTile
+          label={t("nav.clients")}
+          value={clients.length}
+          hint={t("dashboard.inCrmBase")}
+          icon={Users}
+          tone="green"
+        />
+        <MetricTile
+          label={t("nav.tasks")}
+          value={taskAttentionCount}
+          hint={
+            overdueTasks
+              ? `${t("dashboard.overdueCount")}: ${overdueTasks}`
+              : t("dashboard.openFollowups")
+          }
+          icon={ListChecks}
+          tone={overdueTasks ? "amber" : "slate"}
+        />
       </section>
 
-      <Surface as="section" className="mt-5" padding="lg">
+      <Surface as="section" padding="lg">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">{t("dashboard.operatorWorkspace")}</p>
-            <h2 className="mt-1 text-xl font-black text-midnight">{t("dashboard.operatorFocus")}</h2>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-700">
+              {t("dashboard.operatorWorkspace")}
+            </p>
+            <h2 className="mt-1 text-xl font-bold text-zani-text">
+              {t("dashboard.operatorFocus")}
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-zani-subtle">
+              {t("dashboard.operatorFocusText")}
+            </p>
           </div>
           <div className="grid grid-cols-3 gap-2 text-center">
-            <Surface as={Link} to="/app/leads" variant="muted" padding="none" interactive className="rounded-xl px-4 py-3">
-              <p className="text-2xl font-black text-midnight">{leadAttentionCount}</p>
-              <p className="text-xs font-bold text-slate-500">{t("dashboard.leadsLabel")}</p>
-            </Surface>
-            <Surface as={Link} to="/app/conversations" variant="muted" padding="none" interactive className="rounded-xl px-4 py-3">
-              <MessageSquareText className="mx-auto text-brand-600" size={22} />
-              <p className="mt-1 text-xs font-bold text-slate-500">{t("dashboard.chatsLabel")}</p>
-            </Surface>
-            <Surface as={Link} to="/app/deals" variant="muted" padding="none" interactive className="rounded-xl px-4 py-3">
-              <Target className="mx-auto text-ai-600" size={22} />
-              <p className="mt-1 text-xs font-bold text-slate-500">{t("nav.deals")}</p>
-            </Surface>
+            <SummaryLink
+              href="/app/leads"
+              icon={Flame}
+              value={leadAttentionCount}
+              label={t("dashboard.leadsLabel")}
+              tone="brand"
+            />
+            <SummaryLink
+              href="/app/conversations"
+              icon={MessageSquareText}
+              label={t("dashboard.chatsLabel")}
+              tone="brand"
+            />
+            <SummaryLink
+              href="/app/deals"
+              icon={Target}
+              label={t("nav.deals")}
+              tone="ai"
+            />
           </div>
         </div>
       </Surface>
 
-      <section className="mt-5 grid gap-4 xl:grid-cols-3">
-        <WorkListCard eyebrow={t("dashboard.queue")} title={t("dashboard.leadsToAnswer")} href="/app/leads">
-          {queueLeads.length ? queueLeads.map((lead) => (
-            <Surface key={lead.id} as={Link} to={`/app/leads/${lead.id}`} padding="sm" interactive className="block rounded-xl">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate font-bold text-midnight">{lead.title || t("dashboard.leadNumber", { id: lead.id })}</p>
-                  <p className="mt-1 truncate text-xs text-slate-500">{lead.source} · {lead.age_hours ? `${lead.age_hours}h` : t("dashboard.noMessage")}</p>
-                </div>
-                <StatusBadge status={lead.status} />
-              </div>
-            </Surface>
-          )) : urgentLeads.map((lead) => {
-            const client = clients.find((item) => item.id === lead.client);
-            const service = services.find((item) => item.id === lead.service);
+      <section className="grid gap-4 xl:grid-cols-3">
+        <WorkListCard
+          eyebrow={t("dashboard.queue")}
+          title={t("dashboard.leadsToAnswer")}
+          href="/app/leads"
+          emptyTitle={t("dashboard.noUrgentLeads")}
+          emptyDescription={t("dashboard.noUrgentLeadsText")}
+        >
+          {(queueLeads.length ? queueLeads : urgentLeads).map((lead) => {
+            const client =
+              "client_id" in lead
+                ? clients.find((item) => item.id === lead.client_id)
+                : clients.find((item) => item.id === lead.client);
+            const service =
+              "service" in lead
+                ? services.find((item) => item.id === lead.service)
+                : undefined;
             return (
-              <Surface key={lead.id} as={Link} to={`/app/leads/${lead.id}`} padding="sm" interactive className="block rounded-xl">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate font-bold text-midnight">{client?.full_name || t("dashboard.leadNumber", { id: lead.id })}</p>
-                    <p className="mt-1 truncate text-xs text-slate-500">{service?.name || lead.source} · {lead.message || t("dashboard.noMessage")}</p>
-                  </div>
-                  <StatusBadge status={lead.status} />
-                </div>
-              </Surface>
+              <LeadWorkRow
+                key={lead.id}
+                lead={lead}
+                client={client}
+                service={service}
+              />
             );
           })}
-          {!urgentLeads.length ? <EmptyState title={t("dashboard.noUrgentLeads")} description={t("dashboard.noUrgentLeadsText")} /> : null}
         </WorkListCard>
 
-        <WorkListCard eyebrow={t("common.today")} title={t("nav.appointments")} href="/app/calendar">
-          {queueAppointments.length ? queueAppointments.map((appointment) => (
-            <Surface key={`${appointment.type}-${appointment.id}`} as={Link} to="/app/calendar" padding="sm" interactive className="flex items-start gap-3 rounded-xl">
-              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700">
-                <CalendarCheck size={17} />
-              </div>
-              <div className="min-w-0">
-                <p className="truncate font-bold text-midnight">{appointment.title || t("common.client")}</p>
-                <p className="mt-1 text-xs text-slate-500">{formatDateTime(appointment.start_at)}</p>
-              </div>
-            </Surface>
-          )) : todayAppointments.map((appointment) => {
-            const client = clients.find((item) => item.id === appointment.client);
-            const service = services.find((item) => item.id === appointment.service);
+        <WorkListCard
+          eyebrow={t("common.today")}
+          title={t("nav.appointments")}
+          href="/app/calendar"
+          emptyTitle={t("dashboard.noBookingsToday")}
+          emptyDescription={t("dashboard.noBookingsTodayText")}
+        >
+          {(queueAppointments.length
+            ? queueAppointments
+            : todayAppointments
+          ).map((appointment) => {
+            const client = clients.find((item) =>
+              "client_id" in appointment
+                ? item.id === appointment.client_id
+                : item.id === appointment.client,
+            );
+            const service = services.find((item) =>
+              "service_id" in appointment
+                ? item.id === appointment.service_id
+                : item.id === appointment.service,
+            );
             return (
-              <Surface key={appointment.id} as={Link} to="/app/calendar" padding="sm" interactive className="flex items-start gap-3 rounded-xl">
-                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700">
-                  <CalendarCheck size={17} />
-                </div>
-                <div className="min-w-0">
-                  <p className="truncate font-bold text-midnight">{client?.full_name || t("common.client")}</p>
-                  <p className="mt-1 text-xs text-slate-500">{service?.name || t("common.service")} · {formatDateTime(appointment.start_at)}</p>
-                </div>
-              </Surface>
+              <AppointmentWorkRow
+                key={appointment.id}
+                appointment={appointment}
+                client={client}
+                service={service}
+              />
             );
           })}
-          {!todayAppointments.length ? <EmptyState title={t("dashboard.noBookingsToday")} description={t("dashboard.noBookingsTodayText")} /> : null}
         </WorkListCard>
 
-        <WorkListCard eyebrow={t("dashboard.followUp")} title={t("dashboard.myTasks")} href="/app/tasks">
-          {queueTasks.length ? queueTasks.map((task) => (
-            <Surface key={task.id} as={Link} to={task.href} padding="sm" interactive className="block rounded-xl">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate font-bold text-midnight">{task.title}</p>
-                  <p className="mt-1 truncate text-xs text-slate-500">{task.due_at ? formatDateTime(task.due_at) : t("dashboard.noDueDate")}</p>
-                </div>
-                <div className="flex shrink-0 flex-col items-end gap-1">
-                  <span className={taskEscalationClass(task.escalation_level)}>{taskEscalationLabel(task.escalation_level)}</span>
-                  <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-black uppercase text-slate-600">{task.priority}</span>
-                </div>
-              </div>
-            </Surface>
-          )) : openTaskItems.map((task) => (
-            <Surface key={task.id} as={Link} to="/app/tasks" padding="sm" interactive className="block rounded-xl">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate font-bold text-midnight">{task.title}</p>
-                  <p className="mt-1 truncate text-xs text-slate-500">{task.due_at ? formatDateTime(task.due_at) : t("dashboard.noDueDate")}</p>
-                </div>
-                <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-black uppercase text-slate-600">{task.priority}</span>
-              </div>
-            </Surface>
+        <WorkListCard
+          eyebrow={t("dashboard.followUp")}
+          title={t("dashboard.myTasks")}
+          href="/app/tasks"
+          emptyTitle={t("dashboard.noOpenTasks")}
+          emptyDescription={t("dashboard.noOpenTasksText")}
+        >
+          {(queueTasks.length ? queueTasks : openTaskItems).map((task) => (
+            <TaskWorkRow key={task.id} task={task} />
           ))}
-          {!openTaskItems.length ? <EmptyState title={t("dashboard.noOpenTasks")} description={t("dashboard.noOpenTasksText")} /> : null}
         </WorkListCard>
       </section>
     </div>

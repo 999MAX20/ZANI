@@ -76,6 +76,7 @@ export function LeadsWorkspaceTable({
   onShareView,
   onOpenImport,
   onOpenCreate,
+  onSelectLead,
   onOpenLead,
   onToggleBulkLead,
   onToggleAllPageRows,
@@ -130,6 +131,7 @@ export function LeadsWorkspaceTable({
   onShareView: () => void;
   onOpenImport: () => void;
   onOpenCreate: () => void;
+  onSelectLead: (lead: Lead) => void;
   onOpenLead: (lead: Lead) => void;
   onToggleBulkLead: (id: Id) => void;
   onToggleAllPageRows: () => void;
@@ -142,23 +144,44 @@ export function LeadsWorkspaceTable({
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: number) => void;
 }) {
-  const activeTableColumns = columnOrder.filter((column) => visibleColumns[column]);
+  const activeTableColumns = columnOrder.filter(
+    (column) => visibleColumns[column],
+  );
   const tableGridTemplateColumns = `${CRM_TABLE_CHECKBOX_COLUMN} ${activeTableColumns.map((column) => leadColumnWidths[column]).join(" ")} ${CRM_TABLE_ACTIONS_COLUMN}`;
-  const tableGridMinWidth = activeTableColumns.length > 5 ? CRM_TABLE_WIDE_MIN_WIDTH : CRM_TABLE_MIN_WIDTH;
-  const sourceOptions = ["", "whatsapp", "telegram", "instagram", "website", "manual", "parser", "other"];
-  const allPageRowsSelected = pageRows.length > 0 && pageRows.every((lead) => selectedLeadIds.includes(lead.id));
+  const tableGridMinWidth =
+    activeTableColumns.length > 5
+      ? CRM_TABLE_WIDE_MIN_WIDTH
+      : CRM_TABLE_MIN_WIDTH;
+  const sourceOptions = [
+    "",
+    "whatsapp",
+    "telegram",
+    "instagram",
+    "website",
+    "manual",
+    "parser",
+    "other",
+  ];
+  const allPageRowsSelected =
+    pageRows.length > 0 &&
+    pageRows.every((lead) => selectedLeadIds.includes(lead.id));
+  const hasFilters =
+    filter !== "all" || Boolean(search.trim()) || Boolean(source);
 
   return (
     <CrmTableSurface
-      className="flex-none overflow-visible rounded-card border border-slate-200 bg-white shadow-card"
-      filtersClassName="border-b border-slate-100 bg-white px-4 py-3"
+      className="flex-none overflow-visible rounded-card border border-zani-border bg-surface-card shadow-card"
+      filtersClassName="border-b border-zani-border bg-surface-card px-4 py-3"
       filters={
         <LeadsToolbar
           filters={filters}
           filter={filter}
           search={search}
           source={source}
-          sourceOptions={sourceOptions.map((item) => ({ value: item, label: item ? getSourceLabel(item, t) : t("leads.allSources") }))}
+          sourceOptions={sourceOptions.map((item) => ({
+            value: item,
+            label: item ? getSourceLabel(item, t) : t("leads.allSources"),
+          }))}
           savedFiltersOpen={savedFiltersOpen}
           filterPresets={filterPresets}
           presetName={presetName}
@@ -197,12 +220,34 @@ export function LeadsWorkspaceTable({
         />
       }
     >
-      <CrmDataTable className="rounded-none border-0 bg-transparent shadow-none" contentClassName="min-h-0">
+      <CrmDataTable
+        className="rounded-none border-0 bg-transparent shadow-none"
+        contentClassName="min-h-0"
+      >
         <div className="hidden shrink-0 overflow-x-auto lg:block">
-          <div className={cn(CRM_TABLE_HEADER_GRID_CLASS, "bg-slate-50")} style={{ gridTemplateColumns: tableGridTemplateColumns, minWidth: tableGridMinWidth }}>
+          <div
+            className={CRM_TABLE_HEADER_GRID_CLASS}
+            style={{
+              gridTemplateColumns: tableGridTemplateColumns,
+              minWidth: tableGridMinWidth,
+            }}
+          >
             <label className="flex h-5 w-5 items-center justify-center">
-              <input className="sr-only" type="checkbox" checked={allPageRowsSelected} onChange={onToggleAllPageRows} aria-label={t("leads.selectAll")} />
-              <span className={cn("grid h-5 w-5 place-items-center rounded border", allPageRowsSelected ? "border-brand-600 bg-brand-600 text-white" : "border-slate-300 bg-white")}>
+              <input
+                className="sr-only"
+                type="checkbox"
+                checked={allPageRowsSelected}
+                onChange={onToggleAllPageRows}
+                aria-label={t("leads.selectAll")}
+              />
+              <span
+                className={cn(
+                  "grid h-5 w-5 place-items-center rounded border",
+                  allPageRowsSelected
+                    ? "border-brand-600 bg-brand-600 text-white"
+                    : "border-zani-border bg-surface-card",
+                )}
+              >
                 {allPageRowsSelected ? <CheckCheck size={13} /> : null}
               </span>
             </label>
@@ -219,15 +264,39 @@ export function LeadsWorkspaceTable({
                 <div className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-brand-50 text-brand-700">
                   <Plus size={22} />
                 </div>
-                <h3 className="mt-4 text-lg font-black text-midnight">{t("leads.emptyTitle")}</h3>
-                <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">{t("leads.emptyText")}</p>
+                <h3 className="mt-4 text-lg font-bold text-zani-text">
+                  {hasFilters
+                    ? t("leads.emptyFilteredTitle")
+                    : t("leads.emptyTitle")}
+                </h3>
+                <p className="mt-2 text-sm font-semibold leading-6 text-zani-muted">
+                  {hasFilters
+                    ? t("leads.emptyFilteredText")
+                    : t("leads.emptyText")}
+                </p>
                 <div className="mt-4 flex flex-col justify-center gap-2 sm:flex-row">
-                  <Button onClick={onOpenCreate}>
-                    <Plus size={16} /> {t("leads.createFirstLead")}
-                  </Button>
-                  <Button variant="secondary" onClick={onOpenImport}>
-                    <SlidersHorizontal size={16} /> {t("leads.setupIntegrations")}
-                  </Button>
+                  {hasFilters ? (
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        onFilterChange("all");
+                        onSearchChange("");
+                        onSourceChange("");
+                      }}
+                    >
+                      {t("tasks.resetFilters")}
+                    </Button>
+                  ) : (
+                    <>
+                      <Button onClick={onOpenCreate}>
+                        <Plus size={16} /> {t("leads.createFirstLead")}
+                      </Button>
+                      <Button variant="secondary" onClick={onOpenImport}>
+                        <SlidersHorizontal size={16} />{" "}
+                        {t("leads.setupIntegrations")}
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -245,6 +314,7 @@ export function LeadsWorkspaceTable({
                 visibleColumns={visibleColumns}
                 columnOrder={columnOrder}
                 openLead={onOpenLead}
+                selectLead={onSelectLead}
                 toggleBulkLead={onToggleBulkLead}
                 assignLead={onAssignLead}
                 callLead={onCallLead}
@@ -252,7 +322,7 @@ export function LeadsWorkspaceTable({
                 openContextMenu={onOpenContextMenu}
                 t={t}
               />
-              <div className="divide-y divide-slate-100 lg:hidden">
+              <div className="divide-y divide-zani-border lg:hidden">
                 {pageRows.map((lead) => (
                   <LeadQueueItem
                     key={lead.id}
@@ -260,12 +330,22 @@ export function LeadsWorkspaceTable({
                     client={getClient(lead, clientList)}
                     service={getService(lead, serviceList)}
                     selected={lead.id === selected?.id}
-                    onClick={() => onOpenLead(lead)}
+                    onClick={() => onSelectLead(lead)}
                     onSwipeLeft={() => onArchiveLead(lead)}
                     onSwipeRight={() => onTakeLead(lead)}
                     onLongPress={(event) => {
-                      const touch = "touches" in event ? event.touches[0] || event.changedTouches[0] : event;
-                      onOpenContextMenu({ ...event, clientX: touch?.clientX || window.innerWidth / 2, clientY: touch?.clientY || window.innerHeight / 2 } as React.MouseEvent, lead);
+                      const touch =
+                        "touches" in event
+                          ? event.touches[0] || event.changedTouches[0]
+                          : event;
+                      onOpenContextMenu(
+                        {
+                          ...event,
+                          clientX: touch?.clientX || window.innerWidth / 2,
+                          clientY: touch?.clientY || window.innerHeight / 2,
+                        } as React.MouseEvent,
+                        lead,
+                      );
                     }}
                     t={t}
                   />
@@ -280,7 +360,11 @@ export function LeadsWorkspaceTable({
           pageSize={pageSize}
           pageSizeOptions={[10, 25, 50]}
           visiblePages={visiblePages}
-          label={t("leads.tableShowingRange", { start: pageStart, end: pageEnd, total: totalLeadCount })}
+          label={t("leads.tableShowingRange", {
+            start: pageStart,
+            end: pageEnd,
+            total: totalLeadCount,
+          })}
           pageSizeLabel={t("leads.pageSize")}
           onPageChange={onPageChange}
           onPageSizeChange={onPageSizeChange}

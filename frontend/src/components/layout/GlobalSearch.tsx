@@ -226,15 +226,15 @@ export function GlobalSearch() {
 
       <div
         className={cn(
-          "hidden h-11 w-full items-center gap-3 rounded-xl border border-slate-200/70 bg-white/90 px-3 text-sm shadow-sm",
+          "hidden h-10 w-full items-center gap-3 rounded-control border border-zani-border bg-surface-card px-3 text-sm shadow-sm",
           "lg:flex lg:min-w-0",
           mobileExpanded && "flex h-[52px] min-w-0 rounded-full",
         )}
       >
-        <Search size={21} className="shrink-0 text-slate-400" />
+        <Search size={18} className="shrink-0 text-zani-faint" />
         <input
           ref={inputRef}
-          className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-midnight outline-none placeholder:text-slate-400"
+          className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-zani-text outline-none placeholder:text-zani-faint"
           aria-label={t("search.aria")}
           placeholder={placeholder}
           value={query}
@@ -245,24 +245,24 @@ export function GlobalSearch() {
           }}
         />
         {query || mobileExpanded ? (
-          <button type="button" className="grid h-8 w-8 place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700" onClick={query ? clearSearch : closeSearch} aria-label={t("search.close")}>
+          <button type="button" className="zani-focus-ring grid h-8 w-8 place-items-center rounded-control text-zani-faint hover:bg-surface-muted hover:text-zani-text" onClick={query ? clearSearch : closeSearch} aria-label={t("search.close")}>
             <X size={20} />
           </button>
         ) : (
-          <span className="ml-auto hidden items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-500 lg:inline-flex">
+          <span className="ml-auto hidden items-center gap-1 rounded-control bg-surface-muted px-2 py-1 text-[11px] font-semibold text-zani-faint lg:inline-flex">
             <Command size={13} /> K
           </span>
         )}
       </div>
 
       {open && !rendersPageSearchInline ? (
-        <div className="fixed inset-x-3 top-20 z-[70] rounded-xl border border-slate-200 bg-white p-3 shadow-premium lg:absolute lg:inset-x-auto lg:left-1/2 lg:top-full lg:mt-2 lg:w-[min(560px,calc(100vw-8rem))] lg:-translate-x-1/2">
-          <div className="mb-3 grid grid-cols-2 rounded-2xl bg-slate-100 p-1">
+        <div className="fixed inset-x-3 top-16 z-[70] rounded-card border border-zani-border bg-surface-card p-3 shadow-premium lg:absolute lg:inset-x-auto lg:left-1/2 lg:top-full lg:mt-2 lg:w-[min(560px,calc(100vw-8rem))] lg:-translate-x-1/2">
+          <div className="mb-3 grid grid-cols-2 rounded-control bg-surface-muted p-1">
             {(["page", "global"] as const).map((value) => (
               <button
                 key={value}
                 type="button"
-                className={cn("h-9 rounded-xl text-xs font-black transition", scope === value ? "bg-white text-brand-700 shadow-sm" : "text-slate-500 hover:text-slate-800")}
+                className={cn("zani-focus-ring h-9 rounded-control text-xs font-semibold transition", scope === value ? "bg-surface-card text-brand-700 shadow-sm" : "text-zani-subtle hover:text-zani-text")}
                 onClick={() => setScope(value)}
               >
                 {value === "page" ? t("search.scopePage") : t("search.scopeGlobal")}
@@ -277,22 +277,22 @@ export function GlobalSearch() {
                   key={item.id}
                   to={item.to}
                   onClick={closeSearch}
-                  className="flex min-h-[62px] items-start gap-3 rounded-2xl px-3 py-3 transition hover:bg-slate-50 active:scale-[0.99]"
+                  className="zani-focus-ring flex min-h-[62px] items-start gap-3 rounded-control px-3 py-3 transition hover:bg-surface-muted active:scale-[0.99]"
                 >
-                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-slate-100 text-slate-600">
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-control bg-surface-muted text-zani-subtle">
                     <Icon size={18} />
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="truncate font-semibold text-midnight">{item.title}</p>
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-500">{typeLabels[item.type] || item.type}</span>
+                      <p className="truncate font-semibold text-zani-ink">{item.title}</p>
+                      <span className="rounded-full bg-surface-muted px-2 py-0.5 text-[11px] font-semibold text-zani-faint">{typeLabels[item.type] || item.type}</span>
                     </div>
-                    <p className="mt-1 line-clamp-1 text-xs text-slate-500">{item.subtitle || t("search.noMeta")}</p>
+                    <p className="mt-1 line-clamp-1 text-xs text-zani-faint">{item.subtitle || t("search.noMeta")}</p>
                   </div>
                 </Link>
               );
             })}
-            {!results.length ? <p className="px-3 py-6 text-center text-sm text-slate-500">{t("search.empty")}</p> : null}
+            {!results.length ? <p className="px-3 py-6 text-center text-sm text-zani-faint">{t("search.empty")}</p> : null}
           </div>
         </div>
       ) : null}

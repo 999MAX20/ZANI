@@ -81,7 +81,7 @@ export function AppointmentRescheduleForm({
         }
       }}
     >
-      <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3 text-sm font-semibold text-slate-600">
+      <div className="rounded-card border border-zani-border bg-surface-muted p-3 text-sm font-semibold text-zani-subtle">
         {t("appointments.currentTime")}: {new Date(appointment.start_at).toLocaleString(locale, { dateStyle: "medium", timeStyle: "short", timeZone })}
       </div>
       <div className="grid gap-3 sm:grid-cols-2">

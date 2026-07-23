@@ -7,7 +7,7 @@ export function slugify(value: string) {
   return value
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9Р°-СЏС‘]+/gi, "_")
+    .replace(/[^a-z0-9а-яё]+/gi, "_")
     .replace(/^_+|_+$/g, "")
     .slice(0, 64);
 }

@@ -1,7 +1,7 @@
 import { createCrudApi } from "./crud";
 import { apiClient } from "./client";
 import type { PaginatedResponse } from "./client";
-import type { Appointment, Client, Deal, Id, Lead, LeadDuplicateCheckResponse, LeadSummary, Note, Task } from "../types";
+import type { Appointment, Deal, Id, Lead, LeadDuplicateCheckResponse, LeadSummary, Note, Task } from "../types";
 
 export type LeadListParams = {
   page?: number;
@@ -95,10 +95,6 @@ export const leadsApi = {
   },
   createDeal: async ({ id, amount, title }: { id: Id; amount?: string; title?: string }) => {
     const { data } = await apiClient.post<Deal>(`/api/leads/${id}/create-deal/`, { amount, title });
-    return data;
-  },
-  convertToClient: async ({ id }: { id: Id }) => {
-    const { data } = await apiClient.post<Client>(`/api/leads/${id}/convert-client/`, {});
     return data;
   },
 };

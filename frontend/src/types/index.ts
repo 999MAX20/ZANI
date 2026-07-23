@@ -1250,7 +1250,6 @@ export type Task = {
   snoozed_until: string | null;
   priority: "low" | "normal" | "high" | "urgent";
   status: "open" | "in_progress" | "done" | "cancelled";
-  recurrence_rule: string;
   completed_at: string | null;
   completed_by: Id | null;
   cancelled_at?: string | null;

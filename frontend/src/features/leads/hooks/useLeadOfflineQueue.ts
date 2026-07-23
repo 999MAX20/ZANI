@@ -74,7 +74,6 @@ export function useLeadOfflineQueue({
               due_at: new Date(item.due_at).toISOString(),
               reminder_at: null,
               priority: item.priority,
-              recurrence_rule: "",
             });
           }
           synced.push(item.id);

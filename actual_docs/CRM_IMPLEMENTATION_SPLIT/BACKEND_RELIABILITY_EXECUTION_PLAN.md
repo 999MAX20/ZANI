@@ -53,16 +53,16 @@ Baseline evidence:
 
 Business outcome: a manager reply is stored before provider delivery and cannot be sent twice because of HTTP retries, worker races or partial failures.
 
-- [ ] persist outbound `BotMessage` before calling a provider;
-- [ ] add explicit claim/running/retry/terminal delivery state;
-- [ ] add delivery attempts, next retry, lock and provider reference fields;
-- [ ] support a stable client idempotency key for send/retry requests;
-- [ ] move provider delivery to a Celery task with local eager-compatible fallback;
-- [ ] resume transient failures with bounded retry/backoff;
-- [ ] keep permanent failures visible and manually retryable;
-- [ ] preserve provider delivery/read webhook reconciliation;
-- [ ] expose safe queue health without message text or provider secrets;
-- [ ] cover happy path, duplicate request, concurrent claim, transient retry, permanent failure, permission denial and tenant isolation.
+- [x] persist outbound `BotMessage` before calling a provider;
+- [x] add explicit claim/running/retry/terminal delivery state;
+- [x] add delivery attempts, next retry, lock and provider reference fields;
+- [x] support a stable client idempotency key for send/retry requests;
+- [x] move provider delivery to a Celery task with local eager-compatible fallback;
+- [x] resume transient failures with bounded retry/backoff;
+- [x] keep permanent failures visible and manually retryable;
+- [x] preserve provider delivery/read webhook reconciliation;
+- [x] expose safe queue health without message text or provider secrets;
+- [x] cover happy path, duplicate request, concurrent claim, transient retry, permanent failure, permission denial and tenant isolation.
 
 Phase gate:
 
@@ -72,6 +72,14 @@ manage.py check
 makemigrations --check --dry-run
 git diff --check
 ```
+
+R1 verification evidence:
+
+- `pytest apps/bots/tests.py apps/integrations/tests.py apps/core/tests_b1_runtime.py -q`: `134 passed`;
+- `manage.py check`: passed;
+- `manage.py makemigrations --check --dry-run`: no changes detected;
+- clean SQLite `manage.py migrate --noinput`: passed through `bots.0010`;
+- `git diff --check`: passed.
 
 ## 5. Phase R2: Idempotent CRM Create Commands
 
@@ -184,4 +192,3 @@ These external items do not block completion of repository code, but they block 
 - marketplace write-back;
 - clinical/EHR records;
 - separate backend implementations per vertical.
-

@@ -121,6 +121,8 @@ class BotMessage(models.Model):
     class Statuses(models.TextChoices):
         RECEIVED = "received", "Received"
         QUEUED = "queued", "Queued"
+        DELIVERING = "delivering", "Delivering"
+        RETRY_SCHEDULED = "retry_scheduled", "Retry scheduled"
         SENT = "sent", "Sent"
         FAILED = "failed", "Failed"
 
@@ -139,6 +141,13 @@ class BotMessage(models.Model):
     payload_json = models.JSONField(default=dict, blank=True)
     error_text = models.TextField(blank=True)
     status = models.CharField(max_length=32, choices=Statuses.choices, default=Statuses.RECEIVED)
+    delivery_attempts = models.PositiveIntegerField(default=0)
+    delivery_max_attempts = models.PositiveIntegerField(default=5)
+    delivery_next_retry_at = models.DateTimeField(null=True, blank=True)
+    delivery_locked_at = models.DateTimeField(null=True, blank=True)
+    delivery_idempotency_key = models.CharField(max_length=128, blank=True)
+    delivery_request_hash = models.CharField(max_length=64, blank=True)
+    delivery_last_retry_key = models.CharField(max_length=128, blank=True)
     sent_at = models.DateTimeField(null=True, blank=True)
     delivered_at = models.DateTimeField(null=True, blank=True)
     read_at = models.DateTimeField(null=True, blank=True)
@@ -146,12 +155,20 @@ class BotMessage(models.Model):
 
     class Meta:
         ordering = ["created_at"]
-        indexes = [models.Index(fields=["conversation", "created_at"])]
+        indexes = [
+            models.Index(fields=["conversation", "created_at"]),
+            models.Index(fields=["status", "delivery_next_retry_at", "created_at"]),
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=["conversation", "direction", "external_message_id"],
                 condition=~models.Q(external_message_id=""),
                 name="unique_bot_message_external_delivery",
+            ),
+            models.UniqueConstraint(
+                fields=["conversation", "delivery_idempotency_key"],
+                condition=~models.Q(delivery_idempotency_key=""),
+                name="unique_outbound_message_idempotency_key",
             ),
         ]
 

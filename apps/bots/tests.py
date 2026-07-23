@@ -1130,8 +1130,9 @@ class InboxBackendTests(TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data["direction"], BotMessage.Directions.OUTBOUND)
         self.assertEqual(response.data["sender_type"], BotMessage.SenderTypes.MANAGER)
-        self.assertEqual(response.data["status"], BotMessage.Statuses.QUEUED)
+        self.assertEqual(response.data["status"], BotMessage.Statuses.FAILED)
         self.assertEqual(response.data["error_text"], "Channel provider is not connected.")
+        self.assertEqual(response.data["delivery_attempts"], 1)
         self.conversation.refresh_from_db()
         self.assertIsNotNone(self.conversation.last_outbound_at)
         self.assertTrue(
@@ -1189,10 +1190,11 @@ class InboxBackendTests(TestCase):
         self.api.force_authenticate(self.owner)
 
         with patch(
-            "apps.bots.inbox_service.send_message",
+            "apps.bots.outbound_delivery.send_message",
             return_value={
                 "ok": False,
                 "mock": False,
+                "retryable": False,
                 "reason": "provider failed token=raw-secret access_token=raw-access Authorization Bearer raw-bearer",
                 "nested": {"api_key": "raw-api-key"},
             },
@@ -1212,6 +1214,281 @@ class InboxBackendTests(TestCase):
         self.assertNotIn("raw-api-key", serialized)
         self.assertIn("[redacted]", response.data["error_text"])
         self.assertEqual(response.data["payload_json"]["provider_result"]["nested"]["api_key"], "configured")
+
+    def test_outbound_message_is_persisted_before_provider_call(self):
+        BotChannel.objects.create(
+            bot=self.bot,
+            channel=BotChannel.Channels.WEBSITE,
+            status=BotChannel.Statuses.ACTIVE,
+        )
+        self.api.force_authenticate(self.owner)
+
+        def provider_send(channel, recipient_id, text, payload=None):
+            stored = BotMessage.objects.get(id=payload["zani_message_id"])
+            self.assertEqual(stored.status, BotMessage.Statuses.DELIVERING)
+            self.assertEqual(stored.text, "Persist before provider")
+            return {"ok": True, "mock": False, "provider_message_id": "provider-42"}
+
+        with patch("apps.bots.outbound_delivery.send_message", side_effect=provider_send):
+            response = self.api.post(
+                f"/api/inbox/conversations/{self.conversation.id}/messages/",
+                {"text": "Persist before provider", "sender_type": "manager"},
+                format="json",
+            )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["status"], BotMessage.Statuses.SENT)
+        self.assertEqual(response.data["external_message_id"], "provider-42")
+        self.assertEqual(response.data["delivery_attempts"], 1)
+
+    def test_outbound_send_idempotency_replays_exact_request_and_rejects_mismatch(self):
+        self.api.force_authenticate(self.owner)
+        headers = {"HTTP_IDEMPOTENCY_KEY": "send-once-1"}
+
+        first = self.api.post(
+            f"/api/inbox/conversations/{self.conversation.id}/messages/",
+            {"text": "Only once", "sender_type": "manager"},
+            format="json",
+            **headers,
+        )
+        replay = self.api.post(
+            f"/api/inbox/conversations/{self.conversation.id}/messages/",
+            {"text": "Only once", "sender_type": "manager"},
+            format="json",
+            **headers,
+        )
+        mismatch = self.api.post(
+            f"/api/inbox/conversations/{self.conversation.id}/messages/",
+            {"text": "Different payload", "sender_type": "manager"},
+            format="json",
+            **headers,
+        )
+
+        self.assertEqual(first.status_code, 201)
+        self.assertEqual(replay.status_code, 201)
+        self.assertEqual(replay.data["id"], first.data["id"])
+        self.assertEqual(mismatch.status_code, 400)
+        self.assertEqual(
+            BotMessage.objects.filter(
+                conversation=self.conversation,
+                delivery_idempotency_key="send-once-1",
+            ).count(),
+            1,
+        )
+
+    def test_transient_provider_failure_is_scheduled_with_bounded_backoff(self):
+        BotChannel.objects.create(
+            bot=self.bot,
+            channel=BotChannel.Channels.WEBSITE,
+            status=BotChannel.Statuses.ACTIVE,
+        )
+        self.api.force_authenticate(self.owner)
+
+        with patch(
+            "apps.bots.outbound_delivery.send_message",
+            side_effect=TimeoutError("provider timeout"),
+        ):
+            response = self.api.post(
+                f"/api/inbox/conversations/{self.conversation.id}/messages/",
+                {"text": "Retry later", "sender_type": "manager"},
+                format="json",
+            )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["status"], BotMessage.Statuses.RETRY_SCHEDULED)
+        self.assertEqual(response.data["delivery_attempts"], 1)
+        self.assertIsNotNone(response.data["delivery_next_retry_at"])
+
+    @override_settings(OUTBOUND_DELIVERY_MAX_ATTEMPTS=1)
+    def test_transient_provider_failure_becomes_terminal_at_attempt_limit(self):
+        BotChannel.objects.create(
+            bot=self.bot,
+            channel=BotChannel.Channels.WEBSITE,
+            status=BotChannel.Statuses.ACTIVE,
+        )
+        self.api.force_authenticate(self.owner)
+
+        with patch(
+            "apps.bots.outbound_delivery.send_message",
+            side_effect=TimeoutError("provider timeout"),
+        ):
+            response = self.api.post(
+                f"/api/inbox/conversations/{self.conversation.id}/messages/",
+                {"text": "Final attempt", "sender_type": "manager"},
+                format="json",
+            )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["status"], BotMessage.Statuses.FAILED)
+        self.assertEqual(response.data["delivery_attempts"], 1)
+        self.assertIsNone(response.data["delivery_next_retry_at"])
+
+    def test_delivery_claim_is_single_winner(self):
+        from apps.bots.outbound_delivery import claim_outbound_message
+
+        message = BotMessage.objects.create(
+            conversation=self.conversation,
+            direction=BotMessage.Directions.OUTBOUND,
+            sender_type=BotMessage.SenderTypes.MANAGER,
+            text="Claim once",
+            status=BotMessage.Statuses.QUEUED,
+        )
+
+        first = claim_outbound_message(message.id)
+        second = claim_outbound_message(message.id)
+
+        self.assertIsNotNone(first)
+        self.assertEqual(first.status, BotMessage.Statuses.DELIVERING)
+        self.assertEqual(first.delivery_attempts, 1)
+        self.assertIsNone(second)
+
+    @override_settings(OUTBOUND_MESSAGES_RUN_INLINE=False)
+    def test_outbound_delivery_dispatches_to_celery_after_commit(self):
+        self.api.force_authenticate(self.owner)
+
+        with patch("apps.bots.tasks.process_outbound_message_task.delay") as dispatch:
+            with self.captureOnCommitCallbacks(execute=True):
+                response = self.api.post(
+                    f"/api/inbox/conversations/{self.conversation.id}/messages/",
+                    {"text": "Queue in Celery", "sender_type": "manager"},
+                    format="json",
+                )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["status"], BotMessage.Statuses.QUEUED)
+        dispatch.assert_called_once_with(response.data["id"])
+
+    def test_due_outbound_retry_is_processed_and_health_contains_only_counts(self):
+        from apps.bots.outbound_delivery import outbound_delivery_health, process_due_outbound_messages
+
+        BotChannel.objects.create(
+            bot=self.bot,
+            channel=BotChannel.Channels.WEBSITE,
+            status=BotChannel.Statuses.ACTIVE,
+        )
+        message = BotMessage.objects.create(
+            conversation=self.conversation,
+            direction=BotMessage.Directions.OUTBOUND,
+            sender_type=BotMessage.SenderTypes.MANAGER,
+            text="Sensitive customer message",
+            status=BotMessage.Statuses.RETRY_SCHEDULED,
+            delivery_next_retry_at=timezone.now() - timezone.timedelta(seconds=1),
+        )
+
+        before = outbound_delivery_health()
+        with patch(
+            "apps.bots.outbound_delivery.send_message",
+            return_value={"ok": True, "mock": False, "provider_message_id": "provider-due-1"},
+        ):
+            processed = process_due_outbound_messages()
+        after = outbound_delivery_health()
+
+        message.refresh_from_db()
+        self.assertEqual(before["due_retry"], 1)
+        self.assertEqual([item.id for item in processed], [message.id])
+        self.assertEqual(message.status, BotMessage.Statuses.SENT)
+        self.assertEqual(after["due_retry"], 0)
+        self.assertNotIn("Sensitive customer message", str(before))
+        self.assertNotIn("Sensitive customer message", str(after))
+
+    def test_stale_delivery_lock_does_not_exceed_attempt_limit(self):
+        from apps.bots.outbound_delivery import recover_stale_outbound_messages
+
+        message = BotMessage.objects.create(
+            conversation=self.conversation,
+            direction=BotMessage.Directions.OUTBOUND,
+            sender_type=BotMessage.SenderTypes.MANAGER,
+            text="Do not send a sixth time",
+            status=BotMessage.Statuses.DELIVERING,
+            delivery_attempts=5,
+            delivery_max_attempts=5,
+            delivery_locked_at=timezone.now() - timezone.timedelta(hours=1),
+        )
+
+        result = recover_stale_outbound_messages()
+
+        message.refresh_from_db()
+        self.assertEqual(result, {"retry_scheduled": 0, "failed": 1})
+        self.assertEqual(message.status, BotMessage.Statuses.FAILED)
+        self.assertIsNone(message.delivery_next_retry_at)
+
+    def test_retry_request_idempotency_does_not_repeat_provider_or_activity(self):
+        BotChannel.objects.create(
+            bot=self.bot,
+            channel=BotChannel.Channels.WEBSITE,
+            status=BotChannel.Statuses.ACTIVE,
+        )
+        original = BotMessage.objects.create(
+            conversation=self.conversation,
+            direction=BotMessage.Directions.OUTBOUND,
+            sender_type=BotMessage.SenderTypes.MANAGER,
+            text="Retry exactly once",
+            status=BotMessage.Statuses.FAILED,
+            error_text="Provider delivery failed.",
+        )
+        self.api.force_authenticate(self.owner)
+        headers = {"HTTP_IDEMPOTENCY_KEY": "retry-once-1"}
+
+        with patch(
+            "apps.bots.outbound_delivery.send_message",
+            return_value={"ok": False, "retryable": False, "reason": "Invalid recipient."},
+        ) as provider:
+            first = self.api.post(
+                f"/api/inbox/conversations/{self.conversation.id}/retry-message/",
+                {"message_id": original.id},
+                format="json",
+                **headers,
+            )
+            replay = self.api.post(
+                f"/api/inbox/conversations/{self.conversation.id}/retry-message/",
+                {"message_id": original.id},
+                format="json",
+                **headers,
+            )
+
+        self.assertEqual(first.status_code, 201)
+        self.assertEqual(replay.status_code, 201)
+        self.assertEqual(first.data["id"], original.id)
+        self.assertEqual(replay.data["id"], original.id)
+        self.assertEqual(provider.call_count, 1)
+        self.assertEqual(
+            ActivityEvent.objects.filter(
+                business=self.business,
+                event_type=ActivityEvents.MESSAGE_RETRIED,
+                metadata__original_message_id=original.id,
+            ).count(),
+            1,
+        )
+
+    def test_outbound_send_enforces_permission_and_tenant_scope(self):
+        support = User.objects.create_user(
+            username="inbox-support",
+            email="inbox-support@example.com",
+            password="pass",
+            role=User.Roles.STAFF,
+        )
+        BusinessMember.objects.create(
+            business=self.business,
+            user=support,
+            role=BusinessMember.Roles.SUPPORT,
+        )
+
+        self.api.force_authenticate(support)
+        denied = self.api.post(
+            f"/api/inbox/conversations/{self.conversation.id}/messages/",
+            {"text": "Not permitted", "sender_type": "manager"},
+            format="json",
+        )
+        self.api.force_authenticate(self.owner)
+        hidden_other_tenant = self.api.post(
+            f"/api/inbox/conversations/{self.other_conversation.id}/messages/",
+            {"text": "Cross tenant", "sender_type": "manager"},
+            format="json",
+        )
+
+        self.assertEqual(denied.status_code, 403)
+        self.assertIn(hidden_other_tenant.status_code, {403, 404})
+        self.assertFalse(BotMessage.objects.filter(text__in=["Not permitted", "Cross tenant"]).exists())
 
     def test_public_website_chat_flows_into_inbox_and_manager_reply_updates_state(self):
         channel = BotChannel.objects.create(

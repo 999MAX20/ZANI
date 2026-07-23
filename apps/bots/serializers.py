@@ -194,12 +194,20 @@ class BotMessageSerializer(serializers.ModelSerializer):
             "payload_json",
             "error_text",
             "status",
+            "delivery_attempts",
+            "delivery_max_attempts",
+            "delivery_next_retry_at",
             "sent_at",
             "delivered_at",
             "read_at",
             "created_at",
         ]
-        read_only_fields = ["created_at"]
+        read_only_fields = [
+            "created_at",
+            "delivery_attempts",
+            "delivery_max_attempts",
+            "delivery_next_retry_at",
+        ]
         extra_kwargs = {
             "external_message_id": {"required": False, "allow_blank": True},
         }
@@ -209,6 +217,11 @@ class BotMessageSerializer(serializers.ModelSerializer):
         message = super().create(validated_data)
         register_bot_message(message)
         return message
+
+    def validate_direction(self, value):
+        if value == BotMessage.Directions.OUTBOUND:
+            raise serializers.ValidationError("Use the inbox send-message action for outbound delivery.")
+        return value
 
     def to_representation(self, instance):
         data = super().to_representation(instance)

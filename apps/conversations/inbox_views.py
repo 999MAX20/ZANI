@@ -137,6 +137,7 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
                 text=serializer.validated_data["text"],
                 user=request.user,
                 sender_type=BotMessage.SenderTypes.MANAGER,
+                idempotency_key=request.headers.get("Idempotency-Key", ""),
             )
             return Response(InboxMessageSerializer(message).data, status=status.HTTP_201_CREATED)
 
@@ -166,25 +167,15 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
         original = conversation.messages.filter(id=serializer.validated_data["message_id"]).first()
         if original is None:
             raise ValidationError({"message_id": "Message was not found in this conversation."})
-        if original.direction != BotMessage.Directions.OUTBOUND:
-            raise ValidationError({"message_id": "Only outbound messages can be retried."})
-        if original.sender_type == BotMessage.SenderTypes.SYSTEM:
-            raise ValidationError({"message_id": "System messages cannot be retried."})
-        if original.status == BotMessage.Statuses.SENT:
-            raise ValidationError({"message_id": "Sent messages do not need retry."})
+        from apps.bots.outbound_delivery import retry_outbound_message
 
-        retried = send_outbound_message(
-            conversation=conversation,
-            text=original.text,
-            user=request.user,
-            sender_type=original.sender_type,
+        retried, retry_requested = retry_outbound_message(
+            original,
+            actor=request.user,
+            idempotency_key=request.headers.get("Idempotency-Key", ""),
         )
-        retried.payload_json = {
-            **(retried.payload_json or {}),
-            "retry_of_message_id": original.id,
-        }
-        retried.save(update_fields=["payload_json"])
-        record_message_retry(conversation, original_message=original, retried_message=retried, actor=request.user)
+        if retry_requested:
+            record_message_retry(conversation, original_message=original, retried_message=retried, actor=request.user)
         return Response(InboxMessageSerializer(retried).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["post"])

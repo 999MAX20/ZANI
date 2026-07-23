@@ -12,8 +12,6 @@ from apps.businesses.models import BusinessMember
 from apps.businesses.assignment_notifications import create_assignment_notifications
 from apps.businesses.assignment_policy import assert_assignment_allowed, available_fallback_user
 from apps.businesses.access import Resources
-from apps.integrations.sanitization import sanitize_error_payload, sanitize_error_text
-from apps.integrations.providers import send_message
 from apps.notifications.models import Notification
 
 
@@ -298,50 +296,22 @@ def record_inbox_crm_activity(conversation, *, entity, event_type, actor=None, t
     )
 
 
-def send_outbound_message(conversation, text, user, sender_type=BotMessage.SenderTypes.MANAGER):
-    assert_entitlement_allows(conversation.business, EntitlementMetrics.BOT_MESSAGES)
-    status = BotMessage.Statuses.QUEUED
-    error_text = ""
-    delivery_payload = {"delivery_mode": "provider_not_connected"}
-    external_message_id = ""
-    sent_at = None
-    channel = BotChannel.objects.filter(bot=conversation.bot, channel=conversation.channel).first()
-    if channel and conversation.external_user_id:
-        try:
-            result = send_message(channel, conversation.external_user_id, text)
-        except Exception as exc:
-            result = {"ok": False, "mock": False, "reason": sanitize_error_text(exc)}
-        delivery_payload = {"delivery_mode": "provider", "provider_result": sanitize_error_payload(result)}
-        if result.get("ok") and not result.get("mock"):
-            status = BotMessage.Statuses.SENT
-            external_message_id = result.get("provider_message_id") or ""
-            sent_at = timezone.now()
-        elif result.get("mock"):
-            error_text = sanitize_error_text(result.get("reason") or "Provider is running in mock mode.")
-        else:
-            status = BotMessage.Statuses.FAILED
-            error_text = sanitize_error_text(result.get("reason") or "Provider delivery failed.")
-    elif not channel:
-        error_text = "Channel provider is not connected."
-    elif not conversation.external_user_id:
-        error_text = "Conversation does not have an external recipient id."
+def send_outbound_message(
+    conversation,
+    text,
+    user,
+    sender_type=BotMessage.SenderTypes.MANAGER,
+    idempotency_key="",
+):
+    from apps.bots.outbound_delivery import create_outbound_message
 
-    message = BotMessage.objects.create(
-        conversation=conversation,
-        direction=BotMessage.Directions.OUTBOUND,
-        sender_type=sender_type,
+    return create_outbound_message(
+        conversation,
         text=text,
-        status=status,
-        external_message_id=external_message_id,
-        sent_at=sent_at,
-        error_text=error_text,
-        payload_json={
-            "sent_by_user_id": user.id if user and user.is_authenticated else None,
-            **delivery_payload,
-        },
+        user=user,
+        sender_type=sender_type,
+        idempotency_key=idempotency_key,
     )
-    register_bot_message(message, actor=user)
-    return message
 
 
 def _write_conversation_activity(conversation, *, event_type, actor=None, text="", metadata=None):

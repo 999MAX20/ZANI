@@ -3,6 +3,7 @@ from django.utils import timezone
 
 from apps.automations.models import AutomationRun
 from apps.ai_core.models import AIJob
+from apps.bots.outbound_delivery import outbound_delivery_health
 from apps.core.backup_readiness import run_backup_restore_readiness_check
 from apps.core.models import ExportJob, SupportAccessGrant
 from apps.core.production_audit import run_production_readiness_audit
@@ -130,6 +131,13 @@ def _queue_summary():
     ).count()
     failed_syncs = ConnectorSyncRun.objects.filter(status=ConnectorSyncRun.Statuses.FAILED).count()
     failed_webhooks = WebhookDeliveryLog.objects.filter(status=WebhookDeliveryLog.Statuses.FAILED).count()
+    outbound_messages = outbound_delivery_health()
+    outbound_critical = outbound_messages["failed"] + outbound_messages["stale_delivering"]
+    outbound_warning = (
+        outbound_messages["queued"]
+        + outbound_messages["retry_scheduled"]
+        + outbound_messages["due_retry"]
+    )
     return {
         "broker_configured": broker_url.startswith("redis://") or broker_url.startswith("rediss://"),
         "automation_inline": getattr(settings, "AUTOMATIONS_RUN_INLINE", True),
@@ -155,9 +163,22 @@ def _queue_summary():
         },
         "failed_connector_syncs": failed_syncs,
         "failed_webhook_deliveries": failed_webhooks,
+        "outbound_messages": outbound_messages,
         "status": _status_from_failures(
-            failed_runs + failed_notifications + failed_ai_jobs + failed_export_jobs + stale_export_jobs + failed_syncs + failed_webhooks,
-            retry_runs + retry_notifications + retry_ai_jobs + pending_export_jobs + due_notifications,
+            failed_runs
+            + failed_notifications
+            + failed_ai_jobs
+            + failed_export_jobs
+            + stale_export_jobs
+            + failed_syncs
+            + failed_webhooks
+            + outbound_critical,
+            retry_runs
+            + retry_notifications
+            + retry_ai_jobs
+            + pending_export_jobs
+            + due_notifications
+            + outbound_warning,
         ),
     }
 

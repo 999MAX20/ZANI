@@ -107,7 +107,6 @@ class TaskSerializer(serializers.ModelSerializer):
             "snoozed_until",
             "priority",
             "status",
-            "recurrence_rule",
             "completed_at",
             "completed_by",
             "cancelled_at",
@@ -153,6 +152,16 @@ class TaskSerializer(serializers.ModelSerializer):
         return conversation.external_user_id or f"{conversation.channel} #{obj.conversation_id}"
 
     def validate(self, attrs):
+        recurrence_rule = (self.initial_data or {}).get("recurrence_rule")
+        if recurrence_rule and str(recurrence_rule).strip():
+            raise serializers.ValidationError(
+                {
+                    "recurrence_rule": (
+                        "Recurring tasks are not supported yet. "
+                        "Create a follow-up automation instead."
+                    )
+                }
+            )
         attempted_archive_fields = sorted(self.archive_update_fields.intersection((self.initial_data or {}).keys()))
         if attempted_archive_fields:
             raise serializers.ValidationError(

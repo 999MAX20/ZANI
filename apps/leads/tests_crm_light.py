@@ -12,7 +12,6 @@ from apps.businesses.models import Business, BusinessMember, BusinessRole
 from apps.clients.models import Client
 from apps.core.models import AuditLog
 from apps.leads.models import Lead
-from apps.leads.services import convert_lead_to_client
 from apps.scheduling.models import Appointment, WorkingHours
 from apps.services.models import Service
 from apps.tasks.models import Task
@@ -388,12 +387,11 @@ class LeadFlowQuickActionTests(TestCase):
             ).exists()
         )
 
-    def test_convert_lead_to_client_returns_existing_client_and_writes_history(self):
+    def test_obsolete_convert_client_route_is_not_available(self):
         response = self.api.post(f"/api/leads/{self.lead.id}/convert-client/", {}, format="json")
 
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["id"], self.client.id)
-        self.assertTrue(
+        self.assertEqual(response.status_code, 404)
+        self.assertFalse(
             ActivityEvent.objects.filter(
                 business=self.business,
                 entity_type="Lead",
@@ -401,36 +399,14 @@ class LeadFlowQuickActionTests(TestCase):
                 event_type=ActivityEvents.LEAD_CONVERTED_TO_CLIENT,
             ).exists()
         )
-        self.assertTrue(
+        self.assertFalse(
             AuditLog.objects.filter(
                 business=self.business,
                 entity_type="Lead",
                 entity_id=str(self.lead.id),
                 metadata__kind="conversion",
-                metadata__event_type=ActivityEvents.LEAD_CONVERTED_TO_CLIENT,
-                metadata__conversion="lead_to_client",
-                metadata__client_id=self.client.id,
             ).exists()
         )
-
-    def test_manager_cannot_convert_unowned_lead_to_client(self):
-        other_client = Client.objects.create(business=self.business, full_name="Other Lead Client")
-        other_lead = Lead.objects.create(business=self.business, client=other_client, responsible_user=self.owner)
-        self.api.force_authenticate(self.manager)
-
-        response = self.api.post(f"/api/leads/{other_lead.id}/convert-client/", {}, format="json")
-
-        self.assertEqual(response.status_code, 404)
-        self.assertFalse(ActivityEvent.objects.filter(business=self.business, entity_id=str(other_lead.id), event_type="lead_converted_to_client").exists())
-
-    def test_convert_lead_to_client_rejects_foreign_client_relation(self):
-        foreign_owner = User.objects.create_user(username="client-foreign-owner", email="client-foreign-owner@example.com", password="pass12345")
-        foreign_business = Business.objects.create(owner=foreign_owner, name="Client Foreign", slug="client-foreign")
-        foreign_client = Client.objects.create(business=foreign_business, full_name="Foreign Client")
-        self.lead.client = foreign_client
-
-        with self.assertRaisesMessage(Exception, "Client must belong to lead business."):
-            convert_lead_to_client(lead=self.lead, actor=self.owner)
 
     def test_mark_closed_sets_success_status(self):
         response = self.api.post(f"/api/leads/{self.lead.id}/mark-closed/", {}, format="json")

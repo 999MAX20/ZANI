@@ -53,7 +53,7 @@ Phase 13 cross-entity CRM coverage lives in:
 DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test apps.core.tests_business_flows_e2e -v 2
 ```
 
-It covers owner login/dashboard/lead assignment, lead -> client -> appointment -> task, lead -> deal won/lost, inbox AI qualification -> lead/task, duplicate merge, appointment lifecycle, BusinessEvent timeline mapping and AI approval-gated tool execution.
+It covers owner login/dashboard/lead assignment, client-backed lead -> appointment -> task, lead -> deal won/lost, inbox AI qualification -> lead/task, duplicate merge, appointment lifecycle, BusinessEvent timeline mapping and AI approval-gated tool execution.
 
 Mobile owner/manager smoke is in `frontend/e2e/smoke.spec.ts`. The local Playwright config starts Vite and uses `frontend/e2e/django-e2e.mjs` to prepare and start Django on Windows and Unix-like shells:
 

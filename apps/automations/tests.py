@@ -339,6 +339,46 @@ class AutomationFoundationTests(TestCase):
 
         self.assertEqual(response.status_code, 400)
 
+    def test_action_api_rejects_actions_not_supported_by_runtime(self):
+        rule = self._rule(AutomationRule.TriggerTypes.LEAD_CREATED, [])
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            "/api/automation-actions/",
+            {
+                "rule": rule.id,
+                "action_type": AutomationAction.ActionTypes.WEBHOOK,
+                "config": {"url": "https://example.com/hook"},
+                "order": 0,
+                "delay_seconds": 0,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("action_type", response.data)
+        self.assertFalse(AutomationAction.objects.filter(rule=rule).exists())
+
+    def test_action_api_requires_positive_wait_delay(self):
+        rule = self._rule(AutomationRule.TriggerTypes.LEAD_CREATED, [])
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            "/api/automation-actions/",
+            {
+                "rule": rule.id,
+                "action_type": AutomationAction.ActionTypes.WAIT,
+                "config": {},
+                "order": 0,
+                "delay_seconds": 0,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("delay_seconds", response.data)
+        self.assertFalse(AutomationAction.objects.filter(rule=rule).exists())
+
     def test_duplicate_event_does_not_duplicate_automation_actions(self):
         rule = self._rule(
             AutomationRule.TriggerTypes.LEAD_CREATED,

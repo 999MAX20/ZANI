@@ -163,36 +163,6 @@ def reopen_lead(*, lead: Lead, actor, request=None) -> Lead:
     )
 
 
-def convert_lead_to_client(*, lead: Lead, actor, request=None):
-    if not lead.client_id:
-        raise ValidationError({"client": "Lead does not have a linked client."})
-    if lead.client.business_id != lead.business_id:
-        raise ValidationError({"client": "Client must belong to lead business."})
-
-    if request is not None:
-        write_audit_log(
-            request,
-            AuditLog.Actions.UPDATE,
-            lead,
-            metadata={
-                "kind": "conversion",
-                "event_type": ActivityEvents.LEAD_CONVERTED_TO_CLIENT,
-                "conversion": "lead_to_client",
-                "client_id": lead.client_id,
-            },
-        )
-    create_activity_event(
-        business=lead.business,
-        client=lead.client,
-        actor=actor,
-        event_type=ActivityEvents.LEAD_CONVERTED_TO_CLIENT,
-        instance=lead,
-        text="Заявка конвертирована в клиента",
-        metadata={"client_id": lead.client_id},
-    )
-    return lead.client
-
-
 def create_deal_from_lead(*, lead: Lead, actor, amount=0, title="", request=None) -> LeadDealResult:
     existing_deal = lead.deals.filter(is_archived=False).order_by("-updated_at").first()
     if existing_deal:
@@ -235,7 +205,7 @@ def create_deal_from_lead(*, lead: Lead, actor, amount=0, title="", request=None
         request=request,
         status=Lead.Statuses.IN_PROGRESS,
         event_type=ActivityEvents.LEAD_TAKEN_IN_WORK,
-        text="Р—Р°СЏРІРєР° РІР·СЏС‚Р° РІ СЂР°Р±РѕС‚Сѓ РїРѕСЃР»Рµ СЃРѕР·РґР°РЅРёСЏ СЃРґРµР»РєРё",
+        text="Заявка взята в работу после создания сделки",
     )
     if request is not None:
         write_audit_log(request, AuditLog.Actions.CREATE, deal)
@@ -396,7 +366,7 @@ def mark_lead_appointment_created(
         request=request,
         status=Lead.Statuses.APPOINTMENT_CREATED,
         event_type=ActivityEvents.APPOINTMENT_CREATED,
-        text="Appointment created from lead.",
+        text="Запись создана из заявки",
         service=service,
         source=source,
         activity_metadata=metadata,
@@ -433,12 +403,12 @@ def create_appointment_from_lead_contract(*, lead: Lead, actor, service, start_a
         actor=actor,
         event_type=ActivityEvents.APPOINTMENT_CREATED,
         instance=appointment,
-        text="Р—Р°РїРёСЃСЊ СЃРѕР·РґР°РЅР° РёР· Р·Р°СЏРІРєРё",
+        text="Запись создана из заявки",
         metadata={"lead_id": lead.id, "to": lead.status},
     )
     if request is not None:
         write_audit_log(request, AuditLog.Actions.CREATE, appointment)
-    notify_responsible(lead, "Р—Р°РїРёСЃСЊ СЃРѕР·РґР°РЅР° РёР· Р·Р°СЏРІРєРё", action_url=f"/app/calendar?appointment={appointment.id}")
+    notify_responsible(lead, "Запись создана из заявки", action_url=f"/app/calendar?appointment={appointment.id}")
     return appointment
 
 
@@ -480,11 +450,11 @@ def create_follow_up_task_from_lead(*, lead: Lead, actor, title: str, descriptio
         actor=actor,
         event_type=ActivityEvents.TASK_CREATED,
         instance=task,
-        text="Р—Р°РґР°С‡Р° СЃРѕР·РґР°РЅР° РёР· Р·Р°СЏРІРєРё",
+        text="Задача создана из заявки",
         metadata={"lead_id": lead.id},
     )
     if task.assignee_id:
-        create_task_notification(task, f"РќРѕРІР°СЏ Р·Р°РґР°С‡Р° РїРѕ Р·Р°СЏРІРєРµ: {task.title}")
+        create_task_notification(task, f"Новая задача по заявке: {task.title}")
     return task
 
 

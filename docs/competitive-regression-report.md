@@ -42,7 +42,7 @@ The product is strong for an SMB-first CRM MVP, but it is not yet production-com
 | Deals/pipelines/kanban | Partial | pipelines, stages, move stage, stage metadata, board UI | Strong base, but not yet as configurable as amoCRM/Bitrix24 with complex stage rules and required-field UX. |
 | CRM card / unified context | Ready | `CrmEntityDrawer`, CRM card payload, timeline, attachments, tasks, messages | Stronger than a plain table CRM. Needs faster inline editing later. |
 | Inbox/conversations | Partial | inbox, website/Telegram/WhatsApp foundation, quick replies, attachments | Good direction. Needs realtime, assignment queues, SLA/handoff UX, channel health. |
-| Tasks | Partial | recurring fields, priorities, reminders, comments, watchers, archive | Useful. Needs richer views, calendar sync, dependencies UX. |
+| Tasks | Partial | priorities, reminders, comments, watchers, archive; recurring execution is not implemented and is rejected by the API | Useful. Needs richer views, calendar sync, dependencies UX and a real recurrence scheduler before recurrence is exposed. |
 | RBAC/roles | Ready for MVP | `BusinessRole`, `RolePermission`, presets, departments, permissions UI | Strong for current stage. Needs policy review before enterprise rollout. |
 | Audit/security center | Ready for MVP | `AuditLog`, login history, risk levels, support grants, Settings security UI | Good owner-control differentiator. Needs retention jobs and security alert delivery later. |
 | Notifications | Ready for MVP | categories, priority, read/unread, summary, header dropdown | Useful. Needs push/realtime and preference center for parity. |

@@ -179,10 +179,7 @@ class CrmBusinessFlowE2ETests(TestCase):
     def test_lead_client_appointment_task_flow(self):
         self._auth_owner()
         lead = self._api_create_lead(message="Lead wants a consultation")
-
-        convert_response = self.api.post(f"/api/leads/{lead.id}/convert-client/")
-        self.assertEqual(convert_response.status_code, 200, convert_response.data)
-        self.assertEqual(convert_response.data["id"], lead.client_id)
+        self.assertIsNotNone(lead.client_id)
 
         appointment_response = self.api.post(
             f"/api/leads/{lead.id}/create-appointment/",

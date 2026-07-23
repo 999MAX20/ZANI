@@ -8,7 +8,6 @@ from rest_framework.views import APIView
 from django.utils import timezone
 from django.db.models import Count, Q
 
-from apps.clients.serializers import ClientSerializer
 from apps.crm.serializers import DealSerializer
 
 from apps.activities.models import Note
@@ -39,7 +38,6 @@ from apps.leads.serializers import (
 )
 from apps.leads.services import (
     assign_lead,
-    convert_lead_to_client,
     create_appointment_from_lead_contract,
     create_deal_from_lead,
     create_follow_up_task_from_lead,
@@ -271,14 +269,6 @@ class LeadViewSet(TenantModelViewSet):
             request=request,
         )
         return Response(DealSerializer(result.deal).data, status=201 if result.created else 200)
-
-    @action(detail=True, methods=["post"], url_path="convert-client")
-    def convert_client(self, request, pk=None):
-        lead = self.get_object()
-        assert_can(request.user, lead.business, Resources.LEADS, Actions.UPDATE, obj=lead)
-        assert_can(request.user, lead.business, Resources.CLIENTS, Actions.CREATE, obj=lead)
-        client = convert_lead_to_client(lead=lead, actor=request.user, request=request)
-        return Response(ClientSerializer(client).data)
 
     @action(detail=True, methods=["post"], url_path="add-note")
     def add_note(self, request, pk=None):

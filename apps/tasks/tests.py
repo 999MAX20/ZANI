@@ -96,6 +96,42 @@ class TasksAndNotificationsPolishTests(TestCase):
         self.assertEqual(my_tasks_response.status_code, 200)
         self.assertIn(task.id, {item["id"] for item in my_tasks_response.data["results"]})
 
+    def test_task_api_rejects_nonblank_recurrence_rule(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            "/api/tasks/",
+            {
+                "business": self.business.id,
+                "title": "Unsupported recurring task",
+                "client": self.client.id,
+                "recurrence_rule": "FREQ=WEEKLY",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("recurrence_rule", response.data)
+        self.assertFalse(Task.objects.filter(title="Unsupported recurring task").exists())
+
+    def test_task_api_ignores_blank_legacy_recurrence_rule(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            "/api/tasks/",
+            {
+                "business": self.business.id,
+                "title": "Legacy compatible task",
+                "client": self.client.id,
+                "recurrence_rule": "",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertNotIn("recurrence_rule", response.data)
+        self.assertEqual(Task.objects.get(id=response.data["id"]).recurrence_rule, "")
+
     def test_task_serializer_includes_display_fields_for_list_rows(self):
         task = Task.objects.create(
             business=self.business,
@@ -119,6 +155,7 @@ class TasksAndNotificationsPolishTests(TestCase):
         self.assertEqual(row["conversation_channel"], BotConversation.Channels.WEBSITE)
         self.assertEqual(row["assignee_name"], self.owner.full_name)
         self.assertEqual(row["assignee_email"], self.owner.email)
+        self.assertNotIn("recurrence_rule", row)
 
     def test_active_status_filter_excludes_done_and_cancelled_tasks(self):
         active = Task.objects.create(business=self.business, title="Active task", client=self.client)

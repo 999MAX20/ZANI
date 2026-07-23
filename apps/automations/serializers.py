@@ -4,6 +4,16 @@ from apps.automations.models import AutomationAction, AutomationCondition, Autom
 from apps.integrations.sanitization import sanitize_config, sanitize_error_payload, sanitize_error_text
 
 
+SUPPORTED_AUTOMATION_ACTION_TYPES = {
+    AutomationAction.ActionTypes.CREATE_TASK,
+    AutomationAction.ActionTypes.CREATE_FOLLOW_UP,
+    AutomationAction.ActionTypes.CREATE_NOTIFICATION,
+    AutomationAction.ActionTypes.ASSIGN_USER,
+    AutomationAction.ActionTypes.ADD_NOTE,
+    AutomationAction.ActionTypes.WAIT,
+}
+
+
 class AutomationConditionSerializer(serializers.ModelSerializer):
     class Meta:
         model = AutomationCondition
@@ -14,6 +24,17 @@ class AutomationActionSerializer(serializers.ModelSerializer):
     class Meta:
         model = AutomationAction
         fields = ["id", "rule", "action_type", "config", "order", "delay_seconds"]
+
+    def validate(self, attrs):
+        action_type = attrs.get("action_type") or getattr(self.instance, "action_type", None)
+        delay_seconds = attrs.get("delay_seconds", getattr(self.instance, "delay_seconds", 0))
+        if action_type not in SUPPORTED_AUTOMATION_ACTION_TYPES:
+            raise serializers.ValidationError(
+                {"action_type": "This action is not supported by the current automation engine."}
+            )
+        if action_type == AutomationAction.ActionTypes.WAIT and not delay_seconds:
+            raise serializers.ValidationError({"delay_seconds": "Wait action requires a positive delay."})
+        return attrs
 
 
 class AutomationRuleSerializer(serializers.ModelSerializer):
@@ -138,16 +159,8 @@ class ManualAutomationRuleSerializer(serializers.Serializer):
     def validate_actions(self, actions):
         if not actions:
             raise serializers.ValidationError("At least one action is required.")
-        allowed_action_types = {
-            AutomationAction.ActionTypes.CREATE_TASK,
-            AutomationAction.ActionTypes.CREATE_FOLLOW_UP,
-            AutomationAction.ActionTypes.CREATE_NOTIFICATION,
-            AutomationAction.ActionTypes.ASSIGN_USER,
-            AutomationAction.ActionTypes.ADD_NOTE,
-            AutomationAction.ActionTypes.WAIT,
-        }
         for action in actions:
-            if action["action_type"] not in allowed_action_types:
+            if action["action_type"] not in SUPPORTED_AUTOMATION_ACTION_TYPES:
                 raise serializers.ValidationError(f"{action['action_type']} is not supported by the current automation engine.")
             if action["action_type"] == AutomationAction.ActionTypes.WAIT and not action.get("delay_seconds"):
                 raise serializers.ValidationError("Wait action requires delay_seconds.")

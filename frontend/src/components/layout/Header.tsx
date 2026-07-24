@@ -289,7 +289,7 @@ export function Header({ onMenuClick, pageHeader }: { onMenuClick: () => void; p
             >
               <Bell size={20} strokeWidth={2.2} />
               {unreadCount ? (
-                <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-brand-600 px-1.5 py-0.5 text-[10px] font-semibold text-white ring-2 ring-surface">
+                <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-brand-700 px-1.5 py-0.5 text-[10px] font-semibold text-white ring-2 ring-surface">
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               ) : null}

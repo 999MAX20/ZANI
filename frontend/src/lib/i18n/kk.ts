@@ -639,6 +639,7 @@ export const kk: Record<string, string> = {
   "common.loadingData": "Деректер жүктелуде...",
   "common.loadingAccess": "Қолжетім жүктелуде...",
   "common.close": "Жабу",
+  "common.clearSelection": "Таңдауды тазарту",
   "common.cancel": "Болдырмау",
   "common.loadingWorkspace": "Жұмыс кеңістігі дайындалуда...",
   "common.checkingAccess": "Қолжетімділік тексерілуде...",

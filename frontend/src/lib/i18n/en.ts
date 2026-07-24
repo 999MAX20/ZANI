@@ -636,6 +636,7 @@ export const en: Record<string, string> = {
   "common.loadingData": "Loading data...",
   "common.loadingAccess": "Loading access...",
   "common.close": "Close",
+  "common.clearSelection": "Clear selection",
   "common.cancel": "Cancel",
   "common.loadingWorkspace": "Preparing workspace...",
   "common.checkingAccess": "Checking access...",

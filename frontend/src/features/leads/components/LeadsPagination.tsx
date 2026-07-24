@@ -12,6 +12,8 @@ export function LeadsPagination({
   visiblePages,
   label,
   pageSizeLabel,
+  previousLabel,
+  nextLabel,
   onPageChange,
   onPageSizeChange,
 }: {
@@ -22,6 +24,8 @@ export function LeadsPagination({
   visiblePages: number[];
   label: string;
   pageSizeLabel: string;
+  previousLabel: string;
+  nextLabel: string;
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: number) => void;
 }) {
@@ -50,6 +54,7 @@ export function LeadsPagination({
           className="h-8 w-8 rounded-control px-0"
           disabled={page <= 1}
           onClick={() => onPageChange(Math.max(1, page - 1))}
+          aria-label={previousLabel}
         >
           <ChevronLeft size={16} />
         </Button>
@@ -74,6 +79,7 @@ export function LeadsPagination({
           className="h-8 w-8 rounded-control px-0"
           disabled={page >= pageCount}
           onClick={() => onPageChange(Math.min(pageCount, page + 1))}
+          aria-label={nextLabel}
         >
           <ChevronRight size={16} />
         </Button>

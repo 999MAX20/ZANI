@@ -609,7 +609,8 @@ class LeadFlowQuickActionTests(TestCase):
             format="json",
         )
 
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.data["code"], "invalid_transition")
         self.assertFalse(Appointment.objects.filter(business=self.business, lead=self.lead).exists())
         self.lead.refresh_from_db()
         self.assertEqual(self.lead.status, Lead.Statuses.CLOSED)

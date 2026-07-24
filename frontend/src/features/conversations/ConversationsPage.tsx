@@ -210,6 +210,7 @@ export function ConversationsPage() {
     queryKey: ["business-connectors", "inbox-readiness", businessId],
     queryFn: () => businessConnectorsApi.list({ business: businessId! }),
     enabled: Boolean(businessId && canViewIntegrations),
+    retry: false,
   });
 
   const conversations = useQuery({
@@ -1332,6 +1333,14 @@ export function ConversationsPage() {
           }
           priorityActions={priorityActions}
           unavailableChannelCount={unavailableChannelCount}
+          connectorReadinessLoading={
+            canViewIntegrations && communicationConnectors.isLoading
+          }
+          connectorReadinessError={
+            canViewIntegrations && communicationConnectors.isError
+          }
+          connectorReadinessRetrying={communicationConnectors.isFetching}
+          onRetryConnectorReadiness={() => communicationConnectors.refetch()}
           canViewIntegrations={canViewIntegrations}
           t={t}
         />

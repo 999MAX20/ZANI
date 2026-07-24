@@ -46,6 +46,10 @@ type ConversationListPaneProps = {
   retryingMessageId?: number | null;
   priorityActions: InboxSummary["next_actions"];
   unavailableChannelCount: number;
+  connectorReadinessLoading: boolean;
+  connectorReadinessError: boolean;
+  connectorReadinessRetrying: boolean;
+  onRetryConnectorReadiness: () => void;
   canViewIntegrations: boolean;
   t: Translate;
 };
@@ -85,6 +89,10 @@ export function ConversationListPane({
   retryingMessageId,
   priorityActions,
   unavailableChannelCount,
+  connectorReadinessLoading,
+  connectorReadinessError,
+  connectorReadinessRetrying,
+  onRetryConnectorReadiness,
   canViewIntegrations,
   t,
 }: ConversationListPaneProps) {
@@ -135,6 +143,37 @@ export function ConversationListPane({
               <span className="shrink-0 text-brand-700">{t("conversations.openPriority")}</span>
             </Link>
           ))}
+        </div>
+      ) : null}
+
+      {connectorReadinessLoading ? (
+        <div
+          className="border-b border-zani-border bg-surface-muted px-3 py-2 text-xs font-semibold text-zani-muted"
+          data-testid="inbox-provider-status-loading"
+          role="status"
+        >
+          {t("conversations.channelStatusLoading")}
+        </div>
+      ) : null}
+
+      {connectorReadinessError ? (
+        <div
+          className="flex flex-wrap items-center justify-between gap-2 border-b border-[rgba(183,121,31,0.22)] bg-[var(--zani-warning-soft)] px-3 py-2 text-xs font-semibold text-zani-warning"
+          data-testid="inbox-provider-status-unavailable"
+          role="status"
+        >
+          <p>{t("conversations.channelStatusUnavailable")}</p>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="min-h-8 py-1 text-xs"
+            data-testid="inbox-provider-status-retry"
+            isLoading={connectorReadinessRetrying}
+            onClick={onRetryConnectorReadiness}
+          >
+            {t("common.retry")}
+          </Button>
         </div>
       ) : null}
 

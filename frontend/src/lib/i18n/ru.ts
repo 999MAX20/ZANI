@@ -5286,5 +5286,8 @@ export const ru: Record<string, string> = {
   "conversations.slaOverdue": "Ответ просрочен",
   "conversations.openPriority": "Открыть",
   "conversations.channelsUnavailable": "Активных каналов недоступно: {count}.",
+  "conversations.channelStatusLoading": "Проверяем статус каналов…",
+  "conversations.channelStatusUnavailable":
+    "Статус каналов временно недоступен. Диалоги остаются доступны.",
   "conversations.openIntegrations": "Открыть интеграции",
 };

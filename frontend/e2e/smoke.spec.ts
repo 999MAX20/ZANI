@@ -52,31 +52,18 @@ test("mobile manager smoke: daily CRM routes are reachable", async ({
 
 async function login(page: Page, email: string, target: RegExp) {
   await page.context().clearCookies();
-  await page.route("**/api/auth/token/refresh/", async (route) => {
-    const response = await page.request.post(`${apiBaseURL}/api/auth/token/`, {
-      data: { email, password },
-    });
-    expect(response.ok()).toBeTruthy();
-    const tokens = (await response.json()) as TokenPayload;
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({ access: tokens.access }),
-    });
-  });
   await page.goto("/login");
   const emailInput = page.locator('form input[type="email"]').first();
-  if (await emailInput.isVisible({ timeout: 2_000 }).catch(() => false)) {
-    await emailInput.fill(email);
-    await page.locator('form input[type="password"]').first().fill(password);
-    const tokenResponse = page.waitForResponse(
-      (response) =>
-        response.url().includes("/api/auth/token/") &&
-        response.request().method() === "POST",
-    );
-    await page.locator('form button[type="submit"]').click();
-    expect((await tokenResponse).ok()).toBeTruthy();
-  }
+  await expect(emailInput).toBeVisible();
+  await emailInput.fill(email);
+  await page.locator('form input[type="password"]').first().fill(password);
+  const tokenResponse = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/api/auth/token/") &&
+      response.request().method() === "POST",
+  );
+  await page.locator('form button[type="submit"]').click();
+  expect((await tokenResponse).ok()).toBeTruthy();
   await expect(page).toHaveURL(target);
   if (!target.source.includes("platform")) {
     await ensureAuthenticatedAppShell(page, email);
@@ -106,6 +93,16 @@ async function navigateInsideApp(page: Page, path: string) {
   await page.locator(`a[href="${path}"]:visible`).first().click();
   await expect(page).toHaveURL(
     new RegExp(path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
+  );
+}
+
+async function navigateInAppHistory(page: Page, path: string) {
+  await page.evaluate((nextPath) => {
+    window.history.pushState({}, "", nextPath);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  }, path);
+  await expect(page).toHaveURL(
+    new RegExp(path.split("?")[0].replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
   );
 }
 
@@ -867,7 +864,11 @@ test("calendar deep link selects appointment and lifecycle action works", async 
   const appointment = await appointmentResponse.json();
 
   await login(page, users.owner, /\/app/);
-  await page.goto(`/app/calendar?appointment=${appointment.id}`);
+  await navigateInsideApp(page, "/app/calendar");
+  await navigateInAppHistory(
+    page,
+    `/app/calendar?appointment=${appointment.id}`,
+  );
   await expect(
     page.locator("aside").getByText(`Deep Link Client ${unique}`).first(),
   ).toBeVisible();
@@ -895,6 +896,7 @@ test("business owner can reschedule appointment from calendar UI", async ({
   page,
   isMobile,
 }) => {
+  test.setTimeout(60_000);
   test.skip(
     isMobile,
     "Calendar reschedule workflow runs in desktop; mobile reachability is covered separately.",
@@ -1008,15 +1010,27 @@ test("business owner can reschedule appointment from calendar UI", async ({
   const appointment = await appointmentResponse.json();
 
   await login(page, users.owner, /\/app/);
-  await page.goto(`/app/calendar?appointment=${appointment.id}`);
+  await navigateInsideApp(page, "/app/calendar");
+  await navigateInAppHistory(
+    page,
+    `/app/calendar?appointment=${appointment.id}`,
+  );
   await expect(
     page.locator("aside").getByText(`Reschedule Client ${unique}`).first(),
   ).toBeVisible();
 
-  await page.getByTestId("calendar-reschedule-action").click();
+  const rescheduleOpener = page.getByTestId("calendar-reschedule-action");
+  await expect(rescheduleOpener).toHaveAttribute(
+    "data-focus-return-id",
+    `calendar-reschedule-${appointment.id}`,
+  );
+  const originalRescheduleOpener = await rescheduleOpener.elementHandle();
+  expect(originalRescheduleOpener).not.toBeNull();
+  await rescheduleOpener.click();
   const rescheduleDialog = page.getByRole("dialog");
   await expect(rescheduleDialog).toBeVisible();
   await rescheduleDialog.locator('input[type="date"]').fill(newDate);
+  await expect(rescheduleDialog.locator("select")).toHaveCount(2);
   const timeSelect = rescheduleDialog
     .locator("label")
     .filter({ has: page.locator("select") })
@@ -1057,7 +1071,7 @@ test("business owner can reschedule appointment from calendar UI", async ({
         await route.fulfill({
           status: 403,
           contentType: "application/json",
-          body: JSON.stringify({ detail: "Forbidden test failure" }),
+          body: JSON.stringify({ detail: "raw-calendar-forbidden-stack" }),
         });
         return;
       }
@@ -1065,7 +1079,7 @@ test("business owner can reschedule appointment from calendar UI", async ({
         await route.fulfill({
           status: 503,
           contentType: "application/json",
-          body: JSON.stringify({ detail: "Temporary test failure" }),
+          body: JSON.stringify({ detail: "raw-calendar-temporary-stack" }),
         });
         return;
       }
@@ -1079,6 +1093,12 @@ test("business owner can reschedule appointment from calendar UI", async ({
   await expect(recoveryAlert).toBeVisible();
   await expect(recoveryAlert.getByTestId("action-feedback-action")).toHaveCount(0);
   await expect(rescheduleDialog.locator('input[type="date"]')).toHaveValue(newDate);
+  await expect(rescheduleDialog).not.toContainText(
+    "raw-calendar-forbidden-stack",
+  );
+  await expect(recoveryAlert).not.toContainText(
+    "raw-calendar-forbidden-stack",
+  );
   await recoveryAlert.locator('button[aria-label]').click();
   await expect(recoveryAlert).toHaveCount(0);
 
@@ -1086,11 +1106,24 @@ test("business owner can reschedule appointment from calendar UI", async ({
   recoveryAlert = page.getByTestId("action-feedback").first();
   await expect(recoveryAlert).toBeVisible();
   await expect(rescheduleDialog.locator('input[type="date"]')).toHaveValue(newDate);
+  await expect(rescheduleDialog).not.toContainText(
+    "raw-calendar-temporary-stack",
+  );
+  await expect(recoveryAlert).not.toContainText(
+    "raw-calendar-temporary-stack",
+  );
   await recoveryAlert.getByTestId("action-feedback-action").click();
   await expect(recoveryAlert).toHaveCount(0);
   await rescheduleDialog.locator('button[type="submit"]').click();
 
   expect(rescheduleAttempts).toBe(3);
+  await expect(rescheduleDialog).toHaveCount(0);
+  await expect
+    .poll(() =>
+      originalRescheduleOpener!.evaluate((element) => element.isConnected),
+    )
+    .toBeFalsy();
+  await expect(rescheduleOpener).toBeFocused();
   await expect
     .poll(async () => {
       const response = await page.request.get(

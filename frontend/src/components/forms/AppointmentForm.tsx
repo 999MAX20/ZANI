@@ -6,11 +6,11 @@ import { Link } from "react-router-dom";
 import { z } from "zod";
 
 import { appointmentsApi, type AppointmentCreatePayload } from "../../api/appointments";
-import { getApiErrorMessage } from "../../api/client";
 import { workingHoursApi } from "../../api/workingHours";
 import { dateInTimeZone, hourInTimeZone, todayInTimeZone } from "../../lib/format";
 import { useI18n } from "../../lib/i18n";
 import type { Appointment, Client, Id, Lead, Resource, Service, WorkingHours } from "../../types";
+import { useActionFeedback } from "../actions/useActionFeedback";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { Select } from "../ui/Select";
@@ -101,6 +101,7 @@ export function AppointmentForm({
   timeZone?: string;
 }) {
   const { t, language } = useI18n();
+  const { getRecoverableMessage } = useActionFeedback();
   const form = useForm<Values>({
     resolver: zodResolver(createSchema(t)),
     defaultValues: {
@@ -137,7 +138,7 @@ export function AppointmentForm({
       queryClient.invalidateQueries({ queryKey: ["available-slots"] });
       setSubmitError(null);
     },
-    onError: (error) => setSubmitError(getApiErrorMessage(error)),
+    onError: (error) => setSubmitError(getRecoverableMessage(error)),
   });
 
   const slots = useQuery({
@@ -203,7 +204,7 @@ export function AppointmentForm({
             notes: values.notes || "",
           });
         } catch (error) {
-          setSubmitError(getApiErrorMessage(error));
+          setSubmitError(getRecoverableMessage(error));
         }
       })}
     >
@@ -282,7 +283,7 @@ export function AppointmentForm({
       </div>
       {slots.error ? (
         <div className="rounded-card border border-[rgba(194,65,12,0.2)] bg-[var(--zani-danger-soft)] p-4 text-sm font-semibold text-zani-danger">
-          {getApiErrorMessage(slots.error)}
+          {getRecoverableMessage(slots.error)}
         </div>
       ) : null}
       {noSlots ? (

@@ -49,6 +49,7 @@ export function ConversationComposer({
           <Tags size={15} /> {t("conversations.quickRepliesButton")}
         </button>
         <textarea
+          data-testid="inbox-action-composer"
           ref={composerRef}
           rows={1}
           className="max-h-28 min-h-10 min-w-0 flex-1 resize-none bg-transparent py-2 text-sm text-zani-text outline-none placeholder:text-zani-muted"
@@ -64,6 +65,7 @@ export function ConversationComposer({
           }}
         />
         <Button
+          data-testid="inbox-action-send"
           variant="ai"
           className="h-10 shrink-0 rounded-control px-4 text-sm"
           disabled={selected.status === "closed" || !draft.trim()}

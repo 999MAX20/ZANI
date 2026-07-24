@@ -41,6 +41,7 @@ export function CreateDealModal({
   return (
     <Modal title={t("deals.createModalTitle")} open={open} onClose={onClose}>
       <form
+        data-testid="deal-action-form"
         className="space-y-4"
         onSubmit={(event) => {
           event.preventDefault();
@@ -118,6 +119,7 @@ export function CreateDealModal({
           }
         />
         <Button
+          data-testid="deal-action-submit"
           type="submit"
           isLoading={isPending}
           disabled={!clients.length || !stages.length}

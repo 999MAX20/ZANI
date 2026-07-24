@@ -413,7 +413,7 @@ function PrimaryPageAction({ action }: { action?: PageHeaderConfig["primaryActio
   if (!action) return null;
   const Icon = action.icon;
   return (
-    <Button className="h-9 shrink-0 px-4" onClick={action.onClick}>
+    <Button data-testid="page-primary-action" className="h-9 shrink-0 px-4" onClick={action.onClick}>
       {Icon ? <Icon size={17} /> : null}
       {action.label}
     </Button>

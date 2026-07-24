@@ -30,6 +30,7 @@ import {
 import { getApiErrorMessage } from "../../api/client";
 import { botsApi } from "../../api/bots";
 import { clientsApi } from "../../api/clients";
+import { businessConnectorsApi } from "../../api/connectors";
 import { dealsApi } from "../../api/deals";
 import { leadsApi } from "../../api/leads";
 import { quickRepliesApi } from "../../api/quickReplies";
@@ -58,7 +59,7 @@ import {
 import { Textarea } from "../../components/ui/Textarea";
 import { cn } from "../../lib/cn";
 import { useI18n } from "../../lib/i18n";
-import { hasPermission } from "../../lib/permissions";
+import { getPermissionScope, hasPermission } from "../../lib/permissions";
 import { realtimeIntervals, realtimeQueryOptions } from "../../lib/realtime";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useAuth } from "../auth/AuthProvider";
@@ -88,6 +89,11 @@ function searchWithoutLegacyConversation(searchParams: URLSearchParams) {
   params.delete("conversation");
   const query = params.toString();
   return query ? `?${query}` : "";
+}
+
+function isIntegrationsAction(href: string) {
+  const path = href.split(/[?#]/, 1)[0].replace(/\/+$/, "");
+  return path === "/app/integrations" || path.startsWith("/app/integrations/");
 }
 
 export function ConversationsPage() {
@@ -161,6 +167,12 @@ export function ConversationsPage() {
     "integrations",
     "view",
   );
+  const conversationUpdateScope = getPermissionScope(
+    user,
+    business?.id,
+    "conversations",
+    "update",
+  );
 
   useEffect(() => {
     if (!routeSelectedId || routeSelectedId === selectedId) return;
@@ -193,6 +205,11 @@ export function ConversationsPage() {
     queryFn: inboxApi.getSummary,
     refetchInterval: realtimeIntervals.inboxConversationsMs,
     ...realtimeQueryOptions,
+  });
+  const communicationConnectors = useQuery({
+    queryKey: ["business-connectors", "inbox-readiness", businessId],
+    queryFn: () => businessConnectorsApi.list({ business: businessId! }),
+    enabled: Boolean(businessId && canViewIntegrations),
   });
 
   const conversations = useQuery({
@@ -1061,9 +1078,23 @@ export function ConversationsPage() {
     conversations.error ||
     selectedConversation.error ||
     messages.error;
-  const unavailableChannelCount = (summary.data?.channels || []).filter(
-    (channel) => !channel.is_connected && channel.total > 0,
+  const unavailableChannelCount = (communicationConnectors.data || []).filter(
+    (connector) =>
+      connector.capability === "communications" &&
+      ["error", "failed", "needs_attention", "expired_credentials"].includes(
+        connector.status,
+      ),
   ).length;
+  const priorityActions = (summary.data?.next_actions || []).filter(
+    (action) => canViewIntegrations || !isIntegrationsAction(action.href),
+  );
+  function canRetryConversation(conversation: InboxConversation) {
+    if (conversationUpdateScope === "business") return true;
+    return (
+      conversationUpdateScope === "own" &&
+      Number(conversation.assigned_to) === Number(user?.id)
+    );
+  }
   function sendReply() {
     const text = draft.trim();
     if (!selected || !text) return;
@@ -1293,12 +1324,13 @@ export function ConversationsPage() {
               messageId,
             });
           }}
+          canRetryLastMessage={canRetryConversation}
           retryingMessageId={
             retryMessageMutation.isPending
               ? Number(retryMessageMutation.variables?.messageId || 0)
               : null
           }
-          priorityActions={summary.data?.next_actions || []}
+          priorityActions={priorityActions}
           unavailableChannelCount={unavailableChannelCount}
           canViewIntegrations={canViewIntegrations}
           t={t}
@@ -1324,6 +1356,9 @@ export function ConversationsPage() {
               messageId: failedMessage.id,
             });
           }}
+          canRetryMessages={Boolean(
+            selected && canRetryConversation(selected),
+          )}
           draft={draft}
           composerRef={composerRef}
           sendPending={sendMutation.isPending}

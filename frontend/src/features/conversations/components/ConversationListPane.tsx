@@ -42,6 +42,7 @@ type ConversationListPaneProps = {
   onToggleBulkId: (id: number) => void;
   onSelectConversation: (id: number) => void;
   onRetryLastMessage: (conversation: InboxConversation) => void;
+  canRetryLastMessage: (conversation: InboxConversation) => boolean;
   retryingMessageId?: number | null;
   priorityActions: InboxSummary["next_actions"];
   unavailableChannelCount: number;
@@ -80,6 +81,7 @@ export function ConversationListPane({
   onToggleBulkId,
   onSelectConversation,
   onRetryLastMessage,
+  canRetryLastMessage,
   retryingMessageId,
   priorityActions,
   unavailableChannelCount,
@@ -150,7 +152,7 @@ export function ConversationListPane({
       {items.length ? (
         <div className="border-b border-zani-border px-3 py-2">
           {!bulkMode ? (
-            <button type="button" className="text-xs font-bold text-brand-600" onClick={onSelectVisible}>
+            <button type="button" data-testid="conversation-select-multiple" className="text-xs font-bold text-brand-600" onClick={onSelectVisible}>
               {t("conversations.selectMultiple")}
             </button>
           ) : (
@@ -200,6 +202,7 @@ export function ConversationListPane({
             onToggleSelected={() => onToggleBulkId(conversation.id)}
             onClick={() => onSelectConversation(conversation.id)}
             onRetryLastMessage={() => onRetryLastMessage(conversation)}
+            canRetryLastMessage={canRetryLastMessage(conversation)}
             retryPending={Boolean(conversation.last_message?.id && retryingMessageId === conversation.last_message.id)}
             t={t}
           />

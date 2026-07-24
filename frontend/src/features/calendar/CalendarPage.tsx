@@ -68,6 +68,7 @@ import {
 import { CalendarToolbar } from "./components/CalendarToolbar";
 import { MonthInspectorPanel } from "./components/MonthInspectorPanel";
 import { useAuth } from "../auth/AuthProvider";
+import { canAccessAppointmentAction } from "./appointmentAccess";
 
 export function CalendarPage() {
   const { t, language } = useI18n();
@@ -82,12 +83,6 @@ export function CalendarPage() {
     business?.id,
     "appointments",
     "create",
-  );
-  const canUpdateAppointment = hasPermission(
-    user,
-    business?.id,
-    "appointments",
-    "update",
   );
   const canManageWorkingHours = hasPermission(
     user,
@@ -580,6 +575,7 @@ export function CalendarPage() {
     hour?: number,
     resource?: number | null,
   ) {
+    if (!canCreateAppointment) return;
     setBookingPrefill({
       date: nextDate,
       hour,
@@ -599,7 +595,15 @@ export function CalendarPage() {
   }
 
   function getAllowedStatusActions(appointment: Appointment) {
-    if (!canUpdateAppointment) return [] as Appointment["status"][];
+    if (
+      !canAccessAppointmentAction({
+        appointment,
+        resources: resourceItems,
+        user,
+        businessId: business?.id,
+      })
+    )
+      return [] as Appointment["status"][];
     if (
       appointment.status === "created" ||
       appointment.status === "rescheduled"
@@ -612,9 +616,24 @@ export function CalendarPage() {
 
   function canRescheduleAppointment(appointment: Appointment) {
     return (
-      canUpdateAppointment &&
+      canAccessAppointmentAction({
+        appointment,
+        resources: resourceItems,
+        user,
+        businessId: business?.id,
+      }) &&
       !["completed", "cancelled", "no_show"].includes(appointment.status)
     );
+  }
+
+  function canArchiveAppointment(appointment: Appointment) {
+    return canAccessAppointmentAction({
+      appointment,
+      resources: resourceItems,
+      user,
+      businessId: business?.id,
+      action: "delete",
+    });
   }
 
   function openRepeatBooking(appointment: Appointment) {
@@ -1416,6 +1435,7 @@ export function CalendarPage() {
             getAllowedStatusActions={getAllowedStatusActions}
             canRescheduleAppointment={canRescheduleAppointment}
             shouldShowRepeatBooking={shouldShowRepeatBooking}
+            canArchiveAppointment={canArchiveAppointment}
             onClose={() => setSelectedAppointmentId(null)}
             onRepeatBooking={openRepeatBooking}
             onStatusAction={(appointment, status) => {

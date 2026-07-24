@@ -20,6 +20,7 @@ export function AppointmentDrawerPanel({
   getAllowedStatusActions,
   canRescheduleAppointment,
   shouldShowRepeatBooking,
+  canArchiveAppointment,
   onClose,
   onRepeatBooking,
   onStatusAction,
@@ -40,6 +41,7 @@ export function AppointmentDrawerPanel({
   getAllowedStatusActions: (appointment: Appointment) => Appointment["status"][];
   canRescheduleAppointment: (appointment: Appointment) => boolean;
   shouldShowRepeatBooking: (appointment: Appointment) => boolean;
+  canArchiveAppointment: (appointment: Appointment) => boolean;
   onClose: () => void;
   onRepeatBooking: (appointment: Appointment) => void;
   onStatusAction: (appointment: Appointment, status: Appointment["status"]) => void;
@@ -49,6 +51,7 @@ export function AppointmentDrawerPanel({
   t: CalendarTranslate;
 }) {
   const canReschedule = canRescheduleAppointment(appointment);
+  const canArchive = canArchiveAppointment(appointment);
   const statusActions = getAllowedStatusActions(appointment);
 
   return (
@@ -143,9 +146,11 @@ export function AppointmentDrawerPanel({
                 {t("calendar.openCard")}
               </Button>
             </div>
-            <Button type="button" variant="danger" size="sm" className="w-full" onClick={() => onArchive(appointment)}>
-              {t("appointments.archiveAction")}
-            </Button>
+            {canArchive ? (
+              <Button type="button" variant="danger" size="sm" className="w-full" onClick={() => onArchive(appointment)}>
+                {t("appointments.archiveAction")}
+              </Button>
+            ) : null}
           </div>
         </div>
       </div>

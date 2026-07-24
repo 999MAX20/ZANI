@@ -35,7 +35,8 @@ jobs:
       - name: Install backend dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install --require-hashes -r requirements.txt
+          pip install --require-hashes -r requirements-dev.txt
 
       - name: Check migrations
         run: python manage.py makemigrations --check --dry-run
@@ -48,6 +49,9 @@ jobs:
 
       - name: Backend tests
         run: python manage.py test
+
+      - name: Audit Python dependencies
+        run: python -m pip_audit -r requirements.txt
 
   frontend:
     name: Frontend build
@@ -73,3 +77,9 @@ jobs:
 
       - name: Build frontend and widget
         run: npm run build
+
+      - name: Check frontend bundle budget
+        run: npm run check:bundle
+
+      - name: Audit high-severity frontend dependencies
+        run: npm audit --audit-level=high

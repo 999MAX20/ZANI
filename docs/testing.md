@@ -1,5 +1,78 @@
 # Zani Testing Guide
 
+## Deterministic Local Quality Gate
+
+The cross-platform gate is the single local entrypoint for acceptance checks:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\codex_verify.py --mode full
+```
+
+```bash
+.venv/bin/python scripts/codex_verify.py --mode full
+```
+
+`full` runs, in fail-fast order:
+
+1. Python and frontend lock validation plus Git diff hygiene;
+2. Django migration drift and system checks;
+3. the full Django test suite;
+4. `npm ci`, i18n/type checking, production builds and the bundle budget;
+5. Playwright mobile owner/manager smoke;
+6. hashed Python lock installability, `pip-audit`, and npm high-severity audit;
+7. final diff hygiene.
+
+It forcibly uses local SQLite, in-memory/eager workers, the locmem email backend,
+empty AI credentials, and disabled Telegram/WhatsApp/Instagram providers. Values
+from a developer `.env` cannot opt the quality gate into live services.
+
+Use the smallest constituent mode while iterating:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\codex_verify.py --mode static
+.\.venv\Scripts\python.exe scripts\codex_verify.py --mode backend --backend-target apps.core.tests_tenant_isolation
+.\.venv\Scripts\python.exe scripts\codex_verify.py --mode frontend
+.\.venv\Scripts\python.exe scripts\codex_verify.py --mode browser
+.\.venv\Scripts\python.exe scripts\codex_verify.py --mode security
+```
+
+`scripts/codex_verify.sh` and `scripts/check_local_ci.sh` are Unix wrappers over
+the same implementation; they do not maintain separate verification logic.
+
+### Dependency lock maintenance
+
+`requirements.in` is the human-edited set of direct Python constraints.
+`requirements.txt` is the complete, hashed installation lock. Regenerate it
+only through pip-tools and review the resulting dependency/security diff:
+
+```bash
+python -m pip install pip-tools
+python -m piptools compile requirements.in \
+  --output-file requirements.txt \
+  --generate-hashes \
+  --strip-extras \
+  --allow-unsafe \
+  --resolver backtracking
+python -m pip install --require-hashes -r requirements.txt
+```
+
+`requirements-dev.in` and `requirements-dev.txt` pin the verification tools
+(`pip-audit` and `pip-tools`) without adding them to the production image:
+
+```bash
+python -m piptools compile requirements-dev.in \
+  --output-file requirements-dev.txt \
+  --generate-hashes \
+  --strip-extras \
+  --allow-unsafe \
+  --resolver backtracking
+python -m pip install --require-hashes -r requirements-dev.txt
+```
+
+The frontend uses the committed npm v3 lock at
+`frontend/package-lock.json`; do not add lockfiles in directories without a
+matching `package.json`. `npm ci` is the acceptance install path.
+
 ## Commands
 
 ```bash

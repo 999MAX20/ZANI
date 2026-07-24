@@ -112,8 +112,11 @@ Before building or deploying, run the local CI equivalent:
 
 ```bash
 cd /Users/maksim/Desktop/Zani
-scripts/check_local_ci.sh
+scripts/codex_verify.sh --mode full
 ```
+
+On Windows, run
+`.\.venv\Scripts\python.exe scripts\codex_verify.py --mode full`.
 
 ```bash
 cd /Users/maksim/Desktop/Zani

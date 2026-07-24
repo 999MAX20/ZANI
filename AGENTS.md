@@ -139,8 +139,12 @@ For any CRM business action, preserve these invariants:
 Run after meaningful backend/frontend changes:
 
 ```bash
-scripts/codex_verify.sh
+python scripts/codex_verify.py --mode full
 ```
+
+On Unix-like systems, `scripts/codex_verify.sh --mode full` is an equivalent
+wrapper. Use `--mode backend --backend-target <django.test.label>` for a
+proportionate scoped backend gate; the final integration gate remains `full`.
 
 For narrow backend CRM changes, scoped checks are acceptable:
 

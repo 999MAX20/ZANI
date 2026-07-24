@@ -1,5 +1,5 @@
 import { Bell, Check, Menu, MessageSquareText, SlidersHorizontal, Sparkles, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -13,11 +13,21 @@ import { formatDateTime } from "../../lib/format";
 import { hasPermission } from "../../lib/permissions";
 import { realtimeIntervals, realtimeQueryOptions } from "../../lib/realtime";
 import { Button } from "../ui/Button";
+import { Drawer } from "../ui/Overlay";
 import { StatusBadge } from "../ui/StatusBadge";
 import { GlobalSearch } from "./GlobalSearch";
+import { mobileNavigationDrawerId } from "./MobileNav";
 import type { PageHeaderConfig } from "./PageHeaderContext";
 
-export function Header({ onMenuClick, pageHeader }: { onMenuClick: () => void; pageHeader: PageHeaderConfig | null }) {
+export function Header({
+  menuOpen,
+  onMenuClick,
+  pageHeader,
+}: {
+  menuOpen: boolean;
+  onMenuClick: () => void;
+  pageHeader: PageHeaderConfig | null;
+}) {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
@@ -29,9 +39,10 @@ export function Header({ onMenuClick, pageHeader }: { onMenuClick: () => void; p
   const [chatToastOpen, setChatToastOpen] = useState(false);
   const [headerVisible, setHeaderVisible] = useState(true);
   const notificationsRef = useRef<HTMLDivElement | null>(null);
-  const filtersRef = useRef<HTMLDivElement | null>(null);
   const previousUnreadMessagesRef = useRef<number | null>(null);
   const lastScrollYRef = useRef(0);
+  const filterDrawerId = useId();
+  const filterDrawerTitleId = useId();
   const notifications = useQuery({
     queryKey: ["notifications"],
     queryFn: () => notificationsApi.list(),
@@ -147,27 +158,6 @@ export function Header({ onMenuClick, pageHeader }: { onMenuClick: () => void; p
   }, [showNotifications]);
 
   useEffect(() => {
-    function handlePointerDown(event: PointerEvent) {
-      if (filtersRef.current?.contains(event.target as Node)) return;
-      setShowFilters(false);
-    }
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setShowFilters(false);
-      }
-    }
-
-    if (showFilters) {
-      document.addEventListener("pointerdown", handlePointerDown);
-      document.addEventListener("keydown", handleKeyDown);
-    }
-    return () => {
-      document.removeEventListener("pointerdown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [showFilters]);
-
-  useEffect(() => {
     const previous = previousUnreadMessagesRef.current;
     previousUnreadMessagesRef.current = unreadChatMessages;
     if (!receivesChatToasts || previous === null || unreadChatMessages <= previous) return;
@@ -202,8 +192,16 @@ export function Header({ onMenuClick, pageHeader }: { onMenuClick: () => void; p
     <header className={`fixed left-0 right-0 top-0 z-50 border-b border-zani-border bg-surface/92 shadow-soft backdrop-blur-xl transition-transform duration-200 ease-out lg:left-16 ${headerVisible ? "translate-y-0" : "-translate-y-full"}`}>
       <div className="grid h-14 grid-cols-[auto_1fr_auto] items-center gap-3 px-3 sm:px-5 lg:grid-cols-[220px_minmax(320px,560px)_auto]">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-          <Button className="h-10 w-10 min-h-10 min-w-10 px-0 text-zani-ink lg:hidden" variant="ghost" onClick={onMenuClick} aria-label={t("sidebar.expand")}>
-            <Menu size={22} strokeWidth={2.2} />
+          <Button
+            className="h-10 w-10 min-h-10 min-w-10 px-0 text-zani-ink lg:hidden"
+            variant="ghost"
+            onClick={onMenuClick}
+            aria-label={t("sidebar.expand")}
+            aria-controls={mobileNavigationDrawerId}
+            aria-expanded={menuOpen}
+            data-testid="header-mobile-menu-trigger"
+          >
+            <Menu aria-hidden="true" size={22} strokeWidth={2.2} />
           </Button>
           <div className="hidden min-w-0 items-center gap-4 lg:flex">
             <span className="max-w-[220px] truncate text-sm font-semibold text-zani-text">{currentPageTitle}</span>
@@ -221,13 +219,15 @@ export function Header({ onMenuClick, pageHeader }: { onMenuClick: () => void; p
           {pageHeader ? (
             <div className="hidden min-w-0 items-center justify-end gap-2 lg:flex">
               {pageHeader.filters ? (
-                <div className="relative" ref={filtersRef}>
+                <div className="relative">
                   <Button
                     variant={pageHeader.activeFilterCount ? "primary" : "secondary"}
                     className="relative h-9 shrink-0 px-3"
                     onClick={() => setShowFilters((current) => !current)}
                     aria-label={pageHeader.filterLabel || t("calendar.filters")}
                     aria-expanded={showFilters}
+                    aria-controls={filterDrawerId}
+                    data-testid="header-filter-trigger"
                   >
                     <SlidersHorizontal size={17} />
                     <span className="hidden xl:inline">{pageHeader.filterLabel || t("calendar.filters")}</span>
@@ -237,28 +237,36 @@ export function Header({ onMenuClick, pageHeader }: { onMenuClick: () => void; p
                       </span>
                     ) : null}
                   </Button>
-                  {showFilters ? (
-                    <div className="fixed inset-0 z-[80] bg-[rgba(23,18,15,0.28)] backdrop-blur-[1px]">
-                      <button type="button" className="absolute inset-0 cursor-default" aria-label={t("common.close")} onClick={() => setShowFilters(false)} />
-                      <aside className="zani-drawer-surface absolute bottom-0 right-0 top-0 flex w-[min(420px,calc(100vw-1rem))] flex-col rounded-none border-y-0 border-r-0 shadow-premium">
-                        <div className="flex h-14 items-center justify-between gap-3 border-b border-zani-border px-5">
-                          <div className="flex items-center gap-2 text-xs font-semibold text-zani-subtle">
-                            <SlidersHorizontal size={15} />
-                            <span>{pageHeader.filterLabel || t("calendar.filters")}</span>
-                          </div>
-                          <button
-                            type="button"
-                            className="zani-focus-ring grid h-9 w-9 shrink-0 place-items-center rounded-control text-zani-faint transition hover:bg-surface-muted hover:text-zani-text"
-                            onClick={() => setShowFilters(false)}
-                            aria-label={t("common.close")}
-                          >
-                            <X size={18} />
-                          </button>
-                        </div>
-                        <div className="min-h-0 flex-1 overflow-y-auto p-5">{pageHeader.filters}</div>
-                      </aside>
+                  <Drawer
+                    id={filterDrawerId}
+                    open={showFilters}
+                    onClose={() => setShowFilters(false)}
+                    titleId={filterDrawerTitleId}
+                    testId="header-filter-drawer"
+                    backdropClassName="bg-[rgba(23,18,15,0.28)] backdrop-blur-[1px]"
+                    className="max-w-[min(420px,calc(100vw-1rem))] rounded-none border-y-0 border-r-0 shadow-premium"
+                  >
+                    <div className="flex h-14 items-center justify-between gap-3 border-b border-zani-border px-5">
+                      <div
+                        id={filterDrawerTitleId}
+                        className="flex items-center gap-2 text-xs font-semibold text-zani-subtle"
+                      >
+                        <SlidersHorizontal aria-hidden="true" size={15} />
+                        <span>{pageHeader.filterLabel || t("calendar.filters")}</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="zani-focus-ring grid h-9 w-9 shrink-0 place-items-center rounded-control text-zani-faint transition hover:bg-surface-muted hover:text-zani-text"
+                        onClick={() => setShowFilters(false)}
+                        aria-label={t("common.close")}
+                      >
+                        <X aria-hidden="true" size={18} />
+                      </button>
                     </div>
-                  ) : null}
+                    <div className="min-h-0 flex-1 overflow-y-auto p-5">
+                      {pageHeader.filters}
+                    </div>
+                  </Drawer>
                 </div>
               ) : null}
               {pageHeader.secondaryActions?.map((action) => {

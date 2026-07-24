@@ -13,7 +13,11 @@ import { getBusinessRole, hasPermission } from "../../lib/permissions";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useEntityData } from "../../hooks/useEntityData";
 import { TaskFormModal } from "./components/TaskFormModal";
-import type { TaskTabFilter } from "./components/TaskHeaderFilters";
+import {
+  TaskActiveFilters,
+  TaskHeaderFilters,
+  type TaskTabFilter,
+} from "./components/TaskHeaderFilters";
 import { TaskList } from "./components/TaskList";
 import { TaskQuickInspector } from "./components/TaskQuickInspector";
 import { useTaskActions } from "./hooks/useTaskActions";
@@ -148,13 +152,37 @@ export function TasksPage() {
             onClick: openQuickTask,
           }
         : undefined,
-      filterLabel: undefined,
-      filters: undefined,
-      activeFilterCount: 0,
-      activeFilters: null,
+      filterLabel: t("tasks.filters"),
+      filters: (
+        <TaskHeaderFilters
+          {...taskFilterState}
+          {...taskFilterActions}
+          teamMembers={teamMembers.data || []}
+          showScopeTabs={canViewTeam}
+        />
+      ),
+      activeFilterCount,
+      activeFilters: activeFilterCount ? (
+        <TaskActiveFilters
+          {...taskFilterState}
+          {...taskFilterActions}
+          teamMembers={teamMembers.data || []}
+          showScopeTabs={canViewTeam}
+        />
+      ) : null,
     });
     return () => setPageHeader(null);
-  }, [canCreateTask, openQuickTask, setPageHeader, t]);
+  }, [
+    activeFilterCount,
+    canCreateTask,
+    canViewTeam,
+    openQuickTask,
+    setPageHeader,
+    t,
+    taskFilterActions,
+    taskFilterState,
+    teamMembers.data,
+  ]);
 
   if (!business) return <ErrorState message={t("tasks.noBusiness")} />;
   if (taskIdParam) return <Navigate to={`/app/tasks/${taskIdParam}`} replace />;

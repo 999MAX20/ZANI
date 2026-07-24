@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const password = process.env.E2E_PASSWORD || "ZaniTest123!";
 const ownerEmail =
@@ -62,6 +62,34 @@ async function expectNoSeriousOrCriticalViolations(page: Page, context: string) 
   ).toEqual([]);
 }
 
+async function expectFocusInside(container: Locator) {
+  await expect
+    .poll(() =>
+      container.evaluate((element) => element.contains(document.activeElement)),
+    )
+    .toBe(true);
+}
+
+async function expectForwardTabWrap(
+  page: Page,
+  container: Locator,
+) {
+  await container.evaluate((element) => {
+    const focusable = Array.from(
+      element.querySelectorAll<HTMLElement>(
+        "a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])",
+      ),
+    ).filter(
+      (candidate) =>
+        candidate.getAttribute("aria-hidden") !== "true" &&
+        candidate.getClientRects().length > 0,
+    );
+    focusable.at(-1)?.focus();
+  });
+  await page.keyboard.press("Tab");
+  await expectFocusInside(container);
+}
+
 test("F-301 pilot workspaces remain responsive and have no serious or critical axe findings", async ({
   page,
 }, testInfo) => {
@@ -88,11 +116,7 @@ test("F-301 pilot workspaces remain responsive and have no serious or critical a
 
 test("F-301 task dialog contains keyboard focus and returns it to its trigger", async ({
   page,
-}, testInfo) => {
-  test.skip(
-    testInfo.project.name !== "desktop-chromium",
-    "The shared overlay keyboard contract needs one desktop browser run.",
-  );
+}) => {
   await login(page);
   await navigateInsideApp(page, "/app/tasks");
 
@@ -103,33 +127,130 @@ test("F-301 task dialog contains keyboard focus and returns it to its trigger", 
 
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
-  await expect
-    .poll(() =>
-      dialog.evaluate((element) => element.contains(document.activeElement)),
-    )
-    .toBe(true);
+  await expectFocusInside(dialog);
 
-  await dialog.evaluate((element) => {
-    const focusable = Array.from(
-      element.querySelectorAll<HTMLElement>(
-        "a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])",
-      ),
-    ).filter(
-      (candidate) =>
-        candidate.getAttribute("aria-hidden") !== "true" &&
-        candidate.getClientRects().length > 0,
-    );
-    focusable.at(-1)?.focus();
-  });
-  await page.keyboard.press("Tab");
+  const select = dialog.getByRole("combobox").first();
+  await expect(select).toBeVisible();
+  await select.focus();
+  await page.keyboard.press("ArrowDown");
+  await expect(select).toHaveAttribute("aria-expanded", "true");
+  const firstActiveOption = await select.getAttribute("aria-activedescendant");
+  expect(firstActiveOption).toBeTruthy();
+  await page.keyboard.press("ArrowDown");
   await expect
-    .poll(() =>
-      dialog.evaluate((element) => element.contains(document.activeElement)),
-    )
-    .toBe(true);
+    .poll(() => select.getAttribute("aria-activedescendant"))
+    .not.toBe(firstActiveOption);
+  await page.keyboard.press("Enter");
+  await expect(select).toHaveAttribute("aria-expanded", "false");
+  await expect(select).toBeFocused();
+
+  await expectForwardTabWrap(page, dialog);
 
   await expectNoSeriousOrCriticalViolations(page, "task-create-dialog");
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+});
+
+test("F-301 mobile menu is a modal drawer and restores the exact visible trigger", async ({
+  page,
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name !== "mobile-chromium",
+    "This contract targets the mobile-only navigation triggers.",
+  );
+  await login(page);
+
+  for (const triggerId of [
+    "header-mobile-menu-trigger",
+    "bottom-mobile-menu-trigger",
+  ]) {
+    const trigger = page.getByTestId(triggerId);
+    await expect(trigger).toBeVisible();
+    await trigger.focus();
+    await page.keyboard.press("Enter");
+
+    const drawer = page.getByTestId("mobile-navigation-drawer");
+    await expect(drawer).toBeVisible();
+    await expect(drawer).toHaveAttribute("role", "dialog");
+    await expect(drawer).toHaveAttribute("aria-modal", "true");
+    await expect(trigger).toHaveAttribute("aria-expanded", "true");
+    await expectFocusInside(drawer);
+    await expectForwardTabWrap(page, drawer);
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      `mobile-navigation-${triggerId}`,
+    );
+
+    await page.keyboard.press("Escape");
+    await expect(drawer).toHaveCount(0);
+    await expect(trigger).toHaveAttribute("aria-expanded", "false");
+    await expect(trigger).toBeFocused();
+  }
+});
+
+test("F-301 header filters are exposed through the shared modal drawer contract", async ({
+  page,
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name === "mobile-chromium",
+    "The page header filters are intentionally hidden below the tablet breakpoint.",
+  );
+  await login(page);
+  await navigateInsideApp(page, "/app/tasks");
+
+  const trigger = page.getByTestId("header-filter-trigger");
+  await expect(trigger).toBeVisible();
+  await trigger.focus();
+  await page.keyboard.press("Enter");
+
+  const drawer = page.getByTestId("header-filter-drawer");
+  await expect(drawer).toBeVisible();
+  await expect(drawer).toHaveAttribute("role", "dialog");
+  await expect(drawer).toHaveAttribute("aria-modal", "true");
+  await expect(drawer).toHaveAttribute("aria-labelledby", /.+/);
+  await expect(trigger).toHaveAttribute("aria-expanded", "true");
+  await expectFocusInside(drawer);
+  await expectForwardTabWrap(page, drawer);
+  await expectNoSeriousOrCriticalViolations(page, "header-filter-drawer");
+
+  await page.keyboard.press("Escape");
+  await expect(drawer).toHaveCount(0);
+  await expect(trigger).toHaveAttribute("aria-expanded", "false");
+  await expect(trigger).toBeFocused();
+});
+
+test("F-301 conditionally unmounted CRM drawer restores focus to its opener", async ({
+  page,
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name !== "desktop-chromium",
+    "One desktop run proves the conditional-unmount focus restoration path.",
+  );
+  await login(page);
+  await navigateInsideApp(page, "/app/clients");
+
+  const trigger = page.getByTestId("client-row-action-open").first();
+  await expect(trigger).toBeVisible();
+  await trigger.focus();
+  const clientId = Number(await trigger.getAttribute("data-client-id"));
+  expect(clientId).toBeGreaterThan(0);
+  await page.evaluate((id) => {
+    window.history.pushState(
+      {},
+      "",
+      `/app/clients?client=${id}&tab=tasks`,
+    );
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  }, clientId);
+
+  const drawer = page.getByTestId("crm-entity-drawer");
+  await expect(drawer).toBeVisible();
+  await expectFocusInside(drawer);
+  await expectForwardTabWrap(page, drawer);
+  await expectNoSeriousOrCriticalViolations(page, "lead-crm-entity-drawer");
+
+  await page.keyboard.press("Escape");
+  await expect(drawer).toHaveCount(0);
   await expect(trigger).toBeFocused();
 });

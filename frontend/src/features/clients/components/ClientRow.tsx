@@ -190,6 +190,7 @@ export const ClientRow = memo(function ClientRow({
           <button
             type="button"
             data-testid="client-row-action-open"
+            data-client-id={row.client.id}
             className="inline-grid h-8 w-8 place-items-center rounded-lg text-zani-muted opacity-100 transition hover:bg-brand-50 hover:text-brand-700 md:opacity-0 md:group-hover:opacity-100"
             onClick={(event) => {
               event.stopPropagation();

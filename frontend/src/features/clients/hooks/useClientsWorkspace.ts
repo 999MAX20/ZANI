@@ -178,8 +178,9 @@ export function useClientsWorkspace({
   const closeClientCard = useCallback(() => {
     setDrawerEntity(null);
     const nextParams = new URLSearchParams(searchParams);
-    if (nextParams.has("client")) {
+    if (nextParams.has("client") || nextParams.has("tab")) {
       nextParams.delete("client");
+      nextParams.delete("tab");
       setSearchParams(nextParams, { replace: true });
     }
   }, [searchParams, setSearchParams]);
@@ -210,6 +211,23 @@ export function useClientsWorkspace({
     const clientId = Number(searchParams.get("client") || "");
     if (clientId) {
       setSelectedClientId(clientId);
+      const requestedTab = searchParams.get("tab");
+      if (
+        requestedTab === "timeline" ||
+        requestedTab === "tasks" ||
+        requestedTab === "appointments" ||
+        requestedTab === "deals" ||
+        requestedTab === "files" ||
+        requestedTab === "messages" ||
+        requestedTab === "notes"
+      ) {
+        setDrawerEntity({
+          type: "client",
+          id: clientId,
+          initialTab: requestedTab,
+        });
+        return;
+      }
       setDrawerEntity(null);
       navigate(`/app/clients/${clientId}`, { replace: true });
       return;

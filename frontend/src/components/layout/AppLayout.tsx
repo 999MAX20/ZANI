@@ -39,7 +39,11 @@ export function AppLayout() {
           <div className="hidden shrink-0 transition-[width] duration-200 lg:block lg:w-16" />
           <MobileNav open={menuOpen} onOpen={() => setMenuOpen(true)} onClose={() => setMenuOpen(false)} />
           <div className="flex min-w-0 flex-1 flex-col pb-28 lg:pb-0">
-            <Header onMenuClick={() => setMenuOpen(true)} pageHeader={pageHeader} />
+            <Header
+              menuOpen={menuOpen}
+              onMenuClick={() => setMenuOpen(true)}
+              pageHeader={pageHeader}
+            />
             <motion.main
               key={location.pathname}
               initial={{ opacity: 0, y: 10 }}

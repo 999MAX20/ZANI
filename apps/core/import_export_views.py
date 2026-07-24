@@ -8,6 +8,7 @@ from django.conf import settings
 from django.http import FileResponse
 
 from apps.businesses.access import Actions, Resources, assert_can
+from apps.businesses.capabilities import assert_resource_enabled
 from apps.core.audit import write_audit_log
 from apps.core.import_export import (
     build_import_preview,
@@ -41,7 +42,9 @@ class ImportJobViewSet(TenantModelViewSet):
     def perform_create(self, serializer):
         business = serializer.validated_data["business"]
         entity_type = serializer.validated_data.get("entity_type", ImportJob.EntityTypes.CLIENTS)
-        assert_can(self.request.user, business, _resource_for_entity(entity_type), Actions.CREATE)
+        resource = _resource_for_entity(entity_type)
+        assert_can(self.request.user, business, resource, Actions.CREATE)
+        assert_resource_enabled(business, resource)
         upload = serializer.validated_data["source_file"]
         _validate_import_file(upload)
         job = serializer.save(actor=self.request.user, original_filename=getattr(upload, "name", ""))

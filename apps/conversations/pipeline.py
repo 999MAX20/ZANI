@@ -12,6 +12,8 @@ from django.utils import timezone
 from apps.activities.services import create_activity_event
 from apps.activities.taxonomy import ActivityEvents
 from apps.bots.models import BotConversation
+from apps.businesses.access import Resources
+from apps.businesses.capabilities import assert_resource_enabled
 from apps.clients.models import Client
 from apps.conversations.ai_qualification import ConversationQualification, qualify_conversation
 from apps.crm.models import Deal, Pipeline, PipelineStage
@@ -61,6 +63,14 @@ def run_conversation_pipeline(
     The function is intentionally idempotent for the active conversation:
     it reuses linked entities and stores created ids in metadata_json.
     """
+
+    assert_resource_enabled(conversation.business, Resources.CLIENTS)
+    if create_lead:
+        assert_resource_enabled(conversation.business, Resources.LEADS)
+    if create_deal:
+        assert_resource_enabled(conversation.business, Resources.DEALS)
+    if create_task:
+        assert_resource_enabled(conversation.business, Resources.TASKS)
 
     qualification = qualification_override
     ai_log = None

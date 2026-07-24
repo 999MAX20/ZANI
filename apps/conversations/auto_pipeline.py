@@ -10,6 +10,8 @@ from apps.ai_core.models import AgentProfile
 from apps.bots.ai import suggest_bot_reply
 from apps.bots.inbox_service import send_outbound_message
 from apps.bots.models import BotChannel, BotConversation, BotMessage
+from apps.businesses.access import Resources
+from apps.businesses.capabilities import resource_is_enabled
 from apps.conversations.ai_qualification import ConversationQualification, qualify_conversation
 from apps.conversations.booking import BookingResult, maybe_create_appointment_from_reply, store_offered_slots
 from apps.conversations.pipeline import PIPELINE_META_KEY, run_conversation_pipeline
@@ -80,9 +82,23 @@ def maybe_run_auto_pipeline(*, conversation: BotConversation, message: BotMessag
     create_lead = "create_lead" in allowed_tools
     create_task = "create_task" in allowed_tools
     create_deal = decision.status == "created_draft_deal" and "create_deal" in allowed_tools
-    if decision.status == "created_draft_deal" and not create_deal:
+    if create_deal and not resource_is_enabled(conversation.business, Resources.DEALS):
+        create_deal = False
+        decision.status = "created_lead_task"
+        decision.reason = "Deal creation is disabled for this business."
+        decision.confirmation_policy["allowed_auto_actions"] = [
+            action
+            for action in decision.confirmation_policy["allowed_auto_actions"]
+            if action != "create_draft_deal"
+        ]
+    elif decision.status == "created_draft_deal" and not create_deal:
         decision.status = "created_lead_task"
         decision.reason = "Deal creation is disabled by the active agent profile."
+        decision.confirmation_policy["allowed_auto_actions"] = [
+            action
+            for action in decision.confirmation_policy["allowed_auto_actions"]
+            if action != "create_draft_deal"
+        ]
     result = run_conversation_pipeline(
         conversation=conversation,
         create_lead=create_lead,

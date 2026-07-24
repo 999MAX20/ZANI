@@ -7,6 +7,7 @@ from apps.businesses.models import Business
 from apps.businesses.assignment_notifications import create_assignment_notifications
 from apps.businesses.assignment_policy import assert_assignment_allowed
 from apps.businesses.access import Resources
+from apps.businesses.capabilities import assert_resource_enabled
 from apps.activities.services import create_activity_event
 from apps.activities.taxonomy import ActivityEvents, event_label
 from apps.crm.models import Deal, DealStageHistory, DealValueHistory, Pipeline, PipelineStage, StageTransition
@@ -111,6 +112,7 @@ def reopen_deal(*, deal: Deal, actor, source="api", request=None) -> Deal:
 
 
 def assign_deal_owner(*, deal: Deal, actor, user_id, request=None, source="api") -> Deal:
+    assert_resource_enabled(deal.business, Resources.DEALS)
     owner = get_user_model().objects.filter(id=user_id, is_active=True).first()
     if owner is None:
         raise ValidationError({"user_id": "User was not found."})

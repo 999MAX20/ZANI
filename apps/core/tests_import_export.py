@@ -7,6 +7,7 @@ from rest_framework.test import APIClient
 
 from apps.accounts.models import User
 from apps.businesses.access import ensure_default_roles
+from apps.businesses.capabilities import apply_business_type_defaults
 from apps.businesses.models import Business, BusinessMember, BusinessRole
 from apps.clients.models import Client
 from apps.core.models import AuditLog, ImportJob
@@ -54,6 +55,7 @@ class ImportExportTests(TestCase):
             role=BusinessMember.Roles.STAFF,
             business_role=BusinessRole.objects.get(business=self.business, preset_key=BusinessMember.Roles.STAFF),
         )
+        apply_business_type_defaults(self.business, configured_by=self.owner)
 
     def test_csv_clients_import_preview_and_confirm(self):
         Client.objects.create(business=self.business, full_name="Existing", phone="+77010000001")
@@ -239,6 +241,50 @@ class ImportExportTests(TestCase):
         event = BusinessEvent.objects.get(business=self.business, event_type="deal.imported", external_id="deal-1")
         self.assertEqual(event.payload_json["deal_id"], deal.id)
         self.assertEqual(event.payload_json["client_id"], deal.client_id)
+
+    def test_disabled_deals_module_rejects_import_before_job_or_crm_side_effects(self):
+        capability = self.business.capabilities.get(module_key="deals")
+        capability.is_enabled = False
+        capability.save(update_fields=["is_enabled", "updated_at"])
+        upload = SimpleUploadedFile(
+            "deals.csv",
+            (
+                "external_id,title,client_name,phone,email,amount,currency,stage,source,notes\n"
+                "blocked-1,Blocked import,Blocked Client,+77010000007,blocked@example.com,50000,KZT,New,manual,Blocked\n"
+            ).encode(),
+            content_type="text/csv",
+        )
+        self.api.force_authenticate(self.owner)
+        before = {
+            "jobs": ImportJob.objects.filter(business=self.business).count(),
+            "clients": Client.objects.filter(business=self.business).count(),
+            "deals": Deal.objects.filter(business=self.business).count(),
+            "events": BusinessEvent.objects.filter(business=self.business).count(),
+            "audit": AuditLog.objects.filter(business=self.business).count(),
+        }
+
+        response = self.api.post(
+            "/api/import-jobs/",
+            {
+                "business": self.business.id,
+                "entity_type": ImportJob.EntityTypes.DEALS,
+                "source_file": upload,
+            },
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data["code"], "module_disabled")
+        self.assertEqual(
+            {
+                "jobs": ImportJob.objects.filter(business=self.business).count(),
+                "clients": Client.objects.filter(business=self.business).count(),
+                "deals": Deal.objects.filter(business=self.business).count(),
+                "events": BusinessEvent.objects.filter(business=self.business).count(),
+                "audit": AuditLog.objects.filter(business=self.business).count(),
+            },
+            before,
+        )
 
     def test_repeated_leads_import_is_idempotent_by_client_and_message(self):
         self.api.force_authenticate(self.owner)

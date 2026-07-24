@@ -10,7 +10,8 @@ Required for all work:
 
 1. `AGENTS.md`
 2. `plan/clean_code_rules/zani_required_clean_code_rules.md`
-3. Relevant app/frontend files for the task
+3. `actual_docs/PROJECT_EXECUTION_MASTER.md` for the active pre-pilot queue
+4. Relevant app/frontend files for the task
 
 For CRM business logic work:
 

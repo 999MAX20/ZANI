@@ -356,6 +356,11 @@ Remaining follow-up after Phase 13:
 
 ## 5. Ближайший Приоритет
 
+Update 2026-07-24: completed frontend/backend phase plans are frozen as
+evidence. The active local pre-pilot queue, autonomous two-track execution
+protocol, Git rules and external-production boundary live in
+`actual_docs/PROJECT_EXECUTION_MASTER.md`.
+
 The old page-by-page priority list above has been superseded by completed phase notes, the closed audit checklist and the current product/technical map. Current near-term priorities are:
 
 1. Keep the provider live/mock readiness matrix current and make merchant-facing connector labels follow it.

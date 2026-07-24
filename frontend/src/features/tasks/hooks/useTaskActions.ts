@@ -41,14 +41,21 @@ export function useTaskActions({
   const showUndoToast = useUndoToast();
   const { notifyError, notifySuccess } = useActionFeedback();
 
-  const handleTaskChanged = useCallback(
+  const syncTaskChanged = useCallback(
     (task: Task) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["task-activity", task.id] });
       setSelectedTask((current) => (current?.id === task.id ? task : current));
+    },
+    [queryClient, setSelectedTask],
+  );
+
+  const handleTaskChanged = useCallback(
+    (task: Task) => {
+      syncTaskChanged(task);
       notifySuccess(t("tasks.savedNotice"));
     },
-    [notifySuccess, queryClient, setSelectedTask, t],
+    [notifySuccess, syncTaskChanged, t],
   );
 
   const createMutation = useMutation({
@@ -138,12 +145,13 @@ export function useTaskActions({
   const cancelMutation = useMutation({
     mutationFn: tasksApi.cancel,
     onSuccess: (task) => {
-      handleTaskChanged(task);
+      syncTaskChanged(task);
       showUndoToast({
         message: t("tasks.cancelledNotice"),
         onUndo: async () => {
           const restoredTask = await tasksApi.undoCancel(task.id);
-          handleTaskChanged(restoredTask);
+          syncTaskChanged(restoredTask);
+          notifySuccess(t("tasks.savedNotice"));
         },
       });
     },

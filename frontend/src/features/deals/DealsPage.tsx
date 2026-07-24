@@ -121,10 +121,6 @@ export function DealsPage() {
     onSuccess: async (_, variables) => {
       await queryClient.invalidateQueries({ queryKey: ["deals"] });
       selection.setSelectedIds([]);
-      showNotification({
-        message: t("deals.noticeArchived", { count: variables.ids.length }),
-        tone: "success",
-      });
       showUndoToast({
         message: t("deals.noticeArchived", { count: variables.ids.length }),
         onUndo: async () => {

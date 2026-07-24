@@ -79,7 +79,13 @@ export function LeadForm({
   }, [businessId, clientId, initial?.id]);
 
   return (
-    <form className="grid gap-4 rounded-card border border-zani-border bg-surface-card p-4 shadow-card sm:p-5" onSubmit={form.handleSubmit((values) => onSubmit({ ...values, business: businessId, source: values.source as Lead["source"], service: values.service || null, responsible_user: values.responsible_user || null }))}>
+    <form data-testid="lead-action-form" className="grid gap-4 rounded-card border border-zani-border bg-surface-card p-4 shadow-card sm:p-5" onSubmit={form.handleSubmit(async (values) => {
+      try {
+        await onSubmit({ ...values, business: businessId, source: values.source as Lead["source"], service: values.service || null, responsible_user: values.responsible_user || null });
+      } catch {
+        // The owning mutation renders localized, recoverable action feedback.
+      }
+    })}>
       {!hasClients ? (
         <div className="rounded-card border border-[rgba(151,90,22,0.24)] bg-[var(--zani-warning-soft)] p-4 text-sm text-zani-warning">
           <p className="font-semibold">{t("leadForm.needClientTitle")}</p>
@@ -146,7 +152,7 @@ export function LeadForm({
         />
       ) : null}
       <Textarea label={t("leadForm.message")} {...form.register("message")} />
-      <Button type="submit" isLoading={form.formState.isSubmitting} disabled={!hasClients}>{duplicates.length || relatedLeadsCount ? t("clients.createAnyway") : t("clients.save")}</Button>
+      <Button data-testid="lead-action-submit" type="submit" isLoading={form.formState.isSubmitting} disabled={!hasClients}>{duplicates.length || relatedLeadsCount ? t("clients.createAnyway") : t("clients.save")}</Button>
     </form>
   );
 }

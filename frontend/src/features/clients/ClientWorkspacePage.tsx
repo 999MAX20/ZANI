@@ -184,6 +184,7 @@ export function ClientWorkspacePage() {
           actions={
             <>
               <Button
+                data-testid="client-edit-action"
                 type="button"
                 variant="secondary"
                 onClick={() => actions.setEditOpen(true)}

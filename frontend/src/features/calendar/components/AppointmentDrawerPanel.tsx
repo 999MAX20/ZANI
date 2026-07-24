@@ -130,6 +130,7 @@ export function AppointmentDrawerPanel({
               {canReschedule ? (
                 <Button
                   data-testid="calendar-reschedule-action"
+                  data-focus-return-id={`calendar-reschedule-${appointment.id}`}
                   type="button"
                   variant="secondary"
                   size="sm"

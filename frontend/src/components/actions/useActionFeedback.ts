@@ -1,9 +1,14 @@
 import axios from "axios";
 import { useCallback, type RefObject } from "react";
 
-import { getApiErrorMessage } from "../../api/client";
 import { useI18n } from "../../lib/i18n";
 import { useNotification } from "../notifications/NotificationProvider";
+import {
+  canOfferActionRecovery,
+  canUseActionFallback,
+  classifyActionError,
+  type ActionErrorKind,
+} from "./actionFeedbackPolicy";
 
 type ActionFeedbackTone = "success" | "info" | "warning" | "danger";
 
@@ -37,6 +42,18 @@ function getStatus(error: unknown) {
   return axios.isAxiosError(error) ? error.response?.status : undefined;
 }
 
+const errorMessageKeys: Record<ActionErrorKind, string> = {
+  validation: "actions.errorValidation",
+  unauthenticated: "actions.errorUnauthenticated",
+  forbidden: "actions.errorForbidden",
+  unavailable: "actions.errorUnavailable",
+  conflict: "actions.errorConflict",
+  rateLimited: "actions.errorRateLimited",
+  temporary: "actions.errorTemporary",
+  network: "actions.errorNetwork",
+  generic: "actions.errorGeneric",
+};
+
 export function useActionFeedback() {
   const { t } = useI18n();
   const showNotification = useNotification();
@@ -44,16 +61,17 @@ export function useActionFeedback() {
   const getRecoverableMessage = useCallback(
     (error: unknown, fallbackMessage?: string) => {
       const status = getStatus(error);
-      const detail = getApiErrorMessage(error);
-      if (status === 400) return t("actions.errorValidation", { detail });
-      if (status === 403) return t("actions.errorForbidden");
-      if (status === 404) return t("actions.errorUnavailable");
-      if (status === 409) return t("actions.errorConflict", { detail });
-      if (status === 429) return t("actions.errorRateLimited");
-      if (status && status >= 500) return t("actions.errorTemporary");
-      if (axios.isAxiosError(error) && !error.response) return t("actions.errorNetwork");
-      if (error instanceof Error && error.message) return error.message;
-      return fallbackMessage || detail || t("actions.errorGeneric");
+      const transportError = axios.isAxiosError(error);
+      const kind = classifyActionError(
+        status,
+        transportError && !error.response,
+      );
+      if (
+        canUseActionFallback(kind, transportError, Boolean(fallbackMessage))
+      ) {
+        return fallbackMessage!;
+      }
+      return t(errorMessageKeys[kind]);
     },
     [t],
   );
@@ -61,10 +79,9 @@ export function useActionFeedback() {
   const notifyError = useCallback(
     (error: unknown, options: RecoveryOptions = {}) => {
       const status = getStatus(error);
-      const retry =
-        options.retry && status !== 400 && status !== 403
-          ? options.retry
-          : undefined;
+      const retry = canOfferActionRecovery(status, Boolean(options.retry))
+        ? options.retry
+        : undefined;
       showNotification({
         message: getRecoverableMessage(error, options.fallbackMessage),
         tone: options.tone || (status === 403 || status === 404 ? "warning" : "danger"),

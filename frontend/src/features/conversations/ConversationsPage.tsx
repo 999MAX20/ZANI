@@ -732,6 +732,7 @@ export function ConversationsPage() {
         t("conversations.systemAssignedToMe"),
       );
     },
+    onError: (error) => notifyError(error),
   });
 
   const handoffMutation = useMutation({
@@ -744,6 +745,7 @@ export function ConversationsPage() {
         t("conversations.systemHandoff"),
       );
     },
+    onError: (error) => notifyError(error),
   });
 
   const markReadMutation = useMutation({
@@ -751,6 +753,7 @@ export function ConversationsPage() {
     onSuccess: async () => {
       await invalidateInbox();
     },
+    onError: (error) => notifyError(error),
   });
 
   const markUnreadMutation = useMutation({
@@ -759,6 +762,7 @@ export function ConversationsPage() {
       setNotice(t("conversations.markedUnread"));
       await invalidateInbox();
     },
+    onError: (error) => notifyError(error),
   });
 
   const setPriorityMutation = useMutation({
@@ -767,6 +771,7 @@ export function ConversationsPage() {
       setNotice(t("conversations.priorityUpdated"));
       await invalidateInbox();
     },
+    onError: (error) => notifyError(error),
   });
 
   const toggleBotMutation = useMutation({
@@ -781,6 +786,7 @@ export function ConversationsPage() {
           : t("conversations.systemBotPaused"),
       );
     },
+    onError: (error) => notifyError(error),
   });
 
   const closeMutation = useMutation({
@@ -793,6 +799,7 @@ export function ConversationsPage() {
         t("conversations.systemClosed"),
       );
     },
+    onError: (error) => notifyError(error),
   });
 
   const reopenMutation = useMutation({
@@ -805,6 +812,7 @@ export function ConversationsPage() {
         t("conversations.systemReopened"),
       );
     },
+    onError: (error) => notifyError(error),
   });
 
   const suggestMutation = useMutation({
@@ -816,6 +824,10 @@ export function ConversationsPage() {
       setDraft(data.suggested_reply);
       setNotice(t("conversations.aiDraftReady"));
     },
+    onError: (error) =>
+      notifyError(error, {
+        fallbackMessage: t("conversations.aiReplyForbidden"),
+      }),
   });
 
   const qualifyMutation = useMutation({
@@ -833,6 +845,10 @@ export function ConversationsPage() {
       );
       await invalidateInbox();
     },
+    onError: (error) =>
+      notifyError(error, {
+        fallbackMessage: t("conversations.aiPipelinePreviewForbidden"),
+      }),
   });
 
   const sendMutation = useMutation({
@@ -852,6 +868,7 @@ export function ConversationsPage() {
       setNotice(t("conversations.messageRetried"));
       await invalidateInbox();
     },
+    onError: (error) => notifyError(error),
   });
 
   const createClientMutation = useMutation({
@@ -877,6 +894,7 @@ export function ConversationsPage() {
         queryClient.invalidateQueries({ queryKey: ["clients"] }),
       ]);
     },
+    onError: (error) => notifyError(error),
   });
 
   const linkClientMutation = useMutation({
@@ -886,6 +904,7 @@ export function ConversationsPage() {
       setCrmLinkModal(null);
       await invalidateInbox();
     },
+    onError: (error) => notifyError(error),
   });
 
   const createLeadMutation = useMutation({
@@ -897,6 +916,7 @@ export function ConversationsPage() {
         queryClient.invalidateQueries({ queryKey: ["leads"] }),
       ]);
     },
+    onError: (error) => notifyError(error),
   });
 
   const linkLeadMutation = useMutation({
@@ -906,6 +926,7 @@ export function ConversationsPage() {
       setCrmLinkModal(null);
       await invalidateInbox();
     },
+    onError: (error) => notifyError(error),
   });
 
   const createDealMutation = useMutation({
@@ -917,6 +938,7 @@ export function ConversationsPage() {
         queryClient.invalidateQueries({ queryKey: ["deals"] }),
       ]);
     },
+    onError: (error) => notifyError(error),
   });
 
   const linkDealMutation = useMutation({
@@ -926,6 +948,7 @@ export function ConversationsPage() {
       setCrmLinkModal(null);
       await invalidateInbox();
     },
+    onError: (error) => notifyError(error),
   });
 
   const createTaskMutation = useMutation({
@@ -968,6 +991,10 @@ export function ConversationsPage() {
         queryClient.invalidateQueries({ queryKey: ["tasks"] }),
       ]);
     },
+    onError: (error) =>
+      notifyError(error, {
+        fallbackMessage: t("conversations.aiPipelineRunForbidden"),
+      }),
   });
 
   const bulkMutation = useMutation({
@@ -1015,6 +1042,7 @@ export function ConversationsPage() {
       resetBulkSelection();
       await invalidateInbox();
     },
+    onError: (error) => notifyError(error),
   });
 
   const pageError =
@@ -1022,33 +1050,6 @@ export function ConversationsPage() {
     conversations.error ||
     selectedConversation.error ||
     messages.error;
-  const actionError =
-    assignMutation.error ||
-    handoffMutation.error ||
-    markReadMutation.error ||
-    markUnreadMutation.error ||
-    setPriorityMutation.error ||
-    toggleBotMutation.error ||
-    closeMutation.error ||
-    reopenMutation.error ||
-    suggestMutation.error ||
-    qualifyMutation.error ||
-    retryMessageMutation.error ||
-    createClientMutation.error ||
-    linkClientMutation.error ||
-    createLeadMutation.error ||
-    linkLeadMutation.error ||
-    createDealMutation.error ||
-    linkDealMutation.error ||
-    runPipelineMutation.error ||
-    bulkMutation.error;
-  const actionErrorMessage = actionError ? getApiErrorMessage(actionError) : "";
-
-  useEffect(() => {
-    if (!actionErrorMessage) return;
-    notifyError(actionError);
-  }, [actionError, actionErrorMessage, notifyError]);
-
   function sendReply() {
     const text = draft.trim();
     if (!selected || !text) return;

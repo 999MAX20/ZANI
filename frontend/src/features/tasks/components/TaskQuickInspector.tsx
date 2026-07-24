@@ -185,7 +185,7 @@ export function TaskQuickInspector({
             </Button>
           ) : null}
           {!isClosed ? (
-            <Button type="button" variant="secondary" isLoading={pending.dueToday} onClick={() => onDueToday(task)}>
+            <Button data-testid="task-due-today-action" type="button" variant="secondary" isLoading={pending.dueToday} onClick={() => onDueToday(task)}>
               <CalendarPlus size={16} />
               {t("common.today")}
             </Button>

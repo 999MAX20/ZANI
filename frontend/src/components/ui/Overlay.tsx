@@ -1,6 +1,12 @@
 import { X } from "lucide-react";
 import { createPortal } from "react-dom";
-import { HTMLAttributes, useEffect, useId } from "react";
+import {
+  HTMLAttributes,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+} from "react";
 
 import { useBodyScrollLock } from "../../hooks/useBodyScrollLock";
 import { cn } from "../../lib/cn";
@@ -40,6 +46,71 @@ function CloseButton({ onClose }: { onClose: () => void }) {
   );
 }
 
+function useDialogTriggerFocus(open: boolean) {
+  const openerRef = useRef<HTMLElement | null>(null);
+  const openerSelectorRef = useRef<string | null>(null);
+  const wasOpenRef = useRef(false);
+
+  useLayoutEffect(() => {
+    if (open && !wasOpenRef.current) {
+      openerRef.current =
+        document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null;
+      const focusReturnId = openerRef.current?.dataset.focusReturnId;
+      const openerTestId = openerRef.current?.dataset.testid;
+      openerSelectorRef.current = focusReturnId
+        ? `[data-focus-return-id="${CSS.escape(focusReturnId)}"]`
+        : openerTestId
+          ? `[data-testid="${CSS.escape(openerTestId)}"]`
+          : null;
+      wasOpenRef.current = true;
+      return;
+    }
+    if (open || !wasOpenRef.current) return;
+
+    wasOpenRef.current = false;
+    const opener = openerRef.current;
+    const openerSelector = openerSelectorRef.current;
+    openerRef.current = null;
+    openerSelectorRef.current = null;
+
+    function restoreFocus() {
+      const replacement = openerSelector
+        ? document.querySelector<HTMLElement>(openerSelector)
+        : null;
+      const target = replacement || (opener?.isConnected ? opener : null);
+      target?.focus({ preventScroll: true });
+      return Boolean(target);
+    }
+
+    if (restoreFocus()) return;
+
+    let observer: MutationObserver | null = null;
+    let timeoutId: number | null = null;
+    const frameId = window.requestAnimationFrame(() => {
+      if (restoreFocus()) return;
+      observer = new MutationObserver(() => {
+        if (!restoreFocus()) return;
+        observer?.disconnect();
+        observer = null;
+        if (timeoutId !== null) window.clearTimeout(timeoutId);
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+      timeoutId = window.setTimeout(() => {
+        observer?.disconnect();
+        observer = null;
+      }, 1_000);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      observer?.disconnect();
+      if (timeoutId !== null) window.clearTimeout(timeoutId);
+    };
+  }, [open]);
+}
+
 export function Dialog({
   title,
   open,
@@ -62,6 +133,7 @@ export function Dialog({
   const titleId = useId();
   useBodyScrollLock(open);
   useEscapeClose(open, onClose);
+  useDialogTriggerFocus(open);
 
   if (!open) return null;
 

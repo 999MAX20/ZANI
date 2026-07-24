@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 
 import { getApiErrorMessage } from "../../api/client";
+import { useActionFeedback } from "../../components/actions/useActionFeedback";
 import { CrmWorkspaceGrid, CrmWorkspacePage } from "../../components/crm";
 import { usePageHeader } from "../../components/layout/PageHeaderContext";
 import { Button } from "../../components/ui/Button";
@@ -22,6 +23,7 @@ import type { Task } from "../../types";
 
 export function TasksPage() {
   const { t } = useI18n();
+  const { getRecoverableMessage } = useActionFeedback();
   const navigate = useNavigate();
   const { setPageHeader } = usePageHeader();
   const { business } = useActiveBusiness();
@@ -254,7 +256,7 @@ export function TasksPage() {
         services={services.data || []}
         teamMembers={teamMembers.data || []}
         isSaving={createMutation.isPending || updateDetailsMutation.isPending}
-        errorMessage={formError ? getApiErrorMessage(formError) : null}
+        errorMessage={formError ? getRecoverableMessage(formError) : null}
         onClose={() => {
           setOpen(false);
           setEditingTask(null);

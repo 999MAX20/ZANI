@@ -79,8 +79,15 @@ export function ClientForm({
 
   return (
     <form
+      data-testid="client-action-form"
       className="grid gap-4"
-      onSubmit={form.handleSubmit((values) => onSubmit({ ...values, business: businessId } as Partial<Client>))}
+      onSubmit={form.handleSubmit(async (values) => {
+        try {
+          await onSubmit({ ...values, business: businessId } as Partial<Client>);
+        } catch {
+          // The owning mutation renders localized, recoverable action feedback.
+        }
+      })}
     >
       <Input label={t("clients.name")} error={form.formState.errors.full_name?.message} {...form.register("full_name")} />
       <div className="grid gap-4 sm:grid-cols-2">
@@ -126,7 +133,7 @@ export function ClientForm({
       />
       <Input label={t("clients.sourceDetail")} {...form.register("source_detail")} />
       <Textarea label={t("clients.notes")} {...form.register("notes")} />
-      <Button type="submit" isLoading={form.formState.isSubmitting}>{duplicates.length && !initial ? t("clients.createAnyway") : t("clients.save")}</Button>
+      <Button data-testid="client-action-submit" type="submit" isLoading={form.formState.isSubmitting}>{duplicates.length && !initial ? t("clients.createAnyway") : t("clients.save")}</Button>
     </form>
   );
 }

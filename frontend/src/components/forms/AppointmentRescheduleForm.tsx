@@ -2,10 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 
 import { appointmentsApi, type AppointmentReschedulePayload } from "../../api/appointments";
-import { getApiErrorMessage } from "../../api/client";
 import { dateInTimeZone, todayInTimeZone } from "../../lib/format";
 import { useI18n } from "../../lib/i18n";
 import type { Appointment, Id, Resource } from "../../types";
+import { useActionFeedback } from "../actions/useActionFeedback";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { Select } from "../ui/Select";
@@ -30,6 +30,7 @@ export function AppointmentRescheduleForm({
   timeZone?: string;
 }) {
   const { t, language } = useI18n();
+  const { getRecoverableMessage } = useActionFeedback();
   const locale = language === "en" ? "en-US" : language === "kk" ? "kk-KZ" : "ru-RU";
   const [date, setDate] = useState(dateInTimeZone(appointment.start_at, timeZone) || todayInTimeZone(timeZone));
   const [resource, setResource] = useState(appointment.resource ? String(appointment.resource) : "");
@@ -77,7 +78,7 @@ export function AppointmentRescheduleForm({
             reason: reason.trim(),
           });
         } catch (error) {
-          setSubmitError(getApiErrorMessage(error));
+          setSubmitError(getRecoverableMessage(error));
         }
       }}
     >
@@ -114,7 +115,11 @@ export function AppointmentRescheduleForm({
         />
       ) : null}
       <Textarea label={t("appointments.rescheduleReason")} value={reason} onChange={(event) => setReason(event.target.value)} placeholder={t("appointments.rescheduleReasonPlaceholder")} />
-      {submitError || slots.error ? <ErrorState message={submitError || getApiErrorMessage(slots.error)} /> : null}
+      {submitError || slots.error ? (
+        <ErrorState
+          message={submitError || getRecoverableMessage(slots.error)}
+        />
+      ) : null}
       <div className="flex justify-end gap-2">
         <Button type="button" variant="secondary" onClick={onCancel}>
           {t("common.cancel")}

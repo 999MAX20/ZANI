@@ -316,7 +316,7 @@ Completion evidence (2026-07-24):
 
 #### X-101 — P1 Integration Gate
 
-Status: `DONE`  
+Status: `DONE`
 Owner: Manager  
 Depends on: F-101 and B-101 integrated
 
@@ -343,7 +343,7 @@ Completion evidence (2026-07-24):
 
 #### F-201 — Role-Aware Daily Workspaces
 
-Status: `IN_PROGRESS`  
+Status: `IN_PROGRESS`
 Owner: UI/UX  
 Depends on: X-101
 
@@ -357,7 +357,7 @@ operator and doctor routes require targeted desktop/mobile Playwright coverage.
 
 #### B-201 — Action Side-Effect Consistency
 
-Status: `IN_PROGRESS`  
+Status: `IN_PROGRESS`
 Owner: Features/Backend  
 Depends on: X-101
 

@@ -47,7 +47,7 @@ This file is the working reference for role-aware behavior in ZANI.
 - Support should receive notifications only for granted support sessions or platform incidents.
 - Notification preferences must be business-scoped and role-aware.
 - Assignment targets must be active same-business members and inside the caller's OWN/TEAM/BUSINESS scope.
-- Appointment `OWN` scope is derived from an active same-business `resource.linked_user`; a doctor or staff member may view the shared calendar but cannot mutate another linked user's appointment. CRM card `available_action_details` exposes this decision per record.
+- Appointment `OWN` scope is derived from an active same-business `resource.linked_user`; a doctor or staff member may view the shared calendar but cannot mutate another linked user's appointment. CRM card `available_action_details` exposes this decision per record, and appointment notes execute through `POST /api/appointments/{id}/add-note/` under the same exact-object `appointments:update` check.
 - Operators may self-claim eligible unassigned conversations/tasks; managers may redistribute work inside managed teams; owner/admin may assign across the business.
 - Temporarily unavailable members are not valid new assignment targets. Inbound assignment notifications use an available same-business fallback member when configured.
 - Unassigned and SLA-risk handoffs create manager attention notifications instead of silently remaining in a personal queue.

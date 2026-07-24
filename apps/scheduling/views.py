@@ -3,10 +3,12 @@ from datetime import datetime, time, timedelta
 from django.db import transaction
 from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
+from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
+from apps.activities.serializers import NoteSerializer
 from apps.businesses.access import Actions, Resources, assert_can
 from apps.core.crm_cards import appointment_crm_card
 from apps.core.idempotency import IdempotentCRMCreateMixin
@@ -24,6 +26,7 @@ from apps.scheduling.serializers import (
     WorkingHoursSerializer,
 )
 from apps.scheduling.services import (
+    add_appointment_note,
     apply_working_hours_preset,
     cancel_appointment,
     complete_appointment,
@@ -327,6 +330,21 @@ class AppointmentViewSet(IdempotentCRMCreateMixin, TenantModelViewSet):
         except ValueError as exc:
             raise ValidationError(str(exc)) from exc
         return Response(self.get_serializer(appointment).data)
+
+    @action(detail=True, methods=["post"], url_path="add-note")
+    def add_note(self, request, pk=None):
+        appointment = self.get_object()
+        assert_can(request.user, appointment.business, Resources.APPOINTMENTS, Actions.UPDATE, obj=appointment)
+        text = str(request.data.get("text") or "").strip()
+        if not text:
+            raise ValidationError({"text": "This field is required."})
+        note = add_appointment_note(
+            appointment=appointment,
+            actor=request.user,
+            text=text,
+            request=request,
+        )
+        return Response(NoteSerializer(note).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["post"])
     def reschedule(self, request, pk=None):

@@ -329,6 +329,8 @@ Update 2026-07-24: B-201 aligned pilot-critical mutation side effects across dir
 
 Update 2026-07-24: B-201 correction hardens the shared boundaries found during integration review. Inbox task/appointment creation now checks the target module capability after tenant-scoped conversation lookup and again in the creation service before mutation. Direct, automation, Inbox and approved-AI task creation commits the Task, activity, audit and routed notification atomically. Appointment `OWN` update scope now derives from an active same-business `resource.linked_user`, and existing CRM card `available_action_details` exposes the per-record result so doctor/staff clients can hide actions they cannot execute.
 
+Update 2026-07-24: B-201 appointment action contract correction makes the advertised `add_note` action executable under appointment `OWN` update scope. Appointment notes now use a tenant-scoped appointment action that applies the exact per-record permission decision, writes the note/activity/audit atomically, and leaves the generic client-note permission boundary unchanged.
+
 ### Outreach
 
 Update 2026-07-14: Outreach campaign cancellation is now service-backed. `POST /api/outreach/campaigns/{id}/cancel/` delegates to `apps.outreach.services.cancel_campaign`, which cancels queued/pending recipients, cancels pending outreach notifications, records campaign activity, writes an audit lifecycle row and emits a source-grounded `BusinessEvent` for `outreach.campaign_cancelled`. Tests cover owner happy path, non-outreach role denial and cross-tenant hidden access.

@@ -1,4 +1,5 @@
 from datetime import date, datetime, time, timedelta
+from unittest.mock import patch
 from zoneinfo import ZoneInfo
 
 from django.test import TestCase
@@ -6,7 +7,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.accounts.models import User
-from apps.activities.models import ActivityEvent
+from apps.activities.models import ActivityEvent, Note
 from apps.activities.taxonomy import ActivityEvents
 from apps.analytics.models import AnalyticsEvent
 from apps.businesses.models import Business, BusinessMember
@@ -1321,8 +1322,14 @@ class CorePlatformTests(TestCase):
         api.force_authenticate(doctor)
         before = self._business_side_effect_counts(self.business)
 
+        denied_note = api.post(
+            f"/api/appointments/{other_appointment.id}/add-note/",
+            {"text": "Must not be added"},
+            format="json",
+        )
         denied = api.post(f"/api/appointments/{other_appointment.id}/confirm/")
 
+        self.assertEqual(denied_note.status_code, 403)
         self.assertEqual(denied.status_code, 403)
         other_appointment.refresh_from_db()
         self.assertEqual(other_appointment.status, Appointment.Statuses.CREATED)
@@ -1354,8 +1361,14 @@ class CorePlatformTests(TestCase):
         api.force_authenticate(doctor)
         before = self._business_side_effect_counts(self.business)
 
+        note_response = api.post(
+            f"/api/appointments/{appointment.id}/add-note/",
+            {"text": "Must not be added"},
+            format="json",
+        )
         response = api.post(f"/api/appointments/{appointment.id}/confirm/")
 
+        self.assertEqual(note_response.status_code, 403)
         self.assertEqual(response.status_code, 403)
         appointment.refresh_from_db()
         self.assertEqual(appointment.status, Appointment.Statuses.CREATED)
@@ -1416,8 +1429,14 @@ class CorePlatformTests(TestCase):
         api.force_authenticate(doctor)
         before = self._business_side_effect_counts(other_business)
 
+        note_response = api.post(
+            f"/api/appointments/{hidden_appointment.id}/add-note/",
+            {"text": "Must stay hidden"},
+            format="json",
+        )
         response = api.post(f"/api/appointments/{hidden_appointment.id}/confirm/")
 
+        self.assertEqual(note_response.status_code, 404)
         self.assertEqual(response.status_code, 404)
         hidden_appointment.refresh_from_db()
         self.assertEqual(hidden_appointment.status, Appointment.Statuses.CREATED)
@@ -1437,9 +1456,70 @@ class CorePlatformTests(TestCase):
         other_actions = {item["id"]: item for item in other_response.data["available_action_details"]}
         self.assertTrue(own_actions["confirm"]["allowed"])
         self.assertEqual(own_actions["confirm"]["scope"], "own")
+        self.assertTrue(own_actions["add_note"]["allowed"])
+        self.assertEqual(own_actions["add_note"]["scope"], "own")
         self.assertFalse(other_actions["confirm"]["allowed"])
         self.assertEqual(other_actions["confirm"]["scope"], "own")
         self.assertIn("outside your permitted scope", other_actions["confirm"]["reason"])
+        self.assertFalse(other_actions["add_note"]["allowed"])
+        self.assertEqual(other_actions["add_note"]["scope"], "own")
+        self.assertIn("outside your permitted scope", other_actions["add_note"]["reason"])
+
+    def test_doctor_can_execute_advertised_add_note_for_own_appointment(self):
+        doctor, _, own_appointment, _ = self._doctor_appointment_scope_fixture()
+        api = APIClient()
+        api.force_authenticate(doctor)
+
+        card_response = api.get(f"/api/appointments/{own_appointment.id}/crm-card/")
+        actions = {item["id"]: item for item in card_response.data["available_action_details"]}
+        response = api.post(
+            f"/api/appointments/{own_appointment.id}/add-note/",
+            {"text": "Patient requested a follow-up call."},
+            format="json",
+        )
+
+        self.assertEqual(card_response.status_code, 200)
+        self.assertTrue(actions["add_note"]["allowed"])
+        self.assertEqual(response.status_code, 201, response.data)
+        note = Note.objects.get(pk=response.data["id"])
+        self.assertEqual(note.business, self.business)
+        self.assertEqual(note.client, own_appointment.client)
+        self.assertEqual(note.author, doctor)
+        self.assertEqual(note.entity_type, "Appointment")
+        self.assertEqual(note.entity_id, str(own_appointment.id))
+        activity = ActivityEvent.objects.get(
+            business=self.business,
+            event_type=ActivityEvents.NOTE_CREATED,
+            entity_type="Appointment",
+            entity_id=str(own_appointment.id),
+        )
+        self.assertEqual(activity.actor, doctor)
+        self.assertEqual(activity.metadata["note_id"], note.id)
+        audit = AuditLog.objects.get(
+            business=self.business,
+            action=AuditLog.Actions.CREATE,
+            entity_type="Note",
+            entity_id=str(note.id),
+        )
+        self.assertEqual(audit.actor, doctor)
+        self.assertEqual(audit.metadata["kind"], "appointment_note")
+        self.assertEqual(audit.metadata["appointment_id"], own_appointment.id)
+
+    def test_appointment_add_note_rolls_back_when_audit_fails(self):
+        doctor, _, own_appointment, _ = self._doctor_appointment_scope_fixture()
+        api = APIClient()
+        api.force_authenticate(doctor)
+        before = self._business_side_effect_counts(self.business)
+
+        with patch("apps.scheduling.services.write_audit_log", side_effect=RuntimeError("audit unavailable")):
+            with self.assertRaisesMessage(RuntimeError, "audit unavailable"):
+                api.post(
+                    f"/api/appointments/{own_appointment.id}/add-note/",
+                    {"text": "This note must roll back."},
+                    format="json",
+                )
+
+        self.assertEqual(self._business_side_effect_counts(self.business), before)
 
     def _doctor_appointment_scope_fixture(self):
         doctor = User.objects.create_user(
@@ -1503,6 +1583,7 @@ class CorePlatformTests(TestCase):
         return {
             "activity": ActivityEvent.objects.filter(business=business).count(),
             "audit": AuditLog.objects.filter(business=business).count(),
+            "notes": Note.objects.filter(business=business).count(),
             "notifications": Notification.objects.filter(business=business).count(),
             "tasks": Task.objects.filter(business=business).count(),
         }

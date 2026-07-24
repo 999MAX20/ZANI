@@ -69,6 +69,30 @@ infrastructure and do not block this local pre-pilot cycle:
 Agents may improve mocks, adapters, validation and failure states, but must not
 invent credentials or claim live readiness.
 
+### Product constraints confirmed on 2026-07-24
+
+This cycle hardens the existing CRM foundation. It must not expand into a new
+feature roadmap or a new industry-specific CRM architecture.
+
+- Keep one shared CRM domain and preserve the existing core entities: Lead,
+  Client, Deal, Task, Appointment and Conversation.
+- Do not globally rename or merge Lead and Appointment. A Lead remains an
+  inbound request or commercial interest; an Appointment remains a confirmed
+  booking for a concrete time and resource.
+- Do not remove the Deals domain, its data or its standard-CRM workflows.
+- Preserve the already implemented dentistry capability profile: it may use
+  `appointment_first` and disable Deals by default through the real backend and
+  frontend capability layer. Owners may re-enable Deals, and disabling the
+  module must never delete existing deal data.
+- Do not add more vertical hiding, terminology remapping or dentistry-specific
+  workflow changes during this cycle unless required to correct an existing
+  broken contract.
+- Prioritize completeness, correctness, permissions, tenant isolation,
+  lifecycle integrity, activity/audit, notifications, recoverability,
+  accessibility, performance and verification of existing workflows.
+- Findings that are genuinely new product features belong after the pilot and
+  must not be pulled into this execution queue.
+
 ## 4. Autonomous Operating Model
 
 ### Git topology
@@ -478,8 +502,27 @@ The manager must:
 7. use Playwright to inspect actual pages, components, dialogs, drawers,
    popovers and failure states;
 8. compare implemented mechanics against practical SMB CRM workflows;
-9. publish the next evidence-backed roadmap and a local readiness report
-   separating locally ready, known risks and external prerequisites.
+9. publish a complete work report covering every integrated phase and accepted
+   correction;
+10. audit the existing CRM foundation entity by entity and end to end:
+    Conversation/Inbox -> Lead -> Client -> Deal when enabled and/or
+    Appointment -> Task/follow-up -> activity/audit/notification -> operational
+    metrics;
+11. classify every material finding as:
+    verified locally ready, missing or defective existing CRM business logic,
+    non-blocking quality debt, external production prerequisite, or genuinely
+    new post-pilot feature;
+12. remediate missing or defective foundational CRM logic before declaring the
+    local cycle complete, then rerun the affected manager gate;
+13. publish a local readiness report separating locally ready behavior, known
+    non-blocking risks, external prerequisites and deferred new features.
+
+X-401 must not describe the CRM as locally complete while a pilot-critical gap
+remains in capture, qualification, ownership, conversion, pipeline progression,
+booking, follow-up, communication history, permissions, tenant isolation,
+activity/audit, notifications, recovery or reporting. This is a completeness
+gate for the existing product foundation, not authorization to invent new
+features.
 
 P4 completes the local product cycle. It does not claim production or paid-beta
 readiness and does not authorize a push to `main`.

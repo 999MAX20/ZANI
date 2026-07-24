@@ -2,6 +2,7 @@ from django.utils import timezone
 
 from apps.bots.models import BotConversation
 from apps.businesses.access import Actions, Resources, can, scope_queryset
+from apps.businesses.capabilities import resource_is_enabled
 from apps.core.work_queues import (
     no_next_action_deals_queryset,
     overdue_handoff_conversations_queryset,
@@ -120,8 +121,12 @@ def _stale_lead_actions(*, business, user, limit, now, sources_by_id, sections):
 
 
 def _overdue_task_actions(*, business, user, limit, now, sources_by_id, sections):
+    deals_enabled = resource_is_enabled(business, Resources.DEALS)
+    related = ["client", "lead", "assignee"]
+    if deals_enabled:
+        related.append("deal")
     queryset = scope_queryset(
-        Task.objects.filter(business=business, is_archived=False).select_related("client", "lead", "deal", "assignee"),
+        Task.objects.filter(business=business, is_archived=False).select_related(*related),
         user,
         business,
         Resources.TASKS,
@@ -132,7 +137,7 @@ def _overdue_task_actions(*, business, user, limit, now, sources_by_id, sections
     _set_section(sections, "overdue_tasks", overdue_tasks.count(), [_source_id("TASK", item.id) for item in items])
     actions = []
     for task in items:
-        source = _task_source(task, now=now)
+        source = _task_source(task, now=now, include_deal=deals_enabled)
         sources_by_id[source["id"]] = source
         overdue_minutes = source["metadata"].get("overdue_minutes") or 0
         priority = "high" if task.priority in {Task.Priorities.HIGH, Task.Priorities.URGENT} or overdue_minutes >= 1440 else "medium"
@@ -151,7 +156,7 @@ def _overdue_task_actions(*, business, user, limit, now, sources_by_id, sections
 
 def _unanswered_conversation_actions(*, business, user, limit, now, sources_by_id, sections):
     queryset = scope_queryset(
-        BotConversation.objects.filter(business=business, is_archived=False).select_related("client", "lead", "deal", "assigned_to", "bot"),
+        BotConversation.objects.filter(business=business, is_archived=False).select_related("client", "lead", "assigned_to", "bot"),
         user,
         business,
         Resources.CONVERSATIONS,
@@ -183,6 +188,9 @@ def _unanswered_conversation_actions(*, business, user, limit, now, sources_by_i
 
 
 def _stalled_deal_actions(*, business, user, limit, now, sources_by_id, sections):
+    if not resource_is_enabled(business, Resources.DEALS):
+        _set_section(sections, "stalled_deals", 0, [])
+        return []
     queryset = scope_queryset(
         Deal.objects.filter(business=business, status=Deal.Statuses.OPEN, is_archived=False).select_related("client", "stage", "owner"),
         user,
@@ -330,8 +338,18 @@ def _lead_source(lead, *, now):
     )
 
 
-def _task_source(task, *, now):
+def _task_source(task, *, now, include_deal=True):
     overdue_minutes = _minutes_since(task.due_at, now=now) if task.due_at else 0
+    metadata = {
+        "status": task.status,
+        "priority": task.priority,
+        "assignee_id": task.assignee_id,
+        "client_id": task.client_id,
+        "lead_id": task.lead_id,
+        "overdue_minutes": overdue_minutes,
+    }
+    if include_deal:
+        metadata["deal_id"] = task.deal_id
     return _source(
         prefix="TASK",
         entity_type="task",
@@ -340,15 +358,7 @@ def _task_source(task, *, now):
         summary=f"{task.title}; priority {task.priority}; status {task.status}.",
         href=f"/app/tasks?task={task.id}",
         occurred_at=task.due_at or task.updated_at,
-        metadata={
-            "status": task.status,
-            "priority": task.priority,
-            "assignee_id": task.assignee_id,
-            "client_id": task.client_id,
-            "lead_id": task.lead_id,
-            "deal_id": task.deal_id,
-            "overdue_minutes": overdue_minutes,
-        },
+        metadata=metadata,
     )
 
 

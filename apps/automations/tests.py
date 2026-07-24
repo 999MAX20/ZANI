@@ -5,11 +5,12 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.accounts.models import User
-from apps.activities.models import Note
+from apps.activities.models import ActivityEvent, Note
 from apps.automations.engine import process_automation_run, run_automations_for_event, run_task_overdue_automations
 from apps.automations.models import AutomationAction, AutomationRule, AutomationRun
 from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
-from apps.businesses.models import Business, BusinessMember
+from apps.businesses.capabilities import apply_business_type_defaults
+from apps.businesses.models import Business, BusinessCapability, BusinessMember
 from apps.clients.models import Client
 from apps.crm.models import Deal, Pipeline, PipelineStage
 from apps.crm.services import move_deal_stage
@@ -440,6 +441,74 @@ class AutomationFoundationTests(TestCase):
         self.assertEqual(run.current_action_index, 1)
         self.assertIsNotNone(run.run_after)
         self.assertFalse(Task.objects.filter(business=self.business, title="Delayed follow up").exists())
+
+    def test_delayed_deal_automation_stops_without_side_effects_when_deals_are_disabled(self):
+        apply_business_type_defaults(self.business, configured_by=self.owner)
+        rule = self._rule(
+            AutomationRule.TriggerTypes.DEAL_STAGE_CHANGED,
+            [
+                {
+                    "action_type": AutomationAction.ActionTypes.WAIT,
+                    "delay_seconds": 300,
+                    "config": {},
+                },
+                {
+                    "action_type": AutomationAction.ActionTypes.ADD_NOTE,
+                    "config": {"text": "Must not be written after Deals are disabled"},
+                },
+            ],
+        )
+        pipeline = Pipeline.objects.create(business=self.business, name="Delayed sales", slug="delayed-sales")
+        stage = PipelineStage.objects.create(business=self.business, pipeline=pipeline, name="New", order=1)
+        deal = Deal.objects.create(
+            business=self.business,
+            client=self.client,
+            pipeline=pipeline,
+            stage=stage,
+            title="Delayed guarded deal",
+            owner=self.owner,
+        )
+
+        run = run_automations_for_event(
+            business=self.business,
+            trigger_type=AutomationRule.TriggerTypes.DEAL_STAGE_CHANGED,
+            entity=deal,
+            payload={"trigger_type": AutomationRule.TriggerTypes.DEAL_STAGE_CHANGED},
+        )[0]
+        run.refresh_from_db()
+        self.assertEqual(run.rule, rule)
+        self.assertEqual(run.status, AutomationRun.Statuses.WAITING)
+        self.assertEqual(run.current_action_index, 1)
+
+        capability = BusinessCapability.objects.get(business=self.business, module_key="deals")
+        capability.is_enabled = False
+        capability.save(update_fields=["is_enabled", "updated_at"])
+        if hasattr(self.business, "_capability_map"):
+            del self.business._capability_map
+        run.run_after = timezone.now() - timezone.timedelta(seconds=1)
+        run.save(update_fields=["run_after"])
+        before = {
+            "notes": Note.objects.filter(business=self.business).count(),
+            "activity": ActivityEvent.objects.filter(business=self.business).count(),
+            "notifications": Notification.objects.filter(business=self.business).count(),
+            "tasks": Task.objects.filter(business=self.business).count(),
+        }
+
+        processed = process_automation_run(run.id)
+
+        processed.refresh_from_db()
+        self.assertEqual(processed.status, AutomationRun.Statuses.FAILED)
+        self.assertIn("disabled", processed.error.lower())
+        self.assertIsNone(processed.next_retry_at)
+        self.assertEqual(
+            {
+                "notes": Note.objects.filter(business=self.business).count(),
+                "activity": ActivityEvent.objects.filter(business=self.business).count(),
+                "notifications": Notification.objects.filter(business=self.business).count(),
+                "tasks": Task.objects.filter(business=self.business).count(),
+            },
+            before,
+        )
 
     def test_failed_automation_can_be_retried_from_api(self):
         rule = self._rule(

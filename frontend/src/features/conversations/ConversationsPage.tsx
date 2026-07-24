@@ -155,6 +155,12 @@ export function ConversationsPage() {
     "ai_pipeline",
     "execute",
   );
+  const canViewIntegrations = hasPermission(
+    user,
+    business?.id,
+    "integrations",
+    "view",
+  );
 
   useEffect(() => {
     if (!routeSelectedId || routeSelectedId === selectedId) return;
@@ -313,10 +319,15 @@ export function ConversationsPage() {
 
   useEffect(() => {
     if (selectedId || conversations.isLoading || !items.length) return;
+    const slaOverdue = sortedItems.find(
+      (item) => item.sla_overdue || (item.sla_overdue_minutes || 0) > 0,
+    );
+    const handoff = sortedItems.find((item) => item.handoff_required);
     const unread = sortedItems.find((item) => (item.unread_count || 0) > 0);
     const priority =
+      slaOverdue ||
+      handoff ||
       unread ||
-      sortedItems.find((item) => item.handoff_required) ||
       sortedItems[0];
     if (!priority) return;
     setSelectedId(priority.id);
@@ -1050,6 +1061,9 @@ export function ConversationsPage() {
     conversations.error ||
     selectedConversation.error ||
     messages.error;
+  const unavailableChannelCount = (summary.data?.channels || []).filter(
+    (channel) => !channel.is_connected && channel.total > 0,
+  ).length;
   function sendReply() {
     const text = draft.trim();
     if (!selected || !text) return;
@@ -1200,15 +1214,38 @@ export function ConversationsPage() {
     );
   }
 
+  if (pageError) {
+    return (
+      <div data-testid="inbox-error-state">
+        <ErrorState
+          message={getApiErrorMessage(pageError)}
+          action={
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                void Promise.all([
+                  summary.refetch(),
+                  conversations.refetch(),
+                  selectedConversation.refetch(),
+                  messages.refetch(),
+                ]);
+              }}
+            >
+              {t("common.retry")}
+            </Button>
+          }
+        />
+      </div>
+    );
+  }
+
   return (
     <div
       className="-mx-2 overflow-hidden sm:-mx-3 lg:-mx-4"
       style={{ height: `calc(100dvh - ${CONVERSATIONS_SHELL_OFFSET}px)` }}
     >
-      {pageError ? (
-        <ErrorState message={getApiErrorMessage(pageError)} />
-      ) : null}
-
       <WorkQueueLayout
         style={{ height: "100%", minHeight: 0 }}
         className={cn(
@@ -1248,6 +1285,22 @@ export function ConversationsPage() {
           bulkPending={bulkMutation.isPending}
           onToggleBulkId={toggleBulkId}
           onSelectConversation={selectConversation}
+          onRetryLastMessage={(conversation) => {
+            const messageId = conversation.last_message?.id;
+            if (!messageId) return;
+            retryMessageMutation.mutate({
+              conversationId: conversation.id,
+              messageId,
+            });
+          }}
+          retryingMessageId={
+            retryMessageMutation.isPending
+              ? Number(retryMessageMutation.variables?.messageId || 0)
+              : null
+          }
+          priorityActions={summary.data?.next_actions || []}
+          unavailableChannelCount={unavailableChannelCount}
+          canViewIntegrations={canViewIntegrations}
           t={t}
         />
 

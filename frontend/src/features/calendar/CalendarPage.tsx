@@ -18,10 +18,11 @@ import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { Modal } from "../../components/ui/Modal";
 import { StatusBadge } from "../../components/ui/StatusBadge";
-import { ErrorState, LoadingState } from "../../components/ui/StateViews";
+import { EmptyState, ErrorState, LoadingState } from "../../components/ui/StateViews";
 import { cn } from "../../lib/cn";
 import { dateInTimeZone, todayInTimeZone } from "../../lib/format";
 import { useI18n } from "../../lib/i18n";
+import { hasPermission } from "../../lib/permissions";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useEntityData } from "../../hooks/useEntityData";
 import type { Appointment, Task } from "../../types";
@@ -66,6 +67,7 @@ import {
 } from "./components/CalendarFilters";
 import { CalendarToolbar } from "./components/CalendarToolbar";
 import { MonthInspectorPanel } from "./components/MonthInspectorPanel";
+import { useAuth } from "../auth/AuthProvider";
 
 export function CalendarPage() {
   const { t, language } = useI18n();
@@ -74,6 +76,26 @@ export function CalendarPage() {
   const { notifyError } = useActionFeedback();
   const { setPageHeader } = usePageHeader();
   const { business } = useActiveBusiness();
+  const { user } = useAuth();
+  const canCreateAppointment = hasPermission(
+    user,
+    business?.id,
+    "appointments",
+    "create",
+  );
+  const canUpdateAppointment = hasPermission(
+    user,
+    business?.id,
+    "appointments",
+    "update",
+  );
+  const canManageWorkingHours = hasPermission(
+    user,
+    business?.id,
+    "settings",
+    "update",
+  );
+  const canViewTasks = hasPermission(user, business?.id, "tasks", "view");
   const { clients, services, resources, leads, workingHours, tasks } =
     useEntityData({
       clients: true,
@@ -362,14 +384,16 @@ export function CalendarPage() {
   useEffect(() => {
     setPageHeader({
       title: t("nav.calendar"),
-      primaryAction: {
-        label: t("calendar.newBooking"),
-        icon: Plus,
-        onClick: () => openBookingForDate(date),
-      },
+      primaryAction: canCreateAppointment
+        ? {
+            label: t("calendar.newBooking"),
+            icon: Plus,
+            onClick: () => openBookingForDate(date),
+          }
+        : undefined,
     });
     return () => setPageHeader(null);
-  }, [date, setPageHeader, t]);
+  }, [canCreateAppointment, date, setPageHeader, t]);
 
   if (!business) return <ErrorState message={t("calendar.noBusiness")} />;
 
@@ -386,7 +410,46 @@ export function CalendarPage() {
     services.isLoading ||
     resources.isLoading ||
     leads.isLoading ||
-    workingHours.isLoading;
+    workingHours.isLoading ||
+    tasks.isLoading;
+  const calendarDataError =
+    appointments.error ||
+    deepLinkedAppointment.error ||
+    clients.error ||
+    services.error ||
+    resources.error ||
+    leads.error ||
+    workingHours.error ||
+    tasks.error;
+  if (calendarDataError) {
+    return (
+      <div data-testid="calendar-error-state">
+        <ErrorState
+          message={getApiErrorMessage(calendarDataError)}
+          action={
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                void Promise.all([
+                  appointments.refetch(),
+                  clients.refetch(),
+                  services.refetch(),
+                  resources.refetch(),
+                  leads.refetch(),
+                  workingHours.refetch(),
+                  tasks.refetch(),
+                ]);
+              }}
+            >
+              {t("common.retry")}
+            </Button>
+          }
+        />
+      </div>
+    );
+  }
   const locale = localeByLanguage[language];
   const businessTimeZone = normalizeTimeZone(
     business.timezone || "Asia/Almaty",
@@ -536,6 +599,7 @@ export function CalendarPage() {
   }
 
   function getAllowedStatusActions(appointment: Appointment) {
+    if (!canUpdateAppointment) return [] as Appointment["status"][];
     if (
       appointment.status === "created" ||
       appointment.status === "rescheduled"
@@ -547,7 +611,10 @@ export function CalendarPage() {
   }
 
   function canRescheduleAppointment(appointment: Appointment) {
-    return !["completed", "cancelled", "no_show"].includes(appointment.status);
+    return (
+      canUpdateAppointment &&
+      !["completed", "cancelled", "no_show"].includes(appointment.status)
+    );
   }
 
   function openRepeatBooking(appointment: Appointment) {
@@ -563,7 +630,10 @@ export function CalendarPage() {
   }
 
   function shouldShowRepeatBooking(appointment: Appointment) {
-    return ["completed", "cancelled", "no_show"].includes(appointment.status);
+    return (
+      canCreateAppointment &&
+      ["completed", "cancelled", "no_show"].includes(appointment.status)
+    );
   }
 
   const serviceFilterOptions = serviceItems.map((service) => ({
@@ -676,20 +746,31 @@ export function CalendarPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-2 border-b border-zani-border p-3">
-            <Button
-              type="button"
-              className="w-full"
-              onClick={() => openBookingForDate(date)}
-            >
-              <Plus size={16} />
-              {t("calendar.newBooking")}
-            </Button>
-            <Link
-              className="inline-flex min-h-10 items-center justify-center rounded-control border border-zani-border bg-zani-card px-3 py-2 text-xs font-bold text-zani-text hover:bg-surface-hover"
-              to="/app/working-hours"
-            >
-              {t("appointment.openHours")}
-            </Link>
+            {canCreateAppointment ? (
+              <Button
+                type="button"
+                className="w-full"
+                onClick={() => openBookingForDate(date)}
+              >
+                <Plus size={16} />
+                {t("calendar.newBooking")}
+              </Button>
+            ) : null}
+            {canManageWorkingHours ? (
+              <Link
+                className="inline-flex min-h-10 items-center justify-center rounded-control border border-zani-border bg-zani-card px-3 py-2 text-xs font-bold text-zani-text hover:bg-surface-hover"
+                to="/app/working-hours"
+              >
+                {t("appointment.openHours")}
+              </Link>
+            ) : canViewTasks ? (
+              <Link
+                className="inline-flex min-h-10 items-center justify-center rounded-control border border-zani-border bg-zani-card px-3 py-2 text-xs font-bold text-zani-text hover:bg-surface-hover"
+                to="/app/tasks?tab=today"
+              >
+                {t("calendar.openTodayTasks")}
+              </Link>
+            ) : null}
           </div>
 
           <div className="divide-y divide-zani-border">
@@ -718,14 +799,34 @@ export function CalendarPage() {
                 t={t}
               />
             ))}
-            {!dayAppointments.length && !dayTasks.length ? (
-              <button
-                type="button"
-                className="w-full px-4 py-5 text-left text-sm font-bold leading-6 text-zani-muted transition hover:bg-brand-50 hover:text-brand-700"
-                onClick={() => openBookingForDate(date)}
-              >
-                {t("calendar.freeDayHint")}
-              </button>
+            {!isCalendarDataLoading &&
+            !dayAppointments.length &&
+            !dayTasks.length ? (
+              <div className="p-4">
+                <EmptyState
+                  title={t("calendar.emptyDayTitle")}
+                  description={t("calendar.emptyDayText")}
+                  action={
+                    canCreateAppointment ? (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => openBookingForDate(date)}
+                      >
+                        <Plus size={16} />
+                        {t("calendar.newBooking")}
+                      </Button>
+                    ) : canViewTasks ? (
+                      <Link
+                        className="text-sm font-bold text-brand-700"
+                        to="/app/tasks?tab=today"
+                      >
+                        {t("calendar.openTodayTasks")}
+                      </Link>
+                    ) : undefined
+                  }
+                />
+              </div>
             ) : null}
           </div>
         </div>

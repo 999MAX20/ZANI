@@ -45,6 +45,15 @@ export function DashboardPage() {
     "ai_assistant",
     "view",
   );
+  const dailyAccess = {
+    leads: hasPermission(user, business?.id, "leads", "view"),
+    clients: hasPermission(user, business?.id, "clients", "view"),
+    appointments: hasPermission(user, business?.id, "appointments", "view"),
+    tasks: hasPermission(user, business?.id, "tasks", "view"),
+    conversations: hasPermission(user, business?.id, "conversations", "view"),
+    deals: hasPermission(user, business?.id, "deals", "view"),
+    integrations: hasPermission(user, business?.id, "integrations", "view"),
+  };
   const metrics = useQuery({
     queryKey: ["owner-dashboard", business?.id],
     queryFn: () => analyticsApi.ownerDashboard(business?.id),
@@ -152,10 +161,17 @@ export function DashboardPage() {
         services={serviceList}
         tasks={taskList}
         workQueues={workQueues.data}
+        workQueuesError={workQueues.error}
+        isWorkQueuesLoading={workQueues.isLoading}
+        retryWorkQueues={() => void workQueues.refetch()}
         ownerBrief={ownerBrief.data}
         ownerBriefError={ownerBrief.error}
         isOwnerBriefLoading={ownerBrief.isLoading}
         canViewAiAnalyst={canViewAiAnalyst}
+        canViewAiAssistant={canViewAiAssistant}
+        canViewConversations={dailyAccess.conversations}
+        canViewDeals={dailyAccess.deals}
+        canViewIntegrations={dailyAccess.integrations}
         aiStatus={aiStatus.data}
       />
     );
@@ -174,6 +190,11 @@ export function DashboardPage() {
       overdueTasks={overdueTasks}
       isCoreDataLoading={isCoreDataLoading}
       workQueues={workQueues.data}
+      workQueuesError={workQueues.error}
+      isWorkQueuesLoading={workQueues.isLoading}
+      retryWorkQueues={() => void workQueues.refetch()}
+      role={businessRole}
+      access={dailyAccess}
     />
   );
 }

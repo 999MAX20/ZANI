@@ -14,6 +14,8 @@ export function useTaskQueries({
   taskWorkloadParams,
   taskOrdering,
   businessId,
+  includeTeamData,
+  includeTemplates,
 }: {
   selectedTask: Task | null;
   taskIdParam: number;
@@ -22,6 +24,8 @@ export function useTaskQueries({
   taskWorkloadParams: TaskListParams;
   taskOrdering: string;
   businessId: number;
+  includeTeamData: boolean;
+  includeTemplates: boolean;
 }) {
   const selectedTaskQuery = useQuery({
     queryKey: ["task", taskIdParam],
@@ -57,18 +61,19 @@ export function useTaskQueries({
   const taskWorkload = useQuery({
     queryKey: ["tasks-workload", businessId, taskWorkloadParams],
     queryFn: () => tasksApi.workload({ ...taskWorkloadParams, business: businessId }),
-    enabled: Boolean(businessId),
+    enabled: Boolean(businessId && includeTeamData),
   });
 
   const teamMembers = useQuery({
     queryKey: ["team-members"],
     queryFn: teamApi.members,
+    enabled: includeTeamData,
   });
 
   const taskTemplates = useQuery({
     queryKey: ["task-templates", businessId],
     queryFn: () => tasksApi.templates({ business: businessId }),
-    enabled: Boolean(businessId),
+    enabled: Boolean(businessId && includeTemplates),
   });
 
   const loadedTasks = useMemo(() => tasksQuery.data?.pages.flatMap((page) => page.results) || [], [tasksQuery.data]);

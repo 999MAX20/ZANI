@@ -7,9 +7,9 @@ import { toDateTimeLocal } from "../taskFormUtils";
 
 const TASK_ORDERING = "smart";
 
-export function useTaskFilters() {
+export function useTaskFilters(defaultTab: TaskTabFilter = "team") {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [tabFilter, setTabFilter] = useState<TaskTabFilter>(() => normalizeTaskTab(searchParams.get("tab")));
+  const [tabFilter, setTabFilter] = useState<TaskTabFilter>(() => normalizeTaskTab(searchParams.get("tab"), defaultTab));
   const [statusFilter, setStatusFilter] = useState(() => searchParams.get("status") || "all");
   const [priorityFilter, setPriorityFilter] = useState(() => searchParams.get("priority") || "");
   const [assigneeFilter, setAssigneeFilter] = useState(() => searchParams.get("assignee") || "");
@@ -113,8 +113,8 @@ export function useTaskFilters() {
   };
 }
 
-function normalizeTaskTab(value: string | null): TaskTabFilter {
-  return value === "my" || value === "today" || value === "overdue" || value === "team" ? value : "team";
+function normalizeTaskTab(value: string | null, fallback: TaskTabFilter): TaskTabFilter {
+  return value === "my" || value === "today" || value === "overdue" || value === "team" ? value : fallback;
 }
 
 function setOrDelete(params: URLSearchParams, key: string, value: string) {

@@ -340,9 +340,19 @@ def scope_queryset(queryset, user, business: Business | None, resource: str, act
         team_user_ids = _team_user_ids_for(user, business)
         if not team_user_ids:
             team_user_ids = [user.id]
-        return _filter_queryset_by_users(queryset, team_user_ids, include_business_wide_notifications=False)
+        return _filter_queryset_by_users(
+            queryset,
+            team_user_ids,
+            business=business,
+            include_business_wide_notifications=False,
+        )
     if result.scope == RolePermission.Scopes.OWN:
-        return _filter_queryset_by_users(queryset, [user.id], include_business_wide_notifications=True)
+        return _filter_queryset_by_users(
+            queryset,
+            [user.id],
+            business=business,
+            include_business_wide_notifications=True,
+        )
     return queryset
 
 
@@ -364,8 +374,17 @@ def _object_matches_scope(obj, user, business: Business | None, scope: str, acti
         for field in OWNERSHIP_FIELDS
         if field in model_fields
     }
+    appointment_linked_user_id = _appointment_linked_user_id(obj, business)
+    if appointment_linked_user_id is not None:
+        object_user_ids.add(appointment_linked_user_id)
     object_user_ids.discard(None)
 
+    if (
+        obj.__class__.__name__ == "Appointment"
+        and scope in {RolePermission.Scopes.OWN, RolePermission.Scopes.TEAM}
+        and not object_user_ids
+    ):
+        return False
     if not object_user_ids and action == Actions.UPDATE:
         return True
 
@@ -385,6 +404,23 @@ def _object_business_id(obj):
         related = getattr(obj, relation_name, None)
         if related is not None and hasattr(related, "business_id"):
             return related.business_id
+    return None
+
+
+def _appointment_linked_user_id(obj, business: Business | None):
+    if obj.__class__.__name__ != "Appointment" or business is None:
+        return None
+    resource = getattr(obj, "resource", None)
+    if (
+        resource is None
+        or resource.business_id != business.id
+        or resource.linked_user_id is None
+    ):
+        return None
+    if resource.linked_user_id == business.owner_id:
+        return resource.linked_user_id
+    if business.members.filter(user_id=resource.linked_user_id, is_active=True).exists():
+        return resource.linked_user_id
     return None
 
 
@@ -412,12 +448,31 @@ def team_user_ids_for(user, business: Business | None):
     return _team_user_ids_for(user, business)
 
 
-def _filter_queryset_by_users(queryset, user_ids, *, include_business_wide_notifications: bool):
+def _filter_queryset_by_users(
+    queryset,
+    user_ids,
+    *,
+    business: Business | None,
+    include_business_wide_notifications: bool,
+):
     model_fields = {field.name for field in queryset.model._meta.get_fields()}
     query = Q()
     for field in OWNERSHIP_FIELDS:
         if field in model_fields:
             query |= Q(**{f"{field}_id__in": user_ids})
+    if queryset.model.__name__ == "Appointment" and business is not None:
+        active_link = Q(
+            resource__linked_user__business_memberships__business=business,
+            resource__linked_user__business_memberships__is_active=True,
+        )
+        owner_link = Q(resource__linked_user_id=business.owner_id)
+        query |= (
+            Q(
+                resource__business=business,
+                resource__linked_user_id__in=user_ids,
+            )
+            & (active_link | owner_link)
+        )
     if "recipient" in model_fields:
         query |= Q(recipient_id__in=user_ids)
         if include_business_wide_notifications:

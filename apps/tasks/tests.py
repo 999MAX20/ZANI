@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from unittest.mock import patch
 from zoneinfo import ZoneInfo
 
 from django.test import TestCase
@@ -18,7 +19,7 @@ from apps.notifications.models import Notification, NotificationPreference
 from apps.scheduling.models import Appointment
 from apps.services.models import Service
 from apps.tasks.models import Task, TaskComment
-from apps.tasks.services import create_task_notification
+from apps.tasks.services import create_automation_task, create_task_notification
 
 
 class TasksAndNotificationsPolishTests(TestCase):
@@ -140,6 +141,137 @@ class TasksAndNotificationsPolishTests(TestCase):
             ).count(),
             1,
         )
+
+    def test_direct_task_create_rolls_back_entity_activity_audit_and_notification(self):
+        self.api.force_authenticate(self.owner)
+        payload = {
+            "business": self.business.id,
+            "title": "Rollback direct task",
+            "client": self.client.id,
+            "assignee": self.owner.id,
+        }
+
+        with patch(
+            "apps.tasks.services.Notification.objects.bulk_create",
+            side_effect=RuntimeError("injected notification failure"),
+        ):
+            with self.assertRaises(RuntimeError):
+                self.api.post("/api/tasks/", payload, format="json")
+
+        self.assertFalse(Task.objects.filter(business=self.business, title=payload["title"]).exists())
+        self.assertFalse(
+            ActivityEvent.objects.filter(
+                business=self.business,
+                event_type=ActivityEvents.TASK_CREATED,
+                text__contains=payload["title"],
+            ).exists()
+        )
+        self.assertFalse(
+            AuditLog.objects.filter(
+                business=self.business,
+                entity_type="Task",
+                action=AuditLog.Actions.CREATE,
+            ).exists()
+        )
+        self.assertFalse(
+            Notification.objects.filter(
+                business=self.business,
+                category=Notification.Categories.TASKS,
+                text__contains=payload["title"],
+            ).exists()
+        )
+
+    def test_direct_task_create_can_retry_same_idempotency_key_after_notification_rollback(self):
+        self.api.force_authenticate(self.owner)
+        payload = {
+            "business": self.business.id,
+            "title": "Retry direct task after rollback",
+            "client": self.client.id,
+            "assignee": self.owner.id,
+        }
+        headers = {"HTTP_IDEMPOTENCY_KEY": "direct-task-notification-retry"}
+
+        with patch(
+            "apps.tasks.services.Notification.objects.bulk_create",
+            side_effect=RuntimeError("injected notification failure"),
+        ):
+            with self.assertRaises(RuntimeError):
+                self.api.post("/api/tasks/", payload, format="json", **headers)
+
+        retry = self.api.post("/api/tasks/", payload, format="json", **headers)
+
+        self.assertEqual(retry.status_code, 201, retry.data)
+        task = Task.objects.get(id=retry.data["id"])
+        self.assertEqual(Task.objects.filter(business=self.business, title=payload["title"]).count(), 1)
+        self.assertEqual(
+            ActivityEvent.objects.filter(
+                business=self.business,
+                entity_type="Task",
+                entity_id=str(task.id),
+                event_type=ActivityEvents.TASK_CREATED,
+            ).count(),
+            1,
+        )
+        self.assertEqual(
+            AuditLog.objects.filter(
+                business=self.business,
+                entity_type="Task",
+                entity_id=str(task.id),
+                action=AuditLog.Actions.CREATE,
+            ).count(),
+            1,
+        )
+        self.assertEqual(
+            Notification.objects.filter(
+                business=self.business,
+                category=Notification.Categories.TASKS,
+                action_url=f"/app/tasks?task={task.id}",
+            ).count(),
+            1,
+        )
+
+    def test_shared_automation_and_ai_task_creation_rolls_back_on_notification_failure(self):
+        for source, actor in (("automation", None), ("ai", self.owner)):
+            title = f"Rollback {source} task"
+            with self.subTest(source=source):
+                with patch(
+                    "apps.tasks.services.Notification.objects.bulk_create",
+                    side_effect=RuntimeError("injected notification failure"),
+                ):
+                    with self.assertRaises(RuntimeError):
+                        create_automation_task(
+                            business=self.business,
+                            title=title,
+                            entity=self.conversation,
+                            actor=actor,
+                            assignee=self.owner,
+                            source=source,
+                            source_payload={"trigger_type": f"{source}_rollback_test"},
+                        )
+
+                self.assertFalse(Task.objects.filter(business=self.business, title=title).exists())
+                self.assertFalse(
+                    ActivityEvent.objects.filter(
+                        business=self.business,
+                        event_type=ActivityEvents.TASK_CREATED,
+                        text__contains=title,
+                    ).exists()
+                )
+                self.assertFalse(
+                    AuditLog.objects.filter(
+                        business=self.business,
+                        entity_type="Task",
+                        action=AuditLog.Actions.CREATE,
+                        metadata__source=source,
+                    ).exists()
+                )
+                self.assertFalse(
+                    Notification.objects.filter(
+                        business=self.business,
+                        category=Notification.Categories.TASKS,
+                        text__contains=title,
+                    ).exists()
+                )
 
     def test_task_api_rejects_nonblank_recurrence_rule(self):
         self.api.force_authenticate(self.owner)

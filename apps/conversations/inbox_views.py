@@ -277,6 +277,7 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
     @action(detail=True, methods=["post"], url_path="create-task")
     def create_task(self, request, pk=None):
         conversation = self.get_object()
+        assert_resource_enabled(conversation.business, Resources.TASKS)
         assert_can(request.user, conversation.business, Resources.TASKS, Actions.CREATE)
         serializer = InboxCreateTaskSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -309,6 +310,7 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
     @action(detail=True, methods=["post"], url_path="create-appointment")
     def create_appointment(self, request, pk=None):
         conversation = self.get_object()
+        assert_resource_enabled(conversation.business, Resources.APPOINTMENTS)
         assert_can(request.user, conversation.business, Resources.APPOINTMENTS, Actions.CREATE)
         assert_can(request.user, conversation.business, Resources.CONVERSATIONS, Actions.UPDATE, obj=conversation)
         serializer = InboxCreateAppointmentSerializer(data=request.data)

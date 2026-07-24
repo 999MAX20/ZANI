@@ -128,7 +128,9 @@ Cancel is available for pending, running and failed runs. It is gated by `automa
 All mutating CRM actions call domain services/helpers:
 
 - tasks and follow-ups use task service creation with business/member validation,
-  taxonomy activity, sanitized entity audit and routed notification output;
+  capability enforcement, taxonomy activity, sanitized entity audit and routed
+  notification output in one transaction, so notification failure rolls back
+  the task and its timeline/audit rows;
 - notifications use role-aware notification routing;
 - user assignment validates active business membership before changing ownership/assignee fields;
 - notes use the activity timeline service and same-business entity resolution.

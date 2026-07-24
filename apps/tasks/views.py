@@ -251,12 +251,13 @@ class TaskViewSet(IdempotentCRMCreateMixin, TenantModelViewSet):
         return queryset.order_by(*ordering_map[ordering])
 
     def perform_create(self, serializer):
-        serializer.validated_data.setdefault("created_by", self.request.user)
-        super().perform_create(serializer)
-        create_task_notification(
-            serializer.instance,
-            f"New task: {serializer.instance.title}",
-        )
+        with transaction.atomic():
+            serializer.validated_data.setdefault("created_by", self.request.user)
+            super().perform_create(serializer)
+            create_task_notification(
+                serializer.instance,
+                f"New task: {serializer.instance.title}",
+            )
 
     @action(detail=True, methods=["patch"], url_path="update-details")
     def update_details(self, request, pk=None):

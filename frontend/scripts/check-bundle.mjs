@@ -2,7 +2,9 @@ import fs from "node:fs";
 import path from "node:path";
 import zlib from "node:zlib";
 
-const assetsDir = path.resolve("dist/assets");
+const assetsDir = path.resolve(
+  process.env.BUNDLE_ASSETS_DIR || "dist/assets",
+);
 const warningLimitKb = 500;
 const appShellLimitKb = 400;
 
@@ -31,10 +33,8 @@ const chunks = fs
 
 const largest = chunks.slice(0, 12);
 const oversized = chunks.filter((chunk) => chunk.size > warningLimitKb * 1024);
-const oversizedAppShell = chunks.filter(
-  (chunk) =>
-    chunk.file.startsWith("app-shell-") &&
-    chunk.size > appShellLimitKb * 1024,
+const appShellChunks = chunks.filter((chunk) =>
+  chunk.file.startsWith("app-shell-"),
 );
 
 console.log("Largest JS chunks after production build:");
@@ -51,18 +51,28 @@ if (oversized.length) {
   console.log(`Bundle check OK: no JS chunks exceed ${warningLimitKb} kB before gzip.`);
 }
 
-if (oversizedAppShell.length) {
+if (appShellChunks.length !== 1) {
   console.error(
-    `App shell budget failed: ${oversizedAppShell.length} chunk(s) exceed ${appShellLimitKb} kB before gzip.`,
+    `App shell budget failed: expected exactly one app-shell-* JS chunk, found ${appShellChunks.length}.`,
   );
-  for (const chunk of oversizedAppShell) {
+  for (const chunk of appShellChunks) {
     console.error(
       `- ${chunk.file}: ${formatKb(chunk.size)} / gzip ${formatKb(chunk.gzipSize)}`,
     );
   }
   process.exitCode = 1;
+} else if (appShellChunks[0].size > appShellLimitKb * 1024) {
+  const chunk = appShellChunks[0];
+  console.error(
+    `App shell budget failed: ${chunk.file} exceeds ${appShellLimitKb} kB before gzip.`,
+  );
+  console.error(
+    `- ${chunk.file}: ${formatKb(chunk.size)} / gzip ${formatKb(chunk.gzipSize)}`,
+  );
+  process.exitCode = 1;
 } else {
+  const chunk = appShellChunks[0];
   console.log(
-    `App shell budget OK: all app-shell chunks are within ${appShellLimitKb} kB before gzip.`,
+    `App shell budget OK: ${chunk.file} is within ${appShellLimitKb} kB before gzip.`,
   );
 }

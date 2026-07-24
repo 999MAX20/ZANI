@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page, type Request } from "@playwright/test";
 
 const password = process.env.E2E_PASSWORD || "ZaniTest123!";
 const ownerEmail =
@@ -10,14 +10,157 @@ type ApiRequestMetric = {
   startedAt: number;
 };
 
-const routeRequestBudgets: Record<string, number> = {
-  "/app/leads": 10,
-  "/app/clients": 4,
-  "/app/deals": 4,
-  "/app/tasks": 9,
-  "/app/calendar": 3,
-  "/app/conversations": 5,
+type RouteRequestBudget = {
+  path: string;
+  measurementPath: string;
+  minimumRequests: number;
+  requestLimit: number;
+  readySelector: string;
 };
+
+const waterfallBudgetMs = 1_000;
+const postReadyObservationMs = 1_250;
+const routeRequestBudgets: RouteRequestBudget[] = [
+  {
+    path: "/app/leads",
+    measurementPath: "/app/leads?search=__runtime_budget__",
+    minimumRequests: 1,
+    requestLimit: 10,
+    readySelector: '[data-testid="page-primary-action"]',
+  },
+  {
+    path: "/app/clients",
+    measurementPath: "/app/clients?search=__runtime_budget__",
+    minimumRequests: 1,
+    requestLimit: 4,
+    readySelector: '[data-testid="page-primary-action"]',
+  },
+  {
+    path: "/app/deals",
+    measurementPath: "/app/deals",
+    minimumRequests: 0,
+    requestLimit: 4,
+    readySelector:
+      '[data-testid="page-primary-action"], main [role="alert"]',
+  },
+  {
+    path: "/app/tasks",
+    measurementPath: "/app/tasks?search=__runtime_budget__",
+    minimumRequests: 1,
+    requestLimit: 9,
+    readySelector: '[data-testid="page-primary-action"]',
+  },
+  {
+    path: "/app/calendar",
+    measurementPath: "/app/calendar?date=2026-07-26&view=day",
+    minimumRequests: 1,
+    requestLimit: 3,
+    readySelector: '[data-testid="page-primary-action"]',
+  },
+  {
+    path: "/app/conversations",
+    measurementPath: "/app/conversations?unread=true&sort=unread",
+    minimumRequests: 1,
+    requestLimit: 5,
+    readySelector:
+      '[data-testid="inbox-priority-actions"], [data-testid="inbox-action-composer"]',
+  },
+];
+
+const ignoredShellRequests = new Set([
+  "/api/auth/me/",
+  "/api/notifications/summary/",
+  "/api/inbox/conversations/summary/",
+]);
+
+function requestBudgetViolations(
+  requests: ApiRequestMetric[],
+  requestLimit: number,
+) {
+  const signatures = requests.map(
+    (request) => `${request.method} ${request.url}`,
+  );
+  return {
+    duplicates: signatures.filter(
+      (signature, index) => signatures.indexOf(signature) !== index,
+    ),
+    excess: Math.max(0, requests.length - requestLimit),
+    late: requests.filter(
+      (request) => request.startedAt > waterfallBudgetMs,
+    ),
+  };
+}
+
+async function measureRouteRequests(
+  page: Page,
+  budget: RouteRequestBudget,
+) {
+  const requests: ApiRequestMetric[] = [];
+  const navigationStartedAt = Date.now();
+  const onRequest = (request: Request) => {
+    if (
+      request.resourceType() !== "fetch" &&
+      request.resourceType() !== "xhr"
+    ) {
+      return;
+    }
+    const url = new URL(request.url());
+    if (
+      !url.pathname.startsWith("/api/") ||
+      ignoredShellRequests.has(url.pathname)
+    ) {
+      return;
+    }
+    requests.push({
+      method: request.method(),
+      url: `${url.pathname}${url.search}`,
+      startedAt: Date.now() - navigationStartedAt,
+    });
+  };
+
+  page.on("request", onRequest);
+  try {
+    await navigateInsideApp(page, budget.measurementPath);
+    await waitForRouteReady(page, budget);
+
+    // Observe longer than the allowed waterfall after the real workspace is
+    // ready so requests that begin after the former 800 ms snapshot are kept.
+    await page.waitForTimeout(postReadyObservationMs);
+    return requests;
+  } finally {
+    page.off("request", onRequest);
+  }
+}
+
+async function waitForRouteReady(
+  page: Page,
+  budget: RouteRequestBudget,
+) {
+  await expect(
+    page
+      .locator(budget.readySelector)
+      .filter({ visible: true })
+      .first(),
+  ).toBeVisible();
+  await expect(
+    page.locator('main [role="status"][aria-busy="true"]'),
+  ).toHaveCount(0);
+}
+
+async function warmRuntimeRoutes(page: Page) {
+  // Warm route modules so the request gate measures data waterfalls rather
+  // than Vite's development-only transform latency. Each measured navigation
+  // still uses a distinct query and must issue its own real API request.
+  for (const budget of routeRequestBudgets) {
+    await navigateInsideApp(page, budget.path);
+    await waitForRouteReady(page, budget);
+  }
+  await navigateInsideApp(page, "/app");
+  await expect(page.locator('main a[href="/app/leads"]').first()).toBeVisible();
+  await expect(
+    page.locator('main [role="status"][aria-busy="true"]'),
+  ).toHaveCount(0);
+}
 
 async function installWorkspaceProfiler(page: Page) {
   await page.addInitScript(() => {
@@ -41,6 +184,11 @@ async function login(page: Page) {
   await page.locator('form button[type="submit"]').click();
   await expect(page).toHaveURL(/\/app/);
   await expect(page.getByRole("main").first()).toBeVisible();
+  await expect(page.locator('main a[href="/app/leads"]').first()).toBeVisible();
+  await expect(
+    page.locator('main [role="status"][aria-busy="true"]'),
+  ).toHaveCount(0);
+  await page.waitForTimeout(postReadyObservationMs);
 }
 
 async function navigateInsideApp(page: Page, path: string) {
@@ -56,7 +204,6 @@ async function navigateInsideApp(page: Page, path: string) {
     ),
   );
   await expect(page.getByRole("main").first()).toBeVisible();
-  await page.waitForTimeout(800);
 }
 
 async function resetWorkspaceCommits(page: Page) {
@@ -81,56 +228,52 @@ test("F-302 pilot routes stay within request and waterfall budgets", async ({
   page,
 }) => {
   test.setTimeout(180_000);
-  const pendingRequests: ApiRequestMetric[] = [];
-  page.on("request", (request) => {
-    if (
-      request.resourceType() !== "fetch" &&
-      request.resourceType() !== "xhr"
-    ) {
-      return;
-    }
-    const url = new URL(request.url());
-    if (
-      !url.pathname.startsWith("/api/") ||
-      url.pathname === "/api/notifications/summary/" ||
-      url.pathname === "/api/inbox/conversations/summary/"
-    ) {
-      return;
-    }
-    pendingRequests.push({
-      method: request.method(),
-      url: `${url.pathname}${url.search}`,
-      startedAt: Date.now(),
-    });
-  });
-
   await login(page);
+  await warmRuntimeRoutes(page);
 
-  for (const [route, requestBudget] of Object.entries(routeRequestBudgets)) {
-    pendingRequests.length = 0;
-    await navigateInsideApp(page, route);
-    const firstStartedAt = pendingRequests[0]?.startedAt || 0;
-    const requests = pendingRequests.map((request) => ({
-      ...request,
-      startedAt: request.startedAt - firstStartedAt,
-    }));
-    const signatures = requests.map(
-      (request) => `${request.method} ${request.url}`,
+  for (const budget of routeRequestBudgets) {
+    const requests = await measureRouteRequests(page, budget);
+    const violations = requestBudgetViolations(
+      requests,
+      budget.requestLimit,
     );
-
-    expect(
-      new Set(signatures).size,
-      `${route} dispatched duplicate API requests: ${JSON.stringify(requests)}`,
-    ).toBe(signatures.length);
+    const maxStartMs = Math.max(
+      0,
+      ...requests.map((request) => request.startedAt),
+    );
+    console.info(
+      `[F-302] ${budget.path}: ${requests.length}/${budget.requestLimit} requests, latest start ${maxStartMs} ms`,
+    );
     expect(
       requests.length,
-      `${route} exceeded its measured request budget: ${JSON.stringify(requests)}`,
-    ).toBeLessThanOrEqual(requestBudget);
+      `${budget.path} did not exercise its measured API path`,
+    ).toBeGreaterThanOrEqual(budget.minimumRequests);
     expect(
-      Math.max(0, ...requests.map((request) => request.startedAt)),
-      `${route} introduced a deeper request waterfall: ${JSON.stringify(requests)}`,
-    ).toBeLessThanOrEqual(1_000);
+      violations.duplicates,
+      `${budget.path} dispatched duplicate API requests: ${JSON.stringify(requests)}`,
+    ).toEqual([]);
+    expect(
+      violations.excess,
+      `${budget.path} exceeded its measured request budget: ${JSON.stringify(requests)}`,
+    ).toBe(0);
+    expect(
+      violations.late,
+      `${budget.path} started API requests after ${waterfallBudgetMs} ms: ${JSON.stringify(requests)}`,
+    ).toEqual([]);
   }
+});
+
+test("F-302 request analysis rejects starts after the former 800 ms snapshot", () => {
+  const lateRequest: ApiRequestMetric = {
+    method: "GET",
+    url: "/api/tasks/late-dependent/",
+    startedAt: 1_050,
+  };
+
+  expect(requestBudgetViolations([lateRequest], 1).late).toEqual([
+    lateRequest,
+  ]);
+  expect(postReadyObservationMs).toBeGreaterThan(waterfallBudgetMs);
 });
 
 test("F-302 shell interactions do not re-render the active workspace", async ({

@@ -12,7 +12,7 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 export function Button({ className, variant = "primary", size = "md", isLoading, children, disabled, ...props }: ButtonProps) {
   const { t } = useI18n();
   const variants = {
-    primary: "bg-brand-500 text-white shadow-sm ring-1 ring-brand-600/10 hover:bg-brand-600 active:bg-brand-700",
+    primary: "bg-brand-800 text-white shadow-sm ring-1 ring-brand-900/10 hover:bg-brand-900 active:bg-brand-900",
     secondary: "border border-zani-border bg-surface-card text-zani-text shadow-sm hover:border-brand-100 hover:bg-brand-50",
     ghost: "text-zani-subtle hover:bg-surface-muted hover:text-zani-text",
     outline: "border border-brand-500 bg-surface-card text-brand-700 shadow-sm hover:bg-brand-50",

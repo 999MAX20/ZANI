@@ -366,6 +366,8 @@ export function LeadsWorkspaceTable({
             total: totalLeadCount,
           })}
           pageSizeLabel={t("leads.pageSize")}
+          previousLabel={t("pagination.previous")}
+          nextLabel={t("pagination.next")}
           onPageChange={onPageChange}
           onPageSizeChange={onPageSizeChange}
         />

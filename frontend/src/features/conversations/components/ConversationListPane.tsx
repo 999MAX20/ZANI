@@ -191,7 +191,7 @@ export function ConversationListPane({
       {items.length ? (
         <div className="border-b border-zani-border px-3 py-2">
           {!bulkMode ? (
-            <button type="button" data-testid="conversation-select-multiple" className="text-xs font-bold text-brand-600" onClick={onSelectVisible}>
+            <button type="button" data-testid="conversation-select-multiple" className="zani-focus-ring rounded-control text-xs font-bold text-brand-700" onClick={onSelectVisible}>
               {t("conversations.selectMultiple")}
             </button>
           ) : (

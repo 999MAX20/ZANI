@@ -635,6 +635,7 @@ export const ru: Record<string, string> = {
   "common.loadingData": "Загружаем данные...",
   "common.loadingAccess": "Загружаем доступ...",
   "common.close": "Закрыть",
+  "common.clearSelection": "Очистить выбор",
   "common.cancel": "Отмена",
   "common.loadingWorkspace": "Готовим рабочее пространство...",
   "common.checkingAccess": "Проверяем доступ...",

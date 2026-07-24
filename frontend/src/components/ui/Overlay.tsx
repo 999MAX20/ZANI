@@ -21,17 +21,6 @@ const dialogSizeClass: Record<OverlaySize, string> = {
   xl: "max-w-6xl",
 };
 
-function useEscapeClose(open: boolean, onClose: () => void) {
-  useEffect(() => {
-    if (!open) return undefined;
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
-    }
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [onClose, open]);
-}
-
 function CloseButton({ onClose }: { onClose: () => void }) {
   const { t } = useI18n();
   return (
@@ -46,7 +35,27 @@ function CloseButton({ onClose }: { onClose: () => void }) {
   );
 }
 
-function useDialogTriggerFocus(open: boolean) {
+const focusableSelector = [
+  "a[href]",
+  "button:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  "[tabindex]:not([tabindex='-1'])",
+].join(",");
+
+function isTopmostDialog(dialog: HTMLElement) {
+  const dialogs = Array.from(
+    document.querySelectorAll<HTMLElement>('[role="dialog"][aria-modal="true"]'),
+  );
+  return dialogs.at(-1) === dialog;
+}
+
+function useDialogFocus(
+  open: boolean,
+  onClose: () => void,
+  dialogRef: React.RefObject<HTMLElement>,
+) {
   const openerRef = useRef<HTMLElement | null>(null);
   const openerSelectorRef = useRef<string | null>(null);
   const wasOpenRef = useRef(false);
@@ -65,9 +74,25 @@ function useDialogTriggerFocus(open: boolean) {
           ? `[data-testid="${CSS.escape(openerTestId)}"]`
           : null;
       wasOpenRef.current = true;
-      return;
+      const focusInsideDialog = () => {
+        const dialog = dialogRef.current;
+        if (!dialog || !isTopmostDialog(dialog)) return;
+        const autofocusTarget = dialog.querySelector<HTMLElement>("[autofocus]");
+        const firstFocusable =
+          dialog.querySelector<HTMLElement>(focusableSelector);
+        (autofocusTarget || firstFocusable || dialog).focus({
+          preventScroll: true,
+        });
+      };
+      focusInsideDialog();
+      const frameId = window.requestAnimationFrame(() => {
+        const dialog = dialogRef.current;
+        if (dialog?.contains(document.activeElement)) return;
+        focusInsideDialog();
+      });
+      return () => window.cancelAnimationFrame(frameId);
     }
-    if (open || !wasOpenRef.current) return;
+    if (open || !wasOpenRef.current) return undefined;
 
     wasOpenRef.current = false;
     const opener = openerRef.current;
@@ -84,7 +109,7 @@ function useDialogTriggerFocus(open: boolean) {
       return Boolean(target);
     }
 
-    if (restoreFocus()) return;
+    if (restoreFocus()) return undefined;
 
     let observer: MutationObserver | null = null;
     let timeoutId: number | null = null;
@@ -108,7 +133,54 @@ function useDialogTriggerFocus(open: boolean) {
       observer?.disconnect();
       if (timeoutId !== null) window.clearTimeout(timeoutId);
     };
-  }, [open]);
+  }, [dialogRef, open]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      const dialog = dialogRef.current;
+      if (!dialog || !isTopmostDialog(dialog)) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab") return;
+
+      const focusable = Array.from(
+        dialog.querySelectorAll<HTMLElement>(focusableSelector),
+      ).filter(
+        (element) =>
+          !element.hasAttribute("disabled") &&
+          element.getAttribute("aria-hidden") !== "true" &&
+          element.getClientRects().length > 0,
+      );
+      if (!focusable.length) {
+        event.preventDefault();
+        dialog.focus({ preventScroll: true });
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const activeElement = document.activeElement;
+      if (event.shiftKey && (activeElement === first || !dialog.contains(activeElement))) {
+        event.preventDefault();
+        last.focus({ preventScroll: true });
+      } else if (
+        !event.shiftKey &&
+        (activeElement === last || !dialog.contains(activeElement))
+      ) {
+        event.preventDefault();
+        first.focus({ preventScroll: true });
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [dialogRef, onClose, open]);
 }
 
 export function Dialog({
@@ -131,9 +203,9 @@ export function Dialog({
   closeOnBackdrop?: boolean;
 }) {
   const titleId = useId();
+  const dialogRef = useRef<HTMLElement>(null);
   useBodyScrollLock(open);
-  useEscapeClose(open, onClose);
-  useDialogTriggerFocus(open);
+  useDialogFocus(open, onClose, dialogRef);
 
   if (!open) return null;
 
@@ -144,9 +216,12 @@ export function Dialog({
       onMouseDown={closeOnBackdrop ? onClose : undefined}
     >
       <section
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        tabIndex={-1}
+        autoFocus
         className={cn(
           "zani-dialog-surface flex max-h-[calc(100dvh-1.5rem)] w-full flex-col overflow-hidden sm:max-h-[90vh]",
           dialogSizeClass[size],
@@ -182,8 +257,9 @@ export function Drawer({
   className?: string;
   closeOnBackdrop?: boolean;
 }) {
+  const drawerRef = useRef<HTMLElement>(null);
   useBodyScrollLock(open);
-  useEscapeClose(open, onClose);
+  useDialogFocus(open, onClose, drawerRef);
 
   if (!open) return null;
 
@@ -194,9 +270,12 @@ export function Drawer({
       onMouseDown={closeOnBackdrop ? onClose : undefined}
     >
       <aside
+        ref={drawerRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        tabIndex={-1}
+        autoFocus
         className={cn("zani-drawer-surface ml-auto flex h-full w-full max-w-[720px] flex-col overflow-hidden sm:rounded-l-[16px]", className)}
         onMouseDown={(event) => event.stopPropagation()}
       >

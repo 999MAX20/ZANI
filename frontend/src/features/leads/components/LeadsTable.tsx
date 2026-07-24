@@ -186,8 +186,6 @@ function LeadTableRow({
   };
   return (
     <div
-      role="button"
-      tabIndex={0}
       className={cn(
         CRM_TABLE_ROW_GRID_CLASS,
         selected && "bg-brand-50/70 shadow-[inset_3px_0_0_var(--zani-brand)]",
@@ -201,9 +199,6 @@ function LeadTableRow({
           : CRM_TABLE_MIN_WIDTH,
       }}
       onClick={onClick}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") onClick();
-      }}
       onContextMenu={onContextMenu}
     >
       <label

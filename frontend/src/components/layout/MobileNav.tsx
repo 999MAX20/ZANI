@@ -78,8 +78,10 @@ export function MobileNav({ open, onOpen, onClose }: { open: boolean; onOpen: ()
               end={item.to === "/app"}
               className={({ isActive }) =>
                 cn(
-                  "zani-focus-ring flex min-h-14 flex-col items-center justify-center gap-1 rounded-control px-0.5 py-2 text-center text-[10px] font-semibold leading-none text-zani-faint transition active:scale-[0.98]",
-                  isActive && "bg-brand-500 text-white shadow-sm",
+                  "zani-focus-ring flex min-h-14 flex-col items-center justify-center gap-1 rounded-control px-0.5 py-2 text-center text-[10px] font-semibold leading-none transition active:scale-[0.98]",
+                  isActive
+                    ? "bg-brand-800 text-white shadow-sm"
+                    : "text-zani-faint",
                 )
               }
             >
@@ -100,8 +102,10 @@ export function MobileNav({ open, onOpen, onClose }: { open: boolean; onOpen: ()
           onClick={onOpen}
           aria-label={t("mobile.more")}
           className={cn(
-            "zani-focus-ring flex min-h-14 flex-col items-center justify-center gap-1 rounded-control px-0.5 py-2 text-center text-[10px] font-semibold leading-none text-zani-faint transition hover:bg-surface-muted hover:text-zani-text active:scale-[0.98]",
-            open && "bg-brand-500 text-white shadow-sm",
+            "zani-focus-ring flex min-h-14 flex-col items-center justify-center gap-1 rounded-control px-0.5 py-2 text-center text-[10px] font-semibold leading-none transition hover:bg-surface-muted hover:text-zani-text active:scale-[0.98]",
+            open
+              ? "bg-brand-800 text-white shadow-sm"
+              : "text-zani-faint",
           )}
         >
           <MoreHorizontal size={26} strokeWidth={2.35} />

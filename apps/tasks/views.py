@@ -191,18 +191,24 @@ class TaskViewSet(IdempotentCRMCreateMixin, TenantModelViewSet):
     @action(detail=False, methods=["get"], url_path="summary")
     def summary(self, request):
         queryset = self._build_queryset(apply_bucket=False)
-        return Response(
-            {
-                "overdue": self._apply_bucket_filter(queryset, "overdue").count(),
-                "today": self._apply_bucket_filter(queryset, "today").count(),
-                "later": self._apply_bucket_filter(queryset, "later").count(),
-                "noDue": self._apply_bucket_filter(queryset, "noDue").count(),
-                "unassigned": self._apply_bucket_filter(queryset, "unassigned").count(),
-                "inProgress": self._apply_bucket_filter(queryset, "inProgress").count(),
-                "open": self._apply_bucket_filter(queryset, "open").count(),
-                "closed": self._apply_bucket_filter(queryset, "closed").count(),
-            }
+        now = timezone.now()
+        today = timezone.localdate()
+        active = ~Q(status__in=[Task.Statuses.DONE, Task.Statuses.CANCELLED])
+        summary = queryset.aggregate(
+            overdue=Count("id", filter=active & Q(due_at__lt=now), distinct=True),
+            today=Count("id", filter=active & Q(due_at__date=today), distinct=True),
+            later=Count("id", filter=active & Q(due_at__date__gt=today), distinct=True),
+            noDue=Count("id", filter=active & Q(due_at__isnull=True), distinct=True),
+            unassigned=Count("id", filter=active & Q(assignee__isnull=True), distinct=True),
+            inProgress=Count("id", filter=Q(status=Task.Statuses.IN_PROGRESS), distinct=True),
+            open=Count("id", filter=Q(status=Task.Statuses.OPEN), distinct=True),
+            closed=Count(
+                "id",
+                filter=Q(status__in=[Task.Statuses.DONE, Task.Statuses.CANCELLED]),
+                distinct=True,
+            ),
         )
+        return Response(summary)
 
     @action(detail=False, methods=["get"], url_path="templates")
     def templates(self, request):

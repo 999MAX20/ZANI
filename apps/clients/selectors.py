@@ -1,6 +1,6 @@
 from django.db import models
 from django.db.models import BooleanField, Case, CharField, Count, DateTimeField, Exists, F, IntegerField, OuterRef, Q, Subquery, Value, When
-from django.db.models.functions import Cast
+from django.db.models.functions import Cast, Coalesce
 
 from apps.activities.models import Segment, TaggedObject
 from apps.activities.segments import evaluate_segment_queryset
@@ -115,6 +115,11 @@ def annotate_client_list_queryset(queryset):
         .annotate(total=Count("id"))
         .filter(total__gt=1)
     )
+    leads_count = _client_related_count(Lead.objects.filter(is_archived=False))
+    deals_count = _client_related_count(Deal.objects.filter(is_archived=False))
+    appointments_count = _client_related_count(Appointment.objects.filter(is_archived=False))
+    tasks_count = _client_related_count(Task.objects.filter(is_archived=False))
+    conversations_count = _client_related_count(BotConversation.objects.filter(is_archived=False))
 
     return queryset.annotate(
         latest_lead_manager_id=Subquery(latest_lead.values("responsible_user_id")[:1]),
@@ -128,11 +133,11 @@ def annotate_client_list_queryset(queryset):
         latest_task_title=Subquery(latest_task.values("title")[:1]),
         latest_task_due_at=Subquery(latest_task.values("due_at")[:1], output_field=DateTimeField()),
         latest_task_priority=Subquery(latest_task.values("priority")[:1]),
-        leads_count=Count("leads", filter=Q(leads__is_archived=False), distinct=True),
-        deals_count=Count("deals", filter=Q(deals__is_archived=False), distinct=True),
-        appointments_count=Count("appointments", filter=Q(appointments__is_archived=False), distinct=True),
-        tasks_count=Count("tasks", filter=Q(tasks__is_archived=False), distinct=True),
-        conversations_count=Count("bot_conversations", filter=Q(bot_conversations__is_archived=False), distinct=True),
+        leads_count=leads_count,
+        deals_count=deals_count,
+        appointments_count=appointments_count,
+        tasks_count=tasks_count,
+        conversations_count=conversations_count,
         is_vip=Exists(
             TaggedObject.objects.filter(
                 business_id=OuterRef("business_id"),
@@ -195,6 +200,24 @@ def annotate_client_list_queryset(queryset):
             default=Value("normal"),
             output_field=CharField(),
         ),
+    )
+
+
+def _client_related_count(queryset):
+    related_count = (
+        queryset.filter(
+            client_id=OuterRef("id"),
+            business_id=OuterRef("business_id"),
+        )
+        .order_by()
+        .values("client_id")
+        .annotate(total=Count("id"))
+        .values("total")[:1]
+    )
+    return Coalesce(
+        Subquery(related_count, output_field=IntegerField()),
+        Value(0),
+        output_field=IntegerField(),
     )
 
 

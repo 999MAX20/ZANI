@@ -1,8 +1,8 @@
-from django.db.models import Q
+from django.db.models import OuterRef, Q, Subquery
 
 from apps.activities.models import ActivityEvent, Note, TaggedObject
 from apps.activities.serializers import ActivityEventSerializer, NoteSerializer, TaggedObjectSerializer
-from apps.bots.models import BotConversation
+from apps.bots.models import BotConversation, BotMessage
 from apps.businesses.access import Actions, Resources, can
 from apps.businesses.models import RolePermission
 from apps.clients.models import Client
@@ -83,22 +83,29 @@ def _or_queries(queries):
 
 
 def _entity_query(entity_refs):
-    queries = []
+    grouped_ids = {}
     for entity_type, entity_id in entity_refs:
         if not entity_id:
             continue
-        queries.append(Q(entity_type=entity_type, entity_id=str(entity_id)))
-        queries.append(Q(entity_type=entity_type.lower(), entity_id=str(entity_id)))
+        grouped_ids.setdefault(entity_type, []).append(str(entity_id))
+    queries = [
+        Q(
+            entity_type__in=[entity_type, entity_type.lower()],
+            entity_id__in=entity_ids,
+        )
+        for entity_type, entity_ids in grouped_ids.items()
+    ]
     return _or_queries(queries)
 
 
-def _append_entity_refs(entity_refs, entity_type, ids):
-    existing = {(item_type, str(item_id)) for item_type, item_id in entity_refs}
-    for entity_id in ids:
-        key = (entity_type, str(entity_id))
-        if entity_id and key not in existing:
-            entity_refs.append((entity_type, entity_id))
-            existing.add(key)
+def _related_entity_query(entity_refs, related_querysets):
+    related_refs = list(entity_refs)
+    for entity_type, queryset in related_querysets:
+        related_refs.extend(
+            (entity_type, entity_id)
+            for entity_id in queryset.order_by().values_list("id", flat=True)
+        )
+    return _entity_query(related_refs)
 
 
 def _custom_field_entity(client=None, lead=None, deal=None, appointment=None):
@@ -233,10 +240,15 @@ def _action_confirmation(action_id):
 def _available_action_details(action_ids, *, business, actor=None, entity_type="", entity=None):
     definitions = ACTION_DEFINITIONS.get(entity_type, {})
     details = []
+    permission_cache = {}
     for action_id in action_ids:
         resource, permission_action = definitions.get(action_id, ("", ""))
         if resource and permission_action and actor is not None:
-            permission = can(actor, business, resource, permission_action, obj=entity)
+            permission_key = (resource, permission_action)
+            permission = permission_cache.get(permission_key)
+            if permission is None:
+                permission = can(actor, business, resource, permission_action, obj=entity)
+                permission_cache[permission_key] = permission
             allowed = permission.allowed
             scope = permission.scope
             reason = permission.reason
@@ -261,17 +273,17 @@ def _available_action_details(action_ids, *, business, actor=None, entity_type="
     return details
 
 
-def _tags_payload(business, entity_refs):
-    if not entity_refs:
+def _tags_payload(business, entity_query):
+    if entity_query is None:
         return []
-    tags = TaggedObject.objects.filter(business=business).select_related("tag").filter(_entity_query(entity_refs)).distinct()
+    tags = TaggedObject.objects.filter(business=business).select_related("tag").filter(entity_query).distinct()
     return TaggedObjectSerializer(tags, many=True).data
 
 
-def _attachments_payload(business, entity_refs):
-    if not entity_refs:
+def _attachments_payload(business, entity_query):
+    if entity_query is None:
         return []
-    attachments = FileAttachment.objects.filter(business=business).filter(_entity_query(entity_refs)).distinct()
+    attachments = FileAttachment.objects.filter(business=business).filter(entity_query).distinct()
     return FileAttachmentSerializer(attachments, many=True).data
 
 
@@ -364,25 +376,60 @@ def build_crm_card_payload(*, business, actor=None, client=None, lead=None, deal
     leads = Lead.objects.filter(business=business).select_related("business", "client", "service", "responsible_user").filter(_or_queries(lead_filters)).distinct().order_by("-updated_at")
     deals = Deal.objects.filter(business=business).select_related("business", "client", "lead", "pipeline", "stage", "owner").filter(_or_queries(deal_filters)).distinct().order_by("-updated_at")
     appointments = Appointment.objects.filter(business=business).select_related("business", "client", "lead", "service", "resource").filter(_or_queries(appointment_filters)).distinct().order_by("-start_at")
-    tasks = Task.objects.filter(business=business).select_related("business", "client", "lead", "deal", "appointment", "conversation", "conversation__client", "assignee").filter(_or_queries(task_filters)).distinct().order_by("-updated_at")
+    tasks = (
+        Task.objects.filter(business=business)
+        .select_related(
+            "business",
+            "client",
+            "lead",
+            "lead__client",
+            "deal",
+            "appointment",
+            "appointment__service",
+            "conversation",
+            "conversation__client",
+            "assignee",
+            "created_by",
+        )
+        .prefetch_related("watchers")
+        .filter(_or_queries(task_filters))
+        .distinct()
+        .order_by("-updated_at")
+    )
+    latest_message = BotMessage.objects.filter(conversation_id=OuterRef("pk")).order_by(
+        "-created_at",
+        "-id",
+    )
     conversations = (
         BotConversation.objects.filter(business=business)
         .select_related("business", "bot", "client", "lead", "assigned_to")
+        .annotate(
+            latest_message_id=Subquery(latest_message.values("id")[:1]),
+            latest_message_direction=Subquery(latest_message.values("direction")[:1]),
+            latest_message_sender_type=Subquery(latest_message.values("sender_type")[:1]),
+            latest_message_text=Subquery(latest_message.values("text")[:1]),
+            latest_message_status=Subquery(latest_message.values("status")[:1]),
+            latest_message_created_at=Subquery(latest_message.values("created_at")[:1]),
+        )
         .filter(_or_queries(conversation_filters))
         .distinct()
         .order_by("-updated_at")
     )
 
-    _append_entity_refs(entity_refs, "Lead", leads.values_list("id", flat=True))
-    _append_entity_refs(entity_refs, "Deal", deals.values_list("id", flat=True))
-    _append_entity_refs(entity_refs, "Appointment", appointments.values_list("id", flat=True))
-    _append_entity_refs(entity_refs, "Task", tasks.values_list("id", flat=True))
+    related_entity_query = _related_entity_query(
+        entity_refs,
+        [
+            ("Lead", leads),
+            ("Deal", deals),
+            ("Appointment", appointments),
+            ("Task", tasks),
+        ],
+    )
 
     timeline_filters = []
     if client is not None:
         timeline_filters.append(Q(client=client))
-    if entity_refs:
-        timeline_filters.append(_entity_query(entity_refs))
+    timeline_filters.append(related_entity_query)
 
     notes_filters = list(timeline_filters)
 
@@ -443,8 +490,8 @@ def build_crm_card_payload(*, business, actor=None, client=None, lead=None, deal
         "conversations": InboxConversationSerializer(conversations[:RELATED_LIMIT], many=True).data,
         "timeline": ActivityEventSerializer(timeline[:TIMELINE_LIMIT], many=True).data,
         "notes": NoteSerializer(notes[:NOTES_LIMIT], many=True).data,
-        "tags": _tags_payload(business, entity_refs),
-        "attachments": _attachments_payload(business, entity_refs),
+        "tags": _tags_payload(business, related_entity_query),
+        "attachments": _attachments_payload(business, related_entity_query),
         "consents": _consent_summary_payload(business, client),
         "custom_fields": _custom_field_payload(
             business,

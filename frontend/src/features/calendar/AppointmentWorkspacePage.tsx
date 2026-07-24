@@ -11,6 +11,7 @@ import {
 import { getApiErrorMessage } from "../../api/client";
 import { crmCardsApi } from "../../api/crmCards";
 import { useActionConfirm } from "../../components/actions/ActionConfirmProvider";
+import { useActionFeedback } from "../../components/actions/useActionFeedback";
 import {
   EntityWorkspaceEmptyState,
   EntityWorkspaceErrorState,
@@ -24,7 +25,6 @@ import {
   EntityWorkspaceRoot,
 } from "../../components/crm";
 import { AppointmentRescheduleForm } from "../../components/forms/AppointmentRescheduleForm";
-import { useNotification } from "../../components/notifications/NotificationProvider";
 import { Button } from "../../components/ui/Button";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { Modal } from "../../components/ui/Modal";
@@ -51,7 +51,7 @@ export function AppointmentWorkspacePage() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const confirmAction = useActionConfirm();
-  const showNotification = useNotification();
+  const { notifyError, notifySuccess } = useActionFeedback();
   const queryClient = useQueryClient();
   const { business } = useActiveBusiness();
   const { resources } = useEntityData({ resources: true });
@@ -106,12 +106,10 @@ export function AppointmentWorkspacePage() {
       return appointmentsApi.get(appointmentId);
     },
     onSuccess: async (updated) => {
-      showNotification({
-        message: t("appointments.actionDone"),
-        tone: "success",
-      });
+      notifySuccess(t("appointments.actionDone"));
       await invalidateAppointment(updated);
     },
+    onError: (error) => notifyError(error),
   });
 
   const rescheduleMutation = useMutation<
@@ -125,12 +123,14 @@ export function AppointmentWorkspacePage() {
     },
     onSuccess: async (updated) => {
       setRescheduleOpen(false);
-      showNotification({
-        message: t("appointments.rescheduledNotice"),
-        tone: "success",
-      });
+      notifySuccess(t("appointments.rescheduledNotice"));
       await invalidateAppointment(updated);
     },
+    onError: (error) =>
+      notifyError(error, {
+        actionLabel: t("common.refresh"),
+        retry: () => invalidateAppointment(),
+      }),
   });
 
   async function requestReasonAction(status: Appointment["status"]) {

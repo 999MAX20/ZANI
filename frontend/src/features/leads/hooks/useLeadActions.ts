@@ -1,13 +1,11 @@
-import { useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import type { AppointmentCreatePayload } from "../../../api/appointments";
 import { clientsApi } from "../../../api/clients";
-import { getApiErrorMessage } from "../../../api/client";
 import { fileAttachmentsApi } from "../../../api/fileAttachments";
 import { leadsApi, type LeadCreatePayload } from "../../../api/leads";
 import { useActionConfirm } from "../../../components/actions/ActionConfirmProvider";
-import { useNotification } from "../../../components/notifications/NotificationProvider";
+import { useActionFeedback } from "../../../components/actions/useActionFeedback";
 import type { Id, Lead, Task } from "../../../types";
 import type { LeadAction, OfflineLeadAction, Translate, UndoToast } from "../types";
 
@@ -48,17 +46,18 @@ export function useLeadActions({
   setAppointmentOpen: (open: boolean) => void;
 }) {
   const confirmAction = useActionConfirm();
-  const showNotification = useNotification();
+  const { notifyError } = useActionFeedback();
   const queryClient = useQueryClient();
 
   const leadMutation = useMutation({
     mutationFn: (payload: LeadCreatePayload) => leadsApi.create(payload),
     onSuccess: async (lead) => {
       setCreateOpen(false);
-      setNotice(t("leads.noticeCreated"));
+      setNotice(t("leads.noticeCreated"), "success");
       setSelectedId(lead.id);
       await queryClient.invalidateQueries({ queryKey: ["leads"] });
     },
+    onError: (error) => notifyError(error),
   });
 
   const actionMutation = useMutation({
@@ -82,7 +81,7 @@ export function useLeadActions({
         reopen: t("leads.noticeReopened"),
         assign: t("leads.noticeAssigned"),
       };
-      setNotice(labels[variables.action]);
+      setNotice(labels[variables.action], "success");
       if (variables.action === "assign") {
         pushHistory({
           message: t("leads.noticeAssigned"),
@@ -101,6 +100,7 @@ export function useLeadActions({
         queryClient.invalidateQueries({ queryKey: ["deals"] }),
       ]);
     },
+    onError: (error) => notifyError(error),
   });
 
   const archiveMutation = useMutation({
@@ -108,7 +108,7 @@ export function useLeadActions({
     onSuccess: async (_, variables) => {
       setSelectedLeadIds([]);
       setContextMenu(null);
-      setNotice(t("leads.noticeArchived", { count: variables.leads.length }));
+      setNotice(t("leads.noticeArchived", { count: variables.leads.length }), "success");
       pushHistory({
         message: t("leads.noticeArchived", { count: variables.leads.length }),
         undo: async () => {
@@ -122,6 +122,7 @@ export function useLeadActions({
       });
       await queryClient.invalidateQueries({ queryKey: ["leads"] });
     },
+    onError: (error) => notifyError(error),
   });
 
   async function requestArchiveLeads(leadsToArchive: Lead[]) {
@@ -146,9 +147,10 @@ export function useLeadActions({
     mutationFn: (selectedLeads: Lead[]) => Promise.all(selectedLeads.map((lead) => leadsApi.markContacted({ id: lead.id }))),
     onSuccess: async () => {
       setSelectedLeadIds([]);
-      setNotice(t("leads.bulkDone"));
+      setNotice(t("leads.bulkDone"), "success");
       await queryClient.invalidateQueries({ queryKey: ["leads"] });
     },
+    onError: (error) => notifyError(error),
   });
 
   const mergeClientMutation = useMutation({
@@ -165,9 +167,10 @@ export function useLeadActions({
     },
     onSuccess: async (result) => {
       if (!result) return;
-      setNotice(t("leads.duplicatesMerged"));
+      setNotice(t("leads.duplicatesMerged"), "success");
       await queryClient.invalidateQueries();
     },
+    onError: (error) => notifyError(error),
   });
 
   const noteMutation = useMutation({
@@ -200,16 +203,17 @@ export function useLeadActions({
     },
     onSuccess: async (result, variables) => {
       if (result && "offline" in result) {
-        setNotice(t("leads.offlineQueued"));
+        setNotice(t("leads.offlineQueued"), "info");
         return;
       }
-      setNotice(t("leads.noteAdded"));
+      setNotice(t("leads.noteAdded"), "success");
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["crm-card", "lead", variables.lead.id] }),
         queryClient.invalidateQueries({ queryKey: ["file-attachments"] }),
         queryClient.invalidateQueries({ queryKey: ["activity-events"] }),
       ]);
     },
+    onError: (error) => notifyError(error),
   });
 
   const nextActionMutation = useMutation<Task | { offline: true }, Error, Lead>({
@@ -239,12 +243,13 @@ export function useLeadActions({
     onSuccess: async (result) => {
       setNextActionOpen(false);
       if (result && "offline" in result) {
-        setNotice(t("leads.offlineQueued"));
+        setNotice(t("leads.offlineQueued"), "info");
         return;
       }
-      setNotice(t("leads.noticeNextActionCreated"));
+      setNotice(t("leads.noticeNextActionCreated"), "success");
       await queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
+    onError: (error) => notifyError(error),
   });
 
   const appointmentMutation = useMutation({
@@ -257,29 +262,14 @@ export function useLeadActions({
     },
     onSuccess: async () => {
       setAppointmentOpen(false);
-      setNotice(t("leads.appointmentCreated"));
+      setNotice(t("leads.appointmentCreated"), "success");
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["appointments"] }),
         queryClient.invalidateQueries({ queryKey: ["leads"] }),
       ]);
     },
+    onError: (error) => notifyError(error),
   });
-
-  const actionError =
-    leadMutation.error ||
-    actionMutation.error ||
-    archiveMutation.error ||
-    bulkContactMutation.error ||
-    mergeClientMutation.error ||
-    noteMutation.error ||
-    appointmentMutation.error ||
-    nextActionMutation.error;
-  const actionErrorMessage = actionError ? getApiErrorMessage(actionError) : "";
-
-  useEffect(() => {
-    if (!actionErrorMessage) return;
-    showNotification({ message: actionErrorMessage, tone: "danger" });
-  }, [actionErrorMessage, showNotification]);
 
   return {
     leadMutation,

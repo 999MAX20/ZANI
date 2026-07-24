@@ -128,7 +128,13 @@ export function AppointmentDrawerPanel({
             ) : null}
             <div className="grid grid-cols-2 gap-2">
               {canReschedule ? (
-                <Button type="button" variant="secondary" size="sm" onClick={() => onReschedule(appointment)}>
+                <Button
+                  data-testid="calendar-reschedule-action"
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => onReschedule(appointment)}
+                >
                   {t("appointments.reschedule")}
                 </Button>
               ) : null}

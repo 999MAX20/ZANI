@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { dealsApi, type DealCreatePayload, type DealUpdatePayload } from "../../../api/deals";
 import { tasksApi, type TaskCreatePayload } from "../../../api/tasks";
+import { useActionFeedback } from "../../../components/actions/useActionFeedback";
 import type { Deal, Id, PipelineStage, Task } from "../../../types";
 import type { DealActionFlow, DealCreateForm, Translate } from "../types";
 import { nextOpenTask, toDateTimeLocal } from "../utils/dealHelpers";
@@ -21,6 +22,7 @@ export function useDealActions({
   t: Translate;
 }) {
   const queryClient = useQueryClient();
+  const { notifyError, notifySuccess } = useActionFeedback();
   const [createOpen, setCreateOpen] = useState(false);
   const [actionFlow, setActionFlow] = useState<DealActionFlow>(null);
   const [actionDraft, setActionDraft] = useState({ amount: "", lost_reason: "" });
@@ -41,7 +43,9 @@ export function useDealActions({
       setCreateOpen(false);
       onSelect(deal.id);
       setForm({ title: "", client: "", pipeline: "", stage: "", amount: "0", source: "manual" });
+      notifySuccess(t("deals.actionDone"));
     },
+    onError: (error) => notifyError(error),
   });
 
   const moveMutation = useMutation({
@@ -49,7 +53,9 @@ export function useDealActions({
     onSuccess: (deal) => {
       queryClient.invalidateQueries({ queryKey: ["deals"] });
       onSelect(deal.id);
+      notifySuccess(t("deals.actionDone"));
     },
+    onError: (error) => notifyError(error),
   });
 
   const quickActionMutation = useMutation({
@@ -64,7 +70,9 @@ export function useDealActions({
       onSelect(deal.id);
       setActionFlow(null);
       setActionDraft({ amount: "", lost_reason: "" });
+      notifySuccess(t("deals.actionDone"));
     },
+    onError: (error) => notifyError(error),
   });
 
   const createTaskMutation = useMutation({
@@ -74,7 +82,9 @@ export function useDealActions({
       queryClient.invalidateQueries({ queryKey: ["deals"] });
       setNextActionDeal(null);
       setStageGuard("");
+      notifySuccess(t("deals.actionDone"));
     },
+    onError: (error) => notifyError(error),
   });
 
   const updateDealMutation = useMutation({
@@ -82,7 +92,13 @@ export function useDealActions({
     onSuccess: (deal) => {
       queryClient.invalidateQueries({ queryKey: ["deals"] });
       onSelect(deal.id);
+      notifySuccess(t("common.saved"));
     },
+    onError: (error) =>
+      notifyError(error, {
+        actionLabel: t("common.refresh"),
+        retry: () => queryClient.invalidateQueries({ queryKey: ["deals"] }),
+      }),
   });
 
   function openNextActionModal(deal: Deal) {
@@ -138,8 +154,6 @@ export function useDealActions({
     moveMutation.mutate({ id: deal.id, stage: stageId });
   }
 
-  const hasError = Boolean(createMutation.error || moveMutation.error || quickActionMutation.error || createTaskMutation.error || updateDealMutation.error);
-
   return {
     createOpen,
     setCreateOpen,
@@ -162,6 +176,5 @@ export function useDealActions({
     createNextAction,
     openNextActionModal,
     handleStageChange,
-    hasError,
   };
 }

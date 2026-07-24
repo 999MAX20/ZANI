@@ -17,6 +17,7 @@ import {
   CRM_TABLE_EMBEDDED_CLASS,
 } from "../../components/crm";
 import { useActionConfirm } from "../../components/actions/ActionConfirmProvider";
+import { useActionFeedback } from "../../components/actions/useActionFeedback";
 import { useUndoToast } from "../../components/actions/UndoToastProvider";
 import { usePageHeader } from "../../components/layout/PageHeaderContext";
 import { useNotification } from "../../components/notifications/NotificationProvider";
@@ -43,6 +44,7 @@ export function DealsPage() {
   const confirmAction = useActionConfirm();
   const showUndoToast = useUndoToast();
   const showNotification = useNotification();
+  const { notifyError } = useActionFeedback();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -135,6 +137,11 @@ export function DealsPage() {
         },
       });
     },
+    onError: (error) =>
+      notifyError(error, {
+        actionLabel: t("common.refresh"),
+        retry: () => queryClient.invalidateQueries({ queryKey: ["deals"] }),
+      }),
   });
 
   async function requestArchiveSelectedDeals() {
@@ -230,8 +237,6 @@ export function DealsPage() {
     setSearchParams(next, { replace: true });
   }
 
-  const actionErrorMessage =
-    actions.hasError || archiveMutation.error ? t("deals.saveChangeError") : "";
   const selectedDealTaskCount = selection.selectedDeal
     ? data.tasksByDeal.get(selection.selectedDeal.id)?.length || 0
     : 0;
@@ -242,11 +247,6 @@ export function DealsPage() {
           conversation.client === selection.selectedDeal?.client,
       ).length
     : 0;
-
-  useEffect(() => {
-    if (!actionErrorMessage) return;
-    showNotification({ message: actionErrorMessage, tone: "danger" });
-  }, [actionErrorMessage, showNotification]);
 
   useEffect(() => {
     if (!actions.stageGuard) return;

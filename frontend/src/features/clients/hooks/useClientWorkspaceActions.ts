@@ -3,11 +3,10 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { taggedObjectsApi, tagsApi } from "../../../api/activities";
-import { getApiErrorMessage } from "../../../api/client";
 import { clientsApi } from "../../../api/clients";
 import { useActionConfirm } from "../../../components/actions/ActionConfirmProvider";
+import { useActionFeedback } from "../../../components/actions/useActionFeedback";
 import { useUndoToast } from "../../../components/actions/UndoToastProvider";
-import { useNotification } from "../../../components/notifications/NotificationProvider";
 import { useActiveBusiness } from "../../../hooks/useBusiness";
 import { useI18n } from "../../../lib/i18n";
 import type { Client, Id } from "../../../types";
@@ -18,7 +17,7 @@ export function useClientWorkspaceActions(clientId: Id | null) {
   const queryClient = useQueryClient();
   const confirmAction = useActionConfirm();
   const showUndoToast = useUndoToast();
-  const showNotification = useNotification();
+  const { notifyError, notifySuccess } = useActionFeedback();
   const { business } = useActiveBusiness();
   const [editOpen, setEditOpen] = useState(false);
   const [tagOpen, setTagOpen] = useState(false);
@@ -43,10 +42,13 @@ export function useClientWorkspaceActions(clientId: Id | null) {
     onSuccess: async () => {
       await invalidateClient();
       setEditOpen(false);
-      showNotification({ message: t("common.saved"), tone: "success" });
+      notifySuccess(t("common.saved"));
     },
     onError: (error) =>
-      showNotification({ message: getApiErrorMessage(error), tone: "danger" }),
+      notifyError(error, {
+        actionLabel: t("common.refresh"),
+        retry: invalidateClient,
+      }),
   });
 
   const addTagMutation = useMutation({
@@ -79,10 +81,9 @@ export function useClientWorkspaceActions(clientId: Id | null) {
       });
       setTagDraft("");
       setTagOpen(false);
-      showNotification({ message: t("clients.addTag"), tone: "success" });
+      notifySuccess(t("clients.addTag"));
     },
-    onError: (error) =>
-      showNotification({ message: getApiErrorMessage(error), tone: "danger" }),
+    onError: (error) => notifyError(error),
   });
 
   const archiveMutation = useMutation({
@@ -99,8 +100,7 @@ export function useClientWorkspaceActions(clientId: Id | null) {
       });
       navigate("/app/clients");
     },
-    onError: (error) =>
-      showNotification({ message: getApiErrorMessage(error), tone: "danger" }),
+    onError: (error) => notifyError(error),
   });
 
   async function requestArchiveClient(client: Client) {

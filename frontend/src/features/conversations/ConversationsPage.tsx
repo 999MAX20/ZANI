@@ -42,6 +42,7 @@ import {
   type InboxMessage,
   type PaginatedInboxMessageResponse,
 } from "../../api/inbox";
+import { useActionFeedback } from "../../components/actions/useActionFeedback";
 import { usePageHeader } from "../../components/layout/PageHeaderContext";
 import { WorkQueueLayout } from "../../components/layout/WorkQueueLayout";
 import { useNotification } from "../../components/notifications/NotificationProvider";
@@ -94,6 +95,7 @@ export function ConversationsPage() {
   const navigate = useNavigate();
   const { id: routeId } = useParams();
   const showNotification = useNotification();
+  const { notifyError } = useActionFeedback();
   const { setPageHeader } = usePageHeader();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -837,9 +839,11 @@ export function ConversationsPage() {
     mutationFn: inboxApi.sendMessage,
     onSuccess: async () => {
       setDraft("");
-      setNotice(t("conversations.replySent"));
+      setNotice(t("conversations.replySent"), "success");
       await invalidateInbox();
     },
+    onError: (error) =>
+      notifyError(error, { focusTarget: composerRef }),
   });
 
   const retryMessageMutation = useMutation({
@@ -927,10 +931,11 @@ export function ConversationsPage() {
   const createTaskMutation = useMutation({
     mutationFn: inboxApi.createTask,
     onSuccess: async () => {
-      setNotice(t("conversations.taskCreatedShort"));
+      setNotice(t("conversations.taskCreatedShort"), "success");
       setTaskModalOpen(false);
       await queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
+    onError: (error) => notifyError(error),
   });
 
   const runPipelineMutation = useMutation({
@@ -1028,7 +1033,6 @@ export function ConversationsPage() {
     reopenMutation.error ||
     suggestMutation.error ||
     qualifyMutation.error ||
-    sendMutation.error ||
     retryMessageMutation.error ||
     createClientMutation.error ||
     linkClientMutation.error ||
@@ -1036,15 +1040,14 @@ export function ConversationsPage() {
     linkLeadMutation.error ||
     createDealMutation.error ||
     linkDealMutation.error ||
-    createTaskMutation.error ||
     runPipelineMutation.error ||
     bulkMutation.error;
   const actionErrorMessage = actionError ? getApiErrorMessage(actionError) : "";
 
   useEffect(() => {
     if (!actionErrorMessage) return;
-    showNotification({ message: actionErrorMessage, tone: "danger" });
-  }, [actionErrorMessage, showNotification]);
+    notifyError(actionError);
+  }, [actionError, actionErrorMessage, notifyError]);
 
   function sendReply() {
     const text = draft.trim();

@@ -19,13 +19,6 @@ function isOwnerDashboardRole(role: string) {
 
 export function DashboardPage() {
   const { business, isLoading: businessLoading } = useActiveBusiness();
-  const { clients, leads, appointments, services, tasks } = useEntityData({
-    clients: true,
-    leads: true,
-    appointments: true,
-    services: true,
-    tasks: true,
-  });
   const { t } = useI18n();
   const { user } = useAuth();
   const activeMembership = user?.memberships?.find(
@@ -54,6 +47,13 @@ export function DashboardPage() {
     deals: hasPermission(user, business?.id, "deals", "view"),
     integrations: hasPermission(user, business?.id, "integrations", "view"),
   };
+  const { clients, leads, appointments, services, tasks } = useEntityData({
+    clients: dailyAccess.clients,
+    leads: dailyAccess.leads,
+    appointments: dailyAccess.appointments,
+    services: dailyAccess.leads || dailyAccess.appointments,
+    tasks: dailyAccess.tasks,
+  });
   const metrics = useQuery({
     queryKey: ["owner-dashboard", business?.id],
     queryFn: () => analyticsApi.ownerDashboard(business?.id),
@@ -85,11 +85,12 @@ export function DashboardPage() {
   const clientList = clients.data || [];
   const dashboard = metrics.data;
   const isCoreDataLoading =
-    clients.isLoading ||
-    leads.isLoading ||
-    appointments.isLoading ||
-    services.isLoading ||
-    tasks.isLoading;
+    (dailyAccess.clients && clients.isLoading) ||
+    (dailyAccess.leads && leads.isLoading) ||
+    (dailyAccess.appointments && appointments.isLoading) ||
+    ((dailyAccess.leads || dailyAccess.appointments) &&
+      services.isLoading) ||
+    (dailyAccess.tasks && tasks.isLoading);
   const assignedTasks = taskList.filter(
     (task) => task.status !== "done" && task.status !== "cancelled",
   );
@@ -172,6 +173,9 @@ export function DashboardPage() {
         canViewConversations={dailyAccess.conversations}
         canViewDeals={dailyAccess.deals}
         canViewIntegrations={dailyAccess.integrations}
+        canViewLeads={dailyAccess.leads}
+        canViewAppointments={dailyAccess.appointments}
+        canViewTasks={dailyAccess.tasks}
         aiStatus={aiStatus.data}
       />
     );

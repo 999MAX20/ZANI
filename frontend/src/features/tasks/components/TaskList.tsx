@@ -266,6 +266,7 @@ function TaskTableFilters({
           {tabOptions.map((option) => (
             <Button
               key={option.value}
+              data-task-filter={option.value}
               type="button"
               variant={filterState.tabFilter === option.value ? "primary" : "secondary"}
               className="h-9 min-h-9 rounded-control px-3 text-sm"

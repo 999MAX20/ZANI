@@ -74,6 +74,9 @@ type OwnerDashboardProps = {
   canViewConversations: boolean;
   canViewDeals: boolean;
   canViewIntegrations: boolean;
+  canViewLeads: boolean;
+  canViewAppointments: boolean;
+  canViewTasks: boolean;
   aiStatus?: AIAssistantStatusResponse;
 };
 
@@ -618,6 +621,9 @@ export function OwnerDashboard({
   canViewConversations,
   canViewDeals,
   canViewIntegrations,
+  canViewLeads,
+  canViewAppointments,
+  canViewTasks,
   aiStatus,
 }: OwnerDashboardProps) {
   const { t } = useI18n();
@@ -659,15 +665,19 @@ export function OwnerDashboard({
       workQueues.summary.handoff_conversations
     : 0;
   const attentionItems: AttentionItem[] = [
-    {
-      key: "tasks",
-      title: t("dashboard.closeOverdue"),
-      text: t("dashboard.overdueTasksCount", { count: overdueTasks }),
-      count: overdueTasks,
-      href: "/app/tasks",
-      icon: AlertTriangle,
-      tone: overdueTasks ? "red" : "amber",
-    },
+    ...(canViewTasks
+      ? [
+          {
+            key: "tasks",
+            title: t("dashboard.closeOverdue"),
+            text: t("dashboard.overdueTasksCount", { count: overdueTasks }),
+            count: overdueTasks,
+            href: "/app/tasks",
+            icon: AlertTriangle,
+            tone: overdueTasks ? ("red" as const) : ("amber" as const),
+          },
+        ]
+      : []),
     ...(canViewConversations
       ? [
           {
@@ -793,50 +803,60 @@ export function OwnerDashboard({
       </section>
 
       <section className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
-        <MetricTile
-          label={t("dashboard.newLeadsShort")}
-          value={newLeadsCount}
-          hint={t("dashboard.needProcess")}
-          icon={UserPlus}
-          tone="brand"
-          className="shadow-soft"
-        />
-        <MetricTile
-          label={t("dashboard.todayBookings")}
-          value={todayAppointmentsCount}
-          hint={t("common.today")}
-          icon={CalendarCheck}
-          tone="green"
-          className="shadow-soft"
-        />
-        <MetricTile
-          label={t("dashboard.openTasks")}
-          value={openTasks}
-          hint={
-            overdueTasks
-              ? t("dashboard.overdueTasksCount", { count: overdueTasks })
-              : t("dashboard.openFollowups")
-          }
-          icon={ListChecks}
-          tone={overdueTasks ? "amber" : "slate"}
-          className="shadow-soft"
-        />
-        <MetricTile
-          label={t("dashboard.conversion")}
-          value={`${conversion}%`}
-          hint={t("dashboard.leadToBooking")}
-          icon={CheckCircle2}
-          tone="green"
-          className="shadow-soft"
-        />
-        <MetricTile
-          label={t("dashboard.setupScore")}
-          value={`${setupScore}%`}
-          hint={t("dashboard.businessReadiness")}
-          icon={PlugZap}
-          tone={setupScore >= 80 ? "green" : "amber"}
-          className="shadow-soft"
-        />
+        {canViewLeads ? (
+          <MetricTile
+            label={t("dashboard.newLeadsShort")}
+            value={newLeadsCount}
+            hint={t("dashboard.needProcess")}
+            icon={UserPlus}
+            tone="brand"
+            className="shadow-soft"
+          />
+        ) : null}
+        {canViewAppointments ? (
+          <MetricTile
+            label={t("dashboard.todayBookings")}
+            value={todayAppointmentsCount}
+            hint={t("common.today")}
+            icon={CalendarCheck}
+            tone="green"
+            className="shadow-soft"
+          />
+        ) : null}
+        {canViewTasks ? (
+          <MetricTile
+            label={t("dashboard.openTasks")}
+            value={openTasks}
+            hint={
+              overdueTasks
+                ? t("dashboard.overdueTasksCount", { count: overdueTasks })
+                : t("dashboard.openFollowups")
+            }
+            icon={ListChecks}
+            tone={overdueTasks ? "amber" : "slate"}
+            className="shadow-soft"
+          />
+        ) : null}
+        {canViewLeads && canViewAppointments ? (
+          <MetricTile
+            label={t("dashboard.conversion")}
+            value={`${conversion}%`}
+            hint={t("dashboard.leadToBooking")}
+            icon={CheckCircle2}
+            tone="green"
+            className="shadow-soft"
+          />
+        ) : null}
+        {canViewIntegrations ? (
+          <MetricTile
+            label={t("dashboard.setupScore")}
+            value={`${setupScore}%`}
+            hint={t("dashboard.businessReadiness")}
+            icon={PlugZap}
+            tone={setupScore >= 80 ? "green" : "amber"}
+            className="shadow-soft"
+          />
+        ) : null}
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.9fr)]">
@@ -851,7 +871,8 @@ export function OwnerDashboard({
       </section>
 
       <section className="grid gap-4 xl:grid-cols-3">
-        <QueuePreview
+        {canViewLeads ? (
+          <QueuePreview
           title={t("dashboard.latestLeads")}
           href="/app/leads"
           emptyTitle={t("dashboard.noLeads")}
@@ -875,9 +896,11 @@ export function OwnerDashboard({
               />
             );
           })}
-        </QueuePreview>
+          </QueuePreview>
+        ) : null}
 
-        <QueuePreview
+        {canViewAppointments ? (
+          <QueuePreview
           title={t("dashboard.upcomingBookings")}
           href="/app/calendar"
           emptyTitle={t("dashboard.noBookings")}
@@ -903,9 +926,11 @@ export function OwnerDashboard({
               />
             );
           })}
-        </QueuePreview>
+          </QueuePreview>
+        ) : null}
 
-        <QueuePreview
+        {canViewTasks ? (
+          <QueuePreview
           title={t("dashboard.myTasks")}
           href="/app/tasks"
           emptyTitle={t("dashboard.noOpenTasks")}
@@ -914,7 +939,8 @@ export function OwnerDashboard({
           {visibleTasks.map((task) => (
             <TaskRow key={task.id} task={task} />
           ))}
-        </QueuePreview>
+          </QueuePreview>
+        ) : null}
       </section>
 
       {(canViewConversations && visibleConversations.length) ||

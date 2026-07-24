@@ -29,6 +29,7 @@ type ConversationThreadPaneProps = {
   isFetchingNextPage: boolean;
   onLoadMoreMessages: () => void;
   onRetryMessage: (message: InboxMessage) => void;
+  canRetryMessages: boolean;
   draft: string;
   composerRef: Ref<HTMLTextAreaElement>;
   sendPending: boolean;
@@ -59,6 +60,7 @@ export function ConversationThreadPane({
   isFetchingNextPage,
   onLoadMoreMessages,
   onRetryMessage,
+  canRetryMessages,
   draft,
   composerRef,
   sendPending,
@@ -235,7 +237,7 @@ export function ConversationThreadPane({
                 key={message.id}
                 message={message}
                 t={t}
-                onRetry={onRetryMessage}
+                onRetry={canRetryMessages ? onRetryMessage : undefined}
               />
             ))}
             <div ref={messageEndRef} aria-hidden="true" />

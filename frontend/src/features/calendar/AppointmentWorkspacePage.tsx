@@ -33,6 +33,8 @@ import { useI18n } from "../../lib/i18n";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useEntityData } from "../../hooks/useEntityData";
 import type { ActivityEvent, Appointment, Task } from "../../types";
+import { useAuth } from "../auth/AuthProvider";
+import { canAccessAppointmentAction } from "./appointmentAccess";
 
 function asNumericId(value: string | undefined): number | null {
   const id = Number(value);
@@ -54,6 +56,7 @@ export function AppointmentWorkspacePage() {
   const { notifyError, notifySuccess } = useActionFeedback();
   const queryClient = useQueryClient();
   const { business } = useActiveBusiness();
+  const { user } = useAuth();
   const { resources } = useEntityData({ resources: true });
   const { id: routeId } = useParams();
   const appointmentId = asNumericId(routeId);
@@ -71,10 +74,22 @@ export function AppointmentWorkspacePage() {
   const lead = cardQuery.data?.lead || null;
   const tasks = cardQuery.data?.tasks || [];
   const timeline = cardQuery.data?.timeline || [];
-  const statusActions = appointment ? getAllowedStatusActions(appointment) : [];
-  const canReschedule = appointment
-    ? !["completed", "cancelled", "no_show"].includes(appointment.status)
+  const canUpdateAppointment = appointment
+    ? canAccessAppointmentAction({
+        appointment,
+        resources: resources.data || [],
+        user,
+        businessId: business?.id,
+      })
     : false;
+  const statusActions =
+    appointment && canUpdateAppointment
+      ? getAllowedStatusActions(appointment)
+      : [];
+  const canReschedule =
+    appointment && canUpdateAppointment
+      ? !["completed", "cancelled", "no_show"].includes(appointment.status)
+      : false;
 
   const invalidateAppointment = async (updated?: Appointment) => {
     if (updated)

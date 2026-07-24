@@ -272,6 +272,14 @@ export function Header({ onMenuClick, pageHeader }: { onMenuClick: () => void; p
               <PrimaryPageAction action={pageHeader.primaryAction} />
             </div>
           ) : null}
+          {pageHeader?.primaryAction ? (
+            <div className="lg:hidden">
+              <PrimaryPageAction
+                action={pageHeader.primaryAction}
+                compact
+              />
+            </div>
+          ) : null}
           <div className="relative" ref={notificationsRef}>
             <Button
               variant="ghost"
@@ -409,13 +417,24 @@ export function Header({ onMenuClick, pageHeader }: { onMenuClick: () => void; p
   );
 }
 
-function PrimaryPageAction({ action }: { action?: PageHeaderConfig["primaryAction"] }) {
+function PrimaryPageAction({
+  action,
+  compact = false,
+}: {
+  action?: PageHeaderConfig["primaryAction"];
+  compact?: boolean;
+}) {
   if (!action) return null;
   const Icon = action.icon;
   return (
-    <Button data-testid="page-primary-action" className="h-9 shrink-0 px-4" onClick={action.onClick}>
+    <Button
+      data-testid="page-primary-action"
+      className={compact ? "h-10 w-10 shrink-0 px-0" : "h-9 shrink-0 px-4"}
+      onClick={action.onClick}
+      aria-label={action.label}
+    >
       {Icon ? <Icon size={17} /> : null}
-      {action.label}
+      {compact ? null : action.label}
     </Button>
   );
 }

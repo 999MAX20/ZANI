@@ -35,6 +35,19 @@ async function navigateClient(page: Page, path: string) {
   await expect(page).toHaveURL(new RegExp(path === "/app" ? "/app/?$" : path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 }
 
+async function apiList<T>(
+  page: Page,
+  path: string,
+  authorization: string,
+): Promise<T[]> {
+  const response = await page.request.get(path, {
+    headers: { Authorization: authorization },
+  });
+  expect(response.ok()).toBeTruthy();
+  const payload = await response.json();
+  return Array.isArray(payload) ? payload : payload.results || [];
+}
+
 test("F-201 desktop roles receive legitimate daily routes and controls", async ({ page, isMobile }) => {
   test.skip(isMobile, "Desktop role contract is verified in the desktop project.");
   test.setTimeout(120_000);
@@ -77,23 +90,80 @@ test("F-201 desktop roles receive legitimate daily routes and controls", async (
 
 test("F-201 mobile owner, manager, operator and doctor daily routes stay usable", async ({ page, isMobile }) => {
   test.skip(!isMobile, "Mobile role matrix runs only in the mobile project.");
-  test.setTimeout(150_000);
+  test.setTimeout(180_000);
+  let authorization = "";
+  page.on("request", (request) => {
+    const nextAuthorization = request.headers().authorization;
+    if (nextAuthorization) authorization = nextAuthorization;
+  });
 
-  const routeMatrix = [
-    { email: users.owner, routes: ["/app", "/app/tasks", "/app/conversations", "/app/calendar"] },
-    { email: users.manager, routes: ["/app", "/app/tasks", "/app/conversations", "/app/calendar"] },
-    { email: users.operator, routes: ["/app", "/app/tasks", "/app/conversations"] },
-    { email: users.doctor, routes: ["/app", "/app/tasks", "/app/calendar"] },
-  ];
+  await login(page, users.owner);
+  await expect(page.locator('main a[href="/app/tasks"]').first()).toBeVisible();
+  await expect(page.locator('main a[href="/app/calendar"]').first()).toBeVisible();
+  await navigateClient(page, "/app/tasks");
+  await expect(page.locator('[data-testid="page-primary-action"]:visible')).toBeVisible();
+  await navigateClient(page, "/app/conversations");
+  await expect(page.locator('[data-conversation-action-id="assign"]').first()).toBeVisible();
+  await navigateClient(page, "/app/calendar");
+  await expect(page.locator('[data-testid="page-primary-action"]:visible')).toBeVisible();
+  await expectHealthyWorkspace(page);
 
-  for (const entry of routeMatrix) {
-    await login(page, entry.email);
-    for (const route of entry.routes) {
-      await navigateClient(page, route);
-      await expect(page).toHaveURL(new RegExp(route === "/app" ? "/app/?$" : route));
-      await expectHealthyWorkspace(page);
-    }
-  }
+  await login(page, users.manager);
+  await expect(page.getByTestId("role-daily-actions").locator('a[href^="/app/tasks"]')).toBeVisible();
+  await expect(page.getByTestId("role-daily-actions").locator('a[href^="/app/calendar"]')).toBeVisible();
+  await navigateClient(page, "/app/tasks");
+  await expect(page.locator('[data-testid="page-primary-action"]:visible')).toBeVisible();
+  await navigateClient(page, "/app/conversations");
+  await expect(page.locator('[data-conversation-action-id="assign"]').first()).toBeVisible();
+  await navigateClient(page, "/app/calendar");
+  await expect(page.locator('[data-testid="page-primary-action"]:visible')).toBeVisible();
+  await expectHealthyWorkspace(page);
+
+  await login(page, users.operator);
+  await expect(page.getByTestId("role-daily-actions").locator('a[href^="/app/tasks"]')).toBeVisible();
+  await expect(page.getByTestId("role-daily-actions").locator('a[href^="/app/conversations"]')).toBeVisible();
+  await expect(page.getByTestId("role-daily-actions").locator('a[href^="/app/deals"]')).toHaveCount(0);
+  await navigateClient(page, "/app/tasks");
+  await expect(page.getByTestId("page-primary-action")).toHaveCount(0);
+  await expect(page.locator('[data-task-filter="my"]').first()).toBeVisible();
+  await navigateClient(page, "/app/conversations");
+  await expect(page.locator('[data-conversation-action-id="assign"]').first()).toBeVisible();
+  await expectHealthyWorkspace(page);
+
+  await login(page, users.doctor);
+  await expect(page.getByTestId("role-daily-actions").locator('a[href^="/app/tasks"]')).toBeVisible();
+  await expect(page.getByTestId("role-daily-actions").locator('a[href^="/app/calendar"]')).toBeVisible();
+  await expect(page.getByTestId("role-daily-actions").locator('a[href^="/app/conversations"]')).toHaveCount(0);
+  await navigateClient(page, "/app/tasks");
+  await expect(page.getByTestId("page-primary-action")).toHaveCount(0);
+  await expect(page.locator('[data-task-filter="my"]').first()).toBeVisible();
+  await navigateClient(page, "/app/calendar");
+  await expect(page.getByTestId("page-primary-action")).toHaveCount(0);
+
+  const resources = await apiList<{ id: number; linked_user_email?: string | null }>(
+    page,
+    "/api/resources/",
+    authorization,
+  );
+  const appointments = await apiList<{ id: number; resource: number | null }>(
+    page,
+    "/api/appointments/",
+    authorization,
+  );
+  const ownResource = resources.find((resource) => resource.linked_user_email === users.doctor);
+  const otherResource = resources.find(
+    (resource) => resource.linked_user_email && resource.linked_user_email !== users.doctor,
+  );
+  const ownAppointment = appointments.find((appointment) => appointment.resource === ownResource?.id);
+  const otherAppointment = appointments.find((appointment) => appointment.resource === otherResource?.id);
+  expect(ownAppointment).toBeTruthy();
+  expect(otherAppointment).toBeTruthy();
+
+  await navigateClient(page, `/app/calendar/${otherAppointment!.id}`);
+  await expect(page.locator("[data-appointment-action-id]")).toHaveCount(0);
+  await navigateClient(page, `/app/calendar/${ownAppointment!.id}`);
+  await expect(page.locator('[data-appointment-action-id="reschedule"]')).toBeVisible();
+  await expectHealthyWorkspace(page);
 });
 
 test("F-201 recoverable queue, calendar and provider failure states expose next actions", async ({ page, isMobile }) => {
@@ -135,29 +205,15 @@ test("F-201 recoverable queue, calendar and provider failure states expose next 
     async (route) => {
       const response = await route.fetch();
       const payload = await response.json();
-      const channels = Array.isArray(payload.channels) ? payload.channels : [];
-      payload.channels = channels.length
-        ? channels.map((channel: Record<string, unknown>, index: number) =>
-            index === 0
-              ? { ...channel, total: 1, is_connected: false }
-              : channel,
-          )
-        : [
-            {
-              key: "telegram",
-              label: "Telegram",
-              status: "available",
-              pilot_note: "",
-              total: 1,
-              unread: 1,
-              handoff_required: 0,
-              is_connected: false,
-            },
-          ];
       payload.next_actions = [
         {
           label: "Open unread queue",
           href: "/app/conversations?unread=true&sort=unread",
+          priority: "high",
+        },
+        {
+          label: "Repair provider",
+          href: "/app/integrations?status=failed",
           priority: "high",
         },
       ];
@@ -165,12 +221,56 @@ test("F-201 recoverable queue, calendar and provider failure states expose next 
     },
   );
   await page.route(
+    /\/api\/business-connectors\/(?:\?.*)?$/,
+    async (route) => {
+      const response = await route.fetch();
+      const payload = await response.json();
+      const failedConnector = {
+        id: 990001,
+        business: 1,
+        business_name: "Zani E2E Demo",
+        provider: "telegram",
+        capability: "communications",
+        name: "Telegram E2E failure",
+        status: "failed",
+        auth_type: "token",
+        config_json: {},
+        scopes_json: [],
+        last_sync_at: null,
+        next_sync_at: null,
+        last_error: "Temporary provider failure",
+        connected_at: null,
+        created_by: null,
+        created_by_email: null,
+        credentials_count: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      if (Array.isArray(payload)) {
+        await route.fulfill({ response, json: [...payload, failedConnector] });
+        return;
+      }
+      await route.fulfill({
+        response,
+        json: {
+          ...payload,
+          count: Number(payload.count || 0) + 1,
+          results: [...(payload.results || []), failedConnector],
+        },
+      });
+    },
+  );
+  let forcedAssignee: number | undefined;
+  await page.route(
     /\/api\/inbox\/conversations\/(?:\?.*)?$/,
     async (route) => {
       const response = await route.fetch();
       const payload = await response.json();
       if (payload.results?.[0]?.last_message) {
         payload.results[0].last_message.status = "failed";
+        if (forcedAssignee !== undefined) {
+          payload.results[0].assigned_to = forcedAssignee;
+        }
       }
       await route.fulfill({ response, json: payload });
     },
@@ -210,5 +310,14 @@ test("F-201 recoverable queue, calendar and provider failure states expose next 
   const retry = page.getByTestId("conversation-retry-failed").first();
   await expect(retry).toBeVisible();
   await retry.click();
+
+  forcedAssignee = 999999;
+  await login(page, users.operator);
+  await navigateClient(page, "/app/conversations");
+  await expect(page.getByTestId("conversation-retry-failed")).toHaveCount(0);
+  await expect(
+    page.getByTestId("inbox-priority-actions").locator('a[href^="/app/integrations"]'),
+  ).toHaveCount(0);
+  await expect(page.getByTestId("inbox-provider-unavailable")).toHaveCount(0);
   await page.unrouteAll({ behavior: "ignoreErrors" });
 });

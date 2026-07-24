@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
@@ -7,6 +9,7 @@ from apps.businesses.access import ensure_default_roles
 from apps.businesses.models import Business, BusinessMember
 from apps.crm.services import ensure_default_pipeline
 from apps.onboarding.services import apply_niche_template, create_demo_data, create_first_channel_message, setup_first_channel
+from apps.scheduling.models import Appointment, Resource
 
 
 class Command(BaseCommand):
@@ -55,6 +58,12 @@ class Command(BaseCommand):
             role=User.Roles.BUSINESS_OPERATOR,
             full_name="Zani Business Doctor",
         )
+        other_doctor = self._upsert_user(
+            email="business_doctor_other@example.com",
+            password=password,
+            role=User.Roles.BUSINESS_OPERATOR,
+            full_name="Zani Business Doctor Two",
+        )
 
         business, _ = Business.objects.update_or_create(
             slug=options["business_slug"],
@@ -72,6 +81,11 @@ class Command(BaseCommand):
         self._upsert_member(business, manager, BusinessMember.Roles.MANAGER)
         self._upsert_member(business, operator, BusinessMember.Roles.OPERATOR)
         self._upsert_member(business, doctor, BusinessMember.Roles.DOCTOR)
+        self._upsert_member(
+            business,
+            other_doctor,
+            BusinessMember.Roles.DOCTOR,
+        )
 
         ensure_default_roles(business)
         ensure_default_pipeline(business)
@@ -84,6 +98,11 @@ class Command(BaseCommand):
 
         apply_niche_template(business, Business.BusinessTypes.DENTISTRY, actor=owner)
         create_demo_data(business, actor=owner)
+        self._prepare_doctor_appointments(
+            business=business,
+            doctor=doctor,
+            other_doctor=other_doctor,
+        )
         setup_first_channel(business, actor=owner)
         create_first_channel_message(business, actor=owner)
 
@@ -124,3 +143,58 @@ class Command(BaseCommand):
             defaults={"role": role, "is_active": True},
         )
         return member
+
+    def _prepare_doctor_appointments(
+        self,
+        *,
+        business,
+        doctor,
+        other_doctor,
+    ):
+        demo_appointment = business.appointments.order_by("id").first()
+        if demo_appointment is None:
+            return
+
+        doctor_resource, _ = Resource.objects.update_or_create(
+            business=business,
+            name="E2E Doctor Schedule",
+            defaults={
+                "resource_type": Resource.ResourceTypes.STAFF,
+                "linked_user": doctor,
+                "is_active": True,
+            },
+        )
+        other_resource, _ = Resource.objects.update_or_create(
+            business=business,
+            name="E2E Other Doctor Schedule",
+            defaults={
+                "resource_type": Resource.ResourceTypes.STAFF,
+                "linked_user": other_doctor,
+                "is_active": True,
+            },
+        )
+        demo_appointment.resource = other_resource
+        demo_appointment.save(update_fields=["resource", "updated_at"])
+
+        own_appointment = Appointment.objects.filter(
+            business=business,
+            notes="E2E doctor-owned appointment.",
+        ).first()
+        own_defaults = {
+            "client": demo_appointment.client,
+            "lead": demo_appointment.lead,
+            "service": demo_appointment.service,
+            "resource": doctor_resource,
+            "start_at": demo_appointment.start_at + timedelta(hours=4),
+            "end_at": demo_appointment.end_at + timedelta(hours=4),
+            "source": Appointment.Sources.MANUAL,
+            "notes": "E2E doctor-owned appointment.",
+        }
+        if own_appointment is None:
+            Appointment.objects.create(business=business, **own_defaults)
+            return
+        for field, value in own_defaults.items():
+            setattr(own_appointment, field, value)
+        own_appointment.save(
+            update_fields=[*own_defaults.keys(), "updated_at"],
+        )

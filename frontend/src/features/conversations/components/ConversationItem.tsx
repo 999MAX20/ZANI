@@ -13,6 +13,7 @@ export function ConversationItem({
   onToggleSelected,
   onClick,
   onRetryLastMessage,
+  canRetryLastMessage,
   retryPending,
   t,
 }: {
@@ -23,6 +24,7 @@ export function ConversationItem({
   onToggleSelected: () => void;
   onClick: () => void;
   onRetryLastMessage: () => void;
+  canRetryLastMessage: boolean;
   retryPending: boolean;
   t: Translate;
 }) {
@@ -83,7 +85,7 @@ export function ConversationItem({
             <span className="rounded-full bg-surface-muted px-1.5 py-0.5 text-[10px] font-bold text-zani-muted">{channelLabel(conversation.channel, t)}</span>
             {conversation.handoff_required ? <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-700">{t("conversations.noReply")}</span> : null}
             {isSlaOverdue ? <span className="rounded-full bg-[var(--zani-danger-soft)] px-1.5 py-0.5 text-[10px] font-bold text-zani-danger">{t("conversations.slaOverdue")}</span> : null}
-            {lastMessageFailed ? (
+            {lastMessageFailed && canRetryLastMessage ? (
               <button
                 type="button"
                 className="inline-flex min-h-7 items-center gap-1 rounded-control bg-[var(--zani-danger-soft)] px-2 text-[10px] font-bold text-zani-danger"

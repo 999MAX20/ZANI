@@ -90,6 +90,7 @@ export function CrmEntityDrawer({
       open={Boolean(entity)}
       onClose={onClose}
       titleId={titleId}
+      testId="crm-entity-drawer"
       className={cn(
         "transition-transform duration-[620ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform",
         isOpen ? "translate-x-0" : "translate-x-full",

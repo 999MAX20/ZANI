@@ -118,6 +118,7 @@ export function AppointmentDrawerPanel({
                 {statusActions.map((status, index) => (
                   <Button
                     key={status}
+                    data-testid={`calendar-appointment-status-${status}`}
                     type="button"
                     variant={index === 0 ? "primary" : "secondary"}
                     size="sm"

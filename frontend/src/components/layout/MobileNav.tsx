@@ -1,6 +1,5 @@
 import { Home, Inbox, MessageSquareText, MoreHorizontal, Users, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
 import { NavLink } from "react-router-dom";
 
 import { cn } from "../../lib/cn";
@@ -11,7 +10,10 @@ import { realtimeIntervals, realtimeQueryOptions } from "../../lib/realtime";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useAuth } from "../../features/auth/AuthProvider";
 import { Button } from "../ui/Button";
+import { Drawer } from "../ui/Overlay";
 import { Sidebar } from "./Sidebar";
+
+export const mobileNavigationDrawerId = "mobile-navigation-drawer";
 
 const bottomItems = [
   { to: "/app", label: "mobile.home", icon: Home },
@@ -34,39 +36,30 @@ export function MobileNav({ open, onOpen, onClose }: { open: boolean; onOpen: ()
   });
   const unreadMessages = inboxSummary.data?.unread_messages ?? inboxSummary.data?.unread ?? 0;
 
-  useEffect(() => {
-    if (!open) return;
-    const previousOverflow = document.body.style.overflow;
-    const previousOverscroll = document.body.style.overscrollBehavior;
-    document.body.style.overflow = "hidden";
-    document.body.style.overscrollBehavior = "contain";
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.body.style.overscrollBehavior = previousOverscroll;
-    };
-  }, [open]);
-
   return (
     <>
-      {open ? (
-        <div className="fixed inset-0 z-[80] bg-[rgba(23,18,15,0.38)] backdrop-blur-md lg:hidden">
-          <button
-            type="button"
-            className="absolute inset-0 cursor-default"
-            aria-label={t("sidebar.collapse")}
+      <Drawer
+        id={mobileNavigationDrawerId}
+        open={open}
+        onClose={onClose}
+        ariaLabel={t("mobile.more")}
+        side="left"
+        testId="mobile-navigation-drawer"
+        backdropClassName="bg-[rgba(23,18,15,0.38)] backdrop-blur-md lg:hidden"
+        className="relative max-w-[min(390px,94vw)] rounded-none border-y-0 border-l-0 lg:hidden"
+      >
+        <div className="absolute right-3 top-3 z-[90]">
+          <Button
+            variant="secondary"
+            className="h-11 w-11 rounded-full border border-zani-border bg-surface-card px-0 shadow-premium"
             onClick={onClose}
-          />
-          <div className="relative h-full w-[min(390px,94vw)]">
-            <div className="absolute right-3 top-3 z-[90]">
-              <Button variant="secondary" className="h-11 w-11 rounded-full border border-zani-border bg-surface-card px-0 shadow-premium" onClick={onClose} aria-label={t("sidebar.collapse")}>
-                <X size={22} strokeWidth={2.2} />
-              </Button>
-            </div>
-            <Sidebar forceVisible mobileDrawer onNavigate={onClose} />
-          </div>
+            aria-label={t("sidebar.collapse")}
+          >
+            <X aria-hidden="true" size={22} strokeWidth={2.2} />
+          </Button>
         </div>
-      ) : null}
+        <Sidebar forceVisible mobileDrawer onNavigate={onClose} />
+      </Drawer>
 
       <nav className="fixed inset-x-2 bottom-2 z-[60] grid grid-cols-5 rounded-card border border-zani-border bg-surface-card/96 p-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] shadow-premium backdrop-blur-2xl lg:hidden">
         {visibleBottomItems.slice(0, 4).map((item) => {
@@ -101,6 +94,9 @@ export function MobileNav({ open, onOpen, onClose }: { open: boolean; onOpen: ()
           type="button"
           onClick={onOpen}
           aria-label={t("mobile.more")}
+          aria-controls={mobileNavigationDrawerId}
+          aria-expanded={open}
+          data-testid="bottom-mobile-menu-trigger"
           className={cn(
             "zani-focus-ring flex min-h-14 flex-col items-center justify-center gap-1 rounded-control px-0.5 py-2 text-center text-[10px] font-semibold leading-none transition hover:bg-surface-muted hover:text-zani-text active:scale-[0.98]",
             open

@@ -873,12 +873,11 @@ test("calendar deep link selects appointment and lifecycle action works", async 
     page.locator("aside").getByText(`Deep Link Client ${unique}`).first(),
   ).toBeVisible();
 
-  await page.evaluate(() => {
-    const button = Array.from(document.querySelectorAll("aside button")).find(
-      (item) => /РџРѕРґС‚РІРµСЂРґРёС‚СЊ|Confirm|Р Р°СЃС‚Р°Сѓ/.test(item.textContent || ""),
-    ) as HTMLButtonElement | undefined;
-    button?.click();
-  });
+  const confirmAction = page.getByTestId(
+    "calendar-appointment-status-confirmed",
+  );
+  await expect(confirmAction).toBeVisible();
+  await confirmAction.click();
   await expect
     .poll(async () => {
       const response = await page.request.get(

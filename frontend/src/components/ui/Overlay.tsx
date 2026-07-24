@@ -51,87 +51,100 @@ function isTopmostDialog(dialog: HTMLElement) {
   return dialogs.at(-1) === dialog;
 }
 
+function canReceiveFocus(element: HTMLElement | null) {
+  if (!element?.isConnected) return false;
+  if (
+    element.matches(
+      "[disabled], [aria-disabled='true'], [aria-hidden='true'], [hidden]",
+    )
+  ) {
+    return false;
+  }
+  return element.getClientRects().length > 0;
+}
+
+function focusAndConfirm(element: HTMLElement | null) {
+  if (!element || !canReceiveFocus(element)) return false;
+  element.focus({ preventScroll: true });
+  return document.activeElement === element;
+}
+
+function findVisibleFocusReturnTarget(focusReturnId: string | null) {
+  if (!focusReturnId) return null;
+  return Array.from(
+    document.querySelectorAll<HTMLElement>(
+      `[data-focus-return-id="${CSS.escape(focusReturnId)}"]`,
+    ),
+  ).find(canReceiveFocus) || null;
+}
+
+function restoreDialogFocus(
+  opener: HTMLElement | null,
+  focusReturnId: string | null,
+) {
+  function tryRestore() {
+    if (focusAndConfirm(opener)) return true;
+    return focusAndConfirm(findVisibleFocusReturnTarget(focusReturnId));
+  }
+
+  if (tryRestore()) return;
+
+  let observer: MutationObserver | null = null;
+  let timeoutId: number | null = null;
+  window.requestAnimationFrame(() => {
+    if (tryRestore()) return;
+    observer = new MutationObserver(() => {
+      if (!tryRestore()) return;
+      observer?.disconnect();
+      observer = null;
+      if (timeoutId !== null) window.clearTimeout(timeoutId);
+    });
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ["class", "hidden", "style"],
+      childList: true,
+      subtree: true,
+    });
+    timeoutId = window.setTimeout(() => {
+      observer?.disconnect();
+      observer = null;
+    }, 1_000);
+  });
+}
+
 function useDialogFocus(
   open: boolean,
   onClose: () => void,
   dialogRef: React.RefObject<HTMLElement>,
 ) {
-  const openerRef = useRef<HTMLElement | null>(null);
-  const openerSelectorRef = useRef<string | null>(null);
-  const wasOpenRef = useRef(false);
-
   useLayoutEffect(() => {
-    if (open && !wasOpenRef.current) {
-      openerRef.current =
-        document.activeElement instanceof HTMLElement
-          ? document.activeElement
-          : null;
-      const focusReturnId = openerRef.current?.dataset.focusReturnId;
-      const openerTestId = openerRef.current?.dataset.testid;
-      openerSelectorRef.current = focusReturnId
-        ? `[data-focus-return-id="${CSS.escape(focusReturnId)}"]`
-        : openerTestId
-          ? `[data-testid="${CSS.escape(openerTestId)}"]`
-          : null;
-      wasOpenRef.current = true;
-      const focusInsideDialog = () => {
-        const dialog = dialogRef.current;
-        if (!dialog || !isTopmostDialog(dialog)) return;
-        const autofocusTarget = dialog.querySelector<HTMLElement>("[autofocus]");
-        const firstFocusable =
-          dialog.querySelector<HTMLElement>(focusableSelector);
-        (autofocusTarget || firstFocusable || dialog).focus({
-          preventScroll: true,
-        });
-      };
-      focusInsideDialog();
-      const frameId = window.requestAnimationFrame(() => {
-        const dialog = dialogRef.current;
-        if (dialog?.contains(document.activeElement)) return;
-        focusInsideDialog();
-      });
-      return () => window.cancelAnimationFrame(frameId);
-    }
-    if (open || !wasOpenRef.current) return undefined;
+    if (!open) return undefined;
 
-    wasOpenRef.current = false;
-    const opener = openerRef.current;
-    const openerSelector = openerSelectorRef.current;
-    openerRef.current = null;
-    openerSelectorRef.current = null;
-
-    function restoreFocus() {
-      const replacement = openerSelector
-        ? document.querySelector<HTMLElement>(openerSelector)
+    const opener =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
         : null;
-      const target = replacement || (opener?.isConnected ? opener : null);
-      target?.focus({ preventScroll: true });
-      return Boolean(target);
-    }
+    const focusReturnId = opener?.dataset.focusReturnId || null;
+    const focusInsideDialog = () => {
+      const dialog = dialogRef.current;
+      if (!dialog || !isTopmostDialog(dialog)) return;
+      const autofocusTarget =
+        dialog.querySelector<HTMLElement>("[autofocus]");
+      const firstFocusable =
+        dialog.querySelector<HTMLElement>(focusableSelector);
+      focusAndConfirm(autofocusTarget || firstFocusable || dialog);
+    };
 
-    if (restoreFocus()) return undefined;
-
-    let observer: MutationObserver | null = null;
-    let timeoutId: number | null = null;
+    focusInsideDialog();
     const frameId = window.requestAnimationFrame(() => {
-      if (restoreFocus()) return;
-      observer = new MutationObserver(() => {
-        if (!restoreFocus()) return;
-        observer?.disconnect();
-        observer = null;
-        if (timeoutId !== null) window.clearTimeout(timeoutId);
-      });
-      observer.observe(document.body, { childList: true, subtree: true });
-      timeoutId = window.setTimeout(() => {
-        observer?.disconnect();
-        observer = null;
-      }, 1_000);
+      const dialog = dialogRef.current;
+      if (dialog?.contains(document.activeElement)) return;
+      focusInsideDialog();
     });
 
     return () => {
       window.cancelAnimationFrame(frameId);
-      observer?.disconnect();
-      if (timeoutId !== null) window.clearTimeout(timeoutId);
+      restoreDialogFocus(opener, focusReturnId);
     };
   }, [dialogRef, open]);
 
@@ -246,16 +259,26 @@ export function Drawer({
   open,
   onClose,
   children,
+  id,
   titleId,
+  ariaLabel,
   className,
+  backdropClassName,
   closeOnBackdrop = true,
+  side = "right",
+  testId,
 }: {
   open: boolean;
   onClose: () => void;
   children: React.ReactNode;
+  id?: string;
   titleId?: string;
+  ariaLabel?: string;
   className?: string;
+  backdropClassName?: string;
   closeOnBackdrop?: boolean;
+  side?: "left" | "right";
+  testId?: string;
 }) {
   const drawerRef = useRef<HTMLElement>(null);
   useBodyScrollLock(open);
@@ -265,18 +288,27 @@ export function Drawer({
 
   return createPortal(
     <div
-      className="zani-overlay-backdrop fixed inset-0"
+      className={cn("zani-overlay-backdrop fixed inset-0", backdropClassName)}
       style={{ zIndex: "var(--zani-z-drawer)" }}
       onMouseDown={closeOnBackdrop ? onClose : undefined}
     >
       <aside
+        id={id}
         ref={drawerRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        aria-label={titleId ? undefined : ariaLabel}
         tabIndex={-1}
         autoFocus
-        className={cn("zani-drawer-surface ml-auto flex h-full w-full max-w-[720px] flex-col overflow-hidden sm:rounded-l-[16px]", className)}
+        data-testid={testId}
+        className={cn(
+          "zani-drawer-surface flex h-full w-full max-w-[720px] flex-col overflow-hidden",
+          side === "left"
+            ? "mr-auto sm:rounded-r-[16px]"
+            : "ml-auto sm:rounded-l-[16px]",
+          className,
+        )}
         onMouseDown={(event) => event.stopPropagation()}
       >
         {children}

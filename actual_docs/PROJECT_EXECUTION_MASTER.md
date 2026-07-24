@@ -200,7 +200,7 @@ integrated and the manager gate passes.
 
 #### F-101 — Critical Action Feedback and Recovery UX
 
-Status: `IN_PROGRESS`
+Status: `DONE`
 Owner: UI/UX  
 Depends on: integrated baseline
 
@@ -235,6 +235,25 @@ Required gates:
 - targeted Playwright workflow checks;
 - `cd frontend && npm run build`;
 - mobile owner/manager smoke from `docs/testing.md`.
+
+Completion evidence (2026-07-24):
+
+- accepted source commits:
+  `db1496a62fe92e26bba9c6d0123d1c279afe4ed5` and
+  `55819a8f0879ad82fab9f9e598ba779652de02a0`;
+- integration commits:
+  `07d4562` and `7874590` on
+  `codex/project-integration-2026-07`;
+- execution and manager verification:
+  `npm run test:action-feedback` (`3 passed`), `npm run build` with `4460`
+  i18n keys across RU/KK/EN, and `npm run check:bundle` with the largest JS
+  chunk at `465.3 kB`;
+- manager Playwright verification:
+  representative action-feedback matrix `1 passed`, Calendar reschedule
+  recovery/focus `1 passed`, and mobile owner/manager smoke `2 passed`;
+- no backend permission, tenant, BusinessEvent, AI, migration, provider or
+  environment change; backend and live-provider checks were skipped as
+  out-of-scope for the frontend-only task.
 
 #### B-101 — Capability Enforcement for CRM Custom Actions
 
@@ -297,7 +316,7 @@ Completion evidence (2026-07-24):
 
 #### X-101 — P1 Integration Gate
 
-Status: `LOCKED`  
+Status: `DONE`  
 Owner: Manager  
 Depends on: F-101 and B-101 integrated
 
@@ -307,13 +326,29 @@ Depends on: F-101 and B-101 integrated
 - run combined backend/frontend gates and focused browser flows;
 - record evidence before unlocking P2.
 
+Completion evidence (2026-07-24):
+
+- F-101 and B-101 diffs were independently reviewed and integrated without
+  conflicts;
+- combined backend gate: `manage.py check`, migration drift check, and focused
+  capability/automation/AI regression suite (`9 passed`);
+- combined frontend gate: action-feedback unit tests (`3 passed`), production
+  build, bundle budget, desktop action matrix, Calendar recovery/focus and
+  mobile owner/manager smoke all passed;
+- known baseline warnings remain non-blocking: local JWT key length, React
+  Router future flag, unordered BusinessMember pagination, and the separately
+  documented closed-lead HTTP 400/409 expectation mismatch.
+
 ### Phase P2 — Daily Workflow Actionability
 
 #### F-201 — Role-Aware Daily Workspaces
 
-Status: `LOCKED`  
+Status: `IN_PROGRESS`  
 Owner: UI/UX  
 Depends on: X-101
+
+Assignment: 2026-07-24, `codex/f201-role-aware-daily-workspaces` from integrated
+P1 baseline `7874590`.
 
 Refine Dashboard, Tasks, Inbox and Calendar around real overdue, unread,
 upcoming, stalled and failed states. Every priority item must expose a direct
@@ -322,9 +357,12 @@ operator and doctor routes require targeted desktop/mobile Playwright coverage.
 
 #### B-201 — Action Side-Effect Consistency
 
-Status: `LOCKED`  
+Status: `IN_PROGRESS`  
 Owner: Features/Backend  
 Depends on: X-101
+
+Assignment: 2026-07-24, `codex/b201-action-side-effects` from integrated P1
+baseline `7874590`.
 
 Make pilot-critical Lead, Deal, Task, Appointment and Conversation actions
 produce consistent activity, audit, notification and automation effects across

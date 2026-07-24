@@ -6,6 +6,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
 from apps.businesses.access import Actions, Resources, assert_can
+from apps.businesses.capabilities import assert_resource_enabled
 from apps.businesses.models import Business
 from apps.core.crm_cards import deal_crm_card
 from apps.core.permissions import user_can_access_business
@@ -47,6 +48,8 @@ class PipelineViewSet(TenantModelViewSet):
         business = Business.objects.filter(id=business_id).first()
         if not business or not user_can_access_business(request.user, business):
             raise ValidationError({"business": "Business is not available."})
+        assert_can(request.user, business, Resources.DEALS, Actions.CREATE)
+        assert_resource_enabled(business, Resources.DEALS)
 
         pipeline = Pipeline.objects.create(
             business=business,

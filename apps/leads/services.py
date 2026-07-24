@@ -9,6 +9,7 @@ from apps.activities.taxonomy import ActivityEvents
 from apps.businesses.assignment_notifications import create_assignment_notifications
 from apps.businesses.assignment_policy import assert_assignment_allowed
 from apps.businesses.access import Resources
+from apps.businesses.capabilities import assert_resource_enabled
 from apps.core.audit import write_audit_log
 from apps.core.domain_errors import InvalidTransition
 from apps.core.models import AuditLog
@@ -171,6 +172,7 @@ def reopen_lead(*, lead: Lead, actor, request=None) -> Lead:
 
 
 def create_deal_from_lead(*, lead: Lead, actor, amount=0, title="", request=None) -> LeadDealResult:
+    assert_resource_enabled(lead.business, Resources.DEALS)
     existing_deal = lead.deals.filter(is_archived=False).order_by("-updated_at").first()
     if existing_deal:
         return LeadDealResult(deal=existing_deal, created=False)

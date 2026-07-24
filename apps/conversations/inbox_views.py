@@ -24,7 +24,7 @@ from apps.bots.inbox_service import (
 )
 from apps.bots.models import BotConversation, BotMessage
 from apps.businesses.access import Actions, Resources, assert_can, can, scope_queryset
-from apps.businesses.capabilities import resource_is_enabled
+from apps.businesses.capabilities import assert_resource_enabled, resource_is_enabled
 from apps.clients.models import Client
 from apps.clients.serializers import ClientSerializer
 from apps.clients.services import duplicate_payload, find_duplicate_clients
@@ -394,6 +394,7 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
             assert_can(request.user, conversation.business, Resources.LEADS, Actions.CREATE)
         if data.get("create_deal", True):
             assert_can(request.user, conversation.business, Resources.DEALS, Actions.CREATE)
+            assert_resource_enabled(conversation.business, Resources.DEALS)
         if data.get("create_task", True):
             assert_can(request.user, conversation.business, Resources.TASKS, Actions.CREATE)
 
@@ -558,6 +559,8 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
     def link_deal(self, request, pk=None):
         conversation = self.get_object()
         assert_can(request.user, conversation.business, Resources.CONVERSATIONS, Actions.UPDATE, obj=conversation)
+        assert_can(request.user, conversation.business, Resources.DEALS, Actions.VIEW)
+        assert_resource_enabled(conversation.business, Resources.DEALS)
         serializer = InboxLinkDealSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -585,6 +588,7 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
     def create_deal(self, request, pk=None):
         conversation = self.get_object()
         assert_can(request.user, conversation.business, Resources.DEALS, Actions.CREATE)
+        assert_resource_enabled(conversation.business, Resources.DEALS)
         assert_can(request.user, conversation.business, Resources.CONVERSATIONS, Actions.UPDATE, obj=conversation)
         serializer = InboxCreateDealSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

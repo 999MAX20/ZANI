@@ -273,6 +273,7 @@ def _execute_create_task(log, user):
 
 
 def _execute_create_deal(log, user):
+    assert_resource_enabled(log.business, Resources.DEALS)
     conversation = log.conversation
     client = conversation.client if conversation else None
     if client is None:

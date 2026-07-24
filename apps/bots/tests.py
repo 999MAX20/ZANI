@@ -13,7 +13,8 @@ from apps.activities.models import ActivityEvent
 from apps.activities.taxonomy import ActivityEvents
 from apps.ai_core.models import AIRequestLog, AgentProfile, BusinessKnowledgeItem
 from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
-from apps.businesses.models import Business, BusinessMember
+from apps.businesses.capabilities import apply_business_type_defaults
+from apps.businesses.models import Business, BusinessCapability, BusinessMember
 from apps.clients.models import Client
 from apps.crm.models import Deal, Pipeline, PipelineStage
 from apps.integrations.models import BusinessEvent
@@ -384,6 +385,55 @@ class BotsFoundationTests(TestCase):
         self.assertFalse(Deal.objects.filter(business=self.business, client=conversation.client).exists())
         self.assertEqual(conversation.metadata_json["auto_crm_pipeline"]["status"], "created_lead_task")
         self.assertEqual(conversation.metadata_json["auto_crm_pipeline"]["reason"], "Deal creation is disabled by the active agent profile.")
+        self.assertNotIn(
+            "create_draft_deal",
+            conversation.metadata_json["auto_crm_pipeline"]["confirmation_policy"]["allowed_auto_actions"],
+        )
+
+    @override_settings(AI_PROVIDER="mock", OPENAI_API_KEY="", OPENROUTER_API_KEY="")
+    def test_auto_pipeline_respects_disabled_deals_capability(self):
+        apply_business_type_defaults(self.business, configured_by=self.owner)
+        capability = BusinessCapability.objects.get(business=self.business, module_key="deals")
+        capability.is_enabled = False
+        capability.save(update_fields=["is_enabled", "updated_at"])
+        if hasattr(self.business, "_capability_map"):
+            del self.business._capability_map
+        bot = Bot.objects.create(business=self.business, name="Capability guarded bot", status=Bot.Statuses.ACTIVE)
+        channel = BotChannel.objects.create(
+            bot=bot,
+            channel=BotChannel.Channels.WEBSITE,
+            status=BotChannel.Statuses.ACTIVE,
+            config_json={
+                "auto_crm_pipeline": {
+                    "enabled": True,
+                    "mode": "draft_deal",
+                    "require_review_on_fallback": False,
+                    "min_deal_confidence": 0.7,
+                }
+            },
+        )
+
+        response = self.api.post(
+            f"/api/public/website-chat/{channel.public_token}/conversations/",
+            {
+                "full_name": "Capability Guarded Visitor",
+                "phone": "+77015550113",
+                "message": "Здравствуйте, хочу записаться на консультацию и узнать цену",
+                "external_user_id": "capability-guarded-visitor-100",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        conversation = BotConversation.objects.get(public_id=response.data["conversation_id"])
+        self.assertIsNotNone(conversation.client_id)
+        self.assertIsNotNone(conversation.lead_id)
+        self.assertIsNone(conversation.deal_id)
+        self.assertFalse(Deal.objects.filter(business=self.business, client=conversation.client).exists())
+        auto_meta = conversation.metadata_json["auto_crm_pipeline"]
+        self.assertEqual(auto_meta["status"], "created_lead_task")
+        self.assertEqual(auto_meta["reason"], "Deal creation is disabled for this business.")
+        self.assertNotIn("create_draft_deal", auto_meta["confirmation_policy"]["allowed_auto_actions"])
 
     @override_settings(AI_PROVIDER="mock", OPENAI_API_KEY="", OPENROUTER_API_KEY="")
     def test_handoff_conversation_skips_auto_pipeline_and_bot_reply(self):

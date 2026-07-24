@@ -21,6 +21,7 @@ except ImportError:  # pragma: no cover - local env may install requirements aft
 from apps.clients.models import Client
 from apps.clients.services import duplicate_payload, find_duplicate_clients
 from apps.businesses.access import Actions, Resources, scope_queryset
+from apps.businesses.capabilities import assert_resource_enabled
 from apps.core.audit import write_audit_log
 from apps.core.csv_safety import safe_csv_cell
 from apps.core.models import AuditLog, ImportJob
@@ -162,6 +163,8 @@ def build_import_preview(job: ImportJob, mapping=None):
 
 @transaction.atomic
 def confirm_import(job: ImportJob, request):
+    if job.entity_type == ImportJob.EntityTypes.DEALS:
+        assert_resource_enabled(job.business, Resources.DEALS)
     mapping = job.mapping_json or {}
     if not mapping:
         raise ValidationError("Run preview before confirming import.")
@@ -380,6 +383,7 @@ def import_lead_row(job, payload, connector=None):
 
 
 def import_deal_row(job, payload, connector=None):
+    assert_resource_enabled(job.business, Resources.DEALS)
     if not payload.get("title") and not payload.get("client_name") and not payload.get("phone") and not payload.get("email"):
         return "skipped"
     deal_payload = normalize_deal_payload(payload)

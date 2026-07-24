@@ -238,7 +238,7 @@ Required gates:
 
 #### B-101 — Capability Enforcement for CRM Custom Actions
 
-Status: `IN_PROGRESS`
+Status: `DONE`
 Owner: Features/Backend  
 Depends on: integrated baseline
 
@@ -275,6 +275,25 @@ Required gates:
 - migration drift check;
 - scoped CRM, Inbox, automation and AI tests affected by the inventory;
 - full backend suite when shared capability/permission helpers change.
+
+Completion evidence (2026-07-24):
+
+- accepted source commits:
+  `8d6a1156b913e867c9267e225291cc2c26cabf03` and
+  `694b780a32c09b08fe68491972e072a3783a8420`;
+- integration commits:
+  `4fd4bb6` and `91dad9d` on
+  `codex/project-integration-2026-07`;
+- execution verification: focused capability paths `10 passed`; affected CRM,
+  Inbox, automation and AI scope `193 passed` with one independently reproduced
+  baseline status-code expectation excluded; correction scope `68 passed`;
+- manager verification: the three correction regressions `3 passed`,
+  `manage.py check` passed, migration drift reported `No changes detected`, and
+  `git diff --check` passed;
+- no migration, environment, provider or frontend change; no external provider
+  call; the full backend suite was skipped because shared permission/capability
+  helpers were not changed and the unrelated closed-lead appointment baseline
+  still expects HTTP 400 while the established domain contract returns HTTP 409.
 
 #### X-101 — P1 Integration Gate
 

@@ -1,4 +1,4 @@
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.utils import timezone
 
 from apps.bots.models import BotConversation
@@ -111,30 +111,17 @@ def build_work_queues(*, business, user=None, limit=10, now=None):
             _conversation_item(conversation, reason="team", now=now) for conversation in team_conversations[:limit]
         ],
     }
-    summary = {key: query.count() for key, query in {
-        "overdue_tasks": overdue_tasks,
-        "stale_leads": stale_leads,
-        "sla_overdue_deals": sla_overdue_deals,
-        "no_next_action_deals": no_next_action_deals,
-        "upcoming_appointments": upcoming_appointments,
-        "appointment_confirmations": appointment_confirmations,
-        "unread_conversations": unread_conversations,
-        "handoff_conversations": handoff_conversations,
-        "unread_sla_overdue_conversations": unread_sla_overdue_conversations,
-        "handoff_sla_overdue_conversations": handoff_sla_overdue_conversations,
-        "unassigned_tasks": unassigned_tasks,
-        "own_tasks": own_tasks,
-        "team_tasks": team_tasks,
-        "unassigned_leads": unassigned_leads,
-        "own_leads": own_leads,
-        "team_leads": team_leads,
-        "unassigned_deals": unassigned_deals,
-        "own_deals": own_deals,
-        "team_deals": team_deals,
-        "unassigned_conversations": unassigned_conversations,
-        "own_conversations": own_conversations,
-        "team_conversations": team_conversations,
-    }.items()}
+    summary = _work_queue_summary(
+        task_scope=task_scope,
+        lead_scope=lead_scope,
+        open_deals=open_deals,
+        appointment_scope=appointment_scope,
+        conversation_scope=conversation_scope,
+        sla_overdue_deals=sla_overdue_deals,
+        no_next_action_deals=no_next_action_deals,
+        user=user,
+        now=now,
+    )
     summary["total_attention"] = (
         summary["overdue_tasks"]
         + summary["stale_leads"]
@@ -157,6 +144,143 @@ def build_work_queues(*, business, user=None, limit=10, now=None):
         },
         "summary": summary,
         "queues": queues,
+    }
+
+
+def _work_queue_summary(
+    *,
+    task_scope,
+    lead_scope,
+    open_deals,
+    appointment_scope,
+    conversation_scope,
+    sla_overdue_deals,
+    no_next_action_deals,
+    user,
+    now,
+):
+    empty = Q(pk__in=[])
+    own_task = Q(assignee=user) if user else empty
+    team_task = Q(assignee__isnull=False) & ~Q(assignee=user) if user else empty
+    task_counts = task_scope.aggregate(
+        overdue_tasks=Count(
+            "id",
+            filter=Q(due_at__lt=now)
+            & (Q(snoozed_until__isnull=True) | Q(snoozed_until__lte=now)),
+            distinct=True,
+        ),
+        unassigned_tasks=Count("id", filter=Q(assignee__isnull=True), distinct=True),
+        own_tasks=Count("id", filter=own_task, distinct=True),
+        team_tasks=Count("id", filter=team_task, distinct=True),
+    )
+
+    stale_before = now - timezone.timedelta(days=3)
+    own_lead = Q(responsible_user=user) if user else empty
+    team_lead = Q(responsible_user__isnull=False) & ~Q(responsible_user=user) if user else empty
+    lead_counts = lead_scope.aggregate(
+        stale_leads=Count(
+            "id",
+            filter=Q(status__in=OPEN_LEAD_STATUSES)
+            & (Q(responsible_user__isnull=True) | Q(updated_at__lte=stale_before)),
+            distinct=True,
+        ),
+        unassigned_leads=Count("id", filter=Q(responsible_user__isnull=True), distinct=True),
+        own_leads=Count("id", filter=own_lead, distinct=True),
+        team_leads=Count("id", filter=team_lead, distinct=True),
+    )
+
+    own_deal = Q(owner=user) if user else empty
+    team_deal = Q(owner__isnull=False) & ~Q(owner=user) if user else empty
+    deal_counts = open_deals.aggregate(
+        unassigned_deals=Count("id", filter=Q(owner__isnull=True), distinct=True),
+        own_deals=Count("id", filter=own_deal, distinct=True),
+        team_deals=Count("id", filter=team_deal, distinct=True),
+    )
+    deal_counts.update(
+        {
+            "sla_overdue_deals": sla_overdue_deals.count(),
+            "no_next_action_deals": no_next_action_deals.count(),
+        }
+    )
+
+    appointment_counts = appointment_scope.aggregate(
+        upcoming_appointments=Count(
+            "id",
+            filter=Q(
+                status__in=[Appointment.Statuses.CREATED, Appointment.Statuses.CONFIRMED],
+                start_at__gte=now,
+                start_at__lte=now + timezone.timedelta(hours=24),
+            ),
+            distinct=True,
+        ),
+        appointment_confirmations=Count(
+            "id",
+            filter=Q(status=Appointment.Statuses.CREATED, start_at__gte=now),
+            distinct=True,
+        ),
+    )
+
+    open_conversation = Q(status=BotConversation.Statuses.OPEN)
+    own_conversation = (
+        open_conversation & Q(assigned_to=user)
+        if user
+        else empty
+    )
+    team_conversation = (
+        open_conversation & Q(assigned_to__isnull=False) & ~Q(assigned_to=user)
+        if user
+        else empty
+    )
+    conversation_counts = conversation_scope.aggregate(
+        unread_conversations=Count(
+            "id",
+            filter=open_conversation & Q(unread_count__gt=0),
+            distinct=True,
+        ),
+        handoff_conversations=Count(
+            "id",
+            filter=open_conversation & Q(handoff_required=True),
+            distinct=True,
+        ),
+        unread_sla_overdue_conversations=Count(
+            "id",
+            filter=(
+                open_conversation
+                & Q(unread_count__gt=0)
+                & Q(
+                    last_inbound_at__lt=now
+                    - timezone.timedelta(minutes=UNREAD_RESPONSE_SLA_MINUTES)
+                )
+            ),
+            distinct=True,
+        ),
+        handoff_sla_overdue_conversations=Count(
+            "id",
+            filter=(
+                open_conversation
+                & Q(handoff_required=True)
+                & Q(
+                    last_inbound_at__lt=now
+                    - timezone.timedelta(minutes=HANDOFF_RESPONSE_SLA_MINUTES)
+                )
+            ),
+            distinct=True,
+        ),
+        unassigned_conversations=Count(
+            "id",
+            filter=open_conversation & Q(assigned_to__isnull=True),
+            distinct=True,
+        ),
+        own_conversations=Count("id", filter=own_conversation, distinct=True),
+        team_conversations=Count("id", filter=team_conversation, distinct=True),
+    )
+
+    return {
+        **task_counts,
+        **lead_counts,
+        **deal_counts,
+        **appointment_counts,
+        **conversation_counts,
     }
 
 

@@ -187,8 +187,13 @@ class Command(BaseCommand):
             "resource": doctor_resource,
             "start_at": demo_appointment.start_at + timedelta(hours=4),
             "end_at": demo_appointment.end_at + timedelta(hours=4),
+            "status": Appointment.Statuses.CREATED,
             "source": Appointment.Sources.MANUAL,
             "notes": "E2E doctor-owned appointment.",
+            "is_archived": False,
+            "archived_at": None,
+            "archived_by": None,
+            "archive_reason": "",
         }
         if own_appointment is None:
             Appointment.objects.create(business=business, **own_defaults)

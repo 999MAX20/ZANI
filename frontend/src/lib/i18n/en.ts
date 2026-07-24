@@ -5262,5 +5262,8 @@ export const en: Record<string, string> = {
   "conversations.slaOverdue": "Reply overdue",
   "conversations.openPriority": "Open",
   "conversations.channelsUnavailable": "{count} active channels are unavailable.",
+  "conversations.channelStatusLoading": "Checking channel status…",
+  "conversations.channelStatusUnavailable":
+    "Channel status is temporarily unavailable. Conversations remain usable.",
   "conversations.openIntegrations": "Open integrations",
 };

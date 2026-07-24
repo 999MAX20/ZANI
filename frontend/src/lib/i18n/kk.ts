@@ -5295,5 +5295,8 @@ export const kk: Record<string, string> = {
   "conversations.slaOverdue": "Жауап мерзімі өтті",
   "conversations.openPriority": "Ашу",
   "conversations.channelsUnavailable": "Белсенді арналардың {count} қолжетімсіз.",
+  "conversations.channelStatusLoading": "Арналардың күйін тексеріп жатырмыз…",
+  "conversations.channelStatusUnavailable":
+    "Арналардың күйі уақытша қолжетімсіз. Диалогтар қолжетімді болып қалады.",
   "conversations.openIntegrations": "Интеграцияларды ашу",
 };

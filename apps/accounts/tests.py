@@ -2,6 +2,7 @@ from django.core.cache import cache
 from django.core import mail
 from django.core.management import call_command
 from django.contrib.auth.tokens import default_token_generator
+from django.utils import timezone
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from django.test import TestCase
@@ -17,6 +18,7 @@ from apps.accounts.social_auth import SocialUserClaims
 from apps.businesses.models import Business, BusinessMember, BusinessRole
 from apps.crm.models import Pipeline
 from apps.core.models import LoginHistory
+from apps.scheduling.models import Appointment
 
 
 class AuthSecurityBaselineTests(TestCase):
@@ -350,3 +352,45 @@ class CreatePlatformAdminCommandTests(TestCase):
         self.assertEqual(User.objects.filter(email="admin@zani.local").count(), 1)
         self.assertEqual(user.full_name, "Platform Owner")
         self.assertTrue(user.check_password("newpass123"))
+
+
+class PrepareE2ESmokeDataCommandTests(TestCase):
+    def test_repeat_run_restores_doctor_appointment_lifecycle_and_archive_state(self):
+        command_options = {
+            "password": "ZaniTest123!",
+            "business_slug": "repeatable-e2e-seed",
+            "business_name": "Repeatable E2E Seed",
+            "stdout": StringIO(),
+        }
+        call_command("prepare_e2e_smoke_data", **command_options)
+
+        doctor = User.objects.get(email="business_doctor@example.com")
+        appointment = Appointment.objects.get(
+            business__slug="repeatable-e2e-seed",
+            notes="E2E doctor-owned appointment.",
+        )
+        appointment.status = Appointment.Statuses.CANCELLED
+        appointment.is_archived = True
+        appointment.archived_at = timezone.now()
+        appointment.archived_by = doctor
+        appointment.archive_reason = "Repeat-run regression fixture"
+        appointment.save(
+            update_fields=[
+                "status",
+                "is_archived",
+                "archived_at",
+                "archived_by",
+                "archive_reason",
+                "updated_at",
+            ],
+        )
+
+        call_command("prepare_e2e_smoke_data", **command_options)
+
+        appointment.refresh_from_db()
+        self.assertEqual(appointment.status, Appointment.Statuses.CREATED)
+        self.assertFalse(appointment.is_archived)
+        self.assertIsNone(appointment.archived_at)
+        self.assertIsNone(appointment.archived_by)
+        self.assertEqual(appointment.archive_reason, "")
+        self.assertEqual(appointment.resource.linked_user, doctor)

@@ -33,12 +33,18 @@ test("daily workspaces preserve recoverable and role-valid actions", async () =>
   assert.match(appointmentAccess, /scope !== "own"/);
   assert.match(conversations, /data-testid="inbox-error-state"/);
   assert.match(conversations, /businessConnectorsApi\.list/);
+  assert.match(conversations, /retry:\s*false/);
   assert.match(conversations, /connector\.capability === "communications"/);
+  assert.match(conversations, /communicationConnectors\.isError/);
+  assert.match(conversations, /communicationConnectors\.refetch\(\)/);
   assert.doesNotMatch(conversations, /!channel\.is_connected && channel\.total > 0/);
   assert.match(conversations, /conversationUpdateScope === "own"/);
   assert.match(conversations, /!isIntegrationsAction\(action\.href\)/);
   assert.match(conversations, /onRetryLastMessage=/);
   assert.match(conversationList, /canRetryLastMessage\(conversation\)/);
+  assert.match(conversationList, /data-testid="inbox-provider-status-unavailable"/);
+  assert.match(conversationList, /data-testid="inbox-provider-status-retry"/);
+  assert.match(conversationList, /t\("conversations\.channelStatusUnavailable"\)/);
 });
 
 test("owner dashboard fetches and renders capability-scoped daily modules", async () => {

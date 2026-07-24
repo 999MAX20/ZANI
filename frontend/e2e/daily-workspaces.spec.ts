@@ -167,38 +167,39 @@ test("F-201 mobile owner, manager, operator and doctor daily routes stay usable"
 });
 
 test("F-201 recoverable queue, calendar and provider failure states expose next actions", async ({ page, isMobile }) => {
-  test.skip(isMobile, "Failure-state interception is covered once in desktop Chromium.");
-  test.setTimeout(120_000);
+  test.setTimeout(180_000);
 
-  const workQueuesUrl = /\/api\/work-queues\/(?:\?.*)?$/;
-  await page.route(workQueuesUrl, async (route) => {
-    await route.fulfill({
-      status: 503,
-      contentType: "application/json",
-      body: JSON.stringify({ code: "service_unavailable", detail: "temporary" }),
-    });
-  });
-  await login(page, users.owner);
-  await expect(page.getByTestId("dashboard-priority-error")).toBeVisible();
-  await expect(page.getByTestId("dashboard-priority-error").getByRole("button")).toBeVisible();
-  await page.unroute(workQueuesUrl);
-
-  const appointmentsUrl = /\/api\/appointments\/(?:\?.*)?$/;
-  await page.route(appointmentsUrl, async (route) => {
-    if (route.request().method() === "GET") {
+  if (!isMobile) {
+    const workQueuesUrl = /\/api\/work-queues\/(?:\?.*)?$/;
+    await page.route(workQueuesUrl, async (route) => {
       await route.fulfill({
         status: 503,
         contentType: "application/json",
         body: JSON.stringify({ code: "service_unavailable", detail: "temporary" }),
       });
-      return;
-    }
-    await route.continue();
-  });
-  await navigateClient(page, "/app/calendar");
-  await expect(page.getByTestId("calendar-error-state")).toBeVisible();
-  await expect(page.getByTestId("calendar-error-state").getByRole("button")).toBeVisible();
-  await page.unroute(appointmentsUrl);
+    });
+    await login(page, users.owner);
+    await expect(page.getByTestId("dashboard-priority-error")).toBeVisible();
+    await expect(page.getByTestId("dashboard-priority-error").getByRole("button")).toBeVisible();
+    await page.unroute(workQueuesUrl);
+
+    const appointmentsUrl = /\/api\/appointments\/(?:\?.*)?$/;
+    await page.route(appointmentsUrl, async (route) => {
+      if (route.request().method() === "GET") {
+        await route.fulfill({
+          status: 503,
+          contentType: "application/json",
+          body: JSON.stringify({ code: "service_unavailable", detail: "temporary" }),
+        });
+        return;
+      }
+      await route.continue();
+    });
+    await navigateClient(page, "/app/calendar");
+    await expect(page.getByTestId("calendar-error-state")).toBeVisible();
+    await expect(page.getByTestId("calendar-error-state").getByRole("button")).toBeVisible();
+    await page.unroute(appointmentsUrl);
+  }
 
   await page.route(
     /\/api\/inbox\/conversations\/summary\/(?:\?.*)?$/,
@@ -220,9 +221,23 @@ test("F-201 recoverable queue, calendar and provider failure states expose next 
       await route.fulfill({ response, json: payload });
     },
   );
+  let connectorStatusAvailable = false;
+  let connectorStatusRequests = 0;
   await page.route(
     /\/api\/business-connectors\/(?:\?.*)?$/,
     async (route) => {
+      connectorStatusRequests += 1;
+      if (!connectorStatusAvailable) {
+        await route.fulfill({
+          status: 503,
+          contentType: "application/json",
+          body: JSON.stringify({
+            code: "service_unavailable",
+            detail: "connector status temporary unavailable",
+          }),
+        });
+        return;
+      }
       const response = await route.fetch();
       const payload = await response.json();
       const failedConnector = {
@@ -299,6 +314,13 @@ test("F-201 recoverable queue, calendar and provider failure states expose next 
   // provider-unavailable fixture rather than reused from the first dashboard.
   await login(page, users.owner);
   await navigateClient(page, "/app/conversations");
+  if (isMobile) {
+    const closeMobileThread = page
+      .locator("main main > div:first-child button")
+      .first();
+    await expect(closeMobileThread).toBeVisible();
+    await closeMobileThread.click();
+  }
   await expect(page.getByTestId("inbox-priority-actions")).toBeVisible();
   await expect(
     page
@@ -306,7 +328,14 @@ test("F-201 recoverable queue, calendar and provider failure states expose next 
       .locator('a[href*="unread=true"]')
       .first(),
   ).toBeVisible();
+  await expect(page.getByTestId("inbox-provider-status-unavailable")).toBeVisible();
+  await expect(page.getByTestId("conversation-retry-failed").first()).toBeVisible();
+
+  connectorStatusAvailable = true;
+  await page.getByTestId("inbox-provider-status-retry").click();
+  await expect(page.getByTestId("inbox-provider-status-unavailable")).toHaveCount(0);
   await expect(page.getByTestId("inbox-provider-unavailable")).toBeVisible();
+  expect(connectorStatusRequests).toBeGreaterThanOrEqual(2);
   const retry = page.getByTestId("conversation-retry-failed").first();
   await expect(retry).toBeVisible();
   await retry.click();

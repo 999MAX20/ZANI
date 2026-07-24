@@ -200,9 +200,11 @@ integrated and the manager gate passes.
 
 #### F-101 — Critical Action Feedback and Recovery UX
 
-Status: `READY`  
+Status: `IN_PROGRESS`  
 Owner: UI/UX  
 Depends on: integrated baseline
+
+Assignment: 2026-07-24, `codex/frontend-pilot-readiness` at `b312390`.
 
 Goal: make core authenticated actions predictable and recoverable.
 
@@ -236,9 +238,11 @@ Required gates:
 
 #### B-101 — Capability Enforcement for CRM Custom Actions
 
-Status: `READY`  
+Status: `IN_PROGRESS`  
 Owner: Features/Backend  
 Depends on: integrated baseline
+
+Assignment: 2026-07-24, `codex/backend-pilot-readiness` at `b312390`.
 
 Goal: prevent indirect/custom actions from bypassing the product
 capability/profile layer.

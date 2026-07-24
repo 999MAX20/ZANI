@@ -3,6 +3,8 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.accounts.models import User
+from apps.activities.models import ActivityEvent
+from apps.activities.taxonomy import ActivityEvents
 from apps.ai_core.ai_client import AIClientError, generate_text, resolve_model
 from apps.ai_core.models import AIToolCallLog, AIRequestLog, AgentProfile, ApprovalRequest, BusinessKnowledgeItem
 from apps.bots.models import Bot, BotConversation, BotMessage
@@ -592,6 +594,40 @@ class AICoreFoundationTests(TestCase):
                 metadata__output_refs__task_id=task.id,
                 metadata__approval_id=approval.id,
             ).exists()
+        )
+        replay = self.api.post(
+            f"/api/ai/tools/{log.id}/execute/",
+            {"approval_id": approval.id},
+            format="json",
+        )
+        self.assertEqual(replay.status_code, 200)
+        self.assertEqual(Task.objects.filter(id=task.id).count(), 1)
+        self.assertEqual(
+            ActivityEvent.objects.filter(
+                business=self.business,
+                event_type=ActivityEvents.TASK_CREATED,
+                entity_type="Task",
+                entity_id=str(task.id),
+            ).count(),
+            1,
+        )
+        self.assertEqual(
+            AuditLog.objects.filter(
+                business=self.business,
+                entity_type="Task",
+                entity_id=str(task.id),
+                action=AuditLog.Actions.CREATE,
+                metadata__source="ai_tool",
+            ).count(),
+            1,
+        )
+        self.assertEqual(
+            Notification.objects.filter(
+                business=self.business,
+                category=Notification.Categories.TASKS,
+                action_url=f"/app/tasks?task={task.id}",
+            ).count(),
+            1,
         )
 
 

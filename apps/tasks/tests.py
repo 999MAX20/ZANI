@@ -113,6 +113,33 @@ class TasksAndNotificationsPolishTests(TestCase):
         self.assertEqual(replay.status_code, 201)
         self.assertEqual(replay.data["id"], first.data["id"])
         self.assertEqual(Task.objects.filter(business=self.business, title="Create direct task once").count(), 1)
+        task = Task.objects.get(id=first.data["id"])
+        self.assertEqual(
+            ActivityEvent.objects.filter(
+                business=self.business,
+                entity_type="Task",
+                entity_id=str(task.id),
+                event_type=ActivityEvents.TASK_CREATED,
+            ).count(),
+            1,
+        )
+        self.assertEqual(
+            AuditLog.objects.filter(
+                business=self.business,
+                entity_type="Task",
+                entity_id=str(task.id),
+                action=AuditLog.Actions.CREATE,
+            ).count(),
+            1,
+        )
+        self.assertEqual(
+            Notification.objects.filter(
+                business=self.business,
+                category=Notification.Categories.TASKS,
+                action_url=f"/app/tasks?task={task.id}",
+            ).count(),
+            1,
+        )
 
     def test_task_api_rejects_nonblank_recurrence_rule(self):
         self.api.force_authenticate(self.owner)

@@ -11,7 +11,7 @@ from apps.businesses.capabilities import assert_resource_enabled
 from apps.activities.services import create_activity_event
 from apps.activities.taxonomy import ActivityEvents, event_label
 from apps.crm.models import Deal, DealStageHistory, DealValueHistory, Pipeline, PipelineStage, StageTransition
-from apps.core.audit import write_audit_log
+from apps.core.audit import write_actor_audit_log, write_audit_log
 from apps.core.custom_fields import required_custom_fields_missing
 from apps.core.models import AuditLog
 
@@ -145,6 +145,19 @@ def assign_deal_owner(*, deal: Deal, actor, user_id, request=None, source="api")
             AuditLog.Actions.UPDATE,
             deal,
             metadata={"kind": "assignment", "lifecycle_action": "deal_assigned", "from_owner": previous_owner_id, "to_owner": owner.id},
+        )
+    else:
+        write_actor_audit_log(
+            actor=actor,
+            action=AuditLog.Actions.UPDATE,
+            instance=deal,
+            metadata={
+                "kind": "assignment",
+                "lifecycle_action": "deal_assigned",
+                "from_owner": previous_owner_id,
+                "to_owner": owner.id,
+                "source": source,
+            },
         )
     create_assignment_notifications(
         business=deal.business,

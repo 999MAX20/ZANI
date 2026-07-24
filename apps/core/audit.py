@@ -13,6 +13,28 @@ def write_audit_log(request, action, instance, business=None, metadata=None):
     if request is None or not getattr(request, "user", None) or not request.user.is_authenticated:
         return
 
+    return write_actor_audit_log(
+        actor=request.user,
+        action=action,
+        instance=instance,
+        business=business,
+        metadata=metadata,
+        ip_address=get_client_ip(request),
+        user_agent=request.META.get("HTTP_USER_AGENT", ""),
+    )
+
+
+def write_actor_audit_log(
+    *,
+    actor,
+    action,
+    instance,
+    business=None,
+    metadata=None,
+    ip_address=None,
+    user_agent="",
+):
+    """Write a sanitized audit row for HTTP and trusted domain-service actors."""
     resolved_business = business or getattr(instance, "business", None)
     if resolved_business is None and instance.__class__.__name__ == "Business":
         resolved_business = instance
@@ -20,17 +42,17 @@ def write_audit_log(request, action, instance, business=None, metadata=None):
         resolved_business = instance.conversation.business
 
     metadata = sanitize_audit_metadata(metadata or {})
-    AuditLog.objects.create(
+    return AuditLog.objects.create(
         business=resolved_business,
-        actor=request.user,
+        actor=actor if actor and getattr(actor, "is_authenticated", False) else None,
         action=action,
         category=metadata.get("category") or infer_audit_category(action, instance, metadata),
         risk_level=metadata.get("risk_level") or infer_audit_risk(action, instance, metadata),
         entity_type=instance.__class__.__name__,
         entity_id=str(getattr(instance, "pk", "")),
         metadata=metadata,
-        ip_address=get_client_ip(request),
-        user_agent=sanitize_error_text(request.META.get("HTTP_USER_AGENT", "")),
+        ip_address=ip_address,
+        user_agent=sanitize_error_text(user_agent),
     )
 
 

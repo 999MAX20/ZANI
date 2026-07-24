@@ -398,14 +398,34 @@ def _run_after_for_rule(rule):
 def _write_run_activity(run):
     if run.rule is None:
         return
+    text = f"Автоматизация «{run.rule.name}»: {run.status}"
+    metadata = {
+        "trigger_type": run.trigger_type,
+        "entity_type": run.entity_type,
+        "entity_id": run.entity_id,
+        "attempts": run.attempts,
+        "status": run.status,
+    }
+    existing = ActivityEvent.objects.filter(
+        business=run.business,
+        event_type=ActivityEvents.AUTOMATION_RUN,
+        entity_type=run.__class__.__name__,
+        entity_id=str(run.pk),
+        source="automation",
+    ).order_by("id").first()
+    if existing is not None:
+        existing.text = text
+        existing.metadata = metadata
+        existing.save(update_fields=["text", "metadata"])
+        return
     create_activity_event(
         business=run.business,
         event_type=ActivityEvents.AUTOMATION_RUN,
         instance=run,
         category=ActivityEvent.Categories.AUTOMATION,
         source="automation",
-        text=f"Автоматизация «{run.rule.name}»: {run.status}",
-        metadata={"trigger_type": run.trigger_type, "entity_type": run.entity_type, "entity_id": run.entity_id, "attempts": run.attempts},
+        text=text,
+        metadata=metadata,
     )
 
 

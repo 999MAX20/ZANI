@@ -4,6 +4,7 @@ import zlib from "node:zlib";
 
 const assetsDir = path.resolve("dist/assets");
 const warningLimitKb = 500;
+const appShellLimitKb = 400;
 
 function formatKb(bytes) {
   return `${(bytes / 1024).toFixed(1)} kB`;
@@ -30,6 +31,11 @@ const chunks = fs
 
 const largest = chunks.slice(0, 12);
 const oversized = chunks.filter((chunk) => chunk.size > warningLimitKb * 1024);
+const oversizedAppShell = chunks.filter(
+  (chunk) =>
+    chunk.file.startsWith("app-shell-") &&
+    chunk.size > appShellLimitKb * 1024,
+);
 
 console.log("Largest JS chunks after production build:");
 for (const chunk of largest) {
@@ -43,4 +49,20 @@ if (oversized.length) {
   }
 } else {
   console.log(`Bundle check OK: no JS chunks exceed ${warningLimitKb} kB before gzip.`);
+}
+
+if (oversizedAppShell.length) {
+  console.error(
+    `App shell budget failed: ${oversizedAppShell.length} chunk(s) exceed ${appShellLimitKb} kB before gzip.`,
+  );
+  for (const chunk of oversizedAppShell) {
+    console.error(
+      `- ${chunk.file}: ${formatKb(chunk.size)} / gzip ${formatKb(chunk.gzipSize)}`,
+    );
+  }
+  process.exitCode = 1;
+} else {
+  console.log(
+    `App shell budget OK: all app-shell chunks are within ${appShellLimitKb} kB before gzip.`,
+  );
 }

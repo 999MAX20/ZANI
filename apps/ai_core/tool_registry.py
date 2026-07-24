@@ -59,8 +59,9 @@ def assert_tool_execution_allowed(log, user):
     if permission is None:
         return None
     resource, action = permission
+    result = assert_can(user, log.business, resource, action, obj=log)
     assert_resource_enabled(log.business, resource)
-    return assert_can(user, log.business, resource, action, obj=log)
+    return result
 
 
 def suggest_tool_calls(*, business, user, conversation=None, message=""):

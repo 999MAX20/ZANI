@@ -13,6 +13,7 @@ from apps.activities.taxonomy import ActivityEvents
 from apps.automations.models import AutomationAction, AutomationRule, AutomationRun
 from apps.businesses.access import Resources
 from apps.businesses.capabilities import assert_resource_enabled, is_module_enabled
+from apps.core.domain_errors import ModuleDisabled
 from apps.core.work_queues import overdue_tasks_queryset
 from apps.crm.services import assign_deal_owner
 from apps.integrations.sanitization import sanitize_error_text
@@ -217,6 +218,7 @@ def process_automation_run(run_id):
     if run is None:
         return AutomationRun.objects.select_related("business", "rule").filter(id=run_id).first()
 
+    capability_denied = False
     try:
         rule = run.rule
         if rule is None or not rule.is_active:
@@ -224,6 +226,7 @@ def process_automation_run(run_id):
             run.action_results = [{"status": "skipped", "reason": "Rule is missing or inactive."}]
         else:
             entity = _resolve_entity(run.entity_type, run.entity_id)
+            _assert_entity_resource_enabled(run.business, entity)
             if run.current_action_index == 0 and not _conditions_match(rule, entity=entity, payload=run.payload):
                 run.status = AutomationRun.Statuses.SKIPPED
                 run.action_results = [{"status": "skipped", "reason": "Conditions did not match."}]
@@ -285,6 +288,11 @@ def process_automation_run(run_id):
                         current.save(update_fields=["action_results", "current_action_index"])
                         run = current
                 run.status = AutomationRun.Statuses.SUCCESS
+    except ModuleDisabled as exc:
+        capability_denied = True
+        run.error = sanitize_error_text(exc)
+        run.next_retry_at = None
+        run.status = AutomationRun.Statuses.FAILED
     except Exception as exc:
         run.error = sanitize_error_text(exc)
         if run.attempts < run.max_attempts:
@@ -301,7 +309,8 @@ def process_automation_run(run_id):
     run.locked_at = None
     run.run_after = None
     run.save(update_fields=["status", "error", "action_results", "next_retry_at", "finished_at", "locked_at", "run_after"])
-    _write_run_activity(run)
+    if not capability_denied:
+        _write_run_activity(run)
     return run
 
 
@@ -418,6 +427,19 @@ def _resolve_entity(entity_type, entity_id):
     module = __import__(module_path, fromlist=[class_name])
     model = getattr(module, class_name)
     return model.objects.filter(id=entity_id).first()
+
+
+def _assert_entity_resource_enabled(business, entity):
+    resource = {
+        "Lead": Resources.LEADS,
+        "Client": Resources.CLIENTS,
+        "Appointment": Resources.APPOINTMENTS,
+        "BotConversation": Resources.CONVERSATIONS,
+        "Deal": Resources.DEALS,
+        "Task": Resources.TASKS,
+    }.get(entity.__class__.__name__ if entity else "")
+    if resource:
+        assert_resource_enabled(business, resource)
 
 
 def _conditions_match(rule, *, entity, payload):

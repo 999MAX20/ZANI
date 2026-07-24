@@ -8,7 +8,8 @@ from apps.ai_core.models import AIToolCallLog, AIRequestLog, AgentProfile, Appro
 from apps.bots.models import Bot, BotConversation, BotMessage
 from apps.ai_core.services import run_ai_request
 from apps.businesses.access import Actions, Resources
-from apps.businesses.models import Business, BusinessMember, BusinessRole, RolePermission
+from apps.businesses.capabilities import apply_business_type_defaults
+from apps.businesses.models import Business, BusinessCapability, BusinessMember, BusinessRole, RolePermission
 from apps.clients.models import Client
 from apps.crm.models import Deal, Pipeline, PipelineStage
 from apps.core.models import AuditLog
@@ -443,6 +444,53 @@ class AICoreFoundationTests(TestCase):
         self.assertEqual(response.data["sources"], [])
         self.assertTrue(all(section["count"] == 0 for section in response.data["sections"]))
 
+    def test_ai_owner_daily_brief_hides_preserved_deals_when_module_is_disabled(self):
+        apply_business_type_defaults(self.business, configured_by=self.owner)
+        client = Client.objects.create(business=self.business, full_name="Preserved deal client")
+        pipeline = Pipeline.objects.create(business=self.business, name="Preserved sales", slug="preserved-sales")
+        stage = PipelineStage.objects.create(
+            business=self.business,
+            pipeline=pipeline,
+            name="Stalled",
+            order=1,
+            sla_minutes=30,
+        )
+        deal = Deal.objects.create(
+            business=self.business,
+            client=client,
+            pipeline=pipeline,
+            stage=stage,
+            title="CONFIDENTIAL PRESERVED DEAL",
+            owner=self.owner,
+            stage_entered_at=timezone.now() - timezone.timedelta(hours=2),
+        )
+        task = Task.objects.create(
+            business=self.business,
+            client=client,
+            deal=deal,
+            title="Visible overdue task",
+            due_at=timezone.now() - timezone.timedelta(hours=2),
+        )
+        capability = BusinessCapability.objects.get(business=self.business, module_key="deals")
+        capability.is_enabled = False
+        capability.save(update_fields=["is_enabled", "updated_at"])
+        if hasattr(self.business, "_capability_map"):
+            del self.business._capability_map
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.get("/api/ai/owner-brief/daily/", {"business": self.business.id, "limit": 10})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["summary"]["categories"]["stalled_deals"], 0)
+        stalled_section = next(item for item in response.data["sections"] if item["id"] == "stalled_deals")
+        self.assertEqual(stalled_section, {"id": "stalled_deals", "count": 0, "source_ids": []})
+        self.assertFalse(any(source["entity_type"] == "deal" for source in response.data["sources"]))
+        self.assertFalse(any(source["id"].startswith("DEAL-") for source in response.data["sources"]))
+        self.assertFalse(any(item["href"].startswith("/app/deals") for item in response.data["recommendations"]))
+        task_source = next(source for source in response.data["sources"] if source["id"] == f"TASK-{task.id}")
+        self.assertNotIn("deal_id", task_source["metadata"])
+        self.assertNotIn(deal.title, str(response.data))
+
     def test_ai_owner_daily_brief_respects_user_lead_scope(self):
         manager = User.objects.create_user(
             username="brief-manager",
@@ -679,6 +727,67 @@ class AICoreFoundationTests(TestCase):
         self.assertEqual(response.status_code, 403)
         self.assertEqual(response.data["approval_status"], "permission_denied")
         self.assertEqual(Task.objects.count(), 0)
+        log.refresh_from_db()
+        self.assertEqual(log.status, AIToolCallLog.Statuses.SUGGESTED)
+        self.assertTrue(
+            AuditLog.objects.filter(
+                business=self.business,
+                actor=limited_user,
+                entity_type="AIToolCallLog",
+                entity_id=str(log.id),
+                metadata__kind="ai_tool_execution",
+                metadata__status="permission_denied",
+                metadata__approval_id=approval.id,
+            ).exists()
+        )
+
+    def test_ai_deal_tool_checks_permission_before_disabled_module(self):
+        apply_business_type_defaults(self.business, configured_by=self.owner)
+        limited_user = User.objects.create_user(
+            username="ai-deal-limited-executor",
+            email="ai-deal-limited-executor@example.com",
+            password="pass",
+            role=User.Roles.STAFF,
+        )
+        ai_executor_role = BusinessRole.objects.create(
+            business=self.business,
+            name="AI executor without deal create",
+        )
+        RolePermission.objects.create(
+            business_role=ai_executor_role,
+            resource=Resources.AI_PIPELINE,
+            action=Actions.EXECUTE,
+            scope=RolePermission.Scopes.BUSINESS,
+        )
+        BusinessMember.objects.create(
+            business=self.business,
+            user=limited_user,
+            role=BusinessMember.Roles.STAFF,
+            business_role=ai_executor_role,
+        )
+        log = AIToolCallLog.objects.create(
+            business=self.business,
+            user=limited_user,
+            tool_name="create_deal",
+            input_json={"title": "Denied AI deal"},
+        )
+        approval = self.approved_tool_request(log, user=self.owner)
+        capability = BusinessCapability.objects.get(business=self.business, module_key="deals")
+        capability.is_enabled = False
+        capability.save(update_fields=["is_enabled", "updated_at"])
+        if hasattr(self.business, "_capability_map"):
+            del self.business._capability_map
+        self.api.force_authenticate(limited_user)
+
+        response = self.api.post(
+            f"/api/ai/tools/{log.id}/execute/",
+            {"approval_id": approval.id},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data["approval_status"], "permission_denied")
+        self.assertEqual(Deal.objects.filter(business=self.business).count(), 0)
         log.refresh_from_db()
         self.assertEqual(log.status, AIToolCallLog.Statuses.SUGGESTED)
         self.assertTrue(

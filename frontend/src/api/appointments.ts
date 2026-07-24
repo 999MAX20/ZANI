@@ -1,6 +1,6 @@
 import { apiClient } from "./client";
 import { createCrudApi } from "./crud";
-import type { Appointment, AppointmentMessageSetting, AvailableSlot, Id } from "../types";
+import type { Appointment, AppointmentMessageSetting, AvailableSlot, Id, Note } from "../types";
 
 export type AppointmentCreatePayload = Omit<
   Partial<Appointment>,
@@ -55,6 +55,10 @@ export const appointmentsApi = {
   },
   noShow: async (id: Id, payload: AppointmentStatusReasonPayload) => {
     const { data } = await apiClient.post<Appointment>(`/api/appointments/${id}/no-show/`, payload);
+    return data;
+  },
+  addNote: async ({ id, text }: { id: Id; text: string }) => {
+    const { data } = await apiClient.post<Note>(`/api/appointments/${id}/add-note/`, { text });
     return data;
   },
   reschedule: async ({ id, payload }: { id: Id; payload: AppointmentReschedulePayload }) => {

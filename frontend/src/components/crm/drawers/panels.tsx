@@ -2,10 +2,11 @@
 import { Download, ExternalLink, FilePenLine, FileText, Image, MoreHorizontal, Paperclip, Share2, StickyNote, Upload, X, ZoomIn, ZoomOut } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { getApiErrorMessage } from "../../../api/client";
-import { fileAttachmentsApi } from "../../../api/fileAttachments";
 import { notesApi } from "../../../api/activities";
+import { appointmentsApi } from "../../../api/appointments";
+import { getApiErrorMessage } from "../../../api/client";
 import { customFieldValuesApi } from "../../../api/customFields";
+import { fileAttachmentsApi } from "../../../api/fileAttachments";
 import { leadsApi } from "../../../api/leads";
 import { tasksApi } from "../../../api/tasks";
 import { formatDateTime } from "../../../lib/format";
@@ -581,6 +582,9 @@ export function EntityNotesPanel({ data, entity }: { data: CrmCardPayload; entit
       if (!noteText) throw new Error("Note text is required.");
       if (entity.type === "lead" && data.lead) {
         return leadsApi.addNote({ id: data.lead.id, text: noteText });
+      }
+      if (entity.type === "appointment" && data.appointment) {
+        return appointmentsApi.addNote({ id: data.appointment.id, text: noteText });
       }
       if (!businessId) throw new Error("Business is required.");
       return notesApi.create({

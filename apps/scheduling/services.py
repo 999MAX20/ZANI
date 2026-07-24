@@ -4,12 +4,18 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.analytics.models import AnalyticsEvent
-from apps.activities.services import create_activity_event
+from apps.activities.services import create_activity_event, create_note_for_entity
 from apps.activities.taxonomy import ActivityEvents
 from apps.automations.engine import run_automations_for_event
 from apps.automations.models import AutomationRule
 from apps.businesses.models import Business
-from apps.core.audit import infer_audit_category, infer_audit_risk, sanitize_audit_metadata, write_audit_log
+from apps.core.audit import (
+    infer_audit_category,
+    infer_audit_risk,
+    sanitize_audit_metadata,
+    write_actor_audit_log,
+    write_audit_log,
+)
 from apps.core.domain_errors import InvalidTransition
 from apps.core.models import AuditLog
 from apps.notifications.models import Notification
@@ -230,6 +236,37 @@ def mark_appointment_no_show(*, appointment, actor, reason, request=None):
         audit_metadata={"reason": reason},
         reason=reason,
     )
+
+
+@transaction.atomic
+def add_appointment_note(*, appointment, actor, text, request=None):
+    note = create_note_for_entity(
+        business=appointment.business,
+        entity=appointment,
+        text=text,
+        author=actor,
+        source="api",
+    )
+    audit_metadata = {
+        "kind": "appointment_note",
+        "event_type": ActivityEvents.NOTE_CREATED,
+        "appointment_id": appointment.id,
+    }
+    if request is not None:
+        write_audit_log(
+            request,
+            AuditLog.Actions.CREATE,
+            note,
+            metadata=audit_metadata,
+        )
+    else:
+        write_actor_audit_log(
+            actor=actor,
+            action=AuditLog.Actions.CREATE,
+            instance=note,
+            metadata=audit_metadata,
+        )
+    return note
 
 
 @transaction.atomic

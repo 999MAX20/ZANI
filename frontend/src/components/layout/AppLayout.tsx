@@ -1,5 +1,13 @@
-import { motion } from "framer-motion";
-import { lazy, Suspense, useEffect, useState } from "react";
+import {
+  lazy,
+  memo,
+  Profiler,
+  Suspense,
+  useEffect,
+  useMemo,
+  useState,
+  type ProfilerOnRenderCallback,
+} from "react";
 import { Outlet, useLocation } from "react-router-dom";
 
 import { Header } from "./Header";
@@ -9,12 +17,66 @@ import { Sidebar } from "./Sidebar";
 
 const CommandPalette = lazy(() => import("./CommandPalette").then((module) => ({ default: module.CommandPalette })));
 
-export function AppLayout() {
-  const [menuOpen, setMenuOpen] = useState(false);
+const WorkspaceOutlet = memo(function WorkspaceOutlet() {
+  return <Outlet />;
+});
+
+function MeasuredWorkspaceOutlet() {
+  const onRender = (
+    window as typeof window & {
+      __ZANI_RUNTIME_PROFILER__?: ProfilerOnRenderCallback;
+    }
+  ).__ZANI_RUNTIME_PROFILER__;
+
+  if (!onRender) return <WorkspaceOutlet />;
+
+  return (
+    <Profiler id="workspace-outlet" onRender={onRender}>
+      <WorkspaceOutlet />
+    </Profiler>
+  );
+}
+
+function DesktopSidebar() {
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
+
+  return (
+    <>
+      <Sidebar
+        expanded={sidebarExpanded}
+        onDesktopMouseEnter={() => setSidebarExpanded(true)}
+        onDesktopMouseLeave={() => setSidebarExpanded(false)}
+      />
+      <div className="hidden shrink-0 transition-[width] duration-200 lg:block lg:w-16" />
+    </>
+  );
+}
+
+function WorkspaceNavigation({
+  pageHeader,
+}: {
+  pageHeader: PageHeaderConfig | null;
+}) {
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  return (
+    <>
+      <MobileNav
+        open={menuOpen}
+        onOpen={() => setMenuOpen(true)}
+        onClose={() => setMenuOpen(false)}
+      />
+      <Header
+        menuOpen={menuOpen}
+        onMenuClick={() => setMenuOpen(true)}
+        pageHeader={pageHeader}
+      />
+    </>
+  );
+}
+
+function CommandPaletteController() {
   const [commandOpen, setCommandOpen] = useState(false);
-  const [pageHeader, setPageHeader] = useState<PageHeaderConfig | null>(null);
-  const location = useLocation();
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -27,40 +89,37 @@ export function AppLayout() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
+  if (!commandOpen) return null;
+
+  return (
+    <Suspense fallback={null}>
+      <CommandPalette onClose={() => setCommandOpen(false)} />
+    </Suspense>
+  );
+}
+
+export function AppLayout() {
+  const [pageHeader, setPageHeader] = useState<PageHeaderConfig | null>(null);
+  const location = useLocation();
+  const pageHeaderActions = useMemo(() => ({ setPageHeader }), []);
+
   return (
     <div className="min-h-screen bg-surface text-ink">
-      <PageHeaderContext.Provider value={{ pageHeader, setPageHeader }}>
+      <PageHeaderContext.Provider value={pageHeaderActions}>
         <div className="relative flex min-h-screen">
-          <Sidebar
-            expanded={sidebarExpanded}
-            onDesktopMouseEnter={() => setSidebarExpanded(true)}
-            onDesktopMouseLeave={() => setSidebarExpanded(false)}
-          />
-          <div className="hidden shrink-0 transition-[width] duration-200 lg:block lg:w-16" />
-          <MobileNav open={menuOpen} onOpen={() => setMenuOpen(true)} onClose={() => setMenuOpen(false)} />
+          <DesktopSidebar />
           <div className="flex min-w-0 flex-1 flex-col pb-28 lg:pb-0">
-            <Header
-              menuOpen={menuOpen}
-              onMenuClick={() => setMenuOpen(true)}
-              pageHeader={pageHeader}
-            />
-            <motion.main
+            <WorkspaceNavigation pageHeader={pageHeader} />
+            <main
               key={location.pathname}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.22 }}
-              className={`mx-auto w-full max-w-[1440px] flex-1 px-4 pb-4 ${pageHeader?.activeFilters ? "pt-24" : "pt-16"} sm:px-6 sm:pb-6 lg:px-6`}
+              className={`animate-fade-in mx-auto w-full max-w-[1440px] flex-1 px-4 pb-4 ${pageHeader?.activeFilters ? "pt-24" : "pt-16"} sm:px-6 sm:pb-6 lg:px-6`}
             >
-              <Outlet />
-            </motion.main>
+              <MeasuredWorkspaceOutlet />
+            </main>
           </div>
         </div>
       </PageHeaderContext.Provider>
-      {commandOpen ? (
-        <Suspense fallback={null}>
-          <CommandPalette onClose={() => setCommandOpen(false)} />
-        </Suspense>
-      ) : null}
+      <CommandPaletteController />
     </div>
   );
 }

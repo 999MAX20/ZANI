@@ -18,7 +18,6 @@ export type PageHeaderConfig = {
 };
 
 type PageHeaderContextValue = {
-  pageHeader: PageHeaderConfig | null;
   setPageHeader: (config: PageHeaderConfig | null) => void;
 };
 

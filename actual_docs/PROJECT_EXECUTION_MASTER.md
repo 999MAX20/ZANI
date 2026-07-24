@@ -200,7 +200,7 @@ integrated and the manager gate passes.
 
 #### F-101 — Critical Action Feedback and Recovery UX
 
-Status: `IN_PROGRESS`  
+Status: `IN_PROGRESS`
 Owner: UI/UX  
 Depends on: integrated baseline
 
@@ -238,7 +238,7 @@ Required gates:
 
 #### B-101 — Capability Enforcement for CRM Custom Actions
 
-Status: `IN_PROGRESS`  
+Status: `IN_PROGRESS`
 Owner: Features/Backend  
 Depends on: integrated baseline
 

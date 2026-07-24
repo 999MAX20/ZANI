@@ -6,6 +6,23 @@ const managerRoles = new Set(["business_manager", "manager", "marketer", "accoun
 
 const operatorRoles = new Set(["business_operator", "operator", "staff"]);
 
+const resourceModules: Record<string, string> = {
+  conversations: "inbox",
+  leads: "leads",
+  clients: "clients",
+  appointments: "appointments",
+  tasks: "tasks",
+  deals: "deals",
+  analytics: "analytics",
+  ai_assistant: "ai",
+  ai_analyst: "ai",
+  ai_pipeline: "ai",
+  ai_outreach: "ai",
+  ai_automation: "ai",
+  automations: "automations",
+  integrations: "integrations",
+};
+
 export const resourceLabels: Record<string, string> = {
   clients: "Clients",
   leads: "Leads",
@@ -44,6 +61,7 @@ export function hasPermission(
   if (platformRoles.has(user.role || "")) return true;
   const membership = getActiveMembership(user, businessId);
   if (!membership) return false;
+  if (!isBusinessResourceEnabled(user, businessId, resource)) return false;
   if (membership.role === "owner") return true;
   const permissions = user.effective_permissions?.[String(businessId)] || [];
   return permissions.some((permission) => permission.resource === resource && permission.action === action);
@@ -58,6 +76,7 @@ export function getPermissionScope(
   if (!user || !businessId) return "none";
   const membership = getActiveMembership(user, businessId);
   if (!membership) return "none";
+  if (!isBusinessResourceEnabled(user, businessId, resource)) return "none";
   if (membership.role === "owner") return "business";
   const permissions = user.effective_permissions?.[String(businessId)] || [];
   return permissions.find((permission) => permission.resource === resource && permission.action === action)?.scope || "none";
@@ -76,6 +95,7 @@ export function getRoleSurface(user: CurrentUser | null, businessId?: Id) {
   const membershipRole = getBusinessRole(user, businessId);
   const role = membershipRole || user?.role || "";
   if (role === "owner" || role === "admin" || role === "business_owner") return "owner";
+  if (role === "doctor") return "doctor";
   if (operatorRoles.has(role)) return "operator";
   if (managerRoles.has(role)) return "manager";
   return "staff";
@@ -90,7 +110,20 @@ export const businessRoleLabelKeys: Record<string, string> = {
   accountant: "settings.role.accountant",
   support: "settings.role.support",
   staff: "settings.role.staff",
+  doctor: "settings.role.doctor",
 };
+
+export function isBusinessResourceEnabled(
+  user: CurrentUser | null,
+  businessId: Id | undefined,
+  resource: string,
+) {
+  if (!user || !businessId) return false;
+  const module = resourceModules[resource];
+  if (!module) return true;
+  const capability = user.capabilities?.[String(businessId)];
+  return capability?.modules?.[module] !== false;
+}
 
 export function businessRoleLabel(role: string | null | undefined, t: Translate) {
   if (!role) return t("settings.role.staff");

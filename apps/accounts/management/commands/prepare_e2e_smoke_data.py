@@ -49,6 +49,12 @@ class Command(BaseCommand):
             role=User.Roles.BUSINESS_OPERATOR,
             full_name="Zani Business Operator",
         )
+        doctor = self._upsert_user(
+            email="business_doctor@example.com",
+            password=password,
+            role=User.Roles.BUSINESS_OPERATOR,
+            full_name="Zani Business Doctor",
+        )
 
         business, _ = Business.objects.update_or_create(
             slug=options["business_slug"],
@@ -65,6 +71,7 @@ class Command(BaseCommand):
         self._upsert_member(business, owner, BusinessMember.Roles.OWNER)
         self._upsert_member(business, manager, BusinessMember.Roles.MANAGER)
         self._upsert_member(business, operator, BusinessMember.Roles.OPERATOR)
+        self._upsert_member(business, doctor, BusinessMember.Roles.DOCTOR)
 
         ensure_default_roles(business)
         ensure_default_pipeline(business)
@@ -84,7 +91,8 @@ class Command(BaseCommand):
             self.style.SUCCESS(
                 "Prepared E2E smoke data: "
                 "platform_admin@example.com, business_owner@example.com, "
-                "business_manager@example.com, business_operator@example.com"
+                "business_manager@example.com, business_operator@example.com, "
+                "business_doctor@example.com"
             )
         )
 

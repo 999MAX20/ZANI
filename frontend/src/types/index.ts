@@ -5,7 +5,7 @@ export type User = {
   email: string;
   full_name?: string;
   phone?: string;
-  role?: "platform_admin" | "platform_manager" | "business_owner" | "business_manager" | "business_operator" | "manager" | "admin" | "operator" | "marketer" | "accountant" | "support" | "staff";
+  role?: "platform_admin" | "platform_manager" | "business_owner" | "business_manager" | "business_operator" | "manager" | "admin" | "operator" | "marketer" | "accountant" | "support" | "staff" | "doctor";
   is_platform_user?: boolean;
   is_merchant_user?: boolean;
   is_business_manager?: boolean;
@@ -531,6 +531,10 @@ export type BotConversation = {
   last_inbound_at?: string | null;
   last_outbound_at?: string | null;
   unread_count?: number;
+  sla_minutes?: number;
+  sla_due_at?: string | null;
+  sla_overdue?: boolean;
+  sla_overdue_minutes?: number;
   metadata_json?: Record<string, unknown>;
   last_message?: {
     id: Id;
@@ -581,6 +585,7 @@ export type CurrentUser = User & {
   businesses: Business[];
   memberships?: BusinessMembershipSummary[];
   effective_permissions?: Record<string, EffectivePermission[]>;
+  capabilities?: Record<string, BusinessCapabilitySummary>;
   preferences?: UserPreference;
   social_identities?: SocialIdentitySummary[];
   is_platform_user: boolean;
@@ -612,10 +617,30 @@ export type EffectivePermission = {
 
 export type BusinessMembershipSummary = {
   business: Id;
-  role: "owner" | "admin" | "manager" | "operator" | "marketer" | "accountant" | "support" | "staff";
+  role: "owner" | "admin" | "manager" | "operator" | "marketer" | "accountant" | "support" | "staff" | "doctor";
   business_role: Id | null;
   business_role_name: string;
   is_active: boolean;
+};
+
+export type BusinessCapabilitySummary = {
+  business: Id;
+  business_type: Business["business_type"];
+  workflow_mode: "appointment_first" | "standard_crm" | string;
+  modules: Record<
+    | "inbox"
+    | "leads"
+    | "clients"
+    | "appointments"
+    | "tasks"
+    | "deals"
+    | "analytics"
+    | "ai"
+    | "automations"
+    | "integrations"
+    | string,
+    boolean
+  >;
 };
 
 export type BusinessRole = {

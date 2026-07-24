@@ -11,13 +11,19 @@ import { Link } from "react-router-dom";
 
 import type {
   WorkQueueAppointmentItem,
+  WorkQueueConversationItem,
   WorkQueueLeadItem,
   WorkQueueTaskItem,
   WorkQueuesResponse,
 } from "../../api/workQueues";
 import { Surface } from "../../components/ui/Card";
+import { Button } from "../../components/ui/Button";
 import { IconBubble, MetricTile } from "../../components/ui/Primitives";
-import { EmptyState } from "../../components/ui/StateViews";
+import {
+  EmptyState,
+  ErrorState,
+  LoadingState,
+} from "../../components/ui/StateViews";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { formatDateTime } from "../../lib/format";
 import { useI18n } from "../../lib/i18n";
@@ -36,6 +42,19 @@ type ManagerDashboardProps = {
   overdueTasks: number;
   isCoreDataLoading: boolean;
   workQueues?: WorkQueuesResponse;
+  workQueuesError?: unknown;
+  isWorkQueuesLoading: boolean;
+  retryWorkQueues: () => void;
+  role: string;
+  access: {
+    leads: boolean;
+    clients: boolean;
+    appointments: boolean;
+    tasks: boolean;
+    conversations: boolean;
+    deals: boolean;
+    integrations: boolean;
+  };
 };
 
 function WorkListCard({
@@ -225,6 +244,42 @@ function TaskWorkRow({ task }: { task: Task | WorkQueueTaskItem }) {
   );
 }
 
+function ConversationWorkRow({
+  conversation,
+}: {
+  conversation: WorkQueueConversationItem;
+}) {
+  const { t } = useI18n();
+  const status =
+    conversation.sla_overdue_minutes > 0
+      ? "critical"
+      : conversation.handoff_required
+        ? "high"
+        : conversation.priority;
+
+  return (
+    <Surface
+      as={Link}
+      to={conversation.href}
+      padding="sm"
+      interactive
+      className="flex items-start justify-between gap-3 rounded-control"
+    >
+      <div className="min-w-0">
+        <p className="truncate font-bold text-zani-text">{conversation.title}</p>
+        <p className="mt-1 truncate text-xs font-semibold text-zani-subtle">
+          {conversation.unread_count
+            ? t("dashboard.unreadConversationCount", {
+                count: conversation.unread_count,
+              })
+            : conversation.handoff_reason || t("conversations.needsOperator")}
+        </p>
+      </div>
+      <StatusBadge status={status} size="sm" />
+    </Surface>
+  );
+}
+
 export function ManagerDashboard({
   leads,
   appointments,
@@ -237,6 +292,11 @@ export function ManagerDashboard({
   overdueTasks,
   isCoreDataLoading,
   workQueues,
+  workQueuesError,
+  isWorkQueuesLoading,
+  retryWorkQueues,
+  role,
+  access,
 }: ManagerDashboardProps) {
   const { t } = useI18n();
   const urgentLeads = leads
@@ -254,10 +314,30 @@ export function ManagerDashboard({
     ...(workQueues?.queues.upcoming_appointments || []),
   ].slice(0, 4);
   const queueTasks = workQueues?.queues.overdue_tasks || [];
+  const queueConversations = Array.from(
+    new Map(
+      [
+        ...(workQueues?.queues.unread_sla_overdue_conversations || []),
+        ...(workQueues?.queues.handoff_sla_overdue_conversations || []),
+        ...(workQueues?.queues.unread_conversations || []),
+        ...(workQueues?.queues.handoff_conversations || []),
+      ].map((item) => [item.id, item]),
+    ).values(),
+  ).slice(0, 4);
   const leadAttentionCount = workQueues?.summary.stale_leads ?? newLeadsCount;
   const appointmentAttentionCount =
     workQueues?.summary.appointment_confirmations ?? todayAppointmentsCount;
   const taskAttentionCount = workQueues?.summary.overdue_tasks ?? openTasks;
+  const conversationAttentionCount = workQueues
+    ? workQueues.summary.unread_conversations +
+      workQueues.summary.handoff_conversations
+    : 0;
+  const isIndividualWorkspace = [
+    "operator",
+    "staff",
+    "doctor",
+    "business_operator",
+  ].includes(role);
 
   return (
     <div className="space-y-5 pb-6">
@@ -269,56 +349,84 @@ export function ManagerDashboard({
           {t("dashboard.loadingCoreData")}
         </Surface>
       ) : null}
+      {isWorkQueuesLoading ? (
+        <LoadingState label={t("dashboard.loadingPriorities")} />
+      ) : null}
+      {workQueuesError ? (
+        <div data-testid="dashboard-priority-error">
+          <ErrorState
+            message={t("dashboard.priorityQueueError")}
+            action={
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={retryWorkQueues}
+              >
+                {t("common.retry")}
+              </Button>
+            }
+          />
+        </div>
+      ) : null}
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricTile
-          label={t("dashboard.newLeads")}
-          value={leadAttentionCount}
-          hint={t("dashboard.needProcess")}
-          icon={Flame}
-          tone="amber"
-        />
-        <MetricTile
-          label={t("dashboard.appointments")}
-          value={appointmentAttentionCount}
-          hint={t("common.today")}
-          icon={CalendarCheck}
-          tone="brand"
-        />
-        <MetricTile
-          label={t("nav.clients")}
-          value={clients.length}
-          hint={t("dashboard.inCrmBase")}
-          icon={Users}
-          tone="green"
-        />
-        <MetricTile
-          label={t("nav.tasks")}
-          value={taskAttentionCount}
-          hint={
-            overdueTasks
-              ? `${t("dashboard.overdueCount")}: ${overdueTasks}`
-              : t("dashboard.openFollowups")
-          }
-          icon={ListChecks}
-          tone={overdueTasks ? "amber" : "slate"}
-        />
+      <section
+        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+        data-testid="role-daily-metrics"
+      >
+        {access.leads ? (
+          <MetricTile
+            label={t("dashboard.newLeads")}
+            value={leadAttentionCount}
+            hint={t("dashboard.needProcess")}
+            icon={Flame}
+            tone="amber"
+          />
+        ) : null}
+        {access.appointments ? (
+          <MetricTile
+            label={t("dashboard.appointments")}
+            value={appointmentAttentionCount}
+            hint={t("dashboard.upcomingWork")}
+            icon={CalendarCheck}
+            tone="brand"
+          />
+        ) : null}
+        {access.conversations ? (
+          <MetricTile
+            label={t("nav.conversations")}
+            value={conversationAttentionCount}
+            hint={t("dashboard.needReply")}
+            icon={MessageSquareText}
+            tone={conversationAttentionCount ? "amber" : "slate"}
+          />
+        ) : access.clients ? (
+          <MetricTile
+            label={t("nav.clients")}
+            value={clients.length}
+            hint={t("dashboard.inCrmBase")}
+            icon={Users}
+            tone="green"
+          />
+        ) : null}
+        {access.tasks ? (
+          <MetricTile
+            label={isIndividualWorkspace ? t("tasks.my") : t("nav.tasks")}
+            value={taskAttentionCount}
+            hint={
+              overdueTasks
+                ? `${t("dashboard.overdueCount")}: ${overdueTasks}`
+                : t("dashboard.openFollowups")
+            }
+            icon={ListChecks}
+            tone={overdueTasks ? "amber" : "slate"}
+          />
+        ) : null}
       </section>
 
-      <Surface as="section" padding="lg">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-700">
-              {t("dashboard.operatorWorkspace")}
-            </p>
-            <h2 className="mt-1 text-xl font-bold text-zani-text">
-              {t("dashboard.operatorFocus")}
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-zani-subtle">
-              {t("dashboard.operatorFocusText")}
-            </p>
-          </div>
-          <div className="grid grid-cols-3 gap-2 text-center">
+      <Surface as="section" padding="lg" data-testid="role-daily-actions">
+        <div className="grid gap-2 text-center sm:grid-cols-2 lg:grid-cols-4">
+          {access.leads ? (
             <SummaryLink
               href="/app/leads"
               icon={Flame}
@@ -326,24 +434,46 @@ export function ManagerDashboard({
               label={t("dashboard.leadsLabel")}
               tone="brand"
             />
+          ) : null}
+          {access.conversations ? (
             <SummaryLink
-              href="/app/conversations"
+              href="/app/conversations?unread=true&sort=unread"
               icon={MessageSquareText}
+              value={conversationAttentionCount}
               label={t("dashboard.chatsLabel")}
-              tone="brand"
+              tone={conversationAttentionCount ? "amber" : "brand"}
             />
+          ) : null}
+          {access.appointments ? (
             <SummaryLink
-              href="/app/deals"
+              href="/app/calendar?view=day"
+              icon={CalendarCheck}
+              value={appointmentAttentionCount}
+              label={t("nav.calendar")}
+              tone="green"
+            />
+          ) : null}
+          {access.tasks ? (
+            <SummaryLink
+              href="/app/tasks?tab=overdue"
+              icon={ListChecks}
+              value={taskAttentionCount}
+              label={t("dashboard.overdueWork")}
+              tone={taskAttentionCount ? "amber" : "slate"}
+            />
+          ) : access.deals ? (
+            <SummaryLink
+              href="/app/deals?quick=overdue"
               icon={Target}
               label={t("nav.deals")}
               tone="ai"
             />
-          </div>
+          ) : null}
         </div>
       </Surface>
 
       <section className="grid gap-4 xl:grid-cols-3">
-        <WorkListCard
+        {access.leads ? <WorkListCard
           eyebrow={t("dashboard.queue")}
           title={t("dashboard.leadsToAnswer")}
           href="/app/leads"
@@ -368,9 +498,9 @@ export function ManagerDashboard({
               />
             );
           })}
-        </WorkListCard>
+        </WorkListCard> : null}
 
-        <WorkListCard
+        {access.appointments ? <WorkListCard
           eyebrow={t("common.today")}
           title={t("nav.appointments")}
           href="/app/calendar"
@@ -400,9 +530,9 @@ export function ManagerDashboard({
               />
             );
           })}
-        </WorkListCard>
+        </WorkListCard> : null}
 
-        <WorkListCard
+        {access.tasks ? <WorkListCard
           eyebrow={t("dashboard.followUp")}
           title={t("dashboard.myTasks")}
           href="/app/tasks"
@@ -412,7 +542,24 @@ export function ManagerDashboard({
           {(queueTasks.length ? queueTasks : openTaskItems).map((task) => (
             <TaskWorkRow key={task.id} task={task} />
           ))}
-        </WorkListCard>
+        </WorkListCard> : null}
+
+        {access.conversations ? (
+          <WorkListCard
+            eyebrow={t("dashboard.queue")}
+            title={t("dashboard.managerNoAnswer")}
+            href="/app/conversations?unread=true&sort=unread"
+            emptyTitle={t("dashboard.noUnreadConversations")}
+            emptyDescription={t("dashboard.noUnreadConversationsText")}
+          >
+            {queueConversations.map((conversation) => (
+              <ConversationWorkRow
+                key={conversation.id}
+                conversation={conversation}
+              />
+            ))}
+          </WorkListCard>
+        ) : null}
       </section>
     </div>
   );

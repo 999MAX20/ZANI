@@ -1,4 +1,4 @@
-import { CheckSquare, MessageSquare, Square } from "lucide-react";
+import { CheckSquare, MessageSquare, RotateCcw, Square } from "lucide-react";
 
 import type { InboxConversation } from "../../../api/inbox";
 import { cn } from "../../../lib/cn";
@@ -12,6 +12,8 @@ export function ConversationItem({
   selectedForBulk,
   onToggleSelected,
   onClick,
+  onRetryLastMessage,
+  retryPending,
   t,
 }: {
   conversation: InboxConversation;
@@ -20,10 +22,14 @@ export function ConversationItem({
   selectedForBulk: boolean;
   onToggleSelected: () => void;
   onClick: () => void;
+  onRetryLastMessage: () => void;
+  retryPending: boolean;
   t: Translate;
 }) {
   const preview = conversation.last_message?.text || t("conversations.emptyHistoryPreview");
   const unread = conversation.unread_count || 0;
+  const isSlaOverdue = Boolean(conversation.sla_overdue || (conversation.sla_overdue_minutes || 0) > 0);
+  const lastMessageFailed = conversation.last_message?.status === "failed";
   const initials = conversationTitle(conversation, t)
     .split(" ")
     .map((part) => part[0])
@@ -76,6 +82,22 @@ export function ConversationItem({
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
             <span className="rounded-full bg-surface-muted px-1.5 py-0.5 text-[10px] font-bold text-zani-muted">{channelLabel(conversation.channel, t)}</span>
             {conversation.handoff_required ? <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-700">{t("conversations.noReply")}</span> : null}
+            {isSlaOverdue ? <span className="rounded-full bg-[var(--zani-danger-soft)] px-1.5 py-0.5 text-[10px] font-bold text-zani-danger">{t("conversations.slaOverdue")}</span> : null}
+            {lastMessageFailed ? (
+              <button
+                type="button"
+                className="inline-flex min-h-7 items-center gap-1 rounded-control bg-[var(--zani-danger-soft)] px-2 text-[10px] font-bold text-zani-danger"
+                disabled={retryPending}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onRetryLastMessage();
+                }}
+                data-testid="conversation-retry-failed"
+              >
+                <RotateCcw size={12} className={retryPending ? "animate-spin" : undefined} />
+                {t("common.retry")}
+              </button>
+            ) : null}
             {!conversation.handoff_required && !conversation.bot_enabled ? <span className="rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-800">{t("conversations.paused")}</span> : null}
             {conversation.status === "closed" ? <span className="rounded-full bg-surface-muted px-1.5 py-0.5 text-[10px] font-bold text-zani-muted">{t("status.closed")}</span> : null}
           </div>

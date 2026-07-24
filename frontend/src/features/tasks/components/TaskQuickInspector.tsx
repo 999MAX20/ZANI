@@ -42,6 +42,7 @@ type TaskQuickInspectorProps = {
     dueToday: boolean;
     dueTomorrow: boolean;
   };
+  canUpdateTask: boolean;
 };
 
 export function TaskQuickInspector({
@@ -57,6 +58,7 @@ export function TaskQuickInspector({
   onDueToday,
   onDueTomorrow,
   pending,
+  canUpdateTask,
 }: TaskQuickInspectorProps) {
   if (!task) {
     return (
@@ -148,8 +150,16 @@ export function TaskQuickInspector({
         </section>
 
         <div className="grid grid-cols-2 gap-2">
-          <RelatedStat icon={MessageSquare} value={task.comments_count || 0} label={t("tasks.comments")} />
-          <RelatedStat icon={UsersRound} value={task.watchers_count || 0} label={t("tasks.watch")} />
+          <RelatedStat
+            icon={MessageSquare}
+            value={task.comments_count || 0}
+            label={t("tasks.comments")}
+          />
+          <RelatedStat
+            icon={UsersRound}
+            value={task.watchers_count || 0}
+            label={t("tasks.watch")}
+          />
         </div>
 
         {task.cancel_reason ? (
@@ -165,7 +175,11 @@ export function TaskQuickInspector({
           <SquareArrowOutUpRight size={16} />
           {t("tasks.details")}
         </Button>
-        <div className="grid grid-cols-2 gap-2">
+        {canUpdateTask ? (
+          <div
+            className="grid grid-cols-2 gap-2"
+            data-testid="task-lifecycle-actions"
+          >
           {task.status === "open" ? (
             <Button type="button" variant="secondary" isLoading={pending.start} onClick={() => onStart(task)}>
               <Play size={16} />
@@ -208,7 +222,8 @@ export function TaskQuickInspector({
               {t("tasks.reopen")}
             </Button>
           ) : null}
-        </div>
+          </div>
+        ) : null}
       </div>
     </aside>
   );

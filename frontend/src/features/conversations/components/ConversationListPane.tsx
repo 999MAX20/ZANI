@@ -1,4 +1,6 @@
 import type { InboxConversation, InboxFilters } from "../../../api/inbox";
+import type { InboxSummary } from "../../../api/inbox";
+import { Link } from "react-router-dom";
 import { WorkQueueListPane } from "../../../components/layout/WorkQueueLayout";
 import { Button } from "../../../components/ui/Button";
 import { EmptyState, LoadingState } from "../../../components/ui/StateViews";
@@ -39,6 +41,11 @@ type ConversationListPaneProps = {
   bulkPending: boolean;
   onToggleBulkId: (id: number) => void;
   onSelectConversation: (id: number) => void;
+  onRetryLastMessage: (conversation: InboxConversation) => void;
+  retryingMessageId?: number | null;
+  priorityActions: InboxSummary["next_actions"];
+  unavailableChannelCount: number;
+  canViewIntegrations: boolean;
   t: Translate;
 };
 
@@ -72,6 +79,11 @@ export function ConversationListPane({
   bulkPending,
   onToggleBulkId,
   onSelectConversation,
+  onRetryLastMessage,
+  retryingMessageId,
+  priorityActions,
+  unavailableChannelCount,
+  canViewIntegrations,
   t,
 }: ConversationListPaneProps) {
   return (
@@ -108,6 +120,32 @@ export function ConversationListPane({
         onSortChange={onSortChange}
         onReset={onReset}
       />
+
+      {priorityActions.length ? (
+        <div className="space-y-2 border-b border-zani-border bg-surface-warm px-3 py-3" data-testid="inbox-priority-actions">
+          {priorityActions.slice(0, 3).map((action) => (
+            <Link
+              key={`${action.href}-${action.label}`}
+              to={action.href}
+              className="flex min-h-9 items-center justify-between gap-2 rounded-control border border-zani-border bg-surface-card px-3 text-xs font-bold text-zani-text transition hover:border-brand-100 hover:bg-brand-50"
+            >
+              <span className="truncate">{action.label}</span>
+              <span className="shrink-0 text-brand-700">{t("conversations.openPriority")}</span>
+            </Link>
+          ))}
+        </div>
+      ) : null}
+
+      {unavailableChannelCount ? (
+        <div className="border-b border-[rgba(183,121,31,0.22)] bg-[var(--zani-warning-soft)] px-3 py-2 text-xs font-semibold text-zani-warning" data-testid="inbox-provider-unavailable">
+          <p>{t("conversations.channelsUnavailable", { count: unavailableChannelCount })}</p>
+          {canViewIntegrations ? (
+            <Link className="mt-1 inline-flex font-bold underline" to="/app/integrations">
+              {t("conversations.openIntegrations")}
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
 
       {items.length ? (
         <div className="border-b border-zani-border px-3 py-2">
@@ -161,6 +199,8 @@ export function ConversationListPane({
             selectedForBulk={selectedIds.includes(conversation.id)}
             onToggleSelected={() => onToggleBulkId(conversation.id)}
             onClick={() => onSelectConversation(conversation.id)}
+            onRetryLastMessage={() => onRetryLastMessage(conversation)}
+            retryPending={Boolean(conversation.last_message?.id && retryingMessageId === conversation.last_message.id)}
             t={t}
           />
         ))}

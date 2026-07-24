@@ -1,16 +1,13 @@
 import {
   AlertTriangle,
   ArrowRight,
-  Bot,
   CalendarCheck,
   CheckCircle2,
   CircleDollarSign,
   ListChecks,
   MessageSquareText,
   PlugZap,
-  Sparkles,
   UserPlus,
-  Users,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -28,8 +25,13 @@ import type {
   WorkQueuesResponse,
 } from "../../api/workQueues";
 import { Surface } from "../../components/ui/Card";
+import { Button } from "../../components/ui/Button";
 import { IconBubble, MetricTile } from "../../components/ui/Primitives";
-import { EmptyState } from "../../components/ui/StateViews";
+import {
+  EmptyState,
+  ErrorState,
+  LoadingState,
+} from "../../components/ui/StateViews";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { formatDateTime } from "../../lib/format";
 import { useI18n } from "../../lib/i18n";
@@ -61,10 +63,17 @@ type OwnerDashboardProps = {
   services: Service[];
   tasks: Task[];
   workQueues?: WorkQueuesResponse;
+  workQueuesError?: unknown;
+  isWorkQueuesLoading: boolean;
+  retryWorkQueues: () => void;
   ownerBrief?: AIOwnerDailyBriefResponse;
   ownerBriefError?: unknown;
   isOwnerBriefLoading?: boolean;
   canViewAiAnalyst: boolean;
+  canViewAiAssistant: boolean;
+  canViewConversations: boolean;
+  canViewDeals: boolean;
+  canViewIntegrations: boolean;
   aiStatus?: AIAssistantStatusResponse;
 };
 
@@ -82,8 +91,8 @@ type BriefItem = {
   key: string;
   title: string;
   text: string;
-  href: string;
-  action: string;
+  href?: string;
+  action?: string;
   tone: "brand" | "amber" | "red" | "ai";
   sourceIds?: string[];
 };
@@ -269,13 +278,15 @@ function AiBriefCard({ items, meta }: { items: BriefItem[]; meta: string }) {
                 ) : null}
               </div>
             </div>
-            <Link
-              to={item.href}
-              className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-control px-3 text-xs font-bold text-ai-700 transition hover:bg-ai-50"
-            >
-              {item.action}
-              <ArrowRight size={14} />
-            </Link>
+            {item.href && item.action ? (
+              <Link
+                to={item.href}
+                className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-control px-3 text-xs font-bold text-ai-700 transition hover:bg-ai-50"
+              >
+                {item.action}
+                <ArrowRight size={14} />
+              </Link>
+            ) : null}
           </div>
         ))}
       </div>
@@ -496,24 +507,16 @@ function buildBriefItems({
   ownerBriefError,
   isOwnerBriefLoading,
   canViewAiAnalyst,
+  canViewAiAssistant,
   aiStatus,
-  overdueTasks,
-  newLeadsCount,
-  todayAppointmentsCount,
-  revenueHasData,
-  setupScore,
   t,
 }: {
   ownerBrief?: AIOwnerDailyBriefResponse;
   ownerBriefError?: unknown;
   isOwnerBriefLoading?: boolean;
   canViewAiAnalyst: boolean;
+  canViewAiAssistant: boolean;
   aiStatus?: AIAssistantStatusResponse;
-  overdueTasks: number;
-  newLeadsCount: number;
-  todayAppointmentsCount: number;
-  revenueHasData: boolean;
-  setupScore: number;
   t: (key: string, vars?: Record<string, string | number>) => string;
 }): BriefItem[] {
   const recommendations =
@@ -540,8 +543,6 @@ function buildBriefItems({
         text:
           ownerBrief.summary.no_data_reason ||
           t("dashboard.ownerBriefNoDataText"),
-        href: "/app/integrations",
-        action: t("dashboard.aiBrief.missingAction"),
         tone: "ai",
       },
     ];
@@ -552,8 +553,6 @@ function buildBriefItems({
         key: "owner-brief-loading",
         title: t("dashboard.ownerBriefLoadingTitle"),
         text: t("dashboard.ownerBriefLoadingText"),
-        href: "/app/ai-assistant",
-        action: t("dashboard.openAiAnalyst"),
         tone: "ai",
       },
     ];
@@ -564,8 +563,6 @@ function buildBriefItems({
         key: "owner-brief-forbidden",
         title: t("dashboard.ownerBriefNoAccessTitle"),
         text: t("dashboard.ownerBriefNoAccessText"),
-        href: "/app/settings",
-        action: t("dashboard.openTeamSettings"),
         tone: "amber",
       },
     ];
@@ -576,70 +573,8 @@ function buildBriefItems({
         key: "owner-brief-unavailable",
         title: t("dashboard.ownerBriefUnavailableTitle"),
         text: t("dashboard.ownerBriefUnavailableText"),
-        href: "/app/ai-assistant",
-        action: t("dashboard.openAiAnalyst"),
-        tone: "amber",
-      },
-    ];
-  }
-  if (overdueTasks > 0) {
-    return [
-      {
-        key: "overdue-tasks",
-        title: t("dashboard.aiBrief.overdueTitle"),
-        text: t("dashboard.aiBrief.overdueText", { count: overdueTasks }),
-        href: "/app/tasks",
-        action: t("dashboard.aiBrief.openTasks"),
-        tone: "red",
-      },
-    ];
-  }
-  if (newLeadsCount > 0) {
-    return [
-      {
-        key: "new-leads",
-        title: t("dashboard.aiBrief.leadsTitle"),
-        text: t("dashboard.aiBrief.leadsText", { count: newLeadsCount }),
-        href: "/app/leads",
-        action: t("dashboard.aiBrief.openLeads"),
-        tone: "brand",
-      },
-    ];
-  }
-  if (todayAppointmentsCount > 0) {
-    return [
-      {
-        key: "today-bookings",
-        title: t("dashboard.aiBrief.bookingsTitle"),
-        text: t("dashboard.aiBrief.bookingsText", {
-          count: todayAppointmentsCount,
-        }),
-        href: "/app/calendar",
-        action: t("dashboard.aiBrief.openCalendar"),
-        tone: "brand",
-      },
-    ];
-  }
-  if (!revenueHasData) {
-    return [
-      {
-        key: "sales-data",
-        title: t("dashboard.aiBrief.salesTitle"),
-        text: t("dashboard.aiBrief.salesText"),
-        href: "/app/integrations",
-        action: t("dashboard.aiBrief.connectSales"),
-        tone: "amber",
-      },
-    ];
-  }
-  if (setupScore < 100) {
-    return [
-      {
-        key: "setup",
-        title: t("dashboard.aiBrief.setupTitle"),
-        text: t("dashboard.aiBrief.setupText", { progress: setupScore }),
-        href: "/app/settings",
-        action: t("dashboard.aiBrief.openSetup"),
+        href: canViewAiAssistant ? "/app/ai-assistant" : undefined,
+        action: canViewAiAssistant ? t("dashboard.openAiAnalyst") : undefined,
         tone: "amber",
       },
     ];
@@ -647,10 +582,8 @@ function buildBriefItems({
   return [
     {
       key: "no-priority",
-      title: t("dashboard.aiBrief.missingTitle"),
-      text: t("dashboard.aiBrief.missingText"),
-      href: "/app/analytics",
-      action: t("dashboard.openAnalytics"),
+      title: t("dashboard.ownerBriefNoDataTitle"),
+      text: t("dashboard.ownerBriefNoDataText"),
       tone: "ai",
     },
   ];
@@ -674,10 +607,17 @@ export function OwnerDashboard({
   services,
   tasks,
   workQueues,
+  workQueuesError,
+  isWorkQueuesLoading,
+  retryWorkQueues,
   ownerBrief,
   ownerBriefError,
   isOwnerBriefLoading,
   canViewAiAnalyst,
+  canViewAiAssistant,
+  canViewConversations,
+  canViewDeals,
+  canViewIntegrations,
   aiStatus,
 }: OwnerDashboardProps) {
   const { t } = useI18n();
@@ -697,16 +637,17 @@ export function OwnerDashboard({
     tasks
       .filter((task) => task.status !== "done" && task.status !== "cancelled")
       .slice(0, 4);
-  const visibleConversations: WorkQueueConversationItem[] = [
+  const visibleConversations = uniqueQueueItems<WorkQueueConversationItem>([
     ...(workQueues?.queues.unread_sla_overdue_conversations || []),
     ...(workQueues?.queues.handoff_sla_overdue_conversations || []),
     ...(workQueues?.queues.unread_conversations || []),
     ...(workQueues?.queues.handoff_conversations || []),
-  ].slice(0, 4);
-  const staleDeals: WorkQueueDealItem[] = [
+  ]).slice(0, 4);
+  const staleDeals = uniqueQueueItems<WorkQueueDealItem>([
     ...(workQueues?.queues.sla_overdue_deals || []),
     ...(workQueues?.queues.no_next_action_deals || []),
-  ].slice(0, 4);
+  ]).slice(0, 4);
+  const failedConnectors = dashboard?.connector_health?.error || 0;
   const communicationsReady = Boolean(
     dashboard?.setup?.sources?.communications,
   );
@@ -715,20 +656,9 @@ export function OwnerDashboard({
   );
   const noAnswerCount = workQueues
     ? workQueues.summary.unread_conversations +
-      workQueues.summary.handoff_conversations +
-      workQueues.summary.unread_sla_overdue_conversations +
-      workQueues.summary.handoff_sla_overdue_conversations
+      workQueues.summary.handoff_conversations
     : 0;
   const attentionItems: AttentionItem[] = [
-    {
-      key: "leads",
-      title: t("dashboard.answerNewLeads"),
-      text: t("dashboard.newLeadsWaiting", { count: newLeadsCount }),
-      count: newLeadsCount,
-      href: "/app/leads",
-      icon: UserPlus,
-      tone: "brand",
-    },
     {
       key: "tasks",
       title: t("dashboard.closeOverdue"),
@@ -738,24 +668,47 @@ export function OwnerDashboard({
       icon: AlertTriangle,
       tone: overdueTasks ? "red" : "amber",
     },
-    {
-      key: "conversations",
-      title: t("dashboard.managerNoAnswer"),
-      text: t("dashboard.managerNoAnswerText", { count: noAnswerCount }),
-      count: noAnswerCount,
-      href: "/app/conversations",
-      icon: MessageSquareText,
-      tone: noAnswerCount ? "red" : "brand",
-    },
-    {
-      key: "deals",
-      title: t("dashboard.staleDeals"),
-      text: t("dashboard.staleDealsText", { count: staleDeals.length }),
-      count: staleDeals.length,
-      href: "/app/deals",
-      icon: CircleDollarSign,
-      tone: staleDeals.length ? "amber" : "brand",
-    },
+    ...(canViewConversations
+      ? [
+          {
+            key: "conversations",
+            title: t("dashboard.managerNoAnswer"),
+            text: t("dashboard.managerNoAnswerText", { count: noAnswerCount }),
+            count: noAnswerCount,
+            href: "/app/conversations",
+            icon: MessageSquareText,
+            tone: noAnswerCount ? ("red" as const) : ("brand" as const),
+          },
+        ]
+      : []),
+    ...(canViewDeals
+      ? [
+          {
+            key: "deals",
+            title: t("dashboard.staleDeals"),
+            text: t("dashboard.staleDealsText", { count: staleDeals.length }),
+            count: staleDeals.length,
+            href: "/app/deals",
+            icon: CircleDollarSign,
+            tone: staleDeals.length ? ("amber" as const) : ("brand" as const),
+          },
+        ]
+      : []),
+    ...(canViewIntegrations
+      ? [
+          {
+            key: "connectors",
+            title: t("dashboard.failedConnectors"),
+            text: t("dashboard.failedConnectorsText", {
+              count: failedConnectors,
+            }),
+            count: failedConnectors,
+            href: "/app/integrations",
+            icon: PlugZap,
+            tone: failedConnectors ? ("red" as const) : ("brand" as const),
+          },
+        ]
+      : []),
   ];
   const providerMode =
     aiStatus?.mode === "live"
@@ -778,12 +731,8 @@ export function OwnerDashboard({
     ownerBriefError,
     isOwnerBriefLoading,
     canViewAiAnalyst,
+    canViewAiAssistant,
     aiStatus,
-    overdueTasks,
-    newLeadsCount,
-    todayAppointmentsCount,
-    revenueHasData,
-    setupScore,
     t,
   });
 
@@ -804,6 +753,26 @@ export function OwnerDashboard({
         >
           {t("dashboard.ownerAnalyticsError")}
         </Surface>
+      ) : null}
+      {isWorkQueuesLoading ? (
+        <LoadingState label={t("dashboard.loadingPriorities")} />
+      ) : null}
+      {workQueuesError ? (
+        <div data-testid="dashboard-priority-error">
+          <ErrorState
+            message={t("dashboard.priorityQueueError")}
+            action={
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={retryWorkQueues}
+              >
+                {t("common.retry")}
+              </Button>
+            }
+          />
+        </div>
       ) : null}
       {ownerBriefError ? (
         <Surface
@@ -872,11 +841,13 @@ export function OwnerDashboard({
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.9fr)]">
         <AiBriefCard items={briefItems} meta={briefMeta} />
-        <ConnectorHealthCard
-          dashboard={dashboard}
-          communicationsReady={communicationsReady}
-          salesReady={salesReady}
-        />
+        {canViewIntegrations ? (
+          <ConnectorHealthCard
+            dashboard={dashboard}
+            communicationsReady={communicationsReady}
+            salesReady={salesReady}
+          />
+        ) : null}
       </section>
 
       <section className="grid gap-4 xl:grid-cols-3">
@@ -946,104 +917,76 @@ export function OwnerDashboard({
         </QueuePreview>
       </section>
 
-      {visibleConversations.length || staleDeals.length ? (
+      {(canViewConversations && visibleConversations.length) ||
+      (canViewDeals && staleDeals.length) ? (
         <section className="grid gap-4 xl:grid-cols-2">
-          <Surface as="section" padding="lg">
-            <div className="mb-4 flex items-center gap-2">
-              <MessageSquareText size={20} className="text-brand-600" />
-              <h2 className="text-base font-bold text-zani-text">
-                {t("dashboard.managerNoAnswer")}
-              </h2>
-            </div>
-            <div className="space-y-2">
-              {visibleConversations.map((conversation) => (
-                <Link
-                  key={conversation.id}
-                  to={conversation.href}
-                  className="flex items-center justify-between gap-3 rounded-control border border-zani-border bg-surface-card p-3 transition hover:border-brand-100 hover:bg-surface-warm"
-                >
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-bold text-zani-text">
-                      {conversation.title}
+          {canViewConversations && visibleConversations.length ? (
+            <Surface as="section" padding="lg">
+              <div className="mb-4 flex items-center gap-2">
+                <MessageSquareText size={20} className="text-brand-600" />
+                <h2 className="text-base font-bold text-zani-text">
+                  {t("dashboard.managerNoAnswer")}
+                </h2>
+              </div>
+              <div className="space-y-2">
+                {visibleConversations.map((conversation) => (
+                  <Link
+                    key={conversation.id}
+                    to={conversation.href}
+                    className="flex items-center justify-between gap-3 rounded-control border border-zani-border bg-surface-card p-3 transition hover:border-brand-100 hover:bg-surface-warm"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-bold text-zani-text">
+                        {conversation.title}
+                      </span>
+                      <span className="block truncate text-xs font-semibold text-zani-subtle">
+                        {conversation.channel} / {conversation.unread_count}
+                      </span>
                     </span>
-                    <span className="block truncate text-xs font-semibold text-zani-subtle">
-                      {conversation.channel} / {conversation.unread_count}
-                    </span>
-                  </span>
-                  <StatusBadge status={conversation.priority} size="sm" />
-                </Link>
-              ))}
-            </div>
-          </Surface>
+                    <StatusBadge status={conversation.priority} size="sm" />
+                  </Link>
+                ))}
+              </div>
+            </Surface>
+          ) : null}
 
-          <Surface as="section" padding="lg">
-            <div className="mb-4 flex items-center gap-2">
-              <CircleDollarSign size={20} className="text-zani-warning" />
-              <h2 className="text-base font-bold text-zani-text">
-                {t("dashboard.staleDeals")}
-              </h2>
-            </div>
-            <div className="space-y-2">
-              {staleDeals.map((deal) => (
-                <Link
-                  key={`${deal.reason}-${deal.id}`}
-                  to={deal.href}
-                  className="flex items-center justify-between gap-3 rounded-control border border-zani-border bg-surface-card p-3 transition hover:border-brand-100 hover:bg-surface-warm"
-                >
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-bold text-zani-text">
-                      {deal.title}
+          {canViewDeals && staleDeals.length ? (
+            <Surface as="section" padding="lg">
+              <div className="mb-4 flex items-center gap-2">
+                <CircleDollarSign size={20} className="text-zani-warning" />
+                <h2 className="text-base font-bold text-zani-text">
+                  {t("dashboard.staleDeals")}
+                </h2>
+              </div>
+              <div className="space-y-2">
+                {staleDeals.map((deal) => (
+                  <Link
+                    key={`${deal.reason}-${deal.id}`}
+                    to={deal.href}
+                    className="flex items-center justify-between gap-3 rounded-control border border-zani-border bg-surface-card p-3 transition hover:border-brand-100 hover:bg-surface-warm"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-bold text-zani-text">
+                        {deal.title}
+                      </span>
+                      <span className="block truncate text-xs font-semibold text-zani-subtle">
+                        {deal.stage_name} /{" "}
+                        {formatMoney(Number(deal.amount || 0))}
+                      </span>
                     </span>
-                    <span className="block truncate text-xs font-semibold text-zani-subtle">
-                      {deal.stage_name} /{" "}
-                      {formatMoney(Number(deal.amount || 0))}
-                    </span>
-                  </span>
-                  <StatusBadge status={deal.risk_level} size="sm" />
-                </Link>
-              ))}
-            </div>
-          </Surface>
+                    <StatusBadge status={deal.risk_level} size="sm" />
+                  </Link>
+                ))}
+              </div>
+            </Surface>
+          ) : null}
         </section>
       ) : null}
 
-      <Surface as="section" padding="lg">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-start gap-3">
-            <IconBubble
-              icon={Bot}
-              tone="ai"
-              className="h-11 w-11 rounded-control"
-            />
-            <div>
-              <h2 className="text-base font-bold text-zani-text">
-                {t("dashboard.aiNavigator")}
-              </h2>
-              <p className="mt-1 text-sm leading-6 text-zani-subtle">
-                {t("dashboard.ownerReadinessLine", {
-                  setup: setupScore,
-                  conversion,
-                })}
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Link
-              to="/app/ai-assistant"
-              className="inline-flex min-h-10 items-center gap-2 rounded-control bg-ai-600 px-4 text-sm font-bold text-white transition hover:bg-ai-700"
-            >
-              <Sparkles size={16} />
-              {t("dashboard.openAiAnalyst")}
-            </Link>
-            <Link
-              to="/app/analytics"
-              className="inline-flex min-h-10 items-center gap-2 rounded-control border border-zani-border bg-surface-card px-4 text-sm font-bold text-zani-text transition hover:border-brand-100 hover:bg-surface-warm"
-            >
-              {t("dashboard.openAnalytics")}
-            </Link>
-          </div>
-        </div>
-      </Surface>
     </div>
   );
+}
+
+function uniqueQueueItems<T extends { id: number }>(items: T[]) {
+  return Array.from(new Map(items.map((item) => [item.id, item])).values());
 }

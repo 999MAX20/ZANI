@@ -9,6 +9,7 @@ import { usePageHeader } from "../../components/layout/PageHeaderContext";
 import { Button } from "../../components/ui/Button";
 import { ErrorState, LoadingState } from "../../components/ui/StateViews";
 import { useI18n } from "../../lib/i18n";
+import { getBusinessRole, hasPermission } from "../../lib/permissions";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useEntityData } from "../../hooks/useEntityData";
 import { TaskFormModal } from "./components/TaskFormModal";
@@ -20,6 +21,7 @@ import { useTaskFilters } from "./hooks/useTaskFilters";
 import { useTaskQueries } from "./hooks/useTaskQueries";
 import { emptyTaskForm } from "./taskFormUtils";
 import type { Task } from "../../types";
+import { useAuth } from "../auth/AuthProvider";
 
 export function TasksPage() {
   const { t } = useI18n();
@@ -27,6 +29,12 @@ export function TasksPage() {
   const navigate = useNavigate();
   const { setPageHeader } = usePageHeader();
   const { business } = useActiveBusiness();
+  const { user } = useAuth();
+  const businessRole = getBusinessRole(user, business?.id);
+  const isIndividualWorkspace = ["operator", "staff", "doctor"].includes(businessRole || "");
+  const canCreateTask = hasPermission(user, business?.id, "tasks", "create");
+  const canUpdateTask = hasPermission(user, business?.id, "tasks", "update");
+  const canViewTeam = hasPermission(user, business?.id, "team", "view");
   const { appointments, botConversations, clients, deals, leads, services } =
     useEntityData({
       appointments: true,
@@ -47,7 +55,7 @@ export function TasksPage() {
     taskFilterActions,
     activeFilterCount,
     setSearchFilter,
-  } = useTaskFilters();
+  } = useTaskFilters(isIndividualWorkspace ? "my" : "team");
   const [open, setOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -68,6 +76,8 @@ export function TasksPage() {
     taskWorkloadParams,
     taskOrdering,
     businessId: business?.id ?? 0,
+    includeTeamData: canViewTeam,
+    includeTemplates: canCreateTask,
   });
 
   const openQuickTask = useCallback(() => {
@@ -131,26 +141,28 @@ export function TasksPage() {
   useEffect(() => {
     setPageHeader({
       title: t("tasks.title"),
-      primaryAction: {
-        label: t("tasks.quickTask"),
-        icon: Plus,
-        onClick: openQuickTask,
-      },
+      primaryAction: canCreateTask
+        ? {
+            label: t("tasks.quickTask"),
+            icon: Plus,
+            onClick: openQuickTask,
+          }
+        : undefined,
       filterLabel: undefined,
       filters: undefined,
       activeFilterCount: 0,
       activeFilters: null,
     });
     return () => setPageHeader(null);
-  }, [openQuickTask, setPageHeader, t]);
+  }, [canCreateTask, openQuickTask, setPageHeader, t]);
 
   if (!business) return <ErrorState message={t("tasks.noBusiness")} />;
   if (taskIdParam) return <Navigate to={`/app/tasks/${taskIdParam}`} replace />;
   if (
     taskSummary.isLoading ||
-    taskWorkload.isLoading ||
+    (canViewTeam && taskWorkload.isLoading) ||
     tasksQuery.isLoading ||
-    taskTemplates.isLoading ||
+    (canCreateTask && taskTemplates.isLoading) ||
     clients.isLoading ||
     leads.isLoading ||
     deals.isLoading ||
@@ -161,11 +173,11 @@ export function TasksPage() {
     return <LoadingState />;
   if (taskSummary.error)
     return <ErrorState message={getApiErrorMessage(taskSummary.error)} />;
-  if (taskWorkload.error)
+  if (canViewTeam && taskWorkload.error)
     return <ErrorState message={getApiErrorMessage(taskWorkload.error)} />;
   if (tasksQuery.error)
     return <ErrorState message={getApiErrorMessage(tasksQuery.error)} />;
-  if (taskTemplates.error)
+  if (canCreateTask && taskTemplates.error)
     return <ErrorState message={getApiErrorMessage(taskTemplates.error)} />;
   if (botConversations.error)
     return <ErrorState message={getApiErrorMessage(botConversations.error)} />;
@@ -190,6 +202,8 @@ export function TasksPage() {
               totalCount={totalTasks}
               summary={taskSummary.data}
               workload={taskWorkload.data}
+              canCreateTask={canCreateTask}
+              showTeamControls={canViewTeam}
               searchQuery={searchFilter}
               onSearchChange={setSearchFilter}
               emptyTitle={emptyState.title}
@@ -239,6 +253,7 @@ export function TasksPage() {
               dueToday: dueTodayMutation.isPending,
               dueTomorrow: dueTomorrowMutation.isPending,
             }}
+            canUpdateTask={canUpdateTask}
           />
         </CrmWorkspaceGrid>
       </CrmWorkspacePage>

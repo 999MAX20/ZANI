@@ -44,6 +44,8 @@ type TaskListProps = {
   onOpenTask: (task: Task) => void;
   onOpenEntity: (entity: CrmDrawerEntity) => void;
   onCreateTask: () => void;
+  canCreateTask: boolean;
+  showTeamControls: boolean;
 };
 
 export function TaskList({
@@ -64,6 +66,8 @@ export function TaskList({
   onOpenTask,
   onOpenEntity,
   onCreateTask,
+  canCreateTask,
+  showTeamControls,
 }: TaskListProps) {
   const { t } = useI18n();
   const stats = getTaskStats(summary, t);
@@ -88,7 +92,9 @@ export function TaskList({
         })}
       </section>
 
-      <TaskWorkloadPanel workload={workload} selectedAssignee={filterState.assigneeFilter} onSelectAssignee={filterActions.setAssigneeFilter} />
+      {showTeamControls ? (
+        <TaskWorkloadPanel workload={workload} selectedAssignee={filterState.assigneeFilter} onSelectAssignee={filterActions.setAssigneeFilter} />
+      ) : null}
 
       <TaskTableSection
         title={searchQuery ? t("tasks.searchResults") : t("tasks.allTasks")}
@@ -109,6 +115,7 @@ export function TaskList({
         teamMembers={teamMembers}
         searchQuery={searchQuery}
         onSearchChange={onSearchChange}
+        showTeamControls={showTeamControls}
       />
 
       {!tasks.length ? (
@@ -116,12 +123,12 @@ export function TaskList({
           <EmptyState
             title={emptyTitle || t("tasks.emptyTitle")}
             description={emptyDescription || t("tasks.emptyText")}
-            action={
+            action={canCreateTask ? (
               <Button variant="secondary" onClick={onCreateTask}>
                 <Plus size={16} />
                 {t("tasks.create")}
               </Button>
-            }
+            ) : undefined}
           />
         </div>
       ) : null}
@@ -144,6 +151,7 @@ function TaskTableSection({
   teamMembers,
   searchQuery,
   onSearchChange,
+  showTeamControls,
 }: {
   title: string;
   description: string;
@@ -159,6 +167,7 @@ function TaskTableSection({
   teamMembers: TeamMember[];
   searchQuery: string;
   onSearchChange: (value: string) => void;
+  showTeamControls: boolean;
 }) {
   const { t } = useI18n();
   return (
@@ -171,6 +180,7 @@ function TaskTableSection({
           teamMembers={teamMembers}
           searchQuery={searchQuery}
           onSearchChange={onSearchChange}
+          showTeamControls={showTeamControls}
         />
       }
     >
@@ -231,6 +241,7 @@ function TaskTableFilters({
   teamMembers,
   searchQuery,
   onSearchChange,
+  showTeamControls,
 }: {
   filterState: TaskFilterState;
   filterActions: TaskFilterActions;
@@ -238,10 +249,11 @@ function TaskTableFilters({
   teamMembers: TeamMember[];
   searchQuery: string;
   onSearchChange: (value: string) => void;
+  showTeamControls: boolean;
 }) {
   const { t } = useI18n();
   const tabOptions: Array<{ value: TaskTabFilter; label: string }> = [
-    { value: "team", label: t("tasks.all") },
+    ...(showTeamControls ? [{ value: "team" as const, label: t("tasks.all") }] : []),
     { value: "my", label: t("tasks.my") },
     { value: "today", label: t("common.today") },
     { value: "overdue", label: t("tasks.overdue") },
@@ -273,7 +285,7 @@ function TaskTableFilters({
             rightIcon={searchQuery ? <button type="button" onClick={() => onSearchChange("")} className="rounded-full p-1 text-zani-muted hover:bg-surface-muted" aria-label={t("search.close")}><X size={13} /></button> : null}
             aria-label={t("common.search")}
           />
-          <Select
+          {showTeamControls ? <Select
             className="min-h-9 rounded-lg py-1.5 text-sm"
             value={filterState.statusFilter}
             onChange={(event) => filterActions.setStatusFilter(event.target.value)}
@@ -285,7 +297,7 @@ function TaskTableFilters({
               { value: "done", label: t("tasks.done") },
               { value: "cancelled", label: t("tasks.cancelled") },
             ]}
-          />
+          /> : null}
           <Select
             className="min-h-9 rounded-lg py-1.5 text-sm"
             value={filterState.priorityFilter}
@@ -298,19 +310,25 @@ function TaskTableFilters({
               { value: "low", label: t("tasks.priorityLow") },
             ]}
           />
-          <Select
-            className="min-h-9 rounded-lg py-1.5 text-sm"
-            value={filterState.assigneeFilter}
-            onChange={(event) => filterActions.setAssigneeFilter(event.target.value)}
-            options={[
-              { value: "", label: t("tasks.allAssignees") },
-              { value: "unassigned", label: t("tasks.noAssignee") },
-              ...teamMembers.filter((member) => member.is_active).map((member) => ({
-                value: String(member.user.id),
-                label: member.user.full_name || member.user.email,
-              })),
-            ]}
-          />
+          {showTeamControls ? (
+            <Select
+              className="min-h-9 rounded-lg py-1.5 text-sm"
+              value={filterState.assigneeFilter}
+              onChange={(event) =>
+                filterActions.setAssigneeFilter(event.target.value)
+              }
+              options={[
+                { value: "", label: t("tasks.allAssignees") },
+                { value: "unassigned", label: t("tasks.noAssignee") },
+                ...teamMembers
+                  .filter((member) => member.is_active)
+                  .map((member) => ({
+                    value: String(member.user.id),
+                    label: member.user.full_name || member.user.email,
+                  })),
+              ]}
+            />
+          ) : null}
           <Select
             className="min-h-9 rounded-lg py-1.5 text-sm"
             value={filterState.dueFilter}

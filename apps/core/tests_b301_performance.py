@@ -8,12 +8,14 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.accounts.models import User
-from apps.activities.models import ActivityEvent, Note
+from apps.activities.models import ActivityEvent, Note, Tag, TaggedObject
 from apps.bots.models import Bot, BotConversation, BotMessage
 from apps.businesses.access import ensure_default_roles
 from apps.businesses.capabilities import ensure_business_capabilities
 from apps.businesses.models import Business, BusinessMember, BusinessRole
 from apps.clients.models import Client
+from apps.core.crm_cards import _related_entity_query
+from apps.core.models import FileAttachment
 from apps.crm.models import Deal, Pipeline, PipelineStage
 from apps.leads.models import Lead
 from apps.scheduling.models import Appointment, Resource
@@ -379,3 +381,171 @@ class B301MeasuredPerformanceTests(TestCase):
         self.assertEqual(card.status_code, 404)
         self.assertEqual(work_queues.status_code, 403)
         self.assertEqual(dashboard.status_code, 400)
+
+    def test_crm_card_related_predicate_remains_database_bounded_as_rows_grow(self):
+        card_path = f"/api/clients/{self.client_record.id}/crm-card/"
+        with CaptureQueriesContext(connection) as predicate_queries:
+            predicate = _related_entity_query(
+                [("Client", self.client_record.id)],
+                [
+                    ("Lead", Lead.objects.filter(client=self.client_record)),
+                    ("Deal", Deal.objects.filter(client=self.client_record)),
+                    (
+                        "Appointment",
+                        Appointment.objects.filter(client=self.client_record),
+                    ),
+                    ("Task", Task.objects.filter(client=self.client_record)),
+                ],
+            )
+        self.assertEqual(len(predicate_queries), 0)
+        self.assertLessEqual(len(predicate.children), 7)
+
+        with CaptureQueriesContext(connection) as baseline_queries:
+            baseline = self.api.get(card_path)
+
+        extra_rows = 240
+        now = timezone.now()
+        extra_leads = Lead.objects.bulk_create(
+            [
+                Lead(
+                    business=self.business,
+                    client=self.client_record,
+                    responsible_user=self.owner,
+                    status=Lead.Statuses.NEW,
+                    source="b301-scale",
+                )
+                for _ in range(extra_rows)
+            ]
+        )
+        extra_deals = Deal.objects.bulk_create(
+            [
+                Deal(
+                    business=self.business,
+                    client=self.client_record,
+                    lead=extra_leads[index],
+                    pipeline=self.pipeline,
+                    stage=self.stage,
+                    title=f"B301 scaled deal {index}",
+                    owner=self.owner,
+                    stage_entered_at=now,
+                )
+                for index in range(extra_rows)
+            ]
+        )
+        extra_appointments = Appointment.objects.bulk_create(
+            [
+                Appointment(
+                    business=self.business,
+                    client=self.client_record,
+                    lead=extra_leads[index],
+                    service=self.service,
+                    resource=self.resource,
+                    start_at=now + timezone.timedelta(days=90, minutes=index * 45),
+                    end_at=now + timezone.timedelta(days=90, minutes=index * 45 + 30),
+                    status=Appointment.Statuses.CREATED,
+                )
+                for index in range(extra_rows)
+            ]
+        )
+        extra_tasks = Task.objects.bulk_create(
+            [
+                Task(
+                    business=self.business,
+                    title=f"B301 scaled task {index}",
+                    client=self.client_record,
+                    lead=extra_leads[index],
+                    deal=extra_deals[index],
+                    appointment=extra_appointments[index],
+                    assignee=self.owner,
+                    created_by=self.owner,
+                    due_at=now + timezone.timedelta(days=1),
+                )
+                for index in range(extra_rows)
+            ]
+        )
+        scaled_event = ActivityEvent.objects.create(
+            business=self.business,
+            client=None,
+            actor=self.owner,
+            entity_type="Lead",
+            entity_id=str(extra_leads[-1].id),
+            event_type="b301_scaled_event",
+            text="B301 scaled related event",
+        )
+        scaled_note = Note.objects.create(
+            business=self.business,
+            client=None,
+            author=self.owner,
+            entity_type="Deal",
+            entity_id=str(extra_deals[-1].id),
+            text="B301 scaled related note",
+        )
+        scaled_tag = Tag.objects.create(
+            business=self.business,
+            name="B301 scaled tag",
+        )
+        TaggedObject.objects.create(
+            business=self.business,
+            tag=scaled_tag,
+            entity_type="Appointment",
+            entity_id=str(extra_appointments[-1].id),
+        )
+        scaled_attachment = FileAttachment.objects.create(
+            business=self.business,
+            uploaded_by=self.owner,
+            file="private/attachments/b301-scaled.txt",
+            original_name="b301-scaled.txt",
+            entity_type="Task",
+            entity_id=str(extra_tasks[-1].id),
+        )
+
+        with CaptureQueriesContext(connection) as scaled_queries:
+            scaled = self.api.get(card_path)
+
+        self.assertEqual(baseline.status_code, 200)
+        self.assertEqual(scaled.status_code, 200)
+        self.assertLessEqual(len(scaled_queries), len(baseline_queries) + 2)
+        baseline_max_sql = max(len(query["sql"]) for query in baseline_queries)
+        scaled_max_sql = max(len(query["sql"]) for query in scaled_queries)
+        print(
+            "B301_SCALE "
+            f"baseline_rows={REPRESENTATIVE_ROWS} "
+            f"baseline_queries={len(baseline_queries)} "
+            f"baseline_max_sql={baseline_max_sql} "
+            f"scaled_rows={REPRESENTATIVE_ROWS + extra_rows} "
+            f"scaled_queries={len(scaled_queries)} "
+            f"scaled_max_sql={scaled_max_sql}"
+        )
+        self.assertLessEqual(scaled_max_sql, baseline_max_sql + 500)
+        self.assertLessEqual(scaled_max_sql, 15_000)
+        self.assertEqual(
+            scaled.data["meta"]["related_counts"]["leads"],
+            REPRESENTATIVE_ROWS + extra_rows,
+        )
+        self.assertEqual(
+            scaled.data["meta"]["related_counts"]["deals"],
+            REPRESENTATIVE_ROWS + extra_rows,
+        )
+        self.assertEqual(
+            scaled.data["meta"]["related_counts"]["appointments"],
+            REPRESENTATIVE_ROWS + extra_rows,
+        )
+        self.assertEqual(
+            scaled.data["meta"]["related_counts"]["tasks"],
+            REPRESENTATIVE_ROWS + extra_rows,
+        )
+        self.assertTrue(
+            any(item["id"] == scaled_event.id for item in scaled.data["timeline"])
+        )
+        self.assertTrue(
+            any(item["id"] == scaled_note.id for item in scaled.data["notes"])
+        )
+        self.assertTrue(
+            any(item["tag"] == scaled_tag.id for item in scaled.data["tags"])
+        )
+        self.assertTrue(
+            any(
+                item["id"] == scaled_attachment.id
+                for item in scaled.data["attachments"]
+            )
+        )

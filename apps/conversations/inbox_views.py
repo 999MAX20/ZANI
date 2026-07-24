@@ -114,7 +114,11 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
                 Resources.CONVERSATIONS,
                 Actions.VIEW,
             )
-        return apply_inbox_filters(scoped_queryset.distinct(), self.request.query_params, self.request.user)
+        return apply_inbox_filters(
+            scoped_queryset.distinct(),
+            self.request.query_params,
+            self.request.user,
+        ).order_by("-updated_at", "-id")
 
     @action(detail=False, methods=["get"])
     def summary(self, request):

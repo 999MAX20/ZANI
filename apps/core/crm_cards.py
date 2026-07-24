@@ -1,4 +1,5 @@
-from django.db.models import OuterRef, Q, Subquery
+from django.db.models import CharField, OuterRef, Q, Subquery
+from django.db.models.functions import Cast
 
 from apps.activities.models import ActivityEvent, Note, TaggedObject
 from apps.activities.serializers import ActivityEventSerializer, NoteSerializer, TaggedObjectSerializer
@@ -99,13 +100,20 @@ def _entity_query(entity_refs):
 
 
 def _related_entity_query(entity_refs, related_querysets):
-    related_refs = list(entity_refs)
+    queries = [_entity_query(entity_refs)]
     for entity_type, queryset in related_querysets:
-        related_refs.extend(
-            (entity_type, entity_id)
-            for entity_id in queryset.order_by().values_list("id", flat=True)
+        related_ids = (
+            queryset.order_by()
+            .annotate(entity_id_text=Cast("id", output_field=CharField()))
+            .values("entity_id_text")
         )
-    return _entity_query(related_refs)
+        queries.append(
+            Q(
+                entity_type__in=[entity_type, entity_type.lower()],
+                entity_id__in=Subquery(related_ids),
+            )
+        )
+    return _or_queries(queries)
 
 
 def _custom_field_entity(client=None, lead=None, deal=None, appointment=None):

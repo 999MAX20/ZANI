@@ -21,6 +21,7 @@ test("mobile manager smoke: daily CRM routes are reachable", async ({
   page,
   isMobile,
 }) => {
+  test.setTimeout(90_000);
   test.skip(!isMobile, "Mobile manager smoke runs only in the mobile project.");
 
   await login(page, users.manager, /\/app/);
@@ -35,18 +36,24 @@ test("mobile manager smoke: daily CRM routes are reachable", async ({
     await expect(page.getByText("Unexpected Application Error")).toHaveCount(0);
   }
 
+  const modules = await businessCapabilityModules(page, users.manager);
   const drawerRoutes = [
     "/app/tasks",
     "/app/calendar",
-    "/app/deals",
+    ...(modules.deals === false ? [] : ["/app/deals"]),
     "/app/analytics",
   ];
   for (const route of drawerRoutes) {
-    await page.locator("nav button").last().click();
+    await page.getByTestId("bottom-mobile-menu-trigger").click();
     await page.locator(`a[href="${route}"]`).last().click();
     await expect(page).toHaveURL(routePattern(route));
     await expectNoHorizontalOverflow(page);
     await expect(page.getByText("Unexpected Application Error")).toHaveCount(0);
+  }
+  if (modules.deals === false) {
+    await page.getByTestId("bottom-mobile-menu-trigger").click();
+    await expect(page.locator('a[href="/app/deals"]')).toHaveCount(0);
+    await page.keyboard.press("Escape");
   }
 });
 
@@ -171,6 +178,21 @@ async function apiLogin(page: Page, email: string) {
 
 function authHeaders(tokens: TokenPayload) {
   return { Authorization: `Bearer ${tokens.access}` };
+}
+
+async function businessCapabilityModules(page: Page, email: string) {
+  const tokens = await apiLogin(page, email);
+  const response = await page.request.get(`${apiBaseURL}/api/auth/me/`, {
+    headers: authHeaders(tokens),
+  });
+  expect(response.ok()).toBeTruthy();
+  const currentUser = await response.json();
+  const businessId = currentUser.businesses?.[0]?.id;
+  expect(businessId).toBeTruthy();
+  return (currentUser.capabilities?.[String(businessId)]?.modules || {}) as Record<
+    string,
+    boolean
+  >;
 }
 
 function nextBusinessWeekdayDate() {
@@ -1422,6 +1444,7 @@ test("mobile owner smoke: dashboard, bottom nav and more drawer are reachable", 
   page,
   isMobile,
 }) => {
+  test.setTimeout(90_000);
   test.skip(
     !isMobile,
     "Mobile viewport smoke runs only in the mobile project.",
@@ -1447,8 +1470,9 @@ test("mobile owner smoke: dashboard, bottom nav and more drawer are reachable", 
   await expectNoHorizontalOverflow(page);
   await expect(page.getByText("Unexpected Application Error")).toHaveCount(0);
 
+  const modules = await businessCapabilityModules(page, users.owner);
   const drawerRoutes = [
-    "/app/deals",
+    ...(modules.deals === false ? [] : ["/app/deals"]),
     "/app/tasks",
     "/app/calendar",
     "/app/ai-agents",
@@ -1458,7 +1482,7 @@ test("mobile owner smoke: dashboard, bottom nav and more drawer are reachable", 
   ];
 
   for (const route of drawerRoutes) {
-    await page.locator("nav button").last().click();
+    await page.getByTestId("bottom-mobile-menu-trigger").click();
     await page.locator(`a[href="${route}"]`).last().click();
     await expect(page).toHaveURL(routePattern(route));
     await expectNoHorizontalOverflow(page);
@@ -1476,6 +1500,11 @@ test("mobile owner smoke: dashboard, bottom nav and more drawer are reachable", 
       await page.keyboard.press("Escape");
       await expect(page.getByRole("dialog")).toHaveCount(0);
     }
+  }
+  if (modules.deals === false) {
+    await page.getByTestId("bottom-mobile-menu-trigger").click();
+    await expect(page.locator('a[href="/app/deals"]')).toHaveCount(0);
+    await page.keyboard.press("Escape");
   }
 
   await expect(

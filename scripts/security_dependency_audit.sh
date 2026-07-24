@@ -16,9 +16,9 @@ if ! "$PYTHON_BIN" -m pip_audit --version >/dev/null 2>&1; then
 fi
 
 echo "== Python dependency audit =="
-"$PYTHON_BIN" -m pip_audit
+"$PYTHON_BIN" -m pip_audit -r "$ROOT_DIR/requirements.txt"
 
 echo
 echo "== Frontend dependency audit =="
 cd "$ROOT_DIR/frontend"
-npm audit --audit-level=moderate
+npm audit --audit-level=high

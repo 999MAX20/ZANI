@@ -72,14 +72,25 @@ class BackendPerformanceRegressionTests(TestCase):
                     sender_type=BotMessage.SenderTypes.CLIENT,
                     text=f"message-{conversation_index}-{message_index}",
                 )
+        BotConversation.objects.filter(business=self.business).update(
+            updated_at=timezone.now(),
+        )
 
-        with CaptureQueriesContext(connection) as queries:
-            response = self.api.get("/api/inbox/conversations/")
+        for _ in range(3):
+            with CaptureQueriesContext(connection) as queries:
+                response = self.api.get("/api/inbox/conversations/")
 
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["count"], 12)
-        self.assertEqual(response.data["results"][0]["last_message"]["text"], "message-11-7")
-        self.assertLessEqual(len(queries), 18, [query["sql"] for query in queries])
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data["count"], 12)
+            self.assertEqual(
+                response.data["results"][0]["last_message"]["text"],
+                "message-11-7",
+            )
+            self.assertLessEqual(
+                len(queries),
+                18,
+                [query["sql"] for query in queries],
+            )
 
     def test_team_performance_query_count_does_not_scale_with_team_size(self):
         client = Client.objects.create(business=self.business, full_name="Performance Client")

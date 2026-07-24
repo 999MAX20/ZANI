@@ -527,6 +527,23 @@ features.
 P4 completes the local product cycle. It does not claim production or paid-beta
 readiness and does not authorize a push to `main`.
 
+### Terminal stop gate
+
+After X-401 is `DONE` and the final required checks are green, the manager must:
+
+1. publish the final completion and readiness report;
+2. stop all UI/UX, Features/Backend and review agents for this execution plan;
+3. stop or delete the autonomous execution automation for this plan;
+4. leave `main` untouched and keep the accepted result on the integration
+   branch;
+5. not create, assign or implement a new roadmap, feature, vertical change or
+   post-pilot task without a new explicit instruction from the project owner.
+
+The audit may document deferred new features and external prerequisites, but
+they are not authorization to continue implementation. Once the current
+document is complete, work stops for owner review and a separate prioritization
+decision.
+
 ## 8. Manager Review Checklist
 
 Before integration:

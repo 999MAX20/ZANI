@@ -1314,3 +1314,195 @@ class CorePlatformTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 400)
+
+    def test_doctor_can_mutate_only_appointment_for_linked_resource(self):
+        doctor, _, own_appointment, other_appointment = self._doctor_appointment_scope_fixture()
+        api = APIClient()
+        api.force_authenticate(doctor)
+        before = self._business_side_effect_counts(self.business)
+
+        denied = api.post(f"/api/appointments/{other_appointment.id}/confirm/")
+
+        self.assertEqual(denied.status_code, 403)
+        other_appointment.refresh_from_db()
+        self.assertEqual(other_appointment.status, Appointment.Statuses.CREATED)
+        self.assertEqual(self._business_side_effect_counts(self.business), before)
+
+        allowed = api.post(f"/api/appointments/{own_appointment.id}/confirm/")
+
+        self.assertEqual(allowed.status_code, 200, allowed.data)
+        own_appointment.refresh_from_db()
+        self.assertEqual(own_appointment.status, Appointment.Statuses.CONFIRMED)
+
+    def test_doctor_cannot_mutate_unlinked_appointment(self):
+        doctor, _, _, _ = self._doctor_appointment_scope_fixture()
+        client = Client.objects.create(business=self.business, full_name="Unassigned Patient")
+        service = Service.objects.create(
+            business=self.business,
+            name="Unassigned Consultation",
+            duration_minutes=30,
+        )
+        start_at = datetime(2026, 5, 14, 12, 0, tzinfo=ZoneInfo("Asia/Almaty"))
+        appointment = Appointment.objects.create(
+            business=self.business,
+            client=client,
+            service=service,
+            start_at=start_at,
+            end_at=start_at + timedelta(minutes=30),
+        )
+        api = APIClient()
+        api.force_authenticate(doctor)
+        before = self._business_side_effect_counts(self.business)
+
+        response = api.post(f"/api/appointments/{appointment.id}/confirm/")
+
+        self.assertEqual(response.status_code, 403)
+        appointment.refresh_from_db()
+        self.assertEqual(appointment.status, Appointment.Statuses.CREATED)
+        self.assertEqual(self._business_side_effect_counts(self.business), before)
+
+    def test_doctor_appointment_mutation_is_tenant_hidden(self):
+        doctor, _, _, _ = self._doctor_appointment_scope_fixture()
+        other_owner = User.objects.create_user(
+            username="other-doctor-owner",
+            email="other-doctor-owner@example.com",
+            password="pass",
+            role=User.Roles.BUSINESS_OWNER,
+        )
+        other_doctor = User.objects.create_user(
+            username="other-tenant-doctor",
+            email="other-tenant-doctor@example.com",
+            password="pass",
+            role=User.Roles.BUSINESS_MANAGER,
+        )
+        other_business = Business.objects.create(
+            owner=other_owner,
+            name="Other Doctor Clinic",
+            slug="other-doctor-clinic",
+            business_type=Business.BusinessTypes.MEDICAL,
+            timezone="Asia/Almaty",
+        )
+        BusinessMember.objects.create(
+            business=other_business,
+            user=other_owner,
+            role=BusinessMember.Roles.OWNER,
+        )
+        BusinessMember.objects.create(
+            business=other_business,
+            user=other_doctor,
+            role=BusinessMember.Roles.DOCTOR,
+        )
+        other_client = Client.objects.create(business=other_business, full_name="Hidden Patient")
+        other_service = Service.objects.create(
+            business=other_business,
+            name="Hidden Consultation",
+            duration_minutes=30,
+        )
+        other_resource = Resource.objects.create(
+            business=other_business,
+            name="Hidden Doctor",
+            linked_user=other_doctor,
+        )
+        start_at = datetime(2026, 5, 14, 10, 0, tzinfo=ZoneInfo("Asia/Almaty"))
+        hidden_appointment = Appointment.objects.create(
+            business=other_business,
+            client=other_client,
+            service=other_service,
+            resource=other_resource,
+            start_at=start_at,
+            end_at=start_at + timedelta(minutes=30),
+        )
+        api = APIClient()
+        api.force_authenticate(doctor)
+        before = self._business_side_effect_counts(other_business)
+
+        response = api.post(f"/api/appointments/{hidden_appointment.id}/confirm/")
+
+        self.assertEqual(response.status_code, 404)
+        hidden_appointment.refresh_from_db()
+        self.assertEqual(hidden_appointment.status, Appointment.Statuses.CREATED)
+        self.assertEqual(self._business_side_effect_counts(other_business), before)
+
+    def test_appointment_crm_card_exposes_per_record_doctor_action_permissions(self):
+        doctor, _, own_appointment, other_appointment = self._doctor_appointment_scope_fixture()
+        api = APIClient()
+        api.force_authenticate(doctor)
+
+        own_response = api.get(f"/api/appointments/{own_appointment.id}/crm-card/")
+        other_response = api.get(f"/api/appointments/{other_appointment.id}/crm-card/")
+
+        self.assertEqual(own_response.status_code, 200)
+        self.assertEqual(other_response.status_code, 200)
+        own_actions = {item["id"]: item for item in own_response.data["available_action_details"]}
+        other_actions = {item["id"]: item for item in other_response.data["available_action_details"]}
+        self.assertTrue(own_actions["confirm"]["allowed"])
+        self.assertEqual(own_actions["confirm"]["scope"], "own")
+        self.assertFalse(other_actions["confirm"]["allowed"])
+        self.assertEqual(other_actions["confirm"]["scope"], "own")
+        self.assertIn("outside your permitted scope", other_actions["confirm"]["reason"])
+
+    def _doctor_appointment_scope_fixture(self):
+        doctor = User.objects.create_user(
+            username="doctor-one",
+            email="doctor-one@example.com",
+            password="pass",
+            role=User.Roles.BUSINESS_MANAGER,
+        )
+        other_doctor = User.objects.create_user(
+            username="doctor-two",
+            email="doctor-two@example.com",
+            password="pass",
+            role=User.Roles.BUSINESS_MANAGER,
+        )
+        BusinessMember.objects.create(
+            business=self.business,
+            user=doctor,
+            role=BusinessMember.Roles.DOCTOR,
+        )
+        BusinessMember.objects.create(
+            business=self.business,
+            user=other_doctor,
+            role=BusinessMember.Roles.DOCTOR,
+        )
+        client = Client.objects.create(business=self.business, full_name="Doctor Scope Patient")
+        service = Service.objects.create(
+            business=self.business,
+            name="Doctor Scope Consultation",
+            duration_minutes=30,
+        )
+        own_resource = Resource.objects.create(
+            business=self.business,
+            name="Doctor One",
+            linked_user=doctor,
+        )
+        other_resource = Resource.objects.create(
+            business=self.business,
+            name="Doctor Two",
+            linked_user=other_doctor,
+        )
+        start_at = datetime(2026, 5, 14, 9, 0, tzinfo=ZoneInfo("Asia/Almaty"))
+        own_appointment = Appointment.objects.create(
+            business=self.business,
+            client=client,
+            service=service,
+            resource=own_resource,
+            start_at=start_at,
+            end_at=start_at + timedelta(minutes=30),
+        )
+        other_appointment = Appointment.objects.create(
+            business=self.business,
+            client=client,
+            service=service,
+            resource=other_resource,
+            start_at=start_at + timedelta(hours=1),
+            end_at=start_at + timedelta(hours=1, minutes=30),
+        )
+        return doctor, other_doctor, own_appointment, other_appointment
+
+    def _business_side_effect_counts(self, business):
+        return {
+            "activity": ActivityEvent.objects.filter(business=business).count(),
+            "audit": AuditLog.objects.filter(business=business).count(),
+            "notifications": Notification.objects.filter(business=business).count(),
+            "tasks": Task.objects.filter(business=business).count(),
+        }

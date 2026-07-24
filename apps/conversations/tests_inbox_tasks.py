@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.accounts.models import User
@@ -6,13 +7,18 @@ from apps.activities.models import ActivityEvent
 from apps.activities.taxonomy import ActivityEvents
 from apps.bots.models import Bot, BotConversation
 from apps.businesses.access import Actions, Resources, ensure_default_roles
+from apps.businesses.capabilities import ensure_business_capabilities
 from apps.businesses.models import Business, BusinessMember, BusinessRole, RolePermission
 from apps.clients.models import Client
+from apps.conversations.booking import create_appointment_from_conversation
+from apps.conversations.services import create_task_from_conversation
+from apps.core.domain_errors import ModuleDisabled
 from apps.core.models import AuditLog
 from apps.crm.models import Deal
 from apps.crm.services import ensure_default_pipeline
 from apps.leads.models import Lead
 from apps.notifications.models import Notification
+from apps.scheduling.models import Appointment
 from apps.tasks.models import Task
 
 
@@ -213,7 +219,67 @@ class InboxCreateTaskTests(TestCase):
         self.assertFalse(Task.objects.filter(title="Staff cannot create").exists())
         self.assertEqual(self._side_effect_counts(), before)
 
+    def test_create_task_from_inbox_rejects_disabled_tasks_without_side_effects(self):
+        self._disable_module("tasks")
+        self.api.force_authenticate(self.owner)
+        before = self._side_effect_counts()
+
+        response = self.api.post(
+            f"/api/inbox/conversations/{self.conversation.id}/create-task/",
+            {"title": "Disabled inbox task"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data["code"], "module_disabled")
+        self.assertEqual(response.data["errors"], {"module": "tasks"})
+        self.assertEqual(self._side_effect_counts(), before)
+
+    def test_create_task_service_rejects_disabled_tasks_without_side_effects(self):
+        self._disable_module("tasks")
+        before = self._side_effect_counts()
+
+        with self.assertRaises(ModuleDisabled):
+            create_task_from_conversation(
+                conversation=self.conversation,
+                actor=self.owner,
+                title="Disabled service task",
+            )
+
+        self.assertEqual(self._side_effect_counts(), before)
+
+    def test_create_appointment_from_inbox_rejects_disabled_appointments_without_side_effects(self):
+        self._disable_module("appointments")
+        self.api.force_authenticate(self.owner)
+        before = self._side_effect_counts()
+
+        response = self.api.post(
+            f"/api/inbox/conversations/{self.conversation.id}/create-appointment/",
+            {},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data["code"], "module_disabled")
+        self.assertEqual(response.data["errors"], {"module": "appointments"})
+        self.assertEqual(self._side_effect_counts(), before)
+
+    def test_create_appointment_service_rejects_disabled_appointments_without_side_effects(self):
+        self._disable_module("appointments")
+        before = self._side_effect_counts()
+
+        with self.assertRaises(ModuleDisabled):
+            create_appointment_from_conversation(
+                conversation=self.conversation,
+                actor=self.owner,
+                service_id=0,
+                start_at=timezone.now(),
+            )
+
+        self.assertEqual(self._side_effect_counts(), before)
+
     def test_create_task_from_inbox_is_tenant_scoped(self):
+        self._disable_module("tasks")
         self.api.force_authenticate(self.other_owner)
         before = self._side_effect_counts()
 
@@ -227,9 +293,32 @@ class InboxCreateTaskTests(TestCase):
         self.assertFalse(Task.objects.filter(title="Foreign tenant task").exists())
         self.assertEqual(self._side_effect_counts(), before)
 
+    def test_create_appointment_from_inbox_is_tenant_scoped_before_capability_check(self):
+        self._disable_module("appointments")
+        self.api.force_authenticate(self.other_owner)
+        before = self._side_effect_counts()
+
+        response = self.api.post(
+            f"/api/inbox/conversations/{self.conversation.id}/create-appointment/",
+            {},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(self._side_effect_counts(), before)
+
+    def _disable_module(self, module_key):
+        ensure_business_capabilities(self.business)
+        capability = self.business.capabilities.get(module_key=module_key)
+        capability.is_enabled = False
+        capability.save(update_fields=["is_enabled", "updated_at"])
+        if hasattr(self.business, "_capability_map"):
+            del self.business._capability_map
+
     def _side_effect_counts(self):
         return {
             "tasks": Task.objects.filter(business=self.business).count(),
+            "appointments": Appointment.objects.filter(business=self.business).count(),
             "activity": ActivityEvent.objects.filter(business=self.business).count(),
             "audit": AuditLog.objects.filter(business=self.business).count(),
             "notifications": Notification.objects.filter(business=self.business).count(),

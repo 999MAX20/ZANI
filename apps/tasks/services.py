@@ -1,12 +1,14 @@
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.activities.services import create_activity_event, write_activity_event
 from apps.activities.taxonomy import ActivityEvents
-from apps.businesses.assignment_policy import assert_assignment_allowed
-from apps.businesses.assignment_notifications import create_assignment_notifications
 from apps.businesses.access import Resources
+from apps.businesses.assignment_notifications import create_assignment_notifications
+from apps.businesses.assignment_policy import assert_assignment_allowed
+from apps.businesses.capabilities import assert_resource_enabled
 from apps.businesses.models import BusinessMember
 from apps.core.audit import write_actor_audit_log, write_audit_log
 from apps.core.domain_errors import InvalidTransition
@@ -292,6 +294,7 @@ def create_task_notification(task: Task, text: str, *, priority: str | None = No
     return create_routed_task_notifications(task=task, text=text, priority=priority)
 
 
+@transaction.atomic
 def create_automation_task(
     *,
     business,
@@ -313,6 +316,7 @@ def create_automation_task(
     appointment=None,
     conversation=None,
 ) -> Task:
+    assert_resource_enabled(business, Resources.TASKS)
     title = (title or "").strip()
     if not title:
         raise ValidationError({"title": "This field is required."})

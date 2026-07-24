@@ -29,7 +29,7 @@ This file is the working reference for role-aware behavior in ZANI.
 | Leads | business_owner, manager | business_owner, manager | convert/link/assign | assigned manager |
 | Deals | business_owner, manager | business_owner, manager | won/lost, value changes, pipeline move | owner for high-value/risk, manager for assigned |
 | Clients | business_owner, manager | business_owner, manager | merge/delete/archive require owner or explicit permission | assigned manager |
-| Appointments | business_owner, manager, assigned employee | business_owner, manager | book/reschedule/cancel/no-show/complete; cancel and no-show require reason | lead responsible user, linked resource user, actor or owner |
+| Appointments | business_owner, manager, assigned employee | business_owner, manager; doctor/staff only for an appointment whose same-business active `resource.linked_user` is that user | book/reschedule/cancel/no-show/complete; cancel and no-show require reason | lead responsible user, linked resource user, actor or owner |
 | Tasks | business_owner, manager, assigned employee | business_owner, manager | lifecycle, assign, watch and comment require backend `tasks:update`; cancel requires reason; task links may point to client, lead, deal, appointment or conversation; overdue work queues expose backend watch/escalate/critical metadata; workload view is `tasks:view` gated and tenant-scoped | assigned task notifications target the active assignee; unassigned tasks route to manager/admin/operator roles with owner fallback; normal task notifications respect preferences, high/urgent bypass them |
 | Integrations | business_owner, platform_admin, support with grant | business_owner, platform_admin | connect/disconnect/rotate token, health check, failed sync retry | owner/admin/support by event |
 | Outreach | business_owner, manager with permission | business_owner, authorized manager | launch campaign, bulk import | campaign owner and approved operators |
@@ -47,6 +47,7 @@ This file is the working reference for role-aware behavior in ZANI.
 - Support should receive notifications only for granted support sessions or platform incidents.
 - Notification preferences must be business-scoped and role-aware.
 - Assignment targets must be active same-business members and inside the caller's OWN/TEAM/BUSINESS scope.
+- Appointment `OWN` scope is derived from an active same-business `resource.linked_user`; a doctor or staff member may view the shared calendar but cannot mutate another linked user's appointment. CRM card `available_action_details` exposes this decision per record.
 - Operators may self-claim eligible unassigned conversations/tasks; managers may redistribute work inside managed teams; owner/admin may assign across the business.
 - Temporarily unavailable members are not valid new assignment targets. Inbound assignment notifications use an available same-business fallback member when configured.
 - Unassigned and SLA-risk handoffs create manager attention notifications instead of silently remaining in a personal queue.

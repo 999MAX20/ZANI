@@ -1,3 +1,5 @@
+from apps.businesses.access import Resources
+from apps.businesses.capabilities import assert_resource_enabled
 from apps.tasks.models import Task
 from apps.tasks.services import create_automation_task
 
@@ -11,6 +13,7 @@ def create_task_from_conversation(
     priority: str = Task.Priorities.NORMAL,
     due_at=None,
 ) -> Task:
+    assert_resource_enabled(conversation.business, Resources.TASKS)
     task_title = title or f"Follow up: {conversation.client or conversation.external_user_id or conversation.id}"
     return create_automation_task(
         business=conversation.business,

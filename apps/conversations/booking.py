@@ -11,6 +11,8 @@ from apps.activities.services import create_activity_event
 from apps.activities.taxonomy import ActivityEvents
 from apps.bots.inbox_service import send_outbound_message
 from apps.bots.models import BotConversation, BotMessage
+from apps.businesses.access import Resources
+from apps.businesses.capabilities import assert_resource_enabled
 from apps.core.audit import write_actor_audit_log
 from apps.core.models import AuditLog
 from apps.leads.services import can_mark_lead_appointment_created, mark_lead_appointment_created
@@ -51,6 +53,7 @@ def store_offered_slots(*, conversation: BotConversation, scheduling_context: di
 
 
 def maybe_create_appointment_from_reply(*, conversation: BotConversation, message: BotMessage) -> BookingResult:
+    assert_resource_enabled(conversation.business, Resources.APPOINTMENTS)
     slot = _select_offered_slot(conversation=conversation, text=message.text)
     if not slot:
         return BookingResult(status="skipped", reason="No offered slot matched the client reply.")
@@ -130,6 +133,7 @@ def maybe_create_appointment_from_reply(*, conversation: BotConversation, messag
 
 
 def create_appointment_from_conversation(*, conversation: BotConversation, service_id: int, start_at, actor=None, resource_id: int | None = None, notes: str = "") -> Appointment:
+    assert_resource_enabled(conversation.business, Resources.APPOINTMENTS)
     if not conversation.client_id:
         raise ValueError("Conversation must be linked to a client before booking an appointment.")
 

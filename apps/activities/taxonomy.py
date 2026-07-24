@@ -57,6 +57,11 @@ class ActivityEvents:
     MESSAGE_SENT = "message_sent"
     MESSAGE_RETRIED = "message_retried"
     CONVERSATION_ASSIGNED = "conversation_assigned"
+    CONVERSATION_HANDOFF_REQUESTED = "conversation_handoff_requested"
+    CONVERSATION_MARKED_UNREAD = "conversation_marked_unread"
+    CONVERSATION_PRIORITY_CHANGED = "conversation_priority_changed"
+    CONVERSATION_CLOSED = "conversation_closed"
+    CONVERSATION_REOPENED = "conversation_reopened"
     CONVERSATION_QUALIFICATION_PREVIEWED = "conversation_qualification_previewed"
     CONVERSATION_CLIENT_LINKED = "conversation_client_linked"
     CONVERSATION_LEAD_LINKED = "conversation_lead_linked"
@@ -125,6 +130,11 @@ EVENT_LABELS = {
     ActivityEvents.MESSAGE_SENT: "Отправлено сообщение",
     ActivityEvents.MESSAGE_RETRIED: "Message retry requested",
     ActivityEvents.CONVERSATION_ASSIGNED: "Conversation assigned",
+    ActivityEvents.CONVERSATION_HANDOFF_REQUESTED: "Conversation handed off",
+    ActivityEvents.CONVERSATION_MARKED_UNREAD: "Conversation marked unread",
+    ActivityEvents.CONVERSATION_PRIORITY_CHANGED: "Conversation priority changed",
+    ActivityEvents.CONVERSATION_CLOSED: "Conversation closed",
+    ActivityEvents.CONVERSATION_REOPENED: "Conversation reopened",
     ActivityEvents.CONVERSATION_QUALIFICATION_PREVIEWED: "Conversation qualification previewed",
     ActivityEvents.CONVERSATION_CLIENT_LINKED: "Conversation linked to client",
     ActivityEvents.CONVERSATION_LEAD_LINKED: "Conversation linked to lead",
@@ -283,6 +293,36 @@ EVENT_DEFINITIONS = {
         ActivityEvents.CONVERSATION_ASSIGNED,
         category=ActivityEvent.Categories.MESSAGE,
         domain="conversations",
+    ),
+    ActivityEvents.CONVERSATION_HANDOFF_REQUESTED: _define(
+        ActivityEvents.CONVERSATION_HANDOFF_REQUESTED,
+        category=ActivityEvent.Categories.MESSAGE,
+        domain="conversations",
+        audit_required=True,
+        important=True,
+    ),
+    ActivityEvents.CONVERSATION_MARKED_UNREAD: _define(
+        ActivityEvents.CONVERSATION_MARKED_UNREAD,
+        category=ActivityEvent.Categories.MESSAGE,
+        domain="conversations",
+    ),
+    ActivityEvents.CONVERSATION_PRIORITY_CHANGED: _define(
+        ActivityEvents.CONVERSATION_PRIORITY_CHANGED,
+        category=ActivityEvent.Categories.MESSAGE,
+        domain="conversations",
+    ),
+    ActivityEvents.CONVERSATION_CLOSED: _define(
+        ActivityEvents.CONVERSATION_CLOSED,
+        category=ActivityEvent.Categories.MESSAGE,
+        domain="conversations",
+        audit_required=True,
+        important=True,
+    ),
+    ActivityEvents.CONVERSATION_REOPENED: _define(
+        ActivityEvents.CONVERSATION_REOPENED,
+        category=ActivityEvent.Categories.MESSAGE,
+        domain="conversations",
+        audit_required=True,
     ),
     ActivityEvents.CONVERSATION_QUALIFICATION_PREVIEWED: _define(
         ActivityEvents.CONVERSATION_QUALIFICATION_PREVIEWED,

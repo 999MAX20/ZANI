@@ -12,6 +12,8 @@ from apps.businesses.models import BusinessMember
 from apps.businesses.assignment_notifications import create_assignment_notifications
 from apps.businesses.assignment_policy import assert_assignment_allowed, available_fallback_user
 from apps.businesses.access import Resources
+from apps.core.audit import write_actor_audit_log
+from apps.core.models import AuditLog
 from apps.notifications.models import Notification
 
 
@@ -139,10 +141,20 @@ def assign_conversation(conversation, user, *, actor=None):
     conversation.save(update_fields=["assigned_to", "updated_at"])
     _write_conversation_activity(
         conversation,
-        event_type="conversation_assigned",
+        event_type=ActivityEvents.CONVERSATION_ASSIGNED,
         actor=actor,
         text="Conversation assigned.",
         metadata={"from_user_id": previous_assignee_id, "to_user_id": user.id if user else None},
+    )
+    _write_conversation_audit(
+        conversation,
+        actor=actor,
+        event_type=ActivityEvents.CONVERSATION_ASSIGNED,
+        metadata={
+            "kind": "assignment",
+            "from_user_id": previous_assignee_id,
+            "to_user_id": user.id,
+        },
     )
     create_assignment_notifications(
         business=conversation.business,
@@ -155,16 +167,24 @@ def assign_conversation(conversation, user, *, actor=None):
 
 
 def handoff_conversation(conversation, reason="", *, actor=None):
+    if conversation.handoff_required and not conversation.bot_enabled and conversation.handoff_reason == reason:
+        return conversation
     conversation.handoff_required = True
     conversation.handoff_reason = reason
     conversation.bot_enabled = False
     conversation.save(update_fields=["handoff_required", "handoff_reason", "bot_enabled", "updated_at"])
     _write_conversation_activity(
         conversation,
-        event_type="conversation_handoff_requested",
+        event_type=ActivityEvents.CONVERSATION_HANDOFF_REQUESTED,
         actor=actor,
         text="Conversation handed off to a manager.",
         metadata={"reason": reason, "bot_enabled": False},
+    )
+    _write_conversation_audit(
+        conversation,
+        actor=actor,
+        event_type=ActivityEvents.CONVERSATION_HANDOFF_REQUESTED,
+        metadata={"kind": "lifecycle", "reason": reason, "bot_enabled": False},
     )
     manager_members = conversation.business.members.filter(
         is_active=True,
@@ -191,12 +211,14 @@ def handoff_conversation(conversation, reason="", *, actor=None):
 
 
 def mark_conversation_unread(conversation, *, actor=None):
+    if conversation.unread_count >= 1:
+        return conversation
     previous_unread_count = conversation.unread_count
     conversation.unread_count = max(conversation.unread_count, 1)
     conversation.save(update_fields=["unread_count", "updated_at"])
     _write_conversation_activity(
         conversation,
-        event_type="conversation_marked_unread",
+        event_type=ActivityEvents.CONVERSATION_MARKED_UNREAD,
         actor=actor,
         text="Conversation marked unread.",
         metadata={"from_unread_count": previous_unread_count, "to_unread_count": conversation.unread_count},
@@ -209,19 +231,33 @@ def mark_conversation_unread(conversation, *, actor=None):
 
 def set_conversation_priority(conversation, priority, *, actor=None):
     previous_priority = conversation.priority
+    if previous_priority == priority:
+        return conversation
     conversation.priority = priority
     conversation.save(update_fields=["priority", "updated_at"])
     _write_conversation_activity(
         conversation,
-        event_type="conversation_priority_changed",
+        event_type=ActivityEvents.CONVERSATION_PRIORITY_CHANGED,
         actor=actor,
         text="Conversation priority changed.",
         metadata={"from_priority": previous_priority, "to_priority": priority},
+    )
+    _write_conversation_audit(
+        conversation,
+        actor=actor,
+        event_type=ActivityEvents.CONVERSATION_PRIORITY_CHANGED,
+        metadata={
+            "kind": "priority",
+            "from_priority": previous_priority,
+            "to_priority": priority,
+        },
     )
     return conversation
 
 
 def close_conversation(conversation, *, reason="", actor=None):
+    if conversation.status == conversation.Statuses.CLOSED:
+        return conversation
     previous_status = conversation.status
     conversation.status = conversation.Statuses.CLOSED
     conversation.close_reason = reason
@@ -237,15 +273,28 @@ def close_conversation(conversation, *, reason="", actor=None):
     )
     _write_conversation_activity(
         conversation,
-        event_type="conversation_closed",
+        event_type=ActivityEvents.CONVERSATION_CLOSED,
         actor=actor,
         text="Conversation closed.",
         metadata={"from_status": previous_status, "to_status": conversation.status, "reason": reason},
+    )
+    _write_conversation_audit(
+        conversation,
+        actor=actor,
+        event_type=ActivityEvents.CONVERSATION_CLOSED,
+        metadata={
+            "kind": "lifecycle",
+            "from_status": previous_status,
+            "to_status": conversation.status,
+            "reason": reason,
+        },
     )
     return conversation
 
 
 def reopen_conversation(conversation, *, actor=None):
+    if conversation.status == conversation.Statuses.OPEN:
+        return conversation
     previous_status = conversation.status
     conversation.status = conversation.Statuses.OPEN
     conversation.close_reason = ""
@@ -259,10 +308,20 @@ def reopen_conversation(conversation, *, actor=None):
     )
     _write_conversation_activity(
         conversation,
-        event_type="conversation_reopened",
+        event_type=ActivityEvents.CONVERSATION_REOPENED,
         actor=actor,
         text="Conversation reopened.",
         metadata={"from_status": previous_status, "to_status": conversation.status},
+    )
+    _write_conversation_audit(
+        conversation,
+        actor=actor,
+        event_type=ActivityEvents.CONVERSATION_REOPENED,
+        metadata={
+            "kind": "lifecycle",
+            "from_status": previous_status,
+            "to_status": conversation.status,
+        },
     )
     return conversation
 
@@ -325,6 +384,15 @@ def _write_conversation_activity(conversation, *, event_type, actor=None, text="
         event_type=event_type,
         text=text,
         metadata={"event_type": event_type, "conversation_id": conversation.id, **(metadata or {})},
+    )
+
+
+def _write_conversation_audit(conversation, *, actor, event_type, metadata):
+    write_actor_audit_log(
+        actor=actor,
+        action=AuditLog.Actions.UPDATE,
+        instance=conversation,
+        metadata={"event_type": event_type, "source": "inbox", **metadata},
     )
 
 

@@ -6,12 +6,14 @@ from rest_framework.test import APIClient
 
 from apps.accounts.models import User
 from apps.activities.models import ActivityEvent, Note
+from apps.activities.taxonomy import ActivityEvents
 from apps.automations.engine import process_automation_run, run_automations_for_event, run_task_overdue_automations
 from apps.automations.models import AutomationAction, AutomationRule, AutomationRun
 from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
 from apps.businesses.capabilities import apply_business_type_defaults
 from apps.businesses.models import Business, BusinessCapability, BusinessMember
 from apps.clients.models import Client
+from apps.core.models import AuditLog
 from apps.crm.models import Deal, Pipeline, PipelineStage
 from apps.crm.services import move_deal_stage
 from apps.leads.models import Lead
@@ -409,6 +411,43 @@ class AutomationFoundationTests(TestCase):
         self.assertEqual(first_runs[0].id, second_runs[0].id)
         self.assertEqual(AutomationRun.objects.filter(rule=rule).count(), 1)
         self.assertEqual(Task.objects.filter(business=self.business, title="Idempotent follow up").count(), 1)
+        task = Task.objects.get(business=self.business, title="Idempotent follow up")
+        self.assertEqual(
+            ActivityEvent.objects.filter(
+                business=self.business,
+                event_type=ActivityEvents.TASK_CREATED,
+                entity_type="Task",
+                entity_id=str(task.id),
+            ).count(),
+            1,
+        )
+        self.assertEqual(
+            AuditLog.objects.filter(
+                business=self.business,
+                action=AuditLog.Actions.CREATE,
+                entity_type="Task",
+                entity_id=str(task.id),
+                metadata__source="automation",
+            ).count(),
+            1,
+        )
+        self.assertEqual(
+            Notification.objects.filter(
+                business=self.business,
+                category=Notification.Categories.TASKS,
+                action_url=f"/app/tasks?task={task.id}",
+            ).count(),
+            1,
+        )
+        self.assertEqual(
+            ActivityEvent.objects.filter(
+                business=self.business,
+                event_type=ActivityEvents.AUTOMATION_RUN,
+                entity_type="AutomationRun",
+                entity_id=str(first_runs[0].id),
+            ).count(),
+            1,
+        )
 
     def test_delayed_automation_run_is_not_executed_inline(self):
         rule = self._rule(
@@ -551,6 +590,33 @@ class AutomationFoundationTests(TestCase):
         self.assertEqual(run.status, AutomationRun.Statuses.SUCCESS)
         self.assertEqual(run.attempts, 2)
         self.assertEqual(conversation.assigned_to, self.manager)
+        self.assertEqual(
+            ActivityEvent.objects.filter(
+                business=self.business,
+                event_type=ActivityEvents.AUTOMATION_RUN,
+                entity_type="AutomationRun",
+                entity_id=str(run.id),
+            ).count(),
+            1,
+        )
+        self.assertEqual(
+            ActivityEvent.objects.filter(
+                business=self.business,
+                event_type=ActivityEvents.CONVERSATION_ASSIGNED,
+                entity_type="BotConversation",
+                entity_id=str(conversation.id),
+            ).count(),
+            1,
+        )
+        self.assertEqual(
+            AuditLog.objects.filter(
+                business=self.business,
+                entity_type="BotConversation",
+                entity_id=str(conversation.id),
+                metadata__event_type=ActivityEvents.CONVERSATION_ASSIGNED,
+            ).count(),
+            1,
+        )
 
     def test_phase10_triggers_and_actions_are_declared(self):
         self.assertEqual(AutomationRule.TriggerTypes.LEAD_STATUS_CHANGED, "lead_status_changed")

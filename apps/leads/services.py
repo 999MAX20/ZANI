@@ -10,7 +10,7 @@ from apps.businesses.assignment_notifications import create_assignment_notificat
 from apps.businesses.assignment_policy import assert_assignment_allowed
 from apps.businesses.access import Resources
 from apps.businesses.capabilities import assert_resource_enabled
-from apps.core.audit import write_audit_log
+from apps.core.audit import write_actor_audit_log, write_audit_log
 from apps.core.domain_errors import InvalidTransition
 from apps.core.models import AuditLog
 from apps.crm.models import Deal, Pipeline, PipelineStage
@@ -77,6 +77,20 @@ def assign_lead(*, lead: Lead, actor, user_id=None, request=None) -> Lead:
                 "from": previous_responsible_user_id,
                 "to": responsible_user.id,
                 "responsible_user": responsible_user.id,
+            },
+        )
+    else:
+        write_actor_audit_log(
+            actor=actor,
+            action=AuditLog.Actions.UPDATE,
+            instance=lead,
+            metadata={
+                "kind": "assignment",
+                "event_type": ActivityEvents.LEAD_ASSIGNED,
+                "from": previous_responsible_user_id,
+                "to": responsible_user.id,
+                "responsible_user": responsible_user.id,
+                "source": "automation",
             },
         )
     create_activity_event(
@@ -218,6 +232,17 @@ def create_deal_from_lead(*, lead: Lead, actor, amount=0, title="", request=None
     )
     if request is not None:
         write_audit_log(request, AuditLog.Actions.CREATE, deal)
+    else:
+        write_actor_audit_log(
+            actor=actor,
+            action=AuditLog.Actions.CREATE,
+            instance=deal,
+            metadata={
+                "event_type": ActivityEvents.DEAL_CREATED_FROM_LEAD,
+                "source": "domain_service",
+                "lead_id": lead.id,
+            },
+        )
     create_activity_event(
         business=lead.business,
         client=lead.client,
@@ -271,21 +296,28 @@ def apply_lead_status(
         lead.lost_at = None
         lead.lost_by = None
     lead.save(update_fields=update_fields)
+    metadata = {
+        "kind": "lifecycle",
+        "from": previous_status,
+        "to": status,
+        "event_type": event_type,
+        "lifecycle_action": LEAD_LIFECYCLE_AUDIT_ACTIONS.get(event_type, f"lead_{status}"),
+    }
+    if activity_metadata:
+        metadata.update(activity_metadata)
+    if status == Lead.Statuses.LOST:
+        metadata.update({"lost": True, "lost_reason": lead.lost_reason})
+    if clear_lost and previous_lost_reason:
+        metadata["cleared_lost_reason"] = previous_lost_reason
     if request is not None:
-        metadata = {
-            "kind": "lifecycle",
-            "from": previous_status,
-            "to": status,
-            "event_type": event_type,
-            "lifecycle_action": LEAD_LIFECYCLE_AUDIT_ACTIONS.get(event_type, f"lead_{status}"),
-        }
-        if activity_metadata:
-            metadata.update(activity_metadata)
-        if status == Lead.Statuses.LOST:
-            metadata.update({"lost": True, "lost_reason": lead.lost_reason})
-        if clear_lost and previous_lost_reason:
-            metadata["cleared_lost_reason"] = previous_lost_reason
         write_audit_log(request, AuditLog.Actions.UPDATE, lead, metadata=metadata)
+    else:
+        write_actor_audit_log(
+            actor=actor,
+            action=AuditLog.Actions.UPDATE,
+            instance=lead,
+            metadata=metadata,
+        )
     event_metadata = {
         "from": previous_status,
         "to": status,

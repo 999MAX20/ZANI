@@ -51,6 +51,10 @@ business + idempotency_key
 
 If the same CRM event is emitted twice, the existing run is returned and actions are not duplicated.
 
+Each run also owns one `automation_run` activity row. Wait, retry and final-state
+updates revise that row in place, so operational history keeps the latest run
+state without adding timeline noise for every attempt.
+
 ## Queue Behavior
 
 Celery tasks:
@@ -123,7 +127,8 @@ Cancel is available for pending, running and failed runs. It is gated by `automa
 
 All mutating CRM actions call domain services/helpers:
 
-- tasks and follow-ups use task service creation with business/member validation;
+- tasks and follow-ups use task service creation with business/member validation,
+  taxonomy activity, sanitized entity audit and routed notification output;
 - notifications use role-aware notification routing;
 - user assignment validates active business membership before changing ownership/assignee fields;
 - notes use the activity timeline service and same-business entity resolution.

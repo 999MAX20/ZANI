@@ -16,10 +16,13 @@ from apps.businesses.access import Resources
 from apps.businesses.capabilities import assert_resource_enabled
 from apps.clients.models import Client
 from apps.conversations.ai_qualification import ConversationQualification, qualify_conversation
+from apps.core.audit import write_actor_audit_log
+from apps.core.models import AuditLog
 from apps.crm.models import Deal, Pipeline, PipelineStage
 from apps.leads.models import Lead
 from apps.services.models import Service
 from apps.tasks.models import Task
+from apps.tasks.services import create_automation_task
 
 
 PIPELINE_META_KEY = "conversation_pipeline"
@@ -252,6 +255,16 @@ def _ensure_lead(
         message=message or last_message_text(conversation),
         responsible_user=conversation.assigned_to or actor if actor and getattr(actor, "is_authenticated", False) else conversation.assigned_to,
     )
+    write_actor_audit_log(
+        actor=actor,
+        action=AuditLog.Actions.CREATE,
+        instance=lead,
+        metadata={
+            "event_type": ActivityEvents.LEAD_CREATED,
+            "source": source,
+            "conversation_id": conversation.id,
+        },
+    )
     created["lead"] = True
     create_activity_event(
         business=conversation.business,
@@ -303,6 +316,17 @@ def _ensure_deal(
         probability=stage.probability,
         source=source_from_channel(conversation.channel),
         next_action_at=timezone.now() + timedelta(hours=2),
+    )
+    write_actor_audit_log(
+        actor=actor,
+        action=AuditLog.Actions.CREATE,
+        instance=deal,
+        metadata={
+            "event_type": ActivityEvents.DEAL_CREATED,
+            "source": source,
+            "conversation_id": conversation.id,
+            "lead_id": lead.id if lead else None,
+        },
     )
     created["deal"] = True
     create_activity_event(
@@ -359,35 +383,31 @@ def _ensure_task(
         return existing
 
     assignee = conversation.assigned_to or actor if actor and getattr(actor, "is_authenticated", False) else conversation.assigned_to
-    task = Task.objects.create(
+    task = create_automation_task(
         business=conversation.business,
         title=title or default_title,
         description=description or f"Диалог #{conversation.id}: {last_message_text(conversation)}",
+        entity=conversation,
         client=client,
         lead=lead,
         deal=deal,
         conversation=conversation,
         assignee=assignee,
-        created_by=actor if actor and getattr(actor, "is_authenticated", False) else None,
+        actor=actor,
         priority=priority or Task.Priorities.NORMAL,
         due_at=due_at or timezone.now() + timedelta(hours=2),
-    )
-    created["task"] = True
-    create_activity_event(
-        business=conversation.business,
-        instance=task,
-        client=client,
-        actor=actor,
         source=source,
-        event_type=ActivityEvents.TASK_CREATED,
-        metadata={
-            "event_type": ActivityEvents.TASK_CREATED,
+        source_payload={
+            "trigger_type": "conversation_pipeline",
             "conversation_id": conversation.id,
             "lead_id": lead.id if lead else None,
             "deal_id": deal.id if deal else None,
             "channel": conversation.channel,
         },
+        activity_text=f"Task created from conversation pipeline: {title or default_title}",
+        notification_text=f"New conversation follow-up: {title or default_title}",
     )
+    created["task"] = True
     return task
 
 

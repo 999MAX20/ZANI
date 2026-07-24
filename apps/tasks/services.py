@@ -8,7 +8,7 @@ from apps.businesses.assignment_policy import assert_assignment_allowed
 from apps.businesses.assignment_notifications import create_assignment_notifications
 from apps.businesses.access import Resources
 from apps.businesses.models import BusinessMember
-from apps.core.audit import write_audit_log
+from apps.core.audit import write_actor_audit_log, write_audit_log
 from apps.core.domain_errors import InvalidTransition
 from apps.core.models import AuditLog
 from apps.notifications.models import Notification
@@ -95,6 +95,7 @@ def cancel_task(*, task: Task, actor, reason: str, request=None) -> Task:
             "to": task.status,
             "reason": reason,
         },
+        actor=actor,
     )
     return task
 
@@ -151,6 +152,7 @@ def undo_cancel_task(*, task: Task, actor, request=None) -> Task:
             "to": task.status,
             "actor": actor.id if actor else None,
         },
+        actor=actor,
     )
     return task
 
@@ -181,7 +183,14 @@ def assign_task(*, task: Task, actor, user_id=None, request=None) -> Task:
         return task
     task.assignee = assignee
     task.save(update_fields=["assignee", "updated_at"])
-    write_task_activity(request, ActivityEvents.TASK_ASSIGNED, task, text=f"Задача назначена: {task.title}")
+    write_task_activity(
+        request,
+        ActivityEvents.TASK_ASSIGNED,
+        task,
+        text=f"Задача назначена: {task.title}",
+        actor=actor,
+        source="automation" if request is None else "api",
+    )
     create_task_notification(
         task,
         f"Задача назначена: {task.title}",
@@ -204,6 +213,7 @@ def assign_task(*, task: Task, actor, user_id=None, request=None) -> Task:
             "from_assignee": previous_assignee_id,
             "to_assignee": assignee.id,
         },
+        actor=actor,
     )
     return task
 
@@ -236,6 +246,7 @@ def assign_task_to_me(*, task: Task, actor, request=None) -> Task:
             "from_assignee": previous_assignee_id,
             "to_assignee": actor.id,
         },
+        actor=actor,
     )
     return task
 
@@ -296,6 +307,11 @@ def create_automation_task(
     activity_text: str | None = None,
     notification_text: str | None = None,
     notification_priority: str | None = None,
+    client=None,
+    lead=None,
+    deal=None,
+    appointment=None,
+    conversation=None,
 ) -> Task:
     title = (title or "").strip()
     if not title:
@@ -304,6 +320,15 @@ def create_automation_task(
         raise ValidationError({"priority": "Invalid priority."})
     if entity is not None and getattr(entity, "business_id", business.id) != business.id:
         raise ValidationError({"entity": "Task entity must belong to the selected business."})
+    for field_name, related in {
+        "client": client,
+        "lead": lead,
+        "deal": deal,
+        "appointment": appointment,
+        "conversation": conversation,
+    }.items():
+        if related is not None and getattr(related, "business_id", business.id) != business.id:
+            raise ValidationError({field_name: f"Task {field_name} must belong to the selected business."})
 
     assignee = assignee or _entity_preferred_user(entity) or actor
     if assignee and not _is_active_business_user(business, assignee):
@@ -313,11 +338,11 @@ def create_automation_task(
         business=business,
         title=title,
         description=description or "",
-        client=_linked_client(entity),
-        lead=entity if _entity_type(entity, "Lead") else _entity_attr(entity, "lead"),
-        deal=entity if _entity_type(entity, "Deal") else _entity_attr(entity, "deal"),
-        appointment=entity if _entity_type(entity, "Appointment") else _entity_attr(entity, "appointment"),
-        conversation=entity if _entity_type(entity, "BotConversation") else _entity_attr(entity, "conversation"),
+        client=client or _linked_client(entity),
+        lead=lead or (entity if _entity_type(entity, "Lead") else _entity_attr(entity, "lead")),
+        deal=deal or (entity if _entity_type(entity, "Deal") else _entity_attr(entity, "deal")),
+        appointment=appointment or (entity if _entity_type(entity, "Appointment") else _entity_attr(entity, "appointment")),
+        conversation=conversation or (entity if _entity_type(entity, "BotConversation") else _entity_attr(entity, "conversation")),
         assignee=assignee,
         created_by=actor if actor and _is_active_business_user(business, actor) else None,
         due_at=due_at,
@@ -333,6 +358,26 @@ def create_automation_task(
         source=source,
         text=activity_text or f"Automation created task: {task.title}",
         metadata={
+            "event_type": ActivityEvents.TASK_CREATED,
+            "source": source,
+            "task_id": task.id,
+            "conversation_id": task.conversation_id,
+            "client_id": task.client_id,
+            "lead_id": task.lead_id,
+            "deal_id": task.deal_id,
+            "appointment_id": task.appointment_id,
+            "source_entity_type": entity.__class__.__name__ if entity is not None else "",
+            "source_entity_id": str(getattr(entity, "pk", "") or ""),
+            "trigger_type": (source_payload or {}).get("trigger_type", ""),
+        },
+    )
+    write_actor_audit_log(
+        actor=actor,
+        action=AuditLog.Actions.CREATE,
+        instance=task,
+        metadata={
+            "kind": "task_created",
+            "event_type": ActivityEvents.TASK_CREATED,
             "source": source,
             "source_entity_type": entity.__class__.__name__ if entity is not None else "",
             "source_entity_id": str(getattr(entity, "pk", "") or ""),
@@ -425,23 +470,48 @@ def _is_active_business_user(business, user):
     return business.members.filter(user=user, is_active=True).exists()
 
 
-def write_task_activity(request, event_type, task: Task, *, text: str, metadata: dict | None = None) -> None:
-    if request is None:
-        return
+def write_task_activity(
+    request,
+    event_type,
+    task: Task,
+    *,
+    text: str,
+    metadata: dict | None = None,
+    actor=None,
+    source="api",
+) -> None:
     payload = {"event_type": event_type}
     payload.update(TASK_ACTIVITY_DEFAULTS.get(event_type, {}))
     payload.update(metadata or {})
-    write_activity_event(request, event_type, task, text=text, metadata=payload)
-
-
-def write_task_audit(request, task: Task, metadata: dict) -> None:
-    if request is None:
+    if request is not None:
+        write_activity_event(request, event_type, task, text=text, metadata=payload)
         return
+    create_activity_event(
+        business=task.business,
+        client=task.client,
+        actor=actor,
+        event_type=event_type,
+        instance=task,
+        source=source,
+        text=text,
+        metadata=payload,
+    )
+
+
+def write_task_audit(request, task: Task, metadata: dict, *, actor=None) -> None:
     payload = dict(metadata)
     lifecycle_action = payload.get("lifecycle_action")
     if lifecycle_action and "event_type" not in payload:
         payload["event_type"] = TASK_AUDIT_EVENT_TYPES_BY_ACTION.get(lifecycle_action, lifecycle_action)
-    write_audit_log(request, AuditLog.Actions.UPDATE, task, metadata=payload)
+    if request is not None:
+        write_audit_log(request, AuditLog.Actions.UPDATE, task, metadata=payload)
+        return
+    write_actor_audit_log(
+        actor=actor,
+        action=AuditLog.Actions.UPDATE,
+        instance=task,
+        metadata=payload,
+    )
 
 
 def business_local_datetime(business, *, days: int, hour: int, minute: int = 0):

@@ -8,9 +8,11 @@ from apps.bots.models import Bot, BotConversation
 from apps.businesses.access import Actions, Resources, ensure_default_roles
 from apps.businesses.models import Business, BusinessMember, BusinessRole, RolePermission
 from apps.clients.models import Client
+from apps.core.models import AuditLog
 from apps.crm.models import Deal
 from apps.crm.services import ensure_default_pipeline
 from apps.leads.models import Lead
+from apps.notifications.models import Notification
 from apps.tasks.models import Task
 
 
@@ -99,6 +101,26 @@ class InboxCreateTaskTests(TestCase):
                 metadata__task_id=task.id,
             ).exists()
         )
+        self.assertTrue(
+            AuditLog.objects.filter(
+                business=self.business,
+                actor=self.owner,
+                action=AuditLog.Actions.CREATE,
+                entity_type="Task",
+                entity_id=str(task.id),
+                metadata__event_type=ActivityEvents.TASK_CREATED,
+                metadata__source="inbox",
+            ).exists()
+        )
+        self.assertEqual(
+            Notification.objects.filter(
+                business=self.business,
+                recipient=self.owner,
+                category=Notification.Categories.TASKS,
+                action_url=f"/app/tasks?task={task.id}",
+            ).count(),
+            1,
+        )
 
     def test_create_task_from_inbox_replays_idempotency_key(self):
         self.api.force_authenticate(self.owner)
@@ -122,6 +144,33 @@ class InboxCreateTaskTests(TestCase):
         self.assertEqual(replay.status_code, 201)
         self.assertEqual(replay.data["id"], first.data["id"])
         self.assertEqual(Task.objects.filter(conversation=self.conversation, title=payload["title"]).count(), 1)
+        task = Task.objects.get(id=first.data["id"])
+        self.assertEqual(
+            ActivityEvent.objects.filter(
+                business=self.business,
+                event_type=ActivityEvents.TASK_CREATED,
+                entity_type="Task",
+                entity_id=str(task.id),
+            ).count(),
+            1,
+        )
+        self.assertEqual(
+            AuditLog.objects.filter(
+                business=self.business,
+                action=AuditLog.Actions.CREATE,
+                entity_type="Task",
+                entity_id=str(task.id),
+            ).count(),
+            1,
+        )
+        self.assertEqual(
+            Notification.objects.filter(
+                business=self.business,
+                category=Notification.Categories.TASKS,
+                action_url=f"/app/tasks?task={task.id}",
+            ).count(),
+            1,
+        )
 
     def test_create_task_from_inbox_uses_default_title(self):
         self.api.force_authenticate(self.owner)
@@ -152,6 +201,7 @@ class InboxCreateTaskTests(TestCase):
             role=BusinessMember.Roles.STAFF,
         )
         self.api.force_authenticate(self.staff)
+        before = self._side_effect_counts()
 
         response = self.api.post(
             f"/api/inbox/conversations/{self.conversation.id}/create-task/",
@@ -161,9 +211,11 @@ class InboxCreateTaskTests(TestCase):
 
         self.assertEqual(response.status_code, 403)
         self.assertFalse(Task.objects.filter(title="Staff cannot create").exists())
+        self.assertEqual(self._side_effect_counts(), before)
 
     def test_create_task_from_inbox_is_tenant_scoped(self):
         self.api.force_authenticate(self.other_owner)
+        before = self._side_effect_counts()
 
         response = self.api.post(
             f"/api/inbox/conversations/{self.conversation.id}/create-task/",
@@ -173,3 +225,12 @@ class InboxCreateTaskTests(TestCase):
 
         self.assertEqual(response.status_code, 404)
         self.assertFalse(Task.objects.filter(title="Foreign tenant task").exists())
+        self.assertEqual(self._side_effect_counts(), before)
+
+    def _side_effect_counts(self):
+        return {
+            "tasks": Task.objects.filter(business=self.business).count(),
+            "activity": ActivityEvent.objects.filter(business=self.business).count(),
+            "audit": AuditLog.objects.filter(business=self.business).count(),
+            "notifications": Notification.objects.filter(business=self.business).count(),
+        }

@@ -25,6 +25,7 @@ from apps.tasks.services import (
     assign_task_to_me,
     cancel_task,
     complete_task,
+    create_task_notification,
     reopen_task,
     set_task_due_today,
     set_task_due_tomorrow,
@@ -252,6 +253,10 @@ class TaskViewSet(IdempotentCRMCreateMixin, TenantModelViewSet):
     def perform_create(self, serializer):
         serializer.validated_data.setdefault("created_by", self.request.user)
         super().perform_create(serializer)
+        create_task_notification(
+            serializer.instance,
+            f"New task: {serializer.instance.title}",
+        )
 
     @action(detail=True, methods=["patch"], url_path="update-details")
     def update_details(self, request, pk=None):

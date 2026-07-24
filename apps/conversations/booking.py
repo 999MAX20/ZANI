@@ -11,6 +11,8 @@ from apps.activities.services import create_activity_event
 from apps.activities.taxonomy import ActivityEvents
 from apps.bots.inbox_service import send_outbound_message
 from apps.bots.models import BotConversation, BotMessage
+from apps.core.audit import write_actor_audit_log
+from apps.core.models import AuditLog
 from apps.leads.services import can_mark_lead_appointment_created, mark_lead_appointment_created
 from apps.notifications.models import Notification
 from apps.notifications.routing import MANAGER_ROLES, create_role_notification
@@ -90,6 +92,17 @@ def maybe_create_appointment_from_reply(*, conversation: BotConversation, messag
         source=_appointment_source(conversation.channel),
         notes=f"Создано автоматически из диалога #{conversation.id}",
     )
+    write_actor_audit_log(
+        actor=None,
+        action=AuditLog.Actions.CREATE,
+        instance=appointment,
+        metadata={
+            "event_type": ActivityEvents.APPOINTMENT_CREATED,
+            "source": "auto_booking",
+            "conversation_id": conversation.id,
+            "slot": slot,
+        },
+    )
     mark_lead_appointment_created(
         lead=conversation.lead,
         actor=None,
@@ -147,6 +160,18 @@ def create_appointment_from_conversation(*, conversation: BotConversation, servi
         status=Appointment.Statuses.CREATED,
         source=_appointment_source(conversation.channel),
         notes=notes or f"Created from inbox conversation #{conversation.id}",
+    )
+    write_actor_audit_log(
+        actor=actor,
+        action=AuditLog.Actions.CREATE,
+        instance=appointment,
+        metadata={
+            "event_type": ActivityEvents.APPOINTMENT_CREATED,
+            "source": "inbox",
+            "conversation_id": conversation.id,
+            "service_id": service.id,
+            "resource_id": resource.id if resource else None,
+        },
     )
     if conversation.lead_id:
         mark_lead_appointment_created(

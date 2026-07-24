@@ -16,6 +16,7 @@ from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
 from apps.businesses.capabilities import apply_business_type_defaults
 from apps.businesses.models import Business, BusinessCapability, BusinessMember
 from apps.clients.models import Client
+from apps.core.models import AuditLog
 from apps.crm.models import Deal, Pipeline, PipelineStage
 from apps.integrations.models import BusinessEvent
 from apps.leads.models import Lead
@@ -1719,6 +1720,17 @@ class InboxBackendTests(TestCase):
             ).exists()
         )
         self.assertTrue(Notification.objects.filter(business=self.business, appointment_id=response.data["id"]).exists())
+        self.assertTrue(
+            AuditLog.objects.filter(
+                business=self.business,
+                actor=self.owner,
+                action=AuditLog.Actions.CREATE,
+                entity_type="Appointment",
+                entity_id=str(response.data["id"]),
+                metadata__event_type=ActivityEvents.APPOINTMENT_CREATED,
+                metadata__source="inbox",
+            ).exists()
+        )
 
         empty_conversation = BotConversation.objects.create(
             business=self.business,
@@ -1856,6 +1868,26 @@ class InboxBackendTests(TestCase):
                 business=self.business,
                 lead=lead,
                 service=service,
+            ).count(),
+            1,
+        )
+        appointment = Appointment.objects.get(id=first.data["id"])
+        self.assertEqual(
+            ActivityEvent.objects.filter(
+                business=self.business,
+                event_type=ActivityEvents.APPOINTMENT_CREATED,
+                entity_type="Appointment",
+                entity_id=str(appointment.id),
+            ).count(),
+            1,
+        )
+        self.assertEqual(
+            AuditLog.objects.filter(
+                business=self.business,
+                action=AuditLog.Actions.CREATE,
+                entity_type="Appointment",
+                entity_id=str(appointment.id),
+                metadata__source="inbox",
             ).count(),
             1,
         )
@@ -2165,6 +2197,17 @@ class InboxBackendTests(TestCase):
                 metadata__conversation_id=self.conversation.id,
             ).exists()
         )
+        replay_unread = self.api.post(f"/api/inbox/conversations/{self.conversation.id}/mark-unread/")
+        self.assertEqual(replay_unread.status_code, 200)
+        self.assertEqual(
+            ActivityEvent.objects.filter(
+                business=self.business,
+                entity_type="BotConversation",
+                entity_id=str(self.conversation.id),
+                event_type=ActivityEvents.CONVERSATION_MARKED_UNREAD,
+            ).count(),
+            1,
+        )
 
         priority_response = self.api.post(
             f"/api/inbox/conversations/{self.conversation.id}/set-priority/",
@@ -2182,6 +2225,21 @@ class InboxBackendTests(TestCase):
                 metadata__conversation_id=self.conversation.id,
                 metadata__to_priority=BotConversation.Priorities.URGENT,
             ).exists()
+        )
+        replay_priority = self.api.post(
+            f"/api/inbox/conversations/{self.conversation.id}/set-priority/",
+            {"priority": BotConversation.Priorities.URGENT},
+            format="json",
+        )
+        self.assertEqual(replay_priority.status_code, 200)
+        self.assertEqual(
+            ActivityEvent.objects.filter(
+                business=self.business,
+                entity_type="BotConversation",
+                entity_id=str(self.conversation.id),
+                event_type=ActivityEvents.CONVERSATION_PRIORITY_CHANGED,
+            ).count(),
+            1,
         )
 
         close_response = self.api.post(
@@ -2203,6 +2261,38 @@ class InboxBackendTests(TestCase):
                 metadata__reason="Resolved",
             ).exists()
         )
+        replay_close = self.api.post(
+            f"/api/inbox/conversations/{self.conversation.id}/close/",
+            {"reason": "Resolved"},
+            format="json",
+        )
+        self.assertEqual(replay_close.status_code, 200)
+        self.assertEqual(
+            ActivityEvent.objects.filter(
+                business=self.business,
+                entity_type="BotConversation",
+                entity_id=str(self.conversation.id),
+                event_type=ActivityEvents.CONVERSATION_CLOSED,
+            ).count(),
+            1,
+        )
+        self.assertEqual(
+            AuditLog.objects.filter(
+                business=self.business,
+                entity_type="BotConversation",
+                entity_id=str(self.conversation.id),
+                metadata__event_type=ActivityEvents.CONVERSATION_CLOSED,
+            ).count(),
+            1,
+        )
+        self.assertEqual(
+            BotMessage.objects.filter(
+                conversation=self.conversation,
+                sender_type=BotMessage.SenderTypes.SYSTEM,
+                text="Conversation closed by manager.",
+            ).count(),
+            1,
+        )
 
         reopen_response = self.api.post(f"/api/inbox/conversations/{self.conversation.id}/reopen/")
         self.assertEqual(reopen_response.status_code, 200)
@@ -2215,6 +2305,26 @@ class InboxBackendTests(TestCase):
                 event_type="conversation_reopened",
                 metadata__conversation_id=self.conversation.id,
             ).exists()
+        )
+        replay_reopen = self.api.post(f"/api/inbox/conversations/{self.conversation.id}/reopen/")
+        self.assertEqual(replay_reopen.status_code, 200)
+        self.assertEqual(
+            ActivityEvent.objects.filter(
+                business=self.business,
+                entity_type="BotConversation",
+                entity_id=str(self.conversation.id),
+                event_type=ActivityEvents.CONVERSATION_REOPENED,
+            ).count(),
+            1,
+        )
+        self.assertEqual(
+            AuditLog.objects.filter(
+                business=self.business,
+                entity_type="BotConversation",
+                entity_id=str(self.conversation.id),
+                metadata__event_type=ActivityEvents.CONVERSATION_REOPENED,
+            ).count(),
+            1,
         )
 
     def test_inbox_rejects_invalid_priority(self):

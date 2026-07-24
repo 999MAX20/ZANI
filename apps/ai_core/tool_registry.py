@@ -14,6 +14,8 @@ from apps.automations.models import AutomationRule
 from apps.businesses.access import Actions, Resources, assert_can
 from apps.businesses.capabilities import assert_resource_enabled
 from apps.clients.models import Client
+from apps.core.audit import write_actor_audit_log
+from apps.core.models import AuditLog
 from apps.crm.models import Deal, PipelineStage
 from apps.crm.services import ensure_default_pipeline
 from apps.leads.models import Lead
@@ -207,6 +209,17 @@ def _execute_create_lead(log, user):
         message=log.input_json.get("message") or _last_message_text(conversation),
         responsible_user=user if user and user.is_authenticated else None,
     )
+    write_actor_audit_log(
+        actor=user,
+        action=AuditLog.Actions.CREATE,
+        instance=lead,
+        metadata={
+            "event_type": ActivityEvents.LEAD_CREATED,
+            "source": "ai_tool",
+            "tool_call_id": log.id,
+            "tool_name": log.tool_name,
+        },
+    )
     create_activity_event(
         business=log.business,
         client=client,
@@ -303,6 +316,17 @@ def _execute_create_deal(log, user):
         source="ai_tool",
         probability=stage.probability,
         stage_entered_at=timezone.now(),
+    )
+    write_actor_audit_log(
+        actor=user,
+        action=AuditLog.Actions.CREATE,
+        instance=deal,
+        metadata={
+            "event_type": ActivityEvents.DEAL_CREATED,
+            "source": "ai_tool",
+            "tool_call_id": log.id,
+            "tool_name": log.tool_name,
+        },
     )
     create_activity_event(
         business=log.business,

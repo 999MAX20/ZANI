@@ -465,7 +465,7 @@ Completion evidence (2026-07-24):
 
 #### F-301 — Accessibility and Responsive Interaction
 
-Status: `IN_PROGRESS`
+Status: `DONE`
 Owner: UI/UX  
 Depends on: X-201
 
@@ -477,9 +477,31 @@ serious or critical automated accessibility findings.
 Assignment: 2026-07-24, `codex/f301-accessibility-responsive` from the green
 X-201 integration baseline.
 
+Completion evidence (2026-07-24):
+
+- source branch is clean and pushed through
+  `330d6684510dbca99cf4a317465b24f14a6aabfa`; integrated as `d0d2ffa` and
+  `de01d93`;
+- shared dialogs/drawers now establish and trap focus, handle only the topmost
+  overlay, close on Escape and restore the exact visible opener even after
+  conditional unmount;
+- MobileNav and header filters use the shared modal contract; shared form
+  controls expose labels, invalid/error relationships and keyboard-complete
+  Select/listbox behavior;
+- contrast and responsive overflow were corrected with existing design tokens;
+  calendar lifecycle smoke now uses a deterministic action locator;
+- the first independent review rejected three keyboard/modal gaps; the
+  correction closed every finding and the second review accepted the result;
+- manager browser verification passed the desktop/tablet/mobile accessibility
+  suite (`10 passed`, `5` intentional viewport skips), including five
+  pilot-critical route axe scans with zero serious/critical findings, and the
+  corrected calendar lifecycle smoke (`2 passed`);
+- production build, `4481`-key i18n parity, action/daily policy tests and bundle
+  budget passed; the largest chunk was `471.6 kB`.
+
 #### B-301 — Measured API and Query Performance
 
-Status: `IN_PROGRESS`
+Status: `DONE`
 Owner: Features/Backend  
 Depends on: X-201
 
@@ -491,9 +513,33 @@ problems. Record before/after evidence and regression budgets.
 Assignment: 2026-07-24, `codex/b301-measured-performance` from the green X-201
 integration baseline.
 
+Completion evidence (2026-07-24):
+
+- source branch is clean and pushed through
+  `930a0f1ca7f26e10f2f79885a619f9601a80af06`; integrated as `54f3040` and
+  `cc881a6`;
+- measured query fixes replaced client-card Cartesian counts, CRM-card N+1,
+  repeated task-summary queries and repeated work-queue counts without changing
+  tenant, permission or API contracts;
+- Inbox list ordering is now deterministic after scope/filter/distinct using
+  `-updated_at, -id`;
+- CRM-card related predicates remain database-side and fixed-shape instead of
+  materializing unbounded related IDs in Python;
+- the strict independent review rejected the first handoff for ordering and
+  unbounded-predicate gaps; the correction closed both and the same reviewer
+  accepted it;
+- manager verification passed the tied-ordering and B-301 performance suite
+  (`4 passed`), including tenant denials and all nine measured read surfaces;
+- scaling from `60` to `300` rows per related entity kept maximum SQL at
+  `13,837` characters and queries at `28` to `29`, while far-end activity,
+  note, tag and attachment evidence remained visible;
+- the source focused regression passed `78/78`, CRM E2E passed `11/11`,
+  `manage.py check`, migration drift and diff hygiene passed; no migrations,
+  dependencies, environment or external systems changed.
+
 #### F-302 — Frontend Runtime and Maintainability
 
-Status: `LOCKED`  
+Status: `IN_PROGRESS`
 Owner: UI/UX  
 Depends on: F-301 integrated
 
@@ -501,15 +547,21 @@ Measure route chunks, request waterfalls and render churn. Split or refactor onl
 demonstrated hotspots while preserving API separation, i18n, design-system,
 role, loading, error and responsive behavior.
 
+Assignment: 2026-07-24, `codex/f302-runtime-maintainability` from the integrated
+F-301/B-301 baseline.
+
 #### B-302 — Deterministic Local Quality Gate
 
-Status: `LOCKED`  
+Status: `IN_PROGRESS`
 Owner: Features/Backend  
 Depends on: B-301 integrated
 
 Audit Python dependency pinning and frontend lockfile; consolidate deterministic
 migration, backend test, frontend build, browser smoke and dependency/security
 commands that require no production credentials.
+
+Assignment: 2026-07-24, `codex/b302-deterministic-quality-gate` from the
+integrated F-301/B-301 baseline.
 
 #### X-301 — P3 Quality Gate
 

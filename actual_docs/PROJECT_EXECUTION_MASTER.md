@@ -367,7 +367,7 @@ Completion evidence (2026-07-24):
 
 #### F-201 — Role-Aware Daily Workspaces
 
-Status: `IN_PROGRESS`
+Status: `DONE`
 Owner: UI/UX  
 Depends on: X-101
 
@@ -379,9 +379,28 @@ upcoming, stalled and failed states. Every priority item must expose a direct
 next action. AI recommendations appear only with real sources. Owner, manager,
 operator and doctor routes require targeted desktop/mobile Playwright coverage.
 
+Completion evidence (2026-07-24):
+
+- source branch `codex/f201-role-aware-daily-workspaces` is clean and pushed
+  through `524641204489543aa9f9f8660d30bfe3dd9e2d62`; integrated as
+  `f2c0b97`, `7c9cd1a` and `bd6c27a`;
+- owner, manager, operator and doctor daily workspaces now expose direct actions
+  for real overdue, unread, upcoming, stalled and failed states;
+- Inbox connector readiness uses real status queries with non-blocking
+  loading/error recovery; a provider-status 503 does not hide conversations or
+  working actions;
+- dentistry keeps the shared CRM model while doctor actions are constrained to
+  own appointments; disabled capabilities remain explicitly gated;
+- deterministic repeated seed coverage resets appointment status and archive
+  fields;
+- independent review accepted the final diff; manager verification passed the
+  daily-workspace unit suite (`4 passed`), production build with `4480` aligned
+  i18n keys, bundle budget (largest chunk `466.3 kB`) and desktop/mobile
+  Playwright (`4 passed`, `2` project-specific skips).
+
 #### B-201 — Action Side-Effect Consistency
 
-Status: `IN_PROGRESS`
+Status: `DONE`
 Owner: Features/Backend  
 Depends on: X-101
 
@@ -394,9 +413,29 @@ API, Inbox, automation and approved AI entry points. Retries must not create
 duplicate notifications or timeline noise. Denied and tenant-hidden paths must
 have no side effects.
 
+Completion evidence (2026-07-24):
+
+- source branch `codex/b201-action-side-effects` is clean and pushed through
+  `b916a463d7e40cc0aba07b859dcf81ac64993558`; integrated as `65e1b47`,
+  `871345d`, `42fe486` and `ddc661f`;
+- pilot-critical mutations keep activity, audit and notification behavior
+  atomic and tenant-safe; denied or tenant-hidden paths create no side effects;
+- Appointment note creation is an executable API action guarded by exact
+  `appointments:update` object scope, including doctor `OWN` scope through the
+  active same-business linked resource;
+- Note, appointment activity and audit creation roll back together on failure;
+  the frontend drawer calls the dedicated appointment action without changing
+  the generic note flow;
+- the stale closed-lead appointment test now matches the established
+  `409 invalid_transition` contract; production behavior did not change;
+- independent review accepted the diff; manager verification passed the exact
+  correction test (`1 passed`), its full test class (`15 passed`), focused
+  appointment-note tests (`6 passed`), `manage.py check`, migration drift and
+  diff hygiene.
+
 #### X-201 — P2 Workflow Gate
 
-Status: `LOCKED`  
+Status: `DONE`
 Owner: Manager  
 Depends on: F-201 and B-201 integrated
 
@@ -405,11 +444,28 @@ Depends on: F-201 and B-201 integrated
 - no-data, disabled-module and provider-unavailable checks;
 - full integration regression before P3.
 
+Completion evidence (2026-07-24):
+
+- F-201 and B-201 were independently reviewed, accepted and integrated without
+  conflicts into `codex/project-integration-2026-07`;
+- combined frontend verification passed daily-workspace tests (`4 passed`),
+  action-feedback tests (`3 passed`), production build, `4480`-key i18n parity,
+  bundle budget (`466.3 kB`) and desktop/mobile role workflow Playwright
+  (`4 passed`, `2` project-specific skips);
+- the first full backend run exposed only the already documented stale
+  closed-lead HTTP 400 expectation while production correctly returned the
+  established HTTP 409 contract; the test-only correction was independently
+  verified and integrated;
+- the final integration rerun passed all `842` backend tests in `1118.752s`;
+- `manage.py check`, migration drift and integration diff hygiene passed;
+- non-blocking local warnings remain limited to refresh-before-login 400,
+  development HMAC key length and the React Router future flag.
+
 ### Phase P3 — Performance, Accessibility and Reproducibility
 
 #### F-301 — Accessibility and Responsive Interaction
 
-Status: `LOCKED`  
+Status: `IN_PROGRESS`
 Owner: UI/UX  
 Depends on: X-201
 
@@ -418,9 +474,12 @@ error announcements, contrast and core forms/tables/menus at mobile, tablet and
 desktop breakpoints. Pilot-critical flows must be keyboard operable with no new
 serious or critical automated accessibility findings.
 
+Assignment: 2026-07-24, `codex/f301-accessibility-responsive` from the green
+X-201 integration baseline.
+
 #### B-301 — Measured API and Query Performance
 
-Status: `LOCKED`  
+Status: `IN_PROGRESS`
 Owner: Features/Backend  
 Depends on: X-201
 
@@ -428,6 +487,9 @@ Profile owner dashboard, Inbox list/summary, task queues, CRM card/timeline,
 Calendar and core analytics at representative seed volumes. Fix only measured
 N+1, missing-index, repeated-aggregate, unbounded-query or oversized-payload
 problems. Record before/after evidence and regression budgets.
+
+Assignment: 2026-07-24, `codex/b301-measured-performance` from the green X-201
+integration baseline.
 
 #### F-302 — Frontend Runtime and Maintainability
 

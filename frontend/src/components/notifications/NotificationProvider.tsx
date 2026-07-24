@@ -61,6 +61,7 @@ function NotificationCard({ item, onDismiss }: { item: NotificationItem; onDismi
 
   return (
     <div
+      data-testid="action-feedback"
       className={cn(
         "pointer-events-auto flex w-[min(360px,calc(100vw-2rem))] items-start gap-3 rounded-card border px-4 py-3 text-sm font-semibold shadow-panel backdrop-blur transition",
         style.className,
@@ -75,6 +76,7 @@ function NotificationCard({ item, onDismiss }: { item: NotificationItem; onDismi
         <p className="leading-5">{item.message}</p>
         {item.actionLabel && item.onAction ? (
           <Button
+            data-testid="action-feedback-action"
             type="button"
             size="sm"
             variant="secondary"
@@ -82,9 +84,15 @@ function NotificationCard({ item, onDismiss }: { item: NotificationItem; onDismi
             isLoading={isActing}
             onClick={async () => {
               setIsActing(true);
-              await item.onAction?.();
-              onDismiss(item.id);
-              setIsActing(false);
+              try {
+                await item.onAction?.();
+              } catch {
+                // The mutation owns the follow-up error notification. Keep the
+                // retry control recoverable and avoid an unhandled rejection.
+              } finally {
+                onDismiss(item.id);
+                setIsActing(false);
+              }
             }}
           >
             {item.actionLabel}

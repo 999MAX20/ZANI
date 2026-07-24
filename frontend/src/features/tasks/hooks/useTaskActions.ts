@@ -1,11 +1,10 @@
-import { useCallback, useEffect, type Dispatch, type SetStateAction } from "react";
+import { useCallback, type Dispatch, type SetStateAction } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { getApiErrorMessage } from "../../../api/client";
 import { tasksApi, type TaskCreatePayload, type TaskDetailsUpdatePayload } from "../../../api/tasks";
 import { useActionConfirm } from "../../../components/actions/ActionConfirmProvider";
+import { useActionFeedback } from "../../../components/actions/useActionFeedback";
 import { useUndoToast } from "../../../components/actions/UndoToastProvider";
-import { useNotification } from "../../../components/notifications/NotificationProvider";
 import { useI18n } from "../../../lib/i18n";
 import type { Id, Task, TaskComment } from "../../../types";
 import type { TaskFormState } from "../components/TaskFormModal";
@@ -40,15 +39,16 @@ export function useTaskActions({
   const queryClient = useQueryClient();
   const confirmAction = useActionConfirm();
   const showUndoToast = useUndoToast();
-  const showNotification = useNotification();
+  const { notifyError, notifySuccess } = useActionFeedback();
 
   const handleTaskChanged = useCallback(
     (task: Task) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["task-activity", task.id] });
       setSelectedTask((current) => (current?.id === task.id ? task : current));
+      notifySuccess(t("tasks.savedNotice"));
     },
-    [queryClient, setSelectedTask],
+    [notifySuccess, queryClient, setSelectedTask, t],
   );
 
   const createMutation = useMutation({
@@ -58,7 +58,9 @@ export function useTaskActions({
       openTaskDrawer(task);
       setOpen(false);
       setForm(emptyTaskForm);
+      notifySuccess(t("tasks.savedNotice"));
     },
+    onError: (error) => notifyError(error),
   });
 
   const updateDetailsMutation = useMutation({
@@ -69,16 +71,69 @@ export function useTaskActions({
       setEditingTask(null);
       setForm(emptyTaskForm);
     },
+    onError: (error) =>
+      notifyError(error, {
+        actionLabel: t("common.refresh"),
+        retry: () => queryClient.invalidateQueries({ queryKey: ["tasks"] }),
+      }),
   });
 
-  const completeMutation = useMutation({ mutationFn: tasksApi.complete, onSuccess: handleTaskChanged });
-  const startMutation = useMutation({ mutationFn: tasksApi.start, onSuccess: handleTaskChanged });
-  const reopenMutation = useMutation({ mutationFn: tasksApi.reopen, onSuccess: handleTaskChanged });
-  const assignToMeMutation = useMutation({ mutationFn: tasksApi.assignToMe, onSuccess: handleTaskChanged });
-  const dueTodayMutation = useMutation({ mutationFn: tasksApi.dueToday, onSuccess: handleTaskChanged });
-  const dueTomorrowMutation = useMutation({ mutationFn: tasksApi.dueTomorrow, onSuccess: handleTaskChanged });
-  const watcherMutation = useMutation({ mutationFn: tasksApi.addWatcher, onSuccess: handleTaskChanged });
-  const snoozeMutation = useMutation({ mutationFn: tasksApi.snooze, onSuccess: handleTaskChanged });
+  const completeMutation = useMutation({
+    mutationFn: tasksApi.complete,
+    onSuccess: handleTaskChanged,
+    onError: (error) => notifyError(error),
+  });
+  const startMutation = useMutation({
+    mutationFn: tasksApi.start,
+    onSuccess: handleTaskChanged,
+    onError: (error) => notifyError(error),
+  });
+  const reopenMutation = useMutation({
+    mutationFn: tasksApi.reopen,
+    onSuccess: handleTaskChanged,
+    onError: (error) => notifyError(error),
+  });
+  const assignToMeMutation = useMutation({
+    mutationFn: tasksApi.assignToMe,
+    onSuccess: handleTaskChanged,
+    onError: (error) =>
+      notifyError(error, {
+        actionLabel: t("common.refresh"),
+        retry: () => queryClient.invalidateQueries({ queryKey: ["tasks"] }),
+      }),
+  });
+  const dueTodayMutation = useMutation({
+    mutationFn: tasksApi.dueToday,
+    onSuccess: handleTaskChanged,
+    onError: (error) =>
+      notifyError(error, {
+        actionLabel: t("common.refresh"),
+        retry: () => queryClient.invalidateQueries({ queryKey: ["tasks"] }),
+      }),
+  });
+  const dueTomorrowMutation = useMutation({
+    mutationFn: tasksApi.dueTomorrow,
+    onSuccess: handleTaskChanged,
+    onError: (error) =>
+      notifyError(error, {
+        actionLabel: t("common.refresh"),
+        retry: () => queryClient.invalidateQueries({ queryKey: ["tasks"] }),
+      }),
+  });
+  const watcherMutation = useMutation({
+    mutationFn: tasksApi.addWatcher,
+    onSuccess: handleTaskChanged,
+    onError: (error) => notifyError(error),
+  });
+  const snoozeMutation = useMutation({
+    mutationFn: tasksApi.snooze,
+    onSuccess: handleTaskChanged,
+    onError: (error) =>
+      notifyError(error, {
+        actionLabel: t("common.refresh"),
+        retry: () => queryClient.invalidateQueries({ queryKey: ["tasks"] }),
+      }),
+  });
 
   const cancelMutation = useMutation({
     mutationFn: tasksApi.cancel,
@@ -92,6 +147,7 @@ export function useTaskActions({
         },
       });
     },
+    onError: (error) => notifyError(error),
   });
 
   const commentMutation = useMutation({
@@ -103,7 +159,9 @@ export function useTaskActions({
         queryClient.invalidateQueries({ queryKey: ["task-activity", selectedTask?.id] }),
         queryClient.invalidateQueries({ queryKey: ["tasks"] }),
       ]);
+      notifySuccess(t("tasks.savedNotice"));
     },
+    onError: (error) => notifyError(error),
   });
 
   const deleteCommentMutation = useMutation({
@@ -114,7 +172,13 @@ export function useTaskActions({
         queryClient.invalidateQueries({ queryKey: ["task-activity", variables.id] }),
         queryClient.invalidateQueries({ queryKey: ["tasks"] }),
       ]);
+      notifySuccess(t("tasks.savedNotice"));
     },
+    onError: (error) =>
+      notifyError(error, {
+        actionLabel: t("common.refresh"),
+        retry: () => queryClient.invalidateQueries({ queryKey: ["tasks"] }),
+      }),
   });
 
   const requestCancelTask = useCallback(
@@ -165,25 +229,6 @@ export function useTaskActions({
       commentMutation.mutate({ id: selectedTask.id, text: commentText.trim() });
     }
   }, [commentMutation, commentText, selectedTask]);
-
-  const actionError =
-    startMutation.error ||
-    completeMutation.error ||
-    cancelMutation.error ||
-    reopenMutation.error ||
-    assignToMeMutation.error ||
-    dueTodayMutation.error ||
-    dueTomorrowMutation.error ||
-    watcherMutation.error ||
-    snoozeMutation.error ||
-    commentMutation.error ||
-    deleteCommentMutation.error;
-  const actionErrorMessage = actionError ? getApiErrorMessage(actionError) : "";
-
-  useEffect(() => {
-    if (!actionErrorMessage) return;
-    showNotification({ message: actionErrorMessage, tone: "danger" });
-  }, [actionErrorMessage, showNotification]);
 
   return {
     createMutation,

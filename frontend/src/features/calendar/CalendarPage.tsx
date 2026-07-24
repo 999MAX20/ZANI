@@ -9,6 +9,7 @@ import {
 } from "../../api/appointments";
 import { getApiErrorMessage } from "../../api/client";
 import { workingHoursApi } from "../../api/workingHours";
+import { useActionFeedback } from "../../components/actions/useActionFeedback";
 import { AppointmentForm } from "../../components/forms/AppointmentForm";
 import { AppointmentRescheduleForm } from "../../components/forms/AppointmentRescheduleForm";
 import { usePageHeader } from "../../components/layout/PageHeaderContext";
@@ -70,6 +71,7 @@ export function CalendarPage() {
   const { t, language } = useI18n();
   const navigate = useNavigate();
   const showNotification = useNotification();
+  const { notifyError } = useActionFeedback();
   const { setPageHeader } = usePageHeader();
   const { business } = useActiveBusiness();
   const { clients, services, resources, leads, workingHours, tasks } =
@@ -271,6 +273,7 @@ export function CalendarPage() {
       setSelectedAppointmentId(appointment.id);
       setNotice(t("calendar.createdNotice"));
     },
+    onError: (error) => notifyError(error),
   });
 
   const statusMutation = useMutation({
@@ -295,7 +298,9 @@ export function CalendarPage() {
       refreshAppointmentData(appointment);
       setStatusReasonTarget(null);
       setStatusReason("");
+      setNotice(t("appointments.actionDone"));
     },
+    onError: (error) => notifyError(error),
   });
 
   const rescheduleMutation = useMutation({
@@ -312,6 +317,11 @@ export function CalendarPage() {
       setRescheduleTarget(null);
       setNotice(t("appointments.rescheduledNotice"));
     },
+    onError: (error) =>
+      notifyError(error, {
+        actionLabel: t("common.refresh"),
+        retry: () => refreshAppointmentData(),
+      }),
   });
 
   const archiveMutation = useMutation({
@@ -324,6 +334,7 @@ export function CalendarPage() {
       setSelectedAppointmentId(null);
       setNotice(t("appointments.archive"));
     },
+    onError: (error) => notifyError(error),
   });
 
   const quickHoursMutation = useMutation({
@@ -337,6 +348,15 @@ export function CalendarPage() {
       queryClient.invalidateQueries({ queryKey: ["available-slots"] });
       setNotice(t("calendar.quickHoursApplied"));
     },
+    onError: (error) =>
+      notifyError(error, {
+        actionLabel: t("common.refresh"),
+        retry: () =>
+          Promise.all([
+            queryClient.invalidateQueries({ queryKey: ["working-hours"] }),
+            queryClient.invalidateQueries({ queryKey: ["available-slots"] }),
+          ]).then(() => undefined),
+      }),
   });
 
   useEffect(() => {
@@ -350,18 +370,6 @@ export function CalendarPage() {
     });
     return () => setPageHeader(null);
   }, [date, setPageHeader, t]);
-
-  const actionError =
-    statusMutation.error ||
-    quickHoursMutation.error ||
-    rescheduleMutation.error ||
-    archiveMutation.error;
-  const actionErrorMessage = actionError ? getApiErrorMessage(actionError) : "";
-
-  useEffect(() => {
-    if (!actionErrorMessage) return;
-    showNotification({ message: actionErrorMessage, tone: "danger" });
-  }, [actionErrorMessage, showNotification]);
 
   if (!business) return <ErrorState message={t("calendar.noBusiness")} />;
 
@@ -1324,12 +1332,6 @@ export function CalendarPage() {
           />
         ) : null}
       </section>
-
-      {mutation.error ? (
-        <div className="mt-4">
-          <ErrorState message={getApiErrorMessage(mutation.error)} />
-        </div>
-      ) : null}
 
       <Modal
         title={t("calendar.newBooking")}

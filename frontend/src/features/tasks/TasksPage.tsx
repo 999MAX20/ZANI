@@ -221,7 +221,10 @@ export function TasksPage() {
 
   return (
     <>
-      <CrmWorkspacePage maxWidthClassName="max-w-[1520px]">
+      <CrmWorkspacePage
+        maxWidthClassName="max-w-[1520px]"
+        testId="tasks-workspace-ready"
+      >
         <CrmWorkspaceGrid inspectorOpen={Boolean(selectedTask)}>
           <main className="min-w-0 space-y-3">
             <TaskList

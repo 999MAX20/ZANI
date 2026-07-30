@@ -1,8 +1,14 @@
 import { expect, test, type Page, type Request } from "@playwright/test";
 
 const password = process.env.E2E_PASSWORD || "ZaniTest123!";
+const apiBaseURL =
+  process.env.E2E_API_BASE_URL || "http://127.0.0.1:8000";
 const ownerEmail =
   process.env.E2E_OWNER_EMAIL || "business_owner@example.com";
+
+type TokenPayload = {
+  access: string;
+};
 
 type ApiRequestMetric = {
   method: string;
@@ -16,6 +22,13 @@ type RouteRequestBudget = {
   minimumRequests: number;
   requestLimit: number;
   readySelector: string;
+  requiredRequests?: RequiredRequest[];
+};
+
+type RequiredRequest = {
+  method: string;
+  pathname: string;
+  searchParams: Record<string, string>;
 };
 
 const waterfallBudgetMs = 1_000;
@@ -26,36 +39,52 @@ const routeRequestBudgets: RouteRequestBudget[] = [
     measurementPath: "/app/leads?search=__runtime_budget__",
     minimumRequests: 1,
     requestLimit: 10,
-    readySelector: '[data-testid="page-primary-action"]',
+    readySelector: '[data-testid="leads-workspace-ready"]',
   },
   {
     path: "/app/clients",
     measurementPath: "/app/clients?search=__runtime_budget__",
     minimumRequests: 1,
     requestLimit: 4,
-    readySelector: '[data-testid="page-primary-action"]',
+    readySelector: '[data-testid="clients-workspace-ready"]',
   },
   {
     path: "/app/deals",
-    measurementPath: "/app/deals",
-    minimumRequests: 0,
+    measurementPath: "/app/deals?search=__runtime_budget__",
+    minimumRequests: 3,
     requestLimit: 4,
-    readySelector:
-      '[data-testid="page-primary-action"], main [role="alert"]',
+    readySelector: '[data-testid="deals-workspace-ready"]',
+    requiredRequests: [
+      {
+        method: "GET",
+        pathname: "/api/deals/",
+        searchParams: { search: "__runtime_budget__" },
+      },
+      {
+        method: "GET",
+        pathname: "/api/deals/board/",
+        searchParams: { search: "__runtime_budget__" },
+      },
+      {
+        method: "GET",
+        pathname: "/api/deals/summary/",
+        searchParams: { search: "__runtime_budget__" },
+      },
+    ],
   },
   {
     path: "/app/tasks",
     measurementPath: "/app/tasks?search=__runtime_budget__",
     minimumRequests: 1,
     requestLimit: 9,
-    readySelector: '[data-testid="page-primary-action"]',
+    readySelector: '[data-testid="tasks-workspace-ready"]',
   },
   {
     path: "/app/calendar",
     measurementPath: "/app/calendar?date=2026-07-26&view=day",
     minimumRequests: 1,
     requestLimit: 3,
-    readySelector: '[data-testid="page-primary-action"]',
+    readySelector: '[data-testid="calendar-workspace-ready"]',
   },
   {
     path: "/app/conversations",
@@ -89,6 +118,20 @@ function requestBudgetViolations(
       (request) => request.startedAt > waterfallBudgetMs,
     ),
   };
+}
+
+function matchesRequiredRequest(
+  request: ApiRequestMetric,
+  required: RequiredRequest,
+) {
+  const url = new URL(request.url, "http://zani.local");
+  return (
+    request.method === required.method &&
+    url.pathname === required.pathname &&
+    Object.entries(required.searchParams).every(
+      ([key, value]) => url.searchParams.get(key) === value,
+    )
+  );
 }
 
 async function measureRouteRequests(
@@ -145,6 +188,7 @@ async function waitForRouteReady(
   await expect(
     page.locator('main [role="status"][aria-busy="true"]'),
   ).toHaveCount(0);
+  await expect(page.locator('main [role="alert"]')).toHaveCount(0);
 }
 
 async function warmRuntimeRoutes(page: Page) {
@@ -191,6 +235,57 @@ async function login(page: Page) {
   await page.waitForTimeout(postReadyObservationMs);
 }
 
+async function enableDealsForMeasurement(page: Page) {
+  const tokenResponse = await page.request.post(
+    `${apiBaseURL}/api/auth/token/`,
+    { data: { email: ownerEmail, password } },
+  );
+  expect(tokenResponse.ok()).toBeTruthy();
+  const tokens = (await tokenResponse.json()) as TokenPayload;
+  const headers = { Authorization: `Bearer ${tokens.access}` };
+  const meResponse = await page.request.get(
+    `${apiBaseURL}/api/auth/me/`,
+    { headers },
+  );
+  expect(meResponse.ok()).toBeTruthy();
+  const me = await meResponse.json();
+  const businessId = me.businesses?.[0]?.id;
+  expect(businessId).toBeTruthy();
+  const capabilitiesResponse = await page.request.get(
+    `${apiBaseURL}/api/business-capabilities/`,
+    { headers },
+  );
+  expect(capabilitiesResponse.ok()).toBeTruthy();
+  const capabilitiesPayload = await capabilitiesResponse.json();
+  const capabilities = Array.isArray(capabilitiesPayload)
+    ? capabilitiesPayload
+    : capabilitiesPayload.results || [];
+  const dealsCapability = capabilities.find(
+    (candidate: { business?: number; module_key?: string }) =>
+      candidate.business === businessId &&
+      candidate.module_key === "deals",
+  );
+  expect(dealsCapability).toBeTruthy();
+  const wasEnabled = Boolean(dealsCapability.is_enabled);
+
+  if (!wasEnabled) {
+    const enableResponse = await page.request.patch(
+      `${apiBaseURL}/api/business-capabilities/${dealsCapability.id}/`,
+      { headers, data: { is_enabled: true } },
+    );
+    expect(enableResponse.ok()).toBeTruthy();
+  }
+
+  return async () => {
+    if (wasEnabled) return;
+    const restoreResponse = await page.request.patch(
+      `${apiBaseURL}/api/business-capabilities/${dealsCapability.id}/`,
+      { headers, data: { is_enabled: false } },
+    );
+    expect(restoreResponse.ok()).toBeTruthy();
+  };
+}
+
 async function navigateInsideApp(page: Page, path: string) {
   await page.evaluate((nextPath) => {
     window.history.pushState({}, "", nextPath);
@@ -228,38 +323,51 @@ test("F-302 pilot routes stay within request and waterfall budgets", async ({
   page,
 }) => {
   test.setTimeout(180_000);
-  await login(page);
-  await warmRuntimeRoutes(page);
+  const restoreDealsCapability = await enableDealsForMeasurement(page);
+  try {
+    await login(page);
+    await warmRuntimeRoutes(page);
 
-  for (const budget of routeRequestBudgets) {
-    const requests = await measureRouteRequests(page, budget);
-    const violations = requestBudgetViolations(
-      requests,
-      budget.requestLimit,
-    );
-    const maxStartMs = Math.max(
-      0,
-      ...requests.map((request) => request.startedAt),
-    );
-    console.info(
-      `[F-302] ${budget.path}: ${requests.length}/${budget.requestLimit} requests, latest start ${maxStartMs} ms`,
-    );
-    expect(
-      requests.length,
-      `${budget.path} did not exercise its measured API path`,
-    ).toBeGreaterThanOrEqual(budget.minimumRequests);
-    expect(
-      violations.duplicates,
-      `${budget.path} dispatched duplicate API requests: ${JSON.stringify(requests)}`,
-    ).toEqual([]);
-    expect(
-      violations.excess,
-      `${budget.path} exceeded its measured request budget: ${JSON.stringify(requests)}`,
-    ).toBe(0);
-    expect(
-      violations.late,
-      `${budget.path} started API requests after ${waterfallBudgetMs} ms: ${JSON.stringify(requests)}`,
-    ).toEqual([]);
+    for (const budget of routeRequestBudgets) {
+      const requests = await measureRouteRequests(page, budget);
+      const violations = requestBudgetViolations(
+        requests,
+        budget.requestLimit,
+      );
+      const maxStartMs = Math.max(
+        0,
+        ...requests.map((request) => request.startedAt),
+      );
+      console.info(
+        `[F-302] ${budget.path}: ${requests.length}/${budget.requestLimit} requests, latest start ${maxStartMs} ms`,
+      );
+      expect(
+        requests.length,
+        `${budget.path} did not exercise its measured API path`,
+      ).toBeGreaterThanOrEqual(budget.minimumRequests);
+      for (const requiredRequest of budget.requiredRequests || []) {
+        expect(
+          requests.some((request) =>
+            matchesRequiredRequest(request, requiredRequest),
+          ),
+          `${budget.path} did not dispatch ${requiredRequest.method} ${requiredRequest.pathname} with ${JSON.stringify(requiredRequest.searchParams)}: ${JSON.stringify(requests)}`,
+        ).toBe(true);
+      }
+      expect(
+        violations.duplicates,
+        `${budget.path} dispatched duplicate API requests: ${JSON.stringify(requests)}`,
+      ).toEqual([]);
+      expect(
+        violations.excess,
+        `${budget.path} exceeded its measured request budget: ${JSON.stringify(requests)}`,
+      ).toBe(0);
+      expect(
+        violations.late,
+        `${budget.path} started API requests after ${waterfallBudgetMs} ms: ${JSON.stringify(requests)}`,
+      ).toEqual([]);
+    }
+  } finally {
+    await restoreDealsCapability();
   }
 });
 

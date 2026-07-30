@@ -290,7 +290,9 @@ export function ClientsPage() {
 
   return (
     <>
-      <CrmWorkspacePage>
+      <CrmWorkspacePage
+        testId={pageError ? undefined : "clients-workspace-ready"}
+      >
         {pageError ? (
           <div className="mb-3">
             <ErrorState message={getApiErrorMessage(pageError)} />

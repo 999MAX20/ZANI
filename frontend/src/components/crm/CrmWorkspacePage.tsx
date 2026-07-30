@@ -7,14 +7,19 @@ export function CrmWorkspacePage({
   className,
   contentClassName,
   maxWidthClassName = "max-w-[1480px]",
+  testId,
 }: {
   children: ReactNode;
   className?: string;
   contentClassName?: string;
   maxWidthClassName?: string;
+  testId?: string;
 }) {
   return (
-    <section className={cn("flex h-[calc(100vh-5.5rem)] min-h-[620px] w-full flex-col bg-surface px-3 py-3 sm:px-4", className)}>
+    <section
+      className={cn("flex h-[calc(100vh-5.5rem)] min-h-[620px] w-full flex-col bg-surface px-3 py-3 sm:px-4", className)}
+      data-testid={testId}
+    >
       <div className={cn("mx-auto flex min-h-0 w-full flex-1 flex-col", maxWidthClassName, contentClassName)}>
         {children}
       </div>

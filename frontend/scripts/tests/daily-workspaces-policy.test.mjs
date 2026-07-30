@@ -65,6 +65,25 @@ test("owner dashboard fetches and renders capability-scoped daily modules", asyn
   assert.match(dashboard, /\{canViewTasks \? \(/);
 });
 
+test("owner and manager dashboard readiness follows the core loading guard", async () => {
+  const dashboards = await Promise.all([
+    source("features/dashboard/OwnerDashboard.tsx"),
+    source("features/dashboard/ManagerDashboard.tsx"),
+  ]);
+
+  for (const dashboard of dashboards) {
+    const loadingGuard = dashboard.indexOf("if (isCoreDataLoading)");
+    const readyMarker = dashboard.indexOf(
+      'data-testid="dashboard-workspace-ready"',
+    );
+
+    assert.notEqual(loadingGuard, -1);
+    assert.notEqual(readyMarker, -1);
+    assert.ok(loadingGuard < readyMarker);
+    assert.match(dashboard.slice(loadingGuard, readyMarker), /return\s*\(/);
+  }
+});
+
 test("owner AI brief does not substitute unsourced local recommendations", async () => {
   const dashboard = await source("features/dashboard/OwnerDashboard.tsx");
   const briefBuilder = dashboard.slice(

@@ -6,7 +6,7 @@ const ownerEmail =
   process.env.E2E_OWNER_EMAIL || "business_owner@example.com";
 
 const workspaceReadySelectors: Record<string, string> = {
-  "/app": 'main a[href="/app/leads"]',
+  "/app": '[data-testid="dashboard-workspace-ready"]',
   "/app/leads": '[data-testid="leads-workspace-ready"]',
   "/app/clients": '[data-testid="clients-workspace-ready"]',
   "/app/tasks": '[data-testid="tasks-workspace-ready"]',

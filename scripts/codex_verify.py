@@ -21,6 +21,23 @@ from typing import Iterable, Sequence
 ROOT = Path(__file__).resolve().parents[1]
 FRONTEND = ROOT / "frontend"
 MODES = ("static", "backend", "frontend", "browser", "security", "full")
+VITE_SAFE_ENV = {
+    "VITE_APPLE_CLIENT_ID": "",
+    "VITE_CRM_KANBAN_DEFAULT": "false",
+    "VITE_CRM_UNIFIED_DESIGN": "false",
+    "VITE_GOOGLE_CLIENT_ID": "",
+    "VITE_PLAUSIBLE_DOMAIN": "",
+    "VITE_POSTHOG_HOST": "http://127.0.0.1:9",
+    "VITE_POSTHOG_KEY": "",
+    "VITE_SENTRY_DSN": "",
+    "VITE_SENTRY_TRACES_SAMPLE_RATE": "0",
+}
+VITE_RUNTIME_PATHS = (
+    "frontend/src",
+    "frontend/e2e",
+    "frontend/widget",
+    "frontend/*config.*",
+)
 PASSTHROUGH_ENV_KEYS = {
     "APPDATA",
     "CI",
@@ -164,6 +181,7 @@ def safe_environment(
         if key.upper() in PASSTHROUGH_ENV_KEYS
     }
     environment.update(SAFE_ENV)
+    environment.update(VITE_SAFE_ENV)
     django_url = f"http://127.0.0.1:{django_port}"
     frontend_url = f"http://127.0.0.1:{frontend_port}"
     environment.update(
@@ -182,6 +200,120 @@ def safe_environment(
         }
     )
     return environment
+
+
+def git_capture(
+    git: str,
+    arguments: Sequence[str],
+    *,
+    root: Path = ROOT,
+) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        (git, *arguments),
+        cwd=root,
+        check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+
+
+def resolve_base_ref(
+    git: str,
+    base_ref: str,
+    *,
+    root: Path = ROOT,
+) -> str:
+    """Resolve a non-empty committed range whose base is an ancestor of HEAD."""
+    verified = git_capture(
+        git,
+        ("rev-parse", "--verify", "--end-of-options", f"{base_ref}^{{commit}}"),
+        root=root,
+    )
+    if verified.returncode:
+        raise GateError(
+            f"Quality-gate base ref '{base_ref}' is not an available commit. "
+            "Fetch the base history and retry."
+        )
+    base_sha = verified.stdout.strip()
+
+    head = git_capture(
+        git,
+        ("rev-parse", "--verify", "HEAD^{commit}"),
+        root=root,
+    )
+    if head.returncode:
+        raise GateError("Unable to resolve HEAD for committed-range diff hygiene.")
+    if base_sha == head.stdout.strip():
+        raise GateError(
+            "Quality-gate base ref resolves to HEAD; committed-range diff "
+            "hygiene must cover at least one commit."
+        )
+
+    ancestor = git_capture(
+        git,
+        ("merge-base", "--is-ancestor", base_sha, "HEAD"),
+        root=root,
+    )
+    if ancestor.returncode:
+        raise GateError(
+            f"Quality-gate base {base_sha} is not an ancestor of HEAD. "
+            "Use the fetched task/PR base commit."
+        )
+    return base_sha
+
+
+def tracked_vite_runtime_variables(
+    git: str,
+    *,
+    root: Path = ROOT,
+) -> set[str]:
+    tracked = git_capture(
+        git,
+        ("ls-files", "-z", "--", *VITE_RUNTIME_PATHS),
+        root=root,
+    )
+    if tracked.returncode:
+        raise GateError("Unable to inventory tracked frontend runtime configuration.")
+
+    variables: set[str] = set()
+    for relative_path in filter(None, tracked.stdout.split("\0")):
+        path = root / relative_path
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue
+        variables.update(re.findall(r"\bVITE_[A-Z0-9_]+\b", text))
+    return variables
+
+
+def validate_vite_environment_policy(
+    git: str,
+    environment: dict[str, str],
+    *,
+    root: Path = ROOT,
+) -> None:
+    expected_variables = {"VITE_API_URL", *VITE_SAFE_ENV}
+    tracked_variables = tracked_vite_runtime_variables(git, root=root)
+    if tracked_variables != expected_variables:
+        missing = sorted(tracked_variables - expected_variables)
+        stale = sorted(expected_variables - tracked_variables)
+        details = []
+        if missing:
+            details.append(f"missing safe values: {', '.join(missing)}")
+        if stale:
+            details.append(f"stale policy values: {', '.join(stale)}")
+        raise GateError(
+            "Tracked Vite runtime variables do not match the quality-gate policy "
+            f"({'; '.join(details)})."
+        )
+
+    for key, value in VITE_SAFE_ENV.items():
+        if environment.get(key) != value:
+            raise GateError(f"Unsafe or missing deterministic Vite value for {key}.")
+    if not re.fullmatch(r"http://127\.0\.0\.1:\d+", environment.get("VITE_API_URL", "")):
+        raise GateError("VITE_API_URL must target the dedicated loopback Django server.")
 
 
 def find_available_port(excluded: Sequence[int] = ()) -> int:
@@ -364,6 +496,7 @@ def find_executable(name: str) -> str:
 def build_stages(
     mode: str,
     *,
+    base_sha: str,
     python: str,
     npm: str,
     git: str,
@@ -372,12 +505,18 @@ def build_stages(
 ) -> list[Stage]:
     if mode not in MODES:
         raise GateError(f"Unsupported mode: {mode}")
+    if not re.fullmatch(r"[0-9a-f]{40}", base_sha):
+        raise GateError("A resolved 40-character --base-ref commit SHA is required.")
     if backend_targets and mode != "backend":
         raise GateError("--backend-target is supported only with --mode backend.")
 
     stages = [
         Stage("Diff hygiene (working tree)", (git, "diff", "--check")),
         Stage("Diff hygiene (index)", (git, "diff", "--cached", "--check")),
+        Stage(
+            "Diff hygiene (committed range)",
+            (git, "diff", "--check", f"{base_sha}...HEAD"),
+        ),
         Stage(
             "Django migration drift",
             (python, "manage.py", "makemigrations", "--check", "--dry-run"),
@@ -393,7 +532,16 @@ def build_stages(
         stages.append(Stage("Django tests", tuple(test_command)))
 
     if mode in {"frontend", "browser", "full"}:
-        stages.append(Stage("Frontend deterministic install", (npm, "ci"), FRONTEND))
+        stages.extend(
+            (
+                Stage("Frontend deterministic install", (npm, "ci"), FRONTEND),
+                Stage(
+                    "Vite gate environment isolation",
+                    (npm, "run", "test:gate-env"),
+                    FRONTEND,
+                ),
+            )
+        )
 
     if mode in {"frontend", "full"}:
         stages.extend(
@@ -503,6 +651,14 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="Django test label for backend mode; repeat for multiple labels.",
     )
     parser.add_argument(
+        "--base-ref",
+        required=True,
+        help=(
+            "Fetched task/PR base commit or ref. It must be an ancestor of HEAD "
+            "and differ from HEAD."
+        ),
+    )
+    parser.add_argument(
         "--list-stages",
         action="store_true",
         help="Print the resolved stage plan without executing commands.",
@@ -519,12 +675,16 @@ def main(argv: Sequence[str] | None = None) -> int:
         validate_python_lock()
         validate_frontend_lock()
         python = find_python()
+        git = find_executable("git")
+        base_sha = resolve_base_ref(git, args.base_ref)
         with isolated_runtime(python=python) as runtime:
+            validate_vite_environment_policy(git, runtime.environment)
             stages = build_stages(
                 args.mode,
+                base_sha=base_sha,
                 python=python,
                 npm=find_executable("npm"),
-                git=find_executable("git"),
+                git=git,
                 backend_targets=args.backend_target,
                 browser_ports=(runtime.django_port, runtime.frontend_port),
             )

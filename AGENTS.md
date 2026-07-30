@@ -139,11 +139,14 @@ For any CRM business action, preserve these invariants:
 Run after meaningful backend/frontend changes:
 
 ```bash
-python scripts/codex_verify.py --mode full
+python scripts/codex_verify.py --mode full --base-ref <task-base-sha>
 ```
 
 On Unix-like systems, `scripts/codex_verify.sh --mode full` is an equivalent
-wrapper. Use `--mode backend --backend-target <django.test.label>` for a
+wrapper. Every invocation requires a fetched `--base-ref` task/PR base commit
+that is an ancestor of `HEAD` and differs from `HEAD`; the gate checks
+`git diff --check <base>...HEAD` in addition to working-tree/index hygiene.
+Use `--mode backend --backend-target <django.test.label>` for a
 proportionate scoped backend gate. `--backend-target` is rejected in every
 other mode; the final integration gate is always an unscoped `full` run.
 Browser and full runs create a disposable SQLite database and dedicated local

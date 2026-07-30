@@ -574,7 +574,7 @@ Completion evidence (2026-07-30):
 
 #### B-302 — Deterministic Local Quality Gate
 
-Status: `IN_PROGRESS`
+Status: `DONE`
 Owner: Features/Backend  
 Depends on: B-301 integrated
 
@@ -585,9 +585,35 @@ commands that require no production credentials.
 Assignment: 2026-07-24, `codex/b302-deterministic-quality-gate` from the
 integrated F-301/B-301 baseline.
 
+Completion evidence (2026-07-30):
+
+- source branch is clean and pushed through
+  `e881d6aba1b9715b6bad5fba74f478497659c94f`; integrated as `4ef9950`,
+  `06737f6` and `c040174`;
+- the quality gate uses a unique disposable SQLite database, dedicated browser
+  ports, safe allowlisted environment values and disabled external providers;
+- Python production and verification dependencies are fully pinned with hashes,
+  the frontend lock matches its manifest, React/React DOM are pinned to
+  `19.2.8`, React Router is pinned to `8.3.0`, and CI uses Node `22.22.0`;
+- every run requires a resolved non-HEAD ancestor `--base-ref`; working-tree,
+  index and committed-range diff hygiene, migration drift, backend, frontend,
+  browser and security modes are consolidated in `scripts/codex_verify.py`;
+- source verification passed the full local gate with `845` backend tests,
+  production frontend build, mobile owner/manager smoke, hashed-lock
+  installability, `pip-audit` and npm audit;
+- integration exposed a React Router navigation race that could return a user
+  from Integrations to an AI-agent profile; focused correction
+  `2ce96f21e2fe34ae3abde9b79310be00f45e9dbe` was independently accepted and
+  integrated as `fc425fe`;
+- manager integration verification passed quality-gate unit tests (`15/15`),
+  static, frontend, browser and security modes; npm and pip audits reported no
+  known vulnerabilities, migration drift was empty and Django check was clean;
+- no production credentials, live providers, migrations or `main` changes were
+  used.
+
 #### X-301 — P3 Quality Gate
 
-Status: `LOCKED`  
+Status: `DONE`
 Owner: Manager  
 Depends on: F-301, B-301, F-302 and B-302 integrated
 
@@ -596,11 +622,41 @@ Depends on: F-301, B-301, F-302 and B-302 integrated
 - frontend build and required Playwright smoke;
 - dependency and diff-hygiene review.
 
+Completion evidence (2026-07-30):
+
+- the independent review first rejected dashboard duplicate appointment rows
+  and an accessibility false-green that could scan loading UI; corrections
+  `5a80ef832be637cb8f1a5144a661017016ff13cb` and
+  `7265dcd8e6ab5b67e5038be99b45325226ae451d` were accepted and integrated as
+  `c6aa753` and `7599f35`;
+- owner and manager dashboards now deduplicate overlapping appointment queues
+  by id before the four-row slice and expose readiness only after core data
+  loading; the focused policy/unit gate passed `6/6` and rendered dashboard
+  regression passed `1/1`;
+- accessibility waits for route-local ready state, absence of busy/error state
+  and completion of finite animations before Axe and overflow checks; the
+  desktop/tablet/mobile suite passed `10` runnable tests with `5` intentional
+  viewport skips and zero serious or critical Axe findings;
+- confirmed Inbox contrast defects were corrected locally without redesign;
+  mobile navigation race regression passed `1/1`, and mobile owner/manager
+  smoke passed `2/2`;
+- the full backend gate passed `845/845` tests in `1097.254s`; migration drift,
+  Django system check and committed-range hygiene passed;
+- production frontend build passed with `4481` aligned i18n keys; app-shell was
+  `254.9 kB` against the `400 kB` budget and no JavaScript chunk exceeded
+  `500 kB`;
+- hashed Python locks, `pip-audit`, npm audit and safe Vite environment
+  isolation passed with zero known dependency vulnerabilities;
+- non-blocking follow-up evidence remains for deterministic ordering of the
+  paginated `BusinessMember` queryset and explicit clean-tree enforcement
+  outside `git diff --check`; both are recorded for certification review and do
+  not invalidate the green P3 gates.
+
 ### Phase P4 — Local Pilot Certification
 
 #### F-401 — Frontend Role and Workflow Certification
 
-Status: `LOCKED`  
+Status: `READY`
 Owner: UI/UX  
 Depends on: X-301
 
@@ -612,7 +668,7 @@ Fix only certification defects; no unrelated redesign.
 
 #### B-401 — Backend Business-Flow Certification
 
-Status: `LOCKED`  
+Status: `READY`
 Owner: Features/Backend  
 Depends on: X-301
 

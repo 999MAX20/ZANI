@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Activity, AlertTriangle, CheckCircle2, CircleDot, PlugZap, ServerCog, ShieldCheck, Workflow } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 import { asArray } from "../../api/client";
 import { platformApi } from "../../api/platform";

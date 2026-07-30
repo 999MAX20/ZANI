@@ -1,6 +1,6 @@
 import { Activity, BriefcaseBusiness, CalendarDays, ClipboardList, Inbox, MessageCircle, Phone, TrendingUp, UserRound } from "lucide-react";
 import type { ElementType, ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 import { EntityWorkspaceMetric, EntityWorkspaceSection as SharedEntityWorkspaceSection } from "../../../components/crm";
 import { Button } from "../../../components/ui/Button";

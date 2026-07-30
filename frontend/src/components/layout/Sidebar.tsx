@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation } from "react-router";
 
 import { useAuth } from "../../features/auth/AuthProvider";
 import { inboxApi } from "../../api/inbox";

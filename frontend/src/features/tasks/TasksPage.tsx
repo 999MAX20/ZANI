@@ -1,6 +1,6 @@
 import { Plus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router";
 
 import { getApiErrorMessage } from "../../api/client";
 import { useActionFeedback } from "../../components/actions/useActionFeedback";

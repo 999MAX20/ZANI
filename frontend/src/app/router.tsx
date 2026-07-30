@@ -4,7 +4,7 @@ import {
   RouterProvider,
   createBrowserRouter,
   useLocation,
-} from "react-router-dom";
+} from "react-router";
 
 import { PermissionGate } from "../components/auth/PermissionGate";
 import { RouteErrorBoundary } from "../components/ui/RouteErrorBoundary";

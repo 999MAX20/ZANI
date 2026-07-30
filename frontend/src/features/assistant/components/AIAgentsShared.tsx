@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { Bot, CheckCircle2, Plus, Sparkles } from "lucide-react";
 
 import { Button } from "../../../components/ui/Button";

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { TrendingDown } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 import { kaspiPricingApi, type KaspiPriceChangeLog, type KaspiPricingRule } from "../../../../api/pricing";
 import { getApiErrorMessage } from "../../../../api/client";

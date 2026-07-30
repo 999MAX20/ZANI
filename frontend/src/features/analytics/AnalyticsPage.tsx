@@ -1,6 +1,6 @@
-﻿import { AlertTriangle, CalendarCheck, CheckCircle2, Download, Flame, MessageSquareText, PlugZap, ShieldAlert, TrendingDown, TrendingUp, Users } from "lucide-react";
+import { AlertTriangle, CalendarCheck, CheckCircle2, Download, Flame, MessageSquareText, PlugZap, ShieldAlert, TrendingDown, TrendingUp, Users } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 import { analyticsApi } from "../../api/analytics";
 import { asArray, getApiErrorMessage } from "../../api/client";

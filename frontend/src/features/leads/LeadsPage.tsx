@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Navigate, useSearchParams } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router";
 
 import { CrmWorkspaceGrid, CrmWorkspacePage } from "../../components/crm";
 import {

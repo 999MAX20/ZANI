@@ -1,6 +1,6 @@
 import type { InboxConversation, InboxFilters } from "../../../api/inbox";
 import type { InboxSummary } from "../../../api/inbox";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { WorkQueueListPane } from "../../../components/layout/WorkQueueLayout";
 import { Button } from "../../../components/ui/Button";
 import { EmptyState, LoadingState } from "../../../components/ui/StateViews";

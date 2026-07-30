@@ -25,7 +25,7 @@ import {
   useNavigate,
   useParams,
   useSearchParams,
-} from "react-router-dom";
+} from "react-router";
 
 import { getApiErrorMessage } from "../../api/client";
 import { botsApi } from "../../api/bots";

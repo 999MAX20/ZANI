@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router";
 
 import type { TaskListParams } from "../../../api/tasks";
 import { getActiveTaskFilterCount, type TaskFilterActions, type TaskFilterState, type TaskTabFilter } from "../components/TaskHeaderFilters";

@@ -8,7 +8,7 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           const normalizedId = id.replace(/\\/g, "/");
-          if (normalizedId.includes("node_modules/react") || normalizedId.includes("node_modules/react-dom") || normalizedId.includes("node_modules/react-router-dom")) return "react";
+          if (normalizedId.includes("node_modules/react") || normalizedId.includes("node_modules/react-dom") || normalizedId.includes("node_modules/react-router")) return "react";
           if (normalizedId.includes("node_modules/@tanstack/react-query") || normalizedId.includes("node_modules/axios")) return "query";
           if (normalizedId.includes("node_modules/framer-motion")) return "motion";
           if (normalizedId.includes("node_modules/@dnd-kit")) return "dnd";

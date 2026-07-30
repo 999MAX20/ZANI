@@ -8,7 +8,7 @@ import {
   useState,
   type ProfilerOnRenderCallback,
 } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation } from "react-router";
 
 import { Header } from "./Header";
 import { MobileNav } from "./MobileNav";

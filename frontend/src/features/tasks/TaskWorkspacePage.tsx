@@ -11,7 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router";
 
 import { activityEventsApi } from "../../api/activities";
 import { getApiErrorMessage } from "../../api/client";

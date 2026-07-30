@@ -4,7 +4,7 @@ import { Button } from "../../../../components/ui/Button";
 import { ToggleSwitch } from "../../../../components/ui/Switch";
 import { cn } from "../../../../lib/cn";
 import { useI18n } from "../../../../lib/i18n";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { Link2 } from "lucide-react";
 import type { ReactNode } from "react";
 

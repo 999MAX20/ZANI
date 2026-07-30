@@ -1,5 +1,5 @@
 import { Plus, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 import { Button } from "../../../components/ui/Button";
 import type { Appointment, Client, Resource, Service, Task, WorkingHours } from "../../../types";

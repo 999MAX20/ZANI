@@ -43,7 +43,7 @@ import type {
   Service,
   Task,
 } from "../../types";
-import { formatMoney } from "./dashboardUtils";
+import { formatMoney, uniqueById } from "./dashboardUtils";
 
 type OwnerDashboardProps = {
   dashboard?: OwnerDashboardMetrics;
@@ -379,6 +379,8 @@ function AppointmentRow({
   return (
     <Link
       to={`/app/calendar/${appointment.id}`}
+      data-testid="dashboard-appointment-row"
+      data-appointment-id={appointment.id}
       className="flex items-center gap-3 rounded-control border border-zani-border bg-surface-card p-3 transition hover:border-brand-100 hover:bg-surface-warm"
     >
       <IconBubble
@@ -633,10 +635,10 @@ export function OwnerDashboard({
   const visibleLeads =
     workQueues?.queues.stale_leads.slice(0, 4) || activeLeads.slice(0, 4);
   const visibleAppointments = workQueues
-    ? [
+    ? uniqueById([
         ...workQueues.queues.appointment_confirmations,
         ...workQueues.queues.upcoming_appointments,
-      ].slice(0, 4)
+      ]).slice(0, 4)
     : appointments.slice(0, 4);
   const visibleTasks =
     workQueues?.queues.overdue_tasks.slice(0, 4) ||

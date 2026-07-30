@@ -1442,7 +1442,7 @@ export function ConversationsPage() {
                         t("conversations.noContact")}
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <Pill className="bg-[var(--zani-success-soft)] text-zani-success ring-[rgba(21,128,61,0.18)]">
+                      <Pill className="bg-[var(--zani-success-soft)] text-zani-text ring-[rgba(21,128,61,0.18)]">
                         {selected.client
                           ? t("common.client")
                           : t("conversations.newContact")}
@@ -1556,7 +1556,7 @@ export function ConversationsPage() {
                       <Pill
                         className={
                           selected.client
-                            ? "bg-[var(--zani-success-soft)] text-zani-success ring-[rgba(21,128,61,0.18)]"
+                            ? "bg-[var(--zani-success-soft)] text-zani-text ring-[rgba(21,128,61,0.18)]"
                             : "bg-surface-muted text-zani-muted ring-zani-border"
                         }
                       >
@@ -1609,7 +1609,7 @@ export function ConversationsPage() {
                       <Pill
                         className={
                           selected.lead
-                            ? "bg-[var(--zani-success-soft)] text-zani-success ring-[rgba(21,128,61,0.18)]"
+                            ? "bg-[var(--zani-success-soft)] text-zani-text ring-[rgba(21,128,61,0.18)]"
                             : "bg-surface-muted text-zani-muted ring-zani-border"
                         }
                       >
@@ -1660,7 +1660,7 @@ export function ConversationsPage() {
                       <Pill
                         className={
                           selected.deal
-                            ? "bg-[var(--zani-success-soft)] text-zani-success ring-[rgba(21,128,61,0.18)]"
+                            ? "bg-[var(--zani-success-soft)] text-zani-text ring-[rgba(21,128,61,0.18)]"
                             : "bg-surface-muted text-zani-muted ring-zani-border"
                         }
                       >

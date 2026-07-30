@@ -28,7 +28,7 @@ import { StatusBadge } from "../../components/ui/StatusBadge";
 import { formatDateTime } from "../../lib/format";
 import { useI18n } from "../../lib/i18n";
 import type { Appointment, Client, Lead, Service, Task } from "../../types";
-import { isTodayDate } from "./dashboardUtils";
+import { isTodayDate, uniqueById } from "./dashboardUtils";
 
 type ManagerDashboardProps = {
   leads: Lead[];
@@ -196,6 +196,8 @@ function AppointmentWorkRow({
       key={appointment.id}
       as={Link}
       to={`/app/calendar/${appointment.id}`}
+      data-testid="dashboard-appointment-row"
+      data-appointment-id={appointment.id}
       padding="sm"
       interactive
       className="flex items-start gap-3 rounded-control"
@@ -309,10 +311,10 @@ export function ManagerDashboard({
     .filter((task) => task.status !== "done" && task.status !== "cancelled")
     .slice(0, 4);
   const queueLeads = workQueues?.queues.stale_leads || [];
-  const queueAppointments = [
+  const queueAppointments = uniqueById([
     ...(workQueues?.queues.appointment_confirmations || []),
     ...(workQueues?.queues.upcoming_appointments || []),
-  ].slice(0, 4);
+  ]).slice(0, 4);
   const queueTasks = workQueues?.queues.overdue_tasks || [];
   const queueConversations = Array.from(
     new Map(

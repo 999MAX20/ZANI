@@ -731,7 +731,12 @@ export function CalendarPage() {
         </div>
       ) : null}
 
-      <section className="space-y-4">
+      <section
+        className="space-y-4"
+        data-testid={
+          isCalendarDataLoading ? undefined : "calendar-workspace-ready"
+        }
+      >
         <div className="overflow-hidden rounded-card border border-zani-border bg-zani-card shadow-sm lg:hidden">
           <div className="p-4">
             <div className="min-w-0">

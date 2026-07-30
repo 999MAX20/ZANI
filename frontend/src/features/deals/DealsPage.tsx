@@ -53,6 +53,10 @@ export function DealsPage() {
   const {
     business,
     data,
+    queries,
+    deals,
+    board,
+    teamMembers,
     isLoading,
     summary,
     boardHasMoreByStage,
@@ -257,9 +261,26 @@ export function DealsPage() {
   if (!business) return <ErrorState message={t("deals.noBusiness")} />;
   if (isLoading) return <LoadingState />;
 
+  const dealWorkspaceError =
+    queries.clients.error ||
+    queries.pipelines.error ||
+    queries.pipelineStages.error ||
+    deals.error ||
+    board.error ||
+    summary.error ||
+    teamMembers.error;
+  const dealWorkspaceReady =
+    data.pipelines.length > 0 &&
+    !dealWorkspaceError &&
+    !summary.isLoading &&
+    !teamMembers.isLoading;
+
   return (
     <>
-      <CrmWorkspacePage contentClassName="gap-0">
+      <CrmWorkspacePage
+        contentClassName="gap-0"
+        testId={dealWorkspaceReady ? "deals-workspace-ready" : undefined}
+      >
         {!data.pipelines.length ? (
           <ErrorState message={t("deals.noPipeline")} />
         ) : (

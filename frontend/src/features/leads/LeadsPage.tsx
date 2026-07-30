@@ -230,6 +230,7 @@ export function LeadsPage() {
       className="h-auto min-h-[calc(100vh-5.5rem)] overflow-visible"
       contentClassName="flex-none gap-3"
       maxWidthClassName="max-w-[1520px]"
+      testId="leads-workspace-ready"
     >
       <CrmWorkspaceGrid inspectorOpen={Boolean(selected)}>
         <LeadsWorkspaceTable

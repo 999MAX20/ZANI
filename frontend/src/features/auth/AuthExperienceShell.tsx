@@ -1,5 +1,5 @@
 import { ArrowLeft, BarChart3, Bot, BriefcaseBusiness, Cloud, Gift, MessageSquareText, ShieldCheck, ShoppingCart, Sparkles, UsersRound } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 import { LanguageSelector } from "../../components/layout/LanguageSelector";
 import { useI18n } from "../../lib/i18n";

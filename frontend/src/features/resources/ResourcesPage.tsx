@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BriefcaseBusiness, CalendarClock, Plus, UsersRound } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 import { getApiErrorMessage } from "../../api/client";
 import { resourcesApi } from "../../api/resources";

@@ -1,7 +1,7 @@
 import { Ban, ClipboardCheck, Eye, Play, Plus, RotateCcw, Settings2, Trash2, Workflow } from "lucide-react";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 import { automationRulesApi, automationRunsApi } from "../../api/automations";
 import { Badge, type BadgeVariant } from "../../components/ui/Badge";

@@ -1,5 +1,5 @@
 import { useEffect, type Dispatch, type SetStateAction } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 
 import type { CrmDrawerEntity } from "../../../components/crm/CrmEntityDrawer";
 import type { Client, Id, Lead, Service, TeamMember } from "../../../types";

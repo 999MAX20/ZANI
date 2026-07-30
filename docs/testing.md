@@ -18,13 +18,20 @@ The cross-platform gate is the single local entrypoint for acceptance checks:
 2. Django migration drift and system checks;
 3. the full Django test suite;
 4. `npm ci`, i18n/type checking, production builds and the bundle budget;
-5. Playwright mobile owner/manager smoke;
-6. hashed Python lock installability, `pip-audit`, and npm high-severity audit;
+5. the focused Playwright mobile owner/manager CRM smoke;
+6. hashed Python lock installability, `pip-audit`, and npm moderate-severity audit;
 7. final diff hygiene.
 
-It forcibly uses local SQLite, in-memory/eager workers, the locmem email backend,
-empty AI credentials, and disabled Telegram/WhatsApp/Instagram providers. Values
-from a developer `.env` cannot opt the quality gate into live services.
+It creates a unique temporary SQLite database for every invocation, allocates
+dedicated loopback ports for browser runs, refuses to reuse existing servers,
+and removes the database in a `finally`-equivalent context on pass or failure.
+It never writes ordinary `db.sqlite3`, even when `DATABASE_URL` is inherited.
+
+The gate passes through only the minimum OS process environment. It explicitly
+selects the Python runtime and deterministic seed identities, uses
+in-memory/eager workers and the locmem email backend, and clears known AI,
+provider, cloud-storage, SMTP and monitoring credentials. Values from a
+developer shell or `.env` cannot opt the quality gate into live services.
 
 Use the smallest constituent mode while iterating:
 
@@ -35,6 +42,10 @@ Use the smallest constituent mode while iterating:
 .\.venv\Scripts\python.exe scripts\codex_verify.py --mode browser
 .\.venv\Scripts\python.exe scripts\codex_verify.py --mode security
 ```
+
+`--backend-target` is valid only with `--mode backend`. It is rejected with
+`full`, so the integration plan always contains the unscoped
+`python manage.py test -v 2` command.
 
 `scripts/codex_verify.sh` and `scripts/check_local_ci.sh` are Unix wrappers over
 the same implementation; they do not maintain separate verification logic.
@@ -71,7 +82,16 @@ python -m pip install --require-hashes -r requirements-dev.txt
 
 The frontend uses the committed npm v3 lock at
 `frontend/package-lock.json`; do not add lockfiles in directories without a
-matching `package.json`. `npm ci` is the acceptance install path.
+matching `package.json`. `npm ci` is the acceptance install path and
+`npm audit --audit-level=moderate` is the required threshold.
+The pinned React Router runtime requires Node.js `>=22.22.0`; local and CI
+frontend verification must satisfy that engine.
+
+The production Docker image and the backend CI job both install
+`requirements.txt` with `--require-hashes` on Python 3.11. The CI backend job
+also installs `requirements-dev.txt` with hashes and runs `pip-audit`; that job
+is the authoritative Python 3.11 lock proof when a local 3.11 runtime or Docker
+daemon is unavailable.
 
 ## Commands
 

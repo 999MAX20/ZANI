@@ -7,7 +7,7 @@ import {
   MessageSquareText,
   Plus,
 } from "lucide-react";
-import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useParams } from "react-router";
 
 import { agentProfilesApi, businessKnowledgeApi } from "../../api/ai";
 import { botAiApi, botChannelsApi, botsApi, type BotSuggestedReplyResponse } from "../../api/bots";

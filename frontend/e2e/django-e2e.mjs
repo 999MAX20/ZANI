@@ -7,6 +7,10 @@ const e2eDir = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(e2eDir, "../..");
 
 const pythonPath = process.env.E2E_PYTHON || defaultPythonPath();
+const djangoPort = process.env.E2E_DJANGO_PORT || "8000";
+const password = process.env.E2E_PASSWORD || "ZaniTest123!";
+const businessSlug = process.env.E2E_BUSINESS_SLUG || "zani-e2e-demo";
+const businessName = process.env.E2E_BUSINESS_NAME || "Zani E2E Demo";
 const djangoEnv = {
   ...process.env,
   DATABASE_URL: process.env.DATABASE_URL || "sqlite:///db.sqlite3",
@@ -43,7 +47,15 @@ function runManage(args) {
 
 function prepare() {
   runManage(["migrate"]);
-  runManage(["prepare_e2e_smoke_data"]);
+  runManage([
+    "prepare_e2e_smoke_data",
+    "--password",
+    password,
+    "--business-slug",
+    businessSlug,
+    "--business-name",
+    businessName,
+  ]);
 }
 
 const mode = process.argv[2] || "prepare";
@@ -52,7 +64,7 @@ if (mode === "prepare") {
   prepare();
 } else if (mode === "serve") {
   prepare();
-  runManage(["runserver", "127.0.0.1:8000"]);
+  runManage(["runserver", `127.0.0.1:${djangoPort}`, "--noreload"]);
 } else {
   console.error(`Unknown django-e2e mode: ${mode}`);
   process.exit(2);

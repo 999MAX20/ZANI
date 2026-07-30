@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { Bot, CheckCircle2, MessageSquareText, Radio, Sparkles } from "lucide-react";
 
 import type { BotSuggestedReplyResponse } from "../../../api/bots";

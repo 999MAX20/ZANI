@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Clock3, Plus, Scissors, WalletCards } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 import { getApiErrorMessage } from "../../api/client";
 import { servicesApi } from "../../api/services";

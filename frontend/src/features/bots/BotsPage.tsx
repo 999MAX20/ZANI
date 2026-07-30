@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Bot as BotIcon, MessageSquareText, Plus, Radio, Settings2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 import { botsApi } from "../../api/bots";
 import { getApiErrorMessage } from "../../api/client";

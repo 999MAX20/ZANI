@@ -1,6 +1,6 @@
 import { Home, Inbox, MessageSquareText, MoreHorizontal, Users, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { NavLink } from "react-router-dom";
+import { NavLink } from "react-router";
 
 import { cn } from "../../lib/cn";
 import { inboxApi } from "../../api/inbox";

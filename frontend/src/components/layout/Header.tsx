@@ -1,7 +1,7 @@
 import { Bell, Check, Menu, MessageSquareText, SlidersHorizontal, Sparkles, X } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router";
+import { useNavigate } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { notificationsApi } from "../../api/notifications";

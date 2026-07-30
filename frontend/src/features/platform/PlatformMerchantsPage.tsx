@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Activity, AlertTriangle, CheckCircle2, CreditCard, Headphones, Search, Store, UserRound } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 import { platformApi } from "../../api/platform";
 import { Card, CardBody } from "../../components/ui/Card";

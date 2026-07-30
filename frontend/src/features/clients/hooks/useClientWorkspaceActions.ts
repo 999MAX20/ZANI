@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 
 import { taggedObjectsApi, tagsApi } from "../../../api/activities";
 import { clientsApi } from "../../../api/clients";

@@ -68,7 +68,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "22.22.0"
           cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 
@@ -81,5 +81,5 @@ jobs:
       - name: Check frontend bundle budget
         run: npm run check:bundle
 
-      - name: Audit high-severity frontend dependencies
-        run: npm audit --audit-level=high
+      - name: Audit moderate-severity frontend dependencies
+        run: npm audit --audit-level=moderate

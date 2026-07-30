@@ -1,6 +1,6 @@
 import { Plus, Search, Settings, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 
 import { useEntityData } from "../../hooks/useEntityData";
 import { cn } from "../../lib/cn";

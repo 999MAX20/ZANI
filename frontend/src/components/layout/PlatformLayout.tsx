@@ -12,7 +12,7 @@ import {
   Store,
   Target,
 } from "lucide-react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router";
 
 import { useAuth } from "../../features/auth/AuthProvider";
 import { cn } from "../../lib/cn";

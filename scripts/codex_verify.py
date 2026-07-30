@@ -4,12 +4,15 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import os
 import re
 import shutil
+import socket
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Sequence
@@ -18,11 +21,31 @@ from typing import Iterable, Sequence
 ROOT = Path(__file__).resolve().parents[1]
 FRONTEND = ROOT / "frontend"
 MODES = ("static", "backend", "frontend", "browser", "security", "full")
+PASSTHROUGH_ENV_KEYS = {
+    "APPDATA",
+    "CI",
+    "COMSPEC",
+    "FORCE_COLOR",
+    "HOME",
+    "LOCALAPPDATA",
+    "NO_COLOR",
+    "PATH",
+    "PATHEXT",
+    "PROGRAMFILES",
+    "PROGRAMFILES(X86)",
+    "PROGRAMW6432",
+    "SYSTEMDRIVE",
+    "SYSTEMROOT",
+    "TEMP",
+    "TERM",
+    "TMP",
+    "USERPROFILE",
+    "WINDIR",
+}
 SAFE_ENV = {
     "ENVIRONMENT": "development",
     "DEBUG": "False",
     "SECRET_KEY": "zani-local-quality-gate-secret-key-2026-not-for-production",
-    "DATABASE_URL": "sqlite:///db.sqlite3",
     "SECURE_SSL_REDIRECT": "False",
     "SESSION_COOKIE_SECURE": "False",
     "CSRF_COOKIE_SECURE": "False",
@@ -31,16 +54,28 @@ SAFE_ENV = {
     "CELERY_TASK_STORE_EAGER_RESULT": "False",
     "AUTOMATIONS_RUN_INLINE": "True",
     "AI_PROVIDER": "mock",
+    "AI_ENABLED": "True",
     "OPENAI_API_KEY": "",
+    "OPENAI_BASE_URL": "",
+    "OPENAI_MODEL": "mock-ai",
     "OPENROUTER_API_KEY": "",
+    "OPENROUTER_BASE_URL": "",
+    "OPENROUTER_SITE_URL": "",
     "KIMI_API_KEY": "",
+    "KIMI_BASE_URL": "",
     "SENTRY_DSN": "",
+    "SENTRY_TRACES_SAMPLE_RATE": "0",
     "TELEGRAM_ENABLED": "False",
+    "TELEGRAM_BASE_API_URL": "",
     "TELEGRAM_WEBHOOK_SECRET": "",
     "WHATSAPP_ENABLED": "False",
+    "WHATSAPP_GRAPH_BASE_URL": "",
     "WHATSAPP_VERIFY_TOKEN": "",
     "WHATSAPP_APP_SECRET": "",
+    "WHATSAPP_EMBEDDED_SIGNUP_CONFIG_ID": "",
+    "WHATSAPP_EMBEDDED_SIGNUP_LOGIN_URL": "https://www.facebook.com/dialog/oauth",
     "INSTAGRAM_ENABLED": "False",
+    "INSTAGRAM_GRAPH_BASE_URL": "",
     "INSTAGRAM_VERIFY_TOKEN": "",
     "INSTAGRAM_APP_SECRET": "",
     "META_APP_ID": "",
@@ -49,18 +84,47 @@ SAFE_ENV = {
     "KASPI_REPRICING_ENABLED": "False",
     "KASPI_REPRICING_WRITE_ENABLED": "False",
     "KASPI_REPRICING_SCHEDULE_ENABLED": "False",
+    "KASPI_REPRICING_APPLY_AUTOPILOT": "False",
+    "KASPI_API_BASE_URL": "",
+    "KASPI_PRICE_WRITE_API_URL": "",
+    "KASPI_PRICE_WRITE_API_KEY": "",
+    "KASPI_COMPETITOR_MONITOR_API_URL": "",
+    "KASPI_COMPETITOR_MONITOR_API_KEY": "",
     "MOYSKLAD_ENABLED": "False",
+    "MOYSKLAD_API_BASE_URL": "",
     "WILDBERRIES_ENABLED": "False",
+    "WILDBERRIES_STATISTICS_API_BASE_URL": "",
     "OZON_ENABLED": "False",
+    "OZON_SELLER_API_BASE_URL": "",
     "USE_S3": "False",
+    "AWS_ACCESS_KEY_ID": "",
+    "AWS_SECRET_ACCESS_KEY": "",
+    "AWS_SESSION_TOKEN": "",
+    "AWS_STORAGE_BUCKET_NAME": "",
+    "AWS_S3_ENDPOINT_URL": "",
+    "AWS_S3_REGION_NAME": "",
+    "SUPABASE_PROJECT_REF": "",
+    "SUPABASE_DB_PASSWORD": "",
+    "SUPABASE_DB_USER": "",
+    "SUPABASE_DB_HOST": "",
+    "SUPABASE_DB_POOLER_HOST": "",
     "EMAIL_BACKEND": "django.core.mail.backends.locmem.EmailBackend",
     "EMAIL_HOST": "",
     "EMAIL_HOST_USER": "",
     "EMAIL_HOST_PASSWORD": "",
-    "VITE_API_URL": "http://127.0.0.1:8000",
-    "E2E_BASE_URL": "http://127.0.0.1:5173",
-    "E2E_API_BASE_URL": "http://127.0.0.1:8000",
+    "EMAIL_USE_TLS": "False",
+    "DEFAULT_FROM_EMAIL": "Zani Gate <gate@example.invalid>",
     "E2E_SKIP_LOCAL_SETUP": "false",
+    "E2E_REUSE_EXISTING_SERVER": "false",
+    "E2E_PASSWORD": "ZaniTest123!",
+    "E2E_PLATFORM_EMAIL": "platform_admin@example.com",
+    "E2E_OWNER_EMAIL": "business_owner@example.com",
+    "E2E_MANAGER_EMAIL": "business_manager@example.com",
+    "E2E_OPERATOR_EMAIL": "business_operator@example.com",
+    "E2E_DOCTOR_EMAIL": "business_doctor@example.com",
+    "E2E_BUSINESS_SLUG": "zani-e2e-gate",
+    "E2E_BUSINESS_NAME": "Zani E2E Quality Gate",
+    "ZANI_QUALITY_GATE": "1",
 }
 
 
@@ -73,13 +137,97 @@ class Stage:
     name: str
     command: tuple[str, ...]
     cwd: Path = ROOT
+    preflight_ports: tuple[int, ...] = ()
 
 
-def safe_environment(base: dict[str, str] | None = None) -> dict[str, str]:
+@dataclass(frozen=True)
+class GateRuntime:
+    database_path: Path
+    django_port: int
+    frontend_port: int
+    environment: dict[str, str]
+
+
+def safe_environment(
+    *,
+    database_path: Path,
+    python: str,
+    django_port: int,
+    frontend_port: int,
+    base: dict[str, str] | None = None,
+) -> dict[str, str]:
     """Return an environment that cannot inherit live provider/runtime settings."""
-    environment = dict(os.environ if base is None else base)
+    inherited = os.environ if base is None else base
+    environment = {
+        key: value
+        for key, value in inherited.items()
+        if key.upper() in PASSTHROUGH_ENV_KEYS
+    }
     environment.update(SAFE_ENV)
+    django_url = f"http://127.0.0.1:{django_port}"
+    frontend_url = f"http://127.0.0.1:{frontend_port}"
+    environment.update(
+        {
+            "ALLOWED_HOSTS": "localhost,127.0.0.1",
+            "CORS_ALLOWED_ORIGINS": frontend_url,
+            "CORS_ALLOW_CREDENTIALS": "True",
+            "CSRF_TRUSTED_ORIGINS": frontend_url,
+            "DATABASE_URL": f"sqlite:///{database_path.resolve().as_posix()}",
+            "E2E_PYTHON": str(Path(python).resolve()),
+            "E2E_DJANGO_PORT": str(django_port),
+            "E2E_FRONTEND_PORT": str(frontend_port),
+            "E2E_API_BASE_URL": django_url,
+            "E2E_BASE_URL": frontend_url,
+            "VITE_API_URL": django_url,
+        }
+    )
     return environment
+
+
+def find_available_port(excluded: Sequence[int] = ()) -> int:
+    while True:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
+            server.bind(("127.0.0.1", 0))
+            port = int(server.getsockname()[1])
+        if port not in excluded:
+            return port
+
+
+def assert_ports_available(ports: Sequence[int]) -> None:
+    for port in ports:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
+            try:
+                server.bind(("127.0.0.1", port))
+            except OSError as exc:
+                raise GateError(
+                    f"Quality-gate port {port} is already in use; refusing to reuse a server."
+                ) from exc
+
+
+@contextlib.contextmanager
+def isolated_runtime(
+    *,
+    python: str,
+    base: dict[str, str] | None = None,
+) -> Iterable[GateRuntime]:
+    """Yield a disposable database and dedicated ports, then remove all runtime state."""
+    with tempfile.TemporaryDirectory(prefix="zani-quality-gate-") as directory:
+        database_path = Path(directory) / "gate.sqlite3"
+        django_port = find_available_port((8000, 5173))
+        frontend_port = find_available_port((8000, 5173, django_port))
+        environment = safe_environment(
+            database_path=database_path,
+            python=python,
+            django_port=django_port,
+            frontend_port=frontend_port,
+            base=base,
+        )
+        yield GateRuntime(
+            database_path=database_path,
+            django_port=django_port,
+            frontend_port=frontend_port,
+            environment=environment,
+        )
 
 
 def canonical_name(value: str) -> str:
@@ -220,9 +368,12 @@ def build_stages(
     npm: str,
     git: str,
     backend_targets: Sequence[str] = (),
+    browser_ports: Sequence[int] = (),
 ) -> list[Stage]:
     if mode not in MODES:
         raise GateError(f"Unsupported mode: {mode}")
+    if backend_targets and mode != "backend":
+        raise GateError("--backend-target is supported only with --mode backend.")
 
     stages = [
         Stage("Diff hygiene (working tree)", (git, "diff", "--check")),
@@ -236,7 +387,8 @@ def build_stages(
 
     if mode in {"backend", "full"}:
         test_command = [python, "manage.py", "test"]
-        test_command.extend(backend_targets)
+        if mode == "backend":
+            test_command.extend(backend_targets)
         test_command.extend(("-v", "2"))
         stages.append(Stage("Django tests", tuple(test_command)))
 
@@ -254,18 +406,20 @@ def build_stages(
     if mode in {"browser", "full"}:
         stages.append(
             Stage(
-                "Playwright mobile owner/manager smoke",
+                "Playwright mobile role smoke",
                 (
                     npm,
                     "exec",
                     "--",
                     "playwright",
                     "test",
+                    "e2e/smoke.spec.ts",
                     "--project=mobile-chromium",
                     "-g",
                     "mobile (owner|manager) smoke",
                 ),
                 FRONTEND,
+                tuple(browser_ports),
             )
         )
 
@@ -303,8 +457,8 @@ def build_stages(
                     (python, "-m", "pip_audit", "-r", "requirements.txt"),
                 ),
                 Stage(
-                    "Frontend dependency audit (high severity)",
-                    (npm, "audit", "--audit-level=high"),
+                    "Frontend dependency audit (moderate severity)",
+                    (npm, "audit", "--audit-level=moderate"),
                     FRONTEND,
                 ),
             )
@@ -327,6 +481,8 @@ def run_stage(stage: Stage, environment: dict[str, str]) -> None:
     print(f"\n==> [{stage.name}]", flush=True)
     print(f"cwd: {stage.cwd}", flush=True)
     print(f"cmd: {render_command(stage.command)}", flush=True)
+    if stage.preflight_ports:
+        assert_ports_available(stage.preflight_ports)
     result = subprocess.run(stage.command, cwd=stage.cwd, env=environment, check=False)
     if result.returncode:
         raise GateError(f"Stage '{stage.name}' failed with exit code {result.returncode}.")
@@ -344,14 +500,17 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "--backend-target",
         action="append",
         default=[],
-        help="Django test label for backend/full mode; repeat for multiple labels.",
+        help="Django test label for backend mode; repeat for multiple labels.",
     )
     parser.add_argument(
         "--list-stages",
         action="store_true",
         help="Print the resolved stage plan without executing commands.",
     )
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    if args.backend_target and args.mode != "backend":
+        parser.error("--backend-target is supported only with --mode backend")
+    return args
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -359,20 +518,22 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         validate_python_lock()
         validate_frontend_lock()
-        stages = build_stages(
-            args.mode,
-            python=find_python(),
-            npm=find_executable("npm"),
-            git=find_executable("git"),
-            backend_targets=args.backend_target,
-        )
-        if args.list_stages:
+        python = find_python()
+        with isolated_runtime(python=python) as runtime:
+            stages = build_stages(
+                args.mode,
+                python=python,
+                npm=find_executable("npm"),
+                git=find_executable("git"),
+                backend_targets=args.backend_target,
+                browser_ports=(runtime.django_port, runtime.frontend_port),
+            )
+            if args.list_stages:
+                for stage in stages:
+                    print(f"{stage.name}: {render_command(stage.command)}")
+                return 0
             for stage in stages:
-                print(f"{stage.name}: {render_command(stage.command)}")
-            return 0
-        environment = safe_environment()
-        for stage in stages:
-            run_stage(stage, environment)
+                run_stage(stage, runtime.environment)
     except (GateError, OSError, json.JSONDecodeError) as exc:
         print(f"\nQUALITY GATE FAILED: {exc}", file=sys.stderr)
         return 1

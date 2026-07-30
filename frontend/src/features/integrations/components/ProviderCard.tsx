@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link2, RefreshCw, Send, ShieldCheck } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 import { botChannelsApi } from "../../../api/bots";
 import { businessConnectorsApi, connectorSyncRunsApi, type BusinessConnectorPayload } from "../../../api/connectors";

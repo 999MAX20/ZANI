@@ -1,6 +1,6 @@
 import { Bot, CalendarClock, CheckCircle2, ClipboardList, MessageCircle } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router";
 
 import { Card, CardBody } from "../../components/ui/Card";
 import { PageHeader } from "../../components/ui/PageHeader";

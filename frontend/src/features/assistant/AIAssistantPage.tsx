@@ -16,7 +16,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 import { aiApi, businessKnowledgeApi, type AIAnalystSource } from "../../api/ai";
 import type { BusinessKnowledgeItem, Id } from "../../types";

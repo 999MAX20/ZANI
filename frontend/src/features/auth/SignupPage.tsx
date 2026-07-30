@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowRight, Building2, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router";
 import { z } from "zod";
 
 import { getApiErrorMessage } from "../../api/client";

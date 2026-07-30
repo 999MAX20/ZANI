@@ -1,6 +1,6 @@
 import { CalendarCheck, Command, Inbox, KanbanSquare, ListChecks, MessageCircle, Search, User, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router";
 
 import { formatDateTime } from "../../lib/format";
 import { cn } from "../../lib/cn";

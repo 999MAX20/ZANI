@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { SetURLSearchParams } from "react-router-dom";
+import type { SetURLSearchParams } from "react-router";
 
 import { normalizeFilters, type InboxFilters } from "../../../api/inbox";
 import { CONVERSATIONS_PRESET_STORAGE_KEY } from "../conversationConstants";

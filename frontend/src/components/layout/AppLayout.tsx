@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { lazy, Suspense, useEffect, useState } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation } from "react-router";
 
 import { Header } from "./Header";
 import { MobileNav } from "./MobileNav";

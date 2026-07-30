@@ -1483,7 +1483,12 @@ test("mobile owner smoke: dashboard, bottom nav and more drawer are reachable", 
 
   for (const route of drawerRoutes) {
     await page.getByTestId("bottom-mobile-menu-trigger").click();
-    await page.locator(`a[href="${route}"]`).last().click();
+    const drawer = page.getByTestId("mobile-navigation-drawer");
+    await expect(drawer).toBeVisible();
+    const drawerLink = drawer.locator(`a[href="${route}"]`);
+    await expect(drawerLink).toBeVisible();
+    await drawerLink.click();
+    await expect(drawer).toHaveCount(0);
     await expect(page).toHaveURL(routePattern(route));
     await expectNoHorizontalOverflow(page);
     await expect(page.getByText("Unexpected Application Error")).toHaveCount(0);
@@ -1503,8 +1508,11 @@ test("mobile owner smoke: dashboard, bottom nav and more drawer are reachable", 
   }
   if (modules.deals === false) {
     await page.getByTestId("bottom-mobile-menu-trigger").click();
-    await expect(page.locator('a[href="/app/deals"]')).toHaveCount(0);
+    const drawer = page.getByTestId("mobile-navigation-drawer");
+    await expect(drawer).toBeVisible();
+    await expect(drawer.locator('a[href="/app/deals"]')).toHaveCount(0);
     await page.keyboard.press("Escape");
+    await expect(drawer).toHaveCount(0);
   }
 
   await expect(

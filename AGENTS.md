@@ -144,7 +144,10 @@ python scripts/codex_verify.py --mode full
 
 On Unix-like systems, `scripts/codex_verify.sh --mode full` is an equivalent
 wrapper. Use `--mode backend --backend-target <django.test.label>` for a
-proportionate scoped backend gate; the final integration gate remains `full`.
+proportionate scoped backend gate. `--backend-target` is rejected in every
+other mode; the final integration gate is always an unscoped `full` run.
+Browser and full runs create a disposable SQLite database and dedicated local
+ports and never reuse an existing Django/Vite server or ordinary `db.sqlite3`.
 
 For narrow backend CRM changes, scoped checks are acceptable:
 

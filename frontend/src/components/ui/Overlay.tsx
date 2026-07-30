@@ -115,7 +115,7 @@ function restoreDialogFocus(
 function useDialogFocus(
   open: boolean,
   onClose: () => void,
-  dialogRef: React.RefObject<HTMLElement>,
+  dialogRef: React.RefObject<HTMLElement | null>,
 ) {
   useLayoutEffect(() => {
     if (!open) return undefined;

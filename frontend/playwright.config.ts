@@ -1,6 +1,12 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const baseURL = process.env.E2E_BASE_URL || "http://127.0.0.1:5173";
+const djangoPort = process.env.E2E_DJANGO_PORT || "8000";
+const frontendPort = process.env.E2E_FRONTEND_PORT || "5173";
+const baseURL =
+  process.env.E2E_BASE_URL || `http://127.0.0.1:${frontendPort}`;
+const gateRun = process.env.ZANI_QUALITY_GATE === "1";
+const reuseExistingServer =
+  !gateRun && process.env.E2E_REUSE_EXISTING_SERVER !== "false";
 
 export default defineConfig({
   testDir: "./e2e",
@@ -21,14 +27,14 @@ export default defineConfig({
   webServer: [
     {
       command: "node e2e/django-e2e.mjs serve",
-      url: "http://127.0.0.1:8000/health/",
-      reuseExistingServer: true,
+      url: `http://127.0.0.1:${djangoPort}/health/`,
+      reuseExistingServer,
       timeout: 120_000,
     },
     {
-      command: "npm run dev -- --host 127.0.0.1",
+      command: `npm run dev -- --host 127.0.0.1 --port ${frontendPort} --strictPort`,
       url: baseURL,
-      reuseExistingServer: true,
+      reuseExistingServer,
       timeout: 120_000,
     },
   ],

@@ -21,4 +21,4 @@ echo "== Python dependency audit =="
 echo
 echo "== Frontend dependency audit =="
 cd "$ROOT_DIR/frontend"
-npm audit --audit-level=high
+npm audit --audit-level=moderate

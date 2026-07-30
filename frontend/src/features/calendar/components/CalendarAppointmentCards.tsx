@@ -1,5 +1,5 @@
 import { Clock } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 import { StatusBadge } from "../../../components/ui/StatusBadge";
 import { cn } from "../../../lib/cn";

@@ -9,7 +9,7 @@ import {
   Tags,
 } from "lucide-react";
 import type { ElementType, ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 import {
   EntityWorkspaceMetric,

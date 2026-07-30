@@ -5,6 +5,41 @@ const password = process.env.E2E_PASSWORD || "ZaniTest123!";
 const ownerEmail =
   process.env.E2E_OWNER_EMAIL || "business_owner@example.com";
 
+const workspaceReadySelectors: Record<string, string> = {
+  "/app": 'main a[href="/app/leads"]',
+  "/app/leads": '[data-testid="leads-workspace-ready"]',
+  "/app/clients": '[data-testid="clients-workspace-ready"]',
+  "/app/tasks": '[data-testid="tasks-workspace-ready"]',
+  "/app/calendar": '[data-testid="calendar-workspace-ready"]',
+  "/app/conversations":
+    '[data-testid="inbox-priority-actions"], [data-testid="inbox-action-composer"]',
+};
+
+async function waitForWorkspaceReady(page: Page, path: string) {
+  const readySelector = workspaceReadySelectors[path];
+  expect(readySelector, `Missing workspace-ready selector for ${path}`).toBeTruthy();
+  await expect(
+    page.locator(readySelector).filter({ visible: true }).first(),
+  ).toBeVisible();
+  await expect(
+    page.locator('main [role="status"][aria-busy="true"]'),
+  ).toHaveCount(0);
+  await expect(page.locator('main [role="alert"]')).toHaveCount(0);
+  await page.getByRole("main").first().evaluate(async (main) => {
+    const finiteAnimations = main
+      .getAnimations()
+      .filter(
+        (animation) =>
+          animation.effect?.getTiming().iterations !== Infinity,
+      );
+    await Promise.all(
+      finiteAnimations.map((animation) =>
+        animation.finished.catch(() => undefined),
+      ),
+    );
+  });
+}
+
 async function login(page: Page) {
   await page.context().clearCookies();
   await page.goto("/login");
@@ -13,6 +48,7 @@ async function login(page: Page) {
   await page.locator('form button[type="submit"]').click();
   await expect(page).toHaveURL(/\/app/);
   await expect(page.getByRole("main").first()).toBeVisible();
+  await waitForWorkspaceReady(page, "/app");
 }
 
 async function navigateInsideApp(page: Page, path: string) {
@@ -29,7 +65,7 @@ async function navigateInsideApp(page: Page, path: string) {
   );
   await expect(page.getByRole("main").first()).toBeVisible();
   await expect(page.getByText("Unexpected Application Error")).toHaveCount(0);
-  await page.waitForTimeout(350);
+  await waitForWorkspaceReady(page, path);
 }
 
 async function expectNoHorizontalOverflow(page: Page) {

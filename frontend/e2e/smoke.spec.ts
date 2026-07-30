@@ -1440,6 +1440,59 @@ test("operator sees restricted sections as forbidden", async ({ page }) => {
   await expect(page.getByText(/webhook|payload|provider/i)).toHaveCount(0);
 });
 
+test("owner and manager dashboards render overlapping appointment queues once", async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  const duplicateKeyWarnings: string[] = [];
+  let duplicatedAppointmentId: number | undefined;
+
+  page.on("console", (message) => {
+    if (
+      message.type() === "error"
+      && /same key|unique "key" prop/i.test(message.text())
+    ) {
+      duplicateKeyWarnings.push(message.text());
+    }
+  });
+
+  await page.route(/\/api\/work-queues\/(?:\?.*)?$/, async (route) => {
+    const response = await route.fetch();
+    const payload = await response.json();
+    const confirmations = payload.queues?.appointment_confirmations || [];
+    const upcoming = payload.queues?.upcoming_appointments || [];
+    const appointment = confirmations[0] || upcoming[0];
+    expect(appointment).toBeTruthy();
+    duplicatedAppointmentId = Number(appointment.id);
+    await route.fulfill({
+      response,
+      json: {
+        ...payload,
+        queues: {
+          ...payload.queues,
+          appointment_confirmations: [appointment, ...confirmations],
+          upcoming_appointments: [appointment, ...upcoming],
+        },
+      },
+    });
+  });
+
+  for (const email of [users.owner, users.manager]) {
+    duplicatedAppointmentId = undefined;
+    await login(page, email, /\/app/);
+    await expect
+      .poll(() => duplicatedAppointmentId)
+      .toBeGreaterThan(0);
+    await expect(
+      page.locator(
+        `[data-testid="dashboard-appointment-row"][data-appointment-id="${duplicatedAppointmentId}"]`,
+      ),
+    ).toHaveCount(1);
+  }
+
+  expect(duplicateKeyWarnings).toEqual([]);
+});
+
 test("mobile navigation away wins over AI-agent route canonicalization", async ({
   page,
   isMobile,

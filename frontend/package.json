@@ -11,6 +11,7 @@
     "check:i18n": "node scripts/check-i18n.mjs",
     "test:action-feedback": "node --test scripts/tests/action-feedback-policy.test.mjs",
     "test:bundle-budget": "node --test scripts/tests/bundle-budget.test.mjs",
+    "test:dashboard-appointments": "node --test scripts/tests/dashboard-appointment-dedupe.test.mjs",
     "test:daily-workspaces": "node --test scripts/tests/daily-workspaces-policy.test.mjs",
     "test:gate-env": "node --test scripts/tests/gate-environment-policy.test.mjs",
     "check:bundle": "node scripts/check-bundle.mjs",

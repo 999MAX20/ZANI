@@ -38,7 +38,12 @@ export function MessageBubble({ message, t, onRetry }: { message: InboxMessage; 
           inbound ? "rounded-tl-md border border-zani-border bg-zani-card text-zani-text" : ai ? "rounded-tr-md bg-ai-50 text-ai-800 ring-1 ring-ai-100" : "rounded-tr-md bg-brand-600 text-white",
         )}
       >
-        <div className="mb-1 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] opacity-60">
+        <div
+          className={cn(
+            "mb-1 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em]",
+            inbound ? "text-zani-muted" : ai ? "text-ai-800" : "text-white",
+          )}
+        >
           {ai ? <Sparkles size={13} /> : null}
           {author}
         </div>

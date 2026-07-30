@@ -539,7 +539,7 @@ Completion evidence (2026-07-24):
 
 #### F-302 — Frontend Runtime and Maintainability
 
-Status: `IN_PROGRESS`
+Status: `DONE`
 Owner: UI/UX  
 Depends on: F-301 integrated
 
@@ -549,6 +549,28 @@ role, loading, error and responsive behavior.
 
 Assignment: 2026-07-24, `codex/f302-runtime-maintainability` from the integrated
 F-301/B-301 baseline.
+
+Completion evidence (2026-07-30):
+
+- source branch is clean and pushed through
+  `7b2689c49c01e1c2494d1e01b9cf34e402b96bfb`; integrated as `2c3b2b8`,
+  `b2dbb7c` and `b3d433f`;
+- measured refactoring reduced the app-shell from `471.6 kB` to `353.9 kB`
+  before gzip and removed the Framer Motion runtime chunk while preserving
+  role, capability, responsive and i18n behavior;
+- request budgets now wait for route-local successful workspace state, observe
+  longer than the one-second waterfall budget and reject late, duplicate or
+  missing API evidence; Deals requires exact list, board and summary requests;
+- bundle verification requires exactly one `app-shell-*` chunk and has
+  regression fixtures for missing, renamed, duplicate and oversized chunks;
+- the first independent review rejected two false-green verification gaps; the
+  correction closed both and the same reviewer accepted the final result;
+- manager verification passed bundle fixtures (`5/5`), daily-workspace policy
+  (`4/4`), production build with `4481` aligned i18n keys, bundle budget,
+  runtime Playwright desktop/mobile (`6/6`) and focused role-workspace
+  regression (`2 passed`, `2` intentional cross-project skips);
+- no backend permission, tenant, BusinessEvent, AI, migration, dependency,
+  provider or production-environment change.
 
 #### B-302 — Deterministic Local Quality Gate
 

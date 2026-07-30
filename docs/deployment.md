@@ -116,7 +116,7 @@ scripts/codex_verify.sh --mode full
 ```
 
 On Windows, run
-`.\.venv\Scripts\python.exe scripts\codex_verify.py --mode full`.
+`.\.venv\Scripts\python.exe scripts\codex_verify.py --mode full --base-ref <task-base-sha>`.
 
 ```bash
 cd /Users/maksim/Desktop/Zani

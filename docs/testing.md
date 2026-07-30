@@ -5,19 +5,20 @@
 The cross-platform gate is the single local entrypoint for acceptance checks:
 
 ```powershell
-.\.venv\Scripts\python.exe scripts\codex_verify.py --mode full
+.\.venv\Scripts\python.exe scripts\codex_verify.py --mode full --base-ref <task-base-sha>
 ```
 
 ```bash
-.venv/bin/python scripts/codex_verify.py --mode full
+.venv/bin/python scripts/codex_verify.py --mode full --base-ref <task-base-sha>
 ```
 
 `full` runs, in fail-fast order:
 
-1. Python and frontend lock validation plus Git diff hygiene;
+1. Python and frontend lock validation plus working-tree, index and committed-range Git diff hygiene;
 2. Django migration drift and system checks;
 3. the full Django test suite;
-4. `npm ci`, i18n/type checking, production builds and the bundle budget;
+4. `npm ci`, actual Vite env-file isolation, i18n/type checking, production
+   builds and the bundle budget;
 5. the focused Playwright mobile owner/manager CRM smoke;
 6. hashed Python lock installability, `pip-audit`, and npm moderate-severity audit;
 7. final diff hygiene.
@@ -32,15 +33,29 @@ selects the Python runtime and deterministic seed identities, uses
 in-memory/eager workers and the locmem email backend, and clears known AI,
 provider, cloud-storage, SMTP and monitoring credentials. Values from a
 developer shell or `.env` cannot opt the quality gate into live services.
+Every tracked `VITE_*` runtime variable is set in the process environment, so
+Vite's process-over-file precedence prevents ignored `frontend/.env*` files
+from enabling telemetry, OAuth clients or CRM flags. A gate regression uses
+Vite's own `loadEnv` against a controlled unsafe `.env` fixture.
+
+Every invocation requires an explicit fetched task or PR base:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\codex_verify.py --mode static --base-ref <task-base-sha>
+```
+
+The base must resolve to a commit, be an ancestor of `HEAD`, and differ from
+`HEAD`. Shallow CI checkouts must fetch the base history; CI uses
+`fetch-depth: 0` and passes the PR base SHA or push `before` SHA explicitly.
 
 Use the smallest constituent mode while iterating:
 
 ```powershell
-.\.venv\Scripts\python.exe scripts\codex_verify.py --mode static
-.\.venv\Scripts\python.exe scripts\codex_verify.py --mode backend --backend-target apps.core.tests_tenant_isolation
-.\.venv\Scripts\python.exe scripts\codex_verify.py --mode frontend
-.\.venv\Scripts\python.exe scripts\codex_verify.py --mode browser
-.\.venv\Scripts\python.exe scripts\codex_verify.py --mode security
+.\.venv\Scripts\python.exe scripts\codex_verify.py --mode static --base-ref <task-base-sha>
+.\.venv\Scripts\python.exe scripts\codex_verify.py --mode backend --backend-target apps.core.tests_tenant_isolation --base-ref <task-base-sha>
+.\.venv\Scripts\python.exe scripts\codex_verify.py --mode frontend --base-ref <task-base-sha>
+.\.venv\Scripts\python.exe scripts\codex_verify.py --mode browser --base-ref <task-base-sha>
+.\.venv\Scripts\python.exe scripts\codex_verify.py --mode security --base-ref <task-base-sha>
 ```
 
 `--backend-target` is valid only with `--mode backend`. It is rejected with

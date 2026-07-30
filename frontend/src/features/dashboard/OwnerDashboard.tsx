@@ -748,16 +748,21 @@ export function OwnerDashboard({
     t,
   });
 
-  return (
-    <div className="space-y-5 pb-8">
-      {isCoreDataLoading ? (
+  if (isCoreDataLoading) {
+    return (
+      <div className="space-y-5 pb-8">
         <Surface
           className="border-brand-100 bg-brand-50 px-4 py-3 text-sm font-semibold text-brand-700"
           padding="none"
         >
           {t("dashboard.loadingCoreData")}
         </Surface>
-      ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5 pb-8" data-testid="dashboard-workspace-ready">
       {metricsError ? (
         <Surface
           className="border-[rgba(151,90,22,0.24)] bg-[var(--zani-warning-soft)] px-4 py-3 text-sm font-semibold text-zani-warning"

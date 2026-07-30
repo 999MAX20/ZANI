@@ -1440,6 +1440,35 @@ test("operator sees restricted sections as forbidden", async ({ page }) => {
   await expect(page.getByText(/webhook|payload|provider/i)).toHaveCount(0);
 });
 
+test("mobile navigation away wins over AI-agent route canonicalization", async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(
+    !isMobile,
+    "Mobile navigation race regression runs only in the mobile project.",
+  );
+
+  await login(page, users.owner, /\/app/);
+  await page.getByTestId("bottom-mobile-menu-trigger").click();
+  const drawer = page.getByTestId("mobile-navigation-drawer");
+  await expect(drawer).toBeVisible();
+  await drawer.locator('a[href="/app/ai-agents"]').click();
+  await expect(drawer).toHaveCount(0);
+  await expect(page).toHaveURL(
+    /\/app\/ai-agents\/\d+\/(?:overview|profile)(?:[?#].*)?$/,
+  );
+
+  await page.getByTestId("bottom-mobile-menu-trigger").click();
+  await expect(drawer).toBeVisible();
+  await drawer.locator('a[href="/app/integrations"]').click();
+
+  await expect(drawer).toHaveCount(0);
+  await expect(page).toHaveURL(/\/app\/integrations(?:[?#].*)?$/);
+  await page.waitForTimeout(500);
+  await expect(page).toHaveURL(/\/app\/integrations(?:[?#].*)?$/);
+});
+
 test("mobile owner smoke: dashboard, bottom nav and more drawer are reachable", async ({
   page,
   isMobile,

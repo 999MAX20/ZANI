@@ -7,7 +7,7 @@ import {
   MessageSquareText,
   Plus,
 } from "lucide-react";
-import { Link, Navigate, useNavigate, useParams } from "react-router";
+import { Link, useLocation, useNavigate, useParams } from "react-router";
 
 import { agentProfilesApi, businessKnowledgeApi } from "../../api/ai";
 import { botAiApi, botChannelsApi, botsApi, type BotSuggestedReplyResponse } from "../../api/bots";
@@ -42,8 +42,17 @@ import {
   type WhatsAppEmbeddedSignupCallback,
 } from "../integrations/components/setup/metaCallbacks";
 
+function isAiAgentsRoute(pathname: string) {
+  return (
+    pathname === "/app/ai-agents"
+    || pathname.startsWith("/app/ai-agents/")
+    || pathname === "/ai-agents"
+  );
+}
+
 export function AIAgentsPage() {
   const params = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const selectedBotId = params.id ? Number(params.id) : null;
   const requestedSection = params.section;
@@ -111,6 +120,48 @@ export function AIAgentsPage() {
   const botList = bots.data || [];
   const matchedBot = selectedBotId ? botList.find((bot) => bot.id === selectedBotId) || null : null;
   const selectedBot = matchedBot || botList[0] || null;
+  const isPageLoading = isBusinessLoading
+    || bots.isLoading
+    || botChannels.isLoading
+    || botConversations.isLoading
+    || botMessages.isLoading
+    || profiles.isLoading
+    || knowledge.isLoading;
+  const needsCanonicalRoute = Boolean(
+    !isPageLoading
+    && business
+    && botList.length
+    && selectedBot
+    && (!params.id || !matchedBot || !params.section || hasInvalidSection),
+  );
+  const canonicalRoute = needsCanonicalRoute && selectedBot
+    ? `/app/ai-agents/${selectedBot.id}/${activeSection}`
+    : null;
+
+  useEffect(() => {
+    if (!canonicalRoute) return;
+
+    const sourcePathname = location.pathname;
+    if (!isAiAgentsRoute(sourcePathname)) return;
+
+    let cancelled = false;
+    const applyCanonicalRoute = () => {
+      if (
+        cancelled
+        || window.location.pathname !== sourcePathname
+        || !isAiAgentsRoute(window.location.pathname)
+      ) {
+        return;
+      }
+      navigate(canonicalRoute, { replace: true });
+    };
+
+    queueMicrotask(applyCanonicalRoute);
+    return () => {
+      cancelled = true;
+    };
+  }, [canonicalRoute, location.key, location.pathname, navigate]);
+
   const selectedProfile = useMemo(
     () => (profiles.data || []).find((profile) => profile.bot === selectedBot?.id) || (profiles.data || [])[0] || null,
     [profiles.data, selectedBot?.id],
@@ -213,17 +264,14 @@ export function AIAgentsPage() {
     return () => setPageHeader(null);
   }, [canManage, setPageHeader, t]);
 
-  if (isBusinessLoading || bots.isLoading || botChannels.isLoading || botConversations.isLoading || botMessages.isLoading || profiles.isLoading || knowledge.isLoading) {
+  if (isPageLoading) {
     return <LoadingState label={t("aiAgents.loading")} />;
   }
 
   if (!business) return <ErrorState message={t("aiAgents.noBusiness")} />;
 
-  if (botList.length && selectedBot) {
-    const needsCanonicalRoute = !params.id || !matchedBot || !params.section || hasInvalidSection;
-    if (needsCanonicalRoute) {
-      return <Navigate to={`/app/ai-agents/${selectedBot.id}/${activeSection}`} replace />;
-    }
+  if (canonicalRoute) {
+    return <LoadingState label={t("aiAgents.loading")} />;
   }
 
   const channels = (botChannels.data || []).filter((channel) => channel.bot === selectedBot?.id);

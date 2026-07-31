@@ -1,4 +1,4 @@
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.utils import timezone
 from rest_framework.test import APIClient
 
@@ -13,6 +13,50 @@ from apps.leads.models import Lead
 from apps.scheduling.models import Appointment
 from apps.services.models import Service
 from apps.tasks.models import Task
+
+
+@override_settings(SUPPORT_REQUIRES_GRANT=False)
+class BusinessMemberPaginationTests(TestCase):
+    def test_platform_admin_member_pages_have_stable_primary_key_order(self):
+        api = APIClient()
+        platform_admin = User.objects.create_user(
+            username="platform-admin",
+            email="platform-admin@example.com",
+            password="pass12345",
+            role=User.Roles.PLATFORM_ADMIN,
+        )
+        owner = User.objects.create_user(
+            username="pagination-owner",
+            email="pagination-owner@example.com",
+            password="pass12345",
+            role=User.Roles.BUSINESS_OWNER,
+        )
+        business = Business.objects.create(owner=owner, name="Pagination Clinic", slug="pagination-clinic")
+        members = [
+            User(
+                username=f"pagination-staff-{index}",
+                email=f"pagination-staff-{index}@example.com",
+                role=User.Roles.STAFF,
+            )
+            for index in range(55)
+        ]
+        User.objects.bulk_create(members)
+        BusinessMember.objects.bulk_create(
+            [
+                BusinessMember(business=business, user=user, role=BusinessMember.Roles.STAFF)
+                for user in members
+            ]
+        )
+        expected_ids = list(BusinessMember.objects.order_by("pk").values_list("id", flat=True))
+        api.force_authenticate(platform_admin)
+
+        first_page = api.get("/api/business-members/?page=1")
+        second_page = api.get("/api/business-members/?page=2")
+
+        self.assertEqual(first_page.status_code, 200)
+        self.assertEqual(second_page.status_code, 200)
+        actual_ids = [item["id"] for item in first_page.data["results"] + second_page.data["results"]]
+        self.assertEqual(actual_ids, expected_ids)
 
 
 class TeamAccessTests(TestCase):

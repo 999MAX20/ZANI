@@ -15,6 +15,22 @@ test("capability-aware permissions hide disabled daily modules before role grant
   assert.match(permissions, /if \(role === "doctor"\) return "doctor";/);
 });
 
+test("command palette reuses permission and capability policy for commands and entity queries", async () => {
+  const palette = await source("components/layout/CommandPalette.tsx");
+
+  assert.match(palette, /hasPermission\(user, businessId, command\.resource, command\.action\)/);
+  assert.match(palette, /id: "create-lead"[^\n]+resource: "leads", action: "create"/);
+  assert.match(palette, /id: "open-settings"[^\n]+resource: "settings", action: "update"/);
+  assert.match(palette, /id: "open-deals"[^\n]+resource: "deals"/);
+  assert.match(palette, /id: "open-ai-agents"[^\n]+resource: "ai_automation"/);
+  assert.match(palette, /clients: canViewClients/);
+  assert.match(palette, /leads: canViewLeads/);
+  assert.match(palette, /services: canViewServices/);
+  assert.match(palette, /canViewLeads \? leads\.data \|\| \[\] : \[\]/);
+  assert.match(palette, /canViewClients \? clients\.data \|\| \[\] : \[\]/);
+  assert.match(palette, /canViewServices \? services\.data \|\| \[\] : \[\]/);
+});
+
 test("daily workspaces preserve recoverable and role-valid actions", async () => {
   const [tasks, calendar, appointmentAccess, conversations, conversationList] = await Promise.all([
     source("features/tasks/TasksPage.tsx"),

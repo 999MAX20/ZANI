@@ -39,7 +39,7 @@ async function clickRetryControlIfPresent(page: Page, testId: string) {
   let lastError: unknown;
   for (let attempt = 0; attempt < 3; attempt += 1) {
     const control = page.getByTestId(testId);
-    if (!(await control.isVisible().catch(() => false))) return;
+    await expect(control).toBeVisible();
     await expect(control).toBeEnabled();
     await expect(control).toHaveAttribute("type", "button");
     try {
@@ -47,12 +47,18 @@ async function clickRetryControlIfPresent(page: Page, testId: string) {
       return;
     } catch (error) {
       lastError = error;
+      if (!(await control.isVisible().catch(() => false))) {
+        throw new Error(`Retry control ${testId} disappeared after a failed real click.`, { cause: error });
+      }
       await page.waitForTimeout(250);
     }
   }
-  if (await page.getByTestId(testId).isVisible().catch(() => false)) {
-    throw lastError;
-  }
+  throw lastError;
+}
+
+async function openCommandPalette(page: Page) {
+  await page.keyboard.press("Control+K");
+  await expect(page.getByTestId("command-open-leads")).toBeVisible();
 }
 
 async function apiList<T>(
@@ -112,6 +118,50 @@ test("F-201 desktop roles receive legitimate daily routes and controls", async (
 
   await navigateClient(page, "/app/deals");
   await expect(page.getByRole("alert")).toBeVisible();
+});
+
+test("F-401 command palette follows role permissions and disabled modules", async ({ page, isMobile }) => {
+  test.skip(isMobile, "Command palette role and capability contract is certified in the desktop project.");
+  test.setTimeout(120_000);
+
+  await login(page, users.owner);
+  await openCommandPalette(page);
+  await expect(page.getByTestId("command-create-lead")).toBeVisible();
+  await expect(page.getByTestId("command-open-clients")).toBeVisible();
+  await expect(page.getByTestId("command-open-messages")).toBeVisible();
+  await expect(page.getByTestId("command-open-settings")).toBeVisible();
+  await expect(page.getByTestId("command-open-ai-agents")).toBeVisible();
+  await expect(page.getByTestId("command-open-deals")).toHaveCount(0);
+  await page.keyboard.press("Escape");
+
+  await login(page, users.manager);
+  await openCommandPalette(page);
+  await expect(page.getByTestId("command-create-lead")).toBeVisible();
+  await expect(page.getByTestId("command-open-clients")).toBeVisible();
+  await expect(page.getByTestId("command-open-messages")).toBeVisible();
+  await expect(page.getByTestId("command-open-settings")).toHaveCount(0);
+  await expect(page.getByTestId("command-open-ai-agents")).toHaveCount(0);
+  await expect(page.getByTestId("command-open-deals")).toHaveCount(0);
+  await page.keyboard.press("Escape");
+
+  await login(page, users.operator);
+  await openCommandPalette(page);
+  await expect(page.getByTestId("command-create-lead")).toBeVisible();
+  await expect(page.getByTestId("command-open-clients")).toBeVisible();
+  await expect(page.getByTestId("command-open-messages")).toBeVisible();
+  await expect(page.getByTestId("command-open-settings")).toHaveCount(0);
+  await expect(page.getByTestId("command-open-ai-agents")).toHaveCount(0);
+  await expect(page.getByTestId("command-open-deals")).toHaveCount(0);
+  await page.keyboard.press("Escape");
+
+  await login(page, users.doctor);
+  await openCommandPalette(page);
+  await expect(page.getByTestId("command-create-lead")).toHaveCount(0);
+  await expect(page.getByTestId("command-open-clients")).toBeVisible();
+  await expect(page.getByTestId("command-open-messages")).toHaveCount(0);
+  await expect(page.getByTestId("command-open-settings")).toHaveCount(0);
+  await expect(page.getByTestId("command-open-ai-agents")).toHaveCount(0);
+  await expect(page.getByTestId("command-open-deals")).toHaveCount(0);
 });
 
 test("F-201 mobile owner, manager, operator and doctor daily routes stay usable", async ({ page, isMobile }) => {
@@ -247,13 +297,22 @@ test("F-201 recoverable queue, calendar and provider failure states expose next 
       await route.fulfill({ response, json: payload });
     },
   );
-  let connectorStatusAvailable = false;
   let connectorStatusRequests = 0;
   await page.route(
     /\/api\/business-connectors\/(?:\?.*)?$/,
     async (route) => {
       connectorStatusRequests += 1;
-      if (!connectorStatusAvailable) {
+      const retryWasClicked = await page
+        .evaluate(
+          () =>
+            Boolean(
+              (window as typeof window & {
+                __ZANI_TEST_CONNECTOR_RETRY_CLICKED__?: boolean;
+              }).__ZANI_TEST_CONNECTOR_RETRY_CLICKED__,
+            ),
+        )
+        .catch(() => false);
+      if (!retryWasClicked) {
         await route.fulfill({
           status: 503,
           contentType: "application/json",
@@ -359,11 +418,26 @@ test("F-201 recoverable queue, calendar and provider failure states expose next 
   await expect(page.getByTestId("inbox-provider-status-retry")).toHaveAttribute("type", "button");
   await expect(page.getByTestId("conversation-retry-failed").first()).toBeVisible();
 
-  connectorStatusAvailable = true;
+  const connectorRetry = page.getByTestId("inbox-provider-status-retry");
+  await connectorRetry.evaluate((control) => {
+    (window as typeof window & {
+      __ZANI_TEST_CONNECTOR_RETRY_CLICKED__?: boolean;
+    }).__ZANI_TEST_CONNECTOR_RETRY_CLICKED__ = false;
+    control.addEventListener(
+      "click",
+      () => {
+        (window as typeof window & {
+          __ZANI_TEST_CONNECTOR_RETRY_CLICKED__?: boolean;
+        }).__ZANI_TEST_CONNECTOR_RETRY_CLICKED__ = true;
+      },
+      { capture: true, once: true },
+    );
+  });
+  const connectorStatusRequestsBeforeRetry = connectorStatusRequests;
   await clickRetryControlIfPresent(page, "inbox-provider-status-retry");
+  await expect.poll(() => connectorStatusRequests).toBeGreaterThan(connectorStatusRequestsBeforeRetry);
   await expect(page.getByTestId("inbox-provider-status-unavailable")).toHaveCount(0);
   await expect(page.getByTestId("inbox-provider-unavailable")).toBeVisible();
-  expect(connectorStatusRequests).toBeGreaterThanOrEqual(2);
   const retry = page.getByTestId("conversation-retry-failed").first();
   await expect(retry).toBeVisible();
   await retry.click();

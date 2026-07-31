@@ -35,6 +35,26 @@ async function navigateClient(page: Page, path: string) {
   await expect(page).toHaveURL(new RegExp(path === "/app" ? "/app/?$" : path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 }
 
+async function clickRetryControlIfPresent(page: Page, testId: string) {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const control = page.getByTestId(testId);
+    if (!(await control.isVisible().catch(() => false))) return;
+    await expect(control).toBeEnabled();
+    await expect(control).toHaveAttribute("type", "button");
+    try {
+      await control.click({ timeout: 5_000 });
+      return;
+    } catch (error) {
+      lastError = error;
+      await page.waitForTimeout(250);
+    }
+  }
+  if (await page.getByTestId(testId).isVisible().catch(() => false)) {
+    throw lastError;
+  }
+}
+
 async function apiList<T>(
   page: Page,
   path: string,
@@ -55,12 +75,18 @@ test("F-201 desktop roles receive legitimate daily routes and controls", async (
   await login(page, users.owner);
   await expect(page.locator('main a[href="/app/tasks"]').first()).toBeVisible();
   await expect(page.locator('main a[href="/app/calendar"]').first()).toBeVisible();
+  await expect(page.locator('nav a[href="/app/settings"]')).toBeVisible();
+  await expect(page.locator('nav a[href="/app/deals"]')).toHaveCount(0);
   await expectHealthyWorkspace(page);
 
   await login(page, users.manager);
   await expect(page.getByTestId("role-daily-actions")).toBeVisible();
   await expect(page.getByTestId("role-daily-actions").locator('a[href^="/app/tasks"]')).toBeVisible();
   await expect(page.getByTestId("role-daily-actions").locator('a[href^="/app/calendar"]')).toBeVisible();
+  await expect(page.locator('nav a[href="/app/settings"]')).toHaveCount(0);
+  await expect(page.locator('nav a[href="/app/deals"]')).toHaveCount(0);
+  await navigateClient(page, "/app/settings");
+  await expect(page.getByRole("alert")).toBeVisible();
   await expectHealthyWorkspace(page);
 
   await login(page, users.operator);
@@ -329,10 +355,12 @@ test("F-201 recoverable queue, calendar and provider failure states expose next 
       .first(),
   ).toBeVisible();
   await expect(page.getByTestId("inbox-provider-status-unavailable")).toBeVisible();
+  await expect(page.getByTestId("inbox-provider-status-retry")).toBeEnabled();
+  await expect(page.getByTestId("inbox-provider-status-retry")).toHaveAttribute("type", "button");
   await expect(page.getByTestId("conversation-retry-failed").first()).toBeVisible();
 
   connectorStatusAvailable = true;
-  await page.getByTestId("inbox-provider-status-retry").click();
+  await clickRetryControlIfPresent(page, "inbox-provider-status-retry");
   await expect(page.getByTestId("inbox-provider-status-unavailable")).toHaveCount(0);
   await expect(page.getByTestId("inbox-provider-unavailable")).toBeVisible();
   expect(connectorStatusRequests).toBeGreaterThanOrEqual(2);

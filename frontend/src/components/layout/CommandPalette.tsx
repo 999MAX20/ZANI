@@ -2,9 +2,23 @@ import { Plus, Search, Settings, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 
+import { useAuth } from "../../features/auth/AuthProvider";
+import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useEntityData } from "../../hooks/useEntityData";
 import { cn } from "../../lib/cn";
 import { useI18n } from "../../lib/i18n";
+import { hasPermission } from "../../lib/permissions";
+
+type CommandDefinition = {
+  id: string;
+  label: string;
+  hint: string;
+  to: string;
+  icon: typeof Search;
+  priority: number;
+  resource?: string;
+  action?: string;
+};
 
 function commandScore(source: string, query: string) {
   const normalizedSource = source.toLowerCase().replace(/\s+/g, " ").trim();
@@ -30,7 +44,17 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
   const { t } = useI18n();
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
-  const { clients, leads, services } = useEntityData({ clients: true, leads: true, services: true });
+  const { user } = useAuth();
+  const { business } = useActiveBusiness();
+  const businessId = business?.id;
+  const canViewClients = hasPermission(user, businessId, "clients");
+  const canViewLeads = hasPermission(user, businessId, "leads");
+  const canViewServices = hasPermission(user, businessId, "settings");
+  const { clients, leads, services } = useEntityData({
+    clients: canViewClients,
+    leads: canViewLeads,
+    services: canViewServices,
+  });
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -42,16 +66,16 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
   }, [onClose]);
 
   const commands = useMemo(() => {
-    const staticCommands = [
-      { id: "create-lead", label: t("command.createLead"), hint: t("nav.leads"), to: "/app/leads?create=1", icon: Plus, priority: 20 },
-      { id: "open-leads", label: t("command.openLeads"), hint: t("nav.leads"), to: "/app/leads", icon: Search, priority: 10 },
-      { id: "open-clients", label: t("command.openClients"), hint: t("nav.clients"), to: "/app/clients", icon: Search, priority: 10 },
-      { id: "open-deals", label: t("command.openDeals"), hint: t("nav.deals"), to: "/app/deals", icon: Search, priority: 10 },
-      { id: "open-messages", label: t("command.openMessages"), hint: t("nav.conversations"), to: "/app/conversations", icon: Search, priority: 10 },
-      { id: "open-settings", label: t("command.openSettings"), hint: t("nav.settings"), to: "/app/settings", icon: Settings, priority: 10 },
-      { id: "open-ai-agents", label: t("command.openAiAgents"), hint: t("nav.aiAgents"), to: "/app/ai-agents", icon: Search, priority: 10 },
-    ];
-    const leadCommands = (leads.data || []).map((lead) => {
+    const staticCommands: CommandDefinition[] = [
+      { id: "create-lead", label: t("command.createLead"), hint: t("nav.leads"), to: "/app/leads?create=1", icon: Plus, priority: 20, resource: "leads", action: "create" },
+      { id: "open-leads", label: t("command.openLeads"), hint: t("nav.leads"), to: "/app/leads", icon: Search, priority: 10, resource: "leads" },
+      { id: "open-clients", label: t("command.openClients"), hint: t("nav.clients"), to: "/app/clients", icon: Search, priority: 10, resource: "clients" },
+      { id: "open-deals", label: t("command.openDeals"), hint: t("nav.deals"), to: "/app/deals", icon: Search, priority: 10, resource: "deals" },
+      { id: "open-messages", label: t("command.openMessages"), hint: t("nav.conversations"), to: "/app/conversations", icon: Search, priority: 10, resource: "conversations" },
+      { id: "open-settings", label: t("command.openSettings"), hint: t("nav.settings"), to: "/app/settings", icon: Settings, priority: 10, resource: "settings", action: "update" },
+      { id: "open-ai-agents", label: t("command.openAiAgents"), hint: t("nav.aiAgents"), to: "/app/ai-agents", icon: Search, priority: 10, resource: "ai_automation" },
+    ].filter((command) => !command.resource || hasPermission(user, businessId, command.resource, command.action));
+    const leadCommands = (canViewLeads ? leads.data || [] : []).map((lead) => {
       const client = (clients.data || []).find((item) => item.id === lead.client);
       const service = (services.data || []).find((item) => item.id === lead.service);
       return {
@@ -63,7 +87,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
         priority: 5,
       };
     });
-    const clientCommands = (clients.data || []).map((client) => ({
+    const clientCommands = (canViewClients ? clients.data || [] : []).map((client) => ({
       id: `client-${client.id}`,
       label: client.full_name,
       hint: [t("command.typeClient"), client.phone || client.email].filter(Boolean).join(" · "),
@@ -71,7 +95,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       icon: Search,
       priority: 3,
     }));
-    const serviceCommands = (services.data || []).map((service) => ({
+    const serviceCommands = (canViewServices ? services.data || [] : []).map((service) => ({
       id: `service-${service.id}`,
       label: service.name,
       hint: t("command.typeService"),
@@ -80,7 +104,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       priority: 2,
     }));
     return [...staticCommands, ...leadCommands, ...clientCommands, ...serviceCommands];
-  }, [clients.data, leads.data, services.data, t]);
+  }, [businessId, canViewClients, canViewLeads, canViewServices, clients.data, leads.data, services.data, t, user]);
   const filtered = commands
     .map((command) => ({ command, score: commandScore(`${command.label} ${command.hint}`, query) + command.priority }))
     .filter((item) => !query.trim() || item.score > item.command.priority)
@@ -110,6 +134,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
             return (
               <button
                 key={command.id}
+                data-testid={`command-${command.id}`}
                 type="button"
                 className={cn("zani-focus-ring flex w-full items-center gap-3 rounded-control px-3 py-3 text-left transition", index === 0 ? "bg-brand-50" : "hover:bg-surface-muted")}
                 onClick={() => {

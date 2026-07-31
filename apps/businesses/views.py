@@ -154,7 +154,11 @@ class TeamAccessMixin:
 
 class TeamMemberManagementViewSet(TeamAccessMixin, ModelViewSet):
     serializer_class = TeamMemberManagementSerializer
-    queryset = BusinessMember.objects.select_related("business", "user", "business_role").prefetch_related("team_memberships__team")
+    queryset = (
+        BusinessMember.objects.select_related("business", "user", "business_role")
+        .prefetch_related("team_memberships__team")
+        .order_by("pk")
+    )
 
     def get_queryset(self):
         return self.queryset.filter(business_id__in=self.accessible_business_ids(Actions.VIEW))

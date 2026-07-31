@@ -656,7 +656,7 @@ Completion evidence (2026-07-30):
 
 #### F-401 — Frontend Role and Workflow Certification
 
-Status: `IN_PROGRESS`
+Status: `DONE`
 Owner: UI/UX  
 Depends on: X-301
 
@@ -668,6 +668,32 @@ Fix only certification defects; no unrelated redesign.
 
 Assignment: 2026-07-31, `codex/f401-frontend-certification` from the accepted
 P3 integration baseline `9067d8b`.
+
+Completion evidence (2026-07-31):
+
+- source branch is clean and pushed through
+  `f92225b49380b00dbf7095d65729bd851c0402a5`; integrated as `9533a86` and
+  `fdf4d1a`;
+- Settings navigation now requires the same `settings:update` permission as
+  the route, and Command Palette commands, entity queries and cached dynamic
+  results use the current business permission/action/capability contract;
+- owner, manager, operator and doctor role visibility, dentistry-disabled
+  Deals, recoverable queue/calendar/provider states and real retry interaction
+  are covered in the focused browser matrix;
+- the first independent review rejected an unconditional Command Palette path
+  and a retry false-green; the focused correction closed both and the same
+  reviewer accepted the corrected result;
+- source verification passed daily-workspace policy `6/6`, the final
+  desktop/mobile correction matrix `4` runnable tests with `2` intentional
+  project skips, accessibility `10` runnable tests, interaction audit across
+  `12` routes, visual audit across `13` route captures and the complete
+  frontend quality gate;
+- manager integration verification passed daily-workspace policy `6/6`, the
+  production app/widget build with `4481` aligned i18n keys, bundle budget
+  (`254.9 kB` app shell, no JavaScript chunk above `500 kB`) and committed-range
+  diff hygiene;
+- no backend domain/API, migration, dependency, notification, BusinessEvent,
+  AI, live-provider, production-environment, redesign or new-feature change.
 
 #### B-401 — Backend Business-Flow Certification
 
@@ -710,9 +736,12 @@ Completion evidence (2026-07-31):
 
 #### X-401 — Final Integrated Pre-Pilot Gate
 
-Status: `LOCKED`  
+Status: `IN_PROGRESS`  
 Owner: Manager  
 Depends on: F-401 and B-401 integrated
+
+Assignment: 2026-07-31, manager certification on
+`codex/project-integration-2026-07` after accepted F-401/B-401 integration.
 
 The manager must:
 

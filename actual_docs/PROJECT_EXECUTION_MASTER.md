@@ -656,7 +656,7 @@ Completion evidence (2026-07-30):
 
 #### F-401 — Frontend Role and Workflow Certification
 
-Status: `READY`
+Status: `IN_PROGRESS`
 Owner: UI/UX  
 Depends on: X-301
 
@@ -666,9 +666,12 @@ Settings. Cover success, empty, forbidden, disabled-module,
 provider-unavailable and recoverable failure states on desktop and mobile.
 Fix only certification defects; no unrelated redesign.
 
+Assignment: 2026-07-31, `codex/f401-frontend-certification` from the accepted
+P3 integration baseline `9067d8b`.
+
 #### B-401 — Backend Business-Flow Certification
 
-Status: `READY`
+Status: `IN_PROGRESS`
 Owner: Features/Backend  
 Depends on: X-301
 
@@ -676,6 +679,9 @@ Certify clean migrations, full suite, cross-entity E2E, permission/tenant/
 capability matrix, AI approval/no-data/provider-unavailable behavior, integration
 mock retry/idempotency and secret/config safety. Live-provider checks stay
 `EXTERNAL_BLOCKED`.
+
+Assignment: 2026-07-31, `codex/b401-backend-certification` from the accepted
+P3 integration baseline `9067d8b`.
 
 #### X-401 — Final Integrated Pre-Pilot Gate
 

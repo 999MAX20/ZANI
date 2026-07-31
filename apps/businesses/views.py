@@ -68,7 +68,7 @@ class BusinessViewSet(ModelViewSet):
 
 
 class BusinessMemberViewSet(TenantModelViewSet):
-    queryset = BusinessMember.objects.select_related("business", "user")
+    queryset = BusinessMember.objects.select_related("business", "user").order_by("pk")
     serializer_class = BusinessMemberSerializer
     access_resource = Resources.TEAM
 

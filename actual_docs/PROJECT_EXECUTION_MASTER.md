@@ -736,7 +736,7 @@ Completion evidence (2026-07-31):
 
 #### X-401 — Final Integrated Pre-Pilot Gate
 
-Status: `IN_PROGRESS`  
+Status: `IN_PROGRESS`
 Owner: Manager  
 Depends on: F-401 and B-401 integrated
 

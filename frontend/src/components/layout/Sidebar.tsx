@@ -35,6 +35,7 @@ type SidebarItem = {
   label: string;
   icon: typeof Home;
   resource?: string;
+  action?: string;
   children?: SidebarItem[];
 };
 
@@ -83,7 +84,7 @@ const desktopSections = [
           { to: "/app/timeline", label: "nav.timeline", icon: Clock3, resource: "analytics" },
         ],
       },
-      { to: "/app/settings", label: "nav.settings", icon: Settings, resource: "settings" },
+      { to: "/app/settings", label: "nav.settings", icon: Settings, resource: "settings", action: "update" },
     ],
   },
 ] satisfies SidebarSection[];
@@ -127,7 +128,7 @@ const mobileDrawerSections = [
           { to: "/app/timeline", label: "nav.timeline", icon: Clock3, resource: "analytics" },
         ],
       },
-      { to: "/app/settings", label: "nav.settings", icon: Settings, resource: "settings" },
+      { to: "/app/settings", label: "nav.settings", icon: Settings, resource: "settings", action: "update" },
     ],
   },
 ] satisfies SidebarSection[];
@@ -138,7 +139,7 @@ function isItemActive(pathname: string, to?: string) {
 }
 
 function isSidebarItemVisible(item: SidebarItem, user: ReturnType<typeof useAuth>["user"], businessId?: number): boolean {
-  if (item.resource && !hasPermission(user, businessId, item.resource)) return false;
+  if (item.resource && !hasPermission(user, businessId, item.resource, item.action)) return false;
   if (!item.children?.length) return true;
   return item.children.some((child) => isSidebarItemVisible(child, user, businessId));
 }

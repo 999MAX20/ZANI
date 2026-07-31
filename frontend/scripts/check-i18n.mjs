@@ -12,7 +12,7 @@ function dictionaryBlock(name) {
 
 function parseDictionary(block) {
   return Object.fromEntries(
-    [...block.matchAll(/"([^"]+)":\s*"((?:\\.|[^"])*)"/g)].map((match) => [match[1], match[2]]),
+    [...block.matchAll(/^\s*"([^"]+)":/gm)].map((match) => [match[1], true]),
   );
 }
 
@@ -25,6 +25,14 @@ const dictionaries = {
 const allKeys = new Set(Object.values(dictionaries).flatMap((dictionary) => Object.keys(dictionary)));
 const failures = [];
 
+function sourceFiles(directory) {
+  return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const target = path.join(directory, entry.name);
+    if (entry.isDirectory()) return sourceFiles(target);
+    return /\.(ts|tsx)$/.test(entry.name) ? [target] : [];
+  });
+}
+
 for (const [language, dictionary] of Object.entries(dictionaries)) {
   const missing = [...allKeys].filter((key) => !(key in dictionary));
   if (missing.length) {
@@ -32,9 +40,21 @@ for (const [language, dictionary] of Object.entries(dictionaries)) {
   }
 }
 
+const referencedKeys = new Set();
+for (const file of sourceFiles(path.resolve("src"))) {
+  const source = fs.readFileSync(file, "utf8");
+  for (const match of source.matchAll(/\bt\(\s*["'`]([^"'`]+)["'`]/g)) {
+    if (!match[1].includes("${")) referencedKeys.add(match[1]);
+  }
+}
+const missingRuntimeKeys = [...referencedKeys].filter((key) => !(key in dictionaries.ru));
+if (missingRuntimeKeys.length) {
+  failures.push(`runtime: missing ${missingRuntimeKeys.length} referenced keys: ${missingRuntimeKeys.slice(0, 30).join(", ")}`);
+}
+
 if (failures.length) {
   console.error(`i18n dictionary parity failed:\n${failures.join("\n")}`);
   process.exit(1);
 }
 
-console.log(`i18n dictionary parity OK: ${allKeys.size} keys across ru/kk/en.`);
+console.log(`i18n dictionary and runtime references OK: ${allKeys.size} keys across ru/kk/en.`);

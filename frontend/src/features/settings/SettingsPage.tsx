@@ -1056,7 +1056,7 @@ export function SettingsPage() {
                   </p>
                 </div>
                 <div className="rounded-2xl border border-zani-border bg-surface-muted px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-zani-subtle">
-                  {user?.memberships?.[0]?.role || "role"} В·{" "}
+                  {user?.memberships?.[0]?.role || "role"} ·{" "}
                   {user?.effective_permissions?.[String(business?.id || "")]
                     ?.length || 0}{" "}
                   {t("settings.permissions")}
@@ -1196,7 +1196,7 @@ export function SettingsPage() {
                               selectedMember.user.email}
                           </p>
                           <p className="mt-1 text-sm text-zani-subtle">
-                            {selectedMember.user.email} В·{" "}
+                            {selectedMember.user.email} ·{" "}
                             {translatedTeamRoleOptions.find(
                               (role) => role.value === selectedMember.role,
                             )?.label ||
@@ -1439,11 +1439,11 @@ export function SettingsPage() {
                                   {invitation.full_name || invitation.email}
                                 </p>
                                 <p className="text-xs text-zani-subtle">
-                                  {invitation.email} В·{" "}
+                                  {invitation.email} ·{" "}
                                   {translatedTeamRoleOptions.find(
                                     (role) => role.value === invitation.role,
                                   )?.label || invitation.role}{" "}
-                                  В· {t(`status.${invitation.status}`)}
+                                  · {t(`status.${invitation.status}`)}
                                 </p>
                               </div>
                               <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-3 sm:flex sm:flex-wrap">
@@ -1637,7 +1637,7 @@ export function SettingsPage() {
                                 )}
                               </p>
                               <p className="mt-1 text-xs text-zani-subtle">
-                                {log.actor_email || "system"} В·{" "}
+                                {log.actor_email || "system"} ·{" "}
                                 {new Date(log.created_at).toLocaleString(
                                   locale,
                                 )}
@@ -1672,7 +1672,7 @@ export function SettingsPage() {
                                 {item.email || item.user_email}
                               </p>
                               <p className="text-xs text-zani-subtle">
-                                {item.ip_address || t("settings.noIp")} В·{" "}
+                                {item.ip_address || t("settings.noIp")} ·{" "}
                                 {new Date(item.created_at).toLocaleString(
                                   locale,
                                 )}
@@ -1714,7 +1714,7 @@ export function SettingsPage() {
                               {grant.is_active
                                 ? t("settings.active")
                                 : t("settings.inactive")}{" "}
-                              В· {t("settings.until")}{" "}
+                              · {t("settings.until")}{" "}
                               {new Date(grant.expires_at).toLocaleString(
                                 locale,
                               )}
@@ -2186,7 +2186,7 @@ export function SettingsPage() {
                                   .map((resource) =>
                                     permissionResourceLabel(resource, t),
                                   )
-                                  .join(" В· ")}
+                                  .join(" · ")}
                               </p>
                             </div>
                             <div className="flex flex-wrap gap-2">
@@ -2634,8 +2634,8 @@ export function SettingsPage() {
                             {t("settings.technicalDetails")}
                           </summary>
                           <p className="mt-2 rounded-2xl bg-surface-card px-3 py-2 text-xs font-semibold text-zani-subtle">
-                            {field.entity_type} В· {field.field_type} В·{" "}
-                            {field.key} В· #{field.sort_order}
+                            {field.entity_type} · {field.field_type} ·{" "}
+                            {field.key} · #{field.sort_order}
                           </p>
                           <p className="mt-2 text-xs font-semibold text-zani-subtle">
                             View:{" "}
@@ -2644,7 +2644,7 @@ export function SettingsPage() {
                             ) && field.permissions_json.view_roles.length
                               ? field.permissions_json.view_roles.join(", ")
                               : "all"}{" "}
-                            В· Edit:{" "}
+                            · {t("common.edit")}: {" "}
                             {Array.isArray(
                               field.permissions_json?.edit_roles,
                             ) && field.permissions_json.edit_roles.length

@@ -255,6 +255,7 @@ export function ProviderCard({
     <Button
       type="button"
       className="h-8 min-w-[96px] rounded-lg px-3 text-xs"
+      aria-label={t(isConnected ? "integrations.card.configureContext" : "integrations.card.connectContext", { title })}
       disabled={!canManage || isUnavailable}
       onClick={handlePrimaryAction}
     >

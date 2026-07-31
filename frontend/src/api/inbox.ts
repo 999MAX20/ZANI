@@ -30,6 +30,7 @@ export type InboxSummary = {
     is_connected: boolean;
   }>;
   next_actions: Array<{
+    code?: string;
     label: string;
     href: string;
     priority: "low" | "normal" | "high" | "urgent" | string;

@@ -85,7 +85,7 @@ function LeadCardContent({ lead }: { lead: Lead | null }) {
         <StatusBadge status={lead.status} />
       </div>
       <p className="text-sm leading-6 text-zani-subtle">{lead.message || t("crmCard.noLeadMessage")}</p>
-      <p className="mt-3 text-xs font-semibold text-zani-faint">{lead.source} В· {formatDateTime(lead.created_at)}</p>
+      <p className="mt-3 text-xs font-semibold text-zani-faint">{lead.source} · {formatDateTime(lead.created_at)}</p>
     </div>
   );
 }

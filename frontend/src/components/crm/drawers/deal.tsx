@@ -68,7 +68,7 @@ export function DealDrawerContent({ data, entity, onTabChange }: { data: CrmCard
               </div>
               <h3 className="truncate text-xl font-semibold text-zani-ink">{deal.title}</h3>
               <p className="mt-1 text-sm font-semibold text-zani-muted">
-                {[client?.full_name || deal.client_name, `${Number(deal.amount || 0).toLocaleString("ru-RU")} ${deal.currency}`].filter(Boolean).join(" В· ")}
+                {[client?.full_name || deal.client_name, `${Number(deal.amount || 0).toLocaleString("ru-RU")} ${deal.currency}`].filter(Boolean).join(" · ")}
               </p>
             </div>
           </div>

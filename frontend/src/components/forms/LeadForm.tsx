@@ -48,7 +48,7 @@ export function LeadForm({
   const form = useForm<Values>({
     resolver: zodResolver(createSchema(t)),
     defaultValues: {
-      client: initial?.client || clients[0]?.id || 0,
+      client: initial?.client || 0,
       service: initial?.service || undefined,
       source: initial?.source || "manual",
       message: initial?.message || "",
@@ -104,7 +104,12 @@ export function LeadForm({
           </Link>
         </div>
       ) : null}
-      <Select label={t("appointment.client")} options={[{ value: 0, label: t("appointment.selectClient") }, ...clients.map((client) => ({ value: client.id, label: `${client.full_name} ${client.phone || ""}` }))]} {...form.register("client")} />
+      <Select
+        label={t("appointment.client")}
+        error={form.formState.errors.client?.message}
+        options={[{ value: 0, label: t("appointment.selectClient") }, ...clients.map((client) => ({ value: client.id, label: `${client.full_name} ${client.phone || ""}` }))]}
+        {...form.register("client")}
+      />
       {duplicates.length || relatedLeadsCount ? (
         <div className="rounded-card border border-[rgba(151,90,22,0.24)] bg-[var(--zani-warning-soft)] p-4 text-sm text-zani-warning">
           <p className="font-semibold">{t("leadForm.relatedTitle")}</p>

@@ -77,7 +77,7 @@ export function AppointmentDrawerContent({ data, entity }: { data: CrmCardPayloa
   const isTerminal = ["cancelled", "completed", "no_show"].includes(appointment.status);
   const clientName = client?.full_name || appointment.client_name || `#${appointment.client}`;
   const serviceName = appointment.service_name || `#${appointment.service}`;
-  const serviceMeta = appointment.service_duration_minutes ? `${serviceName} В· ${appointment.service_duration_minutes} ${t("appointment.minutes")}` : serviceName;
+  const serviceMeta = appointment.service_duration_minutes ? `${serviceName} · ${appointment.service_duration_minutes} ${t("appointment.minutes")}` : serviceName;
   const resourceName = appointment.resource_name || (appointment.resource ? `#${appointment.resource}` : t("appointment.noResource"));
 
   return (
@@ -91,7 +91,7 @@ export function AppointmentDrawerContent({ data, entity }: { data: CrmCardPayloa
             </div>
             <h3 className="truncate text-xl font-semibold text-zani-ink">{clientName}</h3>
             <p className="mt-1 text-sm font-semibold text-zani-muted">
-              {serviceMeta} В· {formatDateTime(appointment.start_at)} - {formatDateTime(appointment.end_at)}
+              {serviceMeta} · {formatDateTime(appointment.start_at)} - {formatDateTime(appointment.end_at)}
             </p>
           </div>
           <div className="flex shrink-0 flex-wrap gap-2">

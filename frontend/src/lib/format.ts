@@ -1,27 +1,47 @@
-export function formatDateTime(value?: string | null) {
+let activeBusinessTimeZone = "UTC";
+
+export function setActiveBusinessTimeZone(timeZone?: string | null) {
+  activeBusinessTimeZone = timeZone || "UTC";
+}
+
+export function formatDateTime(value?: string | null, timeZone = activeBusinessTimeZone) {
   if (!value) return "-";
   return new Intl.DateTimeFormat("ru-RU", {
     day: "2-digit",
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
+    timeZone,
   }).format(new Date(value));
 }
 
-export function formatDate(value?: string | null) {
+export function formatDate(value?: string | null, timeZone = activeBusinessTimeZone) {
   if (!value) return "-";
   return new Intl.DateTimeFormat("ru-RU", {
     day: "2-digit",
     month: "short",
     year: "numeric",
+    timeZone,
   }).format(new Date(value));
 }
 
-export function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+export function formatMoney(value?: string | number | null, currency = "KZT") {
+  if (value === null || value === undefined || value === "") return "-";
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return "-";
+  return new Intl.NumberFormat("ru-KZ", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(amount);
 }
 
-export function dateInTimeZone(value: Date | string, timeZone = "UTC") {
+export function todayISO() {
+  return dateInTimeZone(new Date(), activeBusinessTimeZone);
+}
+
+export function dateInTimeZone(value: Date | string, timeZone = activeBusinessTimeZone) {
   const date = typeof value === "string" ? new Date(value) : value;
   let parts: Intl.DateTimeFormatPart[];
   try {
@@ -43,11 +63,11 @@ export function dateInTimeZone(value: Date | string, timeZone = "UTC") {
   return `${part("year")}-${part("month")}-${part("day")}`;
 }
 
-export function todayInTimeZone(timeZone = "UTC") {
+export function todayInTimeZone(timeZone = activeBusinessTimeZone) {
   return dateInTimeZone(new Date(), timeZone);
 }
 
-export function hourInTimeZone(value: Date | string, timeZone = "UTC") {
+export function hourInTimeZone(value: Date | string, timeZone = activeBusinessTimeZone) {
   const date = typeof value === "string" ? new Date(value) : value;
   let hour: string;
   try {
@@ -66,7 +86,7 @@ export function hourInTimeZone(value: Date | string, timeZone = "UTC") {
   return Number(hour === "24" ? "0" : hour);
 }
 
-export function minutesInTimeZone(value: Date | string, timeZone = "UTC") {
+export function minutesInTimeZone(value: Date | string, timeZone = activeBusinessTimeZone) {
   const date = typeof value === "string" ? new Date(value) : value;
   let parts: Intl.DateTimeFormatPart[];
   try {
@@ -90,7 +110,8 @@ export function minutesInTimeZone(value: Date | string, timeZone = "UTC") {
 }
 
 export function tomorrowISO() {
-  const date = new Date();
-  date.setDate(date.getDate() + 1);
+  const today = todayInTimeZone(activeBusinessTimeZone);
+  const [year, month, day] = today.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day + 1));
   return date.toISOString().slice(0, 10);
 }

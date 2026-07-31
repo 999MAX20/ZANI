@@ -76,7 +76,7 @@ export function BusinessSettingsForm({
     <form className="grid gap-4" onSubmit={form.handleSubmit((values) => onSubmit(values as Partial<Business>))}>
       <div className="grid gap-4 sm:grid-cols-2">
         <Input label={t("businessForm.name")} error={form.formState.errors.name?.message} {...form.register("name")} />
-        <Input label="Slug" error={form.formState.errors.slug?.message} {...form.register("slug")} />
+        <Input label={t("businessForm.slug")} error={form.formState.errors.slug?.message} {...form.register("slug")} />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <Select label={t("businessForm.type")} options={[
@@ -103,34 +103,34 @@ export function BusinessSettingsForm({
         <Input label="Instagram" {...form.register("instagram")} />
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
-        <Select label="Язык бизнеса" options={[
-          { value: "ru", label: "Русский" },
-          { value: "kk", label: "Қазақша" },
-          { value: "en", label: "English" },
+        <Select label={t("businessForm.language")} options={[
+          { value: "ru", label: t("language.ru") },
+          { value: "kk", label: t("language.kk") },
+          { value: "en", label: t("language.en") },
         ]} {...form.register("language")} />
-        <Select label="Валюта" options={[
+        <Select label={t("businessForm.currency")} options={[
           { value: "KZT", label: "KZT" },
           { value: "USD", label: "USD" },
           { value: "EUR", label: "EUR" },
           { value: "RUB", label: "RUB" },
         ]} {...form.register("currency")} />
-        <Input label="SLA ответа, минут" type="number" error={form.formState.errors.sla_minutes?.message} {...form.register("sla_minutes")} />
+        <Input label={t("businessForm.slaMinutes")} type="number" error={form.formState.errors.sla_minutes?.message} {...form.register("sla_minutes")} />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Input label="Юридическое название" {...form.register("legal_name")} />
-        <Input label="БИН / ИИН" {...form.register("tax_id")} />
+        <Input label={t("businessForm.legalName")} {...form.register("legal_name")} />
+        <Input label={t("businessForm.taxId")} {...form.register("tax_id")} />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Input label="Email для счетов" error={form.formState.errors.invoice_email?.message} {...form.register("invoice_email")} />
-        <Input label="Буфер между записями, минут" type="number" error={form.formState.errors.booking_buffer_minutes?.message} {...form.register("booking_buffer_minutes")} />
+        <Input label={t("businessForm.invoiceEmail")} error={form.formState.errors.invoice_email?.message} {...form.register("invoice_email")} />
+        <Input label={t("businessForm.bookingBufferMinutes")} type="number" error={form.formState.errors.booking_buffer_minutes?.message} {...form.register("booking_buffer_minutes")} />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Input label="Цвет бренда" placeholder="#1D4ED8" {...form.register("brand_color")} />
-        <Input label="URL логотипа" error={form.formState.errors.brand_logo_url?.message} {...form.register("brand_logo_url")} />
+        <Input label={t("businessForm.brandColor")} placeholder="#1D4ED8" {...form.register("brand_color")} />
+        <Input label={t("businessForm.brandLogoUrl")} error={form.formState.errors.brand_logo_url?.message} {...form.register("brand_logo_url")} />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Textarea label="Политика отмены" rows={4} {...form.register("cancellation_policy")} />
-        <Textarea label="Предоплата и оплата" rows={4} {...form.register("prepayment_policy")} />
+        <Textarea label={t("businessForm.cancellationPolicy")} rows={4} {...form.register("cancellation_policy")} />
+        <Textarea label={t("businessForm.prepaymentPolicy")} rows={4} {...form.register("prepayment_policy")} />
       </div>
       <Button type="submit" isLoading={form.formState.isSubmitting}>{t("businessForm.save")}</Button>
     </form>

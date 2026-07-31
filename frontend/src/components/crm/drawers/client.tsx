@@ -50,7 +50,7 @@ export function ClientDrawerContent({ data, entity, actions }: { data: CrmCardPa
             {client.has_no_reply ? <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-600">{t("conversations.noReply")}</span> : null}
           </div>
           <h3 className="truncate text-xl font-semibold text-zani-ink">{client.full_name}</h3>
-          <p className="mt-1 break-words text-sm font-semibold text-zani-muted">{[client.phone, client.email].filter(Boolean).join(" В· ") || t("crmCard.noContacts")}</p>
+          <p className="mt-1 break-words text-sm font-semibold text-zani-muted">{[client.phone, client.email].filter(Boolean).join(" · ") || t("crmCard.noContacts")}</p>
         </div>
         <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(132px,1fr))] gap-2 border-t border-zani-border pt-4">
           {actions?.onEdit ? (
@@ -98,7 +98,7 @@ export function ClientDrawerContent({ data, entity, actions }: { data: CrmCardPa
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zani-faint">{t("crmCard.snapshotHistory")}</p>
             <p className="mt-2 text-sm font-semibold leading-6 text-zani-text">
-              {latestEvent ? `${latestEvent.text || latestEvent.event_type} В· ${formatDateTime(latestEvent.created_at)}` : t("crmCard.emptyTimelineText")}
+              {latestEvent ? `${latestEvent.text || latestEvent.event_type} · ${formatDateTime(latestEvent.created_at)}` : t("crmCard.emptyTimelineText")}
             </p>
           </div>
           <div>

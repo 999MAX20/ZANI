@@ -71,7 +71,7 @@ class PilotDemoSeedCommandTests(TestCase):
         self.assertTrue(Task.objects.filter(business=business, title__icontains="необработанными").exists())
         self.assertTrue(AIToolCallLog.objects.filter(business=business, tool_name="create_task", status=AIToolCallLog.Statuses.EXECUTED).exists())
         self.assertTrue(Notification.objects.filter(business=business, category="tasks").exists())
-        self.assertTrue(Task.objects.filter(business=business, assignee=operator, title__icontains="pilot-чат").exists())
+        self.assertTrue(Task.objects.filter(business=business, assignee=operator, title__icontains="ответить клиенту").exists())
         self.assertGreaterEqual(QuickReplyTemplate.objects.filter(business=business, is_active=True).count(), 3)
 
         # The reset command must be safe to run repeatedly after leads, clients,

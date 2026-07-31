@@ -220,7 +220,7 @@ export function TaskDrawer({
                 <h2 id={titleId} className="truncate text-2xl font-semibold tracking-tight text-zani-ink">{task.title}</h2>
                 <p className="mt-1 text-sm font-semibold text-zani-muted">
                   {assigneeLabel || t("tasks.noAssignee")}
-                  {task.reminder_at ? ` В· ${t("tasks.reminderAt")}: ${formatDateTime(task.reminder_at)}` : ""}
+                  {task.reminder_at ? ` · ${t("tasks.reminderAt")}: ${formatDateTime(task.reminder_at)}` : ""}
                 </p>
               </div>
               <Button type="button" variant="ghost" className="h-12 w-12 shrink-0 rounded-full px-0" onClick={onClose} aria-label={t("crmCard.close")}>
@@ -259,10 +259,10 @@ export function TaskDrawer({
                   {t("tasks.drawerOverviewTab")}
                 </TaskDrawerTabButton>
                 <TaskDrawerTabButton active={activeTab === "comments"} onClick={() => setActiveTab("comments")}>
-                  {t("tasks.drawerCommentsTab")} В· {comments.length}
+                  {t("tasks.drawerCommentsTab")} · {comments.length}
                 </TaskDrawerTabButton>
                 <TaskDrawerTabButton active={activeTab === "history"} onClick={() => setActiveTab("history")}>
-                  {t("tasks.drawerHistoryTab")} В· {activityEvents.length}
+                  {t("tasks.drawerHistoryTab")} · {activityEvents.length}
                 </TaskDrawerTabButton>
               </div>
             </div>
@@ -386,7 +386,7 @@ export function TaskDrawer({
                     {task.client ? <EntityChip onClick={() => onOpenEntity({ type: "client", id: Number(task.client) })}>{task.client_name || t("common.client")}</EntityChip> : null}
                     {task.lead ? <EntityChip onClick={() => onOpenEntity({ type: "lead", id: Number(task.lead) })}>{task.lead_title || t("crmCard.leadNumber", { id: task.lead })}</EntityChip> : null}
                     {task.deal ? <EntityChip onClick={() => onOpenEntity({ type: "deal", id: Number(task.deal) })}>{task.deal_title || t("nav.deals")}</EntityChip> : null}
-                    {task.appointment ? <EntityChip onClick={() => onOpenEntity({ type: "appointment", id: Number(task.appointment) })}>{task.appointment_service_name || t("nav.appointments")}{task.appointment_start_at ? ` В· ${formatDateTime(task.appointment_start_at)}` : ""}</EntityChip> : null}
+                    {task.appointment ? <EntityChip onClick={() => onOpenEntity({ type: "appointment", id: Number(task.appointment) })}>{task.appointment_service_name || t("nav.appointments")}{task.appointment_start_at ? ` · ${formatDateTime(task.appointment_start_at)}` : ""}</EntityChip> : null}
                     {task.conversation ? <EntityLinkChip href={`/app/conversations?conversation=${task.conversation}`}>{task.conversation_label || task.conversation_external_user_id || t("nav.conversations")}</EntityLinkChip> : null}
                     {!linkedEntitiesCount ? <p className="text-sm font-semibold text-zani-muted">{t("tasks.noLinkedEntities")}</p> : null}
                   </div>
@@ -414,7 +414,7 @@ export function TaskDrawer({
                         <div className="min-w-0">
                           <p className="text-sm leading-6 text-zani-text">{comment.text}</p>
                           <p className="mt-1 text-xs font-semibold text-zani-faint">
-                            {comment.author_name || comment.author_email || t("resources.typeStaff")} В· {formatDateTime(comment.created_at)}
+                            {comment.author_name || comment.author_email || t("resources.typeStaff")} · {formatDateTime(comment.created_at)}
                           </p>
                         </div>
                         <Button

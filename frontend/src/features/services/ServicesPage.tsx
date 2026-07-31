@@ -16,6 +16,7 @@ import { StatusBadge } from "../../components/ui/StatusBadge";
 import { ErrorState, LoadingState } from "../../components/ui/StateViews";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useEntityData } from "../../hooks/useEntityData";
+import { formatMoney } from "../../lib/format";
 import { useI18n } from "../../lib/i18n";
 import type { Service } from "../../types";
 
@@ -82,7 +83,7 @@ export function ServicesPage() {
         columns={[
           { header: t("services.name"), cell: (service) => <span className="font-medium text-ink">{service.name}</span> },
           { header: t("services.duration"), cell: (service) => `${service.duration_minutes} ${t("appointment.minutes")}` },
-          { header: t("services.priceFrom"), cell: (service) => service.price_from || "-" },
+          { header: t("services.priceFrom"), cell: (service) => formatMoney(service.price_from) },
           { header: t("services.bookings"), cell: (service) => serviceUsage(service) },
           { header: t("appointment.status"), cell: (service) => <StatusBadge status={service.is_active ? "active" : "inactive"} /> },
           { header: t("appointments.actions"), cell: (service) => <Button variant="ghost" onClick={() => { setEditing(service); setOpen(true); }}>{t("appointments.edit")}</Button> },

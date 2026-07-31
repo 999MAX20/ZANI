@@ -81,7 +81,7 @@ export const DealListItem = memo(function DealListItem({
               currency={deal.currency}
               className="text-[12px] font-bold text-zani-text"
             />
-            <span className="text-zani-muted">В·</span>
+            <span className="text-zani-muted">·</span>
             <span className="truncate text-[11px] font-semibold text-zani-muted">
               {deal.stageEntity?.name || deal.status}
             </span>
@@ -120,7 +120,7 @@ export const DealListItem = memo(function DealListItem({
             onOpen(deal);
           }}
           onDoubleClick={(event) => event.stopPropagation()}
-          aria-label={t("deals.openDeal")}
+          aria-label={t("deals.openDealContext", { title: deal.title })}
         >
           <SquareArrowOutUpRight size={16} />
         </button>

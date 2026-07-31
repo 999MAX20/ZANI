@@ -14,8 +14,8 @@ export function TestAndLaunchSection({
   bot,
   channelsCount,
   activeChannelsCount,
-  knowledgeCount,
   onboardingSteps,
+  launchReady,
   latestConversation,
   latestMessages,
   suggestedReply,
@@ -27,8 +27,8 @@ export function TestAndLaunchSection({
   bot: BotType;
   channelsCount: number;
   activeChannelsCount: number;
-  knowledgeCount: number;
   onboardingSteps: Array<{ done: boolean; title: string; text: string; href: string }>;
+  launchReady: boolean;
   latestConversation?: { id: Id } | null;
   latestMessages: Array<{ id: Id; direction: string; text: string }>;
   suggestedReply: BotSuggestedReplyResponse | null;
@@ -53,12 +53,12 @@ export function TestAndLaunchSection({
             <div>
               <h3 className="text-xl font-black text-midnight">{t("aiAgents.launchControlTitle")}</h3>
               <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">{t("aiAgents.launchControlText")}</p>
-              <FieldHint>{knowledgeCount > 0 && activeChannelsCount > 0 ? t("aiAgents.hint.launchReady") : t("aiAgents.hint.launchNotReady")}</FieldHint>
+              <FieldHint>{launchReady ? t("aiAgents.hint.launchReady") : t("aiAgents.hint.launchNotReady")}</FieldHint>
             </div>
             <Button
               type="button"
               variant={bot.status === "active" ? "secondary" : "ai"}
-              disabled={!canManage}
+              disabled={!canManage || (bot.status !== "active" && !launchReady)}
               isLoading={updateBot.isPending}
               onClick={() => updateBot.mutate({ status: bot.status === "active" ? "paused" : "active" })}
             >

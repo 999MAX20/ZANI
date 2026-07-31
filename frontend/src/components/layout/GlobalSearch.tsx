@@ -55,8 +55,8 @@ export function GlobalSearch() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [open, setOpen] = useState(false);
   const [mobileExpanded, setMobileExpanded] = useState(false);
-  const [scope, setScope] = useState<SearchScope>("page");
-  const [query, setQuery] = useState(searchParams.get("search") || "");
+  const [scope, setScope] = useState<SearchScope>("global");
+  const [query, setQuery] = useState("");
   const rootRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const activeContext = useMemo(() => getSearchContext(location.pathname), [location.pathname]);
@@ -145,8 +145,8 @@ export function GlobalSearch() {
   }, [activeContext.types, items, query, scope]);
 
   useEffect(() => {
-    setQuery(searchParams.get("search") || "");
-  }, [location.pathname, searchParams]);
+    if (scope === "page") setQuery(searchParams.get("search") || "");
+  }, [location.pathname, scope, searchParams]);
 
   useEffect(() => {
     if (scope !== "page" || activeContext.id === "default") return;

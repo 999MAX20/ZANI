@@ -83,7 +83,7 @@ export function BillingSection({
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-zani-subtle">
               {hasSubscription
-                ? `${formatPrice(currentPlan?.monthly_price, t, locale)} В· ${t("settings.status")}: ${subscription?.status}`
+                ? `${formatPrice(currentPlan?.monthly_price, t, locale)} · ${t("settings.status")}: ${subscription?.status}`
                 : t("settings.billingNoSubscription")}
             </p>
             {subscription?.requested_plan ? (
@@ -241,7 +241,7 @@ export function BillingSection({
                 onChange={(event) => setSelectedPlanId(event.target.value)}
                 options={plans.map((plan) => ({
                   value: String(plan.id),
-                  label: `${plan.name} В· ${formatPrice(plan.monthly_price, t, locale)}`,
+                  label: `${plan.name} · ${formatPrice(plan.monthly_price, t, locale)}`,
                 }))}
               />
               <Button

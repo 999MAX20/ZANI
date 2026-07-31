@@ -98,7 +98,26 @@ type BriefItem = {
   action?: string;
   tone: "brand" | "amber" | "red" | "ai";
   sourceIds?: string[];
+  sourceLabels?: string[];
 };
+
+function businessSourceLabel(
+  source: string | null | undefined,
+  t: (key: string) => string,
+) {
+  if (!source) return t("analytics.source.unknown");
+  const normalized = source.toLowerCase();
+  const knownSources = new Set([
+    "website",
+    "landing",
+    "telegram",
+    "whatsapp",
+    "instagram",
+    "manual",
+    "ai_tool",
+  ]);
+  return knownSources.has(normalized) ? t(`source.${normalized}`) : source;
+}
 
 function initials(value?: string | null) {
   const source = (value || "ZANI").trim();
@@ -272,10 +291,10 @@ function AiBriefCard({ items, meta }: { items: BriefItem[]; meta: string }) {
                 <p className="mt-1 text-xs leading-5 text-zani-subtle">
                   {item.text}
                 </p>
-                {item.sourceIds?.length ? (
+                {item.sourceLabels?.length ? (
                   <p className="mt-2 rounded-control bg-surface-muted px-2 py-1 text-[11px] font-bold text-zani-subtle">
                     {t("dashboard.ownerBriefSourceIds", {
-                      ids: item.sourceIds.join(", "),
+                      ids: item.sourceLabels.join(", "),
                     })}
                   </p>
                 ) : null}
@@ -356,7 +375,9 @@ function LeadRow({
           {title || t("dashboard.leadNumber", { id: lead.id })}
         </span>
         <span className="block truncate text-xs font-semibold text-zani-subtle">
-          {service?.name || source || t("dashboard.noMessage")}
+          {service?.name ||
+            businessSourceLabel(source, t) ||
+            t("dashboard.noMessage")}
         </span>
       </span>
       <StatusBadge status={lead.status} size="sm" />
@@ -524,21 +545,45 @@ function buildBriefItems({
   aiStatus?: AIAssistantStatusResponse;
   t: (key: string, vars?: Record<string, string | number>) => string;
 }): BriefItem[] {
+  const sourcesById = new Map(
+    (ownerBrief?.sources || []).map((source) => [source.id, source]),
+  );
   const recommendations =
-    ownerBrief?.recommendations.slice(0, 4).map((recommendation) => ({
-      key: recommendation.id,
-      title: recommendation.label,
-      text: recommendation.description,
-      href: recommendation.href,
-      action: t("dashboard.openPrioritySource"),
-      tone:
-        recommendation.priority === "high"
-          ? ("red" as const)
-          : recommendation.priority === "medium"
-            ? ("amber" as const)
-            : ("ai" as const),
-      sourceIds: recommendation.source_ids,
-    })) || [];
+    ownerBrief?.recommendations.slice(0, 4).map((recommendation) => {
+      const sourceLabels = recommendation.source_ids
+        .map((sourceId) => sourcesById.get(sourceId)?.label)
+        .filter((label): label is string => Boolean(label));
+      const primarySource =
+        sourceLabels[0] || t("dashboard.ownerBriefFallbackSource");
+      const categoryKeys: Record<string, string> = {
+        stale_leads: "staleLead",
+        overdue_tasks: "overdueTask",
+        unanswered_conversations: "unansweredConversation",
+        stalled_deals: "stalledDeal",
+        failed_connectors: "failedConnector",
+      };
+      const copyKey = categoryKeys[recommendation.category];
+
+      return {
+        key: recommendation.id,
+        title: copyKey
+          ? t(`dashboard.ownerBrief.${copyKey}.title`, { source: primarySource })
+          : recommendation.label,
+        text: copyKey
+          ? t(`dashboard.ownerBrief.${copyKey}.text`)
+          : recommendation.description,
+        href: recommendation.href,
+        action: t("dashboard.openPrioritySource"),
+        tone:
+          recommendation.priority === "high"
+            ? ("red" as const)
+            : recommendation.priority === "medium"
+              ? ("amber" as const)
+              : ("ai" as const),
+        sourceIds: recommendation.source_ids,
+        sourceLabels,
+      };
+    }) || [];
   if (recommendations.length) return recommendations;
   if (ownerBrief?.summary.no_data) {
     return [
@@ -632,17 +677,18 @@ export function OwnerDashboard({
   const activeLeads = leads.filter((lead) =>
     ["new", "contacted", "in_progress"].includes(lead.status),
   );
-  const visibleLeads =
-    workQueues?.queues.stale_leads.slice(0, 4) || activeLeads.slice(0, 4);
+  const visibleLeads = workQueues?.queues.stale_leads.length
+    ? workQueues.queues.stale_leads.slice(0, 4)
+    : activeLeads.slice(0, 4);
   const visibleAppointments = workQueues
     ? uniqueById([
         ...workQueues.queues.appointment_confirmations,
         ...workQueues.queues.upcoming_appointments,
       ]).slice(0, 4)
     : appointments.slice(0, 4);
-  const visibleTasks =
-    workQueues?.queues.overdue_tasks.slice(0, 4) ||
-    tasks
+  const visibleTasks = workQueues?.queues.overdue_tasks.length
+    ? workQueues.queues.overdue_tasks.slice(0, 4)
+    : tasks
       .filter((task) => task.status !== "done" && task.status !== "cancelled")
       .slice(0, 4);
   const visibleConversations = uniqueQueueItems<WorkQueueConversationItem>([
@@ -814,7 +860,7 @@ export function OwnerDashboard({
           <MetricTile
             label={t("dashboard.newLeadsShort")}
             value={newLeadsCount}
-            hint={t("dashboard.needProcess")}
+            hint={t("dashboard.businessScopeNeedsProcess")}
             icon={UserPlus}
             tone="brand"
             className="shadow-soft"
@@ -837,7 +883,7 @@ export function OwnerDashboard({
             hint={
               overdueTasks
                 ? t("dashboard.overdueTasksCount", { count: overdueTasks })
-                : t("dashboard.openFollowups")
+                : t("dashboard.teamScopeOpenFollowups")
             }
             icon={ListChecks}
             tone={overdueTasks ? "amber" : "slate"}
@@ -938,10 +984,10 @@ export function OwnerDashboard({
 
         {canViewTasks ? (
           <QueuePreview
-          title={t("dashboard.myTasks")}
+          title={t("dashboard.teamOpenTasks")}
           href="/app/tasks"
-          emptyTitle={t("dashboard.noOpenTasks")}
-          emptyDescription={t("dashboard.noOpenTasksText")}
+          emptyTitle={t("dashboard.noTeamOpenTasks")}
+          emptyDescription={t("dashboard.noTeamOpenTasksText")}
         >
           {visibleTasks.map((task) => (
             <TaskRow key={task.id} task={task} />
@@ -973,7 +1019,8 @@ export function OwnerDashboard({
                         {conversation.title}
                       </span>
                       <span className="block truncate text-xs font-semibold text-zani-subtle">
-                        {conversation.channel} / {conversation.unread_count}
+                        {businessSourceLabel(conversation.channel, t)} ·{" "}
+                        {conversation.unread_count}
                       </span>
                     </span>
                     <StatusBadge status={conversation.priority} size="sm" />

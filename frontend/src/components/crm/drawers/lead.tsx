@@ -80,7 +80,7 @@ export function LeadDrawerContent({ data, entity }: { data: CrmCardPayload; enti
               </div>
               <h3 className="truncate text-xl font-semibold text-zani-ink">{client?.full_name || lead.client_name || t("crmCard.leadNumber", { id: lead.id })}</h3>
               <p className="mt-1 text-sm font-semibold text-zani-muted">
-                {[client?.phone || lead.client_phone, client?.email || lead.client_email].filter(Boolean).join(" В· ") || t("crmCard.noContacts")}
+                {[client?.phone || lead.client_phone, client?.email || lead.client_email].filter(Boolean).join(" · ") || t("crmCard.noContacts")}
               </p>
             </div>
             <div className="flex shrink-0 flex-wrap gap-2">

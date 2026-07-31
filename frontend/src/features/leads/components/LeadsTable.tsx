@@ -210,7 +210,7 @@ function LeadTableRow({
           type="checkbox"
           checked={bulkSelected}
           onChange={onToggleBulk}
-          aria-label={t("leads.selectLeadRow")}
+          aria-label={t("leads.selectLeadRowContext", { title })}
         />
         <span
           className={cn(
@@ -235,20 +235,20 @@ function LeadTableRow({
         {[
           {
             id: "open",
-            label: t("leads.open"),
+            label: t("leads.openContext", { title }),
             icon: SquareArrowOutUpRight,
             onClick: onOpen,
           },
-          { id: "call", label: t("leads.call"), icon: Phone, onClick: onCall },
+          { id: "call", label: t("leads.callContext", { title }), icon: Phone, onClick: onCall },
           {
             id: "whatsapp",
-            label: "WhatsApp",
+            label: t("leads.whatsappContext", { title }),
             icon: MessageCircle,
             onClick: onWhatsApp,
           },
           {
             id: "more",
-            label: t("leads.moreActions"),
+            label: t("leads.moreActionsContext", { title }),
             icon: MoreHorizontal,
             onClick: (event: React.MouseEvent) => onContextMenu(event),
           },

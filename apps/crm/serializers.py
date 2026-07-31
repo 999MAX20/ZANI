@@ -105,7 +105,7 @@ class DealSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         request = self.context.get("request")
-        user = getattr(request, "user", None)
+        user = getattr(request, "user", None) or self.context.get("actor")
         if user and not can_view_sensitive_field(user, instance.business, Resources.DEALS, "amount"):
             data["amount"] = None
             data["currency"] = ""

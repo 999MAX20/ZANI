@@ -29,6 +29,9 @@ export function AgentActionsSection({
   canManage: boolean;
 }) {
   const { t } = useI18n();
+  const runtime = autoPipelineFromSettings(bot.settings_json || {});
+  const toolEnabled = (tool: string) => form.allowed_tools.includes(tool);
+  const leadTaskAutonomy = runtime.mode === "lead_task" || runtime.mode === "draft_deal";
   return (
     <div className="space-y-5">
       <HelpCard
@@ -36,8 +39,38 @@ export function AgentActionsSection({
         text={t("aiAgents.onboarding.actions.helpText")}
         recommendation={t("aiAgents.onboarding.actions.recommendation")}
       />
+      <Card>
+        <CardBody>
+          <h3 className="text-xl font-black text-midnight">{t("aiAgents.authority.title")}</h3>
+          <p className="mt-1 text-sm font-semibold text-slate-500">{t("aiAgents.authority.text")}</p>
+          <div className="mt-4 divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-slate-50 px-4">
+            <AuthorityRow label={t("aiAgents.authority.suggestions")} value={t("aiAgents.authority.suggestOnly")} />
+            <AuthorityRow
+              label={t("aiAgents.authority.leadTask")}
+              value={leadTaskAutonomy && toolEnabled("create_lead") && toolEnabled("create_task") ? t("aiAgents.authority.autonomous") : t("aiAgents.authority.off")}
+            />
+            <AuthorityRow
+              label={t("aiAgents.authority.draftDeal")}
+              value={runtime.mode === "draft_deal" && toolEnabled("create_deal") ? t("aiAgents.authority.autonomousDraft") : t("aiAgents.authority.off")}
+            />
+            <AuthorityRow
+              label={t("aiAgents.authority.appointment")}
+              value={runtime.create_appointment ? t("aiAgents.authority.explicitApproval") : t("aiAgents.authority.off")}
+            />
+          </div>
+        </CardBody>
+      </Card>
       <ControlSection bot={bot} updateBot={updateBot} canManage={canManage} />
       <FunctionsSection form={form} setForm={setForm} saveProfile={saveProfile} canManage={canManage} />
+    </div>
+  );
+}
+
+function AuthorityRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-4 py-3 text-sm">
+      <span className="font-bold text-slate-700">{label}</span>
+      <span className="text-right font-black text-midnight">{value}</span>
     </div>
   );
 }

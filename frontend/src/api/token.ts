@@ -95,10 +95,25 @@ export async function confirmPasswordReset(payload: PasswordResetConfirmPayload)
   return data;
 }
 
-export async function refreshToken() {
-  const { data } = await axios.post<{ access: string }>(`${baseURL}/api/auth/token/refresh/`, {}, { withCredentials: true });
-  tokenStorage.setAccess(data.access);
-  return data.access;
+let refreshSessionPromise: Promise<string> | null = null;
+
+export function refreshToken() {
+  if (!refreshSessionPromise) {
+    refreshSessionPromise = axios
+      .post<{ access: string }>(
+        `${baseURL}/api/auth/token/refresh/`,
+        {},
+        { withCredentials: true },
+      )
+      .then(({ data }) => {
+        tokenStorage.setAccess(data.access);
+        return data.access;
+      })
+      .finally(() => {
+        refreshSessionPromise = null;
+      });
+  }
+  return refreshSessionPromise;
 }
 
 export async function clearRefreshCookie() {

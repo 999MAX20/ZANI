@@ -163,7 +163,7 @@ export function AIAgentsPage() {
   }, [canonicalRoute, location.key, location.pathname, navigate]);
 
   const selectedProfile = useMemo(
-    () => (profiles.data || []).find((profile) => profile.bot === selectedBot?.id) || (profiles.data || [])[0] || null,
+    () => (profiles.data || []).find((profile) => profile.bot === selectedBot?.id) || null,
     [profiles.data, selectedBot?.id],
   );
   const [profileForm, setProfileForm] = useState<AgentFormState>(() => createDefaultProfile(selectedBot, t));
@@ -284,6 +284,7 @@ export function AIAgentsPage() {
   const selectedBotsOnly = selectedBot ? [selectedBot] : [];
   const activeChannelsCount = channels.filter((channel) => channel.status === "active").length;
   const activeKnowledgeCount = (knowledge.data || []).filter((item) => item.is_active).length;
+  const launchReady = Boolean(selectedProfile?.is_active && activeChannelsCount > 0 && activeKnowledgeCount > 0);
   const pageError = bots.error || botChannels.error || botConversations.error || botMessages.error || profiles.error || knowledge.error;
   const mutationError = createBot.error || updateBot.error || saveProfile.error || addChannel.error || toggleChannel.error || suggestReply.error;
   const activeSectionMeta = sections.find((section) => section.id === activeSection) || sections[0];
@@ -420,8 +421,8 @@ export function AIAgentsPage() {
             bot={selectedBot}
             channelsCount={channels.length}
             activeChannelsCount={activeChannelsCount}
-            knowledgeCount={activeKnowledgeCount}
             onboardingSteps={onboardingSteps}
+            launchReady={launchReady}
             latestConversation={latestConversation}
             latestMessages={latestMessages}
             suggestedReply={suggestedReply}

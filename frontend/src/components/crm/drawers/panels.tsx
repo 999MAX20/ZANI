@@ -277,7 +277,7 @@ export function EntityAttachmentsPanel({ data, entity }: { data: CrmCardPayload;
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-zani-ink">{attachment.original_name}</p>
                   <p className="mt-0.5 truncate text-xs font-semibold text-zani-muted">
-                    {attachmentTypeLabel(attachment)} В· {formatAttachmentSize(attachment.size)} В· {formatDateTime(attachment.created_at)}
+                    {attachmentTypeLabel(attachment)} · {formatAttachmentSize(attachment.size)} · {formatDateTime(attachment.created_at)}
                   </p>
                 </div>
               </div>
@@ -364,7 +364,7 @@ export function EntityAttachmentsPanel({ data, entity }: { data: CrmCardPayload;
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="text-sm font-semibold text-zani-muted">
-            {previewAttachment ? `${attachmentTypeLabel(previewAttachment)} В· ${formatAttachmentSize(previewAttachment.size)}` : null}
+            {previewAttachment ? `${attachmentTypeLabel(previewAttachment)} · ${formatAttachmentSize(previewAttachment.size)}` : null}
           </div>
           <div className="flex items-center gap-2">
             <Button type="button" variant="secondary" size="sm" onClick={() => setPreviewScale((value) => Math.max(0.5, Number((value - 0.25).toFixed(2))))} aria-label={t("crmCard.zoomOut")}>
@@ -455,7 +455,7 @@ export function EntityDealsPanel({ data }: { data: CrmCardPayload }) {
               <p className="font-bold text-zani-ink">{deal.title}</p>
               <StatusBadge status={deal.status} />
             </div>
-            <p className="mt-1 text-sm text-zani-muted">#{deal.id} В· {deal.amount || 0} {deal.currency}</p>
+            <p className="mt-1 text-sm text-zani-muted">#{deal.id} · {deal.amount || 0} {deal.currency}</p>
             {deal.notes ? <p className="mt-3 text-sm leading-6 text-zani-subtle">{deal.notes}</p> : null}
           </div>
         ))
@@ -514,7 +514,7 @@ export function EntityTasksPanel({ data }: { data: CrmCardPayload }) {
             <p className="font-bold text-zani-ink">{task.title}</p>
             <StatusBadge status={task.status} />
           </div>
-          <p className="mt-1 text-xs text-zani-muted">{task.priority} В· {t("crmCard.deadline")} {formatDateTime(task.due_at)}</p>
+          <p className="mt-1 text-xs text-zani-muted">{task.priority} · {t("crmCard.deadline")} {formatDateTime(task.due_at)}</p>
           {task.description ? <p className="mt-3 text-sm leading-6 text-zani-subtle">{task.description}</p> : null}
         </div>
       ))}
@@ -561,7 +561,7 @@ export function EntityConversationsPanel({ data }: { data: CrmCardPayload }) {
             <p className="font-bold text-zani-ink">{getChannelLabel(conversation.channel, t)}</p>
             <StatusBadge status={conversation.status} />
           </div>
-          <p className="mt-1 text-xs text-zani-muted">{t("crmCard.unread")}: {conversation.unread_count || 0} В· {formatDateTime(conversation.last_message_at || conversation.updated_at)}</p>
+          <p className="mt-1 text-xs text-zani-muted">{t("crmCard.unread")}: {conversation.unread_count || 0} · {formatDateTime(conversation.last_message_at || conversation.updated_at)}</p>
           {conversation.last_message?.text ? <p className="mt-3 text-sm leading-6 text-zani-subtle">{conversation.last_message.text}</p> : null}
         </div>
       ))}
@@ -618,7 +618,7 @@ export function EntityNotesPanel({ data, entity }: { data: CrmCardPayload; entit
       {data.notes.map((note) => (
         <div key={note.id} className={drawerSurfaceClass}>
           <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-zani-faint">
-            <StickyNote size={14} /> Note В· {formatDateTime(note.created_at)}
+            <StickyNote size={14} /> {t("crmCard.note")} · {formatDateTime(note.created_at)}
           </div>
           <p className="text-sm leading-6 text-zani-text">{note.text}</p>
         </div>

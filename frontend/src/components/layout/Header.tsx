@@ -455,11 +455,16 @@ function getPageTitle(pathname: string, t: (key: string) => string) {
     ["/app/tasks", "nav.tasks"],
     ["/app/calendar", "nav.calendar"],
     ["/app/conversations", "nav.conversations"],
+    ["/app/outreach", "nav.outreach"],
+    ["/app/services", "nav.services"],
+    ["/app/resources", "nav.resources"],
+    ["/app/working-hours", "nav.workingHours"],
     ["/app/analytics", "nav.analytics"],
+    ["/app/timeline", "nav.timeline"],
     ["/app/ai-agents", "nav.aiAgents"],
     ["/app/integrations", "nav.integrations"],
     ["/app/settings", "nav.settings"],
-    ["/app/account", "account.title"],
+    ["/app/account", "nav.account"],
   ];
   const match = routes.find(([route]) => pathname === route || pathname.startsWith(`${route}/`));
   return match ? t(match[1]) : t("nav.dashboard");

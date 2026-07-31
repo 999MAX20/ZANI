@@ -24,7 +24,7 @@ export function getDrawerTitle(data: CrmCardPayload | undefined, t: Translate, e
 export function getDrawerSubtitle(data: CrmCardPayload | undefined, t: (key: string) => string) {
   const client = data?.client;
   if (!client) return t("crmCard.subtitle");
-  return [client.phone, client.email, client.source].filter(Boolean).join(" В· ") || t("crmCard.noContacts");
+  return [client.phone, client.email, client.source].filter(Boolean).join(" · ") || t("crmCard.noContacts");
 }
 
 export function getChannelLabel(channel: string, t: (key: string) => string) {
@@ -76,7 +76,7 @@ export function EntityDecisionSnapshot({ data }: { data: CrmCardPayload }) {
       <div className={drawerSurfaceClass}>
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zani-faint">{t("crmCard.snapshotHistory")}</p>
         <p className="mt-2 text-sm font-semibold leading-6 text-zani-text">
-          {latestEvent ? `${latestEvent.text || latestEvent.event_type} В· ${formatDateTime(latestEvent.created_at)}` : t("crmCard.emptyTimelineText")}
+          {latestEvent ? `${latestEvent.text || latestEvent.event_type} · ${formatDateTime(latestEvent.created_at)}` : t("crmCard.emptyTimelineText")}
         </p>
       </div>
       <div className={drawerSurfaceClass}>

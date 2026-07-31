@@ -49,6 +49,8 @@ class AuthSecurityBaselineTests(TestCase):
         self.assertEqual(login_response.status_code, 200)
         self.assertIn("access", login_response.data)
         self.assertIn("refresh", login_response.data)
+        self.assertIn("zani_refresh", login_response.cookies)
+        self.assertTrue(login_response.cookies["zani_refresh"]["httponly"])
 
         old_refresh = login_response.data["refresh"]
         refresh_response = self.api.post(
@@ -69,6 +71,25 @@ class AuthSecurityBaselineTests(TestCase):
         )
 
         self.assertEqual(reused_refresh_response.status_code, 401)
+
+    def test_refresh_cookie_restores_session_and_logout_clears_it(self):
+        login_response = self.api.post(
+            "/api/auth/token/",
+            {"email": self.user.email, "password": "StrongPass123"},
+            format="json",
+        )
+        self.assertEqual(login_response.status_code, 200)
+
+        refresh_response = self.api.post("/api/auth/token/refresh/", {}, format="json")
+
+        self.assertEqual(refresh_response.status_code, 200)
+        self.assertIn("access", refresh_response.data)
+        self.assertIn("zani_refresh", refresh_response.cookies)
+
+        logout_response = self.api.post("/api/auth/logout/", {}, format="json")
+
+        self.assertEqual(logout_response.status_code, 200)
+        self.assertEqual(logout_response.cookies["zani_refresh"]["max-age"], 0)
 
     def test_login_endpoint_is_throttled(self):
         previous_rates = ScopedRateThrottle.THROTTLE_RATES

@@ -23,6 +23,7 @@ export function sourceLabel(source: string | undefined, t: Translate) {
     whatsapp: "WhatsApp",
     instagram: "Instagram",
     manual: "deals.sourceManual",
+    onboarding: "deals.sourceOnboarding",
     parser: "deals.sourceParser",
     other: "deals.sourceOther",
   };

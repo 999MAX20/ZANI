@@ -13,9 +13,9 @@ from apps.core.models import CustomFieldDefinition, CustomFieldValue
 from apps.core.models import FileAttachment
 from apps.core.serializers import CustomFieldDefinitionSerializer, CustomFieldValueSerializer, FileAttachmentSerializer
 from apps.crm.models import Deal
-from apps.crm.serializers import DealSerializer
+from apps.crm.serializers import DealListSerializer
 from apps.leads.models import Lead
-from apps.leads.serializers import LeadSerializer
+from apps.leads.serializers import LeadListSerializer
 from apps.outreach.models import OutreachConsent
 from apps.scheduling.models import Appointment
 from apps.scheduling.serializers import AppointmentSerializer
@@ -488,11 +488,11 @@ def build_crm_card_payload(*, business, actor=None, client=None, lead=None, deal
             },
         },
         "client": ClientSerializer(client).data if client is not None else None,
-        "lead": LeadSerializer(primary_lead).data if primary_lead is not None else None,
-        "deal": DealSerializer(primary_deal).data if primary_deal is not None else None,
+        "lead": LeadListSerializer(primary_lead).data if primary_lead is not None else None,
+        "deal": DealListSerializer(primary_deal, context={"actor": actor}).data if primary_deal is not None else None,
         "appointment": AppointmentSerializer(primary_appointment).data if primary_appointment is not None else None,
-        "leads": LeadSerializer(leads[:RELATED_LIMIT], many=True).data,
-        "deals": DealSerializer(deals[:RELATED_LIMIT], many=True).data,
+        "leads": LeadListSerializer(leads[:RELATED_LIMIT], many=True).data,
+        "deals": DealListSerializer(deals[:RELATED_LIMIT], many=True, context={"actor": actor}).data,
         "appointments": AppointmentSerializer(appointments[:RELATED_LIMIT], many=True).data,
         "tasks": TaskSerializer(tasks[:RELATED_LIMIT], many=True).data,
         "conversations": InboxConversationSerializer(conversations[:RELATED_LIMIT], many=True).data,

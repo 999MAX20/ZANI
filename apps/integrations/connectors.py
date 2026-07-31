@@ -96,7 +96,7 @@ CONNECTOR_PROVIDER_CAPABILITIES = {
     BusinessConnector.Providers.ONE_C: {
         "capability": BusinessConnector.Capabilities.INVENTORY,
         "auth_type": BusinessConnector.AuthTypes.CONNECTOR,
-        "label": "1C export/import",
+        "label": "1C",
         "description": "На старте — через выгрузку/импорт, без обещания realtime-интеграции.",
         "launch_status": "request",
         "cta_label": "Запросить подключение",

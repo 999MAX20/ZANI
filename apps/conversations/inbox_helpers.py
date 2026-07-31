@@ -97,17 +97,17 @@ def build_inbox_summary_payload(queryset, user):
 
     next_actions = []
     if handoff_sla_overdue:
-        next_actions.append({"label": "Handoff SLA overdue", "href": "/app/inbox?handoff_required=true", "priority": "urgent"})
+        next_actions.append({"code": "handoff_sla_overdue", "label": "Handoff SLA overdue", "href": "/app/conversations?handoff_required=true", "priority": "urgent"})
     if unread_sla_overdue:
-        next_actions.append({"label": "Unread SLA overdue", "href": "/app/inbox?unread=true", "priority": "urgent"})
+        next_actions.append({"code": "unread_sla_overdue", "label": "Unread SLA overdue", "href": "/app/conversations?unread=true", "priority": "urgent"})
     if unread:
-        next_actions.append({"label": "Разобрать непрочитанные", "href": "/app/inbox?unread=true", "priority": "high"})
+        next_actions.append({"code": "review_unread", "label": "Review unread", "href": "/app/conversations?unread=true", "priority": "high"})
     if handoff_required:
-        next_actions.append({"label": "Забрать диалоги у бота", "href": "/app/inbox?handoff_required=true", "priority": "high"})
+        next_actions.append({"code": "take_handoffs", "label": "Take bot handoffs", "href": "/app/conversations?handoff_required=true", "priority": "high"})
     if unassigned:
-        next_actions.append({"label": "Назначить ответственных", "href": "/app/inbox?assigned_to=unassigned", "priority": "normal"})
+        next_actions.append({"code": "assign_owners", "label": "Assign owners", "href": "/app/conversations?assigned_to=unassigned", "priority": "normal"})
     if total == 0:
-        next_actions.append({"label": "Подключить website chat", "href": "/app/integrations", "priority": "normal"})
+        next_actions.append({"code": "connect_channel", "label": "Connect a channel", "href": "/app/ai-agents", "priority": "normal"})
 
     return {
         "total": total,

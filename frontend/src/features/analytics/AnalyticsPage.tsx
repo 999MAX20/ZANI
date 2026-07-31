@@ -13,6 +13,7 @@ import { ErrorState, LoadingState } from "../../components/ui/StateViews";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useEntityData } from "../../hooks/useEntityData";
+import { formatMoney } from "../../lib/format";
 import { useI18n } from "../../lib/i18n";
 import type { CrmAiInsightCard, TeamPerformanceActionItem, TeamPerformanceMember, TeamPerformanceTeam } from "../../types";
 import type { LucideIcon } from "lucide-react";
@@ -57,6 +58,16 @@ function aiCardCopyKey(key: string) {
   ].includes(key)
     ? key
     : "default";
+}
+
+function humanizeToken(value: string) {
+  return value.replace(/[._-]+/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function translatedToken(t: (key: string, vars?: Record<string, string | number>) => string, prefix: string, value: string) {
+  const key = `${prefix}.${value}`;
+  const translated = t(key);
+  return translated === key ? humanizeToken(value) : translated;
 }
 
 export function AnalyticsPage() {
@@ -126,7 +137,10 @@ export function AnalyticsPage() {
           ? {
               id: "top-source",
               title: t("analytics.aiTopSourceTitle"),
-              description: t("analytics.aiTopSourceDesc", { source: topSource.source, count: topSource.count }),
+              description: t("analytics.aiTopSourceDesc", {
+                source: translatedToken(t, "analytics.source", topSource.source),
+                count: topSource.count,
+              }),
               icon: TrendingUp,
               severity: "info",
             }
@@ -166,7 +180,10 @@ export function AnalyticsPage() {
               <h2 className="text-lg font-bold text-zani-text">{t("analytics.smartReportTitle")}</h2>
               <p className="mt-1 max-w-4xl text-base font-semibold leading-7 text-zani-subtle">
                 {topSource
-                  ? t("analytics.smartReportText", { source: topSource.source, conversion })
+                  ? t("analytics.smartReportText", {
+                      source: translatedToken(t, "analytics.source", topSource.source),
+                      conversion,
+                    })
                   : t("analytics.smartReportNoSource")}
               </p>
             </div>
@@ -180,7 +197,7 @@ export function AnalyticsPage() {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <Stat label={t("dashboard.newLeads")} value={dashboard?.new_leads || 0} hint={t("analytics.needProcessing")} icon={Flame} />
         <Stat label={t("analytics.leadToDeal")} value={`${dealConversion}%`} hint={t("analytics.leadToDealHint")} icon={TrendingUp} />
-        <Stat label={t("analytics.wonValue")} value={wonValue} hint={t("analytics.wonValueHint")} icon={CheckCircle2} />
+        <Stat label={t("analytics.wonValue")} value={formatMoney(wonValue)} hint={t("analytics.wonValueHint")} icon={CheckCircle2} />
         <Stat label={t("analytics.unansweredConversations")} value={unansweredConversations} hint={t("analytics.unansweredConversationsHint")} icon={MessageSquareText} />
         <Stat label={t("analytics.noShowRate")} value={`${noShowRate}%`} hint={t("analytics.noShowHint")} icon={TrendingDown} />
       </div>
@@ -194,7 +211,7 @@ export function AnalyticsPage() {
             <div className="mt-4 divide-y divide-zani-border">
               {(sourceRows.length ? sourceRows : [{ source: t("analytics.noData"), count: 0 }]).map(({ source, count }) => (
                 <div key={source} className="flex items-center justify-between py-3">
-                  <span className="font-medium text-zani-text">{source}</span>
+                  <span className="font-medium text-zani-text">{translatedToken(t, "analytics.source", source)}</span>
                   <Badge variant="neutral">{count}</Badge>
                 </div>
               ))}
@@ -227,7 +244,12 @@ export function AnalyticsPage() {
         </Card>
       </div>
 
-      <div className="mt-6 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+      <details className="mt-6 rounded-card border border-zani-border bg-surface-card shadow-card">
+        <summary className="cursor-pointer list-none px-5 py-4 text-lg font-semibold text-zani-ink marker:hidden">
+          {t("analytics.detailedReports")}
+          <span className="ml-2 text-sm font-semibold text-zani-muted">{t("analytics.detailedReportsHint")}</span>
+        </summary>
+      <div className="grid gap-6 border-t border-zani-border p-5 xl:grid-cols-[1.1fr_0.9fr]">
         <Card>
           <CardBody>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -256,8 +278,8 @@ export function AnalyticsPage() {
                 </div>
                 <div className="rounded-card border border-zani-border bg-surface-muted p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zani-muted">{t("analytics.ltvEstimate")}</p>
-                  <p className="mt-2 text-3xl font-semibold text-zani-ink">{report.retention_ltv.ltv_estimate}</p>
-                  <p className="mt-1 text-sm text-zani-subtle">{report.retention_ltv.data_quality}</p>
+                   <p className="mt-2 text-3xl font-semibold text-zani-ink">{formatMoney(report.retention_ltv.ltv_estimate)}</p>
+                   <p className="mt-1 text-sm text-zani-subtle">{translatedToken(t, "analytics.dataQuality", report.retention_ltv.data_quality)}</p>
                 </div>
                 <div className="rounded-card border border-zani-border bg-surface-muted p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zani-muted">{t("analytics.openDeals")}</p>
@@ -315,13 +337,15 @@ export function AnalyticsPage() {
               {(report?.source_roi?.length ? report.source_roi : []).map((row) => (
                 <div key={row.source} className="grid gap-3 py-3 md:grid-cols-[1fr_repeat(4,120px)] md:items-center">
                   <div>
-                    <p className="font-medium text-zani-subtle">{row.source}</p>
-                    <p className="text-xs text-zani-muted">{row.roi_status}</p>
+                    <p className="font-medium text-zani-subtle">
+                      {translatedToken(t, "analytics.source", row.source)}
+                    </p>
+                     <p className="text-xs text-zani-muted">{translatedToken(t, "analytics.roiStatus", row.roi_status)}</p>
                   </div>
                   <MiniMetric label={t("nav.leads")} value={row.leads} />
                   <MiniMetric label={t("nav.appointments")} value={row.appointments} />
                   <MiniMetric label={t("dashboard.conversion")} value={`${row.conversion_rate}%`} />
-                  <MiniMetric label={t("dashboard.revenue")} value={row.revenue_estimate} />
+                   <MiniMetric label={t("dashboard.revenue")} value={formatMoney(row.revenue_estimate)} />
                 </div>
               ))}
               {!report?.source_roi?.length ? <p className="py-3 text-sm text-zani-subtle">{t("analytics.sourcesEmpty")}</p> : null}
@@ -341,7 +365,7 @@ export function AnalyticsPage() {
                     <p className="font-semibold text-zani-ink">{stage.stage}</p>
                     <span className="rounded-full bg-surface-card px-2.5 py-1 text-xs font-bold text-zani-subtle">{stage.count}</span>
                   </div>
-                  <p className="mt-1 text-xs text-zani-subtle">{t("analytics.probability")} {stage.avg_probability}% В· {t("analytics.avgDays")} {stage.avg_days_in_stage ?? "-"}</p>
+                  <p className="mt-1 text-xs text-zani-subtle">{t("analytics.probability")} {stage.avg_probability}% · {t("analytics.avgDays")} {stage.avg_days_in_stage ?? "-"}</p>
                 </div>
               ))}
               {!report?.funnel_velocity.deal_stages.length ? <p className="text-sm text-zani-subtle">{t("analytics.dealsEmpty")}</p> : null}
@@ -369,8 +393,14 @@ export function AnalyticsPage() {
           </CardBody>
         </Card>
       </div>
+      </details>
 
-      <div className="mt-6">
+      <details className="mt-6 rounded-card border border-zani-border bg-surface-card shadow-card">
+        <summary className="cursor-pointer list-none px-5 py-4 marker:hidden">
+          <span className="text-xl font-bold text-zani-ink">{t("analytics.teamPerformance")}</span>
+          <span className="ml-2 text-sm text-zani-subtle">{t("analytics.teamPerformanceText")}</span>
+        </summary>
+      <div className="border-t border-zani-border p-5">
         <div className="mb-4 flex items-center gap-3">
           <div className="grid h-11 w-11 place-items-center rounded-2xl bg-brand-50 text-brand-700">
             <Users size={20} />
@@ -418,11 +448,11 @@ export function AnalyticsPage() {
                         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                           <div>
                             <p className="font-bold text-zani-ink">{member.user.full_name || member.user.email}</p>
-                            <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-zani-muted">{member.role}</p>
+                            <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-zani-muted">{t(`settings.role.${member.role.replace("business_", "")}`)}</p>
                             <div className="mt-2 flex flex-wrap gap-2">
                               {asArray<{ id: string | number; name: string; is_lead: boolean }>(member.teams).map((team) => (
                                 <span key={team.id} className="rounded-full bg-surface-card px-2.5 py-1 text-xs font-bold text-zani-subtle">
-                                  {team.name}{team.is_lead ? ` В· ${t("analytics.teamLead")}` : ""}
+                                  {team.name}{team.is_lead ? ` · ${t("analytics.teamLead")}` : ""}
                                 </span>
                               ))}
                             </div>
@@ -464,8 +494,8 @@ export function AnalyticsPage() {
                       >
                         <div className="flex items-center justify-between gap-3">
                           <div>
-                            <p className={action.severity === "critical" ? "font-semibold text-red-900" : "font-semibold text-amber-900"}>{action.title}</p>
-                            <p className="mt-1 text-xs leading-5 text-zani-subtle">{action.description}</p>
+                            <p className={action.severity === "critical" ? "font-semibold text-red-900" : "font-semibold text-amber-900"}>{t(`analytics.action.${action.type}.title`)}</p>
+                            <p className="mt-1 text-xs leading-5 text-zani-subtle">{t(`analytics.action.${action.type}.description`, { count: action.count })}</p>
                           </div>
                           <span className={action.severity === "critical" ? "rounded-full bg-surface-card px-2.5 py-1 text-xs font-bold text-red-700" : "rounded-full bg-surface-card px-2.5 py-1 text-xs font-bold text-amber-700"}>{action.count}</span>
                         </div>
@@ -483,7 +513,7 @@ export function AnalyticsPage() {
                         <div className="flex items-start justify-between gap-3">
                           <div>
                             <p className="font-semibold text-zani-ink">{team.name}</p>
-                            <p className="mt-1 text-xs text-zani-subtle">{t("analytics.membersCount", { count: team.members_count })} В· {t("analytics.lostRate")} {team.lost_rate}%</p>
+                            <p className="mt-1 text-xs text-zani-subtle">{t("analytics.membersCount", { count: team.members_count })} · {t("analytics.lostRate")} {team.lost_rate}%</p>
                           </div>
                           <span className="rounded-full bg-surface-card px-2.5 py-1 text-xs font-bold text-zani-subtle">{t("analytics.leadsCount", { count: team.assigned_leads })}</span>
                         </div>
@@ -505,6 +535,7 @@ export function AnalyticsPage() {
           </div>
         ) : null}
       </div>
+      </details>
     </>
   );
 }

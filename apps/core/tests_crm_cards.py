@@ -64,6 +64,7 @@ class CrmCardEndpointTests(TestCase):
             service=self.service,
             message="Need a consultation",
             source=Lead.Sources.WEBSITE,
+            responsible_user=self.owner,
         )
         self.pipeline = Pipeline.objects.create(business=self.business, name="Main", slug="main", is_default=True)
         self.stage = PipelineStage.objects.create(
@@ -81,6 +82,7 @@ class CrmCardEndpointTests(TestCase):
             stage=self.stage,
             title="Consultation deal",
             amount=12000,
+            owner=self.owner,
         )
         start_at = datetime(2026, 5, 13, 10, 0, tzinfo=ZoneInfo("Asia/Almaty"))
         self.appointment = Appointment.objects.create(
@@ -149,6 +151,10 @@ class CrmCardEndpointTests(TestCase):
         self.assertEqual(response.data["client"]["source_context_json"]["page_domain"], "example.com")
         self.assertEqual(response.data["lead"]["id"], self.lead.id)
         self.assertEqual(response.data["deal"]["id"], self.deal.id)
+        self.assertEqual(response.data["deal"]["stage_name"], self.stage.name)
+        self.assertEqual(response.data["deal"]["stage_probability"], self.stage.probability)
+        self.assertEqual(response.data["deal"]["owner_name"], self.owner.full_name or self.owner.email)
+        self.assertEqual(response.data["lead"]["responsible_name"], self.owner.full_name)
         self.assertEqual(response.data["appointment"]["id"], self.appointment.id)
         self.assertEqual(len(response.data["tasks"]), 1)
         self.assertEqual(len(response.data["conversations"]), 1)

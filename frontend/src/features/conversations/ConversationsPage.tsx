@@ -96,6 +96,10 @@ function isIntegrationsAction(href: string) {
   return path === "/app/integrations" || path.startsWith("/app/integrations/");
 }
 
+function inboxDraftKey(businessId: number | string, conversationId: number | string) {
+  return `zani_inbox_draft:${businessId}:${conversationId}`;
+}
+
 export function ConversationsPage() {
   const { t } = useI18n();
   const navigate = useNavigate();
@@ -124,6 +128,8 @@ export function ConversationsPage() {
   const [inspectorOpen, setInspectorOpen] = useState(true);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [draft, setDraft] = useState("");
+  const [suggestedReply, setSuggestedReply] = useState("");
+  const draftHydratingRef = useRef(false);
   const [quickRepliesOpen, setQuickRepliesOpen] = useState(false);
   const [quickReplySearch, setQuickReplySearch] = useState("");
   const [crmLinkModal, setCrmLinkModal] = useState<
@@ -274,6 +280,27 @@ export function ConversationsPage() {
   });
 
   const selected = selectedFromList || selectedConversation.data || null;
+
+  useEffect(() => {
+    draftHydratingRef.current = true;
+    setSuggestedReply("");
+    if (!businessId || !selected?.id) {
+      setDraft("");
+      return;
+    }
+    setDraft(sessionStorage.getItem(inboxDraftKey(businessId, selected.id)) || "");
+  }, [businessId, selected?.id]);
+
+  useEffect(() => {
+    if (draftHydratingRef.current) {
+      draftHydratingRef.current = false;
+      return;
+    }
+    if (!businessId || !selected?.id) return;
+    const key = inboxDraftKey(businessId, selected.id);
+    if (draft) sessionStorage.setItem(key, draft);
+    else sessionStorage.removeItem(key);
+  }, [businessId, draft, selected?.id]);
 
   const quickReplies = useQuery({
     queryKey: ["quick-replies", businessId, selected?.channel],
@@ -850,7 +877,7 @@ export function ConversationsPage() {
       return inboxApi.suggestReply(conversationId);
     },
     onSuccess: (data) => {
-      setDraft(data.suggested_reply);
+      setSuggestedReply(data.suggested_reply);
       setNotice(t("conversations.aiDraftReady"));
     },
     onError: (error) =>
@@ -884,6 +911,10 @@ export function ConversationsPage() {
     mutationFn: inboxApi.sendMessage,
     onSuccess: async () => {
       setDraft("");
+      setSuggestedReply("");
+      if (businessId && selected?.id) {
+        sessionStorage.removeItem(inboxDraftKey(businessId, selected.id));
+      }
       setNotice(t("conversations.replySent"), "success");
       await invalidateInbox();
     },
@@ -1427,7 +1458,9 @@ export function ConversationsPage() {
                       <button
                         type="button"
                         className="grid h-7 w-7 shrink-0 place-items-center rounded-control text-zani-muted hover:bg-surface-hover hover:text-zani-text disabled:cursor-not-allowed disabled:opacity-40"
-                        aria-label={t("common.open")}
+                        aria-label={t("conversations.openClientContext", {
+                          title: selected.client_name || conversationTitle(selected, t),
+                        })}
                         disabled={!selected.client}
                         onClick={() =>
                           openEntity("/app/clients", selected.client)
@@ -1714,7 +1747,7 @@ export function ConversationsPage() {
                     <Sparkles size={18} /> {t("conversations.replyHint")}
                   </p>
                   <span className="rounded-full bg-zani-card/80 px-2 py-0.5 text-[10px] font-bold text-ai-700 ring-1 ring-ai-100">
-                    BETA
+                    {t("conversations.suggestionStatus")}
                   </span>
                 </div>
                 <p className="mt-2 text-xs font-bold leading-5 text-ai-800">
@@ -1724,7 +1757,7 @@ export function ConversationsPage() {
                   {t("conversations.recommendedReply")}
                 </p>
                 <div className="mt-3 rounded-card bg-zani-card p-3 text-xs font-semibold leading-5 text-zani-text">
-                  {draft || t("conversations.prepareDraftFallback")}
+                  {suggestedReply || t("conversations.prepareDraftFallback")}
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   <Button
@@ -1749,6 +1782,20 @@ export function ConversationsPage() {
                     <Tags size={15} /> {t("conversations.quickRepliesButton")}
                   </Button>
                 </div>
+                {suggestedReply ? (
+                  <Button
+                    type="button"
+                    className="mt-2 h-10 w-full rounded-control px-3 text-xs"
+                    variant="secondary"
+                    disabled={selected.status === "closed"}
+                    onClick={() => {
+                      setDraft(suggestedReply);
+                      window.requestAnimationFrame(() => composerRef.current?.focus());
+                    }}
+                  >
+                    {t("conversations.useSuggestedReply")}
+                  </Button>
+                ) : null}
               </section>
 
               <section className="rounded-card border border-ai-100 bg-surface-card p-3 shadow-soft">

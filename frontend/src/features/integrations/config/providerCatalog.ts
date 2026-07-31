@@ -55,7 +55,7 @@ export const providerCatalog: Array<{
     group: "data",
     logo: "/integrations_logos/1c.png",
     primaryUseKey: "integrations.provider.oneCUse",
-    requestName: "1C export/import",
+    requestName: "1C",
   },
   {
     provider: "moysklad",

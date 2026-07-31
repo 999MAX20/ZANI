@@ -43,6 +43,7 @@ class LandingActivationFlowTests(TestCase):
         self.assertEqual(business.landing_id, "landing-activation-001")
         self.assertEqual(business.landing_domain, "promo.activated.test")
         self.assertEqual(business.business_type, Business.BusinessTypes.MEDICAL)
+        self.assertEqual(business.timezone, "Asia/Almaty")
         self.assertTrue(owner.check_password("ZaniTest123!"))
         self.assertTrue(BusinessMember.objects.filter(business=business, user=owner, role=BusinessMember.Roles.OWNER, is_active=True).exists())
 

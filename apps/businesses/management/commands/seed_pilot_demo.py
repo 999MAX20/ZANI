@@ -185,8 +185,8 @@ class Command(BaseCommand):
         specs = [
             (BusinessConnector.Providers.WEBSITE, BusinessConnector.Capabilities.SALES, "Website / Landing forms", BusinessConnector.Statuses.CONNECTED, BusinessConnector.AuthTypes.NONE),
             (BusinessConnector.Providers.EXCEL_CSV, BusinessConnector.Capabilities.SALES, "Excel / CSV sales import", BusinessConnector.Statuses.CONNECTED, BusinessConnector.AuthTypes.NONE),
-            (BusinessConnector.Providers.TELEGRAM, BusinessConnector.Capabilities.COMMUNICATIONS, "Telegram beta", BusinessConnector.Statuses.NEEDS_ATTENTION, BusinessConnector.AuthTypes.TOKEN),
-            (BusinessConnector.Providers.WHATSAPP, BusinessConnector.Capabilities.COMMUNICATIONS, "WhatsApp button / beta", BusinessConnector.Statuses.NEEDS_ATTENTION, BusinessConnector.AuthTypes.QR),
+            (BusinessConnector.Providers.TELEGRAM, BusinessConnector.Capabilities.COMMUNICATIONS, "Telegram", BusinessConnector.Statuses.NEEDS_ATTENTION, BusinessConnector.AuthTypes.TOKEN),
+            (BusinessConnector.Providers.WHATSAPP, BusinessConnector.Capabilities.COMMUNICATIONS, "WhatsApp", BusinessConnector.Statuses.NEEDS_ATTENTION, BusinessConnector.AuthTypes.QR),
         ]
         for provider, capability, name, status, auth_type in specs:
             connector, _ = BusinessConnector.objects.update_or_create(
@@ -309,7 +309,7 @@ class Command(BaseCommand):
             business=business,
             title="Связаться с необработанными заявками",
             defaults={
-                "description": "Demo AI action: проверить новые заявки и ответить клиентам до конца дня.",
+                "description": "Проверить новые заявки и ответить клиентам до конца дня.",
                 "assignee": manager,
                 "created_by": owner,
                 "priority": Task.Priorities.HIGH,
@@ -332,9 +332,9 @@ class Command(BaseCommand):
         conversation = BotConversation.objects.filter(business=business, assigned_to__isnull=False).order_by("-updated_at").first()
         Task.objects.update_or_create(
             business=business,
-            title="Оператор: ответить на pilot-чат",
+            title="Оператор: ответить клиенту в чате",
             defaults={
-                "description": "Pilot task for the operator role: review the assigned inbox handoff and keep the client response flow moving.",
+                "description": "Разобрать назначенный диалог и продолжить общение с клиентом.",
                 "conversation": conversation,
                 "assignee": operator,
                 "created_by": owner,

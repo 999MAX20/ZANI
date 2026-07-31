@@ -1,4 +1,11 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import { AUTH_EXPIRED_EVENT } from "../../api/client";
 import {
@@ -36,12 +43,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setAuthenticated] = useState(false);
   const [isLoading, setLoading] = useState(true);
   const [user, setUser] = useState<CurrentUser | null>(null);
+  const mountedRef = useRef(false);
+  const sessionRestoreStartedRef = useRef(false);
 
   useEffect(() => {
-    let active = true;
+    mountedRef.current = true;
 
     function handleAuthExpired() {
-      if (!active) return;
+      if (!mountedRef.current) return;
       setUser(null);
       setAuthenticated(false);
       setLoading(false);
@@ -49,38 +58,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     window.addEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired);
 
+    return () => {
+      mountedRef.current = false;
+      window.removeEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (sessionRestoreStartedRef.current) return;
+    sessionRestoreStartedRef.current = true;
+
     async function loadUser() {
       if (!tokenStorage.getAccess()) {
         try {
           await restoreSession();
         } catch {
-          if (active) setLoading(false);
+          if (mountedRef.current) setLoading(false);
           return;
         }
       }
 
       try {
         const currentUser = await getCurrentUser();
-        if (!active) return;
+        if (!mountedRef.current) return;
         setUser(currentUser);
         setAuthenticated(true);
         tokenStorage.setEmail(currentUser.email);
       } catch {
-        if (!active) return;
+        if (!mountedRef.current) return;
         apiLogout();
         setUser(null);
         setAuthenticated(false);
       } finally {
-        if (active) setLoading(false);
+        if (mountedRef.current) setLoading(false);
       }
     }
 
     loadUser();
-
-    return () => {
-      active = false;
-      window.removeEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired);
-    };
   }, []);
 
   const value = useMemo<AuthContextValue>(

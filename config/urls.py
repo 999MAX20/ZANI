@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from apps.accounts.auth_views import ThrottledTokenObtainPairView, ThrottledTokenRefreshView
+from apps.accounts.auth_views import LogoutView, ThrottledTokenObtainPairView, ThrottledTokenRefreshView
 from apps.accounts.views import ChangePasswordView, CurrentUserLoginHistoryView, CurrentUserView, OwnerSignupView, PasswordResetConfirmView, PasswordResetRequestView, SocialAuthView
 from apps.activities.views import ActivityEventViewSet, NoteViewSet, SegmentFilterViewSet, SegmentViewSet, TaggedObjectViewSet, TagViewSet
 from apps.ai_core.views import (
@@ -187,6 +187,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/auth/token/", ThrottledTokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/auth/token/refresh/", ThrottledTokenRefreshView.as_view(), name="token_refresh"),
+    path("api/auth/logout/", LogoutView.as_view(), name="auth_logout"),
     path("api/auth/social/", SocialAuthView.as_view(), name="auth_social"),
     path("api/auth/signup/owner/", OwnerSignupView.as_view(), name="auth_signup_owner"),
     path("api/auth/password-reset/request/", PasswordResetRequestView.as_view(), name="auth_password_reset_request"),

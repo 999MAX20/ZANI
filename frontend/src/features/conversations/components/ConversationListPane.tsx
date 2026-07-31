@@ -139,7 +139,7 @@ export function ConversationListPane({
               to={action.href}
               className="flex min-h-9 items-center justify-between gap-2 rounded-control border border-zani-border bg-surface-card px-3 text-xs font-bold text-zani-text transition hover:border-brand-100 hover:bg-brand-50"
             >
-              <span className="truncate">{action.label}</span>
+              <span className="truncate">{action.code ? t(`conversations.nextAction.${action.code}`) : action.label}</span>
               <span className="shrink-0 text-brand-700">{t("conversations.openPriority")}</span>
             </Link>
           ))}
@@ -181,7 +181,7 @@ export function ConversationListPane({
         <div className="border-b border-[rgba(183,121,31,0.22)] bg-[var(--zani-warning-soft)] px-3 py-2 text-xs font-semibold text-zani-warning" data-testid="inbox-provider-unavailable">
           <p>{t("conversations.channelsUnavailable", { count: unavailableChannelCount })}</p>
           {canViewIntegrations ? (
-            <Link className="mt-1 inline-flex font-bold underline" to="/app/integrations">
+            <Link className="mt-1 inline-flex font-bold underline" to="/app/ai-agents">
               {t("conversations.openIntegrations")}
             </Link>
           ) : null}

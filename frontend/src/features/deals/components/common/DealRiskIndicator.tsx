@@ -27,7 +27,7 @@ export function DealRiskIndicator({
     >
       {high || medium ? <AlertTriangle size={13} /> : <CircleCheck size={13} />}
       {compact
-        ? `${deal.riskPercent}%`
+        ? t("deals.riskPercentShort", { percent: deal.riskPercent })
         : high
           ? t("deals.riskHighWithPercent", { percent: deal.riskPercent })
           : medium

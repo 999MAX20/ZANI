@@ -11,7 +11,7 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from apps.accounts.auth_views import record_login
+from apps.accounts.auth_views import record_login, set_refresh_cookie
 from apps.accounts.serializers import (
     ChangePasswordSerializer,
     CurrentUserSerializer,
@@ -96,7 +96,7 @@ class SocialAuthView(APIView):
         user, created = get_or_create_social_user(claims)
         refresh = RefreshToken.for_user(user)
         record_login(request, user=user, email=user.email, status=LoginHistory.Statuses.SUCCESS)
-        return Response(
+        response = Response(
             {
                 "access": str(refresh.access_token),
                 "refresh": str(refresh),
@@ -104,6 +104,7 @@ class SocialAuthView(APIView):
                 "provider": claims.provider,
             }
         )
+        return set_refresh_cookie(response, str(refresh))
 
 
 class PasswordResetRequestView(APIView):
@@ -215,7 +216,7 @@ class OwnerSignupView(APIView):
         )
         refresh = RefreshToken.for_user(user)
         record_login(request, user=user, email=user.email, status=LoginHistory.Statuses.SUCCESS)
-        return Response(
+        response = Response(
             {
                 "access": str(refresh.access_token),
                 "refresh": str(refresh),
@@ -224,6 +225,7 @@ class OwnerSignupView(APIView):
             },
             status=201,
         )
+        return set_refresh_cookie(response, str(refresh))
 
     def _unique_business_slug(self, name):
         base_slug = slugify(name) or "business"

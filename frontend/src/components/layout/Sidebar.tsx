@@ -260,6 +260,7 @@ export function Sidebar({
                             <Icon size={18} strokeWidth={2.1} />
                           </span>
                           <span className={cn("min-w-0 truncate text-left transition-opacity duration-150", isExpanded ? "opacity-100" : "hidden opacity-0")}>{t(item.label)}</span>
+                          {!isExpanded ? <span className="sr-only">{t(item.label)}</span> : null}
                           {isExpanded ? <ChevronDown size={16} className={cn("ml-auto text-zani-faint transition-transform", childrenOpen && "rotate-180")} /> : null}
                         </button>
                         {isExpanded && childrenOpen ? (
@@ -318,6 +319,7 @@ export function Sidebar({
                         <Icon size={18} strokeWidth={2.1} />
                       </span>
                       <span className={cn("min-w-0 truncate transition-opacity duration-150", isExpanded ? "opacity-100" : "hidden opacity-0")}>{t(item.label)}</span>
+                      {!isExpanded ? <span className="sr-only">{t(item.label)}</span> : null}
                       {item.to === "/app/conversations" && unreadMessages ? (
                         <span className={cn("min-w-5 rounded-full bg-zani-danger px-1.5 py-0.5 text-center text-[10px] font-semibold leading-none text-white shadow-sm", isExpanded ? "ml-auto" : "absolute right-1 top-1 px-1")}>
                           {unreadMessages > 99 ? "99+" : unreadMessages}

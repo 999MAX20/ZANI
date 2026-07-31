@@ -121,7 +121,7 @@ export function IntegrationsPage() {
   const connectedCount = data.filter((item) => statusFilterFor(item.status) === "connected").length;
   const setupCount = data.filter((item) => statusFilterFor(item.status) === "setup").length;
   const requestCount = data.filter((item) => statusFilterFor(item.status) === "request").length;
-  const plannedCount = data.filter((item) => statusFilterFor(item.status) === "planned").length;
+  const errorCount = data.filter((item) => statusFilterFor(item.status) === "error").length;
 
   if (isBusinessLoading || capabilities.isLoading || connectors.isLoading || bots.isLoading) {
     return <LoadingState label={t("integrations.page.loading")} />;
@@ -138,7 +138,7 @@ export function IntegrationsPage() {
       header={
         <PageHeader
           title={t("integrations.page.title")}
-          description={t("integrations.page.description")}
+          description={t("integrations.page.merchantDescription")}
           actions={
             <Badge variant="primary" size="lg">
               <PlugZap size={14} /> {t("integrations.page.safeTokenNotice")}
@@ -150,8 +150,8 @@ export function IntegrationsPage() {
         <>
           <WorkbenchMetric label={t("integrations.page.connectedTitle")} value={connectedCount} detail={t("integrations.page.connectedText")} tone="success" />
           <WorkbenchMetric label={t("integrations.overview.status.setup")} value={setupCount} detail={t("integrations.page.includedText")} tone="warning" />
-          <WorkbenchMetric label={t("integrations.page.requestTitle")} value={requestCount} detail={t("integrations.page.requestText")} tone="ai" />
-          <WorkbenchMetric label={t("integrations.page.roadmapTitle")} value={plannedCount} detail={t("integrations.page.roadmapText")} />
+          <WorkbenchMetric label={t("integrations.page.requestTitle")} value={requestCount} detail={t("integrations.page.merchantRequestText")} tone="ai" />
+          <WorkbenchMetric label={t("integrations.page.attentionTitle")} value={errorCount} detail={t("integrations.page.attentionText")} tone={errorCount ? "warning" : "success"} />
         </>
       }
       toolbar={
@@ -211,8 +211,8 @@ export function IntegrationsPage() {
       <div className="space-y-5 p-3 sm:p-4">
         {pageError ? <ErrorState message={getApiErrorMessage(pageError)} /> : null}
         <Surface padding="sm" variant="muted" className="text-sm font-semibold text-zani-subtle">
-          {t("integrations.page.resultsMeta", {
-            count: visibleData.length,
+          {t("integrations.page.merchantResultsMeta", {
+            found: visibleData.length,
             total: data.length,
           })}
         </Surface>

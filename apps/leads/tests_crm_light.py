@@ -197,6 +197,20 @@ class LeadCrmLightTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data["fields"], ["is_archived"])
 
+    def test_create_lead_requires_client_and_creates_no_record(self):
+        self.api.force_authenticate(self.owner)
+        before = Lead.objects.filter(business=self.business).count()
+
+        response = self.api.post(
+            "/api/leads/",
+            {"business": self.business.id, "message": "Missing client"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("client", response.data)
+        self.assertEqual(Lead.objects.filter(business=self.business).count(), before)
+
     def test_lead_list_supports_filters_pagination_and_enriched_fields(self):
         self.api.force_authenticate(self.owner)
         self.assigned_lead.source = Lead.Sources.WHATSAPP

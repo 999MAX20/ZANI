@@ -46,6 +46,7 @@ def activate_landing_business(
     landing_preview_url: str = "",
     city: str = "",
     phone: str = "",
+    timezone_name: str = "Asia/Almaty",
 ) -> ActivationResult:
     landing_id = str(landing_id or "").strip()
     owner_email = str(owner_email or "").strip().lower()
@@ -67,6 +68,7 @@ def activate_landing_business(
         landing_preview_url=landing_preview_url,
         city=city,
         phone=phone,
+        timezone_name=timezone_name,
     )
     owner_membership = _ensure_owner_membership(business, owner)
     pipeline = ensure_pilot_pipeline(business)
@@ -130,7 +132,7 @@ def ensure_landing_lead_form(business: Business, *, landing_id: str, landing_dom
     if form is None:
         form = LeadForm.objects.create(
             business=business,
-            name="Landing lead form",
+            name="Форма заявки с лендинга",
             title="Оставить заявку",
             description="Заявки из внешнего лендинга автоматически попадают в CRM Light.",
             source=Lead.Sources.LANDING,
@@ -204,7 +206,7 @@ def _get_or_create_owner(email: str, *, owner_password: str | None, full_name: s
     return owner, created
 
 
-def _get_or_create_business(*, owner, landing_id, business_name, business_type, landing_domain, landing_preview_url, city, phone):
+def _get_or_create_business(*, owner, landing_id, business_name, business_type, landing_domain, landing_preview_url, city, phone, timezone_name):
     business = Business.objects.filter(landing_id=landing_id).first()
     created = False
     if business is None:
@@ -219,6 +221,7 @@ def _get_or_create_business(*, owner, landing_id, business_name, business_type, 
             landing_preview_url=landing_preview_url,
             city=city,
             phone=phone,
+            timezone=timezone_name,
         )
         created = True
     else:
@@ -230,7 +233,8 @@ def _get_or_create_business(*, owner, landing_id, business_name, business_type, 
         business.landing_preview_url = landing_preview_url or business.landing_preview_url
         business.city = city or business.city
         business.phone = phone or business.phone
-        business.save(update_fields=["owner", "name", "business_type", "status", "landing_domain", "landing_preview_url", "city", "phone", "updated_at"])
+        business.timezone = timezone_name or business.timezone
+        business.save(update_fields=["owner", "name", "business_type", "status", "landing_domain", "landing_preview_url", "city", "phone", "timezone", "updated_at"])
     ensure_default_roles(business)
     return business, created
 

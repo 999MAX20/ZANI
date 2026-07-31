@@ -1,6 +1,6 @@
 # ZANI Pre-Pilot Execution Master
 
-Status: active source of truth  
+Status: completed; paused for owner review
 Owner: Chat Manager  
 Execution tracks: UI/UX and Features/Backend  
 Integration branch: `codex/project-integration-2026-07`  
@@ -736,7 +736,7 @@ Completion evidence (2026-07-31):
 
 #### X-401 — Final Integrated Pre-Pilot Gate
 
-Status: `IN_PROGRESS`
+Status: `DONE`
 Owner: Manager  
 Depends on: F-401 and B-401 integrated
 
@@ -768,6 +768,49 @@ The manager must:
     local cycle complete, then rerun the affected manager gate;
 13. publish a local readiness report separating locally ready behavior, known
     non-blocking risks, external prerequisites and deferred new features.
+
+Completion evidence (2026-07-31):
+
+- the final full deterministic gate passed on
+  `codex/project-integration-2026-07`: fresh disposable SQLite migrations,
+  migration drift, Django check, the complete backend suite (`846/846` in
+  `1011.098s`), frontend production/widget build, `4481`-key RU/KK/EN i18n
+  parity, bundle budget, mobile owner/manager Playwright (`2/2`), hashed-lock
+  installability, Python/npm dependency audits, tracked secret scan and Git
+  diff hygiene were green;
+- the Playwright Django harness deterministically ran
+  `prepare_e2e_smoke_data` for `Zani E2E Demo` (`zani-e2e-demo`), preparing
+  platform admin, owner, manager, operator and doctor identities together with
+  niche CRM data, default pipeline, appointments, subscription and first
+  conversation/channel data;
+- accepted F-401 evidence additionally covered owner, manager, operator and
+  doctor desktop/mobile visibility, Command Palette, disabled Deals,
+  recoverable queue/calendar/provider states, accessibility, interaction and
+  visual route audits;
+- final focused Playwright inspection passed `5/5`: the task dialog,
+  header-filter drawer, conditionally unmounted CRM entity drawer,
+  notifications popover and recoverable queue/calendar/provider failure states,
+  including focus, keyboard close/restoration and applicable Axe checks;
+- the full browser run exposed deterministic pagination debt in the separate
+  `/api/team/members/` endpoint; correction
+  `27ed32e086639553092424fb4a9f395b484b56aa` was independently accepted and
+  integrated as `15e54e9`;
+- the correction adds stable primary-key ordering and a warning-as-error test
+  across the 50-row page boundary while preserving same-tenant membership and
+  staff/manager scope; manager migration/check plus focused access regression
+  passed `2/2`, and the affected browser gate passed without
+  `UnorderedObjectListWarning`;
+- the existing local CRM chain was audited from Conversation/Inbox through
+  Lead, Client, Deal when enabled and/or Appointment, Task/follow-up,
+  activity/audit/notification and operational metrics; no remaining
+  pilot-critical defect was found in the existing foundation;
+- all material findings are classified in
+  `actual_docs/X401_LOCAL_PILOT_READINESS_REPORT.md` as locally ready behavior,
+  missing or defective existing CRM business logic (the four remediated
+  certification defects), non-blocking local debt, external production
+  prerequisites or deferred new post-pilot features;
+- no production credential, live-provider rollout, new feature, new vertical,
+  production environment or `main` change was made.
 
 X-401 must not describe the CRM as locally complete while a pilot-critical gap
 remains in capture, qualification, ownership, conversion, pipeline progression,

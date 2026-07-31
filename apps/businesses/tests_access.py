@@ -1,3 +1,6 @@
+import warnings
+
+from django.core.paginator import UnorderedObjectListWarning
 from django.test import TestCase, override_settings
 from django.utils import timezone
 from rest_framework.test import APIClient
@@ -57,6 +60,76 @@ class BusinessMemberPaginationTests(TestCase):
         self.assertEqual(second_page.status_code, 200)
         actual_ids = [item["id"] for item in first_page.data["results"] + second_page.data["results"]]
         self.assertEqual(actual_ids, expected_ids)
+
+
+class TeamMemberPaginationTests(TestCase):
+    def test_team_member_pages_are_stable_tenant_scoped_and_role_scoped(self):
+        api = APIClient()
+        owner = User.objects.create_user(
+            username="team-pagination-owner",
+            email="team-pagination-owner@example.com",
+            password="pass12345",
+            role=User.Roles.BUSINESS_OWNER,
+        )
+        business = Business.objects.create(owner=owner, name="Team Pagination Clinic", slug="team-pagination-clinic")
+        BusinessMember.objects.create(
+            business=business,
+            user=owner,
+            role=BusinessMember.Roles.OWNER,
+        )
+        staff_users = [
+            User(
+                username=f"team-pagination-staff-{index}",
+                email=f"team-pagination-staff-{index}@example.com",
+                role=User.Roles.STAFF,
+            )
+            for index in range(55)
+        ]
+        User.objects.bulk_create(staff_users)
+        BusinessMember.objects.bulk_create(
+            [
+                BusinessMember(business=business, user=user, role=BusinessMember.Roles.STAFF)
+                for user in staff_users
+            ]
+        )
+
+        other_owner = User.objects.create_user(
+            username="other-team-pagination-owner",
+            email="other-team-pagination-owner@example.com",
+            password="pass12345",
+            role=User.Roles.BUSINESS_OWNER,
+        )
+        other_business = Business.objects.create(
+            owner=other_owner,
+            name="Other Team Pagination Clinic",
+            slug="other-team-pagination-clinic",
+        )
+        foreign_member = BusinessMember.objects.create(
+            business=other_business,
+            user=other_owner,
+            role=BusinessMember.Roles.OWNER,
+        )
+        expected_ids = list(
+            BusinessMember.objects.filter(business=business).order_by("pk").values_list("id", flat=True)
+        )
+        api.force_authenticate(owner)
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings("error", category=UnorderedObjectListWarning)
+            first_page = api.get("/api/team/members/?page=1")
+            second_page = api.get("/api/team/members/?page=2")
+
+        self.assertEqual(first_page.status_code, 200)
+        self.assertEqual(second_page.status_code, 200)
+        actual_ids = [item["id"] for item in first_page.data["results"] + second_page.data["results"]]
+        self.assertEqual(actual_ids, expected_ids)
+        self.assertNotIn(foreign_member.id, actual_ids)
+
+        api.force_authenticate(staff_users[0])
+        denied_response = api.get("/api/team/members/")
+
+        self.assertEqual(denied_response.status_code, 200)
+        self.assertEqual(denied_response.data["results"], [])
 
 
 class TeamAccessTests(TestCase):

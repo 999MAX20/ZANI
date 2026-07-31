@@ -671,7 +671,7 @@ P3 integration baseline `9067d8b`.
 
 #### B-401 — Backend Business-Flow Certification
 
-Status: `IN_PROGRESS`
+Status: `DONE`
 Owner: Features/Backend  
 Depends on: X-301
 
@@ -682,6 +682,31 @@ mock retry/idempotency and secret/config safety. Live-provider checks stay
 
 Assignment: 2026-07-31, `codex/b401-backend-certification` from the accepted
 P3 integration baseline `9067d8b`.
+
+Completion evidence (2026-07-31):
+
+- source branch is clean and pushed at
+  `153c8b039493ec1b009d1e66dd210230b055cf9d`; integrated as `72d280a`;
+- platform-admin business-member pagination now has explicit primary-key
+  ordering, with a 55-member/two-page API regression proving stable complete
+  results without changing tenant, permission or capability scoping;
+- the B-401 business-flow pack passed `265/265`, the complete backend suite
+  passed `846/846`, and the focused pagination regression passed `1/1`;
+- fresh SQLite migrations, migration drift and Django system checks passed;
+  Python production/development hash locks were installable, `pip-audit` and
+  npm audit reported zero known vulnerabilities, and the tracked secret scan
+  returned zero high-confidence matches;
+- AI approval/no-data/provider-disabled, integration retry/idempotency,
+  capability, permission and tenant-isolation paths were included in the green
+  certification pack; live-provider checks remain `EXTERNAL_BLOCKED`;
+- an independent reviewer accepted the focused diff and independently passed
+  migration drift, Django check, the warning-as-error pagination regression
+  and two manager/cross-tenant denial tests; manager integration verification
+  passed the same three focused pagination/access tests and diff hygiene;
+- the consolidated Windows wrapper intermittently exited with OS access
+  violation `0xC0000005` while spawning Python children; equivalent documented
+  commands through the approved shared virtualenv were stable and green, so
+  this is recorded as local runtime debt rather than an application failure.
 
 #### X-401 — Final Integrated Pre-Pilot Gate
 

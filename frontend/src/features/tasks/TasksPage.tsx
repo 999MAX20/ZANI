@@ -33,7 +33,7 @@ export function TasksPage() {
   const { business } = useActiveBusiness();
   const { user } = useAuth();
   const businessRole = getBusinessRole(user, business?.id);
-  const isIndividualWorkspace = ["operator", "staff", "doctor"].includes(businessRole || "");
+  const isIndividualWorkspace = ["operator", "specialist", "staff", "doctor"].includes(businessRole || "");
   const canCreateTask = hasPermission(user, business?.id, "tasks", "create");
   const canUpdateTask = hasPermission(user, business?.id, "tasks", "update");
   const canViewTeam = hasPermission(user, business?.id, "team", "view");

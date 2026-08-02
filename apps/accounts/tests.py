@@ -376,7 +376,7 @@ class CreatePlatformAdminCommandTests(TestCase):
 
 
 class PrepareE2ESmokeDataCommandTests(TestCase):
-    def test_repeat_run_restores_doctor_appointment_lifecycle_and_archive_state(self):
+    def test_repeat_run_restores_specialist_appointment_lifecycle_and_archive_state(self):
         command_options = {
             "password": "ZaniTest123!",
             "business_slug": "repeatable-e2e-seed",
@@ -385,15 +385,15 @@ class PrepareE2ESmokeDataCommandTests(TestCase):
         }
         call_command("prepare_e2e_smoke_data", **command_options)
 
-        doctor = User.objects.get(email="business_doctor@example.com")
+        specialist = User.objects.get(email="business_specialist@example.com")
         appointment = Appointment.objects.get(
             business__slug="repeatable-e2e-seed",
-            notes="E2E doctor-owned appointment.",
+            notes="E2E specialist-owned appointment.",
         )
         appointment.status = Appointment.Statuses.CANCELLED
         appointment.is_archived = True
         appointment.archived_at = timezone.now()
-        appointment.archived_by = doctor
+        appointment.archived_by = specialist
         appointment.archive_reason = "Repeat-run regression fixture"
         appointment.save(
             update_fields=[
@@ -414,4 +414,4 @@ class PrepareE2ESmokeDataCommandTests(TestCase):
         self.assertIsNone(appointment.archived_at)
         self.assertIsNone(appointment.archived_by)
         self.assertEqual(appointment.archive_reason, "")
-        self.assertEqual(appointment.resource.linked_user, doctor)
+        self.assertEqual(appointment.resource.linked_user, specialist)

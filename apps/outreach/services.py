@@ -35,7 +35,7 @@ APPOINTMENT_AUTOMATION_SCENARIOS = [
         "key": "appointment_reminder",
         "label": APPOINTMENT_REMINDER_LABEL,
         "trigger": "За 2 часа до записи",
-        "description": "Напоминает клиенту о времени, услуге, мастере и адресе.",
+        "description": "Напоминает клиенту о времени, услуге, специалисте и адресе.",
     },
     {
         "key": "post_service_thank_you",

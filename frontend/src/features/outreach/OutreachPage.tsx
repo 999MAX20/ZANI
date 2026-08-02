@@ -298,7 +298,7 @@ export function OutreachPage() {
   const manualSelectedCount = manualClientIds.length;
   const prepareClientIds = selectedCampaign?.audience_type === "manual" ? manualClientIds : undefined;
   const currentMembership = user?.memberships?.find((membership) => String(membership.business) === String(business.id) && membership.is_active);
-  const currentRole = currentMembership?.role || user?.role || "staff";
+  const currentRole = currentMembership?.role || user?.role || "specialist";
   const canManageOutreach = ["owner", "admin", "marketer", "business_owner"].includes(currentRole);
   const currentRoleLabel = t(`settings.role.${currentRole.replace("business_", "")}`);
   const launchBlockedReason = canManageOutreach

@@ -6,9 +6,10 @@ from django.db import transaction
 from apps.accounts.models import User
 from apps.billing.models import Subscription, SubscriptionPlan
 from apps.businesses.access import ensure_default_roles
+from apps.businesses.capabilities import apply_business_type_defaults
 from apps.businesses.models import Business, BusinessMember
 from apps.crm.services import ensure_default_pipeline
-from apps.onboarding.services import apply_niche_template, create_demo_data, create_first_channel_message, setup_first_channel
+from apps.onboarding.services import create_demo_data, create_first_channel_message, setup_first_channel
 from apps.scheduling.models import Appointment, Resource
 
 
@@ -52,17 +53,17 @@ class Command(BaseCommand):
             role=User.Roles.BUSINESS_OPERATOR,
             full_name="Zani Business Operator",
         )
-        doctor = self._upsert_user(
-            email="business_doctor@example.com",
+        specialist = self._upsert_user(
+            email="business_specialist@example.com",
             password=password,
-            role=User.Roles.BUSINESS_OPERATOR,
-            full_name="Zani Business Doctor",
+            role=User.Roles.STAFF,
+            full_name="Zani Business Specialist",
         )
-        other_doctor = self._upsert_user(
-            email="business_doctor_other@example.com",
+        other_specialist = self._upsert_user(
+            email="business_specialist_other@example.com",
             password=password,
-            role=User.Roles.BUSINESS_OPERATOR,
-            full_name="Zani Business Doctor Two",
+            role=User.Roles.STAFF,
+            full_name="Zani Business Specialist Two",
         )
 
         business, _ = Business.objects.update_or_create(
@@ -70,7 +71,7 @@ class Command(BaseCommand):
             defaults={
                 "owner": owner,
                 "name": options["business_name"],
-                "business_type": Business.BusinessTypes.DENTISTRY,
+                "business_type": Business.BusinessTypes.OTHER,
                 "city": "Almaty",
                 "phone": "+77010000000",
                 "timezone": "Asia/Almaty",
@@ -80,14 +81,15 @@ class Command(BaseCommand):
         self._upsert_member(business, owner, BusinessMember.Roles.OWNER)
         self._upsert_member(business, manager, BusinessMember.Roles.MANAGER)
         self._upsert_member(business, operator, BusinessMember.Roles.OPERATOR)
-        self._upsert_member(business, doctor, BusinessMember.Roles.DOCTOR)
+        self._upsert_member(business, specialist, BusinessMember.Roles.SPECIALIST)
         self._upsert_member(
             business,
-            other_doctor,
-            BusinessMember.Roles.DOCTOR,
+            other_specialist,
+            BusinessMember.Roles.SPECIALIST,
         )
 
         ensure_default_roles(business)
+        apply_business_type_defaults(business, configured_by=owner)
         ensure_default_pipeline(business)
         plan = SubscriptionPlan.objects.filter(code="growth").first()
         if plan:
@@ -96,12 +98,11 @@ class Command(BaseCommand):
                 defaults={"plan": plan, "status": Subscription.Statuses.ACTIVE},
             )
 
-        apply_niche_template(business, Business.BusinessTypes.DENTISTRY, actor=owner)
         create_demo_data(business, actor=owner)
-        self._prepare_doctor_appointments(
+        self._prepare_specialist_appointments(
             business=business,
-            doctor=doctor,
-            other_doctor=other_doctor,
+            specialist=specialist,
+            other_specialist=other_specialist,
         )
         setup_first_channel(business, actor=owner)
         create_first_channel_message(business, actor=owner)
@@ -111,7 +112,7 @@ class Command(BaseCommand):
                 "Prepared E2E smoke data: "
                 "platform_admin@example.com, business_owner@example.com, "
                 "business_manager@example.com, business_operator@example.com, "
-                "business_doctor@example.com"
+                "business_specialist@example.com"
             )
         )
 
@@ -144,32 +145,32 @@ class Command(BaseCommand):
         )
         return member
 
-    def _prepare_doctor_appointments(
+    def _prepare_specialist_appointments(
         self,
         *,
         business,
-        doctor,
-        other_doctor,
+        specialist,
+        other_specialist,
     ):
         demo_appointment = business.appointments.order_by("id").first()
         if demo_appointment is None:
             return
 
-        doctor_resource, _ = Resource.objects.update_or_create(
+        specialist_resource, _ = Resource.objects.update_or_create(
             business=business,
-            name="E2E Doctor Schedule",
+            name="E2E Specialist Schedule",
             defaults={
                 "resource_type": Resource.ResourceTypes.STAFF,
-                "linked_user": doctor,
+                "linked_user": specialist,
                 "is_active": True,
             },
         )
         other_resource, _ = Resource.objects.update_or_create(
             business=business,
-            name="E2E Other Doctor Schedule",
+            name="E2E Other Specialist Schedule",
             defaults={
                 "resource_type": Resource.ResourceTypes.STAFF,
-                "linked_user": other_doctor,
+                "linked_user": other_specialist,
                 "is_active": True,
             },
         )
@@ -178,18 +179,18 @@ class Command(BaseCommand):
 
         own_appointment = Appointment.objects.filter(
             business=business,
-            notes="E2E doctor-owned appointment.",
+            notes="E2E specialist-owned appointment.",
         ).first()
         own_defaults = {
             "client": demo_appointment.client,
             "lead": demo_appointment.lead,
             "service": demo_appointment.service,
-            "resource": doctor_resource,
+            "resource": specialist_resource,
             "start_at": demo_appointment.start_at + timedelta(hours=4),
             "end_at": demo_appointment.end_at + timedelta(hours=4),
             "status": Appointment.Statuses.CREATED,
             "source": Appointment.Sources.MANUAL,
-            "notes": "E2E doctor-owned appointment.",
+            "notes": "E2E specialist-owned appointment.",
             "is_archived": False,
             "archived_at": None,
             "archived_by": None,

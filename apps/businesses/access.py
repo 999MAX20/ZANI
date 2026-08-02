@@ -76,6 +76,49 @@ PERMISSION_CATALOG = {
     Resources.AI_AUTOMATION: [Actions.VIEW, Actions.SUGGEST, Actions.EXECUTE, Actions.APPROVE, Actions.MANAGE],
 }
 
+CANONICAL_BUSINESS_ROLES = (
+    BusinessMember.Roles.OWNER,
+    BusinessMember.Roles.ADMIN,
+    BusinessMember.Roles.MANAGER,
+    BusinessMember.Roles.OPERATOR,
+    BusinessMember.Roles.SPECIALIST,
+)
+
+SPECIALIST_PERMISSIONS = {
+    Resources.CLIENTS: {Actions.VIEW: RolePermission.Scopes.BUSINESS},
+    Resources.LEADS: {
+        Actions.VIEW: RolePermission.Scopes.OWN,
+        Actions.UPDATE: RolePermission.Scopes.OWN,
+    },
+    Resources.APPOINTMENTS: {
+        Actions.VIEW: RolePermission.Scopes.OWN,
+        Actions.UPDATE: RolePermission.Scopes.OWN,
+    },
+    Resources.TASKS: {
+        Actions.VIEW: RolePermission.Scopes.OWN,
+        Actions.UPDATE: RolePermission.Scopes.OWN,
+    },
+    Resources.NOTIFICATIONS: {
+        Actions.VIEW: RolePermission.Scopes.OWN,
+        Actions.UPDATE: RolePermission.Scopes.OWN,
+    },
+    Resources.AI_ASSISTANT: {
+        Actions.VIEW: RolePermission.Scopes.OWN,
+        Actions.SUGGEST: RolePermission.Scopes.OWN,
+    },
+}
+
+# Existing staff/doctor memberships keep their previous read surface until an
+# owner explicitly moves them to the canonical specialist profile. This avoids
+# silently changing access for already assigned teams.
+LEGACY_SPECIALIST_PERMISSIONS = {
+    **SPECIALIST_PERMISSIONS,
+    Resources.APPOINTMENTS: {
+        Actions.VIEW: RolePermission.Scopes.BUSINESS,
+        Actions.UPDATE: RolePermission.Scopes.OWN,
+    },
+}
+
 ROLE_PRESETS = {
     BusinessMember.Roles.OWNER: {
         "*": {Actions.MANAGE: RolePermission.Scopes.BUSINESS},
@@ -100,6 +143,7 @@ ROLE_PRESETS = {
     BusinessMember.Roles.OPERATOR: {
         Resources.CLIENTS: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.OWN},
         Resources.LEADS: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.CREATE: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.OWN},
+        Resources.APPOINTMENTS: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.CREATE: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.BUSINESS},
         Resources.CONVERSATIONS: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.CREATE: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.OWN},
         Resources.TASKS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.UPDATE: RolePermission.Scopes.OWN},
         Resources.NOTIFICATIONS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.UPDATE: RolePermission.Scopes.OWN},
@@ -132,35 +176,23 @@ ROLE_PRESETS = {
         Resources.NOTIFICATIONS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.UPDATE: RolePermission.Scopes.OWN},
         Resources.AI_ASSISTANT: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.SUGGEST: RolePermission.Scopes.OWN},
     },
-    BusinessMember.Roles.STAFF: {
-        Resources.CLIENTS: {Actions.VIEW: RolePermission.Scopes.BUSINESS},
-        Resources.LEADS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.UPDATE: RolePermission.Scopes.OWN},
-        Resources.APPOINTMENTS: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.OWN},
-        Resources.TASKS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.UPDATE: RolePermission.Scopes.OWN},
-        Resources.NOTIFICATIONS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.UPDATE: RolePermission.Scopes.OWN},
-        Resources.AI_ASSISTANT: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.SUGGEST: RolePermission.Scopes.OWN},
-    },
-    BusinessMember.Roles.DOCTOR: {
-        Resources.CLIENTS: {Actions.VIEW: RolePermission.Scopes.BUSINESS},
-        Resources.LEADS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.UPDATE: RolePermission.Scopes.OWN},
-        Resources.APPOINTMENTS: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.OWN},
-        Resources.TASKS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.UPDATE: RolePermission.Scopes.OWN},
-        Resources.NOTIFICATIONS: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.UPDATE: RolePermission.Scopes.OWN},
-        Resources.AI_ASSISTANT: {Actions.VIEW: RolePermission.Scopes.OWN, Actions.SUGGEST: RolePermission.Scopes.OWN},
-    },
+    BusinessMember.Roles.SPECIALIST: SPECIALIST_PERMISSIONS,
+    BusinessMember.Roles.STAFF: LEGACY_SPECIALIST_PERMISSIONS,
+    BusinessMember.Roles.DOCTOR: LEGACY_SPECIALIST_PERMISSIONS,
 }
 
 
 ROLE_DISPLAY_NAMES = {
     BusinessMember.Roles.OWNER: "Владелец",
-    BusinessMember.Roles.ADMIN: "Директор",
+    BusinessMember.Roles.ADMIN: "Администратор",
     BusinessMember.Roles.MANAGER: "Менеджер",
-    BusinessMember.Roles.OPERATOR: "Оператор чатов",
+    BusinessMember.Roles.OPERATOR: "Оператор",
+    BusinessMember.Roles.SPECIALIST: "Специалист",
     BusinessMember.Roles.MARKETER: "Маркетолог",
     BusinessMember.Roles.ACCOUNTANT: "Бухгалтер",
     BusinessMember.Roles.SUPPORT: "Поддержка",
-    BusinessMember.Roles.STAFF: "Сотрудник",
-    BusinessMember.Roles.DOCTOR: "Doctor",
+    BusinessMember.Roles.STAFF: "Специалист (legacy staff)",
+    BusinessMember.Roles.DOCTOR: "Специалист (legacy doctor)",
 }
 
 
@@ -324,7 +356,13 @@ def can_view_sensitive_field(user, business: Business | None, resource: str, fie
     if field in {"amount", "revenue", "margin", "payment_status", "discount"}:
         return can(user, business, Resources.BILLING, Actions.VIEW).allowed
     if field in {"internal_notes", "notes", "lost_reason"}:
-        return membership.role not in {BusinessMember.Roles.OPERATOR, BusinessMember.Roles.SUPPORT, BusinessMember.Roles.STAFF}
+        return membership.role not in {
+            BusinessMember.Roles.OPERATOR,
+            BusinessMember.Roles.SUPPORT,
+            BusinessMember.Roles.SPECIALIST,
+            BusinessMember.Roles.STAFF,
+            BusinessMember.Roles.DOCTOR,
+        }
     return False
 
 
@@ -377,6 +415,9 @@ def _object_matches_scope(obj, user, business: Business | None, scope: str, acti
     appointment_linked_user_id = _appointment_linked_user_id(obj, business)
     if appointment_linked_user_id is not None:
         object_user_ids.add(appointment_linked_user_id)
+    resource_linked_user_id = _resource_linked_user_id(obj, business)
+    if resource_linked_user_id is not None:
+        object_user_ids.add(resource_linked_user_id)
     object_user_ids.discard(None)
 
     if (
@@ -411,6 +452,28 @@ def _appointment_linked_user_id(obj, business: Business | None):
     if obj.__class__.__name__ != "Appointment" or business is None:
         return None
     resource = getattr(obj, "resource", None)
+    if (
+        resource is None
+        or resource.business_id != business.id
+        or resource.linked_user_id is None
+    ):
+        return None
+    if resource.linked_user_id == business.owner_id:
+        return resource.linked_user_id
+    if business.members.filter(user_id=resource.linked_user_id, is_active=True).exists():
+        return resource.linked_user_id
+    return None
+
+
+def _resource_linked_user_id(obj, business: Business | None):
+    if business is None:
+        return None
+    if obj.__class__.__name__ == "Resource":
+        resource = obj
+    elif obj.__class__.__name__ == "WorkingHours":
+        resource = getattr(obj, "resource", None)
+    else:
+        return None
     if (
         resource is None
         or resource.business_id != business.id
@@ -473,6 +536,10 @@ def _filter_queryset_by_users(
             )
             & (active_link | owner_link)
         )
+    if queryset.model.__name__ == "Resource" and business is not None:
+        query |= Q(business=business, linked_user_id__in=user_ids)
+    if queryset.model.__name__ == "WorkingHours" and business is not None:
+        query |= Q(resource__business=business, resource__linked_user_id__in=user_ids)
     if "recipient" in model_fields:
         query |= Q(recipient_id__in=user_ids)
         if include_business_wide_notifications:

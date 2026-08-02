@@ -54,7 +54,7 @@ def build_bot_scheduling_context(conversation, *, qualification=None, days=5, sl
             if len(context["next_available_slots"]) >= 8:
                 return context
     if not context["next_available_slots"]:
-        context["required_questions"].append("Предложить клиенту другой день: свободных окон для выбранной услуги/мастера не найдено.")
+        context["required_questions"].append("Предложить клиенту другой день: свободных окон для выбранной услуги/специалиста не найдено.")
     return context
 
 
@@ -83,7 +83,7 @@ def _required_questions(*, matched_service, matched_resource, resources):
     if not matched_service:
         questions.append("Уточнить услугу, на которую клиент хочет записаться.")
     if resources and not matched_resource:
-        questions.append("Уточнить, нужен ли конкретный мастер/ресурс, или можно подобрать ближайшее свободное окно.")
+        questions.append("Уточнить, нужен ли конкретный специалист/ресурс, или можно подобрать ближайшее свободное окно.")
     questions.append("Уточнить удобный день и время, если клиент не выбрал конкретный слот.")
     return questions
 

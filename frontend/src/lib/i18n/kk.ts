@@ -1369,7 +1369,7 @@ export const kk: Record<string, string> = {
   "appointment.goServices": "Қызметтерді баптау",
   "appointment.resourceHintTitle": "Дәл кесте үшін маман қосыңыз",
   "appointment.resourceHintText":
-    "Салон, шаштараз немесе клиникада ресурс көбіне маман, дәрігер, кабинет немесе жұмыс орны.",
+    "Ресурс жеке кестесі бар маман, кабинет, жұмыс орны немесе жабдық болуы мүмкін.",
   "appointment.goResources": "Ресурстарға өту",
   "appointment.resourceOptionalTitle":
     "Маман немесе кабинетті қолмен таңдауға болады",
@@ -1434,7 +1434,7 @@ export const kk: Record<string, string> = {
   "appointment.create": "Жазба жасау",
   "appointments.title": "Жазбалар",
   "appointments.description":
-    "Барлық жазбалардың жұмыс тізімі: кім келеді, маман не істейді және клиент статусы қандай.",
+    "Барлық жазбалардың жұмыс тізімі: кім келеді, қандай қызмет жоспарланған және клиент статусы қандай.",
   "appointments.noBusiness":
     "Жазбалармен жұмыс істеу үшін баптауларда бизнес жасаңыз.",
   "appointments.create": "Жазба жасау",
@@ -1521,7 +1521,7 @@ export const kk: Record<string, string> = {
   "workingHours.formTitle": "Бүкіл аптаны бірден баптаңыз",
   "workingHours.formText":
     "Жалпы кесте бүкіл бизнес үшін қолданылады. Маман басқаша жұмыс істесе, оған жеке апта беруге болады.",
-  "workingHours.salonPreset": "Салон 09:00-20:00 күн сайын",
+  "workingHours.salonPreset": "Күн сайын 09:00-20:00",
   "workingHours.officePreset": "Офис Дс-Жм 09:00-18:00",
   "workingHours.copyBusinessSchedule": "Бизнес кестесін көшіру",
   "workingHours.saveWeek": "Апталық кестені сақтау",
@@ -1571,7 +1571,7 @@ export const kk: Record<string, string> = {
     "Маманның тұрақты жазылу уақыты бар негізгі қызметі.",
   "services.template.beautyProcedure.name": "Процедура",
   "services.template.beautyProcedure.description":
-    "Салонның немесе кабинеттің жұмыс орнын дайындаумен орындалатын негізгі қызметі.",
+    "Кабинет немесе жұмыс орнын дайындауды қажет ететін негізгі қызмет.",
   "services.template.diagnostics.name": "Диагностика",
   "services.template.diagnostics.description":
     "Негізгі жұмысқа дейінгі қарау, тексеру немесе диагностика.",
@@ -1579,7 +1579,7 @@ export const kk: Record<string, string> = {
   "services.save": "Сақтау",
   "resources.title": "Қызметкерлер мен ресурстар",
   "resources.description":
-    "Клиенттерді жазуға болатын мамандар, қызметкерлер, кабинеттер және жұмыс орындары.",
+    "Жазбаға қолжетімді мамандар, кабинеттер, жұмыс орындары және жабдықтар.",
   "resources.noBusiness":
     "Ресурстарды басқару үшін баптауларда бизнес жасаңыз.",
   "resources.add": "Ресурс қосу",
@@ -1591,10 +1591,10 @@ export const kk: Record<string, string> = {
   "resources.withScheduleHint": "жеке кестесі бар",
   "resources.logicTitle": "Ресурс логикасы:",
   "resources.logicText":
-    "шаштаразда әр маманды жеке ресурс ретінде қосқан дұрыс. Сонда күнтізбе мамандардың бос еместігін көрсетіп, бір адамға бір уақытта екі жазба қоюға жол бермейді.",
+    "Әр маманды жеке ресурс ретінде қосыңыз. Күнтізбе оның жүктемесін көрсетіп, бір уақытта екі жазба жасауға жол бермейді.",
   "resources.templateMaster": "Маман",
   "resources.templateMasterText":
-    "Клиент жазылатын шаштараз, барбер, дәрігер немесе басқа маман.",
+    "Клиент жазыла алатын қызметкер немесе мердігер.",
   "resources.templateMasterName": "Жаңа маман",
   "resources.templateChair": "Орындық / жұмыс орны",
   "resources.templateChairText":
@@ -1617,9 +1617,9 @@ export const kk: Record<string, string> = {
   "resources.editTitle": "Ресурсты өңдеу",
   "resources.formHintTitle": "Ресурс деген не",
   "resources.formHintText":
-    "Салонда бұл маман, барбер немесе орындық. Клиникада - дәрігер немесе кабинет. Автосервисте - бокс немесе көтергіш.",
-  "resources.namePlaceholder": "Мысалы: Әлия, Барбер 1, Орындық 2",
-  "resources.typeStaff": "Қызметкер / маман",
+    "Бұл жеке бос уақыты бар маман, кабинет, жұмыс орны немесе жабдық болуы мүмкін.",
+  "resources.namePlaceholder": "Мысалы: Әлия, Кабинет 1, Жұмыс орны 2",
+  "resources.typeStaff": "Маман",
   "resources.typeRoom": "Кабинет",
   "resources.typeHall": "Зал",
   "resources.typeBox": "Бокс / жұмыс орны",
@@ -2603,11 +2603,11 @@ export const kk: Record<string, string> = {
   "settings.teamEyebrow": "Команда және қолжетімділік",
   "settings.teamTitle": "Қызметкерлер және рұқсаттар",
   "settings.teamText":
-    "Ие мен әкімші бүкіл бизнесті көреді. Менеджер сатумен жұмыс істейді, оператор чаттарға жауап береді, бухгалтер мен маркетолог тек өз бөлімдерін алады.",
+    "Ие мен әкімші бизнесті басқарады, менеджер сатумен жұмыс істейді, оператор кіріс өтініштерді өңдейді, маман өз жазбалары мен тапсырмаларымен жұмыс істейді.",
   "settings.permissions": "рұқсат",
   "settings.accessTitle": "Рұқсаттарды түсінікті баптау",
   "settings.accessText":
-    "Қызметкерді таңдап, рөл беріңіз және көру аймағын тексеріңіз. Жаңа қызметкерлер қауіпсіз түрде «Қызметкер» ретінде бастайды.",
+    "Қызметкерді таңдап, рөл беріңіз және көру аймағын тексеріңіз. Жаңа қызметкерлер қауіпсіз түрде «Маман» ретінде бастайды.",
   "settings.roleGuideTitle": "Қай қызметкерге қандай рөл беру",
   "settings.roleGuideText":
     "Қызметкер түрін бір басумен таңдаңыз. Рөлді кейін өзгертуге, ал кеңейтілген құқықтарды бөлек баптауға болады.",
@@ -2654,13 +2654,14 @@ export const kk: Record<string, string> = {
   "settings.inviteMessage":
     "Сізді Zani CRM-ге шақырды. Сілтемені ашып, пароль қойыңыз: {url}",
   "settings.role.owner": "Ие",
-  "settings.role.admin": "Директор",
-  "settings.role.manager": "Сату менеджері",
-  "settings.role.operator": "Чат операторы",
+  "settings.role.admin": "Әкімші",
+  "settings.role.manager": "Менеджер",
+  "settings.role.operator": "Оператор",
+  "settings.role.specialist": "Маман",
   "settings.role.marketer": "Маркетолог",
   "settings.role.accountant": "Бухгалтер",
   "settings.role.support": "Қолдау",
-  "settings.role.staff": "Қызметкер",
+  "settings.role.staff": "Маман",
   "settings.currentRole": "Ағымдағы рөл",
   "settings.roleDescription.owner":
     "Бизнес, қызметкерлер, қаржы, аналитика және баптаулар бойынша толық бақылау.",
@@ -2669,7 +2670,9 @@ export const kk: Record<string, string> = {
   "settings.roleDescription.manager":
     "Өтінімдер, мәмілелер, клиенттер, тапсырмалар және сату күнтізбесімен жұмыс.",
   "settings.roleDescription.operator":
-    "Чаттарға жауап беру, кіріс өтініштерді өңдеу және басқару бөлімдерінсіз өтінім жасау.",
+    "Баптауларға, қаржыға және команданы басқаруға қолжетімсіз кіріс өтініштер, лидтер және жазбалар.",
+  "settings.roleDescription.specialist":
+    "Өз жазбалары, тапсырмалары және тағайындалған жұмыс контексті, басқару бөлімдерінсіз.",
   "settings.roleDescription.marketer":
     "Маркетинг, дереккөздер, сегменттер, формалар және коммуникациялар, қаржы бақылауынсыз.",
   "settings.roleDescription.accountant":
@@ -2677,7 +2680,7 @@ export const kk: Record<string, string> = {
   "settings.roleDescription.support":
     "Клиенттерге көмек және операциялық тексерістер, иені басқару құқығынсыз.",
   "settings.roleDescription.staff":
-    "Маман немесе қызметкерге базалық қолжетімділік: өз тапсырмалары, жазбалары және жұмыс контексті.",
+    "Өз жазбалары, тапсырмалары және тағайындалған жұмыс контексті, басқару бөлімдерінсіз.",
   "settings.visibility.own": "Тек өзінікі",
   "settings.visibility.own.text":
     "Қызметкер тек өзіне тағайындалған объектілерді көреді.",
@@ -5350,7 +5353,7 @@ export const kk: Record<string, string> = {
   "analytics.aiCard.default.title": "CRM көрсеткіші бойынша қорытынды",
   "analytics.aiCard.default.description":
     "Қорытынды {sources} дереккөзге негізделген.",
-  "settings.role.doctor": "Дәрігер",
+  "settings.role.doctor": "Маман",
   "dashboard.loadingPriorities": "Рөліңізге сай басымдықтар жүктелуде…",
   "dashboard.priorityQueueError": "Басымдық кезектері уақытша қолжетімсіз. Күнделікті жұмыс көрінісін қалпына келтіру үшін қайталаңыз.",
   "dashboard.upcomingWork": "Алдағы жұмыс",

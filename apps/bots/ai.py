@@ -62,7 +62,7 @@ def suggest_bot_reply(*, conversation, user=None, auto_mode=False, qualification
             "Follow sales_playbook exactly for this business type. "
             "Use available scheduling context when present. Offer only real slots from next_available_slots. "
             "Use service prices from services.price_from and explain them as 'от' when price_from is present. "
-            "If service, preferred master/resource, day, or exact slot is missing, ask one clear next question instead of inventing details. "
+            "If service, preferred specialist/resource, day, or exact slot is missing, ask one clear next question instead of inventing details. "
         )
     else:
         reply_instruction = "Generate a short, helpful CRM manager reply for this bot conversation. Do not send it automatically. "

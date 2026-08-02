@@ -651,7 +651,7 @@ test("business owner can create an appointment from calendar UI", async ({
       headers,
       data: {
         business: businessId,
-        name: `Calendar Master ${unique}`,
+        name: `Calendar Specialist ${unique}`,
         resource_type: "staff",
         is_active: true,
       },
@@ -834,7 +834,7 @@ test("calendar deep link selects appointment and lifecycle action works", async 
       headers,
       data: {
         business: businessId,
-        name: `Deep Link Master ${unique}`,
+        name: `Deep Link Specialist ${unique}`,
         resource_type: "staff",
         is_active: true,
       },
@@ -969,7 +969,7 @@ test("business owner can reschedule appointment from calendar UI", async ({
       headers,
       data: {
         business: businessId,
-        name: `Reschedule Master ${unique}`,
+        name: `Reschedule Specialist ${unique}`,
         resource_type: "staff",
         is_active: true,
       },
@@ -1196,7 +1196,7 @@ test("business owner can configure working hours week", async ({
       headers,
       data: {
         business: businessId,
-        name: `Hours Master ${unique}`,
+        name: `Hours Specialist ${unique}`,
         resource_type: "staff",
         is_active: true,
       },
@@ -1225,7 +1225,7 @@ test("business owner can configure working hours week", async ({
 
   await page.locator("select").last().selectOption(String(resource.id));
   await page
-    .getByRole("button", { name: /РЎР°Р»РѕРЅ 09:00-20:00|Salon 09:00-20:00/ })
+    .getByRole("button", { name: /Ежедневно 09:00-20:00|Daily 09:00-20:00|Күн сайын 09:00-20:00/ })
     .click();
   await page
     .getByRole("button", {

@@ -677,7 +677,7 @@ export const ru: Record<string, string> = {
   "search.placeholder.deals": "Поиск по сделкам: название, клиент, источник...",
   "search.placeholder.conversations":
     "Поиск по диалогам: клиент, телефон, сообщение...",
-  "search.placeholder.calendar": "Поиск по записям: клиент, услуга, мастер...",
+  "search.placeholder.calendar": "Поиск по записям: клиент, услуга, специалист...",
   "search.placeholder.tasks": "Поиск по задачам: название, клиент, дедлайн...",
   "search.placeholder.integrations":
     "Поиск по подключениям: Telegram, Kaspi, 1C...",
@@ -1273,7 +1273,7 @@ export const ru: Record<string, string> = {
     "Записи, свободные окна и загрузка команды в одном рабочем экране.",
   "calendar.businessSchedule": "Расписание бизнеса",
   "calendar.heroText":
-    "Проверьте день, свободные окна, мастеров и создайте запись без лишних переходов.",
+    "Проверьте день, свободные окна, специалистов и создайте запись без лишних переходов.",
   "calendar.bookings": "Записи",
   "calendar.confirmed": "Подтверждены",
   "calendar.openSlots": "Свободные окна",
@@ -1353,7 +1353,7 @@ export const ru: Record<string, string> = {
   "calendar.loadingInline":
     "Догружаем календарь: записи, клиентов, услуги и график. Экран уже можно просматривать.",
   "calendar.loadingAppointments": "Загружаем записи...",
-  "appointment.selectResourceError": "Выберите мастера или рабочее место",
+  "appointment.selectResourceError": "Выберите специалиста или рабочее место",
   "appointment.selectSlotError": "Выберите свободный слот",
   "appointment.needClientTitle": "Сначала нужен клиент",
   "appointment.needClientText":
@@ -1363,17 +1363,17 @@ export const ru: Record<string, string> = {
   "appointment.needServiceText":
     "Слоты считаются по длительности услуги. Добавьте хотя бы одну активную услугу.",
   "appointment.goServices": "Настроить услуги",
-  "appointment.resourceHintTitle": "Добавьте мастера для точного расписания",
+  "appointment.resourceHintTitle": "Добавьте специалиста для точного расписания",
   "appointment.resourceHintText":
-    "Для салона, парикмахерской или клиники ресурс обычно означает мастера, врача, кабинет или рабочее место.",
+    "Ресурсом может быть специалист, кабинет, рабочее место или оборудование с отдельным расписанием.",
   "appointment.goResources": "Перейти к ресурсам",
   "appointment.resourceOptionalTitle":
-    "Мастер или кабинет можно выбрать вручную",
+    "Специалиста или ресурс можно выбрать вручную",
   "appointment.resourceSelectedText":
-    "Если оставить поле пустым, запись создаётся по общему графику бизнеса. Если нужен конкретный мастер, кабинет или рабочее место, выберите его ниже.",
+    "Если оставить поле пустым, запись создаётся по общему графику бизнеса. Если нужен конкретный специалист, кабинет или рабочее место, выберите его ниже.",
   "appointment.client": "Клиент",
   "appointment.service": "Услуга",
-  "appointment.resource": "Мастер / ресурс",
+  "appointment.resource": "Специалист / ресурс",
   "appointment.lead": "Заявка",
   "appointment.date": "Дата",
   "appointment.time": "Время",
@@ -1383,7 +1383,7 @@ export const ru: Record<string, string> = {
   "appointment.notes": "Заметки",
   "appointment.selectClient": "Выберите клиента",
   "appointment.selectService": "Выберите услугу",
-  "appointment.selectResource": "Выберите мастера",
+  "appointment.selectResource": "Выберите специалиста",
   "appointment.businessSchedule": "По общему графику бизнеса",
   "appointment.noResource": "Без ресурса",
   "appointment.noLead": "Без заявки",
@@ -1393,7 +1393,7 @@ export const ru: Record<string, string> = {
   "appointment.selectTime": "Выберите время",
   "appointment.noSlotsForDate": "Нет свободных слотов на {date}",
   "appointment.noSlotsReason":
-    "Проверьте график бизнеса или выбранного мастера. Для быстрого старта можно применить салонный график: каждый день 09:00-20:00.",
+    "Проверьте график бизнеса или выбранного специалиста. Для быстрого старта можно применить общий график: каждый день 09:00-20:00.",
   "appointment.noSlotsReasonMissingHours":
     "На этот день не настроен рабочий график. Настройте неделю или примените быстрый график 09:00-20:00.",
   "appointment.noSlotsReasonDayOff":
@@ -1404,7 +1404,7 @@ export const ru: Record<string, string> = {
     "График настроен, но все окна уже заняты другими записями. Выберите другую дату, время или ресурс.",
   "appointment.workingWindow": "Рабочее окно: {start}-{end}",
   "appointment.reasonHours": "на этот день не настроен рабочий график",
-  "appointment.reasonResource": "у выбранного мастера может быть выходной",
+  "appointment.reasonResource": "у выбранного специалиста может быть выходной",
   "appointment.reasonBusy": "все окна уже заняты другими записями",
   "appointment.applyQuickHours": "Применить 09:00-20:00",
   "appointment.openHours": "Открыть график",
@@ -1430,7 +1430,7 @@ export const ru: Record<string, string> = {
   "appointment.create": "Создать запись",
   "appointments.title": "Записи",
   "appointments.description":
-    "Операционный список всех записей: кто придёт, что делает мастер и какой статус у клиента.",
+    "Операционный список всех записей: кто придёт, какая услуга запланирована и какой статус у клиента.",
   "appointments.noBusiness":
     "Создайте бизнес в настройках, чтобы работать с записями.",
   "appointments.create": "Создать запись",
@@ -1441,7 +1441,7 @@ export const ru: Record<string, string> = {
   "appointments.completed": "Завершены",
   "appointments.completedHint": "закрытые визиты и выполненные услуги",
   "appointments.resources": "Задействовано",
-  "appointments.resourcesHint": "мастера или кабинеты в расписании",
+  "appointments.resourcesHint": "специалисты или ресурсы в расписании",
   "appointments.allStatuses": "Все статусы",
   "appointments.emptyTitle": "Записей пока нет",
   "appointments.emptyFiltered":
@@ -1476,7 +1476,7 @@ export const ru: Record<string, string> = {
   "appointments.actionDone": "Действие по записи выполнено",
   "workingHours.title": "График работы",
   "workingHours.description":
-    "Общее расписание бизнеса и отдельные недели мастеров, кабинетов или рабочих мест.",
+    "Общее расписание бизнеса и отдельные недели специалистов, кабинетов или рабочих мест.",
   "workingHours.noBusiness":
     "Создайте бизнес в настройках, чтобы настроить график.",
   "workingHours.setupWeek": "Настроить неделю",
@@ -1486,7 +1486,7 @@ export const ru: Record<string, string> = {
   "workingHours.quickSetup": "Быстрая настройка",
   "workingHours.quickTitle": "Быстро применить общий график",
   "workingHours.quickText":
-    "Выберите шаблон для бизнеса целиком. Для отдельных мастеров используйте кнопку «Настроить неделю».",
+    "Выберите шаблон для бизнеса целиком. Для отдельных специалистов используйте кнопку «Настроить неделю».",
   "workingHours.applyPreset": "Применить график",
   "workingHours.savedNotice":
     "Недельный график сохранён. Календарь обновит свободные слоты.",
@@ -1517,8 +1517,8 @@ export const ru: Record<string, string> = {
   "workingHours.saveSchedule": "Сохранить график",
   "workingHours.formTitle": "Настройте всю неделю сразу",
   "workingHours.formText":
-    "Общий график используется для всего бизнеса. Для мастера можно задать отдельную неделю, если он работает иначе.",
-  "workingHours.salonPreset": "Салон 09:00-20:00 каждый день",
+    "Общий график используется для всего бизнеса. Для специалиста или ресурса можно задать отдельную неделю.",
+  "workingHours.salonPreset": "Ежедневно 09:00-20:00",
   "workingHours.officePreset": "Офис Пн-Пт 09:00-18:00",
   "workingHours.copyBusinessSchedule": "Скопировать график бизнеса",
   "workingHours.saveWeek": "Сохранить недельный график",
@@ -1557,7 +1557,7 @@ export const ru: Record<string, string> = {
   "services.editTitle": "Редактировать услугу",
   "services.formHintTitle": "Услуга влияет на календарь",
   "services.formHintText":
-    "Чем точнее длительность, тем точнее Zani покажет свободные окна и загрузку мастеров.",
+    "Чем точнее длительность, тем точнее Zani покажет свободные окна и загрузку специалистов.",
   "services.templatesTitle": "Быстрый старт услуги",
   "services.templatesText":
     "Выберите шаблон, а затем поправьте название, цену или длительность под свой бизнес.",
@@ -1566,10 +1566,10 @@ export const ru: Record<string, string> = {
     "Первичная консультация клиента и подбор следующего шага.",
   "services.template.haircut.name": "Стрижка",
   "services.template.haircut.description":
-    "Базовая услуга мастера с фиксированным временем записи.",
+    "Базовая услуга специалиста с фиксированным временем записи.",
   "services.template.beautyProcedure.name": "Процедура",
   "services.template.beautyProcedure.description":
-    "Основная услуга салона или кабинета с подготовкой рабочего места.",
+    "Основная услуга с подготовкой кабинета или рабочего места.",
   "services.template.diagnostics.name": "Диагностика",
   "services.template.diagnostics.description":
     "Осмотр, проверка или диагностика перед основной работой.",
@@ -1577,23 +1577,23 @@ export const ru: Record<string, string> = {
   "services.save": "Сохранить",
   "resources.title": "Сотрудники и ресурсы",
   "resources.description":
-    "Мастера, сотрудники, кабинеты и рабочие места, к которым можно записывать клиентов.",
+    "Специалисты, кабинеты, рабочие места и оборудование, доступные для записи.",
   "resources.noBusiness":
     "Создайте бизнес в настройках, чтобы управлять ресурсами.",
   "resources.add": "Добавить ресурс",
   "resources.active": "Активные ресурсы",
   "resources.activeHint": "доступны для записи в календаре",
-  "resources.staff": "Мастера",
+  "resources.staff": "Специалисты",
   "resources.staffHint": "люди, которые оказывают услуги",
   "resources.withSchedule": "С графиком",
   "resources.withScheduleHint": "имеют отдельное расписание",
   "resources.logicTitle": "Логика ресурсов:",
   "resources.logicText":
-    "для парикмахерской обычно создают каждого мастера отдельным ресурсом. Тогда календарь покажет занятость по мастерам и не даст поставить две записи одному человеку на одно время.",
-  "resources.templateMaster": "Мастер",
+    "Создайте каждого специалиста отдельным ресурсом. Календарь покажет его занятость и не допустит две записи на одно время.",
+  "resources.templateMaster": "Специалист",
   "resources.templateMasterText":
-    "Парикмахер, барбер, врач или специалист, к которому записывают клиента.",
-  "resources.templateMasterName": "Новый мастер",
+    "Сотрудник или подрядчик, к которому можно записать клиента.",
+  "resources.templateMasterName": "Новый специалист",
   "resources.templateChair": "Кресло / место",
   "resources.templateChairText":
     "Рабочее место, кресло, стол или оборудование с отдельной занятостью.",
@@ -1606,7 +1606,7 @@ export const ru: Record<string, string> = {
   "resources.templateBoxText":
     "Автосервис, детейлинг или рабочая зона с отдельным расписанием.",
   "resources.templateBoxName": "Бокс 1",
-  "resources.emptyTitle": "Мастера и ресурсы пока не добавлены",
+  "resources.emptyTitle": "Специалисты и ресурсы пока не добавлены",
   "resources.emptyText":
     "Добавьте сотрудников, кабинеты или рабочие места, чтобы записи в календаре были точными.",
   "resources.name": "Название",
@@ -1615,9 +1615,9 @@ export const ru: Record<string, string> = {
   "resources.editTitle": "Редактировать ресурс",
   "resources.formHintTitle": "Что считать ресурсом",
   "resources.formHintText":
-    "В салоне это мастер, барбер или кресло. В клинике - врач или кабинет. В автосервисе - бокс или подъёмник.",
-  "resources.namePlaceholder": "Например: Алия, Барбер 1, Кресло 2",
-  "resources.typeStaff": "Сотрудник / мастер",
+    "Это может быть специалист, кабинет, рабочее место или оборудование с отдельной занятостью.",
+  "resources.namePlaceholder": "Например: Алия, Кабинет 1, Рабочее место 2",
+  "resources.typeStaff": "Специалист",
   "resources.typeRoom": "Кабинет",
   "resources.typeHall": "Зал",
   "resources.typeBox": "Бокс / рабочее место",
@@ -2571,7 +2571,7 @@ export const ru: Record<string, string> = {
     "Сообщение клиенту до визита, чтобы снизить неявки и сразу поймать отмену или перенос.",
   "settings.appointmentMessages.scenario.reminder": "Напоминание перед визитом",
   "settings.appointmentMessages.scenario.reminder.text":
-    "Короткое сообщение за несколько часов до записи с услугой, временем, мастером и адресом.",
+    "Короткое сообщение за несколько часов до записи с услугой, временем, специалистом и адресом.",
   "settings.appointmentMessages.scenario.thankYou": "После оказания услуги",
   "settings.appointmentMessages.scenario.thankYou.text":
     "Спасибо после завершённого визита, повторная запись или мягкий запрос обратной связи.",
@@ -2601,11 +2601,11 @@ export const ru: Record<string, string> = {
   "settings.teamEyebrow": "Команда и доступ",
   "settings.teamTitle": "Сотрудники и доступы",
   "settings.teamText":
-    "Владелец и администратор видят весь бизнес. Менеджер работает с продажами, оператор отвечает в чатах, а бухгалтер и маркетолог получают только свои разделы.",
+    "Владелец и администратор управляют бизнесом, менеджер ведёт продажи, оператор обрабатывает входящие обращения, специалист работает со своими записями и задачами.",
   "settings.permissions": "прав",
   "settings.accessTitle": "Понятная настройка прав",
   "settings.accessText":
-    "Выберите сотрудника, назначьте роль и проверьте область видимости. Новые сотрудники безопасно стартуют как «Сотрудник».",
+    "Выберите сотрудника, назначьте роль и проверьте область видимости. Новые сотрудники безопасно стартуют как «Специалист».",
   "settings.roleGuideTitle": "Кого какой ролью приглашать",
   "settings.roleGuideText":
     "Выберите тип сотрудника одним кликом. Роль можно изменить позже, а расширенные права настроить отдельно.",
@@ -2652,13 +2652,14 @@ export const ru: Record<string, string> = {
   "settings.inviteMessage":
     "Вас пригласили в Zani CRM. Откройте ссылку и задайте пароль: {url}",
   "settings.role.owner": "Владелец",
-  "settings.role.admin": "Директор",
-  "settings.role.manager": "Менеджер продаж",
-  "settings.role.operator": "Оператор чатов",
+  "settings.role.admin": "Администратор",
+  "settings.role.manager": "Менеджер",
+  "settings.role.operator": "Оператор",
+  "settings.role.specialist": "Специалист",
   "settings.role.marketer": "Маркетолог",
   "settings.role.accountant": "Бухгалтер",
   "settings.role.support": "Поддержка",
-  "settings.role.staff": "Сотрудник",
+  "settings.role.staff": "Специалист",
   "settings.currentRole": "Текущая роль",
   "settings.roleDescription.owner":
     "Полный контроль бизнеса, сотрудников, финансов, аналитики и настроек.",
@@ -2667,7 +2668,9 @@ export const ru: Record<string, string> = {
   "settings.roleDescription.manager":
     "Работа с заявками, сделками, клиентами, задачами и календарём продаж.",
   "settings.roleDescription.operator":
-    "Ответы в чатах, обработка входящих обращений и создание заявок без управленческих разделов.",
+    "Входящие обращения, заявки и записи без доступа к настройкам, финансам и управлению командой.",
+  "settings.roleDescription.specialist":
+    "Свои записи, задачи и назначенный рабочий контекст без управленческих разделов.",
   "settings.roleDescription.marketer":
     "Маркетинг, источники, сегменты, формы и коммуникации без финансового контроля.",
   "settings.roleDescription.accountant":
@@ -2675,7 +2678,7 @@ export const ru: Record<string, string> = {
   "settings.roleDescription.support":
     "Помощь клиентам и операционные проверки без доступа к управлению владельцем.",
   "settings.roleDescription.staff":
-    "Базовый доступ для мастера или сотрудника: свои задачи, записи и рабочий контекст.",
+    "Свои записи, задачи и назначенный рабочий контекст без управленческих разделов.",
   "settings.visibility.own": "Только своё",
   "settings.visibility.own.text":
     "Сотрудник видит только назначенные ему объекты.",
@@ -2783,7 +2786,7 @@ export const ru: Record<string, string> = {
   "settings.operations.orderStep1":
     "1. Добавьте услуги: по ним считается длительность и цена записи.",
   "settings.operations.orderStep2":
-    "2. Добавьте мастеров, кабинеты или рабочие места, если записи зависят от конкретного ресурса.",
+    "2. Добавьте специалистов, кабинеты или рабочие места, если записи зависят от конкретного ресурса.",
   "settings.operations.orderStep3":
     "3. Настройте общий график и отдельные недели только там, где это действительно нужно.",
   "settings.openSection": "Открыть раздел",
@@ -5341,7 +5344,7 @@ export const ru: Record<string, string> = {
   "analytics.aiCard.default.title": "Вывод по показателю CRM",
   "analytics.aiCard.default.description":
     "Вывод основан на {sources} источниках.",
-  "settings.role.doctor": "Врач",
+  "settings.role.doctor": "Специалист",
   "dashboard.loadingPriorities": "Загружаем приоритеты по вашей роли…",
   "dashboard.priorityQueueError": "Очереди приоритетов временно недоступны. Повторите запрос, чтобы восстановить рабочий обзор.",
   "dashboard.upcomingWork": "Ближайшая работа",

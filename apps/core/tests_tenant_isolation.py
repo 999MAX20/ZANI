@@ -168,14 +168,20 @@ class TenantObjectBoundaryTests(TestCase):
         self.assertEqual(update_resource.status_code, 403)
         self.assertEqual(apply_preset.status_code, 403)
 
-    def test_operator_cannot_access_scheduling_catalog_without_appointment_or_settings_scope(self):
+    def test_operator_reads_tenant_scheduling_catalog_without_settings_mutation(self):
         self.api.force_authenticate(self.operator_a)
 
-        for endpoint in ["services", "resources", "working-hours"]:
+        for endpoint, own_object in {
+            "services": self.objects_a["services"],
+            "resources": self.objects_a["resources"],
+            "working-hours": self.objects_a["working-hours"],
+        }.items():
             response = self.api.get(f"/api/{endpoint}/")
 
             self.assertEqual(response.status_code, 200, endpoint)
-            self.assertEqual(self._results(response), [], endpoint)
+            ids = {item["id"] for item in self._results(response)}
+            self.assertIn(own_object.id, ids, endpoint)
+            self.assertNotIn(self.objects_b[endpoint].id, ids, endpoint)
 
         response = self.api.post(
             "/api/services/",

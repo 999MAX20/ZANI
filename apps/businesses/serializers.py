@@ -105,7 +105,7 @@ class BusinessMemberSerializer(serializers.ModelSerializer):
         business = attrs.get("business") or getattr(self.instance, "business", None)
         user = attrs.get("user") or getattr(self.instance, "user", None)
         business_role = attrs.get("business_role") if "business_role" in attrs else getattr(self.instance, "business_role", None)
-        role = attrs.get("role") or getattr(self.instance, "role", BusinessMember.Roles.STAFF)
+        role = attrs.get("role") or getattr(self.instance, "role", BusinessMember.Roles.SPECIALIST)
         fallback_member = attrs.get("fallback_member") if "fallback_member" in attrs else getattr(self.instance, "fallback_member", None)
 
         if self.instance is not None:
@@ -310,7 +310,7 @@ class BusinessInvitationSerializer(serializers.ModelSerializer):
         phone = (attrs.get("phone") or getattr(self.instance, "phone", "") or "").strip()
         telegram = (attrs.get("telegram") or getattr(self.instance, "telegram", "") or "").strip()
         delivery_channel = attrs.get("delivery_channel") or getattr(self.instance, "delivery_channel", BusinessInvitation.DeliveryChannels.MANUAL)
-        role = attrs.get("role") or getattr(self.instance, "role", BusinessMember.Roles.STAFF)
+        role = attrs.get("role") or getattr(self.instance, "role", BusinessMember.Roles.SPECIALIST)
         business_role = attrs.get("business_role") or getattr(self.instance, "business_role", None)
         team = attrs.get("team") if "team" in attrs else getattr(self.instance, "team", None)
         if email:

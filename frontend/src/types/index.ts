@@ -5,7 +5,7 @@ export type User = {
   email: string;
   full_name?: string;
   phone?: string;
-  role?: "platform_admin" | "platform_manager" | "business_owner" | "business_manager" | "business_operator" | "manager" | "admin" | "operator" | "marketer" | "accountant" | "support" | "staff" | "doctor";
+  role?: "platform_admin" | "platform_manager" | "business_owner" | "business_manager" | "business_operator" | "manager" | "admin" | "operator" | "specialist" | "marketer" | "accountant" | "support" | "staff" | "doctor";
   is_platform_user?: boolean;
   is_merchant_user?: boolean;
   is_business_manager?: boolean;
@@ -617,7 +617,7 @@ export type EffectivePermission = {
 
 export type BusinessMembershipSummary = {
   business: Id;
-  role: "owner" | "admin" | "manager" | "operator" | "marketer" | "accountant" | "support" | "staff" | "doctor";
+  role: "owner" | "admin" | "manager" | "operator" | "specialist" | "marketer" | "accountant" | "support" | "staff" | "doctor";
   business_role: Id | null;
   business_role_name: string;
   is_active: boolean;

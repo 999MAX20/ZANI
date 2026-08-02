@@ -1,6 +1,6 @@
 # CRM Production Layer Plan
 
-Last updated: 2026-07-21
+Last updated: 2026-08-02
 
 Цель: довести CRM до production-уровня слоями по всему продукту, а не полировать одну страницу изолированно. Этот документ является текущим source-of-truth для CRM hardening.
 
@@ -17,6 +17,20 @@ domain invariants -> state machines -> audit/activity -> API contracts -> fronte
 ## 2. Текущее Состояние
 
 ### Backend Boundaries
+
+Update 2026-08-02: PC-2 standardizes the generic merchant CRM on five
+authorization profiles: Owner, Administrator, Manager, Operator and
+Specialist. Director is a company-facing title for Administrator, while
+doctor/master/barber and similar professions are not technical roles. Operator
+may run business-wide appointment create/update flows but cannot open settings,
+billing or integrations. Specialist has `OWN` appointment/task scope derived
+from active same-business assignment and linked scheduling resource. Historical
+staff/doctor and other specialized presets remain compatibility-only so
+existing memberships are not silently escalated or broken. Business type is
+now descriptive metadata: selecting dentistry no longer disables Deals or
+switches the generic workflow. The canonical foundation stays Inbox -> Leads ->
+Clients -> Deals -> Appointments/Calendar -> Tasks -> Analytics until an owner
+explicitly applies a future vertical profile.
 
 Update 2026-07-23: Backend Reliability Phase R5 repository work and verification are complete. Platform operations and paid-beta checks now return a structured critical `database_unavailable` blocker instead of crashing on an unavailable or unmigrated database. Operations health exposes bounded outbox lag/retry/failure and routing/SLA attention counts/ages without customer text, merchant names, connector names, user email or raw errors. The obsolete 145-checkbox backend backlog is replaced by a closed B0-B6 phase summary and points to the current reliability plan. A clean SQLite migration passed, the complete Django suite passed (`459 passed, 7 warnings`), Django check and migration drift passed, and high-confidence secret scan returned zero matches. Local production readiness remains correctly blocked by ten production configuration/infrastructure failures and one email warning; backup readiness has two paid-beta blockers; provider rollout has zero blockers; paid beta remains blocked by ten gates. These are target-environment prerequisites, not hidden repository completion claims.
 
@@ -372,6 +386,8 @@ The old page-by-page priority list above has been superseded by completed phase 
 1. Keep the provider live/mock readiness matrix current and make merchant-facing connector labels follow it.
 2. Keep `API_ACTION_CONTRACT.md` synchronized with actual DRF router/actions before frontend work uses an endpoint.
 3. Run production-like merchant data QA for calendar, tasks, client/deal/inbox daily workflows and AI source-grounded summaries.
-4. Implement the dentistry-first product profile/capability layer before promising a dentistry workspace where Deals are disabled by default.
+4. Keep dentistry and other vertical profiles deferred until an explicit owner
+   decision; business type alone must not alter the canonical CRM modules or
+   terminology.
 5. Expand full-browser E2E only when UI behavior changes; backend cross-entity gates already cover core CRM invariants.
 6. Continue provider rollout only through readiness gates, rollback notes and support-visible status.

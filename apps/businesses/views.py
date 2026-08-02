@@ -282,7 +282,7 @@ class BusinessInvitationViewSet(TeamAccessMixin, ModelViewSet):
     def perform_create(self, serializer):
         business = self.check_team_permission(Actions.MANAGE)
         assert_entitlement_allows(business, EntitlementMetrics.USERS)
-        role = serializer.validated_data.get("role", BusinessMember.Roles.STAFF)
+        role = serializer.validated_data.get("role", BusinessMember.Roles.SPECIALIST)
         business_role = serializer.validated_data.get("business_role")
         if business_role is None:
             business_role = BusinessRole.objects.filter(business=business, preset_key=role, is_active=True).first()

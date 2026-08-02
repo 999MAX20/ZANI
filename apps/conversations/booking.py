@@ -67,7 +67,7 @@ def maybe_create_appointment_from_reply(*, conversation: BotConversation, messag
     if slot.get("resource_id"):
         resource = Resource.objects.filter(id=slot.get("resource_id"), business=conversation.business, is_active=True).first()
         if resource is None:
-            return _booking_blocked(conversation, "Выбранный мастер/ресурс недоступен. Проверьте расписание.")
+            return _booking_blocked(conversation, "Выбранный специалист/ресурс недоступен. Проверьте расписание.")
 
     try:
         start_at = datetime.fromisoformat(str(slot["start_at"]))

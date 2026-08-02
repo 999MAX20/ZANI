@@ -25,9 +25,9 @@ class B4CapabilityTests(TestCase):
             password="Strong-pass-123",
             role=User.Roles.BUSINESS_OPERATOR,
         )
-        self.doctor = User.objects.create_user(
-            username="b4-doctor@example.com",
-            email="b4-doctor@example.com",
+        self.specialist = User.objects.create_user(
+            username="b4-specialist@example.com",
+            email="b4-specialist@example.com",
             password="Strong-pass-123",
             role=User.Roles.STAFF,
         )
@@ -41,7 +41,7 @@ class B4CapabilityTests(TestCase):
         for user, role in (
             (self.owner, BusinessMember.Roles.OWNER),
             (self.operator, BusinessMember.Roles.OPERATOR),
-            (self.doctor, BusinessMember.Roles.DOCTOR),
+            (self.specialist, BusinessMember.Roles.SPECIALIST),
         ):
             BusinessMember.objects.create(
                 business=self.business,
@@ -62,15 +62,16 @@ class B4CapabilityTests(TestCase):
             owner=self.owner,
         )
 
-    def test_dentistry_profile_is_appointment_first_with_deals_disabled(self):
+    def test_business_type_does_not_replace_the_generic_crm_foundation(self):
         profile = capability_payload(self.business)
 
-        self.assertEqual(profile["workflow_mode"], "appointment_first")
-        self.assertFalse(profile["modules"]["deals"])
+        self.assertEqual(profile["workflow_mode"], "standard_crm")
+        self.assertTrue(profile["modules"]["deals"])
         self.assertTrue(profile["modules"]["appointments"])
         self.assertTrue(profile["modules"]["inbox"])
 
     def test_disabled_deal_module_blocks_api_and_reenable_preserves_data(self):
+        BusinessCapability.objects.filter(business=self.business, module_key="deals").update(is_enabled=False)
         self.api.force_authenticate(self.owner)
 
         hidden = self.api.get(f"/api/deals/{self.deal.id}/")
@@ -103,6 +104,8 @@ class B4CapabilityTests(TestCase):
 
     def test_only_settings_manager_can_change_capability(self):
         capability = BusinessCapability.objects.get(business=self.business, module_key="deals")
+        capability.is_enabled = False
+        capability.save(update_fields=["is_enabled", "updated_at"])
         self.api.force_authenticate(self.operator)
 
         response = self.api.patch(
@@ -116,6 +119,7 @@ class B4CapabilityTests(TestCase):
         self.assertFalse(capability.is_enabled)
 
     def test_ai_tool_cannot_target_disabled_deals(self):
+        BusinessCapability.objects.filter(business=self.business, module_key="deals").update(is_enabled=False)
         log = AIToolCallLog.objects.create(
             business=self.business,
             user=self.owner,
@@ -141,11 +145,11 @@ class B4CapabilityTests(TestCase):
         self.assertEqual(response.status_code, 403)
         self.assertEqual(Deal.objects.filter(business=self.business).count(), 1)
 
-    def test_current_user_bootstrap_exposes_capabilities_and_doctor_role(self):
-        self.api.force_authenticate(self.doctor)
+    def test_current_user_bootstrap_exposes_capabilities_and_specialist_role(self):
+        self.api.force_authenticate(self.specialist)
 
         response = self.api.get("/api/auth/me/")
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["memberships"][0]["role"], BusinessMember.Roles.DOCTOR)
-        self.assertFalse(response.data["capabilities"][str(self.business.id)]["modules"]["deals"])
+        self.assertEqual(response.data["memberships"][0]["role"], BusinessMember.Roles.SPECIALIST)
+        self.assertTrue(response.data["capabilities"][str(self.business.id)]["modules"]["deals"])

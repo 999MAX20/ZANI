@@ -29,7 +29,11 @@ import { Select } from "../../components/ui/Select";
 import { ErrorState, LoadingState } from "../../components/ui/StateViews";
 import { Textarea } from "../../components/ui/Textarea";
 import { useActiveBusiness } from "../../hooks/useBusiness";
-import { hasPermission, permissionResourceLabel } from "../../lib/permissions";
+import {
+  canonicalBusinessRole,
+  hasPermission,
+  permissionResourceLabel,
+} from "../../lib/permissions";
 import { useI18n } from "../../lib/i18n";
 import { useAuth } from "../auth/AuthProvider";
 import type {
@@ -683,17 +687,24 @@ export function SettingsPage() {
   const hasSubscription = Boolean(subscription.data && currentPlan);
   const members = teamMembers.data || [];
   const roles = teamRoles.data || [];
+  const canonicalRoleKeys = new Set(teamRoleOptions.map((option) => option.value));
+  const visibleRoles = roles.filter(
+    (role) => !role.is_system || canonicalRoleKeys.has(role.preset_key as BusinessMembershipSummary["role"]),
+  );
   const selectedMember =
     members.find((member) => Number(member.id) === selectedMemberId) ||
     members[0];
+  const selectedMemberRole = canonicalBusinessRole(
+    selectedMember?.role,
+  ) as BusinessMembershipSummary["role"];
   const selectedRole =
     roles.find((role) => Number(role.id) === selectedRoleId) ||
     roles.find(
       (role) => Number(role.id) === Number(selectedMember?.business_role),
     ) ||
-    roles.find((role) => role.preset_key === selectedMember?.role) ||
-    roles.find((role) => role.preset_key === "staff") ||
-    roles[0];
+    roles.find((role) => role.preset_key === selectedMemberRole) ||
+    roles.find((role) => role.preset_key === "specialist") ||
+    visibleRoles[0];
   const selectedVisibility = selectedRole
     ? roleVisibility(selectedRole)
     : "none";
@@ -1114,7 +1125,7 @@ export function SettingsPage() {
                     />
                     <Select
                       label={t("settings.roleStep")}
-                      value={selectedMember?.role || "staff"}
+                      value={selectedMemberRole}
                       onChange={(event) =>
                         selectedMember &&
                         updateMemberRole(
@@ -1202,7 +1213,7 @@ export function SettingsPage() {
                             )?.label ||
                               selectedMember.business_role_name ||
                               selectedRole?.name ||
-                              t("settings.role.staff")}
+                              t("settings.role.specialist")}
                           </p>
                         </div>
                         <span
@@ -2126,7 +2137,7 @@ export function SettingsPage() {
                 </div>
               ) : null}
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                {roles.map((role) => (
+                {visibleRoles.map((role) => (
                   <button
                     key={role.id}
                     type="button"
@@ -2149,7 +2160,7 @@ export function SettingsPage() {
                     </span>
                   </button>
                 ))}
-                {!teamRoles.isLoading && !roles.length ? (
+                {!teamRoles.isLoading && !visibleRoles.length ? (
                   <p className="text-sm text-zani-subtle">
                     {t("settings.noRoles")}
                   </p>

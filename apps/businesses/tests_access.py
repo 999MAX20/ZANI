@@ -6,14 +6,14 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.accounts.models import User
-from apps.businesses.access import Actions, Resources, ensure_default_roles
+from apps.businesses.access import Actions, Resources, can, ensure_default_roles, user_is_business_owner
 from apps.businesses.models import Business, BusinessInvitation, BusinessMember, BusinessRole, RolePermission, Team, TeamMember
 from apps.bots.models import Bot, BotConversation
 from apps.clients.models import Client
 from apps.crm.models import Deal, Pipeline, PipelineStage
 from apps.core.models import AuditLog
 from apps.leads.models import Lead
-from apps.scheduling.models import Appointment
+from apps.scheduling.models import Appointment, Resource
 from apps.services.models import Service
 from apps.tasks.models import Task
 
@@ -881,3 +881,202 @@ class TeamAccessTests(TestCase):
         response = self.api.get("/api/team/performance/", {"business": self.business.id})
 
         self.assertEqual(response.status_code, 403)
+
+
+class CanonicalBusinessRoleTests(TestCase):
+    def setUp(self):
+        self.api = APIClient()
+        self.owner = User.objects.create_user(
+            username="pc2-owner",
+            email="pc2-owner@example.com",
+            password="pass12345",
+            role=User.Roles.BUSINESS_OWNER,
+        )
+        self.business = Business.objects.create(
+            owner=self.owner,
+            name="PC2 Generic CRM",
+            slug="pc2-generic-crm",
+            business_type=Business.BusinessTypes.DENTISTRY,
+        )
+        ensure_default_roles(self.business)
+        self.owner_member = BusinessMember.objects.create(
+            business=self.business,
+            user=self.owner,
+            role=BusinessMember.Roles.OWNER,
+            business_role=BusinessRole.objects.get(
+                business=self.business,
+                preset_key=BusinessMember.Roles.OWNER,
+            ),
+        )
+
+    def create_member(self, role, email):
+        user = User.objects.create_user(
+            username=email,
+            email=email,
+            password="pass12345",
+            role=User.Roles.STAFF,
+        )
+        member = BusinessMember.objects.create(
+            business=self.business,
+            user=user,
+            role=role,
+            business_role=BusinessRole.objects.get(
+                business=self.business,
+                preset_key=role,
+            ),
+        )
+        return user, member
+
+    def test_canonical_profiles_exist_and_new_members_default_to_specialist(self):
+        expected = {
+            BusinessMember.Roles.OWNER,
+            BusinessMember.Roles.ADMIN,
+            BusinessMember.Roles.MANAGER,
+            BusinessMember.Roles.OPERATOR,
+            BusinessMember.Roles.SPECIALIST,
+        }
+        actual = set(
+            BusinessRole.objects.filter(
+                business=self.business,
+                preset_key__in=expected,
+                is_active=True,
+            ).values_list("preset_key", flat=True)
+        )
+        default_user = User.objects.create_user(
+            username="pc2-default-specialist",
+            email="pc2-default-specialist@example.com",
+            password="pass12345",
+        )
+        default_member = BusinessMember.objects.create(
+            business=self.business,
+            user=default_user,
+        )
+
+        self.assertEqual(actual, expected)
+        self.assertEqual(default_member.role, BusinessMember.Roles.SPECIALIST)
+
+    def test_operator_manages_operational_calendar_but_not_control_plane(self):
+        operator, _ = self.create_member(BusinessMember.Roles.OPERATOR, "pc2-operator@example.com")
+
+        for action in (Actions.VIEW, Actions.CREATE, Actions.UPDATE):
+            result = can(operator, self.business, Resources.APPOINTMENTS, action)
+            self.assertTrue(result.allowed)
+            self.assertEqual(result.scope, RolePermission.Scopes.BUSINESS)
+        for resource in (Resources.SETTINGS, Resources.BILLING, Resources.INTEGRATIONS):
+            self.assertFalse(can(operator, self.business, resource, Actions.VIEW).allowed)
+
+    def test_specialist_can_only_update_appointments_linked_to_them(self):
+        specialist, _ = self.create_member(
+            BusinessMember.Roles.SPECIALIST,
+            "pc2-specialist@example.com",
+        )
+        other_specialist, _ = self.create_member(
+            BusinessMember.Roles.SPECIALIST,
+            "pc2-other-specialist@example.com",
+        )
+        client = Client.objects.create(business=self.business, full_name="PC2 Client")
+        service = Service.objects.create(business=self.business, name="PC2 Service")
+        own_resource = Resource.objects.create(
+            business=self.business,
+            name="Specialist A",
+            linked_user=specialist,
+        )
+        other_resource = Resource.objects.create(
+            business=self.business,
+            name="Specialist B",
+            linked_user=other_specialist,
+        )
+        start_at = timezone.now() + timezone.timedelta(days=1)
+        own_appointment = Appointment.objects.create(
+            business=self.business,
+            client=client,
+            service=service,
+            resource=own_resource,
+            start_at=start_at,
+            end_at=start_at + timezone.timedelta(minutes=30),
+        )
+        other_appointment = Appointment.objects.create(
+            business=self.business,
+            client=client,
+            service=service,
+            resource=other_resource,
+            start_at=start_at + timezone.timedelta(hours=1),
+            end_at=start_at + timezone.timedelta(hours=1, minutes=30),
+        )
+
+        self.assertTrue(
+            can(
+                specialist,
+                self.business,
+                Resources.APPOINTMENTS,
+                Actions.UPDATE,
+                obj=own_appointment,
+            ).allowed
+        )
+        self.assertFalse(
+            can(
+                specialist,
+                self.business,
+                Resources.APPOINTMENTS,
+                Actions.UPDATE,
+                obj=other_appointment,
+            ).allowed
+        )
+        self.assertFalse(can(specialist, self.business, Resources.TEAM, Actions.VIEW).allowed)
+
+        self.api.force_authenticate(specialist)
+        resource_response = self.api.get("/api/resources/")
+        appointment_response = self.api.get("/api/appointments/")
+
+        self.assertEqual(resource_response.status_code, 200)
+        self.assertEqual(
+            [resource["id"] for resource in resource_response.data["results"]],
+            [own_resource.id],
+        )
+        self.assertEqual(appointment_response.status_code, 200)
+        self.assertEqual(
+            [appointment["id"] for appointment in appointment_response.data["results"]],
+            [own_appointment.id],
+        )
+
+    def test_admin_has_operational_control_but_cannot_take_owner_authority(self):
+        admin, _ = self.create_member(BusinessMember.Roles.ADMIN, "pc2-admin@example.com")
+        self.assertTrue(can(admin, self.business, Resources.SETTINGS, Actions.UPDATE).allowed)
+        self.assertFalse(user_is_business_owner(admin, self.business))
+        self.api.force_authenticate(admin)
+
+        response = self.api.patch(
+            f"/api/team/members/{self.owner_member.id}/",
+            {"role": BusinessMember.Roles.ADMIN},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.owner_member.refresh_from_db()
+        self.assertEqual(self.owner_member.role, BusinessMember.Roles.OWNER)
+
+    def test_specialist_has_no_cross_tenant_access(self):
+        specialist, _ = self.create_member(
+            BusinessMember.Roles.SPECIALIST,
+            "pc2-tenant-specialist@example.com",
+        )
+        other_owner = User.objects.create_user(
+            username="pc2-other-owner",
+            email="pc2-other-owner@example.com",
+            password="pass12345",
+            role=User.Roles.BUSINESS_OWNER,
+        )
+        other_business = Business.objects.create(
+            owner=other_owner,
+            name="PC2 Other CRM",
+            slug="pc2-other-crm",
+        )
+
+        self.assertFalse(
+            can(
+                specialist,
+                other_business,
+                Resources.APPOINTMENTS,
+                Actions.VIEW,
+            ).allowed
+        )

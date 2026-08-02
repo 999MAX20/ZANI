@@ -24,6 +24,7 @@ TASK_ASSIGNEE_NOTIFICATION_ROLES = {
     BusinessMember.Roles.ADMIN,
     BusinessMember.Roles.MANAGER,
     BusinessMember.Roles.OPERATOR,
+    BusinessMember.Roles.SPECIALIST,
     BusinessMember.Roles.MARKETER,
     BusinessMember.Roles.ACCOUNTANT,
     BusinessMember.Roles.SUPPORT,

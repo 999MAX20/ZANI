@@ -1,7 +1,7 @@
 # ZANI Post-Certification Execution — 2026-08-02
 
-Status: Phase PC-1 complete and ready for owner review. Phase PC-2 is a
-reviewable draft and has not started.
+Status: Phases PC-1 and PC-2 are complete, independently verified and ready
+for owner review.
 
 Owner decision: accept the completed 22-item browser UI/UX remediation and the
 Serenity login rebuild into the canonical integration branch, independently
@@ -138,62 +138,130 @@ Required full gate:
 
 ## 3. Phase PC-2 — Neutral CRM roles and terminology
 
-Status: `DRAFT — NOT STARTED`
+Status: `DONE`
 
 This phase captures the agreed direction for review. It is not authorization to
 implement dentistry-specific adaptation or clinical functionality.
 
 ### N-101 — Canonical business access profiles
 
-- [ ] Standardize the core business profiles as Owner, Administrator/Director,
+- [x] Standardize the core business profiles as Owner, Administrator/Director,
   Manager, Operator and Specialist.
-- [ ] Treat dentist, master, barber, coach and similar names as later vertical
+- [x] Treat dentist, master, barber, coach and similar names as later vertical
   display titles or job titles, not hard-coded authorization roles.
-- [ ] Keep marketer and accountant as optional templates rather than required
+- [x] Keep marketer and accountant as optional compatibility templates rather than required
   pilot roles.
-- [ ] Keep platform administration/support roles outside merchant CRM roles.
+- [x] Keep platform administration/support roles outside merchant CRM roles.
 
 ### N-102 — Permission preset alignment
 
-- [ ] Separate owner-only authority from delegated administrator authority.
-- [ ] Give an appointment-handling operator the required booking/reschedule
+- [x] Separate owner-only authority from delegated administrator authority.
+- [x] Give an appointment-handling operator the required booking/reschedule
   permissions without granting settings, billing or integration control.
-- [ ] Scope a Specialist to assigned appointments, tasks and necessary linked
+- [x] Scope a Specialist to assigned appointments, tasks and necessary linked
   client context instead of unrestricted merchant-wide clinical context.
-- [ ] Preserve backend Business scoping, object checks and OWN/TEAM/BUSINESS
+- [x] Preserve backend Business scoping, object checks and OWN/TEAM/BUSINESS
   semantics with denial and tenant-isolation tests.
 
 ### N-103 — Industry-neutral calendar/resource language
 
-- [ ] Replace generic product mentions of master, doctor, barber and salon with
+- [x] Replace generic product mentions of master, doctor, barber and salon with
   neutral wording such as `Исполнитель / ресурс`.
-- [ ] Use neutral helper concepts: employee, room or workplace.
-- [ ] Align RU/KK/EN labels, placeholders, empty states, bot scheduling context
+- [x] Use neutral helper concepts: specialist, employee, room or workplace.
+- [x] Align RU/KK/EN labels, placeholders, empty states, bot scheduling context
   and accessibility names.
-- [ ] Do not rename an inbound Lead/Request into an Appointment: unscheduled
+- [x] Do not rename an inbound Lead/Request into an Appointment: unscheduled
   demand and a booked time slot remain separate CRM entities.
 
 ### N-104 — Generic CRM baseline before vertical adaptation
 
-- [ ] Keep the canonical modules and entities available in the generic CRM
+- [x] Keep the canonical modules and entities available in the generic CRM
   baseline: Inbox, Leads/Requests, Clients, Deals, Appointments, Calendar,
   Tasks, Timeline and Analytics.
-- [ ] Store business type without silently presenting a completed vertical
+- [x] Store business type without silently presenting a completed vertical
   adaptation until that vertical phase is explicitly approved.
-- [ ] Keep Deals distinct from a future clinical treatment plan.
-- [ ] Do not add medical history, diagnosis, radiographs, treatment plans,
+- [x] Keep Deals distinct from a future clinical treatment plan.
+- [x] Do not add medical history, diagnosis, radiographs, treatment plans,
   consent or other clinical-record behavior in this phase.
 
 ### N-105 — Neutralization acceptance gate
 
-- [ ] Backend permission happy-path, denial and tenant-isolation coverage.
-- [ ] Frontend build, i18n parity and bundle budget.
-- [ ] Browser verification of role visibility and calendar create/edit flows on
+- [x] Backend permission happy-path, denial and tenant-isolation coverage.
+- [x] Frontend build, i18n parity and bundle budget.
+- [x] Browser verification of role visibility and calendar create/edit flows on
   desktop and mobile.
-- [ ] Final diff review and owner-facing report.
+- [x] Final diff review and owner-facing report.
+
+### PC-2 acceptance evidence
+
+#### Implemented foundation
+
+- Added the canonical merchant profile `specialist`; new memberships and
+  invitations now default to it. Owner, administrator, manager, operator and
+  specialist are the five merchant-facing profiles.
+- Kept historical staff/doctor/marketer/accountant/support presets for data
+  compatibility, but removed them from the default merchant role selector.
+- Preserved owner-only authority, allowed administrators to manage delegated
+  settings, gave operators business-wide booking/reschedule access without
+  billing/settings/integration control, and scoped specialists to their own
+  appointments, resources, tasks, leads and notifications.
+- Added exact Resource and WorkingHours scoping through an active same-business
+  `linked_user`, so specialist calendar reads cannot expose another employee's
+  schedule or another tenant's records.
+- Restored the generic CRM capability baseline for every business type. Merely
+  selecting dentistry no longer hides Deals or switches to an implicit
+  appointment-first vertical.
+- Replaced profession-specific calendar, booking, bot and outreach language
+  with neutral specialist/resource terminology across RU, KK and EN.
+- Added migration `businesses.0010` for the canonical role choice/default; no
+  environment variable or production infrastructure change was introduced.
+
+#### Defects found during acceptance and corrected
+
+- The first mobile Playwright run exposed that OWN-scoped specialists could
+  read their appointment but not its linked Resource. Resource and
+  WorkingHours scope resolution was added, covered by backend API tests and the
+  repeated browser run.
+- The first full manager gate found one stale tenant-isolation expectation: an
+  operator with the new appointment permission was still expected to see an
+  empty scheduling catalog. The contract now proves same-tenant catalog reads,
+  foreign-tenant exclusion and continued settings mutation denial.
+- Django generated the migration with CRLF endings; committed-range hygiene
+  rejected it. The file was normalized to LF without changing migration state.
+- An early browser attempt used a frontend port whose Vite proxy did not point
+  to the backend. It was an environment-only start error; the canonical
+  backend port was used for the accepted runs.
+
+#### Verification results
+
+- Focused canonical role/capability tests: 10 passed.
+- Focused post-correction role and tenant contract: 6 passed.
+- `manage.py makemigrations --check --dry-run`: no changes detected.
+- `manage.py check`: no issues.
+- `npm run build`: passed TypeScript, RU/KK/EN i18n parity and app/widget Vite
+  builds.
+- `npm run check:bundle`: passed the 400 kB app-shell and 500 kB chunk budgets.
+- Role/calendar Playwright matrix on desktop and mobile: 5 passed, 3 expected
+  project-specific skips.
+- Deterministic full gate:
+
+  ```powershell
+  & 'C:\Users\user\Desktop\ZANI-main\.venv\Scripts\python.exe' `
+    scripts\codex_verify.py --mode full --base-ref 9da4210
+  ```
+
+  Passed with exit code 0: working/index/committed-range diff hygiene,
+  migration drift, Django system check, all 854 Django tests, deterministic npm
+  install, frontend environment isolation, build/i18n, bundle budget, browser
+  smoke, locked Python installability, Python dependency audit, npm audit and
+  final diff hygiene.
+- Live provider traffic, production credentials/deployment and
+  dentistry-specific or clinical behavior were not run because they are
+  explicitly outside PC-2 scope.
+- `main` was neither modified nor pushed.
 
 ## 4. Phase boundary
 
-PC-1 must stop after the canonical integration branch is green, documented and
-pushed. PC-2 may begin only after a new explicit owner instruction following
-the PC-1 completion report.
+PC-2 stops here after implementation, verification, documentation and task
+branch publication. No vertical adaptation, new phase or production work may
+start without a new explicit owner instruction.

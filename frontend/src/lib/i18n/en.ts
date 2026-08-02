@@ -678,7 +678,7 @@ export const en: Record<string, string> = {
   "search.placeholder.deals": "Search deals: title, client, source...",
   "search.placeholder.conversations":
     "Search conversations: client, phone, message...",
-  "search.placeholder.calendar": "Search bookings: client, service, staff...",
+  "search.placeholder.calendar": "Search bookings: client, service, specialist...",
   "search.placeholder.tasks": "Search tasks: title, client, deadline...",
   "search.placeholder.integrations":
     "Search integrations: Telegram, Kaspi, 1C...",
@@ -1270,7 +1270,7 @@ export const en: Record<string, string> = {
     "Bookings, available slots and team load in one workspace.",
   "calendar.businessSchedule": "Business schedule",
   "calendar.heroText":
-    "Check the day, available slots and staff, then create bookings without extra navigation.",
+    "Check the day, available slots and specialists, then create bookings without extra navigation.",
   "calendar.bookings": "Bookings",
   "calendar.confirmed": "Confirmed",
   "calendar.openSlots": "Open slots",
@@ -1349,7 +1349,7 @@ export const en: Record<string, string> = {
   "calendar.loadingInline":
     "Loading calendar data: bookings, clients, services and working hours. You can already review the screen.",
   "calendar.loadingAppointments": "Loading bookings...",
-  "appointment.selectResourceError": "Select a staff member or workplace",
+  "appointment.selectResourceError": "Select a specialist or workplace",
   "appointment.selectSlotError": "Select an available slot",
   "appointment.needClientTitle": "Add a client first",
   "appointment.needClientText":
@@ -1359,16 +1359,16 @@ export const en: Record<string, string> = {
   "appointment.needServiceText":
     "Slots are calculated from service duration. Add at least one active service.",
   "appointment.goServices": "Set up services",
-  "appointment.resourceHintTitle": "Add staff for precise scheduling",
+  "appointment.resourceHintTitle": "Add a specialist for precise scheduling",
   "appointment.resourceHintText":
-    "For a salon, barbershop or clinic, a resource usually means a staff member, doctor, room or workplace.",
+    "A resource can be a specialist, room, workplace or equipment item with its own schedule.",
   "appointment.goResources": "Go to resources",
-  "appointment.resourceOptionalTitle": "Staff or room can be selected manually",
+  "appointment.resourceOptionalTitle": "A specialist or resource can be selected manually",
   "appointment.resourceSelectedText":
-    "Leave this field empty to create the booking against the business-wide schedule. Select a specific staff member, room or workplace only when needed.",
+    "Leave this field empty to create the booking against the business-wide schedule. Select a specific specialist, room or workplace only when needed.",
   "appointment.client": "Client",
   "appointment.service": "Service",
-  "appointment.resource": "Staff / resource",
+  "appointment.resource": "Specialist / resource",
   "appointment.lead": "Lead",
   "appointment.date": "Date",
   "appointment.time": "Time",
@@ -1378,7 +1378,7 @@ export const en: Record<string, string> = {
   "appointment.notes": "Notes",
   "appointment.selectClient": "Select client",
   "appointment.selectService": "Select service",
-  "appointment.selectResource": "Select staff",
+  "appointment.selectResource": "Select specialist",
   "appointment.businessSchedule": "Business-wide schedule",
   "appointment.noResource": "No resource",
   "appointment.noLead": "No lead",
@@ -1388,7 +1388,7 @@ export const en: Record<string, string> = {
   "appointment.selectTime": "Select time",
   "appointment.noSlotsForDate": "No available slots for {date}",
   "appointment.noSlotsReason":
-    "Check business or selected staff working hours. For a quick start, apply a daily 09:00-20:00 salon schedule.",
+    "Check business or selected specialist working hours. For a quick start, apply a daily 09:00-20:00 schedule.",
   "appointment.noSlotsReasonMissingHours":
     "Working hours are not configured for this day. Set the week or apply the quick 09:00-20:00 schedule.",
   "appointment.noSlotsReasonDayOff":
@@ -1399,7 +1399,7 @@ export const en: Record<string, string> = {
     "The schedule is configured, but all slots are already booked. Choose another date, time or resource.",
   "appointment.workingWindow": "Working window: {start}-{end}",
   "appointment.reasonHours": "working hours are not configured for this day",
-  "appointment.reasonResource": "selected staff may have a day off",
+  "appointment.reasonResource": "the selected specialist may have a day off",
   "appointment.reasonBusy": "all slots are already taken by other bookings",
   "appointment.applyQuickHours": "Apply 09:00-20:00",
   "appointment.openHours": "Open working hours",
@@ -1425,7 +1425,7 @@ export const en: Record<string, string> = {
   "appointment.create": "Create booking",
   "appointments.title": "Appointments",
   "appointments.description":
-    "Operational list of every booking: who is coming, what the staff member does and what status the client has.",
+    "Operational list of every booking: who is coming, which service is planned and what status the client has.",
   "appointments.noBusiness":
     "Create a business in settings to work with appointments.",
   "appointments.create": "Create booking",
@@ -1436,7 +1436,7 @@ export const en: Record<string, string> = {
   "appointments.completed": "Completed",
   "appointments.completedHint": "closed visits and completed services",
   "appointments.resources": "Involved",
-  "appointments.resourcesHint": "staff or rooms in the schedule",
+  "appointments.resourcesHint": "specialists or resources in the schedule",
   "appointments.allStatuses": "All statuses",
   "appointments.emptyTitle": "No appointments yet",
   "appointments.emptyFiltered":
@@ -1471,7 +1471,7 @@ export const en: Record<string, string> = {
   "appointments.actionDone": "Appointment action completed",
   "workingHours.title": "Working hours",
   "workingHours.description":
-    "Business-wide schedule and separate weekly hours for staff, rooms or workplaces.",
+    "Business-wide schedule and separate weekly hours for specialists, rooms or workplaces.",
   "workingHours.noBusiness":
     "Create a business in settings to configure working hours.",
   "workingHours.setupWeek": "Set up week",
@@ -1481,7 +1481,7 @@ export const en: Record<string, string> = {
   "workingHours.quickSetup": "Quick setup",
   "workingHours.quickTitle": "Apply a business-wide schedule quickly",
   "workingHours.quickText":
-    "Choose a template for the whole business. Use “Set up week” for individual staff schedules.",
+    "Choose a template for the whole business. Use “Set up week” for individual specialist schedules.",
   "workingHours.applyPreset": "Apply schedule",
   "workingHours.savedNotice":
     "Weekly schedule saved. The calendar will refresh available slots.",
@@ -1512,8 +1512,8 @@ export const en: Record<string, string> = {
   "workingHours.saveSchedule": "Save schedule",
   "workingHours.formTitle": "Set up the whole week at once",
   "workingHours.formText":
-    "Business-wide hours apply to the entire business. Staff can have a separate week if they work differently.",
-  "workingHours.salonPreset": "Salon 09:00-20:00 every day",
+    "Business-wide hours apply to the entire business. A specialist or resource can have separate weekly hours.",
+  "workingHours.salonPreset": "Daily 09:00-20:00",
   "workingHours.officePreset": "Office Mon-Fri 09:00-18:00",
   "workingHours.copyBusinessSchedule": "Copy business schedule",
   "workingHours.saveWeek": "Save weekly schedule",
@@ -1551,7 +1551,7 @@ export const en: Record<string, string> = {
   "services.editTitle": "Edit service",
   "services.formHintTitle": "Service affects calendar",
   "services.formHintText":
-    "The more accurate the duration, the more accurately Zani shows available slots and staff load.",
+    "The more accurate the duration, the more accurately Zani shows available slots and specialist load.",
   "services.templatesTitle": "Quick service setup",
   "services.templatesText":
     "Pick a template, then adjust the name, price or duration for your business.",
@@ -1560,32 +1560,32 @@ export const en: Record<string, string> = {
     "Initial client consultation and next-step selection.",
   "services.template.haircut.name": "Haircut",
   "services.template.haircut.description":
-    "Basic staff service with a fixed booking duration.",
+    "Basic specialist service with a fixed booking duration.",
   "services.template.beautyProcedure.name": "Procedure",
   "services.template.beautyProcedure.description":
-    "Core salon or cabinet service with workspace preparation.",
+    "Core service with room or workplace preparation.",
   "services.template.diagnostics.name": "Diagnostics",
   "services.template.diagnostics.description":
     "Inspection, checkup or diagnostics before the main work.",
   "services.isActive": "Active",
   "services.save": "Save",
   "resources.title": "Team and resources",
-  "resources.description": "Staff, rooms and workplaces that clients can book.",
+  "resources.description": "Specialists, rooms, workplaces and equipment available for bookings.",
   "resources.noBusiness": "Create a business in settings to manage resources.",
   "resources.add": "Add resource",
   "resources.active": "Active resources",
   "resources.activeHint": "available for calendar bookings",
-  "resources.staff": "Staff",
+  "resources.staff": "Specialists",
   "resources.staffHint": "people who provide services",
   "resources.withSchedule": "With schedule",
   "resources.withScheduleHint": "have individual working hours",
   "resources.logicTitle": "Resource logic:",
   "resources.logicText":
-    "for a barbershop or salon, create each staff member as a separate resource. The calendar will show staff load and prevent double-booking one person.",
-  "resources.templateMaster": "Staff member",
+    "Create each specialist as a separate resource. The calendar will show their load and prevent two bookings at the same time.",
+  "resources.templateMaster": "Specialist",
   "resources.templateMasterText":
-    "A stylist, barber, doctor or specialist clients can book.",
-  "resources.templateMasterName": "New staff member",
+    "An employee or contractor clients can book.",
+  "resources.templateMasterName": "New specialist",
   "resources.templateChair": "Chair / workplace",
   "resources.templateChairText":
     "A workplace, chair, table or equipment item with its own availability.",
@@ -1598,7 +1598,7 @@ export const en: Record<string, string> = {
   "resources.templateBoxText":
     "Auto service, detailing or work zone with its own schedule.",
   "resources.templateBoxName": "Bay 1",
-  "resources.emptyTitle": "No staff or resources yet",
+  "resources.emptyTitle": "No specialists or resources yet",
   "resources.emptyText":
     "Add staff, rooms or workplaces so calendar bookings are precise.",
   "resources.name": "Name",
@@ -1607,9 +1607,9 @@ export const en: Record<string, string> = {
   "resources.editTitle": "Edit resource",
   "resources.formHintTitle": "What counts as a resource",
   "resources.formHintText":
-    "In a salon it can be a stylist, barber or chair. In a clinic - a doctor or room. In auto service - a bay or lift.",
-  "resources.namePlaceholder": "For example: Aliya, Barber 1, Chair 2",
-  "resources.typeStaff": "Staff member",
+    "It can be a specialist, room, workplace or equipment item with its own availability.",
+  "resources.namePlaceholder": "For example: Aliya, Room 1, Workplace 2",
+  "resources.typeStaff": "Specialist",
   "resources.typeRoom": "Room",
   "resources.typeHall": "Hall",
   "resources.typeBox": "Bay / workplace",
@@ -2623,11 +2623,11 @@ export const en: Record<string, string> = {
   "settings.teamEyebrow": "Team and access",
   "settings.teamTitle": "Employees and access",
   "settings.teamText":
-    "Owner and admin see the full business. Manager works with sales, operator answers chats, accountant and marketer only get their own sections.",
+    "Owner and admin manage the business, manager handles sales, operator processes inbound work, and specialist works with assigned bookings and tasks.",
   "settings.permissions": "permissions",
   "settings.accessTitle": "Clear permission setup",
   "settings.accessText":
-    "Select an employee, assign a role and verify visibility. New employees safely start as Staff.",
+    "Select an employee, assign a role and verify visibility. New employees safely start as Specialist.",
   "settings.roleGuideTitle": "Which role to invite",
   "settings.roleGuideText":
     "Pick the employee type in one click. The role can be changed later and advanced permissions can be tuned separately.",
@@ -2674,13 +2674,14 @@ export const en: Record<string, string> = {
   "settings.inviteMessage":
     "You have been invited to Zani CRM. Open the link and set a password: {url}",
   "settings.role.owner": "Owner",
-  "settings.role.admin": "Director",
-  "settings.role.manager": "Sales manager",
-  "settings.role.operator": "Chat operator",
+  "settings.role.admin": "Administrator",
+  "settings.role.manager": "Manager",
+  "settings.role.operator": "Operator",
+  "settings.role.specialist": "Specialist",
   "settings.role.marketer": "Marketer",
   "settings.role.accountant": "Accountant",
   "settings.role.support": "Support",
-  "settings.role.staff": "Staff",
+  "settings.role.staff": "Specialist",
   "settings.currentRole": "Current role",
   "settings.roleDescription.owner":
     "Full control over business, employees, finance, analytics and settings.",
@@ -2689,7 +2690,9 @@ export const en: Record<string, string> = {
   "settings.roleDescription.manager":
     "Works with leads, deals, clients, tasks and sales calendar.",
   "settings.roleDescription.operator":
-    "Answers chats, handles inbound requests and creates leads without management sections.",
+    "Handles inbound requests, leads and bookings without settings, finance or team management.",
+  "settings.roleDescription.specialist":
+    "Own bookings, tasks and assigned work context without management sections.",
   "settings.roleDescription.marketer":
     "Marketing, sources, segments, forms and communications without finance control.",
   "settings.roleDescription.accountant":
@@ -2697,7 +2700,7 @@ export const en: Record<string, string> = {
   "settings.roleDescription.support":
     "Client help and operational checks without owner-management access.",
   "settings.roleDescription.staff":
-    "Basic access for a specialist or employee: own tasks, bookings and work context.",
+    "Own bookings, tasks and assigned work context without management sections.",
   "settings.visibility.own": "Own only",
   "settings.visibility.own.text":
     "Employee sees only objects assigned to them.",
@@ -5317,7 +5320,7 @@ export const en: Record<string, string> = {
     "Preview the AI qualification before updating CRM links.",
   "conversations.qualificationPreviewReady":
     "AI preview ready: {intent}, {confidence}%.",
-  "settings.role.doctor": "Doctor",
+  "settings.role.doctor": "Specialist",
   "dashboard.loadingPriorities": "Loading role-scoped priorities…",
   "dashboard.priorityQueueError": "Priority queues are temporarily unavailable. Retry to restore the daily work view.",
   "dashboard.upcomingWork": "Upcoming work",

@@ -5,10 +5,7 @@ export const teamRoleOptions: Array<{ value: BusinessMembershipSummary["role"] }
   { value: "admin" },
   { value: "manager" },
   { value: "operator" },
-  { value: "marketer" },
-  { value: "accountant" },
-  { value: "support" },
-  { value: "staff" },
+  { value: "specialist" },
 ];
 
 export const accessGroups = [
@@ -29,7 +26,7 @@ export const visibilityOptions = [
   { value: "business" },
 ] as const;
 
-export const roleGuideKeys = ["manager", "operator", "staff", "accountant"] as const;
+export const roleGuideKeys = ["admin", "manager", "operator", "specialist"] as const;
 export const settingsGroupOrder = ["business", "team", "communication", "setup", "advanced"] as const;
 
 export type SettingsGroupKey = (typeof settingsGroupOrder)[number];

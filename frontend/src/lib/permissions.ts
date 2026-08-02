@@ -4,7 +4,12 @@ const platformRoles = new Set(["platform_admin", "platform_manager"]);
 
 const managerRoles = new Set(["business_manager", "manager", "marketer", "accountant", "support"]);
 
-const operatorRoles = new Set(["business_operator", "operator", "staff"]);
+const operatorRoles = new Set(["business_operator", "operator"]);
+
+export function canonicalBusinessRole(role: string | null | undefined) {
+  if (role === "staff" || role === "doctor") return "specialist";
+  return role || "specialist";
+}
 
 const resourceModules: Record<string, string> = {
   conversations: "inbox",
@@ -93,9 +98,8 @@ export function getBusinessRole(user: CurrentUser | null, businessId: Id | undef
 
 export function getRoleSurface(user: CurrentUser | null, businessId?: Id) {
   const membershipRole = getBusinessRole(user, businessId);
-  const role = membershipRole || user?.role || "";
+  const role = canonicalBusinessRole(membershipRole || user?.role || "");
   if (role === "owner" || role === "admin" || role === "business_owner") return "owner";
-  if (role === "doctor") return "doctor";
   if (operatorRoles.has(role)) return "operator";
   if (managerRoles.has(role)) return "manager";
   return "staff";
@@ -106,11 +110,12 @@ export const businessRoleLabelKeys: Record<string, string> = {
   admin: "settings.role.admin",
   manager: "settings.role.manager",
   operator: "settings.role.operator",
+  specialist: "settings.role.specialist",
   marketer: "settings.role.marketer",
   accountant: "settings.role.accountant",
   support: "settings.role.support",
-  staff: "settings.role.staff",
-  doctor: "settings.role.doctor",
+  staff: "settings.role.specialist",
+  doctor: "settings.role.specialist",
 };
 
 export function isBusinessResourceEnabled(
@@ -126,8 +131,8 @@ export function isBusinessResourceEnabled(
 }
 
 export function businessRoleLabel(role: string | null | undefined, t: Translate) {
-  if (!role) return t("settings.role.staff");
-  return t(businessRoleLabelKeys[role] || "settings.role.staff");
+  if (!role) return t("settings.role.specialist");
+  return t(businessRoleLabelKeys[role] || "settings.role.specialist");
 }
 
 export function forbiddenMessage(resource: string, action = "view") {

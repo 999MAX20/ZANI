@@ -6,7 +6,7 @@ const users = {
   owner: process.env.E2E_OWNER_EMAIL || "business_owner@example.com",
   manager: process.env.E2E_MANAGER_EMAIL || "business_manager@example.com",
   operator: process.env.E2E_OPERATOR_EMAIL || "business_operator@example.com",
-  doctor: process.env.E2E_DOCTOR_EMAIL || "business_doctor@example.com",
+  specialist: process.env.E2E_SPECIALIST_EMAIL || "business_specialist@example.com",
 };
 
 async function login(page: Page, email: string) {
@@ -82,7 +82,7 @@ test("F-201 desktop roles receive legitimate daily routes and controls", async (
   await expect(page.locator('main a[href="/app/tasks"]').first()).toBeVisible();
   await expect(page.locator('main a[href="/app/calendar"]').first()).toBeVisible();
   await expect(page.locator('nav a[href="/app/settings"]')).toBeVisible();
-  await expect(page.locator('nav a[href="/app/deals"]')).toHaveCount(0);
+  await expect(page.locator('nav a[href="/app/deals"]')).toBeVisible();
   await expectHealthyWorkspace(page);
 
   await login(page, users.manager);
@@ -90,7 +90,7 @@ test("F-201 desktop roles receive legitimate daily routes and controls", async (
   await expect(page.getByTestId("role-daily-actions").locator('a[href^="/app/tasks"]')).toBeVisible();
   await expect(page.getByTestId("role-daily-actions").locator('a[href^="/app/calendar"]')).toBeVisible();
   await expect(page.locator('nav a[href="/app/settings"]')).toHaveCount(0);
-  await expect(page.locator('nav a[href="/app/deals"]')).toHaveCount(0);
+  await expect(page.locator('nav a[href="/app/deals"]')).toBeVisible();
   await navigateClient(page, "/app/settings");
   await expect(page.getByRole("alert")).toBeVisible();
   await expectHealthyWorkspace(page);
@@ -101,7 +101,7 @@ test("F-201 desktop roles receive legitimate daily routes and controls", async (
   await expect(page.getByTestId("role-daily-actions").locator('a[href^="/app/deals"]')).toHaveCount(0);
   await expectHealthyWorkspace(page);
 
-  await login(page, users.doctor);
+  await login(page, users.specialist);
   await expect(page.getByTestId("role-daily-actions").locator('a[href^="/app/tasks"]')).toBeVisible();
   await expect(page.getByTestId("role-daily-actions").locator('a[href^="/app/calendar"]')).toBeVisible();
   await expect(page.locator('nav a[href="/app/deals"]')).toHaveCount(0);
@@ -131,7 +131,7 @@ test("F-401 command palette follows role permissions and disabled modules", asyn
   await expect(page.getByTestId("command-open-messages")).toBeVisible();
   await expect(page.getByTestId("command-open-settings")).toBeVisible();
   await expect(page.getByTestId("command-open-ai-agents")).toBeVisible();
-  await expect(page.getByTestId("command-open-deals")).toHaveCount(0);
+  await expect(page.getByTestId("command-open-deals")).toBeVisible();
   await page.keyboard.press("Escape");
 
   await login(page, users.manager);
@@ -141,7 +141,7 @@ test("F-401 command palette follows role permissions and disabled modules", asyn
   await expect(page.getByTestId("command-open-messages")).toBeVisible();
   await expect(page.getByTestId("command-open-settings")).toHaveCount(0);
   await expect(page.getByTestId("command-open-ai-agents")).toHaveCount(0);
-  await expect(page.getByTestId("command-open-deals")).toHaveCount(0);
+  await expect(page.getByTestId("command-open-deals")).toBeVisible();
   await page.keyboard.press("Escape");
 
   await login(page, users.operator);
@@ -154,7 +154,7 @@ test("F-401 command palette follows role permissions and disabled modules", asyn
   await expect(page.getByTestId("command-open-deals")).toHaveCount(0);
   await page.keyboard.press("Escape");
 
-  await login(page, users.doctor);
+  await login(page, users.specialist);
   await openCommandPalette(page);
   await expect(page.getByTestId("command-create-lead")).toHaveCount(0);
   await expect(page.getByTestId("command-open-clients")).toBeVisible();
@@ -164,7 +164,7 @@ test("F-401 command palette follows role permissions and disabled modules", asyn
   await expect(page.getByTestId("command-open-deals")).toHaveCount(0);
 });
 
-test("F-201 mobile owner, manager, operator and doctor daily routes stay usable", async ({ page, isMobile }) => {
+test("F-201 mobile owner, manager, operator and specialist daily routes stay usable", async ({ page, isMobile }) => {
   test.skip(!isMobile, "Mobile role matrix runs only in the mobile project.");
   test.setTimeout(180_000);
   let authorization = "";
@@ -206,7 +206,7 @@ test("F-201 mobile owner, manager, operator and doctor daily routes stay usable"
   await expect(page.locator('[data-conversation-action-id="assign"]').first()).toBeVisible();
   await expectHealthyWorkspace(page);
 
-  await login(page, users.doctor);
+  await login(page, users.specialist);
   await expect(page.getByTestId("role-daily-actions").locator('a[href^="/app/tasks"]')).toBeVisible();
   await expect(page.getByTestId("role-daily-actions").locator('a[href^="/app/calendar"]')).toBeVisible();
   await expect(page.getByTestId("role-daily-actions").locator('a[href^="/app/conversations"]')).toHaveCount(0);
@@ -226,17 +226,12 @@ test("F-201 mobile owner, manager, operator and doctor daily routes stay usable"
     "/api/appointments/",
     authorization,
   );
-  const ownResource = resources.find((resource) => resource.linked_user_email === users.doctor);
-  const otherResource = resources.find(
-    (resource) => resource.linked_user_email && resource.linked_user_email !== users.doctor,
-  );
+  const ownResource = resources.find((resource) => resource.linked_user_email === users.specialist);
   const ownAppointment = appointments.find((appointment) => appointment.resource === ownResource?.id);
-  const otherAppointment = appointments.find((appointment) => appointment.resource === otherResource?.id);
   expect(ownAppointment).toBeTruthy();
-  expect(otherAppointment).toBeTruthy();
+  expect(resources.every((resource) => !resource.linked_user_email || resource.linked_user_email === users.specialist)).toBeTruthy();
+  expect(appointments.every((appointment) => appointment.resource === ownResource?.id)).toBeTruthy();
 
-  await navigateClient(page, `/app/calendar/${otherAppointment!.id}`);
-  await expect(page.locator("[data-appointment-action-id]")).toHaveCount(0);
   await navigateClient(page, `/app/calendar/${ownAppointment!.id}`);
   await expect(page.locator('[data-appointment-action-id="reschedule"]')).toBeVisible();
   await expectHealthyWorkspace(page);

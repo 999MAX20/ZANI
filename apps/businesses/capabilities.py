@@ -34,10 +34,9 @@ RESOURCE_MODULES = {
 
 
 def default_capabilities(business_type):
-    defaults = {module: True for module in MODULE_REGISTRY}
-    if business_type == Business.BusinessTypes.DENTISTRY:
-        defaults["deals"] = False
-    return defaults
+    # Business type is descriptive metadata until an owner explicitly enables
+    # a future vertical profile. The generic CRM foundation stays intact.
+    return {module: True for module in MODULE_REGISTRY}
 
 
 def ensure_business_capabilities(business, *, configured_by=None):
@@ -104,6 +103,6 @@ def capability_payload(business):
     return {
         "business": business.id,
         "business_type": business.business_type,
-        "workflow_mode": "appointment_first" if business.business_type == Business.BusinessTypes.DENTISTRY else "standard_crm",
+        "workflow_mode": "standard_crm",
         "modules": {module: enabled.get(module, default_capabilities(business.business_type)[module]) for module in MODULE_REGISTRY},
     }

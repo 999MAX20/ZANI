@@ -110,7 +110,7 @@ class Command(BaseCommand):
         )
         BusinessMember.objects.create(business=business, user=owner, role=BusinessMember.Roles.OWNER)
         service = Service.objects.create(business=business, name="Консультация", duration_minutes=60, price_from=12000)
-        resource = Resource.objects.create(business=business, name="Мастер Алия", resource_type=Resource.ResourceTypes.STAFF)
+        resource = Resource.objects.create(business=business, name="Специалист Алия", resource_type=Resource.ResourceTypes.STAFF)
         slot_date = timezone.localdate() + timezone.timedelta(days=1)
         WorkingHours.objects.create(
             business=business,
@@ -144,7 +144,7 @@ class Command(BaseCommand):
             {
                 "full_name": "Runtime Client",
                 "phone": "+77015550999",
-                "message": "Хочу записаться на консультацию к Мастер Алия",
+                "message": "Хочу записаться на консультацию к специалисту Алие",
                 "external_user_id": f"runtime-{suffix}",
             },
             format="json",

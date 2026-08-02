@@ -45,6 +45,7 @@ DEFAULT_ROUTING_ROLES = {
     RoutingPolicy.Resources.LEADS: {
         BusinessMember.Roles.MANAGER,
         BusinessMember.Roles.OPERATOR,
+        BusinessMember.Roles.SPECIALIST,
         BusinessMember.Roles.STAFF,
     },
     RoutingPolicy.Resources.CONVERSATIONS: {
@@ -56,6 +57,7 @@ DEFAULT_ROUTING_ROLES = {
     RoutingPolicy.Resources.TASKS: {
         BusinessMember.Roles.MANAGER,
         BusinessMember.Roles.OPERATOR,
+        BusinessMember.Roles.SPECIALIST,
         BusinessMember.Roles.STAFF,
         BusinessMember.Roles.DOCTOR,
     },

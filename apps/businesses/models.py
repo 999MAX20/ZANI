@@ -99,6 +99,9 @@ class BusinessMember(TimeStampedModel):
         ADMIN = "admin", "Admin"
         MANAGER = "manager", "Manager"
         OPERATOR = "operator", "Operator"
+        SPECIALIST = "specialist", "Specialist"
+        # Compatibility values for memberships created before the canonical
+        # five-profile model. New merchant-facing flows do not offer them.
         MARKETER = "marketer", "Marketer"
         ACCOUNTANT = "accountant", "Accountant"
         SUPPORT = "support", "Support"
@@ -111,7 +114,7 @@ class BusinessMember(TimeStampedModel):
 
     business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name="members")
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="business_memberships")
-    role = models.CharField(max_length=32, choices=Roles.choices, default=Roles.STAFF)
+    role = models.CharField(max_length=32, choices=Roles.choices, default=Roles.SPECIALIST)
     business_role = models.ForeignKey(
         "BusinessRole",
         on_delete=models.SET_NULL,
@@ -351,7 +354,11 @@ class BusinessInvitation(TimeStampedModel):
     phone = models.CharField(max_length=32, blank=True)
     telegram = models.CharField(max_length=64, blank=True)
     full_name = models.CharField(max_length=255, blank=True)
-    role = models.CharField(max_length=32, choices=BusinessMember.Roles.choices, default=BusinessMember.Roles.STAFF)
+    role = models.CharField(
+        max_length=32,
+        choices=BusinessMember.Roles.choices,
+        default=BusinessMember.Roles.SPECIALIST,
+    )
     business_role = models.ForeignKey(BusinessRole, on_delete=models.SET_NULL, null=True, blank=True, related_name="invitations")
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True, related_name="invitations")
     invited_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="sent_business_invitations")

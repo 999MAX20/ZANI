@@ -6,11 +6,20 @@ This file is the working reference for role-aware behavior in ZANI.
 
 - `platform_admin`: manages the platform and all operational tooling.
 - `platform_manager`: supports merchants with limited platform operations.
-- `business_owner`: owns a merchant workspace and business settings.
-- `manager`: handles clients, conversations, leads, deals and appointments.
-- `employee`: performs assigned operational work with limited access.
+- `owner`: owns the merchant workspace and retains ownership-only authority.
+- `admin`: delegated administrator; may be titled Director in a company, but is
+  not a separate technical role and cannot take ownership authority.
+- `manager`: handles clients, leads, deals, appointments and team work inside
+  the configured business/team scope.
+- `operator`: processes inbox, leads and bookings without control-plane access.
+- `specialist`: performs assigned appointments and tasks with `OWN` scope.
 - `support`: helps troubleshoot with explicit grants and audit requirements.
-- Business presets include owner, admin/director, manager, operator, marketer, accountant, support, staff and dentistry doctor.
+- The five canonical merchant presets are owner, admin, manager, operator and
+  specialist. Historical marketer/accountant/support/staff/doctor values remain
+  compatibility presets for existing memberships and are not offered as the
+  default merchant role model.
+- Profession names such as doctor, master or barber are future display/job
+  titles, not authorization roles.
 
 ## Principles
 
@@ -29,13 +38,13 @@ This file is the working reference for role-aware behavior in ZANI.
 | Leads | business_owner, manager | business_owner, manager | convert/link/assign | assigned manager |
 | Deals | business_owner, manager | business_owner, manager | won/lost, value changes, pipeline move | owner for high-value/risk, manager for assigned |
 | Clients | business_owner, manager | business_owner, manager | merge/delete/archive require owner or explicit permission | assigned manager |
-| Appointments | business_owner, manager, assigned employee | business_owner, manager; doctor/staff only for an appointment whose same-business active `resource.linked_user` is that user | book/reschedule/cancel/no-show/complete; cancel and no-show require reason | lead responsible user, linked resource user, actor or owner |
+| Appointments | owner/admin/manager/operator; specialist in `OWN` scope | owner/admin/manager/operator; specialist only for an appointment whose same-business active `resource.linked_user` is that user | book/reschedule/cancel/no-show/complete; cancel and no-show require reason | lead responsible user, linked resource user, actor or owner |
 | Tasks | business_owner, manager, assigned employee | business_owner, manager | lifecycle, assign, watch and comment require backend `tasks:update`; cancel requires reason; task links may point to client, lead, deal, appointment or conversation; overdue work queues expose backend watch/escalate/critical metadata; workload view is `tasks:view` gated and tenant-scoped | assigned task notifications target the active assignee; unassigned tasks route to manager/admin/operator roles with owner fallback; normal task notifications respect preferences, high/urgent bypass them |
 | Integrations | business_owner, platform_admin, support with grant | business_owner, platform_admin | connect/disconnect/rotate token, health check, failed sync retry | owner/admin/support by event |
 | Outreach | business_owner, manager with permission | business_owner, authorized manager | launch campaign, bulk import | campaign owner and approved operators |
 | Pricing | business_owner, authorized manager | business_owner, authorized manager | autopilot/write price | owner and pricing operator |
 | AI Analyst | business_owner, manager scoped | n/a | execute suggestions requires underlying permission | same as source events |
-| Settings | business_owner | business_owner | roles, billing, automations | owner/admin |
+| Settings | owner/admin/manager when explicitly granted | owner/admin according to resource permission; ownership transfer stays owner-only | roles, billing, automations | owner/admin |
 | Automations | business_owner, authorized manager with `automations:view` | business_owner or `automations:create/update` | retry/cancel/manage runs require `automations:manage`; actions execute through domain services | routed by the action service, not by the automation engine directly |
 | Platform Operations | platform_admin, platform_manager | platform_admin | support grants, merchant ops | platform team |
 
@@ -47,7 +56,12 @@ This file is the working reference for role-aware behavior in ZANI.
 - Support should receive notifications only for granted support sessions or platform incidents.
 - Notification preferences must be business-scoped and role-aware.
 - Assignment targets must be active same-business members and inside the caller's OWN/TEAM/BUSINESS scope.
-- Appointment `OWN` scope is derived from an active same-business `resource.linked_user`; a doctor or staff member may view the shared calendar but cannot mutate another linked user's appointment. CRM card `available_action_details` exposes this decision per record, and appointment notes execute through `POST /api/appointments/{id}/add-note/` under the same exact-object `appointments:update` check.
+- Appointment `OWN` scope is derived from an active same-business
+  `resource.linked_user`; a canonical specialist sees and mutates only their
+  linked appointments. Legacy staff/doctor memberships retain their previous
+  shared-calendar read surface until the owner moves them to Specialist. CRM
+  card `available_action_details` exposes the exact per-record decision, and
+  appointment notes use the same `appointments:update` check.
 - Operators may self-claim eligible unassigned conversations/tasks; managers may redistribute work inside managed teams; owner/admin may assign across the business.
 - Temporarily unavailable members are not valid new assignment targets. Inbound assignment notifications use an available same-business fallback member when configured.
 - Unassigned and SLA-risk handoffs create manager attention notifications instead of silently remaining in a personal queue.
@@ -55,7 +69,11 @@ This file is the working reference for role-aware behavior in ZANI.
 ## Capability Rules
 
 - Business capabilities are backend-enforced for inbox, leads, clients, appointments, tasks, deals, analytics, AI, automations and integrations.
-- Dentistry defaults to appointment-first workflow with Deals disabled; disabling a module preserves its data.
+- Business type is descriptive metadata in the generic CRM layer. Dentistry
+  and every other type start with Inbox, Leads, Clients, Deals, Appointments,
+  Tasks, Analytics and supporting modules enabled.
+- A future vertical profile must be an explicit owner action. Selecting a
+  business type alone must not hide Deals, rename Leads or add clinical data.
 - Only users with settings update access may change capabilities.
 - Disabled modules return a permission denial and are excluded from work queues, operational aggregates, AI tools and automation actions.
 - Re-enabling a module restores access to preserved records without a destructive migration.

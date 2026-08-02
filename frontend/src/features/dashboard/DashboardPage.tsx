@@ -24,7 +24,7 @@ export function DashboardPage() {
   const activeMembership = user?.memberships?.find(
     (membership) => Number(membership.business) === Number(business?.id),
   );
-  const businessRole = activeMembership?.role || user?.role || "staff";
+  const businessRole = activeMembership?.role || user?.role || "specialist";
   const isOwnerView = isOwnerDashboardRole(businessRole);
   const canViewAiAnalyst = hasPermission(
     user,

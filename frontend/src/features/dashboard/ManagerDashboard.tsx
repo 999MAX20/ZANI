@@ -336,6 +336,7 @@ export function ManagerDashboard({
     : 0;
   const isIndividualWorkspace = [
     "operator",
+    "specialist",
     "staff",
     "doctor",
     "business_operator",

@@ -1,4 +1,4 @@
-from django.db.models import CharField, OuterRef, Q, Subquery
+from django.db.models import CharField, OuterRef, Prefetch, Q, Subquery
 from django.db.models.functions import Cast
 
 from apps.activities.models import ActivityEvent, Note, TaggedObject
@@ -382,7 +382,24 @@ def build_crm_card_payload(*, business, actor=None, client=None, lead=None, deal
         conversation_filters.append(Q(lead=lead))
 
     leads = Lead.objects.filter(business=business).select_related("business", "client", "service", "responsible_user").filter(_or_queries(lead_filters)).distinct().order_by("-updated_at")
-    deals = Deal.objects.filter(business=business).select_related("business", "client", "lead", "pipeline", "stage", "owner").filter(_or_queries(deal_filters)).distinct().order_by("-updated_at")
+    deals = (
+        Deal.objects.filter(business=business)
+        .select_related("business", "client", "lead", "pipeline", "stage", "owner")
+        .prefetch_related(
+            Prefetch(
+                "tasks",
+                queryset=(
+                    Task.objects.filter(business=business, is_archived=False)
+                    .exclude(status__in=[Task.Statuses.DONE, Task.Statuses.CANCELLED])
+                    .order_by("due_at", "-created_at")
+                ),
+                to_attr="open_tasks_for_list",
+            )
+        )
+        .filter(_or_queries(deal_filters))
+        .distinct()
+        .order_by("-updated_at")
+    )
     appointments = Appointment.objects.filter(business=business).select_related("business", "client", "lead", "service", "resource").filter(_or_queries(appointment_filters)).distinct().order_by("-start_at")
     tasks = (
         Task.objects.filter(business=business)

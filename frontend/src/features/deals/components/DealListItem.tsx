@@ -1,9 +1,5 @@
 import { memo } from "react";
-import {
-  CalendarClock,
-  MessageCircle,
-  SquareArrowOutUpRight,
-} from "lucide-react";
+import { CalendarClock, SquareArrowOutUpRight } from "lucide-react";
 
 import { cn } from "../../../lib/cn";
 import { formatDate, formatDateTime } from "../../../lib/format";
@@ -40,7 +36,7 @@ export const DealListItem = memo(function DealListItem({
         event.dataTransfer.setData("text/plain", String(deal.id))
       }
       className={cn(
-        "group relative rounded-card border bg-surface-card p-3 shadow-soft transition duration-150 hover:border-brand-100 hover:bg-surface-warm hover:shadow-card",
+        "group relative rounded-[12px] border bg-surface-card p-2.5 shadow-soft transition duration-150 hover:border-brand-100 hover:bg-surface-warm hover:shadow-card",
         selected &&
           "border-brand-300 bg-brand-50/70 shadow-card ring-2 ring-[var(--zani-focus-ring)]",
         !selected && "border-zani-border",
@@ -53,7 +49,7 @@ export const DealListItem = memo(function DealListItem({
           onClick={() => onSelect(deal)}
           onDoubleClick={() => onOpen(deal)}
         >
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
                 <span
@@ -66,55 +62,45 @@ export const DealListItem = memo(function DealListItem({
                   {deal.title}
                 </h3>
               </div>
-              <p className="mt-0.5 truncate pl-3 text-[11px] font-semibold text-zani-muted">
+              <p className="truncate pl-3 text-[10px] font-semibold leading-4 text-zani-muted">
                 {deal.clientEntity?.full_name || t("deals.clientMissing")}
               </p>
             </div>
-            <span className="h-6 w-6 shrink-0 rounded-full bg-surface-muted text-center text-[11px] font-bold leading-6 text-brand-700 ring-1 ring-zani-border">
+            <span className="h-5 w-5 shrink-0 rounded-full bg-surface-muted text-center text-[10px] font-bold leading-5 text-brand-700 ring-1 ring-zani-border">
               {ownerInitial}
             </span>
           </div>
 
-          <div className="mt-2 flex items-center gap-1.5 pl-3">
+          <div className="mt-1.5 flex items-center justify-between gap-2 pl-3">
             <DealAmount
               value={deal.amount}
               currency={deal.currency}
               className="text-[12px] font-bold text-zani-text"
             />
-            <span className="text-zani-muted">·</span>
-            <span className="truncate text-[11px] font-semibold text-zani-muted">
-              {deal.stageEntity?.name || deal.status}
+            <span className="truncate text-[10px] font-semibold text-zani-muted">
+              {deal.nextTask?.due_at
+                ? formatDateTime(deal.nextTask.due_at)
+                : formatDate(deal.created_at)}
             </span>
           </div>
 
-          <div className="mt-2 flex items-center justify-between gap-2 pl-3 text-[11px] font-semibold text-zani-muted">
+          <div className="mt-1.5 flex items-center justify-between gap-2 pl-3 text-[10px] font-semibold text-zani-muted">
             <span className="inline-flex min-w-0 items-center gap-1.5">
-              <CalendarClock size={13} />
+              <CalendarClock size={12} />
               <span className="truncate">
                 {deal.nextTask
                   ? deal.nextTask.title
-                  : formatDate(deal.created_at)}
+                  : t("deals.noTasksFilter")}
               </span>
             </span>
-            <span className="inline-flex items-center gap-1 text-zani-muted">
-              <MessageCircle size={13} /> {deal.nextTask ? 1 : 0}
-            </span>
-          </div>
-
-          <div className="mt-2 flex items-center justify-between gap-2 pl-3">
             <DealRiskIndicator deal={deal} compact t={t} />
-            <span className="truncate text-[11px] font-semibold text-zani-muted">
-              {deal.nextTask?.due_at
-                ? formatDateTime(deal.nextTask.due_at)
-                : t("deals.noTasksFilter")}
-            </span>
           </div>
         </button>
 
         <button
           type="button"
           data-testid="deal-card-action-open"
-          className="ml-2 grid h-8 w-8 shrink-0 place-items-center rounded-lg text-zani-muted opacity-100 transition hover:bg-brand-50 hover:text-brand-700 md:opacity-0 md:group-hover:opacity-100"
+          className="ml-1 grid h-6 w-6 shrink-0 place-items-center rounded-md text-zani-muted opacity-100 transition hover:bg-brand-50 hover:text-brand-700 md:opacity-0 md:group-hover:opacity-100"
           onClick={(event) => {
             event.stopPropagation();
             onOpen(deal);
@@ -122,7 +108,7 @@ export const DealListItem = memo(function DealListItem({
           onDoubleClick={(event) => event.stopPropagation()}
           aria-label={t("deals.openDealContext", { title: deal.title })}
         >
-          <SquareArrowOutUpRight size={16} />
+          <SquareArrowOutUpRight size={13} />
         </button>
       </div>
     </article>

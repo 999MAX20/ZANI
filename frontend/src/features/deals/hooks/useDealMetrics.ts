@@ -8,7 +8,7 @@ import type {
   DealRow,
   Translate,
 } from "../types";
-import { dealRisk, nextOpenTask } from "../utils/dealHelpers";
+import { dealRisk, dealStageLabel, nextOpenTask } from "../utils/dealHelpers";
 import type { Client, PipelineStage, Task, TeamMember } from "../../../types";
 
 export function useDealMetrics(
@@ -26,7 +26,7 @@ export function useDealMetrics(
   const activeStages = useMemo(
     () =>
       data.stages
-        .filter((stage) => stage.pipeline === activePipeline)
+        .filter((stage) => stage.pipeline === activePipeline && stage.is_active)
         .sort((a, b) => a.order - b.order),
     [activePipeline, data.stages],
   );
@@ -72,6 +72,8 @@ export function useDealMetrics(
                 business: deal.business,
                 pipeline: deal.pipeline,
                 name: deal.stage_name,
+                template_key: deal.stage_template_key || "",
+                is_active: true,
                 order: deal.stage_order || 0,
                 color: deal.stage_color || "#FF7A1A",
                 probability: deal.stage_probability || deal.probability || 0,
@@ -222,7 +224,7 @@ export function useDealMetrics(
         },
         ...activeStages.map((stage) => ({
           value: String(stage.id),
-          label: stage.name,
+          label: dealStageLabel(stage, t),
           count: pipelineRows.filter((deal) => deal.stage === stage.id).length,
         })),
       ],

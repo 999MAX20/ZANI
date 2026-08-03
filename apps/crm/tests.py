@@ -10,7 +10,53 @@ from apps.businesses.models import Business, BusinessMember, BusinessRole
 from apps.core.models import AuditLog, CustomFieldDefinition, CustomFieldValue
 from apps.clients.models import Client
 from apps.crm.models import Deal, DealStageHistory, DealValueHistory, Pipeline, PipelineStage
+from apps.crm.pipeline_templates import DEFAULT_PIPELINE_TEMPLATE_KEY
+from apps.crm.services import ensure_default_pipeline
 from apps.tasks.models import Task
+
+
+class DefaultPipelineTemplateTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(
+            username="default-pipeline-owner",
+            email="default-pipeline-owner@example.com",
+            password="pass",
+            role=User.Roles.BUSINESS_OWNER,
+        )
+        self.business = Business.objects.create(
+            owner=self.owner,
+            name="Default Pipeline Business",
+            slug="default-pipeline-business",
+        )
+
+    def test_default_pipeline_is_generic_and_idempotent(self):
+        pipeline = ensure_default_pipeline(self.business)
+        ensure_default_pipeline(self.business)
+
+        self.assertEqual(pipeline.template_key, DEFAULT_PIPELINE_TEMPLATE_KEY)
+        self.assertEqual(
+            list(pipeline.stages.order_by("order").values_list("template_key", flat=True)),
+            ["new", "qualification", "proposal", "negotiation", "won", "lost"],
+        )
+        self.assertEqual(pipeline.stages.count(), 6)
+
+    def test_existing_pipeline_is_not_silently_extended(self):
+        pipeline = Pipeline.objects.create(
+            business=self.business,
+            name="Custom sales",
+            slug="default-sales",
+            is_default=True,
+        )
+        PipelineStage.objects.create(
+            business=self.business,
+            pipeline=pipeline,
+            name="Custom intake",
+            order=1,
+        )
+
+        ensure_default_pipeline(self.business)
+
+        self.assertEqual(list(pipeline.stages.values_list("name", flat=True)), ["Custom intake"])
 
 
 class PipelineStageEngineUpgradeTests(TestCase):
@@ -85,6 +131,41 @@ class PipelineStageEngineUpgradeTests(TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data["required_fields"], ["amount"])
+
+    def test_inactive_stage_cannot_receive_deals(self):
+        inactive = PipelineStage.objects.create(
+            business=self.business,
+            pipeline=self.pipeline,
+            name="Retired stage",
+            order=5,
+            is_active=False,
+        )
+
+        response = self.api.post(
+            f"/api/deals/{self.deal.id}/move-stage/",
+            {"stage": inactive.id},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.deal.refresh_from_db()
+        self.assertEqual(self.deal.stage, self.new_stage)
+
+    def test_board_excludes_inactive_stages(self):
+        inactive = PipelineStage.objects.create(
+            business=self.business,
+            pipeline=self.pipeline,
+            name="Retired stage",
+            order=5,
+            is_active=False,
+        )
+
+        response = self.api.get(f"/api/deals/board/?pipeline={self.pipeline.id}")
+
+        self.assertEqual(response.status_code, 200)
+        stage_ids = {stage["id"] for stage in response.data["stages"]}
+        self.assertNotIn(inactive.id, stage_ids)
+        self.assertIn(self.new_stage.id, stage_ids)
 
     def test_move_stage_requires_configured_custom_fields(self):
         definition = CustomFieldDefinition.objects.create(
@@ -504,7 +585,11 @@ class PipelineStageEngineUpgradeTests(TestCase):
 
         self.assertEqual(response.status_code, 201)
         pipeline = Pipeline.objects.get(id=response.data["id"])
-        self.assertEqual(pipeline.stages.count(), 5)
+        self.assertEqual(pipeline.stages.count(), 6)
+        self.assertEqual(
+            list(pipeline.stages.order_by("order").values_list("template_key", flat=True)),
+            ["new", "qualification", "proposal", "negotiation", "won", "lost"],
+        )
 
     def test_deal_list_supports_filters_pagination_and_enriched_fields(self):
         other_client = Client.objects.create(business=self.business, full_name="Other Client", phone="+77010000000")

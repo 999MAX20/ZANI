@@ -10,7 +10,7 @@ import { DealAmount } from "./common/DealAmount";
 import { DealRiskIndicator } from "./common/DealRiskIndicator";
 import { DealStageBadge } from "./common/DealStageBadge";
 import { DealListItem } from "./DealListItem";
-import { money } from "../utils/dealHelpers";
+import { dealStageLabel, money } from "../utils/dealHelpers";
 
 type StageGroup = { id: string; name: string; color: string; rows: DealRow[] };
 const stageFallbackColors = [
@@ -83,7 +83,7 @@ export function DealsList({
 }: {
   rows: DealRow[];
   viewMode: DealViewMode;
-  stages: Array<{ id: number; name: string }>;
+  stages: Array<{ id: number; name: string; template_key?: string }>;
   selectedDealId?: number | null;
   selectedIds: number[];
   onOpen: (deal: DealRow) => void;
@@ -111,7 +111,7 @@ export function DealsList({
   const groups = useMemo<StageGroup[]>(() => {
     const active = stages.map((stage, index) => ({
       id: String(stage.id),
-      name: stage.name,
+      name: dealStageLabel(stage, t),
       color:
         "color" in stage && stage.color
           ? String(stage.color)
@@ -229,11 +229,15 @@ export function DealsList({
 
   if (viewMode === "kanban") {
     return (
-      <div className="grid min-h-[560px] auto-cols-[256px] grid-flow-col gap-3 overflow-x-auto p-3 lg:auto-cols-[276px] lg:gap-4 lg:p-3 xl:auto-cols-[292px]">
+      <div
+        data-testid="deals-kanban-board"
+        className="grid h-[calc(100dvh-13rem)] min-h-[600px] auto-cols-[minmax(238px,1fr)] grid-flow-col gap-2 overflow-x-auto overscroll-x-contain p-2 [scrollbar-gutter:stable]"
+      >
         {groups.map((group) => (
           <section
             key={group.id}
-            className="flex min-h-[560px] flex-col overflow-hidden rounded-card border border-zani-border bg-surface-muted shadow-soft"
+            data-testid={`deals-kanban-stage-${group.id}`}
+            className="flex min-h-0 flex-col overflow-hidden rounded-card border border-zani-border bg-surface-muted shadow-soft"
             onDragOver={(event) => event.preventDefault()}
             onDrop={(event) => {
               const deal = dealMap.get(
@@ -243,13 +247,13 @@ export function DealsList({
                 onStageChange(deal, Number(group.id));
             }}
           >
-            <header className="bg-surface-card p-4 pb-3">
+            <header className="shrink-0 bg-surface-card px-3 py-2.5">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <h3 className="truncate text-[13px] font-bold text-zani-text">
                     {group.name}
                   </h3>
-                  <p className="mt-2 text-[13px] font-bold text-zani-text">
+                  <p className="mt-1 text-[12px] font-bold text-zani-text">
                     {money(
                       group.rows.reduce(
                         (sum, deal) => sum + Number(deal.amount || 0),
@@ -258,11 +262,11 @@ export function DealsList({
                     )}
                   </p>
                 </div>
-                <span className="rounded-full bg-surface-card px-2.5 py-1 text-xs font-bold text-zani-text ring-1 ring-zani-border">
+                <span className="rounded-full bg-surface-card px-2 py-0.5 text-[11px] font-bold text-zani-text ring-1 ring-zani-border">
                   {group.rows.length}
                 </span>
               </div>
-              <div className="mt-3 h-0.5 rounded-full bg-surface-muted">
+              <div className="mt-2 h-0.5 rounded-full bg-surface-muted">
                 <div
                   className="h-0.5 rounded-full"
                   style={{
@@ -272,7 +276,7 @@ export function DealsList({
                 />
               </div>
             </header>
-            <div className="min-h-0 flex-1 space-y-2 overflow-y-auto bg-surface-muted p-2.5">
+            <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto bg-surface-muted p-1.5">
               {group.rows
                 .slice(0, visibleByStage[group.id] || 10)
                 .map((deal) => (

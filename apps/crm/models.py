@@ -31,6 +31,8 @@ class PipelineStage(TimeStampedModel):
     business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name="pipeline_stages")
     pipeline = models.ForeignKey(Pipeline, on_delete=models.CASCADE, related_name="stages")
     name = models.CharField(max_length=255)
+    template_key = models.CharField(max_length=64, blank=True)
+    is_active = models.BooleanField(default=True)
     order = models.PositiveIntegerField(default=0)
     color = models.CharField(max_length=24, default="#2563eb")
     probability = models.PositiveSmallIntegerField(default=0)

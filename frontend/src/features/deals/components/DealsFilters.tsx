@@ -6,7 +6,7 @@ import { Input } from "../../../components/ui/Input";
 import { Select } from "../../../components/ui/Select";
 import type { PipelineStage, TeamMember } from "../../../types";
 import type { DealFiltersState, DealQuickFilter, DealStatusFilter, Translate } from "../types";
-import { sourceLabel } from "../utils/dealHelpers";
+import { dealStageLabel, sourceLabel } from "../utils/dealHelpers";
 
 type DealsFiltersProps = {
   filters: DealFiltersState;
@@ -47,7 +47,7 @@ export function DealsFilters({ filters, stages, teamMembers, quickCounts, onChan
   const activeFilters: CrmActiveFilter[] = [
     filters.search ? { id: "search", label: t("common.search"), value: filters.search } : null,
     filters.statusFilter !== "open" ? { id: "statusFilter", label: t("deals.status"), value: statusLabel(filters.statusFilter, t) } : null,
-    filters.stageFilter !== "all" ? { id: "stageFilter", label: t("deals.stage"), value: stages.find((stage) => String(stage.id) === filters.stageFilter)?.name || filters.stageFilter } : null,
+    filters.stageFilter !== "all" ? { id: "stageFilter", label: t("deals.stage"), value: dealStageLabel(stages.find((stage) => String(stage.id) === filters.stageFilter), t) || filters.stageFilter } : null,
     filters.ownerFilter ? { id: "ownerFilter", label: t("deals.manager"), value: teamMembers.find((member) => String(member.user.id) === filters.ownerFilter)?.user.full_name || filters.ownerFilter } : null,
     filters.sourceFilter ? { id: "sourceFilter", label: t("deals.source"), value: sourceLabel(filters.sourceFilter, t) } : null,
     filters.minAmount ? { id: "minAmount", label: t("deals.amountFrom"), value: filters.minAmount } : null,
@@ -82,7 +82,7 @@ export function DealsFilters({ filters, stages, teamMembers, quickCounts, onChan
         <div className="grid gap-2">
           <div className="grid gap-2 md:grid-cols-2">
             <Select value={filters.statusFilter} onChange={(event) => onChange({ statusFilter: event.target.value as DealStatusFilter })} options={statusFilters.map((value) => ({ value, label: statusLabel(value, t) }))} className="h-9 text-xs" aria-label={t("deals.status")} />
-            <Select value={filters.stageFilter} onChange={(event) => onChange({ stageFilter: event.target.value })} options={[{ value: "all", label: t("deals.allStages") }, ...stages.map((stage) => ({ value: String(stage.id), label: stage.name }))]} className="h-9 text-xs" aria-label={t("deals.stage")} />
+            <Select value={filters.stageFilter} onChange={(event) => onChange({ stageFilter: event.target.value })} options={[{ value: "all", label: t("deals.allStages") }, ...stages.map((stage) => ({ value: String(stage.id), label: dealStageLabel(stage, t) }))]} className="h-9 text-xs" aria-label={t("deals.stage")} />
             <Select
               value={filters.ownerFilter}
               onChange={(event) => onChange({ ownerFilter: event.target.value })}

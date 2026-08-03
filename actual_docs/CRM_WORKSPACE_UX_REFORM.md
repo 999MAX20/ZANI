@@ -1,6 +1,6 @@
 # CRM Workspace UX Reform
 
-Status: `ACTIVE` - UX-1 complete; stopped at the phase gate
+Status: `ACTIVE` - UX-2 complete; stopped at the phase gate
 Owner: UI/UX
 Started: 2026-08-03
 Source: owner browser review of `/app`, `/app/leads`, `/app/deals` and
@@ -59,13 +59,44 @@ Completion evidence (2026-08-03):
 
 ## Phase UX-2 - Deals workspace and pipeline language
 
-Status: `PLANNED`
+Status: `DONE`
 
-- canonicalize duplicate English/Russian stage data through the CRM domain
+- [x] canonicalize duplicate English/Russian stage data through the CRM domain
   layer instead of hiding backend data with frontend translations;
-- make horizontal kanban navigation persistent and obvious;
-- increase visible board area and preserve drag/drop, filters and permissions;
-- verify existing merchants and migrations before changing stage data.
+- [x] make horizontal kanban navigation persistent and obvious;
+- [x] increase visible board area and preserve drag/drop, filters and permissions;
+- [x] verify existing merchants and migrations before changing stage data.
+
+Completion evidence (2026-08-03):
+
+- the local integration database was inspected before migration and contained
+  one pipeline with `12` stages: six dentistry/Russian stages plus six English
+  defaults created by a non-idempotent fallback;
+- migration `crm.0010_pipeline_stage_canonicalization` keeps six canonical
+  generic active stages, preserves the six duplicate stage rows as inactive
+  history, remaps current/previous deal pointers and changes the pipeline
+  template from `onboarding_dentistry` to `smb_default`;
+- `ensure_default_pipeline` now creates one generic six-stage template only for
+  an empty pipeline and never silently extends an existing custom pipeline;
+- inactive stages are excluded from merchant stage lists, kanban payloads,
+  terminal actions and AI draft-deal stage selection, and backend validation
+  rejects moving a deal into an inactive stage;
+- the desktop board uses all available width for the six canonical stages;
+  cards no longer repeat the stage name and are capped by browser evidence at
+  `112 px`, keeping all six local deals visible in one column without vertical
+  paging at 1920x1080;
+- narrow desktop/tablet widths retain a real horizontal scroll path to the last
+  stage instead of clipping columns;
+- all `28` CRM backend tests passed; Django system check and migration drift
+  check passed;
+- production frontend/widget build passed with `4629` aligned RU/KK/EN keys;
+  bundle gate passed with app shell `262.13 kB` before gzip against the `400 kB`
+  budget and no JavaScript chunk over `500 kB`;
+- focused Playwright passed `2` runnable scenarios with `2` intentional
+  project skips across 1920px desktop and 1024px tablet;
+- permission scopes, notifications, BusinessEvents and deal lifecycle services
+  were not broadened; the only AI impact is excluding inactive stages from
+  draft-deal selection.
 
 ## Phase UX-3 - Owner and administrator dashboard
 

@@ -13,6 +13,8 @@ class PipelineStageSerializer(serializers.ModelSerializer):
             "business",
             "pipeline",
             "name",
+            "template_key",
+            "is_active",
             "order",
             "color",
             "probability",
@@ -147,6 +149,8 @@ class DealSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"stage": "Stage must belong to selected pipeline."})
         if stage and business and stage.business_id != business.id:
             raise serializers.ValidationError({"stage": "Stage must belong to selected business."})
+        if stage and not stage.is_active:
+            raise serializers.ValidationError({"stage": "Inactive stage cannot receive deals."})
         owner = attrs.get("owner") if "owner" in attrs else getattr(self.instance, "owner", None)
         if owner and business and not business.members.filter(user=owner, is_active=True).exists():
             raise serializers.ValidationError({"owner": "Owner must be an active business member."})
@@ -158,6 +162,7 @@ class DealListSerializer(DealSerializer):
     client_phone = serializers.CharField(source="client.phone", read_only=True)
     client_email = serializers.CharField(source="client.email", read_only=True)
     stage_name = serializers.CharField(source="stage.name", read_only=True)
+    stage_template_key = serializers.CharField(source="stage.template_key", read_only=True)
     stage_color = serializers.CharField(source="stage.color", read_only=True)
     stage_order = serializers.IntegerField(source="stage.order", read_only=True)
     stage_probability = serializers.IntegerField(source="stage.probability", read_only=True)
@@ -184,6 +189,7 @@ class DealListSerializer(DealSerializer):
             "pipeline",
             "stage",
             "stage_name",
+            "stage_template_key",
             "stage_color",
             "stage_order",
             "stage_probability",

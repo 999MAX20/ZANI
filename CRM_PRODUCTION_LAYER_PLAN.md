@@ -18,6 +18,17 @@ domain invariants -> state machines -> audit/activity -> API contracts -> fronte
 
 ### Backend Boundaries
 
+Update 2026-08-03: The default deal pipeline now uses one generic SMB template
+instead of mixing dentistry-specific and English fallback stages. Existing
+recognized aliases are canonicalized to New deal, Qualification, Proposal,
+Negotiation, Won and Lost; duplicate stages remain inactive for historical
+traceability while current and previous deal pointers move to the canonical
+stage. New businesses receive the canonical template once, and an existing
+custom pipeline is never silently extended by `ensure_default_pipeline`.
+Inactive stages are excluded from merchant stage lists, board payloads,
+terminal actions and AI draft-deal selection, and they cannot receive new deal
+moves.
+
 Update 2026-08-02: PC-2 standardizes the generic merchant CRM on five
 authorization profiles: Owner, Administrator, Manager, Operator and
 Specialist. Director is a company-facing title for Administrator, while

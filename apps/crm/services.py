@@ -1,5 +1,4 @@
 from django.contrib.auth import get_user_model
-from django.utils.text import slugify
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
@@ -11,19 +10,10 @@ from apps.businesses.capabilities import assert_resource_enabled
 from apps.activities.services import create_activity_event
 from apps.activities.taxonomy import ActivityEvents, event_label
 from apps.crm.models import Deal, DealStageHistory, DealValueHistory, Pipeline, PipelineStage, StageTransition
+from apps.crm.pipeline_templates import DEFAULT_PIPELINE_TEMPLATE_KEY, DEFAULT_STAGE_SPECS
 from apps.core.audit import write_actor_audit_log, write_audit_log
 from apps.core.custom_fields import required_custom_fields_missing
 from apps.core.models import AuditLog
-
-
-DEFAULT_STAGES = [
-    ("New", "#06b6d4", 10, 60),
-    ("Contacted", "#2563eb", 25, 240),
-    ("Qualified", "#8b5cf6", 50, 480),
-    ("Booked", "#22c55e", 80, None),
-    ("Won", "#16a34a", 100, None),
-    ("Lost", "#ef4444", 0, None),
-]
 
 
 def ensure_default_pipeline(business: Business) -> Pipeline:
@@ -34,22 +24,17 @@ def ensure_default_pipeline(business: Business) -> Pipeline:
             "name": "Sales pipeline",
             "entity_type": Pipeline.EntityTypes.DEAL,
             "is_default": True,
-            "template_key": "smb_default",
+            "template_key": DEFAULT_PIPELINE_TEMPLATE_KEY,
         },
     )
-    for order, (name, color, probability, sla_minutes) in enumerate(DEFAULT_STAGES, start=1):
-        PipelineStage.objects.get_or_create(
+    if pipeline.stages.exists():
+        return pipeline
+    for order, spec in enumerate(DEFAULT_STAGE_SPECS, start=1):
+        PipelineStage.objects.create(
             business=business,
             pipeline=pipeline,
-            name=name,
-            defaults={
-                "order": order,
-                "color": color,
-                "probability": probability,
-                "sla_minutes": sla_minutes,
-                "is_won": slugify(name) == "won",
-                "is_lost": slugify(name) == "lost",
-            },
+            order=order,
+            **spec,
         )
     return pipeline
 
@@ -385,7 +370,7 @@ def record_deal_value_change(
 
 
 def get_terminal_stage(deal: Deal, *, is_won=False, is_lost=False) -> PipelineStage:
-    query = PipelineStage.objects.filter(business=deal.business, pipeline=deal.pipeline)
+    query = PipelineStage.objects.filter(business=deal.business, pipeline=deal.pipeline, is_active=True)
     if is_won:
         query = query.filter(is_won=True)
     if is_lost:
@@ -397,12 +382,13 @@ def get_terminal_stage(deal: Deal, *, is_won=False, is_lost=False) -> PipelineSt
 
 
 def get_reopen_stage(deal: Deal) -> PipelineStage:
-    if deal.previous_stage_id and not (deal.previous_stage.is_won or deal.previous_stage.is_lost):
+    if deal.previous_stage_id and deal.previous_stage.is_active and not (deal.previous_stage.is_won or deal.previous_stage.is_lost):
         return deal.previous_stage
     stage = (
         PipelineStage.objects.filter(
             business=deal.business,
             pipeline=deal.pipeline,
+            is_active=True,
             is_won=False,
             is_lost=False,
         )
@@ -426,6 +412,8 @@ def validate_stage_requirements(*, deal: Deal, stage: PipelineStage, actor, payl
     payload = payload or {}
     if stage.business_id != deal.business_id or stage.pipeline_id != deal.pipeline_id:
         raise ValidationError({"stage": "Stage does not exist in this deal pipeline."})
+    if not stage.is_active:
+        raise ValidationError({"stage": "Inactive stage cannot receive deals."})
 
     transition = StageTransition.objects.filter(
         business=deal.business,

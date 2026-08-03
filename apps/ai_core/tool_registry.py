@@ -301,7 +301,7 @@ def _execute_create_deal(log, user):
         )
         return {"deal_id": result.deal.id, "created": result.created}
     pipeline = ensure_default_pipeline(log.business)
-    stage = PipelineStage.objects.filter(business=log.business, pipeline=pipeline, is_won=False, is_lost=False).order_by("order", "id").first()
+    stage = PipelineStage.objects.filter(business=log.business, pipeline=pipeline, is_active=True, is_won=False, is_lost=False).order_by("order", "id").first()
     if stage is None:
         raise ValueError("A pipeline stage is required to create a deal.")
     deal = Deal.objects.create(

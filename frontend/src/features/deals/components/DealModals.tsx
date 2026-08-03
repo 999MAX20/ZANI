@@ -11,7 +11,7 @@ import type {
   TeamMember,
 } from "../../../types";
 import type { DealActionFlow, DealCreateForm, Translate } from "../types";
-import { money } from "../utils/dealHelpers";
+import { dealStageLabel, money } from "../utils/dealHelpers";
 
 export function CreateDealModal({
   open,
@@ -93,7 +93,7 @@ export function CreateDealModal({
             { value: "", label: t("deals.firstStage") },
             ...stages.map((stage) => ({
               value: String(stage.id),
-              label: stage.name,
+              label: dealStageLabel(stage, t),
             })),
           ]}
         />

@@ -826,6 +826,8 @@ export type PipelineStage = {
   business: Id;
   pipeline: Id;
   name: string;
+  template_key: string;
+  is_active: boolean;
   order: number;
   color: string;
   probability: number;
@@ -849,6 +851,7 @@ export type Deal = {
   pipeline: Id;
   stage: Id;
   stage_name?: string;
+  stage_template_key?: string;
   stage_color?: string;
   stage_order?: number;
   stage_probability?: number;

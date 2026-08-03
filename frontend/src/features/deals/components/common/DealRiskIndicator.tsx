@@ -18,14 +18,17 @@ export function DealRiskIndicator({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold",
+        "inline-flex shrink-0 items-center whitespace-nowrap font-bold",
+        compact
+          ? "gap-1 rounded-md px-1.5 py-0.5 text-[10px]"
+          : "gap-1.5 rounded-lg px-2.5 py-1 text-xs",
         high && "bg-[var(--zani-danger-soft)] text-zani-danger",
         medium && "bg-[var(--zani-warning-soft)] text-zani-warning",
         deal.riskLevel === "low" &&
           "bg-[var(--zani-success-soft)] text-zani-success",
       )}
     >
-      {high || medium ? <AlertTriangle size={13} /> : <CircleCheck size={13} />}
+      {high || medium ? <AlertTriangle size={compact ? 11 : 13} /> : <CircleCheck size={compact ? 11 : 13} />}
       {compact
         ? t("deals.riskPercentShort", { percent: deal.riskPercent })
         : high

@@ -13,6 +13,7 @@ from apps.core.permissions import user_can_access_business
 from apps.core.viewsets import TenantModelViewSet
 from apps.core.work_queues import no_next_action_deals_queryset, sla_overdue_deals_queryset
 from apps.crm.models import Deal, Pipeline, PipelineStage, StageTransition
+from apps.crm.pipeline_templates import DEFAULT_STAGE_SPECS
 from apps.crm.selectors import build_deal_summary, stale_deals_queryset
 from apps.crm.serializers import DealListSerializer, DealSerializer, PipelineSerializer, PipelineStageSerializer, StageTransitionSerializer
 from apps.crm.services import assign_deal_owner, mark_deal_lost, mark_deal_won, move_deal_stage, record_deal_value_change, reopen_deal
@@ -26,7 +27,7 @@ class PipelineViewSet(TenantModelViewSet):
     @action(detail=True, methods=["get"])
     def board(self, request, pk=None):
         pipeline = self.get_object()
-        stages = pipeline.stages.all().order_by("order", "name")
+        stages = pipeline.stages.filter(is_active=True).order_by("order", "name")
         deals = Deal.objects.filter(business=pipeline.business, pipeline=pipeline).select_related("business", "client", "lead", "pipeline", "stage", "owner")
         return Response(
             {
@@ -58,25 +59,12 @@ class PipelineViewSet(TenantModelViewSet):
             is_default=not Pipeline.objects.filter(business=business).exists(),
             template_key=template_key,
         )
-        stage_specs = [
-            ("Новая", "#2563eb", 10, 240, {}),
-            ("В работе", "#06b6d4", 35, 480, {"fields": ["amount"]}),
-            ("Предложение", "#8b5cf6", 65, 1440, {"fields": ["amount", "next_action_at"]}),
-            ("Выиграна", "#16a34a", 100, None, {"fields": ["amount"]}),
-            ("Потеряна", "#ef4444", 0, None, {"fields": ["lost_reason"]}),
-        ]
-        for order, (name, color, probability, sla_minutes, required_fields) in enumerate(stage_specs, start=1):
+        for order, spec in enumerate(DEFAULT_STAGE_SPECS, start=1):
             PipelineStage.objects.create(
                 business=business,
                 pipeline=pipeline,
-                name=name,
                 order=order,
-                color=color,
-                probability=probability,
-                sla_minutes=sla_minutes,
-                required_fields_json=required_fields,
-                is_won=name == "Выиграна",
-                is_lost=name == "Потеряна",
+                **spec,
             )
         return Response(PipelineSerializer(pipeline).data, status=201)
 
@@ -84,6 +72,12 @@ class PipelineViewSet(TenantModelViewSet):
 class PipelineStageViewSet(TenantModelViewSet):
     queryset = PipelineStage.objects.select_related("business", "pipeline")
     serializer_class = PipelineStageSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.action == "list" and self.request.query_params.get("include_inactive") not in {"1", "true"}:
+            queryset = queryset.filter(is_active=True)
+        return queryset
 
 
 class DealPagination(PageNumberPagination):
@@ -297,10 +291,10 @@ class DealViewSet(TenantModelViewSet):
         queryset = self.get_queryset()
         pipeline_id = request.query_params.get("pipeline")
         if pipeline_id:
-            stages = PipelineStage.objects.filter(pipeline_id=pipeline_id, business__in=queryset.values("business")).order_by("order", "name")
+            stages = PipelineStage.objects.filter(pipeline_id=pipeline_id, business__in=queryset.values("business"), is_active=True).order_by("order", "name")
         else:
             first_pipeline = queryset.values_list("pipeline_id", flat=True).first()
-            stages = PipelineStage.objects.filter(pipeline_id=first_pipeline).order_by("order", "name") if first_pipeline else PipelineStage.objects.none()
+            stages = PipelineStage.objects.filter(pipeline_id=first_pipeline, is_active=True).order_by("order", "name") if first_pipeline else PipelineStage.objects.none()
         try:
             limit = min(max(int(request.query_params.get("limit_per_stage", 10)), 1), 50)
             offset = max(int(request.query_params.get("offset", 0)), 0)

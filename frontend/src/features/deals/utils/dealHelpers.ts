@@ -5,6 +5,25 @@ export function money(value: string | number, currency = "KZT") {
   return `${Number(value || 0).toLocaleString("ru-RU")} ${currency}`;
 }
 
+const stageTranslationKeys: Record<string, string> = {
+  new: "deals.stageNew",
+  qualification: "deals.stageQualification",
+  proposal: "deals.stageProposal",
+  negotiation: "deals.stageNegotiation",
+  won: "deals.stageWon",
+  lost: "deals.stageLost",
+};
+
+export function dealStageLabel(
+  stage:
+    | (Pick<PipelineStage, "name"> & { template_key?: string })
+    | undefined,
+  t: Translate,
+) {
+  const translationKey = stageTranslationKeys[stage?.template_key || ""];
+  return translationKey ? t(translationKey) : stage?.name || t("deals.noStage");
+}
+
 export function initials(name?: string) {
   return (name || "D")
     .split(" ")

@@ -10,7 +10,6 @@ import {
 
 import { Button } from "../../../components/ui/Button";
 import { Select } from "../../../components/ui/Select";
-import { cn } from "../../../lib/cn";
 import type { FilterPreset, LeadColumnKey, LeadFilter } from "../types";
 
 type LeadFilterTab = {
@@ -60,6 +59,7 @@ export function LeadsToolbar({
   visibleColumns: Record<LeadColumnKey, boolean>;
   labels: {
     search: string;
+    status: string;
     source: string;
     filters: string;
     columns: string;
@@ -90,34 +90,10 @@ export function LeadsToolbar({
 }) {
   return (
     <>
-      <div className="flex min-w-0 items-center gap-2 overflow-x-auto pb-2">
-        {filters.map((item) => (
-          <button
-            key={item.value}
-            type="button"
-            className={cn(
-              "inline-flex h-9 shrink-0 items-center gap-2 rounded-control border px-3 text-sm font-bold transition",
-              filter === item.value
-                ? "border-brand-100 bg-brand-50 text-brand-700 shadow-sm"
-                : "border-zani-border bg-surface-card text-zani-muted hover:border-brand-100 hover:bg-surface-warm hover:text-zani-text",
-            )}
-            onClick={() => onFilterChange(item.value)}
-          >
-            <span>{item.label}</span>
-            <span
-              className={cn(
-                "rounded-full px-2 py-0.5 text-xs",
-                filter === item.value
-                  ? "bg-surface-card text-brand-700"
-                  : "bg-surface-muted text-zani-muted",
-              )}
-            >
-              {item.count}
-            </span>
-          </button>
-        ))}
-      </div>
-      <div className="grid gap-2 border-t border-zani-border pt-3 xl:grid-cols-[minmax(260px,1fr)_minmax(160px,220px)_auto] xl:items-center">
+      <div
+        className="grid gap-2 xl:grid-cols-[minmax(220px,0.75fr)_minmax(170px,220px)_minmax(160px,210px)_auto] xl:items-center"
+        data-testid="leads-filter-toolbar"
+      >
         <label className="relative block min-w-0">
           <Search
             className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zani-muted"
@@ -130,6 +106,16 @@ export function LeadsToolbar({
             onChange={(event) => onSearchChange(event.target.value)}
           />
         </label>
+        <Select
+          className="h-9 text-xs"
+          value={filter}
+          onChange={(event) => onFilterChange(event.target.value as LeadFilter)}
+          aria-label={labels.status}
+          options={filters.map((item) => ({
+            value: item.value,
+            label: `${item.label} · ${item.count}`,
+          }))}
+        />
         <Select
           className="h-9 text-xs"
           value={source}

@@ -112,6 +112,25 @@ Status: `PLANNED`
 - remove low-value duplication and large empty surfaces;
 - keep no-data and unavailable-source states explicit and honest.
 
+## Owner follow-up - Leads control density
+
+Status: `DONE`
+
+- replaced the six always-visible lead status chips with one accessible status
+  selector that preserves the live count for every option;
+- shortened the table search field and placed search, status, source and table
+  actions in one compact desktop row;
+- preserved the existing filter state, API queries, saved filters, columns,
+  import/export actions and responsive stacking;
+- production frontend/widget build passed with `4629` aligned RU/KK/EN keys;
+- bundle gate passed with the app shell at `256.0 kB` before gzip and no
+  JavaScript chunk above `500 kB`;
+- browser verification at `1536x695` measured a `44 px` toolbar with no
+  horizontal overflow; selecting `Без ответа · 3` reduced the result range to
+  `1–3 из 3`, and returning to `Все · 9` restored `1–9 из 9`;
+- no backend, API, permission, tenant, notification, BusinessEvent, AI,
+  migration, environment or dependency behavior changed.
+
 ## Phase UX-4 - Final browser certification
 
 Status: `PLANNED`

@@ -190,6 +190,7 @@ export function LeadsWorkspaceTable({
           visibleColumns={visibleColumns}
           labels={{
             search: t("leads.search"),
+            status: t("leads.filtersLabel"),
             source: t("leads.source"),
             filters: t("leads.filters"),
             columns: t("leads.columns"),

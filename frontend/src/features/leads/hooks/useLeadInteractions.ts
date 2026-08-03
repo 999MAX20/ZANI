@@ -65,9 +65,8 @@ export function useLeadInteractions({
 
   function openLead(lead: Lead) {
     setSelectedId(lead.id);
-    setDrawerEntity(null);
+    setDrawerEntity({ type: "lead", id: lead.id });
     setContextMenu(null);
-    navigate(`/app/leads/${lead.id}`);
   }
 
   function closeDrawer() {

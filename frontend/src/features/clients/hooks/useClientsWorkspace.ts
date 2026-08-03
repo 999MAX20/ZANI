@@ -166,13 +166,9 @@ export function useClientsWorkspace({
   const openClientCard = useCallback(
     (clientId: number, initialTab: CrmCardTab = "overview") => {
       setSelectedClientId(clientId);
-      if (initialTab === "overview") {
-        navigate(`/app/clients/${clientId}`);
-        return;
-      }
       setDrawerEntity({ type: "client", id: clientId, initialTab });
     },
-    [navigate],
+    [],
   );
 
   const closeClientCard = useCallback(() => {
@@ -187,7 +183,7 @@ export function useClientsWorkspace({
 
   const selectClient = useCallback((clientId: number) => {
     setSelectedClientId(clientId);
-    setDrawerEntity(null);
+    setDrawerEntity({ type: "client", id: clientId });
   }, []);
 
   const toggleClientColumn = useCallback((column: ClientTableColumn) => {
@@ -276,7 +272,7 @@ export function useClientsWorkspace({
   });
 
   const selectedRow =
-    rows.find((row) => row.client.id === selectedClientId) || rows[0] || null;
+    rows.find((row) => row.client.id === selectedClientId) || null;
   const selectedClient = actionClient || selectedRow?.client || null;
   const sourceOptions = useMemo(
     () =>

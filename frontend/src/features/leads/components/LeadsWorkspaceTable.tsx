@@ -313,12 +313,9 @@ export function LeadsWorkspaceTable({
                 allLeads={allLeads}
                 visibleColumns={visibleColumns}
                 columnOrder={columnOrder}
-                openLead={onOpenLead}
                 selectLead={onSelectLead}
                 toggleBulkLead={onToggleBulkLead}
                 assignLead={onAssignLead}
-                callLead={onCallLead}
-                whatsAppLead={onWhatsAppLead}
                 openContextMenu={onOpenContextMenu}
                 t={t}
               />

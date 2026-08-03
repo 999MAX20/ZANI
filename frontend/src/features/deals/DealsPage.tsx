@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Navigate, useNavigate, useSearchParams } from "react-router";
+import { Navigate, useSearchParams } from "react-router";
 
 import { dealsApi } from "../../api/deals";
 import {
@@ -11,7 +11,6 @@ import {
 import {
   CrmDataTable,
   CrmTableSurface,
-  CrmWorkspaceGrid,
   CrmWorkspacePage,
   CRM_TABLE_CONTENT_CLASS,
   CRM_TABLE_EMBEDDED_CLASS,
@@ -31,7 +30,6 @@ import {
   CreateDealModal,
   NextActionModal,
 } from "./components/DealModals";
-import { DealQuickInspector } from "./components/DealQuickInspector";
 import { useDealActions } from "./hooks/useDealActions";
 import { useDealFilters } from "./hooks/useDealFilters";
 import { useDealMetrics } from "./hooks/useDealMetrics";
@@ -46,7 +44,6 @@ export function DealsPage() {
   const showNotification = useNotification();
   const { notifyError } = useActionFeedback();
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { filters, updateFilters, resetFilters, activeFilterCount } =
     useDealFilters();
@@ -210,24 +207,9 @@ export function DealsPage() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [actions, selection, sortedRows]);
 
-  useEffect(() => {
-    const dealId = Number(searchParams.get("deal"));
-    if (!Number.isFinite(dealId) || dealId <= 0) return;
-    setDrawerEntity(null);
-    navigate(`/app/deals/${dealId}`, { replace: true });
-  }, [navigate, searchParams]);
-
   function openDealDrawer(deal: Deal) {
     selection.openDeal(deal.id);
     setDrawerEntity({ type: "deal", id: deal.id });
-    const next = new URLSearchParams(searchParams);
-    next.set("deal", String(deal.id));
-    setSearchParams(next, { replace: true });
-  }
-
-  function openDealWorkspace(deal: Deal) {
-    setDrawerEntity(null);
-    navigate(`/app/deals/${deal.id}`);
   }
 
   function closeDrawer() {
@@ -236,17 +218,6 @@ export function DealsPage() {
     next.delete("deal");
     setSearchParams(next, { replace: true });
   }
-
-  const selectedDealTaskCount = selection.selectedDeal
-    ? data.tasksByDeal.get(selection.selectedDeal.id)?.length || 0
-    : 0;
-  const selectedDealConversationCount = selection.selectedDeal
-    ? data.conversations.filter(
-        (conversation) =>
-          conversation.deal === selection.selectedDeal?.id ||
-          conversation.client === selection.selectedDeal?.client,
-      ).length
-    : 0;
 
   useEffect(() => {
     if (!actions.stageGuard) return;
@@ -279,13 +250,13 @@ export function DealsPage() {
     <>
       <CrmWorkspacePage
         contentClassName="gap-0"
+        maxWidthClassName="max-w-none"
         testId={dealWorkspaceReady ? "deals-workspace-ready" : undefined}
       >
         {!data.pipelines.length ? (
           <ErrorState message={t("deals.noPipeline")} />
         ) : (
-          <CrmWorkspaceGrid inspectorOpen={Boolean(selection.selectedDeal)}>
-            <CrmTableSurface
+          <CrmTableSurface
               filters={
                 <DealsFilters
                   filters={filters}
@@ -308,8 +279,8 @@ export function DealsPage() {
                   stages={activeStages}
                   selectedDealId={selection.selectedDealId}
                   selectedIds={selection.selectedIds}
-                  onSelect={(deal) => selection.openDeal(deal.id)}
-                  onOpen={openDealWorkspace}
+                  onSelect={openDealDrawer}
+                  onOpen={openDealDrawer}
                   onCheck={(deal) => selection.toggleSelected(deal.id)}
                   onSelectAll={selection.selectAll}
                   onCreate={() => actions.setCreateOpen(true)}
@@ -323,17 +294,7 @@ export function DealsPage() {
                   t={t}
                 />
               </CrmDataTable>
-            </CrmTableSurface>
-
-            <DealQuickInspector
-              deal={selection.selectedDeal}
-              taskCount={selectedDealTaskCount}
-              conversationCount={selectedDealConversationCount}
-              t={t}
-              onOpen={openDealWorkspace}
-              onCreateTask={actions.setNextActionDeal}
-            />
-          </CrmWorkspaceGrid>
+          </CrmTableSurface>
         )}
       </CrmWorkspacePage>
       <CreateDealModal

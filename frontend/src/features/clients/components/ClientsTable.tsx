@@ -171,7 +171,7 @@ export function ClientsTable({
               </th>
               <th
                 role="columnheader"
-                className="w-[92px] px-2 py-2 text-right"
+                className="w-14 px-2 py-2 text-right"
               ></th>
             </tr>
           </thead>

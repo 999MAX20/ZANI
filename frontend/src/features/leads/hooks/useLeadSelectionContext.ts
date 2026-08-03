@@ -9,7 +9,6 @@ import { getClient, getService, leadAiInsight } from "../utils/leadFormat";
 export function useLeadSelectionContext({
   businessId,
   rows,
-  pageRows,
   selectedId,
   clients,
   services,
@@ -22,7 +21,6 @@ export function useLeadSelectionContext({
 }: {
   businessId?: Id;
   rows: Lead[];
-  pageRows: Lead[];
   selectedId: Id | null;
   clients: Client[];
   services: Service[];
@@ -33,7 +31,10 @@ export function useLeadSelectionContext({
   aiInsights: Map<Id, LeadAiInsight>;
   t: Translate;
 }) {
-  const selected = useMemo(() => rows.find((lead) => lead.id === selectedId) || pageRows[0] || null, [pageRows, rows, selectedId]);
+  const selected = useMemo(
+    () => rows.find((lead) => lead.id === selectedId) || null,
+    [rows, selectedId],
+  );
   const selectedClient = selected ? getClient(selected, clients) : undefined;
   const selectedService = selected ? getService(selected, services) : undefined;
   const selectedTasks = selected

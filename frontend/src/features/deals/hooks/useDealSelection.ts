@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import type { DealRow } from "../types";
 import type { Id } from "../../../types";
 
@@ -7,14 +7,8 @@ export function useDealSelection(rows: DealRow[]) {
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Id[]>([]);
 
-  useEffect(() => {
-    if (selectedDealId && rows.some((deal) => deal.id === selectedDealId))
-      return;
-    setSelectedDealId(rows[0]?.id || null);
-  }, [rows, selectedDealId]);
-
   const selectedDeal =
-    rows.find((deal) => deal.id === selectedDealId) || rows[0] || null;
+    rows.find((deal) => deal.id === selectedDealId) || null;
 
   const openDeal = useCallback((dealId: Id) => {
     setSelectedDealId(dealId);

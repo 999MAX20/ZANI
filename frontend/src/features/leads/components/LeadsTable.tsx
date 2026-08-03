@@ -1,13 +1,9 @@
 import {
   CheckCheck,
-  MessageCircle,
   MoreHorizontal,
-  Phone,
-  SquareArrowOutUpRight,
 } from "lucide-react";
 
 import {
-  CRM_TABLE_ACTIONS_COLUMN,
   CRM_TABLE_CHECKBOX_COLUMN,
   CRM_TABLE_MIN_WIDTH,
   CRM_TABLE_ROW_GRID_CLASS,
@@ -58,11 +54,8 @@ function LeadTableRow({
   visibleColumns,
   columnOrder,
   onClick,
-  onOpen,
   onToggleBulk,
   onAssign,
-  onCall,
-  onWhatsApp,
   onContextMenu,
   t,
 }: {
@@ -77,11 +70,8 @@ function LeadTableRow({
   visibleColumns: Record<LeadColumnKey, boolean>;
   columnOrder: LeadColumnKey[];
   onClick: () => void;
-  onOpen: () => void;
   onToggleBulk: () => void;
   onAssign: (userId?: Id) => void;
-  onCall: () => void;
-  onWhatsApp: () => void;
   onContextMenu: (event: React.MouseEvent) => void;
   t: Translate;
 }) {
@@ -89,7 +79,7 @@ function LeadTableRow({
   const isHot = lead.status === "new" && !lead.responsible_user;
   const activeColumns = columnOrder.filter((column) => visibleColumns[column]);
   const needsWideTable = activeColumns.length > 5;
-  const gridTemplateColumns = `${CRM_TABLE_CHECKBOX_COLUMN} ${activeColumns.map((column) => leadColumnWidths[column]).join(" ")} ${CRM_TABLE_ACTIONS_COLUMN}`;
+  const gridTemplateColumns = `${CRM_TABLE_CHECKBOX_COLUMN} ${activeColumns.map((column) => leadColumnWidths[column]).join(" ")} 56px`;
   const cells: Record<LeadColumnKey, React.ReactNode> = {
     lead: (
       <span className="flex min-w-0 items-center gap-3">
@@ -234,19 +224,6 @@ function LeadTableRow({
       >
         {[
           {
-            id: "open",
-            label: t("leads.openContext", { title }),
-            icon: SquareArrowOutUpRight,
-            onClick: onOpen,
-          },
-          { id: "call", label: t("leads.callContext", { title }), icon: Phone, onClick: onCall },
-          {
-            id: "whatsapp",
-            label: t("leads.whatsappContext", { title }),
-            icon: MessageCircle,
-            onClick: onWhatsApp,
-          },
-          {
             id: "more",
             label: t("leads.moreActionsContext", { title }),
             icon: MoreHorizontal,
@@ -287,12 +264,9 @@ export function VirtualizedLeadTableRows({
   allLeads,
   visibleColumns,
   columnOrder,
-  openLead,
   selectLead,
   toggleBulkLead,
   assignLead,
-  callLead,
-  whatsAppLead,
   openContextMenu,
   t,
 }: {
@@ -306,18 +280,15 @@ export function VirtualizedLeadTableRows({
   allLeads: Lead[];
   visibleColumns: Record<LeadColumnKey, boolean>;
   columnOrder: LeadColumnKey[];
-  openLead: (lead: Lead) => void;
   selectLead: (lead: Lead) => void;
   toggleBulkLead: (id: Id) => void;
   assignLead: (lead: Lead, userId?: Id) => void;
-  callLead: (lead: Lead) => void;
-  whatsAppLead: (lead: Lead) => void;
   openContextMenu: (event: React.MouseEvent, lead: Lead) => void;
   t: Translate;
 }) {
   const activeColumns = columnOrder.filter((column) => visibleColumns[column]);
   const needsWideTable = activeColumns.length > 5;
-  const gridTemplateColumns = `${CRM_TABLE_CHECKBOX_COLUMN} ${activeColumns.map((column) => leadColumnWidths[column]).join(" ")} ${CRM_TABLE_ACTIONS_COLUMN}`;
+  const gridTemplateColumns = `${CRM_TABLE_CHECKBOX_COLUMN} ${activeColumns.map((column) => leadColumnWidths[column]).join(" ")} 56px`;
 
   return (
     <div className="hidden overflow-x-auto lg:block">
@@ -350,11 +321,8 @@ export function VirtualizedLeadTableRows({
                 visibleColumns={visibleColumns}
                 columnOrder={columnOrder}
                 onClick={() => selectLead(lead)}
-                onOpen={() => openLead(lead)}
                 onToggleBulk={() => toggleBulkLead(lead.id)}
                 onAssign={(userId) => assignLead(lead, userId)}
-                onCall={() => callLead(lead)}
-                onWhatsApp={() => whatsAppLead(lead)}
                 onContextMenu={(event) => openContextMenu(event, lead)}
                 t={t}
               />

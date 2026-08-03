@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Navigate, useSearchParams } from "react-router";
 
-import { CrmWorkspaceGrid, CrmWorkspacePage } from "../../components/crm";
+import { CrmWorkspacePage } from "../../components/crm";
 import {
   CrmEntityDrawer,
   type CrmDrawerEntity,
@@ -12,7 +12,6 @@ import { useI18n } from "../../lib/i18n";
 import type { Id, Lead, Task } from "../../types";
 import { LeadsActionOverlays } from "./components/LeadsActionOverlays";
 import { LeadsModals } from "./components/LeadsModals";
-import { LeadQuickInspector } from "./components/LeadQuickInspector";
 import { LeadsWorkspaceTable } from "./components/LeadsWorkspaceTable";
 import { leadTitle } from "./utils/leadFormat";
 import { useLeadActions } from "./hooks/useLeadActions";
@@ -126,13 +125,6 @@ export function LeadsPage() {
     teamList,
     aiInsights,
     selected,
-    selectedClient,
-    selectedService,
-    selectedNextTask,
-    selectedDeals,
-    selectedAppointments,
-    selectedConversations,
-    selectedAiInsight,
     filters,
     pageStart,
     pageEnd,
@@ -229,11 +221,10 @@ export function LeadsPage() {
     <CrmWorkspacePage
       className="h-auto min-h-[calc(100vh-5.5rem)] overflow-visible"
       contentClassName="flex-none gap-3"
-      maxWidthClassName="max-w-[1520px]"
+      maxWidthClassName="max-w-none"
       testId="leads-workspace-ready"
     >
-      <CrmWorkspaceGrid inspectorOpen={Boolean(selected)}>
-        <LeadsWorkspaceTable
+      <LeadsWorkspaceTable
           filters={filters}
           filter={filter}
           search={search}
@@ -295,11 +286,7 @@ export function LeadsPage() {
             window.location.href = "/app/integrations";
           }}
           onOpenCreate={openCreateLead}
-          onSelectLead={(lead) => {
-            setSelectedId(lead.id);
-            setDrawerEntity(null);
-            setContextMenu(null);
-          }}
+          onSelectLead={openLead}
           onOpenLead={openLead}
           onToggleBulkLead={toggleBulkLead}
           onToggleAllPageRows={toggleAllPageRows}
@@ -320,23 +307,6 @@ export function LeadsPage() {
             setPage(1);
           }}
         />
-
-        <LeadQuickInspector
-          lead={selected}
-          client={selectedClient}
-          service={selectedService}
-          aiInsight={selectedAiInsight}
-          related={{
-            deals: selectedDeals.length,
-            appointments: selectedAppointments.length,
-            conversations: selectedConversations.length,
-          }}
-          t={t}
-          onOpen={openLead}
-          onCall={callLead}
-          onWhatsApp={whatsAppLead}
-        />
-      </CrmWorkspaceGrid>
 
       <LeadsActionOverlays
         contextMenu={contextMenu}

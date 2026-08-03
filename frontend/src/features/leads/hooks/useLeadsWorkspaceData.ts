@@ -136,7 +136,6 @@ export function useLeadsWorkspaceData({
   const selectedContext = useLeadSelectionContext({
     businessId: business?.id,
     rows,
-    pageRows,
     selectedId,
     clients: clientList,
     services: serviceList,

@@ -1,9 +1,4 @@
-import {
-  MessageCircle,
-  Phone,
-  SquareArrowOutUpRight,
-  UserX,
-} from "lucide-react";
+import { MoreHorizontal, UserX } from "lucide-react";
 import { memo } from "react";
 
 import { cn } from "../../../lib/cn";
@@ -35,23 +30,10 @@ export const ClientRow = memo(function ClientRow({
   onToggleCheck: () => void;
   t: Translate;
 }) {
-  const phoneDigits = row.client.phone?.replace(/\D/g, "") || "";
-  const hasTelegram = Boolean(
-    row.client.telegram_id || row.client.source === "telegram",
-  );
-
   function handleKeyDown(event: React.KeyboardEvent<HTMLTableRowElement>) {
     if (event.key !== "Enter" && event.key !== " ") return;
     event.preventDefault();
     onSelect();
-  }
-
-  function openExternalContact(
-    event: React.MouseEvent<HTMLButtonElement>,
-    href: string,
-  ) {
-    event.stopPropagation();
-    window.open(href, "_blank", "noopener,noreferrer");
   }
 
   return (
@@ -149,44 +131,8 @@ export const ClientRow = memo(function ClientRow({
             : t("common.today")}
         </p>
       </td>
-      <td role="gridcell" className="w-[92px] px-2 py-2 text-right">
+      <td role="gridcell" className="w-14 px-2 py-2 text-right">
         <div className="flex items-center justify-end gap-1">
-          {phoneDigits ? (
-            <>
-              <button
-                type="button"
-                className="inline-grid h-8 w-8 place-items-center rounded-lg text-zani-muted transition hover:bg-[var(--zani-success-soft)] hover:text-zani-success"
-                onClick={(event) =>
-                  openExternalContact(event, `tel:${phoneDigits}`)
-                }
-                aria-label={t("clients.call")}
-              >
-                <Phone size={16} />
-              </button>
-              <button
-                type="button"
-                className="inline-grid h-8 w-8 place-items-center rounded-lg text-zani-muted transition hover:bg-[var(--zani-success-soft)] hover:text-zani-success"
-                onClick={(event) =>
-                  openExternalContact(event, `https://wa.me/${phoneDigits}`)
-                }
-                aria-label={t("clients.openWhatsapp")}
-              >
-                <MessageCircle size={16} />
-              </button>
-            </>
-          ) : hasTelegram ? (
-            <button
-              type="button"
-              className="inline-grid h-8 w-8 place-items-center rounded-lg text-zani-muted transition hover:bg-brand-50 hover:text-brand-700"
-              onClick={(event) => {
-                event.stopPropagation();
-                onSelect();
-              }}
-              aria-label={t("clients.openTelegram")}
-            >
-              <MessageCircle size={16} />
-            </button>
-          ) : null}
           <button
             type="button"
             data-testid="client-row-action-open"
@@ -198,7 +144,7 @@ export const ClientRow = memo(function ClientRow({
             }}
             aria-label={t("clients.details")}
           >
-            <SquareArrowOutUpRight size={17} />
+            <MoreHorizontal size={17} />
           </button>
         </div>
       </td>

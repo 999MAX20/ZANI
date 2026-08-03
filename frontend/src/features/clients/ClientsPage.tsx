@@ -12,7 +12,6 @@ import {
 import { CrmEntityDrawer } from "../../components/crm/CrmEntityDrawer";
 import {
   CrmTableSurface,
-  CrmWorkspaceGrid,
   CrmWorkspacePage,
 } from "../../components/crm";
 import { useActionConfirm } from "../../components/actions/ActionConfirmProvider";
@@ -25,7 +24,6 @@ import type { Client, Id } from "../../types";
 import { ClientsFilters } from "./components/ClientsFilters";
 import { ClientsModals } from "./components/ClientsModals";
 import { ClientsTable } from "./components/ClientsTable";
-import { ClientQuickInspector } from "./components/ClientQuickInspector";
 import { MobileClientCards } from "./components/MobileClientCards";
 import { useClientsPageHeader } from "./hooks/useClientsPageHeader";
 import { useClientsWorkspace } from "./hooks/useClientsWorkspace";
@@ -66,7 +64,6 @@ export function ClientsPage() {
     selectClient,
     selectedClient,
     selectedClientId,
-    selectedRow,
     selectedSegment,
     selectedTag,
     setActionClient,
@@ -291,6 +288,7 @@ export function ClientsPage() {
   return (
     <>
       <CrmWorkspacePage
+        maxWidthClassName="max-w-none"
         testId={pageError ? undefined : "clients-workspace-ready"}
       >
         {pageError ? (
@@ -299,8 +297,7 @@ export function ClientsPage() {
           </div>
         ) : null}
 
-        <CrmWorkspaceGrid inspectorOpen={Boolean(selectedRow)}>
-          <main className="min-w-0">
+        <main className="min-h-0 min-w-0 flex-1">
             <CrmTableSurface
               className="h-full"
               filters={
@@ -352,21 +349,7 @@ export function ClientsPage() {
                 t={t}
               />
             </CrmTableSurface>
-          </main>
-          <ClientQuickInspector
-            row={selectedRow}
-            t={t}
-            onOpen={(id) => openClientCard(id)}
-            onCall={(phone) => window.open(`tel:${phone}`, "_self")}
-            onWhatsApp={(phone) =>
-              window.open(
-                `https://wa.me/${phone.replace(/\D/g, "")}`,
-                "_blank",
-                "noopener,noreferrer",
-              )
-            }
-          />
-        </CrmWorkspaceGrid>
+        </main>
       </CrmWorkspacePage>
 
       <ClientsModals

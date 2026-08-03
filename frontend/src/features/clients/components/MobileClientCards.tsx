@@ -86,6 +86,7 @@ export function MobileClientCards({
             <Button
               type="button"
               variant="secondary"
+              data-testid="client-card-action-open"
               className="min-h-11 flex-1"
               onClick={() => onOpenClient(row.client.id)}
             >

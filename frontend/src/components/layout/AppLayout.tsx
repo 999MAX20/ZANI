@@ -105,6 +105,7 @@ export function AppLayout() {
   const usesWideCrmWorkspace = /^\/app\/(leads|clients|deals)\/?$/.test(
     location.pathname,
   );
+  const usesEdgeToEdgeDeals = /^\/app\/deals\/?$/.test(location.pathname);
 
   return (
     <div className="min-h-screen bg-surface text-ink">
@@ -115,7 +116,7 @@ export function AppLayout() {
             <WorkspaceNavigation pageHeader={pageHeader} />
             <main
               key={location.pathname}
-              className={`animate-fade-in mx-auto w-full flex-1 px-4 pb-4 ${usesWideCrmWorkspace ? "max-w-none" : "max-w-[1440px]"} ${pageHeader?.activeFilters ? "pt-24" : "pt-16"} sm:px-6 sm:pb-6 lg:px-6`}
+              className={`animate-fade-in mx-auto w-full flex-1 ${usesEdgeToEdgeDeals ? "px-2 pb-2" : "px-4 pb-4 sm:px-6 sm:pb-6 lg:px-6"} ${usesWideCrmWorkspace ? "max-w-none" : "max-w-[1440px]"} ${pageHeader?.activeFilters ? "pt-24" : "pt-16"}`}
             >
               <MeasuredWorkspaceOutlet />
             </main>

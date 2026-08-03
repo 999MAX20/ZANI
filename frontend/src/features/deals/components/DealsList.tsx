@@ -231,13 +231,13 @@ export function DealsList({
     return (
       <div
         data-testid="deals-kanban-board"
-        className="grid h-[calc(100dvh-13rem)] min-h-[600px] auto-cols-[minmax(238px,1fr)] grid-flow-col gap-2 overflow-x-auto overscroll-x-contain p-2 [scrollbar-gutter:stable]"
+        className="grid min-h-[520px] flex-1 auto-cols-[minmax(238px,1fr)] grid-flow-col gap-1.5 overflow-x-auto overscroll-x-contain p-1.5 [scrollbar-gutter:stable] 2xl:auto-cols-auto 2xl:grid-flow-row 2xl:grid-cols-6"
       >
         {groups.map((group) => (
           <section
             key={group.id}
             data-testid={`deals-kanban-stage-${group.id}`}
-            className="flex min-h-0 flex-col overflow-hidden rounded-card border border-zani-border bg-surface-muted shadow-soft"
+            className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-card border border-zani-border bg-surface-muted shadow-soft"
             onDragOver={(event) => event.preventDefault()}
             onDrop={(event) => {
               const deal = dealMap.get(

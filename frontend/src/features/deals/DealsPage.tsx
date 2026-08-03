@@ -249,6 +249,7 @@ export function DealsPage() {
   return (
     <>
       <CrmWorkspacePage
+        className="px-0 py-2 sm:px-0"
         contentClassName="gap-0"
         maxWidthClassName="max-w-none"
         testId={dealWorkspaceReady ? "deals-workspace-ready" : undefined}
@@ -257,7 +258,8 @@ export function DealsPage() {
           <ErrorState message={t("deals.noPipeline")} />
         ) : (
           <CrmTableSurface
-              filters={
+            filtersClassName="border-b-0 p-0"
+            filters={
                 <DealsFilters
                   filters={filters}
                   stages={activeStages}
@@ -267,8 +269,8 @@ export function DealsPage() {
                   onReset={resetFilters}
                   t={t}
                 />
-              }
-            >
+            }
+          >
               <CrmDataTable
                 className={CRM_TABLE_EMBEDDED_CLASS}
                 contentClassName={CRM_TABLE_CONTENT_CLASS}

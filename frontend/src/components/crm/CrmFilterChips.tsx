@@ -25,6 +25,8 @@ export function CrmFilterChips<TValue extends string>({
   activeFiltersLabel,
   clearAllLabel,
   filtersLabel,
+  compact,
+  testId,
 }: {
   value: TValue;
   options: Array<FilterOption<TValue>>;
@@ -40,6 +42,8 @@ export function CrmFilterChips<TValue extends string>({
   activeFiltersLabel?: string;
   clearAllLabel?: string;
   filtersLabel?: string;
+  compact?: boolean;
+  testId?: string;
 }) {
   return (
     <CrmControlBar
@@ -57,6 +61,8 @@ export function CrmFilterChips<TValue extends string>({
       activeFiltersLabel={activeFiltersLabel}
       clearAllLabel={clearAllLabel}
       filtersLabel={filtersLabel}
+      compact={compact}
+      testId={testId}
     />
   );
 }

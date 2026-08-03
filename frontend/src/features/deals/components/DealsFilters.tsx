@@ -70,6 +70,8 @@ export function DealsFilters({ filters, stages, teamMembers, quickCounts, onChan
 
   return (
     <CrmFilterChips
+      compact
+      testId="deals-filter-bar"
       value={filters.quickFilter}
       options={quickFilters.map((value) => ({ value, label: quickLabel(value, t), count: quickCounts[value] }))}
       onChange={(quickFilter) => onChange({ quickFilter })}
@@ -106,14 +108,14 @@ export function DealsFilters({ filters, stages, teamMembers, quickCounts, onChan
         </div>
       }
     >
-      <div className="relative w-full min-w-[220px] md:w-[300px]">
+      <div className="relative w-full min-w-[210px] md:w-[270px]">
         <Input
           value={filters.search}
           onChange={(event) => onChange({ search: event.target.value })}
           placeholder={t("deals.queueSearch")}
           leftIcon={<Search size={15} />}
           rightIcon={filters.search ? <button type="button" onClick={() => onChange({ search: "" })} className="rounded-full p-1 text-zani-faint hover:bg-surface-muted hover:text-zani-text" aria-label={t("deals.clearSearch")}><X size={13} /></button> : null}
-          className="h-9 text-xs"
+          className="h-8 min-h-8 text-xs"
           aria-label={t("common.search")}
         />
       </div>

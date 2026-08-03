@@ -94,6 +94,10 @@ Completion evidence (2026-08-03):
   budget and no JavaScript chunk over `500 kB`;
 - focused Playwright passed `2` runnable scenarios with `2` intentional
   project skips across 1920px desktop and 1024px tablet;
+- the owner-requested density follow-up gives `/app/deals` an edge-to-edge
+  workspace, keeps the filter/search controls in one compact row and uses an
+  explicit six-column desktop grid so `Потеряно` is fully visible without a
+  horizontal scroll while tablet widths preserve deliberate navigation;
 - permission scopes, notifications, BusinessEvents and deal lifecycle services
   were not broadened; the only AI impact is excluding inactive stages from
   draft-deal selection.

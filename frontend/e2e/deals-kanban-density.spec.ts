@@ -23,7 +23,9 @@ test("deal kanban exposes one dense localized canonical pipeline", async ({
   await expect(page.getByTestId("deals-workspace-ready")).toBeVisible();
 
   const board = page.getByTestId("deals-kanban-board");
+  const filterBar = page.getByTestId("deals-filter-bar");
   await expect(board).toBeVisible();
+  await expect(filterBar).toBeVisible();
   const stages = board.locator('[data-testid^="deals-kanban-stage-"]');
   await expect(stages).toHaveCount(6);
   await expect(stages.locator(":scope > header h3")).toHaveText([
@@ -42,6 +44,40 @@ test("deal kanban exposes one dense localized canonical pipeline", async ({
   expect(boardMetrics.scrollWidth).toBeLessThanOrEqual(
     boardMetrics.clientWidth + 2,
   );
+
+  const layoutMetrics = await page.evaluate(() => {
+    const boardElement = document.querySelector<HTMLElement>(
+      '[data-testid="deals-kanban-board"]',
+    );
+    const filterElement = document.querySelector<HTMLElement>(
+      '[data-testid="deals-filter-bar"]',
+    );
+    const stageElements = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        '[data-testid^="deals-kanban-stage-"]',
+      ),
+    );
+    if (!boardElement || !filterElement || !stageElements.length) return null;
+    const boardRect = boardElement.getBoundingClientRect();
+    const lastStageRect = stageElements.at(-1)?.getBoundingClientRect();
+    return {
+      boardRight: boardRect.right,
+      boardWidth: boardRect.width,
+      filterHeight: filterElement.getBoundingClientRect().height,
+      lastStageRight: lastStageRect?.right || 0,
+      lastStageWidth: lastStageRect?.width || 0,
+      viewportWidth: window.innerWidth,
+    };
+  });
+  expect(layoutMetrics).not.toBeNull();
+  expect(layoutMetrics!.filterHeight).toBeLessThanOrEqual(50);
+  expect(layoutMetrics!.boardWidth).toBeGreaterThan(
+    layoutMetrics!.viewportWidth * 0.92,
+  );
+  expect(layoutMetrics!.lastStageRight).toBeLessThanOrEqual(
+    layoutMetrics!.boardRight + 1,
+  );
+  expect(layoutMetrics!.lastStageWidth).toBeGreaterThan(240);
 
   const cards = stages.first().locator("article");
   await expect(cards).toHaveCount(6);

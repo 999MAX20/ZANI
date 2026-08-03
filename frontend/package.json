@@ -14,6 +14,7 @@
     "test:dashboard-appointments": "node --test scripts/tests/dashboard-appointment-dedupe.test.mjs",
     "test:daily-workspaces": "node --test scripts/tests/daily-workspaces-policy.test.mjs",
     "test:gate-env": "node --test scripts/tests/gate-environment-policy.test.mjs",
+    "test:login-page": "node --test scripts/tests/login-page-policy.test.mjs",
     "check:bundle": "node scripts/check-bundle.mjs",
     "build": "npm run check:i18n && tsc -b && vite build && vite build --config widget/vite.config.ts",
     "preview": "vite preview --host 0.0.0.0",

@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowRight, Building2, CheckCircle2 } from "lucide-react";
+import { ArrowRight, BriefcaseBusiness, CheckCircle2, UsersRound, Zap } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router";
@@ -9,11 +9,10 @@ import { getApiErrorMessage } from "../../api/client";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { Select } from "../../components/ui/Select";
+import { LanguageSelector } from "../../components/layout/LanguageSelector";
 import { useI18n } from "../../lib/i18n";
-import { AuthExperienceShell } from "./AuthExperienceShell";
 import { useAuth } from "./AuthProvider";
-import "./authExperience.css";
-import "./authExperienceMobileFix.css";
+import "./authLoginSerenity.css";
 
 type FormValues = {
   full_name: string;
@@ -23,7 +22,6 @@ type FormValues = {
   password_confirm: string;
   business_name: string;
   business_type: string;
-  city?: string;
 };
 
 export function SignupPage() {
@@ -38,7 +36,6 @@ export function SignupPage() {
     password_confirm: z.string().min(1, t("passwordReset.repeatPasswordRequired")),
     business_name: z.string().min(2, t("validation.businessName")),
     business_type: z.string().min(1),
-    city: z.string().optional(),
   }).refine((values) => values.password === values.password_confirm, {
     message: t("passwordReset.passwordMismatch"),
     path: ["password_confirm"],
@@ -79,7 +76,6 @@ export function SignupPage() {
         password: values.password,
         business_name: values.business_name,
         business_type: values.business_type,
-        city: values.city,
       });
       navigate("/app");
     } catch (err) {
@@ -88,54 +84,102 @@ export function SignupPage() {
   }
 
   return (
-    <AuthExperienceShell mode="signup">
-      <section className="zani-auth-card">
-        <div className="zani-auth-card-icon">
-          <Building2 size={31} />
+    <main className="serenity-login serenity-login--signup">
+      <div className="serenity-login__ambient" aria-hidden="true">
+        <span />
+        <span />
+        <span />
+      </div>
+
+      <header className="serenity-login__header">
+        <Link className="serenity-login__brand" to="/login">
+          <span className="serenity-login__brand-mark" aria-hidden="true">
+            <Zap size={20} />
+          </span>
+          <span className="serenity-login__brand-copy">
+            <strong>ZANI</strong>
+            <small>{t("auth.brandTagline")}</small>
+          </span>
+        </Link>
+
+        <div className="serenity-login__header-actions">
+          <span>{t("auth.alreadyHaveAccount")}</span>
+          <Link className="serenity-login__signup-link" to="/login">
+            {t("auth.submit")}
+          </Link>
+          <LanguageSelector className="serenity-login__language" />
         </div>
-        <h2>{t("signup.createCompanyTitle")}</h2>
-        <p>{t("signup.createCompanyText")}</p>
+      </header>
 
-        {error ? <div className="zani-auth-error">{error}</div> : null}
+      <div className="serenity-login__layout">
+        <section className="serenity-login__story" aria-label={t("auth.heroAria")}>
+          <h1>{t("signup.headline")}</h1>
 
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="zani-auth-field-grid">
-            <Input label={t("signup.yourName")} placeholder={t("signup.namePlaceholder")} error={errors.full_name?.message} {...register("full_name")} />
-            <Input label={t("signup.phone")} placeholder="+7 777 000 00 00" error={errors.phone?.message} {...register("phone")} />
+          <div className="serenity-login__benefits">
+            <article>
+              <span aria-hidden="true"><BriefcaseBusiness size={19} /></span>
+              <div>
+                <h2>{t("signup.businessSection")}</h2>
+                <p>{t("signup.createCompanyText")}</p>
+              </div>
+            </article>
+            <article>
+              <span aria-hidden="true"><UsersRound size={19} /></span>
+              <div>
+                <h2>{t("signup.accountSection")}</h2>
+                <p>{t("signup.afterSignInHelper")}</p>
+              </div>
+            </article>
           </div>
-          <Input label={t("auth.email")} type="email" placeholder={t("auth.emailPlaceholder")} error={errors.email?.message} {...register("email")} />
-          <div className="zani-auth-field-grid">
-            <Input label={t("auth.password")} type="password" placeholder={t("signup.passwordPlaceholder")} error={errors.password?.message} {...register("password")} />
-            <Input label={t("signup.passwordConfirm")} type="password" placeholder={t("passwordReset.repeatPassword")} error={errors.password_confirm?.message} {...register("password_confirm")} />
-          </div>
-          <div className="zani-auth-password-checks">
-            {passwordChecks.map((check) => (
-              <span key={check.label} data-active={check.active}>
-                <CheckCircle2 size={14} />
-                {check.label}
-              </span>
-            ))}
-          </div>
-          <Input label={t("signup.businessName")} placeholder={t("signup.businessNamePlaceholder")} error={errors.business_name?.message} {...register("business_name")} />
-          <div className="zani-auth-field-grid">
-            <Select label={t("signup.businessType")} options={businessTypeOptions} error={errors.business_type?.message} {...register("business_type")} />
-            <Input label={t("signup.cityOptional")} placeholder={t("signup.cityPlaceholder")} error={errors.city?.message} {...register("city")} />
-          </div>
-          <p className="zani-auth-helper">{t("signup.afterSignInHelper")}</p>
-          <Button className="zani-auth-primary" type="submit" isLoading={isSubmitting}>
-            {t("signup.freeSubmit")}
-            <ArrowRight size={18} />
-          </Button>
-        </form>
+        </section>
 
-        <p className="zani-auth-terms">
-          {t("signup.terms")}
-        </p>
-        <p className="zani-auth-links">
-          <span>{t("signup.hasAccess")}</span>
-          <Link to="/login">{t("auth.submit")}</Link>
-        </p>
-      </section>
-    </AuthExperienceShell>
+        <section className="serenity-login__form-area" aria-label={t("auth.create")}>
+          <div className="serenity-login__card serenity-login__card--signup">
+            <div className="serenity-login__card-mark" aria-hidden="true">
+              <Zap size={25} />
+            </div>
+            <span className="serenity-login__eyebrow">{t("signup.eyebrow")}</span>
+            <h2>{t("signup.createCompanyTitle")}</h2>
+            <p className="serenity-login__card-copy">{t("signup.createCompanyText")}</p>
+
+            {error ? (
+              <div className="serenity-login__error" role="alert" aria-live="polite">
+                {error}
+              </div>
+            ) : null}
+
+            <form className="serenity-login__form serenity-login__form--signup" noValidate onSubmit={handleSubmit(onSubmit)}>
+              <div className="serenity-login__field-grid">
+                <Input label={t("signup.yourName")} autoComplete="name" placeholder={t("signup.namePlaceholder")} error={errors.full_name?.message} {...register("full_name")} />
+                <Input label={t("signup.phone")} autoComplete="tel" placeholder="+7 777 000 00 00" error={errors.phone?.message} {...register("phone")} />
+              </div>
+              <div className="serenity-login__field-grid">
+                <Input label={t("auth.email")} type="email" autoComplete="email" placeholder={t("auth.emailPlaceholder")} error={errors.email?.message} {...register("email")} />
+                <Input label={t("signup.businessName")} autoComplete="organization" placeholder={t("signup.businessNamePlaceholder")} error={errors.business_name?.message} {...register("business_name")} />
+              </div>
+              <div className="serenity-login__field-grid">
+                <Input label={t("auth.password")} type="password" autoComplete="new-password" placeholder={t("signup.passwordPlaceholder")} error={errors.password?.message} {...register("password")} />
+                <Input label={t("signup.passwordConfirm")} type="password" autoComplete="new-password" placeholder={t("passwordReset.repeatPassword")} error={errors.password_confirm?.message} {...register("password_confirm")} />
+              </div>
+              <Select label={t("signup.businessType")} placement="top" options={businessTypeOptions} error={errors.business_type?.message} {...register("business_type")} />
+              <div className="serenity-login__password-checks">
+                {passwordChecks.map((check) => (
+                  <span key={check.label} data-active={check.active}>
+                    <CheckCircle2 size={14} />
+                    {check.label}
+                  </span>
+                ))}
+              </div>
+              <Button className="serenity-login__primary" type="submit" isLoading={isSubmitting}>
+                {t("signup.freeSubmit")}
+                <ArrowRight size={18} />
+              </Button>
+            </form>
+
+            <p className="serenity-login__terms">{t("signup.terms")}</p>
+          </div>
+        </section>
+      </div>
+    </main>
   );
 }

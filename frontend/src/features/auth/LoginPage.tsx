@@ -1,17 +1,11 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  ArrowLeft,
   ArrowRight,
-  CalendarDays,
-  MessageCircleMore,
-  ShieldCheck,
-  Sparkles,
-  UsersRound,
   Zap,
 } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Link, useNavigate } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { z } from "zod";
 
 import { getApiErrorMessage } from "../../api/client";
@@ -26,6 +20,14 @@ import "./authLoginSerenity.css";
 type FormValues = {
   email: string;
   password: string;
+};
+
+type LoginLocationState = {
+  from?: {
+    pathname?: string;
+    search?: string;
+    hash?: string;
+  };
 };
 
 function loadExternalScript(id: string, src: string) {
@@ -48,6 +50,7 @@ function loadExternalScript(id: string, src: string) {
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, loginWithSocial } = useAuth();
   const { t } = useI18n();
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -68,30 +71,41 @@ export function LoginPage() {
     resolver: zodResolver(schema),
     defaultValues: { email: "", password: "" },
   });
+  const hasSocialLogin = isGoogleConfigured || isAppleConfigured;
+
+  function getPostLoginPath(user: Awaited<ReturnType<typeof login>>) {
+    const fallback = user.is_platform_user ? "/platform" : "/app";
+    const from = (location.state as LoginLocationState | null)?.from;
+    const pathname = from?.pathname;
+
+    if (!pathname) return fallback;
+    if (user.is_platform_user && !pathname.startsWith("/platform")) return fallback;
+    if (!user.is_platform_user && !pathname.startsWith("/app")) return fallback;
+
+    return `${pathname}${from?.search ?? ""}${from?.hash ?? ""}`;
+  }
 
   async function onSubmit(values: FormValues) {
     setError(null);
     try {
       const user = await login(values.email, values.password);
-      navigate(user.is_platform_user ? "/platform" : "/app");
+      navigate(getPostLoginPath(user), { replace: true });
     } catch (err) {
       setError(getApiErrorMessage(err));
     }
   }
 
   async function completeSocialLogin(provider: SocialProvider, idToken?: string) {
-    if (!idToken) {
-      setError(t("auth.socialFailed"));
-      return;
-    }
-
     setError(null);
     setSocialLoading(provider);
     try {
+      if (!idToken) {
+        throw new Error("Missing social identity token");
+      }
       const user = await loginWithSocial(provider, idToken);
-      navigate(user.is_platform_user ? "/platform" : "/app");
+      navigate(getPostLoginPath(user), { replace: true });
     } catch (err) {
-      setError(getApiErrorMessage(err));
+      setError(err instanceof Error && err.message === "Missing social identity token" ? t("auth.socialFailed") : getApiErrorMessage(err));
     } finally {
       setSocialLoading(null);
     }
@@ -107,14 +121,18 @@ export function LoginPage() {
     setSocialLoading("google");
     try {
       await loadExternalScript("google-identity-services", "https://accounts.google.com/gsi/client");
-      window.google?.accounts?.id?.initialize({
+      const googleIdentity = window.google?.accounts?.id;
+      if (!googleIdentity) {
+        throw new Error("Google Identity Services unavailable");
+      }
+      googleIdentity.initialize({
         client_id: googleClientId,
         callback: (response) => {
           void completeSocialLogin("google", response.credential);
         },
       });
-      window.google?.accounts?.id?.prompt((notification) => {
-        if (notification.isNotDisplayed?.() || notification.isSkippedMoment?.()) {
+      googleIdentity.prompt((notification) => {
+        if (notification.isNotDisplayed?.() || notification.isSkippedMoment?.() || notification.isDismissedMoment?.()) {
           setError(t("auth.socialFailed"));
           setSocialLoading(null);
         }
@@ -135,13 +153,17 @@ export function LoginPage() {
     setSocialLoading("apple");
     try {
       await loadExternalScript("apple-signin", "https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js");
-      window.AppleID?.auth?.init({
+      const appleAuth = window.AppleID?.auth;
+      if (!appleAuth) {
+        throw new Error("Apple Sign In unavailable");
+      }
+      appleAuth.init({
         clientId: appleClientId,
         scope: "name email",
         redirectURI: `${window.location.origin}/login`,
         usePopup: true,
       });
-      const response = await window.AppleID?.auth?.signIn();
+      const response = await appleAuth.signIn();
       await completeSocialLogin("apple", response?.authorization?.id_token);
     } catch {
       setError(t("auth.socialFailed"));
@@ -158,7 +180,7 @@ export function LoginPage() {
       </div>
 
       <header className="serenity-login__header">
-        <Link className="serenity-login__brand" to="/">
+        <Link className="serenity-login__brand" to="/login">
           <span className="serenity-login__brand-mark" aria-hidden="true">
             <Zap size={20} />
           </span>
@@ -169,72 +191,13 @@ export function LoginPage() {
         </Link>
 
         <div className="serenity-login__header-actions">
-          <span>{t("auth.noAccount")}</span>
-          <Link className="serenity-login__signup-link" to="/signup">
-            {t("auth.create")}
-          </Link>
           <LanguageSelector className="serenity-login__language" />
         </div>
       </header>
 
       <div className="serenity-login__layout">
         <section className="serenity-login__story" aria-label={t("auth.heroAria")}>
-          <Link className="serenity-login__back" to="/">
-            <ArrowLeft size={18} />
-            {t("auth.backToSite")}
-          </Link>
-
-          <div className="serenity-login__badge">
-            <Sparkles size={16} />
-            {t("auth.badge")}
-          </div>
           <h1>{t("auth.headline")}</h1>
-          <p className="serenity-login__lead">{t("auth.copy")}</p>
-
-          <div className="serenity-login__benefits">
-            <article>
-              <span aria-hidden="true"><MessageCircleMore size={19} /></span>
-              <div>
-                <h2>{t("auth.fastFollowup")}</h2>
-                <p>{t("auth.fastFollowupText")}</p>
-              </div>
-            </article>
-            <article>
-              <span aria-hidden="true"><CalendarDays size={19} /></span>
-              <div>
-                <h2>{t("auth.smartBooking")}</h2>
-                <p>{t("auth.smartBookingText")}</p>
-              </div>
-            </article>
-            <article>
-              <span aria-hidden="true"><UsersRound size={19} /></span>
-              <div>
-                <h2>{t("auth.ownerControl")}</h2>
-                <p>{t("auth.ownerControlText")}</p>
-              </div>
-            </article>
-          </div>
-
-          <div className="serenity-login__visual" aria-hidden="true">
-            <div className="serenity-login__sun">
-              <span />
-              <Zap size={32} />
-            </div>
-            <div className="serenity-login__orbit serenity-login__orbit--one" />
-            <div className="serenity-login__orbit serenity-login__orbit--two" />
-            <div className="serenity-login__signal serenity-login__signal--clients">
-              <UsersRound size={17} />
-              <span>{t("nav.clients")}</span>
-            </div>
-            <div className="serenity-login__signal serenity-login__signal--messages">
-              <MessageCircleMore size={17} />
-              <span>{t("nav.conversations")}</span>
-            </div>
-            <div className="serenity-login__signal serenity-login__signal--calendar">
-              <CalendarDays size={17} />
-              <span>{t("nav.calendar")}</span>
-            </div>
-          </div>
         </section>
 
         <section className="serenity-login__form-area" aria-label={t("auth.signIn")}>
@@ -252,34 +215,40 @@ export function LoginPage() {
               </div>
             ) : null}
 
-            <div className="serenity-login__social-row">
-              <Button
-                type="button"
-                className="serenity-login__social"
-                isLoading={socialLoading === "google"}
-                disabled={!isGoogleConfigured || isSubmitting || Boolean(socialLoading)}
-                title={!isGoogleConfigured ? t("auth.socialNotConfigured") : undefined}
-                onClick={handleGoogleLogin}
-              >
-                <span className="serenity-login__provider-mark" aria-hidden="true">G</span>
-                {isGoogleConfigured ? "Google" : t("auth.googleSoon")}
-              </Button>
-              <Button
-                type="button"
-                className="serenity-login__social"
-                isLoading={socialLoading === "apple"}
-                disabled={!isAppleConfigured || isSubmitting || Boolean(socialLoading)}
-                title={!isAppleConfigured ? t("auth.socialNotConfigured") : undefined}
-                onClick={handleAppleLogin}
-              >
-                <span className="serenity-login__provider-mark" aria-hidden="true">A</span>
-                {isAppleConfigured ? "Apple" : t("auth.appleSoon")}
-              </Button>
-            </div>
+            {hasSocialLogin ? (
+              <>
+                <div className="serenity-login__social-row">
+                  {isGoogleConfigured ? (
+                    <Button
+                      type="button"
+                      className="serenity-login__social"
+                      isLoading={socialLoading === "google"}
+                      disabled={isSubmitting || Boolean(socialLoading)}
+                      onClick={handleGoogleLogin}
+                    >
+                      <span className="serenity-login__provider-mark" aria-hidden="true">G</span>
+                      Google
+                    </Button>
+                  ) : null}
+                  {isAppleConfigured ? (
+                    <Button
+                      type="button"
+                      className="serenity-login__social"
+                      isLoading={socialLoading === "apple"}
+                      disabled={isSubmitting || Boolean(socialLoading)}
+                      onClick={handleAppleLogin}
+                    >
+                      <span className="serenity-login__provider-mark" aria-hidden="true">A</span>
+                      Apple
+                    </Button>
+                  ) : null}
+                </div>
 
-            <div className="serenity-login__divider">
-              <span>{t("auth.emailDivider")}</span>
-            </div>
+                <div className="serenity-login__divider">
+                  <span>{t("auth.emailDivider")}</span>
+                </div>
+              </>
+            ) : null}
 
             <form className="serenity-login__form" noValidate onSubmit={handleSubmit(onSubmit)}>
               <Input
@@ -313,10 +282,6 @@ export function LoginPage() {
               </Button>
             </form>
 
-            <div className="serenity-login__trust">
-              <ShieldCheck size={17} />
-              <span>{t("auth.trustSecurity")}</span>
-            </div>
           </div>
         </section>
       </div>

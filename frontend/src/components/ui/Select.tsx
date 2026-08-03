@@ -9,10 +9,11 @@ type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
   label?: string;
   error?: string;
   options: { value: string | number; label: string }[];
+  placement?: "bottom" | "top";
 };
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  ({ label, error, options, className, value, defaultValue, onChange, onBlur, disabled, required, name, "aria-label": ariaLabel, "aria-describedby": describedBy, ...props }, ref) => {
+  ({ label, error, options, placement = "bottom", className, value, defaultValue, onChange, onBlur, disabled, required, name, "aria-label": ariaLabel, "aria-describedby": describedBy, ...props }, ref) => {
     const { t } = useI18n();
     const wrapperRef = useRef<HTMLDivElement | null>(null);
     const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -176,7 +177,14 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           <ChevronDown aria-hidden="true" size={17} className={cn("shrink-0 text-zani-faint transition", open && "rotate-180 text-brand-600")} />
         </button>
         {open ? (
-          <PopoverSurface id={listboxId} role="listbox" className="absolute left-0 right-0 top-full mt-2 max-h-72 overflow-y-auto p-1">
+          <PopoverSurface
+            id={listboxId}
+            role="listbox"
+            className={cn(
+              "absolute left-0 right-0 z-50 overflow-y-auto p-1",
+              placement === "top" ? "bottom-full mb-2 max-h-64" : "top-full mt-2 max-h-72",
+            )}
+          >
             {options.map((option, optionIndex) => {
               const isSelected = String(option.value) === currentValue;
               return (
@@ -188,7 +196,8 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                   aria-selected={isSelected}
                   tabIndex={-1}
                   className={cn(
-                    "zani-focus-ring flex w-full items-center justify-between gap-3 rounded-control px-3 py-2.5 text-left text-sm font-semibold transition",
+                    "zani-focus-ring flex w-full items-center justify-between gap-3 rounded-control px-3 text-left text-sm font-semibold transition",
+                    placement === "top" ? "py-2" : "py-2.5",
                     isSelected
                       ? "bg-brand-50 text-brand-700"
                       : activeIndex === optionIndex

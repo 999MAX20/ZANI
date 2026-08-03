@@ -140,6 +140,25 @@ Status: `PLANNED`
 - run accessibility, interaction, visual and bundle gates;
 - document remaining defects separately from new product ideas.
 
+## Owner follow-up - Public authentication clarity
+
+Status: `DONE`
+
+- rebuilt Login and Signup on the compact warm Serenity auth surface while
+  preserving form validation, social-provider gating and post-login redirects;
+- removed the duplicate Login header registration prompt while keeping the
+  in-form business registration action as the single entry point;
+- removed the owner-requested Signup badge, explanatory paragraph and trust
+  copy without changing registration fields or backend payloads;
+- replaced the browser-native language control with the shared accessible
+  select and a warm auth-specific menu treatment;
+- focused auth policy tests passed `8/8`; production frontend/widget build and
+  bundle budget passed with `4629` aligned RU/KK/EN keys;
+- browser checks confirmed RU -> EN -> RU switching, themed menu options, no
+  console errors and no horizontal overflow at desktop and `390x844` mobile;
+- no backend, permission, tenant, notification, BusinessEvent, AI, migration,
+  environment or dependency behavior changed.
+
 ## Explicit non-goals
 
 - no backend lifecycle change in UX-1;

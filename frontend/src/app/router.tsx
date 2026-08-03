@@ -209,9 +209,10 @@ const PlatformMerchantDetailPage = lazy(() =>
 function MerchantRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, isMerchantUser, isPlatformUser } =
     useAuth();
+  const location = useLocation();
   const { t } = useI18n();
   if (isLoading) return <LoadingState label={t("common.loadingAccess")} />;
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!isAuthenticated) return <Navigate to="/login" replace state={{ from: location }} />;
   if (!isMerchantUser && isPlatformUser)
     return <Navigate to="/platform" replace />;
   return isMerchantUser ? children : <Navigate to="/login" replace />;
@@ -219,9 +220,10 @@ function MerchantRoute({ children }: { children: React.ReactNode }) {
 
 function PlatformRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, isPlatformUser } = useAuth();
+  const location = useLocation();
   const { t } = useI18n();
   if (isLoading) return <LoadingState label={t("common.loadingAccess")} />;
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!isAuthenticated) return <Navigate to="/login" replace state={{ from: location }} />;
   return isPlatformUser ? children : <Navigate to="/app" replace />;
 }
 

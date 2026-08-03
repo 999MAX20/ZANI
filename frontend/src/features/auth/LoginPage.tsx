@@ -205,7 +205,6 @@ export function LoginPage() {
             <div className="serenity-login__card-mark" aria-hidden="true">
               <Zap size={26} />
             </div>
-            <span className="serenity-login__eyebrow">{t("auth.welcome")}</span>
             <h2>{t("auth.signIn")}</h2>
             <p className="serenity-login__card-copy">{t("auth.signInCopy")}</p>
 

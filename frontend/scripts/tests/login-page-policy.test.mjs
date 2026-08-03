@@ -34,12 +34,12 @@ test("login page keeps unconfigured social providers out of the compact form", (
 test("login page keeps the public entry screen focused on sign-in", () => {
   assert.doesNotMatch(loginPage, /auth\.badge|auth\.copy|auth\.fastFollowup|auth\.smartBooking|auth\.ownerControl/);
   assert.doesNotMatch(loginPage, /serenity-login__benefits|serenity-login__trustline|serenity-login__trust/);
-  assert.doesNotMatch(loginPage, /nav\.conversations|nav\.calendar|auth\.trustSecurity/);
+  assert.doesNotMatch(loginPage, /nav\.conversations|nav\.calendar|auth\.trustSecurity|auth\.welcome/);
   assert.doesNotMatch(loginPage, /auth\.noAccount|serenity-login__signup-link/);
 });
 
 test("signup omits the owner-requested explanatory copy", () => {
-  assert.doesNotMatch(signupPage, /signup\.badge|signup\.copy|signup\.startNote|auth\.trustSecurity/);
+  assert.doesNotMatch(signupPage, /signup\.badge|signup\.copy|signup\.startNote|signup\.eyebrow|auth\.trustSecurity/);
   assert.doesNotMatch(signupPage, /serenity-login__badge|serenity-login__lead|serenity-login__trustline/);
 });
 

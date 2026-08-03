@@ -138,7 +138,6 @@ export function SignupPage() {
             <div className="serenity-login__card-mark" aria-hidden="true">
               <Zap size={25} />
             </div>
-            <span className="serenity-login__eyebrow">{t("signup.eyebrow")}</span>
             <h2>{t("signup.createCompanyTitle")}</h2>
             <p className="serenity-login__card-copy">{t("signup.createCompanyText")}</p>
 

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router";
 
 import { clientsApi } from "../../../api/clients";
@@ -14,8 +14,8 @@ import type {
   CrmDrawerEntity,
 } from "../../../components/crm/CrmEntityDrawer";
 import type { Client, Id, Segment, Tag, TaggedObject } from "../../../types";
+import { useDebouncedValue } from "../../../hooks/useDebouncedValue";
 import { useClientRows } from "./useClientRows";
-import { useDebouncedValue } from "./useDebouncedValue";
 import type {
   ClientQuickFilter,
   ClientTableColumn,
@@ -91,6 +91,7 @@ export function useClientsWorkspace({
         page_size: pageSize,
       }),
     enabled: Boolean(businessId),
+    placeholderData: keepPreviousData,
   });
 
   const clientList = filteredClients.data?.clients || [];
@@ -124,6 +125,7 @@ export function useClientsWorkspace({
         page_size: RELATED_PAGE_SIZE,
       }),
     enabled: Boolean(businessId && clientIds.length > 0),
+    placeholderData: keepPreviousData,
   });
 
   const segments = useQuery<Segment[]>({

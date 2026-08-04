@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 
 import type { TaskListParams } from "../../../api/tasks";
+import { useDebouncedValue } from "../../../hooks/useDebouncedValue";
 import { getActiveTaskFilterCount, type TaskFilterActions, type TaskFilterState, type TaskTabFilter } from "../components/TaskHeaderFilters";
 import { toDateTimeLocal } from "../taskFormUtils";
 
@@ -17,8 +18,16 @@ export function useTaskFilters(defaultTab: TaskTabFilter = "team") {
   const [relationFilter, setRelationFilter] = useState(() => searchParams.get("relation") || "");
   const [dueFromFilter, setDueFromFilter] = useState(() => toDateTimeLocal(searchParams.get("due_from")));
   const [dueToFilter, setDueToFilter] = useState(() => toDateTimeLocal(searchParams.get("due_to")));
-  const searchFilter = (searchParams.get("search") || "").trim();
+  const [searchFilter, setSearchFilterState] = useState(() => searchParams.get("search") || "");
+  const debouncedSearchFilter = useDebouncedValue(searchFilter, 300);
+  const searchParamValue = searchParams.get("search") || "";
   const taskIdParam = Number(searchParams.get("task") || "");
+
+  useEffect(() => {
+    setSearchFilterState((current) =>
+      current === searchParamValue ? current : searchParamValue,
+    );
+  }, [searchParamValue]);
 
   const taskFilterState = useMemo<TaskFilterState>(
     () => ({ tabFilter, statusFilter, priorityFilter, assigneeFilter, dueFilter, relationFilter, dueFromFilter, dueToFilter }),
@@ -38,14 +47,14 @@ export function useTaskFilters(defaultTab: TaskTabFilter = "team") {
       status: statusFilter === "all" ? undefined : statusFilter,
       priority: priorityFilter || undefined,
       assignee: assigneeFilter || undefined,
-      search: searchFilter || undefined,
+      search: debouncedSearchFilter.trim() || undefined,
       due: dueFilter || undefined,
       relation: relationFilter || undefined,
       due_from: dueFromFilter ? new Date(dueFromFilter).toISOString() : undefined,
       due_to: dueToFilter ? new Date(dueToFilter).toISOString() : undefined,
       ordering: TASK_ORDERING,
     }),
-    [assigneeFilter, dueFilter, dueFromFilter, dueToFilter, priorityFilter, relationFilter, searchFilter, statusFilter, tabFilter],
+    [assigneeFilter, debouncedSearchFilter, dueFilter, dueFromFilter, dueToFilter, priorityFilter, relationFilter, statusFilter, tabFilter],
   );
 
   const taskSummaryParams = useMemo<TaskListParams>(
@@ -53,35 +62,33 @@ export function useTaskFilters(defaultTab: TaskTabFilter = "team") {
       tab: tabFilter === "team" ? undefined : tabFilter,
       priority: priorityFilter || undefined,
       assignee: assigneeFilter || undefined,
-      search: searchFilter || undefined,
+      search: debouncedSearchFilter.trim() || undefined,
       due: dueFilter || undefined,
       relation: relationFilter || undefined,
       due_from: dueFromFilter ? new Date(dueFromFilter).toISOString() : undefined,
       due_to: dueToFilter ? new Date(dueToFilter).toISOString() : undefined,
     }),
-    [assigneeFilter, dueFilter, dueFromFilter, dueToFilter, priorityFilter, relationFilter, searchFilter, tabFilter],
+    [assigneeFilter, debouncedSearchFilter, dueFilter, dueFromFilter, dueToFilter, priorityFilter, relationFilter, tabFilter],
   );
 
   const taskWorkloadParams = useMemo<TaskListParams>(
     () => ({
       tab: tabFilter === "team" ? undefined : tabFilter,
       priority: priorityFilter || undefined,
-      search: searchFilter || undefined,
+      search: debouncedSearchFilter.trim() || undefined,
       due: dueFilter || undefined,
       relation: relationFilter || undefined,
       due_from: dueFromFilter ? new Date(dueFromFilter).toISOString() : undefined,
       due_to: dueToFilter ? new Date(dueToFilter).toISOString() : undefined,
     }),
-    [dueFilter, dueFromFilter, dueToFilter, priorityFilter, relationFilter, searchFilter, tabFilter],
+    [debouncedSearchFilter, dueFilter, dueFromFilter, dueToFilter, priorityFilter, relationFilter, tabFilter],
   );
 
   const setSearchFilter = useCallback(
     (value: string) => {
-      const next = new URLSearchParams(searchParams);
-      setOrDelete(next, "search", value.trim());
-      setSearchParams(next, { replace: true });
+      setSearchFilterState(value);
     },
-    [searchParams, setSearchParams],
+    [],
   );
 
   useEffect(() => {
@@ -94,8 +101,9 @@ export function useTaskFilters(defaultTab: TaskTabFilter = "team") {
     setOrDelete(next, "relation", relationFilter);
     setOrDelete(next, "due_from", dueFromFilter ? new Date(dueFromFilter).toISOString() : "");
     setOrDelete(next, "due_to", dueToFilter ? new Date(dueToFilter).toISOString() : "");
+    setOrDelete(next, "search", debouncedSearchFilter.trim());
     if (next.toString() !== searchParams.toString()) setSearchParams(next, { replace: true });
-  }, [assigneeFilter, dueFilter, dueFromFilter, dueToFilter, priorityFilter, relationFilter, searchParams, setSearchParams, statusFilter, tabFilter]);
+  }, [assigneeFilter, debouncedSearchFilter, dueFilter, dueFromFilter, dueToFilter, priorityFilter, relationFilter, searchParams, setSearchParams, statusFilter, tabFilter]);
 
   return {
     searchParams,

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useInfiniteQuery, useQuery } from "@tanstack/react-query";
 
 import { activityEventsApi } from "../../../api/activities";
 import { teamApi } from "../../../api/team";
@@ -51,17 +51,20 @@ export function useTaskQueries({
     queryFn: ({ pageParam }) => tasksApi.listPage({ ...taskListParams, page: Number(pageParam) }),
     getNextPageParam: (lastPage, allPages) => (lastPage.next ? allPages.length + 1 : undefined),
     enabled: true,
+    placeholderData: keepPreviousData,
   });
 
   const taskSummary = useQuery({
     queryKey: ["tasks-summary", taskSummaryParams],
     queryFn: () => tasksApi.summary(taskSummaryParams),
+    placeholderData: keepPreviousData,
   });
 
   const taskWorkload = useQuery({
     queryKey: ["tasks-workload", businessId, taskWorkloadParams],
     queryFn: () => tasksApi.workload({ ...taskWorkloadParams, business: businessId }),
     enabled: Boolean(businessId && includeTeamData),
+    placeholderData: keepPreviousData,
   });
 
   const teamMembers = useQuery({

@@ -1,11 +1,12 @@
 import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import { getApiErrorMessage } from "../../../api/client";
 import { leadsApi } from "../../../api/leads";
 import { teamApi } from "../../../api/team";
 import { useActiveBusiness } from "../../../hooks/useBusiness";
 import { useEntityData } from "../../../hooks/useEntityData";
+import { useDebouncedValue } from "../../../hooks/useDebouncedValue";
 import { useAuth } from "../../auth/AuthProvider";
 import type { Id } from "../../../types";
 import type { LeadAiInsight, LeadFilter, Translate } from "../types";
@@ -40,6 +41,7 @@ export function useLeadsWorkspaceData({
 }) {
   const { business } = useActiveBusiness();
   const { user } = useAuth();
+  const debouncedSearch = useDebouncedValue(search, 300);
   const { clients, services, resources, tasks, deals, appointments, botConversations } = useEntityData({
     clients: true,
     services: true,
@@ -62,7 +64,7 @@ export function useLeadsWorkspaceData({
       page_size: pageSize,
       ordering: sortByAi ? "-updated_at" : "-created_at",
     };
-    const trimmedSearch = search.trim();
+    const trimmedSearch = debouncedSearch.trim();
     if (trimmedSearch) params.search = trimmedSearch;
     if (source) params.source = source;
     if (filter === "new") params.status = "new";
@@ -74,13 +76,14 @@ export function useLeadsWorkspaceData({
     if (filter === "attention") params.attention = true;
     if (filter === "mine") params.mine = true;
     return params;
-  }, [filter, page, pageSize, search, sortByAi, source]);
+  }, [debouncedSearch, filter, page, pageSize, sortByAi, source]);
 
   const leads = useQuery({
     queryKey: ["leads", "paginated", business?.id, leadListParams],
     queryFn: () => leadsApi.listPaginated(leadListParams),
     enabled: Boolean(business),
     retry: false,
+    placeholderData: keepPreviousData,
   });
   const leadSummary = useQuery({
     queryKey: ["leads", "summary", business?.id],

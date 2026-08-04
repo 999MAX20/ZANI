@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { getApiErrorMessage } from "../../api/client";
 import { segmentsApi } from "../../api/activities";
@@ -36,6 +36,7 @@ import { Textarea } from "../../components/ui/Textarea";
 import { MetricTile } from "../../components/ui/Primitives";
 import { formatDateTime } from "../../lib/format";
 import { useActiveBusiness } from "../../hooks/useBusiness";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { useAuth } from "../auth/AuthProvider";
 import type { Client, Id, OutreachCampaign, OutreachTemplate } from "../../types";
 import { useI18n } from "../../lib/i18n";
@@ -90,6 +91,7 @@ export function OutreachPage() {
   const [consentOpen, setConsentOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [manualSearch, setManualSearch] = useState("");
+  const debouncedManualSearch = useDebouncedValue(manualSearch, 300);
   const [manualClientIds, setManualClientIds] = useState<number[]>([]);
   const [form, setForm] = useState(() => createEmptyForm(t("outreach.defaultMessage")));
   const [consentForm, setConsentForm] = useState({
@@ -112,9 +114,10 @@ export function OutreachPage() {
     enabled: Boolean(business?.id),
   });
   const clients = useQuery({
-    queryKey: ["outreach-clients", business?.id, manualSearch],
-    queryFn: () => clientsApi.listFiltered({ q: manualSearch || undefined }),
+    queryKey: ["outreach-clients", business?.id, debouncedManualSearch],
+    queryFn: () => clientsApi.listFiltered({ q: debouncedManualSearch || undefined }),
     enabled: Boolean(business?.id),
+    placeholderData: keepPreviousData,
   });
   const templates = useQuery({
     queryKey: ["outreach-templates", business?.id],

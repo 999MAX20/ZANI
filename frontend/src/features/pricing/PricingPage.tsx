@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, PauseCircle, PlayCircle, ShieldCheck, SlidersHorizontal, TrendingDown } from "lucide-react";
 
 import { kaspiPricingApi, type KaspiCompetitorOffer, type KaspiPriceChangeLog, type KaspiPricingRecommendation, type KaspiPricingRule, type PricingCatalogItem } from "../../api/pricing";
@@ -10,6 +10,7 @@ import { PageHeader } from "../../components/ui/PageHeader";
 import { ErrorState, LoadingState } from "../../components/ui/StateViews";
 import { Select } from "../../components/ui/Select";
 import { useActiveBusiness } from "../../hooks/useBusiness";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { useAuth } from "../auth/AuthProvider";
 import { hasPermission } from "../../lib/permissions";
 import { useI18n } from "../../lib/i18n";
@@ -52,6 +53,7 @@ export function PricingPage() {
   const [bulkStepAmount, setBulkStepAmount] = useState("1");
   const [bulkMaxChanges, setBulkMaxChanges] = useState("3");
   const [catalogSearch, setCatalogSearch] = useState("");
+  const debouncedCatalogSearch = useDebouncedValue(catalogSearch, 300);
   const [catalogSource, setCatalogSource] = useState("");
   const [catalogRuleState, setCatalogRuleState] = useState("");
   const [selectedRuleIds, setSelectedRuleIds] = useState<Array<string>>([]);
@@ -61,6 +63,7 @@ export function PricingPage() {
   const [bulkRuleMaxChanges, setBulkRuleMaxChanges] = useState("");
   const [bulkRuleDisableAutopilot, setBulkRuleDisableAutopilot] = useState(false);
   const [changeSearch, setChangeSearch] = useState("");
+  const debouncedChangeSearch = useDebouncedValue(changeSearch, 300);
   const [changeStatus, setChangeStatus] = useState("");
 
   const rulesQuery = useQuery({
@@ -79,15 +82,16 @@ export function PricingPage() {
     enabled: Boolean(business?.id),
   });
   const catalogQuery = useQuery({
-    queryKey: ["kaspi-pricing-catalog", business?.id, catalogSearch, catalogSource, catalogRuleState],
+    queryKey: ["kaspi-pricing-catalog", business?.id, debouncedCatalogSearch, catalogSource, catalogRuleState],
     queryFn: () =>
       kaspiPricingApi.catalog.list({
         business: business?.id,
-        search: catalogSearch || undefined,
+        search: debouncedCatalogSearch || undefined,
         source: catalogSource || undefined,
         rule_state: catalogRuleState || undefined,
       }),
     enabled: Boolean(business?.id),
+    placeholderData: keepPreviousData,
   });
   const controlQuery = useQuery({
     queryKey: ["kaspi-pricing-control", business?.id],
@@ -103,14 +107,15 @@ export function PricingPage() {
     enabled: Boolean(business?.id),
   });
   const changeLogsQuery = useQuery({
-    queryKey: ["kaspi-price-change-logs", business?.id, changeSearch, changeStatus],
+    queryKey: ["kaspi-price-change-logs", business?.id, debouncedChangeSearch, changeStatus],
     queryFn: () =>
       kaspiPricingApi.changeLogs.list({
         business: business?.id,
-        search: changeSearch || undefined,
+        search: debouncedChangeSearch || undefined,
         status: changeStatus || undefined,
       }),
     enabled: Boolean(business?.id),
+    placeholderData: keepPreviousData,
   });
 
   const createRule = useMutation({

@@ -44,6 +44,7 @@ function getSearchContext(pathname: string): SearchContext {
 function setSearchParam(searchParams: URLSearchParams, setSearchParams: ReturnType<typeof useSearchParams>[1], value: string) {
   const next = new URLSearchParams(searchParams);
   const clean = value.trim();
+  if ((searchParams.get("search") || "") === clean) return;
   if (clean) next.set("search", clean);
   else next.delete("search");
   setSearchParams(next, { replace: true });

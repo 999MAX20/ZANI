@@ -1,16 +1,18 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import { dealsApi, type DealListParams } from "../../../api/deals";
 import { teamApi } from "../../../api/team";
 import { useActiveBusiness } from "../../../hooks/useBusiness";
 import { useEntityData } from "../../../hooks/useEntityData";
+import { useDebouncedValue } from "../../../hooks/useDebouncedValue";
 import type { ActivityEvent, BotConversation, Id, Lead, Task } from "../../../types";
 import type { DealFiltersState } from "../types";
 
 export function useDeals(filters?: DealFiltersState) {
   const { business } = useActiveBusiness();
   const [boardLimit, setBoardLimit] = useState(25);
+  const debouncedSearch = useDebouncedValue(filters?.search || "", 300);
   const entityData = useEntityData({
     clients: true,
     pipelines: true,
@@ -35,7 +37,7 @@ export function useDeals(filters?: DealFiltersState) {
     if (filters.stageFilter !== "all") params.stage = filters.stageFilter;
     if (filters.statusFilter !== "all") params.status = filters.statusFilter;
     if (filters.ownerFilter) params.owner = filters.ownerFilter;
-    if (filters.search.trim()) params.search = filters.search.trim();
+    if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
     if (filters.quickFilter !== "all") params.quick = filters.quickFilter;
     if (filters.sourceFilter) params.source = filters.sourceFilter;
     if (filters.minAmount) params.amount_min = filters.minAmount;
@@ -43,13 +45,14 @@ export function useDeals(filters?: DealFiltersState) {
     if (filters.dateFrom) params.created_from = filters.dateFrom;
     if (filters.dateTo) params.created_to = filters.dateTo;
     return params;
-  }, [activePipeline, filters]);
+  }, [activePipeline, debouncedSearch, filters]);
 
   const deals = useQuery({
     queryKey: ["deals", "paginated", business?.id, listParams],
     queryFn: () => dealsApi.listPaginated(listParams),
     enabled: Boolean(business && activePipeline),
     retry: false,
+    placeholderData: keepPreviousData,
   });
 
   const board = useQuery({
@@ -57,6 +60,7 @@ export function useDeals(filters?: DealFiltersState) {
     queryFn: () => dealsApi.board({ ...listParams, limit_per_stage: boardLimit }),
     enabled: Boolean(business && activePipeline),
     retry: false,
+    placeholderData: keepPreviousData,
   });
 
   const summary = useQuery({
@@ -64,6 +68,7 @@ export function useDeals(filters?: DealFiltersState) {
     queryFn: () => dealsApi.summary(listParams),
     enabled: Boolean(business && activePipeline),
     retry: false,
+    placeholderData: keepPreviousData,
   });
 
   const clientMap = useMemo(() => new Map((entityData.clients.data || []).map((client) => [client.id, client])), [entityData.clients.data]);

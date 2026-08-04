@@ -36,11 +36,15 @@ export function useDealFilters() {
       expanded: Boolean(saved.expanded),
     };
   });
+  const searchParamValue = searchParams.get("search") || "";
 
   useEffect(() => {
-    const nextSearch = searchParams.get("search") || "";
-    setFilters((current) => (current.search === nextSearch ? current : { ...current, search: nextSearch }));
-  }, [searchParams]);
+    setFilters((current) =>
+      current.search === searchParamValue
+        ? current
+        : { ...current, search: searchParamValue },
+    );
+  }, [searchParamValue]);
 
   useEffect(() => {
     const handle = window.setTimeout(() => {
@@ -59,7 +63,9 @@ export function useDealFilters() {
         ["from", filters.dateFrom],
         ["to", filters.dateTo],
       ].forEach(([key, value]) => (value ? next.set(key, value) : next.delete(key)));
-      setSearchParams(next, { replace: true });
+      if (next.toString() !== searchParams.toString()) {
+        setSearchParams(next, { replace: true });
+      }
     }, 300);
     return () => window.clearTimeout(handle);
   }, [filters, searchParams, setSearchParams]);

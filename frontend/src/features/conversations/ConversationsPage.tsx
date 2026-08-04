@@ -1,5 +1,6 @@
 import {
   InfiniteData,
+  keepPreviousData,
   useInfiniteQuery,
   useMutation,
   useQuery,
@@ -224,6 +225,7 @@ export function ConversationsPage() {
     queryFn: () => inboxApi.listConversations(normalizedFilters),
     refetchInterval: realtimeIntervals.inboxConversationsMs,
     ...realtimeQueryOptions,
+    placeholderData: keepPreviousData,
   });
 
   const bots = useQuery({

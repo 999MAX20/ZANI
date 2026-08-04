@@ -1,23 +1,20 @@
-import { Paperclip, RotateCcw, Sparkles } from "lucide-react";
+import { Paperclip, Sparkles } from "lucide-react";
 
 import type { InboxMessage } from "../../../api/inbox";
 import { cn } from "../../../lib/cn";
 import type { Translate } from "../conversationTypes";
 import { formatMessageTime } from "../conversationUtils";
 
-export function MessageBubble({ message, t, onRetry }: { message: InboxMessage; t: Translate; onRetry?: (message: InboxMessage) => void }) {
+export function MessageBubble({ message, t }: { message: InboxMessage; t: Translate }) {
   const system = message.sender_type === "system";
   const inbound = message.direction === "inbound";
   const ai = message.sender_type === "bot" || message.sender_type === "ai";
-  const author = ai ? t("conversations.senderAssistant") : message.sender_type === "manager" ? t("conversations.senderManager") : t("conversations.senderClient");
+  const author = ai
+    ? t("conversations.senderAssistant")
+    : message.sender_type === "manager"
+      ? t("conversations.senderManager")
+      : t("conversations.senderClient");
   const time = formatMessageTime(message.created_at || message.sent_at);
-  const messageStatusLabel = message.status === "failed"
-    ? t("conversations.messageStatusFailed")
-    : message.status === "queued"
-      ? t("conversations.messageStatusQueued")
-      : message.status === "sent"
-        ? t("conversations.messageStatusSent")
-        : t("conversations.messageStatusReceived");
 
   if (system) {
     return (
@@ -31,59 +28,46 @@ export function MessageBubble({ message, t, onRetry }: { message: InboxMessage; 
   }
 
   return (
-    <div className={cn("flex", inbound ? "justify-start" : "justify-end")}>
+    <div
+      className={cn("flex", inbound ? "justify-start" : "justify-end")}
+      data-testid="conversation-message"
+      data-message-direction={message.direction}
+      data-message-sender={message.sender_type}
+      data-message-status={message.status}
+    >
       <div
         className={cn(
-          "max-w-[78%] rounded-card px-4 py-3 text-sm leading-6 shadow-sm",
-          inbound ? "rounded-tl-md border border-zani-border bg-zani-card text-zani-text" : ai ? "rounded-tr-md bg-ai-50 text-ai-800 ring-1 ring-ai-100" : "rounded-tr-md bg-brand-600 text-white",
+          "max-w-[78%] rounded-card border border-zani-border bg-zani-card px-4 py-3 text-sm leading-6 text-zani-text shadow-sm",
+          inbound ? "rounded-tl-md" : "rounded-tr-md",
         )}
+        data-testid="conversation-message-bubble"
       >
-        <div
-          className={cn(
-            "mb-1 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em]",
-            inbound ? "text-zani-muted" : ai ? "text-ai-800" : "text-white",
-          )}
-        >
+        <div className="mb-1 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] text-zani-text">
           {ai ? <Sparkles size={13} /> : null}
           {author}
         </div>
-        <p className="whitespace-pre-wrap">{message.text || t("conversations.emptyMessage")}</p>
+        <p className="whitespace-pre-wrap">
+          {message.text || t("conversations.emptyMessage")}
+        </p>
         {message.attachments?.length ? (
-          <div className={cn("mt-3 space-y-2", inbound ? "text-zani-text" : "text-white")}>
+          <div className="mt-3 space-y-2 text-zani-text">
             {message.attachments.map((attachment) => (
               <a
                 key={attachment.id}
                 href={attachment.download_url}
                 target="_blank"
                 rel="noreferrer"
-                className={cn("flex items-center gap-2 rounded-control px-3 py-2 text-xs font-bold ring-1", inbound ? "bg-surface-muted ring-zani-border" : "bg-zani-card/15 ring-zani-card/20")}
+                className="flex items-center gap-2 rounded-control bg-surface-muted px-3 py-2 text-xs font-bold ring-1 ring-zani-border"
               >
                 <Paperclip size={14} />
-                <span className="min-w-0 flex-1 truncate">{attachment.original_name}</span>
+                <span className="min-w-0 flex-1 truncate">
+                  {attachment.original_name}
+                </span>
               </a>
             ))}
           </div>
         ) : null}
-        {message.error_text ? (
-          <p className={cn("mt-2 text-xs font-bold", message.status === "failed" ? "text-red-500" : "text-amber-500")}>
-            {message.error_text}
-          </p>
-        ) : null}
-        <div className={cn("mt-2 flex flex-wrap items-center justify-end gap-1.5 text-[11px] font-bold", inbound ? "text-zani-muted" : "text-white/70")}>
-          {!inbound ? (
-            <span className={cn("rounded-full px-1.5 py-0.5", message.status === "failed" ? "bg-red-50 text-red-700 ring-1 ring-red-100" : "bg-zani-card/15")}>
-              {messageStatusLabel}
-            </span>
-          ) : null}
-          {message.status === "failed" && onRetry ? (
-            <button
-              type="button"
-              className="inline-flex items-center gap-1 rounded-full bg-zani-card px-2 py-0.5 text-[11px] font-bold text-red-700 shadow-sm ring-1 ring-red-100 hover:bg-red-50"
-              onClick={() => onRetry(message)}
-            >
-              <RotateCcw size={12} /> {t("common.retry")}
-            </button>
-          ) : null}
+        <div className="mt-2 flex items-center justify-end text-[11px] font-bold text-zani-muted">
           {time ? <span>{time}</span> : null}
         </div>
       </div>

@@ -60,7 +60,7 @@ import {
 import { Textarea } from "../../components/ui/Textarea";
 import { cn } from "../../lib/cn";
 import { useI18n } from "../../lib/i18n";
-import { getPermissionScope, hasPermission } from "../../lib/permissions";
+import { hasPermission } from "../../lib/permissions";
 import { realtimeIntervals, realtimeQueryOptions } from "../../lib/realtime";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useAuth } from "../auth/AuthProvider";
@@ -174,13 +174,6 @@ export function ConversationsPage() {
     "integrations",
     "view",
   );
-  const conversationUpdateScope = getPermissionScope(
-    user,
-    business?.id,
-    "conversations",
-    "update",
-  );
-
   useEffect(() => {
     if (!routeSelectedId || routeSelectedId === selectedId) return;
     setSelectedId(routeSelectedId);
@@ -924,15 +917,6 @@ export function ConversationsPage() {
       notifyError(error, { focusTarget: composerRef }),
   });
 
-  const retryMessageMutation = useMutation({
-    mutationFn: inboxApi.retryMessage,
-    onSuccess: async () => {
-      setNotice(t("conversations.messageRetried"));
-      await invalidateInbox();
-    },
-    onError: (error) => notifyError(error),
-  });
-
   const createClientMutation = useMutation({
     mutationFn: inboxApi.createClient,
     onSuccess: async (result) => {
@@ -1122,13 +1106,6 @@ export function ConversationsPage() {
   const priorityActions = (summary.data?.next_actions || []).filter(
     (action) => canViewIntegrations || !isIntegrationsAction(action.href),
   );
-  function canRetryConversation(conversation: InboxConversation) {
-    if (conversationUpdateScope === "business") return true;
-    return (
-      conversationUpdateScope === "own" &&
-      Number(conversation.assigned_to) === Number(user?.id)
-    );
-  }
   function sendReply() {
     const text = draft.trim();
     if (!selected || !text) return;
@@ -1350,20 +1327,6 @@ export function ConversationsPage() {
           bulkPending={bulkMutation.isPending}
           onToggleBulkId={toggleBulkId}
           onSelectConversation={selectConversation}
-          onRetryLastMessage={(conversation) => {
-            const messageId = conversation.last_message?.id;
-            if (!messageId) return;
-            retryMessageMutation.mutate({
-              conversationId: conversation.id,
-              messageId,
-            });
-          }}
-          canRetryLastMessage={canRetryConversation}
-          retryingMessageId={
-            retryMessageMutation.isPending
-              ? Number(retryMessageMutation.variables?.messageId || 0)
-              : null
-          }
           priorityActions={priorityActions}
           unavailableChannelCount={unavailableChannelCount}
           connectorReadinessLoading={
@@ -1391,16 +1354,6 @@ export function ConversationsPage() {
           onLoadMoreMessages={() => {
             void messages.fetchNextPage();
           }}
-          onRetryMessage={(failedMessage) => {
-            if (!selected) return;
-            retryMessageMutation.mutate({
-              conversationId: selected.id,
-              messageId: failedMessage.id,
-            });
-          }}
-          canRetryMessages={Boolean(
-            selected && canRetryConversation(selected),
-          )}
           draft={draft}
           composerRef={composerRef}
           sendPending={sendMutation.isPending}

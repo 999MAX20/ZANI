@@ -41,9 +41,6 @@ type ConversationListPaneProps = {
   bulkPending: boolean;
   onToggleBulkId: (id: number) => void;
   onSelectConversation: (id: number) => void;
-  onRetryLastMessage: (conversation: InboxConversation) => void;
-  canRetryLastMessage: (conversation: InboxConversation) => boolean;
-  retryingMessageId?: number | null;
   priorityActions: InboxSummary["next_actions"];
   unavailableChannelCount: number;
   connectorReadinessLoading: boolean;
@@ -84,9 +81,6 @@ export function ConversationListPane({
   bulkPending,
   onToggleBulkId,
   onSelectConversation,
-  onRetryLastMessage,
-  canRetryLastMessage,
-  retryingMessageId,
   priorityActions,
   unavailableChannelCount,
   connectorReadinessLoading,
@@ -240,9 +234,6 @@ export function ConversationListPane({
             selectedForBulk={selectedIds.includes(conversation.id)}
             onToggleSelected={() => onToggleBulkId(conversation.id)}
             onClick={() => onSelectConversation(conversation.id)}
-            onRetryLastMessage={() => onRetryLastMessage(conversation)}
-            canRetryLastMessage={canRetryLastMessage(conversation)}
-            retryPending={Boolean(conversation.last_message?.id && retryingMessageId === conversation.last_message.id)}
             t={t}
           />
         ))}

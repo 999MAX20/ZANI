@@ -28,8 +28,6 @@ type ConversationThreadPaneProps = {
   canLoadMoreMessages: boolean;
   isFetchingNextPage: boolean;
   onLoadMoreMessages: () => void;
-  onRetryMessage: (message: InboxMessage) => void;
-  canRetryMessages: boolean;
   draft: string;
   composerRef: Ref<HTMLTextAreaElement>;
   sendPending: boolean;
@@ -59,8 +57,6 @@ export function ConversationThreadPane({
   canLoadMoreMessages,
   isFetchingNextPage,
   onLoadMoreMessages,
-  onRetryMessage,
-  canRetryMessages,
   draft,
   composerRef,
   sendPending,
@@ -233,12 +229,7 @@ export function ConversationThreadPane({
               </div>
             ) : null}
             {messageList.map((message) => (
-              <MessageBubble
-                key={message.id}
-                message={message}
-                t={t}
-                onRetry={canRetryMessages ? onRetryMessage : undefined}
-              />
+              <MessageBubble key={message.id} message={message} t={t} />
             ))}
             <div ref={messageEndRef} aria-hidden="true" />
           </div>

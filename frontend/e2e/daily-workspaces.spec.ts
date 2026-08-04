@@ -370,22 +370,41 @@ test("F-201 recoverable queue, calendar and provider failure states expose next 
       await route.fulfill({ response, json: payload });
     },
   );
+  const rawMessageDeliveryError = "raw-provider-delivery-error";
   await page.route(
-    /\/api\/inbox\/conversations\/\d+\/retry-message\/$/,
+    /\/api\/inbox\/conversations\/\d+\/messages\/(?:\?.*)?$/,
     async (route) => {
+      const response = await route.fetch();
+      const payload = await response.json();
+      const failedMessage = {
+        id: 990002,
+        conversation: Number(
+          route.request().url().match(/conversations\/(\d+)/)?.[1] || 1,
+        ),
+        direction: "outbound",
+        sender_type: "manager",
+        text: "E2E failed outbound message",
+        payload_json: {},
+        error_text: rawMessageDeliveryError,
+        status: "failed",
+        created_at: new Date().toISOString(),
+        attachments: [],
+      };
+      const botMessage = {
+        ...failedMessage,
+        id: 990003,
+        sender_type: "bot",
+        text: "E2E bot outbound message",
+        error_text: "",
+        status: "sent",
+      };
       await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          id: 1,
-          conversation: 1,
-          direction: "outbound",
-          sender_type: "manager",
-          text: "retry",
-          payload_json: {},
-          status: "queued",
-          created_at: new Date().toISOString(),
-        }),
+        response,
+        json: {
+          ...payload,
+          count: Number(payload.count || 0) + 2,
+          results: [...(payload.results || []), failedMessage, botMessage],
+        },
       });
     },
   );
@@ -411,7 +430,26 @@ test("F-201 recoverable queue, calendar and provider failure states expose next 
   await expect(page.getByTestId("inbox-provider-status-unavailable")).toBeVisible();
   await expect(page.getByTestId("inbox-provider-status-retry")).toBeEnabled();
   await expect(page.getByTestId("inbox-provider-status-retry")).toHaveAttribute("type", "button");
-  await expect(page.getByTestId("conversation-retry-failed").first()).toBeVisible();
+  await expect(page.getByTestId("conversation-retry-failed")).toHaveCount(0);
+  if (!isMobile) {
+    const failedMessage = page
+      .getByTestId("conversation-message")
+      .filter({ hasText: "E2E failed outbound message" });
+    await expect(failedMessage).toBeVisible();
+    await expect(failedMessage).toHaveAttribute("data-message-status", "failed");
+    await expect(failedMessage.getByTestId("conversation-message-bubble")).toHaveClass(/bg-zani-card/);
+    await expect(failedMessage.getByTestId("conversation-message-bubble")).toHaveClass(/text-zani-text/);
+    await expect(failedMessage).not.toContainText(rawMessageDeliveryError);
+    await expect(failedMessage.getByRole("button")).toHaveCount(0);
+    const botMessage = page
+      .getByTestId("conversation-message")
+      .filter({ hasText: "E2E bot outbound message" });
+    await expect(botMessage).toBeVisible();
+    await expect(botMessage).toHaveAttribute("data-message-sender", "bot");
+    await expect(botMessage.getByTestId("conversation-message-bubble")).toHaveClass(/bg-zani-card/);
+    await expect(botMessage.getByTestId("conversation-message-bubble")).toHaveClass(/text-zani-text/);
+    await expect(botMessage.getByRole("button")).toHaveCount(0);
+  }
 
   const connectorRetry = page.getByTestId("inbox-provider-status-retry");
   await connectorRetry.evaluate((control) => {
@@ -433,9 +471,6 @@ test("F-201 recoverable queue, calendar and provider failure states expose next 
   await expect.poll(() => connectorStatusRequests).toBeGreaterThan(connectorStatusRequestsBeforeRetry);
   await expect(page.getByTestId("inbox-provider-status-unavailable")).toHaveCount(0);
   await expect(page.getByTestId("inbox-provider-unavailable")).toBeVisible();
-  const retry = page.getByTestId("conversation-retry-failed").first();
-  await expect(retry).toBeVisible();
-  await retry.click();
 
   forcedAssignee = 999999;
   await login(page, users.operator);

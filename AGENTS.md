@@ -54,6 +54,12 @@ docs/testing.md
 docs/CODEX_TASK_TEMPLATE.md
 ```
 
+For defect remediation, UI/UX audits and functional certification:
+
+```text
+actual_docs/DEFECT_KNOWLEDGE_BASE.md
+```
+
 ## Product Direction
 
 Zani is an AI-first CRM and business control layer for SMB.
@@ -222,6 +228,8 @@ After a completed phase or meaningful behavior change:
 - update relevant docs in `docs/`;
 - update `README.md` only when setup, behavior, or public project status changes;
 - do not add new historical roadmap files when one current plan can be updated.
+- update `actual_docs/DEFECT_KNOWLEDGE_BASE.md` when a defect is confirmed,
+  remediated, verified, integrated or leaves durable regression test debt.
 
 ## Work Style
 

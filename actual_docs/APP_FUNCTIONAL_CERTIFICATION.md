@@ -23,6 +23,10 @@ the search control existed, but every character changed server state in a way
 that unmounted the input and lost focus. A complete interaction contract would
 have detected this automatically.
 
+`actual_docs/DEFECT_KNOWLEDGE_BASE.md` is a mandatory certification input.
+Every active regression rule recorded there must be mapped to all relevant
+routes and interactions before certification can be closed.
+
 ## Relationship To Existing QA
 
 `APP_2_PHASE_10_INTERACTION_WORKFLOW_QA_PLAN.md` already proves broad route

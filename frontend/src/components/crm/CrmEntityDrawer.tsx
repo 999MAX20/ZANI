@@ -98,7 +98,10 @@ export function CrmEntityDrawer({
     >
       <CrmEntityHeader data={data} entity={entity} titleId={titleId} onClose={onClose} />
       <CrmEntityTabs active={activeTab} onChange={setActiveTab} data={data} />
-      <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-8 sm:px-7">
+      <div
+        className="min-h-0 flex-1 overflow-y-auto px-5 pb-8 sm:px-7"
+        data-testid="crm-entity-drawer-content"
+      >
         {query.isLoading ? <LoadingState /> : null}
         {query.error ? <ErrorState message={t("crmCard.loadError")} /> : null}
         {tabContent}

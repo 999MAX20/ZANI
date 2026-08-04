@@ -1,3 +1,5 @@
+import { Buffer } from "node:buffer";
+
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const password = process.env.E2E_PASSWORD || "ZaniTest123!";
@@ -86,6 +88,71 @@ test("desktop CRM lists keep full-width context and open entity overlays", async
     "/app/deals",
     dealAction.locator("xpath=ancestor::article"),
   );
+});
+
+test("canceling the attachment picker preserves CRM drawer context", async ({
+  page,
+}, testInfo) => {
+  test.setTimeout(60_000);
+  test.skip(testInfo.project.name !== "desktop-chromium");
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await login(page);
+
+  for (const path of ["/app/leads", "/app/clients", "/app/deals"] as const) {
+    await navigateInsideApp(page, path);
+    const opener =
+      path === "/app/leads"
+        ? page
+            .getByTestId("lead-row-action-more")
+            .first()
+            .locator("xpath=../..")
+        : path === "/app/clients"
+          ? page
+              .getByTestId("client-row-action-open")
+              .first()
+              .locator("xpath=ancestor::tr")
+          : page
+              .getByTestId("deal-card-action-open")
+              .first()
+              .locator("xpath=ancestor::article");
+
+    await opener.click();
+    const drawer = page.getByTestId("crm-entity-drawer");
+    await expect(drawer).toBeVisible();
+    await drawer.getByTestId("crm-entity-tab-files").click();
+
+    const tabs = drawer.getByTestId("crm-entity-tabs");
+    const content = drawer.getByTestId("crm-entity-drawer-content");
+    const pickerTrigger = drawer.getByTestId(
+      "crm-attachment-picker-trigger",
+    );
+    const pickerInput = drawer.getByTestId("crm-attachment-input");
+    await expect(tabs).toBeVisible();
+    await expect(content).toBeVisible();
+    await expect(pickerTrigger).toBeVisible();
+
+    await drawer.evaluate((element) => {
+      element.scrollTop = 500;
+    });
+    await pickerInput.dispatchEvent("cancel");
+
+    await expect.poll(() => drawer.evaluate((element) => element.scrollTop)).toBe(0);
+    await expect(tabs).toBeVisible();
+    await expect(content).toBeVisible();
+    await expect(pickerTrigger).toBeVisible();
+    await expect(pickerTrigger).toBeFocused();
+
+    const fixtureName = `attachment-${path.split("/").at(-1)}.txt`;
+    await pickerInput.setInputFiles({
+      name: fixtureName,
+      mimeType: "text/plain",
+      buffer: Buffer.from("drawer attachment fixture"),
+    });
+    await expect(content.getByText(fixtureName)).toBeVisible();
+
+    await page.keyboard.press("Escape");
+    await expect(drawer).toHaveCount(0);
+  }
 });
 
 test("mobile CRM actions open the same entity overlay without page overflow", async ({

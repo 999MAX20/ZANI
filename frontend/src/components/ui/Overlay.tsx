@@ -303,7 +303,7 @@ export function Drawer({
         autoFocus
         data-testid={testId}
         className={cn(
-          "zani-drawer-surface flex h-full w-full max-w-[720px] flex-col overflow-hidden",
+          "zani-drawer-surface flex h-full w-full max-w-[720px] flex-col overflow-clip",
           side === "left"
             ? "mr-auto sm:rounded-r-[16px]"
             : "ml-auto sm:rounded-l-[16px]",

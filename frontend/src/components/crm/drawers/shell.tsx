@@ -46,13 +46,17 @@ export function CrmEntityTabs({ active, onChange, data }: { active: CrmCardTab; 
     files: data?.attachments.length,
   };
   return (
-    <div className="no-scrollbar flex gap-2 overflow-x-auto px-5 py-4 sm:px-7">
+    <div
+      className="no-scrollbar flex shrink-0 gap-2 overflow-x-auto px-5 py-4 sm:px-7"
+      data-testid="crm-entity-tabs"
+    >
       {crmDrawerTabs.map((tab) => {
         const count = tabCounts[tab.id];
         return (
           <button
             key={tab.id}
             type="button"
+            data-testid={`crm-entity-tab-${tab.id}`}
             className={cn(
               "flex shrink-0 items-center gap-2 rounded-card px-4 py-2 text-sm font-bold transition",
               active === tab.id ? "bg-brand-500 text-white shadow-premium" : "bg-surface-card text-zani-muted hover:bg-surface-card hover:text-zani-ink",

@@ -18,6 +18,7 @@ import { Dialog, PopoverSurface } from "../../ui/Overlay";
 import { Select } from "../../ui/Select";
 import { StatusBadge } from "../../ui/StatusBadge";
 import { Textarea } from "../../ui/Textarea";
+import { AttachmentFilePicker } from "./AttachmentFilePicker";
 import { drawerSurfaceClass, EmptyBlock, getChannelLabel } from "./shared";
 import { EntityTimelineList } from "./timeline";
 import type { CrmDrawerEntity } from "./types";
@@ -46,7 +47,6 @@ export function EntityAttachmentsPanel({ data, entity }: { data: CrmCardPayload;
   const { t } = useI18n();
   const queryClient = useQueryClient();
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [isDragging, setIsDragging] = useState(false);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [previewAttachment, setPreviewAttachment] = useState<FileAttachment | null>(null);
   const [previewUrl, setPreviewUrl] = useState("");
@@ -57,7 +57,6 @@ export function EntityAttachmentsPanel({ data, entity }: { data: CrmCardPayload;
   const [renamingAttachment, setRenamingAttachment] = useState<FileAttachment | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const businessId = data.client?.business || data.lead?.business || data.deal?.business || data.appointment?.business;
-  const inputId = `crm-attachment-upload-${entity.type}-${entity.id}`;
   const uploadMutation = useMutation({
     mutationFn: async () => {
       if (!businessId) throw new Error("Business is required.");
@@ -201,43 +200,10 @@ export function EntityAttachmentsPanel({ data, entity }: { data: CrmCardPayload;
         </div>
       ) : null}
       {!data.attachments.length || isUploadOpen || selectedFiles.length ? (
-        <label
-          htmlFor={inputId}
-          onDragEnter={(event) => {
-            event.preventDefault();
-            setIsDragging(true);
-          }}
-          onDragOver={(event) => {
-            event.preventDefault();
-            setIsDragging(true);
-          }}
-          onDragLeave={() => setIsDragging(false)}
-          onDrop={(event) => {
-            event.preventDefault();
-            setIsDragging(false);
-            appendFiles(event.dataTransfer.files);
-          }}
-          className={`mb-4 flex cursor-pointer flex-col items-center justify-center rounded-card border border-dashed px-4 py-5 text-center transition ${
-            isDragging ? "border-brand-300 bg-brand-50 text-brand-700" : "border-zani-border bg-surface-muted text-zani-muted hover:border-brand-200 hover:bg-surface-card"
-          }`}
-        >
-          <span className="grid h-10 w-10 place-items-center rounded-card bg-surface-card text-brand-600 shadow-sm">
-            <Upload size={18} />
-          </span>
-          <span className="mt-3 text-sm font-semibold text-zani-ink">{t("crmCard.dropFilesTitle")}</span>
-          <span className="mt-1 max-w-md text-xs font-semibold leading-5">{t("crmCard.dropFilesText")}</span>
-          <input
-            id={inputId}
-            type="file"
-            multiple
-            accept={attachmentAccept}
-            className="sr-only"
-            onChange={(event) => {
-              appendFiles(event.target.files || []);
-              event.target.value = "";
-            }}
-          />
-        </label>
+        <AttachmentFilePicker
+          accept={attachmentAccept}
+          onFiles={appendFiles}
+        />
       ) : null}
       {selectedFiles.length ? (
         <div className="mb-4 space-y-2">

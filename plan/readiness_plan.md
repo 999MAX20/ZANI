@@ -70,7 +70,7 @@ Implemented:
   - blue for CRM selection and primary workflow accents;
   - violet for AI-only actions;
   - midnight for critical CTAs.
-- `docs/design-system.md` now documents the baseline UI rules so future pages do not drift back into inconsistent styling.
+- `docs/frontend/design-system.md` now documents the baseline UI rules so future pages do not drift back into inconsistent styling.
 
 ### What Is Still Weak
 

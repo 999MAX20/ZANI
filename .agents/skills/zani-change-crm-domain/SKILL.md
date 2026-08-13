@@ -9,7 +9,7 @@ Preserve ZANI as a simple, action-oriented multi-tenant CRM. Follow the reposito
 
 ## Establish the change contract
 
-1. Read `AGENTS.md`, the clean-code rules, `CRM_PRODUCTION_LAYER_PLAN.md`, `docs/PERMISSION_MATRIX.md`, `docs/AI_ASSISTANT_RULES.md`, `docs/automation-runtime.md`, and `docs/entitlements.md` as relevant.
+1. Read `AGENTS.md`, the clean-code rules, `docs/crm/CRM_PRODUCTION_LAYER_PLAN.md`, `docs/security/PERMISSION_MATRIX.md`, `docs/ai/AI_ASSISTANT_RULES.md`, `docs/automation/automation-runtime.md`, and `docs/billing/entitlements.md` as relevant.
 2. State the business outcome, allowed scope, non-goals, affected roles, and acceptance criteria.
 3. Record permission, notification, BusinessEvent, AI, migration, and environment impact before editing. Use [references/change-impact.md](references/change-impact.md).
 4. Search models, services, selectors, state-machine helpers, permissions, serializers, views, frontend API clients, components, and tests for the existing flow.

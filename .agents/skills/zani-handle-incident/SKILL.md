@@ -7,7 +7,7 @@ description: Diagnose, contain, recover, and document ZANI staging or production
 
 ## Workflow
 
-1. Read `AGENTS.md`, `docs/production-readiness.md`, `docs/deployment.md`, provider rollout docs when relevant, and current evidence.
+1. Read `AGENTS.md`, `docs/production/production-readiness.md`, `docs/production/deployment.md`, provider rollout docs when relevant, and current evidence.
 2. Establish severity, affected users/businesses, start time, current symptoms, recent changes, and whether confidentiality or tenant isolation may be compromised.
 3. Begin with read-only evidence: health/readiness, logs, metrics, traces, deployment state, queue lag, provider status, database health, and a minimal safe reproduction.
 4. Build a timestamped fact timeline. Separate confirmed evidence, hypotheses, and unknowns; do not overstate recovery.

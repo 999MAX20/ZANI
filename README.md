@@ -2,11 +2,11 @@
 
 Zani — AI-first CRM / Business OS для малого и среднего бизнеса. Сейчас проект содержит Django + DRF backend, React + TypeScript frontend, multi-tenant Merchant CRM и foundation для будущего Platform Admin.
 
-Работа ведется по актуальному мастер-плану:
+Работа ведется по актуальным правилам и документации:
 
 ```text
-plan/ZANI_MASTER_TECH_PLAN.md
 AGENTS.md
+docs/README.md
 plan/clean_code_rules/zani_required_clean_code_rules.md
 ```
 
@@ -484,7 +484,7 @@ cd frontend && npm run build
   - проверяет idempotency demo launch pack;
   - запускает `pilot_launch_quality_gate`;
   - поддерживает `PILOT_FRONTEND_URL` и `PILOT_BACKEND_URL`.
-- Документация demo launch обновлена в `docs/block14-pilot-demo-launch.md`.
+- Документация demo launch обновлена в `docs/pilot/block14-pilot-demo-launch.md`.
 
 Проверки:
 
@@ -514,7 +514,7 @@ cd frontend && npm run build
   - `AUTH_SOCIAL_RATE`;
   - `VITE_GOOGLE_CLIENT_ID`;
   - `VITE_APPLE_CLIENT_ID`.
-- Документация: `docs/social-auth.md`.
+- Документация: `docs/auth/social-auth.md`.
 
 Для реального продакшн-входа нужно создать OAuth clients в Google Cloud Console и Apple Developer, затем прописать client IDs в backend/frontend env.
 
@@ -649,7 +649,7 @@ cd frontend && npm run e2e -- --project=desktop-chromium
   - required-field validation;
   - basic honeypot fields.
 - Документация для внешнего лендинга:
-  - `docs/public-lead-capture.md`.
+  - `docs/integrations/public-lead-capture.md`.
 
 Проверки:
 
@@ -692,7 +692,7 @@ cd frontend && npm run build
   - trial subscription на 30 дней.
 - Операция идемпотентна по `landing_id`.
 - Документация:
-  - `docs/landing-activation.md`.
+  - `docs/product/landing-activation.md`.
 
 Проверки:
 
@@ -848,7 +848,7 @@ AUTOMATIONS_RUN_INLINE=True \
   - ручной ввод продажи;
   - ручной ввод услуги/товара.
 - Документация:
-  - `docs/data-imports.md`.
+  - `docs/integrations/imports/data-imports.md`.
 
 Важно:
 
@@ -913,9 +913,9 @@ cd frontend && npm run e2e -- --project=mobile-chromium
   - safer worker prefetch/acks defaults.
 - Docker healthcheck теперь использует `/ready/`.
 - Production documentation:
-  - `docs/production-readiness.md`;
-  - `docs/backup-restore.md`;
-  - обновлен `docs/deployment.md`.
+  - `docs/production/production-readiness.md`;
+  - `docs/production/backup-restore.md`;
+  - обновлен `docs/production/deployment.md`.
 - `.env.example` дополнен logging/Celery production variables.
 
 Не добавлялось:
@@ -953,7 +953,7 @@ cd frontend && npm run build
   - download помечается как `security / medium`.
 - Settings usage UI показывает `Storage`.
 - Обновлена storage-документация:
-  - `docs/file-storage.md`.
+  - `docs/production/file-storage.md`.
 
 Не добавлялось:
 
@@ -990,7 +990,7 @@ cd frontend && npm run build
   - selected messages обновляются каждые 7 секунд;
   - refetch on focus/reconnect.
 - Документация:
-  - `docs/realtime-strategy.md`.
+  - `docs/architecture/realtime-strategy.md`.
 
 Не добавлялось:
 
@@ -1040,7 +1040,7 @@ DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test
   - сохранение секретов без повторного показа raw values;
   - health-check/recovery state.
 - Документация:
-  - `docs/integrations.md`.
+  - `docs/integrations/integrations.md`.
 
 Проверки:
 
@@ -1082,7 +1082,7 @@ cd frontend && npm run build
   - журнал запусков показывает attempts/retry time;
   - failed run можно перезапустить из UI.
 - Документация:
-  - `docs/automation-runtime.md`.
+  - `docs/automation/automation-runtime.md`.
 
 Проверки:
 
@@ -1126,7 +1126,7 @@ cd frontend && npm run build
   - “Первое сообщение”;
   - переходы в Диалоги и Интеграции.
 - Документация:
-  - `docs/communication-onboarding.md`.
+  - `docs/integrations/communication-onboarding.md`.
 
 Проверки:
 
@@ -1170,7 +1170,7 @@ cd frontend && npm run build
   - limit;
   - remaining quota.
 - Документация:
-  - `docs/entitlements.md`.
+  - `docs/billing/entitlements.md`.
 
 Проверки:
 
@@ -1202,7 +1202,7 @@ cd frontend && npm run build
   - operator sees restricted settings section;
   - mobile dashboard -> calendar flow.
 - Basic scale/load plan:
-  - `docs/e2e-scale-baseline.md`.
+  - `docs/testing/e2e-scale-baseline.md`.
 
 Проверки:
 
@@ -1245,7 +1245,7 @@ cd frontend && npm run e2e
   - CSV export.
 - Экспорт отчетов пишет audit log.
 - Документация:
-  - `docs/analytics-reporting.md`.
+  - `docs/analytics/analytics-reporting.md`.
 
 Проверки:
 
@@ -1888,7 +1888,7 @@ scripts/make_clean_archive.sh
   - local-memory email backend в test mode.
 - `.env.example` дополнен минимальными flags для integrations/email backend.
 - Документация:
-  - `docs/testing.md`
+  - `docs/testing/testing.md`
 - Полный `manage.py test -v 2` проходит без зависания и без внешних сетевых вызовов.
 
 Проверено:
@@ -2256,7 +2256,7 @@ cd frontend && npm run build
   - отправлять последующие сообщения;
   - показывать basic status.
 - Документация:
-  - `docs/widget-sdk.md`
+  - `docs/integrations/providers/widget-sdk.md`
 
 Embed target:
 
@@ -2451,7 +2451,7 @@ cd frontend && npm run build
   - Telegram/OpenAI/email/Sentry;
   - storage placeholders;
   - frontend API URL.
-- Добавлен `docs/deployment.md`.
+- Добавлен `docs/production/deployment.md`.
 - Health endpoints сохранены:
   - `/health/`;
   - `/health/db/`.
@@ -2500,7 +2500,7 @@ cd frontend && npm run build
   - endpoint требует auth;
   - путь защищён от directory traversal.
 - Документация:
-  - `docs/file-storage.md`.
+  - `docs/production/file-storage.md`.
 
 Не добавлялось:
 
@@ -2523,7 +2523,7 @@ DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test
 
 Добавлено:
 
-- Документ `docs/internal-dev-tools-boundary.md`.
+- Документ `docs/operations/internal-dev-tools-boundary.md`.
 - Зафиксировано, что не является public product core:
   - parser;
   - landing generator;
@@ -2543,7 +2543,7 @@ Product core не изменялся.
 
 Добавлено:
 
-- Финальный отчёт `docs/regression-report.md`.
+- Финальный отчёт `docs/testing/regression-report.md`.
 
 Проверено:
 
@@ -4242,7 +4242,7 @@ Lead Forms:
 Что добавлено:
 
 - Создан финальный competitive QA report:
-  - `docs/competitive-regression-report.md`.
+  - `docs/product/competitive-regression-report.md`.
 - Отчёт проверяет ключевые зоны:
   - CRM core;
   - clients/leads/appointments;
@@ -4311,7 +4311,7 @@ Lead Forms:
 - Integrations cards получили recommended next step.
 - Onboarding copy стал ближе к рабочему сценарию первого запуска.
 - Документация:
-  - `docs/ui-ux-polish-phase-10.md`.
+  - `docs/frontend/ui-ux-polish-phase-10.md`.
 
 Проверки:
 
@@ -4339,8 +4339,8 @@ Lead Forms:
   - command failure mode;
   - JSON output.
 - Документация:
-  - `docs/production-readiness-10000-audit.md`;
-  - обновлен `docs/production-readiness.md`.
+  - `docs/production/production-readiness-10000-audit.md`;
+  - обновлен `docs/production/production-readiness.md`.
 
 Проверки:
 
@@ -4365,8 +4365,8 @@ Lead Forms:
 - Local CI script:
   - `scripts/check_local_ci.sh`.
 - Staging checklist:
-  - `docs/staging-ci-cd-checklist.md`.
-- `docs/deployment.md` теперь ссылается на staging/CI checklist и local CI command.
+  - `docs/production/staging/staging-ci-cd-checklist.md`.
+- `docs/production/deployment.md` теперь ссылается на staging/CI checklist и local CI command.
 
 Проверки:
 
@@ -4391,11 +4391,11 @@ Lead Forms:
   - `frontend/.env.production.example`.
 - `.gitignore` теперь разрешает tracked env templates, но продолжает игнорировать реальные `.env.*`.
 - Provider selection doc:
-  - `docs/staging-provider-selection.md`.
+  - `docs/production/staging/staging-provider-selection.md`.
 - Обновлены:
-  - `docs/deployment.md`;
-  - `docs/staging-ci-cd-checklist.md`;
-  - `docs/production-readiness-10000-audit.md`.
+  - `docs/production/deployment.md`;
+  - `docs/production/staging/staging-ci-cd-checklist.md`;
+  - `docs/production/production-readiness-10000-audit.md`.
 
 Рекомендованный staging stack:
 
@@ -4426,11 +4426,11 @@ Lead Forms:
   - `frontend/playwright.staging.config.ts`;
   - `npm run e2e:staging`.
 - Staging smoke runbook:
-  - `docs/staging-smoke-runbook.md`.
+  - `docs/production/staging/staging-smoke-runbook.md`.
 - Обновлены:
-  - `docs/deployment.md`;
-  - `docs/staging-ci-cd-checklist.md`;
-  - `docs/staging-provider-selection.md`.
+  - `docs/production/deployment.md`;
+  - `docs/production/staging/staging-ci-cd-checklist.md`;
+  - `docs/production/staging/staging-provider-selection.md`.
 
 Smoke проверяет:
 
@@ -4444,7 +4444,7 @@ Smoke проверяет:
 Latest Render staging execution report:
 
 ```text
-docs/staging-render-execution-report.md
+docs/production/staging/staging-render-execution-report.md
 ```
 
 Пример запуска:
@@ -4499,7 +4499,7 @@ npm run e2e:staging
   - `AI_ASSISTANT_RATE`.
 - Production audit теперь проверяет наличие всех обязательных throttle scopes.
 - Документация:
-  - `docs/rate-limits.md`.
+  - `docs/security/rate-limits.md`.
 
 Проверки:
 
@@ -4522,7 +4522,7 @@ npm run e2e:staging
   - `python manage.py collectstatic --noinput`;
   - `gunicorn config.wsgi:application`.
 - Добавлен `.dockerignore`, чтобы локальный `.env`, SQLite, media, node modules и build artifacts не попадали в Docker image.
-- Обновлен `docs/deployment.md` с Render-specific env checklist.
+- Обновлен `docs/production/deployment.md` с Render-specific env checklist.
 
 Проверки:
 
@@ -4545,7 +4545,7 @@ npm run e2e:staging
   - `.env.production.example`.
 - `frontend/.env.staging.example` указывает на текущий Render backend:
   - `https://zani-9lnp.onrender.com`.
-- `docs/deployment.md` обновлен под Render + Supabase split env.
+- `docs/production/deployment.md` обновлен под Render + Supabase split env.
 
 Для Render можно использовать:
 
@@ -4645,7 +4645,7 @@ Manual smoke:
 
 ### Block 8 — Pilot smoke demo merchant
 
-Added `python manage.py seed_pilot_demo --reset` to create a full demo merchant for local/staging pilot smoke checks: activation, CRM Light, leads, sales events, dashboard pulse, inbox handoff, AI task, notification and quick replies. See `docs/block8-pilot-smoke-demo.md`.
+Added `python manage.py seed_pilot_demo --reset` to create a full demo merchant for local/staging pilot smoke checks: activation, CRM Light, leads, sales events, dashboard pulse, inbox handoff, AI task, notification and quick replies. See `docs/pilot/block8-pilot-smoke-demo.md`.
 
 ### Pilot Tech Plan — Block 10: Clean Pilot Package / Production Readiness
 
@@ -4655,9 +4655,9 @@ Status: **готово**.
 
 - `scripts/pilot_smoke_check.sh` — единая локальная smoke-проверка пилотного пакета.
 - Усилен `scripts/make_clean_archive.sh`: архив исключает `.venv`, `node_modules`, build outputs, local DB, logs, reports, cache files, media/static outputs and nested zip files.
-- `docs/block10-clean-pilot-package.md` — runbook пилотного пакета, команды запуска, demo path, readiness criteria.
-- `docs/block11-pilot-smoke-cleanup.md` — ускоренный smoke-check: один backend test pack, idempotent demo seed reset, optional frontend build.
-- `docs/pilot-safe-promises.md` — границы обещаний для маркетинга/пилота.
+- `docs/pilot/block10-clean-pilot-package.md` — runbook пилотного пакета, команды запуска, demo path, readiness criteria.
+- `docs/pilot/block11-pilot-smoke-cleanup.md` — ускоренный smoke-check: один backend test pack, idempotent demo seed reset, optional frontend build.
+- `docs/pilot/pilot-safe-promises.md` — границы обещаний для маркетинга/пилота.
 
 Проверка:
 
@@ -4673,7 +4673,7 @@ pip install -r requirements.txt
 
 ### Block 12 — Pilot Operations / Internal Control Panel
 
-Internal platform views now show pilot operations health: attention merchants, form errors, handoff conversations, failed connectors, per-merchant health score, blockers, next action, latest activity and operational counts. This helps control the first 10–50 pilot merchants without adding billing or external production integrations. See `docs/block12-platform-operations-panel.md`.
+Internal platform views now show pilot operations health: attention merchants, form errors, handoff conversations, failed connectors, per-merchant health score, blockers, next action, latest activity and operational counts. This helps control the first 10–50 pilot merchants without adding billing or external production integrations. See `docs/pilot/block12-platform-operations-panel.md`.
 
 ### Block 14 — Pilot Demo Launch
 
@@ -4689,7 +4689,7 @@ Default logins:
 - Demo owner: `demo-owner@zani.local / DemoOwner123!`
 - Demo manager: `demo-manager@zani.local / DemoManager123!`
 
-See `docs/block14-pilot-demo-launch.md`.
+See `docs/pilot/block14-pilot-demo-launch.md`.
 
 ---
 
@@ -4925,7 +4925,7 @@ cd frontend && npm run build
   - `CELERY_TASK_ALWAYS_EAGER`;
   - `CELERY_TASK_STORE_EAGER_RESULT`.
 - Production readiness audit now accepts both `redis://` and TLS `rediss://` Redis URLs.
-- Added Render worker setup docs in `docs/celery-render-runtime.md`.
+- Added Render worker setup docs in `docs/production/celery-render-runtime.md`.
 - Staging/production env templates now include queue runtime flags.
 
 Checks:
@@ -4945,7 +4945,7 @@ cd frontend && npm run build
 - The smoke creates a tiny private `FileAttachment`, writes it through the active Django storage backend and verifies the object exists.
 - Documented business-scoped private object keys:
   - `private/attachments/business-{business_id}/{filename}`.
-- Updated `docs/file-storage.md` with S3-compatible provider setup, smoke checks and production cutover checklist.
+- Updated `docs/production/file-storage.md` with S3-compatible provider setup, smoke checks and production cutover checklist.
 - Staging/production env templates already include S3-compatible storage variables.
 
 Checks:
@@ -4964,7 +4964,7 @@ DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test apps.core.test
   - `python manage.py observability_runtime_check --capture-test-message`.
 - The command verifies environment/release, Sentry configuration and can send a safe smoke message without merchant/customer payload.
 - Backend Sentry setup uses `send_default_pii=False`.
-- Added `docs/observability.md`.
+- Added `docs/production/observability.md`.
 - Added Render smoke script:
   - `scripts/render_h3_observability_smoke.sh`;
   - optional event capture: `CAPTURE_SENTRY_SMOKE=true scripts/render_h3_observability_smoke.sh`.
@@ -4992,7 +4992,7 @@ DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test apps.core.test
   - optional real smoke email: `SEND_EMAIL_SMOKE=true EMAIL_SMOKE_TO=owner@example.com scripts/render_h4_email_smoke.sh`.
 - The Render script rejects staging/production deploys that still use local/mock email backends.
 - The smoke email contains no merchant/customer data.
-- Added `docs/transactional-email.md`.
+- Added `docs/integrations/providers/transactional-email.md`.
 
 Checks:
 
@@ -5012,7 +5012,7 @@ DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test apps.notificat
 - Added Render/CI gate:
   - `scripts/render_h5_backup_readiness.sh`.
 - The command verifies paid-beta backup prerequisites: managed PostgreSQL, object storage, bucket config and explicit environment naming.
-- Updated `docs/backup-restore.md` with readiness checks and incident communication template.
+- Updated `docs/production/backup-restore.md` with readiness checks and incident communication template.
 - H5 remains environment-dependent until a real restore is rehearsed into a separate staging database and RTO/RPO is recorded.
 
 Checks:
@@ -5033,7 +5033,7 @@ DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test apps.core.test
 - Added output-file support for preserving baseline artifacts.
 - Added Render/staging wrapper:
   - `scripts/render_h6_load_baseline.sh`.
-- Updated `docs/e2e-scale-baseline.md` with staging examples, first p95 threshold guidance, a risk register and measurement log template.
+- Updated `docs/testing/e2e-scale-baseline.md` with staging examples, first p95 threshold guidance, a risk register and measurement log template.
 
 Checks:
 
@@ -5067,7 +5067,7 @@ cd frontend && npm run build
   - `scripts/render_h7_provider_rollout_check.sh`;
   - provider-specific mode: `PROVIDER=telegram scripts/render_h7_provider_rollout_check.sh`.
 - Added docs:
-  - `docs/provider-rollout.md`.
+  - `docs/integrations/provider-rollout.md`.
 
 Checks:
 
@@ -5102,7 +5102,7 @@ DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test apps.integrati
 - Merchant users cannot access the endpoint/page.
 - Merchant CRM UI remains unchanged; operational complexity stays inside Platform Admin.
 - Added docs:
-  - `docs/platform-operations-health.md`.
+  - `docs/operations/platform-operations-health.md`.
 
 Checks:
 
@@ -5139,7 +5139,7 @@ cd frontend && npm run build
   - `PAID_BETA_BACKUP_RESTORE_DRILL_DONE`;
   - `PAID_BETA_SUPPORT_GRANT_FLOW_TESTED`.
 - Added docs:
-  - `docs/paid-beta-gate.md`.
+  - `docs/production/paid-beta-gate.md`.
 
 Checks:
 
@@ -5157,7 +5157,7 @@ cd frontend && npm run build
 - The script combines the production readiness, backup, observability, email, provider rollout, queue, storage, remote smoke, optional load smoke and final paid-beta gate checks.
 - The script also runs `platform_operations_health_check --fail-on-critical`.
 - Added runbook:
-  - `docs/paid-beta-launch-runbook.md`.
+  - `docs/production/paid-beta-launch-runbook.md`.
 - The script is intentionally expected to fail in local/demo env until real Redis, object storage, Sentry, SMTP, backup drill and support grant checks are configured.
 
 Syntax check:
@@ -5293,8 +5293,8 @@ cd frontend && npm run build
 - Added an executable queue runtime smoke wrapper:
   - `scripts/render_h1_queue_smoke.sh`.
 - Updated Redis/Celery deployment docs:
-  - `docs/celery-render-runtime.md`;
-  - `docs/deployment.md`.
+  - `docs/production/celery-render-runtime.md`;
+  - `docs/production/deployment.md`.
 - Updated staging/production env templates with shared Redis/worker guidance and AI worker concurrency.
 - H1 remains environment-dependent: it becomes green only after a managed Redis URL is configured on Render backend + workers and `scripts/render_h1_queue_smoke.sh` passes.
 
@@ -5314,8 +5314,8 @@ DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py test apps.automatio
 - Added Render object-storage smoke wrapper:
   - `scripts/render_h2_storage_smoke.sh`.
 - Updated storage/deployment docs:
-  - `docs/file-storage.md`;
-  - `docs/deployment.md`.
+  - `docs/production/file-storage.md`;
+  - `docs/production/deployment.md`.
 - H2 remains environment-dependent: it becomes green only after private S3-compatible storage is configured and the smoke wrapper passes against staging/production env.
 
 Checks:
@@ -5409,7 +5409,7 @@ Status: the technical pilot core can be treated as closed when paired with the d
 - Hardened staging smoke:
   - `scripts/staging_smoke.sh` now verifies that the CORS preflight returns the exact `Access-Control-Allow-Origin` for the frontend origin.
 - Added monitoring runbook:
-  - `docs/monitoring-runbook.md` covers uptime checks, Sentry, platform operations health, smoke commands and alert triggers.
+  - `docs/production/monitoring-runbook.md` covers uptime checks, Sentry, platform operations health, smoke commands and alert triggers.
 - Reconfirmed role/permission, tenant isolation, storage and observability foundations through targeted backend tests.
 
 Checks:
@@ -5623,7 +5623,7 @@ Playwright E2E: 15 passed, 7 intentional desktop/mobile skips
   - `.env.production.example`;
   - `frontend/.env.staging.example`;
   - `frontend/.env.production.example`.
-- `docs/deployment.md` получил pre-deploy quality gate с командами для staging/server setup.
+- `docs/production/deployment.md` получил pre-deploy quality gate с командами для staging/server setup.
 
 Проверка:
 
@@ -5763,7 +5763,7 @@ Frontend production build: OK
   - добавлены regression tests: истёкшее приглашение нельзя принять, уже принятое приглашение нельзя использовать повторно;
   - env examples уточняют, что Google/Apple значения — это public client IDs для ID-token validation, а не provider secrets.
 - Lightweight integrations roadmap:
-  - добавлен `docs/lightweight-integrations-roadmap.md`;
+  - добавлен `docs/integrations/lightweight-integrations-roadmap.md`;
   - зафиксирован принцип: merchant видит простые статусы и действия, raw credentials/webhooks остаются backend-side;
   - следующий порядок интеграций: Website/Forms, Excel/CSV, Telegram, затем WhatsApp/Instagram/Kaspi/1C/МойСклад/marketplaces через request/support-assisted flow.
 - Shell polish i18n pass:
@@ -5835,11 +5835,11 @@ Frontend production build: OK
 - Google / Apple readiness pass:
   - social signup теперь создаёт не только trial business и owner membership, но и default business roles + default pipeline;
   - login page уже держит controlled disabled state, если `VITE_GOOGLE_CLIENT_ID` / `VITE_APPLE_CLIENT_ID` не заданы;
-  - `docs/social-auth.md` уточняет production-readiness поведение и env-контракт без реальных secrets.
+  - `docs/auth/social-auth.md` уточняет production-readiness поведение и env-контракт без реальных secrets.
 - Lightweight integration readiness pass:
   - Excel/CSV добавлен в provider rollout readiness как первый data connector с отдельным `excel_csv` gate;
   - readiness command теперь проверяет connector catalog, BusinessEvent/idempotency layer, upload limit и импортируемые сущности clients/leads/sales/catalog;
-  - `docs/provider-rollout.md` и `docs/lightweight-integrations-roadmap.md` обновлены под следующий Telegram + Excel/CSV MVP порядок.
+  - `docs/integrations/provider-rollout.md` и `docs/integrations/lightweight-integrations-roadmap.md` обновлены под следующий Telegram + Excel/CSV MVP порядок.
 - Telegram connector alignment pass:
   - Telegram wizard теперь синхронизирует merchant-facing `BusinessConnector`, чтобы страница интеграций, support health и настройки бота видели один статус;
   - connector хранит только safe metadata (`bot_channel_id`, configured flags, last operation), без bot token и webhook secret;
@@ -6005,8 +6005,8 @@ Lightweight integrations readiness pass: Excel/CSV provider rollout gate is gree
 
 Next implementation specs prepared:
 
-- `docs/telegram-connector-mvp.md`
-- `docs/excel-csv-real-import-mvp.md`
+- `docs/integrations/providers/telegram-connector-mvp.md`
+- `docs/integrations/imports/excel-csv-real-import-mvp.md`
 
 Telegram Connector MVP hardening pass: inbound Telegram webhook processing is idempotent by Telegram `message_id`, duplicate webhook deliveries no longer create duplicate chat messages, and duplicate inbound events are logged for support diagnostics. Bot channel status now exposes webhook readiness plus last inbound/outbound connector event state. The integrations UI shows webhook state, last Telegram events and a beta notice for production prerequisites.
 
@@ -6032,7 +6032,7 @@ Full backend tests after lightweight provider-ready integrations pass: 305 OK
 Frontend production build after lightweight provider-ready integrations pass: OK
 Render staging QA after lightweight provider-ready integrations pass: `/api/auth/me/`, owner dashboard, connector capabilities, WhatsApp request flow and Kaspi mock-sync OK. Kaspi mock-sync created read-only BusinessEvents and owner dashboard surfaced imported revenue, connector health and attention items.
 
-Pilot UX/API hardening pass: calendar empty slots now open the booking modal for the selected date, the date picker is larger and mobile-friendly, direct appointment API creation accepts `start_at + service` and calculates `end_at`, while rejecting slots outside working hours or overlapping existing appointments. Working-hours forms now block invalid start/end time ranges before submit. Header notifications close on outside click/Escape, and the new `docs/pilot-production-qa-checklist.md` captures the owner/operator/mobile/calendar/integration smoke path before pilot demos.
+Pilot UX/API hardening pass: calendar empty slots now open the booking modal for the selected date, the date picker is larger and mobile-friendly, direct appointment API creation accepts `start_at + service` and calculates `end_at`, while rejecting slots outside working hours or overlapping existing appointments. Working-hours forms now block invalid start/end time ranges before submit. Header notifications close on outside click/Escape, and the new `docs/pilot/pilot-production-qa-checklist.md` captures the owner/operator/mobile/calendar/integration smoke path before pilot demos.
 
 Backend migration check after pilot UX/API hardening pass: OK
 Backend check after pilot UX/API hardening pass: OK

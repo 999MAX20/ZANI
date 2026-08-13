@@ -2,7 +2,7 @@
 
 Рабочий список изменений по итогам аудита CRM, AI, ботов и интеграций.
 
-Документ создан как отдельный audit backlog. Он не заменяет `CRM_IMPLEMENTATION_TASKS.md`, но фиксирует найденные слабые места, bottlenecks и некорректные реализации, которые мешают довести Zani до удобной production CRM.
+Документ создан как отдельный audit backlog. Он не заменяет `docs/crm/CRM_IMPLEMENTATION_TASKS.md`, но фиксирует найденные слабые места, bottlenecks и некорректные реализации, которые мешают довести Zani до удобной production CRM.
 
 ## Completion Rules
 
@@ -39,7 +39,7 @@ Files:
 
 - `frontend/src/app/router.tsx`
 - `frontend/src/app/PermissionRoute.tsx`
-- `docs/PERMISSION_MATRIX.md`
+- `docs/security/PERMISSION_MATRIX.md`
 
 Expected changes:
 
@@ -119,8 +119,8 @@ Files:
 - `apps/integrations/providers/*`
 - `apps/bots/views.py`
 - `apps/bots/services.py`
-- `docs/CONNECTOR_BLUEPRINT.md`
-- `docs/integrations.md`
+- `docs/integrations/CONNECTOR_BLUEPRINT.md`
+- `docs/integrations/integrations.md`
 
 Expected changes:
 
@@ -199,8 +199,8 @@ Files:
 - `apps/scheduling/services.py`
 - `apps/scheduling/serializers.py`
 - `apps/scheduling/views.py`
-- `docs/PERMISSION_MATRIX.md`
-- `CRM_PRODUCTION_LAYER_PLAN.md`
+- `docs/security/PERMISSION_MATRIX.md`
+- `docs/crm/CRM_PRODUCTION_LAYER_PLAN.md`
 
 Expected changes:
 
@@ -274,7 +274,7 @@ Files:
 
 - `frontend/src/features/clients/components/ClientInspector.tsx`
 - `apps/ai_core/recommendations.py`
-- `docs/AI_ASSISTANT_RULES.md`
+- `docs/ai/AI_ASSISTANT_RULES.md`
 
 Expected changes:
 
@@ -309,7 +309,7 @@ Files:
 - `apps/ai_core/*`
 - `frontend/src/features/assistant/*`
 - `frontend/src/features/dashboard/*`
-- `docs/AI_ASSISTANT_RULES.md`
+- `docs/ai/AI_ASSISTANT_RULES.md`
 
 Expected changes:
 
@@ -387,8 +387,8 @@ Files:
 - `frontend/src/features/settings/SettingsPage.tsx`
 - `frontend/src/features/integrations/*`
 - `frontend/src/features/assistant/AIAgentsPage.tsx`
-- `docs/integrations.md`
-- `docs/provider-rollout.md`
+- `docs/integrations/integrations.md`
+- `docs/integrations/provider-rollout.md`
 
 Expected changes:
 
@@ -506,7 +506,7 @@ Test gate:
 
 ### 14. Reconcile CRM roadmap/status docs with implemented behavior
 
-- [ ] Update `CRM_PRODUCTION_LAYER_PLAN.md` so old "remaining" notes do not conflict with completed phase notes.
+- [ ] Update `docs/crm/CRM_PRODUCTION_LAYER_PLAN.md` so old "remaining" notes do not conflict with completed phase notes.
 
 Problem:
 
@@ -523,8 +523,8 @@ Affected area:
 
 Files:
 
-- `CRM_PRODUCTION_LAYER_PLAN.md`
-- `CRM_IMPLEMENTATION_TASKS.md`
+- `docs/crm/CRM_PRODUCTION_LAYER_PLAN.md`
+- `docs/crm/CRM_IMPLEMENTATION_TASKS.md`
 - relevant `docs/*`
 
 Expected changes:
@@ -556,9 +556,9 @@ Affected area:
 
 Files:
 
-- `docs/provider-rollout.md`
-- `docs/integrations.md`
-- `docs/CONNECTOR_BLUEPRINT.md`
+- `docs/integrations/provider-rollout.md`
+- `docs/integrations/integrations.md`
+- `docs/integrations/CONNECTOR_BLUEPRINT.md`
 
 Expected changes:
 

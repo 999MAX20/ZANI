@@ -7,7 +7,7 @@ description: Design or review actionable ZANI production observability across Dj
 
 ## Workflow
 
-1. Read `AGENTS.md`, `docs/production-readiness.md`, `docs/production-readiness-10000-audit.md`, `docs/deployment.md`, and affected runtime code.
+1. Read `AGENTS.md`, `docs/production/production-readiness.md`, `docs/production/production-readiness-10000-audit.md`, `docs/production/deployment.md`, and affected runtime code.
 2. Define the operational questions, user impact, owner, and recovery action before adding telemetry.
 3. Map the request path across web, database, queue/worker, provider, and frontend boundaries. Reuse a safe correlation identifier.
 4. Add structured events and bounded-cardinality metrics for traffic, latency, errors, saturation, queue lag, retries, provider health, webhook failures, automation outcomes, and AI cost/latency as applicable.

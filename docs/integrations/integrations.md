@@ -8,8 +8,20 @@ Phase 4 adds the first production-oriented integration foundation for merchant c
 - `ConnectorCredential` stores provider secrets per connector.
 - `BusinessEvent` stores normalized inbound events with idempotency.
 - `ConnectorSyncRun` stores health checks and future pull/webhook sync runs.
+- Marketplace connectors use an explicit connection mode:
+  - `read_only` for safe imports and analytics;
+  - `inventory_write` for stock-only updates after ZANI reservations are implemented and verified.
 
 This keeps integration state separate from CRM entities and avoids putting provider-specific logic directly into CRM views.
+
+## Documentation Map
+
+- `README.md` - integrations documentation index.
+- `CONNECTOR_BLUEPRINT.md` - connector architecture and review contract.
+- `provider-rollout.md` - provider readiness gates and rollout order.
+- `marketplace-integrations.md` - Wildberries, Ozon and Kaspi product/technical direction.
+- `marketplace-onboarding-runbook.md` - merchant-facing onboarding fields and copy.
+- `marketplace-inventory-write-plan.md` - stock reservation and write-back implementation plan.
 
 ## API
 
@@ -91,9 +103,28 @@ Connectors use the existing `integrations` resource.
 - tenant filtering stays server-side;
 - cross-business connector reads return empty list or 404.
 
+Inventory write mode requires owner/admin-level setup permission and must remain disabled for operators unless a later permission-matrix task explicitly grants narrower stock-management rights.
+
+## Marketplace Mode Rules
+
+Read-only mode may sync marketplace orders, sales, returns, products and stock snapshots into `BusinessEvent` records.
+
+Inventory write mode may only update stock quantities after:
+
+- the merchant selected stock-control mode;
+- credentials and write access were validated;
+- the product has a provider mapping;
+- ZANI created a local reservation or release operation;
+- the write request is queued and idempotent;
+- the result is visible in connector status/audit.
+
+Bots, AI tools, React components and DRF views must not call marketplace stock APIs directly.
+
 ## Next Steps
 
 - add queue-backed sync jobs;
 - move long-running health checks to Celery;
 - expand connector setup recovery copy as support playbooks mature;
 - broaden BusinessEvent-to-timeline mapping for conversation-only events when product wants conversation timeline cards.
+- implement the marketplace onboarding UI from `marketplace-onboarding-runbook.md`;
+- implement stock reservation/write-back foundation from `marketplace-inventory-write-plan.md` before enabling inventory write for merchants.

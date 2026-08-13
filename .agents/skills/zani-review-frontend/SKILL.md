@@ -7,7 +7,7 @@ description: Implement or review authenticated ZANI React UI for real business d
 
 ## Workflow
 
-1. Read `AGENTS.md`, `docs/design-system.md`, `plan/ui_ux_design_system_reform.md`, the affected page/API client, and relevant permission/domain docs.
+1. Read `AGENTS.md`, `docs/frontend/design-system.md`, `plan/ui_ux_design_system_reform.md`, the affected page/API client, and relevant permission/domain docs.
 2. Identify the user's role, job, primary action, real data source, and required states before changing layout.
 3. Search shared components, types, API clients, hooks, and i18n keys before creating new ones.
 4. Put network calls in `frontend/src/api/*`; keep components focused on interaction and rendering. Avoid `any` unless justified.

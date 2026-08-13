@@ -7,7 +7,7 @@ description: Implement or review ZANI connectors, provider adapters, webhooks, p
 
 ## Workflow
 
-1. Read `AGENTS.md`, `docs/CONNECTOR_BLUEPRINT.md`, `docs/integrations.md`, `docs/provider-rollout.md`, `docs/PERMISSION_MATRIX.md`, and affected code/tests.
+1. Read `AGENTS.md`, `docs/integrations/CONNECTOR_BLUEPRINT.md`, `docs/integrations/integrations.md`, `docs/integrations/provider-rollout.md`, `docs/security/PERMISSION_MATRIX.md`, and affected code/tests.
 2. Search existing connector, provider, credential, event, sync, and CRM-mapping layers before adding anything.
 3. Keep provider-specific behavior behind adapters/clients. Route CRM writes through provider-neutral mapping or domain services rather than views.
 4. Establish tenant mapping before reading or writing merchant data. Enforce backend view/manage permissions.

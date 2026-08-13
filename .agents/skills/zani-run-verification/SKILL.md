@@ -9,7 +9,7 @@ Treat verification as evidence for the requested behavior, not as a ceremonial c
 
 ## Select the gate
 
-1. Read `AGENTS.md`, `docs/testing.md`, and the acceptance criteria.
+1. Read `AGENTS.md`, `docs/testing/testing.md`, and the acceptance criteria.
 2. Inventory changed or investigated areas: backend, frontend, CRM lifecycle, permissions, tenant isolation, integration, AI, migration, environment, and docs.
 3. Start with the narrowest command that can reproduce or validate the behavior.
 4. Expand to the required scoped or project gate after the focused check passes.

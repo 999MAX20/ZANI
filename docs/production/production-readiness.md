@@ -7,7 +7,7 @@ This document is the operational checklist for moving Zani from local MVP to sta
 For the 10,000 merchants audit and sizing plan, also use:
 
 ```text
-docs/production-readiness-10000-audit.md
+docs/production/production-readiness-10000-audit.md
 ```
 
 ## 1. Environment Strategy
@@ -249,7 +249,7 @@ This script runs Django system/deploy checks, migration drift checks, production
 Rate-limit details:
 
 ```text
-docs/rate-limits.md
+docs/security/rate-limits.md
 ```
 
 ## 10. What Is Not Solved Yet

@@ -1,0 +1,2 @@
+external_id,title,client_name,phone,email,amount,currency,stage,source,notes
+deal-001,Imported deal,Aliya Ivanova,+77015550101,aliya@example.com,15000,KZT,New,manual,Imported from CSV

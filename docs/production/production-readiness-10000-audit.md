@@ -44,7 +44,7 @@ DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py production_readines
 Rate-limit policy:
 
 ```text
-docs/rate-limits.md
+docs/security/rate-limits.md
 ```
 
 ## 2. Текущая Оценка
@@ -196,7 +196,7 @@ Use:
 .env.production.example
 frontend/.env.staging.example
 frontend/.env.production.example
-docs/staging-provider-selection.md
+docs/production/staging/staging-provider-selection.md
 ```
 
 Recommended first staging stack:

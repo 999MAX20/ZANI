@@ -7,7 +7,7 @@ description: Implement or review ZANI AI assistant, analyst, recommendation, own
 
 ## Workflow
 
-1. Read `AGENTS.md`, `docs/AI_ASSISTANT_RULES.md`, `docs/PERMISSION_MATRIX.md`, and the affected code and tests. Read `docs/entitlements.md` when availability or plan limits change.
+1. Read `AGENTS.md`, `docs/ai/AI_ASSISTANT_RULES.md`, `docs/security/PERMISSION_MATRIX.md`, and the affected code and tests. Read `docs/billing/entitlements.md` when availability or plan limits change.
 2. Inventory the actor, permitted source entities, requested output, provider state, and any possible mutation.
 3. Trace each factual output to permission-scoped records or deterministic calculations. Return an explicit no-data or provider-unavailable state when evidence is missing.
 4. Keep source identifiers safe for the API and UI. Never expose hidden entities, raw prompts, secrets, tokens, or sensitive provider payloads.

@@ -159,6 +159,8 @@ export const en: Record<string, string> = {
   "auth.signInCopy": "Open your workspace and continue working with clients.",
   "auth.email": "Email",
   "auth.password": "Password",
+  "auth.showPassword": "Show password",
+  "auth.hidePassword": "Hide password",
   "auth.submit": "Sign in",
   "auth.socialDivider": "or continue with",
   "auth.google": "Continue with Google",

@@ -158,6 +158,8 @@ export const ru: Record<string, string> = {
     "Откройте рабочий кабинет и продолжите работу с клиентами.",
   "auth.email": "Email",
   "auth.password": "Пароль",
+  "auth.showPassword": "Показать пароль",
+  "auth.hidePassword": "Скрыть пароль",
   "auth.submit": "Войти",
   "auth.socialDivider": "или войдите через",
   "auth.google": "Продолжить с Google",

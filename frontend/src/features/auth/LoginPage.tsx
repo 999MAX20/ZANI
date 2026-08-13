@@ -15,6 +15,7 @@ import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { useI18n } from "../../lib/i18n";
 import { useAuth } from "./AuthProvider";
+import { PasswordVisibilityToggle } from "./PasswordVisibilityToggle";
 import "./authLoginSerenity.css";
 
 type FormValues = {
@@ -63,6 +64,7 @@ export function LoginPage() {
   });
   const [error, setError] = useState<string | null>(null);
   const [socialLoading, setSocialLoading] = useState<SocialProvider | null>(null);
+  const [isPasswordVisible, setPasswordVisible] = useState(false);
   const {
     register,
     handleSubmit,
@@ -202,9 +204,6 @@ export function LoginPage() {
 
         <section className="serenity-login__form-area" aria-label={t("auth.signIn")}>
           <div className="serenity-login__card">
-            <div className="serenity-login__card-mark" aria-hidden="true">
-              <Zap size={26} />
-            </div>
             <h2>{t("auth.signIn")}</h2>
             <p className="serenity-login__card-copy">{t("auth.signInCopy")}</p>
 
@@ -260,10 +259,16 @@ export function LoginPage() {
               />
               <Input
                 label={t("auth.password")}
-                type="password"
+                type={isPasswordVisible ? "text" : "password"}
                 autoComplete="current-password"
                 placeholder={t("auth.passwordPlaceholder")}
                 error={errors.password?.message}
+                rightIcon={
+                  <PasswordVisibilityToggle
+                    visible={isPasswordVisible}
+                    onToggle={() => setPasswordVisible((visible) => !visible)}
+                  />
+                }
                 {...register("password")}
               />
               <div className="serenity-login__links">

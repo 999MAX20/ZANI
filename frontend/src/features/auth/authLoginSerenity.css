@@ -107,8 +107,7 @@
   text-decoration: none;
 }
 
-.serenity-login__brand-mark,
-.serenity-login__card-mark {
+.serenity-login__brand-mark {
   display: grid;
   place-items: center;
   border: 1px solid rgba(255, 122, 26, 0.28);
@@ -402,12 +401,6 @@
   background: linear-gradient(90deg, transparent, #ff8a2a 22%, #ff6a00 74%, transparent);
 }
 
-.serenity-login__card-mark {
-  width: 54px;
-  height: 54px;
-  border-radius: 17px;
-}
-
 .serenity-login__eyebrow {
   display: block;
   margin-top: 16px;
@@ -417,7 +410,7 @@
 }
 
 .serenity-login__card h2 {
-  margin: 4px 0 0;
+  margin: 0;
   color: #251b15;
   font-size: clamp(29px, 2.2vw, 34px);
   font-weight: 790;
@@ -563,32 +556,27 @@
   text-decoration: underline;
 }
 
-.serenity-login__password-checks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
+.serenity-login__password-toggle {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #8b7d72;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease;
 }
 
-.serenity-login__password-checks span {
-  display: inline-flex;
-  min-height: 30px;
-  align-items: center;
-  gap: 6px;
-  border-radius: 999px;
-  padding: 0 10px;
-  background: rgba(242, 237, 230, 0.82);
-  color: #75685e;
-  font-size: 12px;
-  font-weight: 720;
-}
-
-.serenity-login__password-checks span[data-active="true"] {
-  background: rgba(255, 241, 230, 0.92);
+.serenity-login__password-toggle:hover {
+  background: rgba(255, 241, 230, 0.9);
   color: #ad4505;
 }
 
-.serenity-login__password-checks svg {
-  flex: 0 0 auto;
+.serenity-login__password-toggle:focus-visible {
+  outline: 3px solid rgba(255, 122, 26, 0.24);
+  outline-offset: 2px;
 }
 
 .serenity-login__primary {
@@ -782,12 +770,6 @@
     padding: 22px 18px;
   }
 
-  .serenity-login__card-mark {
-    width: 48px;
-    height: 48px;
-    border-radius: 15px;
-  }
-
   .serenity-login__eyebrow {
     margin-top: 12px;
   }
@@ -800,7 +782,6 @@
     padding: 18px 17px;
   }
 
-  .serenity-login--signup .serenity-login__card-mark,
   .serenity-login--signup .serenity-login__card-copy,
   .serenity-login--signup .serenity-login__terms {
     display: none;
@@ -817,16 +798,6 @@
   .serenity-login--signup .serenity-login__card input,
   .serenity-login--signup .serenity-login__card [role="combobox"] {
     min-height: 42px;
-  }
-
-  .serenity-login--signup .serenity-login__password-checks {
-    gap: 5px;
-  }
-
-  .serenity-login--signup .serenity-login__password-checks span {
-    min-height: 26px;
-    padding: 0 8px;
-    font-size: 11px;
   }
 
   .serenity-login__links {
@@ -863,11 +834,6 @@
 
   .serenity-login__card {
     padding: 24px 28px;
-  }
-
-  .serenity-login__card-mark {
-    width: 48px;
-    height: 48px;
   }
 
   .serenity-login__card-copy,

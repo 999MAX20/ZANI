@@ -159,6 +159,8 @@ export const kk: Record<string, string> = {
     "Жұмыс кабинетіне кіріп, клиенттермен жұмысты жалғастырыңыз.",
   "auth.email": "Email",
   "auth.password": "Құпиясөз",
+  "auth.showPassword": "Құпиясөзді көрсету",
+  "auth.hidePassword": "Құпиясөзді жасыру",
   "auth.submit": "Кіру",
   "auth.socialDivider": "немесе арқылы кіріңіз",
   "auth.google": "Google арқылы жалғастыру",

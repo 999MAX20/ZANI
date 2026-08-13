@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowRight, BriefcaseBusiness, CheckCircle2, UsersRound, Zap } from "lucide-react";
+import { ArrowRight, BriefcaseBusiness, UsersRound, Zap } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router";
@@ -12,6 +12,7 @@ import { Select } from "../../components/ui/Select";
 import { LanguageSelector } from "../../components/layout/LanguageSelector";
 import { useI18n } from "../../lib/i18n";
 import { useAuth } from "./AuthProvider";
+import { PasswordVisibilityToggle } from "./PasswordVisibilityToggle";
 import "./authLoginSerenity.css";
 
 type FormValues = {
@@ -32,7 +33,10 @@ export function SignupPage() {
     full_name: z.string().min(2, t("validation.name")),
     email: z.string().email(t("validation.email")),
     phone: z.string().min(5, t("validation.phone")),
-    password: z.string().min(8, t("validation.passwordMin")),
+    password: z.string()
+      .min(8, t("signup.passwordMinCheck"))
+      .regex(/^(?=.*\p{L})(?=.*\d).+$/u, t("signup.passwordLettersNumbersCheck"))
+      .refine((value) => !/\s/.test(value), t("signup.passwordNoSpacesCheck")),
     password_confirm: z.string().min(1, t("passwordReset.repeatPasswordRequired")),
     business_name: z.string().min(2, t("validation.businessName")),
     business_type: z.string().min(1),
@@ -50,21 +54,16 @@ export function SignupPage() {
     { value: "other", label: t("businessType.other") },
   ];
   const [error, setError] = useState<string | null>(null);
+  const [isPasswordVisible, setPasswordVisible] = useState(false);
+  const [isPasswordConfirmVisible, setPasswordConfirmVisible] = useState(false);
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { business_type: "beauty" },
   });
-  const passwordValue = watch("password") || "";
-  const passwordChecks = [
-    { label: t("signup.passwordMinCheck"), active: passwordValue.length >= 8 },
-    { label: t("signup.passwordLettersNumbersCheck"), active: /[A-Za-zА-Яа-я]/.test(passwordValue) && /\d/.test(passwordValue) },
-    { label: t("signup.passwordNoSpacesCheck"), active: passwordValue.length > 0 && !/\s/.test(passwordValue) },
-  ];
 
   async function onSubmit(values: FormValues) {
     setError(null);
@@ -135,9 +134,6 @@ export function SignupPage() {
 
         <section className="serenity-login__form-area" aria-label={t("auth.create")}>
           <div className="serenity-login__card serenity-login__card--signup">
-            <div className="serenity-login__card-mark" aria-hidden="true">
-              <Zap size={25} />
-            </div>
             <h2>{t("signup.createCompanyTitle")}</h2>
             <p className="serenity-login__card-copy">{t("signup.createCompanyText")}</p>
 
@@ -157,18 +153,36 @@ export function SignupPage() {
                 <Input label={t("signup.businessName")} autoComplete="organization" placeholder={t("signup.businessNamePlaceholder")} error={errors.business_name?.message} {...register("business_name")} />
               </div>
               <div className="serenity-login__field-grid">
-                <Input label={t("auth.password")} type="password" autoComplete="new-password" placeholder={t("signup.passwordPlaceholder")} error={errors.password?.message} {...register("password")} />
-                <Input label={t("signup.passwordConfirm")} type="password" autoComplete="new-password" placeholder={t("passwordReset.repeatPassword")} error={errors.password_confirm?.message} {...register("password_confirm")} />
+                <Input
+                  label={t("auth.password")}
+                  type={isPasswordVisible ? "text" : "password"}
+                  autoComplete="new-password"
+                  placeholder={t("signup.passwordPlaceholder")}
+                  error={errors.password?.message}
+                  rightIcon={
+                    <PasswordVisibilityToggle
+                      visible={isPasswordVisible}
+                      onToggle={() => setPasswordVisible((visible) => !visible)}
+                    />
+                  }
+                  {...register("password")}
+                />
+                <Input
+                  label={t("signup.passwordConfirm")}
+                  type={isPasswordConfirmVisible ? "text" : "password"}
+                  autoComplete="new-password"
+                  placeholder={t("passwordReset.repeatPassword")}
+                  error={errors.password_confirm?.message}
+                  rightIcon={
+                    <PasswordVisibilityToggle
+                      visible={isPasswordConfirmVisible}
+                      onToggle={() => setPasswordConfirmVisible((visible) => !visible)}
+                    />
+                  }
+                  {...register("password_confirm")}
+                />
               </div>
               <Select label={t("signup.businessType")} placement="top" options={businessTypeOptions} error={errors.business_type?.message} {...register("business_type")} />
-              <div className="serenity-login__password-checks">
-                {passwordChecks.map((check) => (
-                  <span key={check.label} data-active={check.active}>
-                    <CheckCircle2 size={14} />
-                    {check.label}
-                  </span>
-                ))}
-              </div>
               <Button className="serenity-login__primary" type="submit" isLoading={isSubmitting}>
                 {t("signup.freeSubmit")}
                 <ArrowRight size={18} />

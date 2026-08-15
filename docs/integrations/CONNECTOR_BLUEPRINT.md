@@ -19,6 +19,7 @@ Technical setup, webhooks, raw credentials and provider-specific errors must be 
 Every production connector should define:
 
 - provider identity and display metadata;
+- supported modes and selected merchant mode;
 - setup status;
 - masked credentials state;
 - health check;
@@ -28,6 +29,11 @@ Every production connector should define:
 - role-based setup permissions;
 - audit trail for important actions;
 - BusinessEvent output for AI Analyst and dashboards.
+
+For marketplace connectors, supported modes must be explicit:
+
+- `read_only` - read orders, products, stock snapshots and events without changing provider data.
+- `inventory_write` - stock-only write mode after a ZANI reservation/release operation. This is not full marketplace access and must not include price/card/order mutations.
 
 ## Backend Shape
 
@@ -59,6 +65,8 @@ The `Подключения` page should show each integration as a clear operat
 - secondary details only inside modal/wizard.
 
 Setup modal should include only fields required for the selected provider. Advanced webhook/debug details should not dominate the default merchant path.
+
+For marketplace cards, the default setup path must start in read-only mode. Inventory write fields such as warehouse id and product mapping should appear only after the merchant selects stock control.
 
 ## BusinessEvent Output
 
@@ -112,3 +120,18 @@ Each event should include:
 - Tests cover permissions and secret masking.
 - Env vars are documented in `.env.example`.
 - Readiness docs are updated.
+
+## Marketplace Stock Write Checklist
+
+Before enabling stock write for any marketplace:
+
+- read-only connection check passes;
+- write-capable credentials are validated;
+- warehouse/store id is configured where required;
+- provider product mapping exists;
+- ZANI has a local reservation/release service;
+- write operations are queued and idempotent;
+- partial failures create merchant-visible attention status;
+- stock write does not mutate prices, product cards or marketplace orders;
+- audit/BusinessEvent output exists for requested, succeeded and failed operations;
+- rollback/recovery steps are documented in `provider-rollout.md`.

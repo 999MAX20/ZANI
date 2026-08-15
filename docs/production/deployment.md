@@ -5,13 +5,13 @@ This document describes the current production baseline. It is intentionally sim
 For the full production-readiness checklist, use:
 
 ```text
-docs/production-readiness.md
-docs/backup-restore.md
-docs/staging-ci-cd-checklist.md
-docs/staging-provider-selection.md
-docs/staging-smoke-runbook.md
-docs/staging-render-execution-report.md
-docs/rate-limits.md
+docs/production/production-readiness.md
+docs/production/backup-restore.md
+docs/production/staging/staging-ci-cd-checklist.md
+docs/production/staging/staging-provider-selection.md
+docs/production/staging/staging-smoke-runbook.md
+docs/production/staging/staging-render-execution-report.md
+docs/security/rate-limits.md
 ```
 
 ## Services
@@ -157,7 +157,7 @@ For Redis/Celery H1, use the example blueprint as a reviewed checklist, not as a
 
 ```text
 deploy/render.h1.example.yaml
-docs/celery-render-runtime.md
+docs/production/celery-render-runtime.md
 scripts/render_h1_queue_smoke.sh
 ```
 
@@ -420,8 +420,8 @@ scripts/staging_smoke.sh
 The full checklist is in:
 
 ```text
-docs/staging-smoke-runbook.md
-docs/staging-render-execution-report.md
+docs/production/staging/staging-smoke-runbook.md
+docs/production/staging/staging-render-execution-report.md
 ```
 
 For browser smoke against deployed staging:

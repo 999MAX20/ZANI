@@ -1,0 +1,2 @@
+item_type,sku,name,description,duration_minutes,price_from,stock_quantity,source
+service,CONSULT-30,Консультация,Первичная консультация,30,15000,,manual

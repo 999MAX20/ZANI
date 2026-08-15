@@ -17,6 +17,12 @@ Current implementation is read-only:
 - no repricing;
 - no product write-back.
 
+For the broader marketplace mode model and future stock-only write plan, see:
+
+- `../marketplace-integrations.md`;
+- `../marketplace-onboarding-runbook.md`;
+- `../marketplace-inventory-write-plan.md`.
+
 ## Environment
 
 Required for real Kaspi API calls:
@@ -42,6 +48,26 @@ Stored per connector:
   - `api_token_configured=true/false`.
 
 The access key is never returned to frontend responses.
+
+## Merchant Onboarding Fields
+
+Read-only mode:
+
+- `api_token` - UI label: `Kaspi Shop API token`;
+- `merchant_id` - UI label: `Merchant/store identifier`; optional/support field;
+- `order_state` - UI label: `Order state`;
+- `order_status` - UI label: `Order status`;
+- `delivery_type` - UI label: `Delivery type`;
+- `sync_days` - UI label: `Sync period`;
+- `page_size` - UI label: `Page size`.
+
+Inventory write must stay hidden by default until real-account validation confirms the exact safe stock/update flow.
+
+Official onboarding/docs links:
+
+- https://guide.kaspi.kz/partner/ru/shop/api/general/q3196
+- https://guide.kaspi.kz/partner/ru/shop/api/general/q3197
+- https://guide.kaspi.kz/partner/ru/shop/api/orders/q3201
 
 ## Setup Flow
 

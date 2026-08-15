@@ -10,17 +10,18 @@ For all work, start with:
 
 ```text
 ../AGENTS.md
+../docs/README.md
 clean_code_rules/zani_required_clean_code_rules.md
 ```
 
 For CRM backend/business logic production work:
 
 ```text
-../CRM_PRODUCTION_LAYER_PLAN.md
-../docs/PERMISSION_MATRIX.md
-../docs/AI_ASSISTANT_RULES.md
-../docs/automation-runtime.md
-../docs/entitlements.md
+../docs/crm/CRM_PRODUCTION_LAYER_PLAN.md
+../docs/security/PERMISSION_MATRIX.md
+../docs/ai/AI_ASSISTANT_RULES.md
+../docs/automation/automation-runtime.md
+../docs/billing/entitlements.md
 ```
 
 For product/page readiness context:
@@ -32,32 +33,32 @@ readiness_plan.md
 For frontend UI/design work:
 
 ```text
-../docs/design-system.md
+../docs/frontend/design-system.md
 ui_ux_design_system_reform.md
 ```
 
 For production infrastructure and deployment:
 
 ```text
-../docs/production-readiness.md
-../docs/production-readiness-10000-audit.md
-../docs/deployment.md
-../docs/paid-beta-gate.md
+../docs/production/production-readiness.md
+../docs/production/production-readiness-10000-audit.md
+../docs/production/deployment.md
+../docs/production/paid-beta-gate.md
 ```
 
 For integrations and providers:
 
 ```text
-../docs/CONNECTOR_BLUEPRINT.md
-../docs/integrations.md
-../docs/provider-rollout.md
+../docs/integrations/CONNECTOR_BLUEPRINT.md
+../docs/integrations/integrations.md
+../docs/integrations/provider-rollout.md
 ```
 
 For testing:
 
 ```text
-../docs/testing.md
-../docs/CODEX_TASK_TEMPLATE.md
+../docs/testing/testing.md
+../docs/testing/CODEX_TASK_TEMPLATE.md
 ```
 
 ## Active Documents In This Folder
@@ -110,10 +111,10 @@ plan/role_permissions_production_plan.md
 
 Their current replacements are:
 
-- CRM business logic: `../CRM_PRODUCTION_LAYER_PLAN.md`
-- UI/design system: `../docs/design-system.md` and `ui_ux_design_system_reform.md`
-- production/deployment: `../docs/production-readiness.md`, `../docs/deployment.md`, `../docs/paid-beta-gate.md`
-- permissions: `../docs/PERMISSION_MATRIX.md`
+- CRM business logic: `../docs/crm/CRM_PRODUCTION_LAYER_PLAN.md`
+- UI/design system: `../docs/frontend/design-system.md` and `ui_ux_design_system_reform.md`
+- production/deployment: `../docs/production/production-readiness.md`, `../docs/production/deployment.md`, `../docs/production/paid-beta-gate.md`
+- permissions: `../docs/security/PERMISSION_MATRIX.md`
 
 ## Working Rule
 

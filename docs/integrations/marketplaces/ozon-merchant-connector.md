@@ -17,6 +17,12 @@ Implemented as read-only:
 - no product/card editing;
 - no order assembly, shipping or cancellation.
 
+For the broader marketplace mode model and future stock-only write plan, see:
+
+- `../marketplace-integrations.md`;
+- `../marketplace-onboarding-runbook.md`;
+- `../marketplace-inventory-write-plan.md`.
+
 ## Environment
 
 Required for real Ozon Seller API calls:
@@ -43,6 +49,28 @@ Stored per connector:
   - `api_key_configured=true/false`.
 
 The credentials are never returned to frontend responses.
+
+## Merchant Onboarding Fields
+
+Read-only mode:
+
+- `client_id` - UI label: `Ozon Seller Client ID`;
+- `api_key` - UI label: `Ozon Seller API key`;
+- `entities` - UI label: `What to sync`;
+- `sync_days` - UI label: `Sync period`.
+
+Inventory write mode, future gated scope:
+
+- `warehouse_id` - UI label: `Ozon warehouse ID`;
+- `product_mapping_mode` - UI label: `Product matching`.
+
+Inventory write is stock-only. It must not update prices, product cards or marketplace orders.
+
+Official onboarding/docs links:
+
+- https://docs.ozon.ru/api/seller/
+- https://seller-edu.ozon.ru/api-ozon/how-to-api
+- https://dev.ozon.ru/start/299-Rekomendatsii-po-upravleniiu-ostatkami-v-Seller-API/
 
 ## Setup Flow
 

@@ -55,6 +55,16 @@ Status labels:
 - `pilot only`: provider is not generally production-ready and must stay behind support/product approval.
 - `live-ready`: provider can be shown as generally available only after env, readiness command, rollback and monitoring are green for that environment.
 
+Marketplace inventory write has an additional gate:
+
+- merchant explicitly selects `inventory_write`;
+- read-only sync is already healthy;
+- write credentials and warehouse/store configuration pass validation;
+- provider product mapping is complete for affected SKUs;
+- write operation is idempotent, queued and auditable;
+- partial failure is visible to merchant/support;
+- stock write is limited to quantities and does not change prices, product cards or orders.
+
 ## Readiness Command
 
 Run all checks:
@@ -97,10 +107,10 @@ Use the provider-specific form before turning on any real provider env flag.
 - OpenRouter/OpenAI: keep mock mode unless AI queue, throttles and usage limits are ready. AI must stay optional for merchants.
 - WhatsApp: production path is Meta Embedded Signup + Meta Cloud API. Manual credentials are support fallback only. Do not set `WHATSAPP_ENABLED=True` until `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_APP_SECRET`, public HTTPS webhook delivery, Redis/Celery runtime, Sentry and the WhatsApp readiness check are green.
 - Instagram/Meta: primary path is Meta OAuth for a Page linked to Instagram Business; page access tokens are stored in `ConnectorCredential` and removed from channel config. Manual credentials are support fallback only. Do not set `INSTAGRAM_ENABLED=True` until `INSTAGRAM_VERIFY_TOKEN`, `INSTAGRAM_APP_SECRET` or `META_APP_SECRET`, public HTTPS webhook delivery, Redis/Celery runtime, Sentry and the Instagram readiness check are green.
-- Kaspi: beta read-only orders import is available behind `KASPI_ENABLED`; current self-service baseline uses merchant access key, with official partner authorization as the long-term target. Keep write-back, repricing and order mutations disabled.
+- Kaspi: beta read-only orders import is available behind `KASPI_ENABLED`; current self-service baseline uses merchant access key, with official partner authorization as the long-term target. Keep write-back, repricing and order mutations disabled. Keep marketplace stock write hidden/pilot until a real merchant account validates exact supported inventory/update semantics and recovery behavior.
 - МойСклад: beta read-only catalog/stock/sales/client import is available behind `MOYSKLAD_ENABLED`; current self-service baseline uses merchant access key, with app/install authorization as the long-term target. Keep write-back disabled.
-- Wildberries: beta read-only marketplace import is available behind `WILDBERRIES_ENABLED`; current self-service baseline uses merchant Statistics token. Keep price/card/supply/order write-back disabled.
-- Ozon: beta read-only marketplace import is available behind `OZON_ENABLED`; current self-service baseline uses merchant `Client-Id` and `API key`. Keep price/stock/card/order write-back disabled.
+- Wildberries: beta read-only marketplace import is available behind `WILDBERRIES_ENABLED`; current self-service baseline uses merchant Statistics token. Keep price/card/supply/order write-back disabled. Stock-only inventory write can be piloted later with warehouse-capable access, warehouse id, product mapping and the marketplace write checklist.
+- Ozon: beta read-only marketplace import is available behind `OZON_ENABLED`; current self-service baseline uses merchant `Client-Id` and `API key`. Keep price/card/order write-back disabled. Ozon is the preferred first candidate for stock-only inventory write after the reservation/outbox foundation is implemented.
 - 1C: target is push-based ZANI Agent/app flow. Do not make raw endpoint/token setup the primary merchant UX.
 - Other marketplaces: keep request/roadmap until reconciliation, support tooling and data import/export recovery are stable.
 

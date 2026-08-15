@@ -9,7 +9,7 @@
 - Человеческие ошибки валидации.
 - Confirm import создаёт BusinessEvent для продаж и каталога.
 - Dashboard начинает показывать revenue на основе `sale.recorded`.
-- Sample CSV-файлы лежат в `docs/import_samples/`.
+- Sample CSV-файлы лежат в `docs/integrations/imports/samples/`.
 - Команда `write_import_samples` может выгрузить актуальные шаблоны из backend templates.
 
 ## Команды ручной проверки
@@ -21,9 +21,9 @@ python manage.py test apps.core.tests_import_export apps.core.tests_import_sampl
 
 ## Sample files
 
-- `docs/import_samples/sales_template.csv`
-- `docs/import_samples/catalog_template.csv`
-- `docs/import_samples/clients_template.csv`
+- `docs/integrations/imports/samples/sales_template.csv`
+- `docs/integrations/imports/samples/catalog_template.csv`
+- `docs/integrations/imports/samples/clients_template.csv`
 
 ## Product meaning
 

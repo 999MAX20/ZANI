@@ -10,54 +10,49 @@ Required for all work:
 
 1. `AGENTS.md`
 2. `plan/clean_code_rules/zani_required_clean_code_rules.md`
-3. `actual_docs/PROJECT_EXECUTION_MASTER.md` for the active pre-pilot queue
-4. Relevant app/frontend files for the task
+3. `docs/README.md` when choosing documentation paths
+4. `actual_docs/DEFECT_KNOWLEDGE_BASE.md` for defect remediation, UI/UX audits and functional certification
+5. Relevant app/frontend files for the task
 
 For CRM business logic work:
 
 ```text
-CRM_PRODUCTION_LAYER_PLAN.md
-docs/PERMISSION_MATRIX.md
-docs/AI_ASSISTANT_RULES.md
-docs/automation-runtime.md
-docs/entitlements.md
+docs/crm/CRM_PRODUCTION_LAYER_PLAN.md
+docs/security/PERMISSION_MATRIX.md
+docs/ai/AI_ASSISTANT_RULES.md
+docs/automation/automation-runtime.md
+docs/billing/entitlements.md
 ```
 
 For frontend UI work:
 
 ```text
-docs/design-system.md
+docs/frontend/design-system.md
 plan/ui_ux_design_system_reform.md
 ```
 
 For integrations:
 
 ```text
-docs/CONNECTOR_BLUEPRINT.md
-docs/integrations.md
-docs/provider-rollout.md
+docs/integrations/CONNECTOR_BLUEPRINT.md
+docs/integrations/integrations.md
+docs/integrations/provider-rollout.md
 ```
 
 For production infrastructure:
 
 ```text
-docs/production-readiness.md
-docs/production-readiness-10000-audit.md
-docs/deployment.md
-docs/paid-beta-gate.md
+docs/production/production-readiness.md
+docs/production/production-readiness-10000-audit.md
+docs/production/deployment.md
+docs/production/paid-beta-gate.md
 ```
 
 For testing and task format:
 
 ```text
-docs/testing.md
-docs/CODEX_TASK_TEMPLATE.md
-```
-
-For defect remediation, UI/UX audits and functional certification:
-
-```text
-actual_docs/DEFECT_KNOWLEDGE_BASE.md
+docs/testing/testing.md
+docs/testing/CODEX_TASK_TEMPLATE.md
 ```
 
 ## Product Direction
@@ -76,7 +71,7 @@ Daily merchant workflows must stay simple, fast, role-aware and action-oriented.
 
 ## Current CRM Production Strategy
 
-For CRM production work, use `CRM_PRODUCTION_LAYER_PLAN.md`.
+For CRM production work, use `docs/crm/CRM_PRODUCTION_LAYER_PLAN.md`.
 
 The current implementation strategy is layer-based, not page-based:
 
@@ -145,18 +140,8 @@ For any CRM business action, preserve these invariants:
 Run after meaningful backend/frontend changes:
 
 ```bash
-python scripts/codex_verify.py --mode full --base-ref <task-base-sha>
+scripts/codex_verify.sh
 ```
-
-On Unix-like systems, `scripts/codex_verify.sh --mode full` is an equivalent
-wrapper. Every invocation requires a fetched `--base-ref` task/PR base commit
-that is an ancestor of `HEAD` and differs from `HEAD`; the gate checks
-`git diff --check <base>...HEAD` in addition to working-tree/index hygiene.
-Use `--mode backend --backend-target <django.test.label>` for a
-proportionate scoped backend gate. `--backend-target` is rejected in every
-other mode; the final integration gate is always an unscoped `full` run.
-Browser and full runs create a disposable SQLite database and dedicated local
-ports and never reuse an existing Django/Vite server or ordinary `db.sqlite3`.
 
 For narrow backend CRM changes, scoped checks are acceptable:
 
@@ -182,7 +167,7 @@ Final responses and PR summaries must list exactly what was run and what was ski
 
 ## Task Completion Gate
 
-For checklist-driven work such as `CRM_IMPLEMENTATION_TASKS.md`, Codex must not mark a task as complete until the relevant implementation and verification are both done.
+For checklist-driven work such as `docs/crm/CRM_IMPLEMENTATION_TASKS.md`, Codex must not mark a task as complete until the relevant implementation and verification are both done.
 
 Rules:
 
@@ -224,12 +209,10 @@ Rules:
 
 After a completed phase or meaningful behavior change:
 
-- update `CRM_PRODUCTION_LAYER_PLAN.md` if CRM production scope/status changes;
+- update `docs/crm/CRM_PRODUCTION_LAYER_PLAN.md` if CRM production scope/status changes;
 - update relevant docs in `docs/`;
 - update `README.md` only when setup, behavior, or public project status changes;
 - do not add new historical roadmap files when one current plan can be updated.
-- update `actual_docs/DEFECT_KNOWLEDGE_BASE.md` when a defect is confirmed,
-  remediated, verified, integrated or leaves durable regression test debt.
 
 ## Work Style
 

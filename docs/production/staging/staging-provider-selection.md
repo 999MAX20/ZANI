@@ -90,7 +90,7 @@ MERCHANT_OWNER_PASSWORD='***' \
 scripts/staging_smoke.sh
 ```
 
-Подробный порядок: `docs/staging-smoke-runbook.md`.
+Подробный порядок: `docs/production/staging/staging-smoke-runbook.md`.
 
 ## 5. Production Provider Upgrade
 

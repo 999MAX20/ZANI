@@ -15,6 +15,15 @@ Update 2026-07-14: provider-specific connector and bot-channel actions are now s
 
 Update 2026-07-14: Telegram bot tokens and Instagram access tokens now use the same `ConnectorCredential` storage pattern as WhatsApp. Bot channel config stores safe flags and metadata such as `token_configured`, `access_token_configured`, provider mode and external account ids; provider send/test/status flows read secrets through credential helpers with legacy config backfill.
 
+## Documentation Map
+
+- `README.md` — integrations documentation index.
+- `CONNECTOR_BLUEPRINT.md` — connector architecture and review contract.
+- `provider-rollout.md` — provider readiness gates and rollout order.
+- `marketplace-integrations.md` — Wildberries, Ozon and Kaspi product/technical direction.
+- `marketplace-onboarding-runbook.md` — merchant-facing onboarding fields and copy.
+- `marketplace-inventory-write-plan.md` — stock reservation and write-back implementation plan.
+
 ## API
 
 Merchant endpoints:
@@ -40,7 +49,7 @@ Frontend route:
 
 The integrations page is the merchant-facing status center, not a connector developer console.
 
-Provider cards must use `docs/provider-rollout.md` as the readiness source of truth. The UI may show a provider as `connected`, `available`, `beta read-only`, `pilot/setup required`, `request access`, `mock/dev` or `roadmap`, but it must not imply general live readiness when the provider matrix still requires env, support approval or readiness checks.
+Provider cards must use `docs/integrations/provider-rollout.md` as the readiness source of truth. The UI may show a provider as `connected`, `available`, `beta read-only`, `pilot/setup required`, `request access`, `mock/dev` or `roadmap`, but it must not imply general live readiness when the provider matrix still requires env, support approval or readiness checks.
 
 Default daily cards and setup dialogs show:
 
@@ -60,7 +69,7 @@ Provider errors shown in the UI must be translated into merchant-safe recovery m
 
 ## Readiness Labels
 
-The current provider matrix is maintained in `docs/provider-rollout.md`.
+The current provider matrix is maintained in `docs/integrations/provider-rollout.md`.
 
 - Website forms/widget and Excel/CSV are the safest first onboarding surfaces because they do not require paid third-party provider credentials.
 - Telegram may become a live messaging provider only after the Telegram env, webhook, monitoring and readiness gate are green.
@@ -152,3 +161,5 @@ Connectors use the existing `integrations` resource.
 - expand connector setup recovery copy as support playbooks mature;
 - keep advanced credential and webhook setup out of daily CRM pages as provider coverage expands;
 - broaden BusinessEvent-to-timeline mapping for conversation-only events when product wants conversation timeline cards.
+- implement the marketplace onboarding UI from `marketplace-onboarding-runbook.md`;
+- implement stock reservation/write-back foundation from `marketplace-inventory-write-plan.md` before enabling inventory write for merchants.

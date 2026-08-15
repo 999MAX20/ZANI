@@ -19,6 +19,12 @@ Implemented as read-only:
 
 Wildberries reports for orders and sales are updated by WB about every 30 minutes, so ZANI should not promise true 30-second marketplace sync for this provider.
 
+For the broader marketplace mode model and future stock-only write plan, see:
+
+- `../marketplace-integrations.md`;
+- `../marketplace-onboarding-runbook.md`;
+- `../marketplace-inventory-write-plan.md`.
+
 ## Environment
 
 Required for real Wildberries API calls:
@@ -42,6 +48,27 @@ Stored per connector:
   - `api_token_configured=true/false`.
 
 The token is never returned to frontend responses.
+
+## Merchant Onboarding Fields
+
+Read-only mode:
+
+- `api_token` - UI label: `API token Wildberries`;
+- `entities` - UI label: `What to sync`;
+- `sync_days` - UI label: `Sync period`.
+
+Inventory write mode, future gated scope:
+
+- `warehouse_id` - UI label: `Wildberries warehouse ID`;
+- `product_mapping_mode` - UI label: `Product matching`.
+
+Inventory write is stock-only. It must not update prices, product cards, supplies or marketplace orders.
+
+Official onboarding/docs links:
+
+- https://dev.wildberries.ru/
+- https://dev.wildberries.ru/en/docs/openapi/api-information
+- https://dev.wildberries.ru/en/docs/openapi/work-with-products
 
 ## Setup Flow
 

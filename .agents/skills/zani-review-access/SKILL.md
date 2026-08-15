@@ -10,7 +10,7 @@ Treat `AGENTS.md` and repository documentation as authoritative. Use this skill 
 ## Establish context
 
 1. Read `AGENTS.md` and `plan/clean_code_rules/zani_required_clean_code_rules.md`.
-2. Read `docs/PERMISSION_MATRIX.md` and the relevant models, services, selectors, permissions, serializers, views, tasks, and tests.
+2. Read `docs/security/PERMISSION_MATRIX.md` and the relevant models, services, selectors, permissions, serializers, views, tasks, and tests.
 3. Search for an existing tenant-aware layer before proposing a new manager, mixin, permission, endpoint, or helper.
 4. Identify the affected roles, entities, Business ownership paths, and platform/support exceptions.
 

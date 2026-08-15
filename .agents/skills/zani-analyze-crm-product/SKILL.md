@@ -7,7 +7,7 @@ description: Analyze implemented ZANI capabilities against practical SMB CRM mec
 
 ## Workflow
 
-1. Read `AGENTS.md`, `CRM_PRODUCTION_LAYER_PLAN.md`, relevant product docs, and the actual backend, frontend, API, and tests for the workflows in scope.
+1. Read `AGENTS.md`, `docs/crm/CRM_PRODUCTION_LAYER_PLAN.md`, relevant product docs, and the actual backend, frontend, API, and tests for the workflows in scope.
 2. Frame analysis around merchant jobs and end-to-end outcomes rather than a file or feature inventory.
 3. For each workflow, distinguish verified implementation, documented intent, partial foundation, missing user-facing flow, and inference.
 4. Compare against practical CRM mechanics: capture, qualification, ownership, next action, pipeline progression, communication history, scheduling, follow-up, forecasting, reporting, automation, and controlled AI assistance.

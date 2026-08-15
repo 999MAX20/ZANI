@@ -7,7 +7,7 @@
 Последний Render staging execution report:
 
 ```text
-docs/staging-render-execution-report.md
+docs/production/staging/staging-render-execution-report.md
 ```
 
 ## 1. Когда Запускать

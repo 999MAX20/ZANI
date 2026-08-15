@@ -11,7 +11,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             "--output-dir",
-            default="docs/import_samples",
+            default="docs/integrations/imports/samples",
             help="Directory where sample CSV files will be written.",
         )
 

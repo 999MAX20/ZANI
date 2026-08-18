@@ -3,7 +3,7 @@
 - Status: **ACTIVE / IN PROGRESS**
 - Created: 2026-08-18
 - Scope: remaining repository, security and verification debt discovered by the backend audit
-- Execution state: **IN PROGRESS - BE-REM-001 AND BE-REM-002 DONE**
+- Execution state: **IN PROGRESS - BE-REM-001 THROUGH BE-REM-003 DONE**
 - Owner: ZANI manager workflow
 
 ## Purpose
@@ -40,6 +40,7 @@ Confirmed results:
 - `python -m pip check`: no broken requirements;
 - frontend production build, i18n check and bundle gate: passed in the current audit cycle;
 - full Django suite after BE-REM-001: `858` tests passed;
+- full Django suite after BE-REM-003: `868` tests passed;
 - declared Python runtime lock after BE-REM-002: `0` known advisories;
 - rebuilt local `.venv`: matches the committed runtime/development locks and has no broken requirements;
 - frontend production dependency tree after BE-REM-002: `0` known advisories;
@@ -76,7 +77,7 @@ External production services are listed as a release gate because repository har
 | --- | --- | --- | --- | --- |
 | BE-REM-001 | Restore the clean full test gate | P0 | DONE | none |
 | BE-REM-002 | Patch and rebuild dependency baselines | P0 | DONE | BE-REM-001 |
-| BE-REM-003 | Harden refresh sessions and password flows | P0 | NOT_STARTED | BE-REM-002 |
+| BE-REM-003 | Harden refresh sessions and password flows | P0 | DONE | BE-REM-002 |
 | BE-REM-004 | Guarantee the safe API error envelope for unknown failures | P0 | NOT_STARTED | BE-REM-003 |
 | BE-REM-005 | Replace connector secret encryption and add key rotation | P1 | NOT_STARTED | BE-REM-002 |
 | BE-REM-006 | Add privileged-account MFA foundation | P1 | NOT_STARTED | BE-REM-003 |
@@ -423,6 +424,38 @@ Migration/env impact: no migrations or application environment variables changed
 Permission impact: none; full authorization and tenant suite remained green
 Notification/BusinessEvent/AI impact: no contract changes; complete backend suite remained green
 Residual risk: future advisories require recurring audits; production infrastructure readiness is unchanged; BE-REM-003 is next
+```
+
+### BE-REM-003 - Harden Refresh Sessions And Password Flows
+
+```text
+Task: BE-REM-003
+Branch: codex/backend-rem-003-auth-session-hardening
+Implementation commit: 6eee7e0
+Files changed: apps/accounts auth views, serializers, password/session security helpers and tests; business invitation password validation; frontend auth clients and Playwright token contracts
+Behavior delivered:
+- browser login, social signup, owner signup and refresh responses return access tokens only; refresh credentials remain in an HttpOnly cookie
+- refresh rotation replaces the cookie and rejects reused, malformed, expired and blacklisted credentials with safe responses
+- logout blacklists the presented refresh credential, clears the cookie and remains idempotent for invalid or already-revoked tokens
+- password change revokes all earlier refresh sessions transactionally and issues one replacement cookie for the authenticated browser
+- password-reset confirmation revokes every earlier refresh session and clears the browser cookie
+- signup, password change, password reset and invitation acceptance share the configured Django password policy with field-level validation feedback
+- login, logout, password-reset request, password change and password-reset confirmation record sanitized security history without credential material
+- the existing frontend single-flight refresh path is preserved; password change/reset requests explicitly accept cookie updates
+Checks run and exact result:
+- .\.venv\Scripts\python.exe manage.py test apps.accounts.tests.AuthSecurityBaselineTests -v 2 -> 23 focused auth tests passed in 40.443s before the final two refresh edge/throttle regressions were added; the final full suite covers all 25 auth tests
+- .\.venv\Scripts\python.exe manage.py test apps.businesses.tests_access.TeamAccessTests.test_accept_invitation_rejects_common_password -v 2 -> 1 test passed
+- .\.venv\Scripts\python.exe scripts\codex_verify.py --mode full --base-ref f7c6db0 -> migration drift and system check passed; 868 Django tests passed in 1451.618s; frontend stages passed; browser launch stopped only because the newly required Playwright Chromium 1223 binary was not installed locally
+- npx playwright install chromium -> installed Chromium and headless-shell revision 1223 in the local Playwright cache; no repository files changed
+- .\.venv\Scripts\python.exe scripts\codex_verify.py --mode browser --base-ref f7c6db0 -> passed; mobile manager and owner smoke 2/2 passed
+- .\.venv\Scripts\python.exe scripts\codex_verify.py --mode frontend --base-ref f7c6db0 -> passed; clean npm install reported 0 vulnerabilities, env isolation/i18n/TypeScript/app/widget builds passed, bundle budgets passed
+- .\.venv\Scripts\python.exe scripts\codex_verify.py --mode security --base-ref f7c6db0 -> passed; hashed production/development locks installable, pip-audit found 0 known vulnerabilities, npm audit found 0 vulnerabilities
+- git diff --check for the committed range and working tree -> passed
+Checks skipped and reason: no checks skipped; the environment-only browser-runtime failure was corrected and the failed browser stage plus all remaining full-gate stages were rerun through their dedicated deterministic modes
+Migration/env impact: no migrations and no application environment variables changed; Playwright Chromium 1223 was added only to the local user cache
+Permission impact: no role or tenant permission contract changed; the complete authorization and tenant suite remained green
+Notification/BusinessEvent/AI impact: none
+Residual risk: access JWTs issued before password change/reset remain valid until the configured short 15-minute expiry; production cookie/CORS/CSRF values still require the external deployment gate; BE-REM-004 is next
 ```
 
 Add one entry per subsequent completed item:

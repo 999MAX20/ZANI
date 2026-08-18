@@ -18,7 +18,7 @@
 
 ## Current Readiness Snapshot
 
-Update 2026-07-16: all numbered audit items below are closed at their current verified scope. This file is now a closed audit record, not the active remaining-work tracker. New product/technical work should be tracked in `actual_docs/CRM_TECHNICAL_MAP_AND_VERTICAL_MODES.md`, `CRM_PRODUCTION_LAYER_PLAN.md`, relevant docs and `API_ACTION_CONTRACT.md`.
+Update 2026-07-16: all numbered audit items below are closed at their current verified scope. This file is now a closed audit record, not the active remaining-work tracker. Its product/technical map is retained in `archive_docs/CRM_TECHNICAL_MAP_AND_VERTICAL_MODES.md`; new work should be tracked in an active approved technical document, `CRM_PRODUCTION_LAYER_PLAN.md`, relevant docs and `API_ACTION_CONTRACT.md`.
 
 Update 2026-07-14: если не учитывать боевой `.env`, реальные креды сторонних сервисов и включение внешних production-интеграций, ZANI сейчас примерно на **75-80% готов** как база для controlled pilot / MVP CRM.
 
@@ -1022,7 +1022,7 @@ Remaining product/production risks are not unchecked audit tasks:
 
 - live provider credentials and per-provider rollout gates still depend on `docs/provider-rollout.md`, `docs/integrations.md` and environment readiness;
 - production-like merchant data QA still needs to be run for realistic calendar, task, client, deal, inbox and AI daily workflows;
-- dentistry-first launch mode is not implemented yet and needs the product profile/capability layer described in `actual_docs/CRM_TECHNICAL_MAP_AND_VERTICAL_MODES.md`;
+- dentistry-first launch mode is not implemented yet and its earlier product profile/capability proposal is retained in `archive_docs/CRM_TECHNICAL_MAP_AND_VERTICAL_MODES.md`;
 - API/frontend work must keep `API_ACTION_CONTRACT.md` aligned with actual action endpoints.
 
 ## Current Audit Notes

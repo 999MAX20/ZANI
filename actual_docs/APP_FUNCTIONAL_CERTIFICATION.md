@@ -29,7 +29,7 @@ routes and interactions before certification can be closed.
 
 ## Relationship To Existing QA
 
-`APP_2_PHASE_10_INTERACTION_WORKFLOW_QA_PLAN.md` already proves broad route
+`archive_docs/APP_2_PHASE_10_INTERACTION_WORKFLOW_QA_PLAN.md` already proves broad route
 reachability, safe click-through behavior, representative entity workflows,
 role boundaries and responsive smoke. This certification extends that work.
 

@@ -63,7 +63,7 @@ Update 2026-07-16: Phase 13 backend boundary split is complete at the current sc
 
 ### Roadmap Status Hygiene
 
-Update 2026-07-16: `CRM_IMPLEMENTATION_TASKS.md` phases 0-13 and `CRM_AUDIT_REQUIRED_CHANGES.md` items 1-15 are closed at their current verified scope. Historical "remaining" notes below are follow-up risk/QA notes, not active unchecked checklist work. New product work now belongs in the current product/technical map (`actual_docs/CRM_TECHNICAL_MAP_AND_VERTICAL_MODES.md`), this production plan, the relevant docs, and `API_ACTION_CONTRACT.md`.
+Update 2026-07-16: `CRM_IMPLEMENTATION_TASKS.md` phases 0-13 and `CRM_AUDIT_REQUIRED_CHANGES.md` items 1-15 are closed at their current verified scope. Historical "remaining" notes below are follow-up risk/QA notes, not active unchecked checklist work. The product/technical map is retained in the archive (`archive_docs/CRM_TECHNICAL_MAP_AND_VERTICAL_MODES.md`); new work must be defined in an active approved technical document, this production plan, the relevant docs, and `API_ACTION_CONTRACT.md`.
 
 ### Integrations
 
@@ -390,7 +390,7 @@ Remaining follow-up after Phase 13:
 Update 2026-07-24: completed frontend/backend phase plans are frozen as
 evidence. The active local pre-pilot queue, autonomous two-track execution
 protocol, Git rules and external-production boundary live in
-`actual_docs/PROJECT_EXECUTION_MASTER.md`.
+`archive_docs/PROJECT_EXECUTION_MASTER.md`.
 
 The old page-by-page priority list above has been superseded by completed phase notes, the closed audit checklist and the current product/technical map. Current near-term priorities are:
 

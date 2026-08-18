@@ -1,9 +1,9 @@
 # ZANI Backend Audit Remediation Plan
 
-- Status: **ACTIVE / PLANNED**
+- Status: **ACTIVE / IN PROGRESS**
 - Created: 2026-08-18
 - Scope: remaining repository, security and verification debt discovered by the backend audit
-- Execution state: **IN PROGRESS - BE-REM-001 DONE**
+- Execution state: **IN PROGRESS - BE-REM-001 AND BE-REM-002 DONE**
 - Owner: ZANI manager workflow
 
 ## Purpose
@@ -40,9 +40,9 @@ Confirmed results:
 - `python -m pip check`: no broken requirements;
 - frontend production build, i18n check and bundle gate: passed in the current audit cycle;
 - full Django suite after BE-REM-001: `858` tests passed;
-- declared Python runtime lock: `7` known advisories in `2` packages;
-- currently installed local `.venv`: `17` known advisories in `4` packages;
-- frontend production dependency tree: `3` advisories (`2 high`, `1 moderate`, `0 critical`);
+- declared Python runtime lock after BE-REM-002: `0` known advisories;
+- rebuilt local `.venv`: matches the committed runtime/development locks and has no broken requirements;
+- frontend production dependency tree after BE-REM-002: `0` known advisories;
 - local production-readiness audit: `6 pass`, `1 warn`, `10 fail`, which is expected while the runtime remains on local SQLite/mock infrastructure.
 
 The audit's only full-suite failure was repository path drift. BE-REM-001 aligned the test with the canonical `docs/integrations/imports/samples/` location and restored the green full-suite gate.
@@ -75,7 +75,7 @@ External production services are listed as a release gate because repository har
 | ID | Work item | Priority | Status | Depends on |
 | --- | --- | --- | --- | --- |
 | BE-REM-001 | Restore the clean full test gate | P0 | DONE | none |
-| BE-REM-002 | Patch and rebuild dependency baselines | P0 | NOT_STARTED | BE-REM-001 |
+| BE-REM-002 | Patch and rebuild dependency baselines | P0 | DONE | BE-REM-001 |
 | BE-REM-003 | Harden refresh sessions and password flows | P0 | NOT_STARTED | BE-REM-002 |
 | BE-REM-004 | Guarantee the safe API error envelope for unknown failures | P0 | NOT_STARTED | BE-REM-003 |
 | BE-REM-005 | Replace connector secret encryption and add key rotation | P1 | NOT_STARTED | BE-REM-002 |
@@ -392,7 +392,37 @@ Checks skipped and reason: frontend and browser gates were not repeated because 
 Migration/env impact: none
 Permission impact: none
 Notification/BusinessEvent/AI impact: none
-Residual risk: dependency and security remediation continues with BE-REM-002; this task does not change production readiness
+Residual risk: dependency remediation is tracked and completed by BE-REM-002; this task does not change production readiness
+```
+
+### BE-REM-002 - Patch And Rebuild Dependency Baselines
+
+```text
+Task: BE-REM-002
+Branch: codex/backend-rem-002-dependency-baseline
+Implementation commit: b708a59
+Files changed: requirements.in, requirements.txt, frontend/package-lock.json
+Resolved Python advisories: cryptography 48.0.1 -> 50.0.0; sqlparse 0.5.5 -> 0.6.0
+Resolved frontend advisories: brace-expansion 5.0.8 -> 5.0.9; dompurify 3.4.12 -> 3.4.13; nanoid 3.3.16 -> 3.3.18
+Checks run and exact result:
+- pip-compile regenerated requirements.txt with hashes; requirements-dev.txt remained unchanged after regeneration
+- local .venv recreated with Python 3.12.13 and installed from requirements.txt plus requirements-dev.txt using --require-hashes
+- .\.venv\Scripts\python.exe -m pip check -> No broken requirements found
+- .\.venv\Scripts\pip-sync.exe --dry-run requirements.txt requirements-dev.txt -> Everything up-to-date
+- .\.venv\Scripts\python.exe -m pip_audit -r requirements.txt --disable-pip -> No known vulnerabilities found
+- npm ci -> 246 packages installed; audit reported 0 vulnerabilities
+- npm audit --omit=dev -> 0 vulnerabilities
+- .\.venv\Scripts\python.exe manage.py check -> System check identified no issues
+- .\.venv\Scripts\python.exe manage.py makemigrations --check --dry-run -> No changes detected
+- .\.venv\Scripts\python.exe manage.py test -v 2 -> 858 tests passed in 1642.358s
+- npm run build -> passed, including i18n, TypeScript, app and widget production builds
+- npm run check:bundle -> passed; no chunk or app-shell budget violations
+- git diff --check -> passed
+Checks skipped and reason: browser E2E and visual gates were not repeated because no application or UI source changed; live provider checks remain outside this repository-only dependency task
+Migration/env impact: no migrations or application environment variables changed; local .venv and frontend node_modules were rebuilt from committed locks
+Permission impact: none; full authorization and tenant suite remained green
+Notification/BusinessEvent/AI impact: no contract changes; complete backend suite remained green
+Residual risk: future advisories require recurring audits; production infrastructure readiness is unchanged; BE-REM-003 is next
 ```
 
 Add one entry per subsequent completed item:

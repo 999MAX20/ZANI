@@ -13,7 +13,7 @@ from apps.core.models import ImportJob
 class PilotImportSamplesTests(SimpleTestCase):
     def test_committed_pilot_import_samples_are_parseable(self):
         base_dir = Path(__file__).resolve().parents[2]
-        samples_dir = base_dir / "docs" / "import_samples"
+        samples_dir = base_dir / "docs" / "integrations" / "imports" / "samples"
 
         expected = {
             ImportJob.EntityTypes.CLIENTS: samples_dir / "clients_template.csv",

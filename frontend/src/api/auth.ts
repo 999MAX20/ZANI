@@ -66,7 +66,9 @@ export async function updateCurrentUser(payload: Partial<Pick<CurrentUser, "full
 }
 
 export async function changePassword(payload: { current_password: string; new_password: string }) {
-  const { data } = await apiClient.post<{ ok: boolean }>("/api/auth/change-password/", payload);
+  const { data } = await apiClient.post<{ ok: boolean }>("/api/auth/change-password/", payload, {
+    withCredentials: true,
+  });
   return data;
 }
 

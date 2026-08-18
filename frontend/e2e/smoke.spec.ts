@@ -12,7 +12,6 @@ const users = {
 
 type TokenPayload = {
   access: string;
-  refresh: string;
 };
 
 const tokenCache = new Map<string, TokenPayload>();
@@ -171,7 +170,6 @@ async function apiLogin(page: Page, email: string) {
   expect(response.ok()).toBeTruthy();
   const payload = (await response.json()) as TokenPayload;
   expect(payload.access).toBeTruthy();
-  expect(payload.refresh).toBeTruthy();
   tokenCache.set(email, payload);
   return payload;
 }

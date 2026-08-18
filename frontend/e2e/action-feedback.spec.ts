@@ -8,7 +8,6 @@ const ownerEmail =
 
 type TokenPayload = {
   access: string;
-  refresh: string;
 };
 
 async function apiLogin(page: Page) {

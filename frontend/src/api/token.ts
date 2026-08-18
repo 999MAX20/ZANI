@@ -12,7 +12,6 @@ export type LoginPayload = {
 
 export type TokenPair = {
   access: string;
-  refresh?: string;
 };
 
 export type SocialProvider = "google" | "apple";
@@ -91,7 +90,11 @@ export async function requestPasswordReset(payload: PasswordResetRequestPayload)
 }
 
 export async function confirmPasswordReset(payload: PasswordResetConfirmPayload) {
-  const { data } = await axios.post<{ ok: boolean }>(`${baseURL}/api/auth/password-reset/confirm/`, payload);
+  const { data } = await axios.post<{ ok: boolean }>(
+    `${baseURL}/api/auth/password-reset/confirm/`,
+    payload,
+    { withCredentials: true },
+  );
   return data;
 }
 

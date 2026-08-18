@@ -6,12 +6,14 @@ from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.utils.text import slugify
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from apps.accounts.auth_views import record_login, set_refresh_cookie
+from apps.accounts.auth_views import clear_refresh_cookie, record_login, record_security_event, set_refresh_cookie
+from apps.accounts.passwords import enforce_password_policy
 from apps.accounts.serializers import (
     ChangePasswordSerializer,
     CurrentUserSerializer,
@@ -22,11 +24,12 @@ from apps.accounts.serializers import (
     SocialAuthSerializer,
 )
 from apps.accounts.models import User
+from apps.accounts.session_security import update_password_and_revoke_sessions
 from apps.accounts.social_auth import get_or_create_social_user, verify_social_id_token
 from apps.businesses.access import ensure_default_roles, ensure_owner_memberships_for_user
 from apps.businesses.capabilities import apply_business_type_defaults
 from apps.businesses.models import Business, BusinessMember, BusinessRole
-from apps.core.models import LoginHistory
+from apps.core.models import AuditLog, LoginHistory
 from apps.crm.services import ensure_default_pipeline
 
 
@@ -51,9 +54,18 @@ class ChangePasswordView(APIView):
     def post(self, request):
         serializer = ChangePasswordSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
-        request.user.set_password(serializer.validated_data["new_password"])
-        request.user.save(update_fields=["password"])
-        return Response({"ok": True})
+        revoked_sessions, refresh = update_password_and_revoke_sessions(
+            request.user,
+            serializer.validated_data["new_password"],
+            issue_replacement=True,
+        )
+        record_security_event(
+            request,
+            user=request.user,
+            event="password_changed",
+            sessions_revoked=revoked_sessions,
+        )
+        return set_refresh_cookie(Response({"ok": True}), str(refresh))
 
 
 class CurrentUserLoginHistoryView(APIView):
@@ -99,7 +111,6 @@ class SocialAuthView(APIView):
         response = Response(
             {
                 "access": str(refresh.access_token),
-                "refresh": str(refresh),
                 "created": created,
                 "provider": claims.provider,
             }
@@ -137,6 +148,12 @@ class PasswordResetRequestView(APIView):
                 recipient_list=[user.email],
                 fail_silently=True,
             )
+            record_security_event(
+                request,
+                user=user,
+                event="password_reset_requested",
+                risk_level=AuditLog.RiskLevels.LOW,
+            )
         return Response(response)
 
     def _build_reset_url(self, request, reset_path):
@@ -161,9 +178,21 @@ class PasswordResetConfirmView(APIView):
             user = None
         if user is None or not default_token_generator.check_token(user, serializer.validated_data["token"]):
             return Response({"detail": "Invalid or expired reset link."}, status=400)
-        user.set_password(serializer.validated_data["password"])
-        user.save(update_fields=["password"])
-        return Response({"ok": True})
+        try:
+            enforce_password_policy(serializer.validated_data["password"], user=user)
+        except ValidationError as exc:
+            raise ValidationError({"password": exc.detail}) from exc
+        revoked_sessions, _ = update_password_and_revoke_sessions(
+            user,
+            serializer.validated_data["password"],
+        )
+        record_security_event(
+            request,
+            user=user,
+            event="password_reset_confirmed",
+            sessions_revoked=revoked_sessions,
+        )
+        return clear_refresh_cookie(Response({"ok": True}))
 
 
 class OwnerSignupView(APIView):
@@ -219,7 +248,6 @@ class OwnerSignupView(APIView):
         response = Response(
             {
                 "access": str(refresh.access_token),
-                "refresh": str(refresh),
                 "user": CurrentUserSerializer(user).data,
                 "business": {"id": business.id, "name": business.name, "slug": business.slug},
             },

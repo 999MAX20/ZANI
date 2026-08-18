@@ -6,7 +6,6 @@ const ownerEmail = process.env.E2E_OWNER_EMAIL || "business_owner@example.com";
 
 type TokenPayload = {
   access: string;
-  refresh: string;
 };
 
 type OwnerDashboardMetricsPayload = {

@@ -2,6 +2,7 @@ from django.db.models import Prefetch
 from rest_framework import serializers
 
 from apps.accounts.models import SocialIdentity, User, UserPreference
+from apps.accounts.passwords import enforce_password_policy
 from apps.businesses.access import effective_permissions_for, owner_business_role, user_is_business_owner
 from apps.businesses.capabilities import capability_payload
 from apps.businesses.models import BusinessMember
@@ -145,13 +146,16 @@ class CurrentUserUpdateSerializer(serializers.ModelSerializer):
 
 class ChangePasswordSerializer(serializers.Serializer):
     current_password = serializers.CharField(write_only=True)
-    new_password = serializers.CharField(min_length=8, write_only=True)
+    new_password = serializers.CharField(write_only=True)
 
     def validate_current_password(self, value):
         user = self.context["request"].user
         if not user.check_password(value):
             raise serializers.ValidationError("Current password is incorrect.")
         return value
+
+    def validate_new_password(self, value):
+        return enforce_password_policy(value, user=self.context["request"].user)
 
 
 class SocialAuthSerializer(serializers.Serializer):
@@ -167,12 +171,12 @@ class PasswordResetRequestSerializer(serializers.Serializer):
 class PasswordResetConfirmSerializer(serializers.Serializer):
     uid = serializers.CharField()
     token = serializers.CharField()
-    password = serializers.CharField(min_length=8, write_only=True)
+    password = serializers.CharField(write_only=True)
 
 
 class OwnerSignupSerializer(serializers.Serializer):
     email = serializers.EmailField()
-    password = serializers.CharField(min_length=8, write_only=True)
+    password = serializers.CharField(write_only=True)
     full_name = serializers.CharField(required=False, allow_blank=True, max_length=255)
     phone = serializers.CharField(required=False, allow_blank=True, max_length=32)
     business_name = serializers.CharField(max_length=255)
@@ -181,3 +185,16 @@ class OwnerSignupSerializer(serializers.Serializer):
         default="other",
     )
     city = serializers.CharField(required=False, allow_blank=True, max_length=128)
+
+    def validate(self, attrs):
+        email = attrs.get("email", "").strip().lower()
+        candidate = User(
+            username=email,
+            email=email,
+            full_name=attrs.get("full_name", "").strip(),
+        )
+        try:
+            enforce_password_policy(attrs["password"], user=candidate)
+        except serializers.ValidationError as exc:
+            raise serializers.ValidationError({"password": exc.detail}) from exc
+        return attrs

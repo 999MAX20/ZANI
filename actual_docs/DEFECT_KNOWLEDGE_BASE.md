@@ -77,6 +77,7 @@ the accepted project branch.
 | ZD-001 | INTERACTION | Internal search on Leads and Deals | Search controls across Leads, Deals, Clients, Tasks, Inbox, Outreach, Pricing and global search | FIXED_BRANCH / TEST_DEBT | `1b40d00` |
 | ZD-002 | VISUAL / TECHNICAL_LEAK | Outbound manager message in Inbox | Shared message bubbles for manager, bot/AI and client plus failed-message action in the conversation list | VERIFIED_BRANCH | `7284920` |
 | ZD-003 | INTERACTION | Client CRM drawer after canceling the native file picker | Shared `CrmEntityDrawer` attachment flow for client, lead, deal and appointment entities, including entity drawers opened from Tasks | VERIFIED_BRANCH | `f81cee7` |
+| ZD-004 | CONSISTENCY / TECHNICAL_LEAK | Code-level fallback audit | Shared API parsing, crash boundaries and direct error fields across merchant and platform surfaces | CONFIRMED | `UNIFIED_FALLBACK_EXPERIENCE_PLAN.md` |
 
 ## Detailed Precedents
 
@@ -149,6 +150,34 @@ the accepted project branch.
 - Derived audit rule: canceling any browser/OS-mediated action must leave the UI
   in the same usable state as before it opened. This applies to file pickers,
   share dialogs, print dialogs, permission prompts and external OAuth windows.
+
+### ZD-004 — Fallback surfaces can expose raw technical messages
+
+- Recorded: 2026-08-18
+- Type: `CONSISTENCY / TECHNICAL_LEAK`
+- Status: `CONFIRMED`
+- Owner-observed surface: broad fallback/error review requested by the owner.
+- Evidence: shared `getApiErrorMessage` can return raw response strings,
+  backend `detail` and arbitrary key/value output; application and route error
+  boundaries can render runtime `error.message` or `statusText`; several
+  automation, outreach, pricing, developer and operations surfaces render raw
+  error fields directly.
+- User impact: the same failure can appear with different visuals and copy, and
+  a merchant can receive English or technical implementation details without a
+  clear recovery action.
+- Actual scope: backend exception/persistence boundaries, frontend API error
+  normalization, crash boundaries, page/query states, action feedback,
+  background jobs, Inbox delivery and provider/integration status.
+- Required correction: execute
+  `actual_docs/UNIFIED_FALLBACK_EXPERIENCE_PLAN.md` and use one safe error
+  taxonomy, one normalization layer, shared visual surfaces and
+  permission-aware recovery.
+- Verification status: no implementation has started. The source audit is the
+  baseline; browser failure injection and cross-role certification remain
+  required.
+- Derived audit rule: no merchant-visible component may render raw backend or
+  runtime error text. Every failure must be normalized, localized, sanitized
+  and paired with a safe next action when one exists.
 
 ## Regression Rule Catalogue
 

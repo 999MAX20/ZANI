@@ -14,6 +14,12 @@ the canonical ZANI repository.
 3. `APP_FUNCTIONAL_CERTIFICATION.md` — future cross-application certification
    plan. It is intentionally **PLANNED / ON HOLD** and may begin only after an
    explicit owner instruction.
+4. `BACKEND_AUDIT_REMEDIATION_PLAN.md` — active planned queue for the seven
+   remaining backend audit findings, security hardening and their verification
+   gates.
+5. `UNIFIED_FALLBACK_EXPERIENCE_PLAN.md` — active planned queue for the shared
+   backend/frontend error contract, merchant-safe fallback UX and recovery
+   certification.
 
 ## Boundary
 
@@ -21,6 +27,7 @@ Completed execution plans, historical audits, readiness reports and superseded
 roadmaps live in `../archive_docs/`. They remain preserved as evidence and
 project knowledge, but they do not authorize new implementation work.
 
-Production/security remediation is not yet an active execution queue. It must
-be defined in a separate approved document rather than mixed into a UI/UX or
-certification phase.
+Production/security and fallback remediation now have separate active planning
+documents. Their presence does not authorize implementation; execution begins
+only after an explicit owner instruction and follows each document's phase and
+manager gates.

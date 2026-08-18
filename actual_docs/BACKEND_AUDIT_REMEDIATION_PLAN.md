@@ -3,7 +3,7 @@
 - Status: **ACTIVE / PLANNED**
 - Created: 2026-08-18
 - Scope: remaining repository, security and verification debt discovered by the backend audit
-- Execution state: **NOT STARTED**
+- Execution state: **IN PROGRESS - BE-REM-001 DONE**
 - Owner: ZANI manager workflow
 
 ## Purpose
@@ -39,13 +39,13 @@ Confirmed results:
 - `python manage.py makemigrations --check --dry-run`: no changes detected;
 - `python -m pip check`: no broken requirements;
 - frontend production build, i18n check and bundle gate: passed in the current audit cycle;
-- full Django suite: `858` tests, `857` passed, `1` failed;
+- full Django suite after BE-REM-001: `858` tests passed;
 - declared Python runtime lock: `7` known advisories in `2` packages;
 - currently installed local `.venv`: `17` known advisories in `4` packages;
 - frontend production dependency tree: `3` advisories (`2 high`, `1 moderate`, `0 critical`);
 - local production-readiness audit: `6 pass`, `1 warn`, `10 fail`, which is expected while the runtime remains on local SQLite/mock infrastructure.
 
-The only full-suite failure is a repository path drift. The committed import samples live in `docs/integrations/imports/samples/`, but `apps/core/tests_import_samples.py` still expects `docs/import_samples/`.
+The audit's only full-suite failure was repository path drift. BE-REM-001 aligned the test with the canonical `docs/integrations/imports/samples/` location and restored the green full-suite gate.
 
 ## Scope Boundary
 
@@ -74,7 +74,7 @@ External production services are listed as a release gate because repository har
 
 | ID | Work item | Priority | Status | Depends on |
 | --- | --- | --- | --- | --- |
-| BE-REM-001 | Restore the clean full test gate | P0 | NOT_STARTED | none |
+| BE-REM-001 | Restore the clean full test gate | P0 | DONE | none |
 | BE-REM-002 | Patch and rebuild dependency baselines | P0 | NOT_STARTED | BE-REM-001 |
 | BE-REM-003 | Harden refresh sessions and password flows | P0 | NOT_STARTED | BE-REM-002 |
 | BE-REM-004 | Guarantee the safe API error envelope for unknown failures | P0 | NOT_STARTED | BE-REM-003 |
@@ -374,7 +374,28 @@ This plan is complete only when:
 
 ## Evidence Log
 
-No implementation evidence is recorded yet. Add one entry per completed item:
+### BE-REM-001 - Restore The Clean Full Test Gate
+
+```text
+Task: BE-REM-001
+Branch: codex/backend-rem-001-import-sample-gate
+Implementation commit: 72b7cc1
+Files changed: apps/core/tests_import_samples.py
+Checks run and exact result:
+- .\.venv\Scripts\python.exe manage.py test apps.core.tests_import_samples -v 2 -> 2 tests passed
+- .\.venv\Scripts\python.exe manage.py test -v 1 -> 858 tests passed in 1574.400s
+- .\.venv\Scripts\python.exe manage.py makemigrations --check --dry-run -> No changes detected
+- .\.venv\Scripts\python.exe manage.py check -> System check identified no issues
+- stale docs/import_samples reference scan outside this historical plan -> 0 matches
+- git diff --check -> passed
+Checks skipped and reason: frontend and browser gates were not repeated because the change only corrects a backend test fixture path and does not alter runtime or frontend code
+Migration/env impact: none
+Permission impact: none
+Notification/BusinessEvent/AI impact: none
+Residual risk: dependency and security remediation continues with BE-REM-002; this task does not change production readiness
+```
+
+Add one entry per subsequent completed item:
 
 ```text
 Task:

@@ -6,6 +6,7 @@ from apps.core.production_rules import is_local_or_private_hostname
 from apps.core.security_config import has_strong_shared_secret, shared_secret_strength_detail
 from apps.core.models import ImportJob
 from apps.integrations.connectors import CONNECTOR_PROVIDER_CAPABILITIES
+from apps.integrations.credential_encryption import credential_key_configuration_issues
 from apps.integrations.models import BusinessConnector
 from apps.integrations.providers.registry import registered_providers
 
@@ -148,13 +149,19 @@ def _connector_health_gate(provider):
     )
 
 
-def _credential_gate(provider):
+def _credential_gate(provider, enabled):
+    key_issues = credential_key_configuration_issues(production_like=True)
+    legacy_enabled = bool(getattr(settings, "CONNECTOR_CREDENTIAL_ALLOW_LEGACY_DECRYPT", True))
+    production_safe = not key_issues and not legacy_enabled
     return _gate(
         f"{provider}.credentials",
-        "Credential storage and masking model exists",
-        True,
-        "ConnectorCredential stores encrypted_value and masked_value.",
-        "Store merchant credentials through ConnectorCredential or provider settings, never in frontend code.",
+        "Credential storage uses a production-safe AEAD keyring",
+        (not enabled) or production_safe,
+        (
+            f"enabled={enabled}; keyring_safe={not key_issues}; "
+            f"legacy_decrypt_enabled={legacy_enabled}"
+        ),
+        "Configure an independent AES-256 keyring, rotate legacy envelopes and disable legacy decrypt before real provider traffic.",
     )
 
 
@@ -174,7 +181,7 @@ def _telegram_check(order):
     gates = [
         _adapter_gate(BusinessConnector.Providers.TELEGRAM),
         _connector_catalog_gate(BusinessConnector.Providers.TELEGRAM),
-        _credential_gate("telegram"),
+        _credential_gate("telegram", enabled),
         _event_normalization_gate("telegram"),
         _idempotency_gate("telegram"),
         _connector_health_gate("telegram"),
@@ -311,7 +318,7 @@ def _whatsapp_check(order):
     gates = [
         _adapter_gate(BusinessConnector.Providers.WHATSAPP),
         _connector_catalog_gate(BusinessConnector.Providers.WHATSAPP),
-        _credential_gate("whatsapp"),
+        _credential_gate("whatsapp", enabled),
         _event_normalization_gate("whatsapp"),
         _idempotency_gate("whatsapp"),
         _connector_health_gate("whatsapp"),
@@ -341,7 +348,7 @@ def _instagram_check(order):
     gates = [
         _adapter_gate(BusinessConnector.Providers.INSTAGRAM),
         _connector_catalog_gate(BusinessConnector.Providers.INSTAGRAM),
-        _credential_gate("instagram"),
+        _credential_gate("instagram", enabled),
         _event_normalization_gate("instagram"),
         _idempotency_gate("instagram"),
         _connector_health_gate("instagram"),
@@ -387,7 +394,7 @@ def _marketplace_check(order):
         _event_normalization_gate("marketplace"),
         _idempotency_gate("marketplace"),
         _connector_health_gate("marketplace"),
-        _credential_gate("marketplace"),
+        _credential_gate("marketplace", enabled),
     ]
     return _provider_check("marketplace", "Kaspi / marketplace / 1C", order, enabled, gates)
 

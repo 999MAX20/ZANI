@@ -8,7 +8,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from apps.core.production_rules import is_safe_public_https_url
-from apps.integrations.connectors import decrypt_credential_value
+from apps.integrations.connectors import read_connector_credential
 from apps.integrations.models import ConnectorSyncRun
 
 
@@ -30,11 +30,9 @@ class OzonReadOnlyEvent:
 
 
 def get_ozon_credentials(connector):
-    client_id = connector.credentials.filter(key="client_id").first()
-    api_key = connector.credentials.filter(key="api_key").first()
     return {
-        "client_id": decrypt_credential_value(client_id.encrypted_value) if client_id else "",
-        "api_key": decrypt_credential_value(api_key.encrypted_value) if api_key else "",
+        "client_id": read_connector_credential(connector, "client_id", expired_error="Ozon Client-Id expired."),
+        "api_key": read_connector_credential(connector, "api_key", expired_error="Ozon API key expired."),
     }
 
 

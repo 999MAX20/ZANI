@@ -9,6 +9,7 @@ ZANI integrations must stay simple for merchants: connect account, verify access
 - `CONNECTOR_BLUEPRINT.md` — how all ZANI connectors should be shaped.
 - `integrations.md` — implemented integration foundation, APIs, credentials and BusinessEvent model.
 - `provider-rollout.md` — provider rollout order and readiness gates.
+- `connector-credential-key-rotation.md` — AES-GCM key configuration, rotation, rollback and recovery runbook.
 
 ## Marketplace connectors
 

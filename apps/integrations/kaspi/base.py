@@ -8,7 +8,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from apps.core.production_rules import is_safe_public_https_url
-from apps.integrations.connectors import decrypt_credential_value
+from apps.integrations.connectors import read_connector_credential
 from apps.integrations.models import ConnectorSyncRun
 
 
@@ -33,10 +33,7 @@ def normalize_kaspi_amount(value):
 
 
 def get_kaspi_api_token(connector):
-    credential = connector.credentials.filter(key="api_token").first()
-    if not credential:
-        return ""
-    return decrypt_credential_value(credential.encrypted_value)
+    return read_connector_credential(connector, "api_token", expired_error="Kaspi API token expired.")
 
 
 def kaspi_connector_safe_config(connector):

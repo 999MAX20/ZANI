@@ -5,6 +5,8 @@ import json
 
 import environ
 
+from config.local_connector_keys import LOCAL_KEY_ID, load_or_create_local_connector_keyring
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -39,6 +41,22 @@ DEBUG = env("DEBUG")
 ENVIRONMENT = env("ENVIRONMENT", default="development")
 IS_PRODUCTION_LIKE_ENVIRONMENT = ENVIRONMENT in {"production", "staging"}
 ALLOW_DEMO_MERCHANT_FLOWS = env.bool("ALLOW_DEMO_MERCHANT_FLOWS", default=ENVIRONMENT != "production")
+_CONNECTOR_CREDENTIAL_KEYS_FROM_ENV = env("CONNECTOR_CREDENTIAL_KEYS", default="")
+if _CONNECTOR_CREDENTIAL_KEYS_FROM_ENV or IS_PRODUCTION_LIKE_ENVIRONMENT:
+    CONNECTOR_CREDENTIAL_KEYS = _CONNECTOR_CREDENTIAL_KEYS_FROM_ENV
+else:
+    CONNECTOR_CREDENTIAL_KEYS = json.dumps(
+        load_or_create_local_connector_keyring(),
+        separators=(",", ":"),
+    )
+CONNECTOR_CREDENTIAL_ACTIVE_KEY_ID = env(
+    "CONNECTOR_CREDENTIAL_ACTIVE_KEY_ID",
+    default="" if IS_PRODUCTION_LIKE_ENVIRONMENT or _CONNECTOR_CREDENTIAL_KEYS_FROM_ENV else LOCAL_KEY_ID,
+)
+CONNECTOR_CREDENTIAL_ALLOW_LEGACY_DECRYPT = env.bool(
+    "CONNECTOR_CREDENTIAL_ALLOW_LEGACY_DECRYPT",
+    default=True,
+)
 ALLOWED_HOSTS = env("ALLOWED_HOSTS", default=["*"])
 CORS_ALLOWED_ORIGINS = env("CORS_ALLOWED_ORIGINS", default=[])
 CORS_ALLOW_CREDENTIALS = env("CORS_ALLOW_CREDENTIALS")

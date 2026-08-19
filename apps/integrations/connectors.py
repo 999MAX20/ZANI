@@ -1,11 +1,9 @@
-import base64
 import hashlib
 import json
-import secrets
+import logging
 from datetime import timedelta
 
 from django.conf import settings
-from django.core import signing
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 
@@ -14,10 +12,20 @@ from apps.activities.services import create_activity_event
 from apps.activities.taxonomy import ActivityEvents
 from apps.clients.models import Client
 from apps.crm.models import Deal
+from apps.integrations.credential_encryption import (
+    ConnectorCredentialError,
+    CredentialExpiredError,
+    decrypt_connector_credential,
+    decrypt_credential_value,
+    encrypt_credential_value,
+)
 from apps.integrations.models import BusinessConnector, BusinessEvent, ConnectorCredential, ConnectorSyncRun
 from apps.integrations.sanitization import sanitize_config, sanitize_error_text
 from apps.leads.models import Lead
 from apps.scheduling.models import Appointment
+
+
+logger = logging.getLogger("zani.integrations")
 
 
 CONNECTOR_PROVIDER_CAPABILITIES = {
@@ -272,37 +280,6 @@ def mask_secret(value):
     return f"{value[:4]}...{value[-4:]}"
 
 
-def _credential_key_stream(salt, length):
-    seed = f"{settings.SECRET_KEY}:{salt}:connector-credential".encode("utf-8")
-    output = b""
-    counter = 0
-    while len(output) < length:
-        output += hashlib.sha256(seed + counter.to_bytes(4, "big")).digest()
-        counter += 1
-    return output[:length]
-
-
-def encrypt_credential_value(raw_value):
-    plaintext = str(raw_value).encode("utf-8")
-    salt = secrets.token_hex(16)
-    stream = _credential_key_stream(salt, len(plaintext))
-    ciphertext = bytes(left ^ right for left, right in zip(plaintext, stream))
-    envelope = {
-        "v": 1,
-        "salt": salt,
-        "ciphertext": base64.urlsafe_b64encode(ciphertext).decode("ascii"),
-    }
-    return signing.dumps(envelope, salt="zani.connector-credential")
-
-
-def decrypt_credential_value(encrypted_value):
-    envelope = signing.loads(encrypted_value, salt="zani.connector-credential")
-    ciphertext = base64.urlsafe_b64decode(envelope["ciphertext"].encode("ascii"))
-    stream = _credential_key_stream(envelope["salt"], len(ciphertext))
-    plaintext = bytes(left ^ right for left, right in zip(ciphertext, stream))
-    return plaintext.decode("utf-8")
-
-
 def create_or_update_credential(connector, key, raw_value, expires_at=None):
     encrypted_value = encrypt_credential_value(raw_value)
     defaults = {
@@ -318,6 +295,32 @@ def create_or_update_credential(connector, key, raw_value, expires_at=None):
         defaults=defaults,
     )
     return credential
+
+
+def read_connector_credential(connector, key, *, expired_error="Connector credential expired."):
+    credential = connector.credentials.filter(key=key).first()
+    if credential is None:
+        return ""
+    try:
+        return decrypt_connector_credential(credential)
+    except CredentialExpiredError:
+        connector.status = BusinessConnector.Statuses.EXPIRED_CREDENTIALS
+        connector.last_error = expired_error
+        connector.save(update_fields=["status", "last_error", "updated_at"])
+        return ""
+    except ConnectorCredentialError:
+        logger.exception(
+            "connector.credential_unavailable",
+            extra={
+                "business_id": connector.business_id,
+                "connector_id": connector.id,
+                "credential_key": key,
+            },
+        )
+        connector.status = BusinessConnector.Statuses.NEEDS_ATTENTION
+        connector.last_error = "Stored credential is unavailable. Reconnect the provider."
+        connector.save(update_fields=["status", "last_error", "updated_at"])
+        return ""
 
 
 def connector_has_active_credentials(connector):

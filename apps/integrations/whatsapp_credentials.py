@@ -1,6 +1,6 @@
 from django.utils import timezone
 
-from apps.integrations.connectors import create_or_update_credential, decrypt_credential_value
+from apps.integrations.connectors import create_or_update_credential, read_connector_credential
 from apps.integrations.models import BusinessConnector, ConnectorCredential
 
 
@@ -50,12 +50,11 @@ def get_whatsapp_access_token(channel):
     ).first()
     credential = connector.credentials.filter(key="access_token").first() if connector else None
     if credential:
-        if credential.expires_at and credential.expires_at <= timezone.now():
-            connector.status = BusinessConnector.Statuses.EXPIRED_CREDENTIALS
-            connector.last_error = "WhatsApp access token expired."
-            connector.save(update_fields=["status", "last_error", "updated_at"])
-            return ""
-        return decrypt_credential_value(credential.encrypted_value)
+        return read_connector_credential(
+            connector,
+            "access_token",
+            expired_error="WhatsApp access token expired.",
+        )
 
     legacy_token = (channel.config_json or {}).get("access_token", "")
     if legacy_token:

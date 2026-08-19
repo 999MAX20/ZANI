@@ -99,6 +99,7 @@ Use the provider-specific form before turning on any real provider env flag.
 ## Current Provider Notes
 
 - Update 2026-07-14: connector setup/status/test/sync/OAuth actions are service-backed for BusinessConnector providers, and Telegram/WhatsApp/Instagram bot-channel setup/status/test/sync actions are service-backed for BotChannel endpoints. Telegram/Instagram/WhatsApp bot-channel credentials use `ConnectorCredential`, and inbound provider messages have database-backed delivery idempotency by `conversation + direction + external_message_id`. This is a rollout boundary only; provider live flags and readiness gates below still control production exposure.
+- Update 2026-08-19: real provider readiness now requires a production-safe independent AES-256-GCM credential keyring and legacy decryption disabled. Local machine keys remain valid only while real provider flags are off.
 - Update 2026-07-16: merchant integration UI must keep daily setup simple. Credentials, webhook/callback values, raw provider errors and advanced import knobs stay behind owner/admin/support fallback controls; daily cards show only status, business value, safe actions and merchant-safe recovery messages.
 - Telegram: has provider adapter, webhook verification, credential storage for bot tokens and replay-safe inbound messages. Real mode requires `TELEGRAM_ENABLED=True`, `TELEGRAM_WEBHOOK_SECRET`, Redis/Celery runtime and Sentry.
 - Website/public forms: can be used first because it does not require paid provider credentials. Keep public throttles enabled.

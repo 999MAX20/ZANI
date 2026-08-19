@@ -14,6 +14,7 @@ from apps.core.production_rules import has_tls_redis_broker as _has_tls_redis_br
 from apps.core.production_rules import has_transactional_email as _has_transactional_email
 from apps.core.production_rules import unsafe_rate_limits as _unsafe_rate_limits
 from apps.core.security_config import has_strong_secret_key
+from apps.integrations.credential_encryption import credential_key_configuration_issues
 
 
 @register()
@@ -174,6 +175,25 @@ def production_settings_check(app_configs, **kwargs):
                 "Instagram production configuration is not safe.",
                 hint="Keep INSTAGRAM_ENABLED=False or set strong INSTAGRAM_VERIFY_TOKEN, strong INSTAGRAM_APP_SECRET/META_APP_SECRET and public HTTPS INSTAGRAM_GRAPH_BASE_URL.",
                 id="zani.W017",
+            )
+        )
+
+    credential_key_issues = credential_key_configuration_issues(production_like=True)
+    if credential_key_issues:
+        warnings.append(
+            Warning(
+                "Connector credential encryption keys are not production safe.",
+                hint="Configure an independent AES-256 keyring and active key ID: " + " ".join(credential_key_issues),
+                id="zani.W018",
+            )
+        )
+
+    if settings.CONNECTOR_CREDENTIAL_ALLOW_LEGACY_DECRYPT:
+        warnings.append(
+            Warning(
+                "Legacy connector credential decryption remains enabled.",
+                hint="Rotate every legacy credential, verify the rotation report, then set CONNECTOR_CREDENTIAL_ALLOW_LEGACY_DECRYPT=False.",
+                id="zani.W019",
             )
         )
 

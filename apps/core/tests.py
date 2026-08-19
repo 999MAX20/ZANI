@@ -272,6 +272,8 @@ class ProductionReadinessTests(TestCase):
         self.assertIn("zani.W012", warning_ids)
         self.assertIn("zani.W013", warning_ids)
         self.assertIn("zani.W014", warning_ids)
+        self.assertIn("zani.W018", warning_ids)
+        self.assertIn("zani.W019", warning_ids)
 
     @override_settings(
         ENVIRONMENT="production",
@@ -344,6 +346,18 @@ class ProductionReadinessTests(TestCase):
         warning_ids = {warning.id for warning in run_checks()}
 
         self.assertNotIn("zani.W017", warning_ids)
+
+    @override_settings(
+        ENVIRONMENT="production",
+        CONNECTOR_CREDENTIAL_KEYS={"prod-v1": "QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE="},
+        CONNECTOR_CREDENTIAL_ACTIVE_KEY_ID="prod-v1",
+        CONNECTOR_CREDENTIAL_ALLOW_LEGACY_DECRYPT=False,
+    )
+    def test_production_settings_check_accepts_rotated_connector_credential_keyring(self):
+        warning_ids = {warning.id for warning in run_checks()}
+
+        self.assertNotIn("zani.W018", warning_ids)
+        self.assertNotIn("zani.W019", warning_ids)
 
     @override_settings(ENVIRONMENT="production", SECRET_KEY="x" * 64)
     def test_production_settings_check_warns_about_low_entropy_secret_key(self):

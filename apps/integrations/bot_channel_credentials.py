@@ -1,7 +1,5 @@
-from django.utils import timezone
-
 from apps.bots.models import BotChannel
-from apps.integrations.connectors import create_or_update_credential, decrypt_credential_value
+from apps.integrations.connectors import create_or_update_credential, read_connector_credential
 from apps.integrations.models import BusinessConnector, ConnectorCredential
 
 
@@ -71,12 +69,7 @@ def get_bot_channel_credential(channel, provider, key):
     credential = connector.credentials.filter(key=key).first() if connector else None
     meta = PROVIDER_META[provider]
     if credential:
-        if credential.expires_at and credential.expires_at <= timezone.now():
-            connector.status = BusinessConnector.Statuses.EXPIRED_CREDENTIALS
-            connector.last_error = meta["expired_error"]
-            connector.save(update_fields=["status", "last_error", "updated_at"])
-            return ""
-        return decrypt_credential_value(credential.encrypted_value)
+        return read_connector_credential(connector, key, expired_error=meta["expired_error"])
 
     legacy_key = meta["legacy_key"]
     legacy_value = (channel.config_json or {}).get(legacy_key, "")

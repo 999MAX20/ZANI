@@ -66,6 +66,9 @@ Set at least:
 
 ```bash
 SECRET_KEY=generate-a-strong-32-plus-character-key
+CONNECTOR_CREDENTIAL_ACTIVE_KEY_ID=prod-2026-08
+CONNECTOR_CREDENTIAL_KEYS={"prod-2026-08":"replace-with-base64url-encoded-32-byte-key"}
+CONNECTOR_CREDENTIAL_ALLOW_LEGACY_DECRYPT=False
 DEBUG=False
 ALLOWED_HOSTS=api.your-domain.com
 DATABASE_URL=postgres://zani_user:password@db:5432/zani

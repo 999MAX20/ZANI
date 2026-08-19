@@ -68,6 +68,9 @@ class ProviderRolloutReadinessTests(SimpleTestCase):
         CELERY_BROKER_URL="rediss://redis.example.com:6379/0",
         AUTOMATIONS_RUN_INLINE=False,
         SENTRY_DSN="https://example@sentry.invalid/1",
+        CONNECTOR_CREDENTIAL_KEYS={"prod-v1": "QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE="},
+        CONNECTOR_CREDENTIAL_ACTIVE_KEY_ID="prod-v1",
+        CONNECTOR_CREDENTIAL_ALLOW_LEGACY_DECRYPT=False,
     )
     def test_telegram_real_mode_passes_with_runtime_gates(self):
         result = run_provider_rollout_readiness_check(provider="telegram")
@@ -92,6 +95,9 @@ class ProviderRolloutReadinessTests(SimpleTestCase):
         CELERY_BROKER_URL="redis://localhost:6379/0",
         AUTOMATIONS_RUN_INLINE=False,
         SENTRY_DSN="https://example@sentry.invalid/1",
+        CONNECTOR_CREDENTIAL_KEYS={"prod-v1": "QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE="},
+        CONNECTOR_CREDENTIAL_ACTIVE_KEY_ID="prod-v1",
+        CONNECTOR_CREDENTIAL_ALLOW_LEGACY_DECRYPT=False,
     )
     def test_whatsapp_real_mode_requires_meta_webhook_security(self):
         result = run_provider_rollout_readiness_check(provider="whatsapp")
@@ -107,6 +113,9 @@ class ProviderRolloutReadinessTests(SimpleTestCase):
         CELERY_BROKER_URL="rediss://redis.example.com:6379/0",
         AUTOMATIONS_RUN_INLINE=False,
         SENTRY_DSN="https://example@sentry.invalid/1",
+        CONNECTOR_CREDENTIAL_KEYS={"prod-v1": "QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE="},
+        CONNECTOR_CREDENTIAL_ACTIVE_KEY_ID="prod-v1",
+        CONNECTOR_CREDENTIAL_ALLOW_LEGACY_DECRYPT=False,
     )
     def test_whatsapp_real_mode_passes_with_meta_security_and_runtime(self):
         result = run_provider_rollout_readiness_check(provider="whatsapp")
@@ -118,6 +127,9 @@ class ProviderRolloutReadinessTests(SimpleTestCase):
         CELERY_BROKER_URL="redis://localhost:6379/0",
         AUTOMATIONS_RUN_INLINE=False,
         SENTRY_DSN="https://example@sentry.invalid/1",
+        CONNECTOR_CREDENTIAL_KEYS={"prod-v1": "QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE="},
+        CONNECTOR_CREDENTIAL_ACTIVE_KEY_ID="prod-v1",
+        CONNECTOR_CREDENTIAL_ALLOW_LEGACY_DECRYPT=False,
         META_APP_SECRET="",
         INSTAGRAM_APP_SECRET="",
     )
@@ -135,11 +147,32 @@ class ProviderRolloutReadinessTests(SimpleTestCase):
         CELERY_BROKER_URL="rediss://redis.example.com:6379/0",
         AUTOMATIONS_RUN_INLINE=False,
         SENTRY_DSN="https://example@sentry.invalid/1",
+        CONNECTOR_CREDENTIAL_KEYS={"prod-v1": "QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE="},
+        CONNECTOR_CREDENTIAL_ACTIVE_KEY_ID="prod-v1",
+        CONNECTOR_CREDENTIAL_ALLOW_LEGACY_DECRYPT=False,
     )
     def test_instagram_real_mode_passes_with_meta_security_and_runtime(self):
         result = run_provider_rollout_readiness_check(provider="instagram")
 
         self.assertEqual(result["providers"][0]["status"], "ready")
+
+    @override_settings(
+        TELEGRAM_ENABLED=True,
+        TELEGRAM_WEBHOOK_SECRET="telegram-global-A8v_qR7m-L2p_N9x-T5s_K3u-Y6b_C4d",
+        TELEGRAM_BASE_API_URL="https://api.telegram.org",
+        CELERY_BROKER_URL="rediss://redis.example.com:6379/0",
+        AUTOMATIONS_RUN_INLINE=False,
+        SENTRY_DSN="https://example@sentry.invalid/1",
+        CONNECTOR_CREDENTIAL_KEYS={"local-machine-v1": "QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE="},
+        CONNECTOR_CREDENTIAL_ACTIVE_KEY_ID="local-machine-v1",
+        CONNECTOR_CREDENTIAL_ALLOW_LEGACY_DECRYPT=True,
+    )
+    def test_real_provider_rejects_local_or_legacy_credential_keyring(self):
+        result = run_provider_rollout_readiness_check(provider="telegram")
+
+        telegram = result["providers"][0]
+        self.assertEqual(telegram["status"], "blocked")
+        self.assertIn("telegram.credentials", {gate["key"] for gate in telegram["gates"] if gate["status"] == "fail"})
 
     def test_management_command_can_fail_on_blockers(self):
         with override_settings(OPENAI_API_KEY="sk-test", AUTOMATIONS_RUN_INLINE=True):

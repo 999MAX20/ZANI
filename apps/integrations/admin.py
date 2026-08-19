@@ -79,7 +79,8 @@ class ConnectorCredentialAdmin(admin.ModelAdmin):
     list_display = ("business", "connector", "key", "masked_value", "expires_at", "rotated_at")
     list_filter = ("business", "connector__provider", "expires_at")
     search_fields = ("business__name", "connector__name", "key", "masked_value")
-    readonly_fields = ("encrypted_value", "masked_value", "rotated_at", "created_at", "updated_at")
+    exclude = ("encrypted_value",)
+    readonly_fields = ("masked_value", "rotated_at", "created_at", "updated_at")
 
 
 @admin.register(BusinessEvent)

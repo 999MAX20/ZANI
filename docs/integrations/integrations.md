@@ -5,7 +5,7 @@ Phase 4 adds the first production-oriented integration foundation for merchant c
 ## Core Concepts
 
 - `BusinessConnector` is the merchant-facing connection object.
-- `ConnectorCredential` stores provider secrets per connector.
+- `ConnectorCredential` stores provider secrets per connector in a versioned AES-256-GCM envelope with an independent key ID. Use `connector-credential-key-rotation.md` for key setup, legacy migration, rollback and recovery.
 - `BusinessEvent` stores normalized inbound events with idempotency.
 - `ConnectorSyncRun` stores health checks and future pull/webhook sync runs.
 

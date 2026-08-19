@@ -26,6 +26,8 @@ Required env values by environment:
 | `ENVIRONMENT` | `development` | `staging` | `production` |
 | `ALLOW_DEMO_MERCHANT_FLOWS` | `True` | `True` for QA/test data | `False` |
 | `SECRET_KEY` | local random | strong secret | strong secret |
+| `CONNECTOR_CREDENTIAL_ACTIVE_KEY_ID` / `CONNECTOR_CREDENTIAL_KEYS` | dedicated local mock key | independent managed AES-256 keyring | independent managed AES-256 keyring |
+| `CONNECTOR_CREDENTIAL_ALLOW_LEGACY_DECRYPT` | allowed for local migration tests | `False` after rotation | `False` after rotation |
 | `DATABASE_URL` | SQLite/local Postgres | managed Postgres | managed Postgres |
 | `REDIS_URL` | local/Docker Redis | managed Redis | managed Redis |
 | `ALLOWED_HOSTS` | localhost | staging API host | production API host |
@@ -39,6 +41,9 @@ Required env values by environment:
 
 ```env
 SECRET_KEY=<32-plus-byte-random-secret>
+CONNECTOR_CREDENTIAL_ACTIVE_KEY_ID=prod-2026-08
+CONNECTOR_CREDENTIAL_KEYS={"prod-2026-08":"<base64url-encoded-32-byte-key>"}
+CONNECTOR_CREDENTIAL_ALLOW_LEGACY_DECRYPT=False
 DEBUG=False
 ENVIRONMENT=production
 ALLOW_DEMO_MERCHANT_FLOWS=False
@@ -248,6 +253,8 @@ The app now emits Django system check warnings for unsafe staging/production set
 - `zani.W015` — Telegram real-mode settings are unsafe.
 - `zani.W016` — WhatsApp real-mode settings are unsafe.
 - `zani.W017` — Instagram real-mode settings are unsafe.
+- `zani.W018` — connector credential AEAD keyring/active key is missing, invalid or using the local development key.
+- `zani.W019` — legacy v1 credential decryption remains enabled after the migration window.
 
 Run:
 

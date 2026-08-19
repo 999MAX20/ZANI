@@ -3,7 +3,7 @@
 - Status: **ACTIVE / IN PROGRESS**
 - Created: 2026-08-18
 - Scope: remaining repository, security and verification debt discovered by the backend audit
-- Execution state: **IN PROGRESS - BE-REM-001 THROUGH BE-REM-003 DONE**
+- Execution state: **IN PROGRESS - BE-REM-001 THROUGH BE-REM-006 DONE**
 - Owner: ZANI manager workflow
 
 ## Purpose
@@ -41,6 +41,7 @@ Confirmed results:
 - frontend production build, i18n check and bundle gate: passed in the current audit cycle;
 - full Django suite after BE-REM-001: `858` tests passed;
 - full Django suite after BE-REM-003: `868` tests passed;
+- full Django suite after BE-REM-006: `899` tests passed;
 - declared Python runtime lock after BE-REM-002: `0` known advisories;
 - rebuilt local `.venv`: matches the committed runtime/development locks and has no broken requirements;
 - frontend production dependency tree after BE-REM-002: `0` known advisories;
@@ -80,7 +81,7 @@ External production services are listed as a release gate because repository har
 | BE-REM-003 | Harden refresh sessions and password flows | P0 | DONE | BE-REM-002 |
 | BE-REM-004 | Guarantee the safe API error envelope for unknown failures | P0 | DONE | BE-REM-003 |
 | BE-REM-005 | Replace connector secret encryption and add key rotation | P1 | DONE | BE-REM-002 |
-| BE-REM-006 | Add privileged-account MFA foundation | P1 | NOT_STARTED | BE-REM-003 |
+| BE-REM-006 | Add privileged-account MFA foundation | P1 | DONE | BE-REM-003 |
 | BE-REM-007 | Complete the functional certification evidence | P1 | NOT_STARTED | BE-REM-001..006 |
 
 ## BE-REM-001 - Restore The Clean Full Test Gate
@@ -287,6 +288,8 @@ The owner must confirm whether MFA is:
 
 1. mandatory for owner and administrator from the first paid pilot; or
 2. optional during pilot and mandatory before general availability.
+
+**Owner decision (2026-08-19): option 1 selected. MFA is mandatory for owner and administrator accounts from the first paid pilot. Lower roles are not forced into MFA by this phase.**
 
 ### Acceptance criteria
 
@@ -520,7 +523,42 @@ Checks skipped and reason: no repository quality-gate stage skipped; real provid
 Migration/env impact: no Django migration or dependency-lock change; adds CONNECTOR_CREDENTIAL_ACTIVE_KEY_ID, CONNECTOR_CREDENTIAL_KEYS and CONNECTOR_CREDENTIAL_ALLOW_LEGACY_DECRYPT, plus an optional local key-file override; existing production rows must follow the documented external rotation runbook
 Permission impact: no permission model changed; owner API access, operator denial and cross-tenant 404 behavior are covered and the complete authorization/tenant suite remained green
 Notification/BusinessEvent/AI impact: no notification, normalized event or AI contract changed; provider credential reads and real-provider readiness enforcement changed
-Residual risk: target environments must provision and back up the managed keyring, preserve SECRET_KEY until every legacy row is rotated, execute dry-run/rotation with a verified restore point, disable legacy decrypt, retain old keys through the recovery window and complete real-provider smoke; BE-REM-006 is next and has not started
+Residual risk: target environments must provision and back up the managed keyring, preserve SECRET_KEY until every legacy row is rotated, execute dry-run/rotation with a verified restore point, disable legacy decrypt, retain old keys through the recovery window and complete real-provider smoke; privileged MFA is now delivered by BE-REM-006
+```
+
+### BE-REM-006 - Privileged Account MFA Foundation
+
+```text
+Task: BE-REM-006
+Branch: codex/backend-rem-006-privileged-mfa
+Implementation commits: 08a5c17, cfbaaea, bc30822
+Files changed: privileged MFA models/migration/service/API/admin; login, signup, social, refresh, logout and password-session contracts; account and MFA frontend flows; RU/KK/EN copy; environment templates; security/readiness checks; dependency locks; MFA operations documentation and regression tests
+Behavior delivered:
+- owner, active business administrator and platform administrator accounts must enroll and verify TOTP before receiving a privileged browser session when AUTH_PRIVILEGED_MFA_REQUIRED is enabled; manager, operator and specialist roles are not forced by this phase
+- enrollment secrets use the existing versioned AES-256-GCM credential keyring; recovery codes are 96-bit random one-time values stored only as keyed SHA-256 digests and shown once
+- login challenges are short-lived, single-purpose and single-use, lock after five failed attempts, reject replayed TOTP counters and record sanitized success/failure audit events
+- legacy privileged refresh credentials without the mfa_verified claim are rejected; password change preserves a verified replacement session only after password plus MFA confirmation
+- security-sensitive account actions support user-bound expiring step-up confirmation; recovery-code regeneration, session revocation and controlled MFA reset/disable are available from account security
+- mandatory-policy reset requires current password, a valid factor and an audited reason, revokes sessions and returns the account to mandatory enrollment instead of creating an MFA-free session
+- Django admin exposes no MFA secret, recovery digest or challenge token hash and does not permit manual MFA record mutation
+- enrollment start is idempotent inside one challenge and the frontend deduplicates React StrictMode requests; the browser-discovered duplicate request/database-lock 500 was fixed before acceptance
+- Django was patched from 5.2.16 to 5.2.17 after the final security audit detected the newly published PYSEC-2026-3717 advisory
+Checks run and exact result:
+- .\.venv\Scripts\python.exe manage.py test apps.accounts.tests_mfa -v 2 -> 13/13 focused MFA tests passed, including owner/admin policy, idempotent enrollment, replay, lockout, expiry, recovery, reset, step-up, password change, tenant isolation and lower-role behavior
+- extended accounts/core security suite -> 121 tests passed before final full-suite certification
+- npm run test:login-page --prefix frontend -> 12/12 auth policy tests passed, including StrictMode enrollment deduplication
+- npm run build --prefix frontend -> passed; 4662 RU/KK/EN keys, TypeScript, app build and widget build green
+- .\.venv\Scripts\python.exe scripts\codex_verify.py --mode backend --base-ref 91b70a0 -> passed on final code; migration drift clean, system check clean, 899 Django tests passed in 1684.799s
+- .\.venv\Scripts\python.exe scripts\codex_verify.py --mode frontend --base-ref 91b70a0 -> passed; deterministic install reported 0 vulnerabilities, env isolation, i18n, TypeScript/app/widget builds and bundle budgets green
+- .\.venv\Scripts\python.exe scripts\codex_verify.py --mode browser --base-ref 91b70a0 -> passed; mobile manager and owner smoke 2/2 passed
+- .\.venv\Scripts\python.exe scripts\codex_verify.py --mode security --base-ref 91b70a0 -> passed after the Django 5.2.17 patch; hashed runtime/dev locks installable, pip-audit found no known vulnerabilities and npm audit found 0 vulnerabilities
+- targeted Playwright mandatory-MFA flow on a fresh temporary SQLite database -> owner password login redirected to /mfa; enrollment start 1x200, confirmation 1x200, ten recovery codes displayed once, subsequent password login required MFA, verification 1x200 and navigation to /app succeeded; 0 unhandled exceptions or 500 responses
+- committed-range, working-tree and index diff hygiene -> passed in every deterministic mode
+Checks skipped and reason: no repository quality-gate stage skipped; a real third-party authenticator and production support recovery drill require owner-controlled devices and the target operating environment, so the deterministic browser flow generated the standards-compatible TOTP locally and deleted every temporary secret, database, log and screenshot afterward
+Migration/env impact: adds accounts.0006_privileged_mfa; adds AUTH_PRIVILEGED_MFA_REQUIRED, AUTH_MFA_ISSUER, AUTH_MFA_CHALLENGE_SECONDS, AUTH_MFA_STEP_UP_SECONDS and AUTH_MFA_RATE; adds pyotp 2.10.0; patches Django to 5.2.17; deployment must run manage.py migrate and provision the existing managed credential keyring before mandatory MFA is enabled
+Permission impact: MFA records and actions are self-scoped; cross-tenant targeting cannot manage another user's factor; owner/admin are mandatory under the selected policy while lower roles preserve the existing session contract
+Notification/BusinessEvent/AI impact: no notification, normalized business-event or AI contract changed; security audit logs gained MFA lifecycle events without codes, secrets or tokens
+Residual risk: production onboarding must teach owners to save recovery codes and support must rehearse verified device-loss recovery; passkeys/WebAuthn remain a later hardening option; production credentials, managed services and live-environment evidence remain outside this repository phase; BE-REM-007 is next but is not started under the phase stop gate
 ```
 
 Add one entry per subsequent completed item:

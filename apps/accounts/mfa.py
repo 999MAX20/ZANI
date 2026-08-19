@@ -92,8 +92,11 @@ def issue_session(user, *, mfa_verified=False):
     return refresh
 
 
+@transaction.atomic
 def start_auth_challenge(user):
     purpose = MfaChallenge.Purposes.LOGIN if has_confirmed_mfa(user) else MfaChallenge.Purposes.ENROLLMENT
+    if purpose == MfaChallenge.Purposes.ENROLLMENT:
+        MfaDevice.objects.filter(user=user, confirmed_at__isnull=True).delete()
     token, challenge = _create_challenge(user, purpose)
     return {
         "code": "mfa_required" if purpose == MfaChallenge.Purposes.LOGIN else "mfa_enrollment_required",
@@ -106,16 +109,18 @@ def start_auth_challenge(user):
 def start_enrollment(*, challenge_token):
     with transaction.atomic():
         challenge = _resolve_challenge(challenge_token, MfaChallenge.Purposes.ENROLLMENT, lock=True)
-        secret = pyotp.random_base32()
-        device, _ = MfaDevice.objects.select_for_update().get_or_create(
-            user=challenge.user,
-            defaults={"encrypted_secret": encrypt_credential_value(secret)},
-        )
-        if device.is_confirmed:
-            raise ValidationError({"detail": "MFA is already enabled.", "code": "mfa_already_enabled"})
-        device.encrypted_secret = encrypt_credential_value(secret)
-        device.last_used_counter = -1
-        device.save(update_fields=["encrypted_secret", "last_used_counter", "updated_at"])
+        try:
+            device = MfaDevice.objects.select_for_update().get(user=challenge.user)
+        except MfaDevice.DoesNotExist:
+            secret = pyotp.random_base32()
+            device = MfaDevice.objects.create(
+                user=challenge.user,
+                encrypted_secret=encrypt_credential_value(secret),
+            )
+        else:
+            if device.is_confirmed:
+                raise ValidationError({"detail": "MFA is already enabled.", "code": "mfa_already_enabled"})
+            secret = decrypt_credential_value(device.encrypted_secret)
         label = challenge.user.email
         uri = pyotp.TOTP(secret).provisioning_uri(name=label, issuer_name=settings.AUTH_MFA_ISSUER)
         return {
@@ -128,9 +133,11 @@ def start_enrollment(*, challenge_token):
         }
 
 
+@transaction.atomic
 def begin_authenticated_enrollment(user):
     if not is_privileged_mfa_user(user):
         raise ValidationError({"detail": "MFA is available to privileged accounts.", "code": "mfa_not_available"})
+    MfaDevice.objects.filter(user=user, confirmed_at__isnull=True).delete()
     token, _ = _create_challenge(user, MfaChallenge.Purposes.ENROLLMENT)
     return start_enrollment(challenge_token=token)
 

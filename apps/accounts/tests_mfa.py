@@ -88,6 +88,19 @@ class PrivilegedMfaTests(TestCase):
         self.assertEqual(replay.status_code, 401)
         self.assertEqual(replay.data.get("code"), "mfa_code_invalid", replay.data)
 
+    def test_enrollment_start_is_idempotent_for_the_same_challenge(self):
+        login = self._login()
+        payload = {"challenge_token": login.data["challenge_token"]}
+
+        first = self.client.post("/api/auth/mfa/enrollment/start/", payload, format="json")
+        second = self.client.post("/api/auth/mfa/enrollment/start/", payload, format="json")
+
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 200)
+        self.assertEqual(first.data["manual_key"], second.data["manual_key"])
+        self.assertEqual(first.data["otpauth_uri"], second.data["otpauth_uri"])
+        self.assertEqual(MfaDevice.objects.filter(user=self.owner, confirmed_at__isnull=True).count(), 1)
+
     def test_recovery_code_is_single_use_and_never_returned_by_status(self):
         recovery_codes, _ = self._enroll_owner()
         recovery = recovery_codes[0]

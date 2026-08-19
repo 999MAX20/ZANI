@@ -152,23 +152,39 @@ export function isMfaPendingResponse(value: unknown): value is MfaPendingRespons
   return code === "mfa_required" || code === "mfa_enrollment_required";
 }
 
-export async function startMfaEnrollment(challengeToken?: string) {
-  const { data } = await axios.post<MfaEnrollment>(
+const pendingMfaEnrollmentRequests = new Map<string, Promise<MfaEnrollment>>();
+
+export function startMfaEnrollment(challengeToken?: string) {
+  if (challengeToken) {
+    const pendingRequest = pendingMfaEnrollmentRequests.get(challengeToken);
+    if (pendingRequest) return pendingRequest;
+  }
+
+  const request = axios.post<MfaEnrollment>(
     `${baseURL}/api/auth/mfa/enrollment/start/`,
     challengeToken ? { challenge_token: challengeToken } : {},
     { withCredentials: true, headers: tokenStorage.getAccess() ? { Authorization: `Bearer ${tokenStorage.getAccess()}` } : undefined },
-  );
-  return data;
+  ).then(({ data }) => data);
+
+  if (challengeToken) {
+    pendingMfaEnrollmentRequests.set(challengeToken, request);
+    void request.catch(() => pendingMfaEnrollmentRequests.delete(challengeToken));
+  }
+  return request;
 }
 
 export async function confirmMfaEnrollment(challengeToken: string, code: string) {
-  const { data } = await axios.post<MfaSessionResponse>(
-    `${baseURL}/api/auth/mfa/enrollment/confirm/`,
-    { challenge_token: challengeToken, code },
-    { withCredentials: true },
-  );
-  tokenStorage.setAccess(data.access);
-  return data;
+  try {
+    const { data } = await axios.post<MfaSessionResponse>(
+      `${baseURL}/api/auth/mfa/enrollment/confirm/`,
+      { challenge_token: challengeToken, code },
+      { withCredentials: true },
+    );
+    tokenStorage.setAccess(data.access);
+    return data;
+  } finally {
+    pendingMfaEnrollmentRequests.delete(challengeToken);
+  }
 }
 
 export async function verifyMfaLogin(challengeToken: string, code: string) {

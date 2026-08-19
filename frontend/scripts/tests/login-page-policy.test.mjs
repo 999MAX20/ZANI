@@ -12,6 +12,7 @@ const passwordTogglePath = path.join(frontendDir, "src", "features", "auth", "Pa
 const loginCssPath = path.join(frontendDir, "src", "features", "auth", "authLoginSerenity.css");
 const languageSelectorPath = path.join(frontendDir, "src", "components", "layout", "LanguageSelector.tsx");
 const routerPath = path.join(frontendDir, "src", "app", "router.tsx");
+const tokenApiPath = path.join(frontendDir, "src", "api", "token.ts");
 
 const loginPage = fs.readFileSync(loginPagePath, "utf8");
 const signupPage = fs.readFileSync(signupPagePath, "utf8");
@@ -19,12 +20,15 @@ const passwordToggle = fs.readFileSync(passwordTogglePath, "utf8");
 const loginCss = fs.readFileSync(loginCssPath, "utf8");
 const languageSelector = fs.readFileSync(languageSelectorPath, "utf8");
 const router = fs.readFileSync(routerPath, "utf8");
+const tokenApi = fs.readFileSync(tokenApiPath, "utf8");
 
 test("login social flow always clears pending state on token failure", () => {
-  const completeSocialLogin = loginPage.match(/async function completeSocialLogin[\s\S]*?\n  }\n/);
+  const completeSocialLogin = loginPage.match(/async function completeSocialLogin[\s\S]*?\r?\n  }\r?\n/);
   assert.ok(completeSocialLogin, "completeSocialLogin should exist");
   assert.match(completeSocialLogin[0], /finally\s*{[\s\S]*setSocialLoading\(null\)/);
-  assert.doesNotMatch(completeSocialLogin[0], /if \(!idToken\)\s*{[\s\S]*return;/);
+  const missingTokenGuard = completeSocialLogin[0].match(/if \(!idToken\)\s*{([\s\S]*?)\r?\n\s*}/);
+  assert.ok(missingTokenGuard, "missing social token guard should exist");
+  assert.doesNotMatch(missingTokenGuard[1], /return;/);
 });
 
 test("login page keeps unconfigured social providers out of the compact form", () => {
@@ -101,4 +105,11 @@ test("signup password rules are validation errors, not static hint chips", () =>
   assert.match(signupPage, /regex\([\s\S]*signup\.passwordLettersNumbersCheck/);
   assert.match(signupPage, /refine\([\s\S]*signup\.passwordNoSpacesCheck/);
   assert.doesNotMatch(loginCss, /serenity-login__password-checks/);
+});
+
+test("MFA enrollment deduplicates StrictMode requests by challenge", () => {
+  assert.match(tokenApi, /pendingMfaEnrollmentRequests = new Map<string, Promise<MfaEnrollment>>/);
+  assert.match(tokenApi, /pendingMfaEnrollmentRequests\.get\(challengeToken\)/);
+  assert.match(tokenApi, /pendingMfaEnrollmentRequests\.set\(challengeToken, request\)/);
+  assert.match(tokenApi, /pendingMfaEnrollmentRequests\.delete\(challengeToken\)/);
 });

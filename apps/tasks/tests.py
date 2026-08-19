@@ -14,6 +14,7 @@ from apps.bots.models import Bot, BotConversation
 from apps.businesses.access import Actions, Resources
 from apps.businesses.models import Business, BusinessMember, BusinessRole, RolePermission
 from apps.clients.models import Client
+from apps.core.exceptions import SAFE_INTERNAL_DETAIL
 from apps.core.models import AuditLog
 from apps.notifications.models import Notification, NotificationPreference
 from apps.scheduling.models import Appointment
@@ -155,9 +156,14 @@ class TasksAndNotificationsPolishTests(TestCase):
             "apps.tasks.services.Notification.objects.bulk_create",
             side_effect=RuntimeError("injected notification failure"),
         ):
-            with self.assertRaises(RuntimeError):
-                self.api.post("/api/tasks/", payload, format="json")
+            response = self.api.post("/api/tasks/", payload, format="json")
 
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(response.data["code"], "internal_error")
+        self.assertEqual(response.data["detail"], SAFE_INTERNAL_DETAIL)
+        self.assertEqual(response.data["errors"], {})
+        self.assertTrue(response.data["request_id"])
+        self.assertNotIn("notification failure", str(response.data))
         self.assertFalse(Task.objects.filter(business=self.business, title=payload["title"]).exists())
         self.assertFalse(
             ActivityEvent.objects.filter(
@@ -195,11 +201,16 @@ class TasksAndNotificationsPolishTests(TestCase):
             "apps.tasks.services.Notification.objects.bulk_create",
             side_effect=RuntimeError("injected notification failure"),
         ):
-            with self.assertRaises(RuntimeError):
-                self.api.post("/api/tasks/", payload, format="json", **headers)
+            failed = self.api.post("/api/tasks/", payload, format="json", **headers)
 
         retry = self.api.post("/api/tasks/", payload, format="json", **headers)
 
+        self.assertEqual(failed.status_code, 500)
+        self.assertEqual(failed.data["code"], "internal_error")
+        self.assertEqual(failed.data["detail"], SAFE_INTERNAL_DETAIL)
+        self.assertEqual(failed.data["errors"], {})
+        self.assertTrue(failed.data["request_id"])
+        self.assertNotIn("notification failure", str(failed.data))
         self.assertEqual(retry.status_code, 201, retry.data)
         task = Task.objects.get(id=retry.data["id"])
         self.assertEqual(Task.objects.filter(business=self.business, title=payload["title"]).count(), 1)

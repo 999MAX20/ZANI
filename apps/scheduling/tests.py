@@ -12,6 +12,7 @@ from apps.activities.taxonomy import ActivityEvents
 from apps.analytics.models import AnalyticsEvent
 from apps.businesses.models import Business, BusinessMember
 from apps.clients.models import Client
+from apps.core.exceptions import SAFE_INTERNAL_DETAIL
 from apps.core.models import AuditLog
 from apps.leads.models import Lead
 from apps.notifications.models import Notification
@@ -1512,13 +1513,18 @@ class CorePlatformTests(TestCase):
         before = self._business_side_effect_counts(self.business)
 
         with patch("apps.scheduling.services.write_audit_log", side_effect=RuntimeError("audit unavailable")):
-            with self.assertRaisesMessage(RuntimeError, "audit unavailable"):
-                api.post(
-                    f"/api/appointments/{own_appointment.id}/add-note/",
-                    {"text": "This note must roll back."},
-                    format="json",
-                )
+            response = api.post(
+                f"/api/appointments/{own_appointment.id}/add-note/",
+                {"text": "This note must roll back."},
+                format="json",
+            )
 
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(response.data["code"], "internal_error")
+        self.assertEqual(response.data["detail"], SAFE_INTERNAL_DETAIL)
+        self.assertEqual(response.data["errors"], {})
+        self.assertTrue(response.data["request_id"])
+        self.assertNotIn("audit unavailable", str(response.data))
         self.assertEqual(self._business_side_effect_counts(self.business), before)
 
     def _doctor_appointment_scope_fixture(self):

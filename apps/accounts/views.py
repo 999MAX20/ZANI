@@ -6,13 +6,13 @@ from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.utils.text import slugify
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import AuthenticationFailed, ValidationError
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.accounts.auth_views import clear_refresh_cookie, record_login, record_security_event, set_refresh_cookie
+from apps.accounts.mfa import has_confirmed_mfa, issue_session, requires_mfa, start_auth_challenge, verify_user_factor
 from apps.accounts.passwords import enforce_password_policy
 from apps.accounts.serializers import (
     ChangePasswordSerializer,
@@ -54,11 +54,18 @@ class ChangePasswordView(APIView):
     def post(self, request):
         serializer = ChangePasswordSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
-        revoked_sessions, refresh = update_password_and_revoke_sessions(
+        if has_confirmed_mfa(request.user) and not verify_user_factor(
+            request.user,
+            request.data.get("mfa_code"),
+            allow_recovery=True,
+        ):
+            record_security_event(request, user=request.user, event="password_change_mfa_failed")
+            raise AuthenticationFailed("The verification code is invalid.", code="mfa_code_invalid")
+        revoked_sessions, _ = update_password_and_revoke_sessions(
             request.user,
             serializer.validated_data["new_password"],
-            issue_replacement=True,
         )
+        refresh = issue_session(request.user, mfa_verified=has_confirmed_mfa(request.user))
         record_security_event(
             request,
             user=request.user,
@@ -106,7 +113,12 @@ class SocialAuthView(APIView):
             serializer.validated_data["id_token"],
         )
         user, created = get_or_create_social_user(claims)
-        refresh = RefreshToken.for_user(user)
+        if requires_mfa(user):
+            return Response(
+                {**start_auth_challenge(user), "created": created, "provider": claims.provider},
+                status=202,
+            )
+        refresh = issue_session(user, mfa_verified=False)
         record_login(request, user=user, email=user.email, status=LoginHistory.Statuses.SUCCESS)
         response = Response(
             {
@@ -243,7 +255,16 @@ class OwnerSignupView(APIView):
             business_role=owner_role,
             is_active=True,
         )
-        refresh = RefreshToken.for_user(user)
+        if requires_mfa(user):
+            return Response(
+                {
+                    **start_auth_challenge(user),
+                    "user": CurrentUserSerializer(user).data,
+                    "business": {"id": business.id, "name": business.name, "slug": business.slug},
+                },
+                status=202,
+            )
+        refresh = issue_session(user, mfa_verified=False)
         record_login(request, user=user, email=user.email, status=LoginHistory.Statuses.SUCCESS)
         response = Response(
             {

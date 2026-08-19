@@ -56,6 +56,7 @@ class PaidBetaGateTests(TestCase):
         PAID_BETA_BROWSER_E2E_GREEN=True,
         PAID_BETA_BACKUP_RESTORE_DRILL_DONE=True,
         PAID_BETA_SUPPORT_GRANT_FLOW_TESTED=True,
+        AUTH_PRIVILEGED_MFA_REQUIRED=True,
         ENVIRONMENT="staging",
         RELEASE="release-20260528",
         REST_FRAMEWORK={
@@ -65,6 +66,7 @@ class PaidBetaGateTests(TestCase):
                 "auth_social": "20/min",
                 "auth_signup": "10/hour",
                 "auth_password_reset": "5/hour",
+                "auth_mfa": "10/min",
                 "public_api": "120/min",
                 "public_form": "60/min",
                 "public_widget": "120/min",

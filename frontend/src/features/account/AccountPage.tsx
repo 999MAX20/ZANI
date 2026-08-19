@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, Clock3, KeyRound, Languages, Link2, UserRound } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import { changePassword, getCurrentUserLoginHistory, updateCurrentUser } from "../../api/auth";
+import { changePassword, getCurrentUserLoginHistory, getMfaStatus, updateCurrentUser } from "../../api/auth";
 import { getApiErrorMessage } from "../../api/client";
 import { notificationsApi } from "../../api/notifications";
 import { Button } from "../../components/ui/Button";
@@ -17,6 +17,7 @@ import { useI18n, type Language } from "../../lib/i18n";
 import { businessRoleLabel } from "../../lib/permissions";
 import { useAuth } from "../auth/AuthProvider";
 import type { Notification, NotificationPreference } from "../../types";
+import { MfaSecurityCard } from "./MfaSecurityCard";
 
 const notificationCategories: Array<{ category: Notification["category"]; titleKey: string; descriptionKey: string }> = [
   { category: "sales", titleKey: "settings.notifications.category.sales", descriptionKey: "settings.notifications.category.sales.text" },
@@ -46,6 +47,7 @@ export function AccountPage() {
     current_password: "",
     new_password: "",
     confirm_password: "",
+    mfa_code: "",
   });
   const [profileSaved, setProfileSaved] = useState(false);
   const [passwordSaved, setPasswordSaved] = useState(false);
@@ -61,6 +63,7 @@ export function AccountPage() {
     queryFn: getCurrentUserLoginHistory,
     enabled: Boolean(user?.id),
   });
+  const mfaStatus = useQuery({ queryKey: ["mfa-status"], queryFn: getMfaStatus, enabled: Boolean(user?.id) });
 
   useEffect(() => {
     setProfileForm({
@@ -98,12 +101,13 @@ export function AccountPage() {
       return changePassword({
         current_password: passwordForm.current_password,
         new_password: passwordForm.new_password,
+        mfa_code: passwordForm.mfa_code || undefined,
       });
     },
     onSuccess: () => {
       setPasswordSaved(true);
       setPasswordModalOpen(false);
-      setPasswordForm({ current_password: "", new_password: "", confirm_password: "" });
+      setPasswordForm({ current_password: "", new_password: "", confirm_password: "", mfa_code: "" });
       window.setTimeout(() => setPasswordSaved(false), 2600);
     },
   });
@@ -218,6 +222,8 @@ export function AccountPage() {
         </Card>
       </div>
 
+      <MfaSecurityCard />
+
       <div className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
         <Card>
           <CardBody>
@@ -308,7 +314,7 @@ export function AccountPage() {
         onClose={() => {
           if (passwordMutation.isPending) return;
           setPasswordModalOpen(false);
-          setPasswordForm({ current_password: "", new_password: "", confirm_password: "" });
+          setPasswordForm({ current_password: "", new_password: "", confirm_password: "", mfa_code: "" });
         }}
       >
         <div className="rounded-3xl bg-white p-4 sm:p-5">
@@ -332,6 +338,7 @@ export function AccountPage() {
             <Input label={t("account.currentPassword")} type="password" value={passwordForm.current_password} onChange={(event) => setPasswordForm((current) => ({ ...current, current_password: event.target.value }))} required />
             <Input label={t("account.newPassword")} type="password" value={passwordForm.new_password} onChange={(event) => setPasswordForm((current) => ({ ...current, new_password: event.target.value }))} required />
             <Input label={t("account.confirmPassword")} type="password" value={passwordForm.confirm_password} onChange={(event) => setPasswordForm((current) => ({ ...current, confirm_password: event.target.value }))} required />
+            {mfaStatus.data?.enabled ? <Input label={t("mfa.codeLabel")} value={passwordForm.mfa_code} onChange={(event) => setPasswordForm((current) => ({ ...current, mfa_code: event.target.value }))} autoComplete="one-time-code" required /> : null}
             <div className="flex flex-wrap justify-end gap-2 pt-2">
               <Button type="button" variant="secondary" disabled={passwordMutation.isPending} onClick={() => setPasswordModalOpen(false)}>
                 {t("common.cancel")}

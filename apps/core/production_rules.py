@@ -14,6 +14,7 @@ MAX_PRODUCTION_RATE_PER_MINUTE = {
     "auth_social": 20,
     "auth_signup": 10 / 60,
     "auth_password_reset": 5 / 60,
+    "auth_mfa": 10,
     "public_api": 120,
     "public_form": 60,
     "public_widget": 120,

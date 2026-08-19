@@ -247,6 +247,7 @@ class ProductionReadinessTests(TestCase):
                 "auth_social": "100/min",
                 "auth_signup": "100/min",
                 "auth_password_reset": "100/min",
+                "auth_mfa": "100/min",
                 "public_api": "1000/min",
                 "public_form": "1000/min",
                 "public_widget": "1000/min",
@@ -274,6 +275,7 @@ class ProductionReadinessTests(TestCase):
         self.assertIn("zani.W014", warning_ids)
         self.assertIn("zani.W018", warning_ids)
         self.assertIn("zani.W019", warning_ids)
+        self.assertIn("zani.W020", warning_ids)
 
     @override_settings(
         ENVIRONMENT="production",

@@ -197,4 +197,13 @@ def production_settings_check(app_configs, **kwargs):
             )
         )
 
+    if not settings.AUTH_PRIVILEGED_MFA_REQUIRED:
+        warnings.append(
+            Warning(
+                "Privileged account MFA is not mandatory.",
+                hint="Set AUTH_PRIVILEGED_MFA_REQUIRED=True for staging and production.",
+                id="zani.W020",
+            )
+        )
+
     return warnings

@@ -14,6 +14,26 @@ export type TokenPair = {
   access: string;
 };
 
+export type MfaPendingResponse = {
+  code: "mfa_required" | "mfa_enrollment_required";
+  challenge_token: string;
+  expires_at: string;
+  method: "totp";
+};
+
+export type MfaEnrollment = {
+  challenge_token: string;
+  manual_key: string;
+  otpauth_uri: string;
+  issuer: string;
+  account: string;
+  expires_at: string;
+};
+
+export type MfaSessionResponse = TokenPair & {
+  recovery_codes?: string[];
+};
+
 export type SocialProvider = "google" | "apple";
 
 export type SocialLoginPayload = {
@@ -62,23 +82,26 @@ export type PasswordResetConfirmPayload = {
 };
 
 export async function loginWithCredentials(payload: LoginPayload) {
-  const { data } = await axios.post<TokenPair>(`${baseURL}/api/auth/token/`, payload, { withCredentials: true });
+  const { data } = await axios.post<TokenPair | MfaPendingResponse>(`${baseURL}/api/auth/token/`, payload, { withCredentials: true });
+  if (isMfaPendingResponse(data)) return data;
   tokenStorage.setAccess(data.access);
   tokenStorage.setEmail(payload.email);
   return data;
 }
 
 export async function loginWithSocial(payload: SocialLoginPayload) {
-  const { data } = await axios.post<SocialLoginResponse>(`${baseURL}/api/auth/social/`, {
+  const { data } = await axios.post<SocialLoginResponse | MfaPendingResponse>(`${baseURL}/api/auth/social/`, {
     provider: payload.provider,
     id_token: payload.idToken,
   }, { withCredentials: true });
+  if (isMfaPendingResponse(data)) return data;
   tokenStorage.setAccess(data.access);
   return data;
 }
 
 export async function signupOwner(payload: OwnerSignupPayload) {
-  const { data } = await axios.post<SignupOwnerResponse>(`${baseURL}/api/auth/signup/owner/`, payload, { withCredentials: true });
+  const { data } = await axios.post<SignupOwnerResponse | MfaPendingResponse>(`${baseURL}/api/auth/signup/owner/`, payload, { withCredentials: true });
+  if (isMfaPendingResponse(data)) return data;
   tokenStorage.setAccess(data.access);
   tokenStorage.setEmail(payload.email);
   return data;
@@ -121,4 +144,39 @@ export function refreshToken() {
 
 export async function clearRefreshCookie() {
   await axios.post(`${baseURL}/api/auth/logout/`, {}, { withCredentials: true });
+}
+
+export function isMfaPendingResponse(value: unknown): value is MfaPendingResponse {
+  if (!value || typeof value !== "object") return false;
+  const code = (value as { code?: string }).code;
+  return code === "mfa_required" || code === "mfa_enrollment_required";
+}
+
+export async function startMfaEnrollment(challengeToken?: string) {
+  const { data } = await axios.post<MfaEnrollment>(
+    `${baseURL}/api/auth/mfa/enrollment/start/`,
+    challengeToken ? { challenge_token: challengeToken } : {},
+    { withCredentials: true, headers: tokenStorage.getAccess() ? { Authorization: `Bearer ${tokenStorage.getAccess()}` } : undefined },
+  );
+  return data;
+}
+
+export async function confirmMfaEnrollment(challengeToken: string, code: string) {
+  const { data } = await axios.post<MfaSessionResponse>(
+    `${baseURL}/api/auth/mfa/enrollment/confirm/`,
+    { challenge_token: challengeToken, code },
+    { withCredentials: true },
+  );
+  tokenStorage.setAccess(data.access);
+  return data;
+}
+
+export async function verifyMfaLogin(challengeToken: string, code: string) {
+  const { data } = await axios.post<MfaSessionResponse>(
+    `${baseURL}/api/auth/mfa/verify/`,
+    { challenge_token: challengeToken, code },
+    { withCredentials: true },
+  );
+  tokenStorage.setAccess(data.access);
+  return data;
 }

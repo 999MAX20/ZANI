@@ -186,6 +186,7 @@ class ProductionReadinessAuditTests(TestCase):
                 "auth_social": "20/min",
                 "auth_signup": "10/hour",
                 "auth_password_reset": "5/hour",
+                "auth_mfa": "10/min",
                 "public_api": "120/min",
                 "public_form": "60/min",
                 "public_widget": "120/min",

@@ -91,6 +91,13 @@ def run_paid_beta_gate_check():
             "Run frontend Playwright E2E against staging and set PAID_BETA_BROWSER_E2E_GREEN=True only after it passes.",
         ),
         _item(
+            "security.privileged_mfa",
+            "Owner and administrator MFA is mandatory",
+            _required_bool("AUTH_PRIVILEGED_MFA_REQUIRED"),
+            f"AUTH_PRIVILEGED_MFA_REQUIRED={settings.AUTH_PRIVILEGED_MFA_REQUIRED}",
+            "Set AUTH_PRIVILEGED_MFA_REQUIRED=True before the first paid pilot.",
+        ),
+        _item(
             "readiness.production",
             "Production readiness has no critical failures",
             production_failures == 0,

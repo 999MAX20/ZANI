@@ -1,3 +1,5 @@
+import uuid
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
@@ -43,6 +45,61 @@ class User(AbstractUser):
     @property
     def is_business_manager(self):
         return self.role in {self.Roles.BUSINESS_MANAGER, self.Roles.MANAGER}
+
+
+class MfaDevice(models.Model):
+    """The user's confirmed TOTP credential; the shared secret stays encrypted."""
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="mfa_device")
+    encrypted_secret = models.TextField()
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    last_used_counter = models.BigIntegerField(default=-1)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["user_id"]
+
+    @property
+    def is_confirmed(self):
+        return self.confirmed_at is not None
+
+
+class MfaRecoveryCode(models.Model):
+    """A single-use recovery code. Only a keyed cryptographic hash is persisted."""
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="mfa_recovery_codes")
+    code_hash = models.CharField(max_length=64)
+    used_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["id"]
+        indexes = [models.Index(fields=["user", "used_at"])]
+
+
+class MfaChallenge(models.Model):
+    """Short-lived, one-time bridge between primary and second-factor auth."""
+
+    class Purposes(models.TextChoices):
+        LOGIN = "login", "Login"
+        ENROLLMENT = "enrollment", "Enrollment"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="mfa_challenges")
+    purpose = models.CharField(max_length=24, choices=Purposes.choices)
+    token_hash = models.CharField(max_length=64, unique=True)
+    expires_at = models.DateTimeField()
+    consumed_at = models.DateTimeField(null=True, blank=True)
+    failed_attempts = models.PositiveSmallIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["user", "purpose", "expires_at"]),
+            models.Index(fields=["expires_at", "consumed_at"]),
+        ]
 
 
 class SocialIdentity(models.Model):

@@ -99,6 +99,13 @@ def run_production_readiness_audit() -> dict:
             "Set SUPPORT_REQUIRES_GRANT=True before support users can access merchant data.",
         ),
         _item(
+            "security.privileged_mfa",
+            "Privileged account MFA is mandatory",
+            bool(settings.AUTH_PRIVILEGED_MFA_REQUIRED),
+            f"AUTH_PRIVILEGED_MFA_REQUIRED={settings.AUTH_PRIVILEGED_MFA_REQUIRED}",
+            "Set AUTH_PRIVILEGED_MFA_REQUIRED=True before paid pilot traffic.",
+        ),
+        _item(
             "database.managed_postgres",
             "TLS PostgreSQL configured",
             _has_tls_postgres(),

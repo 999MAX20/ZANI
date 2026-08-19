@@ -9,13 +9,14 @@ import { Link, useLocation, useNavigate } from "react-router";
 import { z } from "zod";
 
 import { getApiErrorMessage } from "../../api/client";
-import type { SocialProvider } from "../../api/auth";
+import { isMfaPendingResponse, type SocialProvider } from "../../api/auth";
 import { LanguageSelector } from "../../components/layout/LanguageSelector";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { useI18n } from "../../lib/i18n";
 import { useAuth } from "./AuthProvider";
 import { PasswordVisibilityToggle } from "./PasswordVisibilityToggle";
+import type { CurrentUser } from "../../types";
 import "./authLoginSerenity.css";
 
 type FormValues = {
@@ -75,7 +76,7 @@ export function LoginPage() {
   });
   const hasSocialLogin = isGoogleConfigured || isAppleConfigured;
 
-  function getPostLoginPath(user: Awaited<ReturnType<typeof login>>) {
+  function getPostLoginPath(user: CurrentUser) {
     const fallback = user.is_platform_user ? "/platform" : "/app";
     const from = (location.state as LoginLocationState | null)?.from;
     const pathname = from?.pathname;
@@ -91,6 +92,11 @@ export function LoginPage() {
     setError(null);
     try {
       const user = await login(values.email, values.password);
+      if (isMfaPendingResponse(user)) {
+        sessionStorage.setItem("zani_mfa_pending", JSON.stringify(user));
+        navigate("/mfa", { replace: true, state: { from: location.state } });
+        return;
+      }
       navigate(getPostLoginPath(user), { replace: true });
     } catch (err) {
       setError(getApiErrorMessage(err));
@@ -105,6 +111,11 @@ export function LoginPage() {
         throw new Error("Missing social identity token");
       }
       const user = await loginWithSocial(provider, idToken);
+      if (isMfaPendingResponse(user)) {
+        sessionStorage.setItem("zani_mfa_pending", JSON.stringify(user));
+        navigate("/mfa", { replace: true, state: { from: location.state } });
+        return;
+      }
       navigate(getPostLoginPath(user), { replace: true });
     } catch (err) {
       setError(err instanceof Error && err.message === "Missing social identity token" ? t("auth.socialFailed") : getApiErrorMessage(err));

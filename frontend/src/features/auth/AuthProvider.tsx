@@ -10,6 +10,7 @@ import {
 import { AUTH_EXPIRED_EVENT } from "../../api/client";
 import {
   getCurrentUser,
+  isMfaPendingResponse,
   login as apiLogin,
   logout as apiLogout,
   restoreSession,
@@ -17,6 +18,7 @@ import {
   socialLogin as apiSocialLogin,
   type OwnerSignupPayload,
   type SocialProvider,
+  type MfaPendingResponse,
 } from "../../api/auth";
 import { tokenStorage } from "../../lib/storage";
 import type { Business, CurrentUser } from "../../types";
@@ -31,9 +33,10 @@ type AuthContextValue = {
   isPlatformUser: boolean;
   isMerchantUser: boolean;
   refreshUser: () => Promise<CurrentUser | null>;
-  login: (email: string, password: string) => Promise<CurrentUser>;
-  signupOwner: (payload: OwnerSignupPayload) => Promise<CurrentUser>;
-  loginWithSocial: (provider: SocialProvider, idToken: string) => Promise<CurrentUser>;
+  login: (email: string, password: string) => Promise<CurrentUser | MfaPendingResponse>;
+  signupOwner: (payload: OwnerSignupPayload) => Promise<CurrentUser | MfaPendingResponse>;
+  loginWithSocial: (provider: SocialProvider, idToken: string) => Promise<CurrentUser | MfaPendingResponse>;
+  completeMfaSession: () => Promise<CurrentUser>;
   logout: () => void;
 };
 
@@ -122,7 +125,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return currentUser;
       },
       login: async (email: string, password: string) => {
-        await apiLogin({ email, password });
+        const response = await apiLogin({ email, password });
+        if (isMfaPendingResponse(response)) return response;
         const currentUser = await getCurrentUser();
         setAuthenticated(true);
         setUser(currentUser);
@@ -130,7 +134,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return currentUser;
       },
       signupOwner: async (payload: OwnerSignupPayload) => {
-        await apiSignupOwner(payload);
+        const response = await apiSignupOwner(payload);
+        if (isMfaPendingResponse(response)) return response;
         const currentUser = await getCurrentUser();
         setAuthenticated(true);
         setUser(currentUser);
@@ -138,7 +143,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return currentUser;
       },
       loginWithSocial: async (provider: SocialProvider, idToken: string) => {
-        await apiSocialLogin({ provider, idToken });
+        const response = await apiSocialLogin({ provider, idToken });
+        if (isMfaPendingResponse(response)) return response;
+        const currentUser = await getCurrentUser();
+        setAuthenticated(true);
+        setUser(currentUser);
+        tokenStorage.setEmail(currentUser.email);
+        return currentUser;
+      },
+      completeMfaSession: async () => {
         const currentUser = await getCurrentUser();
         setAuthenticated(true);
         setUser(currentUser);

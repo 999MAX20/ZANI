@@ -7,6 +7,12 @@ import {
   confirmPasswordReset as confirmPasswordResetToken,
   signupOwner as signupOwnerWithCredentials,
   refreshToken,
+  confirmMfaEnrollment,
+  isMfaPendingResponse,
+  startMfaEnrollment,
+  verifyMfaLogin,
+  type MfaEnrollment,
+  type MfaPendingResponse,
   type LoginPayload,
   type OwnerSignupPayload,
   type PasswordResetConfirmPayload,
@@ -21,7 +27,8 @@ import {
 import { tokenStorage } from "../lib/storage";
 import type { CurrentUser, LoginHistory } from "../types";
 
-export { refreshToken };
+export { confirmMfaEnrollment, isMfaPendingResponse, refreshToken, startMfaEnrollment, verifyMfaLogin };
+export type { MfaEnrollment, MfaPendingResponse };
 export type { LoginPayload, SocialLoginPayload, SocialLoginResponse, SocialProvider, TokenPair };
 export type {
   OwnerSignupPayload,
@@ -65,7 +72,7 @@ export async function updateCurrentUser(payload: Partial<Pick<CurrentUser, "full
   return data;
 }
 
-export async function changePassword(payload: { current_password: string; new_password: string }) {
+export async function changePassword(payload: { current_password: string; new_password: string; mfa_code?: string }) {
   const { data } = await apiClient.post<{ ok: boolean }>("/api/auth/change-password/", payload, {
     withCredentials: true,
   });
@@ -74,6 +81,46 @@ export async function changePassword(payload: { current_password: string; new_pa
 
 export async function getCurrentUserLoginHistory() {
   const { data } = await apiClient.get<LoginHistory[]>("/api/auth/login-history/");
+  return data;
+}
+
+export type MfaStatus = {
+  available: boolean;
+  required: boolean;
+  enabled: boolean;
+  method: "totp" | null;
+  confirmed_at: string | null;
+  recovery_codes_remaining: number;
+  active_sessions: number;
+};
+
+export async function getMfaStatus() {
+  const { data } = await apiClient.get<MfaStatus>("/api/auth/mfa/status/");
+  return data;
+}
+
+export async function regenerateMfaRecoveryCodes(code: string) {
+  const { data } = await apiClient.post<{ recovery_codes: string[] }>("/api/auth/mfa/recovery-codes/", { code });
+  return data;
+}
+
+export async function disableMfa(payload: { password: string; code: string; reason: string }) {
+  const { data } = await apiClient.post<({ ok: boolean; access: string } | (MfaPendingResponse & { ok: boolean }))>("/api/auth/mfa/disable/", payload, { withCredentials: true });
+  if (isMfaPendingResponse(data)) {
+    tokenStorage.clear();
+    return data;
+  }
+  tokenStorage.setAccess(data.access);
+  return data;
+}
+
+export async function revokeMfaSessions(code: string) {
+  const { data } = await apiClient.post<{ sessions_revoked: number; access: string }>(
+    "/api/auth/mfa/sessions/revoke/",
+    { code },
+    { withCredentials: true },
+  );
+  tokenStorage.setAccess(data.access);
   return data;
 }
 

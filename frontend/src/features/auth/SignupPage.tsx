@@ -6,6 +6,7 @@ import { Link, useNavigate } from "react-router";
 import { z } from "zod";
 
 import { getApiErrorMessage } from "../../api/client";
+import { isMfaPendingResponse } from "../../api/auth";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { Select } from "../../components/ui/Select";
@@ -68,7 +69,7 @@ export function SignupPage() {
   async function onSubmit(values: FormValues) {
     setError(null);
     try {
-      await signupOwner({
+      const response = await signupOwner({
         full_name: values.full_name,
         email: values.email,
         phone: values.phone,
@@ -76,6 +77,11 @@ export function SignupPage() {
         business_name: values.business_name,
         business_type: values.business_type,
       });
+      if (isMfaPendingResponse(response)) {
+        sessionStorage.setItem("zani_mfa_pending", JSON.stringify(response));
+        navigate("/mfa", { replace: true });
+        return;
+      }
       navigate("/app");
     } catch (err) {
       setError(getApiErrorMessage(err));

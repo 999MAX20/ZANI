@@ -55,6 +55,7 @@ Use `production/` for deployment, readiness, backups, monitoring, storage, Celer
 Use `security/` for permissions, rate limits and access-control documentation.
 
 - `security/PERMISSION_MATRIX.md`
+- `security/privileged-mfa.md`
 - `security/rate-limits.md`
 
 ### Testing

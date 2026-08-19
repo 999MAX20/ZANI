@@ -50,6 +50,11 @@ const ResetPasswordPage = lazy(() =>
     default: module.ResetPasswordPage,
   })),
 );
+const MfaPage = lazy(() =>
+  import("../features/auth/MfaPage").then((module) => ({
+    default: module.MfaPage,
+  })),
+);
 const DashboardPage = lazy(() =>
   import("../features/dashboard/DashboardPage").then((module) => ({
     default: module.DashboardPage,
@@ -837,6 +842,17 @@ const router = createBrowserRouter([
       <PublicRoute>
         <PageLoader>
           <SignupPage />
+        </PageLoader>
+      </PublicRoute>
+    ),
+  },
+  {
+    path: "/mfa",
+    errorElement: <RouteErrorBoundary />,
+    element: (
+      <PublicRoute>
+        <PageLoader>
+          <MfaPage />
         </PageLoader>
       </PublicRoute>
     ),

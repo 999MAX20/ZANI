@@ -3,6 +3,16 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from apps.accounts.auth_views import LogoutView, ThrottledTokenObtainPairView, ThrottledTokenRefreshView
+from apps.accounts.mfa_views import (
+    MfaDisableView,
+    MfaEnrollmentConfirmView,
+    MfaEnrollmentStartView,
+    MfaRecoveryCodesView,
+    MfaRevokeSessionsView,
+    MfaStatusView,
+    MfaStepUpView,
+    MfaVerifyView,
+)
 from apps.accounts.views import ChangePasswordView, CurrentUserLoginHistoryView, CurrentUserView, OwnerSignupView, PasswordResetConfirmView, PasswordResetRequestView, SocialAuthView
 from apps.activities.views import ActivityEventViewSet, NoteViewSet, SegmentFilterViewSet, SegmentViewSet, TaggedObjectViewSet, TagViewSet
 from apps.ai_core.views import (
@@ -195,6 +205,14 @@ urlpatterns = [
     path("api/auth/me/", CurrentUserView.as_view(), name="auth_me"),
     path("api/auth/change-password/", ChangePasswordView.as_view(), name="auth_change_password"),
     path("api/auth/login-history/", CurrentUserLoginHistoryView.as_view(), name="auth_login_history"),
+    path("api/auth/mfa/status/", MfaStatusView.as_view(), name="auth_mfa_status"),
+    path("api/auth/mfa/enrollment/start/", MfaEnrollmentStartView.as_view(), name="auth_mfa_enrollment_start"),
+    path("api/auth/mfa/enrollment/confirm/", MfaEnrollmentConfirmView.as_view(), name="auth_mfa_enrollment_confirm"),
+    path("api/auth/mfa/verify/", MfaVerifyView.as_view(), name="auth_mfa_verify"),
+    path("api/auth/mfa/step-up/", MfaStepUpView.as_view(), name="auth_mfa_step_up"),
+    path("api/auth/mfa/recovery-codes/", MfaRecoveryCodesView.as_view(), name="auth_mfa_recovery_codes"),
+    path("api/auth/mfa/disable/", MfaDisableView.as_view(), name="auth_mfa_disable"),
+    path("api/auth/mfa/sessions/revoke/", MfaRevokeSessionsView.as_view(), name="auth_mfa_revoke_sessions"),
     path("api/team/permissions/catalog/", team_permissions_catalog, name="team_permissions_catalog"),
     path("api/team/performance/", team_performance, name="team_performance"),
     path("api/export/<str:entity_type>/", export_entity, name="export_entity"),

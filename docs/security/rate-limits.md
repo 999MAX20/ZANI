@@ -12,6 +12,7 @@ Rate limits are configured through DRF scoped throttles.
 | --- | --- | --- |
 | `auth_login` | `10/min` | `POST /api/auth/token/` |
 | `auth_refresh` | `30/min` | `POST /api/auth/token/refresh/` |
+| `auth_mfa` | `10/min` | MFA enrollment, verification, recovery and security actions |
 | `public_api` | `120/min` | Public API token endpoints, currently `/api/public-api/clients/` |
 | `public_form` | `60/min` | Public lead form read/submit |
 | `public_widget` | `120/min` | Website chat/widget public endpoints |
@@ -25,6 +26,7 @@ Use:
 ```env
 AUTH_LOGIN_RATE=10/min
 AUTH_REFRESH_RATE=30/min
+AUTH_MFA_RATE=10/min
 PUBLIC_API_RATE=120/min
 PUBLIC_FORM_RATE=60/min
 PUBLIC_WIDGET_RATE=120/min

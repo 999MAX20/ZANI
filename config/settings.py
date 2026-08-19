@@ -266,6 +266,7 @@ REST_FRAMEWORK = {
         "auth_social": env("AUTH_SOCIAL_RATE", default="20/min"),
         "auth_signup": env("AUTH_SIGNUP_RATE", default="10/hour"),
         "auth_password_reset": env("AUTH_PASSWORD_RESET_RATE", default="5/hour"),
+        "auth_mfa": env("AUTH_MFA_RATE", default="10/min"),
         "public_api": env("PUBLIC_API_RATE", default="120/min"),
         "public_form": env("PUBLIC_FORM_RATE", default="60/min"),
         "public_widget": env("PUBLIC_WIDGET_RATE", default="120/min"),
@@ -286,6 +287,13 @@ AUTH_REFRESH_COOKIE_NAME = env("AUTH_REFRESH_COOKIE_NAME", default="zani_refresh
 AUTH_REFRESH_COOKIE_PATH = env("AUTH_REFRESH_COOKIE_PATH", default="/api/auth/")
 AUTH_REFRESH_COOKIE_SECURE = env.bool("AUTH_REFRESH_COOKIE_SECURE", default=IS_PRODUCTION_LIKE_ENVIRONMENT)
 AUTH_REFRESH_COOKIE_SAMESITE = env("AUTH_REFRESH_COOKIE_SAMESITE", default="Lax")
+AUTH_PRIVILEGED_MFA_REQUIRED = env.bool(
+    "AUTH_PRIVILEGED_MFA_REQUIRED",
+    default=IS_PRODUCTION_LIKE_ENVIRONMENT,
+)
+AUTH_MFA_ISSUER = env("AUTH_MFA_ISSUER", default="Zani")
+AUTH_MFA_CHALLENGE_SECONDS = env.int("AUTH_MFA_CHALLENGE_SECONDS", default=300)
+AUTH_MFA_STEP_UP_SECONDS = env.int("AUTH_MFA_STEP_UP_SECONDS", default=300)
 
 GOOGLE_OAUTH_CLIENT_IDS = env.list("GOOGLE_OAUTH_CLIENT_IDS", default=[])
 APPLE_OAUTH_CLIENT_IDS = env.list("APPLE_OAUTH_CLIENT_IDS", default=[])

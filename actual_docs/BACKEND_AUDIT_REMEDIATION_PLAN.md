@@ -79,7 +79,7 @@ External production services are listed as a release gate because repository har
 | BE-REM-002 | Patch and rebuild dependency baselines | P0 | DONE | BE-REM-001 |
 | BE-REM-003 | Harden refresh sessions and password flows | P0 | DONE | BE-REM-002 |
 | BE-REM-004 | Guarantee the safe API error envelope for unknown failures | P0 | DONE | BE-REM-003 |
-| BE-REM-005 | Replace connector secret encryption and add key rotation | P1 | NOT_STARTED | BE-REM-002 |
+| BE-REM-005 | Replace connector secret encryption and add key rotation | P1 | DONE | BE-REM-002 |
 | BE-REM-006 | Add privileged-account MFA foundation | P1 | NOT_STARTED | BE-REM-003 |
 | BE-REM-007 | Complete the functional certification evidence | P1 | NOT_STARTED | BE-REM-001..006 |
 
@@ -487,6 +487,40 @@ Migration/env impact: no migrations, dependency locks or application environment
 Permission impact: no role, resource or tenant permission contract changed; the complete authorization and tenant suite remained green
 Notification/BusinessEvent/AI impact: no runtime contract changed; only existing notification rollback regression assertions were aligned with the safe API response
 Residual risk: real Sentry delivery still requires target-environment DSN evidence; category/retryable/retry_after_seconds fields, stored provider/import error sanitization and frontend AppError normalization remain explicitly scoped to FB-002 and later fallback phases; BE-REM-005 is next
+```
+
+### BE-REM-005 - Standard Connector Secret Encryption And Rotation
+
+```text
+Task: BE-REM-005
+Branch: codex/backend-rem-005-credential-encryption
+Implementation commit: 498969c
+Files changed: versioned connector AEAD service and runtime readers; atomic rotation command and adversarial/API tests; production checks and provider readiness gates; local key adapter; environment templates; credential rotation/deployment documentation
+Behavior delivered:
+- every newly stored connector credential uses an AES-256-GCM envelope with authenticated v/alg/kid metadata, a random 96-bit nonce and an independent 32-byte keyring instead of deriving new encryption from Django SECRET_KEY
+- legacy v1 values remain decrypt-only during a controlled migration window; new writes and rotations always use the active AEAD key, and legacy decrypt can be disabled after verification
+- local development uses a machine-specific key file outside the repository; staging/production require explicitly injected managed key material and reject a local key ID
+- Telegram, WhatsApp, Instagram, Kaspi, MoySklad, Wildberries and Ozon runtime readers share safe missing/expired/corrupt behavior without returning raw values
+- corrupt or unknown-key ciphertext fails closed, marks the connector for safe merchant recovery and logs only generic exception text plus non-secret connector identifiers
+- raw encrypted_value is excluded from Django admin, while the existing write-only API value, masking, tenant scope and role permissions remain enforced
+- rotate_connector_credentials verifies and rotates selected legacy/old-key rows in one transaction, prints only counts/key IDs and rolls back every write if any row cannot be decrypted
+- zani.W018/zani.W019 and real-provider rollout gates block unsafe production keyrings or a completed rollout with legacy decrypt still enabled
+- the key setup, migration, rollback, lost-key recovery and post-rotation verification procedure is recorded in docs/integrations/connector-credential-key-rotation.md
+Checks run and exact result:
+- focused credential, provider-readiness and production-check suite -> 54 tests passed in 13.072s
+- .\.venv\Scripts\python.exe manage.py check -> System check identified no issues
+- .\.venv\Scripts\python.exe manage.py makemigrations --check --dry-run -> No changes detected
+- .\.venv\Scripts\python.exe scripts\codex_verify.py --mode static --base-ref 09c0a61 -> passed
+- .\.venv\Scripts\python.exe scripts\codex_verify.py --mode backend --base-ref 09c0a61 -> passed; 886 Django tests passed in 1818.714s
+- .\.venv\Scripts\python.exe scripts\codex_verify.py --mode frontend --base-ref 09c0a61 -> passed; deterministic install and audit reported 0 vulnerabilities, env isolation 1/1, 4631-key RU/KK/EN i18n check, TypeScript/app/widget builds and bundle budgets passed
+- .\.venv\Scripts\python.exe scripts\codex_verify.py --mode browser --base-ref 09c0a61 -> passed; mobile manager and owner smoke 2/2 passed
+- .\.venv\Scripts\python.exe scripts\codex_verify.py --mode security --base-ref 09c0a61 -> passed; hashed runtime/dev locks installable, pip-audit found no known vulnerabilities, npm audit found 0 vulnerabilities
+- committed-range, working-tree and index diff hygiene -> passed in every deterministic mode
+Checks skipped and reason: no repository quality-gate stage skipped; real provider credential smoke and production database rotation were not run because they require approved external credentials, managed secrets, a verified backup/PITR point and an owner-approved maintenance window
+Migration/env impact: no Django migration or dependency-lock change; adds CONNECTOR_CREDENTIAL_ACTIVE_KEY_ID, CONNECTOR_CREDENTIAL_KEYS and CONNECTOR_CREDENTIAL_ALLOW_LEGACY_DECRYPT, plus an optional local key-file override; existing production rows must follow the documented external rotation runbook
+Permission impact: no permission model changed; owner API access, operator denial and cross-tenant 404 behavior are covered and the complete authorization/tenant suite remained green
+Notification/BusinessEvent/AI impact: no notification, normalized event or AI contract changed; provider credential reads and real-provider readiness enforcement changed
+Residual risk: target environments must provision and back up the managed keyring, preserve SECRET_KEY until every legacy row is rotated, execute dry-run/rotation with a verified restore point, disable legacy decrypt, retain old keys through the recovery window and complete real-provider smoke; BE-REM-006 is next and has not started
 ```
 
 Add one entry per subsequent completed item:

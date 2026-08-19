@@ -44,7 +44,7 @@ The project already contains useful reusable pieces:
 
 | Layer | Existing mechanism | Current value |
 | --- | --- | --- |
-| API contract | `apps/core/exceptions.py` | stable `code`, `request_id`, `detail`, `errors` for known DRF/domain errors |
+| API contract | `apps/core/exceptions.py` | stable `code`, `request_id`, `detail`, `errors` for known DRF/domain errors and unknown `internal_error` failures |
 | Domain failures | `apps/core/domain_errors.py` | explicit conflict, unavailable, disabled and temporary-service codes |
 | Secret redaction | `apps/integrations/sanitization.py` | removes common credentials from persisted/logged error text |
 | Authentication recovery | `frontend/src/api/client.ts` | single-flight refresh and one retry after `401` |
@@ -104,9 +104,9 @@ Platform/support users may need technical evidence, but it must live behind a se
 
 Several provider, import, scheduling, analytics, leads and AI paths use `str(exc)` as a stored error or validation detail. Redaction exists, but it is not applied consistently at every persistence and response boundary.
 
-### 6. Unknown 500 responses are outside the stable contract
+### 6. Unknown 500 backend responses are fixed; the broader taxonomy remains
 
-If DRF does not handle an exception, the current API exception handler returns `None`. The merchant-safe envelope and frontend mapping are therefore not guaranteed for an unknown server error.
+BE-REM-004 now guarantees a safe `internal_error` envelope for exceptions DRF cannot handle and for non-domain DRF 5xx responses. It correlates the response, structured log and configured Sentry capture by request ID without exposing exception text, stack traces, SQL, payloads or provider responses. The broader `category`, `retryable` and `retry_after_seconds` contract, stored-error sanitization and frontend mapping remain part of FB-002 and FB-003.
 
 ### 7. Recovery placement varies
 
@@ -332,7 +332,7 @@ Deliverable: a machine-readable registry or typed source file plus a generated h
 
 ## FB-002 - Backend Safe Envelope
 
-- implement the unknown-500 contract from BE-REM-004;
+- extend the completed BE-REM-004 unknown-500 contract with the remaining shared taxonomy fields;
 - add `category`, `retryable` and `retry_after_seconds` consistently;
 - sanitize all stored provider/import/automation error text;
 - replace merchant-facing `str(exc)` with explicit domain errors;
@@ -506,7 +506,22 @@ The unified fallback layer is complete only when:
 
 ## Evidence Log
 
-No implementation evidence is recorded yet. Add one entry per completed item:
+The fallback execution queue itself has not started. The prerequisite backend item has the following accepted evidence:
+
+```text
+Task: BE-REM-004 prerequisite - unknown API 500 contract
+Affected routes/actions: every DRF API view that raises an unknown exception or a non-domain 5xx APIException
+Branch: codex/backend-rem-004-safe-api-envelope
+Commits: b1d554c, c3241e9
+Backend error codes changed: unknown failures now use internal_error; known domain/4xx codes are unchanged
+Frontend surfaces changed: none
+Checks run and exact result: focused contract/rollback tests passed; backend 872/872 passed; frontend build/bundle passed; browser mobile role smoke 2/2 passed; Python/npm security audits passed with 0 known vulnerabilities
+Checks skipped and reason: no constituent deterministic gate skipped
+Role/tenant impact: no permission or tenant behavior changed; complete suite remained green
+Residual risk: FB-002 through FB-010 remain NOT_STARTED; target-environment Sentry delivery requires a real configured DSN
+```
+
+Add one entry per completed fallback item:
 
 ```text
 Task:

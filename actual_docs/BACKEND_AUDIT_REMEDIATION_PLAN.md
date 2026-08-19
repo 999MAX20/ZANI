@@ -78,7 +78,7 @@ External production services are listed as a release gate because repository har
 | BE-REM-001 | Restore the clean full test gate | P0 | DONE | none |
 | BE-REM-002 | Patch and rebuild dependency baselines | P0 | DONE | BE-REM-001 |
 | BE-REM-003 | Harden refresh sessions and password flows | P0 | DONE | BE-REM-002 |
-| BE-REM-004 | Guarantee the safe API error envelope for unknown failures | P0 | NOT_STARTED | BE-REM-003 |
+| BE-REM-004 | Guarantee the safe API error envelope for unknown failures | P0 | DONE | BE-REM-003 |
 | BE-REM-005 | Replace connector secret encryption and add key rotation | P1 | NOT_STARTED | BE-REM-002 |
 | BE-REM-006 | Add privileged-account MFA foundation | P1 | NOT_STARTED | BE-REM-003 |
 | BE-REM-007 | Complete the functional certification evidence | P1 | NOT_STARTED | BE-REM-001..006 |
@@ -456,6 +456,37 @@ Migration/env impact: no migrations and no application environment variables cha
 Permission impact: no role or tenant permission contract changed; the complete authorization and tenant suite remained green
 Notification/BusinessEvent/AI impact: none
 Residual risk: access JWTs issued before password change/reset remain valid until the configured short 15-minute expiry; production cookie/CORS/CSRF values still require the external deployment gate; BE-REM-004 is next
+```
+
+### BE-REM-004 - Safe API Envelope For Unknown Failures
+
+```text
+Task: BE-REM-004
+Branch: codex/backend-rem-004-safe-api-envelope
+Implementation commits: b1d554c, c3241e9
+Files changed: apps/core/exceptions.py; apps/core/tests_api_exceptions.py; API rollback assertions in apps/scheduling/tests.py and apps/tasks/tests.py
+Behavior delivered:
+- exceptions not handled by DRF and non-domain DRF 5xx errors now return the canonical JSON envelope with code internal_error, a safe generic detail, request_id and empty errors
+- response bodies never include the exception class, traceback, SQL, request path, payload, provider response or exception text
+- the full server-side exception is written to structured logs with request ID plus sanitized method/path/cached-user context and without request payload/query data
+- when SENTRY_DSN is configured, the original exception is captured explicitly with request_id and internal_error tags plus sanitized request context
+- monitoring/reporting failures cannot replace or break the merchant-safe 500 response
+- known validation, permission, conflict, throttling and provider/domain envelopes remain unchanged
+- task and appointment rollback tests now assert both the safe 500 response and the original atomic rollback/idempotency guarantees
+Checks run and exact result:
+- .\.venv\Scripts\python.exe manage.py test apps.core.tests_api_exceptions apps.core.tests_b3_contracts -v 2 -> 10 tests passed
+- focused unknown-error plus scheduling/task rollback and idempotency retry suite -> 7 tests passed
+- initial full gate exposed 3 obsolete assertRaises expectations for API RuntimeError rollback tests; no rollback failure occurred; the tests were updated to the new safe response contract
+- .\.venv\Scripts\python.exe scripts\codex_verify.py --mode backend --base-ref 16bb853 -> passed; migration drift clean, system check clean, 872 Django tests passed in 1813.891s
+- .\.venv\Scripts\python.exe scripts\codex_verify.py --mode frontend --base-ref 16bb853 -> passed; deterministic install reported 0 vulnerabilities, env isolation 1/1, 4631-key RU/KK/EN i18n check, TypeScript/app/widget builds and bundle budgets passed
+- .\.venv\Scripts\python.exe scripts\codex_verify.py --mode browser --base-ref 16bb853 -> passed; mobile manager and owner smoke 2/2 passed
+- .\.venv\Scripts\python.exe scripts\codex_verify.py --mode security --base-ref 16bb853 -> passed; hashed runtime/dev locks installable, pip-audit found no known vulnerabilities, npm audit found 0 vulnerabilities
+- committed-range, working-tree and index diff hygiene -> passed in every deterministic mode
+Checks skipped and reason: no constituent quality-gate stage skipped; the all-in-one full command was split into the official backend/frontend/browser/security modes after the 872-test backend stage exceeded the first combined command's outer time allowance
+Migration/env impact: no migrations, dependency locks or application environment variables changed; Sentry remains optional and is used only when SENTRY_DSN is configured
+Permission impact: no role, resource or tenant permission contract changed; the complete authorization and tenant suite remained green
+Notification/BusinessEvent/AI impact: no runtime contract changed; only existing notification rollback regression assertions were aligned with the safe API response
+Residual risk: real Sentry delivery still requires target-environment DSN evidence; category/retryable/retry_after_seconds fields, stored provider/import error sanitization and frontend AppError normalization remain explicitly scoped to FB-002 and later fallback phases; BE-REM-005 is next
 ```
 
 Add one entry per subsequent completed item:

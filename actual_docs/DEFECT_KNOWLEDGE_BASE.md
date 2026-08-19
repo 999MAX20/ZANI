@@ -172,9 +172,12 @@ the accepted project branch.
   `actual_docs/UNIFIED_FALLBACK_EXPERIENCE_PLAN.md` and use one safe error
   taxonomy, one normalization layer, shared visual surfaces and
   permission-aware recovery.
-- Verification status: no implementation has started. The source audit is the
-  baseline; browser failure injection and cross-role certification remain
-  required.
+- Verification status: BE-REM-004 closed the unknown backend `500` sub-gap with
+  a safe `internal_error` envelope, structured request-ID logging, configured
+  Sentry capture and 872-test backend certification. ZD-004 remains
+  `CONFIRMED` overall because stored raw errors, frontend normalization, crash
+  boundaries, shared fallback surfaces and cross-role failure injection still
+  require FB-002 through FB-010.
 - Derived audit rule: no merchant-visible component may render raw backend or
   runtime error text. Every failure must be normalized, localized, sanitized
   and paired with a safe next action when one exists.

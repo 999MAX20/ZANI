@@ -63,6 +63,7 @@ export function AppointmentRescheduleForm({
 
   return (
     <form
+      data-testid="appointment-reschedule-form"
       className="space-y-4"
       onSubmit={async (event) => {
         event.preventDefault();
@@ -87,6 +88,7 @@ export function AppointmentRescheduleForm({
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <Input
+          data-testid="appointment-reschedule-date"
           label={t("appointment.date")}
           type="date"
           value={date}
@@ -96,6 +98,7 @@ export function AppointmentRescheduleForm({
           }}
         />
         <Select
+          data-testid="appointment-reschedule-resource"
           label={t("appointment.resource")}
           value={resource}
           onChange={(event) => {
@@ -108,6 +111,7 @@ export function AppointmentRescheduleForm({
       {slots.isLoading ? <LoadingState /> : null}
       {!slots.isLoading ? (
         <Select
+          data-testid="appointment-reschedule-slot"
           label={t("appointment.time")}
           value={slot}
           onChange={(event) => setSlot(event.target.value)}
@@ -124,7 +128,7 @@ export function AppointmentRescheduleForm({
         <Button type="button" variant="secondary" onClick={onCancel}>
           {t("common.cancel")}
         </Button>
-        <Button type="submit" isLoading={isSubmitting}>
+        <Button data-testid="appointment-reschedule-submit" type="submit" isLoading={isSubmitting}>
           {t("appointments.reschedule")}
         </Button>
       </div>

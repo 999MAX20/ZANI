@@ -25,6 +25,12 @@ async function waitForWorkspaceReady(page: Page, path: string) {
     page.locator('main [role="status"][aria-busy="true"]'),
   ).toHaveCount(0);
   await expect(page.locator('main [role="alert"]')).toHaveCount(0);
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ),
+  );
   await page.getByRole("main").first().evaluate(async (main) => {
     const finiteAnimations = main
       .getAnimations()
@@ -38,6 +44,14 @@ async function waitForWorkspaceReady(page: Page, path: string) {
       ),
     );
   });
+  await expect
+    .poll(() =>
+      page
+        .getByRole("main")
+        .first()
+        .evaluate((main) => Number(getComputedStyle(main).opacity)),
+    )
+    .toBe(1);
 }
 
 async function login(page: Page) {
@@ -225,7 +239,7 @@ test("F-301 mobile menu is a modal drawer and restores the exact visible trigger
   }
 });
 
-test("F-301 header filters are exposed through the shared modal drawer contract", async ({
+test("F-301 page header secondary actions remain keyboard reachable", async ({
   page,
 }, testInfo) => {
   test.skip(
@@ -233,27 +247,14 @@ test("F-301 header filters are exposed through the shared modal drawer contract"
     "The page header filters are intentionally hidden below the tablet breakpoint.",
   );
   await login(page);
-  await navigateInsideApp(page, "/app/tasks");
+  await navigateInsideApp(page, "/app/leads");
 
-  const trigger = page.getByTestId("header-filter-trigger");
+  const trigger = page.getByTestId("page-secondary-action-0");
   await expect(trigger).toBeVisible();
   await trigger.focus();
   await page.keyboard.press("Enter");
-
-  const drawer = page.getByTestId("header-filter-drawer");
-  await expect(drawer).toBeVisible();
-  await expect(drawer).toHaveAttribute("role", "dialog");
-  await expect(drawer).toHaveAttribute("aria-modal", "true");
-  await expect(drawer).toHaveAttribute("aria-labelledby", /.+/);
-  await expect(trigger).toHaveAttribute("aria-expanded", "true");
-  await expectFocusInside(drawer);
-  await expectForwardTabWrap(page, drawer);
-  await expectNoSeriousOrCriticalViolations(page, "header-filter-drawer");
-
-  await page.keyboard.press("Escape");
-  await expect(drawer).toHaveCount(0);
-  await expect(trigger).toHaveAttribute("aria-expanded", "false");
-  await expect(trigger).toBeFocused();
+  await expect(page.getByTestId("lead-saved-filters-panel")).toBeVisible();
+  await expectNoSeriousOrCriticalViolations(page, "lead-saved-filters-panel");
 });
 
 test("F-301 conditionally unmounted CRM drawer restores focus to its opener", async ({

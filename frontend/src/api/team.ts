@@ -8,8 +8,10 @@ export type PermissionCatalog = {
 };
 
 export const teamApi = {
-  members: async () => {
-    const { data } = await apiClient.get<TeamMember[] | PaginatedResponse<TeamMember>>("/api/team/members/");
+  members: async (business?: Id) => {
+    const { data } = await apiClient.get<TeamMember[] | PaginatedResponse<TeamMember>>("/api/team/members/", {
+      params: business ? { business } : undefined,
+    });
     return unwrapList(data);
   },
   updateMember: async ({ id, payload }: { id: Id; payload: Partial<TeamMember> }) => {

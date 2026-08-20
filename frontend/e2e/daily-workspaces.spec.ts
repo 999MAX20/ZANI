@@ -4,6 +4,8 @@ const password = process.env.E2E_PASSWORD || "ZaniTest123!";
 
 const users = {
   owner: process.env.E2E_OWNER_EMAIL || "business_owner@example.com",
+  administrator:
+    process.env.E2E_ADMIN_EMAIL || "business_administrator@example.com",
   manager: process.env.E2E_MANAGER_EMAIL || "business_manager@example.com",
   operator: process.env.E2E_OPERATOR_EMAIL || "business_operator@example.com",
   specialist: process.env.E2E_SPECIALIST_EMAIL || "business_specialist@example.com",
@@ -85,6 +87,13 @@ test("F-201 desktop roles receive legitimate daily routes and controls", async (
   await expect(page.locator('nav a[href="/app/deals"]')).toBeVisible();
   await expectHealthyWorkspace(page);
 
+  await login(page, users.administrator);
+  await expect(page.locator('main a[href="/app/tasks"]').first()).toBeVisible();
+  await expect(page.locator('main a[href="/app/calendar"]').first()).toBeVisible();
+  await expect(page.locator('nav a[href="/app/settings"]')).toBeVisible();
+  await expect(page.locator('nav a[href="/app/deals"]')).toBeVisible();
+  await expectHealthyWorkspace(page);
+
   await login(page, users.manager);
   await expect(page.getByTestId("role-daily-actions")).toBeVisible();
   await expect(page.getByTestId("role-daily-actions").locator('a[href^="/app/tasks"]')).toBeVisible();
@@ -125,6 +134,16 @@ test("F-401 command palette follows role permissions and disabled modules", asyn
   test.setTimeout(120_000);
 
   await login(page, users.owner);
+  await openCommandPalette(page);
+  await expect(page.getByTestId("command-create-lead")).toBeVisible();
+  await expect(page.getByTestId("command-open-clients")).toBeVisible();
+  await expect(page.getByTestId("command-open-messages")).toBeVisible();
+  await expect(page.getByTestId("command-open-settings")).toBeVisible();
+  await expect(page.getByTestId("command-open-ai-agents")).toBeVisible();
+  await expect(page.getByTestId("command-open-deals")).toBeVisible();
+  await page.keyboard.press("Escape");
+
+  await login(page, users.administrator);
   await openCommandPalette(page);
   await expect(page.getByTestId("command-create-lead")).toBeVisible();
   await expect(page.getByTestId("command-open-clients")).toBeVisible();
@@ -184,6 +203,13 @@ test("F-201 mobile owner, manager, operator and specialist daily routes stay usa
   await expect(page.locator('[data-testid="page-primary-action"]:visible')).toBeVisible();
   await expectHealthyWorkspace(page);
 
+  await login(page, users.administrator);
+  await expect(page.locator('main a[href="/app/tasks"]').first()).toBeVisible();
+  await expect(page.locator('main a[href="/app/calendar"]').first()).toBeVisible();
+  await navigateClient(page, "/app/settings");
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  await expectHealthyWorkspace(page);
+
   await login(page, users.manager);
   await expect(page.getByTestId("role-daily-actions").locator('a[href^="/app/tasks"]')).toBeVisible();
   await expect(page.getByTestId("role-daily-actions").locator('a[href^="/app/calendar"]')).toBeVisible();
@@ -226,11 +252,17 @@ test("F-201 mobile owner, manager, operator and specialist daily routes stay usa
     "/api/appointments/",
     authorization,
   );
-  const ownResource = resources.find((resource) => resource.linked_user_email === users.specialist);
-  const ownAppointment = appointments.find((appointment) => appointment.resource === ownResource?.id);
+  // A user may legitimately belong to more than one business. The unscoped
+  // endpoint therefore returns the specialist's resources from every
+  // accessible tenant, while still excluding other specialists' schedules.
+  const ownResources = resources.filter((resource) => resource.linked_user_email === users.specialist);
+  const ownResourceIds = new Set(ownResources.map((resource) => resource.id));
+  const ownAppointment = appointments.find((appointment) =>
+    appointment.resource !== null && ownResourceIds.has(appointment.resource),
+  );
   expect(ownAppointment).toBeTruthy();
   expect(resources.every((resource) => !resource.linked_user_email || resource.linked_user_email === users.specialist)).toBeTruthy();
-  expect(appointments.every((appointment) => appointment.resource === ownResource?.id)).toBeTruthy();
+  expect(appointments.every((appointment) => appointment.resource !== null && ownResourceIds.has(appointment.resource))).toBeTruthy();
 
   await navigateClient(page, `/app/calendar/${ownAppointment!.id}`);
   await expect(page.locator('[data-appointment-action-id="reschedule"]')).toBeVisible();

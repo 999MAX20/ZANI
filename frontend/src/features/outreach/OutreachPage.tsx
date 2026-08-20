@@ -797,7 +797,7 @@ function ManualAudiencePicker({
           <h3 className="font-semibold text-zani-ink">{t("outreach.manualAudience")}</h3>
           <p className="mt-1 text-sm font-medium text-zani-subtle">{t("outreach.manualAudienceText", { count: selectedIds.length })}</p>
         </div>
-        <Input className="md:max-w-xs" placeholder={t("outreach.clientSearch")} value={search} onChange={(event) => onSearch(event.target.value)} />
+        <Input data-testid="outreach-search-input" className="md:max-w-xs" placeholder={t("outreach.clientSearch")} value={search} onChange={(event) => onSearch(event.target.value)} />
       </div>
       <div className="mt-3 grid max-h-72 gap-2 overflow-y-auto pr-1 md:grid-cols-2">
         {clients.slice(0, 80).map((client) => {

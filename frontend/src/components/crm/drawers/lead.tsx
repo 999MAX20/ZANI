@@ -116,32 +116,32 @@ export function LeadDrawerContent({ data, entity }: { data: CrmCardPayload; enti
           </div>
           <div className="flex flex-wrap gap-2 border-t border-zani-border pt-4">
             {availableActions.has("take") ? (
-              <Button type="button" variant="secondary" size="sm" isLoading={lifecycleMutation.isPending} onClick={() => lifecycleMutation.mutate("take")}>
+              <Button data-crm-action-id="take" type="button" variant="secondary" size="sm" isLoading={lifecycleMutation.isPending} onClick={() => lifecycleMutation.mutate("take")}>
                 {t("leads.takeWork")}
               </Button>
             ) : null}
             {availableActions.has("contacted") ? (
-              <Button type="button" variant="secondary" size="sm" isLoading={lifecycleMutation.isPending} onClick={() => lifecycleMutation.mutate("contacted")}>
+              <Button data-crm-action-id="contacted" type="button" variant="secondary" size="sm" isLoading={lifecycleMutation.isPending} onClick={() => lifecycleMutation.mutate("contacted")}>
                 {t("leads.contacted")}
               </Button>
             ) : null}
             {availableActions.has("create_deal") ? (
-              <Button type="button" size="sm" isLoading={lifecycleMutation.isPending} onClick={() => lifecycleMutation.mutate("deal")}>
+              <Button data-crm-action-id="create_deal" type="button" size="sm" isLoading={lifecycleMutation.isPending} onClick={() => lifecycleMutation.mutate("deal")}>
                 {t("leads.deal")}
               </Button>
             ) : null}
             {availableActions.has("close") ? (
-              <Button type="button" variant="secondary" size="sm" isLoading={lifecycleMutation.isPending} onClick={() => lifecycleMutation.mutate("closed")}>
+              <Button data-crm-action-id="close" type="button" variant="secondary" size="sm" isLoading={lifecycleMutation.isPending} onClick={() => lifecycleMutation.mutate("closed")}>
                 {t("leads.close")}
               </Button>
             ) : null}
             {availableActions.has("lost") ? (
-              <Button type="button" variant="secondary" size="sm" isLoading={lifecycleMutation.isPending} onClick={() => setLostActionOpen(true)}>
+              <Button data-crm-action-id="lost" type="button" variant="secondary" size="sm" isLoading={lifecycleMutation.isPending} onClick={() => setLostActionOpen(true)}>
                 {t("leads.lost")}
               </Button>
             ) : null}
             {availableActions.has("reopen") ? (
-              <Button type="button" variant="secondary" size="sm" isLoading={lifecycleMutation.isPending} onClick={() => lifecycleMutation.mutate("reopen")}>
+              <Button data-crm-action-id="reopen" type="button" variant="secondary" size="sm" isLoading={lifecycleMutation.isPending} onClick={() => lifecycleMutation.mutate("reopen")}>
                 {t("leads.reopen")}
               </Button>
             ) : null}

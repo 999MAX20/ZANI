@@ -37,7 +37,7 @@ export function ResourcesPage() {
   const { resources, appointments, workingHours } = useEntityData({ resources: true, appointments: true, workingHours: true });
   const teamMembers = useQuery({
     queryKey: ["team-members", business?.id],
-    queryFn: teamApi.members,
+    queryFn: () => teamApi.members(business?.id),
     enabled: Boolean(business),
   });
   const [open, setOpen] = useState(false);

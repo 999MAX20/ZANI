@@ -161,7 +161,15 @@ class TeamMemberManagementViewSet(TeamAccessMixin, ModelViewSet):
     )
 
     def get_queryset(self):
-        return self.queryset.filter(business_id__in=self.accessible_business_ids(Actions.VIEW))
+        queryset = self.queryset.filter(business_id__in=self.accessible_business_ids(Actions.VIEW))
+        business_id = self.request.query_params.get("business")
+        if not business_id:
+            return queryset
+        try:
+            business_id = int(business_id)
+        except (TypeError, ValueError):
+            return queryset.none()
+        return queryset.filter(business_id=business_id)
 
     def perform_create(self, serializer):
         business = self.check_team_permission(Actions.MANAGE)

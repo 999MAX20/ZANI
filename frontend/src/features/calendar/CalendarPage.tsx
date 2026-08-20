@@ -800,7 +800,7 @@ export function CalendarPage() {
           <div className="divide-y divide-zani-border">
             {dayAppointments.map((appointment) => (
               <CalendarAppointmentPreview
-                key={appointment.id}
+                key={`appointment-${appointment.id}`}
                 appointment={appointment}
                 compact
                 selectedAppointmentId={selectedAppointmentId}
@@ -816,7 +816,7 @@ export function CalendarPage() {
             ))}
             {dayTasks.map((task) => (
               <CalendarTaskPreview
-                key={task.id}
+                key={`task-${task.id}`}
                 task={task}
                 locale={locale}
                 businessTimeZone={businessTimeZone}

@@ -72,14 +72,20 @@ class ResourceViewSet(TenantModelViewSet):
     serializer_class = ResourceSerializer
 
     def get_access_resource(self):
-        if self.action in {"list", "retrieve"}:
+        if self.action in {"list", "retrieve", "options"}:
             return Resources.APPOINTMENTS
         return Resources.SETTINGS
 
     def get_access_action(self):
-        if self.action in {"list", "retrieve"}:
+        if self.action in {"list", "retrieve", "options"}:
             return Actions.VIEW
         return Actions.UPDATE
+
+    @action(detail=False, methods=["get"], url_path="options")
+    def options(self, request):
+        """Return the complete tenant-scoped resource set for form selectors."""
+        queryset = self.filter_queryset(self.get_queryset()).order_by("name", "id")
+        return Response(self.get_serializer(queryset, many=True).data)
 
 
 class WorkingHoursViewSet(TenantModelViewSet):

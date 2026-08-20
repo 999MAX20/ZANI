@@ -380,6 +380,50 @@ class CorePlatformTests(TestCase):
         self.assertEqual(response.data["linked_user"], staff.id)
         self.assertEqual(response.data["linked_user_name"], "Resource Staff")
 
+    def test_resource_options_are_complete_and_tenant_scoped(self):
+        Resource.objects.bulk_create(
+            [
+                Resource(
+                    business=self.business,
+                    name=f"Resource {index:03d}",
+                    resource_type=Resource.ResourceTypes.STAFF,
+                )
+                for index in range(55)
+            ]
+        )
+        other_owner = User.objects.create_user(
+            username="resource-options-other-owner",
+            email="resource-options-other-owner@example.com",
+            password="pass",
+            role=User.Roles.BUSINESS_OWNER,
+        )
+        other_business = Business.objects.create(
+            owner=other_owner,
+            name="Other Resource Business",
+            slug="other-resource-business",
+            business_type=Business.BusinessTypes.MEDICAL,
+            city="Astana",
+            timezone="Asia/Almaty",
+        )
+        BusinessMember.objects.create(
+            business=other_business,
+            user=other_owner,
+            role=BusinessMember.Roles.OWNER,
+        )
+        foreign_resource = Resource.objects.create(
+            business=other_business,
+            name="Foreign Resource",
+            resource_type=Resource.ResourceTypes.STAFF,
+        )
+
+        api = APIClient()
+        api.force_authenticate(self.owner)
+        response = api.get("/api/resources/options/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 55)
+        self.assertNotIn(foreign_resource.id, {item["id"] for item in response.data})
+
     def test_resource_rejects_inactive_or_cross_tenant_linked_user(self):
         api = APIClient()
         api.force_authenticate(self.owner)

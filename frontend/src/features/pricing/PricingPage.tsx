@@ -363,7 +363,7 @@ export function PricingPage() {
           </div>
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-3">
-          <Input label={t("common.search")} value={catalogSearch} onChange={(event) => setCatalogSearch(event.target.value)} placeholder={t("pricing.searchPlaceholder")} />
+          <Input data-testid="pricing-catalog-search-input" label={t("common.search")} value={catalogSearch} onChange={(event) => setCatalogSearch(event.target.value)} placeholder={t("pricing.searchPlaceholder")} />
           <Select
             label={t("pricing.source")}
             value={catalogSource}
@@ -606,7 +606,7 @@ export function PricingPage() {
           <span className="rounded-full bg-slate-50 px-3 py-1 text-xs font-black text-slate-500">{t("pricing.recordsCount", { count: changeLogs.length })}</span>
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
-          <Input label={t("common.search")} value={changeSearch} onChange={(event) => setChangeSearch(event.target.value)} placeholder={t("pricing.historySearchPlaceholder")} />
+          <Input data-testid="pricing-history-search-input" label={t("common.search")} value={changeSearch} onChange={(event) => setChangeSearch(event.target.value)} placeholder={t("pricing.historySearchPlaceholder")} />
           <Select
             label={t("pricing.status")}
             value={changeStatus}

@@ -41,6 +41,12 @@ class Command(BaseCommand):
             role=User.Roles.BUSINESS_OWNER,
             full_name="Zani Business Owner",
         )
+        administrator = self._upsert_user(
+            email="business_administrator@example.com",
+            password=password,
+            role=User.Roles.BUSINESS_MANAGER,
+            full_name="Zani Business Administrator",
+        )
         manager = self._upsert_user(
             email="business_manager@example.com",
             password=password,
@@ -79,6 +85,11 @@ class Command(BaseCommand):
             },
         )
         self._upsert_member(business, owner, BusinessMember.Roles.OWNER)
+        self._upsert_member(
+            business,
+            administrator,
+            BusinessMember.Roles.ADMIN,
+        )
         self._upsert_member(business, manager, BusinessMember.Roles.MANAGER)
         self._upsert_member(business, operator, BusinessMember.Roles.OPERATOR)
         self._upsert_member(business, specialist, BusinessMember.Roles.SPECIALIST)
@@ -111,6 +122,7 @@ class Command(BaseCommand):
             self.style.SUCCESS(
                 "Prepared E2E smoke data: "
                 "platform_admin@example.com, business_owner@example.com, "
+                "business_administrator@example.com, "
                 "business_manager@example.com, business_operator@example.com, "
                 "business_specialist@example.com"
             )

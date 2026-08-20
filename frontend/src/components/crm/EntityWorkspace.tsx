@@ -12,13 +12,21 @@ import { EmptyState, ErrorState, LoadingState } from "../ui/StateViews";
 import { StatusBadge } from "../ui/StatusBadge";
 import { CrmWorkspacePage } from "./CrmWorkspacePage";
 
-export function EntityWorkspaceRoot({ children }: { children: ReactNode }) {
+export function EntityWorkspaceRoot({
+  children,
+  testId,
+}: {
+  children: ReactNode;
+  testId?: string;
+}) {
   return (
     <CrmWorkspacePage
       className="h-auto min-h-[calc(100vh-5.5rem)] bg-surface"
       maxWidthClassName="max-w-[1440px]"
     >
-      <div className="space-y-4 pb-6">{children}</div>
+      <div className="space-y-4 pb-6" data-testid={testId}>
+        {children}
+      </div>
     </CrmWorkspacePage>
   );
 }

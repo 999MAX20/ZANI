@@ -98,6 +98,7 @@ export function CalendarToolbar({
               <button
                 key={item.value}
                 type="button"
+                data-testid={`calendar-view-${item.value}`}
                 className={cn(
                   "rounded-control px-3 py-2 text-xs font-bold transition sm:text-sm",
                   viewMode === item.value ? "bg-zani-card text-brand-700 shadow-sm" : "text-zani-muted hover:bg-surface-hover hover:text-zani-text",

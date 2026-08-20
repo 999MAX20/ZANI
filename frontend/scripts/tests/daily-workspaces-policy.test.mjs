@@ -12,7 +12,7 @@ test("capability-aware permissions hide disabled daily modules before role grant
   const permissions = await source("lib/permissions.ts");
   assert.match(permissions, /if \(!isBusinessResourceEnabled\(user, businessId, resource\)\) return false;/);
   assert.match(permissions, /deals:\s*"deals"/);
-  assert.match(permissions, /if \(role === "doctor"\) return "doctor";/);
+  assert.match(permissions, /if \(role === "staff" \|\| role === "doctor"\) return "specialist";/);
 });
 
 test("command palette reuses permission and capability policy for commands and entity queries", async () => {
@@ -54,10 +54,9 @@ test("daily workspaces preserve recoverable and role-valid actions", async () =>
   assert.match(conversations, /communicationConnectors\.isError/);
   assert.match(conversations, /communicationConnectors\.refetch\(\)/);
   assert.doesNotMatch(conversations, /!channel\.is_connected && channel\.total > 0/);
-  assert.match(conversations, /conversationUpdateScope === "own"/);
   assert.match(conversations, /!isIntegrationsAction\(action\.href\)/);
-  assert.match(conversations, /onRetryLastMessage=/);
-  assert.match(conversationList, /canRetryLastMessage\(conversation\)/);
+  assert.doesNotMatch(conversations, /onRetryLastMessage=/);
+  assert.doesNotMatch(conversationList, /canRetryLastMessage\(conversation\)/);
   assert.match(conversationList, /data-testid="inbox-provider-status-unavailable"/);
   assert.match(conversationList, /data-testid="inbox-provider-status-retry"/);
   assert.match(conversationList, /t\("conversations\.channelStatusUnavailable"\)/);

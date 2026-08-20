@@ -136,7 +136,7 @@ export function WorkingHoursPage() {
   }
 
   return (
-    <>
+    <div data-testid="working-hours-workspace-ready">
       <PageHeader
         title={t("workingHours.title")}
         description={t("workingHours.description")}
@@ -147,7 +147,7 @@ export function WorkingHoursPage() {
                 {t("settings.schedulingCenter")}
               </Button>
             </Link>
-            <Button onClick={() => setOpen(true)}>
+            <Button data-testid="working-hours-setup" onClick={() => setOpen(true)}>
               <Plus size={18} />
               {t("workingHours.setupWeek")}
             </Button>
@@ -373,6 +373,6 @@ export function WorkingHoursPage() {
           onSubmit={(payloads) => mutation.mutateAsync(payloads)}
         />
       </Modal>
-    </>
+    </div>
   );
 }

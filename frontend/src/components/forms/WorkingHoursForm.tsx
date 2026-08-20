@@ -148,6 +148,7 @@ export function WeeklyWorkingHoursForm({
 
   return (
     <form
+      data-testid="weekly-working-hours-form"
       className="grid gap-5"
       onSubmit={async (event) => {
         event.preventDefault();
@@ -194,8 +195,8 @@ export function WeeklyWorkingHoursForm({
         options={[{ value: "", label: t("workingHours.wholeBusinessSchedule") }, ...resources.map((item) => ({ value: item.id, label: item.name }))]}
       />
       <div className="flex flex-wrap gap-2">
-        <Button type="button" variant="secondary" onClick={() => applyPreset("salon")}>{t("workingHours.salonPreset")}</Button>
-        <Button type="button" variant="secondary" onClick={() => applyPreset("weekdays")}>{t("workingHours.officePreset")}</Button>
+        <Button data-testid="working-hours-preset-daily" type="button" variant="secondary" onClick={() => applyPreset("salon")}>{t("workingHours.salonPreset")}</Button>
+        <Button data-testid="working-hours-preset-weekdays" type="button" variant="secondary" onClick={() => applyPreset("weekdays")}>{t("workingHours.officePreset")}</Button>
         {targetResource ? (
           <Button type="button" variant="secondary" onClick={copyBusinessSchedule}>{t("workingHours.copyBusinessSchedule")}</Button>
         ) : null}
@@ -237,7 +238,7 @@ export function WeeklyWorkingHoursForm({
           );
         })}
       </div>
-      <Button type="submit" isLoading={isSubmitting}>{t("workingHours.saveWeek")}</Button>
+      <Button data-testid="working-hours-save-week" type="submit" isLoading={isSubmitting}>{t("workingHours.saveWeek")}</Button>
     </form>
   );
 }

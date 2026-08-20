@@ -278,6 +278,7 @@ function TaskTableFilters({
         </div>
         <div className="grid w-full gap-2 sm:grid-cols-2 lg:w-auto lg:grid-cols-[220px_150px_160px_190px_150px_160px]">
           <Input
+            data-testid="tasks-search-input"
             className="h-9 text-sm"
             value={searchQuery}
             onChange={(event) => onSearchChange(event.target.value)}

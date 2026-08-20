@@ -100,6 +100,7 @@ export function LeadsToolbar({
             size={18}
           />
           <input
+            data-testid="leads-search-input"
             className="h-9 w-full rounded-control border border-zani-border bg-surface-card px-9 text-sm font-semibold text-zani-text outline-none transition placeholder:text-zani-muted focus:border-brand-300 focus:ring-4 focus:ring-[var(--zani-focus-ring)]"
             placeholder={labels.search}
             value={search}
@@ -107,6 +108,7 @@ export function LeadsToolbar({
           />
         </label>
         <Select
+          data-testid="leads-status-filter"
           className="h-9 text-xs"
           value={filter}
           onChange={(event) => onFilterChange(event.target.value as LeadFilter)}
@@ -117,6 +119,7 @@ export function LeadsToolbar({
           }))}
         />
         <Select
+          data-testid="leads-source-filter"
           className="h-9 text-xs"
           value={source}
           onChange={(event) => onSourceChange(event.target.value)}
@@ -163,6 +166,7 @@ export function LeadsToolbar({
         </div>
       </div>
       {savedFiltersOpen ? (
+        <div data-testid="lead-saved-filters-panel">
         <div className="mt-3 rounded-card border border-zani-border bg-surface-muted p-3">
           <div className="flex min-w-0 items-center gap-2 overflow-x-auto pb-2">
             {filterPresets.length ? (
@@ -198,6 +202,7 @@ export function LeadsToolbar({
               {labels.saveFilter}
             </Button>
           </div>
+        </div>
         </div>
       ) : null}
       {moreMenuOpen ? (

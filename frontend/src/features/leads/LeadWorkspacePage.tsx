@@ -210,7 +210,7 @@ export function LeadWorkspacePage() {
   );
 
   return (
-    <EntityWorkspaceRoot>
+    <EntityWorkspaceRoot testId="lead-workspace-ready">
       <EntityWorkspaceHeader
         backLabel={t("common.back")}
         onBack={() => navigate("/app/leads")}

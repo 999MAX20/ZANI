@@ -1285,6 +1285,7 @@ export function ConversationsPage() {
 
   return (
     <div
+      data-testid="inbox-workspace-ready"
       className="-mx-2 overflow-hidden sm:-mx-3 lg:-mx-4"
       style={{ height: `calc(100dvh - ${CONVERSATIONS_SHELL_OFFSET}px)` }}
     >

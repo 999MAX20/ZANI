@@ -3,7 +3,7 @@
 - Status: **ACTIVE / IN PROGRESS**
 - Created: 2026-08-18
 - Scope: remaining repository, security and verification debt discovered by the backend audit
-- Execution state: **IN PROGRESS - BE-REM-001 THROUGH BE-REM-006 DONE**
+- Execution state: **IN PROGRESS - BE-REM-001 THROUGH BE-REM-006 DONE; BE-REM-007 BLOCKED BY FALLBACK PREREQUISITE**
 - Owner: ZANI manager workflow
 
 ## Purpose
@@ -82,7 +82,7 @@ External production services are listed as a release gate because repository har
 | BE-REM-004 | Guarantee the safe API error envelope for unknown failures | P0 | DONE | BE-REM-003 |
 | BE-REM-005 | Replace connector secret encryption and add key rotation | P1 | DONE | BE-REM-002 |
 | BE-REM-006 | Add privileged-account MFA foundation | P1 | DONE | BE-REM-003 |
-| BE-REM-007 | Complete the functional certification evidence | P1 | NOT_STARTED | BE-REM-001..006 |
+| BE-REM-007 | Complete the functional certification evidence | P1 | BLOCKED - independent gates pass; FB-001..010 prerequisite open | BE-REM-001..006 |
 
 ## BE-REM-001 - Restore The Clean Full Test Gate
 
@@ -559,6 +559,40 @@ Migration/env impact: adds accounts.0006_privileged_mfa; adds AUTH_PRIVILEGED_MF
 Permission impact: MFA records and actions are self-scoped; cross-tenant targeting cannot manage another user's factor; owner/admin are mandatory under the selected policy while lower roles preserve the existing session contract
 Notification/BusinessEvent/AI impact: no notification, normalized business-event or AI contract changed; security audit logs gained MFA lifecycle events without codes, secrets or tokens
 Residual risk: production onboarding must teach owners to save recovery codes and support must rehearse verified device-loss recovery; passkeys/WebAuthn remain a later hardening option; production credentials, managed services and live-environment evidence remain outside this repository phase; BE-REM-007 is next but is not started under the phase stop gate
+```
+
+### BE-REM-007 - Functional Certification Evidence
+
+```text
+Task: BE-REM-007
+Branch: codex/backend-rem-007-functional-certification
+Base commit: 00b1e2146f05cd92dbebc976ed3c3163eee3b958
+Evidence report: actual_docs/APP_FUNCTIONAL_CERTIFICATION_REPORT_2026-08-20.md
+Status: BLOCKED - every independent repository gate executed in this phase is green, but the required unified failure/recovery layer FB-001 through FB-010 is NOT_STARTED
+Behavior delivered:
+- a machine-readable 43-entry route/action registry covers all 81 router path declarations (77 unique) and a guard test prevents unregistered routes
+- deterministic certification fixtures cover owner, administrator, manager, operator and specialist profiles plus multiple businesses and foreign-tenant data
+- Playwright contracts cover search focus/debounce/query composition, action feedback and focus restoration, CRM overlays, role/capability workspaces, kanban density, accessibility/responsiveness and request/render budgets
+- complete tenant-scoped resource options prevent paginated selector truncation
+- team-member options are now filtered by the active accessible business, preventing duplicate identities and cross-workspace assignment choices
+- stale policy assertions were aligned with the approved neutral specialist role and the owner-requested removal of Inbox retry controls
+Checks run and exact result:
+- npx playwright test --workers=1 -> 138 scenarios discovered across desktop/tablet/mobile; exit 0
+- .\.venv\Scripts\python.exe manage.py test -v 1 -> 901 tests passed in 1511.830s
+- manage.py check -> 0 issues; makemigrations --check --dry-run -> no changes detected
+- npm run check:certification -> 43 entries cover 81 declarations; registry guard test 1/1 passed
+- frontend policy tests -> 29/29 passed
+- npm run build -> 4662-key RU/KK/EN i18n, TypeScript, app and widget builds passed
+- npm run check:bundle -> no chunk over 500 kB; app shell 261.6 kB within 400 kB budget
+- npm audit --omit=dev and npm audit -> 0 vulnerabilities; pip-audit -> no known vulnerabilities
+- npm run audit:interaction -> 12 workspaces, 0 auth redirects, unexpected errors or API issues
+- npm run audit:visual -> 13 views, 0 overflow, surface, API or auth issues
+- git diff --check -> passed
+Checks skipped and reason: no independent repository gate was skipped; exhaustive 400/401/403/404/409/429/500/timeout/offline/stale-response UI recovery and all ten frontend-to-persistence merchant journeys cannot be accepted before FB-001..FB-010
+Migration/env impact: no migration or dependency-lock change; deterministic fixtures and quality-gate configuration only
+Permission impact: no permission grant was widened; team options are restricted to the active business after the existing accessible-business authorization filter
+Notification/BusinessEvent/AI impact: no notification, BusinessEvent or AI production behavior changed; mock-provider and disabled-provider paths remain deterministic
+Residual risk: registry entries remain NOT_RUN until their complete action and failure contracts are individually certified; FC-003, FC-004 and FC-006 remain partial, and FC-008 cannot become PASS until the committed-range full gate and fallback certification are both green
 ```
 
 Add one entry per subsequent completed item:

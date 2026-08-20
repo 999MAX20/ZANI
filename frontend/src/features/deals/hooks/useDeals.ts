@@ -20,7 +20,7 @@ export function useDeals(filters?: DealFiltersState) {
   });
   const teamMembers = useQuery({
     queryKey: ["team-members", business?.id],
-    queryFn: teamApi.members,
+    queryFn: () => teamApi.members(business?.id),
     enabled: Boolean(business),
     retry: false,
   });

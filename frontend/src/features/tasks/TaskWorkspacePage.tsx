@@ -79,8 +79,9 @@ export function TaskWorkspacePage() {
     enabled: Boolean(taskId),
   });
   const teamMembersQuery = useQuery({
-    queryKey: ["team-members"],
-    queryFn: teamApi.members,
+    queryKey: ["team-members", taskQuery.data?.business],
+    queryFn: () => teamApi.members(taskQuery.data?.business),
+    enabled: Boolean(taskQuery.data?.business),
   });
 
   const task = taskQuery.data || null;

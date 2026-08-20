@@ -180,6 +180,7 @@ export function AppointmentForm({
 
   return (
     <form
+      data-testid="appointment-form"
       className="grid gap-4 rounded-card border border-zani-border bg-surface-card p-4 shadow-card sm:p-5"
       onSubmit={form.handleSubmit(async (values) => {
         setSubmitError(null);
@@ -321,7 +322,7 @@ export function AppointmentForm({
         { value: "bot", label: "Bot" },
       ]} {...form.register("source")} />
       <Textarea label={t("appointment.notes")} {...form.register("notes")} />
-      <Button type="submit" isLoading={form.formState.isSubmitting} disabled={!initial && (!hasClients || !hasServices || slots.isLoading || slots.data?.length === 0)}>
+      <Button data-testid="appointment-submit" type="submit" isLoading={form.formState.isSubmitting} disabled={!initial && (!hasClients || !hasServices || slots.isLoading || slots.data?.length === 0)}>
         {initial ? t("appointment.save") : t("appointment.create")}
       </Button>
     </form>

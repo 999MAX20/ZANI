@@ -319,6 +319,16 @@ async function readWorkspaceCommits(page: Page) {
   });
 }
 
+async function waitForWorkspaceCommitStability(page: Page) {
+  const deadline = Date.now() + 8_000;
+  while (Date.now() < deadline) {
+    await resetWorkspaceCommits(page);
+    await page.waitForTimeout(500);
+    if ((await readWorkspaceCommits(page)) === 0) return;
+  }
+  throw new Error("The active workspace did not reach a stable render state");
+}
+
 test("F-302 pilot routes stay within request and waterfall budgets", async ({
   page,
 }) => {
@@ -390,8 +400,7 @@ test("F-302 shell interactions do not re-render the active workspace", async ({
   await installWorkspaceProfiler(page);
   await login(page);
   await navigateInsideApp(page, "/app/tasks");
-  await page.waitForTimeout(1_200);
-  await resetWorkspaceCommits(page);
+  await waitForWorkspaceCommitStability(page);
 
   if (testInfo.project.name === "mobile-chromium") {
     const menuTrigger = page.getByTestId("header-mobile-menu-trigger");

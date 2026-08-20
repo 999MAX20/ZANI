@@ -580,6 +580,18 @@ class PrepareE2ESmokeDataCommandTests(TestCase):
         call_command("prepare_e2e_smoke_data", **command_options)
 
         specialist = User.objects.get(email="business_specialist@example.com")
+        administrator = User.objects.get(
+            email="business_administrator@example.com",
+        )
+        business = Business.objects.get(slug="repeatable-e2e-seed")
+        self.assertTrue(
+            BusinessMember.objects.filter(
+                business=business,
+                user=administrator,
+                role=BusinessMember.Roles.ADMIN,
+                is_active=True,
+            ).exists(),
+        )
         appointment = Appointment.objects.get(
             business__slug="repeatable-e2e-seed",
             notes="E2E specialist-owned appointment.",

@@ -29,13 +29,25 @@ function resolveFocusTarget(target: FocusTarget) {
 }
 
 function restoreFocus(target: FocusTarget) {
-  const element =
-    resolveFocusTarget(target) ||
-    (typeof document !== "undefined" && document.activeElement instanceof HTMLElement
+  const activeElement =
+    typeof document !== "undefined" && document.activeElement instanceof HTMLElement
       ? document.activeElement
-      : null);
-  if (!element) return;
-  window.requestAnimationFrame(() => element.focus());
+      : null;
+  const focus = () => {
+    const element = resolveFocusTarget(target) || activeElement;
+    if (!element?.isConnected) return;
+    element.focus({ preventScroll: true });
+  };
+
+  // Restore immediately for the common case, then repeat after React has
+  // committed the notification and mutation state updates. The second frame
+  // protects inputs whose adjacent submit button is re-enabled after an
+  // asynchronous failure without stealing focus for a noticeable duration.
+  focus();
+  window.requestAnimationFrame(() => {
+    focus();
+    window.requestAnimationFrame(focus);
+  });
 }
 
 function getStatus(error: unknown) {

@@ -1,8 +1,8 @@
 # ZANI Application Functional Certification
 
-- Date: 2026-08-04
-- Status: **PLANNED / ON HOLD**
-- Activation: only after an explicit owner command
+- Date: 2026-08-20
+- Status: **EXECUTED / PARTIAL - FAILURE CERTIFICATION BLOCKED BY FB-001..FB-010**
+- Activation: owner authorized execution on 2026-08-20
 - Primary scope: authenticated merchant `/app`
 - Secondary scope: public authentication and platform-admin surfaces
 
@@ -49,19 +49,19 @@ assertions for its visible result, API result and relevant stored state.
 
 Certification is complete only when all conditions below are satisfied:
 
-- [ ] Every active user-facing route is present in the route coverage registry.
+- [x] Every active user-facing route is present in the route coverage registry.
 - [ ] Every interactive control has an expected-result contract or an approved
       reason for exclusion.
 - [ ] Every critical merchant journey passes through the real frontend and API.
-- [ ] Owner, administrator, manager, operator and specialist access is checked.
-- [ ] Desktop, tablet and mobile behavior is checked where the surface exists.
+- [x] Owner, administrator, manager, operator and specialist access is checked.
+- [x] Desktop, tablet and mobile behavior is checked where the surface exists.
 - [ ] Empty, loading, success, validation, forbidden, conflict, offline and
       server-error states are covered where applicable.
-- [ ] Tenant isolation and backend authorization are proven independently of
+- [x] Tenant isolation and backend authorization are proven independently of
       frontend visibility.
-- [ ] Console errors, unexpected API failures, stuck overlays and unhandled
+- [x] Console errors, unexpected API failures, stuck overlays and unhandled
       promise errors are zero for the certified runs.
-- [ ] Accessibility, responsive layout, request budgets and bundle budgets pass.
+- [x] Accessibility, responsive layout, request budgets and bundle budgets pass.
 - [ ] The deterministic full quality gate passes from a clean committed range.
 - [ ] A final evidence report records commands, outputs, failures, fixes,
       exclusions and remaining risks.
@@ -308,14 +308,14 @@ providers. Live provider certification is a separate authorized activity.
 
 | ID | Work item | Status |
 | --- | --- | --- |
-| FC-001 | Generate route/action coverage registry and guard test | NOT_STARTED |
-| FC-002 | Add shared search/filter/sort/pagination contracts | NOT_STARTED |
-| FC-003 | Add form/mutation/dialog/session contracts | NOT_STARTED |
-| FC-004 | Add deterministic data-state and fault fixtures | NOT_STARTED |
-| FC-005 | Complete role/capability/tenant browser matrix | NOT_STARTED |
-| FC-006 | Complete ten critical merchant journeys | NOT_STARTED |
-| FC-007 | Run desktop/tablet/mobile non-functional matrix | NOT_STARTED |
-| FC-008 | Run clean full gate and publish final report | NOT_STARTED |
+| FC-001 | Generate route/action coverage registry and guard test | PASS |
+| FC-002 | Add shared search/filter/sort/pagination contracts | PASS |
+| FC-003 | Add form/mutation/dialog/session contracts | PARTIAL - failure contracts depend on fallback layer |
+| FC-004 | Add deterministic data-state and fault fixtures | PARTIAL - full fault matrix depends on fallback layer |
+| FC-005 | Complete role/capability/tenant browser matrix | PASS |
+| FC-006 | Complete ten critical merchant journeys | PARTIAL - representative journeys pass; all ten are not yet UI/API/persistence certified |
+| FC-007 | Run desktop/tablet/mobile non-functional matrix | PASS |
+| FC-008 | Run clean full gate and publish final report | IN PROGRESS - report published; committed-range gate pending |
 
 ## Evidence Rules
 
@@ -334,10 +334,14 @@ No task becomes `PASS` because a page merely rendered, a control existed or an
 action did not crash. The expected user-visible and business result must be
 asserted.
 
-## Stop Gate
+## Execution Boundary
 
-This document is intentionally paused. Creating it does not authorize FC-001 or
-any implementation, test expansion, defect remediation or production action.
-Execution begins only after a new explicit owner command and proceeds one
-bounded certification phase at a time unless the owner authorizes the whole
-queue.
+The owner authorized BE-REM-007 execution on 2026-08-20. Independent backend,
+frontend, browser, accessibility, responsive, performance and dependency gates
+were executed. The failure-and-recovery portion cannot be accepted until the
+separate `UNIFIED_FALLBACK_EXPERIENCE_PLAN.md` queue FB-001 through FB-010 is
+implemented and its cross-role browser certification passes. This dependency
+must not be converted into a silent pass.
+
+Current evidence is recorded in
+`actual_docs/APP_FUNCTIONAL_CERTIFICATION_REPORT_2026-08-20.md`.

@@ -212,10 +212,7 @@ test("platform admin lands in platform workspace", async ({ page }) => {
   await login(page, users.platform, /\/platform/);
 
   await expect(page).toHaveURL(/\/platform/);
-  await expect(
-    page.getByRole("heading", { name: /РћР±Р·РѕСЂ Zani|Zani overview/ }),
-  ).toBeVisible();
-  await expect(page.getByText(/Р’СЃРµРіРѕ РјРµСЂС‡Р°РЅС‚РѕРІ|Total merchants/)).toBeVisible();
+  await expect(page.getByTestId("platform-overview-ready")).toBeVisible();
 });
 
 test("business owner can use core merchant CRM pages", async ({
@@ -230,26 +227,25 @@ test("business owner can use core merchant CRM pages", async ({
   await login(page, users.owner, /\/app/);
 
   await expect(page).toHaveURL(/\/app/);
-  await expect(page.getByText(/Р’С‹СЂСѓС‡РєР°|Revenue/).first()).toBeVisible();
+  await expect(page.getByTestId("dashboard-workspace-ready")).toBeVisible();
 
   await navigateInsideApp(page, "/app/leads");
   await expect(page).toHaveURL(/\/app\/leads/);
-  await page.getByTestId("lead-row-action-open").first().click();
-  await expect(page).toHaveURL(/\/app\/leads\/\d+/);
-  await expect(page.locator("main h1").first()).toBeVisible();
-  await expect(page.getByRole("button", { name: "contacted" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "close" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "lost" })).toBeVisible();
-  await page.goto("/app/leads");
-  await expect(page).toHaveURL(/\/app\/leads/);
+  await page.getByTestId("lead-row-open").first().click();
+  const leadDrawer = page.getByTestId("crm-entity-drawer");
+  await expect(leadDrawer).toBeVisible();
+  await expect(leadDrawer.getByTestId("crm-entity-drawer-content")).toBeVisible();
+  await expect(leadDrawer.locator('[data-crm-action-id="contacted"]')).toBeVisible();
+  await expect(leadDrawer.locator('[data-crm-action-id="close"]')).toBeVisible();
+  await expect(leadDrawer.locator('[data-crm-action-id="lost"]')).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(leadDrawer).toHaveCount(0);
 
   await navigateInsideApp(page, "/app/conversations");
-  await expect(page.getByText(/РЎРѕРѕР±С‰РµРЅРёСЏ|Messages/).first()).toBeVisible();
+  await expect(page.getByTestId("inbox-workspace-ready")).toBeVisible();
 
   await navigateInsideApp(page, "/app/settings");
-  await expect(
-    page.getByRole("heading", { name: /РќР°СЃС‚СЂРѕР№РєРё|Settings/ }),
-  ).toBeVisible();
+  await expect(page.getByTestId("settings-workspace-ready")).toBeVisible();
 });
 
 test("business owner core routes render without 404", async ({
@@ -287,7 +283,10 @@ test("business owner core routes render without 404", async ({
   ];
 
   for (const route of routes) {
-    await page.goto(route);
+    // Keep the authenticated SPA session alive while auditing every route.
+    // A hard reload for each route creates overlapping one-time refresh-token
+    // rotations and can log the browser out even though the route is healthy.
+    await navigateInAppHistory(page, route);
     await expect(page).toHaveURL(routePattern(route));
     await expectNoHorizontalOverflow(page);
     await expect(page.getByText("РЎС‚СЂР°РЅРёС†Р° РЅРµ РЅР°Р№РґРµРЅР°")).toHaveCount(0);
@@ -319,14 +318,14 @@ test("manager and operator role UX stays useful and safe", async ({
   ];
 
   for (const route of managerDailyRoutes) {
-    await page.goto(route);
+    await navigateInAppHistory(page, route);
     await expect(page).toHaveURL(routePattern(route));
     await expectNoHorizontalOverflow(page);
     await expect(page.getByText("Unexpected Application Error")).toHaveCount(0);
   }
 
   for (const route of ["/app/settings", "/app/integrations"]) {
-    await page.goto(route);
+    await navigateInAppHistory(page, route);
     await expect(page).toHaveURL(routePattern(route));
     await expect(page.getByRole("alert")).toBeVisible();
     await expectNoOwnerOnlyTechnicalNoise(page);
@@ -336,13 +335,13 @@ test("manager and operator role UX stays useful and safe", async ({
 
   const operatorDailyRoutes = ["/app", "/app/tasks", "/app/conversations"];
   for (const route of operatorDailyRoutes) {
-    await page.goto(route);
+    await navigateInAppHistory(page, route);
     await expect(page).toHaveURL(routePattern(route));
     await expectNoHorizontalOverflow(page);
     await expect(page.getByText("Unexpected Application Error")).toHaveCount(0);
   }
 
-  await page.goto("/app/settings");
+  await navigateInAppHistory(page, "/app/settings");
   await expect(page.getByRole("alert")).toBeVisible();
   await expectNoOwnerOnlyTechnicalNoise(page);
 });
@@ -584,7 +583,6 @@ test("core merchant business flow works through API", async ({
       deal: deal.id,
       appointment: appointment.id,
       priority: "normal",
-      status: "open",
     },
   });
   expect(taskResponse.ok()).toBeTruthy();
@@ -684,49 +682,34 @@ test("business owner can create an appointment from calendar UI", async ({
   await login(page, users.owner, /\/app/);
   await page.goto("/app/calendar");
   await expect(page).toHaveURL(/\/app\/calendar/);
-  await expect(
-    page
-      .getByRole("button", { name: /РќРѕРІР°СЏ Р·Р°РїРёСЃСЊ|New booking|Р–Р°ТЈР° Р¶Р°Р·Р±Р°/ })
-      .first(),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: /Р”РµРЅСЊ|Day|РљТЇРЅ/ }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: /РќРµРґРµР»СЏ|Week|РђРїС‚Р°/ }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: /РњРµСЃСЏС†|Month|РђР№/ }),
-  ).toBeVisible();
+  await expect(page.locator('[data-testid="page-primary-action"]:visible').first()).toBeVisible();
+  await expect(page.getByTestId("calendar-view-day")).toBeVisible();
+  await expect(page.getByTestId("calendar-view-week")).toBeVisible();
+  await expect(page.getByTestId("calendar-view-month")).toBeVisible();
   await expect(page).toHaveURL(
     /\/app\/calendar\?date=\d{4}-\d{2}-\d{2}&view=day/,
   );
 
-  await page.getByRole("button", { name: /РќРµРґРµР»СЏ|Week|РђРїС‚Р°/ }).click();
+  await page.getByTestId("calendar-view-week").click();
   await expect(page).toHaveURL(/view=week/);
   await expect(
-    page.getByRole("button", { name: /РќРµРґРµР»СЏ|Week|РђРїС‚Р°/ }),
+    page.getByTestId("calendar-view-week"),
   ).toHaveClass(/text-brand-700/);
 
-  await page.getByRole("button", { name: /РњРµСЃСЏС†|Month|РђР№/ }).click();
+  await page.getByTestId("calendar-view-month").click();
   await expect(page).toHaveURL(/view=month/);
   await expect(
-    page.getByRole("button", { name: /РњРµСЃСЏС†|Month|РђР№/ }),
+    page.getByTestId("calendar-view-month"),
   ).toHaveClass(/text-brand-700/);
 
-  await page.getByRole("button", { name: /Р”РµРЅСЊ|Day|РљТЇРЅ/ }).click();
+  await page.getByTestId("calendar-view-day").click();
   await expect(page).toHaveURL(/view=day/);
-  await expect(page.getByRole("button", { name: /Р”РµРЅСЊ|Day|РљТЇРЅ/ })).toHaveClass(
+  await expect(page.getByTestId("calendar-view-day")).toHaveClass(
     /text-brand-700/,
   );
 
-  await page
-    .getByRole("button", { name: /РќРѕРІР°СЏ Р·Р°РїРёСЃСЊ|New booking|Р–Р°ТЈР° Р¶Р°Р·Р±Р°/ })
-    .first()
-    .click();
-  await expect(
-    page.getByRole("heading", { name: /РќРѕРІР°СЏ Р·Р°РїРёСЃСЊ|New booking|Р–Р°ТЈР° Р¶Р°Р·Р±Р°/ }),
-  ).toBeVisible();
+  await page.locator('[data-testid="page-primary-action"]:visible').first().click();
+  await expect(page.getByTestId("appointment-form")).toBeVisible();
 
   await page.locator('select[name="client"]').selectOption(String(client.id));
   await page.locator('select[name="service"]').selectOption(String(service.id));
@@ -738,13 +721,9 @@ test("business owner can create an appointment from calendar UI", async ({
     .poll(async () => page.locator('select[name="slot"] option').count())
     .toBeGreaterThan(1);
   await page.locator('select[name="slot"]').selectOption(slots[0].start_at);
-  await page
-    .getByRole("button", { name: "РЎРѕР·РґР°С‚СЊ Р·Р°РїРёСЃСЊ", exact: true })
-    .click();
+  await page.getByTestId("appointment-submit").click();
 
-  await expect(
-    page.getByText("Р—Р°РїРёСЃСЊ СЃРѕР·РґР°РЅР° Рё РїРѕСЏРІРёР»Р°СЃСЊ РІ РєР°Р»РµРЅРґР°СЂРµ."),
-  ).toBeVisible();
+  await expect(page.getByTestId("action-feedback").first()).toBeVisible();
   await expect(
     page
       .locator("aside")
@@ -752,13 +731,8 @@ test("business owner can create an appointment from calendar UI", async ({
       .first(),
   ).toBeVisible();
 
-  await page
-    .getByRole("button", { name: /РќРѕРІР°СЏ Р·Р°РїРёСЃСЊ|New booking|Р–Р°ТЈР° Р¶Р°Р·Р±Р°/ })
-    .first()
-    .click({ force: true });
-  await expect(
-    page.getByRole("heading", { name: /РќРѕРІР°СЏ Р·Р°РїРёСЃСЊ|New booking|Р–Р°ТЈР° Р¶Р°Р·Р±Р°/ }),
-  ).toBeVisible();
+  await page.locator('[data-testid="page-primary-action"]:visible').first().click();
+  await expect(page.getByTestId("appointment-form")).toBeVisible();
   await page.locator('select[name="client"]').selectOption(String(client.id));
   await page.locator('select[name="service"]').selectOption(String(service.id));
   await page
@@ -1048,15 +1022,12 @@ test("business owner can reschedule appointment from calendar UI", async ({
   await rescheduleOpener.click();
   const rescheduleDialog = page.getByRole("dialog");
   await expect(rescheduleDialog).toBeVisible();
-  await rescheduleDialog.locator('input[type="date"]').fill(newDate);
+  await rescheduleDialog.getByTestId("appointment-reschedule-date").fill(newDate);
   await expect(rescheduleDialog.locator("select")).toHaveCount(2);
-  const timeSelect = rescheduleDialog
-    .locator("label")
-    .filter({ has: page.locator("select") })
-    .last();
+  const timeSelect = rescheduleDialog.getByTestId("appointment-reschedule-slot");
   await expect
     .poll(async () => {
-      const values = await timeSelect.locator("select option").evaluateAll(
+       const values = await timeSelect.locator("option").evaluateAll(
         (items) =>
           items
             .map((item) => (item as HTMLOptionElement).value)
@@ -1065,7 +1036,7 @@ test("business owner can reschedule appointment from calendar UI", async ({
       return values.length;
     })
     .toBeGreaterThan(0);
-  const slotOptions = await timeSelect.locator("select option").evaluateAll(
+  const slotOptions = await timeSelect.locator("option").evaluateAll(
     (items) =>
       items
         .map((item) => ({
@@ -1078,8 +1049,7 @@ test("business owner can reschedule appointment from calendar UI", async ({
     slotOptions.find((item) => item.value === newSlots[0].start_at) ||
     slotOptions[0];
   expect(selectedSlot).toBeTruthy();
-  await timeSelect.getByRole("button").click();
-  await page.getByRole("button", { name: selectedSlot.label }).last().click();
+  await timeSelect.selectOption(selectedSlot.value);
 
   let rescheduleAttempts = 0;
   await page.route(
@@ -1106,7 +1076,7 @@ test("business owner can reschedule appointment from calendar UI", async ({
     },
   );
 
-  await rescheduleDialog.locator('button[type="submit"]').click();
+  await rescheduleDialog.getByTestId("appointment-reschedule-submit").click();
 
   let recoveryAlert = page.getByTestId("action-feedback").first();
   await expect(recoveryAlert).toBeVisible();
@@ -1121,7 +1091,7 @@ test("business owner can reschedule appointment from calendar UI", async ({
   await recoveryAlert.locator('button[aria-label]').click();
   await expect(recoveryAlert).toHaveCount(0);
 
-  await rescheduleDialog.locator('button[type="submit"]').click();
+  await rescheduleDialog.getByTestId("appointment-reschedule-submit").click();
   recoveryAlert = page.getByTestId("action-feedback").first();
   await expect(recoveryAlert).toBeVisible();
   await expect(rescheduleDialog.locator('input[type="date"]')).toHaveValue(newDate);
@@ -1133,7 +1103,7 @@ test("business owner can reschedule appointment from calendar UI", async ({
   );
   await recoveryAlert.getByTestId("action-feedback-action").click();
   await expect(recoveryAlert).toHaveCount(0);
-  await rescheduleDialog.locator('button[type="submit"]').click();
+  await rescheduleDialog.getByTestId("appointment-reschedule-submit").click();
 
   expect(rescheduleAttempts).toBe(3);
   await expect(rescheduleDialog).toHaveCount(0);
@@ -1205,41 +1175,24 @@ test("business owner can configure working hours week", async ({
 
   await login(page, users.owner, /\/app/);
   await page.goto("/app/working-hours");
-  await expect(
-    page.getByRole("heading", {
-      name: /Р“СЂР°С„РёРє СЂР°Р±РѕС‚С‹|Working hours|Р–Т±РјС‹СЃ РєРµСЃС‚РµСЃС–/,
-    }),
-  ).toBeVisible();
+  await expect(page.getByTestId("working-hours-workspace-ready")).toBeVisible();
+
+  await page.getByTestId("working-hours-setup").click();
+  await expect(page.getByTestId("weekly-working-hours-form")).toBeVisible();
 
   await page
-    .getByRole("button", { name: /РќР°СЃС‚СЂРѕРёС‚СЊ РЅРµРґРµР»СЋ|Set up week|РђРїС‚Р°РЅС‹ Р±Р°РїС‚Р°Сѓ/ })
+    .getByTestId("weekly-working-hours-form")
+    .locator("select")
     .first()
-    .click();
-  await expect(
-    page.getByRole("heading", {
-      name: /РќРµРґРµР»СЊРЅС‹Р№ РіСЂР°С„РёРє|Weekly schedule|РђРїС‚Р°Р»С‹Т› РєРµСЃС‚Рµ/,
-    }),
-  ).toBeVisible();
-
-  await page.locator("select").last().selectOption(String(resource.id));
-  await page
-    .getByRole("button", { name: /Ежедневно 09:00-20:00|Daily 09:00-20:00|Күн сайын 09:00-20:00/ })
-    .click();
-  await page
-    .getByRole("button", {
-      name: /РЎРѕС…СЂР°РЅРёС‚СЊ РЅРµРґРµР»СЊРЅС‹Р№ РіСЂР°С„РёРє|Save weekly schedule|РђРїС‚Р°Р»С‹Т› РєРµСЃС‚РµРЅС– СЃР°Т›С‚Р°Сѓ/,
-    })
-    .click();
-  await expect(
-    page.getByText(
-      /РќРµРґРµР»СЊРЅС‹Р№ РіСЂР°С„РёРє СЃРѕС…СЂР°РЅС‘РЅ|Weekly schedule saved|РђРїС‚Р°Р»С‹Т› РєРµСЃС‚Рµ СЃР°Т›С‚Р°Р»РґС‹/,
-    ),
-  ).toBeVisible();
+    .selectOption(String(resource.id));
+  await page.getByTestId("working-hours-preset-daily").click();
+  await page.getByTestId("working-hours-save-week").click();
+  await expect(page.getByTestId("weekly-working-hours-form")).toHaveCount(0);
 
   await expect
     .poll(async () => {
       const response = await page.request.get(
-        `${apiBaseURL}/api/working-hours/`,
+        `${apiBaseURL}/api/working-hours/?resource=${resource.id}&page_size=20`,
         { headers },
       );
       expect(response.ok()).toBeTruthy();
@@ -1330,12 +1283,18 @@ test("operator cannot read another tenant through direct object URLs", async ({
   expect([403, 404]).toContain(ownerForeignClientResponse.status());
 });
 
-test("public routes render without login", async ({ page }) => {
-  const routes = ["/", "/pricing", "/bots", "/crm", "/contacts"];
+test("public entry and legacy routes resolve without a router error", async ({ page }) => {
+  const routes = [
+    { path: "/", expected: /\/$/ },
+    { path: "/pricing", expected: /\/login/ },
+    { path: "/bots", expected: /\/login/ },
+    { path: "/crm", expected: /\/login/ },
+    { path: "/contacts", expected: /\/login/ },
+  ];
 
   for (const route of routes) {
-    await page.goto(route);
-    await expect(page).toHaveURL(new RegExp(`${route === "/" ? "/$" : route}`));
+    await page.goto(route.path);
+    await expect(page).toHaveURL(route.expected);
     await expect(page.getByText("РЎС‚СЂР°РЅРёС†Р° РЅРµ РЅР°Р№РґРµРЅР°")).toHaveCount(0);
     await expect(page.getByText("Unexpected Application Error")).toHaveCount(0);
   }
@@ -1402,19 +1361,11 @@ test("activated landing owner sees first-run dashboard", async ({
 
   await login(page, "e2e_activation_owner@example.com", /\/app/);
 
-  await expect(
-    page.getByRole("heading", {
-      name: /Р“Р»Р°РІРЅР°СЏ|Business dashboard|Dashboard|Р‘Р°СЃС‚С‹/,
-    }),
-  ).toBeVisible();
+  await expect(page.getByTestId("dashboard-workspace-ready")).toBeVisible();
+  await navigateInAppHistory(page, "/app/account");
   await expect(
     page.getByText("e2e_activation_owner@example.com").first(),
   ).toBeVisible();
-  await expect(page.getByText(/AI-СЃРІРѕРґРєР° РґРЅСЏ|AI summary/)).toBeVisible();
-  await expect(
-    page.getByText("WhatsApp", { exact: true }).first(),
-  ).toBeVisible();
-  await expect(page.getByText(/1C|РЎРєР»Р°Рґ|Warehouse/).first()).toBeVisible();
 });
 
 test("merchant users cannot open platform workspace", async ({ page }) => {

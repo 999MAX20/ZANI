@@ -131,6 +131,46 @@ class TeamMemberPaginationTests(TestCase):
         self.assertEqual(denied_response.status_code, 200)
         self.assertEqual(denied_response.data["results"], [])
 
+    def test_team_members_can_be_scoped_to_one_accessible_business(self):
+        api = APIClient()
+        owner = User.objects.create_user(
+            username="multi-business-owner",
+            email="multi-business-owner@example.com",
+            password="pass12345",
+            role=User.Roles.BUSINESS_OWNER,
+        )
+        first_business = Business.objects.create(
+            owner=owner,
+            name="First Accessible Clinic",
+            slug="first-accessible-clinic",
+        )
+        second_business = Business.objects.create(
+            owner=owner,
+            name="Second Accessible Clinic",
+            slug="second-accessible-clinic",
+        )
+        first_member = BusinessMember.objects.create(
+            business=first_business,
+            user=owner,
+            role=BusinessMember.Roles.OWNER,
+        )
+        second_member = BusinessMember.objects.create(
+            business=second_business,
+            user=owner,
+            role=BusinessMember.Roles.OWNER,
+        )
+        api.force_authenticate(owner)
+
+        response = api.get(f"/api/team/members/?business={first_business.id}")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([item["id"] for item in response.data["results"]], [first_member.id])
+        self.assertNotIn(second_member.id, [item["id"] for item in response.data["results"]])
+
+        invalid_response = api.get("/api/team/members/?business=not-a-number")
+        self.assertEqual(invalid_response.status_code, 200)
+        self.assertEqual(invalid_response.data["results"], [])
+
 
 class TeamAccessTests(TestCase):
     def setUp(self):

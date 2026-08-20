@@ -83,7 +83,7 @@ export function DealsFilters({ filters, stages, teamMembers, quickCounts, onChan
       advanced={
         <div className="grid gap-2">
           <div className="grid gap-2 md:grid-cols-2">
-            <Select value={filters.statusFilter} onChange={(event) => onChange({ statusFilter: event.target.value as DealStatusFilter })} options={statusFilters.map((value) => ({ value, label: statusLabel(value, t) }))} className="h-9 text-xs" aria-label={t("deals.status")} />
+            <Select data-testid="deals-status-filter" value={filters.statusFilter} onChange={(event) => onChange({ statusFilter: event.target.value as DealStatusFilter })} options={statusFilters.map((value) => ({ value, label: statusLabel(value, t) }))} className="h-9 text-xs" aria-label={t("deals.status")} />
             <Select value={filters.stageFilter} onChange={(event) => onChange({ stageFilter: event.target.value })} options={[{ value: "all", label: t("deals.allStages") }, ...stages.map((stage) => ({ value: String(stage.id), label: dealStageLabel(stage, t) }))]} className="h-9 text-xs" aria-label={t("deals.stage")} />
             <Select
               value={filters.ownerFilter}
@@ -110,6 +110,7 @@ export function DealsFilters({ filters, stages, teamMembers, quickCounts, onChan
     >
       <div className="relative w-full min-w-[210px] md:w-[270px]">
         <Input
+          data-testid="deals-search-input"
           value={filters.search}
           onChange={(event) => onChange({ search: event.target.value })}
           placeholder={t("deals.queueSearch")}

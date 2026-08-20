@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, Clock3, KeyRound, Languages, Link2, UserRound } from "lucide-react";
+import { Bell, Clock3, KeyRound, Languages, Link2, LogOut, UserRound } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { changePassword, getCurrentUserLoginHistory, getMfaStatus, updateCurrentUser } from "../../api/auth";
@@ -31,7 +31,7 @@ const notificationCategories: Array<{ category: Notification["category"]; titleK
 export function AccountPage() {
   const { t, language, setLanguage } = useI18n();
   const queryClient = useQueryClient();
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, logout } = useAuth();
   const { business } = useActiveBusiness();
   const activeMembership = user?.memberships?.find((membership) => String(membership.business) === String(business?.id) && membership.is_active);
   const [profileForm, setProfileForm] = useState({
@@ -146,8 +146,19 @@ export function AccountPage() {
             </p>
           </div>
         </div>
-        <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600">
-          {business?.name || t("account.noBusiness")}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600">
+            {business?.name || t("account.noBusiness")}
+          </div>
+          <Button
+            type="button"
+            variant="secondary"
+            data-testid="merchant-logout"
+            onClick={logout}
+          >
+            <LogOut size={17} />
+            {t("header.logout")}
+          </Button>
         </div>
       </div>
 

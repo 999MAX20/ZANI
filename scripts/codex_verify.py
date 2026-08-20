@@ -134,6 +134,10 @@ SAFE_ENV = {
     "E2E_SKIP_LOCAL_SETUP": "false",
     "E2E_REUSE_EXISTING_SERVER": "false",
     "E2E_PASSWORD": "ZaniTest123!",
+    # Browser certification intentionally restores sessions across many full-page
+    # navigations. Keep production throttling covered by backend tests without
+    # letting the shared loopback address throttle an otherwise valid E2E pack.
+    "AUTH_REFRESH_RATE": "1000/min",
     "E2E_PLATFORM_EMAIL": "platform_admin@example.com",
     "E2E_OWNER_EMAIL": "business_owner@example.com",
     "E2E_MANAGER_EMAIL": "business_manager@example.com",

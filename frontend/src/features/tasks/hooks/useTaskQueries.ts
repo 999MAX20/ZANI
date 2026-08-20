@@ -68,9 +68,9 @@ export function useTaskQueries({
   });
 
   const teamMembers = useQuery({
-    queryKey: ["team-members"],
-    queryFn: teamApi.members,
-    enabled: includeTeamData,
+    queryKey: ["team-members", businessId],
+    queryFn: () => teamApi.members(businessId),
+    enabled: Boolean(businessId && includeTeamData),
   });
 
   const taskTemplates = useQuery({

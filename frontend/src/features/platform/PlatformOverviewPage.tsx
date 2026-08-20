@@ -32,7 +32,7 @@ export function PlatformOverviewPage() {
   const data = overview.data;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5" data-testid="platform-overview-ready">
       <section className="glass-panel rounded-[2rem] p-6 sm:p-8">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>

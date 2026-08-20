@@ -130,6 +130,7 @@ test("F-101 representative actions keep safe feedback, recovery and success", as
   await navigateInApp(page, "/app/leads?create=1");
   const leadForm = page.getByTestId("lead-action-form");
   await expect(leadForm).toBeVisible();
+  await leadForm.locator("select").first().selectOption(String(client.id));
   const leadFailures = [
     { status: 400, detail: "raw-lead-validation-stack" },
     { status: 422, detail: "raw-lead-unprocessable-stack" },
@@ -238,7 +239,7 @@ test("F-101 representative actions keep safe feedback, recovery and success", as
     });
   });
   await navigateInApp(page, "/app/deals");
-  await page.getByTestId("page-primary-action").click();
+  await page.locator('[data-testid="page-primary-action"]:visible').first().click();
   const dealForm = page.getByTestId("deal-action-form");
   await expect(dealForm).toBeVisible();
   await dealForm.locator("input").first().fill(`F101 Deal ${unique}`);

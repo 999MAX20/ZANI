@@ -66,7 +66,7 @@ export function useEntityData(options?: EntityDataOptions) {
 
   const clients = useQuery<Client[]>({ queryKey: ["clients"], queryFn: () => clientsApi.list(), enabled: shouldLoad("clients") });
   const services = useQuery<Service[]>({ queryKey: ["services"], queryFn: () => servicesApi.list(), enabled: shouldLoad("services") });
-  const resources = useQuery<Resource[]>({ queryKey: ["resources"], queryFn: () => resourcesApi.list(), enabled: shouldLoad("resources") });
+  const resources = useQuery<Resource[]>({ queryKey: ["resources"], queryFn: () => resourcesApi.options(), enabled: shouldLoad("resources") });
   const leads = useQuery<Lead[]>({ queryKey: ["leads"], queryFn: () => leadsApi.list(), enabled: shouldLoad("leads") });
   const appointments = useQuery<Appointment[]>({ queryKey: ["appointments"], queryFn: () => appointmentsApi.list(), enabled: shouldLoad("appointments") });
   const workingHours = useQuery<WorkingHours[]>({ queryKey: ["working-hours"], queryFn: () => workingHoursApi.list(), enabled: shouldLoad("workingHours") });

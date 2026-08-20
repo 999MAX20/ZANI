@@ -269,10 +269,10 @@ export function Header({
                   </Drawer>
                 </div>
               ) : null}
-              {pageHeader.secondaryActions?.map((action) => {
+              {pageHeader.secondaryActions?.map((action, index) => {
                 const Icon = action.icon;
                 return (
-                  <Button key={action.label} variant="secondary" size="icon" className="h-9 w-9 shrink-0" onClick={action.onClick} aria-label={action.label}>
+                  <Button key={action.label} variant="secondary" size="icon" className="h-9 w-9 shrink-0" onClick={action.onClick} aria-label={action.label} data-testid={`page-secondary-action-${index}`}>
                     {Icon ? <Icon size={17} /> : null}
                   </Button>
                 );

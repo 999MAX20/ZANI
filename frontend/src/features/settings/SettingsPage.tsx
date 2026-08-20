@@ -228,7 +228,7 @@ export function SettingsPage() {
   });
   const teamMembers = useQuery({
     queryKey: ["team-members", business?.id],
-    queryFn: teamApi.members,
+    queryFn: () => teamApi.members(business?.id),
     enabled: Boolean(business && canViewTeam),
   });
   const teamRoles = useQuery({
@@ -835,7 +835,7 @@ export function SettingsPage() {
   }
 
   return (
-    <>
+    <div data-testid="settings-workspace-ready">
       <section className="mb-4">
         <div>
           <h1 className="text-2xl font-semibold text-zani-text">
@@ -2717,6 +2717,6 @@ export function SettingsPage() {
           </Card>
         </div>
       </div>
-    </>
+    </div>
   );
 }

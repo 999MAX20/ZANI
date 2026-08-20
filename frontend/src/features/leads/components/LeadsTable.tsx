@@ -176,6 +176,7 @@ function LeadTableRow({
   };
   return (
     <div
+      data-testid="lead-row-open"
       className={cn(
         CRM_TABLE_ROW_GRID_CLASS,
         selected && "bg-brand-50/70 shadow-[inset_3px_0_0_var(--zani-brand)]",

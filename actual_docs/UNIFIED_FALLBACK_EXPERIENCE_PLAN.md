@@ -3,7 +3,7 @@
 - Status: **ACTIVE / IN EXECUTION**
 - Created: 2026-08-18
 - Scope: merchant-visible errors, recovery actions, loading/empty/offline states, backend error contracts and technical-detail isolation
-- Execution state: **FB-001 DONE / FB-002 READY**
+- Execution state: **FB-001 DONE / FB-002 DONE / FB-003 READY**
 - Owner: ZANI manager workflow
 
 ## Product Outcome
@@ -44,9 +44,9 @@ The project already contains useful reusable pieces:
 
 | Layer | Existing mechanism | Current value |
 | --- | --- | --- |
-| API contract | `apps/core/exceptions.py` | stable `code`, `request_id`, `detail`, `errors` for known DRF/domain errors and unknown `internal_error` failures |
+| API contract | `apps/core/exceptions.py` | stable `code`, `request_id`, `detail`, `errors`, `category`, `retryable` and `retry_after_seconds` for known DRF/domain errors and unknown `internal_error` failures |
 | Domain failures | `apps/core/domain_errors.py` | explicit conflict, unavailable, disabled and temporary-service codes |
-| Secret redaction | `apps/integrations/sanitization.py` | removes common credentials from persisted/logged error text |
+| Secret redaction | `apps/core/sanitization.py`, `apps/integrations/sanitization.py` | removes common credentials from error text and nested payloads at response and model-persistence boundaries |
 | Authentication recovery | `frontend/src/api/client.ts` | single-flight refresh and one retry after `401` |
 | Query recovery | React Query defaults | reconnect refetch and one retry for network/5xx reads |
 | Action feedback | `useActionFeedback` | status classification, safe generic copy, optional retry and focus restoration |
@@ -100,13 +100,13 @@ Confirmed raw or weakly normalized surfaces include:
 
 Platform/support users may need technical evidence, but it must live behind a separate permission-aware detail view. A daily merchant surface must not render the same field directly.
 
-### 5. Backend code still persists or raises raw exception text
+### 5. Backend persistence and response boundaries are sanitized
 
-Several provider, import, scheduling, analytics, leads and AI paths use `str(exc)` as a stored error or validation detail. Redaction exists, but it is not applied consistently at every persistence and response boundary.
+FB-002 added a shared text/payload sanitizer and model-level save boundary for 15 error-bearing model types. Remaining `str(exc)` uses are limited to controlled provider-configuration messages, sanitized persistence backed by that model boundary, internal exception chaining or management-command output. Merchant API paths now use explicit domain/validation errors or safe provider failure copy. Frontend surfaces that still render sanitized technical fields directly remain migration work for FB-003 through FB-006.
 
-### 6. Unknown 500 backend responses are fixed; the broader taxonomy remains
+### 6. Backend taxonomy is complete; frontend normalization remains
 
-BE-REM-004 now guarantees a safe `internal_error` envelope for exceptions DRF cannot handle and for non-domain DRF 5xx responses. It correlates the response, structured log and configured Sentry capture by request ID without exposing exception text, stack traces, SQL, payloads or provider responses. The broader `category`, `retryable` and `retry_after_seconds` contract, stored-error sanitization and frontend mapping remain part of FB-002 and FB-003.
+BE-REM-004 and FB-002 now guarantee a safe envelope for unknown and known API failures, correlate the response, structured log and configured Sentry capture by request ID, and expose bounded taxonomy/retry metadata without exception text, stack traces, SQL, payloads or provider responses. Mapping this contract into one frontend `AppError` model remains FB-003.
 
 ### 7. Recovery placement varies
 
@@ -309,8 +309,8 @@ Even platform/support views must sanitize credentials and personal data. A reque
 | ID | Work item | Priority | Status | Depends on |
 | --- | --- | --- | --- | --- |
 | FB-001 | Build route/action/failure inventory and error-code registry | P0 | DONE | none |
-| FB-002 | Complete the backend safe envelope and sanitization boundary | P0 | NOT_STARTED | BE-REM-004 |
-| FB-003 | Introduce `AppError` normalization and retire raw parsing | P0 | NOT_STARTED | FB-001..002 |
+| FB-002 | Complete the backend safe envelope and sanitization boundary | P0 | DONE | BE-REM-004 |
+| FB-003 | Introduce `AppError` normalization and retire raw parsing | P0 | READY | FB-001..002 |
 | FB-004 | Build the shared visual fallback surface family | P0 | NOT_STARTED | FB-003 |
 | FB-005 | Remove raw messages from crash and route boundaries | P0 | NOT_STARTED | FB-003..004 |
 | FB-006 | Migrate direct technical-error consumers | P0 | NOT_STARTED | FB-003..005 |
@@ -506,7 +506,7 @@ The unified fallback layer is complete only when:
 
 ## Evidence Log
 
-The fallback execution queue itself has not started. The prerequisite backend item has the following accepted evidence:
+The fallback execution queue is active. The prerequisite backend item has the following accepted evidence:
 
 ```text
 Task: BE-REM-004 prerequisite - unknown API 500 contract
@@ -547,4 +547,17 @@ Checks run and exact result: npm run test:fallback-inventory -> 2/2 passed; npm 
 Checks skipped and reason: backend and browser gates skipped because FB-001 changes inventory/test/docs tooling only and does not change API or merchant runtime behavior
 Role/tenant impact: no permission or tenant behavior changed; every inventory entry records its permission owner and intended recovery location
 Residual risk: FB-002 through FB-010 remain unfinished; current route surface detection records migration gaps but does not remediate them
+```
+
+```text
+Task: FB-002 - backend safe envelope and sanitization boundary
+Affected routes/actions: shared DRF exception handler; public API token authentication; merchant validation/domain failures in scheduling, Inbox, leads, outreach, analytics, AI, imports and integration setup; provider delivery/validation for Telegram, WhatsApp, Instagram, Kaspi, Ozon, Wildberries and MoySklad; persistence boundaries for 15 error-bearing model types
+Branch: codex/fallback-fb-002-safe-envelope-sanitization
+Commits: c9bc8d5, 079508d
+Backend error codes changed: every safe envelope now includes category, retryable and retry_after_seconds; unknown failures remain internal_error; validation/authentication/permission/not-found/rate-limit and explicit domain codes retain stable HTTP semantics; arbitrary non-validation payload keys are dropped
+Frontend surfaces changed: none at runtime; the documented API action contract now includes the complete backend error envelope consumed by the future FB-003 normalizer
+Checks run and exact result: focused fallback, redaction, persistence, provider and compatibility tests passed; codex_verify.py --mode backend --base-ref 8a7eba1 -> 906/906 tests passed with no migration drift and clean Django system check; codex_verify.py --mode static -> PASS; codex_verify.py --mode security -> PASS including hashed Python lock dry-runs, pip-audit and npm audit at moderate threshold; codex_verify.py --mode frontend -> PASS including production application/widget builds and bundle budget
+Checks skipped and reason: browser failure-injection matrix skipped because FB-002 changes backend contracts and persistence only; cross-role browser certification is explicitly FB-010 after frontend normalization and shared recovery surfaces exist
+Role/tenant impact: no permission, tenant scoping or successful CRM workflow changed; full backend suite and frontend build remained green; malformed/revoked public API tokens preserve safe 401 behavior
+Residual risk: ZD-004 remains open at the product level because frontend raw parsing, crash boundaries, direct technical-field consumers, recovery surfaces, localization and browser failure injection remain FB-003 through FB-010
 ```

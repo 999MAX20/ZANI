@@ -172,12 +172,15 @@ the accepted project branch.
   `actual_docs/UNIFIED_FALLBACK_EXPERIENCE_PLAN.md` and use one safe error
   taxonomy, one normalization layer, shared visual surfaces and
   permission-aware recovery.
-- Verification status: BE-REM-004 closed the unknown backend `500` sub-gap with
-  a safe `internal_error` envelope, structured request-ID logging, configured
-  Sentry capture and 872-test backend certification. ZD-004 remains
-  `CONFIRMED` overall because stored raw errors, frontend normalization, crash
-  boundaries, shared fallback surfaces and cross-role failure injection still
-  require FB-002 through FB-010.
+- Verification status: BE-REM-004 closed the unknown backend `500` sub-gap.
+  FB-002 then completed the shared taxonomy/retry envelope, response redaction,
+  safe provider failure boundary and model-level sanitization for 15 persisted
+  error-bearing model types. The complete 906-test backend gate plus static,
+  security and frontend build/bundle gates passed on branch
+  `codex/fallback-fb-002-safe-envelope-sanitization` at commit `079508d`.
+  ZD-004 remains `CONFIRMED` overall because frontend normalization, crash
+  boundaries, direct technical-field consumers, shared fallback surfaces and
+  cross-role failure injection still require FB-003 through FB-010.
 - Derived audit rule: no merchant-visible component may render raw backend or
   runtime error text. Every failure must be normalized, localized, sanitized
   and paired with a safe next action when one exists.

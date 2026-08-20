@@ -62,8 +62,8 @@ Certification is complete only when all conditions below are satisfied:
 - [x] Console errors, unexpected API failures, stuck overlays and unhandled
       promise errors are zero for the certified runs.
 - [x] Accessibility, responsive layout, request budgets and bundle budgets pass.
-- [ ] The deterministic full quality gate passes from a clean committed range.
-- [ ] A final evidence report records commands, outputs, failures, fixes,
+- [x] The deterministic full quality gate passes from a clean committed range.
+- [x] A final evidence report records commands, outputs, failures, fixes,
       exclusions and remaining risks.
 
 ## FC-0: Build The Coverage Registry
@@ -315,7 +315,7 @@ providers. Live provider certification is a separate authorized activity.
 | FC-005 | Complete role/capability/tenant browser matrix | PASS |
 | FC-006 | Complete ten critical merchant journeys | PARTIAL - representative journeys pass; all ten are not yet UI/API/persistence certified |
 | FC-007 | Run desktop/tablet/mobile non-functional matrix | PASS |
-| FC-008 | Run clean full gate and publish final report | IN PROGRESS - report published; committed-range gate pending |
+| FC-008 | Run clean full gate and publish final report | BLOCKED - committed-range gate passed; fallback prerequisite remains open |
 
 ## Evidence Rules
 

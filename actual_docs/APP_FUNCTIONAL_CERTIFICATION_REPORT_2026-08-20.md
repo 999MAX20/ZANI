@@ -17,6 +17,7 @@ untested recovery behavior as passed.
 
 - Branch: `codex/backend-rem-007-functional-certification`
 - Base: `00b1e2146f05cd92dbebc976ed3c3163eee3b958`
+- Certified implementation commit: `42db5d4`
 - Providers: deterministic mock or disabled; no live external writes
 - Database: disposable/local SQLite test databases
 - Browser projects: desktop Chromium, tablet Chromium and mobile Chromium
@@ -84,6 +85,10 @@ Artifact: output/playwright/interaction-audit-2026-08-20T13-34-13
 npm run audit:visual
 Result: 13 views; 0 horizontal overflow, transparent-surface, API or auth issues
 Artifact: output/playwright/visual-audit-2026-08-20T13-38-22
+
+.\.venv\Scripts\python.exe scripts\codex_verify.py --mode full --base-ref 00b1e2146f05cd92dbebc976ed3c3163eee3b958
+Result: PASS against committed range ending at 42db5d4; all backend, frontend,
+browser and security stages passed in 1561s
 ```
 
 ## Defects Found And Corrected During Certification
@@ -115,7 +120,7 @@ Artifact: output/playwright/visual-audit-2026-08-20T13-38-22
 | FC-005 role/capability/tenant | PASS | Browser and 901-test backend evidence are green. |
 | FC-006 ten merchant journeys | PARTIAL | Representative workflows pass; all ten are not yet fully UI/API/persistence certified. |
 | FC-007 non-functional matrix | PASS | Viewports, Axe, focus, request/render and bundle budgets pass. |
-| FC-008 final closeout | BLOCKED | Committed-range gate is pending and fallback prerequisite remains open. |
+| FC-008 final closeout | BLOCKED | Committed-range gate passed; fallback prerequisite remains open. |
 
 ## Remaining Required Work
 
@@ -129,6 +134,4 @@ the already approved quality debt:
    journeys.
 4. Change registry entries from `NOT_RUN` only when each entry's complete
    action and failure contract has evidence.
-5. Run the deterministic committed-range full gate and record its final commit.
-
 Until those items are complete, BE-REM-007 remains `BLOCKED`, not `DONE`.

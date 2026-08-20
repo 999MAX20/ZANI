@@ -587,12 +587,13 @@ Checks run and exact result:
 - npm audit --omit=dev and npm audit -> 0 vulnerabilities; pip-audit -> no known vulnerabilities
 - npm run audit:interaction -> 12 workspaces, 0 auth redirects, unexpected errors or API issues
 - npm run audit:visual -> 13 views, 0 overflow, surface, API or auth issues
+- .\.venv\Scripts\python.exe scripts\codex_verify.py --mode full --base-ref 00b1e2146f05cd92dbebc976ed3c3163eee3b958 -> passed against commit 42db5d4; all committed-range backend/frontend/browser/security stages green in 1561s
 - git diff --check -> passed
 Checks skipped and reason: no independent repository gate was skipped; exhaustive 400/401/403/404/409/429/500/timeout/offline/stale-response UI recovery and all ten frontend-to-persistence merchant journeys cannot be accepted before FB-001..FB-010
 Migration/env impact: no migration or dependency-lock change; deterministic fixtures and quality-gate configuration only
 Permission impact: no permission grant was widened; team options are restricted to the active business after the existing accessible-business authorization filter
 Notification/BusinessEvent/AI impact: no notification, BusinessEvent or AI production behavior changed; mock-provider and disabled-provider paths remain deterministic
-Residual risk: registry entries remain NOT_RUN until their complete action and failure contracts are individually certified; FC-003, FC-004 and FC-006 remain partial, and FC-008 cannot become PASS until the committed-range full gate and fallback certification are both green
+Residual risk: registry entries remain NOT_RUN until their complete action and failure contracts are individually certified; FC-003, FC-004 and FC-006 remain partial, and FC-008 cannot become PASS until fallback certification is green
 ```
 
 Add one entry per subsequent completed item:

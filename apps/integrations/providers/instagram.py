@@ -10,7 +10,7 @@ from rest_framework.exceptions import PermissionDenied
 from apps.core.production_rules import is_safe_public_https_url
 from apps.integrations.bot_channel_credentials import get_instagram_access_token
 from apps.integrations.models import IntegrationEventLog
-from apps.integrations.providers.base import BaseChannelProvider
+from apps.integrations.providers.base import BaseChannelProvider, ProviderConfigurationError
 from apps.integrations.sanitization import SAFE_PROVIDER_FAILURE_DETAIL
 
 
@@ -158,6 +158,17 @@ class InstagramProvider(BaseInstagramAdapter):
                 status=IntegrationEventLog.Statuses.SENT,
             )
             return {"ok": True, "mock": False, "instagram_account": result}
+        except ProviderConfigurationError as exc:
+            reason = str(exc)
+            self.log_event(
+                business=channel.bot.business,
+                channel=channel.channel,
+                direction=IntegrationEventLog.Directions.OUTBOUND,
+                payload=safe_payload,
+                status=IntegrationEventLog.Statuses.FAILED,
+                error=reason,
+            )
+            return {"ok": False, "mock": False, "reason": reason}
         except Exception as exc:
             logger.exception("integrations.instagram.credentials_validation_failed", extra={"channel_id": channel.id})
             self.log_event(
@@ -218,6 +229,17 @@ class InstagramProvider(BaseInstagramAdapter):
                 status=IntegrationEventLog.Statuses.SENT,
             )
             return {"ok": True, "mock": False, "provider": self.provider, "result": result}
+        except ProviderConfigurationError as exc:
+            reason = str(exc)
+            self.log_event(
+                business=channel.bot.business,
+                channel=channel.channel,
+                direction=IntegrationEventLog.Directions.OUTBOUND,
+                payload=event_payload,
+                status=IntegrationEventLog.Statuses.FAILED,
+                error=reason,
+            )
+            return {"ok": False, "mock": False, "provider": self.provider, "reason": reason}
         except Exception as exc:
             logger.exception("integrations.instagram.send_message_failed", extra={"channel_id": channel.id})
             self.log_event(
@@ -233,7 +255,7 @@ class InstagramProvider(BaseInstagramAdapter):
     def _graph_url(self, instagram_user_id, edge="", fields=""):
         base = str(getattr(settings, "INSTAGRAM_GRAPH_BASE_URL", "https://graph.facebook.com") or "").strip().rstrip("/")
         if not is_safe_public_https_url(base):
-            raise ValueError("INSTAGRAM_GRAPH_BASE_URL must be a public HTTPS URL.")
+            raise ProviderConfigurationError("INSTAGRAM_GRAPH_BASE_URL must be a public HTTPS URL.")
         version = getattr(settings, "INSTAGRAM_GRAPH_API_VERSION", "v25.0").strip("/")
         suffix = f"/{edge.strip('/')}" if edge else ""
         query = f"?fields={fields}" if fields else ""

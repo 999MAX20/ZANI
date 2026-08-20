@@ -2,6 +2,10 @@ from apps.integrations.models import IntegrationEventLog
 from apps.integrations.sanitization import sanitize_config, sanitize_error_text
 
 
+class ProviderConfigurationError(ValueError):
+    """A controlled provider configuration message that is safe to show to operators."""
+
+
 class BaseChannelProvider:
     provider = "base"
 

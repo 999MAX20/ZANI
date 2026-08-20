@@ -516,7 +516,7 @@ class WebhookEndpointSerializer(serializers.ModelSerializer):
         try:
             return validate_outbound_webhook_url(value, allow_mock=True)
         except ValueError as exc:
-            raise serializers.ValidationError("The webhook URL is not allowed.") from exc
+            raise serializers.ValidationError("The webhook URL must use public HTTPS and must not contain credentials.") from exc
 
 
 class WebhookDeliveryLogSerializer(serializers.ModelSerializer):

@@ -324,6 +324,8 @@ class OutreachCampaignTests(APITestCase):
         response = self.client.post(f"/api/outreach/campaigns/{campaign.id}/launch/")
 
         self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["code"], "validation_error")
+        self.assertEqual(response.data["category"], "validation")
         self.assertIn("approved template", str(response.data))
         self.assertTrue(
             Notification.objects.filter(

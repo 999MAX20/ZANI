@@ -18,6 +18,7 @@ from apps.businesses.access import Actions, Resources, assert_can, can
 from apps.clients.models import Client
 from apps.clients.serializers import ClientSerializer
 from apps.core.audit import write_audit_log
+from apps.core.exceptions import api_exception_handler
 from apps.core.models import AuditLog
 from apps.core.permissions import accessible_businesses, platform_admin_has_global_access
 from apps.core.viewsets import TenantModelViewSet
@@ -509,8 +510,8 @@ class PublicApiClientsView(APIView):
     def get(self, request):
         try:
             token = authenticate_api_token(request, "clients:read")
-        except AuthenticationFailed as exc:
-            raise AuthenticationFailed() from exc
+        except AuthenticationFailed:
+            return api_exception_handler(AuthenticationFailed(), {"request": request})
         clients = Client.objects.filter(business=token.business, is_archived=False)[:100]
         return Response(ClientSerializer(clients, many=True).data)
 

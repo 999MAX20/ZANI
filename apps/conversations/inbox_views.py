@@ -61,7 +61,6 @@ from apps.conversations.pipeline import run_conversation_pipeline, source_from_c
 from apps.conversations.services import create_task_from_conversation
 from apps.core.permissions import accessible_businesses
 from apps.core.idempotency import CRMCommandResult, run_idempotent_crm_command
-from apps.core.domain_errors import ScheduleConflict
 from apps.crm.models import Deal
 from apps.crm.serializers import DealSerializer
 from apps.leads.models import Lead
@@ -332,7 +331,14 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
                     actor=request.user,
                 )
             except ValueError as exc:
-                raise ScheduleConflict(errors={"start_at": "Choose another available time."}) from exc
+                raise ValidationError(
+                    {
+                        "appointment": (
+                            "The appointment could not be created. Check the linked client, "
+                            "service, resource, and current lead status."
+                        )
+                    }
+                ) from exc
             return CRMCommandResult(
                 data=AppointmentSerializer(appointment).data,
                 status_code=status.HTTP_201_CREATED,

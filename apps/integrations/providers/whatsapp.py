@@ -12,7 +12,7 @@ from rest_framework.exceptions import PermissionDenied
 from apps.core.security_config import has_strong_shared_secret
 from apps.core.production_rules import is_safe_public_https_url
 from apps.integrations.models import IntegrationEventLog
-from apps.integrations.providers.base import BaseChannelProvider
+from apps.integrations.providers.base import BaseChannelProvider, ProviderConfigurationError
 from apps.integrations.sanitization import SAFE_PROVIDER_FAILURE_DETAIL
 from apps.integrations.whatsapp_credentials import get_whatsapp_access_token
 
@@ -230,6 +230,17 @@ class WhatsAppProvider(BaseWhatsAppAdapter):
                 status=IntegrationEventLog.Statuses.SENT,
             )
             return {"ok": True, "mock": False, "provider": self.provider, "result": result, "provider_message_id": provider_message_id}
+        except ProviderConfigurationError as exc:
+            reason = str(exc)
+            self.log_event(
+                business=business,
+                channel=channel.channel,
+                direction=IntegrationEventLog.Directions.OUTBOUND,
+                payload=event_payload,
+                status=IntegrationEventLog.Statuses.FAILED,
+                error=reason,
+            )
+            return {"ok": False, "mock": False, "provider": self.provider, "reason": reason}
         except Exception as exc:
             logger.exception("integrations.whatsapp.send_message_failed", extra={"channel_id": channel.id})
             self.log_event(
@@ -310,6 +321,17 @@ class WhatsAppProvider(BaseWhatsAppAdapter):
                 status=IntegrationEventLog.Statuses.SENT,
             )
             return {"ok": True, "mock": False, "phone_number": result}
+        except ProviderConfigurationError as exc:
+            reason = str(exc)
+            self.log_event(
+                business=business,
+                channel=channel.channel,
+                direction=IntegrationEventLog.Directions.OUTBOUND,
+                payload=safe_payload,
+                status=IntegrationEventLog.Statuses.FAILED,
+                error=reason,
+            )
+            return {"ok": False, "mock": False, "reason": reason}
         except Exception as exc:
             logger.exception("integrations.whatsapp.credentials_validation_failed", extra={"channel_id": channel.id})
             self.log_event(
@@ -325,7 +347,7 @@ class WhatsAppProvider(BaseWhatsAppAdapter):
     def _graph_url(self, phone_number_id, edge=""):
         base = str(getattr(settings, "WHATSAPP_GRAPH_BASE_URL", "https://graph.facebook.com") or "").strip().rstrip("/")
         if not is_safe_public_https_url(base):
-            raise ValueError("WHATSAPP_GRAPH_BASE_URL must be a public HTTPS URL.")
+            raise ProviderConfigurationError("WHATSAPP_GRAPH_BASE_URL must be a public HTTPS URL.")
         version = getattr(settings, "WHATSAPP_GRAPH_API_VERSION", "v25.0").strip("/")
         suffix = f"/{edge.strip('/')}" if edge else ""
         return f"{base}/{version}/{phone_number_id}{suffix}"

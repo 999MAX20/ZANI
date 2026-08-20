@@ -73,6 +73,10 @@ class PublicApiAndWebhookTests(TestCase):
         response = self.api.get("/api/public-api/clients/", HTTP_AUTHORIZATION="Token not-a-zani-token")
 
         self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.data["code"], "authentication_required")
+        self.assertEqual(response.data["category"], "authentication")
+        self.assertFalse(response.data["retryable"])
+        self.assertNotIn("not-a-zani-token", str(response.data))
 
     def test_legacy_sha256_api_token_hash_still_authenticates(self):
         raw_token = ApiToken.generate_raw_token()
@@ -151,6 +155,8 @@ class PublicApiAndWebhookTests(TestCase):
         response = self.api.get("/api/public-api/clients/", HTTP_X_ZANI_API_KEY=raw_token)
 
         self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.data["code"], "authentication_required")
+        self.assertNotIn(raw_token, str(response.data))
 
     def test_token_rotate_and_revoke(self):
         self.api.force_authenticate(self.owner)

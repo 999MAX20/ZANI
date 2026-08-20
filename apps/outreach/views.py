@@ -9,8 +9,8 @@ from apps.businesses.access import Actions
 from apps.businesses.models import BusinessMember
 from apps.clients.models import Client
 from apps.core.file_validation import validate_file_upload
-from apps.core.domain_errors import InvalidTransition
 from apps.core.permissions import accessible_businesses
+from apps.core.sanitization import sanitize_error_text
 from apps.core.viewsets import TenantModelViewSet
 from apps.outreach.imports import read_consent_upload
 from apps.outreach.models import OutreachCampaign, OutreachConsent, OutreachRecipient, OutreachTemplate
@@ -81,7 +81,7 @@ class OutreachCampaignViewSet(TenantModelViewSet):
         try:
             result = prepare_campaign_recipients(campaign, client_ids=request.data.get("client_ids"))
         except ValueError as exc:
-            raise InvalidTransition() from exc
+            raise ValidationError({"campaign": sanitize_error_text(exc)}) from exc
         return Response({"campaign": OutreachCampaignSerializer(campaign, context={"request": request}).data, **result})
 
     @action(detail=True, methods=["post"])
@@ -91,7 +91,7 @@ class OutreachCampaignViewSet(TenantModelViewSet):
         try:
             result = launch_campaign(campaign)
         except ValueError as exc:
-            raise InvalidTransition() from exc
+            raise ValidationError({"campaign": sanitize_error_text(exc)}) from exc
         return Response({"campaign": OutreachCampaignSerializer(campaign, context={"request": request}).data, **result})
 
     @action(detail=True, methods=["post"], url_path="refresh-status")
@@ -126,7 +126,7 @@ class OutreachCampaignViewSet(TenantModelViewSet):
                 delay_minutes=int(request.data.get("delay_minutes") or 0),
             )
         except ValueError as exc:
-            raise InvalidTransition() from exc
+            raise ValidationError({"campaign": sanitize_error_text(exc)}) from exc
         return Response({"campaign": OutreachCampaignSerializer(campaign, context={"request": request}).data, **result})
 
     @action(detail=True, methods=["post"])
@@ -136,7 +136,7 @@ class OutreachCampaignViewSet(TenantModelViewSet):
         try:
             result = cancel_campaign(campaign, request=request, reason=str(request.data.get("reason") or ""))
         except ValueError as exc:
-            raise InvalidTransition() from exc
+            raise ValidationError({"campaign": sanitize_error_text(exc)}) from exc
         return Response({"campaign": OutreachCampaignSerializer(campaign, context={"request": request}).data, **result})
 
 

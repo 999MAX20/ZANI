@@ -1744,6 +1744,10 @@ class InboxBackendTests(TestCase):
             format="json",
         )
         self.assertEqual(missing_client_response.status_code, 400)
+        self.assertEqual(missing_client_response.data["code"], "validation_error")
+        self.assertEqual(missing_client_response.data["category"], "validation")
+        self.assertIn("appointment", missing_client_response.data["errors"])
+        self.assertNotIn("Conversation must be linked", str(missing_client_response.data))
 
     def test_inbox_rejects_appointment_when_linked_lead_transition_is_invalid(self):
         lead = Lead.objects.create(
@@ -1774,6 +1778,9 @@ class InboxBackendTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["code"], "validation_error")
+        self.assertIn("appointment", response.data["errors"])
+        self.assertNotIn("Cannot move lead", str(response.data))
         self.assertFalse(Appointment.objects.filter(business=self.business, lead=lead).exists())
         lead.refresh_from_db()
         self.assertEqual(lead.status, Lead.Statuses.CLOSED)

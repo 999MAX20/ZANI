@@ -1,3 +1,4 @@
+import logging
 import uuid
 
 from django.db.models import F, Q
@@ -11,6 +12,9 @@ from apps.billing.models import UsageCounter
 from apps.billing.entitlements import EntitlementMetrics, assert_entitlement_allows
 from apps.billing.usage import increment_usage
 from apps.integrations.sanitization import sanitize_error_text
+
+
+logger = logging.getLogger(__name__)
 
 
 def run_ai_request(
@@ -144,6 +148,7 @@ def process_ai_job(job_id):
             update_fields=["status", "result_json", "request_log", "completed_at", "locked_at", "updated_at"]
         )
     except Exception as exc:
+        logger.exception("ai.job_failed", extra={"ai_job_id": job.id})
         job.error = sanitize_error_text(exc)
         job.locked_at = None
         if job.attempts < job.max_attempts:

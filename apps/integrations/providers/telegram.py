@@ -1,4 +1,5 @@
 import json
+import logging
 from urllib import parse as urllib_parse
 from urllib import request as urllib_request
 
@@ -10,9 +11,11 @@ from apps.core.security_config import has_strong_shared_secret
 from apps.integrations.bot_channel_credentials import get_telegram_bot_token
 from apps.integrations.models import IntegrationEventLog
 from apps.integrations.providers.base import BaseChannelProvider
+from apps.integrations.sanitization import SAFE_PROVIDER_FAILURE_DETAIL
 
 
 TELEGRAM_SECRET_HEADER = "HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN"
+logger = logging.getLogger(__name__)
 
 
 class TelegramProvider(BaseChannelProvider):
@@ -135,6 +138,7 @@ class TelegramProvider(BaseChannelProvider):
             )
             return result
         except Exception as exc:
+            logger.exception("integrations.telegram.send_message_failed", extra={"channel_id": channel.id})
             self.log_event(
                 business=business,
                 channel=channel.channel,
@@ -194,6 +198,7 @@ class TelegramProvider(BaseChannelProvider):
                 "bot": result.get("result") or {},
             }
         except Exception as exc:
+            logger.exception("integrations.telegram.validate_token_failed", extra={"channel_id": channel.id})
             self.log_event(
                 business=business,
                 channel=channel.channel,
@@ -202,7 +207,7 @@ class TelegramProvider(BaseChannelProvider):
                 status=IntegrationEventLog.Statuses.FAILED,
                 error=str(exc),
             )
-            return {"ok": False, "reason": str(exc), "token_configured": True}
+            return {"ok": False, "reason": SAFE_PROVIDER_FAILURE_DETAIL, "token_configured": True}
 
     def get_updates(self, channel, *, offset=None, limit=20):
         business = channel.bot.business
@@ -253,6 +258,7 @@ class TelegramProvider(BaseChannelProvider):
             )
             return result
         except Exception as exc:
+            logger.exception("integrations.telegram.get_updates_failed", extra={"channel_id": channel.id})
             self.log_event(
                 business=business,
                 channel=channel.channel,
@@ -261,7 +267,7 @@ class TelegramProvider(BaseChannelProvider):
                 status=IntegrationEventLog.Statuses.FAILED,
                 error=str(exc),
             )
-            return {"ok": False, "result": [], "reason": str(exc)}
+            return {"ok": False, "result": [], "reason": SAFE_PROVIDER_FAILURE_DETAIL}
 
     def set_webhook(self, channel, webhook_url):
         business = channel.bot.business
@@ -347,6 +353,7 @@ class TelegramProvider(BaseChannelProvider):
             )
             return result
         except Exception as exc:
+            logger.exception("integrations.telegram.set_webhook_failed", extra={"channel_id": channel.id})
             self.log_event(
                 business=business,
                 channel=channel.channel,

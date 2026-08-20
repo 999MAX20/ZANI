@@ -3,11 +3,13 @@ from django.db import models
 from django.utils import timezone
 
 from apps.businesses.models import Business, TimeStampedModel
+from apps.core.sanitization import SanitizedErrorFieldsMixin
 from apps.clients.models import Client
 from apps.scheduling.models import Appointment
 
 
-class Notification(TimeStampedModel):
+class Notification(SanitizedErrorFieldsMixin, TimeStampedModel):
+    sanitized_text_fields = ("last_error",)
     class Channels(models.TextChoices):
         TELEGRAM = "telegram", "Telegram"
         WHATSAPP = "whatsapp", "WhatsApp"

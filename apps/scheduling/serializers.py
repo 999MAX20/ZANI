@@ -176,7 +176,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
                     exclude_appointment=self.instance,
                 )
             except ValueError as exc:
-                raise serializers.ValidationError(str(exc)) from exc
+                raise serializers.ValidationError("The appointment time is not available.") from exc
             attrs["end_at"] = calculated_end
         return attrs
 

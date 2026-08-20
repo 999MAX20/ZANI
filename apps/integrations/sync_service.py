@@ -7,6 +7,7 @@ from apps.integrations.crm_mapping import record_connector_events
 from apps.integrations.connectors import run_connector_healthcheck
 from apps.integrations.kaspi import sync_kaspi_orders
 from apps.integrations.models import BusinessConnector, ConnectorSyncRun
+from apps.integrations.sanitization import sanitize_error_text
 from apps.integrations.moysklad import sync_moysklad
 from apps.integrations.ozon import sync_ozon
 from apps.integrations.wildberries import sync_wildberries
@@ -50,7 +51,7 @@ def execute_connector_sync(connector):
     sync_run = result["run"]
 
     connector.status = BusinessConnector.Statuses.CONNECTED if result.get("ok") else BusinessConnector.Statuses.FAILED
-    connector.last_error = "" if result.get("ok") else result.get("reason", config["failure"])
+    connector.last_error = "" if result.get("ok") else sanitize_error_text(result.get("reason", config["failure"]))
     connector.last_sync_at = sync_run.finished_at or timezone.now()
     connector.next_sync_at = timezone.now() + config["next_delta"]
     if connector.status == BusinessConnector.Statuses.CONNECTED and connector.connected_at is None:
@@ -60,7 +61,7 @@ def execute_connector_sync(connector):
     return {
         "ok": result.get("ok", False),
         "mock": result.get("mock", False),
-        "reason": result.get("reason", ""),
+        "reason": sanitize_error_text(result.get("reason", "")),
         "events": events,
         "sync_run": sync_run,
         "audit_kind": config["audit_kind"],

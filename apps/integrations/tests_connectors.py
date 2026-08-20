@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
@@ -6,7 +8,12 @@ from apps.activities.models import ActivityEvent
 from apps.activities.taxonomy import ActivityEvents
 from apps.businesses.models import Business, BusinessMember
 from apps.integrations.connectors import decrypt_credential_value, normalize_business_event, update_connector_health
-from apps.integrations.kaspi import KASPI_EVENT_TYPES, build_kaspi_events_from_orders, build_kaspi_mock_events
+from apps.integrations.kaspi import (
+    KASPI_EVENT_TYPES,
+    build_kaspi_events_from_orders,
+    build_kaspi_mock_events,
+    validate_kaspi_credentials,
+)
 from apps.integrations.moysklad import (
     MOYSKLAD_EVENT_TYPES,
     build_moysklad_mock_events,
@@ -153,6 +160,30 @@ class BusinessConnectorFoundationTests(TestCase):
         self.assertNotIn("raw-access-token", str(response.data))
         self.assertNotIn("raw-bearer-token", str(response.data))
 
+    @override_settings(KASPI_ENABLED=True)
+    def test_provider_exception_is_logged_but_public_reason_is_generic(self):
+        connector = BusinessConnector.objects.create(
+            business=self.business,
+            provider=BusinessConnector.Providers.KASPI,
+            name="Kaspi failing",
+            created_by=self.owner,
+        )
+
+        with (
+            patch("apps.integrations.kaspi.base.get_kaspi_api_token", return_value="configured-token"),
+            patch(
+                "apps.integrations.kaspi.base.fetch_kaspi_orders",
+                side_effect=RuntimeError("access_token=raw-kaspi-token"),
+            ),
+            self.assertLogs("apps.integrations.kaspi.base", level="ERROR") as captured,
+        ):
+            result = validate_kaspi_credentials(connector)
+
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["reason"], "The external provider could not complete the request.")
+        self.assertNotIn("raw-kaspi-token", str(result))
+        self.assertIn("raw-kaspi-token", "\n".join(captured.output))
+
     def test_event_payload_secrets_are_masked_in_api_responses(self):
         connector = BusinessConnector.objects.create(
             business=self.business,
@@ -160,7 +191,7 @@ class BusinessConnectorFoundationTests(TestCase):
             name="Custom events",
             created_by=self.owner,
         )
-        BusinessEvent.objects.create(
+        event = BusinessEvent.objects.create(
             business=self.business,
             connector=connector,
             source=BusinessConnector.Providers.CUSTOM,
@@ -169,7 +200,7 @@ class BusinessConnectorFoundationTests(TestCase):
             deduplication_key="event-1",
             payload_json={"api_key": "raw-api-key", "nested": {"access_token": "raw-access-token"}},
         )
-        IntegrationEventLog.objects.create(
+        log = IntegrationEventLog.objects.create(
             business=self.business,
             provider=BusinessConnector.Providers.CUSTOM,
             channel="custom",
@@ -198,7 +229,7 @@ class BusinessConnectorFoundationTests(TestCase):
             name="Custom errors",
             created_by=self.owner,
         )
-        BusinessEvent.objects.create(
+        event = BusinessEvent.objects.create(
             business=self.business,
             connector=connector,
             source=BusinessConnector.Providers.CUSTOM,
@@ -208,7 +239,7 @@ class BusinessConnectorFoundationTests(TestCase):
             status=BusinessEvent.Statuses.FAILED,
             error="Failed with token=raw-event-token",
         )
-        IntegrationEventLog.objects.create(
+        log = IntegrationEventLog.objects.create(
             business=self.business,
             provider=BusinessConnector.Providers.CUSTOM,
             channel="custom",
@@ -217,13 +248,19 @@ class BusinessConnectorFoundationTests(TestCase):
             payload_json={},
             error='Provider returned {"client_secret":"raw-client-secret"}',
         )
-        ConnectorSyncRun.objects.create(
+        run = ConnectorSyncRun.objects.create(
             business=self.business,
             connector=connector,
             mode=ConnectorSyncRun.Modes.MANUAL,
             status=ConnectorSyncRun.Statuses.FAILED,
             error="Sync failed https://api.example.com/orders?api_key=raw-sync-key",
         )
+        event.refresh_from_db()
+        log.refresh_from_db()
+        run.refresh_from_db()
+        self.assertNotIn("raw-event-token", event.error)
+        self.assertNotIn("raw-client-secret", log.error)
+        self.assertNotIn("raw-sync-key", run.error)
         self.api.force_authenticate(self.owner)
 
         event_response = self.api.get("/api/business-events/")

@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 from decimal import Decimal
 import json
+import logging
 from urllib import request as urllib_request
 
 from django.conf import settings
@@ -10,6 +11,10 @@ from django.utils import timezone
 from apps.core.production_rules import is_safe_public_https_url
 from apps.integrations.connectors import read_connector_credential
 from apps.integrations.models import ConnectorSyncRun
+from apps.integrations.sanitization import SAFE_PROVIDER_FAILURE_DETAIL, sanitize_error_text
+
+
+logger = logging.getLogger(__name__)
 
 
 OZON_EVENT_TYPES = {
@@ -59,7 +64,8 @@ def validate_ozon_credentials(connector):
     try:
         payload = fetch_ozon_json("v1/warehouse/list", credentials, {})
     except Exception as exc:
-        return {"ok": False, "mock": False, "reason": str(exc)}
+        logger.exception("integrations.ozon.credentials_validation_failed")
+        return {"ok": False, "mock": False, "reason": SAFE_PROVIDER_FAILURE_DETAIL}
     warehouses = payload.get("result") or []
     return {"ok": True, "mock": False, "warehouses_count": len(warehouses), "provider_response": {"result_type": type(warehouses).__name__}}
 
@@ -86,11 +92,12 @@ def sync_ozon(connector):
         run.save(update_fields=["status", "events_received", "events_processed", "finished_at"])
         return {"ok": True, "mock": not settings.OZON_ENABLED, "events": events, "run": run}
     except Exception as exc:
+        logger.exception("integrations.ozon.sync_failed", extra={"connector_id": connector.id})
         run.status = ConnectorSyncRun.Statuses.FAILED
-        run.error = str(exc)
+        run.error = sanitize_error_text(exc)
         run.finished_at = timezone.now()
         run.save(update_fields=["status", "error", "finished_at"])
-        return {"ok": False, "mock": False, "reason": str(exc), "events": [], "run": run}
+        return {"ok": False, "mock": False, "reason": SAFE_PROVIDER_FAILURE_DETAIL, "events": [], "run": run}
 
 
 def fetch_ozon_events(connector):

@@ -242,7 +242,7 @@ def report_export(request):
             end_date=end_date,
         )
     except ValueError as exc:
-        raise ValidationError(str(exc)) from exc
+        raise ValidationError({"report": "The report request is not valid."}) from exc
     write_audit_log(
         request,
         AuditLog.Actions.CREATE,

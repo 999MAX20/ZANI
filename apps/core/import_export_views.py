@@ -22,6 +22,7 @@ from apps.core.file_validation import validate_file_upload
 from apps.core.export_jobs import request_entity_export
 from apps.core.models import AuditLog, ExportJob, ImportJob
 from apps.core.permissions import accessible_businesses
+from apps.core.sanitization import sanitize_error_text
 from apps.core.serializers import ExportJobSerializer, ImportJobSerializer
 from apps.core.viewsets import TenantModelViewSet
 from apps.integrations.serializers import BusinessEventSerializer
@@ -52,7 +53,7 @@ class ImportJobViewSet(TenantModelViewSet):
             build_import_preview(job)
         except Exception as exc:
             job.status = ImportJob.Statuses.FAILED
-            job.error = str(exc)
+            job.error = sanitize_error_text(exc)
             job.save(update_fields=["status", "error", "updated_at"])
             mark_excel_csv_import_failed(job, exc)
             raise
@@ -83,7 +84,7 @@ class ImportJobViewSet(TenantModelViewSet):
             raise
         except Exception as exc:
             job.status = ImportJob.Statuses.FAILED
-            job.error = str(exc)
+            job.error = sanitize_error_text(exc)
             job.save(update_fields=["status", "error", "updated_at"])
             raise
         return Response(self.get_serializer(job).data)

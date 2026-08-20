@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from decimal import Decimal
 import json
+import logging
 from urllib import parse, request as urllib_request
 
 from django.conf import settings
@@ -9,6 +10,10 @@ from django.utils import timezone
 from apps.core.production_rules import is_safe_public_https_url
 from apps.integrations.connectors import read_connector_credential
 from apps.integrations.models import ConnectorSyncRun
+from apps.integrations.sanitization import SAFE_PROVIDER_FAILURE_DETAIL, sanitize_error_text
+
+
+logger = logging.getLogger(__name__)
 
 
 MOYSKLAD_EVENT_TYPES = {
@@ -54,7 +59,8 @@ def validate_moysklad_credentials(connector):
     try:
         payload = fetch_moysklad_json("entity/organization", token, {"limit": "1"})
     except Exception as exc:
-        return {"ok": False, "mock": False, "reason": str(exc)}
+        logger.exception("integrations.moysklad.credentials_validation_failed")
+        return {"ok": False, "mock": False, "reason": SAFE_PROVIDER_FAILURE_DETAIL}
     return {"ok": True, "mock": False, "rows_count": len(payload.get("rows") or []), "provider_response": _safe_response_meta(payload)}
 
 
@@ -87,11 +93,12 @@ def sync_moysklad(connector):
         run.save(update_fields=["status", "events_received", "events_processed", "finished_at"])
         return {"ok": True, "mock": not settings.MOYSKLAD_ENABLED, "events": events, "run": run}
     except Exception as exc:
+        logger.exception("integrations.moysklad.sync_failed", extra={"connector_id": connector.id})
         run.status = ConnectorSyncRun.Statuses.FAILED
-        run.error = str(exc)
+        run.error = sanitize_error_text(exc)
         run.finished_at = timezone.now()
         run.save(update_fields=["status", "error", "finished_at"])
-        return {"ok": False, "mock": False, "reason": str(exc), "events": [], "run": run}
+        return {"ok": False, "mock": False, "reason": SAFE_PROVIDER_FAILURE_DETAIL, "events": [], "run": run}
 
 
 def fetch_moysklad_events(connector):

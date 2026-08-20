@@ -25,6 +25,7 @@ from apps.businesses.capabilities import assert_resource_enabled
 from apps.core.audit import write_audit_log
 from apps.core.csv_safety import safe_csv_cell
 from apps.core.models import AuditLog, ImportJob
+from apps.core.sanitization import sanitize_error_text
 from apps.crm.models import Deal
 from apps.crm.services import ensure_default_pipeline
 from apps.integrations.crm_mapping import CLIENT_IMPORTED_EVENT, DEAL_IMPORTED_EVENT, LEAD_IMPORTED_EVENT, record_import_event
@@ -198,11 +199,11 @@ def confirm_import(job: ImportJob, request):
             summary[result] = summary.get(result, 0) + 1
     except Exception as exc:
         sync_run.status = ConnectorSyncRun.Statuses.FAILED
-        sync_run.error = str(exc)
+        sync_run.error = sanitize_error_text(exc)
         sync_run.finished_at = timezone.now()
         sync_run.save(update_fields=["status", "error", "finished_at"])
         connector.status = BusinessConnector.Statuses.FAILED
-        connector.last_error = str(exc)
+        connector.last_error = sanitize_error_text(exc)
         connector.save(update_fields=["status", "last_error", "updated_at"])
         raise
     imported = summary["created"] + summary["updated"]
@@ -289,7 +290,7 @@ def ensure_excel_csv_connector(job):
 
 def mark_excel_csv_import_failed(job, error):
     connector = ensure_excel_csv_connector(job)
-    message = str(error)
+    message = sanitize_error_text(error)
     run = ConnectorSyncRun.objects.create(
         business=job.business,
         connector=connector,

@@ -1,5 +1,6 @@
 import hashlib
 import json
+import logging
 
 from django.conf import settings
 from django.db import IntegrityError, transaction
@@ -11,6 +12,9 @@ from apps.billing.entitlements import EntitlementMetrics, assert_entitlement_all
 from apps.bots.models import BotChannel, BotMessage
 from apps.integrations.providers import send_message
 from apps.integrations.sanitization import sanitize_error_payload, sanitize_error_text
+
+
+logger = logging.getLogger(__name__)
 
 
 CLAIMABLE_STATUSES = {
@@ -193,6 +197,7 @@ def deliver_outbound_message(message_id):
             payload={"zani_message_id": message.id},
         )
     except Exception as exc:
+        logger.exception("bots.outbound_delivery_failed", extra={"message_id": message.id})
         result = {
             "ok": False,
             "reason": sanitize_error_text(exc),

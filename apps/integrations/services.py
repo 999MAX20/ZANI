@@ -8,6 +8,7 @@ from apps.integrations.connectors import create_or_update_credential, defaults_f
 from apps.integrations.instagram_oauth import build_instagram_oauth_url, complete_instagram_oauth
 from apps.integrations.kaspi import build_kaspi_mock_events, kaspi_connector_safe_config, validate_kaspi_credentials
 from apps.integrations.models import BusinessConnector
+from apps.integrations.sanitization import sanitize_error_text
 from apps.integrations.moysklad import build_moysklad_mock_events, moysklad_connector_safe_config, validate_moysklad_credentials
 from apps.integrations.one_c import build_one_c_mock_events
 from apps.integrations.ozon import build_ozon_mock_events, ozon_connector_safe_config, validate_ozon_credentials
@@ -338,7 +339,7 @@ def test_connector_connection(connector, expected_provider):
     spec = CONNECTOR_TEST_SPECS[expected_provider]
     result = spec["validate"](connector)
     connector.status = BusinessConnector.Statuses.CONNECTED if result.get("ok") else BusinessConnector.Statuses.FAILED
-    connector.last_error = "" if result.get("ok") else result.get("reason", spec["failure"])
+    connector.last_error = "" if result.get("ok") else sanitize_error_text(result.get("reason", spec["failure"]))
     if connector.status == BusinessConnector.Statuses.CONNECTED and connector.connected_at is None:
         connector.connected_at = timezone.now()
     connector.save(update_fields=["status", "last_error", "connected_at", "updated_at"])
@@ -346,7 +347,7 @@ def test_connector_connection(connector, expected_provider):
     payload = {
         "ok": result.get("ok", False),
         "mock": result.get("mock", False),
-        "reason": result.get("reason", ""),
+        "reason": sanitize_error_text(result.get("reason", "")),
         "status": connector.status,
     }
     for output_key, credential_key in spec["credentials"].items():

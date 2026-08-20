@@ -21,6 +21,7 @@ from apps.core.audit import write_audit_log
 from apps.core.crm_cards import lead_crm_card
 from apps.core.idempotency import CRMCommandResult, run_idempotent_crm_command
 from apps.core.models import AuditLog
+from apps.core.sanitization import sanitize_error_text
 from apps.core.viewsets import TenantModelViewSet
 from apps.core.work_queues import stale_leads_queryset
 from apps.leads.forms_service import log_lead_form_submission_error, submit_lead_form
@@ -488,10 +489,10 @@ class PublicLeadFormSubmitView(APIView):
                 form=form,
                 public_id=public_id,
                 payload=request.data,
-                error_message=str(exc),
+                error_message=sanitize_error_text(exc),
                 request=request,
             )
-            raise ValidationError(str(exc)) from exc
+            raise ValidationError({"submission": "The form could not be submitted. Check the fields and try again."}) from exc
         return Response(
             {
                 "ok": True,

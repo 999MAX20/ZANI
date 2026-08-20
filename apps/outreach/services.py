@@ -585,7 +585,7 @@ def refresh_campaign_status(campaign):
             recipient.status = OutreachRecipient.Statuses.FAILED
             result = sanitize_error_payload(_notification_delivery_result(recipient.notification))
             reason = sanitize_error_text(_delivery_reason(result) or "Notification delivery failed.")
-            recipient.error = reason
+            recipient.error = sanitize_error_text(reason)
             recipient.error_code = classify_delivery_error(reason)
             recipient.provider_result = result
         elif notification_status == Notification.Statuses.CANCELLED:

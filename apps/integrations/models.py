@@ -6,9 +6,12 @@ import hmac
 import secrets
 
 from apps.businesses.models import Business
+from apps.core.sanitization import SanitizedErrorFieldsMixin
 
 
-class IntegrationEventLog(models.Model):
+class IntegrationEventLog(SanitizedErrorFieldsMixin, models.Model):
+    sanitized_text_fields = ("error",)
+    sanitized_payload_fields = ("payload_json",)
     class Directions(models.TextChoices):
         INBOUND = "inbound", "Inbound"
         OUTBOUND = "outbound", "Outbound"
@@ -40,7 +43,8 @@ class IntegrationEventLog(models.Model):
         return f"{self.provider}:{self.direction}:{self.status}"
 
 
-class BusinessConnector(models.Model):
+class BusinessConnector(SanitizedErrorFieldsMixin, models.Model):
+    sanitized_text_fields = ("last_error",)
     class Providers(models.TextChoices):
         WEBSITE = "website", "Website"
         TELEGRAM = "telegram", "Telegram"
@@ -144,7 +148,8 @@ class ConnectorCredential(models.Model):
         return f"{self.connector}: {self.key}"
 
 
-class BusinessEvent(models.Model):
+class BusinessEvent(SanitizedErrorFieldsMixin, models.Model):
+    sanitized_text_fields = ("error",)
     class Statuses(models.TextChoices):
         RECEIVED = "received", "Received"
         PROCESSED = "processed", "Processed"
@@ -178,7 +183,8 @@ class BusinessEvent(models.Model):
         return f"{self.business}: {self.source}.{self.event_type}"
 
 
-class ConnectorSyncRun(models.Model):
+class ConnectorSyncRun(SanitizedErrorFieldsMixin, models.Model):
+    sanitized_text_fields = ("error",)
     class Modes(models.TextChoices):
         WEBHOOK = "webhook", "Webhook"
         PULL = "pull", "Pull"
@@ -290,7 +296,8 @@ class WebhookEndpoint(models.Model):
         return f"{self.business}: {self.name}"
 
 
-class WebhookDeliveryLog(models.Model):
+class WebhookDeliveryLog(SanitizedErrorFieldsMixin, models.Model):
+    sanitized_text_fields = ("error",)
     class Statuses(models.TextChoices):
         PENDING = "pending", "Pending"
         SENT = "sent", "Sent"

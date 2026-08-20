@@ -1,3 +1,5 @@
+import logging
+
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.db import transaction
@@ -11,6 +13,9 @@ from apps.businesses.capabilities import resource_is_enabled
 from apps.core.import_export import entity_export_queryset, export_entity_response
 from apps.core.models import ExportJob
 from apps.integrations.sanitization import sanitize_error_text
+
+
+logger = logging.getLogger(__name__)
 
 
 def export_resource(export_key):
@@ -135,6 +140,7 @@ def process_export_job(job_id):
         job.error = ""
         job.save(update_fields=["result_file", "row_count", "status", "completed_at", "error", "updated_at"])
     except Exception as exc:
+        logger.exception("exports.job_failed", extra={"export_job_id": job.id})
         job.status = ExportJob.Statuses.FAILED
         job.completed_at = timezone.now()
         job.error = sanitize_error_text(str(exc), max_length=1000)

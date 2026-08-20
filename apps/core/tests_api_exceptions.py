@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock, patch
 
 from django.test import SimpleTestCase, override_settings
-from rest_framework.exceptions import APIException, ValidationError
+from rest_framework.exceptions import APIException, Throttled, ValidationError
 from rest_framework.test import APIRequestFactory
 from rest_framework.views import APIView
 
@@ -37,12 +37,16 @@ class SafeApiExceptionContractTests(SimpleTestCase):
                 "request_id": "unknown-error-42",
                 "detail": SAFE_INTERNAL_DETAIL,
                 "errors": {},
+                "category": "internal",
+                "retryable": False,
+                "retry_after_seconds": None,
             },
         )
         self.assertNotIn("merchant-secret", response.content.decode())
         self.assertNotIn("RuntimeError", response.content.decode())
         self.assertEqual(captured.records[0].request_id, "unknown-error-42")
         self.assertEqual(captured.records[0].path, "/api/test/unknown-failure/")
+        self.assertIn("merchant-secret", "\n".join(captured.output))
 
     def test_drf_500_is_normalized_in_debug_and_production_modes(self):
         class UnsafeServerError(APIException):
@@ -108,3 +112,57 @@ class SafeApiExceptionContractTests(SimpleTestCase):
         self.assertEqual(response.data["request_id"], "validation-error-42")
         self.assertEqual(response.data["detail"], "Validation failed.")
         self.assertEqual(response.data["errors"], {"name": ["This field is required."]})
+        self.assertEqual(response.data["category"], "validation")
+        self.assertFalse(response.data["retryable"])
+        self.assertIsNone(response.data["retry_after_seconds"])
+
+    def test_validation_errors_redact_credentials_without_losing_field_feedback(self):
+        request = self.factory.post("/api/test/validation/", {}, format="json")
+        request.correlation_id = "redaction-error-42"
+
+        response = api_exception_handler(
+            ValidationError(
+                {
+                    "email": ["Enter a valid email."],
+                    "token": "raw-provider-token",
+                    "notes": "Authorization: Bearer raw-bearer-token",
+                }
+            ),
+            {"request": request},
+        )
+
+        self.assertEqual(response.data["errors"]["email"], ["Enter a valid email."])
+        self.assertEqual(response.data["errors"]["token"], "[redacted]")
+        self.assertNotIn("raw-bearer-token", str(response.data))
+
+    def test_throttled_error_is_retryable_and_exposes_bounded_retry_delay(self):
+        request = self.factory.get("/api/test/throttled/")
+        request.correlation_id = "throttled-error-42"
+
+        response = api_exception_handler(Throttled(wait=2.1), {"request": request})
+
+        self.assertEqual(response.status_code, 429)
+        self.assertEqual(response.data["code"], "rate_limited")
+        self.assertEqual(response.data["category"], "rate_limit")
+        self.assertTrue(response.data["retryable"])
+        self.assertEqual(response.data["retry_after_seconds"], 3)
+
+    def test_non_validation_api_error_drops_unapproved_payload_keys(self):
+        class UnsafeClientError(APIException):
+            status_code = 400
+            default_detail = "Request failed."
+
+        request = self.factory.get("/api/test/client-error/")
+        request.correlation_id = "client-error-42"
+        exception = UnsafeClientError()
+        exception.detail = {
+            "detail": "database_password=merchant-secret",
+            "debug_context": "internal stack marker",
+        }
+
+        response = api_exception_handler(exception, {"request": request})
+
+        self.assertEqual(response.data["detail"], "Request could not be processed.")
+        self.assertEqual(response.data["errors"], {})
+        self.assertNotIn("merchant-secret", str(response.data))
+        self.assertNotIn("debug_context", response.data)

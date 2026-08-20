@@ -28,6 +28,7 @@ from apps.ai_core.services import create_ai_job, run_ai_request
 from apps.ai_core.tool_registry import assert_tool_execution_allowed, execute_tool_call_once, registered_tools, suggest_tool_calls, tool_call_fingerprint, tool_requires_approval
 from apps.businesses.access import Actions, Resources, assert_can
 from apps.core.permissions import user_can_access_business
+from apps.core.sanitization import sanitize_error_text
 from apps.core.viewsets import TenantModelViewSet
 
 
@@ -157,7 +158,7 @@ class AIAssistantChatView(APIView):
         try:
             assert_business_access(request.user, business)
         except PermissionError as exc:
-            raise PermissionDenied(str(exc)) from exc
+            raise PermissionDenied() from exc
         assert_can(request.user, business, Resources.AI_ASSISTANT, Actions.SUGGEST)
 
         crm_context = build_crm_context(business, user=request.user)
@@ -209,7 +210,7 @@ class AIAssistantStatusView(APIView):
         try:
             assert_business_access(request.user, business)
         except PermissionError as exc:
-            raise PermissionDenied(str(exc)) from exc
+            raise PermissionDenied() from exc
         assert_can(request.user, business, Resources.AI_ASSISTANT, Actions.VIEW)
 
         from django.conf import settings
@@ -247,7 +248,7 @@ class AIAnalystBriefView(APIView):
         try:
             assert_business_access(request.user, business)
         except PermissionError as exc:
-            raise PermissionDenied(str(exc)) from exc
+            raise PermissionDenied() from exc
         assert_can(request.user, business, Resources.AI_ANALYST, Actions.VIEW)
 
         brief = build_event_analyst_brief(
@@ -269,7 +270,7 @@ class AIOwnerDailyBriefView(APIView):
         try:
             assert_business_access(request.user, business)
         except PermissionError as exc:
-            raise PermissionDenied(str(exc)) from exc
+            raise PermissionDenied() from exc
         assert_can(request.user, business, Resources.AI_ANALYST, Actions.VIEW)
 
         return Response(
@@ -340,7 +341,7 @@ class AIToolExecuteView(APIView):
                 request,
                 log,
                 status="permission_denied",
-                error=str(exc),
+                error=sanitize_error_text(exc),
                 extra_metadata={
                     "approval_id": approval.id if approval else None,
                     "approval_required": bool(approval),
@@ -348,7 +349,7 @@ class AIToolExecuteView(APIView):
             )
             return Response(
                 {
-                    "detail": str(exc),
+                    "detail": "This AI tool action is not permitted.",
                     "approval_required": bool(approval),
                     "approval_status": "permission_denied",
                     "tool_call": AIToolCallLogSerializer(log).data,

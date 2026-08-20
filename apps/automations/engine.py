@@ -1,5 +1,6 @@
 import hashlib
 import json
+import logging
 
 from django.conf import settings
 from django.db import IntegrityError, transaction
@@ -18,6 +19,9 @@ from apps.core.work_queues import overdue_tasks_queryset
 from apps.crm.services import assign_deal_owner
 from apps.integrations.sanitization import sanitize_error_text
 from apps.leads.services import assign_lead
+
+
+logger = logging.getLogger(__name__)
 from apps.notifications.models import Notification
 from apps.notifications.routing import create_role_notification
 from apps.tasks.models import Task
@@ -294,6 +298,7 @@ def process_automation_run(run_id):
         run.next_retry_at = None
         run.status = AutomationRun.Statuses.FAILED
     except Exception as exc:
+        logger.exception("automations.run_failed", extra={"automation_run_id": run.id})
         run.error = sanitize_error_text(exc)
         if run.attempts < run.max_attempts:
             delay_seconds = min(3600, 60 * (2 ** (run.attempts - 1)))

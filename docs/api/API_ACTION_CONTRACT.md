@@ -1,6 +1,6 @@
 # API Action Contract
 
-Last updated: 2026-07-23
+Last updated: 2026-08-21
 
 Purpose: keep frontend and backend aligned on which fields are regular CRUD fields and which fields are state-machine fields that must only change through action endpoints/services.
 
@@ -28,7 +28,10 @@ All DRF error responses use this stable shape:
   "detail": "The requested appointment time is not available.",
   "errors": {
     "start_at": "Select another available time."
-  }
+  },
+  "category": "conflict",
+  "retryable": false,
+  "retry_after_seconds": null
 }
 ```
 
@@ -36,7 +39,12 @@ All DRF error responses use this stable shape:
 - `request_id` is safe to show in support UI and must be included in incident reports.
 - `detail` is a safe user-facing fallback. Frontend localization may replace it by `code`.
 - `errors` contains field/action context and is `{}` when no safe structured context exists.
+- `category` is the normalized recovery family: `validation`, `authentication`, `permission`, `not_found`, `conflict`, `rate_limit`, `provider`, `temporary` or `internal`.
+- `retryable` is a server-owned signal. A client must not retry mutations merely because an HTTP status usually looks temporary.
+- `retry_after_seconds` is an integer delay when the server knows a safe retry window, otherwise `null`.
 - Existing serializer field keys can also remain at the top level for backward compatibility.
+
+Only validation field keys may be mirrored at the top level for backward compatibility. Other DRF/API payload keys are discarded unless they are part of this envelope. Every error value is credential-redacted before it reaches the response or a persisted diagnostic field.
 
 Stable domain codes:
 

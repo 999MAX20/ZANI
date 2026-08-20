@@ -11,7 +11,7 @@ from apps.clients.services import duplicate_payload, find_duplicate_clients
 from apps.leads.models import Lead, LeadFormSubmission, LeadFormSubmissionError
 from apps.notifications.models import Notification
 from apps.integrations.crm_mapping import record_lead_captured_event
-from apps.integrations.sanitization import sanitize_config
+from apps.integrations.sanitization import sanitize_config, sanitize_error_text
 from apps.outreach.consent import payload_has_explicit_consent
 from apps.outreach.models import OutreachCampaign
 from apps.outreach.services import record_explicit_consent
@@ -174,7 +174,7 @@ def log_lead_form_submission_error(*, form=None, public_id="", payload=None, err
         page_url=page_url,
         page_domain=page_domain,
         payload_json=safe_payload,
-        error_message=str(error_message),
+        error_message=sanitize_error_text(error_message),
         ip_address=_client_ip(request),
         user_agent=_truncate(request.META.get("HTTP_USER_AGENT", "") if request else "", MAX_STORED_USER_AGENT_LENGTH),
     )

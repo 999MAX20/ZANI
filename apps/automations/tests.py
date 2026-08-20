@@ -257,6 +257,9 @@ class AutomationFoundationTests(TestCase):
             action_results=[{"reason": "Failed with token=raw-action-token"}],
             error="Failed with access_token=raw-error-token",
         )
+        run.refresh_from_db()
+        self.assertNotIn("raw-action-token", str(run.action_results))
+        self.assertNotIn("raw-error-token", run.error)
         self.api.force_authenticate(self.owner)
 
         response = self.api.get("/api/automation-runs/")

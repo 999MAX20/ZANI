@@ -57,6 +57,21 @@ class ImportExportTests(TestCase):
         )
         apply_business_type_defaults(self.business, configured_by=self.owner)
 
+    def test_import_job_error_is_sanitized_at_persistence_boundary(self):
+        job = ImportJob.objects.create(
+            business=self.business,
+            actor=self.owner,
+            entity_type=ImportJob.EntityTypes.CLIENTS,
+            source_file=SimpleUploadedFile("clients.csv", b"full_name\nClient"),
+            error="Import failed with access_token=raw-import-token",
+            status=ImportJob.Statuses.FAILED,
+        )
+
+        job.refresh_from_db()
+
+        self.assertNotIn("raw-import-token", job.error)
+        self.assertIn("[redacted]", job.error)
+
     def test_csv_clients_import_preview_and_confirm(self):
         Client.objects.create(business=self.business, full_name="Existing", phone="+77010000001")
         upload = SimpleUploadedFile(

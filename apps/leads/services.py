@@ -11,7 +11,7 @@ from apps.businesses.assignment_policy import assert_assignment_allowed
 from apps.businesses.access import Resources
 from apps.businesses.capabilities import assert_resource_enabled
 from apps.core.audit import write_actor_audit_log, write_audit_log
-from apps.core.domain_errors import InvalidTransition
+from apps.core.domain_errors import InvalidTransition, ScheduleConflict
 from apps.core.models import AuditLog
 from apps.crm.models import Deal, Pipeline, PipelineStage
 from apps.leads.models import Lead
@@ -441,7 +441,7 @@ def create_appointment_from_lead_contract(*, lead: Lead, actor, service, start_a
             lead_activity_source="lead_api",
         )
     except ValueError as exc:
-        raise ValidationError(str(exc)) from exc
+        raise ScheduleConflict(errors={"start_at": "Choose another available time."}) from exc
     lead.refresh_from_db()
 
     create_activity_event(

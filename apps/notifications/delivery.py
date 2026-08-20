@@ -1,3 +1,5 @@
+import logging
+
 from django.core.mail import send_mail
 from django.db.models import F, Q
 from django.utils import timezone
@@ -11,6 +13,9 @@ from apps.notifications.routing import MANAGER_ROLES, TECHNICAL_ROLES, create_ro
 from apps.scheduling.models import Appointment
 from apps.scheduling.services import cancel_appointment, confirm_appointment
 from apps.tasks.models import Task
+
+
+logger = logging.getLogger(__name__)
 
 
 POSITIVE_CONFIRMATION_WORDS = {"да", "подтверждаю", "подтвердить", "в силе", "ок", "окей", "yes", "confirm"}
@@ -72,6 +77,7 @@ def deliver_notification(notification, *, claimed=False):
     try:
         result = _deliver(notification)
     except Exception as exc:
+        logger.exception("notifications.delivery_failed", extra={"notification_id": notification.id})
         reason = sanitize_error_text(exc)
         status = _record_delivery_failure(notification, reason=reason, retryable=True)
         _write_delivery_activity(notification, status=status, result={"reason": reason})
@@ -158,8 +164,12 @@ def handle_appointment_followup_reply(*, business, channel, external_user_id, te
                     activity_metadata=_reply_lifecycle_metadata(channel=channel, text=text, action="confirm"),
                     activity_source=channel,
                 )
-            except ValueError as exc:
-                return {"status": "skipped", "reason": str(exc), "appointment_id": appointment.id}
+            except ValueError:
+                return {
+                    "status": "skipped",
+                    "reason": "The appointment can no longer be confirmed.",
+                    "appointment_id": appointment.id,
+                }
         _notify_manager_for_reply(appointment, f"Клиент подтвердил запись: {client.full_name}")
         return {"status": "confirmed", "appointment_id": appointment.id}
 
@@ -172,8 +182,12 @@ def handle_appointment_followup_reply(*, business, channel, external_user_id, te
                 activity_metadata=_reply_lifecycle_metadata(channel=channel, text=text, action="cancel"),
                 activity_source=channel,
             )
-        except ValueError as exc:
-            return {"status": "skipped", "reason": str(exc), "appointment_id": appointment.id}
+        except ValueError:
+            return {
+                "status": "skipped",
+                "reason": "The appointment can no longer be cancelled.",
+                "appointment_id": appointment.id,
+            }
         _notify_manager_for_reply(appointment, f"Клиент отменил запись: {client.full_name}")
         return {"status": "cancelled", "appointment_id": appointment.id}
 

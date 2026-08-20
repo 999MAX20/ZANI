@@ -14,6 +14,7 @@ from apps.integrations.bot_channel_credentials import (
 )
 from apps.integrations.models import BusinessConnector, IntegrationEventLog
 from apps.integrations.providers import get_provider
+from apps.integrations.sanitization import sanitize_error_text
 from apps.integrations.telegram import set_telegram_webhook, sync_telegram_updates as pull_telegram_updates, validate_telegram_token
 from apps.integrations.whatsapp_credentials import has_whatsapp_access_token, store_whatsapp_access_token
 
@@ -62,7 +63,7 @@ def sync_telegram_connector(channel, status=None, last_error="", operation="conf
     connector.auth_type = BusinessConnector.AuthTypes.TOKEN
     connector.status = connector_status
     connector.config_json = safe_config
-    connector.last_error = last_error
+    connector.last_error = sanitize_error_text(last_error)
     if connector_status == BusinessConnector.Statuses.CONNECTED and connector.connected_at is None:
         connector.connected_at = timezone.now()
     connector.save(
@@ -111,7 +112,7 @@ def sync_whatsapp_connector(channel, status=None, last_error="", operation="conf
     connector.auth_type = BusinessConnector.AuthTypes.OAUTH
     connector.status = connector_status
     connector.config_json = safe_config
-    connector.last_error = last_error
+    connector.last_error = sanitize_error_text(last_error)
     if connector_status == BusinessConnector.Statuses.CONNECTED and connector.connected_at is None:
         connector.connected_at = timezone.now()
     connector.save(update_fields=["capability", "auth_type", "status", "config_json", "last_error", "connected_at", "updated_at"])
@@ -150,7 +151,7 @@ def sync_instagram_connector(channel, status=None, last_error="", operation="con
     connector.auth_type = BusinessConnector.AuthTypes.OAUTH
     connector.status = connector_status
     connector.config_json = safe_config
-    connector.last_error = last_error
+    connector.last_error = sanitize_error_text(last_error)
     if connector_status == BusinessConnector.Statuses.CONNECTED and connector.connected_at is None:
         connector.connected_at = timezone.now()
     connector.save(update_fields=["capability", "auth_type", "status", "config_json", "last_error", "connected_at", "updated_at"])

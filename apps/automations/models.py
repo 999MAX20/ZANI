@@ -1,6 +1,7 @@
 from django.db import models
 
 from apps.businesses.models import Business, TimeStampedModel
+from apps.core.sanitization import SanitizedErrorFieldsMixin
 
 
 class AutomationRule(TimeStampedModel):
@@ -82,7 +83,9 @@ class AutomationAction(models.Model):
         return self.action_type
 
 
-class AutomationRun(models.Model):
+class AutomationRun(SanitizedErrorFieldsMixin, models.Model):
+    sanitized_text_fields = ("error",)
+    sanitized_payload_fields = ("action_results",)
     class Statuses(models.TextChoices):
         PENDING = "pending", "Pending"
         RUNNING = "running", "Running"

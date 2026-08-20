@@ -2,6 +2,7 @@ from django.conf import settings
 from django.db import models
 
 from apps.businesses.models import Business, TimeStampedModel
+from apps.core.sanitization import SanitizedErrorFieldsMixin
 
 
 class AIRequestLog(models.Model):
@@ -78,7 +79,8 @@ class AgentProfile(TimeStampedModel):
         return f"{self.name} ({self.business})"
 
 
-class AIToolCallLog(models.Model):
+class AIToolCallLog(SanitizedErrorFieldsMixin, models.Model):
+    sanitized_text_fields = ("error",)
     class Statuses(models.TextChoices):
         SUGGESTED = "suggested", "Suggested"
         EXECUTING = "executing", "Executing"
@@ -122,7 +124,8 @@ class AIToolCallLog(models.Model):
         return f"{self.tool_name} ({self.status}) for {self.business}"
 
 
-class AIJob(TimeStampedModel):
+class AIJob(SanitizedErrorFieldsMixin, TimeStampedModel):
+    sanitized_text_fields = ("error",)
     class Statuses(models.TextChoices):
         PENDING = "pending", "Pending"
         RUNNING = "running", "Running"

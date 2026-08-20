@@ -3,6 +3,7 @@ from django.db import models
 
 from apps.activities.models import Segment
 from apps.businesses.models import Business, TimeStampedModel
+from apps.core.sanitization import SanitizedErrorFieldsMixin
 from apps.clients.models import Client
 from apps.notifications.models import Notification
 
@@ -94,7 +95,9 @@ class OutreachCampaign(TimeStampedModel):
         return self.name
 
 
-class OutreachRecipient(TimeStampedModel):
+class OutreachRecipient(SanitizedErrorFieldsMixin, TimeStampedModel):
+    sanitized_text_fields = ("error",)
+    sanitized_payload_fields = ("provider_result",)
     class Statuses(models.TextChoices):
         QUEUED = "queued", "Queued"
         PENDING = "pending", "Pending"

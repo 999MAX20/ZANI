@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from apps.activities.serializers import NoteSerializer
 from apps.businesses.access import Actions, Resources, assert_can
 from apps.core.crm_cards import appointment_crm_card
+from apps.core.domain_errors import InvalidTransition, ScheduleConflict
 from apps.core.idempotency import IdempotentCRMCreateMixin
 from apps.core.permissions import user_can_access_business
 from apps.core.viewsets import TenantModelViewSet
@@ -135,7 +136,7 @@ class WorkingHoursViewSet(TenantModelViewSet):
         try:
             working_hours = apply_working_hours_preset(business, preset, resource=resource)
         except ValueError as exc:
-            raise ValidationError(str(exc)) from exc
+            raise ValidationError({"preset": "The selected working-hours preset is not valid."}) from exc
 
         serializer = self.get_serializer(working_hours, many=True)
         return Response({"preset": preset, "count": len(working_hours), "results": serializer.data})
@@ -264,7 +265,7 @@ class AppointmentViewSet(IdempotentCRMCreateMixin, TenantModelViewSet):
                     resource=serializer.validated_data.get("resource"),
                 )
             except ValueError as exc:
-                raise ValidationError(str(exc)) from exc
+                raise ScheduleConflict(errors={"start_at": "Choose another available time."}) from exc
             super().perform_create(serializer)
         handle_appointment_created(serializer.instance)
 
@@ -290,7 +291,7 @@ class AppointmentViewSet(IdempotentCRMCreateMixin, TenantModelViewSet):
         try:
             appointment = confirm_appointment(appointment=appointment, actor=request.user)
         except ValueError as exc:
-            raise ValidationError(str(exc)) from exc
+            raise InvalidTransition() from exc
         return Response(self.get_serializer(appointment).data)
 
     @action(detail=True, methods=["post"])
@@ -307,7 +308,7 @@ class AppointmentViewSet(IdempotentCRMCreateMixin, TenantModelViewSet):
                 request=request,
             )
         except ValueError as exc:
-            raise ValidationError(str(exc)) from exc
+            raise InvalidTransition() from exc
         return Response(self.get_serializer(appointment).data)
 
     @action(detail=True, methods=["post"])
@@ -317,7 +318,7 @@ class AppointmentViewSet(IdempotentCRMCreateMixin, TenantModelViewSet):
         try:
             appointment = complete_appointment(appointment=appointment, actor=request.user, request=request)
         except ValueError as exc:
-            raise ValidationError(str(exc)) from exc
+            raise InvalidTransition() from exc
         return Response(self.get_serializer(appointment).data)
 
     @action(detail=True, methods=["post"], url_path="no-show")
@@ -334,7 +335,7 @@ class AppointmentViewSet(IdempotentCRMCreateMixin, TenantModelViewSet):
                 request=request,
             )
         except ValueError as exc:
-            raise ValidationError(str(exc)) from exc
+            raise InvalidTransition() from exc
         return Response(self.get_serializer(appointment).data)
 
     @action(detail=True, methods=["post"], url_path="add-note")
@@ -368,7 +369,7 @@ class AppointmentViewSet(IdempotentCRMCreateMixin, TenantModelViewSet):
                 request=request,
             )
         except ValueError as exc:
-            raise ValidationError(str(exc)) from exc
+            raise ScheduleConflict(errors={"start_at": "Choose another available time."}) from exc
         return Response(self.get_serializer(appointment).data)
 
     @action(detail=False, methods=["get"], url_path="available-slots")

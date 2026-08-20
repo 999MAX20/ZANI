@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import json
+import logging
 from datetime import timedelta
 from urllib import request as urllib_request
 
@@ -12,11 +13,13 @@ from apps.core.security_config import has_strong_shared_secret
 from apps.core.production_rules import is_safe_public_https_url
 from apps.integrations.models import IntegrationEventLog
 from apps.integrations.providers.base import BaseChannelProvider
+from apps.integrations.sanitization import SAFE_PROVIDER_FAILURE_DETAIL
 from apps.integrations.whatsapp_credentials import get_whatsapp_access_token
 
 
 WHATSAPP_SECRET_HEADER = "HTTP_X_ZANI_WHATSAPP_SECRET"
 META_SIGNATURE_HEADER = "HTTP_X_HUB_SIGNATURE_256"
+logger = logging.getLogger(__name__)
 
 
 class BaseWhatsAppAdapter(BaseChannelProvider):
@@ -228,6 +231,7 @@ class WhatsAppProvider(BaseWhatsAppAdapter):
             )
             return {"ok": True, "mock": False, "provider": self.provider, "result": result, "provider_message_id": provider_message_id}
         except Exception as exc:
+            logger.exception("integrations.whatsapp.send_message_failed", extra={"channel_id": channel.id})
             self.log_event(
                 business=business,
                 channel=channel.channel,
@@ -236,7 +240,7 @@ class WhatsAppProvider(BaseWhatsAppAdapter):
                 status=IntegrationEventLog.Statuses.FAILED,
                 error=str(exc),
             )
-            return {"ok": False, "mock": False, "provider": self.provider, "reason": str(exc)}
+            return {"ok": False, "mock": False, "provider": self.provider, "reason": SAFE_PROVIDER_FAILURE_DETAIL}
 
     def _meta_cloud_message_payload(self, recipient_id, text, payload=None):
         payload = payload or {}
@@ -307,6 +311,7 @@ class WhatsAppProvider(BaseWhatsAppAdapter):
             )
             return {"ok": True, "mock": False, "phone_number": result}
         except Exception as exc:
+            logger.exception("integrations.whatsapp.credentials_validation_failed", extra={"channel_id": channel.id})
             self.log_event(
                 business=business,
                 channel=channel.channel,
@@ -315,7 +320,7 @@ class WhatsAppProvider(BaseWhatsAppAdapter):
                 status=IntegrationEventLog.Statuses.FAILED,
                 error=str(exc),
             )
-            return {"ok": False, "mock": False, "reason": str(exc)}
+            return {"ok": False, "mock": False, "reason": SAFE_PROVIDER_FAILURE_DETAIL}
 
     def _graph_url(self, phone_number_id, edge=""):
         base = str(getattr(settings, "WHATSAPP_GRAPH_BASE_URL", "https://graph.facebook.com") or "").strip().rstrip("/")

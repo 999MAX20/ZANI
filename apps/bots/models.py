@@ -4,6 +4,7 @@ from django.db import models
 from django.conf import settings
 
 from apps.businesses.models import Business, TimeStampedModel
+from apps.core.sanitization import SanitizedErrorFieldsMixin
 from apps.clients.models import Client
 from apps.leads.models import Lead
 
@@ -113,7 +114,8 @@ class BotConversation(TimeStampedModel):
         return f"{self.bot} conversation via {self.channel}"
 
 
-class BotMessage(models.Model):
+class BotMessage(SanitizedErrorFieldsMixin, models.Model):
+    sanitized_text_fields = ("error_text",)
     class Directions(models.TextChoices):
         INBOUND = "inbound", "Inbound"
         OUTBOUND = "outbound", "Outbound"

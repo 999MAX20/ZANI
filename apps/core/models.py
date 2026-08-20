@@ -7,6 +7,7 @@ from django.utils.text import get_valid_filename
 from django.utils import timezone
 
 from apps.businesses.models import Business
+from apps.core.sanitization import SanitizedErrorFieldsMixin
 
 
 def safe_original_filename(filename):
@@ -261,7 +262,8 @@ class CustomFieldValue(models.Model):
         return f"{self.definition.key}={self.value_json}"
 
 
-class ImportJob(models.Model):
+class ImportJob(SanitizedErrorFieldsMixin, models.Model):
+    sanitized_text_fields = ("error",)
     class EntityTypes(models.TextChoices):
         CLIENTS = "clients", "Clients"
         LEADS = "leads", "Leads"
@@ -303,7 +305,8 @@ class ImportJob(models.Model):
         return f"{self.business}: {self.entity_type} import #{self.id}"
 
 
-class ExportJob(models.Model):
+class ExportJob(SanitizedErrorFieldsMixin, models.Model):
+    sanitized_text_fields = ("error",)
     class Kinds(models.TextChoices):
         ENTITY = "entity", "Entity"
         ANALYTICS_REPORT = "analytics_report", "Analytics report"

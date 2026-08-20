@@ -1,4 +1,5 @@
 from decimal import Decimal
+import logging
 
 from django.conf import settings
 from django.db import transaction
@@ -10,6 +11,9 @@ from apps.notifications.models import Notification
 from apps.pricing.models import KaspiCompetitorOffer, KaspiPriceChangeLog, KaspiPricingAlert, KaspiPricingControl, KaspiPricingRecommendation, KaspiPricingRule, PricingCatalogItem
 from apps.pricing.providers import get_competitor_price_provider
 from apps.pricing.write_adapters import get_kaspi_price_write_adapter
+
+
+logger = logging.getLogger(__name__)
 
 
 PRICING_CATALOG_EVENT_TYPES = {
@@ -110,7 +114,11 @@ def create_kaspi_recommendation(rule, competitor_price=None, competitor_name="",
         )
         rule.last_checked_at = timezone.now()
         rule.last_recommended_price = target
-        rule.last_error = "" if recommendation.status != KaspiPricingRecommendation.Statuses.BLOCKED else recommendation.reason
+        rule.last_error = (
+            ""
+            if recommendation.status != KaspiPricingRecommendation.Statuses.BLOCKED
+            else sanitize_error_text(recommendation.reason)
+        )
         rule.save(update_fields=["last_checked_at", "last_recommended_price", "last_error", "updated_at"])
         return recommendation
 
@@ -150,7 +158,7 @@ def apply_kaspi_recommendation(recommendation, user=None, force=False):
         result = get_kaspi_price_write_adapter().update_price(change)
         change.status = KaspiPriceChangeLog.Statuses.QUEUED if result.ok and result.status == "queued" else KaspiPriceChangeLog.Statuses.FAILED
         change.provider_response_json = {**provider_response, **result.payload}
-        change.error = result.error
+        change.error = sanitize_error_text(result.error)
         change.save(update_fields=["status", "provider_response_json", "error"])
         if not result.ok:
             create_pricing_alert(
@@ -236,6 +244,7 @@ def collect_kaspi_competitor_offers(rule, provider_key=None):
     try:
         offers = provider.fetch_offers(rule)
     except Exception as exc:
+        logger.exception("pricing.offer_fetch_failed", extra={"pricing_rule_id": rule.id})
         rule.last_error = sanitize_error_text(exc)
         rule.save(update_fields=["last_error", "updated_at"])
         return {"ok": False, "provider": provider.key, "offers_created": 0, "error": rule.last_error}

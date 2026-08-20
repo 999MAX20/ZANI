@@ -126,6 +126,17 @@ class B3BackendContractTests(TestCase):
                 self.assertEqual(response.data["request_id"], "domain-error-42")
                 self.assertTrue(response.data["detail"])
                 self.assertIn("errors", response.data)
+                self.assertIn("category", response.data)
+                self.assertIn("retryable", response.data)
+                self.assertIn("retry_after_seconds", response.data)
+
+        provider_response = api_exception_handler(
+            ProviderUnavailable(retry_after_seconds=30),
+            {"request": request},
+        )
+        self.assertEqual(provider_response.data["category"], "provider")
+        self.assertTrue(provider_response.data["retryable"])
+        self.assertEqual(provider_response.data["retry_after_seconds"], 30)
 
     def test_invitation_acceptance_is_explicit_once_and_assigns_team(self):
         team = Team.objects.create(business=self.business, name="B3 Front desk")

@@ -1,14 +1,24 @@
 import logging
+import math
 import uuid
 
 from django.conf import settings
-from rest_framework.exceptions import MethodNotAllowed, NotAuthenticated, NotFound, PermissionDenied, Throttled, ValidationError
+from rest_framework.exceptions import (
+    AuthenticationFailed,
+    MethodNotAllowed,
+    NotAuthenticated,
+    NotFound,
+    PermissionDenied,
+    Throttled,
+    ValidationError,
+)
 from rest_framework.response import Response
 from rest_framework.status import HTTP_500_INTERNAL_SERVER_ERROR
 from rest_framework.views import exception_handler as drf_exception_handler
 
 from apps.core.domain_errors import DomainAPIException
 from apps.core.logging import request_id_context
+from apps.core.sanitization import sanitize_error_payload, sanitize_error_text
 
 
 SAFE_PERMISSION_DETAIL = "You do not have permission to perform this action."
@@ -30,39 +40,25 @@ def api_exception_handler(exc, context):
                 "request_id": request_id,
                 "detail": SAFE_INTERNAL_DETAIL,
                 "errors": {},
+                "category": "internal",
+                "retryable": False,
+                "retry_after_seconds": None,
             },
             status=HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
     original = response.data
-    if isinstance(exc, DomainAPIException):
-        payload = {
-            "code": exc.error_code,
-            "request_id": request_id,
-            "detail": _detail_from(original, exc.default_detail),
-            "errors": exc.errors,
-        }
-    elif isinstance(exc, PermissionDenied):
-        payload = {
-            "code": "permission_denied",
-            "request_id": request_id,
-            "detail": SAFE_PERMISSION_DETAIL,
-            "errors": {},
-        }
-    elif isinstance(exc, NotFound):
-        payload = {
-            "code": "not_found",
-            "request_id": request_id,
-            "detail": SAFE_NOT_FOUND_DETAIL,
-            "errors": {},
-        }
-    else:
-        payload = dict(original) if isinstance(original, dict) else {}
-        field_errors = _field_errors(original)
-        payload["code"] = _error_code(exc)
-        payload["request_id"] = request_id
-        payload.setdefault("detail", VALIDATION_DETAIL if isinstance(exc, ValidationError) else "Request could not be processed.")
-        payload["errors"] = payload.get("errors", field_errors)
+    payload = {
+        "code": exc.error_code if isinstance(exc, DomainAPIException) else _error_code(exc),
+        "request_id": request_id,
+        "detail": _safe_detail(exc, original),
+        "errors": sanitize_error_payload(_safe_errors(exc, original)),
+        "category": exc.category if isinstance(exc, DomainAPIException) else _error_category(exc),
+        "retryable": bool(exc.retryable) if isinstance(exc, DomainAPIException) else _is_retryable(exc),
+        "retry_after_seconds": _retry_after_seconds(exc),
+    }
+    if isinstance(exc, ValidationError) and isinstance(payload["errors"], dict):
+        payload.update(payload["errors"])
     response.data = payload
     return response
 
@@ -125,8 +121,12 @@ def _safe_request_context(request):
 
 
 def _error_code(exc):
-    if isinstance(exc, NotAuthenticated):
+    if isinstance(exc, (NotAuthenticated, AuthenticationFailed)):
         return "authentication_required"
+    if isinstance(exc, PermissionDenied):
+        return "permission_denied"
+    if isinstance(exc, NotFound):
+        return "not_found"
     if isinstance(exc, MethodNotAllowed):
         return "method_not_allowed"
     if isinstance(exc, Throttled):
@@ -134,6 +134,60 @@ def _error_code(exc):
     if isinstance(exc, ValidationError):
         return "validation_error"
     return "request_failed"
+
+
+def _error_category(exc):
+    if isinstance(exc, (NotAuthenticated, AuthenticationFailed)):
+        return "authentication"
+    if isinstance(exc, PermissionDenied):
+        return "permission"
+    if isinstance(exc, NotFound):
+        return "not_found"
+    if isinstance(exc, Throttled):
+        return "rate_limit"
+    if isinstance(exc, ValidationError):
+        return "validation"
+    return "validation"
+
+
+def _is_retryable(exc):
+    return isinstance(exc, Throttled)
+
+
+def _retry_after_seconds(exc):
+    value = getattr(exc, "retry_after_seconds", None) if isinstance(exc, DomainAPIException) else getattr(exc, "wait", None)
+    if value in (None, ""):
+        return None
+    try:
+        return max(0, math.ceil(float(value)))
+    except (TypeError, ValueError):
+        return None
+
+
+def _safe_detail(exc, data):
+    if isinstance(exc, DomainAPIException):
+        return sanitize_error_text(_detail_from(data, exc.default_detail))
+    if isinstance(exc, (NotAuthenticated, AuthenticationFailed)):
+        return "Authentication is required."
+    if isinstance(exc, PermissionDenied):
+        return SAFE_PERMISSION_DETAIL
+    if isinstance(exc, NotFound):
+        return SAFE_NOT_FOUND_DETAIL
+    if isinstance(exc, Throttled):
+        return "Too many requests. Please try again later."
+    if isinstance(exc, ValidationError):
+        return VALIDATION_DETAIL
+    if isinstance(exc, MethodNotAllowed):
+        return "This request method is not supported."
+    return "Request could not be processed."
+
+
+def _safe_errors(exc, data):
+    if isinstance(exc, DomainAPIException):
+        return exc.errors
+    if isinstance(exc, ValidationError):
+        return _field_errors(data)
+    return {}
 
 
 def _detail_from(data, default):
@@ -148,5 +202,5 @@ def _field_errors(data):
     return {
         key: value
         for key, value in data.items()
-        if key not in {"detail", "code", "request_id", "errors"}
+        if key not in {"detail", "code", "request_id", "errors", "category", "retryable", "retry_after_seconds"}
     }

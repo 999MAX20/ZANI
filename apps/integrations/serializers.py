@@ -516,7 +516,7 @@ class WebhookEndpointSerializer(serializers.ModelSerializer):
         try:
             return validate_outbound_webhook_url(value, allow_mock=True)
         except ValueError as exc:
-            raise serializers.ValidationError(str(exc)) from exc
+            raise serializers.ValidationError("The webhook URL is not allowed.") from exc
 
 
 class WebhookDeliveryLogSerializer(serializers.ModelSerializer):

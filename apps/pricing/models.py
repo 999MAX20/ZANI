@@ -5,6 +5,7 @@ from django.db import models
 from django.utils import timezone
 
 from apps.businesses.models import Business
+from apps.core.sanitization import SanitizedErrorFieldsMixin
 
 
 class PricingCatalogItem(models.Model):
@@ -52,7 +53,8 @@ class KaspiPricingControl(models.Model):
         return f"{self.business}: emergency_stop={self.emergency_stop_enabled}"
 
 
-class KaspiPricingRule(models.Model):
+class KaspiPricingRule(SanitizedErrorFieldsMixin, models.Model):
+    sanitized_text_fields = ("last_error",)
     class Modes(models.TextChoices):
         RECOMMEND = "recommend", "Recommend"
         APPROVAL = "approval", "Approval"
@@ -154,7 +156,8 @@ class KaspiPricingRecommendation(models.Model):
         return f"{self.rule.product_sku}: {self.current_price} -> {self.target_price}"
 
 
-class KaspiPriceChangeLog(models.Model):
+class KaspiPriceChangeLog(SanitizedErrorFieldsMixin, models.Model):
+    sanitized_text_fields = ("error",)
     class Statuses(models.TextChoices):
         SIMULATED = "simulated", "Simulated"
         QUEUED = "queued", "Queued"

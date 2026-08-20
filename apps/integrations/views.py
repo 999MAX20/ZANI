@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.exceptions import AuthenticationFailed, NotFound, PermissionDenied
+from rest_framework.exceptions import AuthenticationFailed, NotFound, PermissionDenied, ValidationError
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
@@ -194,7 +194,7 @@ class BusinessConnectorViewSet(TenantModelViewSet):
                 request=request,
             )
         except ValueError as exc:
-            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError({"oauth": "WhatsApp connection could not be completed. Restart setup and try again."}) from exc
         return Response(
             {
                 "ok": True,
@@ -230,7 +230,7 @@ class BusinessConnectorViewSet(TenantModelViewSet):
                 request=request,
             )
         except ValueError as exc:
-            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError({"oauth": "Instagram connection could not be completed. Restart setup and try again."}) from exc
         return Response({"ok": True, "channel_id": channel.id, "connector": self.get_serializer(connector).data})
 
     @action(detail=True, methods=["post"])
@@ -510,7 +510,7 @@ class PublicApiClientsView(APIView):
         try:
             token = authenticate_api_token(request, "clients:read")
         except AuthenticationFailed as exc:
-            return Response({"detail": str(exc)}, status=status.HTTP_401_UNAUTHORIZED)
+            raise AuthenticationFailed() from exc
         clients = Client.objects.filter(business=token.business, is_archived=False)[:100]
         return Response(ClientSerializer(clients, many=True).data)
 

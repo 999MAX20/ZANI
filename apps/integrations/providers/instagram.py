@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import json
+import logging
 from urllib import request as urllib_request
 
 from django.conf import settings
@@ -10,9 +11,11 @@ from apps.core.production_rules import is_safe_public_https_url
 from apps.integrations.bot_channel_credentials import get_instagram_access_token
 from apps.integrations.models import IntegrationEventLog
 from apps.integrations.providers.base import BaseChannelProvider
+from apps.integrations.sanitization import SAFE_PROVIDER_FAILURE_DETAIL
 
 
 META_SIGNATURE_HEADER = "HTTP_X_HUB_SIGNATURE_256"
+logger = logging.getLogger(__name__)
 
 
 class BaseInstagramAdapter(BaseChannelProvider):
@@ -156,6 +159,7 @@ class InstagramProvider(BaseInstagramAdapter):
             )
             return {"ok": True, "mock": False, "instagram_account": result}
         except Exception as exc:
+            logger.exception("integrations.instagram.credentials_validation_failed", extra={"channel_id": channel.id})
             self.log_event(
                 business=channel.bot.business,
                 channel=channel.channel,
@@ -164,7 +168,7 @@ class InstagramProvider(BaseInstagramAdapter):
                 status=IntegrationEventLog.Statuses.FAILED,
                 error=str(exc),
             )
-            return {"ok": False, "mock": False, "reason": str(exc)}
+            return {"ok": False, "mock": False, "reason": SAFE_PROVIDER_FAILURE_DETAIL}
 
     def _send_meta_message(self, channel, recipient_id, text, payload=None):
         config = channel.config_json or {}
@@ -215,6 +219,7 @@ class InstagramProvider(BaseInstagramAdapter):
             )
             return {"ok": True, "mock": False, "provider": self.provider, "result": result}
         except Exception as exc:
+            logger.exception("integrations.instagram.send_message_failed", extra={"channel_id": channel.id})
             self.log_event(
                 business=channel.bot.business,
                 channel=channel.channel,
@@ -223,7 +228,7 @@ class InstagramProvider(BaseInstagramAdapter):
                 status=IntegrationEventLog.Statuses.FAILED,
                 error=str(exc),
             )
-            return {"ok": False, "mock": False, "provider": self.provider, "reason": str(exc)}
+            return {"ok": False, "mock": False, "provider": self.provider, "reason": SAFE_PROVIDER_FAILURE_DETAIL}
 
     def _graph_url(self, instagram_user_id, edge="", fields=""):
         base = str(getattr(settings, "INSTAGRAM_GRAPH_BASE_URL", "https://graph.facebook.com") or "").strip().rstrip("/")

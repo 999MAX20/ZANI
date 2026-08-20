@@ -1,9 +1,9 @@
 # ZANI Unified Fallback And Error Experience Plan
 
-- Status: **ACTIVE / PLANNED**
+- Status: **ACTIVE / IN EXECUTION**
 - Created: 2026-08-18
 - Scope: merchant-visible errors, recovery actions, loading/empty/offline states, backend error contracts and technical-detail isolation
-- Execution state: **NOT STARTED**
+- Execution state: **FB-001 DONE / FB-002 READY**
 - Owner: ZANI manager workflow
 
 ## Product Outcome
@@ -308,7 +308,7 @@ Even platform/support views must sanitize credentials and personal data. A reque
 
 | ID | Work item | Priority | Status | Depends on |
 | --- | --- | --- | --- | --- |
-| FB-001 | Build route/action/failure inventory and error-code registry | P0 | NOT_STARTED | none |
+| FB-001 | Build route/action/failure inventory and error-code registry | P0 | DONE | none |
 | FB-002 | Complete the backend safe envelope and sanitization boundary | P0 | NOT_STARTED | BE-REM-004 |
 | FB-003 | Introduce `AppError` normalization and retire raw parsing | P0 | NOT_STARTED | FB-001..002 |
 | FB-004 | Build the shared visual fallback surface family | P0 | NOT_STARTED | FB-003 |
@@ -534,4 +534,17 @@ Checks run and exact result:
 Checks skipped and reason:
 Role/tenant impact:
 Residual risk:
+```
+
+```text
+Task: FB-001 - route/action/failure inventory and error-code registry
+Affected routes/actions: all 43 registered public, merchant and platform route entries; 580 distinct frontend API query/mutation contracts; 13 Celery tasks; 83 async/provider status values across 15 models
+Branch: codex/fallback-fb-001-registry
+Commit: 6f44856
+Backend error codes changed: none; 27 current stable codes are classified into the shared fallback taxonomy and localized copy families
+Frontend surfaces changed: none at runtime; added a source-derived machine-readable policy registry, completeness guard and generated report at actual_docs/UNIFIED_FALLBACK_INVENTORY.generated.md
+Checks run and exact result: npm run test:fallback-inventory -> 2/2 passed; npm run check:fallback-inventory -> 43 routes, 580 API operations, 13 tasks, 83 statuses and 27 codes; npm run check:certification -> 43 entries cover 81 declarations / 77 unique paths; npm run build -> 4662 i18n keys across RU/KK/EN and both application/widget builds passed; npm run check:bundle -> no chunk above 500 kB and app shell below 400 kB; git diff --check passed after newline normalization
+Checks skipped and reason: backend and browser gates skipped because FB-001 changes inventory/test/docs tooling only and does not change API or merchant runtime behavior
+Role/tenant impact: no permission or tenant behavior changed; every inventory entry records its permission owner and intended recovery location
+Residual risk: FB-002 through FB-010 remain unfinished; current route surface detection records migration gaps but does not remediate them
 ```

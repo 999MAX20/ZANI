@@ -19,4 +19,3 @@ test("generated fallback report is current", () => {
   assert.ok(result.routes > 0);
   assert.ok(result.errorCodes > 0);
 });
-

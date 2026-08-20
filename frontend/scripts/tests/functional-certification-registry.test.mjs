@@ -10,4 +10,3 @@ test("every router path declaration has a complete functional certification entr
   assert.ok(result.routerPathDeclarations > 0);
   assert.ok(result.uniqueRouterPaths > 0);
 });
-

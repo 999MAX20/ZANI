@@ -628,4 +628,3 @@ export const routeActionRegistry = [
     fixtures: ["missing-route"],
   }),
 ];
-

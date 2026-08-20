@@ -101,4 +101,3 @@ if (invokedPath === import.meta.url) {
       `${result.routerPathDeclarations} router path declarations (${result.uniqueRouterPaths} unique).`,
   );
 }
-

@@ -461,7 +461,7 @@ attack paths are closed and added to regression suites.
 
 | ID | Work item | Priority | Status |
 | --- | --- | --- | --- |
-| PP-SEC-006 | add access-token session/auth epoch revocation | P1 | READY after PP-SEC-004 |
+| PP-SEC-006 | add access-token session/auth epoch revocation | P1 | DONE |
 | PP-SEC-007 | harden outbound webhook redirects, peer validation and response limits | P1 | READY |
 | PP-SEC-008 | replace automation dotted traversal with safe field extractors | P1 | READY |
 | PP-SEC-009 | prohibit plaintext credentials in generic connector/channel JSON and migrate existing data | P1 | READY |
@@ -755,3 +755,50 @@ Verification:
 No schema, dependency or frontend change was required. Live credential,
 provider-console and public HTTPS validation remain deployment gates outside
 this code-readiness phase.
+
+### 15.6 PP-SEC-006 closure evidence
+
+Status: `DONE` on `codex/pre-pilot-sec-006-access-token-epoch`.
+
+Implemented invariants:
+
+- every issued refresh/access JWT carries the user's current `auth_epoch`;
+- the default DRF authentication boundary loads the current user and rejects
+  access JWTs whose epoch is missing, malformed or stale;
+- refresh rotation performs the same database-backed epoch validation before
+  issuing new credentials;
+- logout, password change, password reset, MFA enrollment/reset and explicit
+  session revocation blacklist outstanding refresh tokens and atomically
+  advance the epoch;
+- explicit session revocation and password change issue their replacement
+  session only after the new epoch is committed;
+- MFA step-up tokens are bound to the same epoch and cannot survive a security
+  revocation;
+- legacy JWTs without the claim fail closed, producing a deliberate one-time
+  sign-in requirement after this migration is deployed.
+
+Verification:
+
+- focused exploit and legitimate-control regressions -> `6/6` passed,
+  covering immediate access-token denial after logout, password change,
+  password reset and all-session revocation, stale/missing epoch denial,
+  replacement-session success and step-up invalidation;
+- `python manage.py test apps.accounts.tests apps.accounts.tests_mfa --keepdb`
+  -> `43/43` passed across login, refresh rotation/replay, social auth,
+  password policy/reset/change, MFA enrollment/verification/recovery and
+  session controls;
+- `python manage.py test apps.core.tests_security apps.core.tests_platform_operations --keepdb`
+  -> `25/25` passed across support grants, platform permissions and privileged
+  MFA step-up consumers;
+- `python manage.py check` -> no issues;
+- `python manage.py makemigrations --check --dry-run` -> no changes detected;
+- `python manage.py migrate --plan` -> only
+  `accounts.0007_user_auth_epoch` pending before application;
+- `python manage.py migrate` -> `accounts.0007_user_auth_epoch` applied
+  successfully to the canonical local database;
+- `python -m compileall -q apps` -> passed;
+- `git diff --check` -> clean.
+
+Schema change: `accounts.User.auth_epoch` with migration
+`accounts.0007_user_auth_epoch`. No dependency or frontend code change was
+required.

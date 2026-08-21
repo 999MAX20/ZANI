@@ -18,6 +18,7 @@ class User(AbstractUser):
     phone = models.CharField(max_length=32, blank=True)
     full_name = models.CharField(max_length=255, blank=True)
     role = models.CharField(max_length=32, choices=Roles.choices, default=Roles.BUSINESS_OWNER)
+    auth_epoch = models.PositiveBigIntegerField(default=0)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username"]

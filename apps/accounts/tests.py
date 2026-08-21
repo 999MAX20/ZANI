@@ -52,6 +52,11 @@ class AuthSecurityBaselineTests(TestCase):
         client.cookies["zani_refresh"] = raw_token
         return client.post("/api/auth/token/refresh/", {}, format="json")
 
+    def access_status(self, raw_token):
+        client = APIClient()
+        client.credentials(HTTP_AUTHORIZATION=f"Bearer {raw_token}")
+        return client.get("/api/auth/me/").status_code
+
     def test_auth_views_have_scoped_throttles(self):
         self.assertEqual(ThrottledTokenObtainPairView.throttle_scope, "auth_login")
         self.assertEqual(ThrottledTokenRefreshView.throttle_scope, "auth_refresh")
@@ -99,6 +104,8 @@ class AuthSecurityBaselineTests(TestCase):
         self.assertIn("zani_refresh", refresh_response.cookies)
         active_refresh = refresh_response.cookies["zani_refresh"].value
         active_jti = RefreshToken(active_refresh)["jti"]
+        active_access = refresh_response.data["access"]
+        self.assertEqual(self.access_status(active_access), 200)
 
         logout_response = self.api.post("/api/auth/logout/", {}, format="json")
 
@@ -107,6 +114,7 @@ class AuthSecurityBaselineTests(TestCase):
         self.assertTrue(BlacklistedToken.objects.filter(token__jti=refresh_jti).exists())
         self.assertTrue(BlacklistedToken.objects.filter(token__jti=active_jti).exists())
         self.assertEqual(self.refresh_with(active_refresh).status_code, 401)
+        self.assertEqual(self.access_status(active_access), 401)
         event = AuditLog.objects.get(actor=self.user, metadata__event="logout")
         self.assertEqual(event.category, AuditLog.Categories.SECURITY)
         self.assertNotIn(active_refresh, str(event.metadata))
@@ -140,6 +148,19 @@ class AuthSecurityBaselineTests(TestCase):
                 self.assertEqual(response.data["detail"], "Session expired or invalid.")
                 self.assertNotIn(raw_token, str(response.data))
                 self.assertEqual(response.cookies["zani_refresh"]["max-age"], 0)
+
+    def test_legacy_and_stale_epoch_tokens_are_rejected(self):
+        legacy_refresh = RefreshToken.for_user(self.user)
+        self.assertEqual(self.access_status(str(legacy_refresh.access_token)), 401)
+
+        login_response = self.login()
+        issued_refresh = login_response.cookies["zani_refresh"].value
+        issued_access = login_response.data["access"]
+        self.user.auth_epoch += 1
+        self.user.save(update_fields=["auth_epoch"])
+
+        self.assertEqual(self.access_status(issued_access), 401)
+        self.assertEqual(self.refresh_with(issued_refresh).status_code, 401)
 
     def test_refresh_endpoint_is_throttled(self):
         previous_rates = ScopedRateThrottle.THROTTLE_RATES
@@ -365,6 +386,8 @@ class AuthSecurityBaselineTests(TestCase):
         other_login = self.login(other_client)
         current_refresh = current_login.cookies["zani_refresh"].value
         other_refresh = other_login.cookies["zani_refresh"].value
+        current_access = current_login.data["access"]
+        other_access = other_login.data["access"]
         current_client.credentials(HTTP_AUTHORIZATION=f"Bearer {current_login.data['access']}")
 
         response = current_client.post(
@@ -379,7 +402,11 @@ class AuthSecurityBaselineTests(TestCase):
         self.assertNotEqual(replacement_refresh, current_refresh)
         self.assertEqual(self.refresh_with(current_refresh).status_code, 401)
         self.assertEqual(self.refresh_with(other_refresh).status_code, 401)
-        self.assertEqual(self.refresh_with(replacement_refresh).status_code, 200)
+        self.assertEqual(self.access_status(current_access), 401)
+        self.assertEqual(self.access_status(other_access), 401)
+        replacement_response = self.refresh_with(replacement_refresh)
+        self.assertEqual(replacement_response.status_code, 200)
+        self.assertEqual(self.access_status(replacement_response.data["access"]), 200)
         event = AuditLog.objects.get(actor=self.user, metadata__event="password_changed")
         self.assertGreaterEqual(event.metadata["sessions_revoked"], 2)
         self.assertNotIn(current_refresh, str(event.metadata))
@@ -466,8 +493,10 @@ class AuthSecurityBaselineTests(TestCase):
         self.assertTrue(self.user.check_password("NewStrongPass123"))
 
     def test_password_reset_revokes_all_existing_refresh_sessions(self):
-        first_refresh = self.login(APIClient()).cookies["zani_refresh"].value
-        second_refresh = self.login(APIClient()).cookies["zani_refresh"].value
+        first_login = self.login(APIClient())
+        second_login = self.login(APIClient())
+        first_refresh = first_login.cookies["zani_refresh"].value
+        second_refresh = second_login.cookies["zani_refresh"].value
         self.user.refresh_from_db()
         uid = urlsafe_base64_encode(force_bytes(self.user.pk))
         token = default_token_generator.make_token(self.user)
@@ -484,10 +513,33 @@ class AuthSecurityBaselineTests(TestCase):
         self.assertEqual(response.cookies["zani_refresh"]["max-age"], 0)
         self.assertEqual(self.refresh_with(first_refresh).status_code, 401)
         self.assertEqual(self.refresh_with(second_refresh).status_code, 401)
+        self.assertEqual(self.access_status(first_login.data["access"]), 401)
+        self.assertEqual(self.access_status(second_login.data["access"]), 401)
         event = AuditLog.objects.get(actor=self.user, metadata__event="password_reset_confirmed")
         self.assertGreaterEqual(event.metadata["sessions_revoked"], 2)
         self.assertNotIn(first_refresh, str(event.metadata))
         self.assertNotIn(second_refresh, str(event.metadata))
+
+    def test_revoke_sessions_invalidates_all_access_tokens_and_returns_current_epoch_session(self):
+        first_client = APIClient()
+        second_client = APIClient()
+        first_login = self.login(first_client)
+        second_login = self.login(second_client)
+        first_access = first_login.data["access"]
+        second_access = second_login.data["access"]
+        first_refresh = first_login.cookies["zani_refresh"].value
+        second_refresh = second_login.cookies["zani_refresh"].value
+        first_client.credentials(HTTP_AUTHORIZATION=f"Bearer {first_access}")
+
+        response = first_client.post("/api/auth/mfa/sessions/revoke/", {}, format="json")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertGreaterEqual(response.data["sessions_revoked"], 2)
+        self.assertEqual(self.access_status(first_access), 401)
+        self.assertEqual(self.access_status(second_access), 401)
+        self.assertEqual(self.refresh_with(first_refresh).status_code, 401)
+        self.assertEqual(self.refresh_with(second_refresh).status_code, 401)
+        self.assertEqual(self.access_status(response.data["access"]), 200)
 
     def test_password_reset_applies_django_password_policy(self):
         uid = urlsafe_base64_encode(force_bytes(self.user.pk))

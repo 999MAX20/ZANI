@@ -9,6 +9,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.accounts.mfa import MfaStepUpRequired, issue_step_up_token, validate_step_up_token
 from apps.accounts.models import MfaChallenge, MfaDevice, MfaRecoveryCode, User
+from apps.accounts.session_security import revoke_user_refresh_sessions
 from apps.businesses.models import Business, BusinessMember
 from apps.core.models import AuditLog
 from apps.integrations.credential_encryption import decrypt_credential_value
@@ -286,6 +287,9 @@ class PrivilegedMfaTests(TestCase):
         with self.assertRaises(MfaStepUpRequired):
             validate_step_up_token(other, token)
         with override_settings(AUTH_MFA_STEP_UP_SECONDS=-1), self.assertRaises(MfaStepUpRequired):
+            validate_step_up_token(self.owner, token)
+        revoke_user_refresh_sessions(self.owner)
+        with self.assertRaises(MfaStepUpRequired):
             validate_step_up_token(self.owner, token)
 
     def test_password_change_requires_factor_and_reissues_verified_session(self):

@@ -34,6 +34,21 @@ Refresh tokens for accounts that require MFA carry an `mfa_verified` claim. A le
 - When mandatory MFA applies, reset revokes every refresh session and returns a new enrollment challenge. It never creates an MFA-free privileged session.
 - A short-lived, user-bound step-up token contract is available for future sensitive operations and passkey/WebAuthn adoption.
 
+## Immediate session revocation
+
+- Every refresh and access JWT contains the user's current database-backed
+  authentication epoch.
+- The API checks that epoch on every authenticated request and again before a
+  refresh token can rotate.
+- Logout, password change/reset, MFA security reset and the explicit
+  revoke-sessions action atomically advance the epoch and blacklist outstanding
+  refresh tokens. Already issued access JWTs therefore stop working
+  immediately rather than remaining valid until their normal expiry.
+- MFA step-up tokens are epoch-bound as well and cannot be reused after one of
+  those security events.
+- Tokens issued before the epoch claim was introduced are intentionally
+  rejected and require a fresh sign-in.
+
 ## Audit events
 
 Security audit metadata records enrollment, verification, failed verification, recovery-code regeneration, password-change MFA failures, session revocation and controlled reset. It never contains TOTP secrets, raw recovery codes, challenge tokens, passwords or refresh tokens.

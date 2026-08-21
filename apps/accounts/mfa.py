@@ -93,6 +93,7 @@ def issue_session(user, *, mfa_verified=False):
     refresh = RefreshToken.for_user(user)
     refresh["mfa_verified"] = bool(mfa_verified)
     refresh["auth_time"] = int(timezone.now().timestamp())
+    refresh["auth_epoch"] = int(user.auth_epoch)
     return refresh
 
 
@@ -199,7 +200,11 @@ def issue_step_up_token(user, code):
     if not verify_user_factor(user, code, allow_recovery=True):
         raise MfaCodeInvalid()
     return signing.dumps(
-        {"user_id": user.pk, "nonce": secrets.token_urlsafe(16)},
+        {
+            "user_id": user.pk,
+            "auth_epoch": int(user.auth_epoch),
+            "nonce": secrets.token_urlsafe(16),
+        },
         salt=MFA_STEP_UP_SALT,
         compress=True,
     )
@@ -216,7 +221,7 @@ def validate_step_up_token(user, token):
         )
     except signing.BadSignature:
         raise MfaStepUpRequired() from None
-    if payload.get("user_id") != user.pk:
+    if payload.get("user_id") != user.pk or payload.get("auth_epoch") != int(user.auth_epoch):
         raise MfaStepUpRequired()
     return True
 

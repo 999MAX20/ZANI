@@ -13,7 +13,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from apps.accounts.models import User
 from apps.accounts.mfa import issue_session, requires_mfa, start_auth_challenge
-from apps.accounts.session_security import blacklist_refresh_token
+from apps.accounts.session_security import blacklist_refresh_token, token_matches_auth_epoch
 from apps.core.audit import get_client_ip, write_actor_audit_log
 from apps.core.models import AuditLog, LoginHistory
 from apps.core.permissions import accessible_businesses
@@ -117,6 +117,8 @@ class ThrottledTokenRefreshView(TokenRefreshView):
                 refresh = RefreshToken(raw_refresh)
                 user_id = refresh.payload.get(api_settings.USER_ID_CLAIM)
                 user = User.objects.filter(**{api_settings.USER_ID_FIELD: user_id}).first()
+                if not user or not token_matches_auth_epoch(user, refresh):
+                    raise TokenError("Session epoch is no longer valid.")
                 if user and requires_mfa(user) and not refresh.payload.get("mfa_verified"):
                     raise TokenError("MFA verification is required.")
             except TokenError:
@@ -150,13 +152,13 @@ class LogoutView(APIView):
     def post(self, request):
         body_token = request.data.get("refresh") if hasattr(request.data, "get") else None
         raw_token = request.COOKIES.get(settings.AUTH_REFRESH_COOKIE_NAME) or body_token
-        user, revoked = blacklist_refresh_token(raw_token)
-        if user is not None and revoked:
+        user, revoked_sessions = blacklist_refresh_token(raw_token)
+        if user is not None and revoked_sessions:
             record_security_event(
                 request,
                 user=user,
                 event="logout",
-                sessions_revoked=1,
+                sessions_revoked=revoked_sessions,
                 risk_level=AuditLog.RiskLevels.LOW,
             )
         return clear_refresh_cookie(Response({"ok": True}))

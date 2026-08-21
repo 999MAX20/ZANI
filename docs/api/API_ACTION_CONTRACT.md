@@ -52,6 +52,7 @@ Stable domain codes:
 | --- | ---: | --- |
 | `validation_error` | 400 | Highlight fields from `errors`; do not retry unchanged input. |
 | `authentication_required` | 401 | Start the login/session recovery flow. |
+| `invitation_account_authentication_required` | 401 | Preserve the invitation route and sign in as the invited existing account before retrying. |
 | `mfa_step_up_required` | 401 | Preserve the form and request recent MFA confirmation before retrying the critical action. |
 | `permission_denied` | 403 | Show a generic access message; do not reveal whether another tenant owns an object. |
 | `module_disabled` | 403 | Offer module enablement only to users allowed to manage settings. |
@@ -81,6 +82,24 @@ included in the envelope.
 - Expired grants are rejected at creation/update and never authorize tenant
   access.
 - Every mutation is recorded in the merchant security audit log.
+
+## Team Invitations
+
+- `GET /api/team/invitations/preview/{token}/` returns invitation metadata and
+  `requires_authentication`, which is `true` when the invited email already
+  belongs to an account.
+- `POST /api/team/invitations/accept/` creates a new account only when no
+  account exists for the invited email; a policy-compliant password is then
+  required.
+- An existing account may accept only from its own authenticated session. An
+  anonymous request receives
+  `invitation_account_authentication_required`; a different authenticated
+  account receives a tenant-safe permission denial.
+- Accepting an invitation for an existing account changes only the target
+  business membership. It never changes the account password, global role,
+  active state, profile name or phone.
+- Frontend login recovery must preserve the `/invite/{token}` return route so
+  the invited user can finish the membership action after authentication.
 
 ## Core CRM
 

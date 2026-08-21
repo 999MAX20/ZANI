@@ -30,6 +30,7 @@ from apps.businesses.serializers import (
 )
 from apps.core.audit import write_audit_log
 from apps.core.date_ranges import parse_bounded_date_range
+from apps.core.domain_errors import InvitationAccountAuthenticationRequired
 from apps.core.models import AuditLog
 from apps.core.permissions import IsTenantMember, accessible_businesses, is_platform_admin, platform_admin_has_global_access
 from apps.core.viewsets import TenantModelViewSet
@@ -325,6 +326,7 @@ class BusinessInvitationViewSet(TeamAccessMixin, ModelViewSet):
                 "role": invitation.role,
                 "status": invitation.status,
                 "expires_at": invitation.expires_at,
+                "requires_authentication": User.objects.filter(email__iexact=invitation.email).exists(),
             }
         )
 
@@ -342,28 +344,24 @@ class BusinessInvitationViewSet(TeamAccessMixin, ModelViewSet):
         full_name = serializer.validated_data.get("full_name") or invitation.full_name
         phone = (serializer.validated_data.get("phone") or invitation.phone or "").strip()
         if user is None:
+            if request.user.is_authenticated:
+                raise PermissionDenied("Sign out before accepting an invitation for a new account.")
+            password = serializer.validated_data.get("password")
+            if not password:
+                raise ValidationError({"password": "A password is required for a new account."})
             user = User.objects.create_user(
                 username=invitation.email,
                 email=invitation.email,
-                password=serializer.validated_data["password"],
+                password=password,
                 full_name=full_name,
                 phone=phone,
                 role=_user_role_for_business_member(invitation.role),
             )
         else:
-            update_fields = ["role", "is_active"]
-            if full_name and not user.full_name:
-                user.full_name = full_name
-                update_fields.append("full_name")
-            if phone and not user.phone:
-                user.phone = phone
-                update_fields.append("phone")
-            if not user.has_usable_password():
-                user.set_password(serializer.validated_data["password"])
-                update_fields.append("password")
-            user.role = _user_role_for_business_member(invitation.role)
-            user.is_active = True
-            user.save(update_fields=update_fields)
+            if not request.user.is_authenticated:
+                raise InvitationAccountAuthenticationRequired()
+            if request.user.pk != user.pk:
+                raise PermissionDenied("This invitation belongs to another account.")
         membership, _ = BusinessMember.objects.update_or_create(
             business=invitation.business,
             user=user,

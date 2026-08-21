@@ -455,7 +455,7 @@ class TeamAccessTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertFalse(User.objects.filter(email="weak-password@example.com").exists())
 
-    def test_existing_user_accept_invitation_preserves_password(self):
+    def test_existing_user_must_authenticate_before_accepting_invitation(self):
         existing_user = User.objects.create_user(
             username="existing-invite",
             email="existing-invite@example.com",
@@ -478,11 +478,57 @@ class TeamAccessTests(TestCase):
             format="json",
         )
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.data["code"], "invitation_account_authentication_required")
         existing_user.refresh_from_db()
         self.assertTrue(existing_user.check_password("ExistingPass123"))
-        self.assertEqual(existing_user.phone, "+77015550103")
-        self.assertEqual(existing_user.role, User.Roles.BUSINESS_OPERATOR)
+        self.assertEqual(existing_user.phone, "")
+        self.assertEqual(existing_user.role, User.Roles.STAFF)
+        self.assertFalse(
+            BusinessMember.objects.filter(
+                business=self.business,
+                user=existing_user,
+                role=BusinessMember.Roles.OPERATOR,
+                is_active=True,
+            ).exists()
+        )
+
+    def test_authenticated_existing_user_acceptance_changes_only_membership(self):
+        existing_user = User.objects.create_user(
+            username="existing-authenticated-invite",
+            email="existing-authenticated-invite@example.com",
+            password="ExistingPass123",
+            role=User.Roles.STAFF,
+            full_name="Existing Name",
+            phone="+77010000001",
+            is_active=True,
+        )
+        original_password = existing_user.password
+        invitation = BusinessInvitation.objects.create(
+            business=self.business,
+            invited_by=self.owner,
+            email=existing_user.email,
+            phone="+77015550103",
+            full_name="Attacker Supplied Name",
+            role=BusinessMember.Roles.OPERATOR,
+            delivery_channel=BusinessInvitation.DeliveryChannels.MANUAL,
+            expires_at=timezone.now() + timezone.timedelta(days=7),
+        )
+        self.api.force_authenticate(existing_user)
+
+        response = self.api.post(
+            "/api/team/invitations/accept/",
+            {"token": str(invitation.token)},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        existing_user.refresh_from_db()
+        self.assertEqual(existing_user.password, original_password)
+        self.assertEqual(existing_user.full_name, "Existing Name")
+        self.assertEqual(existing_user.phone, "+77010000001")
+        self.assertEqual(existing_user.role, User.Roles.STAFF)
+        self.assertTrue(existing_user.is_active)
         self.assertTrue(
             BusinessMember.objects.filter(
                 business=self.business,
@@ -491,6 +537,71 @@ class TeamAccessTests(TestCase):
                 is_active=True,
             ).exists()
         )
+
+    def test_public_invitation_cannot_set_password_on_social_only_account(self):
+        social_user = User.objects.create(
+            username="social-only-invite",
+            email="social-only-invite@example.com",
+            role=User.Roles.STAFF,
+            is_active=True,
+        )
+        social_user.set_unusable_password()
+        social_user.save(update_fields=["password"])
+        original_password = social_user.password
+        invitation = BusinessInvitation.objects.create(
+            business=self.business,
+            invited_by=self.owner,
+            email=social_user.email,
+            role=BusinessMember.Roles.MANAGER,
+            delivery_channel=BusinessInvitation.DeliveryChannels.MANUAL,
+            expires_at=timezone.now() + timezone.timedelta(days=7),
+        )
+        self.api.force_authenticate(user=None)
+
+        response = self.api.post(
+            "/api/team/invitations/accept/",
+            {"token": str(invitation.token), "password": "AttackerPass123"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 401)
+        social_user.refresh_from_db()
+        self.assertEqual(social_user.password, original_password)
+        self.assertFalse(social_user.has_usable_password())
+        self.assertEqual(social_user.role, User.Roles.STAFF)
+        self.assertFalse(BusinessMember.objects.filter(business=self.business, user=social_user).exists())
+
+    def test_authenticated_user_cannot_accept_another_accounts_invitation(self):
+        invited_user = User.objects.create_user(
+            username="invited-existing-user",
+            email="invited-existing-user@example.com",
+            password="ExistingPass123",
+            role=User.Roles.STAFF,
+        )
+        other_user = User.objects.create_user(
+            username="other-existing-user",
+            email="other-existing-user@example.com",
+            password="ExistingPass123",
+            role=User.Roles.STAFF,
+        )
+        invitation = BusinessInvitation.objects.create(
+            business=self.business,
+            invited_by=self.owner,
+            email=invited_user.email,
+            role=BusinessMember.Roles.MANAGER,
+            delivery_channel=BusinessInvitation.DeliveryChannels.MANUAL,
+            expires_at=timezone.now() + timezone.timedelta(days=7),
+        )
+        self.api.force_authenticate(other_user)
+
+        response = self.api.post(
+            "/api/team/invitations/accept/",
+            {"token": str(invitation.token)},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(BusinessMember.objects.filter(business=self.business, user=invited_user).exists())
 
     def test_revoked_invitation_cannot_be_accepted(self):
         self.api.force_authenticate(self.owner)

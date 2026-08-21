@@ -341,7 +341,7 @@ class BusinessInvitationSerializer(serializers.ModelSerializer):
 
 class BusinessInvitationAcceptSerializer(serializers.Serializer):
     token = serializers.UUIDField()
-    password = serializers.CharField(write_only=True)
+    password = serializers.CharField(required=False, allow_blank=False, write_only=True)
     full_name = serializers.CharField(required=False, allow_blank=True, max_length=255)
     phone = serializers.CharField(required=False, allow_blank=True, max_length=32)
 

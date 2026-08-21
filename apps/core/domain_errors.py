@@ -63,6 +63,14 @@ class OwnershipConflict(DomainAPIException):
     category = "conflict"
 
 
+class InvitationAccountAuthenticationRequired(DomainAPIException):
+    status_code = 401
+    error_code = "invitation_account_authentication_required"
+    default_code = error_code
+    default_detail = "Sign in to the invited account before accepting this invitation."
+    category = "authentication"
+
+
 class ProviderUnavailable(DomainAPIException):
     status_code = 503
     error_code = "provider_unavailable"

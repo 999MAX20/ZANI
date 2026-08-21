@@ -82,6 +82,7 @@ export function LoginPage() {
     const pathname = from?.pathname;
 
     if (!pathname) return fallback;
+    if (pathname.startsWith("/invite/")) return `${pathname}${from?.search ?? ""}${from?.hash ?? ""}`;
     if (user.is_platform_user && !pathname.startsWith("/platform")) return fallback;
     if (!user.is_platform_user && !pathname.startsWith("/app")) return fallback;
 

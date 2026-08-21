@@ -453,7 +453,7 @@ attack paths are closed and added to regression suites.
 | --- | --- | --- | --- |
 | PP-SEC-001 | lock platform activation to administrator + MFA step-up; separate provisioning, recovery and ownership transfer | P0 | DONE |
 | PP-SEC-002 | make support grants proposed-state safe and tenant-immutable | P0 | DONE |
-| PP-SEC-003 | make invitation acceptance safe for existing accounts | P0 | READY |
+| PP-SEC-003 | make invitation acceptance safe for existing accounts | P0 | DONE |
 | PP-SEC-004 | cover every platform/support role with MFA and step-up enforcement | P0 | READY |
 | PP-SEC-005 | make WhatsApp and Instagram webhook authentication fail closed | P0 | READY |
 
@@ -644,3 +644,37 @@ Verification:
 No schema or dependency change was required. Browser certification remains in
 PP-SEC-010; the current frontend only reads support grants and has no mutation
 surface to update in this phase.
+
+### 15.3 PP-SEC-003 closure evidence
+
+Status: `DONE` on `codex/pre-pilot-sec-003-invitation-acceptance`.
+
+Implemented invariants:
+
+- public acceptance may create a new account only when the invited email is
+  not already registered, and then requires the shared password policy;
+- an existing account may accept only from its own authenticated session;
+- an anonymous existing-account attempt returns the stable
+  `invitation_account_authentication_required` authentication envelope;
+- a different authenticated account receives a permission denial;
+- existing-account acceptance changes only the business membership and never
+  changes password, global role, active state, full name or phone;
+- the invitation preview tells the frontend when authentication is required;
+- the login flow preserves the invite return route, and the invite page does
+  not request a replacement password for an existing account.
+
+Verification:
+
+- focused account-takeover regressions -> `4/4` passed, covering anonymous
+  existing-account acceptance, social-only unusable-password takeover,
+  same-account acceptance and wrong-account denial;
+- `python manage.py test apps.businesses.tests_access -v 1` -> `40/40`
+  passed;
+- `npm run build` -> i18n validation, TypeScript, merchant frontend and widget
+  production builds passed;
+- `git diff --check` -> clean;
+- `python manage.py check` and migration drift are rerun in the phase closeout
+  gate below.
+
+No schema or dependency change was required. The complete browser/security
+rerun remains assigned to PP-SEC-010 after PP-SEC-004 through PP-SEC-009.

@@ -33,6 +33,9 @@ This file is the working reference for role-aware behavior in ZANI.
   recipient. Ownership transfer is never performed by editing a grant.
 - Support recipients may inspect only granted tenants while a grant is active;
   they cannot extend or mutate their own grant.
+- A team invitation for an existing email is membership-only and may be
+  accepted only by that authenticated account. Invitation acceptance never
+  resets an existing password or rewrites global account attributes.
 - AI must follow the same role restrictions as the user who invokes it.
 
 ## Page And Action Matrix

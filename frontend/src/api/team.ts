@@ -40,12 +40,12 @@ export const teamApi = {
     return data;
   },
   previewInvitation: async (token: string) => {
-    const { data } = await apiClient.get<Pick<BusinessInvitation, "business_name" | "email" | "full_name" | "role" | "status" | "expires_at">>(
+    const { data } = await apiClient.get<Pick<BusinessInvitation, "business_name" | "email" | "full_name" | "role" | "status" | "expires_at"> & { requires_authentication: boolean }>(
       `/api/team/invitations/preview/${token}/`,
     );
     return data;
   },
-  acceptInvitation: async ({ token, password, full_name, phone }: { token: string; password: string; full_name?: string; phone?: string }) => {
+  acceptInvitation: async ({ token, password, full_name, phone }: { token: string; password?: string; full_name?: string; phone?: string }) => {
     const { data } = await apiClient.post<{ ok: boolean; business: Id; email: string; role: BusinessMembershipSummary["role"] }>("/api/team/invitations/accept/", {
       token,
       password,

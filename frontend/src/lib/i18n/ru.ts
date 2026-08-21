@@ -3065,6 +3065,7 @@ export const ru: Record<string, string> = {
   "weekday.sunShort": "Вс",
   "routeError.notFound": "Страница не найдена или больше недоступна.",
   "routeError.forbidden": "У вашей роли нет доступа к этому разделу.",
+  "routeError.title": "Не удалось открыть страницу",
   "routeError.generic": "Не удалось открыть раздел.",
   "routeError.back": "Назад",
   "routeError.home": "На главную",

@@ -3072,6 +3072,7 @@ export const kk: Record<string, string> = {
   "weekday.sunShort": "Жк",
   "routeError.notFound": "Бет табылмады немесе енді қолжетімсіз.",
   "routeError.forbidden": "Бұл бөлімге сіздің рөліңізде қолжетім жоқ.",
+  "routeError.title": "Бетті ашу мүмкін болмады",
   "routeError.generic": "Бөлімді ашу мүмкін болмады.",
   "routeError.back": "Артқа",
   "routeError.home": "Басты бет",

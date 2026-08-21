@@ -3088,6 +3088,7 @@ export const en: Record<string, string> = {
   "weekday.sunShort": "Sun",
   "routeError.notFound": "Page was not found or is no longer available.",
   "routeError.forbidden": "Your role does not have access to this section.",
+  "routeError.title": "Could not open this page",
   "routeError.generic": "Could not open this section.",
   "routeError.back": "Back",
   "routeError.home": "Home",

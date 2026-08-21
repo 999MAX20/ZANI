@@ -72,11 +72,24 @@ type PageFallbackProps = SharedFallbackProps & {
   secondaryAction?: ReactNode;
 };
 
-export function PageFallback({ error, onRetry, secondaryAction, title }: PageFallbackProps) {
-  const { t } = useI18n();
+type PageFallbackLayoutProps = {
+  actions?: ReactNode;
+  details?: ReactNode;
+  message: string;
+  testId?: string;
+  title: string;
+};
+
+export function PageFallbackLayout({
+  actions,
+  details,
+  message,
+  testId = "page-fallback",
+  title,
+}: PageFallbackLayoutProps) {
   return (
     <section
-      data-testid="page-fallback"
+      data-testid={testId}
       role="alert"
       className="grid min-h-[280px] place-items-center rounded-card border border-zani-border bg-surface-card p-6 shadow-card"
     >
@@ -84,15 +97,29 @@ export function PageFallback({ error, onRetry, secondaryAction, title }: PageFal
         <div className="mx-auto grid h-12 w-12 place-items-center rounded-control bg-[var(--zani-danger-soft)] text-zani-danger">
           <AlertTriangle aria-hidden="true" size={24} />
         </div>
-        <h2 className="mt-4 text-xl font-semibold text-zani-ink">{title || t("fallback.page.title")}</h2>
-        <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-zani-subtle">{t(error.messageKey)}</p>
-        <div className="mt-5 flex flex-wrap justify-center gap-2">
-          <FallbackAction error={error} onRetry={onRetry} />
-          {secondaryAction}
-        </div>
-        <RecoveryDetails error={error} className="mx-auto mt-4 max-w-md text-left" />
+        <h2 className="mt-4 text-xl font-semibold text-zani-ink">{title}</h2>
+        <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-zani-subtle">{message}</p>
+        {actions ? <div className="mt-5 flex flex-wrap justify-center gap-2">{actions}</div> : null}
+        {details}
       </div>
     </section>
+  );
+}
+
+export function PageFallback({ error, onRetry, secondaryAction, title }: PageFallbackProps) {
+  const { t } = useI18n();
+  return (
+    <PageFallbackLayout
+      title={title || t("fallback.page.title")}
+      message={t(error.messageKey)}
+      actions={(
+        <>
+          <FallbackAction error={error} onRetry={onRetry} />
+          {secondaryAction}
+        </>
+      )}
+      details={<RecoveryDetails error={error} className="mx-auto mt-4 max-w-md text-left" />}
+    />
   );
 }
 

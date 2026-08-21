@@ -38,6 +38,6 @@ def resolve_attachment_entity(business, entity_type, entity_id):
 
 
 def assert_attachment_access(user, attachment, action=Actions.VIEW):
-    _, resource = resolve_attachment_entity(attachment.business, attachment.entity_type, attachment.entity_id)
+    entity, resource = resolve_attachment_entity(attachment.business, attachment.entity_type, attachment.entity_id)
     required_action = Actions.UPDATE if action in {Actions.CREATE, Actions.UPDATE} else Actions.VIEW
-    return assert_can(user, attachment.business, resource, required_action)
+    return assert_can(user, attachment.business, resource, required_action, obj=entity)

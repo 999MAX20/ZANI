@@ -17,7 +17,7 @@ from apps.billing.models import Subscription, SubscriptionPlan, UsageCounter
 from apps.businesses.models import Business, BusinessMember
 from apps.bots.models import Bot, BotChannel, BotConversation
 from apps.clients.models import Client
-from apps.core.models import AuditLog
+from apps.core.models import AuditLog, FileAttachment
 from apps.core.file_validation import normalize_extension, validate_file_upload
 from apps.leads.models import Lead
 from apps.scheduling.models import Resource, WorkingHours
@@ -714,13 +714,25 @@ class FileSafetyFoundationTests(TestCase):
         with self.assertRaises(ValidationError):
             validate_file_upload(too_large, max_size_mb=0.000001)
 
-    def test_private_media_endpoint_requires_auth_and_serves_private_file(self):
-        with TemporaryDirectory() as temp_dir, override_settings(PRIVATE_MEDIA_ROOT=temp_dir, USE_S3=False):
-            private_file = Path(temp_dir) / f"business-{self.business.id}" / "note.txt"
-            private_file.parent.mkdir(parents=True)
-            private_file.write_text("secret note")
-
-            private_url = f"/api/files/private/business-{self.business.id}/note.txt/"
+    def test_private_media_endpoint_requires_auth_and_registered_attachment(self):
+        with TemporaryDirectory() as temp_dir, override_settings(
+            MEDIA_ROOT=temp_dir,
+            PRIVATE_MEDIA_ROOT=str(Path(temp_dir) / "private"),
+            USE_S3=False,
+        ):
+            client = Client.objects.create(business=self.business, full_name="Private File Client")
+            attachment = FileAttachment.objects.create(
+                business=self.business,
+                uploaded_by=self.user,
+                file=SimpleUploadedFile("note.txt", b"secret note", content_type="text/plain"),
+                original_name="note.txt",
+                content_type="text/plain",
+                size=11,
+                entity_type="client",
+                entity_id=str(client.id),
+            )
+            private_path = attachment.file.name.removeprefix("private/")
+            private_url = f"/api/files/private/{private_path}/"
             anonymous_response = self.api.get(private_url)
             self.assertEqual(anonymous_response.status_code, 401)
 
@@ -729,6 +741,16 @@ class FileSafetyFoundationTests(TestCase):
 
             self.assertEqual(response.status_code, 200)
             self.assertEqual(b"".join(response.streaming_content), b"secret note")
+            self.assertTrue(
+                AuditLog.objects.filter(
+                    business=self.business,
+                    actor=self.user,
+                    action=AuditLog.Actions.DOWNLOAD,
+                    entity_type="FileAttachment",
+                    entity_id=str(attachment.id),
+                    metadata__source="legacy_private_media",
+                ).exists()
+            )
 
     def test_private_media_endpoint_blocks_another_business_prefix(self):
         with TemporaryDirectory() as temp_dir, override_settings(PRIVATE_MEDIA_ROOT=temp_dir, USE_S3=False):

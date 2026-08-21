@@ -78,6 +78,7 @@ the accepted project branch.
 | ZD-002 | VISUAL / TECHNICAL_LEAK | Outbound manager message in Inbox | Shared message bubbles for manager, bot/AI and client plus failed-message action in the conversation list | VERIFIED_BRANCH | `7284920` |
 | ZD-003 | INTERACTION | Client CRM drawer after canceling the native file picker | Shared `CrmEntityDrawer` attachment flow for client, lead, deal and appointment entities, including entity drawers opened from Tasks | VERIFIED_BRANCH | `f81cee7` |
 | ZD-004 | CONSISTENCY / TECHNICAL_LEAK | Code-level fallback audit | Shared API parsing, crash boundaries and direct error fields across merchant and platform surfaces | CONFIRMED | `UNIFIED_FALLBACK_EXPERIENCE_PLAN.md` |
+| ZD-005 | SECURITY / AUTHORIZATION | Legacy local private-media URL | Every registered attachment consumer and every CRM entity scope within the same business | VERIFIED_BRANCH | `codex/pre-pilot-sec-010-security-certification` |
 
 ## Detailed Precedents
 
@@ -184,6 +185,46 @@ the accepted project branch.
 - Derived audit rule: no merchant-visible component may render raw backend or
   runtime error text. Every failure must be normalized, localized, sanitized
   and paired with a safe next action when one exists.
+
+### ZD-005 — Raw private-media URL bypasses entity-level scope
+
+- Recorded: 2026-08-22.
+- Type: `SECURITY / AUTHORIZATION`.
+- Status: `VERIFIED_BRANCH`.
+- Owner-observed surface: discovered by repository-wide security certification;
+  the affected endpoint is the legacy local private-media download route.
+- Role and prerequisites: authenticated operator in the same business as an
+  owner, with a guessed or obtained storage path for an attachment linked to an
+  owner-only task.
+- Reproduction steps: create an owner-only task and attachment, authenticate as
+  the operator, request the canonical attachment endpoint and then the raw
+  `/api/files/private/...` endpoint.
+- Expected behavior: both endpoints apply the attachment entity's OWN/TEAM scope
+  and return `404` to the operator.
+- Actual behavior: before remediation the canonical endpoint returned `404`,
+  while the raw private-media endpoint returned `200` based only on business
+  membership.
+- User impact: a same-tenant user could read a private attachment outside their
+  assigned entity scope if its storage path became known.
+- Root cause class: authorization boundary divergence between two consumers of
+  the same protected object.
+- Actual cross-product scope: all local/private registered file attachments and
+  every entity type resolved by `resolve_attachment_entity`.
+- Correction: resolve the exact `FileAttachment` in the legacy route, require
+  shared entity-aware attachment authorization, hide unauthorized/unregistered
+  paths behind `404`, and audit legitimate downloads.
+- Commit / branch: `codex/pre-pilot-sec-010-security-certification`.
+- Verification commands and results: focused attachment suites `13/13`; full
+  backend suite `944/944`; security dependency gate passed; remediation diff
+  scan `30ad4502-d729-4009-af48-ae0acc1681e7` completed with `0` findings.
+- Skipped checks and reason: frontend/browser gates were not rerun because the
+  fix changes no frontend contract or UI; live object storage remains a
+  deployment-environment gate.
+- Remaining risk or test debt: production S3/object-storage bucket policy and
+  signed-delivery behavior require live-environment certification.
+- Derived audit rule: whenever one protected object has multiple download or
+  view routes, prove that every route resolves the same object and applies the
+  same object-level permission and audit boundary.
 
 ## Regression Rule Catalogue
 

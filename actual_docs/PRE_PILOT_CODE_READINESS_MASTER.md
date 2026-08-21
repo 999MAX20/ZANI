@@ -465,7 +465,7 @@ attack paths are closed and added to regression suites.
 | PP-SEC-007 | harden outbound webhook redirects, peer validation and response limits | P1 | DONE |
 | PP-SEC-008 | replace automation dotted traversal with safe field extractors | P1 | DONE |
 | PP-SEC-009 | prohibit plaintext credentials in generic connector/channel JSON and migrate existing data | P1 | DONE |
-| PP-SEC-010 | rerun full security, dependency, backend and migration gates | P0 | BLOCKED by PP-SEC-001..009 |
+| PP-SEC-010 | rerun full security, dependency, backend and migration gates | P0 | DONE |
 
 ### Gate P2 - Unified fallback and recovery
 
@@ -926,3 +926,55 @@ Verification:
 No dependency or frontend change was required. The data migration changes
 persisted credential storage; a pre-migration SQLite backup was retained under
 `output/` for local recovery and is not a release artifact.
+
+### 15.10 PP-SEC-010 closure evidence
+
+Status: `DONE` on `codex/pre-pilot-sec-010-security-certification`.
+
+Security certification result:
+
+- a repository-wide Codex Security scan reviewed authentication/session/MFA,
+  tenant and platform authorization, public forms/chat, API tokens/webhooks,
+  credential storage, files/import/export, automations/AI and frontend error
+  boundaries;
+- the scan found one medium-severity broken-object-authorization path in the
+  legacy local private-media endpoint: membership of the correct business was
+  checked, but the attachment's entity-level OWN/TEAM scope was not;
+- the exploit was reproduced with an operator from the same business reading
+  an attachment attached to an owner-only task through the raw private-media
+  URL while the canonical attachment download correctly returned `404`;
+- the legacy route now resolves an exact registered `FileAttachment`, applies
+  the same entity-aware `assert_attachment_access` boundary as the canonical
+  route and returns `404` for unknown, unregistered or unauthorized paths;
+- `assert_attachment_access` now passes the resolved CRM entity to `assert_can`,
+  so OWN/TEAM/BUSINESS scope is enforced consistently for every attachment
+  consumer;
+- successful legacy downloads preserve the original filename and write the
+  same tenant-scoped audit record expected from the canonical download flow.
+
+Verification:
+
+- focused exploit and legitimate-control regressions -> `13/13` passed,
+  including anonymous denial, legitimate registered download, audit evidence,
+  cross-business denial and same-business entity-scope denial on both download
+  routes;
+- the original exploit changed from `200` before the fix to `404` after it,
+  while the authorized owner control remained `200`;
+- remediation security diff scan
+  `30ad4502-d729-4009-af48-ae0acc1681e7` -> complete coverage, `0` findings;
+- full backend gate -> `944/944` tests passed in `1108.683s`, followed by final
+  diff hygiene success;
+- `python scripts/codex_verify.py --mode security --base-ref 470fe6081ed8db7aaefc23e82271a4c2d92949ff`
+  -> passed;
+- both hashed Python lock files are installable;
+- `pip-audit -r requirements.txt` -> no known vulnerabilities;
+- `npm audit --audit-level=moderate` -> `0` vulnerabilities;
+- `python manage.py check` -> no issues;
+- `python manage.py makemigrations --check --dry-run` -> no changes detected;
+- final working-tree and index `git diff --check` -> clean.
+
+No schema, dependency or frontend change was required. The repository-wide
+scan preflight was degraded only by unavailable delegated security workers;
+the complete eight-surface parent review and the dedicated remediation diff
+scan were both sealed. Live object-storage policy and production-provider
+validation remain deployment gates outside this local code-readiness phase.

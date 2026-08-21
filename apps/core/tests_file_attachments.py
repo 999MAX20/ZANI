@@ -10,12 +10,17 @@ from apps.billing.models import Subscription, SubscriptionPlan
 from apps.businesses.models import Business, BusinessMember
 from apps.clients.models import Client
 from apps.core.models import AuditLog, FileAttachment
+from apps.tasks.models import Task
 
 
 TEST_MEDIA_ROOT = tempfile.mkdtemp()
 
 
-@override_settings(MEDIA_ROOT=TEST_MEDIA_ROOT)
+@override_settings(
+    MEDIA_ROOT=TEST_MEDIA_ROOT,
+    PRIVATE_MEDIA_ROOT=f"{TEST_MEDIA_ROOT}/private",
+    USE_S3=False,
+)
 class FileAttachmentTests(TestCase):
     @classmethod
     def tearDownClass(cls):
@@ -188,6 +193,42 @@ class FileAttachmentTests(TestCase):
         self.assertEqual(list_response.status_code, 200)
         self.assertEqual(list_response.data["results"], [])
         self.assertEqual(download_response.status_code, 404)
+
+    def test_private_media_route_enforces_entity_scope_inside_business(self):
+        operator = User.objects.create_user(
+            username="files-operator",
+            email="files-operator@example.com",
+            password="pass",
+        )
+        BusinessMember.objects.create(
+            business=self.business,
+            user=operator,
+            role=BusinessMember.Roles.OPERATOR,
+        )
+        task = Task.objects.create(
+            business=self.business,
+            title="Owner-only task",
+            assignee=self.owner,
+            created_by=self.owner,
+        )
+        attachment = FileAttachment.objects.create(
+            business=self.business,
+            uploaded_by=self.owner,
+            file=SimpleUploadedFile("owner-note.txt", b"owner secret", content_type="text/plain"),
+            original_name="owner-note.txt",
+            content_type="text/plain",
+            size=12,
+            entity_type="task",
+            entity_id=str(task.id),
+        )
+        raw_path = attachment.file.name.removeprefix("private/")
+        self.api.force_authenticate(operator)
+
+        scoped_response = self.api.get(f"/api/file-attachments/{attachment.id}/download/")
+        raw_response = self.api.get(f"/api/files/private/{raw_path}/")
+
+        self.assertEqual(scoped_response.status_code, 404)
+        self.assertEqual(raw_response.status_code, 404)
 
     def test_storage_quota_rejects_upload_over_plan_limit(self):
         plan = SubscriptionPlan.objects.get(code="start")

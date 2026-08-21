@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from apps.automations.condition_fields import validate_condition_field
 from apps.automations.models import AutomationAction, AutomationCondition, AutomationRule, AutomationRun
 from apps.integrations.sanitization import sanitize_config, sanitize_error_payload, sanitize_error_text
 
@@ -18,6 +19,16 @@ class AutomationConditionSerializer(serializers.ModelSerializer):
     class Meta:
         model = AutomationCondition
         fields = ["id", "rule", "field", "operator", "value"]
+
+    def validate(self, attrs):
+        rule = attrs.get("rule") or getattr(self.instance, "rule", None)
+        field = attrs.get("field", getattr(self.instance, "field", ""))
+        if rule is not None:
+            try:
+                attrs["field"] = validate_condition_field(field, trigger_type=rule.trigger_type)
+            except ValueError as exc:
+                raise serializers.ValidationError({"field": str(exc)}) from exc
+        return attrs
 
 
 class AutomationActionSerializer(serializers.ModelSerializer):
@@ -155,6 +166,21 @@ class ManualAutomationRuleSerializer(serializers.Serializer):
     priority = serializers.IntegerField(default=100, min_value=0)
     conditions = AutomationConditionInputSerializer(many=True, required=False)
     actions = AutomationActionInputSerializer(many=True)
+
+    def validate(self, attrs):
+        trigger_type = attrs.get("trigger_type")
+        condition_errors = {}
+        for index, condition in enumerate(attrs.get("conditions", [])):
+            try:
+                condition["field"] = validate_condition_field(
+                    condition.get("field"),
+                    trigger_type=trigger_type,
+                )
+            except ValueError as exc:
+                condition_errors[index] = {"field": str(exc)}
+        if condition_errors:
+            raise serializers.ValidationError({"conditions": condition_errors})
+        return attrs
 
     def validate_actions(self, actions):
         if not actions:

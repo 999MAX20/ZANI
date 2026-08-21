@@ -137,6 +137,28 @@ All mutating CRM actions call domain services/helpers:
 
 Unsupported action types are rejected during execution and stored on the failed run with an error.
 
+## Condition Field Safety
+
+Condition fields are a closed contract, not arbitrary model paths.
+
+- A bare field such as `source`, `status`, `priority` or `stage_id` is accepted
+  only when it appears in the explicit operational-field allowlist for the
+  entity type emitted by the selected trigger.
+- Event data must use an explicit `payload.*` field such as
+  `payload.from_status`, `payload.message_id` or
+  `payload.utm.campaign`. Arbitrary payload paths are rejected.
+- Relationship traversal and Python/Django attributes are never supported.
+  Examples such as `responsible_user.password`, `client.business.owner` and
+  `__class__.__mro__` fail validation.
+- Both the rule APIs and runtime enforce this contract. If a legacy database
+  row contains an unsupported field, the condition safely evaluates as not
+  matched and no action runs.
+
+The canonical catalog lives in
+`apps/automations/condition_fields.py`. Add a field there only when it is a
+deliberate merchant-facing automation input and does not expose secrets,
+credentials, internal authorization state or unrestricted related objects.
+
 ## Noisy Rule Protection
 
 Before creating a new non-duplicate run, the engine checks how many recent runs the same business/rule produced inside a rolling window.

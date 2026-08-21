@@ -8,7 +8,7 @@ from apps.accounts.models import User
 from apps.activities.models import ActivityEvent, Note
 from apps.activities.taxonomy import ActivityEvents
 from apps.automations.engine import process_automation_run, run_automations_for_event, run_task_overdue_automations
-from apps.automations.models import AutomationAction, AutomationRule, AutomationRun
+from apps.automations.models import AutomationAction, AutomationCondition, AutomationRule, AutomationRun
 from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
 from apps.businesses.capabilities import apply_business_type_defaults
 from apps.businesses.models import Business, BusinessCapability, BusinessMember
@@ -328,6 +328,133 @@ class AutomationFoundationTests(TestCase):
         rule = AutomationRule.objects.get(id=create_response.data["id"])
         self.assertEqual(rule.conditions.count(), 1)
         self.assertEqual(rule.actions.count(), 2)
+
+    def test_manual_rule_rejects_arbitrary_model_attribute_traversal(self):
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            "/api/automation-rules/preview/",
+            {
+                "business": self.business.id,
+                "name": "Unsafe condition",
+                "trigger_type": AutomationRule.TriggerTypes.LEAD_CREATED,
+                "conditions": [
+                    {
+                        "field": "responsible_user.password",
+                        "operator": "eq",
+                        "value": {"value": self.owner.password},
+                    }
+                ],
+                "actions": [
+                    {
+                        "action_type": AutomationAction.ActionTypes.CREATE_TASK,
+                        "config": {"title": "Should never run"},
+                    }
+                ],
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("conditions", response.data)
+        self.assertNotIn(self.owner.password, str(response.data))
+
+    def test_existing_unsafe_condition_fails_closed_without_secret_oracle(self):
+        rule = self._rule(
+            AutomationRule.TriggerTypes.LEAD_CREATED,
+            [
+                {
+                    "action_type": AutomationAction.ActionTypes.CREATE_TASK,
+                    "config": {"title": "Secret matched"},
+                }
+            ],
+        )
+        AutomationCondition.objects.create(
+            rule=rule,
+            field="responsible_user.password",
+            operator=AutomationCondition.Operators.EQ,
+            value={"value": self.owner.password},
+        )
+        lead = Lead.objects.create(
+            business=self.business,
+            client=self.client,
+            service=self.service,
+            responsible_user=self.owner,
+        )
+
+        run = run_automations_for_event(
+            business=self.business,
+            trigger_type=AutomationRule.TriggerTypes.LEAD_CREATED,
+            entity=lead,
+            payload={"trigger_type": AutomationRule.TriggerTypes.LEAD_CREATED},
+        )[0]
+        run.refresh_from_db()
+
+        self.assertEqual(run.status, AutomationRun.Statuses.SKIPPED)
+        self.assertFalse(Task.objects.filter(title="Secret matched").exists())
+        self.assertNotIn(self.owner.password, str(run.action_results))
+
+    def test_safe_entity_and_payload_condition_extractors_still_match(self):
+        rule = self._rule(
+            AutomationRule.TriggerTypes.LEAD_CREATED,
+            [
+                {
+                    "action_type": AutomationAction.ActionTypes.CREATE_TASK,
+                    "config": {"title": "Safe condition matched"},
+                }
+            ],
+        )
+        AutomationCondition.objects.create(
+            rule=rule,
+            field="source",
+            operator=AutomationCondition.Operators.EQ,
+            value={"value": Lead.Sources.WEBSITE},
+        )
+        AutomationCondition.objects.create(
+            rule=rule,
+            field="payload.utm.campaign",
+            operator=AutomationCondition.Operators.EQ,
+            value={"value": "pilot"},
+        )
+        lead = Lead.objects.create(
+            business=self.business,
+            client=self.client,
+            service=self.service,
+            source=Lead.Sources.WEBSITE,
+        )
+
+        run = run_automations_for_event(
+            business=self.business,
+            trigger_type=AutomationRule.TriggerTypes.LEAD_CREATED,
+            entity=lead,
+            payload={
+                "trigger_type": AutomationRule.TriggerTypes.LEAD_CREATED,
+                "utm": {"campaign": "pilot"},
+            },
+        )[0]
+        run.refresh_from_db()
+
+        self.assertEqual(run.status, AutomationRun.Statuses.SUCCESS)
+        self.assertTrue(Task.objects.filter(title="Safe condition matched").exists())
+
+    def test_condition_api_rejects_field_not_supported_by_rule_trigger(self):
+        rule = self._rule(AutomationRule.TriggerTypes.TASK_OVERDUE, [])
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            "/api/automation-conditions/",
+            {
+                "rule": rule.id,
+                "field": "payload.api_key",
+                "operator": AutomationCondition.Operators.EQ,
+                "value": {"value": "secret"},
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("field", response.data)
+        self.assertEqual(rule.conditions.count(), 0)
 
     def test_manual_rule_rejects_invalid_actions(self):
         self.api.force_authenticate(self.owner)

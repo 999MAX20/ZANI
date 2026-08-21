@@ -463,7 +463,7 @@ attack paths are closed and added to regression suites.
 | --- | --- | --- | --- |
 | PP-SEC-006 | add access-token session/auth epoch revocation | P1 | DONE |
 | PP-SEC-007 | harden outbound webhook redirects, peer validation and response limits | P1 | DONE |
-| PP-SEC-008 | replace automation dotted traversal with safe field extractors | P1 | READY |
+| PP-SEC-008 | replace automation dotted traversal with safe field extractors | P1 | DONE |
 | PP-SEC-009 | prohibit plaintext credentials in generic connector/channel JSON and migrate existing data | P1 | READY |
 | PP-SEC-010 | rerun full security, dependency, backend and migration gates | P0 | BLOCKED by PP-SEC-001..009 |
 
@@ -842,3 +842,45 @@ Verification:
 No schema, dependency or frontend change was required. Live receiver
 availability and production worker observability remain deployment gates;
 SSRF and response-memory safety are enforced in code.
+
+### 15.8 PP-SEC-008 closure evidence
+
+Status: `DONE` on `codex/pre-pilot-sec-008-safe-automation-fields`.
+
+Implemented invariants:
+
+- automation conditions no longer traverse user-supplied dotted attributes on
+  Django models;
+- entity conditions are extracted only from an explicit operational-field
+  allowlist for Lead, Client, Deal, Appointment, BotConversation and Task;
+- payload conditions use explicit path extractors for documented event fields
+  and bounded UTM keys rather than arbitrary nested dictionary traversal;
+- manual rule preview/create and direct condition create/update validate the
+  requested field against the rule trigger before persistence;
+- an unknown, unsupported or legacy unsafe field resolves to an internal
+  sentinel that can never compare equal, including when the expected value is
+  null;
+- legacy rows such as `responsible_user.password` therefore fail closed and
+  cannot disclose a password hash or other model state through automation
+  match/no-match side effects;
+- supported operational conditions such as Lead `source` and
+  `payload.utm.campaign` preserve their existing execution behavior.
+
+Verification:
+
+- focused exploit and legitimate-control regressions -> `5/5` passed,
+  covering manual-rule rejection, direct condition API rejection, a persisted
+  password-hash traversal attempt, supported entity extraction and supported
+  nested payload extraction;
+- `python manage.py test apps.automations.tests --keepdb` -> `28/28` passed
+  across triggers, conditions, task/notification/note actions, assignment,
+  wait/resume, retry, cancellation, throttling, idempotency and tenant-safe
+  management;
+- `python manage.py check` -> no issues;
+- `python manage.py makemigrations --check --dry-run` -> no changes detected;
+- `python -m compileall -q apps` -> passed;
+- `git diff --check` -> clean.
+
+No schema or dependency change was required. The advanced frontend builder may
+later replace its free-text field input with labels backed by the same catalog;
+the backend and runtime already enforce the security boundary independently.

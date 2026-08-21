@@ -11,6 +11,7 @@ from django.utils import timezone
 from apps.activities.models import ActivityEvent
 from apps.activities.services import create_activity_event, create_note_for_entity
 from apps.activities.taxonomy import ActivityEvents
+from apps.automations.condition_fields import UNRESOLVED_CONDITION_VALUE, extract_condition_value
 from apps.automations.models import AutomationAction, AutomationRule, AutomationRun
 from apps.businesses.access import Resources
 from apps.businesses.capabilities import assert_resource_enabled, is_module_enabled
@@ -477,17 +478,7 @@ def _conditions_match(rule, *, entity, payload):
 
 
 def _resolve_value(field, *, entity, payload):
-    if field.startswith("payload."):
-        value = payload
-        for part in field.removeprefix("payload.").split("."):
-            value = value.get(part) if isinstance(value, dict) else None
-        return value
-    value = entity
-    for part in field.split("."):
-        value = getattr(value, part, None)
-        if value is None:
-            return None
-    return value
+    return extract_condition_value(field, entity=entity, payload=payload)
 
 
 def _expected_value(value):
@@ -497,6 +488,8 @@ def _expected_value(value):
 
 
 def _compare(actual, operator, expected):
+    if actual is UNRESOLVED_CONDITION_VALUE:
+        return False
     if operator == "eq":
         return actual == expected
     if operator == "contains":

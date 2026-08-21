@@ -753,6 +753,48 @@ class WhatsAppIntegrationFoundationTests(TestCase):
         self.assertEqual(response.status_code, 403)
         self.assertEqual(BotMessage.objects.count(), 0)
 
+    @override_settings(
+        WHATSAPP_ENABLED=True,
+        WHATSAPP_WEBHOOK_SECRET="strong-internal-whatsapp-secret-32-chars",
+        WHATSAPP_APP_SECRET="strong-whatsapp-app-secret-32-chars-2026",
+    )
+    def test_whatsapp_live_webhook_rejects_internal_secret_without_meta_signature(self):
+        response = self.api.post(
+            "/api/integrations/whatsapp/webhook/",
+            {
+                "message_id": "wamid.forged",
+                "from": {"phone": "+77015550101", "name": "Attacker"},
+                "text": "Forged",
+            },
+            format="json",
+            HTTP_X_ZANI_WHATSAPP_SECRET="strong-internal-whatsapp-secret-32-chars",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(BotMessage.objects.count(), 0)
+        self.assertEqual(BusinessEvent.objects.count(), 0)
+
+    @override_settings(
+        WHATSAPP_ENABLED=False,
+        WHATSAPP_WEBHOOK_SECRET="",
+        WHATSAPP_APP_SECRET="",
+    )
+    def test_whatsapp_webhook_rejects_arbitrary_unconfigured_internal_secret(self):
+        response = self.api.post(
+            "/api/integrations/whatsapp/webhook/",
+            {
+                "message_id": "wamid.arbitrary-secret",
+                "from": {"phone": "+77015550101", "name": "Attacker"},
+                "text": "Forged",
+            },
+            format="json",
+            HTTP_X_ZANI_WHATSAPP_SECRET="attacker-controlled-value",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(BotMessage.objects.count(), 0)
+        self.assertEqual(BusinessEvent.objects.count(), 0)
+
     @override_settings(WHATSAPP_VERIFY_TOKEN="verify-token")
     def test_whatsapp_webhook_get_verification_returns_challenge(self):
         response = self.api.get(
@@ -830,7 +872,10 @@ class WhatsAppIntegrationFoundationTests(TestCase):
         self.assertIn("Webhook callback URL: https://api.zani.kz/api/integrations/whatsapp/webhook/", text)
         self.assertNotIn("raw-secret-token", text)
 
-    @override_settings(WHATSAPP_APP_SECRET="app-secret")
+    @override_settings(
+        WHATSAPP_ENABLED=True,
+        WHATSAPP_APP_SECRET="strong-whatsapp-app-secret-32-chars-2026",
+    )
     def test_meta_whatsapp_webhook_routes_by_phone_number_id_and_signature(self):
         self.channel.config_json = {
             "provider_mode": "meta_cloud",
@@ -866,7 +911,11 @@ class WhatsAppIntegrationFoundationTests(TestCase):
             ],
         }
         raw_payload = json.dumps(payload).encode("utf-8")
-        signature = "sha256=" + hmac.new(b"app-secret", raw_payload, hashlib.sha256).hexdigest()
+        signature = "sha256=" + hmac.new(
+            b"strong-whatsapp-app-secret-32-chars-2026",
+            raw_payload,
+            hashlib.sha256,
+        ).hexdigest()
 
         response = self.api.generic(
             "POST",
@@ -890,6 +939,30 @@ class WhatsAppIntegrationFoundationTests(TestCase):
         event = BusinessEvent.objects.get(business=self.business, source=BusinessConnector.Providers.WHATSAPP, event_type="message.received")
         self.assertEqual(event.external_id, "wamid.1")
         self.assertEqual(event.payload_json["conversation_id"], conversation.id)
+
+    @override_settings(
+        WHATSAPP_ENABLED=True,
+        WHATSAPP_APP_SECRET="strong-whatsapp-app-secret-32-chars-2026",
+    )
+    def test_meta_whatsapp_webhook_rejects_invalid_signature(self):
+        raw_payload = json.dumps(
+            {
+                "object": "whatsapp_business_account",
+                "entry": [{"changes": [{"value": {"metadata": {"phone_number_id": "dev-phone"}}}]}],
+            }
+        ).encode("utf-8")
+
+        response = self.api.generic(
+            "POST",
+            "/api/integrations/whatsapp/webhook/",
+            raw_payload,
+            content_type="application/json",
+            HTTP_X_HUB_SIGNATURE_256="sha256=invalid",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(BotMessage.objects.count(), 0)
+        self.assertEqual(BusinessEvent.objects.count(), 0)
 
     def test_whatsapp_outbound_uses_provider_layer(self):
         result = send_whatsapp_message(self.channel, recipient_id="+77015550101", text="Здравствуйте")
@@ -956,6 +1029,10 @@ class WhatsAppIntegrationFoundationTests(TestCase):
         credential = ConnectorCredential.objects.get(connector=connector, key="access_token")
         self.assertEqual(decrypt_credential_value(credential.encrypted_value), "meta-access-token")
 
+    @override_settings(
+        WHATSAPP_ENABLED=True,
+        WHATSAPP_APP_SECRET="strong-whatsapp-app-secret-32-chars-2026",
+    )
     def test_whatsapp_status_webhook_updates_outbound_message(self):
         self.channel.config_json = {
             "provider_mode": "meta_cloud",
@@ -978,8 +1055,7 @@ class WhatsAppIntegrationFoundationTests(TestCase):
             status=BotMessage.Statuses.SENT,
         )
 
-        response = self.api.post(
-            "/api/integrations/whatsapp/webhook/",
+        raw_payload = json.dumps(
             {
                 "entry": [
                     {
@@ -993,8 +1069,19 @@ class WhatsAppIntegrationFoundationTests(TestCase):
                         ]
                     }
                 ]
-            },
-            format="json",
+            }
+        ).encode("utf-8")
+        signature = "sha256=" + hmac.new(
+            b"strong-whatsapp-app-secret-32-chars-2026",
+            raw_payload,
+            hashlib.sha256,
+        ).hexdigest()
+        response = self.api.generic(
+            "POST",
+            "/api/integrations/whatsapp/webhook/",
+            raw_payload,
+            content_type="application/json",
+            HTTP_X_HUB_SIGNATURE_256=signature,
         )
 
         self.assertEqual(response.status_code, 200)
@@ -1266,10 +1353,10 @@ class InstagramIntegrationFoundationTests(TestCase):
 
     @override_settings(
         INSTAGRAM_ENABLED=True,
-        INSTAGRAM_VERIFY_TOKEN="verify-token",
+        INSTAGRAM_VERIFY_TOKEN="strong-instagram-verify-token-32-chars-2026",
         META_APP_ID="meta-app",
-        META_APP_SECRET="meta-secret",
-        INSTAGRAM_APP_SECRET="instagram-secret",
+        META_APP_SECRET="strong-meta-app-secret-32-chars-2026",
+        INSTAGRAM_APP_SECRET="strong-instagram-app-secret-32-chars-2026",
     )
     def test_instagram_local_real_test_rejects_private_public_url(self):
         output = StringIO()
@@ -1287,10 +1374,10 @@ class InstagramIntegrationFoundationTests(TestCase):
 
     @override_settings(
         INSTAGRAM_ENABLED=True,
-        INSTAGRAM_VERIFY_TOKEN="verify-token",
+        INSTAGRAM_VERIFY_TOKEN="strong-instagram-verify-token-32-chars-2026",
         META_APP_ID="meta-app",
-        META_APP_SECRET="meta-secret",
-        INSTAGRAM_APP_SECRET="instagram-secret",
+        META_APP_SECRET="strong-meta-app-secret-32-chars-2026",
+        INSTAGRAM_APP_SECRET="strong-instagram-app-secret-32-chars-2026",
     )
     def test_instagram_local_real_test_accepts_public_https_url(self):
         output = StringIO()
@@ -1307,10 +1394,10 @@ class InstagramIntegrationFoundationTests(TestCase):
 
     @override_settings(
         INSTAGRAM_ENABLED=True,
-        INSTAGRAM_VERIFY_TOKEN="verify-token",
+        INSTAGRAM_VERIFY_TOKEN="strong-instagram-verify-token-32-chars-2026",
         META_APP_ID="meta-app",
-        META_APP_SECRET="meta-secret",
-        INSTAGRAM_APP_SECRET="instagram-secret",
+        META_APP_SECRET="strong-meta-app-secret-32-chars-2026",
+        INSTAGRAM_APP_SECRET="strong-instagram-app-secret-32-chars-2026",
     )
     def test_instagram_local_real_test_rejects_and_redacts_public_url_query(self):
         output = StringIO()
@@ -1329,7 +1416,10 @@ class InstagramIntegrationFoundationTests(TestCase):
         self.assertIn("Webhook callback URL: https://api.zani.kz/api/integrations/instagram/webhook/", text)
         self.assertNotIn("raw-secret-token", text)
 
-    @override_settings(INSTAGRAM_APP_SECRET="app-secret")
+    @override_settings(
+        INSTAGRAM_ENABLED=True,
+        INSTAGRAM_APP_SECRET="strong-instagram-app-secret-32-chars-2026",
+    )
     def test_instagram_webhook_routes_by_instagram_user_id_and_signature(self):
         payload = {
             "object": "instagram",
@@ -1350,7 +1440,11 @@ class InstagramIntegrationFoundationTests(TestCase):
             ],
         }
         raw_payload = json.dumps(payload).encode("utf-8")
-        signature = "sha256=" + hmac.new(b"app-secret", raw_payload, hashlib.sha256).hexdigest()
+        signature = "sha256=" + hmac.new(
+            b"strong-instagram-app-secret-32-chars-2026",
+            raw_payload,
+            hashlib.sha256,
+        ).hexdigest()
 
         response = self.api.generic(
             "POST",
@@ -1374,6 +1468,30 @@ class InstagramIntegrationFoundationTests(TestCase):
         event = BusinessEvent.objects.get(business=self.business, source=BusinessConnector.Providers.INSTAGRAM, event_type="message.received")
         self.assertEqual(event.external_id, "mid.1")
         self.assertEqual(event.payload_json["conversation_id"], conversation.id)
+
+    @override_settings(
+        INSTAGRAM_ENABLED=True,
+        INSTAGRAM_APP_SECRET="strong-instagram-app-secret-32-chars-2026",
+    )
+    def test_instagram_webhook_rejects_invalid_signature(self):
+        raw_payload = json.dumps(
+            {
+                "object": "instagram",
+                "entry": [{"id": "ig-123", "messaging": []}],
+            }
+        ).encode("utf-8")
+
+        response = self.api.generic(
+            "POST",
+            "/api/integrations/instagram/webhook/",
+            raw_payload,
+            content_type="application/json",
+            HTTP_X_HUB_SIGNATURE_256="sha256=invalid",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(BotMessage.objects.count(), 0)
+        self.assertEqual(BusinessEvent.objects.count(), 0)
 
     @override_settings(INSTAGRAM_APP_SECRET="app-secret")
     def test_instagram_webhook_is_idempotent_for_repeated_message(self):
@@ -1428,8 +1546,45 @@ class InstagramIntegrationFoundationTests(TestCase):
             format="json",
         )
 
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 403)
         self.assertEqual(BotMessage.objects.count(), 0)
+
+    @override_settings(INSTAGRAM_APP_SECRET="app-secret")
+    def test_instagram_webhook_rejects_missing_signature_before_persisting(self):
+        response = self.api.post(
+            "/api/integrations/instagram/webhook/",
+            {
+                "object": "instagram",
+                "entry": [
+                    {
+                        "id": "ig-123",
+                        "messaging": [
+                            {
+                                "sender": {"id": "attacker"},
+                                "recipient": {"id": "ig-123"},
+                                "message": {"mid": "mid.forged", "text": "Forged"},
+                            }
+                        ],
+                    }
+                ],
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(BotMessage.objects.count(), 0)
+        self.assertEqual(BusinessEvent.objects.count(), 0)
+
+    @override_settings(
+        INSTAGRAM_ENABLED=True,
+        INSTAGRAM_VERIFY_TOKEN="short",
+    )
+    def test_instagram_live_verification_rejects_weak_verify_token(self):
+        response = self.api.get(
+            "/api/integrations/instagram/webhook/?hub.mode=subscribe&hub.verify_token=short&hub.challenge=challenge-ig"
+        )
+
+        self.assertEqual(response.status_code, 403)
 
     def test_instagram_outbound_uses_provider_layer(self):
         result = send_instagram_message(self.channel, recipient_id="client-ig-1", text="Здравствуйте")

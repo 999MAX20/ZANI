@@ -581,6 +581,8 @@ class InstagramWebhookView(APIView):
         mode = request.query_params.get("hub.mode")
         token = request.query_params.get("hub.verify_token")
         challenge = request.query_params.get("hub.challenge")
+        if settings.INSTAGRAM_ENABLED and not has_strong_shared_secret(settings.INSTAGRAM_VERIFY_TOKEN):
+            return Response({"detail": "Instagram verify token is not production-ready."}, status=status.HTTP_403_FORBIDDEN)
         if mode == "subscribe" and token and token == settings.INSTAGRAM_VERIFY_TOKEN and challenge:
             return HttpResponse(challenge, status=200, content_type="text/plain")
         return Response({"detail": "Invalid Instagram verification token."}, status=status.HTTP_403_FORBIDDEN)

@@ -27,15 +27,17 @@ class BaseWhatsAppAdapter(BaseChannelProvider):
     adapter = "base"
 
     def verify_webhook(self, request):
-        expected_secret = getattr(settings, "WHATSAPP_WEBHOOK_SECRET", "")
-        provided_secret = request.META.get(WHATSAPP_SECRET_HEADER, "")
-        if expected_secret and provided_secret != expected_secret:
-            raise PermissionDenied("Invalid WhatsApp webhook secret.")
-        app_secret = getattr(settings, "WHATSAPP_APP_SECRET", "")
-        signature = request.META.get(META_SIGNATURE_HEADER, "")
-        if getattr(settings, "WHATSAPP_ENABLED", False) and not has_strong_shared_secret(app_secret):
+        expected_secret = str(getattr(settings, "WHATSAPP_WEBHOOK_SECRET", "") or "")
+        provided_secret = str(request.META.get(WHATSAPP_SECRET_HEADER, "") or "")
+        app_secret = str(getattr(settings, "WHATSAPP_APP_SECRET", "") or "")
+        signature = str(request.META.get(META_SIGNATURE_HEADER, "") or "")
+        live_mode = bool(getattr(settings, "WHATSAPP_ENABLED", False))
+
+        if live_mode and not has_strong_shared_secret(app_secret):
             raise PermissionDenied("WhatsApp app secret is not production-ready.")
-        if app_secret and signature:
+        if signature:
+            if not app_secret:
+                raise PermissionDenied("WhatsApp webhook signature cannot be verified.")
             expected_signature = "sha256=" + hmac.new(
                 app_secret.encode("utf-8"),
                 request.body,
@@ -43,9 +45,30 @@ class BaseWhatsAppAdapter(BaseChannelProvider):
             ).hexdigest()
             if not hmac.compare_digest(signature, expected_signature):
                 raise PermissionDenied("Invalid WhatsApp webhook signature.")
-        elif app_secret and not provided_secret:
+            return ""
+
+        if live_mode:
             raise PermissionDenied("Missing WhatsApp webhook signature.")
+
+        internal_secret_valid = bool(expected_secret and provided_secret) and hmac.compare_digest(
+            provided_secret,
+            expected_secret,
+        )
+        if not internal_secret_valid and provided_secret:
+            internal_secret_valid = self._is_channel_secret(provided_secret)
+        if not internal_secret_valid:
+            raise PermissionDenied("Invalid WhatsApp webhook authentication.")
         return provided_secret
+
+    def _is_channel_secret(self, provided_secret):
+        from apps.bots.models import Bot, BotChannel
+
+        return BotChannel.objects.filter(
+            channel=BotChannel.Channels.WHATSAPP,
+            status__in=[BotChannel.Statuses.DRAFT, BotChannel.Statuses.ACTIVE],
+            bot__status__in=[Bot.Statuses.DRAFT, Bot.Statuses.ACTIVE],
+            config_json__webhook_secret=provided_secret,
+        ).exists()
 
     def parse_webhook(self, payload, headers=None):
         meta_message = self._parse_meta_cloud_payload(payload)

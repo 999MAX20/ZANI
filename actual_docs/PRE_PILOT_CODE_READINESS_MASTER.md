@@ -1,6 +1,6 @@
 # ZANI Pre-Pilot Code Readiness Master
 
-- Status: **ACTIVE / ANALYSIS COMPLETE / EXECUTION NOT STARTED**
+- Status: **ACTIVE / EXECUTION IN PROGRESS**
 - Created: 2026-08-21
 - Baseline branch: `codex/fallback-fb-002-safe-envelope-sanitization`
 - Baseline revision: `9cde5ec78120453bfe972496599e1d86fa7733ad`
@@ -455,7 +455,7 @@ attack paths are closed and added to regression suites.
 | PP-SEC-002 | make support grants proposed-state safe and tenant-immutable | P0 | DONE |
 | PP-SEC-003 | make invitation acceptance safe for existing accounts | P0 | DONE |
 | PP-SEC-004 | cover every platform/support role with MFA and step-up enforcement | P0 | DONE |
-| PP-SEC-005 | make WhatsApp and Instagram webhook authentication fail closed | P0 | READY |
+| PP-SEC-005 | make WhatsApp and Instagram webhook authentication fail closed | P0 | DONE |
 
 ### Gate P1 - Security completion
 
@@ -716,3 +716,42 @@ Verification:
 No schema or dependency change was required. Access-token epoch revocation is
 kept separate in PP-SEC-006; full browser/security certification remains in
 PP-SEC-010.
+
+### 15.5 PP-SEC-005 closure evidence
+
+Status: `DONE` on `codex/pre-pilot-sec-005-meta-webhook-auth`.
+
+Implemented invariants:
+
+- WhatsApp live mode requires a production-strength app secret and a valid
+  `X-Hub-Signature-256` HMAC for every POST; the internal routing header cannot
+  bypass Meta authentication;
+- disabled/local WhatsApp mode accepts only an exact configured global or
+  active-channel webhook secret, so arbitrary non-empty headers fail closed;
+- a supplied but unverifiable or invalid WhatsApp signature is rejected rather
+  than falling back to an internal secret;
+- Instagram POST requests always require a configured signing secret and valid
+  `X-Hub-Signature-256` HMAC, including when the provider live flag is off;
+- live Instagram verification rejects weak subscription verify tokens;
+- both provider checks execute before payload parsing, channel resolution,
+  conversation creation, status mutation, event emission or automation work.
+
+Verification:
+
+- focused exploit and legitimate-control regressions -> `10/10` passed,
+  covering arbitrary/unconfigured internal secrets, the live WhatsApp internal
+  header bypass, missing and invalid signatures, missing Instagram secrets,
+  weak live verify tokens, valid live HMAC requests and the configured local
+  channel-secret flow;
+- rejected requests produced no `BotMessage` or `BusinessEvent` persistence;
+- `python manage.py test apps.integrations.tests.WhatsAppIntegrationFoundationTests apps.integrations.tests.InstagramIntegrationFoundationTests --keepdb`
+  -> `41/41` passed, including signed delivery-status updates, duplicate
+  delivery idempotency, OAuth/setup and provider readiness checks;
+- `python manage.py check` -> no issues;
+- `python manage.py makemigrations --check --dry-run` -> no changes detected;
+- `python -m compileall -q apps` -> passed;
+- `git diff --check` -> clean.
+
+No schema, dependency or frontend change was required. Live credential,
+provider-console and public HTTPS validation remain deployment gates outside
+this code-readiness phase.

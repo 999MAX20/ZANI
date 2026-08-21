@@ -8,6 +8,7 @@ from django.conf import settings
 from rest_framework.exceptions import PermissionDenied
 
 from apps.core.production_rules import is_safe_public_https_url
+from apps.core.security_config import has_strong_shared_secret
 from apps.integrations.bot_channel_credentials import get_instagram_access_token
 from apps.integrations.models import IntegrationEventLog
 from apps.integrations.providers.base import BaseChannelProvider, ProviderConfigurationError
@@ -23,18 +24,25 @@ class BaseInstagramAdapter(BaseChannelProvider):
     adapter = "base"
 
     def verify_webhook(self, request):
-        app_secret = getattr(settings, "INSTAGRAM_APP_SECRET", "") or getattr(settings, "META_APP_SECRET", "")
-        signature = request.META.get(META_SIGNATURE_HEADER, "")
-        if app_secret:
-            if not signature:
-                raise PermissionDenied("Missing Instagram webhook signature.")
-            expected_signature = "sha256=" + hmac.new(
-                app_secret.encode("utf-8"),
-                request.body,
-                hashlib.sha256,
-            ).hexdigest()
-            if not hmac.compare_digest(signature, expected_signature):
-                raise PermissionDenied("Invalid Instagram webhook signature.")
+        app_secret = str(
+            getattr(settings, "INSTAGRAM_APP_SECRET", "")
+            or getattr(settings, "META_APP_SECRET", "")
+            or ""
+        )
+        signature = str(request.META.get(META_SIGNATURE_HEADER, "") or "")
+        if not app_secret:
+            raise PermissionDenied("Instagram webhook signing secret is not configured.")
+        if getattr(settings, "INSTAGRAM_ENABLED", False) and not has_strong_shared_secret(app_secret):
+            raise PermissionDenied("Instagram app secret is not production-ready.")
+        if not signature:
+            raise PermissionDenied("Missing Instagram webhook signature.")
+        expected_signature = "sha256=" + hmac.new(
+            app_secret.encode("utf-8"),
+            request.body,
+            hashlib.sha256,
+        ).hexdigest()
+        if not hmac.compare_digest(signature, expected_signature):
+            raise PermissionDenied("Invalid Instagram webhook signature.")
         return ""
 
     def parse_webhook(self, payload, headers=None):

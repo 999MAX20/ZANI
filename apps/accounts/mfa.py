@@ -63,7 +63,11 @@ class RecentAuthenticationFailed(DomainAPIException):
 def is_privileged_mfa_user(user):
     if not user or not user.is_authenticated:
         return False
-    if user.is_superuser or user.role in {User.Roles.PLATFORM_ADMIN, User.Roles.BUSINESS_OWNER}:
+    if user.is_superuser or user.role in {
+        User.Roles.PLATFORM_ADMIN,
+        User.Roles.PLATFORM_MANAGER,
+        User.Roles.BUSINESS_OWNER,
+    }:
         return True
     return BusinessMember.objects.filter(
         user=user,

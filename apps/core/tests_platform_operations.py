@@ -2,13 +2,14 @@ import json
 from io import StringIO
 from unittest.mock import patch
 
+import pyotp
 from django.core.management import call_command, CommandError
 from django.db import OperationalError
 from django.utils import timezone
 from django.test import TestCase
 from rest_framework.test import APIClient
 
-from apps.accounts.models import User
+from apps.accounts.models import MfaDevice, User
 from apps.automations.models import AutomationRun
 from apps.billing.models import Subscription, SubscriptionPlan
 from apps.bots.models import Bot, BotConversation
@@ -16,6 +17,7 @@ from apps.businesses.models import Business, BusinessMember
 from apps.clients.models import Client
 from apps.core.models import AuditLog
 from apps.integrations.models import BusinessConnector, BusinessEvent, IntegrationEventLog, WebhookDeliveryLog, WebhookEndpoint
+from apps.integrations.credential_encryption import encrypt_credential_value
 from apps.leads.models import Lead, LeadForm, LeadFormSubmissionError
 from apps.tasks.models import Task
 
@@ -149,6 +151,22 @@ class PlatformOperationsDashboardTests(TestCase):
             last_message_at=timezone.now(),
         )
 
+    def _authenticate_platform_with_step_up(self):
+        secret = pyotp.random_base32()
+        MfaDevice.objects.create(
+            user=self.platform,
+            encrypted_secret=encrypt_credential_value(secret),
+            confirmed_at=timezone.now(),
+        )
+        self.api.force_authenticate(self.platform)
+        response = self.api.post(
+            "/api/auth/mfa/step-up/",
+            {"code": pyotp.TOTP(secret).now()},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+        return {"HTTP_X_ZANI_MFA_STEP_UP": response.data["step_up_token"]}
+
     def test_platform_overview_returns_operations_summary(self):
         self.api.force_authenticate(self.platform)
 
@@ -204,12 +222,13 @@ class PlatformOperationsDashboardTests(TestCase):
         self.assertIn("answer_inbox", keys)
 
     def test_platform_user_can_log_support_action(self):
-        self.api.force_authenticate(self.platform)
+        step_up = self._authenticate_platform_with_step_up()
 
         response = self.api.post(
             f"/api/platform/merchants/{self.business.id}/support-actions/",
             {"action_type": "whatsapp_followup", "note": "Asked owner to reconnect WhatsApp QR", "status": "done"},
             format="json",
+            **step_up,
         )
 
         self.assertEqual(response.status_code, 201)
@@ -220,12 +239,13 @@ class PlatformOperationsDashboardTests(TestCase):
         self.assertEqual(actions[0]["actor_email"], self.platform.email)
 
     def test_platform_support_action_masks_secret_note(self):
-        self.api.force_authenticate(self.platform)
+        step_up = self._authenticate_platform_with_step_up()
 
         response = self.api.post(
             f"/api/platform/merchants/{self.business.id}/support-actions/",
             {"action_type": "support_note", "note": "Owner sent api_key=raw-support-action-key", "status": "logged"},
             format="json",
+            **step_up,
         )
 
         self.assertEqual(response.status_code, 201)
@@ -238,8 +258,13 @@ class PlatformOperationsDashboardTests(TestCase):
         )
 
     def test_support_action_requires_note_and_platform_user(self):
-        self.api.force_authenticate(self.platform)
-        bad = self.api.post(f"/api/platform/merchants/{self.business.id}/support-actions/", {"action_type": "note"}, format="json")
+        step_up = self._authenticate_platform_with_step_up()
+        bad = self.api.post(
+            f"/api/platform/merchants/{self.business.id}/support-actions/",
+            {"action_type": "note"},
+            format="json",
+            **step_up,
+        )
         self.assertEqual(bad.status_code, 400)
 
         self.api.force_authenticate(self.owner)
@@ -249,6 +274,19 @@ class PlatformOperationsDashboardTests(TestCase):
             format="json",
         )
         self.assertEqual(forbidden.status_code, 403)
+
+    def test_platform_support_action_requires_recent_mfa_step_up(self):
+        self.api.force_authenticate(self.platform)
+
+        response = self.api.post(
+            f"/api/platform/merchants/{self.business.id}/support-actions/",
+            {"action_type": "support_note", "note": "Cross-tenant support note"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.data["code"], "mfa_step_up_required")
+        self.assertFalse(AuditLog.objects.filter(entity_type="platform_support_action").exists())
 
     def test_platform_operations_health_returns_support_runtime_and_failure_queues(self):
         self.api.force_authenticate(self.platform)

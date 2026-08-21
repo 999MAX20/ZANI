@@ -5,6 +5,7 @@ import { Link, useParams } from "react-router";
 
 import { platformApi } from "../../api/platform";
 import { getApiErrorMessage } from "../../api/client";
+import { issueMfaStepUp } from "../../api/auth";
 import { Button } from "../../components/ui/Button";
 import { Card, CardBody, CardHeader } from "../../components/ui/Card";
 import { Input } from "../../components/ui/Input";
@@ -27,6 +28,7 @@ export function PlatformMerchantDetailPage() {
   const { id } = useParams();
   const queryClient = useQueryClient();
   const [note, setNote] = useState("");
+  const [mfaCode, setMfaCode] = useState("");
   const [actionType, setActionType] = useState("support_note");
   const locale = language === "kk" ? "kk-KZ" : language === "en" ? "en-US" : "ru-RU";
   const actionOptions = [
@@ -41,9 +43,13 @@ export function PlatformMerchantDetailPage() {
     enabled: Boolean(id),
   });
   const supportMutation = useMutation({
-    mutationFn: () => platformApi.createSupportAction(id || "", { action_type: actionType, note }),
+    mutationFn: async () => {
+      const { step_up_token: stepUpToken } = await issueMfaStepUp(mfaCode);
+      return platformApi.createSupportAction(id || "", { action_type: actionType, note }, stepUpToken);
+    },
     onSuccess: () => {
       setNote("");
+      setMfaCode("");
       queryClient.invalidateQueries({ queryKey: ["platform-merchant", id] });
       queryClient.invalidateQueries({ queryKey: ["platform-merchants"] });
       queryClient.invalidateQueries({ queryKey: ["platform-overview"] });
@@ -182,9 +188,17 @@ export function PlatformMerchantDetailPage() {
               <Input value={note} onChange={(event) => setNote(event.target.value)} placeholder={t("platform.merchantDetail.notePlaceholder")} />
             </div>
             <Textarea className="mt-3" value={note} onChange={(event) => setNote(event.target.value)} placeholder={t("platform.merchantDetail.noteTextarea")} />
+            <Input
+              className="mt-3"
+              label={t("mfa.codeLabel")}
+              value={mfaCode}
+              onChange={(event) => setMfaCode(event.target.value)}
+              placeholder={t("mfa.codePlaceholder")}
+              autoComplete="one-time-code"
+            />
             {supportMutation.isError ? <ErrorState message={getApiErrorMessage(supportMutation.error)} /> : null}
             <div className="mt-3 flex flex-wrap gap-2">
-              <Button onClick={() => supportMutation.mutate()} isLoading={supportMutation.isPending} disabled={!note.trim()}>
+              <Button onClick={() => supportMutation.mutate()} isLoading={supportMutation.isPending} disabled={!note.trim() || !mfaCode.trim()}>
                 <MessageSquarePlus size={16} /> {t("platform.merchantDetail.saveAction")}
               </Button>
               <Button variant="secondary" onClick={() => merchant.refetch()} isLoading={merchant.isFetching}>

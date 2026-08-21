@@ -83,6 +83,13 @@ included in the envelope.
   access.
 - Every mutation is recorded in the merchant security audit log.
 
+Platform support notes are also privileged cross-tenant mutations:
+
+- `POST /api/platform/merchants/{id}/support-actions/` requires a recent MFA
+  step-up token in `X-Zani-MFA-Step-Up`;
+- the platform UI obtains that token from `POST /api/auth/mfa/step-up/` using a
+  TOTP or recovery code immediately before submitting the support action.
+
 ## Team Invitations
 
 - `GET /api/team/invitations/preview/{token}/` returns invitation metadata and

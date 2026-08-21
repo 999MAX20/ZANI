@@ -99,6 +99,14 @@ export async function getMfaStatus() {
   return data;
 }
 
+export async function issueMfaStepUp(code: string) {
+  const { data } = await apiClient.post<{ step_up_token: string; expires_in: number }>(
+    "/api/auth/mfa/step-up/",
+    { code },
+  );
+  return data;
+}
+
 export async function regenerateMfaRecoveryCodes(code: string) {
   const { data } = await apiClient.post<{ recovery_codes: string[] }>("/api/auth/mfa/recovery-codes/", { code });
   return data;

@@ -317,6 +317,7 @@ def platform_merchant_detail(request, business_id):
 @api_view(["POST"])
 @permission_classes([IsPlatformUser])
 def platform_merchant_support_action(request, business_id):
+    validate_step_up_token(request.user, request.headers.get("X-Zani-MFA-Step-Up", ""))
     try:
         business = Business.objects.get(id=business_id)
     except Business.DoesNotExist:

@@ -232,6 +232,31 @@ class PrivilegedMfaTests(TestCase):
         self.assertEqual(response.data["code"], "mfa_enrollment_required")
         self.assertNotIn("access", response.data)
 
+    def test_platform_manager_is_forced_into_mfa_and_can_enroll(self):
+        platform_manager = User.objects.create_user(
+            username="platform-manager@example.com",
+            email="platform-manager@example.com",
+            password=self.password,
+            role=User.Roles.PLATFORM_MANAGER,
+        )
+
+        response = self.client.post(
+            "/api/auth/token/",
+            {"email": platform_manager.email, "password": self.password},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 202)
+        self.assertEqual(response.data["code"], "mfa_enrollment_required")
+        self.assertNotIn("access", response.data)
+        enrollment = self.client.post(
+            "/api/auth/mfa/enrollment/start/",
+            {"challenge_token": response.data["challenge_token"]},
+            format="json",
+        )
+        self.assertEqual(enrollment.status_code, 200)
+        self.assertIn("manual_key", enrollment.data)
+
     def test_expired_challenge_is_rejected(self):
         login = self._login()
         MfaChallenge.objects.filter(purpose=MfaChallenge.Purposes.ENROLLMENT).update(

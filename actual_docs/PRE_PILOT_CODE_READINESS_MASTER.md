@@ -454,7 +454,7 @@ attack paths are closed and added to regression suites.
 | PP-SEC-001 | lock platform activation to administrator + MFA step-up; separate provisioning, recovery and ownership transfer | P0 | DONE |
 | PP-SEC-002 | make support grants proposed-state safe and tenant-immutable | P0 | DONE |
 | PP-SEC-003 | make invitation acceptance safe for existing accounts | P0 | DONE |
-| PP-SEC-004 | cover every platform/support role with MFA and step-up enforcement | P0 | READY |
+| PP-SEC-004 | cover every platform/support role with MFA and step-up enforcement | P0 | DONE |
 | PP-SEC-005 | make WhatsApp and Instagram webhook authentication fail closed | P0 | READY |
 
 ### Gate P1 - Security completion
@@ -678,3 +678,41 @@ Verification:
 
 No schema or dependency change was required. The complete browser/security
 rerun remains assigned to PP-SEC-010 after PP-SEC-004 through PP-SEC-009.
+
+### 15.4 PP-SEC-004 closure evidence
+
+Status: `DONE` on `codex/pre-pilot-sec-004-privileged-mfa`.
+
+Implemented invariants:
+
+- `platform_manager` is now included with platform administrators, superusers,
+  merchant owners and active merchant administrators in the privileged MFA
+  predicate;
+- when privileged MFA is enabled, a platform manager receives an enrollment or
+  verification challenge before any access/refresh session is issued;
+- MFA enrollment, status, recovery and step-up capabilities are available to
+  the platform manager through the same shared boundary;
+- cross-tenant platform support actions require a recent confirmed MFA step-up
+  token and create no audit row when the token is absent or invalid;
+- the platform merchant UI requests a TOTP/recovery code, obtains the step-up
+  token and sends it only in the privileged request header.
+
+Verification:
+
+- focused MFA and platform support regressions -> `5/5` passed, covering
+  platform-manager forced enrollment, valid step-up, missing step-up, role
+  denial and sanitized successful support actions;
+- `python manage.py test apps.accounts.tests_mfa apps.core.tests_platform_operations -v 1`
+  -> `28/28` passed;
+- `npm run build` -> i18n validation, TypeScript, merchant frontend and widget
+  production builds passed;
+- `python manage.py check` -> no issues;
+- `python manage.py makemigrations --check --dry-run` -> no changes detected;
+- `python -m compileall -q apps` -> passed;
+- `npm run check:bundle` -> passed; no JS chunk exceeds the `500 kB` budget
+  and the application shell remains below `400 kB` before gzip;
+- `git diff --check` -> clean.
+
+No schema or dependency change was required. Access-token epoch revocation is
+kept separate in PP-SEC-006; full browser/security certification remains in
+PP-SEC-010.

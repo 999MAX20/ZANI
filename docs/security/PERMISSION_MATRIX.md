@@ -24,6 +24,11 @@ This file is the working reference for role-aware behavior in ZANI.
 ## Principles
 
 - Backend permissions are mandatory. Frontend hiding is not security.
+- `platform_admin`, `platform_manager`, superusers, merchant owners and active
+  merchant administrators are privileged MFA identities when the production
+  MFA policy is enabled.
+- Cross-tenant platform/support mutations require a recent MFA step-up in
+  addition to the authenticated privileged session.
 - Every merchant entity must be scoped to `Business`.
 - Role checks must happen before state-changing actions.
 - Support access should be explicit, limited and auditable.

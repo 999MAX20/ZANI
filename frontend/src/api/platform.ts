@@ -18,8 +18,12 @@ export const platformApi = {
     const { data } = await apiClient.get<PlatformMerchant>(`/api/platform/merchants/${id}/`);
     return data;
   },
-  createSupportAction: async (id: number | string, payload: { action_type?: string; note: string; status?: string }) => {
-    const { data } = await apiClient.post<PlatformSupportAction>(`/api/platform/merchants/${id}/support-actions/`, payload);
+  createSupportAction: async (id: number | string, payload: { action_type?: string; note: string; status?: string }, stepUpToken: string) => {
+    const { data } = await apiClient.post<PlatformSupportAction>(
+      `/api/platform/merchants/${id}/support-actions/`,
+      payload,
+      { headers: { "X-Zani-MFA-Step-Up": stepUpToken } },
+    );
     return data;
   },
 };

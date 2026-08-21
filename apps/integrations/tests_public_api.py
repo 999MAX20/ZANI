@@ -1,5 +1,7 @@
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 import hashlib
+import socket
+from urllib.error import URLError
 
 from django.test import TestCase, override_settings
 from django.utils import timezone
@@ -9,7 +11,14 @@ from apps.accounts.models import User
 from apps.businesses.models import Business, BusinessMember
 from apps.clients.models import Client
 from apps.integrations.models import ApiToken, WebhookDeliveryLog, WebhookEndpoint
-from apps.integrations.webhooks import deliver_webhook_event
+from apps.integrations.webhooks import (
+    WEBHOOK_MAX_RESPONSE_BYTES,
+    _PinnedHTTPSConnection,
+    _post_webhook,
+    _post_webhook_once,
+    _read_limited_response_body,
+    deliver_webhook_event,
+)
 
 
 def unwrap_response_list(response):
@@ -234,13 +243,105 @@ class PublicApiAndWebhookTests(TestCase):
             created_by=self.owner,
         )
 
-        with patch("apps.integrations.webhooks.urllib_request.urlopen") as urlopen:
+        with patch("apps.integrations.webhooks._PinnedHTTPSConnection") as connection:
             log = deliver_webhook_event(endpoint, "system.test", {"visible": True}, "plain-http-delivery")
 
         self.assertEqual(log.status, WebhookDeliveryLog.Statuses.FAILED)
         self.assertIn("https", log.error.lower())
         self.assertEqual(log.attempts, 1)
-        urlopen.assert_not_called()
+        connection.assert_not_called()
+
+    @patch("apps.integrations.webhooks._post_webhook_once")
+    def test_webhook_delivery_revalidates_and_rejects_private_redirect(self, post_once):
+        post_once.return_value = (307, "https://127.0.0.1/internal", "")
+
+        with self.assertRaisesRegex(ValueError, "local or private"):
+            _post_webhook(
+                "https://webhook.example.test/receive",
+                b"{}",
+                {"Content-Type": "application/json"},
+            )
+
+        post_once.assert_called_once()
+
+    @patch("apps.integrations.webhooks.validate_outbound_webhook_url")
+    @patch("apps.integrations.webhooks._post_webhook_once")
+    def test_webhook_delivery_follows_only_revalidated_redirects(self, post_once, validate_url):
+        post_once.side_effect = [
+            (308, "/v2/receive", ""),
+            (204, None, ""),
+        ]
+
+        status, response_body = _post_webhook(
+            "https://webhook.example.test/receive",
+            b"{}",
+            {"Content-Type": "application/json"},
+        )
+
+        self.assertEqual(status, 204)
+        self.assertEqual(response_body, "")
+        validate_url.assert_called_once_with("https://webhook.example.test/v2/receive", allow_mock=False)
+        self.assertEqual(post_once.call_count, 2)
+
+    def test_webhook_response_reader_never_reads_past_limit(self):
+        response = Mock()
+        response.read.side_effect = lambda size: b"x" * size
+
+        response_body = _read_limited_response_body(response)
+
+        self.assertEqual(len(response_body.encode("utf-8")), WEBHOOK_MAX_RESPONSE_BYTES)
+        self.assertLessEqual(sum(call.args[0] for call in response.read.call_args_list), WEBHOOK_MAX_RESPONSE_BYTES + 1)
+
+    def test_pinned_connection_rejects_private_actual_peer_before_tls_or_request(self):
+        raw_socket = Mock()
+        raw_socket.getpeername.return_value = ("169.254.169.254", 443)
+        connection = _PinnedHTTPSConnection(
+            "webhook.example.test",
+            443,
+            "93.184.216.34",
+            timeout=8,
+        )
+        connection._create_connection = Mock(return_value=raw_socket)
+        connection._context = Mock()
+
+        with self.assertRaisesRegex(URLError, "local or private"):
+            connection.connect()
+
+        raw_socket.close.assert_called_once()
+        connection._context.wrap_socket.assert_not_called()
+
+    @patch("apps.integrations.webhooks.socket.getaddrinfo")
+    @patch("apps.integrations.webhooks._PinnedHTTPSConnection")
+    def test_webhook_delivery_pins_the_validated_dns_address(self, connection_class, getaddrinfo):
+        getaddrinfo.return_value = [
+            (socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP, "", ("93.184.216.34", 443)),
+        ]
+        response = Mock(status=202)
+        response.getheader.return_value = None
+        response.read.side_effect = [b"accepted", b""]
+        connection = connection_class.return_value
+        connection.getresponse.return_value = response
+
+        status, location, response_body = _post_webhook_once(
+            "https://webhook.example.test/receive?source=zani",
+            b"{}",
+            {"Content-Type": "application/json"},
+        )
+
+        connection_class.assert_called_once_with(
+            "webhook.example.test",
+            443,
+            "93.184.216.34",
+            timeout=8,
+        )
+        connection.request.assert_called_once_with(
+            "POST",
+            "/receive?source=zani",
+            body=b"{}",
+            headers={"Content-Type": "application/json"},
+        )
+        connection.close.assert_called_once()
+        self.assertEqual((status, location, response_body), (202, None, "accepted"))
 
     def test_webhook_delivery_success_and_failure_are_logged(self):
         self.api.force_authenticate(self.owner)

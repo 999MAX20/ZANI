@@ -145,6 +145,28 @@ conversation + direction + external_message_id
 
 The constraint applies only when `external_message_id` is present, so manual/internal messages without provider ids remain allowed. Telegram, WhatsApp and Instagram webhook handlers use the shared idempotent message helper and return the existing message on duplicate delivery without creating duplicate `BusinessEvent`, automation work or inbox side effects.
 
+## Outbound Webhook Egress Safety
+
+Custom outbound webhook delivery is fail closed:
+
+- production delivery permits HTTPS only and rejects credentials, fragments,
+  localhost and every private, loopback, link-local, multicast, reserved or
+  unspecified target address;
+- all DNS answers must be public, and the client connects to a validated,
+  pinned answer while retaining the hostname for TLS certificate validation;
+- the actual socket peer is checked before any request bytes are sent;
+- redirects are manual, loop-checked, limited to three hops and each target is
+  independently parsed and resolved before it receives the payload;
+- response bodies are read through a 2000-byte bound before sanitization and
+  persistence, so a receiver cannot make the worker buffer an unbounded body;
+- delivery payloads, errors and response excerpts continue through the shared
+  sanitization boundary before they reach delivery logs or APIs.
+
+Any URL or peer validation failure is stored as a sanitized failed delivery and
+is eligible for the existing controlled retry flow. Do not weaken these checks
+for a merchant endpoint; use a publicly reachable HTTPS receiver with a valid
+certificate.
+
 ## Permissions
 
 Connectors use the existing `integrations` resource.

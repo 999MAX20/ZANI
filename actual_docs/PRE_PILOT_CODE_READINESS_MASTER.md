@@ -462,7 +462,7 @@ attack paths are closed and added to regression suites.
 | ID | Work item | Priority | Status |
 | --- | --- | --- | --- |
 | PP-SEC-006 | add access-token session/auth epoch revocation | P1 | DONE |
-| PP-SEC-007 | harden outbound webhook redirects, peer validation and response limits | P1 | READY |
+| PP-SEC-007 | harden outbound webhook redirects, peer validation and response limits | P1 | DONE |
 | PP-SEC-008 | replace automation dotted traversal with safe field extractors | P1 | READY |
 | PP-SEC-009 | prohibit plaintext credentials in generic connector/channel JSON and migrate existing data | P1 | READY |
 | PP-SEC-010 | rerun full security, dependency, backend and migration gates | P0 | BLOCKED by PP-SEC-001..009 |
@@ -802,3 +802,43 @@ Verification:
 Schema change: `accounts.User.auth_epoch` with migration
 `accounts.0007_user_auth_epoch`. No dependency or frontend code change was
 required.
+
+### 15.7 PP-SEC-007 closure evidence
+
+Status: `DONE` on `codex/pre-pilot-sec-007-webhook-egress`.
+
+Implemented invariants:
+
+- every initial outbound webhook URL and every redirect target is parsed,
+  resolved and rejected when it uses plaintext HTTP, credentials, fragments,
+  local hostnames or any private, loopback, link-local, multicast, reserved or
+  unspecified address;
+- delivery connects directly to the already validated DNS address while
+  preserving the original hostname for TLS certificate and SNI validation, so
+  the HTTP client cannot perform a second rebinding-prone DNS lookup;
+- the actual connected peer is checked before TLS or request transmission and
+  a private/link-local peer fails closed;
+- redirects are followed manually, bounded to three hops, loop-checked and
+  revalidated before any second request is sent;
+- response bodies are streamed through a strict `2000` byte storage boundary;
+  a controlled endpoint can no longer force the worker to buffer the complete
+  response before sanitization and truncation;
+- existing signature, idempotency, safe payload persistence, delivery status
+  and retry semantics remain unchanged.
+
+Verification:
+
+- focused exploit and legitimate-control regressions -> `6/6` passed, covering
+  private redirect rejection, safe relative redirect handling, actual private
+  peer rejection, DNS-address pinning, plaintext HTTP rejection without a
+  connection and bounded response reads;
+- `python manage.py test apps.integrations.tests_public_api.PublicApiAndWebhookTests --keepdb`
+  -> all public API/outbound webhook tests passed;
+- `python manage.py check` -> no issues;
+- `python manage.py makemigrations --check --dry-run` -> no changes detected;
+- `python -m compileall -q apps` -> passed;
+- `git diff --check` -> clean.
+
+No schema, dependency or frontend change was required. Live receiver
+availability and production worker observability remain deployment gates;
+SSRF and response-memory safety are enforced in code.

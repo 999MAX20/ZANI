@@ -1,7 +1,9 @@
 import { AlertCircle, Inbox, Loader2, ShieldAlert } from "lucide-react";
 
+import type { AppError } from "../../api/appError";
 import { cn } from "../../lib/cn";
 import { useI18n } from "../../lib/i18n";
+import { PermissionFallback } from "./FallbackSurfaces";
 
 export function LoadingState({ label }: { label?: string }) {
   const { t } = useI18n();
@@ -43,13 +45,17 @@ export function ErrorState({ message, action }: { message: string; action?: Reac
 }
 
 export function ForbiddenState({
+  error,
   title,
   message,
 }: {
+  error?: AppError;
   title?: string;
-  message: string;
+  message?: string;
 }) {
   const { t } = useI18n();
+  if (error) return <PermissionFallback error={error} title={title} />;
+
   return (
     <div
       role="alert"
@@ -61,7 +67,7 @@ export function ForbiddenState({
         </div>
         <div>
           <p className="text-lg font-semibold text-zani-ink">{title || t("permissions.hiddenTitle")}</p>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-zani-subtle">{message}</p>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-zani-subtle">{message || t("actions.errorForbidden")}</p>
           <p className="mt-3 rounded-control bg-surface-card px-3 py-2 text-xs font-semibold text-zani-warning">
             {t("permissions.hiddenText")}
           </p>
@@ -114,3 +120,8 @@ export function PageSkeleton() {
     </div>
   );
 }
+
+export { ConnectivityBanner } from "./ConnectivityBanner";
+export { FieldErrorSummary } from "./FieldErrorSummary";
+export { InlineFallback, PageFallback, PermissionFallback } from "./FallbackSurfaces";
+export { RecoveryDetails } from "./RecoveryDetails";

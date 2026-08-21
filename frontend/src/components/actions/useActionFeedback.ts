@@ -69,8 +69,11 @@ export function useActionFeedback() {
       const retry = canOfferActionRecovery(appError, Boolean(options.retry))
         ? options.retry
         : undefined;
+      const fallbackMessage = canUseActionFallback(appError, Boolean(options.fallbackMessage))
+        ? options.fallbackMessage
+        : undefined;
       showNotification({
-        message: getRecoverableMessage(error, options.fallbackMessage),
+        ...(fallbackMessage ? { message: fallbackMessage } : { appError }),
         tone: options.tone || (["permission", "not_found"].includes(appError.category) ? "warning" : "danger"),
         durationMs: retry ? 10_000 : 7_000,
         actionLabel: retry ? options.actionLabel || t("common.retry") : undefined,
@@ -78,7 +81,7 @@ export function useActionFeedback() {
       });
       restoreFocus(options.focusTarget);
     },
-    [getRecoverableMessage, showNotification, t],
+    [showNotification, t],
   );
 
   const notifySuccess = useCallback(

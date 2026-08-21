@@ -1,14 +1,16 @@
 import { AlertTriangle, CheckCircle2, Info, X, XCircle } from "lucide-react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
+import type { AppError } from "../../api/appError";
 import { Button } from "../ui/Button";
 import { cn } from "../../lib/cn";
 import { useI18n } from "../../lib/i18n";
 
 type NotificationTone = "success" | "info" | "warning" | "danger";
 
-type NotificationOptions = {
-  message: string;
+export type NotificationOptions = {
+  appError?: AppError;
+  message?: string;
   tone?: NotificationTone;
   durationMs?: number;
   actionLabel?: string;
@@ -45,13 +47,14 @@ const toneStyles: Record<NotificationTone, { icon: typeof Info; iconClassName: s
   },
 };
 
-function NotificationCard({ item, onDismiss }: { item: NotificationItem; onDismiss: (id: number) => void }) {
+export function ActionFeedbackToast({ item, onDismiss }: { item: NotificationItem; onDismiss: (id: number) => void }) {
   const { t } = useI18n();
   const [isHovered, setIsHovered] = useState(false);
   const [isActing, setIsActing] = useState(false);
-  const tone = item.tone || "info";
+  const tone = item.tone || (item.appError ? "danger" : "info");
   const style = toneStyles[tone];
   const Icon = style.icon;
+  const message = item.appError ? t(item.appError.messageKey) : item.message || t("actions.errorGeneric");
 
   useEffect(() => {
     if (isHovered || isActing) return undefined;
@@ -73,7 +76,7 @@ function NotificationCard({ item, onDismiss }: { item: NotificationItem; onDismi
     >
       <Icon size={18} className={cn("mt-0.5 shrink-0", style.iconClassName)} />
       <div className="min-w-0 flex-1">
-        <p className="leading-5">{item.message}</p>
+        <p className="leading-5">{message}</p>
         {item.actionLabel && item.onAction ? (
           <Button
             data-testid="action-feedback-action"
@@ -141,7 +144,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         style={{ zIndex: "var(--zani-z-toast)" }}
       >
         {items.map((item) => (
-          <NotificationCard key={item.id} item={item} onDismiss={dismiss} />
+          <ActionFeedbackToast key={item.id} item={item} onDismiss={dismiss} />
         ))}
       </div>
     </NotificationContext.Provider>

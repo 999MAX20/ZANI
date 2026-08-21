@@ -117,7 +117,9 @@ Before setting `PAID_BETA_BACKUP_RESTORE_DRILL_DONE=True`:
 
 Before setting `PAID_BETA_SUPPORT_GRANT_FLOW_TESTED=True`:
 
-- owner creates a support grant;
+- owner creates a time-limited support grant with recent MFA step-up;
+- attempts to retarget the grant or use a non-platform recipient are rejected;
+- the support recipient cannot extend, retarget or delete their own grant;
 - platform/support user can access scoped merchant data only while grant is active;
 - expired/revoked grant blocks access;
 - audit log records grant and support action;

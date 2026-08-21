@@ -27,6 +27,12 @@ This file is the working reference for role-aware behavior in ZANI.
 - Every merchant entity must be scoped to `Business`.
 - Role checks must happen before state-changing actions.
 - Support access should be explicit, limited and auditable.
+- Only the merchant owner may create, change, revoke or delete a support grant,
+  and every mutation requires recent MFA step-up confirmation.
+- A support grant is permanently bound to its original business and platform
+  recipient. Ownership transfer is never performed by editing a grant.
+- Support recipients may inspect only granted tenants while a grant is active;
+  they cannot extend or mutate their own grant.
 - AI must follow the same role restrictions as the user who invokes it.
 
 ## Page And Action Matrix

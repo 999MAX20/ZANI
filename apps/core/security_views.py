@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
+from apps.accounts.mfa import validate_step_up_token
 from apps.businesses.access import Actions, Resources, assert_can, can
 from apps.core.audit import write_audit_log
 from apps.core.models import AuditLog, LoginHistory, SupportAccessGrant
@@ -106,7 +107,7 @@ class SupportAccessGrantViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         business = serializer.validated_data["business"]
-        assert_can(self.request.user, business, Resources.AUDIT_LOGS, Actions.MANAGE)
+        self._authorize_owner_mutation(business)
         instance = serializer.save(created_by=self.request.user)
         write_audit_log(
             self.request,
@@ -118,5 +119,43 @@ class SupportAccessGrantViewSet(ModelViewSet):
 
     def perform_update(self, serializer):
         instance = self.get_object()
-        assert_can(self.request.user, instance.business, Resources.AUDIT_LOGS, Actions.MANAGE)
-        serializer.save()
+        self._authorize_owner_mutation(instance.business)
+        instance = serializer.save()
+        write_audit_log(
+            self.request,
+            AuditLog.Actions.SUPPORT_ACCESS,
+            instance,
+            business=instance.business,
+            metadata={
+                "support_access": True,
+                "event": "updated",
+                "is_active": instance.is_active,
+                "risk_level": AuditLog.RiskLevels.HIGH,
+                "category": AuditLog.Categories.ACCESS,
+            },
+        )
+
+    def perform_destroy(self, instance):
+        self._authorize_owner_mutation(instance.business)
+        write_audit_log(
+            self.request,
+            AuditLog.Actions.DELETE,
+            instance,
+            business=instance.business,
+            metadata={
+                "support_access": True,
+                "event": "revoked",
+                "risk_level": AuditLog.RiskLevels.CRITICAL,
+                "category": AuditLog.Categories.ACCESS,
+            },
+        )
+        instance.delete()
+
+    def _authorize_owner_mutation(self, business):
+        if business.owner_id != self.request.user.id:
+            raise PermissionDenied("Only the business owner can manage support access.")
+        assert_can(self.request.user, business, Resources.AUDIT_LOGS, Actions.MANAGE)
+        validate_step_up_token(
+            self.request.user,
+            self.request.headers.get("X-Zani-MFA-Step-Up", ""),
+        )

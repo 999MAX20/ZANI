@@ -52,6 +52,7 @@ Stable domain codes:
 | --- | ---: | --- |
 | `validation_error` | 400 | Highlight fields from `errors`; do not retry unchanged input. |
 | `authentication_required` | 401 | Start the login/session recovery flow. |
+| `mfa_step_up_required` | 401 | Preserve the form and request recent MFA confirmation before retrying the critical action. |
 | `permission_denied` | 403 | Show a generic access message; do not reveal whether another tenant owns an object. |
 | `module_disabled` | 403 | Offer module enablement only to users allowed to manage settings. |
 | `not_found` | 404 | Show a generic missing/unavailable state. |
@@ -66,6 +67,20 @@ Stable domain codes:
 `permission_denied` and `not_found` use sanitized details. Tenant names, object
 ownership, credentials, provider payloads, and raw exception text must not be
 included in the envelope.
+
+## Support Access Grants
+
+- `POST /api/security/support-grants/` creates a time-limited support grant.
+- `PATCH /api/security/support-grants/{id}/` may update reason, expiry or active
+  state, but cannot change the business or recipient.
+- `DELETE /api/security/support-grants/{id}/` revokes and removes the grant.
+- Create, update and delete are owner-only operations and require a recent MFA
+  step-up token in `X-Zani-MFA-Step-Up`.
+- The recipient must be a platform account. A recipient cannot extend, retarget
+  or delete their own grant.
+- Expired grants are rejected at creation/update and never authorize tenant
+  access.
+- Every mutation is recorded in the merchant security audit log.
 
 ## Core CRM
 

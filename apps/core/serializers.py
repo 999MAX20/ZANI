@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import serializers
 
 from apps.core.custom_fields import validate_custom_field_value
@@ -248,6 +249,28 @@ class SupportAccessGrantSerializer(serializers.ModelSerializer):
 
     def validate_reason(self, value):
         return sanitize_error_text(value, max_length=1000)
+
+    def validate(self, attrs):
+        errors = {}
+        user = attrs.get("user") or getattr(self.instance, "user", None)
+        expires_at = attrs.get("expires_at") or getattr(self.instance, "expires_at", None)
+
+        if user is not None and not getattr(user, "is_platform_user", False):
+            errors["user"] = "Support access can only be granted to a platform support account."
+        if expires_at is not None and expires_at <= timezone.now():
+            errors["expires_at"] = "Support access must expire in the future."
+
+        if self.instance is not None:
+            business = attrs.get("business")
+            if business is not None and business.id != self.instance.business_id:
+                errors["business"] = "The business of an existing support grant cannot be changed."
+            proposed_user = attrs.get("user")
+            if proposed_user is not None and proposed_user.id != self.instance.user_id:
+                errors["user"] = "The recipient of an existing support grant cannot be changed."
+
+        if errors:
+            raise serializers.ValidationError(errors)
+        return attrs
 
     def to_representation(self, instance):
         data = super().to_representation(instance)

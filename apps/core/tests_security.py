@@ -1,19 +1,22 @@
+import pyotp
 from django.utils import timezone
 from django.test import override_settings
 from rest_framework.test import APITestCase
 
-from apps.accounts.models import User
+from apps.accounts.mfa import issue_step_up_token
+from apps.accounts.models import MfaDevice, User
 from apps.businesses.access import Actions, Resources
 from apps.businesses.models import Business, BusinessMember, BusinessRole, RolePermission
 from apps.clients.models import Client
 from apps.core.models import AuditLog, LoginHistory, SupportAccessGrant
+from apps.integrations.credential_encryption import encrypt_credential_value
 
 
 class SecurityCenterTests(APITestCase):
     def setUp(self):
         self.owner = User.objects.create_user(username="security-owner", email="security-owner@example.com", password="pass", role=User.Roles.BUSINESS_OWNER)
         self.staff = User.objects.create_user(username="security-staff", email="security-staff@example.com", password="pass", role=User.Roles.STAFF)
-        self.support = User.objects.create_user(username="security-support", email="security-support@example.com", password="pass", role=User.Roles.STAFF)
+        self.support = User.objects.create_user(username="security-support", email="security-support@example.com", password="pass", role=User.Roles.PLATFORM_ADMIN)
         self.platform_admin = User.objects.create_user(username="security-platform", email="security-platform@example.com", password="pass", role=User.Roles.PLATFORM_ADMIN)
         self.business = Business.objects.create(owner=self.owner, name="Security Clinic", slug="security-clinic")
         BusinessMember.objects.create(business=self.business, user=self.owner, role=BusinessMember.Roles.OWNER)
@@ -97,6 +100,7 @@ class SecurityCenterTests(APITestCase):
                 "expires_at": (timezone.now() + timezone.timedelta(hours=2)).isoformat(),
             },
             format="json",
+            HTTP_X_ZANI_MFA_STEP_UP=self._step_up_token(self.owner),
         )
 
         self.assertEqual(response.status_code, 201)
@@ -104,6 +108,167 @@ class SecurityCenterTests(APITestCase):
         self.assertTrue(SupportAccessGrant.objects.filter(business=self.business, user=self.support).exists())
         self.assertNotIn("raw-support-grant-token", SupportAccessGrant.objects.get(business=self.business, user=self.support).reason)
         self.assertTrue(AuditLog.objects.filter(business=self.business, action=AuditLog.Actions.SUPPORT_ACCESS, risk_level=AuditLog.RiskLevels.HIGH).exists())
+
+    def test_support_grant_requires_owner_mfa_step_up(self):
+        self.client.force_authenticate(self.owner)
+
+        response = self.client.post(
+            "/api/security/support-grants/",
+            {
+                "business": self.business.id,
+                "user": self.support.id,
+                "reason": "Support ticket #step-up",
+                "is_active": True,
+                "expires_at": (timezone.now() + timezone.timedelta(hours=2)).isoformat(),
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.data["code"], "mfa_step_up_required")
+        self.assertFalse(SupportAccessGrant.objects.filter(business=self.business, user=self.support).exists())
+
+    def test_support_grant_rejects_non_platform_recipient(self):
+        non_platform = User.objects.create_user(
+            username="merchant-support-target",
+            email="merchant-support-target@example.com",
+            password="pass",
+            role=User.Roles.STAFF,
+        )
+        self.client.force_authenticate(self.owner)
+
+        response = self.client.post(
+            "/api/security/support-grants/",
+            {
+                "business": self.business.id,
+                "user": non_platform.id,
+                "reason": "Invalid support target",
+                "is_active": True,
+                "expires_at": (timezone.now() + timezone.timedelta(hours=2)).isoformat(),
+            },
+            format="json",
+            HTTP_X_ZANI_MFA_STEP_UP=self._step_up_token(self.owner),
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("user", response.data["errors"])
+        self.assertFalse(SupportAccessGrant.objects.filter(user=non_platform).exists())
+
+    def test_support_grant_business_and_recipient_are_immutable(self):
+        other_owner = User.objects.create_user(
+            username="other-security-owner",
+            email="other-security-owner@example.com",
+            password="pass",
+            role=User.Roles.BUSINESS_OWNER,
+        )
+        other_business = Business.objects.create(
+            owner=other_owner,
+            name="Other Security Clinic",
+            slug="other-security-clinic",
+        )
+        other_support = User.objects.create_user(
+            username="other-security-support",
+            email="other-security-support@example.com",
+            password="pass",
+            role=User.Roles.PLATFORM_ADMIN,
+        )
+        grant = SupportAccessGrant.objects.create(
+            business=self.business,
+            user=self.support,
+            reason="Original grant",
+            expires_at=timezone.now() + timezone.timedelta(hours=1),
+            created_by=self.owner,
+        )
+        self.client.force_authenticate(self.owner)
+
+        response = self.client.patch(
+            f"/api/security/support-grants/{grant.id}/",
+            {"business": other_business.id, "user": other_support.id},
+            format="json",
+            HTTP_X_ZANI_MFA_STEP_UP=self._step_up_token(self.owner),
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("business", response.data["errors"])
+        self.assertIn("user", response.data["errors"])
+        grant.refresh_from_db()
+        self.assertEqual(grant.business, self.business)
+        self.assertEqual(grant.user, self.support)
+
+    def test_support_recipient_cannot_extend_or_delete_own_grant(self):
+        grant = SupportAccessGrant.objects.create(
+            business=self.business,
+            user=self.support,
+            reason="Owner controlled grant",
+            expires_at=timezone.now() + timezone.timedelta(hours=1),
+            created_by=self.owner,
+        )
+        self.client.force_authenticate(self.support)
+
+        update_response = self.client.patch(
+            f"/api/security/support-grants/{grant.id}/",
+            {"expires_at": (timezone.now() + timezone.timedelta(days=7)).isoformat()},
+            format="json",
+        )
+        delete_response = self.client.delete(f"/api/security/support-grants/{grant.id}/")
+
+        self.assertEqual(update_response.status_code, 403)
+        self.assertEqual(delete_response.status_code, 403)
+        grant.refresh_from_db()
+        self.assertTrue(grant.is_active)
+        self.assertTrue(grant.expires_at < timezone.now() + timezone.timedelta(days=1))
+
+    def test_owner_can_revoke_and_delete_support_grants_with_step_up(self):
+        revoke_grant = SupportAccessGrant.objects.create(
+            business=self.business,
+            user=self.support,
+            reason="Grant to revoke",
+            expires_at=timezone.now() + timezone.timedelta(hours=1),
+            created_by=self.owner,
+        )
+        delete_grant = SupportAccessGrant.objects.create(
+            business=self.business,
+            user=self.platform_admin,
+            reason="Grant to delete",
+            expires_at=timezone.now() + timezone.timedelta(hours=1),
+            created_by=self.owner,
+        )
+        self.client.force_authenticate(self.owner)
+        step_up_token = self._step_up_token(self.owner)
+
+        revoke_response = self.client.patch(
+            f"/api/security/support-grants/{revoke_grant.id}/",
+            {"is_active": False},
+            format="json",
+            HTTP_X_ZANI_MFA_STEP_UP=step_up_token,
+        )
+        delete_response = self.client.delete(
+            f"/api/security/support-grants/{delete_grant.id}/",
+            HTTP_X_ZANI_MFA_STEP_UP=step_up_token,
+        )
+
+        self.assertEqual(revoke_response.status_code, 200)
+        self.assertEqual(delete_response.status_code, 204)
+        revoke_grant.refresh_from_db()
+        self.assertFalse(revoke_grant.is_active)
+        self.assertFalse(SupportAccessGrant.objects.filter(id=delete_grant.id).exists())
+        self.assertTrue(
+            AuditLog.objects.filter(
+                business=self.business,
+                entity_type="SupportAccessGrant",
+                entity_id=str(revoke_grant.id),
+                action=AuditLog.Actions.SUPPORT_ACCESS,
+            ).exists()
+        )
+        self.assertTrue(
+            AuditLog.objects.filter(
+                business=self.business,
+                entity_type="SupportAccessGrant",
+                entity_id=str(delete_grant.id),
+                action=AuditLog.Actions.DELETE,
+                risk_level=AuditLog.RiskLevels.CRITICAL,
+            ).exists()
+        )
 
     @override_settings(SUPPORT_REQUIRES_GRANT=True)
     def test_platform_admin_needs_support_grant_for_security_center(self):
@@ -147,3 +312,13 @@ class SecurityCenterTests(APITestCase):
         self.assertEqual(with_grant_list.status_code, 200)
         self.assertEqual([item["id"] for item in with_grant_list.data["results"]], [self.client_obj.id])
         self.assertEqual(with_grant_detail.status_code, 200)
+
+    @staticmethod
+    def _step_up_token(user):
+        secret = pyotp.random_base32()
+        MfaDevice.objects.create(
+            user=user,
+            encrypted_secret=encrypt_credential_value(secret),
+            confirmed_at=timezone.now(),
+        )
+        return issue_step_up_token(user, pyotp.TOTP(secret).now())

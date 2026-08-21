@@ -185,10 +185,15 @@ the accepted project branch.
   action feedback with the same retry policy. Its focused tests, generated
   inventory, RU/KK/EN validation, production builds and bundle gate passed on
   `codex/fallback-fb-003-app-error-normalization`.
-  ZD-004 remains `CONFIRMED` overall because shared visual surfaces, crash
-  boundaries, direct technical-field consumers, session/connectivity/draft
-  recovery and cross-role failure injection still require FB-004 through
-  FB-010.
+  FB-004 then completed one AppError-driven visual family for page, inline,
+  permission, connectivity, form, toast and support-reference failures. Its
+  focused policy tests, RU/KK/EN validation, production builds, bundle gate,
+  manager gate and desktop/mobile browser review passed on
+  `codex/fallback-fb-004-shared-fallback-surfaces` at commit `42f4779`.
+  ZD-004 remains `CONFIRMED` overall because crash boundaries, direct technical-
+  field consumers, session/connectivity/draft recovery, provider recovery,
+  final copy/accessibility review and cross-role failure injection still require
+  FB-005 through FB-010.
 - Derived audit rule: no merchant-visible component may render raw backend or
   runtime error text. Every failure must be normalized, localized, sanitized
   and paired with a safe next action when one exists.

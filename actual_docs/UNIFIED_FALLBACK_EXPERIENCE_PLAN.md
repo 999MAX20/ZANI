@@ -3,7 +3,7 @@
 - Status: **ACTIVE / IN EXECUTION**
 - Created: 2026-08-18
 - Scope: merchant-visible errors, recovery actions, loading/empty/offline states, backend error contracts and technical-detail isolation
-- Execution state: **FB-001 DONE / FB-002 DONE / FB-003 DONE / FB-004 READY**
+- Execution state: **FB-001 DONE / FB-002 DONE / FB-003 DONE / FB-004 DONE / FB-005 READY**
 - Owner: ZANI manager workflow
 
 ## Product Outcome
@@ -311,8 +311,8 @@ Even platform/support views must sanitize credentials and personal data. A reque
 | FB-001 | Build route/action/failure inventory and error-code registry | P0 | DONE | none |
 | FB-002 | Complete the backend safe envelope and sanitization boundary | P0 | DONE | BE-REM-004 |
 | FB-003 | Introduce `AppError` normalization and retire raw parsing | P0 | DONE | FB-001..002 |
-| FB-004 | Build the shared visual fallback surface family | P0 | READY | FB-003 |
-| FB-005 | Remove raw messages from crash and route boundaries | P0 | NOT_STARTED | FB-003..004 |
+| FB-004 | Build the shared visual fallback surface family | P0 | DONE | FB-003 |
+| FB-005 | Remove raw messages from crash and route boundaries | P0 | READY | FB-003..004 |
 | FB-006 | Migrate direct technical-error consumers | P0 | NOT_STARTED | FB-003..005 |
 | FB-007 | Standardize session, connectivity and draft preservation | P1 | NOT_STARTED | FB-003..004 |
 | FB-008 | Standardize async job, provider and Inbox delivery recovery | P1 | NOT_STARTED | FB-002..007 |
@@ -573,4 +573,17 @@ Checks run and exact result: npm run test:app-error -> 6/6 passed; npm run test:
 Checks skipped and reason: backend and browser suites skipped because FB-003 changes only shared frontend error normalization and policy; visual failure surfaces are FB-004, crash-boundary browser behavior is FB-005 and the cross-role failure matrix is FB-010
 Role/tenant impact: no backend permission, tenant scoping, notification, BusinessEvent, AI, schema, dependency or environment behavior changed
 Residual risk: ZD-004 remains CONFIRMED overall; shared visual surfaces, crash boundaries, direct technical-field consumers, session/connectivity/draft recovery, provider recovery, accessibility/copy review and browser failure certification remain FB-004 through FB-010
+```
+
+```text
+Task: FB-004 - shared visual fallback surface family
+Affected routes/actions: shared action feedback notifications and every current or future frontend consumer of the common page, inline, permission, connectivity, form-field and support-reference fallback primitives
+Branch: codex/fallback-fb-004-shared-fallback-surfaces
+Commit: 42f4779
+Backend error codes changed: none; all surfaces consume the existing typed AppError contract and its 29 accepted codes
+Frontend surfaces changed: added InlineFallback, PageFallback, PermissionFallback, ConnectivityBanner, FieldErrorSummary and RecoveryDetails; ForbiddenState delegates to the permission surface; ActionFeedbackToast and useActionFeedback consume AppError directly; added RU/KK/EN copy and a browser fixture covering the complete family
+Checks run and exact result: npm run test:fallback-surfaces -> 4/4 passed; npm run test:app-error -> 6/6 passed; npm run test:action-feedback -> 2/2 passed; npm run check:i18n -> 4677 keys across RU/KK/EN; npm run check:fallback-inventory -> 43 routes, 581 API operations, 13 tasks, 83 statuses and 29 codes; npm run test:fallback-inventory -> 2/2 passed; npm run build -> TypeScript plus application/widget production builds passed; npm run check:bundle -> no JS chunk above 500 kB and app shell below 400 kB; Playwright CLI desktop 1280x720 and mobile 390x844 visual/interaction review -> all required surfaces and recovery actions rendered without overflow, request-ID disclosure was bounded to support-reference-7, clipboard and toast interactions passed, console errors 0; codex_verify.py --mode frontend --base-ref 91178a4c1321ce6daf8246395ceca43afc820148 -> QUALITY GATE PASSED with deterministic npm ci (0 vulnerabilities), gate-environment policy 1/1, no migration drift, clean Django check, application/widget builds and bundle budget; git diff --check -> clean
+Checks skipped and reason: full backend suite skipped because FB-004 changes only shared frontend presentation and uses the already accepted AppError contract; app/route crash injection is FB-005, direct-consumer migration is FB-006, session/connectivity/draft behavior is FB-007 and the full cross-role failure matrix is FB-010
+Role/tenant impact: no backend permission, tenant scoping, schema, dependency, environment, notification delivery, BusinessEvent or AI behavior changed; access-denied presentation remains driven by the existing authorization result
+Residual risk: ZD-004 remains CONFIRMED overall; crash boundaries, direct technical-field consumers, session/connectivity/draft recovery, provider recovery, final accessibility/copy review and browser failure certification remain FB-005 through FB-010
 ```

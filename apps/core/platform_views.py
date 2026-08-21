@@ -6,6 +6,7 @@ from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
+from apps.accounts.mfa import validate_step_up_token
 from apps.ai_core.models import AIRequestLog
 from apps.billing.models import Subscription
 from apps.billing.usage import usage_summary
@@ -14,9 +15,10 @@ from apps.businesses.activation import activate_landing_business
 from apps.businesses.models import Business
 from apps.clients.models import Client
 from apps.businesses.serializers import ActivateLandingBusinessSerializer
+from apps.core.audit import write_audit_log
 from apps.core.models import AuditLog
 from apps.core.operations_health import platform_operations_health
-from apps.core.permissions import IsPlatformUser
+from apps.core.permissions import IsPlatformAdmin, IsPlatformUser
 from apps.integrations.models import BusinessConnector, BusinessEvent
 from apps.integrations.sanitization import sanitize_error_text
 from apps.leads.models import Lead, LeadForm, LeadFormSubmissionError
@@ -351,8 +353,9 @@ def platform_merchant_support_action(request, business_id):
 
 
 @api_view(["POST"])
-@permission_classes([IsPlatformUser])
+@permission_classes([IsPlatformAdmin])
 def platform_activate_landing(request):
+    validate_step_up_token(request.user, request.headers.get("X-Zani-MFA-Step-Up", ""))
     serializer = ActivateLandingBusinessSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     result = activate_landing_business(
@@ -366,6 +369,21 @@ def platform_activate_landing(request):
         landing_preview_url=serializer.validated_data.get("landing_preview_url", ""),
         city=serializer.validated_data.get("city", ""),
         phone=serializer.validated_data.get("phone", ""),
+    )
+    write_audit_log(
+        request,
+        AuditLog.Actions.CREATE if result.created_business else AuditLog.Actions.UPDATE,
+        result.business,
+        business=result.business,
+        metadata={
+            "category": AuditLog.Categories.SECURITY,
+            "risk_level": AuditLog.RiskLevels.CRITICAL,
+            "kind": "platform_activation",
+            "landing_id": result.business.landing_id,
+            "created_business": result.created_business,
+            "created_owner": result.created_owner,
+            "owner_id": result.owner.id,
+        },
     )
     return Response(
         {

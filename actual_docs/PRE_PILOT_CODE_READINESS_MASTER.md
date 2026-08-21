@@ -451,8 +451,8 @@ attack paths are closed and added to regression suites.
 
 | ID | Work item | Priority | Status |
 | --- | --- | --- | --- |
-| PP-SEC-001 | lock platform activation to administrator + MFA step-up; separate provisioning, recovery and ownership transfer | P0 | READY |
-| PP-SEC-002 | make support grants proposed-state safe and tenant-immutable | P0 | BLOCKED by PP-SEC-001 only for shared platform review |
+| PP-SEC-001 | lock platform activation to administrator + MFA step-up; separate provisioning, recovery and ownership transfer | P0 | DONE |
+| PP-SEC-002 | make support grants proposed-state safe and tenant-immutable | P0 | READY |
 | PP-SEC-003 | make invitation acceptance safe for existing accounts | P0 | READY |
 | PP-SEC-004 | cover every platform/support role with MFA and step-up enforcement | P0 | READY |
 | PP-SEC-005 | make WhatsApp and Instagram webhook authentication fail closed | P0 | READY |
@@ -577,3 +577,38 @@ evidence and are not deleted.
 - Accepted UX state: UX-1 and UX-2 complete; UX-3 and UX-4 planned.
 - No implementation, migration, dependency or environment change was made by
   this analysis document.
+
+### 15.1 PP-SEC-001 closure evidence
+
+Status: `DONE` on `codex/pre-pilot-sec-001-platform-activation`.
+
+Implemented invariants:
+
+- only `platform_admin` can call landing activation;
+- every call requires a recent MFA step-up token in
+  `X-Zani-MFA-Step-Up`, and the account must still have confirmed MFA;
+- `platform_manager` and merchant roles are denied before provisioning runs;
+- an existing `landing_id` cannot be rebound to another owner;
+- activation never changes an existing user's password, global role or active
+  state;
+- new passwords pass the shared Django password policy;
+- legitimate same-owner retries remain idempotent;
+- successful creates and retries write a sanitized critical security audit row;
+- account recovery and ownership transfer remain separate from provisioning.
+
+Verification:
+
+- `python manage.py test apps.businesses.tests_activation -v 1` -> `10/10`
+  passed, including endpoint-level `401`, `403`, `409`, password-policy,
+  immutable-owner and immutable-account-state regressions;
+- `python manage.py test apps.businesses.tests_activation apps.accounts.tests_mfa -v 1`
+  -> `21/21` passed;
+- `python manage.py test apps.core.tests_b3_contracts apps.core.tests_security apps.businesses.tests_access -v 1`
+  -> `49/49` passed;
+- `python manage.py check` -> no issues;
+- `python manage.py makemigrations --check --dry-run` -> no changes detected;
+- `python -m compileall -q apps` -> passed;
+- `git diff --check` -> clean.
+
+No schema or dependency change was required. Full browser and full repository
+gates remain assigned to PP-SEC-010 after PP-SEC-002 through PP-SEC-009.

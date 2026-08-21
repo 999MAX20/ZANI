@@ -515,6 +515,9 @@ Platform helper endpoint:
 - `GET /api/platform/merchants/{business_id}/`
 - `POST /api/platform/merchants/{business_id}/support-actions/`
 - `POST /api/platform/activate-landing/`
+  - platform administrator only;
+  - requires a recent MFA step-up token in `X-Zani-MFA-Step-Up`;
+  - never resets an existing account or transfers ownership of an existing `landing_id`.
 
 Platform frontend rule: platform operations endpoints are internal/support surfaces, not daily merchant CRM pages. Keep them out of role-scoped merchant navigation unless the user has platform-level access.
 

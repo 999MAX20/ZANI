@@ -202,6 +202,8 @@ def issue_step_up_token(user, code):
 
 
 def validate_step_up_token(user, token):
+    if not has_confirmed_mfa(user):
+        raise MfaStepUpRequired()
     try:
         payload = signing.loads(
             token,

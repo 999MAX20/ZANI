@@ -8,6 +8,7 @@ from django.utils.text import slugify
 from apps.billing.models import Subscription, SubscriptionPlan
 from apps.businesses.access import ensure_default_roles
 from apps.businesses.models import Business, BusinessMember, BusinessRole
+from apps.core.domain_errors import OwnershipConflict
 from apps.crm.models import Pipeline, PipelineStage
 from apps.leads.models import Lead, LeadForm, LeadFormField
 
@@ -58,9 +59,20 @@ def activate_landing_business(
     if not business_name:
         raise ValueError("business_name is required.")
 
-    owner, created_owner = _get_or_create_owner(owner_email, owner_password=owner_password, full_name=owner_full_name)
+    existing_business = (
+        Business.objects.select_for_update().select_related("owner").filter(landing_id=landing_id).first()
+    )
+    if existing_business is not None and existing_business.owner.email.casefold() != owner_email.casefold():
+        raise OwnershipConflict(errors={"landing_id": "This landing is already linked to another owner."})
+
+    owner, created_owner = _get_or_create_owner(
+        owner_email,
+        owner_password=owner_password,
+        full_name=owner_full_name,
+    )
     business, created_business = _get_or_create_business(
         owner=owner,
+        existing_business=existing_business,
         landing_id=landing_id,
         business_name=business_name,
         business_type=business_type,
@@ -195,19 +207,32 @@ def _get_or_create_owner(email: str, *, owner_password: str | None, full_name: s
             "is_active": True,
         },
     )
-    owner.role = User.Roles.BUSINESS_OWNER
-    owner.full_name = full_name or owner.full_name
-    owner.is_active = True
-    if owner_password:
-        owner.set_password(owner_password)
-    elif created:
-        owner.set_unusable_password()
-    owner.save(update_fields=["role", "full_name", "is_active", "password"])
+    if created:
+        if owner_password:
+            owner.set_password(owner_password)
+        else:
+            owner.set_unusable_password()
+        owner.save(update_fields=["password"])
+    elif full_name and not owner.full_name:
+        owner.full_name = full_name
+        owner.save(update_fields=["full_name"])
     return owner, created
 
 
-def _get_or_create_business(*, owner, landing_id, business_name, business_type, landing_domain, landing_preview_url, city, phone, timezone_name):
-    business = Business.objects.filter(landing_id=landing_id).first()
+def _get_or_create_business(
+    *,
+    owner,
+    existing_business,
+    landing_id,
+    business_name,
+    business_type,
+    landing_domain,
+    landing_preview_url,
+    city,
+    phone,
+    timezone_name,
+):
+    business = existing_business
     created = False
     if business is None:
         business = Business.objects.create(
@@ -225,7 +250,8 @@ def _get_or_create_business(*, owner, landing_id, business_name, business_type, 
         )
         created = True
     else:
-        business.owner = owner
+        if business.owner_id != owner.id:
+            raise OwnershipConflict(errors={"landing_id": "This landing is already linked to another owner."})
         business.name = business_name or business.name
         business.business_type = business_type if business_type in Business.BusinessTypes.values else business.business_type
         business.status = Business.Statuses.TRIAL
@@ -234,7 +260,19 @@ def _get_or_create_business(*, owner, landing_id, business_name, business_type, 
         business.city = city or business.city
         business.phone = phone or business.phone
         business.timezone = timezone_name or business.timezone
-        business.save(update_fields=["owner", "name", "business_type", "status", "landing_domain", "landing_preview_url", "city", "phone", "timezone", "updated_at"])
+        business.save(
+            update_fields=[
+                "name",
+                "business_type",
+                "status",
+                "landing_domain",
+                "landing_preview_url",
+                "city",
+                "phone",
+                "timezone",
+                "updated_at",
+            ]
+        )
     ensure_default_roles(business)
     return business, created
 

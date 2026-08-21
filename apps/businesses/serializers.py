@@ -371,3 +371,6 @@ class ActivateLandingBusinessSerializer(serializers.Serializer):
     landing_preview_url = serializers.URLField(required=False, allow_blank=True)
     city = serializers.CharField(required=False, allow_blank=True, max_length=128)
     phone = serializers.CharField(required=False, allow_blank=True, max_length=32)
+
+    def validate_owner_password(self, value):
+        return enforce_password_policy(value) if value else value

@@ -55,6 +55,14 @@ class IdempotencyConflict(DomainAPIException):
     category = "conflict"
 
 
+class OwnershipConflict(DomainAPIException):
+    status_code = 409
+    error_code = "ownership_conflict"
+    default_code = error_code
+    default_detail = "The requested resource is already owned by another account."
+    category = "conflict"
+
+
 class ProviderUnavailable(DomainAPIException):
     status_code = 503
     error_code = "provider_unavailable"

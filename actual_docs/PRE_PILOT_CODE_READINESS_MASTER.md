@@ -358,7 +358,7 @@ work, but final certification waits for both.
 - persisted error fields use shared sanitization;
 - the backend, static, security, frontend and migration gates passed at FB-002.
 
-`FB-003` and `FB-004` are done. `FB-005` is ready; `FB-006` through
+`FB-003` through `FB-005` are done. `FB-006` is ready; `FB-007` through
 `FB-010` are not started.
 
 ### 8.2 Confirmed gaps
@@ -367,7 +367,8 @@ work, but final certification waits for both.
   files, but every caller now receives normalized localized category copy;
 - typed `AppError` now exposes only bounded field errors, request ID and retry
   metadata while discarding raw detail and unrelated response values;
-- crash boundaries can render runtime `error.message` or route `statusText`;
+- application and route crash boundaries now retain the original error only for
+  monitoring and render localized safe copy through the shared page surface;
 - direct technical fields remain in merchant-facing code paths, including
   `last_error`, `response_body` and `error_code` consumers;
 - shared action feedback is not universal;
@@ -387,7 +388,7 @@ work, but final certification waits for both.
 | --- | --- |
 | FB-003 | DONE - typed `AppError` normalization; raw parsing retired |
 | FB-004 | DONE - shared page, inline, permission, connectivity, form, toast and support-reference surfaces |
-| FB-005 | safe app/route crash boundaries with no runtime text leakage |
+| FB-005 | DONE - safe app/route crash boundaries with no runtime text leakage |
 | FB-006 | migrate every direct technical-error consumer |
 | FB-007 | standardized session expiry, offline/reconnect and draft preservation |
 | FB-008 | standardized async job, provider and Inbox delivery recovery |
@@ -396,11 +397,11 @@ work, but final certification waits for both.
 
 ### 8.4 Fallback conclusion
 
-The backend contract, frontend normalization boundary and shared visual family
-are ready, but the user-facing recovery experience is not complete. The fallback
-layer is now approximately `55-60%` complete: inventory, server safety,
-application-error normalization and reusable presentation are complete while
-crash-boundary migration, direct-consumer migration, recovery and browser
+The backend contract, frontend normalization boundary, shared visual family and
+crash boundaries are ready, but the user-facing recovery experience is not
+complete. The fallback layer is now approximately `65-70%` complete: inventory,
+server safety, application-error normalization, reusable presentation and crash
+containment are complete while direct-consumer migration, recovery and browser
 failure proof remain open.
 
 ## 9. Layer E - Functional Certification
@@ -577,7 +578,7 @@ evidence and are not deleted.
 - Security scan ID: `d09b8e41-0fcb-4c8c-b47a-1676792d7958`.
 - Security result: `1 critical`, `5 high`, `5 medium`.
 - Accepted current backend evidence: `944/944` tests after PP-SEC-010.
-- Accepted fallback state: `FB-001 DONE / FB-002 DONE / FB-003 DONE / FB-004 DONE / FB-005 READY`.
+- Accepted fallback state: `FB-001 DONE / FB-002 DONE / FB-003 DONE / FB-004 DONE / FB-005 DONE / FB-006 READY`.
 - Accepted certification state: four PASS, three PARTIAL, one BLOCKED.
 - Accepted UX state: UX-1 and UX-2 complete; UX-3 and UX-4 planned.
 - No implementation, migration, dependency or environment change was made by

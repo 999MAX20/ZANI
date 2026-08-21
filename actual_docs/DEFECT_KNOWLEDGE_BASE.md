@@ -190,10 +190,17 @@ the accepted project branch.
   focused policy tests, RU/KK/EN validation, production builds, bundle gate,
   manager gate and desktop/mobile browser review passed on
   `codex/fallback-fb-004-shared-fallback-surfaces` at commit `42f4779`.
-  ZD-004 remains `CONFIRMED` overall because crash boundaries, direct technical-
-  field consumers, session/connectivity/draft recovery, provider recovery,
-  final copy/accessibility review and cross-role failure injection still require
-  FB-005 through FB-010.
+  FB-005 then removed raw `error.message` and route `statusText` from the root
+  application and router crash boundaries while retaining the original
+  exception for monitoring. Focused policy tests, production builds, the
+  manager gate and deliberate desktop/mobile browser crash injection passed on
+  `codex/fallback-fb-005-safe-crash-route-boundaries` at commit `155cbb8`;
+  technical SQL, path, token-marker and chunk-load strings reached the expected
+  monitoring console only and were absent from the DOM/accessibility snapshots.
+  ZD-004 remains `CONFIRMED` overall because direct technical-field consumers,
+  session/connectivity/draft recovery, provider recovery, final copy/
+  accessibility review and cross-role failure injection still require FB-006
+  through FB-010.
 - Derived audit rule: no merchant-visible component may render raw backend or
   runtime error text. Every failure must be normalized, localized, sanitized
   and paired with a safe next action when one exists.

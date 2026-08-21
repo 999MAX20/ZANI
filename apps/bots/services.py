@@ -9,14 +9,25 @@ from apps.bots.models import BotChannel
 from apps.integrations.bot_channel_credentials import (
     has_instagram_access_token,
     has_telegram_bot_token,
+    has_telegram_webhook_secret,
+    get_telegram_bot_token,
+    get_telegram_webhook_secret,
     store_instagram_access_token,
     store_telegram_bot_token,
+    store_telegram_webhook_secret,
 )
 from apps.integrations.models import BusinessConnector, IntegrationEventLog
 from apps.integrations.providers import get_provider
 from apps.integrations.sanitization import sanitize_error_text
 from apps.integrations.telegram import set_telegram_webhook, sync_telegram_updates as pull_telegram_updates, validate_telegram_token
-from apps.integrations.whatsapp_credentials import has_whatsapp_access_token, store_whatsapp_access_token
+from apps.integrations.whatsapp_credentials import (
+    has_whatsapp_access_token,
+    has_whatsapp_webhook_secret,
+    get_whatsapp_access_token,
+    get_whatsapp_webhook_secret,
+    store_whatsapp_access_token,
+    store_whatsapp_webhook_secret,
+)
 
 
 def is_public_https_url(url):
@@ -54,7 +65,7 @@ def sync_telegram_connector(channel, status=None, last_error="", operation="conf
         {
             "bot_channel_id": channel.id,
             "token_configured": token_configured,
-            "webhook_secret_configured": bool(config.get("webhook_secret")),
+            "webhook_secret_configured": has_telegram_webhook_secret(channel),
             "webhook_configured": bool(config.get("webhook_configured")),
             "last_operation": operation,
         }
@@ -104,6 +115,7 @@ def sync_whatsapp_connector(channel, status=None, last_error="", operation="conf
             "provider_mode": config.get("provider_mode") or "mock",
             "phone_number_id_configured": bool(config.get("phone_number_id") or channel.external_id),
             "access_token_configured": token_configured,
+            "webhook_secret_configured": has_whatsapp_webhook_secret(channel),
             "business_account_id_configured": bool(config.get("business_account_id")),
             "last_operation": operation,
         }
@@ -159,6 +171,9 @@ def sync_instagram_connector(channel, status=None, last_error="", operation="con
 
 
 def configure_telegram_channel(channel, validated_data):
+    get_telegram_bot_token(channel)
+    get_telegram_webhook_secret(channel)
+    channel.refresh_from_db(fields=["config_json"])
     config = dict(channel.config_json or {})
     if "bot_token" in validated_data:
         bot_token = validated_data["bot_token"]
@@ -168,11 +183,14 @@ def configure_telegram_channel(channel, validated_data):
             config["token_verified"] = False
             config.pop("bot_username", None)
         config.pop("bot_token", None)
-    if "webhook_secret" in validated_data:
-        config["webhook_secret"] = validated_data["webhook_secret"]
+    if validated_data.get("webhook_secret"):
+        store_telegram_webhook_secret(channel, validated_data["webhook_secret"])
+        config["webhook_secret_configured"] = True
+    config.pop("webhook_secret", None)
     token_configured = has_telegram_bot_token(channel) or bool(config.get("token_configured"))
-    if token_configured and not config.get("webhook_secret"):
-        config["webhook_secret"] = secrets.token_urlsafe(32)
+    if token_configured and not has_telegram_webhook_secret(channel):
+        store_telegram_webhook_secret(channel, secrets.token_urlsafe(32))
+        config["webhook_secret_configured"] = True
     channel.config_json = config
     channel.status = BotChannel.Statuses.ACTIVE if token_configured else channel.status
     channel.save(update_fields=["config_json", "status", "updated_at"])
@@ -180,7 +198,7 @@ def configure_telegram_channel(channel, validated_data):
     return {
         "ok": True,
         "token_configured": has_telegram_bot_token(channel),
-        "webhook_secret_configured": bool(config.get("webhook_secret")),
+        "webhook_secret_configured": has_telegram_webhook_secret(channel),
         "status": channel.status,
     }
 
@@ -229,7 +247,7 @@ def telegram_channel_status(channel, webhook_url):
         "token_configured": has_telegram_bot_token(channel),
         "token_verified": bool(config.get("token_verified")),
         "bot_username": config.get("bot_username", ""),
-        "webhook_secret_configured": bool(config.get("webhook_secret")),
+        "webhook_secret_configured": has_telegram_webhook_secret(channel),
         "webhook_configured": bool(config.get("webhook_configured")),
         "webhook_url": webhook_url,
         "webhook_public_ready": webhook_public_ready,
@@ -280,9 +298,12 @@ def sync_telegram_channel_updates(channel, limit=20):
 
 
 def configure_whatsapp_channel(channel, validated_data):
+    get_whatsapp_access_token(channel)
+    get_whatsapp_webhook_secret(channel)
+    channel.refresh_from_db(fields=["config_json"])
     config = dict(channel.config_json or {})
     for key, value in validated_data.items():
-        if key == "access_token":
+        if key in {"access_token", "webhook_secret"}:
             continue
         config[key] = value
     access_token = validated_data.get("access_token", "")
@@ -290,6 +311,11 @@ def configure_whatsapp_channel(channel, validated_data):
         store_whatsapp_access_token(channel, access_token)
         config["access_token_configured"] = True
     config.pop("access_token", None)
+    webhook_secret = validated_data.get("webhook_secret", "")
+    if webhook_secret:
+        store_whatsapp_webhook_secret(channel, webhook_secret)
+        config["webhook_secret_configured"] = True
+    config.pop("webhook_secret", None)
     if not config.get("provider_mode"):
         config["provider_mode"] = "meta_cloud" if has_whatsapp_access_token(channel) and config.get("phone_number_id") else "mock"
     channel.config_json = config
@@ -303,7 +329,7 @@ def configure_whatsapp_channel(channel, validated_data):
         "status": channel.status,
         "phone_number_id_configured": bool(config.get("phone_number_id") or channel.external_id),
         "access_token_configured": has_whatsapp_access_token(channel),
-        "webhook_secret_configured": bool(config.get("webhook_secret")),
+        "webhook_secret_configured": has_whatsapp_webhook_secret(channel),
     }
 
 
@@ -351,7 +377,7 @@ def whatsapp_channel_status(channel, webhook_url):
         "phone_number_id_configured": bool(config.get("phone_number_id") or channel.external_id),
         "access_token_configured": has_whatsapp_access_token(channel),
         "business_account_id_configured": bool(config.get("business_account_id")),
-        "webhook_secret_configured": bool(config.get("webhook_secret")),
+        "webhook_secret_configured": has_whatsapp_webhook_secret(channel),
         "verify_token_configured": bool(settings.WHATSAPP_VERIFY_TOKEN),
         "app_secret_configured": bool(settings.WHATSAPP_APP_SECRET),
         "last_error": failed_event.error if failed_event else "",

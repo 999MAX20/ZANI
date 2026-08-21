@@ -15,6 +15,7 @@ from apps.integrations.providers import get_provider, parse_webhook, send_messag
 from apps.notifications.delivery import handle_appointment_followup_reply
 from apps.outreach.consent import record_inbound_consent
 from apps.integrations.sanitization import sanitize_config
+from apps.integrations.bot_channel_credentials import find_telegram_channel_by_webhook_secret, get_telegram_webhook_secret
 
 
 TELEGRAM_SECRET_HEADER = "HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN"
@@ -25,18 +26,12 @@ def verify_telegram_secret(request):
 
 
 def resolve_telegram_channel(provided_secret):
-    candidates = (
-        BotChannel.objects.select_related("bot", "bot__business")
-        .filter(channel=BotChannel.Channels.TELEGRAM, status__in=[BotChannel.Statuses.DRAFT, BotChannel.Statuses.ACTIVE])
-        .exclude(bot__status=Bot.Statuses.PAUSED)
-    )
-    for channel in candidates:
-        channel_secret = channel.config_json.get("webhook_secret")
-        if channel_secret and channel_secret == provided_secret:
-            return channel
-
     if not provided_secret:
         raise PermissionDenied("Telegram webhook secret is required.")
+
+    channel = find_telegram_channel_by_webhook_secret(provided_secret)
+    if channel:
+        return channel
 
     raise ValidationError("Telegram bot channel was not resolved.")
 
@@ -174,7 +169,7 @@ def sync_telegram_updates(channel, limit=20):
 
     processed = 0
     updates = result.get("result") or []
-    webhook_secret = config.get("webhook_secret", "")
+    webhook_secret = get_telegram_webhook_secret(channel)
     for update in updates:
         update_id = update.get("update_id")
         if update_id is not None:

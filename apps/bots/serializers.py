@@ -11,7 +11,7 @@ from apps.conversations.auto_pipeline import maybe_run_auto_pipeline
 from apps.outreach.consent import payload_has_explicit_consent
 from apps.outreach.models import OutreachCampaign
 from apps.outreach.services import record_explicit_consent
-from apps.integrations.sanitization import sanitize_config
+from apps.integrations.sanitization import sanitize_config, sensitive_config_paths
 from apps.integrations.crm_mapping import record_lead_captured_event, record_message_received_event
 from apps.leads.models import Lead
 
@@ -52,6 +52,17 @@ class BotChannelSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         data["config_json"] = sanitize_config(data.get("config_json") or {})
         return data
+
+    def validate_config_json(self, value):
+        if value in (None, ""):
+            return {}
+        if not isinstance(value, dict):
+            raise serializers.ValidationError("Channel config must be an object.")
+        if sensitive_config_paths(value):
+            raise serializers.ValidationError(
+                "Credentials are not allowed in channel config. Use the dedicated channel configuration action."
+            )
+        return value
 
 
 class TelegramChannelConfigSerializer(serializers.Serializer):

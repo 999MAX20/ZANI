@@ -464,7 +464,7 @@ attack paths are closed and added to regression suites.
 | PP-SEC-006 | add access-token session/auth epoch revocation | P1 | DONE |
 | PP-SEC-007 | harden outbound webhook redirects, peer validation and response limits | P1 | DONE |
 | PP-SEC-008 | replace automation dotted traversal with safe field extractors | P1 | DONE |
-| PP-SEC-009 | prohibit plaintext credentials in generic connector/channel JSON and migrate existing data | P1 | READY |
+| PP-SEC-009 | prohibit plaintext credentials in generic connector/channel JSON and migrate existing data | P1 | DONE |
 | PP-SEC-010 | rerun full security, dependency, backend and migration gates | P0 | BLOCKED by PP-SEC-001..009 |
 
 ### Gate P2 - Unified fallback and recovery
@@ -884,3 +884,45 @@ Verification:
 No schema or dependency change was required. The advanced frontend builder may
 later replace its free-text field input with labels backed by the same catalog;
 the backend and runtime already enforce the security boundary independently.
+
+### 15.9 PP-SEC-009 closure evidence
+
+Status: `DONE` on `codex/pre-pilot-sec-009-encrypted-config`.
+
+Implemented invariants:
+
+- generic connector and bot-channel JSON rejects credential-like keys before
+  persistence, recursively across nested objects/lists and across case, camel
+  case and separator variants;
+- API validation does not echo the submitted credential value;
+- Telegram and WhatsApp webhook secrets now use the existing versioned
+  AES-256-GCM `ConnectorCredential` store rather than `BotChannel.config_json`;
+- webhook channel lookup stores only a keyed digest, then decrypts and compares
+  the selected credential in constant time before resolving the channel;
+- provider configure/status/set-webhook, inbound resolution, polling and the
+  Telegram smoke command read secrets only through credential helpers;
+- legacy runtime reads backfill encrypted credentials and immediately remove
+  the plaintext field;
+- data migration `integrations.0006_encrypt_plaintext_config_credentials`
+  recursively extracts historical connector/channel credentials, preserves
+  safe configured flags, writes encrypted credentials and removes plaintext;
+- existing encrypted credentials remain authoritative and are not overwritten
+  by a stale duplicate plaintext field during migration.
+
+Verification:
+
+- focused exploit, control and migration regressions -> `6/6` passed, covering
+  nested case-variant connector secrets, generic channel authorization values,
+  dedicated encrypted Telegram/WhatsApp setup, lookup/verification and
+  historical connector/channel extraction;
+- `python manage.py test apps.integrations apps.bots -v 1 --keepdb` ->
+  `225/225` passed after replacing one obsolete masked-plaintext assertion
+  with the stricter absence plus safe configured-flag contract;
+- `python manage.py migrate` -> migration `integrations.0006` applied to the
+  canonical local database;
+- post-migration inventory -> `0` connector rows and `0` channel rows with
+  recursively detected plaintext credential keys.
+
+No dependency or frontend change was required. The data migration changes
+persisted credential storage; a pre-migration SQLite backup was retained under
+`output/` for local recovery and is not a release artifact.

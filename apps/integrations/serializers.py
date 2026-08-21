@@ -16,7 +16,7 @@ from apps.integrations.models import (
     WebhookDeliveryLog,
     WebhookEndpoint,
 )
-from apps.integrations.sanitization import sanitize_config, sanitize_error_text
+from apps.integrations.sanitization import sanitize_config, sanitize_error_text, sensitive_config_paths
 from apps.integrations.webhooks import validate_outbound_webhook_url
 from apps.integrations.whatsapp.base import build_whatsapp_provider_decision
 
@@ -149,6 +149,10 @@ class BusinessConnectorSerializer(serializers.ModelSerializer):
             return {}
         if not isinstance(value, dict):
             raise serializers.ValidationError("Connector config must be an object.")
+        if sensitive_config_paths(value):
+            raise serializers.ValidationError(
+                "Credentials are not allowed in connector config. Store them through the encrypted credentials endpoint."
+            )
         return value
 
     def validate(self, attrs):

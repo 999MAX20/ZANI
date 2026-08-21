@@ -16,6 +16,7 @@ from apps.integrations.sanitization import sanitize_config
 from apps.integrations.whatsapp_credentials import (
     get_whatsapp_access_token,
     get_whatsapp_connector,
+    find_whatsapp_channel_by_webhook_secret,
     has_whatsapp_access_token,
     store_whatsapp_access_token,
 )
@@ -40,10 +41,9 @@ def resolve_whatsapp_channel(provided_secret="", phone_number_id=""):
         if channel:
             return channel
 
-    for channel in candidates:
-        channel_secret = (channel.config_json or {}).get("webhook_secret")
-        if channel_secret and channel_secret == provided_secret:
-            return channel
+    channel = find_whatsapp_channel_by_webhook_secret(provided_secret)
+    if channel:
+        return channel
 
     if not provided_secret and not phone_number_id:
         raise PermissionDenied("WhatsApp webhook secret or phone number id is required.")

@@ -8,7 +8,11 @@ from rest_framework.exceptions import PermissionDenied
 
 from apps.core.production_rules import is_local_or_private_hostname
 from apps.core.security_config import has_strong_shared_secret
-from apps.integrations.bot_channel_credentials import get_telegram_bot_token
+from apps.integrations.bot_channel_credentials import (
+    find_telegram_channel_by_webhook_secret,
+    get_telegram_bot_token,
+    get_telegram_webhook_secret,
+)
 from apps.integrations.models import IntegrationEventLog
 from apps.integrations.providers.base import BaseChannelProvider
 from apps.integrations.sanitization import SAFE_PROVIDER_FAILURE_DETAIL
@@ -66,14 +70,7 @@ class TelegramProvider(BaseChannelProvider):
         return provided_secret
 
     def _is_channel_secret(self, provided_secret):
-        from apps.bots.models import Bot, BotChannel
-
-        return BotChannel.objects.filter(
-            channel=BotChannel.Channels.TELEGRAM,
-            status__in=[BotChannel.Statuses.DRAFT, BotChannel.Statuses.ACTIVE],
-            bot__status__in=[Bot.Statuses.DRAFT, Bot.Statuses.ACTIVE],
-            config_json__webhook_secret=provided_secret,
-        ).exists()
+        return find_telegram_channel_by_webhook_secret(provided_secret) is not None
 
     def parse_webhook(self, payload, headers=None):
         message = payload.get("message") or payload.get("edited_message")
@@ -272,7 +269,7 @@ class TelegramProvider(BaseChannelProvider):
     def set_webhook(self, channel, webhook_url):
         business = channel.bot.business
         token = get_telegram_bot_token(channel)
-        webhook_secret = channel.config_json.get("webhook_secret", "")
+        webhook_secret = get_telegram_webhook_secret(channel)
         safe_payload = {
             "webhook_url": webhook_url,
             "token_configured": bool(token),

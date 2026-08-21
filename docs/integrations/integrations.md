@@ -13,7 +13,12 @@ This keeps integration state separate from CRM entities and avoids putting provi
 
 Update 2026-07-14: provider-specific connector and bot-channel actions are now service-backed. `BusinessConnectorViewSet` validates HTTP input and delegates marketplace/Meta/WhatsApp/Kaspi/MoySklad/Wildberries/Ozon config, status, test and sync orchestration to `apps.integrations.services`. `BotChannelViewSet` delegates Telegram, WhatsApp and Instagram setup/test/status/sync orchestration to `apps.bots.services`. Raw provider credentials remain write-only or masked in connector/channel API responses.
 
-Update 2026-07-14: Telegram bot tokens and Instagram access tokens now use the same `ConnectorCredential` storage pattern as WhatsApp. Bot channel config stores safe flags and metadata such as `token_configured`, `access_token_configured`, provider mode and external account ids; provider send/test/status flows read secrets through credential helpers with legacy config backfill.
+Update 2026-08-21: Telegram/WhatsApp webhook secrets, Telegram bot tokens and
+WhatsApp/Instagram access tokens use `ConnectorCredential`. Generic connector
+and channel JSON rejects secret-like keys recursively, including nested and
+case/separator variants. Migration `integrations.0006` extracts any historical
+plaintext credentials before removing them from JSON. Config JSON contains only
+safe flags, lookup digests and operational metadata.
 
 ## Documentation Map
 
@@ -99,9 +104,11 @@ Raw credentials are write-only.
 Bot-channel credential behavior:
 
 - Telegram `bot_token` is accepted by setup, encrypted into `ConnectorCredential(key="bot_token")`, and removed from `BotChannel.config_json`.
+- Telegram `webhook_secret` is encrypted into `ConnectorCredential(key="webhook_secret")`; channel resolution uses a keyed lookup digest followed by constant-time comparison of the decrypted candidate.
 - Instagram manual setup and Meta OAuth page tokens are encrypted into `ConnectorCredential(key="access_token")` and removed from `BotChannel.config_json`.
-- WhatsApp keeps using `ConnectorCredential(key="access_token")`.
+- WhatsApp access tokens and per-channel webhook secrets use `ConnectorCredential`.
 - `BotChannel.config_json` and connector config should expose only safe configured flags and account metadata.
+- Generic `BusinessConnector.config_json` and `BotChannel.config_json` writes reject credentials. Provider-specific credential values must use the encrypted credential endpoint or the dedicated provider/channel setup action.
 
 API responses return:
 
@@ -116,8 +123,10 @@ API responses never return:
 - raw API key;
 - encrypted storage envelope.
 
-The current local implementation uses a dependency-free encrypted and signed envelope derived from `SECRET_KEY`.
-Before high-scale production, prefer an external secret manager or KMS-backed envelope encryption.
+The current implementation uses versioned AES-256-GCM envelopes and a separate
+credential keyring. Production must supply a non-local active key and retain old
+keys until rotation is complete. Before high-scale production, prefer an
+external secret manager or KMS-backed envelope encryption.
 
 ## Idempotency
 

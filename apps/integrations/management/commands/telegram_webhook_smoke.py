@@ -6,6 +6,7 @@ from django.test import override_settings
 from rest_framework.test import APIClient
 
 from apps.bots.models import BotChannel, BotConversation, BotMessage
+from apps.integrations.bot_channel_credentials import get_telegram_webhook_secret, has_telegram_webhook_secret
 from apps.integrations.models import IntegrationEventLog
 
 
@@ -25,7 +26,7 @@ class Command(BaseCommand):
             self._finish({"ok": False, "checks": checks}, options)
             return
 
-        webhook_secret = (channel.config_json or {}).get("webhook_secret", "")
+        webhook_secret = get_telegram_webhook_secret(channel)
         checks.append(self._check("webhook_secret_saved", bool(webhook_secret), "Telegram channel must have webhook_secret."))
         if not webhook_secret:
             self._finish({"ok": False, "checks": checks, "channel_id": channel.id}, options)
@@ -84,7 +85,10 @@ class Command(BaseCommand):
         queryset = BotChannel.objects.select_related("bot", "bot__business").filter(channel=BotChannel.Channels.TELEGRAM)
         if channel_id:
             return queryset.filter(id=channel_id).first()
-        return queryset.exclude(config_json__webhook_secret="").order_by("-updated_at", "-id").first()
+        for channel in queryset.order_by("-updated_at", "-id"):
+            if has_telegram_webhook_secret(channel):
+                return channel
+        return None
 
     def _check(self, name, passed, detail):
         return {"name": name, "status": "pass" if passed else "fail", "detail": detail}

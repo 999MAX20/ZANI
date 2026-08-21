@@ -14,7 +14,7 @@ from apps.core.production_rules import is_safe_public_https_url
 from apps.integrations.models import IntegrationEventLog
 from apps.integrations.providers.base import BaseChannelProvider, ProviderConfigurationError
 from apps.integrations.sanitization import SAFE_PROVIDER_FAILURE_DETAIL
-from apps.integrations.whatsapp_credentials import get_whatsapp_access_token
+from apps.integrations.whatsapp_credentials import find_whatsapp_channel_by_webhook_secret, get_whatsapp_access_token
 
 
 WHATSAPP_SECRET_HEADER = "HTTP_X_ZANI_WHATSAPP_SECRET"
@@ -61,14 +61,7 @@ class BaseWhatsAppAdapter(BaseChannelProvider):
         return provided_secret
 
     def _is_channel_secret(self, provided_secret):
-        from apps.bots.models import Bot, BotChannel
-
-        return BotChannel.objects.filter(
-            channel=BotChannel.Channels.WHATSAPP,
-            status__in=[BotChannel.Statuses.DRAFT, BotChannel.Statuses.ACTIVE],
-            bot__status__in=[Bot.Statuses.DRAFT, Bot.Statuses.ACTIVE],
-            config_json__webhook_secret=provided_secret,
-        ).exists()
+        return find_whatsapp_channel_by_webhook_secret(provided_secret) is not None
 
     def parse_webhook(self, payload, headers=None):
         meta_message = self._parse_meta_cloud_payload(payload)

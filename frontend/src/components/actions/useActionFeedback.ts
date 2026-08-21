@@ -1,13 +1,11 @@
-import axios from "axios";
 import { useCallback, type RefObject } from "react";
 
+import { normalizeAppError } from "../../api/appError";
 import { useI18n } from "../../lib/i18n";
 import { useNotification } from "../notifications/NotificationProvider";
 import {
   canOfferActionRecovery,
   canUseActionFallback,
-  classifyActionError,
-  type ActionErrorKind,
 } from "./actionFeedbackPolicy";
 
 type ActionFeedbackTone = "success" | "info" | "warning" | "danger";
@@ -50,53 +48,30 @@ function restoreFocus(target: FocusTarget) {
   });
 }
 
-function getStatus(error: unknown) {
-  return axios.isAxiosError(error) ? error.response?.status : undefined;
-}
-
-const errorMessageKeys: Record<ActionErrorKind, string> = {
-  validation: "actions.errorValidation",
-  unauthenticated: "actions.errorUnauthenticated",
-  forbidden: "actions.errorForbidden",
-  unavailable: "actions.errorUnavailable",
-  conflict: "actions.errorConflict",
-  rateLimited: "actions.errorRateLimited",
-  temporary: "actions.errorTemporary",
-  network: "actions.errorNetwork",
-  generic: "actions.errorGeneric",
-};
-
 export function useActionFeedback() {
   const { t } = useI18n();
   const showNotification = useNotification();
 
   const getRecoverableMessage = useCallback(
     (error: unknown, fallbackMessage?: string) => {
-      const status = getStatus(error);
-      const transportError = axios.isAxiosError(error);
-      const kind = classifyActionError(
-        status,
-        transportError && !error.response,
-      );
-      if (
-        canUseActionFallback(kind, transportError, Boolean(fallbackMessage))
-      ) {
+      const appError = normalizeAppError(error);
+      if (canUseActionFallback(appError, Boolean(fallbackMessage))) {
         return fallbackMessage!;
       }
-      return t(errorMessageKeys[kind]);
+      return t(appError.messageKey);
     },
     [t],
   );
 
   const notifyError = useCallback(
     (error: unknown, options: RecoveryOptions = {}) => {
-      const status = getStatus(error);
-      const retry = canOfferActionRecovery(status, Boolean(options.retry))
+      const appError = normalizeAppError(error);
+      const retry = canOfferActionRecovery(appError, Boolean(options.retry))
         ? options.retry
         : undefined;
       showNotification({
         message: getRecoverableMessage(error, options.fallbackMessage),
-        tone: options.tone || (status === 403 || status === 404 ? "warning" : "danger"),
+        tone: options.tone || (["permission", "not_found"].includes(appError.category) ? "warning" : "danger"),
         durationMs: retry ? 10_000 : 7_000,
         actionLabel: retry ? options.actionLabel || t("common.retry") : undefined,
         onAction: retry,

@@ -10,6 +10,7 @@
     "dev": "vite --host 0.0.0.0",
     "check:i18n": "node scripts/check-i18n.mjs",
     "test:action-feedback": "node --test scripts/tests/action-feedback-policy.test.mjs",
+    "test:app-error": "node --test scripts/tests/app-error-normalization.test.mjs",
     "test:bundle-budget": "node --test scripts/tests/bundle-budget.test.mjs",
     "test:dashboard-appointments": "node --test scripts/tests/dashboard-appointment-dedupe.test.mjs",
     "test:daily-workspaces": "node --test scripts/tests/daily-workspaces-policy.test.mjs",

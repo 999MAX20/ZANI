@@ -2,8 +2,8 @@
 
 - Status: **ACTIVE / EXECUTION IN PROGRESS**
 - Created: 2026-08-21
-- Baseline branch: `codex/fallback-fb-002-safe-envelope-sanitization`
-- Baseline revision: `9cde5ec78120453bfe972496599e1d86fa7733ad`
+- Baseline branch: `codex/pre-pilot-sec-010-security-certification`
+- Baseline revision: `c113e3eb620da90c4952ea7e969ddee5a54326ae`
 - Scope: final repository work required before a controlled pilot, excluding live infrastructure and new product features
 - Owner: ZANI manager workflow
 
@@ -109,12 +109,12 @@ Evidence reviewed:
 - backend access, session, MFA, error, secrets and tenant boundaries;
 - CRM models, services, viewsets and cross-entity tests;
 - frontend route registry, API inventory and browser suites;
-- accepted full backend result `906/906` after FB-002;
+- accepted full backend result `944/944` after PP-SEC-010;
 - frontend build, bundle, dependency and migration gates from the same accepted
   revision;
 - prior `138`-scenario Playwright run across desktop, tablet and mobile;
-- fallback inventory: `43` routes, `580` frontend API operations, `13`
-  background-task surfaces, `83` async/provider statuses and `27` stable
+- fallback inventory: `43` routes, `581` frontend API operations, `13`
+  background-task surfaces, `83` async/provider statuses and `29` stable
   backend error codes;
 - independent Codex Security scan
   `d09b8e41-0fcb-4c8c-b47a-1676792d7958` against the frozen baseline.
@@ -358,12 +358,15 @@ work, but final certification waits for both.
 - persisted error fields use shared sanitization;
 - the backend, static, security, frontend and migration gates passed at FB-002.
 
-`FB-003` is ready. `FB-004` through `FB-010` are not started.
+`FB-003` is done. `FB-004` is ready; `FB-005` through `FB-010` are not
+started.
 
 ### 8.2 Confirmed gaps
 
-- `getApiErrorMessage` is still referenced `126` times in frontend source;
-- it can return raw strings, raw backend detail or arbitrary object values;
+- `getApiErrorMessage` remains referenced `126` times across `48` frontend
+  files, but every caller now receives normalized localized category copy;
+- typed `AppError` now exposes only bounded field errors, request ID and retry
+  metadata while discarding raw detail and unrelated response values;
 - crash boundaries can render runtime `error.message` or route `statusText`;
 - direct technical fields remain in merchant-facing code paths, including
   `last_error`, `response_body` and `error_code` consumers;
@@ -382,7 +385,7 @@ work, but final certification waits for both.
 
 | Phase | Required result |
 | --- | --- |
-| FB-003 | typed `AppError` normalization; raw parsing retired |
+| FB-003 | DONE - typed `AppError` normalization; raw parsing retired |
 | FB-004 | one shared visual family for page, panel, form, toast and inline recovery |
 | FB-005 | safe app/route crash boundaries with no runtime text leakage |
 | FB-006 | migrate every direct technical-error consumer |
@@ -393,10 +396,11 @@ work, but final certification waits for both.
 
 ### 8.4 Fallback conclusion
 
-The backend contract is ready for a unified frontend layer, but the user-facing
-recovery experience is not. The current `35-40%` score is appropriate because
-inventory and server safety are complete while most normalization,
-presentation, recovery and browser failure proof remains open.
+The backend contract and frontend normalization boundary are ready, but the
+user-facing recovery experience is not. The fallback layer is now approximately
+`45-50%` complete: inventory, server safety and application-error normalization
+are complete while presentation, crash-boundary migration, direct-consumer
+migration, recovery and browser failure proof remain open.
 
 ## 9. Layer E - Functional Certification
 
@@ -571,8 +575,8 @@ evidence and are not deleted.
 
 - Security scan ID: `d09b8e41-0fcb-4c8c-b47a-1676792d7958`.
 - Security result: `1 critical`, `5 high`, `5 medium`.
-- Accepted current backend evidence: `906/906` tests after FB-002.
-- Accepted fallback state: `FB-001 DONE / FB-002 DONE / FB-003 READY`.
+- Accepted current backend evidence: `944/944` tests after PP-SEC-010.
+- Accepted fallback state: `FB-001 DONE / FB-002 DONE / FB-003 DONE / FB-004 READY`.
 - Accepted certification state: four PASS, three PARTIAL, one BLOCKED.
 - Accepted UX state: UX-1 and UX-2 complete; UX-3 and UX-4 planned.
 - No implementation, migration, dependency or environment change was made by

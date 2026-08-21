@@ -1,6 +1,8 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 
+import { getAppErrorMessage, normalizeAppError } from "./appError";
 import { refreshToken } from "./token";
+import { getCurrentLanguage, translate } from "../lib/i18n";
 import { tokenStorage } from "../lib/storage";
 
 const baseURL = import.meta.env.VITE_API_URL || "";
@@ -78,17 +80,13 @@ apiClient.interceptors.response.use(
   },
 );
 
-export function getApiErrorMessage(error: unknown) {
-  if (axios.isAxiosError(error)) {
-    const data = error.response?.data;
-    if (typeof data === "string") return data;
-    if (data && typeof data === "object") {
-      const detail = "detail" in data ? data.detail : null;
-      if (typeof detail === "string") return detail;
-      return Object.entries(data)
-        .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(", ") : String(value)}`)
-        .join("; ");
-    }
-  }
-  return "Something went wrong. Please try again.";
+export function getApiErrorMessage(
+  error: unknown,
+  translator: (key: string) => string = (key) => translate(getCurrentLanguage(), key),
+) {
+  return getAppErrorMessage(error, translator);
+}
+
+export function getApiFieldErrors(error: unknown) {
+  return normalizeAppError(error).fieldErrors;
 }

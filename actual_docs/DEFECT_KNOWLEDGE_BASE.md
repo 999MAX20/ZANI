@@ -179,9 +179,16 @@ the accepted project branch.
   error-bearing model types. The complete 906-test backend gate plus static,
   security and frontend build/bundle gates passed on branch
   `codex/fallback-fb-002-safe-envelope-sanitization` at commit `079508d`.
-  ZD-004 remains `CONFIRMED` overall because frontend normalization, crash
-  boundaries, direct technical-field consumers, shared fallback surfaces and
-  cross-role failure injection still require FB-003 through FB-010.
+  FB-003 then introduced the typed frontend `AppError` boundary, recognized all
+  29 accepted backend codes before HTTP fallback, removed raw response parsing
+  from `getApiErrorMessage`, bounded field/retry metadata and aligned shared
+  action feedback with the same retry policy. Its focused tests, generated
+  inventory, RU/KK/EN validation, production builds and bundle gate passed on
+  `codex/fallback-fb-003-app-error-normalization`.
+  ZD-004 remains `CONFIRMED` overall because shared visual surfaces, crash
+  boundaries, direct technical-field consumers, session/connectivity/draft
+  recovery and cross-role failure injection still require FB-004 through
+  FB-010.
 - Derived audit rule: no merchant-visible component may render raw backend or
   runtime error text. Every failure must be normalized, localized, sanitized
   and paired with a safe next action when one exists.

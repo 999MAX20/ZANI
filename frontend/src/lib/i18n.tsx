@@ -41,9 +41,14 @@ type I18nContextValue = {
 
 const I18nContext = createContext<I18nContextValue | null>(null);
 
-function getInitialLanguage(): Language {
+export function getCurrentLanguage(): Language {
+  if (typeof localStorage === "undefined") return "ru";
   const saved = localStorage.getItem(LANGUAGE_KEY);
   return saved === "en" || saved === "ru" || saved === "kk" ? saved : "ru";
+}
+
+function getInitialLanguage(): Language {
+  return getCurrentLanguage();
 }
 
 async function loadDictionary(language: Language): Promise<Dictionary> {

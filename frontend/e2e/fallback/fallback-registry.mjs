@@ -6,6 +6,8 @@
  * second manual source of truth.
  */
 
+import { appErrorCodeRegistry } from "../../src/api/appErrorRegistry.ts";
+
 export const fallbackCategories = {
   validation: { copyFamily: "fallback.validation", defaultSurface: "field_error_summary", recovery: "fix_fields" },
   authentication: { copyFamily: "fallback.authentication", defaultSurface: "session_notice", recovery: "sign_in" },
@@ -19,43 +21,10 @@ export const fallbackCategories = {
   internal: { copyFamily: "fallback.internal", defaultSurface: "page_fallback", recovery: "reload_or_contact_support" },
 };
 
-const errorCode = (code, category, options = {}) => ({
-  code,
-  category,
-  copyFamily: options.copyFamily || `${fallbackCategories[category].copyFamily}.${code}`,
-  retryable: options.retryable ?? false,
-  retryPolicy: options.retryPolicy || "never_blindly",
-});
-
-export const errorCodeRegistry = [
-  errorCode("validation_error", "validation"),
-  errorCode("request_failed", "validation"),
-  errorCode("method_not_allowed", "validation"),
-  errorCode("authentication_required", "authentication"),
-  errorCode("token_not_valid", "authentication"),
-  errorCode("mfa_required", "authentication"),
-  errorCode("mfa_enrollment_required", "authentication"),
-  errorCode("mfa_challenge_invalid", "authentication"),
-  errorCode("mfa_enrollment_invalid", "authentication"),
-  errorCode("mfa_code_invalid", "authentication"),
-  errorCode("mfa_disable_reason_required", "validation"),
-  errorCode("mfa_already_enabled", "conflict"),
-  errorCode("mfa_not_available", "permission"),
-  errorCode("mfa_step_up_required", "authentication"),
-  errorCode("recent_auth_failed", "authentication"),
-  errorCode("permission_denied", "permission"),
-  errorCode("module_disabled", "permission"),
-  errorCode("not_found", "not_found"),
-  errorCode("invalid_transition", "conflict"),
-  errorCode("schedule_conflict", "conflict"),
-  errorCode("assignee_unavailable", "conflict"),
-  errorCode("idempotency_conflict", "conflict"),
-  errorCode("rate_limited", "rate_limit", { retryable: true, retryPolicy: "server_delay_only" }),
-  errorCode("provider_unavailable", "provider", { retryable: true, retryPolicy: "owned_status_surface_only" }),
-  errorCode("temporary_service_failure", "temporary", { retryable: true, retryPolicy: "idempotent_or_keyed_only" }),
-  errorCode("database_unavailable", "temporary", { retryable: true, retryPolicy: "safe_read_only" }),
-  errorCode("internal_error", "internal"),
-];
+export const errorCodeRegistry = appErrorCodeRegistry.map((entry) => ({
+  ...entry,
+  copyFamily: `${fallbackCategories[entry.category].copyFamily}.${entry.code}`,
+}));
 
 const merchant = (permissionOwner, retryLocation = "owning_page") => ({
   permissionOwner,

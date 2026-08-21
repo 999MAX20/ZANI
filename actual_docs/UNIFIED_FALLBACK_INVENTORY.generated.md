@@ -5,10 +5,10 @@
 ## Coverage Summary
 
 - Routes: **43** (derived from the functional certification registry).
-- Distinct frontend API operations: **580** (173 queries, 407 mutations).
+- Distinct frontend API operations: **581** (173 queries, 408 mutations).
 - Background tasks: **13**.
 - Async/provider status values: **83** across 15 models.
-- Stable backend/API error codes: **27**.
+- Stable backend/API error codes: **29**.
 - Defect precedents applied: `ZD-001`, `ZD-002`, `ZD-003`, `ZD-004`, `ZR-002`, `ZR-004`, `ZR-005`, `ZR-006`, `ZR-007`.
 
 The registry is conservative: only GET operations are automatically retryable. A mutation marked `conditional_idempotency_key` is still not retried automatically until its caller proves and supplies a stable key.
@@ -47,6 +47,7 @@ The registry is conservative: only GET operations are automatically retryable. A
 | mfa_not_available | permission | fallback.permission.mfa_not_available | false | never_blindly |
 | mfa_step_up_required | authentication | fallback.authentication.mfa_step_up_required | false | never_blindly |
 | recent_auth_failed | authentication | fallback.authentication.recent_auth_failed | false | never_blindly |
+| invitation_account_authentication_required | authentication | fallback.authentication.invitation_account_authentication_required | false | never_blindly |
 | permission_denied | permission | fallback.permission.permission_denied | false | never_blindly |
 | module_disabled | permission | fallback.permission.module_disabled | false | never_blindly |
 | not_found | not_found | fallback.not_found.not_found | false | never_blindly |
@@ -54,6 +55,7 @@ The registry is conservative: only GET operations are automatically retryable. A
 | schedule_conflict | conflict | fallback.conflict.schedule_conflict | false | never_blindly |
 | assignee_unavailable | conflict | fallback.conflict.assignee_unavailable | false | never_blindly |
 | idempotency_conflict | conflict | fallback.conflict.idempotency_conflict | false | never_blindly |
+| ownership_conflict | conflict | fallback.conflict.ownership_conflict | false | never_blindly |
 | rate_limited | rate_limit | fallback.rate_limit.rate_limited | true | server_delay_only |
 | provider_unavailable | provider | fallback.provider.provider_unavailable | true | owned_status_surface_only |
 | temporary_service_failure | temporary | fallback.temporary.temporary_service_failure | true | idempotent_or_keyed_only |
@@ -187,12 +189,13 @@ Detection records which fallback signals currently exist in the owning page sour
 | POST | /api/auth/logout/ | mutation | anonymous_or_authenticated | none_proven | no automatic retry | authentication_flow | frontend/src/api/token.ts:146 |
 | GET | /api/auth/me/ | query | authenticated_user | safe_read | safe read only | account_security | frontend/src/api/auth.ts:66 |
 | PATCH | /api/auth/me/ | mutation | authenticated_user | none_proven | no automatic retry | account_security | frontend/src/api/auth.ts:71 |
-| POST | /api/auth/mfa/disable/ | mutation | authenticated_user | none_proven | no automatic retry | account_security | frontend/src/api/auth.ts:108 |
+| POST | /api/auth/mfa/disable/ | mutation | authenticated_user | none_proven | no automatic retry | account_security | frontend/src/api/auth.ts:116 |
 | POST | /api/auth/mfa/enrollment/confirm/ | mutation | anonymous_or_authenticated | none_proven | no automatic retry | authentication_flow | frontend/src/api/token.ts:178 |
 | POST | /api/auth/mfa/enrollment/start/ | mutation | anonymous_or_authenticated | none_proven | no automatic retry | authentication_flow | frontend/src/api/token.ts:163 |
-| POST | /api/auth/mfa/recovery-codes/ | mutation | authenticated_user | none_proven | no automatic retry | account_security | frontend/src/api/auth.ts:103 |
-| POST | /api/auth/mfa/sessions/revoke/ | mutation | authenticated_user | none_proven | no automatic retry | account_security | frontend/src/api/auth.ts:118 |
+| POST | /api/auth/mfa/recovery-codes/ | mutation | authenticated_user | none_proven | no automatic retry | account_security | frontend/src/api/auth.ts:111 |
+| POST | /api/auth/mfa/sessions/revoke/ | mutation | authenticated_user | none_proven | no automatic retry | account_security | frontend/src/api/auth.ts:126 |
 | GET | /api/auth/mfa/status/ | query | authenticated_user | safe_read | safe read only | account_security | frontend/src/api/auth.ts:98 |
+| POST | /api/auth/mfa/step-up/ | mutation | authenticated_user | none_proven | no automatic retry | account_security | frontend/src/api/auth.ts:103 |
 | POST | /api/auth/mfa/verify/ | mutation | anonymous_or_authenticated | none_proven | no automatic retry | authentication_flow | frontend/src/api/token.ts:191 |
 | POST | /api/auth/password-reset/confirm/ | mutation | anonymous_or_authenticated | none_proven | no automatic retry | authentication_flow | frontend/src/api/token.ts:116 |
 | POST | /api/auth/password-reset/request/ | mutation | anonymous_or_authenticated | none_proven | no automatic retry | authentication_flow | frontend/src/api/token.ts:111 |

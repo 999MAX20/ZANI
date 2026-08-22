@@ -16,7 +16,7 @@ import { Sidebar } from "./Sidebar";
 export const mobileNavigationDrawerId = "mobile-navigation-drawer";
 
 const bottomItems = [
-  { to: "/app", label: "mobile.home", icon: Home },
+  { to: "/app/dashboard", label: "mobile.home", icon: Home },
   { to: "/app/leads", label: "nav.leads", icon: Inbox, resource: "leads" },
   { to: "/app/clients", label: "nav.clients", icon: Users, resource: "clients" },
   { to: "/app/conversations", label: "nav.conversations", icon: MessageSquareText, resource: "conversations" },
@@ -68,7 +68,7 @@ export function MobileNav({ open, onOpen, onClose }: { open: boolean; onOpen: ()
             <NavLink
               key={item.to}
               to={item.to}
-              end={item.to === "/app"}
+              end={item.to === "/app/dashboard"}
               className={({ isActive }) =>
                 cn(
                   "zani-focus-ring flex min-h-14 flex-col items-center justify-center gap-1 rounded-control px-0.5 py-2 text-center text-[10px] font-semibold leading-none transition active:scale-[0.98]",

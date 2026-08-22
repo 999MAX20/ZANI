@@ -229,7 +229,7 @@ function PlatformRoute({ children }: { children: React.ReactNode }) {
   const { t } = useI18n();
   if (isLoading) return <LoadingState label={t("common.loadingAccess")} />;
   if (!isAuthenticated) return <Navigate to="/login" replace state={{ from: location }} />;
-  return isPlatformUser ? children : <Navigate to="/app" replace />;
+  return isPlatformUser ? children : <Navigate to="/app/dashboard" replace />;
 }
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
@@ -237,7 +237,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   const { t } = useI18n();
   if (isLoading) return <LoadingState label={t("common.loadingAccess")} />;
   if (!isAuthenticated) return children;
-  return <Navigate to={isPlatformUser ? "/platform" : "/app"} replace />;
+  return <Navigate to={isPlatformUser ? "/platform" : "/app/dashboard"} replace />;
 }
 
 function PageLoader({ children }: { children: React.ReactNode }) {
@@ -278,7 +278,10 @@ function PermissionRoute({
 
 function LegacyDashboardRedirect() {
   const location = useLocation();
-  const targetPath = location.pathname.replace(/^\/dashboard(?=\/|$)/, "/app");
+  const legacySuffix = location.pathname.replace(/^\/dashboard(?=\/|$)/, "");
+  const targetPath = !legacySuffix || legacySuffix === "/"
+    ? "/app/dashboard"
+    : `/app${legacySuffix}`;
   return (
     <Navigate to={`${targetPath}${location.search}${location.hash}`} replace />
   );
@@ -287,11 +290,7 @@ function LegacyDashboardRedirect() {
 const merchantChildren = [
   {
     index: true,
-    element: (
-      <PageLoader>
-        <DashboardPage />
-      </PageLoader>
-    ),
+    element: <Navigate to="/app/dashboard" replace />,
   },
   {
     path: "dashboard",

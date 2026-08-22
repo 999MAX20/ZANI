@@ -4,10 +4,10 @@ import {
   CalendarCheck,
   CheckCircle2,
   CircleDollarSign,
-  ListChecks,
   MessageSquareText,
   PlugZap,
   UserPlus,
+  UsersRound,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Link } from "react-router";
@@ -17,33 +17,18 @@ import type {
   AIOwnerDailyBriefResponse,
 } from "../../api/ai";
 import type {
-  WorkQueueAppointmentItem,
   WorkQueueConversationItem,
   WorkQueueDealItem,
-  WorkQueueLeadItem,
-  WorkQueueTaskItem,
   WorkQueuesResponse,
 } from "../../api/workQueues";
-import { Surface } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
-import { IconBubble, MetricTile } from "../../components/ui/Primitives";
-import {
-  EmptyState,
-  ErrorState,
-  LoadingState,
-} from "../../components/ui/StateViews";
-import { StatusBadge } from "../../components/ui/StatusBadge";
-import { formatDateTime } from "../../lib/format";
+import { Surface } from "../../components/ui/Card";
+import { IconBubble } from "../../components/ui/Primitives";
+import { ErrorState, LoadingState } from "../../components/ui/StateViews";
 import { useI18n } from "../../lib/i18n";
-import type {
-  Appointment,
-  Client,
-  Lead,
-  OwnerDashboardMetrics,
-  Service,
-  Task,
-} from "../../types";
-import { formatMoney, uniqueById } from "./dashboardUtils";
+import { businessRoleLabel } from "../../lib/permissions";
+import type { OwnerDashboardMetrics } from "../../types";
+import { formatMoney } from "./dashboardUtils";
 
 type OwnerDashboardProps = {
   dashboard?: OwnerDashboardMetrics;
@@ -53,15 +38,7 @@ type OwnerDashboardProps = {
   revenueHasData: boolean;
   newLeadsCount: number;
   todayAppointmentsCount: number;
-  conversion: number;
-  openTasks: number;
   overdueTasks: number;
-  setupScore: number;
-  leads: Lead[];
-  clients: Client[];
-  appointments: Appointment[];
-  services: Service[];
-  tasks: Task[];
   workQueues?: WorkQueuesResponse;
   workQueuesError?: unknown;
   isWorkQueuesLoading: boolean;
@@ -97,31 +74,21 @@ type BriefItem = {
   href?: string;
   action?: string;
   tone: "brand" | "amber" | "red" | "ai";
-  sourceIds?: string[];
   sourceLabels?: string[];
 };
 
-function businessSourceLabel(
-  source: string | null | undefined,
-  t: (key: string) => string,
-) {
-  if (!source) return t("analytics.source.unknown");
-  const normalized = source.toLowerCase();
-  const knownSources = new Set([
-    "website",
-    "landing",
-    "telegram",
-    "whatsapp",
-    "instagram",
-    "manual",
-    "ai_tool",
-  ]);
-  return knownSources.has(normalized) ? t(`source.${normalized}`) : source;
-}
+type DashboardMetricProps = {
+  label: string;
+  value: string | number;
+  hint: string;
+  href: string;
+  icon: LucideIcon;
+  tone: "brand" | "green" | "amber" | "slate";
+};
 
 function initials(value?: string | null) {
-  const source = (value || "ZANI").trim();
-  return source
+  return (value || "ZANI")
+    .trim()
     .split(/\s+/)
     .slice(0, 2)
     .map((part) => part[0])
@@ -136,81 +103,48 @@ function toneDot(tone: AttentionItem["tone"]) {
   return "bg-brand-600";
 }
 
-function RevenueStateCard({
-  revenue,
-  revenueHasData,
-  dashboard,
-}: {
-  revenue: number;
-  revenueHasData: boolean;
-  dashboard?: OwnerDashboardMetrics;
-}) {
-  const { t } = useI18n();
-  const revenueToday = Number(dashboard?.revenue?.today || revenue || 0);
-  const revenueYesterday = Number(dashboard?.revenue?.yesterday || 0);
-  const growth = dashboard?.revenue?.growth_percent;
-  const hasExactRevenue = Boolean(dashboard?.revenue?.today);
-
+function DashboardMetric({
+  label,
+  value,
+  hint,
+  href,
+  icon,
+  tone,
+}: DashboardMetricProps) {
   return (
-    <Surface as="section" padding="lg" className="min-h-full">
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-700">
-            {t("dashboard.revenue")}
-          </p>
-          <p className="mt-3 text-3xl font-bold tabular-nums text-zani-text sm:text-4xl">
-            {revenueHasData
-              ? formatMoney(revenueToday || revenue)
-              : t("dashboard.revenueMissingValue")}
-          </p>
-        </div>
-        <IconBubble
-          icon={CircleDollarSign}
-          tone="brand"
-          className="h-11 w-11 rounded-control"
-        />
-      </div>
-      <p className="mt-4 text-sm leading-6 text-zani-subtle">
-        {revenueHasData
-          ? hasExactRevenue
-            ? t("dashboard.revenueExactText")
-            : t("dashboard.revenueEstimateText")
-          : t("dashboard.revenueMissingHint")}
-      </p>
-      <div className="mt-5 grid gap-3 sm:grid-cols-2">
-        <div className="rounded-control bg-surface-muted p-3">
-          <p className="text-xs font-semibold text-zani-faint">
-            {t("dashboard.yesterday")}
-          </p>
-          <p className="mt-1 text-lg font-bold tabular-nums text-zani-text">
-            {revenueYesterday
-              ? formatMoney(revenueYesterday)
-              : t("dashboard.revenueMissingValue")}
-          </p>
-        </div>
-        <div className="rounded-control bg-surface-muted p-3">
-          <p className="text-xs font-semibold text-zani-faint">
-            {t("dashboard.toYesterday")}
-          </p>
-          <p className="mt-1 text-lg font-bold tabular-nums text-zani-text">
-            {typeof growth === "number"
-              ? `${growth}%`
-              : t("dashboard.revenueMissingValue")}
-          </p>
-        </div>
-      </div>
+    <Surface
+      as={Link}
+      to={href}
+      interactive
+      padding="md"
+      className="group flex min-h-28 items-start gap-3"
+    >
+      <IconBubble icon={icon} tone={tone} className="h-10 w-10 rounded-control" />
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-semibold text-zani-subtle">{label}</span>
+        <span className="mt-1 block text-2xl font-semibold tracking-tight tabular-nums text-zani-ink">
+          {value}
+        </span>
+        <span className="mt-1 block truncate text-xs font-medium text-zani-faint">
+          {hint}
+        </span>
+      </span>
+      <ArrowRight
+        aria-hidden="true"
+        size={16}
+        className="mt-1 shrink-0 text-zani-faint transition-transform group-hover:translate-x-0.5 group-hover:text-brand-700"
+      />
     </Surface>
   );
 }
 
 function AttentionList({ items }: { items: AttentionItem[] }) {
   const { t } = useI18n();
-  const total = items.reduce((sum, item) => sum + item.count, 0);
 
   return (
-    <Surface as="section" padding="lg">
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
+    <Surface as="section" padding="lg" className="min-h-full min-w-0">
+      <div className="mb-4 min-w-0">
+        <div className="min-w-0">
           <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-700">
             {t("dashboard.ownerUrgentActions")}
           </p>
@@ -218,50 +152,62 @@ function AttentionList({ items }: { items: AttentionItem[] }) {
             {t("dashboard.attention")}
           </h2>
         </div>
-        <span className="grid min-h-8 min-w-8 place-items-center rounded-full bg-surface-muted px-2 text-xs font-bold tabular-nums text-zani-text">
-          {total}
-        </span>
       </div>
-      <div className="space-y-2">
-        {items.map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.key}
-              to={item.href}
-              className="flex min-h-[4.25rem] items-center gap-3 rounded-control border border-zani-border bg-surface-card p-3 transition hover:border-brand-100 hover:bg-surface-warm"
-            >
-              <span
-                className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${toneDot(item.tone)}`}
-              />
-              <Icon className="shrink-0 text-zani-subtle" size={18} />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-bold text-zani-text">
-                  {item.title}
+
+      {items.length ? (
+        <div className="space-y-2">
+          {items.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.key}
+                to={item.href}
+                className="group flex min-h-14 items-center gap-3 rounded-control border border-zani-border bg-surface-card px-3 py-2.5 transition hover:border-brand-100 hover:bg-surface-warm"
+              >
+                <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${toneDot(item.tone)}`} />
+                <Icon aria-hidden="true" className="shrink-0 text-zani-subtle" size={18} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-bold text-zani-text">
+                    {item.title}
+                  </span>
+                  <span className="block truncate text-xs font-semibold text-zani-subtle">
+                    {item.text}
+                  </span>
                 </span>
-                <span className="block truncate text-xs font-semibold text-zani-subtle">
-                  {item.text}
+                <span className="shrink-0 text-sm font-bold tabular-nums text-zani-text">
+                  {item.count}
                 </span>
-              </span>
-              <span className="shrink-0 text-sm font-bold tabular-nums text-zani-text">
-                {item.count}
-              </span>
-              <ArrowRight size={16} className="shrink-0 text-zani-faint" />
-            </Link>
-          );
-        })}
-      </div>
+                <ArrowRight
+                  aria-hidden="true"
+                  size={16}
+                  className="shrink-0 text-zani-faint transition-transform group-hover:translate-x-0.5"
+                />
+              </Link>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="flex min-h-44 flex-col items-center justify-center rounded-control border border-dashed border-zani-border bg-surface-muted px-5 text-center">
+          <CheckCircle2 aria-hidden="true" size={28} className="text-zani-success" />
+          <p className="mt-3 text-sm font-bold text-zani-text">
+            {t("dashboard.noPrioritiesTitle")}
+          </p>
+          <p className="mt-1 text-xs leading-5 text-zani-subtle">
+            {t("dashboard.noPrioritiesText")}
+          </p>
+        </div>
+      )}
     </Surface>
   );
 }
 
-function AiBriefCard({ items, meta }: { items: BriefItem[]; meta: string }) {
+function AiBriefCard({ items }: { items: BriefItem[] }) {
   const { t } = useI18n();
 
   return (
-    <Surface as="section" variant="ai" padding="lg">
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
+    <Surface as="section" variant="ai" padding="lg" className="min-h-full min-w-0">
+      <div className="mb-4 min-w-0">
+        <div className="min-w-0">
           <p className="text-xs font-bold uppercase tracking-[0.14em] text-ai-700">
             {t("dashboard.aiBrief.eyebrow")}
           </p>
@@ -269,30 +215,18 @@ function AiBriefCard({ items, meta }: { items: BriefItem[]; meta: string }) {
             {t("dashboard.aiBrief.title")}
           </h2>
         </div>
-        <span className="rounded-full bg-surface-card px-2.5 py-1 text-[11px] font-bold text-zani-subtle">
-          {meta}
-        </span>
       </div>
-      <p className="mb-4 text-sm leading-6 text-zani-subtle">
-        {t("dashboard.aiBrief.source")}
-      </p>
-      <div className="space-y-3">
+
+      <div className="space-y-2">
         {items.map((item) => (
-          <div
-            key={item.key}
-            className="rounded-control border border-ai-100 bg-surface-card p-3"
-          >
+          <div key={item.key} className="rounded-control border border-ai-100 bg-surface-card p-3">
             <div className="flex items-start gap-3">
-              <span
-                className={`mt-1.5 h-2.5 w-2.5 rounded-full ${toneDot(item.tone)}`}
-              />
+              <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${toneDot(item.tone)}`} />
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold text-zani-text">{item.title}</p>
-                <p className="mt-1 text-xs leading-5 text-zani-subtle">
-                  {item.text}
-                </p>
+                <p className="mt-1 text-xs leading-5 text-zani-subtle">{item.text}</p>
                 {item.sourceLabels?.length ? (
-                  <p className="mt-2 rounded-control bg-surface-muted px-2 py-1 text-[11px] font-bold text-zani-subtle">
+                  <p className="mt-2 truncate text-[11px] font-semibold text-zani-faint">
                     {t("dashboard.ownerBriefSourceIds", {
                       ids: item.sourceLabels.join(", "),
                     })}
@@ -303,10 +237,10 @@ function AiBriefCard({ items, meta }: { items: BriefItem[]; meta: string }) {
             {item.href && item.action ? (
               <Link
                 to={item.href}
-                className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-control px-3 text-xs font-bold text-ai-700 transition hover:bg-ai-50"
+                className="mt-2 inline-flex min-h-8 items-center gap-2 rounded-control px-2 text-xs font-bold text-ai-700 transition hover:bg-ai-50"
               >
                 {item.action}
-                <ArrowRight size={14} />
+                <ArrowRight aria-hidden="true" size={14} />
               </Link>
             ) : null}
           </div>
@@ -316,214 +250,71 @@ function AiBriefCard({ items, meta }: { items: BriefItem[]; meta: string }) {
   );
 }
 
-function QueuePreview({
-  title,
-  href,
-  emptyTitle,
-  emptyDescription,
-  children,
-}: {
-  title: string;
-  href: string;
-  emptyTitle: string;
-  emptyDescription: string;
-  children: React.ReactNode;
-}) {
+function TeamPerformanceCard({ dashboard }: { dashboard?: OwnerDashboardMetrics }) {
   const { t } = useI18n();
-  const isEmpty = Array.isArray(children) && children.length === 0;
+  const members = [...(dashboard?.manager_performance?.rows || [])]
+    .filter((member) => !["owner", "business_owner"].includes(member.role))
+    .sort(
+      (left, right) =>
+        right.overdue_tasks - left.overdue_tasks ||
+        right.assigned_leads - left.assigned_leads,
+    )
+    .slice(0, 4);
 
   return (
-    <Surface as="section" padding="lg">
+    <Surface as="section" padding="lg" className="min-h-full min-w-0">
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-base font-bold text-zani-text">{title}</h2>
-        <Link to={href} className="text-sm font-bold text-brand-700">
+        <div className="flex min-w-0 items-center gap-2">
+          <UsersRound aria-hidden="true" size={20} className="shrink-0 text-brand-600" />
+          <h2 className="truncate text-base font-bold text-zani-text">
+            {t("analytics.teamPerformance")}
+          </h2>
+        </div>
+        <Link to="/app/analytics" className="shrink-0 text-xs font-bold text-brand-700">
           {t("common.all")}
         </Link>
       </div>
-      {isEmpty ? (
-        <EmptyState title={emptyTitle} description={emptyDescription} />
+
+      {members.length ? (
+        <div className="space-y-2">
+          {members.map((member) => (
+            <div
+              key={member.user_id}
+              className="grid min-h-14 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 rounded-control border border-zani-border bg-surface-card px-3 py-2.5 sm:flex"
+            >
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-50 text-xs font-bold text-brand-700">
+                {initials(member.full_name || member.email)}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-bold text-zani-text">
+                  {member.full_name || member.email}
+                </span>
+                <span className="block truncate text-xs font-semibold text-zani-subtle">
+                  {businessRoleLabel(member.role, t)}
+                </span>
+              </span>
+              <span className="col-span-2 flex min-w-0 justify-between gap-3 border-t border-zani-border pt-2 text-xs font-semibold text-zani-subtle sm:block sm:shrink-0 sm:border-0 sm:pt-0 sm:text-right">
+                <span className="truncate tabular-nums text-zani-text sm:block">
+                  {t("analytics.assignedLeads")}: {member.assigned_leads}
+                </span>
+                <span className={`truncate sm:block ${member.overdue_tasks ? "text-zani-danger" : "text-zani-faint"}`}>
+                  {t("analytics.overdueTasks")}: {member.overdue_tasks}
+                </span>
+              </span>
+            </div>
+          ))}
+        </div>
       ) : (
-        <div className="space-y-2">{children}</div>
+        <div className="flex min-h-44 flex-col items-center justify-center rounded-control border border-dashed border-zani-border bg-surface-muted px-5 text-center">
+          <UsersRound aria-hidden="true" size={28} className="text-zani-faint" />
+          <p className="mt-3 text-sm font-bold text-zani-text">
+            {t("dashboard.teamDataEmpty")}
+          </p>
+          <p className="mt-1 text-xs leading-5 text-zani-subtle">
+            {t("dashboard.teamDataEmptyText")}
+          </p>
+        </div>
       )}
-    </Surface>
-  );
-}
-
-function LeadRow({
-  lead,
-  client,
-  service,
-}: {
-  lead: Lead | WorkQueueLeadItem;
-  client?: Client;
-  service?: Service;
-}) {
-  const { t } = useI18n();
-  const title = "title" in lead ? lead.title : client?.full_name;
-  const source = "source" in lead ? lead.source : "";
-
-  return (
-    <Link
-      to={`/app/leads/${lead.id}`}
-      className="flex items-center gap-3 rounded-control border border-zani-border bg-surface-card p-3 transition hover:border-brand-100 hover:bg-surface-warm"
-    >
-      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-50 text-sm font-bold text-brand-700">
-        {initials(title || client?.full_name)}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-bold text-zani-text">
-          {title || t("dashboard.leadNumber", { id: lead.id })}
-        </span>
-        <span className="block truncate text-xs font-semibold text-zani-subtle">
-          {service?.name ||
-            businessSourceLabel(source, t) ||
-            t("dashboard.noMessage")}
-        </span>
-      </span>
-      <StatusBadge status={lead.status} size="sm" />
-    </Link>
-  );
-}
-
-function AppointmentRow({
-  appointment,
-  client,
-  service,
-}: {
-  appointment: Appointment | WorkQueueAppointmentItem;
-  client?: Client;
-  service?: Service;
-}) {
-  const { t } = useI18n();
-  const title = "title" in appointment ? appointment.title : client?.full_name;
-
-  return (
-    <Link
-      to={`/app/calendar/${appointment.id}`}
-      data-testid="dashboard-appointment-row"
-      data-appointment-id={appointment.id}
-      className="flex items-center gap-3 rounded-control border border-zani-border bg-surface-card p-3 transition hover:border-brand-100 hover:bg-surface-warm"
-    >
-      <IconBubble
-        icon={CalendarCheck}
-        tone="brand"
-        className="h-10 w-10 rounded-control"
-      />
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-bold text-zani-text">
-          {title || t("common.client")}
-        </span>
-        <span className="block truncate text-xs font-semibold text-zani-subtle">
-          {service?.name || t("common.service")} /{" "}
-          {formatDateTime(appointment.start_at)}
-        </span>
-      </span>
-      <StatusBadge status={appointment.status} size="sm" />
-    </Link>
-  );
-}
-
-function TaskRow({ task }: { task: Task | WorkQueueTaskItem }) {
-  const { t } = useI18n();
-  const href = "href" in task ? task.href : `/app/tasks/${task.id}`;
-  const escalationLevel =
-    "escalation_level" in task ? task.escalation_level : null;
-
-  return (
-    <Link
-      to={href}
-      className="flex items-center gap-3 rounded-control border border-zani-border bg-surface-card p-3 transition hover:border-brand-100 hover:bg-surface-warm"
-    >
-      <IconBubble
-        icon={ListChecks}
-        tone="amber"
-        className="h-10 w-10 rounded-control"
-      />
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-bold text-zani-text">
-          {task.title}
-        </span>
-        <span className="block truncate text-xs font-semibold text-zani-subtle">
-          {task.due_at ? formatDateTime(task.due_at) : t("dashboard.noDueDate")}
-        </span>
-      </span>
-      {escalationLevel ? (
-        <StatusBadge status={escalationLevel} size="sm" />
-      ) : null}
-    </Link>
-  );
-}
-
-function ConnectorHealthCard({
-  dashboard,
-  communicationsReady,
-  salesReady,
-}: {
-  dashboard?: OwnerDashboardMetrics;
-  communicationsReady: boolean;
-  salesReady: boolean;
-}) {
-  const { t } = useI18n();
-  const health = dashboard?.connector_health;
-  const rows = [
-    {
-      key: "communications",
-      label: t("dashboard.channels"),
-      ready: communicationsReady,
-      href: "/app/integrations",
-    },
-    {
-      key: "sales",
-      label: t("dashboard.dataSources"),
-      ready: salesReady,
-      href: "/app/integrations",
-    },
-    {
-      key: "health",
-      label: t("dashboard.connectorHealth"),
-      ready: !health || health.error === 0,
-      href: "/app/integrations",
-    },
-  ];
-
-  return (
-    <Surface as="section" padding="lg">
-      <div className="mb-4 flex items-center gap-2">
-        <PlugZap size={20} className="text-brand-600" />
-        <h2 className="text-base font-bold text-zani-text">
-          {t("dashboard.connections")}
-        </h2>
-      </div>
-      <div className="space-y-2">
-        {rows.map((row) => (
-          <Link
-            key={row.key}
-            to={row.href}
-            className="flex items-center justify-between gap-3 rounded-control border border-zani-border bg-surface-card px-3 py-2.5 transition hover:border-brand-100 hover:bg-surface-warm"
-          >
-            <span className="truncate text-sm font-bold text-zani-text">
-              {row.label}
-            </span>
-            <span className="inline-flex items-center gap-2 text-xs font-bold text-zani-subtle">
-              <span
-                className={`h-2 w-2 rounded-full ${row.ready ? "bg-zani-success" : "bg-zani-warning"}`}
-              />
-              {row.ready
-                ? t("dashboard.statusConnected")
-                : t("dashboard.statusConnect")}
-            </span>
-          </Link>
-        ))}
-      </div>
-      {health ? (
-        <p className="mt-4 rounded-control bg-surface-muted px-3 py-2 text-xs font-semibold text-zani-subtle">
-          {t("dashboard.connectionReadiness", {
-            score: health.total
-              ? Math.round((health.connected / health.total) * 100)
-              : 0,
-          })}
-        </p>
-      ) : null}
     </Surface>
   );
 }
@@ -548,42 +339,48 @@ function buildBriefItems({
   const sourcesById = new Map(
     (ownerBrief?.sources || []).map((source) => [source.id, source]),
   );
-  const recommendations =
-    ownerBrief?.recommendations.slice(0, 4).map((recommendation) => {
-      const sourceLabels = recommendation.source_ids
-        .map((sourceId) => sourcesById.get(sourceId)?.label)
-        .filter((label): label is string => Boolean(label));
-      const primarySource =
-        sourceLabels[0] || t("dashboard.ownerBriefFallbackSource");
-      const categoryKeys: Record<string, string> = {
-        stale_leads: "staleLead",
-        overdue_tasks: "overdueTask",
-        unanswered_conversations: "unansweredConversation",
-        stalled_deals: "stalledDeal",
-        failed_connectors: "failedConnector",
-      };
-      const copyKey = categoryKeys[recommendation.category];
+  const categoryKeys: Record<string, string> = {
+    stale_leads: "staleLead",
+    overdue_tasks: "overdueTask",
+    unanswered_conversations: "unansweredConversation",
+    stalled_deals: "stalledDeal",
+    failed_connectors: "failedConnector",
+  };
+  const uniqueRecommendations = Array.from(
+    new Map(
+      (ownerBrief?.recommendations || []).map((recommendation) => [
+        recommendation.category,
+        recommendation,
+      ]),
+    ).values(),
+  ).slice(0, 3);
+  const recommendations = uniqueRecommendations.map((recommendation) => {
+    const sourceLabels = recommendation.source_ids
+      .map((sourceId) => sourcesById.get(sourceId)?.label)
+      .filter((label): label is string => Boolean(label));
+    const primarySource =
+      sourceLabels[0] || t("dashboard.ownerBriefFallbackSource");
+    const copyKey = categoryKeys[recommendation.category];
 
-      return {
-        key: recommendation.id,
-        title: copyKey
-          ? t(`dashboard.ownerBrief.${copyKey}.title`, { source: primarySource })
-          : recommendation.label,
-        text: copyKey
-          ? t(`dashboard.ownerBrief.${copyKey}.text`)
-          : recommendation.description,
-        href: recommendation.href,
-        action: t("dashboard.openPrioritySource"),
-        tone:
-          recommendation.priority === "high"
-            ? ("red" as const)
-            : recommendation.priority === "medium"
-              ? ("amber" as const)
-              : ("ai" as const),
-        sourceIds: recommendation.source_ids,
-        sourceLabels,
-      };
-    }) || [];
+    return {
+      key: recommendation.category || recommendation.id,
+      title: copyKey
+        ? t(`dashboard.ownerBrief.${copyKey}.title`, { source: primarySource })
+        : recommendation.label,
+      text: copyKey
+        ? t(`dashboard.ownerBrief.${copyKey}.text`)
+        : recommendation.description,
+      href: recommendation.href,
+      action: t("dashboard.openPrioritySource"),
+      tone:
+        recommendation.priority === "high"
+          ? ("red" as const)
+          : recommendation.priority === "medium"
+            ? ("amber" as const)
+            : ("ai" as const),
+      sourceLabels,
+    };
+  });
   if (recommendations.length) return recommendations;
   if (ownerBrief?.summary.no_data) {
     return [
@@ -639,6 +436,10 @@ function buildBriefItems({
   ];
 }
 
+function uniqueQueueItems<T extends { id: number }>(items: T[]) {
+  return Array.from(new Map(items.map((item) => [item.id, item])).values());
+}
+
 export function OwnerDashboard({
   dashboard,
   metricsError,
@@ -647,15 +448,7 @@ export function OwnerDashboard({
   revenueHasData,
   newLeadsCount,
   todayAppointmentsCount,
-  conversion,
-  openTasks,
   overdueTasks,
-  setupScore,
-  leads,
-  clients,
-  appointments,
-  services,
-  tasks,
   workQueues,
   workQueuesError,
   isWorkQueuesLoading,
@@ -674,46 +467,23 @@ export function OwnerDashboard({
   aiStatus,
 }: OwnerDashboardProps) {
   const { t } = useI18n();
-  const activeLeads = leads.filter((lead) =>
-    ["new", "contacted", "in_progress"].includes(lead.status),
-  );
-  const visibleLeads = workQueues?.queues.stale_leads.length
-    ? workQueues.queues.stale_leads.slice(0, 4)
-    : activeLeads.slice(0, 4);
-  const visibleAppointments = workQueues
-    ? uniqueById([
-        ...workQueues.queues.appointment_confirmations,
-        ...workQueues.queues.upcoming_appointments,
-      ]).slice(0, 4)
-    : appointments.slice(0, 4);
-  const visibleTasks = workQueues?.queues.overdue_tasks.length
-    ? workQueues.queues.overdue_tasks.slice(0, 4)
-    : tasks
-      .filter((task) => task.status !== "done" && task.status !== "cancelled")
-      .slice(0, 4);
   const visibleConversations = uniqueQueueItems<WorkQueueConversationItem>([
     ...(workQueues?.queues.unread_sla_overdue_conversations || []),
     ...(workQueues?.queues.handoff_sla_overdue_conversations || []),
     ...(workQueues?.queues.unread_conversations || []),
     ...(workQueues?.queues.handoff_conversations || []),
-  ]).slice(0, 4);
+  ]);
   const staleDeals = uniqueQueueItems<WorkQueueDealItem>([
     ...(workQueues?.queues.sla_overdue_deals || []),
     ...(workQueues?.queues.no_next_action_deals || []),
-  ]).slice(0, 4);
-  const failedConnectors = dashboard?.connector_health?.error || 0;
-  const communicationsReady = Boolean(
-    dashboard?.setup?.sources?.communications,
-  );
-  const salesReady = Boolean(
-    dashboard?.setup?.sources?.sales_data || revenueHasData,
-  );
+  ]);
   const noAnswerCount = workQueues
     ? workQueues.summary.unread_conversations +
       workQueues.summary.handoff_conversations
-    : 0;
+    : visibleConversations.length;
+  const failedConnectors = dashboard?.connector_health?.error || 0;
   const attentionItems: AttentionItem[] = [
-    ...(canViewTasks
+    ...(canViewTasks && overdueTasks > 0
       ? [
           {
             key: "tasks",
@@ -722,11 +492,11 @@ export function OwnerDashboard({
             count: overdueTasks,
             href: "/app/tasks",
             icon: AlertTriangle,
-            tone: overdueTasks ? ("red" as const) : ("amber" as const),
+            tone: "red" as const,
           },
         ]
       : []),
-    ...(canViewConversations
+    ...(canViewConversations && noAnswerCount > 0
       ? [
           {
             key: "conversations",
@@ -735,11 +505,11 @@ export function OwnerDashboard({
             count: noAnswerCount,
             href: "/app/conversations",
             icon: MessageSquareText,
-            tone: noAnswerCount ? ("red" as const) : ("brand" as const),
+            tone: "red" as const,
           },
         ]
       : []),
-    ...(canViewDeals
+    ...(canViewDeals && staleDeals.length > 0
       ? [
           {
             key: "deals",
@@ -748,11 +518,11 @@ export function OwnerDashboard({
             count: staleDeals.length,
             href: "/app/deals",
             icon: CircleDollarSign,
-            tone: staleDeals.length ? ("amber" as const) : ("brand" as const),
+            tone: "amber" as const,
           },
         ]
       : []),
-    ...(canViewIntegrations
+    ...(canViewIntegrations && failedConnectors > 0
       ? [
           {
             key: "connectors",
@@ -763,27 +533,11 @@ export function OwnerDashboard({
             count: failedConnectors,
             href: "/app/integrations",
             icon: PlugZap,
-            tone: failedConnectors ? ("red" as const) : ("brand" as const),
+            tone: "red" as const,
           },
         ]
       : []),
   ];
-  const providerMode =
-    aiStatus?.mode === "live"
-      ? t("aiAssistant.modeLive")
-      : t("aiAssistant.modeMock");
-  const briefMeta = isOwnerBriefLoading
-    ? t("common.loading")
-    : ownerBrief
-      ? t("dashboard.ownerBriefSources", {
-          count: ownerBrief.summary.source_count,
-        })
-      : aiStatus
-        ? t("dashboard.aiProviderStatus", {
-            provider: aiStatus.provider,
-            mode: providerMode,
-          })
-        : t("aiAssistant.providerChecking");
   const briefItems = buildBriefItems({
     ownerBrief,
     ownerBriefError,
@@ -793,10 +547,11 @@ export function OwnerDashboard({
     aiStatus,
     t,
   });
+  const revenueToday = Number(dashboard?.revenue?.today || revenue || 0);
 
   if (isCoreDataLoading) {
     return (
-      <div className="space-y-5 pb-8">
+      <div className="space-y-4 pb-8">
         <Surface
           className="border-brand-100 bg-brand-50 px-4 py-3 text-sm font-semibold text-brand-700"
           padding="none"
@@ -808,7 +563,7 @@ export function OwnerDashboard({
   }
 
   return (
-    <div className="space-y-5 pb-8" data-testid="dashboard-workspace-ready">
+    <div className="space-y-4 pb-8" data-testid="dashboard-workspace-ready">
       {metricsError ? (
         <Surface
           className="border-[rgba(151,90,22,0.24)] bg-[var(--zani-warning-soft)] px-4 py-3 text-sm font-semibold text-zani-warning"
@@ -837,236 +592,65 @@ export function OwnerDashboard({
           />
         </div>
       ) : null}
-      {ownerBriefError ? (
-        <Surface
-          className="border-[rgba(151,90,22,0.24)] bg-[var(--zani-warning-soft)] px-4 py-3 text-sm font-semibold text-zani-warning"
-          padding="none"
-        >
-          {t("dashboard.ownerBriefError")}
-        </Surface>
-      ) : null}
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
-        <RevenueStateCard
-          revenue={revenue}
-          revenueHasData={revenueHasData}
-          dashboard={dashboard}
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <DashboardMetric
+          label={t("dashboard.revenue")}
+          value={
+            revenueHasData
+              ? formatMoney(revenueToday)
+              : t("dashboard.revenueMissingValue")
+          }
+          hint={
+            revenueHasData
+              ? t("dashboard.revenueExactText")
+              : t("dashboard.revenueMissingShort")
+          }
+          href={revenueHasData ? "/app/analytics" : "/app/settings#data-tools"}
+          icon={CircleDollarSign}
+          tone="brand"
         />
-        <AttentionList items={attentionItems} />
-      </section>
-
-      <section className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
         {canViewLeads ? (
-          <MetricTile
+          <DashboardMetric
             label={t("dashboard.newLeadsShort")}
             value={newLeadsCount}
             hint={t("dashboard.businessScopeNeedsProcess")}
+            href="/app/leads"
             icon={UserPlus}
             tone="brand"
-            className="shadow-soft"
           />
         ) : null}
         {canViewAppointments ? (
-          <MetricTile
+          <DashboardMetric
             label={t("dashboard.todayBookings")}
             value={todayAppointmentsCount}
             hint={t("common.today")}
+            href="/app/calendar"
             icon={CalendarCheck}
             tone="green"
-            className="shadow-soft"
           />
         ) : null}
         {canViewTasks ? (
-          <MetricTile
-            label={t("dashboard.openTasks")}
-            value={openTasks}
+          <DashboardMetric
+            label={t("dashboard.overdueTasks")}
+            value={overdueTasks}
             hint={
               overdueTasks
                 ? t("dashboard.overdueTasksCount", { count: overdueTasks })
-                : t("dashboard.teamScopeOpenFollowups")
+                : t("dashboard.noPrioritiesTitle")
             }
-            icon={ListChecks}
+            href="/app/tasks"
+            icon={AlertTriangle}
             tone={overdueTasks ? "amber" : "slate"}
-            className="shadow-soft"
-          />
-        ) : null}
-        {canViewLeads && canViewAppointments ? (
-          <MetricTile
-            label={t("dashboard.conversion")}
-            value={`${conversion}%`}
-            hint={t("dashboard.leadToBooking")}
-            icon={CheckCircle2}
-            tone="green"
-            className="shadow-soft"
-          />
-        ) : null}
-        {canViewIntegrations ? (
-          <MetricTile
-            label={t("dashboard.setupScore")}
-            value={`${setupScore}%`}
-            hint={t("dashboard.businessReadiness")}
-            icon={PlugZap}
-            tone={setupScore >= 80 ? "green" : "amber"}
-            className="shadow-soft"
           />
         ) : null}
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.9fr)]">
-        <AiBriefCard items={briefItems} meta={briefMeta} />
-        {canViewIntegrations ? (
-          <ConnectorHealthCard
-            dashboard={dashboard}
-            communicationsReady={communicationsReady}
-            salesReady={salesReady}
-          />
-        ) : null}
+      <section className="grid min-w-0 grid-cols-1 items-stretch gap-4 xl:grid-cols-3">
+        <AttentionList items={attentionItems} />
+        <AiBriefCard items={briefItems} />
+        <TeamPerformanceCard dashboard={dashboard} />
       </section>
-
-      <section className="grid gap-4 xl:grid-cols-3">
-        {canViewLeads ? (
-          <QueuePreview
-          title={t("dashboard.latestLeads")}
-          href="/app/leads"
-          emptyTitle={t("dashboard.noLeads")}
-          emptyDescription={t("dashboard.noLeadsText")}
-        >
-          {visibleLeads.map((lead) => {
-            const client =
-              "client_id" in lead
-                ? clients.find((item) => item.id === lead.client_id)
-                : clients.find((item) => item.id === lead.client);
-            const service =
-              "service" in lead
-                ? services.find((item) => item.id === lead.service)
-                : undefined;
-            return (
-              <LeadRow
-                key={lead.id}
-                lead={lead}
-                client={client}
-                service={service}
-              />
-            );
-          })}
-          </QueuePreview>
-        ) : null}
-
-        {canViewAppointments ? (
-          <QueuePreview
-          title={t("dashboard.upcomingBookings")}
-          href="/app/calendar"
-          emptyTitle={t("dashboard.noBookings")}
-          emptyDescription={t("dashboard.noBookingsText")}
-        >
-          {visibleAppointments.map((appointment) => {
-            const client = clients.find((item) =>
-              "client_id" in appointment
-                ? item.id === appointment.client_id
-                : item.id === appointment.client,
-            );
-            const service = services.find((item) =>
-              "service_id" in appointment
-                ? item.id === appointment.service_id
-                : item.id === appointment.service,
-            );
-            return (
-              <AppointmentRow
-                key={appointment.id}
-                appointment={appointment}
-                client={client}
-                service={service}
-              />
-            );
-          })}
-          </QueuePreview>
-        ) : null}
-
-        {canViewTasks ? (
-          <QueuePreview
-          title={t("dashboard.teamOpenTasks")}
-          href="/app/tasks"
-          emptyTitle={t("dashboard.noTeamOpenTasks")}
-          emptyDescription={t("dashboard.noTeamOpenTasksText")}
-        >
-          {visibleTasks.map((task) => (
-            <TaskRow key={task.id} task={task} />
-          ))}
-          </QueuePreview>
-        ) : null}
-      </section>
-
-      {(canViewConversations && visibleConversations.length) ||
-      (canViewDeals && staleDeals.length) ? (
-        <section className="grid gap-4 xl:grid-cols-2">
-          {canViewConversations && visibleConversations.length ? (
-            <Surface as="section" padding="lg">
-              <div className="mb-4 flex items-center gap-2">
-                <MessageSquareText size={20} className="text-brand-600" />
-                <h2 className="text-base font-bold text-zani-text">
-                  {t("dashboard.managerNoAnswer")}
-                </h2>
-              </div>
-              <div className="space-y-2">
-                {visibleConversations.map((conversation) => (
-                  <Link
-                    key={conversation.id}
-                    to={conversation.href}
-                    className="flex items-center justify-between gap-3 rounded-control border border-zani-border bg-surface-card p-3 transition hover:border-brand-100 hover:bg-surface-warm"
-                  >
-                    <span className="min-w-0">
-                      <span className="block truncate text-sm font-bold text-zani-text">
-                        {conversation.title}
-                      </span>
-                      <span className="block truncate text-xs font-semibold text-zani-subtle">
-                        {businessSourceLabel(conversation.channel, t)} ·{" "}
-                        {conversation.unread_count}
-                      </span>
-                    </span>
-                    <StatusBadge status={conversation.priority} size="sm" />
-                  </Link>
-                ))}
-              </div>
-            </Surface>
-          ) : null}
-
-          {canViewDeals && staleDeals.length ? (
-            <Surface as="section" padding="lg">
-              <div className="mb-4 flex items-center gap-2">
-                <CircleDollarSign size={20} className="text-zani-warning" />
-                <h2 className="text-base font-bold text-zani-text">
-                  {t("dashboard.staleDeals")}
-                </h2>
-              </div>
-              <div className="space-y-2">
-                {staleDeals.map((deal) => (
-                  <Link
-                    key={`${deal.reason}-${deal.id}`}
-                    to={deal.href}
-                    className="flex items-center justify-between gap-3 rounded-control border border-zani-border bg-surface-card p-3 transition hover:border-brand-100 hover:bg-surface-warm"
-                  >
-                    <span className="min-w-0">
-                      <span className="block truncate text-sm font-bold text-zani-text">
-                        {deal.title}
-                      </span>
-                      <span className="block truncate text-xs font-semibold text-zani-subtle">
-                        {deal.stage_name} /{" "}
-                        {formatMoney(Number(deal.amount || 0))}
-                      </span>
-                    </span>
-                    <StatusBadge status={deal.risk_level} size="sm" />
-                  </Link>
-                ))}
-              </div>
-            </Surface>
-          ) : null}
-        </section>
-      ) : null}
-
     </div>
   );
-}
-
-function uniqueQueueItems<T extends { id: number }>(items: T[]) {
-  return Array.from(new Map(items.map((item) => [item.id, item])).values());
 }

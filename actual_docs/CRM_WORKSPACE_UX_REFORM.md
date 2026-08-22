@@ -1,6 +1,6 @@
 # CRM Workspace UX Reform
 
-Status: `ACTIVE` - UX-2 complete; stopped at the phase gate
+Status: `ACTIVE` - UX-3 complete; stopped at the phase gate
 Owner: UI/UX
 Started: 2026-08-03
 Source: owner browser review of `/app`, `/app/leads`, `/app/deals` and
@@ -104,13 +104,47 @@ Completion evidence (2026-08-03):
 
 ## Phase UX-3 - Owner and administrator dashboard
 
-Status: `PLANNED`
+Status: `DONE`
 
-- rebuild the information hierarchy around real revenue, operating health,
+- [x] rebuild the information hierarchy around real revenue, operating health,
   team performance, urgent exceptions and today's decisions;
-- keep connector health compact unless attention is required;
-- remove low-value duplication and large empty surfaces;
-- keep no-data and unavailable-source states explicit and honest.
+- [x] keep connector health compact unless attention is required;
+- [x] remove low-value duplication and large empty surfaces;
+- [x] keep no-data and unavailable-source states explicit and honest;
+- [x] make `/app/dashboard` the canonical merchant dashboard route while
+  retaining `/app` as a safe redirect.
+
+Completion evidence (2026-08-22):
+
+- `/app/dashboard` is now the canonical route in the router, desktop sidebar,
+  mobile drawer and bottom navigation; `/app` redirects with `replace`, and the
+  legacy `/dashboard` alias resolves to the same canonical route;
+- the owner/administrator surface now contains four decision metrics only:
+  honest revenue availability, new leads, today's bookings and overdue tasks;
+- the remaining workspace is reduced to three actionable surfaces: non-zero
+  urgent exceptions, a deduplicated AI brief and compact team performance;
+- duplicate latest-lead, booking, task, unanswered-client, stale-deal and
+  always-visible connector blocks were removed; connector health is shown only
+  when a real failure requires attention;
+- the dashboard uses existing analytics/work-queue/AI contracts and real data;
+  unavailable revenue remains an explicit no-data state rather than a fake KPI;
+- production frontend/widget build passed with `4680` aligned RU/KK/EN keys;
+  the dashboard route chunk is `24.55 kB` before gzip and the bundle budget
+  passed with no JavaScript chunk above `500 kB`;
+- focused dashboard appointment regression passed `1/1`; focused route E2E
+  passed `1/1` and proved `/app -> /app/dashboard` plus the canonical navigation
+  link;
+- focused responsive/accessibility coverage passed `2/2` across desktop and
+  mobile with no serious or critical Axe finding;
+- Playwright CLI inspection at `1920x1080` and `390x844` confirmed the canonical
+  URL, zero horizontal overflow and zero console errors; desktop presents the
+  full management summary in one viewport and mobile uses a readable stacked
+  hierarchy;
+- the full interaction audit covered `12` merchant workspaces without a
+  blocking result, and the visual audit covered `13` routes with zero overflow
+  and zero API/auth errors on the dashboard;
+- no backend, API, permission, tenant, notification, BusinessEvent, migration,
+  dependency, environment or production-service behavior changed.
 
 ## Owner follow-up - Leads control density
 

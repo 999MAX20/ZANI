@@ -79,6 +79,7 @@ the accepted project branch.
 | ZD-003 | INTERACTION | Client CRM drawer after canceling the native file picker | Shared `CrmEntityDrawer` attachment flow for client, lead, deal and appointment entities, including entity drawers opened from Tasks | VERIFIED_BRANCH | `f81cee7` |
 | ZD-004 | CONSISTENCY / TECHNICAL_LEAK | Code-level fallback audit | Shared API parsing, crash boundaries and direct error fields across merchant and platform surfaces | CONFIRMED | `UNIFIED_FALLBACK_EXPERIENCE_PLAN.md` |
 | ZD-005 | SECURITY / AUTHORIZATION | Legacy local private-media URL | Every registered attachment consumer and every CRM entity scope within the same business | VERIFIED_BRANCH | `codex/pre-pilot-sec-010-security-certification` |
+| ZD-006 | VISUAL / CONSISTENCY | Merchant root and owner dashboard | Router aliases, desktop/mobile navigation and the owner/administrator dashboard hierarchy | VERIFIED_BRANCH | `codex/ux-3-owner-dashboard` |
 
 ## Detailed Precedents
 
@@ -245,6 +246,45 @@ the accepted project branch.
   view routes, prove that every route resolves the same object and applies the
   same object-level permission and audit boundary.
 
+### ZD-006 — Ambiguous dashboard route and overloaded owner workspace
+
+- Recorded: 2026-08-22.
+- Type: `VISUAL / CONSISTENCY`.
+- Status: `VERIFIED_BRANCH`.
+- Owner-observed surface: authenticated merchant root `/app` and its owner/
+  administrator dashboard.
+- Role and prerequisites: authenticated owner or administrator with ordinary
+  CRM, task, booking, conversation and analytics data.
+- Reproduction steps: open `/app`, inspect the URL and scan the complete page at
+  desktop width; then repeat on a narrow mobile viewport.
+- Expected behavior: the dashboard has an explicit canonical URL and presents
+  one fast management summary built from revenue availability, daily workload,
+  urgent exceptions and team state.
+- Actual behavior: the dashboard previously lived only at the generic `/app`
+  root and repeated the same operational data across a large revenue surface,
+  KPI cards, priority lists, entity lists and a permanent connector block.
+- User impact: owners had no clear dashboard route, needed excessive scanning
+  and could not distinguish decisions from low-value status detail.
+- Root cause class: route identity drift plus an unbounded information budget.
+- Actual cross-product scope: merchant router redirects, sidebar/mobile home
+  links, route-sensitive E2E helpers and the owner/administrator dashboard.
+- Correction: make `/app/dashboard` canonical with a safe `/app` redirect;
+  reduce the page to four decision metrics and three compact actionable
+  surfaces; deduplicate AI recommendations; show connectors only on failure;
+  retain explicit no-data states and existing permission-aware destinations.
+- Commit / branch: `codex/ux-3-owner-dashboard`.
+- Verification commands and results: dashboard regression `1/1`; production
+  build and `4680`-key i18n gate passed; bundle budget passed; canonical route
+  E2E `1/1`; Playwright CLI desktop/mobile overflow `0` and console errors `0`;
+  full interaction and visual audits produced no dashboard blocker.
+- Skipped checks and reason: backend and migration suites were not rerun because
+  the implementation changes no backend, persistence or API contract.
+- Remaining risk or test debt: final owner product sign-off and UX-4 cross-role
+  failure/empty-state certification remain separate gates.
+- Derived audit rule: every primary workspace needs one canonical route, and
+  every dashboard block must justify itself with a unique decision or action;
+  repeated status detail belongs on the destination workspace.
+
 ## Regression Rule Catalogue
 
 These rules are inputs to future functional certification and browser audits.
@@ -258,6 +298,7 @@ These rules are inputs to future functional certification and browser audits.
 | ZR-005 Recovery action placement | Assert retry/recovery appears once, is permission-aware and is shown only when actionable | Messages, integrations, imports, background jobs and sync states |
 | ZR-006 Overlay continuity | Exercise Escape, backdrop, focus return, native dialogs and viewport changes | Drawers, dialogs, popovers, command palette and mobile navigation |
 | ZR-007 Success-path preservation | After a defect fix, prove the original normal action still completes | Every remediated interaction |
+| ZR-008 Canonical route and information budget | Assert one canonical URL, safe aliases and one unique decision per dashboard surface | Dashboard, overview and landing workspaces |
 
 ## Audit Expansion Matrix
 

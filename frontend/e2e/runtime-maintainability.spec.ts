@@ -199,7 +199,7 @@ async function warmRuntimeRoutes(page: Page) {
     await navigateInsideApp(page, budget.path);
     await waitForRouteReady(page, budget);
   }
-  await navigateInsideApp(page, "/app");
+  await navigateInsideApp(page, "/app/dashboard");
   await expect(page.locator('main a[href="/app/leads"]').first()).toBeVisible();
   await expect(
     page.locator('main [role="status"][aria-busy="true"]'),
@@ -292,11 +292,7 @@ async function navigateInsideApp(page: Page, path: string) {
     window.dispatchEvent(new PopStateEvent("popstate"));
   }, path);
   await expect(page).toHaveURL(
-    new RegExp(
-      path === "/app"
-        ? "/app/?$"
-        : path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-    ),
+    new RegExp(path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
   );
   await expect(page.getByRole("main").first()).toBeVisible();
 }

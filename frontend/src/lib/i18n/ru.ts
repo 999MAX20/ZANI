@@ -392,6 +392,9 @@ export const ru: Record<string, string> = {
   "dashboard.healthyPipeline": "Здоровая воронка",
   "dashboard.aiRecommendations": "Рекомендации",
   "dashboard.attention": "Что требует внимания",
+  "dashboard.noPrioritiesTitle": "Срочных отклонений нет",
+  "dashboard.noPrioritiesText":
+    "Просрочки, клиенты без ответа и сбои подключений сейчас не требуют реакции.",
   "dashboard.generatePlan": "Сформировать план",
   "dashboard.leadFunnel": "Воронка заявок",
   "dashboard.leadFunnelHint": "Новая -> контакт -> уточнение -> запись",

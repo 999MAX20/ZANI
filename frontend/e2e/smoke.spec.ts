@@ -114,7 +114,7 @@ async function navigateInAppHistory(page: Page, path: string) {
 
 function routePattern(route: string) {
   return new RegExp(
-    route === "/app" ? "/app/?$" : route.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+    route.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
   );
 }
 
@@ -215,6 +215,19 @@ test("platform admin lands in platform workspace", async ({ page }) => {
   await expect(page.getByTestId("platform-overview-ready")).toBeVisible();
 });
 
+test("merchant root redirects to the canonical dashboard route", async ({
+  page,
+}) => {
+  await login(page, users.owner, /\/app\/dashboard/);
+
+  await page.goto("/app");
+  await expect(page).toHaveURL(/\/app\/dashboard\/?$/);
+  await expect(page.getByTestId("dashboard-workspace-ready")).toBeVisible();
+  await expect(
+    page.locator('aside a[href="/app/dashboard"]').first(),
+  ).toBeVisible();
+});
+
 test("business owner can use core merchant CRM pages", async ({
   page,
   isMobile,
@@ -226,7 +239,7 @@ test("business owner can use core merchant CRM pages", async ({
 
   await login(page, users.owner, /\/app/);
 
-  await expect(page).toHaveURL(/\/app/);
+  await expect(page).toHaveURL(/\/app\/dashboard/);
   await expect(page.getByTestId("dashboard-workspace-ready")).toBeVisible();
 
   await navigateInsideApp(page, "/app/leads");
@@ -261,7 +274,7 @@ test("business owner core routes render without 404", async ({
   await login(page, users.owner, /\/app/);
 
   const routes = [
-    "/app",
+    "/app/dashboard",
     "/app/leads",
     "/app/deals",
     "/app/clients",
@@ -307,7 +320,7 @@ test("manager and operator role UX stays useful and safe", async ({
   await login(page, users.manager, /\/app/);
 
   const managerDailyRoutes = [
-    "/app",
+    "/app/dashboard",
     "/app/leads",
     "/app/deals",
     "/app/clients",
@@ -333,7 +346,11 @@ test("manager and operator role UX stays useful and safe", async ({
 
   await login(page, users.operator, /\/app/);
 
-  const operatorDailyRoutes = ["/app", "/app/tasks", "/app/conversations"];
+  const operatorDailyRoutes = [
+    "/app/dashboard",
+    "/app/tasks",
+    "/app/conversations",
+  ];
   for (const route of operatorDailyRoutes) {
     await navigateInAppHistory(page, route);
     await expect(page).toHaveURL(routePattern(route));
@@ -356,7 +373,7 @@ test("desktop sidebar links render without 404", async ({ page, isMobile }) => {
   await login(page, users.owner, /\/app/);
 
   const sidebarRoutes = [
-    "/app",
+    "/app/dashboard",
     "/app/leads",
     "/app/deals",
     "/app/clients",
@@ -419,7 +436,7 @@ test("global search and command palette open safely", async ({ page, isMobile })
 
   await login(page, users.owner, /\/app/);
 
-  await page.goto("/app");
+  await page.goto("/app/dashboard");
   await expect(page.locator("header")).toBeVisible();
   await expect(page.getByText("Unexpected Application Error")).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
@@ -1372,7 +1389,7 @@ test("merchant users cannot open platform workspace", async ({ page }) => {
   await login(page, users.owner, /\/app/);
   await page.goto("/platform");
 
-  await expect(page).toHaveURL(/\/app/);
+  await expect(page).toHaveURL(/\/app\/dashboard/);
 });
 
 test("operator sees restricted sections as forbidden", async ({ page }) => {

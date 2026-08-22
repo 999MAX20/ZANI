@@ -393,6 +393,9 @@ export const en: Record<string, string> = {
   "dashboard.healthyPipeline": "Healthy pipeline",
   "dashboard.aiRecommendations": "Recommendations",
   "dashboard.attention": "Needs attention",
+  "dashboard.noPrioritiesTitle": "No urgent exceptions",
+  "dashboard.noPrioritiesText":
+    "Overdue work, unanswered clients, and connection failures do not require action right now.",
   "dashboard.generatePlan": "Build plan",
   "dashboard.leadFunnel": "Lead funnel",
   "dashboard.leadFunnelHint": "New -> contact -> qualify -> booking",

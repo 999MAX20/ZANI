@@ -50,7 +50,7 @@ const desktopSections = [
     id: "work",
     titleKey: "nav.workspace",
     items: [
-      { to: "/app", label: "nav.dashboard", icon: Home },
+      { to: "/app/dashboard", label: "nav.dashboard", icon: Home },
       { to: "/app/leads", label: "nav.leads", icon: Inbox, resource: "leads" },
       { to: "/app/deals", label: "nav.deals", icon: KanbanSquare, resource: "deals" },
       { to: "/app/clients", label: "nav.clients", icon: Users, resource: "clients" },
@@ -94,7 +94,7 @@ const mobileDrawerSections = [
     id: "operations",
     titleKey: "nav.operations",
     items: [
-      { to: "/app", label: "nav.dashboard", icon: Home },
+      { to: "/app/dashboard", label: "nav.dashboard", icon: Home },
       { to: "/app/leads", label: "nav.leads", icon: Inbox, resource: "leads" },
       { to: "/app/deals", label: "nav.deals", icon: KanbanSquare, resource: "deals" },
       { to: "/app/clients", label: "nav.clients", icon: Users, resource: "clients" },
@@ -135,7 +135,7 @@ const mobileDrawerSections = [
 
 function isItemActive(pathname: string, to?: string) {
   if (!to) return false;
-  return pathname === to || (to !== "/app" && pathname.startsWith(to));
+  return pathname === to || pathname.startsWith(`${to}/`);
 }
 
 function isSidebarItemVisible(item: SidebarItem, user: ReturnType<typeof useAuth>["user"], businessId?: number): boolean {
@@ -297,7 +297,7 @@ export function Sidebar({
                     <NavLink
                       key={item.to}
                       to={item.to!}
-                      end={item.to === "/app"}
+                      end={item.to === "/app/dashboard"}
                       onClick={onNavigate}
                       onMouseEnter={() => prefetchRouteData(item.to!, queryClient, business?.id)}
                       onFocus={() => prefetchRouteData(item.to!, queryClient, business?.id)}

@@ -246,7 +246,7 @@ remains future owner-approved product work.
 | Deals | canonical six-stage pipeline, owner, value, tasks, won/lost/reopen and reason rules | canonicalization migration, backend actions and kanban browser coverage | complete drag/action/persistence/error certification |
 | Appointments | working hours, availability, overlap, resource, responsible user, confirm/reschedule/cancel/complete/no-show | lifecycle services, conflict tests and calendar browser coverage | all role/mobile/failure and draft-preservation scenarios |
 | Tasks | assignment, take/start/complete/cancel/snooze/watch/comments, entity links, workload and escalation | service and role tests, representative UI coverage | full operator/specialist daily queue and recovery certification |
-| Analytics/dashboard | CRM metrics, funnel, appointment, overdue, unanswered, manager performance and connector health | backend metrics and tests | owner dashboard UX redesign and final visual/product sign-off |
+| Analytics/dashboard | CRM metrics, funnel, appointment, overdue, unanswered, manager performance and connector health | backend metrics/tests plus verified UX-3 owner dashboard | final owner product sign-off and UX-4 certification |
 | Imports | validation, mapping, duplicate handling and job status | backend/import evidence and inventory | end-to-end browser validation, partial failure and recovery |
 | AI/automation | suggestions, approvals, tool execution, runs, retries and audit | backend approval/idempotency evidence | fix security findings, then certify every merchant-visible failure/recovery path |
 
@@ -315,13 +315,16 @@ the real browser through persisted state.
 - UX-1: CRM entity workspace foundation is done;
 - UX-2: deal pipeline language, duplicate-stage cleanup and kanban density are
   done;
+- UX-3: canonical dashboard routing and owner/administrator information
+  hierarchy are done;
 - Leads toolbar density follow-up is done;
 - public auth-page clarity follow-up is done.
 
 ### 7.3 Open UI/UX scope
 
-- UX-3 owner/administrator dashboard redesign is planned;
 - UX-4 final browser certification is planned;
+- the UX-3 implementation is browser-verified but still participates in the
+  final owner visual/product sign-off during UX-4;
 - Tasks, Calendar, Inbox and Settings have broad implementation but have not
   received the same complete owner-led visual polishing pass;
 - additional pages, forms, overlays, responsive layouts and empty/error states
@@ -481,7 +484,7 @@ defect knowledge base with exact evidence.
 
 ### Gate P3 - Owner-led frontend polish
 
-- complete UX-3 dashboard redesign;
+- [x] complete UX-3 dashboard redesign;
 - inspect Tasks, Calendar, Inbox and Settings;
 - inspect all remaining active routes on desktop and mobile;
 - record and generalize every confirmed defect;
@@ -580,7 +583,7 @@ evidence and are not deleted.
 - Accepted current backend evidence: `944/944` tests after PP-SEC-010.
 - Accepted fallback state: `FB-001 DONE / FB-002 DONE / FB-003 DONE / FB-004 DONE / FB-005 DONE / FB-006 READY`.
 - Accepted certification state: four PASS, three PARTIAL, one BLOCKED.
-- Accepted UX state: UX-1 and UX-2 complete; UX-3 and UX-4 planned.
+- Accepted UX state: UX-1, UX-2 and UX-3 complete; UX-4 planned.
 - No implementation, migration, dependency or environment change was made by
   this analysis document.
 

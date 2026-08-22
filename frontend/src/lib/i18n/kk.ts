@@ -393,6 +393,9 @@ export const kk: Record<string, string> = {
   "dashboard.healthyPipeline": "Сау воронка",
   "dashboard.aiRecommendations": "Ұсыныстар",
   "dashboard.attention": "Назар қажет",
+  "dashboard.noPrioritiesTitle": "Шұғыл ауытқулар жоқ",
+  "dashboard.noPrioritiesText":
+    "Мерзімі өткен жұмыс, жауапсыз клиенттер және қосылым ақаулары қазір әрекетті қажет етпейді.",
   "dashboard.generatePlan": "Жоспар құру",
   "dashboard.leadFunnel": "Өтінімдер воронкасы",
   "dashboard.leadFunnelHint": "Жаңа -> байланыс -> нақтылау -> жазба",

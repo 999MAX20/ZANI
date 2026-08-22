@@ -6,7 +6,7 @@ const ownerEmail =
   process.env.E2E_OWNER_EMAIL || "business_owner@example.com";
 
 const workspaceReadySelectors: Record<string, string> = {
-  "/app": '[data-testid="dashboard-workspace-ready"]',
+  "/app/dashboard": '[data-testid="dashboard-workspace-ready"]',
   "/app/leads": '[data-testid="leads-workspace-ready"]',
   "/app/clients": '[data-testid="clients-workspace-ready"]',
   "/app/tasks": '[data-testid="tasks-workspace-ready"]',
@@ -62,7 +62,7 @@ async function login(page: Page) {
   await page.locator('form button[type="submit"]').click();
   await expect(page).toHaveURL(/\/app/);
   await expect(page.getByRole("main").first()).toBeVisible();
-  await waitForWorkspaceReady(page, "/app");
+  await waitForWorkspaceReady(page, "/app/dashboard");
 }
 
 async function navigateInsideApp(page: Page, path: string) {
@@ -72,9 +72,7 @@ async function navigateInsideApp(page: Page, path: string) {
   }, path);
   await expect(page).toHaveURL(
     new RegExp(
-      path === "/app"
-        ? "/app/?$"
-        : path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+      path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
     ),
   );
   await expect(page.getByRole("main").first()).toBeVisible();
@@ -147,7 +145,7 @@ test("F-301 pilot workspaces remain responsive and have no serious or critical a
   await login(page);
 
   for (const route of [
-    "/app",
+    "/app/dashboard",
     "/app/leads",
     "/app/tasks",
     "/app/calendar",

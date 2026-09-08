@@ -21,6 +21,7 @@ already implemented and verified at their documented scope.
 | `ENV_GATED` | Repository support exists, but the target environment or real provider gate is not green. |
 | `ROADMAP` | Intentionally unavailable and must not be presented as current functionality. |
 | `POLICY_CONFLICT` | Code and documentation express different authorization or product rules. |
+| `CLOSED` | The repository requirement and its deterministic verification are complete. |
 
 ## Pilot Decision Boundary
 
@@ -33,12 +34,12 @@ A paid or externally connected pilot additionally requires all production,
 queue, storage, email, monitoring, backup and live-provider gates in this
 document to be green.
 
-## Open Register
+## Gap Register
 
 | ID | Area | Status | Controlled pilot | Paid/live pilot |
 | --- | --- | --- | --- | --- |
 | BE-GAP-001 | Tenant ownership immutability on generic updates | `BLOCKER` | Blocks | Blocks |
-| BE-GAP-002 | Exact clean release candidate and final integrated gate | `BLOCKER` | Blocks | Blocks |
+| BE-GAP-002 | Exact clean release candidate and final integrated gate | `CLOSED` | Cleared for the repository candidate | Production env gates remain separate |
 | BE-GAP-003 | Functional certification FC-003/004/006/008 | `PARTIAL` | Blocks formal acceptance | Blocks |
 | BE-GAP-004 | Platform manager support-mutation policy | `POLICY_CONFLICT` | Resolve before support access | Blocks support operations |
 | BE-GAP-005 | Real provider failure and recovery evidence | `ENV_GATED` | May remain disabled | Blocks each enabled provider |
@@ -89,22 +90,29 @@ but it is a tenant integrity and authorization defect.
   cross-business reassignment denial and unchanged related records.
 - Cross-tenant failure remains non-enumerable.
 
-## BE-GAP-002 - Clean Release Candidate And Integrated Verification
+## BE-GAP-002 - Clean Release Candidate And Integrated Verification - Closed
 
 At audit start the branch had no staged changes and a large mixed working tree.
 The service archive implementation included an untracked migration, domain
 service and tests. Historical green results therefore did not identify one
 reproducible artifact that a deploy could build.
 
-Acceptance requires:
+Closure evidence:
 
-- every intended model change and migration committed together;
-- no project source or required migration left untracked;
-- no generated Playwright CLI logs or stray root lockfile in the commit;
-- `git diff --check` clean;
-- the full deterministic gate executed from the exact committed range;
-- the verification report records branch, base SHA, candidate SHA, commands,
-  results and skipped external checks.
+- integrated candidate: `e65e0f4` on `codex/ux-3-owner-dashboard`;
+- base SHA: `f142f3e498e4726320fc7de0b6ad0cc27187c57f`;
+- all intended model changes, the service migration, domain service and tests
+  are committed together;
+- generated Playwright CLI logs and the stray root lockfile are not committed;
+- `git diff --check` passed for working tree, index and committed range;
+- `scripts/codex_verify.py --mode full --base-ref f142f3e...` passed in
+  1727.1 seconds with no migration drift, a clean Django check, all 954 Django
+  tests, deterministic frontend install/build/bundle, mobile owner/manager
+  smoke, hashed lock installability, zero Python advisories, zero npm
+  vulnerabilities and final diff hygiene.
+
+This closes the repository artifact and integrated-gate portion only. It does
+not close BE-GAP-001, the remaining FC rows or any paid/live environment gate.
 
 ## BE-GAP-003 - Functional Certification Is Partial
 

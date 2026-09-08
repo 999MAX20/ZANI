@@ -77,7 +77,7 @@ the accepted project branch.
 | ZD-001 | INTERACTION | Internal search on Leads and Deals | Search controls across Leads, Deals, Clients, Tasks, Inbox, Outreach, Pricing and global search | FIXED_BRANCH / TEST_DEBT | `1b40d00` |
 | ZD-002 | VISUAL / TECHNICAL_LEAK | Outbound manager message in Inbox | Shared message bubbles for manager, bot/AI and client plus failed-message action in the conversation list | VERIFIED_BRANCH | `7284920` |
 | ZD-003 | INTERACTION | Client CRM drawer after canceling the native file picker | Shared `CrmEntityDrawer` attachment flow for client, lead, deal and appointment entities, including entity drawers opened from Tasks | VERIFIED_BRANCH | `f81cee7` |
-| ZD-004 | CONSISTENCY / TECHNICAL_LEAK | Code-level fallback audit | Shared API parsing, crash boundaries and direct error fields across merchant and platform surfaces | INTEGRATED_RUNTIME_PASS / CLEAN_RANGE_OPEN | `UNIFIED_FALLBACK_EXPERIENCE_PLAN.md` |
+| ZD-004 | CONSISTENCY / TECHNICAL_LEAK | Code-level fallback audit | Shared API parsing, crash boundaries and direct error fields across merchant and platform surfaces | VERIFIED_BRANCH / EXTERNAL_AND_MANUAL_EVIDENCE_OPEN | `UNIFIED_FALLBACK_EXPERIENCE_PLAN.md` |
 | ZD-005 | SECURITY / AUTHORIZATION | Legacy local private-media URL | Every registered attachment consumer and every CRM entity scope within the same business | VERIFIED_BRANCH | `codex/pre-pilot-sec-010-security-certification` |
 | ZD-006 | VISUAL / CONSISTENCY | Merchant root and owner dashboard | Router aliases, desktop/mobile navigation and the owner/administrator dashboard hierarchy | VERIFIED_BRANCH | `codex/ux-3-owner-dashboard` |
 
@@ -157,7 +157,7 @@ the accepted project branch.
 
 - Recorded: 2026-08-18
 - Type: `CONSISTENCY / TECHNICAL_LEAK`
-- Status: `INTEGRATED_RUNTIME_PASS / CLEAN_RANGE_OPEN`
+- Status: `VERIFIED_BRANCH / EXTERNAL_AND_MANUAL_EVIDENCE_OPEN`
 - Owner-observed surface: broad fallback/error review requested by the owner.
 - Evidence: shared `getApiErrorMessage` can return raw response strings,
   backend `detail` and arbitrary key/value output; application and route error
@@ -202,8 +202,9 @@ the accepted project branch.
   notices delegate to `StatusNotice`; import-row and provider `reason` text is
   no longer rendered directly; RU/KK/EN parity, production build, bundle,
   desktop/mobile failure matrix, session recovery, visual audit and interaction
-  audit pass. ZD-004 remains open only for a clean committed-range gate,
-  production-like live-provider evidence and manual screen-reader review.
+  audit pass. The committed-range full gate passed on `e65e0f4`. ZD-004
+  remains open only for production-like live-provider evidence and manual
+  screen-reader review.
 - Derived audit rule: no merchant-visible component may render raw backend or
   runtime error text. Every failure must be normalized, localized, sanitized
   and paired with a safe next action when one exists.

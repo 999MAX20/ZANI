@@ -1,10 +1,22 @@
 # ZANI Application Functional Certification
 
 - Date: 2026-08-20
-- Status: **EXECUTED / PARTIAL - FB-010 ISOLATED MATRIX PASSED; CLEAN-RANGE EVIDENCE AND FINAL REPORT OPEN**
+- Status: **EXECUTED / PARTIAL - INTEGRATED CLEAN-RANGE GATE PASSED; FC-003/004/006 AND FINAL REPORT OPEN**
 - Activation: owner authorized execution on 2026-08-20
 - Primary scope: authenticated merchant `/app`
 - Secondary scope: public authentication and platform-admin surfaces
+
+## 2026-09-08 Integrated Gate Checkpoint
+
+The committed code candidate `e65e0f4` on
+`codex/ux-3-owner-dashboard` passed the full deterministic gate against base
+`f142f3e498e4726320fc7de0b6ad0cc27187c57f`. Evidence includes no migration
+drift, a clean Django system check, all 954 Django tests, deterministic frontend
+install/build/bundle, mobile owner/manager smoke, zero Python and npm dependency
+advisories, and final committed-range diff hygiene. This closes the clean-range
+prerequisite. FC-008 remains partial until FC-003/004/006 and the final
+certification report are reconciled; the pass must not be interpreted as live
+provider or paid-beta evidence.
 
 ## Purpose
 
@@ -315,7 +327,7 @@ providers. Live provider certification is a separate authorized activity.
 | FC-005 | Complete role/capability/tenant browser matrix | PASS |
 | FC-006 | Complete ten critical merchant journeys | PARTIAL - representative journeys pass; all ten are not yet UI/API/persistence certified |
 | FC-007 | Run desktop/tablet/mobile non-functional matrix | PASS |
-| FC-008 | Run clean full gate and publish final report | PARTIAL / BLOCKED - the combined dirty checkout passed 947 backend tests and the isolated FB-010 matrix; the clean committed range, integrated inventory/audits and final report remain open |
+| FC-008 | Run clean full gate and publish final report | PARTIAL - integrated clean-range full gate passed on `e65e0f4`; FC-003/004/006 reconciliation and the final report remain open |
 
 ## Evidence Rules
 
@@ -340,11 +352,11 @@ The owner authorized BE-REM-007 execution on 2026-08-20. Independent backend,
 frontend, browser, accessibility, responsive, performance and dependency gates
 were executed. The isolated cross-role failure matrix in
 `UNIFIED_FALLBACK_EXPERIENCE_PLAN.md` now passes for the required merchant
-roles and desktop/mobile viewports. FC-008 remains open until the shared dirty
-checkout is reconciled into a clean committed range, the generated fallback
-inventory and Critic-owned visual/interaction gates are current, and the final
-report is published. The isolated pass must not be converted into a silent
-integrated pass.
+roles and desktop/mobile viewports. The integrated committed-range gate,
+generated fallback inventory and visual/interaction gates are now current on
+`e65e0f4`. FC-008 remains partial until FC-003/004/006 and the final report are
+reconciled. The repository pass must not be converted into a live-provider or
+paid-beta claim.
 
 Current evidence is recorded in
 `actual_docs/APP_FUNCTIONAL_CERTIFICATION_REPORT_2026-08-20.md`.

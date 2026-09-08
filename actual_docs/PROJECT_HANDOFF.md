@@ -27,6 +27,20 @@ Completed, archived и historical документы являются evidence, 
 
 ## Git snapshot
 
+### 2026-09-08 integrated committed-range checkpoint
+
+The previously mixed checkout is consolidated on
+`codex/ux-3-owner-dashboard` at code candidate `e65e0f4`. The deterministic
+full gate for `f142f3e...e65e0f4` passed in 1727.1 seconds: migration drift and
+Django checks are clean, all 954 Django tests passed, deterministic frontend
+install/build/bundle passed, mobile owner/manager smoke passed, Python and npm
+dependency audits reported zero known vulnerabilities, and final diff hygiene
+passed. Generated Playwright CLI logs and the stray root `package-lock.json`
+were excluded from the commit. The repository artifact/clean-range blocker is
+closed; tenant ownership immutability, FC-003/004/006 and the final
+certification report remain open. The active backend gap register is
+`docs/pilot/backend-open-logic-register.md`.
+
 ### 2026-09-03 FB-010 verification checkpoint
 
 This checkpoint supersedes older FB-010 status statements later in this handoff. The bounded cross-role failure matrix passes in an isolated runtime: 744 applicable journey/role/state/viewport cells, five-role desktop and mobile session-expiry recovery, tenant-safe browser denial, 208/208 targeted provider/async backend tests and 947/947 full backend tests are green. Integrated closeout remains open because this checkout is still shared and dirty, the generated fallback inventory is stale while Critic UI/UX changes the source set, and the Critic-owned visual/interaction audits plus a clean committed-range gate have not been accepted here. Detailed evidence and the one bounded next step are authoritative in `UNIFIED_FALLBACK_EXPERIENCE_PLAN.md`.

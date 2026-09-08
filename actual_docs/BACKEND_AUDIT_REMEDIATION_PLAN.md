@@ -3,7 +3,7 @@
 - Status: **ACTIVE / IN PROGRESS**
 - Created: 2026-08-18
 - Scope: remaining repository, security and verification debt discovered by the backend audit
-- Execution state: **IN PROGRESS - BE-REM-001 THROUGH BE-REM-006 DONE; BE-REM-007 BLOCKED BY FINAL FAILURE CERTIFICATION**
+- Execution state: **IN PROGRESS - BE-REM-001 THROUGH BE-REM-006 DONE; BE-REM-007 PARTIAL AFTER CLEAN-RANGE PASS, FINAL CERTIFICATION OPEN**
 - Owner: ZANI manager workflow
 
 ## Purpose
@@ -82,7 +82,7 @@ External production services are listed as a release gate because repository har
 | BE-REM-004 | Guarantee the safe API error envelope for unknown failures | P0 | DONE | BE-REM-003 |
 | BE-REM-005 | Replace connector secret encryption and add key rotation | P1 | DONE | BE-REM-002 |
 | BE-REM-006 | Add privileged-account MFA foundation | P1 | DONE | BE-REM-003 |
-| BE-REM-007 | Complete the functional certification evidence | P1 | BLOCKED - FB-006..009 implementation landed; FB-010/clean-range evidence open | BE-REM-001..006 |
+| BE-REM-007 | Complete the functional certification evidence | P1 | PARTIAL - integrated clean-range gate passed on `e65e0f4`; FC-003/004/006 reconciliation and final report open | BE-REM-001..006 |
 
 ## BE-REM-001 - Restore The Clean Full Test Gate
 
@@ -568,7 +568,7 @@ Task: BE-REM-007
 Branch: codex/backend-rem-007-functional-certification
 Base commit: 00b1e2146f05cd92dbebc976ed3c3163eee3b958
 Evidence report: actual_docs/APP_FUNCTIONAL_CERTIFICATION_REPORT_2026-08-20.md
-Status: BLOCKED - fallback implementation FB-006 through FB-009 is present in the current dirty checkout, but FB-010 failure certification and clean-range evidence are still open
+Status: PARTIAL - the integrated committed-range full gate and FB-010 passed on `e65e0f4`; FC-003/004/006 reconciliation and the final certification report remain open
 Behavior delivered:
 - a machine-readable 43-entry route/action registry covers all 81 router path declarations (77 unique) and a guard test prevents unregistered routes
 - deterministic certification fixtures cover owner, administrator, manager, operator and specialist profiles plus multiple businesses and foreign-tenant data
@@ -593,7 +593,7 @@ Checks skipped and reason: no independent repository gate was skipped; exhaustiv
 Migration/env impact: no migration or dependency-lock change; deterministic fixtures and quality-gate configuration only
 Permission impact: no permission grant was widened; team options are restricted to the active business after the existing accessible-business authorization filter
 Notification/BusinessEvent/AI impact: no notification, BusinessEvent or AI production behavior changed; mock-provider and disabled-provider paths remain deterministic
-Residual risk: registry entries remain NOT_RUN until their complete action and failure contracts are individually certified; FB-006 through FB-009 implementation is present but FB-010, FC-003, FC-004, FC-006 and FC-008 remain open
+Residual risk: FC-003, FC-004, FC-006 and the final FC-008 report remain open; production-like live-provider and managed-service evidence remains outside this repository gate
 ```
 
 Add one entry per subsequent completed item:

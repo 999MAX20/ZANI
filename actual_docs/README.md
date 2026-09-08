@@ -17,18 +17,18 @@ the canonical ZANI repository.
    register. Every confirmed defect must be recorded here and audited across
    every relevant shared surface.
 5. `APP_FUNCTIONAL_CERTIFICATION.md` — executed partial certification: FC-001,
-   FC-002, FC-005 and FC-007 pass; FC-003, FC-004 and FC-006 are partial;
-   FC-008 has green 947-test backend and isolated FB-010 cross-role checkpoints
-   but remains blocked by the integrated inventory/audits, clean committed
-   range and final report.
+   FC-002, FC-005 and FC-007 pass; FC-003, FC-004 and FC-006 are partial. The
+   integrated committed-range full gate passed on `e65e0f4` with 954 Django
+   tests, frontend build/bundle, mobile smoke and dependency audits; FC-008
+   remains partial until the open FC rows and final report are reconciled.
 6. `BACKEND_AUDIT_REMEDIATION_PLAN.md` — backend remediation evidence through
-   BE-REM-006; BE-REM-007 remains blocked by final fallback and certification.
+   BE-REM-006; BE-REM-007 is partial after the clean-range pass and remains
+   open for final certification.
 7. `UNIFIED_FALLBACK_EXPERIENCE_PLAN.md` — active execution queue for the shared
    backend/frontend error contract, merchant-safe fallback UX and recovery
-   certification. FB-001 through FB-005 are done; FB-006 through FB-009 are
-   implemented in the current dirty checkout with verification gates open;
-   the bounded FB-010 matrix passes in isolation, while integrated closeout
-   remains open until the parallel UI source set and clean-range gates settle.
+   certification. FB-001 through FB-007 and FB-010 are done in the committed
+   candidate; FB-008 remains open for live-provider evidence and FB-009 for
+   manual screen-reader evidence.
 
 ## Boundary
 

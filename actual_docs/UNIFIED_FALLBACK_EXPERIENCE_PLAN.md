@@ -3,7 +3,7 @@
 - Status: **ACTIVE / IN EXECUTION**
 - Created: 2026-08-18
 - Scope: merchant-visible errors, recovery actions, loading/empty/offline states, backend error contracts and technical-detail isolation
-- Execution state: **FB-001..FB-005 DONE / FB-006..FB-009 INTEGRATED RUNTIME PASS / FB-010 MATRIX + VISUAL + INTERACTION PASS / CLEAN COMMIT-RANGE CLOSEOUT OPEN**
+- Execution state: **FB-001..FB-007 DONE / FB-008 LIVE-PROVIDER EVIDENCE OPEN / FB-009 MANUAL SCREEN-READER OPEN / FB-010 DONE**
 - Owner: ZANI manager workflow
 
 ## Product Outcome
@@ -313,11 +313,11 @@ Even platform/support views must sanitize credentials and personal data. A reque
 | FB-003 | Introduce `AppError` normalization and retire raw parsing | P0 | DONE | FB-001..002 |
 | FB-004 | Build the shared visual fallback surface family | P0 | DONE | FB-003 |
 | FB-005 | Remove raw messages from crash and route boundaries | P0 | DONE | FB-003..004 |
-| FB-006 | Migrate direct technical-error consumers | P0 | INTEGRATED RUNTIME PASS - clean range open | FB-003..005 |
-| FB-007 | Standardize session, connectivity and draft preservation | P1 | INTEGRATED RUNTIME PASS - clean range open | FB-003..004 |
+| FB-006 | Migrate direct technical-error consumers | P0 | DONE | FB-003..005 |
+| FB-007 | Standardize session, connectivity and draft preservation | P1 | DONE | FB-003..004 |
 | FB-008 | Standardize async job, provider and Inbox delivery recovery | P1 | INTEGRATED RUNTIME PASS - live-provider evidence open | FB-002..007 |
 | FB-009 | Complete RU/KK/EN copy and accessibility review | P1 | INTEGRATED BROWSER PASS - manual screen-reader review open | FB-004..008 |
-| FB-010 | Run cross-role browser failure certification | P1 | MATRIX + VISUAL + INTERACTION PASS - clean range open | FB-001..009 |
+| FB-010 | Run cross-role browser failure certification | P1 | DONE - matrix, visual, interaction and committed-range gates pass | FB-001..009 |
 
 ## FB-001 - Inventory And Error-Code Registry
 
@@ -678,3 +678,15 @@ Runner correction: the first isolated visual audit timed out because both audit 
 Checks skipped and reason: full backend suite and migration tests were not rerun because this checkpoint changes frontend presentation, frontend policy tests and browser audit runners only; the previously recorded 947/947 backend evidence remains the current integrated backend checkpoint. scripts/codex_verify.sh / clean-range verification was not run because the canonical checkout still contains unrelated mixed uncommitted changes and cannot produce honest commit-range evidence.
 Residual risk: no absolute all-route production guarantee is claimed. Clean committed-range verification, manual screen-reader review and real staging provider failures remain open. The interaction audit also reported five non-blocking selector misses across Leads, Deals, Conversations, Analytics and AI Agents; no page was blocked and no API or unexpected error occurred.
 ```
+
+### 2026-09-08 committed-range closeout
+
+The integrated candidate `e65e0f4` on `codex/ux-3-owner-dashboard` passed
+`scripts/codex_verify.py --mode full --base-ref f142f3e...` in 1727.1 seconds.
+The gate included committed-range diff hygiene, migration drift, Django system
+check, all 954 Django tests, deterministic frontend install/build/bundle,
+mobile owner/manager smoke, hashed Python lock installation, Python and npm
+dependency audits with zero known vulnerabilities, and final diff hygiene.
+This closes the clean-range dependencies for FB-006, FB-007 and FB-010. FB-008
+still requires real staging provider failure/recovery evidence, and FB-009
+still requires manual screen-reader review.

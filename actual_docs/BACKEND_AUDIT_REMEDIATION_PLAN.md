@@ -598,7 +598,8 @@ Checks run and exact result:
 - .\.venv\Scripts\python.exe scripts\codex_verify.py --mode full --base-ref 00b1e2146f05cd92dbebc976ed3c3163eee3b958 -> passed against commit 42db5d4; all committed-range backend/frontend/browser/security stages green in 1561s
 - git diff --check -> passed
 Current reconciliation checks: merchant-journey registry 10/10; failure registry 744 cells; J06/J07/J10 passed 3/3 on desktop and 6/6 across tablet/mobile; a clean disposable-database desktop project discovered 62 scenarios and exited zero; frontend build passed with 4841 RU/KK/EN keys; focused Django check plus 6 import/team/AI regressions passed
-Checks skipped and reason: the final current-candidate full gate has not yet run; exhaustive per-control semantic execution is not represented by the 43 structural route/action rows, which all remain NOT_RUN
+Current committed-range gate: implementation commit d4f7c8f passed scripts/codex_verify.py --mode full --base-ref 81167518... in 1911.2s; all 962 Django tests plus migration/check, deterministic frontend install/build/bundle, mobile role smoke, dependency audits and diff hygiene passed
+Checks skipped and reason: exhaustive per-control semantic execution is not represented by the 43 structural route/action rows, which all remain NOT_RUN
 Migration/env impact: no migration or dependency-lock change; deterministic fixtures and quality-gate configuration only
 Permission impact: no permission grant was widened; team collections are restricted to the active accessible business and AI suggest/execute/approve capabilities remain backend-enforced
 Notification/BusinessEvent/AI impact: no notification or BusinessEvent contract changed; the AI frontend now reaches existing source-grounded suggestion, approval, execution and audit contracts without bypassing confirmation

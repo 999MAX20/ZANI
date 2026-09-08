@@ -34,7 +34,10 @@ real platform MFA step-up and backend-declared retryability. No migration,
 dependency or environment change is required.
 Formal certification remains partial because all 43 structural route/action
 records are still `NOT_RUN`; per-control semantic evidence or approved
-exclusions must close FC-003 before final FC-008 acceptance.
+exclusions must close FC-003 before final FC-008 acceptance. Implementation
+commit `d4f7c8f` passed the full committed-range gate against `81167518` in
+1911.2s with all 962 Django tests and every frontend, browser, security and diff
+stage green, so no separate current-candidate gate failure remains.
 
 Update 2026-09-08: BE-GAP-001 closes the generic-update tenant ownership
 boundary. `TenantModelViewSet` now rejects direct `business` reassignment and

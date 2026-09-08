@@ -123,8 +123,9 @@ The current functional certification records:
   merchant journeys with route, role, frontend, API and persistence evidence;
   newly added browser coverage proves J06 lead import, J07 team role changes and
   J10 source-grounded AI approval end to end;
-- `FC-008 PARTIAL`: the prior clean committed-range gate is green, but the
-  current candidate gate and final FC-003 reconciliation are still open.
+- `FC-008 PARTIAL`: implementation commit `d4f7c8f` passes the current full
+  committed-range gate; final acceptance remains dependent on FC-003
+  reconciliation.
 
 ### Delivered in the current candidate
 
@@ -144,6 +145,11 @@ The current functional certification records:
   platform MFA step-up, explicit backend retryability and the current
   owner/manager dashboard separation. Working-hours modal close/discard returns
   focus to the visible resource trigger.
+- Implementation commit `d4f7c8f` passed
+  `scripts/codex_verify.py --mode full --base-ref 81167518...` in 1911.2s:
+  all 962 Django tests, migration/check, deterministic frontend
+  install/build/bundle, mobile role smoke, dependency audits and diff hygiene
+  passed.
 
 ### Still unimplemented or only partially evidenced
 
@@ -152,11 +158,12 @@ The current functional certification records:
 2. Every interactive control needs either a passing expected-result assertion
    or a documented exclusion with owner rationale. Structural route coverage
    and broad failure matrices cannot substitute for this action-level proof.
-3. After those records are executed, the final committed-range gate and report
-   reconciliation must close `FC-003` and then `FC-008`. The current candidate
-   has passed focused backend checks, production frontend build, all registry
-   guards, a clean full desktop browser project and the new tablet/mobile
-   journeys; the committed-range gate is intentionally run only after commit.
+3. After those records are executed, rerun the committed-range gate if the
+   action-level work changes executable code, reconcile the report and close
+   `FC-003` and then `FC-008`. The current implementation commit already passes
+   focused backend checks, production frontend build, all registry guards, a
+   clean full desktop browser project, the new tablet/mobile journeys and the
+   full committed-range gate.
 
 This remaining work is formal certification debt. No current evidence shows an
 additional missing CRM lifecycle, permission or tenant-isolation implementation

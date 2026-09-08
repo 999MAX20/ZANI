@@ -13,9 +13,8 @@ The committed code candidate `e65e0f4` on
 `f142f3e498e4726320fc7de0b6ad0cc27187c57f`. Evidence includes no migration
 drift, a clean Django system check, all 954 Django tests, deterministic frontend
 install/build/bundle, mobile owner/manager smoke, zero Python and npm dependency
-advisories, and final committed-range diff hygiene. This closes the clean-range
-prerequisite. FC-008 remains partial until FC-003/004/006 and the final
-certification report are reconciled; the pass must not be interpreted as live
+advisories, and final committed-range diff hygiene. This closed the clean-range
+prerequisite at that checkpoint. The pass must not be interpreted as live
 provider or paid-beta evidence.
 
 ## 2026-09-08 Merchant-Journey Reconciliation Checkpoint
@@ -34,9 +33,10 @@ journeys, five roles, twelve data/failure states and two viewport classes.
 Together these artifacts close `FC-004` and `FC-006`. They do not close
 `FC-003`: all 43 structural route/action records still have `NOT_RUN` status,
 so exhaustive control-level expected-result or approved-exclusion evidence is
-not yet recorded. `FC-008` therefore remains partial until that semantic
-registry work and the final committed-candidate gate/report reconciliation are
-complete. Browser certification also corrected working-hours focus return,
+not yet recorded. The current implementation commit `d4f7c8f` passes the full
+committed-range gate against `81167518`; `FC-008` therefore remains partial
+only until the FC-003 semantic registry is executed and final acceptance is
+published. Browser certification also corrected working-hours focus return,
 stale service-create fixtures, MFA step-up setup and retryability assertions so
 the evidence follows the current product and backend contracts.
 
@@ -349,7 +349,7 @@ providers. Live provider certification is a separate authorized activity.
 | FC-005 | Complete role/capability/tenant browser matrix | PASS |
 | FC-006 | Complete ten critical merchant journeys | PASS - machine registry accepts exactly 10/10 journeys with frontend, API and persistence evidence; missing J06/J07/J10 browser flows pass |
 | FC-007 | Run desktop/tablet/mobile non-functional matrix | PASS |
-| FC-008 | Run clean full gate and publish final report | PARTIAL - prior integrated gate passed on `e65e0f4`; current candidate gate and FC-003 semantic reconciliation remain open |
+| FC-008 | Run clean full gate and publish final report | PARTIAL - current candidate `d4f7c8f` passed the full gate; final acceptance remains blocked by FC-003 semantic reconciliation |
 
 ## Evidence Rules
 

@@ -9,8 +9,9 @@ UI-to-API-to-persistence evidence for all ten critical merchant journeys.
 `FC-004` and `FC-006` are accepted. Full application certification is not
 declared because the 43-entry route/action registry remains structural: every
 entry is still marked `NOT_RUN`, so it does not yet prove every interactive
-control's expected result or approved exclusion. The current candidate also
-requires its final committed-range gate before `FC-008` can be reconciled.
+control's expected result or approved exclusion. The current candidate passes
+its committed-range gate; `FC-008` remains partial because final acceptance
+depends on the unresolved `FC-003` evidence.
 
 This is an evidence-granularity gap, not a known failing user journey and not
 permission to mark unexecuted control contracts as passed.
@@ -28,7 +29,10 @@ permission to mark unexecuted control contracts as passed.
 - Added backend regressions: lead duplicate preview and active-business team
   collection scoping pass together with existing AI approval and role audit
   flows
-- Final candidate commit and full committed-range gate: pending
+- Implementation commit: `d4f7c8fa6414ce919c5172dabe8656ebb6243a52`
+- Full committed-range gate against `81167518`: PASS in 1911.2s, including all
+  962 Django tests, deterministic frontend build/browser/security stages and
+  final diff hygiene
 
 ## Tested Range
 
@@ -118,7 +122,7 @@ Result: PASS against committed range ending at 42db5d4; all backend, frontend,
 browser and security stages passed in 1561s
 ```
 
-Current reconciliation checks before the final committed-range gate:
+Current candidate reconciliation checks:
 
 ```text
 npm run check:merchant-journeys
@@ -150,6 +154,12 @@ Result: 6 passed across lead import, team scoping/permissions/audit and AI appro
 
 npm run build
 Result: 4841 RU/KK/EN keys; TypeScript, application and widget builds passed
+
+.\.venv\Scripts\python.exe scripts\codex_verify.py --mode full --base-ref 81167518fb60887c023069a1fd7fa83f90fba6aa
+Result: PASS against implementation commit d4f7c8f in 1911.2s; 962 Django
+tests, migration drift, system check, deterministic frontend install/build,
+bundle budget, mobile role smoke, Python/npm security audits and final diff
+hygiene all passed
 ```
 
 ## Defects Found And Corrected During Certification
@@ -201,7 +211,7 @@ Result: 4841 RU/KK/EN keys; TypeScript, application and widget builds passed
 | FC-005 role/capability/tenant | PASS | Browser and 901-test backend evidence are green. |
 | FC-006 ten merchant journeys | PASS | Exactly 10/10 journeys map to frontend, API and persistence evidence; missing J06/J07/J10 browser flows pass. |
 | FC-007 non-functional matrix | PASS | Viewports, Axe, focus, request/render and bundle budgets pass; current J06/J07/J10 journeys pass on tablet/mobile and the clean desktop project exits zero. |
-| FC-008 final closeout | PARTIAL | The prior committed-range gate passed; the current candidate gate and FC-003 reconciliation remain open. |
+| FC-008 final closeout | PARTIAL | Current candidate `d4f7c8f` passed the full committed-range gate; final acceptance remains blocked by FC-003 reconciliation. |
 
 ## Remaining Required Work
 
@@ -210,8 +220,7 @@ formal semantic certification debt:
 
 1. For every route/action entry, record executed expected-result evidence or an
    approved exclusion and replace `NOT_RUN` only when that evidence exists.
-2. Run the final committed-candidate full gate and reconcile the exact result in
-   this report.
-3. Close `FC-003`, then publish the final `FC-008` acceptance decision.
+2. Close `FC-003`, then rerun the committed-candidate gate if that work changes
+   executable code and publish the final `FC-008` acceptance decision.
 
 Until those items are complete, BE-REM-007 remains `PARTIAL`, not `DONE`.

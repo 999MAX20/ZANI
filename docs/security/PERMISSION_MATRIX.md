@@ -24,6 +24,10 @@ This file is the working reference for role-aware behavior in ZANI.
 ## Principles
 
 - Backend permissions are mandatory. Frontend hiding is not security.
+- Generic merchant `PATCH` and `PUT` operations cannot change an entity's
+  owning Business, including ownership derived through a parent relation. A
+  future cross-business transfer requires a separate privileged, atomic and
+  audited workflow.
 - `platform_admin`, `platform_manager`, superusers, merchant owners and active
   merchant administrators are privileged MFA identities when the production
   MFA policy is enabled.

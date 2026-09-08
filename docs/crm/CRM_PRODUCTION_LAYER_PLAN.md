@@ -1,6 +1,6 @@
 # CRM Production Layer Plan
 
-Last updated: 2026-08-02
+Last updated: 2026-09-08
 
 Цель: довести CRM до production-уровня слоями по всему продукту, а не полировать одну страницу изолированно. Этот документ является текущим source-of-truth для CRM hardening.
 
@@ -17,6 +17,16 @@ domain invariants -> state machines -> audit/activity -> API contracts -> fronte
 ## 2. Текущее Состояние
 
 ### Backend Boundaries
+
+Update 2026-09-08: BE-GAP-001 closes the generic-update tenant ownership
+boundary. `TenantModelViewSet` now rejects direct `business` reassignment and
+derived ownership changes defined by each viewset's `business_lookup` before
+any default or overridden `perform_update()` can save. Same-business direct and
+derived updates remain supported, foreign source objects remain hidden, and
+related CRM records stay unchanged on a rejected move. The focused tenant suite
+passed 11 tests and the deterministic backend gate passed all 960 Django tests
+with no migration drift or Django check errors. Cross-business transfer remains
+a future explicit privileged and atomic workflow, not generic CRUD behavior.
 
 Update 2026-08-03: The default deal pipeline now uses one generic SMB template
 instead of mixing dentistry-specific and English fallback stages. Existing

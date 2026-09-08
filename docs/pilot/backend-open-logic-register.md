@@ -2,7 +2,7 @@
 
 - Status: active pre-pilot technical source of truth
 - Audit date: 2026-09-08
-- Candidate branch: `codex/ux-3-owner-dashboard`
+- Candidate branch: `codex/be-gap-001-tenant-ownership-immutability`
 - Source baseline at audit start: `f142f3e498e4726320fc7de0b6ad0cc27187c57f`
 - Scope: backend behavior, tenant and permission boundaries, recovery, providers,
   production gates and certification dependencies
@@ -38,7 +38,7 @@ document to be green.
 
 | ID | Area | Status | Controlled pilot | Paid/live pilot |
 | --- | --- | --- | --- | --- |
-| BE-GAP-001 | Tenant ownership immutability on generic updates | `BLOCKER` | Blocks | Blocks |
+| BE-GAP-001 | Tenant ownership immutability on generic updates | `CLOSED` | Cleared at repository level | Cleared at repository level; environment gates remain separate |
 | BE-GAP-002 | Exact clean release candidate and final integrated gate | `CLOSED` | Cleared for the repository candidate | Production env gates remain separate |
 | BE-GAP-003 | Functional certification FC-003/004/006/008 | `PARTIAL` | Blocks formal acceptance | Blocks |
 | BE-GAP-004 | Platform manager support-mutation policy | `POLICY_CONFLICT` | Resolve before support access | Blocks support operations |
@@ -51,44 +51,39 @@ document to be green.
 | BE-GAP-011 | Production file lifecycle hardening | `PARTIAL` | Local private media is sufficient | Required by production policy |
 | BE-GAP-012 | Vertical-specific CRM behavior | `ROADMAP` | Canonical CRM only | Product decision required |
 
-## BE-GAP-001 - Tenant Ownership Is Mutable On Generic Update
+## BE-GAP-001 - Tenant Ownership Immutability - Closed
 
-### Current behavior
+Generic `PATCH` and `PUT` requests can no longer move a tenant-owned object to
+another business. `TenantModelViewSet.update()` now validates ownership before
+calling any `perform_update()` implementation, including domain viewsets that
+override the default mutation hook.
 
-`TenantModelViewSet.get_object()` scopes and authorizes the existing object in
-its current business. During update, `_business_from_serializer()` prefers the
-request-supplied `business`, `_enforce_business_access()` authorizes that target
-business, and `serializer.save()` persists the new foreign key.
+The invariant uses each viewset's existing `business_lookup`, so it covers both
+direct ownership through `business` and derived ownership through relations
+such as `conversation__business`, `bot__business`, `rule__business` and
+`form__business`. Repointing a relation inside the same business remains
+allowed. A future cross-business transfer must be a separate privileged,
+atomic workflow that validates and moves every dependent relation.
 
-The field remains writable in verified serializers including:
+Closure evidence:
 
-- `ClientSerializer`;
-- `ServiceSerializer`;
-- `ResourceSerializer` and `WorkingHoursSerializer`;
-- `LeadSerializer`;
-- `BusinessConnectorSerializer`.
+- implementation commit: `21f5eb0`;
+- verification base: `ba764a94992b64a328c3f19b54253e3c83069e8b`;
+- before the fix, the focused regression class reproduced three unauthorized
+  moves with HTTP `200`: direct `Client.business`, derived
+  `Message.conversation` and `BusinessConnector.business` through a custom
+  `perform_update()`;
+- after the fix, `apps.core.tests_tenant_isolation` passed all 11 tests,
+  covering same-business direct and derived updates, multi-business
+  reassignment denial, unchanged related CRM records, role denial and a hidden
+  foreign source object;
+- `scripts/codex_verify.py --mode backend --base-ref ba764a9...` passed in
+  1686.5 seconds: clean working-tree/index/committed-range diff checks, no
+  migration drift, clean Django system check and all 960 Django tests in
+  1623.366 seconds.
 
-Some sensitive serializers already reject business reassignment explicitly,
-including support grants, routing policy and membership serializers. The
-protection is therefore present as a local pattern but is not a global invariant.
-
-### Impact
-
-An actor who can access both businesses can re-parent an entity from one tenant
-to another. Existing leads, appointments, deals, connector events or other
-relations may continue to reference the moved object from the original
-business, violating the mandatory same-business invariant. This is not an
-arbitrary foreign-tenant IDOR because access to both businesses is required,
-but it is a tenant integrity and authorization defect.
-
-### Acceptance criteria
-
-- Generic updates cannot change the owning business for tenant-owned entities.
-- Any future explicit transfer workflow is separate, privileged, atomic and
-  validates every dependent relation.
-- Regression coverage includes same-business success, role denial,
-  cross-business reassignment denial and unchanged related records.
-- Cross-tenant failure remains non-enumerable.
+No migration, environment, notification, BusinessEvent, AI or frontend change
+was required.
 
 ## BE-GAP-002 - Clean Release Candidate And Integrated Verification - Closed
 

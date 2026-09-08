@@ -9,9 +9,11 @@ from apps.ai_core.models import AIRequestLog, AgentProfile, BusinessKnowledgeIte
 from apps.bots.models import Bot, BotChannel
 from apps.businesses.models import Business, BusinessMember
 from apps.clients.models import Client
+from apps.conversations.models import Conversation, Message
 from apps.crm.models import Deal, Pipeline, PipelineStage
 from apps.activities.models import Note
 from apps.core.viewsets import TenantModelViewSet
+from apps.integrations.models import BusinessConnector
 from apps.leads.models import Lead
 from apps.notifications.models import Notification
 from apps.scheduling.models import Appointment, Resource, WorkingHours
@@ -115,6 +117,13 @@ class TenantObjectBoundaryTests(TestCase):
         payload = response.data
         return payload.get("results", payload) if isinstance(payload, dict) else payload
 
+    def _grant_owner_a_access_to_business_b(self):
+        BusinessMember.objects.create(
+            business=self.business_b,
+            user=self.owner_a,
+            role=BusinessMember.Roles.ADMIN,
+        )
+
     def test_owner_lists_only_current_tenant_records_across_core_entities(self):
         self.api.force_authenticate(self.owner_a)
 
@@ -190,6 +199,140 @@ class TenantObjectBoundaryTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 403)
+
+    def test_generic_update_allows_same_business_ownership_value(self):
+        self.api.force_authenticate(self.owner_a)
+        client = self.objects_a["clients"]
+
+        response = self.api.patch(
+            f"/api/clients/{client.id}/",
+            {"business": self.business_a.id, "full_name": "Renamed inside tenant"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200, response.data)
+        client.refresh_from_db()
+        self.assertEqual(client.business_id, self.business_a.id)
+        self.assertEqual(client.full_name, "Renamed inside tenant")
+
+    def test_generic_update_rejects_direct_business_reassignment_for_multi_business_actor(self):
+        self._grant_owner_a_access_to_business_b()
+        self.api.force_authenticate(self.owner_a)
+        client = self.objects_a["clients"]
+        original_name = client.full_name
+
+        response = self.api.patch(
+            f"/api/clients/{client.id}/",
+            {"business": self.business_b.id, "full_name": "Attempted tenant move"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400, response.data)
+        self.assertIn("The owning business cannot be changed.", str(response.data))
+        client.refresh_from_db()
+        self.assertEqual(client.business_id, self.business_a.id)
+        self.assertEqual(client.full_name, original_name)
+        for key in ("leads", "deals", "appointments", "tasks"):
+            related = self.objects_a[key]
+            related.refresh_from_db()
+            self.assertEqual(related.business_id, self.business_a.id, key)
+            self.assertEqual(related.client_id, client.id, key)
+
+    def test_generic_update_keeps_foreign_source_object_hidden(self):
+        self.api.force_authenticate(self.owner_a)
+        foreign_client = self.objects_b["clients"]
+
+        response = self.api.patch(
+            f"/api/clients/{foreign_client.id}/",
+            {"business": self.business_a.id, "full_name": "Hidden tenant mutation"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 404, response.data)
+        foreign_client.refresh_from_db()
+        self.assertEqual(foreign_client.business_id, self.business_b.id)
+        self.assertEqual(foreign_client.full_name, "Client B")
+
+    def test_generic_update_allows_derived_owner_change_inside_same_business(self):
+        self.api.force_authenticate(self.owner_a)
+        conversation_a = Conversation.objects.create(
+            business=self.business_a,
+            client=self.objects_a["clients"],
+            channel=Conversation.Channels.MANUAL,
+        )
+        another_conversation_a = Conversation.objects.create(
+            business=self.business_a,
+            client=self.objects_a["clients"],
+            channel=Conversation.Channels.WEBSITE,
+        )
+        message = Message.objects.create(
+            conversation=conversation_a,
+            sender_type=Message.SenderTypes.MANAGER,
+            text="Original message",
+        )
+
+        response = self.api.patch(
+            f"/api/messages/{message.id}/",
+            {"conversation": another_conversation_a.id, "text": "Moved inside tenant"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200, response.data)
+        message.refresh_from_db()
+        self.assertEqual(message.conversation_id, another_conversation_a.id)
+        self.assertEqual(message.text, "Moved inside tenant")
+
+    def test_generic_update_rejects_derived_business_reassignment(self):
+        self._grant_owner_a_access_to_business_b()
+        self.api.force_authenticate(self.owner_a)
+        conversation_a = Conversation.objects.create(
+            business=self.business_a,
+            client=self.objects_a["clients"],
+            channel=Conversation.Channels.MANUAL,
+        )
+        conversation_b = Conversation.objects.create(
+            business=self.business_b,
+            client=self.objects_b["clients"],
+            channel=Conversation.Channels.MANUAL,
+        )
+        message = Message.objects.create(
+            conversation=conversation_a,
+            sender_type=Message.SenderTypes.MANAGER,
+            text="Original message",
+        )
+
+        response = self.api.patch(
+            f"/api/messages/{message.id}/",
+            {"conversation": conversation_b.id, "text": "Attempted tenant move"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400, response.data)
+        self.assertIn("The owning business cannot be changed.", str(response.data))
+        message.refresh_from_db()
+        self.assertEqual(message.conversation_id, conversation_a.id)
+        self.assertEqual(message.text, "Original message")
+
+    def test_generic_update_guard_runs_before_custom_perform_update(self):
+        self._grant_owner_a_access_to_business_b()
+        self.api.force_authenticate(self.owner_a)
+        connector = BusinessConnector.objects.create(
+            business=self.business_a,
+            provider=BusinessConnector.Providers.WEBSITE,
+            name="Tenant A website",
+            created_by=self.owner_a,
+        )
+
+        response = self.api.patch(
+            f"/api/business-connectors/{connector.id}/",
+            {"business": self.business_b.id, "name": "Attempted tenant move"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400, response.data)
+        connector.refresh_from_db()
+        self.assertEqual(connector.business_id, self.business_a.id)
+        self.assertEqual(connector.name, "Tenant A website")
 
 
 class TenantPermissionMapCoverageTests(TestCase):

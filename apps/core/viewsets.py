@@ -10,6 +10,7 @@ from apps.core.archive import archive_instance, can_hard_delete, restore_instanc
 from apps.core.audit import write_audit_log
 from apps.core.models import AuditLog
 from apps.core.permissions import IsTenantMember, accessible_businesses, platform_admin_has_global_access, user_can_access_business
+from apps.core.tenant_ownership import assert_tenant_ownership_unchanged
 
 
 def _parse_query_id_list(query_params, key: str) -> list[int]:
@@ -228,6 +229,19 @@ class TenantModelViewSet(ModelViewSet):
             elif serializer.instance is not None:
                 setattr(candidate, field.attname, getattr(serializer.instance, field.attname))
         return candidate
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        assert_tenant_ownership_unchanged(serializer, business_lookup=self.business_lookup)
+        self.perform_update(serializer)
+
+        if getattr(instance, "_prefetched_objects_cache", None):
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
 
     def perform_create(self, serializer):
         self._enforce_business_access(serializer)

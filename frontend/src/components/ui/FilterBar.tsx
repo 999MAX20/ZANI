@@ -27,7 +27,7 @@ export function FilterBar<TValue extends string>({ options, value, onChange, ari
             aria-selected={active}
             className={cn(
               "zani-focus-ring inline-flex min-h-9 shrink-0 items-center justify-center gap-2 rounded-control px-3 text-sm font-semibold transition",
-              active ? "bg-surface-card text-brand-700 shadow-sm" : "text-zani-subtle hover:bg-surface-warm hover:text-zani-text",
+              active ? "bg-brand-50 text-brand-700 shadow-sm ring-1 ring-brand-100" : "text-zani-subtle hover:bg-surface-warm hover:text-zani-text",
             )}
             onClick={() => onChange(item.value)}
           >

@@ -541,7 +541,7 @@ export type BotConversation = {
     direction: "inbound" | "outbound";
     sender_type: "client" | "bot" | "manager" | "system" | "ai";
     text: string;
-    status: "received" | "queued" | "sent" | "failed";
+    status: "received" | "queued" | "delivering" | "retry_scheduled" | "sent" | "failed";
     created_at: string;
   } | null;
   attachments?: FileAttachment[];
@@ -558,7 +558,10 @@ export type BotMessage = {
   external_message_id?: string;
   payload_json: Record<string, unknown>;
   error_text?: string;
-  status: "received" | "queued" | "sent" | "failed";
+  status: "received" | "queued" | "delivering" | "retry_scheduled" | "sent" | "failed";
+  delivery_attempts?: number;
+  delivery_max_attempts?: number;
+  delivery_next_retry_at?: string | null;
   sent_at?: string | null;
   delivered_at?: string | null;
   read_at?: string | null;
@@ -758,6 +761,10 @@ export type Service = {
   duration_minutes: number;
   price_from: string | null;
   is_active: boolean;
+  is_archived: boolean;
+  archived_at: string | null;
+  archived_by: Id | null;
+  archive_reason: string;
   created_at: string;
   updated_at: string;
 };
@@ -934,6 +941,8 @@ export type Resource = {
   linked_user_name?: string;
   linked_user_email?: string | null;
   is_active: boolean;
+  appointment_count?: number;
+  has_individual_schedule?: boolean;
   created_at: string;
   updated_at: string;
 };

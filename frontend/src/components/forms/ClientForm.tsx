@@ -9,6 +9,8 @@ import type { Client, DuplicateClient, Id } from "../../types";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { Select } from "../ui/Select";
+import { ErrorState } from "../ui/StateViews";
+import { StatusNotice } from "../ui/StatusNotice";
 import { Textarea } from "../ui/Textarea";
 
 function createSchema(t: (key: string) => string) {
@@ -95,10 +97,11 @@ export function ClientForm({
         <Input label={t("common.email")} error={form.formState.errors.email?.message} {...form.register("email")} />
       </div>
       {duplicates.length ? (
-        <div className="rounded-card border border-[rgba(151,90,22,0.24)] bg-[var(--zani-warning-soft)] p-4 text-sm text-zani-warning">
-          <p className="font-semibold">{t("clients.duplicateTitle")}</p>
-          <p className="mt-1">{t("clients.duplicateText")}</p>
-          <div className="mt-3 space-y-2">
+        <StatusNotice
+          tone="warning"
+          title={t("clients.duplicateTitle")}
+          description={t("clients.duplicateText")}
+          details={<div className="space-y-2">
             {duplicates.slice(0, 3).map((client) => (
               <div key={client.id} className="flex flex-wrap items-center justify-between gap-2 rounded-control border border-[rgba(151,90,22,0.18)] bg-surface-card p-3">
                 <span className="font-semibold">{client.full_name} · {client.phone || client.email || t("clients.noContact")}</span>
@@ -114,10 +117,10 @@ export function ClientForm({
                 ) : null}
               </div>
             ))}
-          </div>
-        </div>
+          </div>}
+        />
       ) : null}
-      {duplicateError ? <div className="rounded-control border border-[rgba(194,65,12,0.2)] bg-[var(--zani-danger-soft)] p-3 text-sm font-semibold text-zani-danger">{duplicateError}</div> : null}
+      {duplicateError ? <ErrorState message={duplicateError} /> : null}
       <Select
         label={t("appointment.source")}
         options={[

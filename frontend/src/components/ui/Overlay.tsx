@@ -2,6 +2,7 @@ import { X } from "lucide-react";
 import { createPortal } from "react-dom";
 import {
   HTMLAttributes,
+  forwardRef,
   useEffect,
   useId,
   useLayoutEffect,
@@ -13,12 +14,19 @@ import { cn } from "../../lib/cn";
 import { useI18n } from "../../lib/i18n";
 
 type OverlaySize = "sm" | "md" | "lg" | "xl";
+type DrawerSize = "detail" | "complex" | "custom";
 
 const dialogSizeClass: Record<OverlaySize, string> = {
   sm: "max-w-lg",
   md: "max-w-2xl",
   lg: "max-w-4xl",
   xl: "max-w-6xl",
+};
+
+const drawerSizeClass: Record<DrawerSize, string> = {
+  detail: "max-w-[520px]",
+  complex: "max-w-[720px]",
+  custom: "",
 };
 
 function CloseButton({ onClose }: { onClose: () => void }) {
@@ -205,6 +213,7 @@ export function Dialog({
   className,
   bodyClassName,
   closeOnBackdrop = true,
+  testId,
 }: {
   title: string;
   open: boolean;
@@ -214,6 +223,7 @@ export function Dialog({
   className?: string;
   bodyClassName?: string;
   closeOnBackdrop?: boolean;
+  testId?: string;
 }) {
   const titleId = useId();
   const dialogRef = useRef<HTMLElement>(null);
@@ -233,6 +243,7 @@ export function Dialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        data-testid={testId}
         tabIndex={-1}
         autoFocus
         className={cn(
@@ -266,6 +277,7 @@ export function Drawer({
   backdropClassName,
   closeOnBackdrop = true,
   side = "right",
+  size = "complex",
   testId,
 }: {
   open: boolean;
@@ -278,6 +290,7 @@ export function Drawer({
   backdropClassName?: string;
   closeOnBackdrop?: boolean;
   side?: "left" | "right";
+  size?: DrawerSize;
   testId?: string;
 }) {
   const drawerRef = useRef<HTMLElement>(null);
@@ -303,7 +316,8 @@ export function Drawer({
         autoFocus
         data-testid={testId}
         className={cn(
-          "zani-drawer-surface flex h-full w-full max-w-[720px] flex-col overflow-clip",
+          "zani-drawer-surface flex h-full w-full flex-col overflow-clip",
+          drawerSizeClass[size],
           side === "left"
             ? "mr-auto sm:rounded-r-[16px]"
             : "ml-auto sm:rounded-l-[16px]",
@@ -318,13 +332,16 @@ export function Drawer({
   );
 }
 
-export function PopoverSurface({ children, className, ...props }: HTMLAttributes<HTMLDivElement> & { children: React.ReactNode }) {
+export const PopoverSurface = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement> & { children: React.ReactNode }>(function PopoverSurface(
+  { children, className, ...props },
+  ref,
+) {
   return (
-    <div className={cn("zani-popover-surface", className)} {...props}>
+    <div ref={ref} className={cn("zani-popover-surface", className)} {...props}>
       {children}
     </div>
   );
-}
+});
 
 export function ToastSurface({
   children,

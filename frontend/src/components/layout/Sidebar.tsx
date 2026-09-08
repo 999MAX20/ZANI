@@ -13,9 +13,7 @@ import {
   MessageSquareText,
   PlugZap,
   Settings,
-  Sparkles,
   Users,
-  Wrench,
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -66,16 +64,7 @@ const desktopSections = [
           { to: "/app/integrations", label: "nav.integrations", icon: PlugZap, resource: "integrations" },
         ],
       },
-      {
-        label: "nav.business",
-        icon: Building2,
-        resource: "settings",
-        children: [
-          { to: "/app/services", label: "nav.services", icon: Wrench, resource: "settings" },
-          { to: "/app/resources", label: "nav.resources", icon: Users, resource: "settings" },
-          { to: "/app/working-hours", label: "nav.workingHours", icon: Clock3, resource: "settings" },
-        ],
-      },
+      { to: "/app/business", label: "nav.business", icon: Building2, resource: "settings" },
       {
         label: "nav.control",
         icon: BarChart3,
@@ -110,16 +99,7 @@ const mobileDrawerSections = [
           { to: "/app/integrations", label: "nav.integrations", icon: PlugZap, resource: "integrations" },
         ],
       },
-      {
-        label: "nav.business",
-        icon: Building2,
-        resource: "settings",
-        children: [
-          { to: "/app/services", label: "nav.services", icon: Wrench, resource: "settings" },
-          { to: "/app/resources", label: "nav.resources", icon: Users, resource: "settings" },
-          { to: "/app/working-hours", label: "nav.workingHours", icon: Clock3, resource: "settings" },
-        ],
-      },
+      { to: "/app/business", label: "nav.business", icon: Building2, resource: "settings" },
       {
         label: "nav.control",
         icon: BarChart3,
@@ -180,7 +160,7 @@ export function Sidebar({
   });
   const unreadMessages = inboxSummary.data?.unread_messages ?? inboxSummary.data?.unread ?? 0;
   const isExpanded = forceVisible || expanded;
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({ "nav.channels": true, "nav.business": true, "nav.control": true });
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({ "nav.channels": true, "nav.control": true });
 
   const visibleGroups = useMemo(
     () =>
@@ -194,6 +174,7 @@ export function Sidebar({
   );
   return (
     <aside
+      data-testid={forceVisible ? "mobile-sidebar" : "desktop-sidebar"}
       onMouseEnter={forceVisible ? undefined : onDesktopMouseEnter}
       onMouseLeave={forceVisible ? undefined : onDesktopMouseLeave}
       className={cn(
@@ -207,18 +188,10 @@ export function Sidebar({
       )}
     >
       <div className={cn("flex h-full min-h-0 flex-col", forceVisible && "min-h-dvh overflow-y-auto pb-8")}>
-        <div className={cn("py-3", isExpanded ? "px-3" : "px-2")}>
-          <div className={cn("flex items-center", isExpanded ? "justify-start gap-2" : "justify-center")}>
-            <div className="relative grid h-9 w-9 shrink-0 place-items-center rounded-control bg-brand-500 text-white shadow-sm">
-              <Sparkles size={20} />
-            </div>
-            <div className={cn("min-w-0 transition-opacity duration-150", isExpanded ? "opacity-100" : "pointer-events-none hidden opacity-0")}>
-              <p className="truncate text-sm font-semibold text-zani-text">{t("sidebar.product")}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-1.5 no-scrollbar">
+        <div className={cn(
+          "min-h-0 flex-1 space-y-2 overflow-y-auto px-1.5 no-scrollbar",
+          mobileDrawer ? "pt-16" : "pt-3",
+        )}>
           {visibleGroups.map((group) => {
             return (
             <section key={group.id}>
@@ -247,13 +220,13 @@ export function Sidebar({
                             "zani-focus-ring group relative flex min-h-10 w-full items-center gap-2 rounded-control border-l-2 border-transparent px-3 py-2 text-xs font-semibold text-zani-subtle transition-colors duration-150",
                             !isExpanded && "justify-center px-0",
                             "hover:bg-brand-50 hover:text-zani-text",
-                            active && "border-brand-600 bg-brand-50 text-zani-text",
+                            active && "border-[var(--zani-brand-content)] bg-brand-50 text-zani-text",
                           )}
                         >
                           <span
                             className={cn(
                               "grid h-5 w-5 shrink-0 place-items-center text-zani-faint transition-colors",
-                              active && "text-brand-600",
+                              active && "text-brand-700",
                               !active && "group-hover:text-zani-text",
                             )}
                           >
@@ -279,10 +252,10 @@ export function Sidebar({
                                   className={cn(
                                     "zani-focus-ring group relative flex min-h-9 items-center gap-2 rounded-control px-2.5 py-1.5 text-xs font-semibold text-zani-subtle transition-colors duration-150",
                                     "hover:bg-brand-50 hover:text-zani-text",
-                                    childIsActive && "bg-brand-50 text-zani-text",
+                                    childIsActive && "bg-brand-50 text-zani-text ring-1 ring-brand-100",
                                   )}
                                 >
-                                  <ChildIcon size={16} strokeWidth={2.1} className={cn("shrink-0 text-zani-faint", childIsActive && "text-brand-600")} />
+                                  <ChildIcon size={16} strokeWidth={2.1} className={cn("shrink-0 text-zani-faint", childIsActive && "text-brand-700")} />
                                   <span className="min-w-0 truncate">{t(child.label)}</span>
                                 </NavLink>
                               ) : null;
@@ -306,13 +279,13 @@ export function Sidebar({
                         "zani-focus-ring group relative flex min-h-10 items-center gap-2 rounded-control border-l-2 border-transparent px-3 py-2 text-xs font-semibold text-zani-subtle transition-colors duration-150",
                         !isExpanded && "justify-center px-0",
                         "hover:bg-brand-50 hover:text-zani-text",
-                        active && "border-brand-600 bg-brand-50 text-zani-text",
+                        active && "border-[var(--zani-brand-content)] bg-brand-50 text-zani-text",
                       )}
                     >
                       <span
                         className={cn(
                           "grid h-5 w-5 shrink-0 place-items-center text-zani-faint transition-colors",
-                          active && "text-brand-600",
+                          active && "text-brand-700",
                           !active && "group-hover:text-zani-text",
                         )}
                       >
@@ -324,7 +297,7 @@ export function Sidebar({
                         <span className={cn("min-w-5 rounded-full bg-zani-danger px-1.5 py-0.5 text-center text-[10px] font-semibold leading-none text-white shadow-sm", isExpanded ? "ml-auto" : "absolute right-1 top-1 px-1")}>
                           {unreadMessages > 99 ? "99+" : unreadMessages}
                         </span>
-                      ) : active && isExpanded ? <span className="ml-auto h-2 w-2 rounded-full bg-brand-500" /> : null}
+                      ) : active && isExpanded ? <span className="ml-auto h-2 w-2 rounded-full bg-[var(--zani-brand-content)]" /> : null}
                     </NavLink>
                   );
                 })}
@@ -333,27 +306,6 @@ export function Sidebar({
             );
           })}
 
-        </div>
-
-        <div className={cn("border-t border-zani-border", isExpanded ? "p-2" : "p-1.5")}>
-          <NavLink
-            to="/app/account"
-            onClick={onNavigate}
-            title={t("account.menuProfile")}
-            className={({ isActive }) => cn(
-              "zani-focus-ring flex items-center gap-2 rounded-control transition hover:bg-surface-muted",
-              isExpanded ? "p-2" : "justify-center p-1",
-              isActive && "bg-surface-muted",
-            )}
-          >
-            <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary-100 text-xs font-semibold text-brand-700">
-              {(user?.full_name || user?.email || "Z").slice(0, 2).toUpperCase()}
-            </div>
-            <div className={cn("min-w-0 transition-opacity duration-150", isExpanded ? "opacity-100" : "hidden opacity-0")}>
-              <p className="truncate text-xs font-semibold text-midnight">{user?.full_name || user?.email || t("sidebar.product")}</p>
-              <p className="truncate text-[11px] text-zani-faint">{t("account.menuProfile")}</p>
-            </div>
-          </NavLink>
         </div>
       </div>
     </aside>

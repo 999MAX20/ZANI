@@ -120,7 +120,7 @@ export function AppointmentDrawerPanel({
                     key={status}
                     data-testid={`calendar-appointment-status-${status}`}
                     type="button"
-                    variant={index === 0 ? "primary" : "secondary"}
+                    variant={status === "cancelled" || status === "no_show" ? "warning" : index === 0 ? "primary" : "secondary"}
                     size="sm"
                     disabled={statusMutationPending}
                     onClick={() => onStatusAction(appointment, status)}
@@ -148,7 +148,7 @@ export function AppointmentDrawerPanel({
               </Button>
             </div>
             {canArchive ? (
-              <Button type="button" variant="danger" size="sm" className="w-full" onClick={() => onArchive(appointment)}>
+              <Button type="button" variant="warning" size="sm" className="w-full" onClick={() => onArchive(appointment)}>
                 {t("appointments.archiveAction")}
               </Button>
             ) : null}

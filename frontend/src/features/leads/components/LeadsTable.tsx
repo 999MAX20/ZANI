@@ -82,7 +82,16 @@ function LeadTableRow({
   const gridTemplateColumns = `${CRM_TABLE_CHECKBOX_COLUMN} ${activeColumns.map((column) => leadColumnWidths[column]).join(" ")} 56px`;
   const cells: Record<LeadColumnKey, React.ReactNode> = {
     lead: (
-      <span className="flex min-w-0 items-center gap-3">
+      <button
+        type="button"
+        data-testid="lead-row-keyboard-open"
+        className="zani-focus-ring -m-1 flex min-w-0 items-center gap-3 rounded-control p-1 text-left"
+        aria-label={t("leads.openContext", { title })}
+        onClick={(event) => {
+          event.stopPropagation();
+          onClick();
+        }}
+      >
         <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-surface-muted text-xs font-bold text-brand-700">
           {initials(title)}
         </span>
@@ -94,7 +103,7 @@ function LeadTableRow({
             {service?.name || getSourceLabel(lead.source, t)}
           </TruncatedText>
         </span>
-      </span>
+      </button>
     ),
     phone: (
       <span className="truncate font-semibold text-zani-text">
@@ -207,7 +216,7 @@ function LeadTableRow({
           className={cn(
             "grid h-5 w-5 place-items-center rounded border",
             bulkSelected
-              ? "border-brand-600 bg-brand-600 text-white"
+              ? "border-brand-500 bg-brand-500 text-zani-ink"
               : "border-zani-border bg-surface-card",
           )}
         >

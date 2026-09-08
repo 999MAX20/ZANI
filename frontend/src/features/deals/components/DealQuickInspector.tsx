@@ -117,7 +117,7 @@ export function DealQuickInspector({
           </div>
           <div className="mt-2 h-2 rounded-full bg-surface-muted">
             <div
-              className="h-2 rounded-full bg-brand-600"
+              className="h-2 rounded-full bg-[var(--zani-brand-content)]"
               style={{ width: `${Math.max(4, Math.min(100, probability))}%` }}
             />
           </div>

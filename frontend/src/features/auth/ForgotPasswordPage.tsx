@@ -10,6 +10,7 @@ import { getApiErrorMessage } from "../../api/client";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { Select } from "../../components/ui/Select";
+import { ErrorState } from "../../components/ui/StateViews";
 import { useI18n } from "../../lib/i18n";
 
 type FormValues = {
@@ -88,7 +89,7 @@ export function ForgotPasswordPage() {
           </p>
         </div>
 
-        {error ? <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+        {error ? <div className="mb-5"><ErrorState message={error} /></div> : null}
 
         <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
           <Input label={t("common.email")} type="email" error={errors.email?.message} {...register("email")} />
@@ -103,7 +104,7 @@ export function ForgotPasswordPage() {
             error={errors.delivery_channel?.message}
             {...register("delivery_channel")}
           />
-          <Button variant="ai" className="w-full" type="submit" isLoading={isSubmitting}>
+          <Button variant="primary" className="w-full" type="submit" isLoading={isSubmitting}>
             {t("passwordReset.getLink")}
             <Send size={18} />
           </Button>

@@ -8,6 +8,7 @@ import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
 import { Select } from "../../../components/ui/Select";
 import { ErrorState } from "../../../components/ui/StateViews";
+import { StatusNotice } from "../../../components/ui/StatusNotice";
 import { cn } from "../../../lib/cn";
 import { useI18n } from "../../../lib/i18n";
 import type { Id, ImportJob } from "../../../types";
@@ -147,23 +148,32 @@ export function ImportPanel({ businessId }: { businessId: Id }) {
         ) : null}
 
         {errors.length ? (
-          <div className="mt-4 rounded-card border border-[rgba(194,65,12,0.2)] bg-[var(--zani-danger-soft)] p-3">
-            <p className="text-sm font-semibold text-zani-danger">{t("integrations.import.fixFileShort")}</p>
-            {errors.slice(0, 5).map((item, index) => (
-              <p key={`${item.row}-${item.field}-${index}`} className="mt-1 text-xs font-semibold text-zani-danger">
-                {t("integrations.import.rowError", { row: item.row, field: item.field, message: item.message })}
-              </p>
-            ))}
-          </div>
+          <StatusNotice
+            className="mt-4"
+            tone="danger"
+            title={t("integrations.import.fixFileShort")}
+            details={(
+              <ul className="space-y-1 text-xs font-semibold text-zani-danger">
+                {errors.slice(0, 5).map((item, index) => (
+                  <li key={`${item.row}-${item.field}-${index}`}>
+                    {item.row > 0
+                      ? t("integrations.import.rowNeedsReview", { row: item.row })
+                      : t("integrations.import.columnsNeedReview")}
+                  </li>
+                ))}
+              </ul>
+            )}
+          />
         ) : null}
 
         {duplicates.length ? (
-          <div className="mt-4 rounded-card border border-[rgba(151,90,22,0.24)] bg-[var(--zani-warning-soft)] p-3">
-            <p className="text-sm font-semibold text-zani-warning">{t("integrations.import.duplicatesFound")}</p>
-            <p className="mt-1 text-xs font-semibold leading-5 text-zani-warning">
-              {t("integrations.import.duplicatesDescription")}
-            </p>
-          </div>
+          <StatusNotice
+            className="mt-4"
+            compact
+            tone="warning"
+            title={t("integrations.import.duplicatesFound")}
+            description={t("integrations.import.duplicatesDescription")}
+          />
         ) : null}
 
         <div className="mt-4 overflow-hidden rounded-card border border-zani-border bg-surface-card">

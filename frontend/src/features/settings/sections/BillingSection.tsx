@@ -97,7 +97,7 @@ export function BillingSection({
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"
-              variant="secondary"
+              variant="warning"
               disabled={
                 !canManageBilling ||
                 !subscription ||

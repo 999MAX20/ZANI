@@ -87,7 +87,7 @@ export function LeadQueueItem({
         setTouchStart(null);
       }}
     >
-      <span className="pointer-events-none absolute inset-y-0 left-0 hidden w-1 bg-brand-500 group-active:block" />
+      <span className="pointer-events-none absolute inset-y-0 left-0 hidden w-1 bg-[var(--zani-brand-content)] group-active:block" />
       <div className="flex items-center gap-4">
         <div className="grid h-12 w-12 shrink-0 place-items-center rounded-card bg-surface-muted text-sm font-bold text-brand-700 ring-1 ring-zani-border">
           {initials(title)}

@@ -38,6 +38,7 @@ Use `frontend/` for UI architecture, design system, authenticated app UX and pro
 
 - `frontend/design-system.md`
 - `frontend/product-ui-reform.md`
+- `frontend/ui-ux-implementation-standard.md`
 - `frontend/ui-ux-polish-phase-10.md`
 
 ### Production
@@ -78,6 +79,8 @@ Use `testing/` for test strategy, Codex task format, regression reports and scal
 - `billing/` — entitlements and billing limits.
 - `operations/` — platform/support operations.
 - `pilot/` — pilot blocks, smoke reports and pilot runbooks.
+- `pilot/backend-open-logic-register.md` — active backend register for
+  unimplemented, partial, environment-gated and roadmap behavior.
 - `product/` — product positioning, landing and competitive notes.
 
 ## Documentation placement rule

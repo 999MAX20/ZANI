@@ -144,7 +144,7 @@ export function InstagramInlineSetup({
   const testConnection = useMutation({
     mutationFn: () => instagramChannelApi.testConnection(Number(channel?.id)),
     onSuccess: (data) => {
-      setNotice(data.ok ? t("integrations.instagram.connectionChecked") : data.reason || t("integrations.instagram.connectionCheckFailed"));
+      setNotice(data.ok ? t("integrations.instagram.connectionChecked") : merchantSafeIntegrationError(data.reason, t), data.ok ? "success" : "warning");
       queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
       queryClient.invalidateQueries({ queryKey: ["instagram-status", channel?.id] });
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });

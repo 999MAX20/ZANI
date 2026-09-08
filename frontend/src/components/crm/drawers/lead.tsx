@@ -136,7 +136,7 @@ export function LeadDrawerContent({ data, entity }: { data: CrmCardPayload; enti
               </Button>
             ) : null}
             {availableActions.has("lost") ? (
-              <Button data-crm-action-id="lost" type="button" variant="secondary" size="sm" isLoading={lifecycleMutation.isPending} onClick={() => setLostActionOpen(true)}>
+              <Button data-crm-action-id="lost" type="button" variant="warning" size="sm" isLoading={lifecycleMutation.isPending} onClick={() => setLostActionOpen(true)}>
                 {t("leads.lost")}
               </Button>
             ) : null}
@@ -158,7 +158,7 @@ export function LeadDrawerContent({ data, entity }: { data: CrmCardPayload; enti
                   <span>{leadScore}/100</span>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-surface-muted">
-                  <div className="h-full rounded-full bg-brand-500" style={{ width: `${Math.min(100, Math.max(0, leadScore))}%` }} />
+                  <div className="h-full rounded-full bg-[var(--zani-brand-content)]" style={{ width: `${Math.min(100, Math.max(0, leadScore))}%` }} />
                 </div>
               </div>
               <div>
@@ -220,7 +220,7 @@ export function LeadDrawerContent({ data, entity }: { data: CrmCardPayload; enti
             <Button type="button" variant="secondary" onClick={() => setLostActionOpen(false)}>
               {t("common.cancel")}
             </Button>
-            <Button type="submit" variant="danger" isLoading={lifecycleMutation.isPending} disabled={!lostReason.trim()}>
+            <Button type="submit" variant="warning" isLoading={lifecycleMutation.isPending} disabled={!lostReason.trim()}>
               {t("leads.closeAsLost")}
             </Button>
           </div>

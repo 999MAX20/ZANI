@@ -39,6 +39,11 @@ frontend/vite.config.d.ts
 coverage/
 playwright-report/
 test-results/
+.playwright-cli/
+
+# Root npm lock is an accidental empty artifact; the real frontend lock lives
+# next to frontend/package.json and remains tracked.
+/package-lock.json
 
 # OS/editor
 .DS_Store

@@ -67,6 +67,7 @@ import { useAuth } from "../auth/AuthProvider";
 import { ConversationListPane } from "./components/ConversationListPane";
 import { Pill } from "./components/ConversationPrimitives";
 import { ConversationThreadPane } from "./components/ConversationThreadPane";
+import { MessageDeliveryDetails } from "./components/MessageDeliveryDetails";
 import {
   channelOptions,
   CONVERSATIONS_SHELL_OFFSET,
@@ -101,6 +102,13 @@ function inboxDraftKey(businessId: number | string, conversationId: number | str
   return `zani_inbox_draft:${businessId}:${conversationId}`;
 }
 
+function createIdempotencyKey(scope: string) {
+  const random = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return `${scope}:${random}`;
+}
+
 export function ConversationsPage() {
   const { t } = useI18n();
   const navigate = useNavigate();
@@ -131,6 +139,7 @@ export function ConversationsPage() {
   const [draft, setDraft] = useState("");
   const [suggestedReply, setSuggestedReply] = useState("");
   const draftHydratingRef = useRef(false);
+  const sendIdempotencyRef = useRef<{ conversationId: number; text: string; key: string } | null>(null);
   const [quickRepliesOpen, setQuickRepliesOpen] = useState(false);
   const [quickReplySearch, setQuickReplySearch] = useState("");
   const [crmLinkModal, setCrmLinkModal] = useState<
@@ -905,6 +914,7 @@ export function ConversationsPage() {
   const sendMutation = useMutation({
     mutationFn: inboxApi.sendMessage,
     onSuccess: async () => {
+      sendIdempotencyRef.current = null;
       setDraft("");
       setSuggestedReply("");
       if (businessId && selected?.id) {
@@ -915,6 +925,15 @@ export function ConversationsPage() {
     },
     onError: (error) =>
       notifyError(error, { focusTarget: composerRef }),
+  });
+
+  const retryMessageMutation = useMutation({
+    mutationFn: inboxApi.retryMessage,
+    onSuccess: async () => {
+      setNotice(t("conversations.messageRetried"), "success");
+      await invalidateInbox();
+    },
+    onError: (error) => notifyError(error),
   });
 
   const createClientMutation = useMutation({
@@ -1109,7 +1128,12 @@ export function ConversationsPage() {
   function sendReply() {
     const text = draft.trim();
     if (!selected || !text) return;
-    sendMutation.mutate({ conversationId: selected.id, text });
+    const previousRequest = sendIdempotencyRef.current;
+    const idempotencyKey = previousRequest?.conversationId === selected.id && previousRequest.text === text
+      ? previousRequest.key
+      : createIdempotencyKey(`inbox:send:${selected.id}`);
+    sendIdempotencyRef.current = { conversationId: selected.id, text, key: idempotencyKey };
+    sendMutation.mutate({ conversationId: selected.id, text, idempotencyKey });
   }
 
   function insertQuickReply(text: string) {
@@ -1219,6 +1243,10 @@ export function ConversationsPage() {
     if (!messages.data) return [];
     return [...messages.data.pages].reverse().flatMap((page) => page.results);
   }, [messages.data]);
+  const latestOutboundMessage = [...messageList].reverse().find(
+    (message) => message.direction === "outbound" && message.sender_type !== "system",
+  ) || null;
+  const canRetryDelivery = hasPermission(user, business?.id, "conversations", "update");
   const canLoadMoreMessages = Boolean(messages.hasNextPage);
   const lastMessage = messageList[messageList.length - 1];
   const lastMessageSignature = lastMessage
@@ -1398,6 +1426,22 @@ export function ConversationsPage() {
         >
           {selected ? (
             <>
+              {latestOutboundMessage ? (
+                <MessageDeliveryDetails
+                  message={latestOutboundMessage}
+                  canRetry={canRetryDelivery}
+                  retryPending={retryMessageMutation.isPending}
+                  onRetry={() => {
+                    retryMessageMutation.mutate({
+                      conversationId: selected.id,
+                      messageId: latestOutboundMessage.id,
+                      idempotencyKey: createIdempotencyKey(`inbox:retry:${latestOutboundMessage.id}`),
+                    });
+                  }}
+                  t={t}
+                />
+              ) : null}
+
               <section className="rounded-card border border-zani-border bg-surface-card p-3 shadow-soft">
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-zani-muted">
                   {t("common.client")}

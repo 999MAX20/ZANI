@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { CheckCircle2, ChevronRight, FunctionSquare, Save } from "lucide-react";
+import { ChevronRight, FunctionSquare, Save } from "lucide-react";
 
 import { Button } from "../../../components/ui/Button";
 import { Card, CardBody } from "../../../components/ui/Card";
@@ -9,7 +9,7 @@ import { Select } from "../../../components/ui/Select";
 import { ToggleSwitch } from "../../../components/ui/Switch";
 import { useI18n } from "../../../lib/i18n";
 import { cn } from "../../../lib/cn";
-import type { AgentProfile, Bot as BotType } from "../../../types";
+import type { Bot as BotType } from "../../../types";
 import type { AgentFormState, AutoPipelineMode } from "../aiAgentsTypes";
 import { autoPipelineFromSettings, defaultAllowedTools } from "../aiAgentsUtils";
 import { HelpCard, FieldHint } from "./AIAgentsShared";
@@ -18,14 +18,12 @@ export function AgentActionsSection({
   form,
   setForm,
   updateBot,
-  saveProfile,
   canManage,
 }: {
   bot: BotType;
   form: AgentFormState;
   setForm: React.Dispatch<React.SetStateAction<AgentFormState>>;
   updateBot: ReturnType<typeof useMutation<BotType, Error, Partial<BotType>>>;
-  saveProfile: ReturnType<typeof useMutation<AgentProfile, Error, void>>;
   canManage: boolean;
 }) {
   const { t } = useI18n();
@@ -39,7 +37,7 @@ export function AgentActionsSection({
         text={t("aiAgents.onboarding.actions.helpText")}
         recommendation={t("aiAgents.onboarding.actions.recommendation")}
       />
-      <Card>
+      <Card variant="outlined">
         <CardBody>
           <h3 className="text-xl font-black text-midnight">{t("aiAgents.authority.title")}</h3>
           <p className="mt-1 text-sm font-semibold text-slate-500">{t("aiAgents.authority.text")}</p>
@@ -61,7 +59,7 @@ export function AgentActionsSection({
         </CardBody>
       </Card>
       <ControlSection bot={bot} updateBot={updateBot} canManage={canManage} />
-      <FunctionsSection form={form} setForm={setForm} saveProfile={saveProfile} canManage={canManage} />
+      <FunctionsSection form={form} setForm={setForm} canManage={canManage} />
     </div>
   );
 }
@@ -101,7 +99,7 @@ function ControlSection({ bot, updateBot, canManage }: { bot: BotType; updateBot
   };
 
   return (
-    <Card>
+    <Card variant="outlined">
       <CardBody>
         <div className="mb-5">
           <h3 className="text-xl font-black text-midnight">{t("aiAgents.control.pipelineTitle")}</h3>
@@ -111,6 +109,7 @@ function ControlSection({ bot, updateBot, canManage }: { bot: BotType; updateBot
         <Select
           label={t("aiAgents.control.mode")}
           value={config.mode}
+          disabled={!canManage}
           onChange={(event) => {
             const mode = event.target.value as AutoPipelineMode;
             setConfig((current) => ({ ...current, mode, enabled: mode !== "off" }));
@@ -156,7 +155,7 @@ function ControlSection({ bot, updateBot, canManage }: { bot: BotType; updateBot
               <h4 className="font-black text-midnight">{t("aiAgents.control.advancedTitle")}</h4>
               <p className="mt-1 text-sm font-semibold leading-5 text-slate-500">{t("aiAgents.control.advancedText")}</p>
             </div>
-            <ChevronRight size={18} className={cn("shrink-0 text-slate-400 transition", showAdvanced && "rotate-90 text-brand-700")} />
+            <ChevronRight size={18} className={cn("shrink-0 text-zani-faint transition", showAdvanced && "rotate-90 text-ai-700")} />
           </button>
 
           {showAdvanced ? (
@@ -168,18 +167,19 @@ function ControlSection({ bot, updateBot, canManage }: { bot: BotType; updateBot
                   min={120}
                   max={2000}
                   value={config.max_auto_reply_chars}
+                  disabled={!canManage}
                   onChange={(event) => setConfig((current) => ({ ...current, max_auto_reply_chars: Number(event.target.value) }))}
                 />
                 <FieldHint>{t("aiAgents.hint.maxReplyChars")}</FieldHint>
               </div>
               <label className="block">
                 <span className="mb-2 block text-sm font-bold text-slate-700">{t("aiAgents.control.leadConfidence", { value: config.min_lead_confidence.toFixed(1) })}</span>
-                <input className="w-full accent-brand-600" type="range" min="0.1" max="1" step="0.1" value={config.min_lead_confidence} onChange={(event) => setConfig((current) => ({ ...current, min_lead_confidence: Number(event.target.value) }))} />
+                <input className="w-full accent-ai-600" type="range" min="0.1" max="1" step="0.1" value={config.min_lead_confidence} disabled={!canManage} onChange={(event) => setConfig((current) => ({ ...current, min_lead_confidence: Number(event.target.value) }))} />
                 <FieldHint>{t("aiAgents.hint.leadConfidence")}</FieldHint>
               </label>
               <label className="block md:col-span-2">
                 <span className="mb-2 block text-sm font-bold text-slate-700">{t("aiAgents.control.dealConfidence", { value: config.min_deal_confidence.toFixed(1) })}</span>
-                <input className="w-full accent-brand-600" type="range" min="0.1" max="1" step="0.1" value={config.min_deal_confidence} onChange={(event) => setConfig((current) => ({ ...current, min_deal_confidence: Number(event.target.value) }))} />
+                <input className="w-full accent-ai-600" type="range" min="0.1" max="1" step="0.1" value={config.min_deal_confidence} disabled={!canManage} onChange={(event) => setConfig((current) => ({ ...current, min_deal_confidence: Number(event.target.value) }))} />
                 <FieldHint>{t("aiAgents.hint.dealConfidence")}</FieldHint>
               </label>
             </div>
@@ -197,12 +197,10 @@ function ControlSection({ bot, updateBot, canManage }: { bot: BotType; updateBot
 function FunctionsSection({
   form,
   setForm,
-  saveProfile,
   canManage,
 }: {
   form: AgentFormState;
   setForm: React.Dispatch<React.SetStateAction<AgentFormState>>;
-  saveProfile: ReturnType<typeof useMutation<AgentProfile, Error, void>>;
   canManage: boolean;
 }) {
   const { t } = useI18n();
@@ -227,9 +225,9 @@ function FunctionsSection({
         {tools.map(([key, title, text]) => {
           const enabled = form.allowed_tools.includes(key);
           return (
-        <Card key={key}>
+        <Card key={key} variant="outlined">
           <CardBody className="flex min-h-[170px] flex-col">
-            <div className="grid h-11 w-11 place-items-center rounded-2xl bg-brand-50 text-brand-700">
+            <div className="grid h-11 w-11 place-items-center rounded-2xl bg-ai-50 text-ai-700 ring-1 ring-ai-100">
               <FunctionSquare size={20} />
             </div>
             <h3 className="mt-4 text-lg font-black text-midnight">{title}</h3>
@@ -244,9 +242,6 @@ function FunctionsSection({
           );
         })}
       </div>
-      <Button type="button" disabled={!canManage} isLoading={saveProfile.isPending} onClick={() => saveProfile.mutate()}>
-        <Save size={16} /> {t("aiAgents.functions.save")}
-      </Button>
     </div>
   );
 }

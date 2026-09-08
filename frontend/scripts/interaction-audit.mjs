@@ -6,6 +6,8 @@ import { fileURLToPath } from "node:url";
 
 const baseURL = process.env.E2E_BASE_URL || "http://127.0.0.1:5173";
 const apiBaseURL = process.env.E2E_API_BASE_URL || "http://127.0.0.1:8000";
+const frontendPort = new URL(baseURL).port || "5173";
+const djangoPort = new URL(apiBaseURL).port || "8000";
 const email = process.env.E2E_OWNER_EMAIL || "business_owner@example.com";
 const password = process.env.E2E_PASSWORD || "ZaniTest123!";
 const dateStamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
@@ -249,7 +251,7 @@ async function ensureLocalServers() {
       startManagedProcess(
         "django",
         pythonPath,
-        ["manage.py", "runserver", "127.0.0.1:8000"],
+        ["manage.py", "runserver", `127.0.0.1:${djangoPort}`],
         { cwd: rootDir, env: djangoEnv },
       ),
     );
@@ -260,7 +262,7 @@ async function ensureLocalServers() {
   }
 
   if (!(await isReachable(baseURL))) {
-    const viteCommand = npmCommand(["run", "dev", "--", "--host", "127.0.0.1", "--port", "5173"]);
+    const viteCommand = npmCommand(["run", "dev", "--", "--host", "127.0.0.1", "--port", frontendPort, "--strictPort"]);
     started.push(startManagedProcess("vite", viteCommand.command, viteCommand.args));
     await waitForUrl(baseURL, 240_000).catch((error) => {
       for (const processInfo of started) console.error(processInfo.logs.join("\n"));

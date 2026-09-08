@@ -149,7 +149,7 @@ export function DealsPage() {
         count: selection.selectedIds.length,
       }),
       confirmLabel: t("deals.archive"),
-      variant: "danger",
+      tone: "warning",
       reason: {
         label: t("deals.archiveReason"),
         placeholder: t("deals.archiveReasonPlaceholder"),

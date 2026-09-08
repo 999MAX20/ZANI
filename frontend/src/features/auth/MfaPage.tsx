@@ -14,6 +14,8 @@ import { getApiErrorMessage } from "../../api/client";
 import { LanguageSelector } from "../../components/layout/LanguageSelector";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
+import { ErrorState } from "../../components/ui/StateViews";
+import { StatusNotice } from "../../components/ui/StatusNotice";
 import { useI18n } from "../../lib/i18n";
 import { useAuth } from "./AuthProvider";
 import "./authLoginSerenity.css";
@@ -122,13 +124,11 @@ export function MfaPage() {
               <div><h2>{t("mfa.title")}</h2><p className="serenity-login__card-copy">{t("mfa.text")}</p></div>
             </div>
 
-            {error ? <div className="serenity-login__error" role="alert">{error}</div> : null}
+            {error ? <div className="mb-3"><ErrorState message={error} /></div> : null}
 
             {recoveryCodes.length ? (
               <div className="grid gap-4">
-                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">
-                  {t("mfa.recoveryWarning")}
-                </div>
+                <StatusNotice tone="warning" title={t("mfa.recoveryWarning")} />
                 <div className="grid grid-cols-2 gap-2 rounded-2xl bg-slate-950 p-4 font-mono text-sm text-white">
                   {recoveryCodes.map((recoveryCode) => <span key={recoveryCode}>{recoveryCode}</span>)}
                 </div>

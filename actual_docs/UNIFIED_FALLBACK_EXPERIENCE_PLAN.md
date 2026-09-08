@@ -3,7 +3,7 @@
 - Status: **ACTIVE / IN EXECUTION**
 - Created: 2026-08-18
 - Scope: merchant-visible errors, recovery actions, loading/empty/offline states, backend error contracts and technical-detail isolation
-- Execution state: **FB-001 DONE / FB-002 DONE / FB-003 DONE / FB-004 DONE / FB-005 DONE / FB-006 READY**
+- Execution state: **FB-001..FB-005 DONE / FB-006..FB-009 INTEGRATED RUNTIME PASS / FB-010 MATRIX + VISUAL + INTERACTION PASS / CLEAN COMMIT-RANGE CLOSEOUT OPEN**
 - Owner: ZANI manager workflow
 
 ## Product Outcome
@@ -313,11 +313,11 @@ Even platform/support views must sanitize credentials and personal data. A reque
 | FB-003 | Introduce `AppError` normalization and retire raw parsing | P0 | DONE | FB-001..002 |
 | FB-004 | Build the shared visual fallback surface family | P0 | DONE | FB-003 |
 | FB-005 | Remove raw messages from crash and route boundaries | P0 | DONE | FB-003..004 |
-| FB-006 | Migrate direct technical-error consumers | P0 | READY | FB-003..005 |
-| FB-007 | Standardize session, connectivity and draft preservation | P1 | NOT_STARTED | FB-003..004 |
-| FB-008 | Standardize async job, provider and Inbox delivery recovery | P1 | NOT_STARTED | FB-002..007 |
-| FB-009 | Complete RU/KK/EN copy and accessibility review | P1 | NOT_STARTED | FB-004..008 |
-| FB-010 | Run cross-role browser failure certification | P1 | NOT_STARTED | FB-001..009 |
+| FB-006 | Migrate direct technical-error consumers | P0 | INTEGRATED RUNTIME PASS - clean range open | FB-003..005 |
+| FB-007 | Standardize session, connectivity and draft preservation | P1 | INTEGRATED RUNTIME PASS - clean range open | FB-003..004 |
+| FB-008 | Standardize async job, provider and Inbox delivery recovery | P1 | INTEGRATED RUNTIME PASS - live-provider evidence open | FB-002..007 |
+| FB-009 | Complete RU/KK/EN copy and accessibility review | P1 | INTEGRATED BROWSER PASS - manual screen-reader review open | FB-004..008 |
+| FB-010 | Run cross-role browser failure certification | P1 | MATRIX + VISUAL + INTERACTION PASS - clean range open | FB-001..009 |
 
 ## FB-001 - Inventory And Error-Code Registry
 
@@ -599,4 +599,82 @@ Checks run and exact result: npm run test:error-boundaries -> 3/3 passed; npm ru
 Checks skipped and reason: full backend suite skipped because FB-005 changes only frontend crash presentation and monitoring handoff; direct technical-field consumers are FB-006, session/connectivity/draft behavior is FB-007, provider recovery is FB-008 and the full cross-role failure matrix is FB-010
 Role/tenant impact: no backend permission, tenant scoping, schema, dependency, environment, notification delivery, BusinessEvent or AI behavior changed; the original exception remains available to configured monitoring but never to the merchant DOM
 Residual risk: ZD-004 remains CONFIRMED overall; direct technical-field consumers, session/connectivity/draft recovery, provider recovery, final accessibility/copy review and browser failure certification remain FB-006 through FB-010
+```
+
+```text
+Task: FB-006 - direct technical-error consumer migration
+Working tree: codex/ux-3-owner-dashboard @ f142f3e498e4726320fc7de0b6ad0cc27187c57f (uncommitted)
+Backend error codes changed: none
+Frontend surfaces changed: authentication now distinguishes invalid credentials from login bootstrap failure; Automations, Platform Operations, Outreach, Pricing and Developer delivery views use localized safe copy for technical failure fields; the existing platform-admin diagnostic boundary remains permission-scoped; fallback consumers retain normalized AppError policy.
+Checks run and exact result: npm run test:login-page -> 14/14 passed; npm run test:app-error -> 6/6 passed; npm run test:fallback-surfaces -> 4/4 passed; npm run check:i18n -> 4687 keys at the FB-006 checkpoint and 4703 keys in the final integrated checkout; npm run check:fallback-inventory -> 43 routes, 581 API operations, 13 tasks, 83 statuses and 29 error codes; npm run build -> TypeScript plus application/widget production builds passed; npm run check:bundle -> no JS chunk above 500 kB and app shell below 400 kB; git diff --check -> exit 0 with line-ending normalization warnings only.
+Checks skipped and reason: audit:interaction and audit:visual were intentionally skipped because the owner excluded point 2 Critic UI/UX; full Django/codex_verify and browser failure matrix remain part of FB-010/FC-008.
+Role/tenant impact: no permission grant or tenant scope changed; login route preservation remains in the existing router state flow.
+Residual risk: clean commit-range evidence and cross-role browser proof remain open.
+```
+
+```text
+Task: FB-007 - session, connectivity and draft preservation
+Working tree: codex/ux-3-owner-dashboard @ f142f3e498e4726320fc7de0b6ad0cc27187c57f (uncommitted)
+Backend error codes changed: none
+Frontend surfaces changed: refresh expiry writes a one-shot session notice consumed by LoginPage; protected-route destination remains preserved; AppProviders now mounts a global offline/reconnecting banner; React Query continues safe read refetch on reconnect and the banner retry refetches active reads only; the existing Inbox composer session draft is preserved per business/conversation and no password/token/attachment is stored by this change.
+Checks run and exact result: npm run test:login-page -> 14/14 passed; npm run check:i18n -> 4687 keys at the FB-007 checkpoint and 4703 keys in the final integrated checkout; npm run test:fallback-surfaces -> 4/4 passed; npm run build -> application/widget builds passed; npm run check:bundle -> budget passed; manage.py check -> no issues.
+Checks skipped and reason: multi-401 browser injection, full cross-role session matrix, visual/interaction audits and full Django suite were not accepted as complete; the combined apps.bots/apps.conversations run timed out at 124 seconds, while the targeted backend labels passed.
+Role/tenant impact: no permission or tenant scope changed; auth-expiry notice is generated only after protected-request refresh failure.
+Residual risk: browser proof of simultaneous 401 single-flight behavior and reconnect UI is still open.
+```
+
+```text
+Task: FB-008 - async/provider and Inbox delivery recovery
+Working tree: codex/ux-3-owner-dashboard @ f142f3e498e4726320fc7de0b6ad0cc27187c57f (uncommitted)
+Backend error codes changed: none; the existing outbox/retry/idempotency contract is consumed by the frontend.
+Frontend surfaces changed: send and manual retry requests now pass Idempotency-Key; Inbox types accept backend delivering/retry_scheduled metadata; delivery states normalize to queued, sending, delivered, delayed, retrying and failed; a single permission-aware retry action is exposed in MessageDeliveryDetails, while the primary MessageBubble continues to omit raw provider error text and retry controls.
+Checks run and exact result: npm run test:inbox-delivery -> 2/2 passed; npm run check:i18n -> 4703 keys; npm run build -> TypeScript plus application/widget production builds passed; npm run check:bundle -> no JS chunk above 500 kB and app shell below 400 kB; targeted Django labels for outbound retry/send/retry-idempotency/inbox-task-idempotency -> 5/5 passed; manage.py check -> no issues.
+Checks skipped and reason: full apps.bots/apps.conversations suite timed out at 124 seconds; provider fault fixture matrix and cross-role browser certification remain open; audit:interaction and audit:visual remain intentionally skipped under the excluded point 2.
+Role/tenant impact: retry is gated by the existing conversations:update permission; server-side retry idempotency and tenant-scoped conversation lookup remain authoritative.
+Residual risk: live provider failure fixtures, delivery-details browser proof and final FC-008 clean-range gate remain open.
+```
+
+```text
+Task: FB-009 - RU/KK/EN copy and accessibility surface pass
+Working tree: codex/ux-3-owner-dashboard @ f142f3e498e4726320fc7de0b6ad0cc27187c57f (uncommitted)
+Frontend surfaces changed: added RU/KK/EN login, connectivity and delivery-recovery copy; session and connectivity surfaces use polite status announcements; recovery icons have text labels and animated indicators respect reduced-motion preferences.
+Checks run and exact result: npm run check:i18n -> 4703 keys; npm run test:login-page -> 14/14 passed; npm run test:fallback-surfaces -> 4/4 passed; npm run test:inbox-delivery -> 2/2 passed; npm run build -> passed.
+Checks skipped and reason: dedicated screen-reader/manual accessibility and browser visual/interaction audits are still open; point 2 audits were excluded by owner instruction.
+Residual risk: FB-010 must prove mobile reachability, focus order, announcement priority and copy across owner, manager, operator and staff scenarios.
+```
+
+```text
+Checkpoint: 2026-09-02 pre-pilot dependency and E2E-fixture integration
+Working tree: codex/ux-3-owner-dashboard @ f142f3e498e4726320fc7de0b6ad0cc27187c57f (uncommitted and shared with the active Critic UI/UX work)
+Integrated scope: Django REST framework 3.17.2 lock update; npm audit lock-only update; deterministic foreign-owner/foreign-tenant E2E fixture; tenant-denial smoke no longer depends on platform-admin MFA activation.
+Checks run and exact result: pip-audit against requirements.txt -> 0 known vulnerabilities; npm audit --audit-level=moderate -> 0 vulnerabilities; manage.py check -> no issues; manage.py makemigrations --check --dry-run -> no changes; targeted backend labels -> 265/265 passed; full manage.py test -v 1 --noinput -> 947/947 passed in 2343.504 seconds; npm run build -> passed; npm run check:bundle -> passed with maximum JS chunk 365.0 kB and app shell 266.6 kB; bounded Playwright desktop/mobile action, role and tenant matrix -> 14 selected cases completed with suite status passed; git diff --check -> exit 0 with line-ending normalization warnings only.
+Checks skipped and reason: audit:interaction and audit:visual remain owned by the separately executing Critic UI/UX scope; the full FB-010 state-by-role-by-viewport matrix was not represented by this bounded 14-case checkpoint; codex_verify clean-range gate is not valid while the canonical checkout contains mixed uncommitted work.
+Infrastructure evidence: production_readiness_audit -> 6 passed, 1 warning and 11 critical failures in the local development profile; real providers remain disabled, so their guardrail passes do not prove live-provider readiness.
+Role/tenant impact: no permission grant changed; the new foreign tenant fixture exercises existing backend tenant isolation without requiring privileged platform activation.
+Residual risk: FB-010, FC-003, FC-004, FC-006, FC-008 and BE-REM-007 remain open until the full failure/recovery matrix and a clean committed-range gate pass. Production-like staging also requires external secrets and managed services.
+```
+
+```text
+Task: FB-010 - cross-role browser failure certification
+Working tree: codex/ux-3-owner-dashboard @ f142f3e498e4726320fc7de0b6ad0cc27187c57f (uncommitted and shared with the active Critic UI/UX work)
+Coverage: machine-readable registry covers 10 critical merchant journeys, owner/administrator/manager/operator/specialist where applicable, 12 required states and desktop/mobile; 744 applicable cells total (372 per viewport).
+Defects found and fixed: session restore failures that bypassed the shared Axios interceptor did not raise the one-shot expired-session notice; the authenticated public-route guard could race the login callback and redirect to the dashboard instead of the preserved protected route; each role cycle could retain prior browser auth state. Session expiry now distinguishes prior authenticated state from first anonymous login, stores only safe internal /app or /platform return paths, keeps raw 401 details out of the login UI and restores the intended route after re-authentication.
+Browser evidence: desktop matrix 372/372 cells passed; desktop session-expiry recovery passed for 5/5 merchant roles; mobile matrix and session-expiry tests passed 2/2; desktop foreign-tenant operator smoke passed 1/1. Assertions cover non-empty safe copy, recovery availability and completion, draft/context preservation, validation focus restoration, no raw SQLSTATE/token/provider/stack markers, no horizontal overflow and zero serious/critical Axe violations across the 12 unique surfaces per viewport.
+Backend evidence: manage.py check -> no issues; apps.core.tests_b3_contracts plus apps.core.tests_tenant_isolation -> 11/11 passed; apps.integrations apps.conversations apps.automations -> 208/208 passed in 432.592 seconds; full manage.py test -v 1 --noinput -> 947/947 passed in 2539.088 seconds.
+Frontend evidence: npm run test:failure-certification -> 1/1 passed; npm run check:failure-certification -> 744 cells accepted; npm run test:login-page -> 14/14 passed; npm run test:app-error -> 6/6 passed; npm run test:fallback-surfaces -> 4/4 passed; npm run test:error-boundaries -> 3/3 passed; npm run test:inbox-delivery -> 2/2 passed; npm run build -> i18n parity at 4721 RU/KK/EN keys plus TypeScript and application/widget production builds passed; npm run check:bundle -> maximum JS chunk 365.0 kB and app shell 267.9 kB.
+Checks skipped or not accepted for integrated closeout: npm run audit:interaction and npm run audit:visual remain owned by the separately executing and explicitly excluded Critic UI/UX scope; npm run check:fallback-inventory reports that the generated report is stale and was not regenerated while that source set is changing in parallel; codex_verify clean-range evidence is not valid in the mixed dirty checkout; live providers were not enabled.
+Role/tenant impact: no permission grants, membership rules or tenant query scopes changed. Backend and browser evidence confirms foreign tenant object access remains indistinguishable 404 and role-denied mutations remain 403.
+Status decision: the bounded FB-010 matrix is implemented and passes in the isolated fixture/runtime. FB-010 is not marked fully DONE until the generated inventory, Critic-owned visual/interaction gates and one clean integrated commit range are reconciled.
+Next bounded step: after Critic UI/UX stops changing the shared source set, regenerate and verify the fallback inventory, run the two Critic-owned audits against the integrated checkout and execute the clean-range verification gate; do not begin FC-008 as part of this checkpoint.
+```
+
+```text
+Checkpoint: 2026-09-04 integrated fallback and alert UI convergence
+Working tree: codex/ux-3-owner-dashboard @ f142f3e498e4726320fc7de0b6ad0cc27187c57f (mixed uncommitted checkout; no commit created)
+Frontend surfaces changed: StatusNotice is now the canonical success/info/warning/danger anatomy used by shared page/inline/permission/connectivity/form/toast states and migrated auth, MFA, CRM forms/drawers, Inbox, AI, import and integration setup notices. Semantic business badges and metric cards remain separate status components. Import row field/message text, outreach skip reasons and integration provider reason/last_error values are not rendered directly; field summaries replace technical markers with localized safe copy.
+Scenario coverage: the machine-readable registry remains complete at 744 applicable cells across 10 critical merchant journeys, 5 roles, 12 states and desktop/mobile. The generated source inventory is current at 43 routes, 583 API operations, 13 background tasks, 83 provider/async statuses and 29 stable error codes. Auxiliary route rows marked not_detected remain explicit source-detection gaps rather than certified fallback behavior.
+Checks run and exact result: npm run test:fallback-surfaces -> 6/6 passed; npm run test:app-error -> 6/6; npm run test:error-boundaries -> 3/3; npm run test:login-page -> 14/14; npm run test:action-feedback -> 2/2; npm run test:inbox-delivery -> 2/2; npm run test:failure-certification -> 1/1; npm run check:failure-certification -> 744 cells accepted; npm run generate:fallback-inventory plus test/check -> 43 routes, 583 API operations, 13 tasks, 83 statuses, 29 codes and 2/2 tests passed; final npm run check:i18n -> 4831 RU/KK/EN keys; final npm run build -> TypeScript plus application/widget builds passed; final npm run check:bundle -> no chunk above 500 kB and app shell below 400 kB. Playwright desktop/mobile failure fixture and five-role session-expiry recovery passed after an isolated rerun; no SQLSTATE/token/provider/stack marker, horizontal overflow or serious/critical Axe violation reached the DOM. npm run audit:visual -> 13/13 routes with zero overflow, API issues, auth redirects or transparent-surface issues. npm run audit:interaction -> 12 routes with zero blocking/unexpected/API issues.
+Runner correction: the first isolated visual audit timed out because both audit scripts hard-coded ports 5173/8000 while waiting on configured URLs; both now derive managed server ports from E2E_BASE_URL/E2E_API_BASE_URL and use strict Vite port binding. The rerun passed.
+Checks skipped and reason: full backend suite and migration tests were not rerun because this checkpoint changes frontend presentation, frontend policy tests and browser audit runners only; the previously recorded 947/947 backend evidence remains the current integrated backend checkpoint. scripts/codex_verify.sh / clean-range verification was not run because the canonical checkout still contains unrelated mixed uncommitted changes and cannot produce honest commit-range evidence.
+Residual risk: no absolute all-route production guarantee is claimed. Clean committed-range verification, manual screen-reader review and real staging provider failures remain open. The interaction audit also reported five non-blocking selector misses across Leads, Deals, Conversations, Analytics and AI Agents; no page was blocked and no API or unexpected error occurred.
 ```

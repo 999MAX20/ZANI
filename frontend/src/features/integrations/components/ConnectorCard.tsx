@@ -1,10 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, CheckCircle2, Link2, LockKeyhole, PlugZap, Send, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Link2, LockKeyhole, PlugZap, Send, ShieldCheck } from "lucide-react";
 
 import { getApiErrorMessage } from "../../../api/client";
 import { businessConnectorsApi } from "../../../api/connectors";
 import { Button } from "../../../components/ui/Button";
 import { ErrorState } from "../../../components/ui/StateViews";
+import { StatusNotice } from "../../../components/ui/StatusNotice";
 import { useI18n } from "../../../lib/i18n";
 import type { BusinessConnector, ConnectorCapability, Id } from "../../../types";
 import { merchantSafeIntegrationError } from "../utils";
@@ -161,10 +162,12 @@ export function ConnectorCard({
       <p className="mt-4 text-sm leading-6 text-zani-subtle">{capability.description}</p>
 
       {connector?.last_error ? (
-        <div className="mt-4 flex gap-2 rounded-control border border-[rgba(151,90,22,0.24)] bg-[var(--zani-warning-soft)] px-3 py-2 text-sm font-semibold text-zani-warning">
-          <AlertTriangle className="mt-0.5 shrink-0" size={16} />
-          <span>{merchantSafeIntegrationError(connector.last_error, t)}</span>
-        </div>
+        <StatusNotice
+          className="mt-4"
+          compact
+          tone="warning"
+          title={merchantSafeIntegrationError(connector.last_error, t)}
+        />
       ) : null}
 
       <div className="mt-5 grid gap-2 text-sm text-zani-subtle sm:grid-cols-3">
@@ -202,32 +205,24 @@ export function ConnectorCard({
                 {isRequestOnly ? <Send size={16} /> : isRoadmapOnly ? <LockKeyhole size={16} /> : <Link2 size={16} />} {primaryLabel}
               </Button>
               {isRequestOnly ? (
-                <p className="rounded-control bg-ai-50 px-4 py-3 text-sm font-semibold text-ai-700">
-                  {t("integrations.card.requestNotice")}
-                </p>
+                <StatusNotice compact tone="info" title={t("integrations.card.requestNotice")} />
               ) : null}
               {isRoadmapOnly ? (
-                <p className="rounded-control bg-surface-muted px-4 py-3 text-sm font-semibold text-zani-muted">
-                  {t("integrations.card.roadmapNotice")}
-                </p>
+                <StatusNotice compact tone="info" title={t("integrations.card.roadmapNotice")} />
               ) : null}
             </div>
           ) : (
             <>
               {connector.status !== "connected" ? (
-                <div className="rounded-control border border-[rgba(151,90,22,0.24)] bg-[var(--zani-warning-soft)] px-4 py-3 text-sm font-semibold text-zani-warning">
-                  {t("integrations.card.pendingNotice")}
-                </div>
+                <StatusNotice compact tone="warning" title={t("integrations.card.pendingNotice")} />
               ) : (
-                <div className="rounded-control border border-[rgba(21,128,61,0.18)] bg-[var(--zani-success-soft)] px-4 py-3 text-sm font-semibold text-zani-success">
-                  {t("integrations.card.connectedNotice")}
-                </div>
+                <StatusNotice compact tone="success" title={t("integrations.card.connectedNotice")} />
               )}
               <div className="flex flex-wrap gap-2">
                 <Button variant="secondary" disabled>
                   <CheckCircle2 size={16} /> {primaryLabel}
                 </Button>
-                <Button variant="ghost" onClick={() => disconnect.mutate()} isLoading={disconnect.isPending}>
+                <Button variant="warning" onClick={() => disconnect.mutate()} isLoading={disconnect.isPending}>
                   {t("integrations.action.disconnect")}
                 </Button>
               </div>
@@ -236,9 +231,7 @@ export function ConnectorCard({
           {error ? <ErrorState message={merchantSafeIntegrationError(getApiErrorMessage(error), t)} /> : null}
         </div>
       ) : (
-        <p className="mt-5 rounded-control bg-surface-muted px-4 py-3 text-sm font-semibold text-zani-muted">
-          {t("integrations.card.readOnly")}
-        </p>
+        <StatusNotice className="mt-5" compact tone="info" title={t("integrations.card.readOnly")} />
       )}
     </div>
   );

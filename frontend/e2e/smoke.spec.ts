@@ -8,6 +8,8 @@ const users = {
   owner: process.env.E2E_OWNER_EMAIL || "business_owner@example.com",
   manager: process.env.E2E_MANAGER_EMAIL || "business_manager@example.com",
   operator: process.env.E2E_OPERATOR_EMAIL || "business_operator@example.com",
+  foreignOwner:
+    process.env.E2E_FOREIGN_OWNER_EMAIL || "foreign_owner@example.com",
 };
 
 type TokenPayload = {
@@ -280,8 +282,8 @@ test("business owner core routes render without 404", async ({
     "/app/clients",
     "/app/tasks",
     "/app/calendar",
-    "/app/services",
-    "/app/resources",
+    "/app/business/services",
+    "/app/business/resources",
     "/app/conversations",
     "/app/bots",
     "/app/integrations",
@@ -289,7 +291,7 @@ test("business owner core routes render without 404", async ({
     "/app/ai-assistant",
     "/app/ai-agents",
     "/app/automations",
-    "/app/working-hours",
+    "/app/business/working-hours",
     "/app/analytics",
     "/app/settings",
     "/app/ai",
@@ -1162,6 +1164,7 @@ test("business owner can configure working hours week", async ({
     isMobile,
     "Working-hours setup smoke runs in desktop; mobile route reachability is covered separately.",
   );
+  await page.setViewportSize({ width: 1600, height: 1000 });
 
   const tokens = await apiLogin(page, users.owner);
   const headers = authHeaders(tokens);
@@ -1191,20 +1194,20 @@ test("business owner can configure working hours week", async ({
   const resource = await resourceResponse.json();
 
   await login(page, users.owner, /\/app/);
-  await page.goto("/app/working-hours");
+  await page.goto(`/app/business/working-hours?view=resources&resource=${resource.id}`);
   await expect(page.getByTestId("working-hours-workspace-ready")).toBeVisible();
-
-  await page.getByTestId("working-hours-setup").click();
+  await expect(page.getByTestId("working-hours-edit-modal")).toBeVisible();
   await expect(page.getByTestId("weekly-working-hours-form")).toBeVisible();
 
-  await page
-    .getByTestId("weekly-working-hours-form")
-    .locator("select")
-    .first()
-    .selectOption(String(resource.id));
   await page.getByTestId("working-hours-preset-daily").click();
+  const saveResponse = page.waitForResponse(
+    (response) => response.url().includes("/api/working-hours/bulk-upsert-week/") && response.request().method() === "POST",
+  );
   await page.getByTestId("working-hours-save-week").click();
-  await expect(page.getByTestId("weekly-working-hours-form")).toHaveCount(0);
+  expect((await saveResponse).ok()).toBeTruthy();
+  await expect(page.getByTestId("working-hours-save-week")).not.toHaveAttribute("aria-busy", "true");
+  await expect(page.getByTestId("working-hours-save-week")).toBeDisabled();
+  await expect(page.getByTestId("weekly-working-hours-form")).toBeVisible();
 
   await expect
     .poll(async () => {
@@ -1229,6 +1232,45 @@ test("business owner can configure working hours week", async ({
       ).length;
     })
     .toBe(7);
+
+  const inspector = page.getByTestId("working-hours-edit-modal");
+  await inspector.getByRole("button", { name: /Close|Закрыть|Жабу/i }).click();
+  await expect(page).not.toHaveURL(/resource=/);
+  const resourceRow = page.locator(`[data-focus-return-id="working-hours-resource-${resource.id}"]:visible`).first();
+  await expect(resourceRow).toBeFocused();
+  await resourceRow.press("Enter");
+  await expect(inspector).toBeVisible();
+  await expect(inspector.locator(":focus")).toHaveCount(1);
+
+  const timeInputs = inspector.locator('input[type="time"]');
+  await timeInputs.nth(0).fill("20:00");
+  await timeInputs.nth(1).fill("09:00");
+  await inspector.getByTestId("working-hours-save-week").click();
+  await expect(inspector.getByText(/end time must be later|время окончания должно быть позже|аяқталу уақыты.*кейін/i)).toBeVisible();
+  await inspector.getByRole("button", { name: /^Cancel$|^Отмена$|^Бас тарту$/i }).click();
+  await expect(inspector.getByTestId("working-hours-save-week")).toBeDisabled();
+
+  await inspector.getByTestId("working-hours-preset-weekdays").click();
+  await inspector.getByRole("button", { name: /Close|Закрыть|Жабу/i }).click();
+  const discardDialog = page.getByRole("dialog");
+  await expect(discardDialog).toBeVisible();
+  await discardDialog.getByRole("button", { name: /Discard changes|Отменить изменения|Өзгерістерден бас тарту/i }).click();
+  await expect(page).not.toHaveURL(/resource=/);
+  await expect(resourceRow).toBeFocused();
+});
+
+test("working-hours editor keeps all seven days reachable on mobile", async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(!isMobile, "Mobile working-hours coverage runs only in the mobile project.");
+
+  await login(page, users.owner, /\/app/);
+  await page.goto("/app/business/working-hours?target=business");
+  await expect(page.getByTestId("working-hours-workspace-ready")).toBeVisible();
+  await expect(page.getByTestId("working-hours-edit-modal")).toBeVisible();
+  await expect(page.getByTestId("weekly-working-hours-form").locator('input[type="checkbox"]')).toHaveCount(7);
+  await expectNoHorizontalOverflow(page);
 });
 
 test("operator cannot read another tenant through direct object URLs", async ({
@@ -1238,29 +1280,8 @@ test("operator cannot read another tenant through direct object URLs", async ({
   test.skip(isMobile, "Tenant API smoke only needs one browser project.");
 
   const ownerTokens = await apiLogin(page, users.owner);
-  const platformTokens = await apiLogin(page, users.platform);
   const operatorTokens = await apiLogin(page, users.operator);
-
-  const activationResponse = await page.request.post(
-    `${apiBaseURL}/api/platform/activate-landing/`,
-    {
-      headers: authHeaders(platformTokens),
-      data: {
-        landing_id: `e2e-foreign-${Date.now()}`,
-        owner_email: `foreign-owner-${Date.now()}@example.com`,
-        owner_password: password,
-        owner_full_name: "Foreign Owner",
-        business_name: "Foreign Tenant",
-        business_type: "medical",
-        city: "Almaty",
-      },
-    },
-  );
-  expect(activationResponse.ok()).toBeTruthy();
-
-  const foreignOwnerEmail = (await activationResponse.json()).owner?.email;
-  expect(foreignOwnerEmail).toBeTruthy();
-  const foreignTokens = await apiLogin(page, foreignOwnerEmail);
+  const foreignTokens = await apiLogin(page, users.foreignOwner);
   const foreignMeResponse = await page.request.get(
     `${apiBaseURL}/api/auth/me/`,
     { headers: authHeaders(foreignTokens) },

@@ -44,6 +44,7 @@ export function MobileNav({ open, onOpen, onClose }: { open: boolean; onOpen: ()
         onClose={onClose}
         ariaLabel={t("mobile.more")}
         side="left"
+        size="custom"
         testId="mobile-navigation-drawer"
         backdropClassName="bg-[rgba(23,18,15,0.38)] backdrop-blur-md lg:hidden"
         className="relative max-w-[min(390px,94vw)] rounded-none border-y-0 border-l-0 lg:hidden"
@@ -73,7 +74,7 @@ export function MobileNav({ open, onOpen, onClose }: { open: boolean; onOpen: ()
                 cn(
                   "zani-focus-ring flex min-h-14 flex-col items-center justify-center gap-1 rounded-control px-0.5 py-2 text-center text-[10px] font-semibold leading-none transition active:scale-[0.98]",
                   isActive
-                    ? "bg-brand-800 text-white shadow-sm"
+                    ? "bg-brand-50 text-brand-700 shadow-sm ring-1 ring-brand-100"
                     : "text-zani-faint",
                 )
               }
@@ -100,7 +101,7 @@ export function MobileNav({ open, onOpen, onClose }: { open: boolean; onOpen: ()
           className={cn(
             "zani-focus-ring flex min-h-14 flex-col items-center justify-center gap-1 rounded-control px-0.5 py-2 text-center text-[10px] font-semibold leading-none transition hover:bg-surface-muted hover:text-zani-text active:scale-[0.98]",
             open
-              ? "bg-brand-800 text-white shadow-sm"
+              ? "bg-brand-50 text-brand-700 shadow-sm ring-1 ring-brand-100"
               : "text-zani-faint",
           )}
         >

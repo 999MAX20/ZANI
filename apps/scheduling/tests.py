@@ -424,6 +424,145 @@ class CorePlatformTests(TestCase):
         self.assertEqual(len(response.data), 55)
         self.assertNotIn(foreign_resource.id, {item["id"] for item in response.data})
 
+    def test_resource_list_filters_paginates_and_returns_operational_summary(self):
+        specialist = User.objects.create_user(
+            username="resource-list-specialist",
+            email="resource-list-specialist@example.com",
+            password="pass",
+            full_name="Resource List Specialist",
+            role=User.Roles.BUSINESS_MANAGER,
+        )
+        BusinessMember.objects.create(
+            business=self.business,
+            user=specialist,
+            role=BusinessMember.Roles.STAFF,
+        )
+        staff_resource = Resource.objects.create(
+            business=self.business,
+            name="Primary Specialist",
+            resource_type=Resource.ResourceTypes.STAFF,
+            linked_user=specialist,
+        )
+        selected_room = Resource.objects.create(
+            business=self.business,
+            name="Treatment Room Alpha",
+            resource_type=Resource.ResourceTypes.ROOM,
+        )
+        Resource.objects.create(
+            business=self.business,
+            name="Treatment Room Beta",
+            resource_type=Resource.ResourceTypes.ROOM,
+        )
+        Resource.objects.create(
+            business=self.business,
+            name="Inactive Treatment Room",
+            resource_type=Resource.ResourceTypes.ROOM,
+            is_active=False,
+        )
+        WorkingHours.objects.create(
+            business=self.business,
+            resource=selected_room,
+            weekday=0,
+            start_time=time(9, 0),
+            end_time=time(18, 0),
+        )
+        client = Client.objects.create(business=self.business, full_name="Resource Client")
+        service = Service.objects.create(business=self.business, name="Resource Service")
+        start_at = datetime(2026, 5, 11, 10, 0, tzinfo=ZoneInfo("Asia/Almaty"))
+        Appointment.objects.create(
+            business=self.business,
+            client=client,
+            service=service,
+            resource=selected_room,
+            start_at=start_at,
+            end_at=start_at + timedelta(minutes=30),
+        )
+
+        other_owner = User.objects.create_user(
+            username="resource-list-other-owner",
+            email="resource-list-other-owner@example.com",
+            password="pass",
+            role=User.Roles.BUSINESS_OWNER,
+        )
+        other_business = Business.objects.create(
+            owner=other_owner,
+            name="Other Resource List Business",
+            slug="other-resource-list-business",
+            business_type=Business.BusinessTypes.MEDICAL,
+            city="Astana",
+            timezone="Asia/Almaty",
+        )
+        BusinessMember.objects.create(
+            business=other_business,
+            user=other_owner,
+            role=BusinessMember.Roles.OWNER,
+        )
+        foreign_resource = Resource.objects.create(
+            business=other_business,
+            name="Treatment Room Foreign",
+            resource_type=Resource.ResourceTypes.ROOM,
+        )
+
+        api = APIClient()
+        api.force_authenticate(self.owner)
+        response = api.get(
+            "/api/resources/",
+            {
+                "business": self.business.id,
+                "search": "Treatment Room",
+                "resource_type": Resource.ResourceTypes.ROOM,
+                "status": "active",
+                "page": 1,
+                "page_size": 1,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["count"], 2)
+        self.assertEqual(len(response.data["results"]), 1)
+        self.assertEqual(response.data["results"][0]["id"], selected_room.id)
+        self.assertEqual(response.data["results"][0]["appointment_count"], 1)
+        self.assertTrue(response.data["results"][0]["has_individual_schedule"])
+        self.assertEqual(
+            response.data["summary"],
+            {"active": 3, "staff": 1, "with_individual_schedule": 1},
+        )
+        self.assertNotEqual(response.data["results"][0]["id"], foreign_resource.id)
+        self.assertNotEqual(response.data["results"][0]["id"], staff_resource.id)
+
+    def test_resource_manager_can_view_but_cannot_update_settings(self):
+        resource = Resource.objects.create(
+            business=self.business,
+            name="Manager Read Only Room",
+            resource_type=Resource.ResourceTypes.ROOM,
+        )
+        manager = User.objects.create_user(
+            username="resource-read-only-manager",
+            email="resource-read-only-manager@example.com",
+            password="pass",
+            role=User.Roles.BUSINESS_MANAGER,
+        )
+        BusinessMember.objects.create(
+            business=self.business,
+            user=manager,
+            role=BusinessMember.Roles.MANAGER,
+        )
+        api = APIClient()
+        api.force_authenticate(manager)
+
+        list_response = api.get("/api/resources/", {"business": self.business.id})
+        update_response = api.patch(
+            f"/api/resources/{resource.id}/",
+            {"name": "Manager Mutated Room"},
+            format="json",
+        )
+
+        self.assertEqual(list_response.status_code, 200)
+        self.assertEqual([item["id"] for item in list_response.data["results"]], [resource.id])
+        self.assertEqual(update_response.status_code, 403)
+        resource.refresh_from_db()
+        self.assertEqual(resource.name, "Manager Read Only Room")
+
     def test_resource_rejects_inactive_or_cross_tenant_linked_user(self):
         api = APIClient()
         api.force_authenticate(self.owner)

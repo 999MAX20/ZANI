@@ -106,12 +106,12 @@ export function AppointmentDrawerContent({ data, entity }: { data: CrmCardPayloa
               </Button>
             ) : null}
             {appointment.status !== "no_show" && appointment.status !== "cancelled" && appointment.status !== "completed" ? (
-              <Button size="sm" variant="secondary" isLoading={lifecycleMutation.isPending} onClick={() => { setStatusReasonAction("no_show"); setStatusReason(""); }}>
+              <Button size="sm" variant="warning" isLoading={lifecycleMutation.isPending} onClick={() => { setStatusReasonAction("no_show"); setStatusReason(""); }}>
                 {t("appointment.actionNoShow")}
               </Button>
             ) : null}
             {appointment.status !== "cancelled" && appointment.status !== "completed" ? (
-              <Button size="sm" variant="secondary" isLoading={lifecycleMutation.isPending} onClick={() => { setStatusReasonAction("cancelled"); setStatusReason(""); }}>
+              <Button size="sm" variant="warning" isLoading={lifecycleMutation.isPending} onClick={() => { setStatusReasonAction("cancelled"); setStatusReason(""); }}>
                 {t("appointment.actionCancel")}
               </Button>
             ) : null}
@@ -131,7 +131,7 @@ export function AppointmentDrawerContent({ data, entity }: { data: CrmCardPayloa
               <Button
                 type="button"
                 size="sm"
-                variant={statusReasonAction === "cancelled" ? "danger" : "primary"}
+                variant="warning"
                 isLoading={lifecycleMutation.isPending}
                 disabled={!statusReason.trim()}
                 onClick={() => lifecycleMutation.mutate({ action: statusReasonAction, reason: statusReason.trim() })}

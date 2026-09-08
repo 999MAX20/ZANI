@@ -473,7 +473,7 @@ export function OutreachPage() {
                   <Button type="button" variant="secondary" disabled={!canManageOutreach || !selectedCampaign.recipients_failed} isLoading={retryFailed.isPending} onClick={() => retryFailed.mutate({ id: selectedCampaign.id })}>
                     <RefreshCw size={16} /> {t("outreach.retryAll")}
                   </Button>
-                  <Button type="button" variant="ghost" disabled={!canManageOutreach || selectedCampaign.status === "cancelled"} isLoading={cancel.isPending} onClick={() => cancel.mutate(selectedCampaign.id)}>
+                  <Button type="button" variant="warning" disabled={!canManageOutreach || selectedCampaign.status === "cancelled"} isLoading={cancel.isPending} onClick={() => cancel.mutate(selectedCampaign.id)}>
                     {t("common.cancel")}
                   </Button>
                 </div>
@@ -588,8 +588,8 @@ export function OutreachPage() {
                         <Badge variant={recipient.status === "sent" ? "success" : recipient.status === "failed" ? "danger" : recipient.status === "skipped" ? "warning" : "neutral"} size="sm">
                           {recipient.status}
                         </Badge>
-                        {recipient.skipped_reason ? <span className="text-xs font-semibold text-amber-700">{recipient.skipped_reason}</span> : null}
-                        {recipient.error_code ? <span className="text-xs font-semibold text-rose-700">{recipient.error_code}</span> : null}
+                        {recipient.skipped_reason ? <span className="text-xs font-semibold text-zani-warning">{t("outreach.recipientSkipped")}</span> : null}
+                        {recipient.error_code ? <span className="text-xs font-semibold text-rose-700">{t("outreach.recipientDeliveryFailed")}</span> : null}
                       </div>
                     ))}
                     {!recipients.isLoading && !(recipients.data || []).length ? <p className="text-sm font-medium text-zani-subtle">{t("outreach.queueEmpty")}</p> : null}

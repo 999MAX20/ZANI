@@ -1,24 +1,30 @@
-import { ButtonHTMLAttributes } from "react";
+import { ButtonHTMLAttributes, forwardRef } from "react";
 
 import { cn } from "../../lib/cn";
 import { useI18n } from "../../lib/i18n";
 
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "outline" | "warning" | "danger" | "ai" | "icon";
+
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary" | "ghost" | "outline" | "danger" | "ai" | "icon";
+  variant?: ButtonVariant;
   size?: "sm" | "md" | "lg" | "icon";
   isLoading?: boolean;
 };
 
-export function Button({ className, variant = "primary", size = "md", isLoading, children, disabled, ...props }: ButtonProps) {
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
+  { className, variant = "primary", size = "md", isLoading, children, disabled, ...props },
+  ref,
+) {
   const { t } = useI18n();
   const variants = {
-    primary: "bg-brand-800 text-white shadow-sm ring-1 ring-brand-900/10 hover:bg-brand-900 active:bg-brand-900",
-    secondary: "border border-zani-border bg-surface-card text-zani-text shadow-sm hover:border-brand-100 hover:bg-brand-50",
+    primary: "bg-brand-500 text-zani-ink shadow-sm ring-1 ring-brand-600/20 hover:bg-brand-600 active:bg-[var(--zani-brand-strong)]",
+    secondary: "border border-zani-border bg-surface-card text-zani-text shadow-sm hover:bg-surface-muted",
     ghost: "text-zani-subtle hover:bg-surface-muted hover:text-zani-text",
-    outline: "border border-brand-500 bg-surface-card text-brand-700 shadow-sm hover:bg-brand-50",
-    danger: "bg-zani-danger text-white shadow-sm hover:brightness-95 active:brightness-90",
+    outline: "border border-zani-border bg-surface-card text-zani-text shadow-sm hover:bg-surface-muted",
+    warning: "bg-[var(--zani-warning-bold)] text-zani-ink shadow-sm ring-1 ring-[rgba(151,90,22,0.18)] hover:bg-[var(--zani-warning-bold-hover)] active:bg-[var(--zani-warning-bold-pressed)]",
+    danger: "bg-zani-danger text-white shadow-sm hover:bg-[var(--zani-danger-hover)] active:bg-[var(--zani-danger-pressed)]",
     ai: "bg-ai-600 text-white shadow-sm hover:bg-ai-700 active:bg-ai-700",
-    icon: "border border-zani-border bg-surface-card text-zani-subtle shadow-sm hover:border-brand-100 hover:bg-brand-50 hover:text-zani-text",
+    icon: "border border-zani-border bg-surface-card text-zani-subtle shadow-sm hover:bg-surface-muted hover:text-zani-text",
   };
   const sizes = {
     sm: "min-h-9 rounded-control px-3 py-1.5 text-[13px]",
@@ -29,9 +35,10 @@ export function Button({ className, variant = "primary", size = "md", isLoading,
 
   return (
     <button
+      ref={ref}
       className={cn(
         "inline-flex max-w-full items-center justify-center gap-2 whitespace-normal text-center font-semibold transition duration-150 active:scale-[0.99] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60",
-        "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-500/20 focus-visible:ring-offset-2",
+        "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--zani-focus-ring)] focus-visible:ring-offset-2",
         "disabled:shadow-none",
         variants[variant],
         sizes[size],
@@ -44,4 +51,4 @@ export function Button({ className, variant = "primary", size = "md", isLoading,
       {isLoading ? t("common.loading") : children}
     </button>
   );
-}
+});

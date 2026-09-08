@@ -211,7 +211,7 @@ export function TaskQuickInspector({
             </Button>
           ) : null}
           {!isClosed ? (
-            <Button type="button" variant="ghost" isLoading={pending.cancel} onClick={() => onCancel(task)}>
+            <Button type="button" variant="warning" isLoading={pending.cancel} onClick={() => onCancel(task)}>
               <X size={16} />
               {t("tasks.cancel")}
             </Button>

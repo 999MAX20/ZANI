@@ -1,4 +1,5 @@
 export { CrmWorkspaceGrid, CrmWorkspacePage } from "./CrmWorkspacePage";
+export { OperationalInspector, OperationalWorkspace } from "./OperationalWorkspace";
 export {
   EntitySecondaryButton,
   EntityWorkspaceEmptyState,

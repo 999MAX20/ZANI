@@ -10,10 +10,25 @@ The desired visual direction is:
 
 ```txt
 Warm Premium CRM
-Warm ivory workspace + saturated orange actions + plum AI accent
+Warm ivory workspace + soft peach actions + plum AI accent
 ```
 
 This direction applies to the authenticated app. Public landing pages are intentionally out of scope for this document until the landing system is redesigned separately.
+
+### Public Login Background
+
+The public `/login` route may use a restrained animated brand background as a
+separate product-entry mode. Keep it lightweight and subordinate to the sign-in
+form:
+
+- use up to five clearly separable, soft peach, light-orange, coral, and warm-gold radial-gradient fields;
+- do not add grids, orbit lines, outlined circles, nodes, dots, particles, canvas, or WebGL;
+- animate only `transform` and `opacity`, with no more than five fields on desktop;
+- distribute the paths so at least three color fields remain visible through the full desktop cycle;
+- keep the drift noticeable within a few seconds while the form and content remain visually dominant;
+- reduce the background to three slower fields on narrow or coarse-pointer devices;
+- disable the field animations under `prefers-reduced-motion: reduce`;
+- keep the form, headline, controls, and layout stationary and readable.
 
 For the agreed redesign brief and implementation guardrails, see `docs/WARM_PREMIUM_CRM_REDESIGN_BRIEF.md`.
 
@@ -21,8 +36,8 @@ For the agreed redesign brief and implementation guardrails, see `docs/WARM_PREM
 
 - Premium, warm, relaxed SaaS feeling.
 - No blue-tinted page background in the CRM workspace.
-- Orange stays as the ZANI brand and primary action color.
-- Orange must not become every semantic color in the product.
+- Soft peach stays as the ZANI brand action color, with a dark brand-content token for readable emphasis and focus.
+- Brand must not become every semantic color in the product.
 - AI must stay visually distinct from ordinary CRM actions.
 - Status colors must communicate state, not decoration.
 - Daily screens must be dense, scannable, and low-fatigue.
@@ -48,24 +63,32 @@ Text Muted:         #8A7B70
 ### Brand / Primary Actions
 
 ```txt
-Brand Primary:      #FF7A1A
-Primary Hover:      #F06400
-Primary Pressed:    #C84D00
-Primary Soft:       #FFF1E6
-Focus Ring:         rgba(255, 122, 26, 0.24)
+Brand Primary:      #F5B37A
+Primary Hover:      #EE995A
+Primary Pressed:    #DF813F
+Brand Content:      #A4470D
+Primary Soft:       #FFF3EA
+Focus Ring:         rgba(164, 71, 13, 0.42)
 ```
 
-Use orange for:
+Use the filled peach brand for:
 
 - primary CTA buttons;
-- active navigation item;
-- selected tab/filter;
-- active toggle/switch;
-- input focus ring;
-- selected row indicator;
 - small brand marks.
 
-Do not use orange for:
+Use `Brand Soft` + `Brand Content` for:
+
+- active navigation item;
+- selected tab/filter;
+- selected row surface and indicator;
+- low-emphasis brand badges.
+
+Use `Brand Content` for:
+
+- focus indicators;
+- active switch tracks where a light track would fail non-text contrast.
+
+Do not use brand for:
 
 - every icon;
 - all KPI cards;
@@ -93,11 +116,16 @@ Use AI colors only for AI assistant, AI analyst, AI draft, generation, summariza
 Success:            #15803D
 Success Soft:       #ECFDF3
 
-Warning:            #B7791F
+Warning Content:    #975A16
 Warning Soft:       #FFF7E6
+Warning Bold:       #F4C04F
+Warning Hover:      #E9AC2D
+Warning Pressed:    #D99616
 
 Danger:             #C2410C
 Danger Soft:        #FFF1ED
+Danger Hover:       #9A3412
+Danger Pressed:     #7C2D12
 
 Info:               #0E7490
 Info Soft:          #EAF9FC
@@ -107,6 +135,25 @@ Neutral Soft:       #F2EDE6
 ```
 
 Status colors are semantic. Do not use them as generic decoration.
+
+### Semantic Color Roles
+
+ZANI follows the semantic role model from [Atlassian Color Foundation](https://atlassian.design/foundations/color): role determines meaning, emphasis determines visual weight, and interaction state determines hover, pressed, focus and disabled treatment.
+
+```txt
+Neutral:       default text, secondary actions, navigation and table controls
+Brand:         primary CRM actions and selected brand context
+Information:   progress, syncing and informational states
+Success:       connected, completed and favorable outcomes
+Warning:       caution, attention and mistake prevention
+Danger:        destructive actions and serious failures
+Discovery:     onboarding and genuinely new product capability
+Inverse:       readable content placed on bold semantic surfaces
+Input:         form borders, focus, validation and disabled states
+AI:            ZANI AI recommendations, drafts and assistant surfaces
+```
+
+Brand and semantic status colors must not be substituted for one another. In particular, `in_progress`, `queued` and `syncing` use information; warning is reserved for caution; AI remains violet.
 
 ### Dark Theme
 
@@ -370,11 +417,24 @@ Required variants:
 primary     Brand action: create, save, invite, confirm, assign
 secondary   Neutral action: copy, open, export, secondary navigation
 ghost       Low-emphasis toolbar/icon action
-outline     Neutral bordered action with brand focus/hover
-danger      Destructive or irreversible action
-ai          AI assistant/recommendation action, plum/violet only
+outline     Neutral bordered action with a shared brand focus indicator
+warning     Reversible caution action: archive, discard, pause, disable, disconnect
+danger      Destructive or irreversible action: delete, merge, revoke access, emergency stop
+ai          AI generation, suggestion, summary or recommendation action, plum/violet only
 icon        Icon-only control with aria-label and tooltip when meaning is not obvious
 ```
+
+Action role matrix:
+
+| User intent | Tone | Examples |
+| --- | --- | --- |
+| Primary commit | `brand` | Create, save, invite, submit, send |
+| Routine utility | `neutral` | Edit, open, copy, export, retry, back, restore |
+| Reversible caution | `warning` | Archive, discard unsaved changes, mark lost, cancel/no-show, deactivate, disable, disconnect, pause |
+| Irreversible/high-impact | `danger` | Delete, merge, revoke API token/access, cancel subscription, emergency stop |
+| AI computation | `ai` | Generate, suggest, summarize, prepare AI draft |
+
+`Cancel` in a dialog means “close without applying” and stays neutral. `Cancel` as a business lifecycle change (appointment, task, campaign) is warning. Creating or configuring an AI agent is ordinary CRUD and uses brand/neutral; only the model-driven operation uses AI tone.
 
 Button anatomy:
 
@@ -408,25 +468,32 @@ Long button labels:
 Button states:
 
 ```txt
-primary default:     Brand Primary background, white text
+primary default:     Brand Primary (#F5B37A) background, dark Zani Ink text for contrast
 primary hover:       Primary Hover background, slightly stronger shadow
 primary active:      Primary Pressed background, optional scale 0.99
 primary focus:       4px Focus Ring, 2px offset when outside dense surfaces
 primary disabled:    muted surface, muted text, no hover, cursor not-allowed
 
 secondary default:   Surface background, Border, Text Primary
-secondary hover:     Primary Soft or Surface Warm, Brand border, Text Primary
-secondary active:    Surface Muted, Brand border
+secondary hover:     Surface Muted, neutral border, Text Primary
+secondary active:    Surface Muted, neutral border
 
 ghost default:       transparent, Text Secondary
-ghost hover:         Primary Soft or Surface Muted, Text Primary
+ghost hover:         Surface Muted, Text Primary
+
+warning default:     Warning Bold background, Zani Ink text
+warning hover:       Warning Hover background
+warning active:      Warning Pressed background
 
 danger default:      Danger background, white text
 danger hover:        darker danger tone
+danger active:       Danger Pressed background
 
 ai default:          AI Accent background or AI Soft surface depending on prominence
 ai hover:            AI Hover or slightly stronger AI border
 ```
+
+Every semantic button keeps the shared focus ring and disabled treatment. Text contrast must meet 4.5:1 for normal-size labels, while component boundaries and interactive state differences must meet at least 3:1 where applicable.
 
 Do not use hover translate effects on normal app buttons. Avoid `hover:-translate-y-*` for authenticated CRM controls because it makes dense operational screens feel jumpy. Use color, border, shadow, and a very small active press state instead.
 
@@ -441,7 +508,7 @@ Switch rules:
 - default size: track 48px x 28px, knob 22px;
 - dense size: track 40px x 24px, knob 18px;
 - click/touch target must be at least 44px high;
-- active ordinary business setting uses Brand Primary;
+- active ordinary business setting uses Brand Content when the track itself needs a high-contrast state;
 - active AI setting may use AI Accent;
 - verified connection status may use Success, but only when the state means "connected/healthy";
 - off state uses neutral muted surface, not red;
@@ -659,11 +726,21 @@ Desktop sidebar compaction:
 
 - desktop sidebar should be route-first and compact, not a branding panel;
 - remove the large product logo/title/subtitle block from the normal desktop sidebar;
+- reserve only the compact rail width in the page flow; the expanded desktop sidebar overlays the workspace and must not resize, reflow, or compress page content;
 - keep only the page links and compact route groups in the main scroll path;
 - item typography should use 13px / 20px or 14px / 20px depending on density;
 - item vertical padding should stay tight enough that the normal owner/manager route set fits with minimal scrolling;
 - expanded width should be just wide enough for readable route labels, not a wide control panel;
 - rare profile, support, technical and system actions should not dominate the primary navigation area.
+- account/profile navigation belongs to the top-header utility cluster, not the sidebar route list;
+- show the account avatar at every authenticated viewport and reveal the user name and business role only when horizontal space allows;
+- do not add a chevron or menu affordance until the account control opens a real menu; a direct account link must look and behave like a link.
+
+Top-header utilities:
+
+- neutral icon controls use a 40px minimum hit target;
+- the notification bell is 24px inside that hit target and must not shrink because of inherited button padding;
+- every icon-only utility requires an accessible name and a visible keyboard focus state.
 
 Mobile navigation:
 
@@ -720,6 +797,19 @@ Every page and reusable data component must define:
 
 These states must follow the same surface, button, typography, and status rules as normal content.
 
+`StatusNotice` is the canonical alert anatomy for success, information, warning,
+and danger feedback. `InlineFallback`, `PageFallback`, `PermissionFallback`,
+`ConnectivityBanner`, `FieldErrorSummary`, `ErrorState`, and action-feedback
+toasts must compose or delegate to this primitive rather than recreate local
+border, background, icon, title, description, action, or live-region styles.
+
+Status colors remain semantic: brand orange is not an error color. Merchant
+surfaces must never render backend `detail`, `reason`, `last_error`,
+`error_code`, import-row messages, runtime `error.message`, route `statusText`,
+provider payloads, stack traces, paths, tokens, or secrets directly. Translate
+stable codes through `AppError`; pass provider diagnostics through the approved
+merchant-safe mapper; show only a bounded support reference when needed.
+
 ### Implementation Guardrails
 
 When a new authenticated page is created:
@@ -742,7 +832,7 @@ When a new authenticated page is created:
 
 - Primary filters should be segmented buttons, chips, or custom `Select`.
 - Advanced filters should be hidden behind a compact control unless they are part of the core workflow.
-- Active filter state can use Primary Soft + Brand Primary text/border.
+- Active filter state uses Primary Soft + Brand Content; filled Brand Primary is reserved for the page's highest-priority CTA.
 - Do not put filters inside a separate heavy card if the page already has a control bar.
 
 ## Metrics
@@ -758,7 +848,7 @@ When a new authenticated page is created:
 - Language selector belongs in the top header on desktop because it is not a daily workflow action.
 - Rare system controls should stay out of the main sidebar.
 - Mobile drawer should use a calm surface with a dimmed overlay.
-- Active navigation should use orange brand accent, but inactive items should stay neutral.
+- Active navigation should use Primary Soft + Brand Content/indicator, while inactive items stay neutral.
 
 ## Page Layout
 
@@ -790,7 +880,7 @@ Before a page is considered visually aligned:
 - The main work area has one clear primary surface model.
 - There are no more than two neutral background planes visible in the normal state.
 - Nested muted blocks are used only where they improve comprehension.
-- Brand orange is used for actions/active states, not generic decoration.
+- Brand peach is used for actions/selected context, not generic decoration.
 - AI colors are separate from ordinary CRM actions.
 - Status colors are semantic and consistent.
 - Text contrast is readable on all backgrounds.

@@ -46,7 +46,7 @@ export function DealClientPanel({ deal, client }: { deal: Deal; client: Client |
       {client ? (
         <Link
           to={`/app/clients/${client.id}`}
-          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-control border border-[#E6DDD2] bg-white px-4 py-2 text-sm font-semibold text-midnight shadow-sm transition duration-150 hover:border-[#D96718] hover:bg-[#F2EDE6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-control border border-zani-border bg-surface-card px-4 py-2 text-sm font-semibold text-zani-text shadow-sm transition duration-150 hover:border-brand-300 hover:bg-brand-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--zani-focus-ring)] focus-visible:ring-offset-2"
         >
           {t("leads.openClient")}
         </Link>

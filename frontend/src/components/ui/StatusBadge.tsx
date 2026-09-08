@@ -23,12 +23,12 @@ const statusTones: Record<string, StatusTone> = {
   urgent: "danger",
 
   high: "warning",
-  in_progress: "warning",
+  in_progress: "info",
   needs_attention: "warning",
   no_show: "warning",
   paused: "warning",
-  pending: "warning",
-  queued: "warning",
+  pending: "info",
+  queued: "info",
 
   contacted: "info",
   created: "info",
@@ -40,6 +40,9 @@ const statusTones: Record<string, StatusTone> = {
   rescheduled: "info",
   syncing: "info",
   trial: "info",
+
+  new_feature: "discovery",
+  onboarding: "discovery",
 
   expert: "ai",
   support: "ai",

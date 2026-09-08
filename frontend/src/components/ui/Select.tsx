@@ -174,7 +174,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           }}
         >
           <span id={valueId} className="min-w-0 truncate">{selectedOption?.label || t("common.select")}</span>
-          <ChevronDown aria-hidden="true" size={17} className={cn("shrink-0 text-zani-faint transition", open && "rotate-180 text-brand-600")} />
+          <ChevronDown aria-hidden="true" size={17} className={cn("shrink-0 text-zani-faint transition", open && "rotate-180 text-brand-700")} />
         </button>
         {open ? (
           <PopoverSurface
@@ -199,7 +199,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                     "zani-focus-ring flex w-full items-center justify-between gap-3 rounded-control px-3 text-left text-sm font-semibold transition",
                     placement === "top" ? "py-2" : "py-2.5",
                     isSelected
-                      ? "bg-brand-50 text-brand-700"
+                      ? "bg-brand-50 text-brand-700 ring-1 ring-brand-100"
                       : activeIndex === optionIndex
                         ? "bg-surface-muted text-zani-text"
                         : "text-zani-subtle hover:bg-surface-muted hover:text-zani-text",

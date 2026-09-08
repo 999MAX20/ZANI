@@ -783,7 +783,7 @@ export function CalendarPage() {
             {canManageWorkingHours ? (
               <Link
                 className="inline-flex min-h-10 items-center justify-center rounded-control border border-zani-border bg-zani-card px-3 py-2 text-xs font-bold text-zani-text hover:bg-surface-hover"
-                to="/app/working-hours"
+                to="/app/business/working-hours"
               >
                 {t("appointment.openHours")}
               </Link>
@@ -972,7 +972,7 @@ export function CalendarPage() {
                             "group absolute left-2 right-2 overflow-visible rounded-control border-l-4 border-t border-r border-b px-3 py-2 text-left shadow-sm transition hover:z-30 hover:shadow-md",
                             getTone(index),
                             selectedAppointment?.id === appointment.id &&
-                              "border-brand-500 bg-brand-50 shadow-md",
+                              "border-[var(--zani-brand-content)] bg-brand-50 shadow-md",
                           )}
                           style={{
                             top: `${metrics.top + 6}px`,
@@ -1165,7 +1165,7 @@ export function CalendarPage() {
                                 "group absolute left-1 right-1 overflow-visible rounded-control border-l-4 border-t border-r border-b px-2 py-1 text-left text-xs shadow-sm hover:z-30 hover:shadow-md",
                                 getTone(index),
                                 selectedAppointment?.id === appointment.id &&
-                                  "border-brand-500 bg-brand-50 shadow-md",
+                              "border-[var(--zani-brand-content)] bg-brand-50 shadow-md",
                               )}
                               style={{
                                 top: `${metrics.top + 4}px`,
@@ -1528,11 +1528,7 @@ export function CalendarPage() {
             </Button>
             <Button
               type="button"
-              variant={
-                statusReasonTarget?.status === "cancelled"
-                  ? "danger"
-                  : "primary"
-              }
+              variant="warning"
               isLoading={statusMutation.isPending}
               disabled={!statusReason.trim()}
               onClick={() => {
@@ -1579,7 +1575,7 @@ export function CalendarPage() {
             </Button>
             <Button
               type="button"
-              variant="danger"
+              variant="warning"
               isLoading={archiveMutation.isPending}
               onClick={() => {
                 if (!archiveTarget) return;

@@ -1,6 +1,6 @@
 # ZANI Project Handoff
 
-Дата снимка: 22 августа 2026 года
+Дата снимка: 2 сентября 2026 года
 
 Этот документ — стартовый handoff для нового Codex-проекта `Zani`. Он не заменяет `AGENTS.md` и не разрешает реализацию задач сам по себе.
 
@@ -27,12 +27,19 @@ Completed, archived и historical документы являются evidence, 
 
 ## Git snapshot
 
-- Ветка на момент финализации handoff: `codex/ux-3-owner-dashboard`.
-- HEAD на момент финализации handoff: `72b380a0f3bb9a4c53d767796a31a8f1e4fe69b7` (`feat: simplify owner dashboard workspace`).
+### 2026-09-03 FB-010 verification checkpoint
+
+This checkpoint supersedes older FB-010 status statements later in this handoff. The bounded cross-role failure matrix passes in an isolated runtime: 744 applicable journey/role/state/viewport cells, five-role desktop and mobile session-expiry recovery, tenant-safe browser denial, 208/208 targeted provider/async backend tests and 947/947 full backend tests are green. Integrated closeout remains open because this checkout is still shared and dirty, the generated fallback inventory is stale while Critic UI/UX changes the source set, and the Critic-owned visual/interaction audits plus a clean committed-range gate have not been accepted here. Detailed evidence and the one bounded next step are authoritative in `UNIFIED_FALLBACK_EXPERIENCE_PLAN.md`.
+
+- Current verification on 2026-09-02: `git status --short` reports 72 entries after the fallback implementation and the F-101 fixture alignment; the checkout remains intentionally uncommitted.
+
+- Текущая ветка: `codex/ux-3-owner-dashboard`.
+- Текущий HEAD: `f142f3e498e4726320fc7de0b6ad0cc27187c57f`.
 - Предыдущий baseline `3b84b52` и UX-3 commit `72b380a` разделены; handoff не смешивается с UX-3 commit.
-- Основной checkout не считать полностью чистым: обнаружен отдельный untracked `package-lock.json`; его происхождение не подтверждено.
-- Эти untracked-файлы не классифицированы и не должны автоматически включаться в commit, перенос или cleanup.
-- Перед кодовой работой требуется отдельный clean writable worktree от зафиксированного HEAD.
+- Канонический checkout грязный: `58` записей в `git status --short`; среди них находятся существующие UI-изменения, fallback-изменения текущей реализации и untracked `package-lock.json`.
+- `package-lock.json` не классифицирован и не должен автоматически включаться в commit, перенос или cleanup.
+- Отдельный worktree `C:\Users\user\Desktop\Zani-ui-color-correction` остаётся грязным на ветке `codex/ui-orange-cta-correction`; он относится к исключённому пункту Critic UI/UX и не переносился.
+- Из-за смешанного dirty checkout единый commit текущего scope пока не создавался.
 
 ### Migration freeze
 
@@ -50,8 +57,9 @@ Completed, archived и historical документы являются evidence, 
 
 - Backend foundation и B-101 в рабочих отчётах отмечены закрытыми; BE-REM-001…006 отмечены закрытыми.
 - BE-REM-007 остаётся зависимым от fallback/recovery и функциональной сертификации.
-- FB-001…FB-005 были подтверждены рабочими чатами как закрытые; FB-006 был подготовлен как следующий bounded scope; FB-007…FB-010 не начинались.
-- В `actual_docs/README.md` одновременно сохраняется более старый статус `FB-003 ready`. Это противоречие обязательно сверить до выдачи нового fallback-запроса.
+- FB-001…FB-005 закрыты; FB-006…FB-008 реализованы в текущем каноническом working tree и имеют зелёные frontend/targeted backend gates; FB-009 реализован на уровне RU/KK/EN copy и reduced-motion поверхности, но browser/accessibility gate открыт; FB-010 не сертифицирован.
+- `actual_docs/README.md` синхронизирован с этим состоянием: старый статус `FB-003 ready` устранён.
+- `FC-003`, `FC-004`, `FC-006`, `FC-008` и `BE-REM-007` остаются открытыми до полной failure matrix и clean-range certification.
 - Интеграционный pilot inventory: website/public forms и widget — demo/local; CSV/Excel — controlled pilot; Telegram — после токена и HTTPS webhook; Kaspi/MoySklad/Wildberries/Ozon — read-only beta; WhatsApp/Instagram требуют внешней настройки; 1C — roadmap.
 
 ## Ограничения нового проекта

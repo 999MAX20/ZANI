@@ -30,6 +30,7 @@ import { PageHeader } from "../../components/ui/PageHeader";
 import { Select } from "../../components/ui/Select";
 import { Textarea } from "../../components/ui/Textarea";
 import { ErrorState, LoadingState } from "../../components/ui/StateViews";
+import { StatusNotice } from "../../components/ui/StatusNotice";
 import { AiInsightCard, aiInsightDotClass, type AiInsightSeverity } from "../../components/ai/AiInsightCard";
 import { useAuth } from "../auth/AuthProvider";
 import { useActiveBusiness } from "../../hooks/useBusiness";
@@ -384,15 +385,12 @@ export function AIAssistantPage() {
       ) : null}
 
       {aiStatus.data && !aiStatus.data.ready ? (
-        <div className="mb-4 rounded-card border border-[rgba(183,121,31,0.22)] bg-[var(--zani-warning-soft)] p-4 text-sm font-semibold leading-6 text-zani-warning">
-          <div className="flex items-start gap-3">
-            <AlertTriangle size={18} className="mt-0.5 shrink-0" />
-            <div>
-              <p className="font-bold">{t("aiAssistant.providerUnavailableTitle")}</p>
-              <p className="mt-1">{t("aiAssistant.providerUnavailableText")}</p>
-            </div>
-          </div>
-        </div>
+        <StatusNotice
+          className="mb-4"
+          tone="warning"
+          title={t("aiAssistant.providerUnavailableTitle")}
+          description={t("aiAssistant.providerUnavailableText")}
+        />
       ) : null}
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
@@ -471,16 +469,19 @@ export function AIAssistantPage() {
 
               <div className="mt-5 grid gap-3">
                 {!canViewAnalyst ? (
-                  <p className="rounded-card border border-[rgba(183,121,31,0.22)] bg-[var(--zani-warning-soft)] p-4 text-sm font-semibold leading-6 text-zani-warning">
-                    {t("permissions.forbidden", {
+                  <StatusNotice
+                    tone="warning"
+                    title={t("fallback.permission.title")}
+                    description={t("permissions.forbidden", {
                       resource: t("permissions.resource.ai_analyst"),
                     })}
-                  </p>
+                  />
                 ) : null}
                 {!analystBrief.isLoading && analystHasNoSourceData ? (
-                  <p className="rounded-card border border-[rgba(183,121,31,0.22)] bg-[var(--zani-warning-soft)] p-4 text-sm font-semibold leading-6 text-zani-warning">
-                    {t("aiNavigator.noSourceDataState")}
-                  </p>
+                  <StatusNotice
+                    tone="info"
+                    title={t("aiNavigator.noSourceDataState")}
+                  />
                 ) : null}
                 {(analystBrief.data?.insights || []).map((insight) => (
                   <div key={insight.id} className="rounded-card border border-zani-border bg-surface-muted p-4">
@@ -677,7 +678,7 @@ export function AIAssistantPage() {
             />
             {t("aiAssistant.useInContext")}
           </label>
-          <Button type="submit" variant="ai" isLoading={memoryMutation.isPending} disabled={!memoryDraft.title.trim() || !memoryDraft.content.trim()}>
+          <Button type="submit" variant="primary" isLoading={memoryMutation.isPending} disabled={!memoryDraft.title.trim() || !memoryDraft.content.trim()}>
             {t("aiAssistant.saveMemory")}
           </Button>
         </form>

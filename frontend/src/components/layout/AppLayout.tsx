@@ -47,7 +47,7 @@ function DesktopSidebar() {
         onDesktopMouseEnter={() => setSidebarExpanded(true)}
         onDesktopMouseLeave={() => setSidebarExpanded(false)}
       />
-      <div className={`hidden shrink-0 transition-[width] duration-200 lg:block ${sidebarExpanded ? "lg:w-[224px]" : "lg:w-16"}`} />
+      <div className="hidden w-16 shrink-0 lg:block" aria-hidden="true" />
     </>
   );
 }

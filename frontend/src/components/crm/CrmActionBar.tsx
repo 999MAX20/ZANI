@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import type { CrmCardActionDetail } from "../../types";
 import { cn } from "../../lib/cn";
 import { useI18n } from "../../lib/i18n";
+import { buttonVariantForActionTone, resolveCrmActionTone, type ActionTone } from "../ui/actionTone";
 import { Button } from "../ui/Button";
 import { Modal } from "../ui/Modal";
 import { Textarea } from "../ui/Textarea";
@@ -24,6 +25,11 @@ function scopeLabel(action: CrmCardActionDetail, t: (key: string) => string) {
   const key = `permissions.scope.${action.scope}`;
   const translated = t(key);
   return translated === key ? action.scope : translated;
+}
+
+function confirmationTone(action: CrmCardActionDetail): ActionTone {
+  const tone = resolveCrmActionTone(action);
+  return tone === "neutral" ? "brand" : tone;
 }
 
 export function CrmActionBar({ actions, onExecute, isPending = false, className, maxVisible = 8 }: CrmActionBarProps) {
@@ -58,13 +64,13 @@ export function CrmActionBar({ actions, onExecute, isPending = false, className,
     <>
       <div className={cn("flex flex-wrap gap-2", className)}>
         {visibleActions.map((action) => {
-          const destructive = action.destructive || action.confirmation === "reason";
+          const tone = resolveCrmActionTone(action);
           return (
             <Button
               key={action.id}
               type="button"
               size="sm"
-              variant={destructive ? "danger" : action.confirmation === "confirm" ? "secondary" : "secondary"}
+              variant={buttonVariantForActionTone(tone)}
               disabled={!action.allowed || isPending}
               isLoading={isPending && action.allowed}
               data-crm-action-id={action.id}
@@ -87,7 +93,7 @@ export function CrmActionBar({ actions, onExecute, isPending = false, className,
               </Button>
               <Button
                 type="button"
-                variant={confirmAction.destructive ? "danger" : "primary"}
+                variant={buttonVariantForActionTone(confirmationTone(confirmAction))}
                 isLoading={isPending}
                 onClick={() => {
                   onExecute(confirmAction);
@@ -117,7 +123,7 @@ export function CrmActionBar({ actions, onExecute, isPending = false, className,
               <Button type="button" variant="secondary" onClick={closeReason}>
                 {t("common.cancel")}
               </Button>
-              <Button type="submit" variant="danger" isLoading={isPending} disabled={!reason.trim()}>
+              <Button type="submit" variant={buttonVariantForActionTone(resolveCrmActionTone(reasonAction))} isLoading={isPending} disabled={!reason.trim()}>
                 {t("actions.confirm")}
               </Button>
             </div>

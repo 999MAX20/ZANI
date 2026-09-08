@@ -6,6 +6,8 @@ import { fileURLToPath } from "node:url";
 
 const baseURL = process.env.E2E_BASE_URL || "http://127.0.0.1:5173";
 const apiBaseURL = process.env.E2E_API_BASE_URL || "http://127.0.0.1:8000";
+const frontendPort = new URL(baseURL).port || "5173";
+const djangoPort = new URL(apiBaseURL).port || "8000";
 const email = process.env.E2E_OWNER_EMAIL || "business_owner@example.com";
 const password = process.env.E2E_PASSWORD || "ZaniTest123!";
 const dateStamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
@@ -55,7 +57,11 @@ async function isReachable(url) {
 function startManagedProcess(name, command, args) {
   const child = spawn(command, args, {
     cwd: frontendDir,
-    env: process.env,
+    env: {
+      ...process.env,
+      E2E_DJANGO_PORT: djangoPort,
+      E2E_FRONTEND_PORT: frontendPort,
+    },
     stdio: ["ignore", "pipe", "pipe"],
     windowsHide: true,
   });
@@ -123,7 +129,8 @@ async function ensureLocalServers() {
       "--host",
       "127.0.0.1",
       "--port",
-      "5173",
+      frontendPort,
+      "--strictPort",
     ]);
     started.push(
       startManagedProcess("vite", viteCommand.command, viteCommand.args),

@@ -16,7 +16,7 @@ const toneClasses: Record<NonNullable<AiNavigatorSignal["tone"]>, string> = {
   good: "bg-zani-success",
   warning: "bg-zani-warning",
   danger: "bg-zani-danger",
-  info: "bg-brand-500",
+  info: "bg-zani-info",
 };
 
 export function AiNavigatorWidget({ signals }: { signals: AiNavigatorSignal[] }) {

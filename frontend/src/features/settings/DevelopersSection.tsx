@@ -18,6 +18,7 @@ import { ErrorState } from "../../components/ui/StateViews";
 import { Textarea } from "../../components/ui/Textarea";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useI18n } from "../../lib/i18n";
+import { merchantSafeIntegrationError } from "../integrations/utils";
 import type {
   ApiTokenCreateResponse,
   Id,
@@ -476,7 +477,7 @@ function DeliveryRow({
           </p>
           {delivery.error ? (
             <p className="mt-1 text-xs font-semibold text-red-600">
-              {delivery.error}
+              {merchantSafeIntegrationError(delivery.error, t)}
             </p>
           ) : null}
         </div>

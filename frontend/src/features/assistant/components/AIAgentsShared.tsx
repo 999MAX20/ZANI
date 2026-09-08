@@ -1,27 +1,23 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router";
-import { Bot, CheckCircle2, Plus, Sparkles } from "lucide-react";
+import { Bot, CheckCircle2, Sparkles } from "lucide-react";
 
-import { Button } from "../../../components/ui/Button";
 import { Card, CardBody } from "../../../components/ui/Card";
 import { useI18n } from "../../../lib/i18n";
 import { cn } from "../../../lib/cn";
 import type { OnboardingStep } from "../aiAgentsTypes";
-export function EmptyAgentsState({ onCreate }: { onCreate: () => void }) {
+export function EmptyAgentsState() {
   const { t } = useI18n();
   return (
-    <Card>
+    <Card variant="outlined">
       <CardBody className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="grid h-14 w-14 place-items-center rounded-2xl bg-brand-600 text-white">
+        <div className="grid h-14 w-14 place-items-center rounded-2xl bg-ai-600 text-white">
           <Bot size={24} />
         </div>
         <h3 className="mt-4 text-2xl font-black text-midnight">{t("aiAgents.emptyAgentsTitle")}</h3>
         <p className="mt-2 max-w-xl text-sm font-semibold leading-6 text-slate-500">
           {t("aiAgents.emptyAgentsText")}
         </p>
-        <Button className="mt-5" type="button" onClick={onCreate}>
-          <Plus size={16} /> {t("aiAgents.createAgent")}
-        </Button>
       </CardBody>
     </Card>
   );
@@ -29,15 +25,15 @@ export function EmptyAgentsState({ onCreate }: { onCreate: () => void }) {
 
 export function HelpCard({ title, text, recommendation }: { title: string; text: string; recommendation: string }) {
   return (
-    <div className="rounded-2xl border border-brand-100 bg-brand-50 p-4">
+    <div className="rounded-2xl border border-ai-100 bg-ai-50 p-4">
       <div className="flex items-start gap-3">
-        <div className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-brand-700">
+        <div className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-ai-700">
           <Sparkles size={18} />
         </div>
         <div>
           <h3 className="font-black text-midnight">{title}</h3>
           <p className="mt-1 text-sm font-semibold leading-6 text-slate-600">{text}</p>
-          <p className="mt-2 text-sm font-black leading-6 text-brand-800">{recommendation}</p>
+          <p className="mt-2 text-sm font-black leading-6 text-ai-700">{recommendation}</p>
         </div>
       </div>
     </div>
@@ -62,13 +58,13 @@ export function OnboardingProgress({
     <div className={cn("rounded-2xl border border-slate-200 bg-white p-4", compact ? "mt-5" : "shadow-sm")}>
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">{t("aiAgents.firstLaunch")}</p>
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-ai-700">{t("aiAgents.firstLaunch")}</p>
           <h3 className="mt-1 font-black text-midnight">{t("aiAgents.firstLaunchTitle")}</h3>
         </div>
-        <span className="rounded-full bg-brand-50 px-3 py-1 text-sm font-black text-brand-700">{doneCount}/{steps.length}</span>
+        <span className="rounded-full bg-ai-50 px-3 py-1 text-sm font-black text-ai-700 ring-1 ring-ai-100">{doneCount}/{steps.length}</span>
       </div>
       <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
-        <div className="h-full rounded-full bg-brand-600 transition-all" style={{ width: `${progress}%` }} />
+        <div className="h-full rounded-full bg-ai-600 transition-all" style={{ width: `${progress}%` }} />
       </div>
       <div className="mt-4 space-y-2">
         {steps.map((step) => (

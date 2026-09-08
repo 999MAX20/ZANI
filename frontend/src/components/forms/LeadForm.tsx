@@ -9,6 +9,7 @@ import { useI18n } from "../../lib/i18n";
 import type { DuplicateClient, Id, Lead, Service, Client, TeamMember } from "../../types";
 import { Button } from "../ui/Button";
 import { Select } from "../ui/Select";
+import { StatusNotice } from "../ui/StatusNotice";
 import { Textarea } from "../ui/Textarea";
 
 function createSchema(t: (key: string) => string) {
@@ -43,8 +44,11 @@ export function LeadForm({
   const { t } = useI18n();
   const [duplicates, setDuplicates] = useState<DuplicateClient[]>([]);
   const [relatedLeadsCount, setRelatedLeadsCount] = useState(0);
+  const selectableServices = services.filter(
+    (service) => (service.is_active && !service.is_archived) || service.id === initial?.service,
+  );
   const hasClients = clients.length > 0;
-  const hasServices = services.length > 0;
+  const hasServices = selectableServices.length > 0;
   const form = useForm<Values>({
     resolver: zodResolver(createSchema(t)),
     defaultValues: {
@@ -87,22 +91,24 @@ export function LeadForm({
       }
     })}>
       {!hasClients ? (
-        <div className="rounded-card border border-[rgba(151,90,22,0.24)] bg-[var(--zani-warning-soft)] p-4 text-sm text-zani-warning">
-          <p className="font-semibold">{t("leadForm.needClientTitle")}</p>
-          <p className="mt-1 leading-6">{t("leadForm.needClientText")}</p>
-          <Link className="mt-3 inline-flex font-semibold text-zani-warning underline-offset-4 hover:underline" to="/app/clients?create=1">
+        <StatusNotice
+          tone="warning"
+          title={t("leadForm.needClientTitle")}
+          description={t("leadForm.needClientText")}
+          action={<Link className="zani-focus-ring inline-flex rounded-control px-2 py-1 font-semibold text-zani-warning underline-offset-4 hover:underline" to="/app/clients?create=1">
             {t("clients.create")}
-          </Link>
-        </div>
+          </Link>}
+        />
       ) : null}
       {!hasServices ? (
-        <div className="rounded-card border border-zani-border bg-surface-muted p-4 text-sm text-zani-subtle">
-          <p className="font-semibold text-zani-ink">{t("leadForm.serviceLaterTitle")}</p>
-          <p className="mt-1 leading-6">{t("leadForm.serviceLaterText")}</p>
-          <Link className="mt-3 inline-flex font-bold text-brand-700 underline-offset-4 hover:underline" to="/app/services">
+        <StatusNotice
+          tone="info"
+          title={t("leadForm.serviceLaterTitle")}
+          description={t("leadForm.serviceLaterText")}
+          action={<Link className="zani-focus-ring inline-flex rounded-control px-2 py-1 font-bold text-zani-info underline-offset-4 hover:underline" to="/app/business/services">
             {t("services.title")}
-          </Link>
-        </div>
+          </Link>}
+        />
       ) : null}
       <Select
         label={t("appointment.client")}
@@ -111,13 +117,16 @@ export function LeadForm({
         {...form.register("client")}
       />
       {duplicates.length || relatedLeadsCount ? (
-        <div className="rounded-card border border-[rgba(151,90,22,0.24)] bg-[var(--zani-warning-soft)] p-4 text-sm text-zani-warning">
-          <p className="font-semibold">{t("leadForm.relatedTitle")}</p>
-          <p className="mt-1">
+        <StatusNotice
+          tone="warning"
+          title={t("leadForm.relatedTitle")}
+          description={(
+            <p>
             {relatedLeadsCount ? `${t("leadForm.relatedCount").replace("{count}", String(relatedLeadsCount))} ` : ""}
             {t("leadForm.relatedText")}
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
+            </p>
+          )}
+          details={<div className="flex flex-wrap gap-2">
             {duplicates.slice(0, 2).map((client) => (
               <Button key={client.id} type="button" variant="secondary" className="h-9 rounded-xl px-3 text-xs" onClick={() => onOpenClient?.(client.id)}>
                 {t("clients.openExisting")}
@@ -128,10 +137,10 @@ export function LeadForm({
                 {t("clients.openExisting")}
               </Button>
             ) : null}
-          </div>
-        </div>
+          </div>}
+        />
       ) : null}
-      <Select label={t("appointment.service")} options={[{ value: "", label: t("leadForm.noService") }, ...services.map((service) => ({ value: service.id, label: service.name }))]} {...form.register("service")} />
+      <Select label={t("appointment.service")} options={[{ value: "", label: t("leadForm.noService") }, ...selectableServices.map((service) => ({ value: service.id, label: service.name }))]} {...form.register("service")} />
       <Select label={t("appointment.source")} options={[
         { value: "manual", label: t("clients.sourceManual") },
         { value: "website", label: t("clients.sourceWebsite") },

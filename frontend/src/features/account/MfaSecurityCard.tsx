@@ -18,6 +18,7 @@ import { Card, CardBody } from "../../components/ui/Card";
 import { Input } from "../../components/ui/Input";
 import { Modal } from "../../components/ui/Modal";
 import { ErrorState } from "../../components/ui/StateViews";
+import { StatusNotice } from "../../components/ui/StatusNotice";
 import { useI18n } from "../../lib/i18n";
 
 type Mode = "setup" | "recovery" | "disable" | "sessions" | null;
@@ -124,8 +125,8 @@ export function MfaSecurityCard() {
             ) : (
               <>
                 <Button type="button" variant="secondary" onClick={() => openMode("recovery")}><KeyRound size={17} />{t("mfa.newRecoveryCodes")}</Button>
-                <Button type="button" variant="secondary" onClick={() => openMode("sessions")}><LogOut size={17} />{t("mfa.revokeSessions")}</Button>
-                <Button type="button" variant="secondary" onClick={() => openMode("disable")}><ShieldOff size={17} />{t("mfa.disable")}</Button>
+                <Button type="button" variant="warning" onClick={() => openMode("sessions")}><LogOut size={17} />{t("mfa.revokeSessions")}</Button>
+                <Button type="button" variant="warning" onClick={() => openMode("disable")}><ShieldOff size={17} />{t("mfa.disable")}</Button>
               </>
             )}
           </div>
@@ -136,7 +137,7 @@ export function MfaSecurityCard() {
         <div className="grid gap-4 rounded-3xl bg-white p-4 sm:p-5">
           {recoveryCodes.length ? (
             <>
-              <p className="rounded-2xl bg-amber-50 p-4 text-sm font-semibold leading-6 text-amber-900">{t("mfa.recoveryWarning")}</p>
+              <StatusNotice tone="warning" title={t("mfa.recoveryWarning")} />
               <div className="grid grid-cols-2 gap-2 rounded-2xl bg-slate-950 p-4 font-mono text-sm text-white">{recoveryCodes.map((item) => <span key={item}>{item}</span>)}</div>
               <Button type="button" variant="secondary" onClick={() => navigator.clipboard.writeText(recoveryCodes.join("\n"))}><Copy size={17} />{t("mfa.copyCodes")}</Button>
               <Button type="button" onClick={closeModal}>{t("common.close")}</Button>
@@ -157,7 +158,7 @@ export function MfaSecurityCard() {
                 </>
               ) : null}
               <Input label={t("mfa.codeLabel")} value={code} onChange={(event) => setCode(event.target.value)} autoComplete="one-time-code" placeholder={t("mfa.codePlaceholder")} required={mode !== "sessions" || Boolean(mfa?.enabled)} />
-              <div className="flex justify-end gap-2"><Button type="button" variant="secondary" onClick={closeModal}>{t("common.cancel")}</Button><Button type="submit" isLoading={actionMutation.isPending}>{t("common.save")}</Button></div>
+              <div className="flex justify-end gap-2"><Button type="button" variant="secondary" onClick={closeModal}>{t("common.cancel")}</Button><Button type="submit" variant={mode === "disable" || mode === "sessions" ? "warning" : "primary"} isLoading={actionMutation.isPending}>{t("common.save")}</Button></div>
             </form>
           )}
         </div>

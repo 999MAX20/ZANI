@@ -1,74 +1,127 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { CalendarDays, Clock3, Plus, UsersRound } from "lucide-react";
-import { useState } from "react";
-import { Link } from "react-router";
+import { CalendarClock, CalendarDays, Clock3, SlidersHorizontal, UsersRound } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router";
 
 import { getApiErrorMessage } from "../../api/client";
-import {
-  workingHoursApi,
-  type WorkingHoursPreset,
-} from "../../api/workingHours";
-import { WeeklyWorkingHoursForm } from "../../components/forms/WorkingHoursForm";
-import { DataTable } from "../../components/tables/DataTable";
+import { workingHoursApi, type WorkingHoursPreset } from "../../api/workingHours";
+import { useActionConfirm } from "../../components/actions/ActionConfirmProvider";
+import { CrmWorkspacePage } from "../../components/crm";
+import { usePageHeader } from "../../components/layout/PageHeaderContext";
 import { useNotification } from "../../components/notifications/NotificationProvider";
 import { Button } from "../../components/ui/Button";
-import { Modal } from "../../components/ui/Modal";
-import { PageHeader } from "../../components/ui/PageHeader";
+import { MetricCard } from "../../components/ui/MetricCard";
 import { Select } from "../../components/ui/Select";
 import { ErrorState, LoadingState } from "../../components/ui/StateViews";
+import { Tabs } from "../../components/ui/Tabs";
 import { useActiveBusiness } from "../../hooks/useBusiness";
 import { useEntityData } from "../../hooks/useEntityData";
 import { useI18n } from "../../lib/i18n";
-import type { WorkingHours } from "../../types";
+import { hasPermission, permissionForbiddenMessage } from "../../lib/permissions";
+import type { Resource, WorkingHours } from "../../types";
+import { useAuth } from "../auth/AuthProvider";
+import { BusinessWorkspaceNav } from "../business/components/BusinessWorkspaceNav";
+import { WorkingHoursBusinessView } from "./components/WorkingHoursBusinessView";
+import { WorkingHoursEditModal } from "./components/WorkingHoursEditModal";
+import { WorkingHoursResourcesView, type ResourceScheduleSummary } from "./components/WorkingHoursResourcesView";
 
-const weekdays = [
-  "weekday.monShort",
-  "weekday.tueShort",
-  "weekday.wedShort",
-  "weekday.thuShort",
-  "weekday.friShort",
-  "weekday.satShort",
-  "weekday.sunShort",
+const weekdayKeys = [
+  "weekday.mon",
+  "weekday.tue",
+  "weekday.wed",
+  "weekday.thu",
+  "weekday.fri",
+  "weekday.sat",
+  "weekday.sun",
 ];
-const presetOptions: Array<{
-  value: WorkingHoursPreset;
-  labelKey: string;
-  descriptionKey: string;
-}> = [
-  {
-    value: "weekdays_9_18",
-    labelKey: "workingHours.preset.weekdays",
-    descriptionKey: "workingHours.preset.weekendsOff",
-  },
-  {
-    value: "daily_9_20",
-    labelKey: "workingHours.preset.daily",
-    descriptionKey: "workingHours.preset.everyDay",
-  },
-  {
-    value: "mon_sat_9_18",
-    labelKey: "workingHours.preset.monSat",
-    descriptionKey: "workingHours.preset.sunOff",
-  },
+
+const presetOptions: Array<{ value: WorkingHoursPreset; labelKey: string; descriptionKey: string }> = [
+  { value: "weekdays_9_18", labelKey: "workingHours.preset.weekdays", descriptionKey: "workingHours.preset.weekendsOff" },
+  { value: "daily_9_20", labelKey: "workingHours.preset.daily", descriptionKey: "workingHours.preset.everyDay" },
+  { value: "mon_sat_9_18", labelKey: "workingHours.preset.monSat", descriptionKey: "workingHours.preset.sunOff" },
 ];
+
+type ScheduleMode = "" | "business" | "individual";
+type WorkingHoursView = "business" | "resources";
+
+function positiveInteger(value: string | null) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
 
 export function WorkingHoursPage() {
   const { t } = useI18n();
   const showNotification = useNotification();
+  const confirmAction = useActionConfirm();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { setPageHeader } = usePageHeader();
   const { business } = useActiveBusiness();
-  const { workingHours, resources } = useEntityData({
-    workingHours: true,
-    resources: true,
-  });
-  const [open, setOpen] = useState(false);
-  const [editingResource, setEditingResource] = useState<number | null>(null);
+  const { user } = useAuth();
+  const { workingHours, resources } = useEntityData({ workingHours: true, resources: true });
+  const [searchParams, setSearchParams] = useSearchParams();
   const [preset, setPreset] = useState<WorkingHoursPreset>("weekdays_9_18");
+  const [resourceSearch, setResourceSearch] = useState("");
+  const [scheduleMode, setScheduleMode] = useState<ScheduleMode>("");
+  const [resourcePage, setResourcePage] = useState(1);
+  const [resourcePageSize, setResourcePageSize] = useState(20);
+  const [modalDirty, setModalDirty] = useState(false);
+
+  const canManage = hasPermission(user, business?.id, "settings", "update");
+  const canViewSettings = hasPermission(user, business?.id, "settings", "view");
+  const permissionMessage = permissionForbiddenMessage("settings", "update", t);
+  const selectedResourceId = positiveInteger(searchParams.get("resource"));
+  const businessSelected = searchParams.get("target") === "business";
+  const activeView: WorkingHoursView = searchParams.get("view") === "resources" || selectedResourceId ? "resources" : "business";
+  const rows = workingHours.data || [];
+  const activeResources = useMemo(
+    () => (resources.data || []).filter((resource) => resource.is_active),
+    [resources.data],
+  );
+  const selectedResource = activeResources.find((resource) => resource.id === selectedResourceId) || null;
+  const modalOpen = businessSelected || Boolean(selectedResource);
+
+  const setView = useCallback((view: WorkingHoursView) => {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      next.set("view", view);
+      next.delete("resource");
+      next.delete("target");
+      return next;
+    }, { replace: false });
+    setResourcePage(1);
+  }, [setSearchParams]);
+
+  const updateSelection = useCallback((resource: Resource | null) => {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      if (resource) {
+        next.set("view", "resources");
+        next.set("resource", String(resource.id));
+        next.delete("target");
+      } else {
+        next.set("view", "business");
+        next.delete("resource");
+        next.set("target", "business");
+      }
+      return next;
+    }, { replace: false });
+  }, [setSearchParams]);
+
+  const clearSelection = useCallback(() => {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      next.delete("resource");
+      next.delete("target");
+      return next;
+    }, { replace: false });
+  }, [setSearchParams]);
+
   const mutation = useMutation({
     mutationFn: async (payloads: Array<Partial<WorkingHours>>) =>
       workingHoursApi.bulkUpsertWeek({
         business: business!.id,
-        resource: payloads[0]?.resource || null,
+        resource: payloads[0]?.resource ?? null,
         days: payloads.map((payload) => ({
           weekday: Number(payload.weekday),
           start_time: String(payload.start_time || "09:00"),
@@ -76,303 +129,183 @@ export function WorkingHoursPage() {
           is_day_off: Boolean(payload.is_day_off),
         })),
       }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["working-hours"] });
-      queryClient.invalidateQueries({ queryKey: ["available-slots"] });
-      setOpen(false);
-      setEditingResource(null);
-      showNotification({
-        message: t("workingHours.savedNotice"),
-        tone: "success",
-      });
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["working-hours"] }),
+        queryClient.invalidateQueries({ queryKey: ["available-slots"] }),
+        queryClient.invalidateQueries({ queryKey: ["resources"] }),
+      ]);
+      setModalDirty(false);
+      showNotification({ message: t("workingHours.savedNotice"), tone: "success" });
     },
   });
+
   const presetMutation = useMutation({
-    mutationFn: () =>
-      workingHoursApi.applyPreset({ business: business!.id, preset }),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["working-hours"] });
-      queryClient.invalidateQueries({ queryKey: ["available-slots"] });
-      showNotification({
-        message: t("workingHours.presetNotice").replace(
-          "{count}",
-          String(data.count),
-        ),
-        tone: "success",
-      });
+    mutationFn: () => workingHoursApi.applyPreset({ business: business!.id, preset }),
+    onSuccess: async (data) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["working-hours"] }),
+        queryClient.invalidateQueries({ queryKey: ["available-slots"] }),
+        queryClient.invalidateQueries({ queryKey: ["resources"] }),
+      ]);
+      showNotification({ message: t("workingHours.presetNotice").replace("{count}", String(data.count)), tone: "success" });
     },
+    onError: (error) => showNotification({ message: getApiErrorMessage(error), tone: "danger" }),
   });
+
+  useEffect(() => {
+    setPageHeader({
+      title: t("nav.workingHours"),
+      secondaryActions: canViewSettings ? [{
+        label: t("settings.schedulingCenter"),
+        icon: CalendarClock,
+        onClick: () => navigate("/app/settings#operations-setup"),
+        presentation: "label",
+        showOnMobile: true,
+      }] : undefined,
+      primaryAction: {
+        label: t("workingHours.setupWeek"),
+        icon: CalendarDays,
+        onClick: () => updateSelection(null),
+        disabled: !canManage,
+        title: !canManage ? permissionMessage : undefined,
+      },
+    });
+    return () => setPageHeader(null);
+  }, [canManage, canViewSettings, navigate, permissionMessage, setPageHeader, t, updateSelection]);
+
+  useEffect(() => {
+    if (!selectedResourceId || resources.isLoading || selectedResource) return;
+    clearSelection();
+  }, [clearSelection, resources.isLoading, selectedResource, selectedResourceId]);
+
+  const confirmDiscard = useCallback(async () => {
+    if (!modalDirty) return true;
+    const result = await confirmAction({
+      title: t("workingHours.discardChanges"),
+      confirmLabel: t("actions.discardChanges"),
+      tone: "warning",
+    });
+    return result.confirmed;
+  }, [confirmAction, modalDirty, t]);
+
+  const closeModal = useCallback(async () => {
+    if (!await confirmDiscard()) return;
+    setModalDirty(false);
+    clearSelection();
+  }, [clearSelection, confirmDiscard]);
+
+  async function applyPreset() {
+    if (!canManage || presetMutation.isPending) return;
+    const result = await confirmAction({
+      title: t("workingHours.applyPresetTitle"),
+      description: t("workingHours.applyPresetDescription"),
+      confirmLabel: t("workingHours.applyPreset"),
+    });
+    if (result.confirmed) presetMutation.mutate();
+  }
 
   if (!business) return <ErrorState message={t("workingHours.noBusiness")} />;
   if (workingHours.isLoading || resources.isLoading) return <LoadingState />;
-  const rows = workingHours.data || [];
-  const activeResources = (resources.data || []).filter(
-    (resource) => resource.is_active,
-  );
-  const businessDays = rows.filter(
-    (row) => !row.resource && !row.is_day_off,
-  ).length;
-  const resourceSchedules = new Set(
-    rows.map((row) => row.resource).filter(Boolean),
-  ).size;
-  const dayOffRows = rows.filter((row) => row.is_day_off).length;
-  const businessWeek = weekdays.map(
-    (key, index) =>
-      rows.find((row) => !row.resource && row.weekday === index) || null,
-  );
-  const resourceSummary = activeResources.map((resource) => {
-    const resourceRows = rows.filter((row) => row.resource === resource.id);
+
+  const pageError = workingHours.error || resources.error;
+  const businessWeek = weekdayKeys.map((key, weekday) => ({
+    key,
+    schedule: rows.find((row) => !row.resource && row.weekday === weekday) || null,
+  }));
+  const businessDays = businessWeek.filter((day) => day.schedule && !day.schedule.is_day_off).length;
+  const resourceSummaries: ResourceScheduleSummary[] = activeResources.map((resource) => {
+    const ownRows = rows.filter((row) => row.resource === resource.id);
+    const effectiveWeek = weekdayKeys.map((_, weekday) => ownRows.find((row) => row.weekday === weekday) || businessWeek[weekday]?.schedule || null);
     return {
       resource,
-      workingDays: resourceRows.filter((row) => !row.is_day_off).length,
-      configuredDays: resourceRows.length,
+      individual: ownRows.length > 0,
+      workingDays: effectiveWeek.filter((row) => row && !row.is_day_off).length,
     };
   });
-
-  function formatHours(row: WorkingHours | null) {
-    if (!row) return t("workingHours.notConfigured");
-    if (row.is_day_off) return t("workingHours.dayOff");
-    return `${row.start_time.slice(0, 5)} - ${row.end_time.slice(0, 5)}`;
-  }
+  const normalizedSearch = resourceSearch.trim().toLocaleLowerCase();
+  const filteredResources = resourceSummaries.filter((item) => {
+    if (normalizedSearch && !item.resource.name.toLocaleLowerCase().includes(normalizedSearch)) return false;
+    if (scheduleMode === "individual" && !item.individual) return false;
+    if (scheduleMode === "business" && item.individual) return false;
+    return true;
+  });
+  const resourceTotalPages = Math.max(1, Math.ceil(filteredResources.length / resourcePageSize));
+  const safeResourcePage = Math.min(resourcePage, resourceTotalPages);
+  const pagedResources = filteredResources.slice((safeResourcePage - 1) * resourcePageSize, safeResourcePage * resourcePageSize);
+  const individualSchedules = resourceSummaries.filter((item) => item.individual).length;
+  const dayOffRows = rows.filter((row) => row.is_day_off).length;
 
   return (
-    <div data-testid="working-hours-workspace-ready">
-      <PageHeader
-        title={t("workingHours.title")}
-        description={t("workingHours.description")}
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <Link to="/app/settings#operations-setup">
-              <Button type="button" variant="secondary">
-                {t("settings.schedulingCenter")}
-              </Button>
-            </Link>
-            <Button data-testid="working-hours-setup" onClick={() => setOpen(true)}>
-              <Plus size={18} />
-              {t("workingHours.setupWeek")}
-            </Button>
-          </div>
-        }
-      />
-      <section className="mb-5 grid gap-3 lg:grid-cols-3">
-        <div className="rounded-card border border-zani-border bg-surface-card p-5 shadow-card">
-          <CalendarDays className="text-brand-600" size={24} />
-          <p className="mt-4 text-sm font-bold text-zani-subtle">
-            {t("workingHours.businessDays")}
-          </p>
-          <p className="mt-2 text-3xl font-bold text-zani-text">
-            {businessDays}/7
-          </p>
-        </div>
-        <div className="rounded-card border border-zani-border bg-surface-card p-5 shadow-card">
-          <UsersRound className="text-brand-600" size={24} />
-          <p className="mt-4 text-sm font-bold text-zani-subtle">
-            {t("workingHours.resourceSchedules")}
-          </p>
-          <p className="mt-2 text-3xl font-bold text-zani-text">
-            {resourceSchedules}/{activeResources.length}
-          </p>
-        </div>
-        <div className="rounded-card border border-zani-border bg-surface-card p-5 shadow-card">
-          <Clock3 className="text-brand-600" size={24} />
-          <p className="mt-4 text-sm font-bold text-zani-subtle">
-            {t("workingHours.daysOff")}
-          </p>
-          <p className="mt-2 text-3xl font-bold text-zani-text">{dayOffRows}</p>
-        </div>
+    <CrmWorkspacePage maxWidthClassName="max-w-[1520px]" testId={pageError ? undefined : "working-hours-workspace-ready"}>
+      <BusinessWorkspaceNav />
+      <section tabIndex={0} aria-label={t("workingHours.metricsLabel")} className="zani-focus-ring mb-3 flex shrink-0 snap-x gap-3 overflow-x-auto rounded-card pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:grid lg:grid-cols-3 lg:overflow-visible lg:pb-0">
+        <MetricCard compact className="min-w-[220px] snap-start lg:min-w-0" label={t("workingHours.businessDays")} value={`${businessDays}/7`} hint={t("workingHours.businessDaysHint")} icon={CalendarDays} />
+        <MetricCard compact className="min-w-[220px] snap-start lg:min-w-0" label={t("workingHours.resourceSchedules")} value={`${individualSchedules}/${activeResources.length}`} hint={t("workingHours.resourceSchedulesHint")} icon={UsersRound} />
+        <MetricCard compact className="min-w-[220px] snap-start lg:min-w-0" label={t("workingHours.daysOff")} value={dayOffRows} hint={t("workingHours.daysOffHint")} icon={Clock3} tone="slate" />
       </section>
-      <div className="mb-5 rounded-card border border-brand-100 bg-brand-50 p-4 shadow-card">
-        <div className="grid gap-4 lg:grid-cols-[1fr_220px] lg:items-end">
-          <div>
-            <p className="text-sm font-bold uppercase tracking-[0.16em] text-brand-600">
-              {t("workingHours.quickSetup")}
-            </p>
-            <h2 className="mt-1 text-xl font-bold text-zani-text">
-              {t("workingHours.quickTitle")}
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-zani-subtle">
-              {t("workingHours.quickText")}
-            </p>
-          </div>
-          <div className="grid gap-3">
-            <Select
-              value={preset}
-              onChange={(event) =>
-                setPreset(event.target.value as WorkingHoursPreset)
-              }
-              options={presetOptions.map((item) => ({
-                value: item.value,
-                label: `${t(item.labelKey)} · ${t(item.descriptionKey)}`,
-              }))}
-            />
-            <Button
-              type="button"
-              isLoading={presetMutation.isPending}
-              onClick={() => presetMutation.mutate()}
-            >
-              {t("workingHours.applyPreset")}
-            </Button>
-          </div>
-        </div>
-      </div>
-      {mutation.error ? (
-        <div className="mb-4">
-          <ErrorState message={getApiErrorMessage(mutation.error)} />
+
+      {pageError ? (
+        <div className="mb-3 shrink-0">
+          <ErrorState message={getApiErrorMessage(pageError)} action={<Button type="button" variant="secondary" onClick={() => void Promise.all([workingHours.refetch(), resources.refetch()])}>{t("common.retry")}</Button>} />
         </div>
       ) : null}
-      {presetMutation.error ? (
-        <div className="mb-4">
-          <ErrorState message={getApiErrorMessage(presetMutation.error)} />
-        </div>
-      ) : null}
-      <section className="mb-5 grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-        <div className="rounded-card border border-zani-border bg-surface-card p-5 shadow-card">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-600">
-                {t("workingHours.wholeBusinessSchedule")}
-              </p>
-              <h2 className="mt-1 text-xl font-bold text-zani-text">
-                {t("workingHours.weekOverview")}
-              </h2>
-            </div>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setEditingResource(null);
-                setOpen(true);
-              }}
-            >
-              {t("workingHours.editWeek")}
-            </Button>
-          </div>
-          <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-7">
-            {businessWeek.map((row, index) => (
-              <div
-                key={weekdays[index]}
-                className={`rounded-control border p-3 ${row && !row.is_day_off ? "border-brand-100 bg-brand-50" : "border-zani-border bg-surface-muted"}`}
-              >
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-zani-faint">
-                  {t(weekdays[index])}
-                </p>
-                <p
-                  className={`mt-2 text-sm font-bold ${row && !row.is_day_off ? "text-brand-800" : "text-zani-subtle"}`}
-                >
-                  {formatHours(row)}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="rounded-card border border-zani-border bg-surface-card p-5 shadow-card">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-600">
-                {t("workingHours.resourceSchedules")}
-              </p>
-              <h2 className="mt-1 text-xl font-bold text-zani-text">
-                {t("workingHours.staffOverview")}
-              </h2>
-            </div>
-            <Button variant="secondary" onClick={() => setOpen(true)}>
-              {t("workingHours.setupWeek")}
-            </Button>
-          </div>
-          <div className="mt-4 space-y-2">
-            {resourceSummary.length ? (
-              resourceSummary.map((item) => (
-                <button
-                  key={item.resource.id}
-                  type="button"
-                  className="flex w-full items-center justify-between gap-3 rounded-control border border-zani-border bg-surface-muted px-4 py-3 text-left transition hover:border-brand-100 hover:bg-surface-warm"
-                  onClick={() => {
-                    setEditingResource(item.resource.id);
-                    setOpen(true);
-                  }}
-                >
-                  <span className="font-bold text-zani-text">
-                    {item.resource.name}
-                  </span>
-                  <span className="text-sm font-bold text-zani-subtle">
-                    {item.configuredDays
-                      ? t("workingHours.configuredDays").replace(
-                          "{count}",
-                          String(item.workingDays),
-                        )
-                      : t("workingHours.usesBusinessSchedule")}
-                  </span>
-                </button>
-              ))
-            ) : (
-              <p className="rounded-control bg-surface-muted p-4 text-sm leading-6 text-zani-subtle">
-                {t("workingHours.noResourcesText")}
-              </p>
-            )}
-          </div>
-        </div>
-      </section>
-      <DataTable
-        rows={rows}
-        emptyTitle={t("workingHours.emptyTitle")}
-        emptyDescription={t("workingHours.emptyText")}
-        emptyAction={
-          <Button variant="secondary" onClick={() => setOpen(true)}>
-            <Plus size={16} />
-            {t("workingHours.setupWeek")}
-          </Button>
-        }
-        columns={[
-          {
-            header: t("workingHours.day"),
-            cell: (item) => t(weekdays[item.weekday] || "weekday.monShort"),
-          },
-          {
-            header: t("workingHours.target"),
-            cell: (item) =>
-              resources.data?.find((resource) => resource.id === item.resource)
-                ?.name || t("workingHours.wholeBusiness"),
-          },
-          {
-            header: t("workingHours.time"),
-            cell: (item) =>
-              item.is_day_off
-                ? t("workingHours.dayOff")
-                : `${item.start_time.slice(0, 5)} - ${item.end_time.slice(0, 5)}`,
-          },
-          {
-            header: t("appointments.actions"),
-            cell: (item) => (
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setEditingResource(item.resource || null);
-                  setOpen(true);
-                }}
-              >
-                {t("workingHours.editWeek")}
-              </Button>
-            ),
-          },
+
+      <Tabs<WorkingHoursView>
+        value={activeView}
+        ariaLabel={t("workingHours.viewsLabel")}
+        className="mb-3 shrink-0 self-start"
+        options={[
+          { value: "business", label: t("workingHours.weekOverview") },
+          { value: "resources", label: t("workingHours.staffOverview"), count: activeResources.length },
         ]}
+        onChange={setView}
       />
-      <Modal
-        title={t("workingHours.weekTitle")}
-        open={open}
-        onClose={() => {
-          setOpen(false);
-          setEditingResource(null);
-        }}
-      >
-        <WeeklyWorkingHoursForm
-          businessId={business.id}
-          resources={(resources.data || []).filter(
-            (resource) => resource.is_active,
-          )}
-          existingHours={workingHours.data || []}
-          initialResource={editingResource}
-          onSubmit={(payloads) => mutation.mutateAsync(payloads)}
+
+      {activeView === "business" ? (
+        <>
+          <section className="mb-3 flex shrink-0 flex-col gap-3 rounded-card border border-zani-border bg-surface-card p-3 shadow-card lg:flex-row lg:items-end lg:justify-between">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-control bg-surface-muted text-zani-subtle"><SlidersHorizontal aria-hidden="true" size={18} /></div>
+              <div className="min-w-0"><h2 className="text-sm font-semibold text-zani-ink">{t("workingHours.quickSetup")}</h2><p className="truncate text-xs font-medium text-zani-subtle">{t("workingHours.quickToolbarHint")}</p></div>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-[minmax(240px,360px)_auto]">
+              <Select aria-label={t("workingHours.presetLabel")} value={preset} disabled={!canManage || presetMutation.isPending} onChange={(event) => setPreset(event.target.value as WorkingHoursPreset)} options={presetOptions.map((item) => ({ value: item.value, label: `${t(item.labelKey)} · ${t(item.descriptionKey)}` }))} />
+              <Button type="button" disabled={!canManage} title={!canManage ? permissionMessage : undefined} isLoading={presetMutation.isPending} onClick={() => void applyPreset()}>{t("workingHours.applyPreset")}</Button>
+            </div>
+          </section>
+          <WorkingHoursBusinessView days={businessWeek} onEdit={() => updateSelection(null)} />
+        </>
+      ) : (
+        <WorkingHoursResourcesView
+          rows={pagedResources}
+          total={filteredResources.length}
+          page={safeResourcePage}
+          pageSize={resourcePageSize}
+          search={resourceSearch}
+          scheduleMode={scheduleMode}
+          hasResources={activeResources.length > 0}
+          onSearchChange={(value) => { setResourceSearch(value); setResourcePage(1); }}
+          onScheduleModeChange={(value) => { setScheduleMode(value); setResourcePage(1); }}
+          onPageChange={setResourcePage}
+          onPageSizeChange={(value) => { setResourcePageSize(value); setResourcePage(1); }}
+          onOpen={updateSelection}
         />
-      </Modal>
-    </div>
+      )}
+
+      <WorkingHoursEditModal
+        business={business}
+        resource={selectedResource}
+        resources={activeResources}
+        existingHours={rows}
+        open={modalOpen}
+        canManage={canManage}
+        isSaving={mutation.isPending}
+        errorMessage={mutation.error ? getApiErrorMessage(mutation.error) : undefined}
+        onDirtyChange={setModalDirty}
+        onClose={() => { void closeModal(); }}
+        onSubmit={(payloads) => mutation.mutateAsync(payloads)}
+      />
+    </CrmWorkspacePage>
   );
 }

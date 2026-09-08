@@ -99,7 +99,7 @@ export function ConversationQueueFilters({
         >
           <MoreHorizontal size={18} />
           {advancedCount ? (
-            <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-brand-600 px-1 text-[10px] font-bold text-white">
+            <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-brand-500 px-1 text-[10px] font-bold text-zani-ink">
               {advancedCount}
             </span>
           ) : null}

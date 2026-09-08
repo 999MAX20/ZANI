@@ -26,7 +26,7 @@ export function NotFoundPage() {
             </p>
             <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
               <Link to={homePath}>
-                <Button variant="ai"><LayoutDashboard size={17} />{t("notFound.backWorkspace")}</Button>
+                <Button variant="primary"><LayoutDashboard size={17} />{t("notFound.backWorkspace")}</Button>
               </Link>
               {isAuthenticated ? null : (
                 <Link to="/login">

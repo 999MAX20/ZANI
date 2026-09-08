@@ -15,7 +15,7 @@ type SwitchProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "onChange"> & {
 };
 
 const toneClasses: Record<SwitchTone, string> = {
-  brand: "border-brand-500 bg-brand-500",
+  brand: "border-[var(--zani-brand-content)] bg-[var(--zani-brand-content)]",
   ai: "border-ai-600 bg-ai-600",
   success: "border-zani-success bg-zani-success",
 };
@@ -58,7 +58,7 @@ export function Switch({
       onClick={() => onChange(!checked)}
       className={cn(
         "relative inline-flex shrink-0 items-center rounded-full border p-0.5 transition duration-150",
-        "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-500/20 focus-visible:ring-offset-2",
+        "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--zani-focus-ring)] focus-visible:ring-offset-2",
         "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-55",
         checked ? toneClasses[tone] : "border-zani-border bg-surface-muted",
         sizing.track,

@@ -1,12 +1,13 @@
 import {
+  Archive,
   CircleDot,
   MessageCircle,
   Phone,
   UserCheck,
-  XCircle,
 } from "lucide-react";
 
 import { PopoverSurface } from "../../../components/ui/Overlay";
+import { cn } from "../../../lib/cn";
 import type { Lead } from "../../../types";
 
 export function LeadContextMenu({
@@ -38,7 +39,12 @@ export function LeadContextMenu({
   onTake: (lead: Lead) => void;
   onArchive: (lead: Lead) => void;
 }) {
-  const items = [
+  const items: Array<{
+    label: string;
+    icon: typeof CircleDot;
+    onClick: () => void;
+    tone?: "warning";
+  }> = [
     { label: labels.open, icon: CircleDot, onClick: () => onOpen(lead) },
     { label: labels.call, icon: Phone, onClick: () => onCall(lead) },
     {
@@ -47,7 +53,7 @@ export function LeadContextMenu({
       onClick: () => onWhatsApp(lead),
     },
     { label: labels.assignToMe, icon: UserCheck, onClick: () => onTake(lead) },
-    { label: labels.archive, icon: XCircle, onClick: () => onArchive(lead) },
+    { label: labels.archive, icon: Archive, onClick: () => onArchive(lead), tone: "warning" },
   ];
 
   return (
@@ -63,7 +69,10 @@ export function LeadContextMenu({
             <button
               key={item.label}
               type="button"
-              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-bold text-zani-text hover:bg-surface-warm"
+              className={cn(
+                "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-bold hover:bg-surface-warm",
+                item.tone === "warning" ? "text-zani-warning hover:bg-[var(--zani-warning-soft)]" : "text-zani-text",
+              )}
               onClick={() => {
                 item.onClick();
                 onClose();

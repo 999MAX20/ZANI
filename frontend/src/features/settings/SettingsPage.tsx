@@ -125,7 +125,7 @@ export function SettingsPage() {
         ? `${t("settings.delete")}: ${label}`
         : t("settings.delete"),
       confirmLabel: t("settings.delete"),
-      variant: "danger",
+      tone: "danger",
     });
     return result.confirmed;
   }
@@ -1462,7 +1462,7 @@ export function SettingsPage() {
                                   href={inviteShareUrl(invitation)}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="inline-flex min-h-11 items-center justify-center rounded-full bg-zani-text px-4 py-2 text-sm font-bold text-white transition hover:bg-brand-700"
+                                  className="inline-flex min-h-11 items-center justify-center rounded-full bg-brand-500 px-4 py-2 text-sm font-bold text-zani-ink transition hover:bg-brand-600"
                                 >
                                   {t("settings.send")}
                                 </a>
@@ -1480,7 +1480,7 @@ export function SettingsPage() {
                                 {invitation.status === "pending" ? (
                                   <Button
                                     type="button"
-                                    variant="ghost"
+                                    variant="warning"
                                     className="min-h-11 rounded-full px-4 text-sm"
                                     onClick={() =>
                                       revokeInvitationMutation.mutate(
@@ -2053,7 +2053,7 @@ export function SettingsPage() {
                           </Button>
                           <Button
                             type="button"
-                            variant="secondary"
+                            variant={template.is_active ? "warning" : "secondary"}
                             onClick={() => {
                               const payload = {
                                 title: template.title,
@@ -2673,7 +2673,7 @@ export function SettingsPage() {
                           </Button>
                           <Button
                             type="button"
-                            variant="secondary"
+                            variant={field.is_active ? "warning" : "secondary"}
                             onClick={() =>
                               updateCustomFieldMutation.mutate({
                                 id: Number(field.id),

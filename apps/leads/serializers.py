@@ -69,6 +69,15 @@ class LeadSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Client must belong to the selected business.")
         if service and business and service.business_id != business.id:
             raise serializers.ValidationError("Service must belong to the selected business.")
+        if (
+            "service" in attrs
+            and service
+            and (self.instance is None or service.id != self.instance.service_id)
+            and (not service.is_active or service.is_archived)
+        ):
+            raise serializers.ValidationError(
+                {"service": "Select an active service that is not archived."}
+            )
         responsible_user = attrs.get("responsible_user") if "responsible_user" in attrs else getattr(self.instance, "responsible_user", None)
         if responsible_user and business and not business.members.filter(user=responsible_user, is_active=True).exists():
             raise serializers.ValidationError({"responsible_user": "Responsible user must be an active business member."})
@@ -163,6 +172,10 @@ class CreateAppointmentFromLeadSerializer(serializers.Serializer):
         resource = attrs.get("resource")
         if service.business_id != lead.business_id:
             raise serializers.ValidationError("Service must belong to lead business.")
+        if not service.is_active or service.is_archived:
+            raise serializers.ValidationError(
+                {"service": "Select an active service that is not archived."}
+            )
         if resource and resource.business_id != lead.business_id:
             raise serializers.ValidationError("Resource must belong to lead business.")
         return attrs

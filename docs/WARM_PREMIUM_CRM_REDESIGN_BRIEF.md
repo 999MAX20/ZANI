@@ -2,7 +2,7 @@
 
 Date: 2026-07-16
 
-Status: decision documented, implementation postponed.
+Status: implementation in progress in the canonical local checkout.
 
 This document records the agreed ZANI authenticated-app redesign direction. It is a planning and alignment brief for future redesign work. Do not start the implementation from this document alone; begin only when the active parallel tasks are finished and the user explicitly starts the redesign phase.
 
@@ -12,14 +12,14 @@ ZANI should move toward a warm, premium, calm CRM interface:
 
 ```txt
 Warm Premium CRM
-Warm ivory workspace + saturated orange actions + plum AI accent
+Warm ivory workspace + soft peach actions + plum AI accent
 ```
 
 The generated Settings / Team and Access concept was accepted as the target feeling:
 
 - mostly white and warm-white work surfaces;
 - calm app shell;
-- saturated orange only for meaningful actions and active states;
+- soft peach only for meaningful primary actions; selected states use a softer peach surface with dark brand content;
 - no blue-tinted layout background;
 - no background noise from several nested color planes;
 - clean, expensive SaaS typography and spacing;
@@ -69,26 +69,22 @@ Use the detailed token values from `docs/design-system.md`. The high-level rule 
 
 - warm ivory for the app background;
 - white or warm-white for primary surfaces;
-- saturated orange for brand and primary actions;
+- soft peach for brand and primary actions;
 - plum/violet for AI;
 - green/amber/red/cyan only for semantic statuses.
 
-Orange is approved and should stay. The issue to avoid is orange being used for everything.
+The soft peach brand is approved. The issue to avoid is brand color being used for every semantic state.
 
 ## Orange Usage Rules
 
-Use saturated orange for:
+Use soft peach for:
 
 - primary CTA buttons;
-- active sidebar item;
-- selected tab;
-- active segmented control;
-- active toggle;
-- input focus;
-- selected row indicator;
 - small brand marks.
 
-Do not use saturated orange for:
+Use a soft peach surface plus dark brand content for active navigation, selected tabs/filters and selected row indicators. Use the dark brand-content token for focus and active switches where the light color would fail non-text contrast.
+
+Do not use brand peach for:
 
 - all icons;
 - all KPIs;
@@ -139,8 +135,8 @@ Each authenticated page should share the same app-level feeling as the approved 
 - main content uses calm white/warm-white surfaces;
 - inner blocks are not aggressively recolored;
 - rows and panels are separated by dividers and whitespace;
-- primary buttons are saturated orange;
-- selected states are softly orange;
+- primary buttons use soft peach with dark Zani Ink text;
+- selected states use softly peach surfaces with dark brand content;
 - AI blocks are softly plum/violet;
 - statuses use semantic colors;
 - no text overlap;
@@ -255,7 +251,7 @@ Core rule:
 Required button variants:
 
 ```txt
-primary     saturated orange CRM action
+primary     soft peach CRM action with dark Zani Ink text
 secondary   neutral action
 ghost       low-emphasis toolbar/action
 outline     bordered neutral action
@@ -286,7 +282,7 @@ Switch rules:
 
 - use `role="switch"` and `aria-checked`;
 - default track 48px x 28px;
-- active ordinary setting uses saturated orange;
+- active ordinary setting uses the dark brand-content track when a light track would fail non-text contrast;
 - active AI setting may use plum/violet;
 - verified healthy connection state may use success green;
 - off state is neutral, not red;
@@ -308,7 +304,7 @@ Native browser select visuals should not appear in authenticated CRM pages.
 
 ### Tabs, Chips, And Filters
 
-Tabs and segmented controls should use a muted warm container with a clear active pill/underline. Active state uses saturated orange text/border or soft orange background. Counts remain neutral unless they represent a real semantic status.
+Tabs and segmented controls should use a muted warm container with a clear active pill/underline. Active state uses a soft peach background with dark brand-content text/border. Counts remain neutral unless they represent a real semantic status.
 
 Filter chips are interactive. Status badges are informational. Do not mix the two visually.
 
@@ -321,7 +317,7 @@ Badges should be small and semantic:
 - success/warning/danger/info only for real state;
 - neutral for metadata.
 
-Do not turn the product into an orange badge field. Orange is the brand/action color, not every state color.
+Do not turn the product into a peach badge field. Brand is the action/selected-context color, not every state color.
 
 ### Tables And Lists
 
@@ -379,7 +375,7 @@ A page matches the new direction when:
 - it has one clear primary work surface;
 - it does not show three or four neutral backgrounds in the normal state;
 - nested cards are removed unless they represent real repeated entities or modal sections;
-- primary actions and active states use saturated orange;
+- primary actions use soft peach and active states use softly peach surfaces;
 - AI blocks use plum/violet;
 - status colors are semantic;
 - text contrast is comfortable;

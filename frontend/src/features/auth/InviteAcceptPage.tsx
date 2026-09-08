@@ -10,6 +10,7 @@ import { teamApi } from "../../api/team";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { ErrorState, LoadingState } from "../../components/ui/StateViews";
+import { StatusNotice } from "../../components/ui/StatusNotice";
 import { useI18n } from "../../lib/i18n";
 import { useAuth } from "./AuthProvider";
 
@@ -86,9 +87,12 @@ export function InviteAcceptPage() {
 
           {preview.error ? <div className="mt-5"><ErrorState message={getApiErrorMessage(preview.error)} /></div> : null}
           {preview.data?.status && preview.data.status !== "pending" ? (
-            <div className="mt-5 rounded-2xl border border-amber-100 bg-amber-50 p-4 text-sm text-amber-800">
-              {t("invite.inactive", { status: preview.data.status })}
-            </div>
+            <StatusNotice
+              compact
+              className="mt-5"
+              tone="warning"
+              title={t("invite.inactive", { status: preview.data.status })}
+            />
           ) : null}
           {preview.data?.status === "pending" ? (
             <div className="mt-5 rounded-3xl border border-brand-100 bg-brand-50/70 p-4">
@@ -119,7 +123,7 @@ export function InviteAcceptPage() {
               ) : (
                 <Button
                   className="w-full"
-                  variant="ai"
+                  variant="primary"
                   type="button"
                   isLoading={acceptMutation.isPending}
                   disabled={preview.data?.status !== "pending"}
@@ -138,7 +142,7 @@ export function InviteAcceptPage() {
               <Input label={t("invite.phone")} {...form.register("phone")} placeholder={t("invite.phonePlaceholder")} />
               <Input label={t("invite.newPassword")} type="password" error={form.formState.errors.password?.message} {...form.register("password")} />
               <Input label={t("passwordReset.repeatPassword")} type="password" error={form.formState.errors.password_confirm?.message} {...form.register("password_confirm")} />
-              <Button className="w-full" variant="ai" type="submit" isLoading={acceptMutation.isPending} disabled={preview.data?.status !== "pending"}>
+              <Button className="w-full" variant="primary" type="submit" isLoading={acceptMutation.isPending} disabled={preview.data?.status !== "pending"}>
                 <CheckCircle2 size={18} />
                 {t("invite.accept")}
                 <ArrowRight size={18} />

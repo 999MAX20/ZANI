@@ -7,7 +7,11 @@ import {
   useState,
 } from "react";
 
-import { AUTH_EXPIRED_EVENT } from "../../api/client";
+import {
+  AUTH_EXPIRED_EVENT,
+  expireBrowserSession,
+  isSessionExpiryResponse,
+} from "../../api/client";
 import {
   getCurrentUser,
   isMfaPendingResponse,
@@ -73,9 +77,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     async function loadUser() {
       if (!tokenStorage.getAccess()) {
+        const hadPreviousSession = Boolean(tokenStorage.getEmail());
         try {
           await restoreSession();
-        } catch {
+        } catch (error) {
+          if (hadPreviousSession && isSessionExpiryResponse(error)) {
+            expireBrowserSession();
+          }
           if (mountedRef.current) setLoading(false);
           return;
         }
@@ -112,9 +120,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isMerchantUser: Boolean(user?.is_merchant_user),
       refreshUser: async () => {
         if (!tokenStorage.getAccess()) {
+          const hadPreviousSession = Boolean(tokenStorage.getEmail());
           try {
             await restoreSession();
-          } catch {
+          } catch (error) {
+            if (hadPreviousSession && isSessionExpiryResponse(error)) {
+              expireBrowserSession();
+            }
             return null;
           }
         }

@@ -7,15 +7,44 @@ import { tokenStorage } from "../lib/storage";
 
 const baseURL = import.meta.env.VITE_API_URL || "";
 export const AUTH_EXPIRED_EVENT = "zani:auth-expired";
+export const SESSION_EXPIRED_NOTICE_KEY = "zani:session-expired";
+export const SESSION_EXPIRED_RETURN_TO_KEY = "zani:session-expired-return-to";
+
+export function isSafeInternalReturnPath(value: string) {
+  return /^\/(app|platform)(\/|\?|#|$)/.test(value);
+}
 
 function notifyAuthExpired() {
   if (typeof window !== "undefined") {
+    try {
+      window.sessionStorage.setItem(SESSION_EXPIRED_NOTICE_KEY, "1");
+      const returnTo = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      if (isSafeInternalReturnPath(returnTo)) {
+        window.sessionStorage.setItem(SESSION_EXPIRED_RETURN_TO_KEY, returnTo);
+      }
+    } catch {
+      // A blocked sessionStorage must not prevent the auth-expired event.
+    }
     window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
   }
 }
 
+export function isSessionExpiryResponse(error: unknown) {
+  if (!axios.isAxiosError(error)) return false;
+  return error.response?.status === 400 || error.response?.status === 401;
+}
+
+export function expireBrowserSession() {
+  tokenStorage.clear();
+  notifyAuthExpired();
+}
+
 function isAuthEndpoint(url = "") {
   return url.includes("/api/auth/token/") || url.includes("/api/auth/token/refresh/") || url.includes("/api/auth/social/");
+}
+
+function isCredentialLoginEndpoint(url = "") {
+  return url.includes("/api/auth/token/") && !url.includes("/refresh/");
 }
 
 export const apiClient = axios.create({
@@ -73,8 +102,7 @@ apiClient.interceptors.response.use(
       originalRequest.headers.Authorization = `Bearer ${access}`;
       return apiClient(originalRequest);
     } catch (refreshError) {
-      tokenStorage.clear();
-      notifyAuthExpired();
+      expireBrowserSession();
       return Promise.reject(refreshError);
     }
   },
@@ -85,6 +113,63 @@ export function getApiErrorMessage(
   translator: (key: string) => string = (key) => translate(getCurrentLanguage(), key),
 ) {
   return getAppErrorMessage(error, translator);
+}
+
+export function getLoginErrorMessage(
+  error: unknown,
+  translator: (key: string) => string = (key) => translate(getCurrentLanguage(), key),
+) {
+  const normalized = normalizeAppError(error);
+  if (normalized.category === "authentication" && axios.isAxiosError(error)) {
+    if (isCredentialLoginEndpoint(error.config?.url || "")) {
+      return translator("auth.invalidCredentials");
+    }
+    return translator("auth.loginUnavailable");
+  }
+  return translator(normalized.messageKey);
+}
+
+export function hasSessionExpiredNotice() {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.sessionStorage.getItem(SESSION_EXPIRED_NOTICE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function clearSessionExpiredNotice() {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.removeItem(SESSION_EXPIRED_NOTICE_KEY);
+  } catch {
+    // A blocked sessionStorage must not break the login page.
+  }
+}
+
+export function getSessionExpiredReturnTo() {
+  if (typeof window === "undefined") return undefined;
+  try {
+    const returnTo = window.sessionStorage.getItem(SESSION_EXPIRED_RETURN_TO_KEY) || "";
+    return isSafeInternalReturnPath(returnTo) ? returnTo : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export function clearSessionExpiredReturnTo() {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.removeItem(SESSION_EXPIRED_RETURN_TO_KEY);
+  } catch {
+    // A blocked sessionStorage must not break authenticated navigation.
+  }
+}
+
+export function consumeSessionExpiredReturnTo() {
+  const returnTo = getSessionExpiredReturnTo();
+  clearSessionExpiredReturnTo();
+  return returnTo;
 }
 
 export function getApiFieldErrors(error: unknown) {

@@ -195,7 +195,7 @@ export function useTaskActions({
         title: t("tasks.cancelConfirmTitle"),
         description: t("tasks.cancelConfirmText"),
         confirmLabel: t("tasks.cancel"),
-        variant: "danger",
+        tone: "warning",
         reason: {
           label: t("tasks.cancelReasonLabel"),
           placeholder: t("tasks.cancelReasonPlaceholder"),
@@ -215,7 +215,7 @@ export function useTaskActions({
         title: t("tasks.deleteCommentConfirmTitle"),
         description: t("tasks.deleteCommentConfirmText"),
         confirmLabel: t("tasks.deleteComment"),
-        variant: "danger",
+        tone: "danger",
       });
       if (!result.confirmed) return;
       deleteCommentMutation.mutate({ id: task.id, commentId: comment.id });

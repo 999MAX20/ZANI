@@ -89,6 +89,10 @@ export function getService(lead: Lead, services: Service[]) {
     duration_minutes: 0,
     price_from: null,
     is_active: true,
+    is_archived: false,
+    archived_at: null,
+    archived_by: null,
+    archive_reason: "",
     created_at: lead.created_at,
     updated_at: lead.updated_at,
   };

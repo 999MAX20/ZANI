@@ -4,6 +4,7 @@ import { Link } from "react-router";
 import { WorkQueueListPane } from "../../../components/layout/WorkQueueLayout";
 import { Button } from "../../../components/ui/Button";
 import { EmptyState, LoadingState } from "../../../components/ui/StateViews";
+import { StatusNotice } from "../../../components/ui/StatusNotice";
 import type { InboxSort, Translate } from "../conversationTypes";
 import { ConversationItem } from "./ConversationItem";
 import { ConversationQueueFilters } from "./ConversationQueueFilters";
@@ -151,13 +152,14 @@ export function ConversationListPane({
       ) : null}
 
       {connectorReadinessError ? (
-        <div
-          className="flex flex-wrap items-center justify-between gap-2 border-b border-[rgba(183,121,31,0.22)] bg-[var(--zani-warning-soft)] px-3 py-2 text-xs font-semibold text-zani-warning"
+        <StatusNotice
+          compact
+          className="rounded-none border-x-0 border-t-0 shadow-none"
           data-testid="inbox-provider-status-unavailable"
+          tone="warning"
           role="status"
-        >
-          <p>{t("conversations.channelStatusUnavailable")}</p>
-          <Button
+          title={t("conversations.channelStatusUnavailable")}
+          action={<Button
             type="button"
             variant="secondary"
             size="sm"
@@ -167,19 +169,23 @@ export function ConversationListPane({
             onClick={onRetryConnectorReadiness}
           >
             {t("common.retry")}
-          </Button>
-        </div>
+          </Button>}
+        />
       ) : null}
 
       {unavailableChannelCount ? (
-        <div className="border-b border-[rgba(183,121,31,0.22)] bg-[var(--zani-warning-soft)] px-3 py-2 text-xs font-semibold text-zani-warning" data-testid="inbox-provider-unavailable">
-          <p>{t("conversations.channelsUnavailable", { count: unavailableChannelCount })}</p>
-          {canViewIntegrations ? (
-            <Link className="mt-1 inline-flex font-bold underline" to="/app/ai-agents">
+        <StatusNotice
+          compact
+          className="rounded-none border-x-0 border-t-0 shadow-none"
+          data-testid="inbox-provider-unavailable"
+          tone="warning"
+          title={t("conversations.channelsUnavailable", { count: unavailableChannelCount })}
+          action={canViewIntegrations ? (
+            <Link className="zani-focus-ring inline-flex rounded-control px-2 py-1 font-bold text-zani-warning underline" to="/app/ai-agents">
               {t("conversations.openIntegrations")}
             </Link>
           ) : null}
-        </div>
+        />
       ) : null}
 
       {items.length ? (
@@ -203,7 +209,7 @@ export function ConversationListPane({
                 <Button className="h-8 rounded-control px-3 text-xs" variant="secondary" disabled={!selectedIds.length} onClick={() => onBulkAction("assign")} isLoading={bulkPending}>
                   {t("conversations.take")}
                 </Button>
-                <Button className="h-8 rounded-control px-3 text-xs" variant="secondary" disabled={!selectedIds.length} onClick={() => onBulkAction("pauseBot")} isLoading={bulkPending}>
+                <Button className="h-8 rounded-control px-3 text-xs" variant="warning" disabled={!selectedIds.length} onClick={() => onBulkAction("pauseBot")} isLoading={bulkPending}>
                   {t("conversations.pause")}
                 </Button>
                 <Button className="h-8 rounded-control px-3 text-xs" variant="secondary" disabled={!selectedIds.length} onClick={() => onBulkAction("handoff")} isLoading={bulkPending}>

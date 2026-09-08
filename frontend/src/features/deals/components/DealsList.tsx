@@ -14,7 +14,7 @@ import { dealStageLabel, money } from "../utils/dealHelpers";
 
 type StageGroup = { id: string; name: string; color: string; rows: DealRow[] };
 const stageFallbackColors = [
-  "#FF7A1A",
+  "#F5B37A",
   "#B7791F",
   "#15803D",
   "#0E7490",

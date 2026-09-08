@@ -99,7 +99,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       id: `service-${service.id}`,
       label: service.name,
       hint: t("command.typeService"),
-      to: `/app/services?service=${service.id}`,
+      to: `/app/business/services?service=${service.id}`,
       icon: Search,
       priority: 2,
     }));

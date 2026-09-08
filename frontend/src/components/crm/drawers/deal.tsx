@@ -90,7 +90,7 @@ export function DealDrawerContent({ data, entity, onTabChange }: { data: CrmCard
             </div>
             <div className="flex shrink-0 flex-wrap gap-2">
               {availableActions.has("won") ? <Button size="sm" isLoading={mutation.isPending} onClick={() => mutation.mutate("won")}>{t("crmCard.won")}</Button> : null}
-              {availableActions.has("lost") ? <Button size="sm" variant="secondary" isLoading={mutation.isPending} onClick={() => setLostOpen(true)}>{t("deals.lost")}</Button> : null}
+              {availableActions.has("lost") ? <Button size="sm" variant="warning" isLoading={mutation.isPending} onClick={() => setLostOpen(true)}>{t("deals.lost")}</Button> : null}
               {availableActions.has("reopen") ? <Button size="sm" variant="secondary" isLoading={mutation.isPending} onClick={() => mutation.mutate("reopen")}>{t("deals.reopen")}</Button> : null}
             </div>
           </div>
@@ -100,7 +100,7 @@ export function DealDrawerContent({ data, entity, onTabChange }: { data: CrmCard
               <span>{probability}%</span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-surface-muted">
-              <div className="h-full rounded-full bg-brand-500" style={{ width: `${probability}%` }} />
+              <div className="h-full rounded-full bg-[var(--zani-brand-content)]" style={{ width: `${probability}%` }} />
             </div>
           </div>
         </div>
@@ -183,7 +183,7 @@ export function DealDrawerContent({ data, entity, onTabChange }: { data: CrmCard
           <Textarea label={t("deals.lostReasonPrompt")} value={lostReason} onChange={(event) => setLostReason(event.target.value)} required />
           <div className="flex justify-end gap-2">
             <Button type="button" variant="secondary" onClick={() => setLostOpen(false)}>{t("common.cancel")}</Button>
-            <Button type="submit" variant="danger" isLoading={mutation.isPending} disabled={!lostReason.trim()}>{t("deals.markLost")}</Button>
+            <Button type="submit" variant="warning" isLoading={mutation.isPending} disabled={!lostReason.trim()}>{t("deals.markLost")}</Button>
           </div>
         </form>
       </Modal>

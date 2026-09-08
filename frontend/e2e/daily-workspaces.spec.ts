@@ -122,7 +122,7 @@ test("F-201 desktop roles receive legitimate daily routes and controls", async (
 
   await navigateClient(page, "/app/calendar");
   await expect(page.getByRole("button", { name: /New booking|Новая запись|Жаңа жазба/i })).toHaveCount(0);
-  await expect(page.locator('a[href="/app/working-hours"]')).toHaveCount(0);
+  await expect(page.locator('nav a[href="/app/business"]')).toHaveCount(0);
   await expectHealthyWorkspace(page);
 
   await navigateClient(page, "/app/deals");

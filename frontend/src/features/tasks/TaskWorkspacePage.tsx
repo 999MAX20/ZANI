@@ -199,7 +199,7 @@ export function TaskWorkspacePage() {
       title: t("tasks.cancelConfirmTitle"),
       description: t("tasks.cancelConfirmText"),
       confirmLabel: t("tasks.cancel"),
-      variant: "danger",
+      tone: "warning",
       reason: {
         label: t("tasks.cancelReasonLabel"),
         placeholder: t("tasks.cancelReasonPlaceholder"),
@@ -349,7 +349,7 @@ export function TaskWorkspacePage() {
               {!isClosed ? (
                 <Button
                   data-task-action-id="cancel"
-                  variant="danger"
+                  variant="warning"
                   onClick={() => void requestCancel()}
                   isLoading={lifecycleMutation.isPending}
                 >
@@ -624,9 +624,9 @@ function CommentRow({
         </div>
         <Button
           type="button"
-          variant="ghost"
+          variant="danger"
           size="sm"
-          className="shrink-0 text-red-600 hover:bg-red-50 hover:text-red-700"
+          className="shrink-0"
           onClick={onDelete}
           isLoading={isDeleting}
         >
@@ -640,7 +640,7 @@ function CommentRow({
 function ActivityRow({ event }: { event: ActivityEvent }) {
   return (
     <div className="flex gap-3 rounded-card bg-surface-subtle p-3">
-      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-control bg-zani-card text-brand-600">
+      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-control bg-zani-card text-brand-700">
         <CalendarClock size={16} />
       </span>
       <div className="min-w-0">

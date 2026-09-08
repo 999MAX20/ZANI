@@ -19,7 +19,7 @@ export function MetricTile({
   const toneClass = {
     brand: "bg-brand-50 text-brand-700",
     green: "bg-emerald-50 text-emerald-700",
-    amber: "bg-orange-50 text-orange-700",
+    amber: "bg-amber-50 text-amber-700",
     blue: "bg-sky-50 text-sky-700",
     pink: "bg-rose-50 text-rose-700",
   }[tone];

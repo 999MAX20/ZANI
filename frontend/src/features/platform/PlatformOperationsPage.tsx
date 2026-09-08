@@ -176,7 +176,7 @@ export function PlatformOperationsPage() {
                 <Link key={item.id} to={`/platform/merchants/${item.business_id}`} className="block rounded-3xl border border-slate-100 bg-slate-50 p-4 transition hover:border-brand-200 hover:bg-white">
                   <p className="font-black text-midnight">{item.business_name}</p>
                   <p className="mt-1 text-sm text-slate-500">{item.provider} · {item.status}</p>
-                  {item.last_error ? <p className="mt-2 text-xs font-semibold text-red-600">{item.last_error}</p> : null}
+                  {item.last_error ? <p className="mt-2 text-xs font-semibold text-red-600">{t("platform.operations.failureRecorded")}</p> : null}
                 </Link>
               )) : <EmptyLine label={t("platform.operations.noConnectorRequests")} />}
             </div>
@@ -191,7 +191,7 @@ export function PlatformOperationsPage() {
                 <Link key={item.id} to={`/platform/merchants/${item.business_id}`} className="block rounded-3xl border border-slate-100 bg-slate-50 p-4 transition hover:border-brand-200 hover:bg-white">
                   <p className="font-black text-midnight">{item.business_name}</p>
                   <p className="mt-1 text-sm text-slate-500">{item.trigger_type} · {t("platform.operations.attempts", { attempts: item.attempts, max: item.max_attempts })}</p>
-                  {item.error ? <p className="mt-2 text-xs font-semibold text-red-600">{item.error}</p> : null}
+                  {item.error ? <p className="mt-2 text-xs font-semibold text-red-600">{t("platform.operations.failureRecorded")}</p> : null}
                 </Link>
               )) : <EmptyLine label={t("platform.operations.noFailedAutomationRuns")} />}
             </div>
@@ -206,7 +206,7 @@ export function PlatformOperationsPage() {
                 <Link key={item.id} to={item.business_id ? `/platform/merchants/${item.business_id}` : "/platform/operations"} className="block rounded-3xl border border-slate-100 bg-slate-50 p-4 transition hover:border-brand-200 hover:bg-white">
                   <p className="font-black text-midnight">{item.business_name || t("platform.operations.noBusiness")}</p>
                   <p className="mt-1 text-sm text-slate-500">{item.provider} · {item.direction}</p>
-                  {item.error ? <p className="mt-2 text-xs font-semibold text-red-600">{item.error}</p> : null}
+                  {item.error ? <p className="mt-2 text-xs font-semibold text-red-600">{t("platform.operations.failureRecorded")}</p> : null}
                 </Link>
               )) : <EmptyLine label={t("platform.operations.noFailedIntegrationEvents")} />}
             </div>

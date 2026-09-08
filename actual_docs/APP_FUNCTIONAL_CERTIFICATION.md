@@ -1,7 +1,7 @@
 # ZANI Application Functional Certification
 
 - Date: 2026-08-20
-- Status: **EXECUTED / PARTIAL - FAILURE CERTIFICATION BLOCKED BY FB-001..FB-010**
+- Status: **EXECUTED / PARTIAL - FB-010 ISOLATED MATRIX PASSED; CLEAN-RANGE EVIDENCE AND FINAL REPORT OPEN**
 - Activation: owner authorized execution on 2026-08-20
 - Primary scope: authenticated merchant `/app`
 - Secondary scope: public authentication and platform-admin surfaces
@@ -315,7 +315,7 @@ providers. Live provider certification is a separate authorized activity.
 | FC-005 | Complete role/capability/tenant browser matrix | PASS |
 | FC-006 | Complete ten critical merchant journeys | PARTIAL - representative journeys pass; all ten are not yet UI/API/persistence certified |
 | FC-007 | Run desktop/tablet/mobile non-functional matrix | PASS |
-| FC-008 | Run clean full gate and publish final report | BLOCKED - committed-range gate passed; fallback prerequisite remains open |
+| FC-008 | Run clean full gate and publish final report | PARTIAL / BLOCKED - the combined dirty checkout passed 947 backend tests and the isolated FB-010 matrix; the clean committed range, integrated inventory/audits and final report remain open |
 
 ## Evidence Rules
 
@@ -338,10 +338,13 @@ asserted.
 
 The owner authorized BE-REM-007 execution on 2026-08-20. Independent backend,
 frontend, browser, accessibility, responsive, performance and dependency gates
-were executed. The failure-and-recovery portion cannot be accepted until the
-separate `UNIFIED_FALLBACK_EXPERIENCE_PLAN.md` queue FB-001 through FB-010 is
-implemented and its cross-role browser certification passes. This dependency
-must not be converted into a silent pass.
+were executed. The isolated cross-role failure matrix in
+`UNIFIED_FALLBACK_EXPERIENCE_PLAN.md` now passes for the required merchant
+roles and desktop/mobile viewports. FC-008 remains open until the shared dirty
+checkout is reconciled into a clean committed range, the generated fallback
+inventory and Critic-owned visual/interaction gates are current, and the final
+report is published. The isolated pass must not be converted into a silent
+integrated pass.
 
 Current evidence is recorded in
 `actual_docs/APP_FUNCTIONAL_CERTIFICATION_REPORT_2026-08-20.md`.

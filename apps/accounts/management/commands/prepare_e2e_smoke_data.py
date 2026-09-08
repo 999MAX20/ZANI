@@ -71,6 +71,12 @@ class Command(BaseCommand):
             role=User.Roles.STAFF,
             full_name="Zani Business Specialist Two",
         )
+        foreign_owner = self._upsert_user(
+            email="foreign_owner@example.com",
+            password=password,
+            role=User.Roles.BUSINESS_OWNER,
+            full_name="Zani Foreign Business Owner",
+        )
 
         business, _ = Business.objects.update_or_create(
             slug=options["business_slug"],
@@ -102,6 +108,27 @@ class Command(BaseCommand):
         ensure_default_roles(business)
         apply_business_type_defaults(business, configured_by=owner)
         ensure_default_pipeline(business)
+
+        foreign_business, _ = Business.objects.update_or_create(
+            slug="zani-e2e-foreign",
+            defaults={
+                "owner": foreign_owner,
+                "name": "Zani E2E Foreign Tenant",
+                "business_type": Business.BusinessTypes.MEDICAL,
+                "city": "Almaty",
+                "phone": "+77019999998",
+                "timezone": "Asia/Almaty",
+                "status": Business.Statuses.ACTIVE,
+            },
+        )
+        self._upsert_member(
+            foreign_business,
+            foreign_owner,
+            BusinessMember.Roles.OWNER,
+        )
+        ensure_default_roles(foreign_business)
+        apply_business_type_defaults(foreign_business, configured_by=foreign_owner)
+        ensure_default_pipeline(foreign_business)
         plan = SubscriptionPlan.objects.filter(code="growth").first()
         if plan:
             Subscription.objects.update_or_create(
@@ -124,7 +151,7 @@ class Command(BaseCommand):
                 "platform_admin@example.com, business_owner@example.com, "
                 "business_administrator@example.com, "
                 "business_manager@example.com, business_operator@example.com, "
-                "business_specialist@example.com"
+                "business_specialist@example.com, foreign_owner@example.com"
             )
         )
 

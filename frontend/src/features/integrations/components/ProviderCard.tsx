@@ -9,6 +9,7 @@ import { getApiErrorMessage } from "../../../api/client";
 import { Badge, type BadgeVariant } from "../../../components/ui/Badge";
 import { Button } from "../../../components/ui/Button";
 import { ErrorState } from "../../../components/ui/StateViews";
+import { StatusNotice } from "../../../components/ui/StatusNotice";
 import { Input } from "../../../components/ui/Input";
 import { Modal } from "../../../components/ui/Modal";
 import { ToggleSwitch } from "../../../components/ui/Switch";
@@ -297,9 +298,12 @@ export function ProviderCard({
       </div>
 
       {connector?.last_error && !isChannelProvider ? (
-        <div className="mt-2 max-h-12 overflow-hidden rounded-control border border-[rgba(194,65,12,0.2)] bg-[var(--zani-danger-soft)] px-2.5 py-1.5 text-xs font-semibold text-zani-danger">
-          {readableConnectorError(connector.last_error, t)}
-        </div>
+        <StatusNotice
+          className="mt-2"
+          compact
+          tone="danger"
+          title={readableConnectorError(connector.last_error, t)}
+        />
       ) : null}
 
       {connector && !isChannelProvider ? (
@@ -329,9 +333,12 @@ export function ProviderCard({
               ) : null}
             </div>
             {latestRun.error ? (
-              <p className="mt-1 line-clamp-2 text-xs font-semibold text-red-700">
-                {readableConnectorError(latestRun.error, t)}
-              </p>
+              <StatusNotice
+                className="mt-2"
+                compact
+                tone="danger"
+                title={readableConnectorError(latestRun.error, t)}
+              />
             ) : null}
           </div>
         ) : syncRunsQuery.isSuccess ? (

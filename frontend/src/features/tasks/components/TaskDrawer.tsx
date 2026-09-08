@@ -6,6 +6,7 @@ import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
 import { Select } from "../../../components/ui/Select";
 import { StatusBadge } from "../../../components/ui/StatusBadge";
+import { ErrorState } from "../../../components/ui/StateViews";
 import { Textarea } from "../../../components/ui/Textarea";
 import { useBodyScrollLock } from "../../../hooks/useBodyScrollLock";
 import { cn } from "../../../lib/cn";
@@ -239,7 +240,7 @@ export function TaskDrawer({
                 <div className="flex flex-wrap gap-2 lg:justify-end">
                   {canStart ? <Button variant="secondary" onClick={() => onStart(task)} isLoading={pending.start}><Play size={16} /> {t("tasks.start")}</Button> : null}
                   {canComplete ? <Button variant="primary" onClick={() => onComplete(task)} isLoading={pending.complete}><Check size={16} /> {t("tasks.complete")}</Button> : null}
-                  {canCancel ? <Button variant="ghost" onClick={() => onCancel(task)} isLoading={pending.cancel}><X size={16} /> {t("tasks.cancel")}</Button> : null}
+                  {canCancel ? <Button variant="warning" onClick={() => onCancel(task)} isLoading={pending.cancel}><X size={16} /> {t("tasks.cancel")}</Button> : null}
                   {canReopen ? <Button variant="secondary" onClick={() => onReopen(task)} isLoading={pending.reopen}><RotateCcw size={16} /> {t("tasks.reopen")}</Button> : null}
                 </div>
               </div>
@@ -320,7 +321,7 @@ export function TaskDrawer({
                           onChange={(event) => setDetailsDraft((current) => ({ ...current, reminder_at: event.target.value }))}
                         />
                       </div>
-                      {detailsErrorMessage ? <p className="rounded-card bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{detailsErrorMessage}</p> : null}
+                      {detailsErrorMessage ? <ErrorState message={detailsErrorMessage} /> : null}
                     </div>
                   </div>
                 ) : null}
@@ -419,9 +420,9 @@ export function TaskDrawer({
                         </div>
                         <Button
                           type="button"
-                          variant="ghost"
+                          variant="danger"
                           size="sm"
-                          className="shrink-0 px-2 text-red-600 hover:bg-red-50 hover:text-red-700"
+                          className="shrink-0 px-2"
                           aria-label={t("tasks.deleteComment")}
                           title={t("tasks.deleteComment")}
                           isLoading={pending.deleteComment}

@@ -5,6 +5,11 @@ export type PageHeaderAction = {
   label: string;
   icon?: LucideIcon;
   onClick: () => void;
+  disabled?: boolean;
+  title?: string;
+  variant?: "primary" | "ai";
+  presentation?: "icon" | "label";
+  showOnMobile?: boolean;
 };
 
 export type PageHeaderConfig = {

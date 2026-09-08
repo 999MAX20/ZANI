@@ -137,7 +137,7 @@ function toneDot(tone: "brand" | "ai" | "green" | "amber" | "slate") {
   if (tone === "ai") return "bg-ai-600";
   if (tone === "green") return "bg-green-600";
   if (tone === "amber") return "bg-amber-500";
-  if (tone === "brand") return "bg-brand-600";
+  if (tone === "brand") return "bg-[var(--zani-brand-content)]";
   return "bg-zani-border";
 }
 

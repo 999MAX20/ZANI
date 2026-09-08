@@ -220,7 +220,7 @@ export function ClientWorkspacePage() {
               </Button>
               <Button
                 type="button"
-                variant="danger"
+                variant="warning"
                 isLoading={actions.archiveMutation.isPending}
                 onClick={() => void actions.requestArchiveClient(client)}
               >

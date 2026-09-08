@@ -16,6 +16,7 @@ import { Button } from "../ui/Button";
 import { Drawer } from "../ui/Overlay";
 import { StatusBadge } from "../ui/StatusBadge";
 import { GlobalSearch } from "./GlobalSearch";
+import { HeaderAccountLink } from "./HeaderAccountLink";
 import { mobileNavigationDrawerId } from "./MobileNav";
 import type { PageHeaderConfig } from "./PageHeaderContext";
 
@@ -204,7 +205,7 @@ export function Header({
             <Menu aria-hidden="true" size={22} strokeWidth={2.2} />
           </Button>
           <div className="hidden min-w-0 items-center gap-4 lg:flex">
-            <span className="max-w-[220px] truncate text-sm font-semibold text-zani-text">{currentPageTitle}</span>
+            <span className="max-w-[220px] truncate text-[21px] font-semibold leading-7 text-zani-text">{currentPageTitle}</span>
           </div>
           <div className={pageHeader ? "min-w-0 flex-1 lg:hidden" : "lg:hidden"}>
             <GlobalSearch />
@@ -242,6 +243,7 @@ export function Header({
                     open={showFilters}
                     onClose={() => setShowFilters(false)}
                     titleId={filterDrawerTitleId}
+                    size="custom"
                     testId="header-filter-drawer"
                     backdropClassName="bg-[rgba(23,18,15,0.28)] backdrop-blur-[1px]"
                     className="max-w-[min(420px,calc(100vw-1rem))] rounded-none border-y-0 border-r-0 shadow-premium"
@@ -271,15 +273,45 @@ export function Header({
               ) : null}
               {pageHeader.secondaryActions?.map((action, index) => {
                 const Icon = action.icon;
+                const showsLabel = action.presentation === "label";
                 return (
-                  <Button key={action.label} variant="secondary" size="icon" className="h-9 w-9 shrink-0" onClick={action.onClick} aria-label={action.label} data-testid={`page-secondary-action-${index}`}>
+                  <Button
+                    key={action.label}
+                    variant="secondary"
+                    size={showsLabel ? "md" : "icon"}
+                    className={showsLabel ? "h-9 shrink-0 px-3" : "h-9 w-9 shrink-0"}
+                    onClick={action.onClick}
+                    disabled={action.disabled}
+                    title={action.title}
+                    aria-label={action.label}
+                    data-testid={`page-secondary-action-${index}`}
+                  >
                     {Icon ? <Icon size={17} /> : null}
+                    {showsLabel ? <span className="hidden xl:inline">{action.label}</span> : null}
                   </Button>
                 );
               })}
               <PrimaryPageAction action={pageHeader.primaryAction} />
             </div>
           ) : null}
+          {pageHeader?.secondaryActions?.map((action, index) => {
+            if (!action.showOnMobile) return null;
+            const Icon = action.icon;
+            return (
+              <Button
+                key={action.label}
+                variant="secondary"
+                className="h-10 w-10 shrink-0 px-0 lg:hidden"
+                onClick={action.onClick}
+                disabled={action.disabled}
+                title={action.title}
+                aria-label={action.label}
+                data-testid={`page-secondary-action-mobile-${index}`}
+              >
+                {Icon ? <Icon size={17} /> : null}
+              </Button>
+            );
+          })}
           {pageHeader?.primaryAction ? (
             <div className="lg:hidden">
               <PrimaryPageAction
@@ -291,13 +323,15 @@ export function Header({
           <div className="relative" ref={notificationsRef}>
             <Button
               variant="ghost"
+              size="icon"
               className="relative h-10 w-10 min-h-10 min-w-10 rounded-control px-0"
               aria-label={t("header.notifications")}
               onClick={() => setShowNotifications((current) => !current)}
+              data-testid="header-notifications-trigger"
             >
-              <Bell size={20} strokeWidth={2.2} />
+              <Bell aria-hidden="true" size={24} strokeWidth={2.1} />
               {unreadCount ? (
-                <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-brand-700 px-1.5 py-0.5 text-[10px] font-semibold text-white ring-2 ring-surface">
+                <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-brand-500 px-1.5 py-0.5 text-[10px] font-semibold text-zani-ink ring-2 ring-surface">
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               ) : null}
@@ -327,7 +361,7 @@ export function Header({
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
                               <div className="mb-1 flex flex-wrap items-center gap-2">
-                                {!notification.read_at ? <span className="h-2 w-2 rounded-full bg-brand-600" /> : null}
+                                {!notification.read_at ? <span className="h-2 w-2 rounded-full bg-brand-500" /> : null}
                                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${priorityClass[notification.priority] || priorityClass.normal}`}>
                                   {priorityLabels[notification.priority] || notification.priority}
                                 </span>
@@ -374,13 +408,14 @@ export function Header({
                 <Link
                   to="/app/tasks"
                   onClick={() => setShowNotifications(false)}
-                  className="zani-focus-ring mt-4 block rounded-control bg-brand-500 px-4 py-3 text-center text-sm font-semibold text-white ring-1 ring-brand-600/10 transition hover:bg-brand-600"
+                  className="zani-focus-ring mt-4 block rounded-control bg-brand-500 px-4 py-3 text-center text-sm font-semibold text-zani-ink ring-1 ring-brand-600/10 transition hover:bg-brand-600"
                 >
                   {t("header.openTasks")}
                 </Link>
               </div>
             ) : null}
           </div>
+          <HeaderAccountLink user={user} membership={activeMembership} />
           {chatToastOpen ? (
             <div className="fixed right-4 top-20 z-[90] w-[min(360px,calc(100vw-2rem))] rounded-card border border-zani-border bg-surface-card p-4 shadow-premium ring-1 ring-[rgba(194,65,12,0.16)]">
               <div className="flex items-start gap-3">
@@ -394,7 +429,7 @@ export function Header({
                   </p>
                   <button
                     type="button"
-                    className="zani-focus-ring mt-3 rounded-control bg-brand-500 px-3 py-2 text-xs font-semibold text-white ring-1 ring-brand-600/10 transition hover:bg-brand-600"
+                    className="zani-focus-ring mt-3 rounded-control bg-brand-500 px-3 py-2 text-xs font-semibold text-zani-ink ring-1 ring-brand-600/10 transition hover:bg-brand-600"
                     onClick={() => {
                       setChatToastOpen(false);
                       navigate("/app/conversations?unread=true");
@@ -437,8 +472,11 @@ function PrimaryPageAction({
   return (
     <Button
       data-testid="page-primary-action"
-      className={compact ? "h-10 w-10 shrink-0 px-0" : "h-9 shrink-0 px-4"}
+      variant={action.variant || "primary"}
+      className={compact ? "h-10 w-10 shrink-0 px-0" : "h-9 shrink-0 whitespace-nowrap px-4"}
       onClick={action.onClick}
+      disabled={action.disabled}
+      title={action.title}
       aria-label={action.label}
     >
       {Icon ? <Icon size={17} /> : null}
@@ -456,6 +494,9 @@ function getPageTitle(pathname: string, t: (key: string) => string) {
     ["/app/calendar", "nav.calendar"],
     ["/app/conversations", "nav.conversations"],
     ["/app/outreach", "nav.outreach"],
+    ["/app/business/services", "nav.services"],
+    ["/app/business/resources", "nav.resources"],
+    ["/app/business/working-hours", "nav.workingHours"],
     ["/app/services", "nav.services"],
     ["/app/resources", "nav.resources"],
     ["/app/working-hours", "nav.workingHours"],

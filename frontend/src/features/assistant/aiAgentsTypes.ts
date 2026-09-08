@@ -16,6 +16,11 @@ export type AgentFormState = {
   allowed_tools: string[];
 };
 
+export type BotDraftState = {
+  name: string;
+  default_language: string;
+};
+
 export type AutoPipelineMode = "off" | "triage" | "lead_task" | "draft_deal";
 
 export type OnboardingStep = {

@@ -2,6 +2,7 @@ import { Modal } from "../../../components/ui/Modal";
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
 import { Select } from "../../../components/ui/Select";
+import { StatusNotice } from "../../../components/ui/StatusNotice";
 import type {
   Client,
   Deal,
@@ -48,11 +49,7 @@ export function CreateDealModal({
           onSubmit();
         }}
       >
-        {!clients.length ? (
-          <div className="rounded-card border border-[rgba(183,121,31,0.22)] bg-[var(--zani-warning-soft)] p-4 text-sm font-bold text-zani-warning">
-            {t("deals.needClientFirst")}
-          </div>
-        ) : null}
+        {!clients.length ? <StatusNotice tone="warning" title={t("deals.needClientFirst")} /> : null}
         <Input
           placeholder={t("deals.titlePlaceholder")}
           value={form.title}
@@ -193,7 +190,7 @@ export function DealActionModal({
           )}
           <Button
             type="submit"
-            variant={actionFlow.type === "won" ? "primary" : "danger"}
+            variant={actionFlow.type === "won" ? "primary" : "warning"}
             isLoading={isPending}
           >
             {actionFlow.type === "won"

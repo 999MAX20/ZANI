@@ -20,7 +20,7 @@ The authenticated CRM direction is now:
 
 ```txt
 Warm Premium CRM
-Warm ivory workspace + saturated orange actions + plum AI accent
+Warm ivory workspace + soft peach actions + plum AI accent
 ```
 
 This update supersedes the earlier blue-primary color direction below. The previous page structure and operational-density rules still apply: authenticated CRM screens must stay compact, useful, role-aware, and free from decorative/marketing blocks.
@@ -182,10 +182,10 @@ Info Soft:         #F0F9FF
 
 ## Color Usage Rules
 
-- Blue primary is used for normal CRM actions: create, save, assign, launch, selected state, primary focus.
+- Soft peach Brand Primary is used for normal CRM actions: create, save, assign and launch. Selected states use Brand Soft + Brand Content; focus uses Brand Content.
 - Violet AI is used only for AI actions: AI answer, AI analyst, AI pipeline, generate, AI insight.
 - Green is used only for success/connected/won/confirmed/completed.
-- Orange is used only for attention/waiting/needs operator/not confirmed.
+- Information is used for progress/syncing/queued states. Warning is reserved for attention, waiting, needs operator or not confirmed.
 - Red is used only for error/lost/failed/expired/destructive.
 - Do not use violet/blue gradients as generic decoration.
 - Do not make pages dominated by one purple-blue hue.

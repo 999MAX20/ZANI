@@ -1,12 +1,12 @@
-import { AlertTriangle, CheckCircle2, Info, X, XCircle } from "lucide-react";
+import { X } from "lucide-react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 import type { AppError } from "../../api/appError";
 import { Button } from "../ui/Button";
-import { cn } from "../../lib/cn";
 import { useI18n } from "../../lib/i18n";
+import { StatusNotice, type StatusNoticeTone } from "../ui/StatusNotice";
 
-type NotificationTone = "success" | "info" | "warning" | "danger";
+type NotificationTone = StatusNoticeTone;
 
 export type NotificationOptions = {
   appError?: AppError;
@@ -24,36 +24,11 @@ type NotificationItem = NotificationOptions & {
 
 const NotificationContext = createContext<((options: NotificationOptions) => void) | null>(null);
 
-const toneStyles: Record<NotificationTone, { icon: typeof Info; iconClassName: string; className: string }> = {
-  success: {
-    icon: CheckCircle2,
-    iconClassName: "text-zani-success",
-    className: "border-[rgba(21,128,61,0.18)] bg-[var(--zani-success-soft)] text-zani-text",
-  },
-  info: {
-    icon: Info,
-    iconClassName: "text-brand-600",
-    className: "border-brand-100 bg-brand-50 text-zani-text",
-  },
-  warning: {
-    icon: AlertTriangle,
-    iconClassName: "text-zani-warning",
-    className: "border-[rgba(183,121,31,0.22)] bg-[var(--zani-warning-soft)] text-zani-text",
-  },
-  danger: {
-    icon: XCircle,
-    iconClassName: "text-zani-danger",
-    className: "border-[rgba(194,65,12,0.2)] bg-[var(--zani-danger-soft)] text-zani-text",
-  },
-};
-
 export function ActionFeedbackToast({ item, onDismiss }: { item: NotificationItem; onDismiss: (id: number) => void }) {
   const { t } = useI18n();
   const [isHovered, setIsHovered] = useState(false);
   const [isActing, setIsActing] = useState(false);
   const tone = item.tone || (item.appError ? "danger" : "info");
-  const style = toneStyles[tone];
-  const Icon = style.icon;
   const message = item.appError ? t(item.appError.messageKey) : item.message || t("actions.errorGeneric");
 
   useEffect(() => {
@@ -63,21 +38,27 @@ export function ActionFeedbackToast({ item, onDismiss }: { item: NotificationIte
   }, [isActing, isHovered, item.durationMs, item.id, onDismiss]);
 
   return (
-    <div
+    <StatusNotice
       data-testid="action-feedback"
-      className={cn(
-        "pointer-events-auto flex w-[min(360px,calc(100vw-2rem))] items-start gap-3 rounded-card border px-4 py-3 text-sm font-semibold shadow-panel backdrop-blur transition",
-        style.className,
-      )}
+      compact
+      tone={tone}
+      title={message}
+      className="pointer-events-auto w-[min(360px,calc(100vw-2rem))] shadow-panel backdrop-blur transition"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       role={tone === "danger" || tone === "warning" ? "alert" : "status"}
-      aria-live={tone === "danger" || tone === "warning" ? "assertive" : "polite"}
-    >
-      <Icon size={18} className={cn("mt-0.5 shrink-0", style.iconClassName)} />
-      <div className="min-w-0 flex-1">
-        <p className="leading-5">{message}</p>
-        {item.actionLabel && item.onAction ? (
+      ariaLive={tone === "danger" || tone === "warning" ? "assertive" : "polite"}
+      action={(
+        <button
+          type="button"
+          className="zani-focus-ring grid h-7 w-7 shrink-0 place-items-center rounded-control text-zani-faint transition hover:bg-surface-card hover:text-zani-text"
+          aria-label={t("common.close")}
+          onClick={() => onDismiss(item.id)}
+        >
+          <X size={15} />
+        </button>
+      )}
+      details={item.actionLabel && item.onAction ? (
           <Button
             data-testid="action-feedback-action"
             type="button"
@@ -100,17 +81,8 @@ export function ActionFeedbackToast({ item, onDismiss }: { item: NotificationIte
           >
             {item.actionLabel}
           </Button>
-        ) : null}
-      </div>
-      <button
-        type="button"
-        className="zani-focus-ring grid h-7 w-7 shrink-0 place-items-center rounded-control text-zani-faint transition hover:bg-surface-card hover:text-zani-text"
-        aria-label={t("common.close")}
-        onClick={() => onDismiss(item.id)}
-      >
-        <X size={15} />
-      </button>
-    </div>
+      ) : null}
+    />
   );
 }
 

@@ -87,7 +87,7 @@ export function MonthInspectorPanel({
         <Button type="button" variant="secondary" size="sm" onClick={onOpenDay}>
           {t("calendar.openDay")}
         </Button>
-        <Link className="col-span-2 inline-flex min-h-9 items-center justify-center rounded-control border border-zani-border bg-zani-card px-3 py-2 text-xs font-bold text-zani-text transition hover:bg-surface-hover" to="/app/working-hours">
+        <Link className="col-span-2 inline-flex min-h-9 items-center justify-center rounded-control border border-zani-border bg-zani-card px-3 py-2 text-xs font-bold text-zani-text transition hover:bg-surface-hover" to="/app/business/working-hours">
           {t("appointment.openHours")}
         </Link>
       </div>

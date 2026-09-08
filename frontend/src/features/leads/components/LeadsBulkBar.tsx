@@ -1,4 +1,4 @@
-import { MessageCircle, XCircle } from "lucide-react";
+import { Archive, MessageCircle } from "lucide-react";
 
 import { Button } from "../../../components/ui/Button";
 import type { Id } from "../../../types";
@@ -72,11 +72,11 @@ export function LeadsBulkBar({
         </Button>
         <Button
           size="sm"
-          variant="secondary"
-          className="rounded-lg bg-white text-[#17120F] hover:bg-surface-warm"
+          variant="warning"
+          className="rounded-lg"
           onClick={onArchive}
         >
-          <XCircle size={15} /> {labels.archive}
+          <Archive size={15} /> {labels.archive}
         </Button>
         <Button
           size="sm"

@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 
 import { Button } from "../../../components/ui/Button";
 import { Select } from "../../../components/ui/Select";
+import { StatusNotice } from "../../../components/ui/StatusNotice";
 import { cn } from "../../../lib/cn";
 import { formatDate, formatDateTime } from "../../../lib/format";
 import type { ActivityEvent, BotConversation, Id, Lead, PipelineStage, Task, TeamMember } from "../../../types";
@@ -102,7 +103,7 @@ export function DealDetailPanel({
                 <Button variant="secondary" size="sm" onClick={() => onMarkWon(deal)}>
                   <CheckCircle2 size={15} /> {t("deals.success")}
                 </Button>
-                <Button variant="danger" size="sm" onClick={() => onMarkLost(deal)}>
+                <Button variant="warning" size="sm" onClick={() => onMarkLost(deal)}>
                   <XCircle size={15} /> {t("deals.lost")}
                 </Button>
               </>
@@ -134,7 +135,7 @@ export function DealDetailPanel({
           <div className="grid gap-4">
             <PanelBlock title={t("deals.nearestStep")} icon={ClipboardList}>
               {deal.status === "open" && !deal.nextTask && !deal.next_action_at ? (
-                <div className="mb-3 rounded-lg border border-amber-100 bg-amber-50 p-3 text-sm font-bold text-amber-800">{t("deals.noMoveWithoutNext")}</div>
+                <StatusNotice className="mb-3" compact tone="warning" title={t("deals.noMoveWithoutNext")} />
               ) : null}
               {deal.nextTask ? (
                 <div className="rounded-lg bg-slate-50 p-3">

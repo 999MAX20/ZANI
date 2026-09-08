@@ -97,7 +97,7 @@ export function CrmControlBar<TValue extends string>({
                 className={cn(
                   "zani-focus-ring inline-flex items-center gap-1.5 rounded-control font-semibold transition",
                   compact ? "min-h-8 px-2.5 text-xs" : "min-h-9 px-3 text-sm",
-                  active ? "bg-surface-card text-brand-700 shadow-sm" : "text-zani-subtle hover:bg-surface-warm hover:text-zani-text",
+                  active ? "bg-brand-50 text-brand-700 shadow-sm ring-1 ring-brand-100" : "text-zani-subtle hover:bg-surface-warm hover:text-zani-text",
                 )}
               >
                 <span className="min-w-0 truncate">{tab.label}</span>

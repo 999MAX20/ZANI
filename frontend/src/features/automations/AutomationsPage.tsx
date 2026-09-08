@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router";
 
 import { automationRulesApi, automationRunsApi } from "../../api/automations";
+import { getApiErrorMessage } from "../../api/client";
 import { Badge, type BadgeVariant } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { Card, CardBody, Surface } from "../../components/ui/Card";
@@ -162,7 +163,7 @@ export function AutomationsPage() {
     },
     onError: (error) => {
       setPreview(null);
-      setAdvancedError(error instanceof Error ? error.message : t("automations.previewFailed"));
+      setAdvancedError(getApiErrorMessage(error, t));
     },
   });
   const createManualMutation = useMutation({
@@ -176,7 +177,7 @@ export function AutomationsPage() {
       setConditions([]);
       setActions(defaultActions(t));
     },
-    onError: (error) => setAdvancedError(error instanceof Error ? error.message : t("automations.ruleNotSaved")),
+    onError: (error) => setAdvancedError(getApiErrorMessage(error, t)),
   });
   const retryRunMutation = useMutation({
     mutationFn: (runId: number) => automationRunsApi.retry(runId),
@@ -320,7 +321,7 @@ export function AutomationsPage() {
               {rule.description ? <p className="mt-3 text-sm leading-6 text-zani-subtle">{rule.description}</p> : null}
               <div className="mt-4 flex flex-wrap gap-2">
                 <Button
-                  variant={rule.is_active ? "secondary" : "primary"}
+                  variant={rule.is_active ? "warning" : "primary"}
                   onClick={() => toggleMutation.mutate({ rule, isActive: !rule.is_active })}
                   isLoading={toggleMutation.isPending}
                 >
@@ -349,7 +350,7 @@ export function AutomationsPage() {
                 <p className="text-xs font-semibold leading-5 text-zani-subtle">
                   {run.entity_type || t("automations.entity")} #{run.entity_id || "-"} · {t("automations.attempt", { current: run.attempts || 0, max: run.max_attempts || 3 })}
                   {run.next_retry_at ? ` · ${t("automations.retryAt", { date: new Date(run.next_retry_at).toLocaleString(locale) })}` : ""}
-                  {run.error ? ` · ${run.error}` : ""}
+                  {run.error ? ` · ${t("automations.runFailureSummary")}` : ""}
                 </p>
               </div>
               <Badge variant={runStatusVariant(run.status)}>
@@ -372,7 +373,7 @@ export function AutomationsPage() {
                 ) : null}
                 {canCancelRun(run) ? (
                   <Button
-                    variant="secondary"
+                    variant="warning"
                     className="min-h-8 px-3 py-1 text-xs"
                     onClick={() => cancelRunMutation.mutate(run.id)}
                     isLoading={cancelRunMutation.isPending}
@@ -426,7 +427,7 @@ export function AutomationsPage() {
                 <p className="mt-1 text-zani-subtle">{selectedRun.finished_at ? new Date(selectedRun.finished_at).toLocaleString(locale) : "-"}</p>
               </div>
             </div>
-            {selectedRun.error ? <ErrorState message={`${t("automations.runError")}: ${selectedRun.error}`} /> : null}
+            {selectedRun.error ? <ErrorState message={t("automations.runFailureDetails")} /> : null}
             <div>
               <p className="mb-2 text-xs font-bold uppercase text-zani-muted">{t("automations.runPayload")}</p>
               <pre className="max-h-48 overflow-auto rounded-card bg-zani-ink p-3 text-xs text-surface-card">{formatJson(selectedRun.payload)}</pre>
@@ -442,7 +443,7 @@ export function AutomationsPage() {
                 </Button>
               ) : null}
               {canCancelRun(selectedRun) ? (
-                <Button type="button" variant="secondary" onClick={() => cancelRunMutation.mutate(selectedRun.id)} isLoading={cancelRunMutation.isPending}>
+                <Button type="button" variant="warning" onClick={() => cancelRunMutation.mutate(selectedRun.id)} isLoading={cancelRunMutation.isPending}>
                   <Ban size={16} />{t("automations.cancelRun")}
                 </Button>
               ) : null}

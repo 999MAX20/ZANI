@@ -1,11 +1,13 @@
 from datetime import datetime, time, timedelta
 
 from django.db import transaction
+from django.db.models import Count, Exists, OuterRef, Q
 from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
 from apps.activities.serializers import NoteSerializer
@@ -68,9 +70,71 @@ def _parse_range_boundary(value, *, business, end_of_date=False):
     return timezone.make_aware(boundary, _business_zone(business))
 
 
+class ResourcePagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
+
 class ResourceViewSet(TenantModelViewSet):
     queryset = Resource.objects.select_related("business", "linked_user")
     serializer_class = ResourceSerializer
+    pagination_class = ResourcePagination
+
+    def get_queryset(self, apply_filters=True):
+        individual_schedule = WorkingHours.objects.filter(
+            business_id=OuterRef("business_id"),
+            resource_id=OuterRef("pk"),
+        )
+        queryset = super().get_queryset().annotate(
+            appointment_count=Count(
+                "appointments",
+                filter=Q(appointments__is_archived=False),
+                distinct=True,
+            ),
+            has_individual_schedule=Exists(individual_schedule),
+        )
+        params = self.request.query_params
+        business_id = params.get("business")
+        if business_id:
+            queryset = queryset.filter(business_id=business_id)
+        if not apply_filters:
+            return queryset
+
+        search = (params.get("search") or "").strip()
+        resource_type = params.get("resource_type")
+        resource_status = params.get("status")
+        if search:
+            queryset = queryset.filter(
+                Q(name__icontains=search)
+                | Q(linked_user__full_name__icontains=search)
+                | Q(linked_user__email__icontains=search)
+            )
+        if resource_type in Resource.ResourceTypes.values:
+            queryset = queryset.filter(resource_type=resource_type)
+        if resource_status == "active":
+            queryset = queryset.filter(is_active=True)
+        elif resource_status == "inactive":
+            queryset = queryset.filter(is_active=False)
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        summary_queryset = self.get_queryset(apply_filters=False)
+        summary = {
+            "active": summary_queryset.filter(is_active=True).count(),
+            "staff": summary_queryset.filter(
+                is_active=True,
+                resource_type=Resource.ResourceTypes.STAFF,
+            ).count(),
+            "with_individual_schedule": summary_queryset.filter(
+                is_active=True,
+                has_individual_schedule=True,
+            ).count(),
+        }
+        response = super().list(request, *args, **kwargs)
+        if isinstance(response.data, dict):
+            response.data["summary"] = summary
+        return response
 
     def get_access_resource(self):
         if self.action in {"list", "retrieve", "options"}:
@@ -402,6 +466,12 @@ class AppointmentViewSet(IdempotentCRMCreateMixin, TenantModelViewSet):
             exclude_appointment = Appointment.objects.filter(id=exclude_appointment_id, business=business).first()
             if not exclude_appointment:
                 raise ValidationError("Appointment to exclude is not available.")
+
+        service_is_current_for_reschedule = bool(
+            exclude_appointment and exclude_appointment.service_id == service.id
+        )
+        if (not service.is_active or service.is_archived) and not service_is_current_for_reschedule:
+            raise ValidationError("Service is not available for new bookings.")
 
         try:
             slot_date = datetime.strptime(date_value, "%Y-%m-%d").date()

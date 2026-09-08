@@ -78,7 +78,7 @@ export function ClientDrawerContent({ data, entity, actions }: { data: CrmCardPa
             <span className="truncate">Email</span>
           </Button>
           {actions?.onArchive ? (
-            <Button variant="danger" className="min-w-0 px-3" onClick={() => actions.onArchive?.(client)}>
+            <Button variant="warning" className="min-w-0 px-3" onClick={() => actions.onArchive?.(client)}>
               <Archive className="shrink-0" size={16} />
               <span className="truncate">{t("clients.archiveAction")}</span>
             </Button>

@@ -207,7 +207,7 @@ function EntityInlineEditPanel({ data, entity }: { data: CrmCardPayload; entity:
               {lead?.status !== "in_progress" ? <Button type="button" variant="secondary" className="h-9 rounded-full px-3 text-xs" isLoading={lifecycleMutation.isPending} onClick={() => lifecycleMutation.mutate({ type: "lead", action: "take" })}>{t("leads.takeInWork")}</Button> : null}
               {lead?.status !== "contacted" ? <Button type="button" variant="secondary" className="h-9 rounded-full px-3 text-xs" isLoading={lifecycleMutation.isPending} onClick={() => lifecycleMutation.mutate({ type: "lead", action: "contacted" })}>{t("leads.contacted")}</Button> : null}
               {lead?.status !== "closed" ? <Button type="button" variant="secondary" className="h-9 rounded-full px-3 text-xs" isLoading={lifecycleMutation.isPending} onClick={() => lifecycleMutation.mutate({ type: "lead", action: "closed" })}>{t("leads.close")}</Button> : null}
-              {lead?.status !== "lost" ? <Button type="button" variant="secondary" className="h-9 rounded-full px-3 text-xs" isLoading={lifecycleMutation.isPending} onClick={() => { setLostAction({ type: "lead", id: lead!.id }); setLostReason(lead?.lost_reason || ""); }}>{t("leads.lost")}</Button> : null}
+              {lead?.status !== "lost" ? <Button type="button" variant="warning" className="h-9 rounded-full px-3 text-xs" isLoading={lifecycleMutation.isPending} onClick={() => { setLostAction({ type: "lead", id: lead!.id }); setLostReason(lead?.lost_reason || ""); }}>{t("leads.lost")}</Button> : null}
               {lead?.status === "closed" || lead?.status === "lost" ? <Button type="button" variant="secondary" className="h-9 rounded-full px-3 text-xs" isLoading={lifecycleMutation.isPending} onClick={() => lifecycleMutation.mutate({ type: "lead", action: "reopen" })}>{t("leads.reopen")}</Button> : null}
             </div>
             <Input label={t("crmCard.messageNote")} value={leadMessage} onChange={(event) => setLeadMessage(event.target.value)} />
@@ -217,7 +217,7 @@ function EntityInlineEditPanel({ data, entity }: { data: CrmCardPayload; entity:
           <div className="grid gap-3">
             <div className="flex flex-wrap gap-2">
               {deal?.status !== "won" ? <Button type="button" variant="secondary" className="h-9 rounded-full px-3 text-xs" isLoading={lifecycleMutation.isPending} onClick={() => lifecycleMutation.mutate({ type: "deal", action: "won" })}>{t("crmCard.won")}</Button> : null}
-              {deal?.status !== "lost" ? <Button type="button" variant="secondary" className="h-9 rounded-full px-3 text-xs" isLoading={lifecycleMutation.isPending} onClick={() => { setLostAction({ type: "deal", id: deal!.id }); setLostReason(deal?.lost_reason || ""); }}>{t("leads.lost")}</Button> : null}
+              {deal?.status !== "lost" ? <Button type="button" variant="warning" className="h-9 rounded-full px-3 text-xs" isLoading={lifecycleMutation.isPending} onClick={() => { setLostAction({ type: "deal", id: deal!.id }); setLostReason(deal?.lost_reason || ""); }}>{t("leads.lost")}</Button> : null}
               {deal?.status !== "open" ? <Button type="button" variant="secondary" className="h-9 rounded-full px-3 text-xs" isLoading={lifecycleMutation.isPending} onClick={() => lifecycleMutation.mutate({ type: "deal", action: "reopen" })}>{t("deals.reopen")}</Button> : null}
             </div>
             <Input label={t("clients.notes")} value={dealNotes} onChange={(event) => setDealNotes(event.target.value)} />
@@ -238,7 +238,7 @@ function EntityInlineEditPanel({ data, entity }: { data: CrmCardPayload; entity:
             <Button type="button" variant="secondary" onClick={() => { setLostAction(null); setLostReason(""); }}>
               {t("common.cancel")}
             </Button>
-            <Button type="submit" variant="danger" isLoading={lifecycleMutation.isPending} disabled={!lostReason.trim()}>
+            <Button type="submit" variant="warning" isLoading={lifecycleMutation.isPending} disabled={!lostReason.trim()}>
               {t("leads.closeAsLost")}
             </Button>
           </div>

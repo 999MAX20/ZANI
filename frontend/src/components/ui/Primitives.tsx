@@ -126,7 +126,7 @@ export function SegmentedControl<T extends string>({
             type="button"
             className={cn(
               "zani-focus-ring min-h-8 rounded-control px-3 text-sm font-semibold transition",
-              active ? "bg-surface-card text-brand-700 shadow-sm" : "text-zani-subtle hover:bg-surface-warm hover:text-zani-text",
+              active ? "bg-brand-50 text-brand-700 shadow-sm ring-1 ring-brand-100" : "text-zani-subtle hover:bg-surface-warm hover:text-zani-text",
             )}
             onClick={() => onChange(option.value)}
           >
@@ -161,7 +161,7 @@ export function FilterChips<T extends string>({
             className={cn(
               "zani-focus-ring inline-flex min-h-9 shrink-0 items-center gap-2 rounded-control border px-3 text-sm font-semibold transition",
               active
-                ? "border-brand-100 bg-brand-50 text-brand-700"
+                ? "border-brand-200 bg-brand-50 text-brand-700 ring-1 ring-brand-100"
                 : "border-zani-border bg-surface-card text-zani-subtle hover:border-brand-100 hover:bg-surface-warm hover:text-zani-text",
             )}
             onClick={() => onChange(option.value)}
@@ -191,7 +191,7 @@ export function FloatingActionButton({
     <button
       type="button"
       className={cn(
-        "fixed bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] right-5 z-30 inline-flex h-14 w-14 items-center justify-center rounded-full bg-brand-600 text-white shadow-panel transition hover:bg-brand-700 sm:hidden",
+        "fixed bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] right-5 z-30 inline-flex h-14 w-14 items-center justify-center rounded-full bg-brand-500 text-zani-ink shadow-panel transition hover:bg-brand-600 sm:hidden",
         className,
       )}
       onClick={onClick}

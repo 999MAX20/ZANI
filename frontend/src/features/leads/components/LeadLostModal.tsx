@@ -68,7 +68,7 @@ export function LeadLostModal({
         />
         <Button
           type="submit"
-          variant="danger"
+          variant="warning"
           isLoading={isLoading}
           disabled={!reason}
         >

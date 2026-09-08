@@ -75,7 +75,7 @@ export function useDealMetrics(
                 template_key: deal.stage_template_key || "",
                 is_active: true,
                 order: deal.stage_order || 0,
-                color: deal.stage_color || "#FF7A1A",
+                color: deal.stage_color || "#F5B37A",
                 probability: deal.stage_probability || deal.probability || 0,
                 sla_minutes: null,
                 is_won: Boolean(deal.stage_is_won),

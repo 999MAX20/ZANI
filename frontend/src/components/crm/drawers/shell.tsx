@@ -59,13 +59,13 @@ export function CrmEntityTabs({ active, onChange, data }: { active: CrmCardTab; 
             data-testid={`crm-entity-tab-${tab.id}`}
             className={cn(
               "flex shrink-0 items-center gap-2 rounded-card px-4 py-2 text-sm font-bold transition",
-              active === tab.id ? "bg-brand-500 text-white shadow-premium" : "bg-surface-card text-zani-muted hover:bg-surface-card hover:text-zani-ink",
+              active === tab.id ? "bg-brand-50 text-brand-700 shadow-sm ring-1 ring-brand-100" : "bg-surface-card text-zani-muted hover:bg-surface-warm hover:text-zani-ink",
             )}
             onClick={() => onChange(tab.id)}
           >
             <span>{t(tab.labelKey)}</span>
             {typeof count === "number" ? (
-              <span className={cn("min-w-5 rounded-full px-1.5 py-0.5 text-center text-[11px] font-semibold", active === tab.id ? "bg-surface-card/20 text-white" : "bg-surface-muted text-zani-muted")}>
+              <span className={cn("min-w-5 rounded-full px-1.5 py-0.5 text-center text-[11px] font-semibold", active === tab.id ? "bg-surface-card/45 text-zani-ink" : "bg-surface-muted text-zani-muted")}>
                 {count}
               </span>
             ) : null}

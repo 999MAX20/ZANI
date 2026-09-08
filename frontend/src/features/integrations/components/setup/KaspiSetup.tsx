@@ -6,6 +6,7 @@ import { businessConnectorsApi } from "../../../../api/connectors";
 import { getApiErrorMessage } from "../../../../api/client";
 import { Button } from "../../../../components/ui/Button";
 import { ErrorState } from "../../../../components/ui/StateViews";
+import { StatusNotice } from "../../../../components/ui/StatusNotice";
 import { Input } from "../../../../components/ui/Input";
 import { Select } from "../../../../components/ui/Select";
 import { useNotification } from "../../../../components/notifications/NotificationProvider";
@@ -33,9 +34,9 @@ export function KaspiInlineSetup({
   const [showAccessSetup, setShowAccessSetup] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  function setNotice(message: string | null) {
+  function setNotice(message: string | null, tone: "success" | "info" | "warning" | "danger" = "success") {
     if (!message) return;
-    showNotification({ message, tone: "info" });
+    showNotification({ message, tone });
   }
 
   const status = useQuery({
@@ -64,7 +65,7 @@ export function KaspiInlineSetup({
   const testConnection = useMutation({
     mutationFn: () => businessConnectorsApi.kaspiTestConnection(Number(connector?.id)),
     onSuccess: (data) => {
-      setNotice(data.ok ? (data.mock ? t("integrations.mock.connectionChecked") : t("integrations.kaspi.connectionChecked")) : data.reason || t("integrations.kaspi.connectionCheckFailed"));
+      setNotice(data.ok ? (data.mock ? t("integrations.mock.connectionChecked") : t("integrations.kaspi.connectionChecked")) : merchantSafeIntegrationError(data.reason, t), data.ok ? "success" : "warning");
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
       queryClient.invalidateQueries({ queryKey: ["kaspi-status", connector?.id] });
     },
@@ -73,7 +74,7 @@ export function KaspiInlineSetup({
   const syncOrders = useMutation({
     mutationFn: () => businessConnectorsApi.kaspiSyncOrders(Number(connector?.id)),
     onSuccess: (data) => {
-      setNotice(data.ok ? (data.mock ? t("integrations.mock.syncLoaded", { count: data.events.length }) : t("integrations.kaspi.ordersLoaded", { count: data.events.length })) : data.reason || t("integrations.kaspi.ordersLoadFailed"));
+      setNotice(data.ok ? (data.mock ? t("integrations.mock.syncLoaded", { count: data.events.length }) : t("integrations.kaspi.ordersLoaded", { count: data.events.length })) : merchantSafeIntegrationError(data.reason, t), data.ok ? "success" : "warning");
       queryClient.invalidateQueries({ queryKey: ["business-events"] });
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
       queryClient.invalidateQueries({ queryKey: ["connector-sync-runs"] });
@@ -103,11 +104,7 @@ export function KaspiInlineSetup({
           <p className="mt-1 text-sm font-black text-midnight">{status.data?.last_sync_at ? t("integrations.kaspi.ordersLoadedBefore") : t("integrations.setupMetric.notYet")}</p>
         </div>
       </div>
-      {runsInMockMode ? (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold leading-5 text-amber-800">
-          {t("integrations.mock.providerDisabledNotice")}
-        </div>
-      ) : null}
+      {runsInMockMode ? <StatusNotice compact tone="warning" title={t("integrations.mock.providerDisabledNotice")} /> : null}
 
       {!showAccessSetup ? (
         <div className="rounded-card border border-blue-100 bg-blue-50 p-4">

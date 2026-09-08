@@ -146,7 +146,7 @@ export function ConversationThreadPane({
                   <Button
                     data-conversation-action-id="toggle-bot"
                     className="h-9 rounded-control px-3 text-xs"
-                    variant="secondary"
+                    variant={selected.bot_enabled ? "warning" : "secondary"}
                     disabled={!selected}
                     onClick={onToggleBot}
                     isLoading={toggleBotPending}

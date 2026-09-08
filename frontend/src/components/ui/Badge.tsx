@@ -1,6 +1,6 @@
 import { cn } from "../../lib/cn";
 
-export type BadgeVariant = "neutral" | "primary" | "success" | "warning" | "danger" | "info" | "ai";
+export type BadgeVariant = "neutral" | "primary" | "success" | "warning" | "danger" | "info" | "discovery" | "ai";
 export type BadgeSize = "sm" | "md" | "lg";
 
 export const badgeVariants: Record<BadgeVariant, string> = {
@@ -10,6 +10,7 @@ export const badgeVariants: Record<BadgeVariant, string> = {
   warning: "bg-[var(--zani-warning-soft)] text-zani-warning ring-[rgba(151,90,22,0.24)]",
   danger: "bg-[var(--zani-danger-soft)] text-zani-danger ring-[rgba(194,65,12,0.2)]",
   info: "bg-[var(--zani-info-soft)] text-zani-info ring-[rgba(14,116,144,0.2)]",
+  discovery: "bg-discovery-50 text-discovery-700 ring-discovery-100",
   ai: "bg-ai-50 text-ai-700 ring-ai-100",
 };
 

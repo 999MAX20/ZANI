@@ -100,7 +100,7 @@ function toneDot(tone: AttentionItem["tone"]) {
   if (tone === "red") return "bg-zani-danger";
   if (tone === "amber") return "bg-zani-warning";
   if (tone === "ai") return "bg-ai-600";
-  return "bg-brand-600";
+  return "bg-[var(--zani-brand-content)]";
 }
 
 function DashboardMetric({

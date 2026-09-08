@@ -55,7 +55,7 @@ export const DealListItem = memo(function DealListItem({
                 <span
                   className="h-1.5 w-1.5 shrink-0 rounded-full"
                   style={{
-                    backgroundColor: deal.stageEntity?.color || "#FF7A1A",
+                    backgroundColor: deal.stageEntity?.color || "#F5B37A",
                   }}
                 />
                 <h3 className="min-w-0 truncate text-[13px] font-bold leading-5 text-zani-text">

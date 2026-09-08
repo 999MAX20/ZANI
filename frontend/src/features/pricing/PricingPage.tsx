@@ -572,7 +572,7 @@ export function PricingPage() {
                       </p>
                     </div>
                     {rule.mode === "autopilot" ? (
-                      <Button variant="secondary" disabled={!canManage} isLoading={disableAutopilot.isPending} onClick={() => disableAutopilot.mutate(rule)}>
+                        <Button variant="warning" disabled={!canManage} isLoading={disableAutopilot.isPending} onClick={() => disableAutopilot.mutate(rule)}>
                         <PauseCircle size={16} /> {t("pricing.stop")}
                       </Button>
                     ) : (
@@ -631,7 +631,7 @@ export function PricingPage() {
               </div>
               <div className="text-sm font-black text-midnight">
                 {formatMoney(log.old_price)} → {formatMoney(log.new_price)}
-                {log.error ? <p className="mt-1 text-xs font-semibold text-red-600">{log.error}</p> : null}
+                {log.error ? <p className="mt-1 text-xs font-semibold text-red-600">{t("pricing.changeFailed")}</p> : null}
               </div>
               <div className="flex flex-wrap items-center gap-2 md:justify-end">
                 <span className={`rounded-full px-3 py-1 text-xs font-black ${changeStatusClass(log.status)}`}>{t(`pricing.changeStatus.${log.status}`)}</span>

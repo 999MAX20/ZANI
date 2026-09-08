@@ -191,7 +191,7 @@ function TaskTableSection({
         </div>
         <div className="flex items-center rounded-control bg-surface-muted p-1">
           <span className="inline-flex h-8 items-center gap-2 rounded-control bg-zani-card px-3 text-sm font-bold text-brand-700 shadow-sm">
-            <span className="rounded-control bg-brand-800 px-1.5 py-0.5 text-xs text-white">{totalCount ?? tasks.length}</span>
+            <span className="rounded-control bg-brand-50 px-1.5 py-0.5 text-xs text-brand-700 ring-1 ring-brand-100">{totalCount ?? tasks.length}</span>
             {t("tasks.all")}
           </span>
           <span className="inline-flex h-8 items-center gap-2 rounded-control px-3 text-sm font-bold text-zani-muted">
@@ -405,7 +405,7 @@ function TaskTableRow({
     >
       <td className="px-3 py-2 align-middle">
         <div className="flex min-w-0 items-center gap-3">
-          <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-control ${task.status === "in_progress" ? "bg-brand-600 text-white" : "bg-brand-50 text-brand-700"}`}>
+          <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-control ${task.status === "in_progress" ? "bg-[var(--zani-info)] text-white" : "bg-brand-50 text-brand-700"}`}>
             <StatusIcon size={15} fill="currentColor" />
           </div>
           <div className="min-w-0">

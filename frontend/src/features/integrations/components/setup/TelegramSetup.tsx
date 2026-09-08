@@ -29,9 +29,9 @@ export function TelegramInlineSetup({
   const queryClient = useQueryClient();
   const [botToken, setBotToken] = useState("");
 
-  function setNotice(message: string | null) {
+  function setNotice(message: string | null, tone: "success" | "info" | "warning" | "danger" = "success") {
     if (!message) return;
-    showNotification({ message, tone: "info" });
+    showNotification({ message, tone });
   }
 
   const status = useQuery({
@@ -78,7 +78,7 @@ export function TelegramInlineSetup({
   const testConnection = useMutation({
     mutationFn: () => telegramChannelApi.testConnection(Number(channel?.id)),
     onSuccess: (data) => {
-      setNotice(data.ok ? t("integrations.telegram.connectionChecked") : data.reason || t("integrations.telegram.connectionCheckFailed"));
+      setNotice(data.ok ? t("integrations.telegram.connectionChecked") : merchantSafeIntegrationError(data.reason, t), data.ok ? "success" : "warning");
       queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
       queryClient.invalidateQueries({ queryKey: ["telegram-status", channel?.id] });
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
@@ -91,7 +91,7 @@ export function TelegramInlineSetup({
       return telegramChannelApi.setWebhook({ channelId: Number(channel?.id), webhookUrl: current.webhook_url });
     },
     onSuccess: (data) => {
-      setNotice(data.ok ? t("integrations.telegram.inboundConnected") : data.reason || t("integrations.telegram.inboundConnectFailed"));
+      setNotice(data.ok ? t("integrations.telegram.inboundConnected") : merchantSafeIntegrationError(data.reason, t), data.ok ? "success" : "warning");
       queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
       queryClient.invalidateQueries({ queryKey: ["telegram-status", channel?.id] });
       queryClient.invalidateQueries({ queryKey: ["integration-event-logs"] });

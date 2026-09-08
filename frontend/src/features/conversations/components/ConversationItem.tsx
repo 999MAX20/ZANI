@@ -42,7 +42,7 @@ export function ConversationItem({
       }}
       className={cn(
         "group relative w-full border-b border-zani-border px-3 py-2.5 text-left transition hover:bg-surface-hover",
-        active ? "bg-brand-50/80 before:absolute before:bottom-0 before:left-0 before:top-0 before:w-1 before:bg-brand-600" : "bg-zani-card",
+        active ? "bg-brand-50/80 before:absolute before:bottom-0 before:left-0 before:top-0 before:w-1 before:bg-[var(--zani-brand-content)]" : "bg-zani-card",
       )}
     >
       <div className="flex items-center gap-2.5">
@@ -63,7 +63,7 @@ export function ConversationItem({
           {initials || <MessageSquare size={16} />}
           <span className={cn("absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full border-2 border-zani-card", conversation.channel === "telegram" ? "bg-sky-500" : conversation.channel === "whatsapp" ? "bg-emerald-500" : conversation.channel === "instagram" ? "bg-pink-500" : "bg-zani-muted")} />
           {unread > 0 ? (
-            <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-brand-600 px-1 text-[10px] font-bold text-white">
+            <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-brand-500 px-1 text-[10px] font-bold text-zani-ink">
               {unread}
             </span>
           ) : null}

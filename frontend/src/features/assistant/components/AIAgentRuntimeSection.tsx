@@ -1,8 +1,8 @@
-import { useMutation } from "@tanstack/react-query";
 import { Link } from "react-router";
-import { Bot, CheckCircle2, MessageSquareText, Radio, Sparkles } from "lucide-react";
+import { Bot, MessageSquareText, Radio, Sparkles } from "lucide-react";
 
 import type { BotSuggestedReplyResponse } from "../../../api/bots";
+import { Badge } from "../../../components/ui/Badge";
 import { Button } from "../../../components/ui/Button";
 import { Card, CardBody } from "../../../components/ui/Card";
 import { MetricCard } from "../../../components/ui/MetricCard";
@@ -21,8 +21,6 @@ export function TestAndLaunchSection({
   suggestedReply,
   isSuggesting,
   onSuggest,
-  updateBot,
-  canManage,
 }: {
   bot: BotType;
   channelsCount: number;
@@ -34,8 +32,6 @@ export function TestAndLaunchSection({
   suggestedReply: BotSuggestedReplyResponse | null;
   isSuggesting: boolean;
   onSuggest: () => void;
-  updateBot: ReturnType<typeof useMutation<BotType, Error, Partial<BotType>>>;
-  canManage: boolean;
 }) {
   const { t } = useI18n();
   return (
@@ -48,22 +44,16 @@ export function TestAndLaunchSection({
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_280px]">
         <OnboardingProgress steps={onboardingSteps} />
-        <Card>
+        <Card variant="outlined">
           <CardBody className="flex h-full flex-col justify-between gap-5">
             <div>
               <h3 className="text-xl font-black text-midnight">{t("aiAgents.launchControlTitle")}</h3>
               <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">{t("aiAgents.launchControlText")}</p>
               <FieldHint>{launchReady ? t("aiAgents.hint.launchReady") : t("aiAgents.hint.launchNotReady")}</FieldHint>
             </div>
-            <Button
-              type="button"
-              variant={bot.status === "active" ? "secondary" : "ai"}
-              disabled={!canManage || (bot.status !== "active" && !launchReady)}
-              isLoading={updateBot.isPending}
-              onClick={() => updateBot.mutate({ status: bot.status === "active" ? "paused" : "active" })}
-            >
-              <CheckCircle2 size={16} /> {bot.status === "active" ? t("aiAgents.pauseAgent") : t("aiAgents.activateAgent")}
-            </Button>
+            <Badge variant={launchReady ? "success" : "warning"}>
+              {launchReady ? t("aiAgents.hint.launchReady") : t("aiAgents.hint.launchNotReady")}
+            </Badge>
           </CardBody>
         </Card>
       </div>
@@ -94,15 +84,15 @@ function OverviewSection({
     <div className="space-y-5">
       <div className="grid gap-3 md:grid-cols-3">
         <MetricCard label={t("aiAgents.statusLabel")} value={statusLabel} icon={Bot} tone={bot.status === "active" ? "emerald" : "slate"} compact />
-        <MetricCard label={t("aiAgents.connectedChannels")} value={`${activeChannelsCount}/${channelsCount}`} icon={Radio} tone="brand" compact />
+        <MetricCard label={t("aiAgents.connectedChannels")} value={`${activeChannelsCount}/${channelsCount}`} icon={Radio} tone="emerald" compact />
         <MetricCard label={t("aiAgents.messagesMetric")} value={messagesCount} icon={MessageSquareText} tone="slate" compact />
       </div>
 
-      <Card>
+      <Card variant="outlined">
         <CardBody>
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">{t("aiAgents.nextSetup")}</p>
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-ai-700">{t("aiAgents.nextSetup")}</p>
               <h3 className="mt-2 text-2xl font-black text-midnight">{bot.name}</h3>
               <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-slate-500">{t("aiAgents.overviewText")}</p>
             </div>
@@ -137,7 +127,7 @@ function MessagesSection({
   const { t } = useI18n();
   return (
     <div className="grid gap-5 xl:grid-cols-2">
-      <Card>
+      <Card variant="outlined">
         <CardBody>
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
@@ -163,7 +153,7 @@ function MessagesSection({
         </CardBody>
       </Card>
 
-      <Card>
+      <Card variant="outlined">
         <CardBody>
           <h3 className="text-xl font-black text-midnight">{t("aiAgents.draftReply")}</h3>
           <div className="mt-4 min-h-40 rounded-card bg-ai-50 p-4 text-sm font-semibold leading-7 text-ai-900">

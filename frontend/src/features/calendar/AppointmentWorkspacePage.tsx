@@ -153,7 +153,7 @@ export function AppointmentWorkspacePage() {
       title: t("appointments.statusReasonTitle"),
       description: t("appointments.statusReasonPlaceholder"),
       confirmLabel: getAppointmentActionLabel(status, t),
-      variant: status === "cancelled" ? "danger" : "primary",
+      tone: "warning",
       reason: {
         label: t("appointments.statusReason"),
         placeholder: t("appointments.statusReasonPlaceholder"),
@@ -284,7 +284,7 @@ export function AppointmentWorkspacePage() {
                     type="button"
                     variant={
                       status === "cancelled" || status === "no_show"
-                        ? "danger"
+                        ? "warning"
                         : index === 0
                           ? "primary"
                           : "secondary"

@@ -131,7 +131,7 @@ export function useLeadActions({
       title: t("leads.archiveConfirmTitle"),
       description: t("leads.archiveConfirmText", { count: leadsToArchive.length }),
       confirmLabel: t("leads.archive"),
-      variant: "danger",
+      tone: "warning",
       reason: {
         label: t("leads.archiveReason"),
         placeholder: t("leads.archiveReasonPlaceholder"),
@@ -161,6 +161,7 @@ export function useLeadActions({
         title: t("clients.mergePreviewTitle"),
         description: t("clients.mergePreviewConfirm", { count: transferredCount }),
         confirmLabel: t("clients.mergeConfirm"),
+        tone: "danger",
       });
       if (!result.confirmed) return null;
       return clientsApi.merge({ id: targetId, duplicate_client_id: duplicateId });

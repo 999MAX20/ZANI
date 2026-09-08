@@ -9,6 +9,8 @@ class ResourceSerializer(serializers.ModelSerializer):
     linked_user = serializers.PrimaryKeyRelatedField(queryset=User.objects.filter(is_active=True), required=False, allow_null=True)
     linked_user_name = serializers.SerializerMethodField()
     linked_user_email = serializers.EmailField(source="linked_user.email", read_only=True, allow_null=True)
+    appointment_count = serializers.SerializerMethodField()
+    has_individual_schedule = serializers.SerializerMethodField()
 
     class Meta:
         model = Resource
@@ -21,6 +23,8 @@ class ResourceSerializer(serializers.ModelSerializer):
             "linked_user_name",
             "linked_user_email",
             "is_active",
+            "appointment_count",
+            "has_individual_schedule",
             "created_at",
             "updated_at",
         ]
@@ -30,6 +34,18 @@ class ResourceSerializer(serializers.ModelSerializer):
         if obj.linked_user is None:
             return ""
         return obj.linked_user.full_name or obj.linked_user.email
+
+    def get_appointment_count(self, obj):
+        annotated_count = getattr(obj, "appointment_count", None)
+        if annotated_count is not None:
+            return annotated_count
+        return obj.appointments.filter(is_archived=False).count()
+
+    def get_has_individual_schedule(self, obj):
+        annotated_value = getattr(obj, "has_individual_schedule", None)
+        if annotated_value is not None:
+            return annotated_value
+        return obj.working_hours.exists()
 
     def validate(self, attrs):
         business = attrs.get("business") or getattr(self.instance, "business", None)
@@ -164,6 +180,14 @@ class AppointmentSerializer(serializers.ModelSerializer):
         related = [client, lead, service, resource]
         if any(obj and obj.business_id != business.id for obj in related):
             raise serializers.ValidationError("All related objects must belong to the selected business.")
+        if (
+            service
+            and (self.instance is None or "service" in attrs)
+            and (not service.is_active or service.is_archived)
+        ):
+            raise serializers.ValidationError(
+                {"service": "Select an active service that is not archived."}
+            )
         if start_at and end_at and start_at >= end_at:
             raise serializers.ValidationError("start_at must be before end_at.")
         if start_at and service and business:

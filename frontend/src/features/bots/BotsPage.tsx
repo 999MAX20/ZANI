@@ -64,7 +64,7 @@ export function BotsPage() {
       <PageHeader
         title={t("bots.title")}
         description={t("bots.description")}
-        actions={<Button variant="ai" onClick={() => setOpen(true)}><Plus size={18} />{t("bots.create")}</Button>}
+        actions={<Button variant="primary" onClick={() => setOpen(true)}><Plus size={18} />{t("bots.create")}</Button>}
       />
 
       {!botList.length ? (

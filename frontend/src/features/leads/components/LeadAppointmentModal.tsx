@@ -26,6 +26,9 @@ export function LeadAppointmentModal({
   onClose: () => void;
   onSubmit: (payload: AppointmentCreatePayload) => Promise<unknown>;
 }) {
+  const selectedLeadService = services.find(
+    (service) => service.id === selectedLead?.service && service.is_active && !service.is_archived,
+  );
   return (
     <Modal title={title} open={open} onClose={onClose}>
       <AppointmentForm
@@ -36,7 +39,7 @@ export function LeadAppointmentModal({
         leads={leads}
         prefill={{
           client: selectedLead?.client,
-          service: selectedLead?.service,
+          service: selectedLeadService?.id,
           lead: selectedLead?.id,
           source: "manual",
         }}
@@ -44,7 +47,7 @@ export function LeadAppointmentModal({
           ...payload,
           lead: selectedLead?.id || payload.lead,
           client: selectedLead?.client || payload.client,
-          service: selectedLead?.service || payload.service,
+          service: payload.service,
         })}
       />
     </Modal>

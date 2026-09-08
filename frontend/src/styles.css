@@ -9,11 +9,16 @@
   --zani-surface-warm: #fffcf8;
   --zani-surface-muted: #f2ede6;
   --zani-surface-raised: rgba(255, 252, 248, 0.96);
-  --zani-brand: #ff7a1a;
-  --zani-brand-hover: #f06400;
-  --zani-brand-strong: #c84d00;
-  --zani-brand-soft: #fff1e6;
-  --zani-focus-ring: rgba(255, 122, 26, 0.24);
+  --zani-brand: #f5b37a;
+  --zani-brand-hover: #ee995a;
+  --zani-brand-strong: #df813f;
+  --zani-brand-content: #a4470d;
+  --zani-brand-soft: #fff3ea;
+  --zani-focus-ring: rgba(164, 71, 13, 0.42);
+  --zani-text-inverse: #ffffff;
+  --zani-discovery: #4f46e5;
+  --zani-discovery-soft: #eef2ff;
+  --zani-discovery-border: #c7d2fe;
   --zani-ai: #6f4cc3;
   --zani-ai-hover: #5e3cae;
   --zani-ai-soft: #f4f0ff;
@@ -23,8 +28,13 @@
   --zani-success-soft: #ecfdf3;
   --zani-warning: #975a16;
   --zani-warning-soft: #fff7e6;
+  --zani-warning-bold: #f4c04f;
+  --zani-warning-bold-hover: #e9ac2d;
+  --zani-warning-bold-pressed: #d99616;
   --zani-danger: #c2410c;
   --zani-danger-soft: #fff1ed;
+  --zani-danger-hover: #9a3412;
+  --zani-danger-pressed: #7c2d12;
   --zani-info: #0e7490;
   --zani-info-soft: #eaf9fc;
   --zani-neutral: #6b625a;
@@ -87,7 +97,7 @@ select {
 }
 
 ::selection {
-  background: rgba(255, 122, 26, 0.18);
+  background: rgba(245, 179, 122, 0.36);
 }
 
 @layer components {
@@ -171,7 +181,7 @@ select {
   }
 
   .zani-focus-ring:focus-visible {
-    border-color: var(--zani-brand);
+    border-color: var(--zani-brand-content);
     box-shadow: 0 0 0 4px var(--zani-focus-ring);
   }
 
@@ -273,7 +283,7 @@ select {
 }
 
 .focus-visible-ring:focus-visible {
-  outline: 2px solid var(--zani-brand);
+  outline: 2px solid var(--zani-focus-ring);
   outline-offset: 2px;
 }
 

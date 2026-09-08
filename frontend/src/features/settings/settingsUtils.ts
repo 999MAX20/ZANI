@@ -120,7 +120,7 @@ export function riskClass(risk: string) {
   const classes: Record<string, string> = {
     low: "rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600",
     medium: "rounded-full bg-amber-50 px-2.5 py-1 text-xs font-black text-amber-700",
-    high: "rounded-full bg-orange-50 px-2.5 py-1 text-xs font-black text-orange-700",
+    high: "rounded-full bg-amber-50 px-2.5 py-1 text-xs font-black text-amber-700",
     critical: "rounded-full bg-red-50 px-2.5 py-1 text-xs font-black text-red-700",
   };
   return classes[risk] || classes.low;

@@ -101,7 +101,7 @@ export function BotDetailPage() {
           <>
             <Link to="/app/bots"><Button variant="secondary"><ArrowLeft size={16} />{t("common.back")}</Button></Link>
             <Button
-              variant="ai"
+              variant="primary"
               onClick={() => addWebsiteChannel.mutate()}
               isLoading={addWebsiteChannel.isPending}
               disabled={Boolean(websiteChannel)}
@@ -257,7 +257,7 @@ export function BotDetailPage() {
                   <Input label={t("common.email")} value={preview.email} onChange={(event) => setPreview({ ...preview, email: event.target.value })} />
                 </div>
                 <Textarea label={t("botDetail.message")} value={preview.message} onChange={(event) => setPreview({ ...preview, message: event.target.value })} required />
-                <Button type="submit" variant="ai" isLoading={previewMutation.isPending}><Send size={16} />{t("botDetail.createTestConversation")}</Button>
+                <Button type="submit" variant="primary" isLoading={previewMutation.isPending}><Send size={16} />{t("botDetail.createTestConversation")}</Button>
               </form>
               {previewConversationId ? (
                 <div className="rounded-3xl border border-slate-100 bg-white/80 p-4">

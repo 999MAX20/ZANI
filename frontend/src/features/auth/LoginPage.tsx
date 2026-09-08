@@ -3,16 +3,24 @@ import {
   ArrowRight,
   Zap,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useLocation, useNavigate } from "react-router";
 import { z } from "zod";
 
-import { getApiErrorMessage } from "../../api/client";
+import {
+  clearSessionExpiredNotice,
+  consumeSessionExpiredReturnTo,
+  getApiErrorMessage,
+  getLoginErrorMessage,
+  hasSessionExpiredNotice,
+  isSafeInternalReturnPath,
+} from "../../api/client";
 import { isMfaPendingResponse, type SocialProvider } from "../../api/auth";
 import { LanguageSelector } from "../../components/layout/LanguageSelector";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
+import { StatusNotice } from "../../components/ui/StatusNotice";
 import { useI18n } from "../../lib/i18n";
 import { useAuth } from "./AuthProvider";
 import { PasswordVisibilityToggle } from "./PasswordVisibilityToggle";
@@ -75,22 +83,33 @@ export function LoginPage() {
     defaultValues: { email: "", password: "" },
   });
   const hasSocialLogin = isGoogleConfigured || isAppleConfigured;
+  const [sessionExpiredNotice, setSessionExpiredNotice] = useState(() => hasSessionExpiredNotice());
+
+  useEffect(() => {
+    if (sessionExpiredNotice) clearSessionExpiredNotice();
+  }, [sessionExpiredNotice]);
 
   function getPostLoginPath(user: CurrentUser) {
     const fallback = user.is_platform_user ? "/platform" : "/app";
     const from = (location.state as LoginLocationState | null)?.from;
     const pathname = from?.pathname;
+    const storedReturnTo = consumeSessionExpiredReturnTo();
+    const intendedPath = pathname
+      ? `${pathname}${from?.search ?? ""}${from?.hash ?? ""}`
+      : storedReturnTo;
 
-    if (!pathname) return fallback;
-    if (pathname.startsWith("/invite/")) return `${pathname}${from?.search ?? ""}${from?.hash ?? ""}`;
-    if (user.is_platform_user && !pathname.startsWith("/platform")) return fallback;
-    if (!user.is_platform_user && !pathname.startsWith("/app")) return fallback;
+    if (!intendedPath) return fallback;
+    if (intendedPath.startsWith("/invite/")) return intendedPath;
+    if (!isSafeInternalReturnPath(intendedPath)) return fallback;
+    if (user.is_platform_user && !intendedPath.startsWith("/platform")) return fallback;
+    if (!user.is_platform_user && !intendedPath.startsWith("/app")) return fallback;
 
-    return `${pathname}${from?.search ?? ""}${from?.hash ?? ""}`;
+    return intendedPath;
   }
 
   async function onSubmit(values: FormValues) {
     setError(null);
+    setSessionExpiredNotice(false);
     try {
       const user = await login(values.email, values.password);
       if (isMfaPendingResponse(user)) {
@@ -100,12 +119,13 @@ export function LoginPage() {
       }
       navigate(getPostLoginPath(user), { replace: true });
     } catch (err) {
-      setError(getApiErrorMessage(err));
+      setError(getLoginErrorMessage(err));
     }
   }
 
   async function completeSocialLogin(provider: SocialProvider, idToken?: string) {
     setError(null);
+    setSessionExpiredNotice(false);
     setSocialLoading(provider);
     try {
       if (!idToken) {
@@ -186,8 +206,10 @@ export function LoginPage() {
   }
 
   return (
-    <main className="serenity-login">
+    <main className="serenity-login serenity-login--signal-field">
       <div className="serenity-login__ambient" aria-hidden="true">
+        <span />
+        <span />
         <span />
         <span />
         <span />
@@ -219,10 +241,27 @@ export function LoginPage() {
             <h2>{t("auth.signIn")}</h2>
             <p className="serenity-login__card-copy">{t("auth.signInCopy")}</p>
 
+            {sessionExpiredNotice && !error ? (
+              <StatusNotice
+                compact
+                className="mb-3"
+                data-testid="session-expired-notice"
+                tone="warning"
+                role="status"
+                ariaLive="polite"
+                title={t("fallback.session.title")}
+                description={t("actions.errorUnauthenticated")}
+              />
+            ) : null}
+
             {error ? (
-              <div className="serenity-login__error" role="alert" aria-live="polite">
-                {error}
-              </div>
+              <StatusNotice
+                compact
+                className="mb-3"
+                tone="danger"
+                title={t("fallback.inline.title")}
+                description={error}
+              />
             ) : null}
 
             {hasSocialLogin ? (

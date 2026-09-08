@@ -9,6 +9,7 @@ import { confirmPasswordReset } from "../../api/auth";
 import { getApiErrorMessage } from "../../api/client";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
+import { ErrorState } from "../../components/ui/StateViews";
 import { useI18n } from "../../lib/i18n";
 
 type FormValues = {
@@ -59,13 +60,13 @@ export function ResetPasswordPage() {
           </p>
         </div>
 
-        {error ? <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+        {error ? <div className="mb-5"><ErrorState message={error} /></div> : null}
 
         {!done ? (
           <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
             <Input label={t("invite.newPassword")} type="password" error={errors.password?.message} {...register("password")} />
             <Input label={t("passwordReset.repeatPassword")} type="password" error={errors.password_confirm?.message} {...register("password_confirm")} />
-            <Button variant="ai" className="w-full" type="submit" isLoading={isSubmitting}>
+            <Button variant="primary" className="w-full" type="submit" isLoading={isSubmitting}>
               {t("passwordReset.savePassword")}
             </Button>
           </form>

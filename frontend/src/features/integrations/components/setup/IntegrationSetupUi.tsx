@@ -26,7 +26,7 @@ export function LogoMark({ logo, label, compact = false }: { logo?: string; labe
     );
   }
   return (
-    <div className={cn("grid shrink-0 place-items-center bg-brand-600 font-bold text-white", compact ? "text-xs" : "text-sm", containerClassName)}>
+    <div className={cn("grid shrink-0 place-items-center bg-brand-500 font-bold text-zani-ink", compact ? "text-xs" : "text-sm", containerClassName)}>
       {label.slice(0, 2).toUpperCase()}
     </div>
   );

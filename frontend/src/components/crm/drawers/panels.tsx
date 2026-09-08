@@ -17,6 +17,7 @@ import { Input } from "../../ui/Input";
 import { Dialog, PopoverSurface } from "../../ui/Overlay";
 import { Select } from "../../ui/Select";
 import { StatusBadge } from "../../ui/StatusBadge";
+import { ErrorState } from "../../ui/StateViews";
 import { Textarea } from "../../ui/Textarea";
 import { AttachmentFilePicker } from "./AttachmentFilePicker";
 import { drawerSurfaceClass, EmptyBlock, getChannelLabel } from "./shared";
@@ -228,7 +229,11 @@ export function EntityAttachmentsPanel({ data, entity }: { data: CrmCardPayload;
           ))}
         </div>
       ) : null}
-      {uploadMutation.error || attachmentActionError ? <p className="mb-4 rounded-control bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{uploadMutation.error ? getApiErrorMessage(uploadMutation.error) : attachmentActionError}</p> : null}
+      {uploadMutation.error || attachmentActionError ? (
+        <div className="mb-4">
+          <ErrorState message={uploadMutation.error ? getApiErrorMessage(uploadMutation.error) : attachmentActionError} />
+        </div>
+      ) : null}
       {data.attachments.length ? (
         <div className="space-y-2">
           {data.attachments.map((attachment) => (
@@ -387,7 +392,7 @@ export function EntityAttachmentsPanel({ data, entity }: { data: CrmCardPayload;
           }}
         >
           <Input label={t("crmCard.fileName")} value={renameValue} onChange={(event) => setRenameValue(event.target.value)} required />
-          {renameMutation.error ? <p className="rounded-control bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{getApiErrorMessage(renameMutation.error)}</p> : null}
+          {renameMutation.error ? <ErrorState message={getApiErrorMessage(renameMutation.error)} /> : null}
           <div className="flex justify-end gap-2">
             <Button
               type="button"
@@ -472,7 +477,7 @@ export function EntityTasksPanel({ data }: { data: CrmCardPayload }) {
             {t("crmCard.createTask")}
           </Button>
         </div>
-        {mutation.error ? <p className="mt-2 text-sm font-semibold text-red-600">{t("crmCard.taskError")}</p> : null}
+        {mutation.error ? <div className="mt-2"><ErrorState message={t("crmCard.taskError")} /></div> : null}
       </div>
       {data.tasks.map((task) => (
         <div key={task.id} className={drawerSurfaceClass}>
@@ -579,7 +584,7 @@ export function EntityNotesPanel({ data, entity }: { data: CrmCardPayload; entit
             {t("crmCard.addComment")}
           </Button>
         </div>
-        {mutation.error ? <p className="mt-2 text-sm font-semibold text-red-600">{t("crmCard.commentError")}</p> : null}
+        {mutation.error ? <div className="mt-2"><ErrorState message={t("crmCard.commentError")} /></div> : null}
       </div>
       {data.notes.map((note) => (
         <div key={note.id} className={drawerSurfaceClass}>

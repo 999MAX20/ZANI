@@ -80,6 +80,13 @@ export type PaginatedInboxMessageResponse = PaginatedResponse<InboxMessage> & {
   has_more?: boolean;
 };
 
+function idempotencyConfig(idempotencyKey?: string) {
+  const normalizedKey = idempotencyKey?.trim();
+  return normalizedKey
+    ? { headers: { "Idempotency-Key": normalizedKey } }
+    : undefined;
+}
+
 export type InboxPipelineResult = {
   conversation: InboxConversation;
   client: Client;
@@ -175,17 +182,23 @@ export const inboxApi = {
     const { data } = await apiClient.post<InboxConversation>(`/api/inbox/conversations/${conversationId}/reopen/`);
     return data;
   },
-  sendMessage: async ({ conversationId, text }: { conversationId: Id; text: string }) => {
-    const { data } = await apiClient.post<InboxMessage>(`/api/inbox/conversations/${conversationId}/messages/`, {
-      text,
-      sender_type: "manager",
-    });
+  sendMessage: async ({ conversationId, text, idempotencyKey }: { conversationId: Id; text: string; idempotencyKey?: string }) => {
+    const { data } = await apiClient.post<InboxMessage>(
+      `/api/inbox/conversations/${conversationId}/messages/`,
+      {
+        text,
+        sender_type: "manager",
+      },
+      idempotencyConfig(idempotencyKey),
+    );
     return data;
   },
-  retryMessage: async ({ conversationId, messageId }: { conversationId: Id; messageId: Id }) => {
-    const { data } = await apiClient.post<InboxMessage>(`/api/inbox/conversations/${conversationId}/retry-message/`, {
-      message_id: messageId,
-    });
+  retryMessage: async ({ conversationId, messageId, idempotencyKey }: { conversationId: Id; messageId: Id; idempotencyKey?: string }) => {
+    const { data } = await apiClient.post<InboxMessage>(
+      `/api/inbox/conversations/${conversationId}/retry-message/`,
+      { message_id: messageId },
+      idempotencyConfig(idempotencyKey),
+    );
     return data;
   },
   suggestReply: async (conversationId: Id) => {

@@ -63,7 +63,7 @@ export function useClientWorkspaceActions(clientId: Id | null) {
         (await tagsApi.create({
           business: business.id,
           name: tagName,
-          color: "#FF7A1A",
+          color: "#F5B37A",
           source: "manual",
         }));
       return taggedObjectsApi.create({
@@ -110,7 +110,7 @@ export function useClientWorkspaceActions(clientId: Id | null) {
         name: client.full_name || t("common.client"),
       }),
       confirmLabel: t("clients.archiveAction"),
-      variant: "danger",
+      tone: "warning",
       reason: {
         label: t("clients.archiveReason"),
         placeholder: t("clients.archiveReasonPlaceholder"),

@@ -14,6 +14,8 @@ import { useActionFeedback } from "../actions/useActionFeedback";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { Select } from "../ui/Select";
+import { ErrorState } from "../ui/StateViews";
+import { StatusNotice } from "../ui/StatusNotice";
 import { Textarea } from "../ui/Textarea";
 
 function createSchema(t: (key: string) => string) {
@@ -43,13 +45,16 @@ function SetupNotice({
   action: string;
 }) {
   return (
-    <div className="rounded-card border border-[rgba(151,90,22,0.24)] bg-[var(--zani-warning-soft)] p-4 text-sm text-zani-warning">
-      <p className="font-semibold">{title}</p>
-      <p className="mt-1 leading-6">{description}</p>
-      <Link className="mt-3 inline-flex font-semibold text-zani-warning underline-offset-4 hover:underline" to={to}>
-        {action}
-      </Link>
-    </div>
+    <StatusNotice
+      tone="warning"
+      title={title}
+      description={description}
+      action={(
+        <Link className="zani-focus-ring inline-flex rounded-control px-2 py-1 font-semibold text-zani-warning underline-offset-4 hover:underline" to={to}>
+          {action}
+        </Link>
+      )}
+    />
   );
 }
 
@@ -102,11 +107,14 @@ export function AppointmentForm({
 }) {
   const { t, language } = useI18n();
   const { getRecoverableMessage } = useActionFeedback();
+  const selectableServices = services.filter(
+    (service) => (service.is_active && !service.is_archived) || service.id === initial?.service,
+  );
   const form = useForm<Values>({
     resolver: zodResolver(createSchema(t)),
     defaultValues: {
       client: initial?.client || prefill?.client || clients[0]?.id || 0,
-      service: initial?.service || prefill?.service || services[0]?.id || 0,
+      service: initial?.service || prefill?.service || selectableServices[0]?.id || 0,
       resource: initial?.resource || prefill?.resource || undefined,
       lead: initial?.lead || prefill?.lead || undefined,
       date: initial?.start_at ? dateInTimeZone(initial.start_at, timeZone) : prefill?.date || todayInTimeZone(timeZone),
@@ -122,9 +130,9 @@ export function AppointmentForm({
   const skipSlotResetRef = useRef(true);
   const queryClient = useQueryClient();
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const selectedService = services.find((service) => service.id === Number(serviceId));
+  const selectedService = selectableServices.find((service) => service.id === Number(serviceId));
   const hasClients = clients.length > 0;
-  const hasServices = services.length > 0;
+  const hasServices = selectableServices.length > 0;
   const activeResources = resources.filter((resource) => resource.is_active);
   const hasResources = activeResources.length > 0;
   const locale = language === "en" ? "en-US" : language === "kk" ? "kk-KZ" : "ru-RU";
@@ -221,7 +229,7 @@ export function AppointmentForm({
         <SetupNotice
           title={t("appointment.needServiceTitle")}
           description={t("appointment.needServiceText")}
-          to="/app/services"
+          to="/app/business/services"
           action={t("appointment.goServices")}
         />
       ) : null}
@@ -229,7 +237,7 @@ export function AppointmentForm({
         <div className="rounded-card border border-zani-border bg-surface-muted p-4 text-sm text-zani-subtle">
           <p className="font-semibold text-zani-ink">{t("appointment.resourceHintTitle")}</p>
           <p className="mt-1 leading-6">{t("appointment.resourceHintText")}</p>
-          <Link className="mt-3 inline-flex font-bold text-brand-700 underline-offset-4 hover:underline" to="/app/resources">
+          <Link className="mt-3 inline-flex font-bold text-brand-700 underline-offset-4 hover:underline" to="/app/business/resources">
             {t("appointment.goResources")}
           </Link>
         </div>
@@ -242,7 +250,7 @@ export function AppointmentForm({
       ) : null}
       <div className="grid gap-4 sm:grid-cols-2">
         <Select label={t("appointment.client")} error={form.formState.errors.client?.message} options={[{ value: 0, label: t("appointment.selectClient") }, ...clients.map((client) => ({ value: client.id, label: client.full_name }))]} {...form.register("client")} />
-        <Select label={t("appointment.service")} error={form.formState.errors.service?.message} options={[{ value: 0, label: t("appointment.selectService") }, ...services.map((service) => ({ value: service.id, label: `${service.name} · ${service.duration_minutes} ${t("appointment.minutes")}` }))]} {...form.register("service")} />
+        <Select label={t("appointment.service")} error={form.formState.errors.service?.message} options={[{ value: 0, label: t("appointment.selectService") }, ...selectableServices.map((service) => ({ value: service.id, label: `${service.name} · ${service.duration_minutes} ${t("appointment.minutes")}` }))]} {...form.register("service")} />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <Select
@@ -283,35 +291,34 @@ export function AppointmentForm({
         )}
       </div>
       {slots.error ? (
-        <div className="rounded-card border border-[rgba(194,65,12,0.2)] bg-[var(--zani-danger-soft)] p-4 text-sm font-semibold text-zani-danger">
-          {getRecoverableMessage(slots.error)}
-        </div>
+        <ErrorState message={getRecoverableMessage(slots.error)} />
       ) : null}
       {noSlots ? (
-        <div className="rounded-card border border-[rgba(151,90,22,0.24)] bg-[var(--zani-warning-soft)] p-4 text-sm text-zani-warning">
-          <p className="font-semibold">{t("appointment.noSlotsForDate").replace("{date}", selectedDateLabel)}</p>
-          <p className="mt-1 leading-6">
-            {t(noSlotsReasonKey)}
-          </p>
-          {selectedHours && !selectedHours.is_day_off ? (
-            <p className="mt-2 text-xs font-semibold uppercase tracking-[0.14em]">
-              {t("appointment.workingWindow").replace("{start}", selectedHours.start_time.slice(0, 5)).replace("{end}", selectedHours.end_time.slice(0, 5))}
-            </p>
-          ) : null}
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Button type="button" variant="secondary" isLoading={quickHoursMutation.isPending} onClick={() => quickHoursMutation.mutate()}>
-              {t("appointment.applyQuickHours")}
-            </Button>
-            <Link className="inline-flex min-h-10 items-center rounded-control px-4 py-2 font-semibold text-zani-warning underline-offset-4 hover:underline" to="/app/working-hours">
-              {t("appointment.openHours")}
-            </Link>
-          </div>
-        </div>
+        <StatusNotice
+          tone="warning"
+          title={t("appointment.noSlotsForDate").replace("{date}", selectedDateLabel)}
+          description={t(noSlotsReasonKey)}
+          details={(
+            <>
+              {selectedHours && !selectedHours.is_day_off ? (
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zani-warning">
+                  {t("appointment.workingWindow").replace("{start}", selectedHours.start_time.slice(0, 5)).replace("{end}", selectedHours.end_time.slice(0, 5))}
+                </p>
+              ) : null}
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button type="button" variant="secondary" isLoading={quickHoursMutation.isPending} onClick={() => quickHoursMutation.mutate()}>
+                  {t("appointment.applyQuickHours")}
+                </Button>
+                <Link className="zani-focus-ring inline-flex min-h-10 items-center rounded-control px-4 py-2 font-semibold text-zani-warning underline-offset-4 hover:underline" to="/app/business/working-hours">
+                  {t("appointment.openHours")}
+                </Link>
+              </div>
+            </>
+          )}
+        />
       ) : null}
       {submitError ? (
-        <div className="rounded-card border border-[rgba(194,65,12,0.2)] bg-[var(--zani-danger-soft)] p-4 text-sm font-semibold text-zani-danger">
-          {submitError}
-        </div>
+        <ErrorState message={submitError} />
       ) : null}
       <Select label={t("appointment.source")} options={[
         { value: "manual", label: t("appointment.sourceManual") },

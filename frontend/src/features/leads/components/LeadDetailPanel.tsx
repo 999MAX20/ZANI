@@ -269,7 +269,7 @@ export function LeadDetailPanel({
                   <CheckCheck size={16} /> {t("leads.success")}
                 </Button>
                 <Button
-                  variant="secondary"
+                  variant="warning"
                   className="rounded-lg px-2 text-xs"
                   onClick={() => {
                     setLostLead(selected);
@@ -293,7 +293,7 @@ export function LeadDetailPanel({
             <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">{t("leads.history")}</p>
             <div className="mt-3 space-y-3">
               <div className="flex gap-3">
-                <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-brand-500" />
+                <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[var(--zani-brand-content)]" />
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-midnight">{t("leads.leadCreated")}</p>
                   <p className="mt-1 text-xs text-slate-500">{formatDateTime(selected.created_at)}</p>
@@ -455,7 +455,7 @@ export function LeadDetailPanel({
           <Button className="justify-center rounded-lg" variant="secondary" onClick={() => setDrawerEntity({ type: "lead", id: selected.id })}>
             {t("leads.fullCard")}
           </Button>
-          <Button className="justify-center rounded-lg bg-brand-600" onClick={() => priorityLead && openLead(priorityLead)} disabled={!priorityLead}>
+          <Button className="justify-center rounded-lg" onClick={() => priorityLead && openLead(priorityLead)} disabled={!priorityLead}>
             {t("leads.callNow")}
           </Button>
         </div>

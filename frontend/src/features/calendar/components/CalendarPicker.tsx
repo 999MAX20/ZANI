@@ -82,7 +82,7 @@ export function CalendarPicker({
                   className={cn(
                     "h-11 rounded-control text-sm font-bold transition disabled:pointer-events-none disabled:opacity-0",
                     isSelected
-                      ? "bg-brand-600 text-white shadow-card"
+                      ? "bg-brand-50 text-brand-700 shadow-card ring-1 ring-brand-100"
                       : isToday
                         ? "bg-brand-50 text-brand-700"
                         : "text-zani-text hover:bg-surface-hover",

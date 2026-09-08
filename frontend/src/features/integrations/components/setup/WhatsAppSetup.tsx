@@ -120,7 +120,7 @@ export function WhatsAppInlineSetup({
   const testConnection = useMutation({
     mutationFn: () => whatsappChannelApi.testConnection(Number(channel?.id)),
     onSuccess: (data) => {
-      setNotice(data.ok ? t("integrations.whatsapp.connectionChecked") : data.reason || t("integrations.whatsapp.connectionCheckFailed"));
+      setNotice(data.ok ? t("integrations.whatsapp.connectionChecked") : merchantSafeIntegrationError(data.reason, t), data.ok ? "success" : "warning");
       queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
       queryClient.invalidateQueries({ queryKey: ["whatsapp-status", channel?.id] });
       queryClient.invalidateQueries({ queryKey: ["business-connectors"] });

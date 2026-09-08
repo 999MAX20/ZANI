@@ -312,7 +312,11 @@ test("F-101 representative actions keep safe feedback, recovery and success", as
     await route.fulfill({
       status: 503,
       contentType: "application/json",
-      body: JSON.stringify({ detail: rawTaskDetail }),
+      body: JSON.stringify({
+        code: "temporary_service_failure",
+        detail: rawTaskDetail,
+        retryable: true,
+      }),
     });
   });
   await dueTodayAction.click();

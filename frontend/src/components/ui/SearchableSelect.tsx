@@ -104,7 +104,7 @@ export function SearchableSelect({
         <span id={valueId} className={cn("min-w-0 truncate", !selectedOption && "text-zani-faint")}>
           {selectedOption?.label || displayPlaceholder}
         </span>
-        <ChevronDown aria-hidden="true" size={17} className={cn("shrink-0 text-zani-faint transition", open && "rotate-180 text-brand-600")} />
+        <ChevronDown aria-hidden="true" size={17} className={cn("shrink-0 text-zani-faint transition", open && "rotate-180 text-brand-700")} />
       </button>
       {value ? (
         <button
@@ -155,7 +155,7 @@ export function SearchableSelect({
               aria-selected={!value}
               className={cn(
                 "zani-focus-ring flex w-full items-center justify-between gap-3 rounded-control px-3 py-2.5 text-left text-sm font-semibold transition",
-                !value ? "bg-brand-50 text-brand-700" : "text-zani-subtle hover:bg-surface-muted hover:text-zani-text",
+                !value ? "bg-brand-50 text-brand-700 ring-1 ring-brand-100" : "text-zani-subtle hover:bg-surface-muted hover:text-zani-text",
               )}
               onClick={() => selectValue("")}
             >
@@ -172,7 +172,7 @@ export function SearchableSelect({
                   aria-selected={isSelected}
                   className={cn(
                     "zani-focus-ring flex w-full items-start justify-between gap-3 rounded-control px-3 py-2.5 text-left text-sm font-semibold transition",
-                    isSelected ? "bg-brand-50 text-brand-700" : "text-zani-subtle hover:bg-surface-muted hover:text-zani-text",
+                    isSelected ? "bg-brand-50 text-brand-700 ring-1 ring-brand-100" : "text-zani-subtle hover:bg-surface-muted hover:text-zani-text",
                   )}
                   onClick={() => selectValue(option.value)}
                 >

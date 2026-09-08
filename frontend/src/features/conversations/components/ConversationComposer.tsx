@@ -3,6 +3,7 @@ import { Paperclip, Tags } from "lucide-react";
 
 import type { InboxConversation } from "../../../api/inbox";
 import { Button } from "../../../components/ui/Button";
+import { StatusNotice } from "../../../components/ui/StatusNotice";
 import type { Translate } from "../conversationTypes";
 
 type ConversationComposerProps = {
@@ -31,9 +32,12 @@ export function ConversationComposer({
   return (
     <div className="border-t border-zani-border bg-zani-card p-3">
       {selected.status === "closed" ? (
-        <div className="mb-3 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">
-          {t("conversations.closedReplyNotice")}
-        </div>
+        <StatusNotice
+          compact
+          className="mb-3"
+          tone="warning"
+          title={t("conversations.closedReplyNotice")}
+        />
       ) : null}
       <div className="flex items-end gap-2 rounded-card border border-zani-border bg-zani-card px-3 py-2 shadow-sm">
         <button type="button" className="mb-1 grid h-8 w-8 shrink-0 place-items-center rounded-control text-zani-muted hover:bg-surface-hover hover:text-zani-text" title={t("conversations.attachFile")}>
@@ -66,7 +70,7 @@ export function ConversationComposer({
         />
         <Button
           data-testid="inbox-action-send"
-          variant="ai"
+          variant="primary"
           className="h-10 shrink-0 rounded-control px-4 text-sm"
           disabled={selected.status === "closed" || !draft.trim()}
           isLoading={sendPending}

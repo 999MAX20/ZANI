@@ -10,6 +10,7 @@ import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
 import { Modal } from "../../../components/ui/Modal";
 import { Select } from "../../../components/ui/Select";
+import { StatusNotice } from "../../../components/ui/StatusNotice";
 import type { SegmentDraft, Translate } from "../types";
 
 export function ClientsModals({
@@ -102,12 +103,11 @@ export function ClientsModals({
       >
         {mergePreview ? (
           <div className="space-y-4">
-            <div className="rounded-card border border-[rgba(183,121,31,0.22)] bg-[var(--zani-warning-soft)] p-4 text-sm leading-6 text-zani-warning">
-              <p className="font-bold">{t("clients.mergePreviewWarning")}</p>
-              <p className="mt-1">
-                {t("clients.mergePreviewPolicy")}: {mergePreview.policy}
-              </p>
-            </div>
+            <StatusNotice
+              tone="warning"
+              title={t("clients.mergePreviewWarning")}
+              description={`${t("clients.mergePreviewPolicy")}: ${mergePreview.policy}`}
+            />
             <div className="rounded-card border border-zani-border bg-surface-card p-4">
               <p className="font-bold text-zani-text">
                 {mergePreview.duplicate.full_name || t("common.client")}

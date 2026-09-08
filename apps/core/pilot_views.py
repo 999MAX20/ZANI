@@ -172,7 +172,7 @@ class PilotReadinessView(APIView):
                 "Добавлены услуги, которые можно использовать в заявках и записях.",
                 services.exists(),
                 count=services.count(),
-                href="/app/services",
+                href="/app/business/services",
             ),
             self.item(
                 "resources",
@@ -180,7 +180,7 @@ class PilotReadinessView(APIView):
                 "Есть сотрудники/кабинеты/ресурсы для расписания.",
                 resources.exists(),
                 count=resources.count(),
-                href="/app/resources",
+                href="/app/business/resources",
             ),
             self.item(
                 "working_hours",
@@ -188,7 +188,7 @@ class PilotReadinessView(APIView):
                 "График работы нужен для корректных свободных слотов и записей.",
                 WorkingHours.objects.filter(business=business).exists(),
                 count=WorkingHours.objects.filter(business=business).count(),
-                href="/app/working-hours",
+                href="/app/business/working-hours",
             ),
             self.item(
                 "bot",

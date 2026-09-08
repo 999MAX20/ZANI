@@ -1,4 +1,4 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import {
   Navigate,
   RouterProvider,
@@ -9,6 +9,11 @@ import {
 import { PermissionGate } from "../components/auth/PermissionGate";
 import { RouteErrorBoundary } from "../components/ui/RouteErrorBoundary";
 import { ForbiddenState, LoadingState } from "../components/ui/StateViews";
+import {
+  clearSessionExpiredReturnTo,
+  getSessionExpiredReturnTo,
+  isSafeInternalReturnPath,
+} from "../api/client";
 import { useAuth } from "../features/auth/AuthProvider";
 import { LoginPage } from "../features/auth/LoginPage";
 import {
@@ -234,10 +239,33 @@ function PlatformRoute({ children }: { children: React.ReactNode }) {
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, isPlatformUser } = useAuth();
+  const location = useLocation();
   const { t } = useI18n();
+  const [storedReturnTo] = useState(() => getSessionExpiredReturnTo());
+
+  useEffect(() => {
+    if (isAuthenticated) clearSessionExpiredReturnTo();
+  }, [isAuthenticated]);
+
   if (isLoading) return <LoadingState label={t("common.loadingAccess")} />;
   if (!isAuthenticated) return children;
-  return <Navigate to={isPlatformUser ? "/platform" : "/app/dashboard"} replace />;
+
+  const from = (location.state as {
+    from?: { pathname?: string; search?: string; hash?: string };
+  } | null)?.from;
+  const stateReturnTo = from?.pathname
+    ? `${from.pathname}${from.search ?? ""}${from.hash ?? ""}`
+    : undefined;
+  const intendedPath = stateReturnTo || storedReturnTo;
+  const fallback = isPlatformUser ? "/platform" : "/app/dashboard";
+
+  if (!intendedPath) return <Navigate to={fallback} replace />;
+  if (intendedPath.startsWith("/invite/")) return <Navigate to={intendedPath} replace />;
+  if (!isSafeInternalReturnPath(intendedPath)) return <Navigate to={fallback} replace />;
+  if (isPlatformUser && !intendedPath.startsWith("/platform")) return <Navigate to={fallback} replace />;
+  if (!isPlatformUser && !intendedPath.startsWith("/app")) return <Navigate to={fallback} replace />;
+
+  return <Navigate to={intendedPath} replace />;
 }
 
 function PageLoader({ children }: { children: React.ReactNode }) {
@@ -284,6 +312,16 @@ function LegacyDashboardRedirect() {
     : `/app${legacySuffix}`;
   return (
     <Navigate to={`${targetPath}${location.search}${location.hash}`} replace />
+  );
+}
+
+function BusinessRouteRedirect({ section }: { section: "services" | "resources" | "working-hours" }) {
+  const location = useLocation();
+  return (
+    <Navigate
+      to={`/app/business/${section}${location.search}${location.hash}`}
+      replace
+    />
   );
 }
 
@@ -539,7 +577,12 @@ const merchantChildren = [
     ),
   },
   {
-    path: "services",
+    path: "business",
+    resource: "settings",
+    element: <Navigate to="/app/business/services" replace />,
+  },
+  {
+    path: "business/services",
     resource: "settings",
     element: (
       <PageLoader>
@@ -548,7 +591,7 @@ const merchantChildren = [
     ),
   },
   {
-    path: "resources",
+    path: "business/resources",
     resource: "settings",
     element: (
       <PageLoader>
@@ -557,13 +600,28 @@ const merchantChildren = [
     ),
   },
   {
-    path: "working-hours",
+    path: "business/working-hours",
     resource: "settings",
     element: (
       <PageLoader>
         <WorkingHoursPage />
       </PageLoader>
     ),
+  },
+  {
+    path: "services",
+    resource: "settings",
+    element: <BusinessRouteRedirect section="services" />,
+  },
+  {
+    path: "resources",
+    resource: "settings",
+    element: <BusinessRouteRedirect section="resources" />,
+  },
+  {
+    path: "working-hours",
+    resource: "settings",
+    element: <BusinessRouteRedirect section="working-hours" />,
   },
   {
     path: "analytics",
@@ -744,29 +802,17 @@ const legacyMerchantRoutes = [
   {
     path: "/services",
     resource: "settings",
-    element: (
-      <PageLoader>
-        <ServicesPage />
-      </PageLoader>
-    ),
+    element: <BusinessRouteRedirect section="services" />,
   },
   {
     path: "/resources",
     resource: "settings",
-    element: (
-      <PageLoader>
-        <ResourcesPage />
-      </PageLoader>
-    ),
+    element: <BusinessRouteRedirect section="resources" />,
   },
   {
     path: "/working-hours",
     resource: "settings",
-    element: (
-      <PageLoader>
-        <WorkingHoursPage />
-      </PageLoader>
-    ),
+    element: <BusinessRouteRedirect section="working-hours" />,
   },
   {
     path: "/analytics",

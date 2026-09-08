@@ -4,13 +4,14 @@ import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Overlay";
 import { Textarea } from "../ui/Textarea";
 import { useI18n } from "../../lib/i18n";
+import { buttonVariantForActionTone, type ActionTone } from "../ui/actionTone";
 
 type ActionConfirmOptions = {
   title: string;
   description?: string;
   confirmLabel?: string;
   cancelLabel?: string;
-  variant?: "danger" | "primary";
+  tone?: ActionTone;
   reason?: {
     label: string;
     placeholder?: string;
@@ -78,7 +79,7 @@ export function ActionConfirmProvider({ children }: { children: React.ReactNode 
             </Button>
             <Button
               type="button"
-              variant={pending.variant === "danger" ? "danger" : "primary"}
+              variant={buttonVariantForActionTone(pending.tone || "brand")}
               disabled={isReasonInvalid}
               onClick={() => close({ confirmed: true, reason: trimmedReason })}
             >

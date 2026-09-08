@@ -101,7 +101,7 @@ test("F-201 desktop roles receive legitimate daily routes and controls", async (
   await expect(page.locator('nav a[href="/app/settings"]')).toHaveCount(0);
   await expect(page.locator('nav a[href="/app/deals"]')).toBeVisible();
   await navigateClient(page, "/app/settings");
-  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(page.getByTestId("forbidden-state")).toBeVisible();
   await expectHealthyWorkspace(page);
 
   await login(page, users.operator);
@@ -126,7 +126,7 @@ test("F-201 desktop roles receive legitimate daily routes and controls", async (
   await expectHealthyWorkspace(page);
 
   await navigateClient(page, "/app/deals");
-  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(page.getByTestId("forbidden-state")).toBeVisible();
 });
 
 test("F-401 command palette follows role permissions and disabled modules", async ({ page, isMobile }) => {

@@ -1,6 +1,6 @@
 import { apiClient } from "./client";
 import { createCrudApi } from "./crud";
-import type { AgentProfile, AIToolCallLog, AIToolSuggestResponse, BusinessKnowledgeItem, Id } from "../types";
+import type { AgentProfile, ApprovalRequest, AIToolCallLog, AIToolSuggestResponse, BusinessKnowledgeItem, Id } from "../types";
 
 export type AIAssistantChatResponse = {
   answer: string;
@@ -143,8 +143,29 @@ export const aiApi = {
     });
     return data;
   },
-  suggestTools: async ({ business, message }: { business: Id; message: string }) => {
-    const { data } = await apiClient.post<AIToolSuggestResponse>("/api/ai/tools/suggest/", { business, message });
+  suggestTools: async ({ business, conversation, message }: { business: Id; conversation?: Id; message: string }) => {
+    const { data } = await apiClient.post<AIToolSuggestResponse>("/api/ai/tools/suggest/", {
+      business,
+      conversation,
+      message,
+    });
+    return data;
+  },
+  createToolApproval: async ({ business, toolCallId }: { business: Id; toolCallId: Id }) => {
+    const { data } = await apiClient.post<ApprovalRequest>("/api/ai/approval-requests/", {
+      business,
+      action_type: "ai_pipeline",
+      ai_tool_call_log: toolCallId,
+      source_object_type: "AIToolCallLog",
+      source_object_id: String(toolCallId),
+    });
+    return data;
+  },
+  approveToolApproval: async ({ id, reason }: { id: Id; reason?: string }) => {
+    const { data } = await apiClient.post<ApprovalRequest>(
+      `/api/ai/approval-requests/${id}/approve/`,
+      reason ? { reason } : {},
+    );
     return data;
   },
   executeTool: async (logId: Id, approvalId?: Id) => {

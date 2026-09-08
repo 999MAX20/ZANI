@@ -2,8 +2,8 @@
 
 - Status: active pre-pilot technical source of truth
 - Audit date: 2026-09-08
-- Candidate branch: `codex/be-gap-001-tenant-ownership-immutability`
-- Source baseline at audit start: `f142f3e498e4726320fc7de0b6ad0cc27187c57f`
+- Candidate branch: `codex/be-gap-003-functional-certification`
+- Source baseline for the current candidate: `81167518fb60887c023069a1fd7fa83f90fba6aa`
 - Scope: backend behavior, tenant and permission boundaries, recovery, providers,
   production gates and certification dependencies
 
@@ -40,7 +40,7 @@ document to be green.
 | --- | --- | --- | --- | --- |
 | BE-GAP-001 | Tenant ownership immutability on generic updates | `CLOSED` | Cleared at repository level | Cleared at repository level; environment gates remain separate |
 | BE-GAP-002 | Exact clean release candidate and final integrated gate | `CLOSED` | Cleared for the repository candidate | Production env gates remain separate |
-| BE-GAP-003 | Functional certification FC-003/004/006/008 | `PARTIAL` | Blocks formal acceptance | Blocks |
+| BE-GAP-003 | Functional certification FC-003/008 | `PARTIAL` - FC-004/006 closed | Blocks formal acceptance | Blocks |
 | BE-GAP-004 | Platform manager support-mutation policy | `POLICY_CONFLICT` | Resolve before support access | Blocks support operations |
 | BE-GAP-005 | Real provider failure and recovery evidence | `ENV_GATED` | May remain disabled | Blocks each enabled provider |
 | BE-GAP-006 | Queue-backed production runtime | `ENV_GATED` | May use eager/in-memory mode | Blocks |
@@ -106,24 +106,62 @@ Closure evidence:
   smoke, hashed lock installability, zero Python advisories, zero npm
   vulnerabilities and final diff hygiene.
 
-This closes the repository artifact and integrated-gate portion only. It does
-not close BE-GAP-001, the remaining FC rows or any paid/live environment gate.
+This closed the repository artifact and integrated-gate portion at that
+checkpoint. BE-GAP-001 was closed by its later dedicated candidate; the
+remaining FC rows and paid/live environment gates stay separate.
 
 ## BE-GAP-003 - Functional Certification Is Partial
 
 The current functional certification records:
 
-- `FC-003 PARTIAL`: form, mutation, dialog and session failure contracts are not
-  fully closed in the certification report;
-- `FC-004 PARTIAL`: deterministic data-state and fault fixtures do not yet
-  constitute a final integrated fault matrix;
-- `FC-006 PARTIAL`: representative journeys pass, but all ten journeys are not
-  yet accepted as UI-to-API-to-persistence evidence in the final report;
-- `FC-008 PARTIAL/BLOCKED`: clean full gate and final report are open.
+- `FC-003 PARTIAL`: all 43 routes have structural action metadata, but every
+  route/action registry row is still `NOT_RUN`; expected-result proof or an
+  approved exclusion is not recorded for every interactive control;
+- `FC-004 PASS`: the FB-010 machine registry certifies 744 combinations across
+  ten journeys, five roles, twelve data/failure states and two viewport classes;
+- `FC-006 PASS`: a separate machine registry accepts exactly ten required
+  merchant journeys with route, role, frontend, API and persistence evidence;
+  newly added browser coverage proves J06 lead import, J07 team role changes and
+  J10 source-grounded AI approval end to end;
+- `FC-008 PARTIAL`: the prior clean committed-range gate is green, but the
+  current candidate gate and final FC-003 reconciliation are still open.
 
-The fallback registry and browser audits provide strong supporting evidence,
-but they do not silently convert these certification rows to `PASS`. Statuses
-must be reconciled and closed in `actual_docs/APP_FUNCTIONAL_CERTIFICATION.md`.
+### Delivered in the current candidate
+
+- Lead CSV preview now reports an existing-client duplicate before importing a
+  lead and retains UI/API/persistence evidence.
+- Team role, department and invitation collections retain accessible-business
+  authorization and can be narrowed to the active business; Settings supplies
+  the active business, preventing cross-business option mixing.
+- The AI assistant requires a real conversation source before requesting a tool
+  suggestion and requires explicit confirmation plus an approval record before
+  executing the exact suggested task action.
+- Registry guard scripts fail if the ten-journey set, route identifiers,
+  evidence files or exact evidence markers drift.
+- All J06/J07/J10 journeys pass on desktop, tablet and mobile Chromium; the
+  complete clean desktop project discovers 62 scenarios and exits zero.
+- Certification fixtures now follow action-only service activation, real
+  platform MFA step-up, explicit backend retryability and the current
+  owner/manager dashboard separation. Working-hours modal close/discard returns
+  focus to the visible resource trigger.
+
+### Still unimplemented or only partially evidenced
+
+1. `route-action-registry.mjs` needs an executable semantic status/evidence
+   contract per listed action, rather than the current global `NOT_RUN` default.
+2. Every interactive control needs either a passing expected-result assertion
+   or a documented exclusion with owner rationale. Structural route coverage
+   and broad failure matrices cannot substitute for this action-level proof.
+3. After those records are executed, the final committed-range gate and report
+   reconciliation must close `FC-003` and then `FC-008`. The current candidate
+   has passed focused backend checks, production frontend build, all registry
+   guards, a clean full desktop browser project and the new tablet/mobile
+   journeys; the committed-range gate is intentionally run only after commit.
+
+This remaining work is formal certification debt. No current evidence shows an
+additional missing CRM lifecycle, permission or tenant-isolation implementation
+inside J01-J10. Live-provider and managed-service gates remain separately
+environment-gated and are not closed by repository certification.
 
 ## BE-GAP-004 - Platform Manager Support Mutation Policy Conflict
 

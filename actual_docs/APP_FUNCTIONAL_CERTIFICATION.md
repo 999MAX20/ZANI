@@ -1,7 +1,7 @@
 # ZANI Application Functional Certification
 
 - Date: 2026-08-20
-- Status: **EXECUTED / PARTIAL - INTEGRATED CLEAN-RANGE GATE PASSED; FC-003/004/006 AND FINAL REPORT OPEN**
+- Status: **EXECUTED / PARTIAL - FC-004 AND FC-006 PASS; FC-003 AND FC-008 OPEN**
 - Activation: owner authorized execution on 2026-08-20
 - Primary scope: authenticated merchant `/app`
 - Secondary scope: public authentication and platform-admin surfaces
@@ -17,6 +17,28 @@ advisories, and final committed-range diff hygiene. This closes the clean-range
 prerequisite. FC-008 remains partial until FC-003/004/006 and the final
 certification report are reconciled; the pass must not be interpreted as live
 provider or paid-beta evidence.
+
+## 2026-09-08 Merchant-Journey Reconciliation Checkpoint
+
+The candidate branch `codex/be-gap-003-functional-certification` adds a
+machine-checked ten-journey registry with exact route, role, frontend and
+backend evidence markers. Missing browser-to-API-to-persistence proof was added
+for lead CSV import and duplicate preview, active-business team role changes,
+and source-grounded AI task suggestion with explicit approval. All three added
+journeys pass on desktop, tablet and mobile Chromium; the complete clean
+desktop project also exits zero across 62 discovered scenarios. The registry
+checker accepts exactly ten of ten required journeys.
+
+The deterministic FB-010 registry already covers 744 combinations across ten
+journeys, five roles, twelve data/failure states and two viewport classes.
+Together these artifacts close `FC-004` and `FC-006`. They do not close
+`FC-003`: all 43 structural route/action records still have `NOT_RUN` status,
+so exhaustive control-level expected-result or approved-exclusion evidence is
+not yet recorded. `FC-008` therefore remains partial until that semantic
+registry work and the final committed-candidate gate/report reconciliation are
+complete. Browser certification also corrected working-hours focus return,
+stale service-create fixtures, MFA step-up setup and retryability assertions so
+the evidence follows the current product and backend contracts.
 
 ## Purpose
 
@@ -64,10 +86,10 @@ Certification is complete only when all conditions below are satisfied:
 - [x] Every active user-facing route is present in the route coverage registry.
 - [ ] Every interactive control has an expected-result contract or an approved
       reason for exclusion.
-- [ ] Every critical merchant journey passes through the real frontend and API.
+- [x] Every critical merchant journey passes through the real frontend and API.
 - [x] Owner, administrator, manager, operator and specialist access is checked.
 - [x] Desktop, tablet and mobile behavior is checked where the surface exists.
-- [ ] Empty, loading, success, validation, forbidden, conflict, offline and
+- [x] Empty, loading, success, validation, forbidden, conflict, offline and
       server-error states are covered where applicable.
 - [x] Tenant isolation and backend authorization are proven independently of
       frontend visibility.
@@ -322,12 +344,12 @@ providers. Live provider certification is a separate authorized activity.
 | --- | --- | --- |
 | FC-001 | Generate route/action coverage registry and guard test | PASS |
 | FC-002 | Add shared search/filter/sort/pagination contracts | PASS |
-| FC-003 | Add form/mutation/dialog/session contracts | PARTIAL - failure contracts depend on fallback layer |
-| FC-004 | Add deterministic data-state and fault fixtures | PARTIAL - full fault matrix depends on fallback layer |
+| FC-003 | Add form/mutation/dialog/session contracts | PARTIAL - 43/43 structural route/action entries still have `NOT_RUN`; control-level evidence or approved exclusions remain open |
+| FC-004 | Add deterministic data-state and fault fixtures | PASS - FB-010 machine registry certifies 744 journey/role/state/viewport combinations |
 | FC-005 | Complete role/capability/tenant browser matrix | PASS |
-| FC-006 | Complete ten critical merchant journeys | PARTIAL - representative journeys pass; all ten are not yet UI/API/persistence certified |
+| FC-006 | Complete ten critical merchant journeys | PASS - machine registry accepts exactly 10/10 journeys with frontend, API and persistence evidence; missing J06/J07/J10 browser flows pass |
 | FC-007 | Run desktop/tablet/mobile non-functional matrix | PASS |
-| FC-008 | Run clean full gate and publish final report | PARTIAL - integrated clean-range full gate passed on `e65e0f4`; FC-003/004/006 reconciliation and the final report remain open |
+| FC-008 | Run clean full gate and publish final report | PARTIAL - prior integrated gate passed on `e65e0f4`; current candidate gate and FC-003 semantic reconciliation remain open |
 
 ## Evidence Rules
 
@@ -351,12 +373,13 @@ asserted.
 The owner authorized BE-REM-007 execution on 2026-08-20. Independent backend,
 frontend, browser, accessibility, responsive, performance and dependency gates
 were executed. The isolated cross-role failure matrix in
-`UNIFIED_FALLBACK_EXPERIENCE_PLAN.md` now passes for the required merchant
-roles and desktop/mobile viewports. The integrated committed-range gate,
-generated fallback inventory and visual/interaction gates are now current on
-`e65e0f4`. FC-008 remains partial until FC-003/004/006 and the final report are
-reconciled. The repository pass must not be converted into a live-provider or
-paid-beta claim.
+`UNIFIED_FALLBACK_EXPERIENCE_PLAN.md` passes for the required merchant roles and
+desktop/mobile viewports, and the ten critical merchant journeys now have a
+machine-checked UI/API/persistence evidence registry. FC-004 and FC-006 are
+closed. FC-003 and FC-008 remain partial because the 43-entry route/action
+registry still records structural coverage rather than executed semantic
+control contracts. Repository evidence must not be converted into a
+live-provider or paid-beta claim.
 
 Current evidence is recorded in
 `actual_docs/APP_FUNCTIONAL_CERTIFICATION_REPORT_2026-08-20.md`.

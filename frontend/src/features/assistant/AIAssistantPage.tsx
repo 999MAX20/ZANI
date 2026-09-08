@@ -19,8 +19,9 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router";
 
 import { aiApi, businessKnowledgeApi, type AIAnalystSource } from "../../api/ai";
-import type { BusinessKnowledgeItem, Id } from "../../types";
+import type { AIToolCallLog, BusinessKnowledgeItem, Id } from "../../types";
 import { getApiErrorMessage } from "../../api/client";
+import { useActionConfirm } from "../../components/actions/ActionConfirmProvider";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { Card, CardBody } from "../../components/ui/Card";
@@ -100,13 +101,20 @@ function hoursSince(dateValue: string | null | undefined, now: Date) {
 
 export function AIAssistantPage() {
   const { t } = useI18n();
+  const confirmAction = useActionConfirm();
   const { business, isLoading } = useActiveBusiness();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const canUseAssistant = hasPermission(user, business?.id, "ai_assistant", "suggest");
   const canViewAnalyst = hasPermission(user, business?.id, "ai_analyst", "view");
   const canManageMemory = hasPermission(user, business?.id, "ai_automation", "manage");
+  const canSuggestActions = hasPermission(user, business?.id, "ai_pipeline", "suggest");
+  const canExecuteActions = hasPermission(user, business?.id, "ai_pipeline", "execute");
+  const canApproveActions = hasPermission(user, business?.id, "ai_pipeline", "approve");
   const [aiBrief, setAiBrief] = useState("");
+  const [toolPrompt, setToolPrompt] = useState("");
+  const [toolConversationId, setToolConversationId] = useState("");
+  const [suggestedActions, setSuggestedActions] = useState<AIToolCallLog[]>([]);
   const [memoryOpen, setMemoryOpen] = useState(false);
   const [editingMemory, setEditingMemory] = useState<BusinessKnowledgeItem | undefined>();
   const [memoryDraft, setMemoryDraft] = useState(emptyMemoryDraft);
@@ -347,6 +355,74 @@ export function AIAssistantPage() {
     onSuccess: (response) => setAiBrief(response.answer),
   });
 
+  const suggestActionsMutation = useMutation({
+    mutationFn: () => {
+      if (!business || !toolConversationId) {
+        throw new Error(t("aiAssistant.actionSourceRequired"));
+      }
+      return aiApi.suggestTools({
+        business: business.id,
+        conversation: Number(toolConversationId),
+        message: toolPrompt.trim(),
+      });
+    },
+    onSuccess: (response) => setSuggestedActions(response.suggested_actions),
+  });
+
+  const runSuggestedActionMutation = useMutation({
+    mutationFn: async ({
+      action,
+      reason,
+    }: {
+      action: AIToolCallLog;
+      reason?: string;
+    }) => {
+      if (!business) throw new Error(t("aiAssistant.noBusiness"));
+      const requiresApproval = action.input_json.requires_confirmation === true;
+      if (!requiresApproval) return aiApi.executeTool(action.id);
+      const approval = await aiApi.createToolApproval({
+        business: business.id,
+        toolCallId: action.id,
+      });
+      await aiApi.approveToolApproval({ id: approval.id, reason });
+      return aiApi.executeTool(action.id, approval.id);
+    },
+    onSuccess: (updatedAction) => {
+      setSuggestedActions((current) =>
+        current.map((action) =>
+          action.id === updatedAction.id ? updatedAction : action,
+        ),
+      );
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["activity-events"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+
+  async function runSuggestedAction(action: AIToolCallLog) {
+    const requiresApproval = action.input_json.requires_confirmation === true;
+    if (!requiresApproval) {
+      runSuggestedActionMutation.mutate({ action });
+      return;
+    }
+    const result = await confirmAction({
+      title: t("aiAssistant.approvalTitle"),
+      description: t("aiAssistant.approvalDescription"),
+      confirmLabel:
+        action.tool_name === "create_task"
+          ? t("aiAssistant.createTask")
+          : t("actions.confirm"),
+      tone: "ai",
+      reason: {
+        label: t("aiAssistant.approvalReason"),
+        required: true,
+        minLength: 3,
+      },
+    });
+    if (!result.confirmed) return;
+    runSuggestedActionMutation.mutate({ action, reason: result.reason });
+  }
+
   if (isLoading) return <LoadingState />;
   if (!business) return <ErrorState message={t("aiAssistant.noBusiness")} />;
 
@@ -380,8 +456,8 @@ export function AIAssistantPage() {
         )}
       />
 
-      {briefMutation.error || memoryMutation.error || analystBrief.error ? (
-        <div className="mb-4"><ErrorState message={getApiErrorMessage(briefMutation.error || memoryMutation.error || analystBrief.error)} /></div>
+      {briefMutation.error || memoryMutation.error || analystBrief.error || suggestActionsMutation.error || runSuggestedActionMutation.error ? (
+        <div className="mb-4"><ErrorState message={getApiErrorMessage(briefMutation.error || memoryMutation.error || analystBrief.error || suggestActionsMutation.error || runSuggestedActionMutation.error)} /></div>
       ) : null}
 
       {aiStatus.data && !aiStatus.data.ready ? (
@@ -449,6 +525,152 @@ export function AIAssistantPage() {
                   <p className="mt-2 whitespace-pre-wrap text-sm font-semibold leading-7 text-zani-text">{aiBrief}</p>
                 </div>
               ) : null}
+            </CardBody>
+          </Card>
+
+          <Card data-testid="ai-action-workflow">
+            <CardBody className="p-5 sm:p-6">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-ai-700">
+                  {t("aiAssistant.taskFlowTitle")}
+                </p>
+                <p className="mt-2 text-sm font-semibold leading-6 text-zani-subtle">
+                  {t("aiAssistant.taskFlowText")}
+                </p>
+              </div>
+
+              {canSuggestActions ? (
+                <div className="mt-5 grid gap-3">
+                  <Select
+                    data-testid="ai-action-source"
+                    label={t("aiAssistant.actionSourceLabel")}
+                    value={toolConversationId}
+                    onChange={(event) => setToolConversationId(event.target.value)}
+                    options={[
+                      { value: "", label: t("aiAssistant.actionSourcePlaceholder") },
+                      ...(botConversations.data || []).map((conversation) => ({
+                        value: String(conversation.id),
+                        label:
+                          conversation.client_name ||
+                          conversation.external_user_id ||
+                          `#${conversation.id}`,
+                      })),
+                    ]}
+                  />
+                  <Textarea
+                    data-testid="ai-action-prompt"
+                    label={t("aiAssistant.questionLabel")}
+                    value={toolPrompt}
+                    onChange={(event) => setToolPrompt(event.target.value)}
+                    placeholder={t("aiAssistant.questionPlaceholder")}
+                  />
+                  <div>
+                    <Button
+                      data-testid="ai-action-suggest"
+                      type="button"
+                      variant="ai"
+                      isLoading={suggestActionsMutation.isPending}
+                      disabled={!toolConversationId || !toolPrompt.trim()}
+                      onClick={() => suggestActionsMutation.mutate()}
+                    >
+                      <Sparkles size={16} /> {t("aiAssistant.createActions")}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <StatusNotice
+                  className="mt-5"
+                  tone="warning"
+                  title={t("fallback.permission.title")}
+                  description={t("permissions.forbidden", {
+                    resource: t("permissions.resource.ai_pipeline"),
+                  })}
+                />
+              )}
+
+              <div className="mt-5 grid gap-3">
+                {suggestedActions.map((action) => {
+                  const requiresApproval =
+                    action.input_json.requires_confirmation === true;
+                  const rawTaskId = action.output_json.task_id;
+                  const taskId =
+                    typeof rawTaskId === "number" ||
+                    typeof rawTaskId === "string"
+                      ? rawTaskId
+                      : null;
+                  const canRun =
+                    canExecuteActions && (!requiresApproval || canApproveActions);
+                  return (
+                    <div
+                      key={String(action.id)}
+                      data-testid={`ai-action-${action.tool_name}`}
+                      className="rounded-card border border-zani-border bg-surface-muted p-4"
+                    >
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0">
+                          <p className="font-bold text-zani-text">
+                            {String(
+                              action.input_json.title ||
+                                t("aiAssistant.actionFallback"),
+                            )}
+                          </p>
+                          <p className="mt-1 text-xs font-semibold text-zani-subtle">
+                            {t("aiAssistant.actionStatus", {
+                              status: action.status,
+                              tool: action.tool_name,
+                            })}
+                          </p>
+                          {action.conversation ? (
+                            <span
+                              data-testid="ai-action-source-chip"
+                              className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-surface-card px-2.5 py-1 text-[11px] font-bold text-zani-subtle ring-1 ring-zani-border"
+                            >
+                              <DatabaseZap size={12} />
+                              CONVERSATION-{action.conversation}
+                            </span>
+                          ) : null}
+                          {taskId ? (
+                            <p className="mt-2 text-sm font-semibold text-zani-success">
+                              {t("aiAssistant.taskCreated", { id: String(taskId) })}
+                            </p>
+                          ) : null}
+                        </div>
+                        {action.status === "suggested" ? (
+                          <Button
+                            data-testid={`ai-action-run-${action.id}`}
+                            type="button"
+                            size="sm"
+                            variant={requiresApproval ? "ai" : "secondary"}
+                            disabled={!canRun}
+                            isLoading={
+                              runSuggestedActionMutation.isPending &&
+                              runSuggestedActionMutation.variables?.action.id ===
+                                action.id
+                            }
+                            onClick={() => void runSuggestedAction(action)}
+                          >
+                            {action.tool_name === "create_task"
+                              ? t("aiAssistant.createTask")
+                              : t("aiAssistant.run")}
+                          </Button>
+                        ) : taskId ? (
+                          <Link
+                            to={`/app/tasks/${taskId}`}
+                            className="zani-focus-ring inline-flex min-h-10 items-center justify-center rounded-control border border-zani-border bg-surface-card px-3 text-sm font-bold text-zani-text"
+                          >
+                            {t("common.open")}
+                          </Link>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })}
+                {!suggestedActions.length ? (
+                  <p className="rounded-card bg-surface-muted p-4 text-sm font-semibold leading-6 text-zani-subtle">
+                    {t("aiAssistant.emptyActionsText")}
+                  </p>
+                ) : null}
+              </div>
             </CardBody>
           </Card>
 

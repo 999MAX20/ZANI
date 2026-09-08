@@ -56,6 +56,7 @@ export function ForbiddenState({
 
   return (
     <StatusNotice
+      data-testid="forbidden-state"
       tone="warning"
       icon={ShieldAlert}
       title={title || t("permissions.hiddenTitle")}

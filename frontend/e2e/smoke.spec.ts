@@ -1,4 +1,5 @@
 ﻿import { expect, test, type Page } from "@playwright/test";
+import { createHmac } from "node:crypto";
 
 const password = process.env.E2E_PASSWORD || "ZaniTest123!";
 const apiBaseURL = process.env.E2E_API_BASE_URL || "http://127.0.0.1:8000";
@@ -180,6 +181,94 @@ function authHeaders(tokens: TokenPayload) {
   return { Authorization: `Bearer ${tokens.access}` };
 }
 
+function decodeBase32(value: string) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  const bits = value
+    .replace(/=+$/u, "")
+    .toUpperCase()
+    .split("")
+    .map((character) => alphabet.indexOf(character).toString(2).padStart(5, "0"))
+    .join("");
+  const bytes = [];
+  for (let index = 0; index + 8 <= bits.length; index += 8) {
+    bytes.push(Number.parseInt(bits.slice(index, index + 8), 2));
+  }
+  return Buffer.from(bytes);
+}
+
+function currentTotp(secret: string) {
+  const counterBuffer = Buffer.alloc(8);
+  counterBuffer.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 30_000)));
+  const digest = createHmac("sha1", decodeBase32(secret))
+    .update(counterBuffer)
+    .digest();
+  const offset = digest[digest.length - 1] & 0x0f;
+  const binary =
+    (((digest[offset] & 0x7f) << 24) |
+      ((digest[offset + 1] & 0xff) << 16) |
+      ((digest[offset + 2] & 0xff) << 8) |
+      (digest[offset + 3] & 0xff)) >>>
+    0;
+  return String(binary % 1_000_000).padStart(6, "0");
+}
+
+async function createPlatformStepUp(page: Page, tokens: TokenPayload) {
+  const enrollmentStart = await page.request.post(
+    `${apiBaseURL}/api/auth/mfa/enrollment/start/`,
+    { headers: authHeaders(tokens), data: {} },
+  );
+  expect(enrollmentStart.ok()).toBeTruthy();
+  const enrollment = (await enrollmentStart.json()) as {
+    challenge_token: string;
+    manual_key: string;
+  };
+  const enrollmentConfirm = await page.request.post(
+    `${apiBaseURL}/api/auth/mfa/enrollment/confirm/`,
+    {
+      data: {
+        challenge_token: enrollment.challenge_token,
+        code: currentTotp(enrollment.manual_key),
+      },
+    },
+  );
+  expect(enrollmentConfirm.ok()).toBeTruthy();
+  const confirmed = (await enrollmentConfirm.json()) as TokenPayload & {
+    recovery_codes: string[];
+  };
+  expect(confirmed.recovery_codes.length).toBeGreaterThanOrEqual(2);
+
+  const stepUpResponse = await page.request.post(
+    `${apiBaseURL}/api/auth/mfa/step-up/`,
+    {
+      headers: authHeaders(confirmed),
+      data: { code: confirmed.recovery_codes[0] },
+    },
+  );
+  expect(stepUpResponse.ok()).toBeTruthy();
+  const stepUp = (await stepUpResponse.json()) as { step_up_token: string };
+
+  return {
+    headers: {
+      ...authHeaders(confirmed),
+      "X-Zani-MFA-Step-Up": stepUp.step_up_token,
+    },
+    cleanup: async () => {
+      const response = await page.request.post(
+        `${apiBaseURL}/api/auth/mfa/disable/`,
+        {
+          headers: authHeaders(confirmed),
+          data: {
+            password,
+            code: confirmed.recovery_codes[1],
+            reason: "Restore deterministic E2E platform fixture",
+          },
+        },
+      );
+      expect(response.ok()).toBeTruthy();
+    },
+  };
+}
+
 async function businessCapabilityModules(page: Page, email: string) {
   const tokens = await apiLogin(page, email);
   const response = await page.request.get(`${apiBaseURL}/api/auth/me/`, {
@@ -342,7 +431,7 @@ test("manager and operator role UX stays useful and safe", async ({
   for (const route of ["/app/settings", "/app/integrations"]) {
     await navigateInAppHistory(page, route);
     await expect(page).toHaveURL(routePattern(route));
-    await expect(page.getByRole("alert")).toBeVisible();
+    await expect(page.getByTestId("forbidden-state")).toBeVisible();
     await expectNoOwnerOnlyTechnicalNoise(page);
   }
 
@@ -361,7 +450,7 @@ test("manager and operator role UX stays useful and safe", async ({
   }
 
   await navigateInAppHistory(page, "/app/settings");
-  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(page.getByTestId("forbidden-state")).toBeVisible();
   await expectNoOwnerOnlyTechnicalNoise(page);
 });
 
@@ -501,7 +590,6 @@ test("core merchant business flow works through API", async ({
         description: "Created by Playwright smoke.",
         duration_minutes: 30,
         price_from: "1000.00",
-        is_active: true,
       },
     },
   );
@@ -653,7 +741,6 @@ test("business owner can create an appointment from calendar UI", async ({
         description: "Calendar UI smoke service.",
         duration_minutes: 30,
         price_from: "5000.00",
-        is_active: true,
       },
     },
   );
@@ -812,7 +899,6 @@ test("calendar deep link selects appointment and lifecycle action works", async 
         name: `Deep Link Service ${unique}`,
         duration_minutes: 30,
         price_from: "6000.00",
-        is_active: true,
       },
     },
   );
@@ -947,7 +1033,6 @@ test("business owner can reschedule appointment from calendar UI", async ({
         name: `Reschedule Service ${unique}`,
         duration_minutes: 30,
         price_from: "7000.00",
-        is_active: true,
       },
     },
   );
@@ -1120,7 +1205,8 @@ test("business owner can reschedule appointment from calendar UI", async ({
   await expect(recoveryAlert).not.toContainText(
     "raw-calendar-temporary-stack",
   );
-  await recoveryAlert.getByTestId("action-feedback-action").click();
+  await expect(recoveryAlert.getByTestId("action-feedback-action")).toHaveCount(0);
+  await recoveryAlert.locator('button[aria-label]').click();
   await expect(recoveryAlert).toHaveCount(0);
   await rescheduleDialog.getByTestId("appointment-reschedule-submit").click();
 
@@ -1252,7 +1338,9 @@ test("business owner can configure working hours week", async ({
 
   await inspector.getByTestId("working-hours-preset-weekdays").click();
   await inspector.getByRole("button", { name: /Close|Закрыть|Жабу/i }).click();
-  const discardDialog = page.getByRole("dialog");
+  const discardDialog = page.getByRole("dialog", {
+    name: /Discard unsaved schedule changes|Отменить несохранённые изменения графика|Сақталмаған кесте өзгерістерінен бас тарту/i,
+  });
   await expect(discardDialog).toBeVisible();
   await discardDialog.getByRole("button", { name: /Discard changes|Отменить изменения|Өзгерістерден бас тарту/i }).click();
   await expect(page).not.toHaveURL(/resource=/);
@@ -1377,33 +1465,38 @@ test("activated landing owner sees first-run dashboard", async ({
   );
 
   const tokenPayload = await apiLogin(page, users.platform);
+  const privilegedSession = await createPlatformStepUp(page, tokenPayload);
+  const unique = Date.now();
+  const activatedOwnerEmail = `e2e_activation_owner_${unique}@example.com`;
 
-  const activationResponse = await page.request.post(
-    `${apiBaseURL}/api/platform/activate-landing/`,
-    {
-      headers: authHeaders(tokenPayload),
-      data: {
-        landing_id: "e2e-first-run-landing",
-        owner_email: "e2e_activation_owner@example.com",
-        owner_password: password,
-        owner_full_name: "E2E Activation Owner",
-        business_name: "E2E Activated Clinic",
-        business_type: "medical",
-        landing_domain: "e2e-landing.zani.test",
-        landing_preview_url: "https://example.com/e2e-landing",
-        city: "Almaty",
+  try {
+    const activationResponse = await page.request.post(
+      `${apiBaseURL}/api/platform/activate-landing/`,
+      {
+        headers: privilegedSession.headers,
+        data: {
+          landing_id: `e2e-first-run-landing-${unique}`,
+          owner_email: activatedOwnerEmail,
+          owner_password: password,
+          owner_full_name: "E2E Activation Owner",
+          business_name: `E2E Activated Clinic ${unique}`,
+          business_type: "medical",
+          landing_domain: `e2e-${unique}.zani.test`,
+          landing_preview_url: "https://example.com/e2e-landing",
+          city: "Almaty",
+        },
       },
-    },
-  );
-  expect(activationResponse.ok()).toBeTruthy();
+    );
+    expect(activationResponse.ok()).toBeTruthy();
 
-  await login(page, "e2e_activation_owner@example.com", /\/app/);
+    await login(page, activatedOwnerEmail, /\/app/);
 
-  await expect(page.getByTestId("dashboard-workspace-ready")).toBeVisible();
-  await navigateInAppHistory(page, "/app/account");
-  await expect(
-    page.getByText("e2e_activation_owner@example.com").first(),
-  ).toBeVisible();
+    await expect(page.getByTestId("dashboard-workspace-ready")).toBeVisible();
+    await navigateInAppHistory(page, "/app/account");
+    await expect(page.getByText(activatedOwnerEmail).first()).toBeVisible();
+  } finally {
+    await privilegedSession.cleanup();
+  }
 });
 
 test("merchant users cannot open platform workspace", async ({ page }) => {
@@ -1417,9 +1510,9 @@ test("operator sees restricted sections as forbidden", async ({ page }) => {
   await login(page, users.operator, /\/app/);
   await page.goto("/app/settings");
 
-  const forbiddenAlert = page.getByRole("alert");
-  await expect(forbiddenAlert).toBeVisible();
-  await expect(forbiddenAlert.getByText(/\u0440\u043e\u043b\u044c|\u0440\u043e\u043b\u0438|\u0434\u043e\u0441\u0442\u0443\u043f|СЂРѕР»СЊ|СЂРѕР»Рё|РґРѕСЃС‚СѓРї|access/i).first()).toBeVisible();
+  const forbiddenState = page.getByTestId("forbidden-state");
+  await expect(forbiddenState).toBeVisible();
+  await expect(forbiddenState.getByText(/\u0440\u043e\u043b\u044c|\u0440\u043e\u043b\u0438|\u0434\u043e\u0441\u0442\u0443\u043f|СЂРѕР»СЊ|СЂРѕР»Рё|РґРѕСЃС‚СѓРї|access/i).first()).toBeVisible();
   await expect(page.getByText(/Billing|Р‘РёР»Р»РёРЅРі|Р‘РёР»Р»РёРЅРі/i)).toHaveCount(0);
   await expect(
     page.getByText(/API and events|API Рё СЃРѕР±С‹С‚РёСЏ|API Р¶У™РЅРµ РѕТ›РёТ“Р°Р»Р°СЂ/i),
@@ -1427,7 +1520,7 @@ test("operator sees restricted sections as forbidden", async ({ page }) => {
   await expect(page.getByText(/webhook|payload|provider/i)).toHaveCount(0);
 });
 
-test("owner and manager dashboards render overlapping appointment queues once", async ({
+test("owner summary omits duplicate appointment rows and manager queue deduplicates them", async ({
   page,
 }) => {
   test.setTimeout(90_000);
@@ -1464,18 +1557,20 @@ test("owner and manager dashboards render overlapping appointment queues once", 
     });
   });
 
-  for (const email of [users.owner, users.manager]) {
-    duplicatedAppointmentId = undefined;
-    await login(page, email, /\/app/);
-    await expect
-      .poll(() => duplicatedAppointmentId)
-      .toBeGreaterThan(0);
-    await expect(
-      page.locator(
-        `[data-testid="dashboard-appointment-row"][data-appointment-id="${duplicatedAppointmentId}"]`,
-      ),
-    ).toHaveCount(1);
-  }
+  duplicatedAppointmentId = undefined;
+  await login(page, users.owner, /\/app/);
+  await expect.poll(() => duplicatedAppointmentId).toBeGreaterThan(0);
+  await expect(page.getByTestId("dashboard-workspace-ready")).toBeVisible();
+  await expect(page.getByTestId("dashboard-appointment-row")).toHaveCount(0);
+
+  duplicatedAppointmentId = undefined;
+  await login(page, users.manager, /\/app/);
+  await expect.poll(() => duplicatedAppointmentId).toBeGreaterThan(0);
+  await expect(
+    page.locator(
+      `[data-testid="dashboard-appointment-row"][data-appointment-id="${duplicatedAppointmentId}"]`,
+    ),
+  ).toHaveCount(1);
 
   expect(duplicateKeyWarnings).toEqual([]);
 });

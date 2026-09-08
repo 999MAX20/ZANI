@@ -18,8 +18,10 @@ export const teamApi = {
     const { data } = await apiClient.patch<TeamMember>(`/api/team/members/${id}/`, payload);
     return data;
   },
-  invitations: async () => {
-    const { data } = await apiClient.get<BusinessInvitation[] | PaginatedResponse<BusinessInvitation>>("/api/team/invitations/");
+  invitations: async (business?: Id) => {
+    const { data } = await apiClient.get<BusinessInvitation[] | PaginatedResponse<BusinessInvitation>>("/api/team/invitations/", {
+      params: business ? { business } : undefined,
+    });
     return unwrapList(data);
   },
   createInvitation: async (payload: {
@@ -54,8 +56,10 @@ export const teamApi = {
     });
     return data;
   },
-  roles: async () => {
-    const { data } = await apiClient.get<BusinessRole[] | PaginatedResponse<BusinessRole>>("/api/team/roles/");
+  roles: async (business?: Id) => {
+    const { data } = await apiClient.get<BusinessRole[] | PaginatedResponse<BusinessRole>>("/api/team/roles/", {
+      params: business ? { business } : undefined,
+    });
     return unwrapList(data);
   },
   updateRole: async ({ id, payload }: { id: Id; payload: Partial<BusinessRole> }) => {
@@ -66,8 +70,10 @@ export const teamApi = {
     const { data } = await apiClient.patch<RolePermission>(`/api/team/role-permissions/${id}/`, payload);
     return data;
   },
-  departments: async () => {
-    const { data } = await apiClient.get<TeamDepartment[] | PaginatedResponse<TeamDepartment>>("/api/team/departments/");
+  departments: async (business?: Id) => {
+    const { data } = await apiClient.get<TeamDepartment[] | PaginatedResponse<TeamDepartment>>("/api/team/departments/", {
+      params: business ? { business } : undefined,
+    });
     return unwrapList(data);
   },
   createDepartment: async (payload: Pick<TeamDepartment, "business" | "name" | "description">) => {

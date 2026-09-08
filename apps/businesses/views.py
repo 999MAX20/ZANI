@@ -104,6 +104,16 @@ class TeamAccessMixin:
             if can(self.request.user, business, self.business_resource, action).allowed
         ]
 
+    def filter_requested_business(self, queryset, *, lookup="business_id"):
+        business_id = self.request.query_params.get("business")
+        if not business_id:
+            return queryset
+        try:
+            business_id = int(business_id)
+        except (TypeError, ValueError):
+            return queryset.none()
+        return queryset.filter(**{lookup: business_id})
+
     def get_business_from_request(self):
         business_id = self.request.data.get("business") or self.request.query_params.get("business")
         if business_id:
@@ -163,14 +173,7 @@ class TeamMemberManagementViewSet(TeamAccessMixin, ModelViewSet):
 
     def get_queryset(self):
         queryset = self.queryset.filter(business_id__in=self.accessible_business_ids(Actions.VIEW))
-        business_id = self.request.query_params.get("business")
-        if not business_id:
-            return queryset
-        try:
-            business_id = int(business_id)
-        except (TypeError, ValueError):
-            return queryset.none()
-        return queryset.filter(business_id=business_id)
+        return self.filter_requested_business(queryset)
 
     def perform_create(self, serializer):
         business = self.check_team_permission(Actions.MANAGE)
@@ -184,7 +187,8 @@ class BusinessRoleViewSet(TeamAccessMixin, ModelViewSet):
     queryset = BusinessRole.objects.prefetch_related("permissions")
 
     def get_queryset(self):
-        return self.queryset.filter(business_id__in=self.accessible_business_ids(Actions.VIEW))
+        queryset = self.queryset.filter(business_id__in=self.accessible_business_ids(Actions.VIEW))
+        return self.filter_requested_business(queryset)
 
 
 class RolePermissionViewSet(TeamAccessMixin, ModelViewSet):
@@ -192,7 +196,8 @@ class RolePermissionViewSet(TeamAccessMixin, ModelViewSet):
     queryset = RolePermission.objects.select_related("business_role", "business_role__business")
 
     def get_queryset(self):
-        return self.queryset.filter(business_role__business_id__in=self.accessible_business_ids(Actions.VIEW))
+        queryset = self.queryset.filter(business_role__business_id__in=self.accessible_business_ids(Actions.VIEW))
+        return self.filter_requested_business(queryset, lookup="business_role__business_id")
 
     def get_business_from_request(self):
         business_role_id = self.request.data.get("business_role")
@@ -227,7 +232,8 @@ class TeamViewSet(TeamAccessMixin, ModelViewSet):
     queryset = Team.objects.select_related("business")
 
     def get_queryset(self):
-        return self.queryset.filter(business_id__in=self.accessible_business_ids(Actions.VIEW))
+        queryset = self.queryset.filter(business_id__in=self.accessible_business_ids(Actions.VIEW))
+        return self.filter_requested_business(queryset)
 
 
 class TeamMembershipViewSet(TeamAccessMixin, ModelViewSet):
@@ -235,7 +241,8 @@ class TeamMembershipViewSet(TeamAccessMixin, ModelViewSet):
     queryset = TeamMember.objects.select_related("team", "team__business", "member", "member__user")
 
     def get_queryset(self):
-        return self.queryset.filter(team__business_id__in=self.accessible_business_ids(Actions.VIEW))
+        queryset = self.queryset.filter(team__business_id__in=self.accessible_business_ids(Actions.VIEW))
+        return self.filter_requested_business(queryset, lookup="team__business_id")
 
     def get_business_from_request(self):
         team_id = self.request.data.get("team")
@@ -286,7 +293,8 @@ class BusinessInvitationViewSet(TeamAccessMixin, ModelViewSet):
         return [IsAuthenticated()]
 
     def get_queryset(self):
-        return self.queryset.filter(business_id__in=self.accessible_business_ids(Actions.VIEW))
+        queryset = self.queryset.filter(business_id__in=self.accessible_business_ids(Actions.VIEW))
+        return self.filter_requested_business(queryset)
 
     def perform_create(self, serializer):
         business = self.check_team_permission(Actions.MANAGE)

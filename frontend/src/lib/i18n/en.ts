@@ -3360,6 +3360,13 @@ export const en: Record<string, string> = {
     "Active facts: {count}. AI uses them as context: services, rules, tone of voice and business specifics.",
   "aiAssistant.questionLabel": "AI question",
   "aiAssistant.questionPlaceholder": "Example: who should we message today?",
+  "aiAssistant.actionSourceLabel": "Source conversation",
+  "aiAssistant.actionSourcePlaceholder": "Select a conversation",
+  "aiAssistant.actionSourceRequired": "Select a source conversation.",
+  "aiAssistant.approvalTitle": "Approve AI action",
+  "aiAssistant.approvalDescription":
+    "Confirm this exact AI suggestion before it changes CRM data.",
+  "aiAssistant.approvalReason": "Confirmation reason",
   "aiAssistant.ask": "Ask AI",
   "aiAssistant.createActions": "Create actions",
   "aiAssistant.memoryEyebrow": "Memory",

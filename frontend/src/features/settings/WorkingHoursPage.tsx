@@ -191,9 +191,28 @@ export function WorkingHoursPage() {
 
   const closeModal = useCallback(async () => {
     if (!await confirmDiscard()) return;
+    const focusReturnId = selectedResourceId
+      ? `working-hours-resource-${selectedResourceId}`
+      : businessSelected
+        ? "working-hours-business-trigger"
+        : null;
     setModalDirty(false);
     clearSelection();
-  }, [clearSelection, confirmDiscard]);
+    if (focusReturnId) {
+      window.requestAnimationFrame(() => {
+        const restoreFocus = () => {
+          const target = Array.from(
+            document.querySelectorAll<HTMLElement>(
+              `[data-focus-return-id="${CSS.escape(focusReturnId)}"]`,
+            ),
+          ).find((candidate) => candidate.getClientRects().length > 0);
+          target?.focus({ preventScroll: true });
+        };
+        restoreFocus();
+        window.requestAnimationFrame(restoreFocus);
+      });
+    }
+  }, [businessSelected, clearSelection, confirmDiscard, selectedResourceId]);
 
   async function applyPreset() {
     if (!canManage || presetMutation.isPending) return;

@@ -8,6 +8,7 @@ import {
 } from "../../components/crm/CrmEntityDrawer";
 import { useNotification } from "../../components/notifications/NotificationProvider";
 import { ErrorState, PageSkeleton } from "../../components/ui/StateViews";
+import { Modal } from "../../components/ui/Modal";
 import { useI18n } from "../../lib/i18n";
 import type { Id, Lead, Task } from "../../types";
 import { LeadsActionOverlays } from "./components/LeadsActionOverlays";
@@ -22,6 +23,7 @@ import { useLeadsPageHeader } from "./hooks/useLeadsPageHeader";
 import { useLeadsTableState } from "./hooks/useLeadsTableState";
 import { useLeadsWorkspaceData } from "./hooks/useLeadsWorkspaceData";
 import { toDateTimeLocal } from "./utils/leadStorage";
+import { ImportPanel } from "../integrations/components/ImportPanel";
 
 export function LeadsPage() {
   const { t } = useI18n();
@@ -33,6 +35,7 @@ export function LeadsPage() {
   const [createOpen, setCreateOpen] = useState(
     searchParams.get("create") === "1",
   );
+  const [importOpen, setImportOpen] = useState(false);
   const [appointmentOpen, setAppointmentOpen] = useState(false);
   const [drawerEntity, setDrawerEntity] = useState<CrmDrawerEntity | null>(
     null,
@@ -282,9 +285,7 @@ export function LeadsPage() {
           onExportCsv={() => exportRows("csv")}
           onExportExcel={() => exportRows("excel")}
           onShareView={shareView}
-          onOpenImport={() => {
-            window.location.href = "/app/integrations";
-          }}
+          onOpenImport={() => setImportOpen(true)}
           onOpenCreate={openCreateLead}
           onSelectLead={openLead}
           onOpenLead={openLead}
@@ -372,6 +373,20 @@ export function LeadsPage() {
           setLostReason("");
         }}
       />
+
+      <Modal
+        title={t("leads.import")}
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        size="xl"
+        testId="leads-import-modal"
+      >
+        <ImportPanel
+          businessId={business.id}
+          allowedEntities={["leads"]}
+          initialEntity="leads"
+        />
+      </Modal>
 
       <CrmEntityDrawer entity={drawerEntity} onClose={closeDrawer} />
     </CrmWorkspacePage>

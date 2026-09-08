@@ -3344,6 +3344,13 @@ export const kk: Record<string, string> = {
     "Белсенді факт: {count}. AI оларды қызметтер, ережелер, сөйлесу тоны және бизнес ерекшеліктері ретінде қолданады.",
   "aiAssistant.questionLabel": "AI сұрағы",
   "aiAssistant.questionPlaceholder": "Мысалы: бүгін кімге жазу керек?",
+  "aiAssistant.actionSourceLabel": "Дереккөз диалог",
+  "aiAssistant.actionSourcePlaceholder": "Диалогты таңдаңыз",
+  "aiAssistant.actionSourceRequired": "Дереккөз диалогты таңдаңыз.",
+  "aiAssistant.approvalTitle": "AI әрекетін растау",
+  "aiAssistant.approvalDescription":
+    "CRM деректері өзгермес бұрын осы AI ұсынысын растаңыз.",
+  "aiAssistant.approvalReason": "Растау себебі",
   "aiAssistant.ask": "AI-дан сұрау",
   "aiAssistant.createActions": "Әрекеттер жасау",
   "aiAssistant.memoryEyebrow": "Жад",

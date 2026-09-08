@@ -3,7 +3,7 @@
 - Status: **ACTIVE / IN PROGRESS**
 - Created: 2026-08-18
 - Scope: remaining repository, security and verification debt discovered by the backend audit
-- Execution state: **IN PROGRESS - BE-REM-001 THROUGH BE-REM-006 DONE; BE-REM-007 PARTIAL AFTER CLEAN-RANGE PASS, FINAL CERTIFICATION OPEN**
+- Execution state: **IN PROGRESS - BE-REM-001 THROUGH BE-REM-006 DONE; BE-REM-007 PARTIAL WITH FC-004/006 PASS AND FC-003/008 OPEN**
 - Owner: ZANI manager workflow
 
 ## Purpose
@@ -82,7 +82,7 @@ External production services are listed as a release gate because repository har
 | BE-REM-004 | Guarantee the safe API error envelope for unknown failures | P0 | DONE | BE-REM-003 |
 | BE-REM-005 | Replace connector secret encryption and add key rotation | P1 | DONE | BE-REM-002 |
 | BE-REM-006 | Add privileged-account MFA foundation | P1 | DONE | BE-REM-003 |
-| BE-REM-007 | Complete the functional certification evidence | P1 | PARTIAL - integrated clean-range gate passed on `e65e0f4`; FC-003/004/006 reconciliation and final report open | BE-REM-001..006 |
+| BE-REM-007 | Complete the functional certification evidence | P1 | PARTIAL - FC-004/006 pass; action-level FC-003 evidence and final FC-008 closeout remain open | BE-REM-001..006 |
 
 ## BE-REM-001 - Restore The Clean Full Test Gate
 
@@ -303,7 +303,10 @@ The owner must confirm whether MFA is:
 
 ### Confirmed finding
 
-The codebase has strong focused coverage, but the project does not yet have a single durable matrix proving every supported action, role, data state and failure mode. `APP_FUNCTIONAL_CERTIFICATION.md` remains `PLANNED / ON HOLD`, and ZD-001 still carries cross-page search regression test debt.
+The codebase now has durable route, failure-state and ten-journey evidence, but
+the 43 route/action records remain structural and `NOT_RUN`. FC-004 and FC-006
+are accepted; FC-003 still needs per-control expected-result evidence or an
+approved exclusion, and FC-008 remains dependent on that reconciliation.
 
 ### Required work
 
@@ -565,22 +568,27 @@ Residual risk: production onboarding must teach owners to save recovery codes an
 
 ```text
 Task: BE-REM-007
-Branch: codex/backend-rem-007-functional-certification
-Base commit: 00b1e2146f05cd92dbebc976ed3c3163eee3b958
+Branch: codex/be-gap-003-functional-certification
+Base commit: 81167518fb60887c023069a1fd7fa83f90fba6aa
 Evidence report: actual_docs/APP_FUNCTIONAL_CERTIFICATION_REPORT_2026-08-20.md
-Status: PARTIAL - the integrated committed-range full gate and FB-010 passed on `e65e0f4`; FC-003/004/006 reconciliation and the final certification report remain open
+Status: PARTIAL - FC-004 and FC-006 pass; all 43 route/action rows remain NOT_RUN for FC-003 and FC-008 closeout remains open
 Behavior delivered:
-- a machine-readable 43-entry route/action registry covers all 81 router path declarations (77 unique) and a guard test prevents unregistered routes
+- a machine-readable 43-entry route/action registry covers all 85 router path declarations (81 unique) and a guard test prevents unregistered routes
 - deterministic certification fixtures cover owner, administrator, manager, operator and specialist profiles plus multiple businesses and foreign-tenant data
 - Playwright contracts cover search focus/debounce/query composition, action feedback and focus restoration, CRM overlays, role/capability workspaces, kanban density, accessibility/responsiveness and request/render budgets
 - complete tenant-scoped resource options prevent paginated selector truncation
 - team-member options are now filtered by the active accessible business, preventing duplicate identities and cross-workspace assignment choices
 - stale policy assertions were aligned with the approved neutral specialist role and the owner-requested removal of Inbox retry controls
+- a ten-journey machine registry maps J01-J10 to exact route, role, browser, backend and persistence evidence and fails on marker drift
+- browser-to-API-to-persistence tests close the missing J06 lead-import, J07 team-role-change and J10 source-grounded AI-approval journeys
+- lead duplicate preview now covers lead rows that resolve an existing client identity
+- team configuration collections support active-business scoping after accessible-business authorization, preventing cross-business option mixing
+- AI task suggestions require a selected conversation source, capability checks, explicit confirmation and a persisted approval before execution
 Checks run and exact result:
 - npx playwright test --workers=1 -> 138 scenarios discovered across desktop/tablet/mobile; exit 0
 - .\.venv\Scripts\python.exe manage.py test -v 1 -> 901 tests passed in 1511.830s
 - manage.py check -> 0 issues; makemigrations --check --dry-run -> no changes detected
-- npm run check:certification -> 43 entries cover 81 declarations; registry guard test 1/1 passed
+- npm run check:certification -> current candidate covers 85 declarations / 81 unique paths with 43 entries; registry guard test 1/1 passed
 - frontend policy tests -> 29/29 passed
 - npm run build -> 4662-key RU/KK/EN i18n, TypeScript, app and widget builds passed
 - npm run check:bundle -> no chunk over 500 kB; app shell 261.6 kB within 400 kB budget
@@ -589,11 +597,12 @@ Checks run and exact result:
 - npm run audit:visual -> 13 views, 0 overflow, surface, API or auth issues
 - .\.venv\Scripts\python.exe scripts\codex_verify.py --mode full --base-ref 00b1e2146f05cd92dbebc976ed3c3163eee3b958 -> passed against commit 42db5d4; all committed-range backend/frontend/browser/security stages green in 1561s
 - git diff --check -> passed
-Checks skipped and reason: no independent repository gate was skipped; exhaustive 400/401/403/404/409/429/500/timeout/offline/stale-response UI recovery and all ten frontend-to-persistence merchant journeys cannot be accepted before FB-010 and the remaining FC-003/004/006/008 evidence
+Current reconciliation checks: merchant-journey registry 10/10; failure registry 744 cells; J06/J07/J10 passed 3/3 on desktop and 6/6 across tablet/mobile; a clean disposable-database desktop project discovered 62 scenarios and exited zero; frontend build passed with 4841 RU/KK/EN keys; focused Django check plus 6 import/team/AI regressions passed
+Checks skipped and reason: the final current-candidate full gate has not yet run; exhaustive per-control semantic execution is not represented by the 43 structural route/action rows, which all remain NOT_RUN
 Migration/env impact: no migration or dependency-lock change; deterministic fixtures and quality-gate configuration only
-Permission impact: no permission grant was widened; team options are restricted to the active business after the existing accessible-business authorization filter
-Notification/BusinessEvent/AI impact: no notification, BusinessEvent or AI production behavior changed; mock-provider and disabled-provider paths remain deterministic
-Residual risk: FC-003, FC-004, FC-006 and the final FC-008 report remain open; production-like live-provider and managed-service evidence remains outside this repository gate
+Permission impact: no permission grant was widened; team collections are restricted to the active accessible business and AI suggest/execute/approve capabilities remain backend-enforced
+Notification/BusinessEvent/AI impact: no notification or BusinessEvent contract changed; the AI frontend now reaches existing source-grounded suggestion, approval, execution and audit contracts without bypassing confirmation
+Residual risk: FC-003 action-level semantic evidence and the final FC-008 closeout remain open; production-like live-provider and managed-service evidence remains outside this repository gate
 ```
 
 Add one entry per subsequent completed item:

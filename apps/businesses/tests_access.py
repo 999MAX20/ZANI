@@ -282,6 +282,42 @@ class TeamAccessTests(TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertTrue(BusinessMember.objects.filter(business=self.business, user=self.staff_user).exists())
 
+    def test_team_collections_can_be_scoped_to_active_business(self):
+        second_business = Business.objects.create(
+            owner=self.owner,
+            name="Second clinic",
+            slug="second-clinic",
+        )
+        ensure_default_roles(second_business)
+        Team.objects.create(business=self.business, name="Clinic team")
+        Team.objects.create(business=second_business, name="Second team")
+        BusinessInvitation.objects.create(
+            business=self.business,
+            email="clinic-invite@example.com",
+            expires_at=timezone.now() + timezone.timedelta(days=1),
+        )
+        BusinessInvitation.objects.create(
+            business=second_business,
+            email="second-invite@example.com",
+            expires_at=timezone.now() + timezone.timedelta(days=1),
+        )
+        self.api.force_authenticate(self.owner)
+
+        endpoints = {
+            "/api/team/roles/": self.business.roles.count(),
+            "/api/team/departments/": 1,
+            "/api/team/invitations/": 1,
+        }
+        for endpoint, expected_count in endpoints.items():
+            response = self.api.get(endpoint, {"business": self.business.id})
+            self.assertEqual(response.status_code, 200)
+            rows = response.data.get("results", response.data)
+            self.assertEqual(len(rows), expected_count)
+            self.assertEqual(
+                {row["business"] for row in rows},
+                {self.business.id},
+            )
+
     def test_team_screen_cannot_promote_member_to_owner(self):
         staff_member = BusinessMember.objects.create(
             business=self.business,

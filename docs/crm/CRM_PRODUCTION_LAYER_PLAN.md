@@ -18,6 +18,24 @@ domain invariants -> state machines -> audit/activity -> API contracts -> fronte
 
 ### Backend Boundaries
 
+Update 2026-09-08: BE-GAP-003 closes formal merchant-journey evidence for
+FC-006 and deterministic failure/data-state evidence for FC-004. Lead CSV
+preview now detects existing-client identity before confirmation; team
+configuration collections can be scoped to the active accessible business;
+and the AI assistant reaches the existing source-grounded suggestion, explicit
+approval, execution and audit contracts. A machine registry maps exactly ten
+critical journeys to route, role, browser, backend and persistence evidence,
+with new end-to-end coverage for lead import, team role changes and approved AI
+task creation. Those journeys pass on desktop, tablet and mobile Chromium, and
+the complete clean desktop project exits zero across 62 discovered scenarios.
+The certification pass also restores working-hours focus to the visible
+responsive trigger and aligns fixtures with action-only service activation,
+real platform MFA step-up and backend-declared retryability. No migration,
+dependency or environment change is required.
+Formal certification remains partial because all 43 structural route/action
+records are still `NOT_RUN`; per-control semantic evidence or approved
+exclusions must close FC-003 before final FC-008 acceptance.
+
 Update 2026-09-08: BE-GAP-001 closes the generic-update tenant ownership
 boundary. `TenantModelViewSet` now rejects direct `business` reassignment and
 derived ownership changes defined by each viewset's `business_lookup` before

@@ -2,16 +2,33 @@
 
 ## Decision
 
-Status: **INDEPENDENT GATES PASS / FULL CERTIFICATION BLOCKED**.
+Status: **PARTIAL - FC-004 AND FC-006 PASS; FC-003 AND FC-008 OPEN**.
 
-The repository state passed every backend, frontend, browser, accessibility,
-responsive, performance, migration and dependency-security gate executed in
-BE-REM-007. Full application certification is not declared because the source
-plan explicitly requires the unified failure-and-recovery layer. FB-001 through
-FB-010 in `actual_docs/UNIFIED_FALLBACK_EXPERIENCE_PLAN.md` remain `NOT_STARTED`.
+The repository has deterministic failure/recovery coverage and exact
+UI-to-API-to-persistence evidence for all ten critical merchant journeys.
+`FC-004` and `FC-006` are accepted. Full application certification is not
+declared because the 43-entry route/action registry remains structural: every
+entry is still marked `NOT_RUN`, so it does not yet prove every interactive
+control's expected result or approved exclusion. The current candidate also
+requires its final committed-range gate before `FC-008` can be reconciled.
 
-This is a scope dependency, not a test failure and not permission to mark
-untested recovery behavior as passed.
+This is an evidence-granularity gap, not a known failing user journey and not
+permission to mark unexecuted control contracts as passed.
+
+## 2026-09-08 Reconciliation Addendum
+
+- Candidate branch: `codex/be-gap-003-functional-certification`
+- Base: `81167518fb60887c023069a1fd7fa83f90fba6aa`
+- Merchant-journey registry: 10/10 exact journeys accepted
+- Failure registry: 744 journey/role/state/viewport cells accepted
+- Added browser journeys: J06 lead import, J07 team role change and J10
+  source-grounded AI approval; 3/3 pass on desktop, tablet and mobile Chromium
+- Clean current-candidate desktop project: 62 scenarios discovered; exit 0 on
+  a disposable SQLite database
+- Added backend regressions: lead duplicate preview and active-business team
+  collection scoping pass together with existing AI approval and role audit
+  flows
+- Final candidate commit and full committed-range gate: pending
 
 ## Tested Range
 
@@ -27,7 +44,8 @@ untested recovery behavior as passed.
 ## Delivered Evidence
 
 - `frontend/e2e/certification/route-action-registry.mjs` contains 43 complete
-  structural entries covering 81 router declarations and 77 unique paths.
+  structural entries covering 85 router declarations and 81 unique paths in
+  the current candidate.
 - `frontend/scripts/check-functional-certification.mjs` and its guard test fail
   when active routes are absent or registry metadata is incomplete.
 - `frontend/e2e/functional-certification.spec.ts` adds semantic search/filter,
@@ -40,6 +58,15 @@ untested recovery behavior as passed.
   after the existing accessible-business authorization check.
 - Workspace focus restoration and background-render measurement are stable and
   covered by repeatable browser assertions.
+- `frontend/e2e/certification/merchant-journey-registry.mjs` now maps exactly
+  ten required journeys to route, role, persistence entity and exact browser
+  and backend evidence markers.
+- `frontend/e2e/merchant-journeys-certification.spec.ts` closes the previously
+  missing end-to-end evidence for J06, J07 and J10.
+- Lead import duplicate preview now applies when lead rows resolve an existing
+  client identity; team roles, departments and invitations can be scoped to
+  the active accessible business; AI task suggestions require a selected
+  source conversation and explicit approval before execution.
 
 ## Exact Verification Results
 
@@ -91,6 +118,40 @@ Result: PASS against committed range ending at 42db5d4; all backend, frontend,
 browser and security stages passed in 1561s
 ```
 
+Current reconciliation checks before the final committed-range gate:
+
+```text
+npm run check:merchant-journeys
+Result: 10/10 required merchant journeys accepted
+
+npm run check:certification
+Result: 43 entries cover 85 router declarations (81 unique)
+
+npm run test:merchant-journey-certification
+Result: 1 passed, 0 failed
+
+npm run check:failure-certification
+Result: 744 cells across 10 journeys, 5 roles, 12 states and 2 viewports
+
+npm run test:failure-certification
+Result: 1 passed, 0 failed
+
+npx playwright test e2e/merchant-journeys-certification.spec.ts --project=desktop-chromium
+Result: 3 passed in 1.3m
+
+npx playwright test e2e/merchant-journeys-certification.spec.ts --project=tablet-chromium --project=mobile-chromium --workers=1
+Result: 6 passed in 2.2m
+
+npx playwright test --project=desktop-chromium --workers=1
+Result: 62 scenarios discovered on a disposable SQLite database; exit 0 in 621.6s
+
+focused Django certification regressions
+Result: 6 passed across lead import, team scoping/permissions/audit and AI approval
+
+npm run build
+Result: 4841 RU/KK/EN keys; TypeScript, application and widget builds passed
+```
+
 ## Defects Found And Corrected During Certification
 
 1. The complete resource selector was accidentally limited by paginated list
@@ -108,6 +169,26 @@ browser and security stages passed in 1561s
 5. Two policy assertions described superseded product decisions: a separate
    `doctor` technical role and Inbox retry controls. They now enforce the
    canonical `specialist` mapping and the approved absence of retry controls.
+6. Lead import preview omitted duplicate-client warnings even though lead rows
+   resolve client identity. The lead path now reuses the same duplicate preview
+   contract as client import and has backend plus browser regression coverage.
+7. Settings loaded role, department and invitation collections from every
+   accessible business. This could pair a member from one active business with
+   a role id from another and cause a rejected update. Collection endpoints now
+   preserve access checks and optionally scope to the active business; the UI
+   always supplies that business.
+8. AI tool execution had backend suggestion, approval and audit foundations but
+   no source-grounded merchant UI flow. The assistant now requires a real
+   conversation source, exposes the suggested action, and executes only after
+   an explicit confirmation and approval record.
+9. The working-hours editor restored focus to the first matching resource node,
+   which could be a hidden duplicate in the responsive DOM. It now restores
+   focus to the visible trigger after close and after confirmed discard.
+10. Certification fixtures had drifted from current contracts: service
+    activation is action-only, platform landing activation requires real MFA
+    step-up, owner dashboard no longer duplicates manager appointment rows and
+    retry UI is present only for backend-declared retryable errors. The tests
+    now exercise those canonical contracts without bypassing their gates.
 
 ## Coverage Decision By Phase
 
@@ -115,23 +196,22 @@ browser and security stages passed in 1561s
 | --- | --- | --- |
 | FC-001 registry | PASS | Structural coverage and guard test are green. |
 | FC-002 search/filter contracts | PASS | Semantic browser assertions are green. |
-| FC-003 form/mutation/dialog/session | PARTIAL | Representative contracts pass; exhaustive recovery depends on fallback. |
-| FC-004 data/fault fixtures | PARTIAL | Deterministic role/tenant/large-data fixtures exist; full fault matrix is open. |
+| FC-003 form/mutation/dialog/session | PARTIAL | The 43 route/action entries still have `NOT_RUN`; control-level semantic evidence and approved exclusions remain open. |
+| FC-004 data/fault fixtures | PASS | FB-010 deterministically covers 744 journey/role/state/viewport combinations. |
 | FC-005 role/capability/tenant | PASS | Browser and 901-test backend evidence are green. |
-| FC-006 ten merchant journeys | PARTIAL | Representative workflows pass; all ten are not yet fully UI/API/persistence certified. |
-| FC-007 non-functional matrix | PASS | Viewports, Axe, focus, request/render and bundle budgets pass. |
-| FC-008 final closeout | BLOCKED | Committed-range gate passed; fallback prerequisite remains open. |
+| FC-006 ten merchant journeys | PASS | Exactly 10/10 journeys map to frontend, API and persistence evidence; missing J06/J07/J10 browser flows pass. |
+| FC-007 non-functional matrix | PASS | Viewports, Axe, focus, request/render and bundle budgets pass; current J06/J07/J10 journeys pass on tablet/mobile and the clean desktop project exits zero. |
+| FC-008 final closeout | PARTIAL | The prior committed-range gate passed; the current candidate gate and FC-003 reconciliation remain open. |
 
 ## Remaining Required Work
 
 No newly invented CRM feature is required by this report. The remaining work is
-the already approved quality debt:
+formal semantic certification debt:
 
-1. Implement FB-001 through FB-010 from the unified fallback plan.
-2. Execute the complete 400/401/403/404/409/429/500/timeout/offline/stale-response
-   browser recovery matrix across relevant roles.
-3. Complete UI/API/persistence evidence for each of the ten FC-5 merchant
-   journeys.
-4. Change registry entries from `NOT_RUN` only when each entry's complete
-   action and failure contract has evidence.
-Until those items are complete, BE-REM-007 remains `BLOCKED`, not `DONE`.
+1. For every route/action entry, record executed expected-result evidence or an
+   approved exclusion and replace `NOT_RUN` only when that evidence exists.
+2. Run the final committed-candidate full gate and reconcile the exact result in
+   this report.
+3. Close `FC-003`, then publish the final `FC-008` acceptance decision.
+
+Until those items are complete, BE-REM-007 remains `PARTIAL`, not `DONE`.

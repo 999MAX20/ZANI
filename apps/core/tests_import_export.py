@@ -227,6 +227,39 @@ class ImportExportTests(TestCase):
         lead = Lead.objects.get(business=self.business, message="Need appointment")
         self.assertTrue(BusinessEvent.objects.filter(business=self.business, event_type="lead.imported", payload_json__lead_id=lead.id).exists())
 
+    def test_csv_leads_import_previews_existing_client_duplicate(self):
+        existing = Client.objects.create(
+            business=self.business,
+            full_name="Existing lead client",
+            phone="+77010000015",
+            email="existing-lead@example.com",
+        )
+        upload = SimpleUploadedFile(
+            "leads.csv",
+            (
+                "full_name,phone,email,service_name,source,message,status\n"
+                "Existing lead client,+77010000015,existing-lead@example.com,,landing,Needs follow-up,new\n"
+            ).encode(),
+            content_type="text/csv",
+        )
+        self.api.force_authenticate(self.owner)
+
+        response = self.api.post(
+            "/api/import-jobs/",
+            {
+                "business": self.business.id,
+                "entity_type": ImportJob.EntityTypes.LEADS,
+                "source_file": upload,
+            },
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        duplicate_rows = response.data["duplicates_json"]["rows"]
+        self.assertEqual(len(duplicate_rows), 1)
+        self.assertEqual(duplicate_rows[0]["row"], 1)
+        self.assertEqual(duplicate_rows[0]["duplicates"][0]["id"], existing.id)
+
     def test_csv_deals_import_creates_open_deals_and_business_events(self):
         upload = SimpleUploadedFile(
             "deals.csv",

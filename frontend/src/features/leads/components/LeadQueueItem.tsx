@@ -47,6 +47,7 @@ export function LeadQueueItem({
   return (
     <button
       type="button"
+      data-testid="lead-mobile-row-open"
       className={cn(
         "group relative w-full touch-pan-y overflow-hidden border-b border-zani-border px-5 py-4 text-left transition hover:bg-surface-warm",
         selected ? "bg-brand-50/80" : "bg-surface-card",

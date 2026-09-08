@@ -80,6 +80,10 @@ the accepted project branch.
 | ZD-004 | CONSISTENCY / TECHNICAL_LEAK | Code-level fallback audit | Shared API parsing, crash boundaries and direct error fields across merchant and platform surfaces | VERIFIED_BRANCH / EXTERNAL_AND_MANUAL_EVIDENCE_OPEN | `UNIFIED_FALLBACK_EXPERIENCE_PLAN.md` |
 | ZD-005 | SECURITY / AUTHORIZATION | Legacy local private-media URL | Every registered attachment consumer and every CRM entity scope within the same business | VERIFIED_BRANCH | `codex/pre-pilot-sec-010-security-certification` |
 | ZD-006 | VISUAL / CONSISTENCY | Merchant root and owner dashboard | Router aliases, desktop/mobile navigation and the owner/administrator dashboard hierarchy | VERIFIED_BRANCH | `codex/ux-3-owner-dashboard` |
+| ZD-007 | DATA_QUALITY / INTERACTION | Lead CSV import preview | Lead rows that resolve existing client identity through phone or email | VERIFIED_BRANCH | `codex/be-gap-003-functional-certification` |
+| ZD-008 | TENANT_CONTEXT / CONSISTENCY | Team settings with access to multiple businesses | Team roles, departments, invitations and role mutation options | VERIFIED_BRANCH | `codex/be-gap-003-functional-certification` |
+| ZD-009 | FUNCTIONAL / AI_APPROVAL | AI assistant suggested actions | Source-grounded suggestion, confirmation, approval, execution and audit chain | VERIFIED_BRANCH | `codex/be-gap-003-functional-certification` |
+| ZD-010 | INTERACTION / RESPONSIVE | Working-hours editor close/discard | Focus return across duplicate desktop/mobile resource representations | VERIFIED_BRANCH | `codex/be-gap-003-functional-certification` |
 
 ## Detailed Precedents
 
@@ -287,6 +291,135 @@ the accepted project branch.
 - Derived audit rule: every primary workspace needs one canonical route, and
   every dashboard block must justify itself with a unique decision or action;
   repeated status detail belongs on the destination workspace.
+
+### ZD-007 — Lead import preview omits existing-client duplicates
+
+- Recorded: 2026-09-08.
+- Type: `DATA_QUALITY / INTERACTION`.
+- Status: `VERIFIED_BRANCH`.
+- Owner-observed surface: lead CSV import from `/app/leads`.
+- Role and prerequisites: a permitted CRM user, an existing client and a lead
+  row containing the same normalized phone or email.
+- Reproduction steps: open the lead import dialog, select a CSV containing the
+  existing identity and run preview.
+- Expected behavior: preview warns that the lead row resolves an existing
+  client before the user confirms the import.
+- Actual behavior: duplicate preview was calculated only when importing
+  `clients`; `leads` reused client identity during commit but showed no duplicate
+  warning during preview.
+- Root cause class: shared domain behavior applied only to one entity branch.
+- Actual cross-product scope: CSV preview and import for clients and leads.
+- Correction: invoke the shared client-duplicate preview for both entities and
+  expose the lead import flow directly from Leads with confirm/persistence
+  assertions.
+- Commit / branch: `codex/be-gap-003-functional-certification`.
+- Verification commands and results: focused Django duplicate/import tests
+  passed; J06 desktop Chromium browser-to-API-to-persistence journey passed.
+- Skipped checks and reason: final committed-range gate is recorded separately
+  in the functional certification report.
+- Remaining risk or test debt: broader per-control FC-003 execution remains
+  open; no known lead-import persistence gap remains for this defect.
+- Derived audit rule: if two imports share identity resolution at commit time,
+  preview must use the same duplicate-detection contract for both.
+
+### ZD-008 — Team settings mix configuration from accessible businesses
+
+- Recorded: 2026-09-08.
+- Type: `TENANT_CONTEXT / CONSISTENCY`.
+- Status: `VERIFIED_BRANCH`.
+- Owner-observed surface: team settings after switching between two businesses
+  accessible to the same user.
+- Role and prerequisites: owner or administrator with membership in at least
+  two businesses and business-specific roles or departments.
+- Reproduction steps: select the second business, open Team settings, select a
+  member and inspect role options or submit a role change.
+- Expected behavior: member and configuration options all belong to the active
+  accessible business; the persisted membership uses the selected role.
+- Actual behavior: roles, departments and invitations were loaded across every
+  accessible business, so the UI could pair the active-business member with a
+  role id from another business; the backend correctly rejected that mutation.
+- Root cause class: active-tenant UI query omitted after an otherwise correct
+  accessible-business authorization filter.
+- Actual cross-product scope: team member, role, permission, department, team
+  membership and invitation collection APIs plus Team settings queries.
+- Correction: preserve accessible-business authorization, add optional active
+  `business` filtering to team collections and pass the active business from
+  every relevant Settings query.
+- Commit / branch: `codex/be-gap-003-functional-certification`.
+- Verification commands and results: focused Django active-business scoping,
+  owner-protection and role-audit tests passed; J07 desktop Chromium role-change
+  UI/API/persistence journey passed; frontend build passed.
+- Skipped checks and reason: final committed-range gate is recorded separately
+  in the functional certification report.
+- Remaining risk or test debt: none known for active-business collection
+  scoping; formal action-level FC-003 evidence remains separate.
+- Derived audit rule: a user being authorized for multiple businesses does not
+  permit one active workspace to mix configuration objects from those tenants.
+
+### ZD-009 — AI tool foundations have no complete merchant approval flow
+
+- Recorded: 2026-09-08.
+- Type: `FUNCTIONAL / AI_APPROVAL`.
+- Status: `VERIFIED_BRANCH`.
+- Owner-observed surface: AI assistant suggested CRM actions.
+- Role and prerequisites: a user with AI suggest/execute/approve capabilities
+  and an accessible conversation containing source material.
+- Reproduction steps: open the AI assistant and attempt to request and execute
+  a task suggestion.
+- Expected behavior: the suggestion cites a real source, shows the proposed
+  action, requires explicit confirmation, persists approval, executes the exact
+  tool call and exposes the created task/audit evidence.
+- Actual behavior: the backend contracts existed, but the assistant frontend
+  did not call the tool suggestion, approval or execution APIs.
+- Root cause class: backend foundation without a reachable user-facing flow.
+- Actual cross-product scope: assistant UI, capability checks, AI tool-call and
+  approval APIs, task persistence, activity/audit invalidation and i18n.
+- Correction: add conversation source selection, source-grounded suggestion,
+  permission-aware action display and shared explicit confirmation before
+  creating/approving/executing the exact proposed task action.
+- Commit / branch: `codex/be-gap-003-functional-certification`.
+- Verification commands and results: existing Django AI suggest/approve/
+  execute/audit flow passed; J10 desktop Chromium UI/API/persistence/audit
+  journey passed; frontend build and i18n parity passed.
+- Skipped checks and reason: live AI provider execution remains outside this
+  deterministic repository certification; the tool flow uses controlled local
+  evidence.
+- Remaining risk or test debt: live-provider availability and quality require
+  target-environment evidence; critical execution remains explicitly approved.
+- Derived audit rule: AI action foundations are incomplete until a user can
+  reach them through source-grounded UI without bypassing permission or
+  confirmation gates.
+
+### ZD-010 — Working-hours close can focus a hidden responsive duplicate
+
+- Recorded: 2026-09-08.
+- Type: `INTERACTION / RESPONSIVE`.
+- Status: `VERIFIED_BRANCH`.
+- Owner-observed surface: resource working-hours editor reached by direct URL.
+- Role and prerequisites: business owner, at least one resource, responsive DOM
+  containing desktop and compact representations of the same resource.
+- Reproduction steps: open a resource editor, close it or confirm discarding
+  dirty preset changes and inspect the active element.
+- Expected behavior: the modal closes and focus returns to the visible resource
+  trigger that opened the editor.
+- Actual behavior: the first matching `data-focus-return-id` could belong to a
+  hidden responsive duplicate, leaving keyboard focus off the visible control.
+- Root cause class: focus restoration selected by identity without checking
+  rendered visibility.
+- Actual cross-product scope: direct-link resource selection, normal close and
+  confirmed-discard close across responsive resource representations.
+- Correction: retain the stable focus-return identity, select the rendered
+  matching element and repeat restoration on the next animation frame after
+  the responsive/modal DOM settles.
+- Commit / branch: `codex/be-gap-003-functional-certification`.
+- Verification commands and results: focused desktop Playwright regression
+  passed; complete clean desktop project discovered 62 scenarios and exited
+  zero.
+- Skipped checks and reason: exhaustive FC-003 per-control execution remains a
+  separate formal certification item.
+- Remaining risk or test debt: none known for this focus-return contract.
+- Derived audit rule: focus identities shared by responsive duplicate nodes
+  must resolve to a visible target after the closing surface unmounts.
 
 ## Regression Rule Catalogue
 

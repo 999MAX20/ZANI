@@ -154,6 +154,7 @@ export const fb010CriticalJourneys = [
     routeIds: ["CRM-LEADS-LIST", "CRM-CLIENTS-LIST"],
     apiModules: ["importExport", "leads", "clients"],
     roles: ["owner", "administrator", "manager", "operator"],
+    browserEvidence: [...sharedBrowserEvidence, "e2e/merchant-journeys-certification.spec.ts"],
     backendEvidence: [...sharedBackendEvidence, "apps/core/tests_import_export.py", "apps/core/tests_import_samples.py"],
   }),
   journey({
@@ -161,6 +162,7 @@ export const fb010CriticalJourneys = [
     routeIds: ["SETUP-SETTINGS"],
     apiModules: ["team", "businesses"],
     roles: ["owner", "administrator"],
+    browserEvidence: [...sharedBrowserEvidence, "e2e/merchant-journeys-certification.spec.ts"],
     backendEvidence: [...sharedBackendEvidence, "apps/businesses/tests_access.py", "apps/accounts/tests.py"],
   }),
   journey({
@@ -182,6 +184,7 @@ export const fb010CriticalJourneys = [
     routeIds: ["AI-ASSISTANT", "MGMT-TIMELINE"],
     apiModules: ["ai", "activities"],
     roles: ["owner", "administrator", "manager"],
+    browserEvidence: [...sharedBrowserEvidence, "e2e/merchant-journeys-certification.spec.ts"],
     backendEvidence: [...sharedBackendEvidence, "apps/ai_core/tests.py", "apps/activities/tests.py"],
   }),
 ];

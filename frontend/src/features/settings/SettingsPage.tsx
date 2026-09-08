@@ -233,12 +233,12 @@ export function SettingsPage() {
   });
   const teamRoles = useQuery({
     queryKey: ["team-roles", business?.id],
-    queryFn: teamApi.roles,
+    queryFn: () => teamApi.roles(business?.id),
     enabled: Boolean(business && canViewTeam),
   });
   const invitations = useQuery({
     queryKey: ["team-invitations", business?.id],
-    queryFn: teamApi.invitations,
+    queryFn: () => teamApi.invitations(business?.id),
     enabled: Boolean(business && canManageTeam),
   });
   const [inviteForm, setInviteForm] = useState({
@@ -258,7 +258,7 @@ export function SettingsPage() {
     useState<BusinessInvitation | null>(null);
   const departments = useQuery({
     queryKey: ["team-departments", business?.id],
-    queryFn: teamApi.departments,
+    queryFn: () => teamApi.departments(business?.id),
     enabled: Boolean(business && canViewTeam),
   });
   const [departmentName, setDepartmentName] = useState("");
@@ -1108,6 +1108,7 @@ export function SettingsPage() {
                   </div>
                   <div className="grid gap-3 lg:grid-cols-3">
                     <Select
+                      data-testid="team-member-select"
                       label={t("settings.memberStep")}
                       value={
                         selectedMember?.id ? String(selectedMember.id) : ""
@@ -1124,6 +1125,7 @@ export function SettingsPage() {
                       }))}
                     />
                     <Select
+                      data-testid="team-role-select"
                       label={t("settings.roleStep")}
                       value={selectedMemberRole}
                       onChange={(event) =>

@@ -155,6 +155,7 @@ export function LeadsToolbar({
             {labels.exportCsv}
           </Button>
           <Button
+            data-testid="leads-import"
             variant="secondary"
             size="sm"
             className="h-9 rounded-control px-3"

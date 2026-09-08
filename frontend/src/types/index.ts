@@ -1240,9 +1240,32 @@ export type AIToolCallLog = {
   tool_name: string;
   input_json: Record<string, unknown>;
   output_json: Record<string, unknown>;
-  status: "suggested" | "executed" | "failed" | "rejected";
+  status: "suggested" | "executing" | "executed" | "failed" | "rejected";
   error: string;
+  attempts?: number;
+  executed_at?: string | null;
   created_at: string;
+};
+
+export type ApprovalRequest = {
+  id: Id;
+  business: Id;
+  requested_by: Id | null;
+  action_type:
+    | "ai_pipeline"
+    | "ai_outreach"
+    | "ai_automation"
+    | "campaign_launch"
+    | "appointment_change"
+    | "export";
+  payload: Record<string, unknown>;
+  source_object_type: string;
+  source_object_id: string;
+  ai_tool_call_log: Id | null;
+  status: "pending" | "approved" | "rejected" | "expired" | "executed";
+  reason: string;
+  created_at: string;
+  updated_at: string;
 };
 
 export type AIToolDefinition = {

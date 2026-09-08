@@ -211,7 +211,6 @@ test("client, lead, deal, appointment, conversation and task workspaces render e
         description: "Created by Playwright entity workspace.",
         duration_minutes: 30,
         price_from: "1000.00",
-        is_active: true,
       },
     },
   );

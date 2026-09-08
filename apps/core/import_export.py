@@ -136,7 +136,15 @@ def build_import_preview(job: ImportJob, mapping=None):
     headers = list(rows[0].keys()) if rows else []
     mapping = mapping or guess_mapping(headers, aliases_for_entity(job.entity_type))
     preview_rows = rows[: settings.IMPORT_PREVIEW_ROWS]
-    duplicates = duplicate_preview(job, preview_rows, mapping) if job.entity_type == ImportJob.EntityTypes.CLIENTS else []
+    duplicate_aware_entities = {
+        ImportJob.EntityTypes.CLIENTS,
+        ImportJob.EntityTypes.LEADS,
+    }
+    duplicates = (
+        duplicate_preview(job, preview_rows, mapping)
+        if job.entity_type in duplicate_aware_entities
+        else []
+    )
     row_errors = validate_import_rows(job.entity_type, rows, mapping)
     job.mapping_json = mapping
     job.preview_json = {

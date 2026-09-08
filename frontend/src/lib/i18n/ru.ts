@@ -3337,6 +3337,13 @@ export const ru: Record<string, string> = {
     "Активных фактов: {count}. AI использует их как контекст: услуги, правила, тон общения и особенности бизнеса.",
   "aiAssistant.questionLabel": "Вопрос AI",
   "aiAssistant.questionPlaceholder": "Например: кому написать сегодня?",
+  "aiAssistant.actionSourceLabel": "Диалог-источник",
+  "aiAssistant.actionSourcePlaceholder": "Выберите диалог",
+  "aiAssistant.actionSourceRequired": "Выберите диалог-источник.",
+  "aiAssistant.approvalTitle": "Подтвердить действие AI",
+  "aiAssistant.approvalDescription":
+    "Подтвердите именно это предложение AI перед изменением данных CRM.",
+  "aiAssistant.approvalReason": "Причина подтверждения",
   "aiAssistant.ask": "Спросить AI",
   "aiAssistant.createActions": "Создать действия",
   "aiAssistant.memoryEyebrow": "Память",

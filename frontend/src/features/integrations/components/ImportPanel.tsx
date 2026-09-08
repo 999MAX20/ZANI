@@ -37,10 +37,27 @@ function ImportMetric({ label, value, tone = "default" }: { label: string; value
   );
 }
 
-export function ImportPanel({ businessId }: { businessId: Id }) {
+const importEntities: ImportEntity[] = ["clients", "leads", "deals", "sales", "catalog"];
+
+export function ImportPanel({
+  businessId,
+  allowedEntities = importEntities,
+  initialEntity,
+  onImported,
+}: {
+  businessId: Id;
+  allowedEntities?: ImportEntity[];
+  initialEntity?: ImportEntity;
+  onImported?: (job: ImportJob) => void;
+}) {
   const { t } = useI18n();
   const queryClient = useQueryClient();
-  const [entity, setEntity] = useState<ImportEntity>("clients");
+  const normalizedEntities = allowedEntities.length ? allowedEntities : importEntities;
+  const [entity, setEntity] = useState<ImportEntity>(
+    initialEntity && normalizedEntities.includes(initialEntity)
+      ? initialEntity
+      : normalizedEntities[0],
+  );
   const [file, setFile] = useState<File | null>(null);
   const [activeJob, setActiveJob] = useState<ImportJob | null>(null);
 
@@ -71,6 +88,7 @@ export function ImportPanel({ businessId }: { businessId: Id }) {
       queryClient.invalidateQueries({ queryKey: ["deals"] });
       queryClient.invalidateQueries({ queryKey: ["services"] });
       queryClient.invalidateQueries({ queryKey: ["connector-sync-runs"] });
+      onImported?.(job);
     },
   });
 
@@ -91,7 +109,7 @@ export function ImportPanel({ businessId }: { businessId: Id }) {
     { value: "deals", label: t("integrations.import.deals") },
     { value: "sales", label: t("integrations.import.sales") },
     { value: "catalog", label: t("integrations.import.catalogShort") },
-  ];
+  ].filter((option) => normalizedEntities.includes(option.value as ImportEntity));
 
   return (
     <div className="space-y-4">
@@ -106,12 +124,29 @@ export function ImportPanel({ businessId }: { businessId: Id }) {
 
       <div className="rounded-card border border-zani-border bg-surface-card p-4 shadow-sm">
         <div className="grid gap-3 lg:grid-cols-[180px_1fr_auto_auto]">
-          <Select value={entity} onChange={(event) => setEntity(event.target.value as ImportEntity)} options={entityOptions} />
-          <Input type="file" accept=".csv,.xlsx" onChange={(event) => setFile(event.target.files?.[0] || null)} />
+          <Select
+            data-testid="import-entity"
+            value={entity}
+            disabled={entityOptions.length === 1}
+            onChange={(event) => setEntity(event.target.value as ImportEntity)}
+            options={entityOptions}
+          />
+          <Input
+            data-testid="import-file"
+            type="file"
+            accept=".csv,.xlsx"
+            onChange={(event) => setFile(event.target.files?.[0] || null)}
+          />
           <Button type="button" variant="secondary" isLoading={template.isPending} onClick={() => template.mutate(entity)}>
             <FileSpreadsheet size={16} /> {t("integrations.import.template")}
           </Button>
-          <Button type="button" disabled={!file} isLoading={upload.isPending} onClick={() => upload.mutate()}>
+          <Button
+            data-testid="import-preview"
+            type="button"
+            disabled={!file}
+            isLoading={upload.isPending}
+            onClick={() => upload.mutate()}
+          >
             <Upload size={16} /> {t("integrations.import.checkFile")}
           </Button>
         </div>
@@ -132,7 +167,12 @@ export function ImportPanel({ businessId }: { businessId: Id }) {
             </p>
           </div>
           {selected?.status === "previewed" && !errors.length ? (
-            <Button type="button" isLoading={confirm.isPending} onClick={() => confirm.mutate(selected.id)}>
+            <Button
+              data-testid="import-confirm"
+              type="button"
+              isLoading={confirm.isPending}
+              onClick={() => confirm.mutate(selected.id)}
+            >
               <CheckCircle2 size={16} /> {t("integrations.import.import")}
             </Button>
           ) : null}
@@ -168,6 +208,7 @@ export function ImportPanel({ businessId }: { businessId: Id }) {
 
         {duplicates.length ? (
           <StatusNotice
+            data-testid="import-duplicates"
             className="mt-4"
             compact
             tone="warning"

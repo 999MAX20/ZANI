@@ -221,7 +221,7 @@ class BotReadinessAPITests(TestCase):
         self.assertEqual(first.data["bot"], self.bot.id)
         self.assertEqual(BotChannel.objects.filter(bot=self.bot, channel=BotChannel.Channels.TELEGRAM).count(), 1)
 
-    def test_public_widget_rejects_draft_bot_or_channel(self):
+    def test_public_widget_transport_ignores_ai_readiness_but_rejects_draft_channel(self):
         channel = BotChannel.objects.create(
             bot=self.bot,
             channel=BotChannel.Channels.WEBSITE,
@@ -236,11 +236,11 @@ class BotReadinessAPITests(TestCase):
         channel.save(update_fields=["status", "updated_at"])
         draft_channel_response = self.api.get(f"/api/public/website-chat/{channel.public_token}/")
 
-        self.assertEqual(draft_bot_response.status_code, 403)
-        self.assertEqual(unready_active_response.status_code, 403)
+        self.assertEqual(draft_bot_response.status_code, 200)
+        self.assertEqual(unready_active_response.status_code, 200)
         self.assertEqual(draft_channel_response.status_code, 403)
 
-    def test_public_widget_accepts_only_runtime_ready_agent(self):
+    def test_public_widget_accepts_runtime_ready_agent(self):
         channel = BotChannel.objects.create(
             bot=self.bot,
             channel=BotChannel.Channels.WEBSITE,

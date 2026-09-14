@@ -1,6 +1,6 @@
 from django.db import transaction
 
-from apps.bots.models import Bot, BotChannel
+from apps.bots.models import Bot, BotChannel, BotConversation
 from apps.businesses.models import Business
 from apps.core.domain_errors import InvalidTransition, OwnershipConflict
 from apps.integrations.models import BusinessConnector
@@ -40,6 +40,22 @@ def get_bot_readiness(bot: Bot) -> dict:
 
 def is_bot_runtime_ready(bot: Bot) -> bool:
     return bot.status == Bot.Statuses.ACTIVE and get_bot_readiness(bot)["is_ready"]
+
+
+def conversation_ai_block_reason(conversation: BotConversation) -> str:
+    """Recheck persisted state at autonomous-work boundaries, not transport lookup."""
+    current = BotConversation.objects.select_related("bot", "bot__business").get(pk=conversation.pk)
+    if current.handoff_required:
+        return "handoff"
+    if not current.bot_enabled:
+        return "bot_paused"
+    if current.status != BotConversation.Statuses.OPEN or current.is_archived:
+        return "inactive"
+    if current.business_id != current.bot.business_id or not is_bot_runtime_ready(current.bot):
+        return "agent_unready"
+    if not current.bot.channels.filter(channel=current.channel, status=BotChannel.Statuses.ACTIVE).exists():
+        return "channel_inactive"
+    return ""
 
 
 def assert_bot_can_activate(bot: Bot) -> dict:

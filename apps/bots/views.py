@@ -13,7 +13,7 @@ from apps.bots.channel_actions import (
     whatsapp_status_action,
 )
 from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
-from apps.bots.lifecycle import activate_bot, create_bot, ensure_bot_channel, is_bot_runtime_ready, pause_bot, update_bot, update_bot_channel
+from apps.bots.lifecycle import activate_bot, create_bot, ensure_bot_channel, pause_bot, update_bot, update_bot_channel
 from apps.bots.serializers import (
     BotChannelSerializer,
     BotConversationSerializer,
@@ -284,7 +284,7 @@ def get_public_website_channel(public_token):
         public_token=public_token,
         channel=BotChannel.Channels.WEBSITE,
     )
-    if channel.status != BotChannel.Statuses.ACTIVE or not is_bot_runtime_ready(channel.bot):
+    if channel.status != BotChannel.Statuses.ACTIVE:
         raise PermissionDenied("This website chat channel is not available.")
     return channel
 

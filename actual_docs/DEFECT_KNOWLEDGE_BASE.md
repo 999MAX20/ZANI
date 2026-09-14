@@ -450,17 +450,28 @@ the accepted project branch.
 - Owner-observed surface: `/app/ai-agents/:id/*`, website widget and messenger webhook resolution.
 - Role and prerequisites: legacy active bot or an active bot that later loses its active profile, active channel or active business knowledge.
 - Reproduction steps: inspect an active bot without all three launch requirements, or call a public/provider entry point for that bot.
-- Expected behavior: the UI states that launch is blocked and runtime rejects the bot until readiness is restored.
+- Expected behavior: the UI states that AI launch is blocked and autonomous AI does not run until readiness is restored. An active authenticated channel remains available to Inbox; channel disablement is separate from agent pause.
 - Actual behavior: status-only checks could still present and resolve the bot as active.
 - User impact: an AI agent could answer without its intended profile or grounded business knowledge.
 - Root cause class: persisted lifecycle status was treated as sufficient runtime readiness.
 - Actual cross-product scope: website public chat plus Telegram, WhatsApp and Instagram inbound channel resolution.
-- Correction: expose structural readiness, require dedicated active profile/channel/knowledge for activation, label legacy active-but-unready records and apply a fail-closed readiness check at runtime entry points.
+- Correction: expose structural readiness, require dedicated active profile/channel/knowledge for activation and label legacy active-but-unready records. The original entry-point check also blocked transport; the bounded 2026-09-14 follow-up moves readiness enforcement to autonomous execution and bot outbox delivery without relaxing channel authentication or ownership.
 - Commit / branch: `codex/be-gap-003-functional-certification`.
 - Verification commands and results: Django system check passed; `apps/bots/tests_readiness.py` passed 11 tests, onboarding passed 11 tests and the Telegram/WhatsApp/Instagram plus encrypted-credential selection passed 68 tests.
 - Skipped checks and reason: none for the bounded readiness/provider-resolution contract; the full repository verification script was not run because Bash is unavailable in the Windows shell.
-- Remaining risk or test debt: existing active-but-unready rows are not mutated automatically; they remain visible for an owner to repair or pause while runtime stays blocked.
+- Remaining risk or test debt: existing active-but-unready rows are not mutated automatically; they remain visible for an owner to repair or pause while autonomous AI stays blocked. The 2026-09-14 follow-up is local/uncommitted on `codex/ai-pause-inbound`; its current evidence and limitations are recorded in `docs/integrations/integrations.md`. Deployment-engine concurrency and live-provider certification remain separate gates.
 - Derived audit rule: AI runtime eligibility must be recomputed from current dependencies, never inferred from a persisted active flag alone.
+
+Follow-up verification 2026-09-14 (`codex/ai-pause-inbound`, local/uncommitted):
+12 new regressions cover independent inbound transport, disabled channels,
+authenticated/replayed provider messages, tenant boundaries, manager replies,
+readiness loss, pauses during qualification/reply generation and queued bot replies.
+Final focused rerun: 26/26 passed with normal logging, Django check and migration
+drift clean. The broader 325-test probe passed 324 tests and had one logging-test
+failure caused by the ad-hoc runner; that exact test is green in the final rerun.
+No runtime code changed between those runs. This is scoped evidence, not a
+zero-exit full-candidate gate; see the integration document for exact commands,
+failed setup probes, snapshot digest and skipped deployment/live checks.
 
 ### ZD-013 — Generic messenger configuration bypasses ownership and verification
 

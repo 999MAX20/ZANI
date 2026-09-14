@@ -6,8 +6,7 @@ from apps.automations.models import AutomationRule
 from apps.billing.models import UsageCounter
 from apps.billing.usage import increment_usage
 from apps.bots.inbox_service import register_bot_message
-from apps.bots.lifecycle import is_bot_runtime_ready
-from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
+from apps.bots.models import BotChannel, BotConversation, BotMessage
 from apps.conversations.auto_pipeline import maybe_run_auto_pipeline
 from apps.integrations.crm_mapping import record_message_received_event
 from apps.integrations.message_idempotency import create_inbound_message_once, find_existing_inbound_message
@@ -26,7 +25,7 @@ def resolve_instagram_channel(instagram_user_id=""):
         .filter(
             channel=BotChannel.Channels.INSTAGRAM,
             status=BotChannel.Statuses.ACTIVE,
-            bot__status=Bot.Statuses.ACTIVE,
+
         )
     )
     if instagram_user_id:

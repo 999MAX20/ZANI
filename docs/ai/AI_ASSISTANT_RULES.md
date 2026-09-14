@@ -103,6 +103,18 @@ For conversation -> CRM pipeline flows:
 4. The result must be visible in the conversation timeline and CRM entity history.
 5. Important steps should create BusinessEvents.
 6. Handoff, bot-paused or closed conversations are stop states for auto-pipeline execution. AI must not qualify, mutate CRM records, book appointments or send automatic replies in those states.
+7. Agent pause/draft or missing active profile/business knowledge blocks autonomous
+   AI, not incoming transport. An explicitly active channel must still deliver
+   authenticated messages to Inbox and permit authorized manager replies.
+   Channel disablement is a separate operation. Recheck persisted eligibility
+   after provider work and at outbox delivery; do not send an old queued bot reply
+   merely because the agent was ready when it was created. An already dispatched
+   provider request cannot be recalled by this local check.
+
+Website contact capture and explicit client appointment confirmations are not
+AI qualification; disabling autonomous AI must not silently disable those
+existing deterministic CRM flows. Manually invoked drafts and approved AI tools
+continue to use their existing permissions and confirmation gates.
 
 ## Analyst Output Format
 

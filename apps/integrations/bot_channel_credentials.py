@@ -130,8 +130,6 @@ def find_bot_channel_by_credential(provider, key, raw_value, channel_type):
     if not raw_value or provider != channel_type:
         return None
 
-    from apps.bots.models import Bot
-
     digest = credential_lookup_digest(provider, key, raw_value)
     connectors = BusinessConnector.objects.filter(
         provider=provider,
@@ -150,7 +148,7 @@ def find_bot_channel_by_credential(provider, key, raw_value, channel_type):
             bot__business_id=connector.business_id,
             channel=channel_type,
             status=BotChannel.Statuses.ACTIVE,
-            bot__status=Bot.Statuses.ACTIVE,
+
         ).first()
         if channel and is_bot_runtime_ready(channel.bot):
             return channel
@@ -160,7 +158,7 @@ def find_bot_channel_by_credential(provider, key, raw_value, channel_type):
     legacy_channel = BotChannel.objects.select_related("bot", "bot__business").filter(
         channel=channel_type,
         status=BotChannel.Statuses.ACTIVE,
-        bot__status=Bot.Statuses.ACTIVE,
+
         **{f"config_json__{key}": raw_value},
     ).first()
     if legacy_channel and is_bot_runtime_ready(legacy_channel.bot):

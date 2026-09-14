@@ -9,7 +9,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.accounts.models import User
-from apps.ai_core.models import AIRequestLog
+from apps.ai_core.models import AIRequestLog, AgentProfile, BusinessKnowledgeItem
 from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
 from apps.businesses.models import Business, BusinessMember
 from apps.clients.models import Client
@@ -121,6 +121,12 @@ class Command(BaseCommand):
         )
         self._create_message_settings(business)
         bot = Bot.objects.create(business=business, name="CRM Runtime Sales Bot", status=Bot.Statuses.ACTIVE)
+        AgentProfile.objects.create(business=business, bot=bot, name="CRM runtime check profile")
+        BusinessKnowledgeItem.objects.create(
+            business=business,
+            title="CRM runtime check knowledge",
+            content="Offer only configured services and available slots; booking needs explicit client selection.",
+        )
         channel = BotChannel.objects.create(
             bot=bot,
             channel=BotChannel.Channels.WEBSITE,

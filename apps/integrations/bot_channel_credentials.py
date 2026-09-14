@@ -4,7 +4,6 @@ import hmac
 from django.conf import settings
 from django.db import transaction
 
-from apps.bots.lifecycle import is_bot_runtime_ready
 from apps.bots.models import BotChannel
 from apps.integrations.connectors import create_or_update_credential, read_connector_credential
 from apps.integrations.channel_boundary import lock_channel_business, valid_channel_binding_id
@@ -148,9 +147,8 @@ def find_bot_channel_by_credential(provider, key, raw_value, channel_type):
             bot__business_id=connector.business_id,
             channel=channel_type,
             status=BotChannel.Statuses.ACTIVE,
-
         ).first()
-        if channel and is_bot_runtime_ready(channel.bot):
+        if channel:
             return channel
         # Do not reinterpret a broken authenticated binding as a legacy one.
         return None
@@ -158,10 +156,9 @@ def find_bot_channel_by_credential(provider, key, raw_value, channel_type):
     legacy_channel = BotChannel.objects.select_related("bot", "bot__business").filter(
         channel=channel_type,
         status=BotChannel.Statuses.ACTIVE,
-
         **{f"config_json__{key}": raw_value},
     ).first()
-    if legacy_channel and is_bot_runtime_ready(legacy_channel.bot):
+    if legacy_channel:
         get_bot_channel_credential(legacy_channel, provider, key)
         return legacy_channel
     return None

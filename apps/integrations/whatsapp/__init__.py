@@ -36,12 +36,11 @@ def resolve_whatsapp_channel(provided_secret="", phone_number_id=""):
         .filter(
             channel=BotChannel.Channels.WHATSAPP,
             status=BotChannel.Statuses.ACTIVE,
-
         )
     )
     if phone_number_id:
         channel = candidates.filter(config_json__phone_number_id=phone_number_id).first() or candidates.filter(external_id=phone_number_id).first()
-        if channel and is_bot_runtime_ready(channel.bot):
+        if channel:
             return channel
 
     channel = find_whatsapp_channel_by_webhook_secret(provided_secret)

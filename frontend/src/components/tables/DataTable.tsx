@@ -1,4 +1,5 @@
 import type React from "react";
+import { Fragment } from "react";
 
 import { CRM_TABLE_ROW_HEIGHT } from "../crm";
 import { surfaceClass } from "../ui/Card";
@@ -36,6 +37,7 @@ export function DataTable<T>({
   rowFocusReturnId,
   rowTestId,
   rowClassName,
+  rowGroup,
   tableLabel,
   toolbar,
   footer,
@@ -56,6 +58,7 @@ export function DataTable<T>({
   rowFocusReturnId?: (row: T) => string;
   rowTestId?: (row: T) => string;
   rowClassName?: (row: T) => string | undefined;
+  rowGroup?: (row: T) => string;
   tableLabel?: string;
   toolbar?: React.ReactNode;
   footer?: React.ReactNode;
@@ -100,7 +103,8 @@ export function DataTable<T>({
           {rows.map((row, index) => {
             const resolvedRowKey = rowKey?.(row, index) ?? index;
             const selected = selectedRowKey !== null && selectedRowKey !== undefined && String(resolvedRowKey) === String(selectedRowKey);
-            return (
+            return (<Fragment key={resolvedRowKey}>
+              {rowGroup && (index === 0 || rowGroup(rows[index - 1]) !== rowGroup(row)) ? <h3 className="bg-surface-muted px-3 py-2 text-xs font-semibold text-zani-subtle">{rowGroup(row)}</h3> : null}
               <article
                 key={resolvedRowKey}
                 tabIndex={onRowSelect ? 0 : undefined}
@@ -136,7 +140,7 @@ export function DataTable<T>({
                     )}
                   </div>
                 ))}
-              </article>
+              </article></Fragment>
             );
           })}
         </div>
@@ -158,7 +162,8 @@ export function DataTable<T>({
             {rows.map((row, index) => {
               const resolvedRowKey = rowKey?.(row, index) ?? index;
               const selected = selectedRowKey !== null && selectedRowKey !== undefined && String(resolvedRowKey) === String(selectedRowKey);
-              return (
+              return (<Fragment key={resolvedRowKey}>
+                {rowGroup && (index === 0 || rowGroup(rows[index - 1]) !== rowGroup(row)) ? <tr className="bg-surface-muted"><th colSpan={columns.length} scope="rowgroup" className="px-3 py-2 text-left text-xs font-semibold text-zani-subtle">{rowGroup(row)}</th></tr> : null}
                 <tr
                   key={resolvedRowKey}
                   tabIndex={onRowSelect ? 0 : undefined}
@@ -188,7 +193,7 @@ export function DataTable<T>({
                       {column.cell(row)}
                     </td>
                   ))}
-                </tr>
+                </tr></Fragment>
               );
             })}
           </tbody>

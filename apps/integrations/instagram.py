@@ -25,12 +25,11 @@ def resolve_instagram_channel(instagram_user_id=""):
         .filter(
             channel=BotChannel.Channels.INSTAGRAM,
             status=BotChannel.Statuses.ACTIVE,
-
         )
     )
     if instagram_user_id:
         channel = candidates.filter(config_json__instagram_user_id=instagram_user_id).first() or candidates.filter(external_id=instagram_user_id).first()
-        if channel and is_bot_runtime_ready(channel.bot):
+        if channel:
             return channel
 
     raise ValidationError("Instagram channel was not resolved.")

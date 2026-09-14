@@ -1,6 +1,6 @@
 # API Action Contract
 
-Last updated: 2026-08-21
+Last updated: 2026-09-14
 
 Purpose: keep frontend and backend aligned on which fields are regular CRUD fields and which fields are state-machine fields that must only change through action endpoints/services.
 
@@ -16,6 +16,42 @@ Current sync note 2026-07-16: refreshed against the current DRF router/actions f
 - Use `POST /api/<resource>/<id>/restore/` for restore. Restore is restricted to owner/admin-level permissions for critical CRM records.
 - Do not write `created_at`, `updated_at`, `archived_at`, `archived_by`, system timestamps, runtime errors, provider payloads, delivery results or audit metadata from frontend.
 - Treat `400` with `{ "fields": [...] }` as a contract violation: switch to the listed action endpoint instead of retrying the generic update.
+
+## Activity timeline reads
+
+The `/app/timeline` workspace uses the existing `GET /api/activity-events/` API;
+it does not create events or offer export/lifecycle actions.
+
+- All queries start from the existing tenant-, capability- and `analytics:view`-
+  scoped queryset. An explicitly requested inaccessible business returns 404;
+  a member without analytics permission, or with the module disabled, gets 403.
+- Filters: `business`, `client` (alias `client_id`), `entity_type`, `entity_id`,
+  `category`, `event_type`, `q` (maximum 160 characters), `actor` (positive ID or
+  `none`), `date_from`/`date_to` (aliases `created_after`/`created_before`). Search
+  includes event text/type and the client name only within the event's business.
+- With `business` supplied, date-only bounds use that business's timezone. The
+  upper date includes the whole day, implemented as an exclusive next midnight.
+  ISO timestamps remain supported. Invalid/reversed ranges return 400.
+- Stable ordering is `-created_at, -id`. `page_size` defaults to 50 for existing
+  callers and is capped at 100; Timeline explicitly requests 20 initially.
+- List/retrieve responses add read-only `actor_name` and `client_name` labels.
+  Actor names require a retained business membership or ownership; account email
+  is never a display-name fallback. Cross-business client labels are blank.
+- `GET /api/activity-events/actors/` returns paginated `{id, name}` options from
+  authorized activity actors, supports `business`, `q`, `page`, `page_size` and
+  an optional `selected_actor` ID. `selected_actor` is resolved from the same
+  authorized queryset, or returned as null. Actor options are not limited to
+  actors on the current event page.
+- Existing metadata serialization/redaction remains in place. The new merchant
+  detail surface additionally projects only validated status, amount and booking
+  time transitions. It never renders raw text fallback, metadata, IDs, IPs,
+  provider payloads or diagnostic source fields. This UI allowlist is not a
+  substitute for API authorization or a claim that all legacy payloads are safe.
+- Related links use an internal entity-type allowlist and current resource view
+  permissions. Destination pages/APIs remain responsible for object access.
+
+No migration, new environment variable, notification, BusinessEvent or AI action
+is introduced by these read-contract additions.
 
 ## Error Envelope
 

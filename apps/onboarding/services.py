@@ -158,13 +158,10 @@ def setup_first_channel(business: Business, channel: str = BotChannel.Channels.W
         business=business,
         name="Zani assistant",
         defaults={
-            "status": Bot.Statuses.ACTIVE,
+            "status": Bot.Statuses.DRAFT,
             "settings_json": {"created_by": "onboarding", "handoff_mode": "manager_first"},
         },
     )
-    if bot.status != Bot.Statuses.ACTIVE:
-        bot.status = Bot.Statuses.ACTIVE
-        bot.save(update_fields=["status", "updated_at"])
 
     channel_config = {
         "created_by": "onboarding",

@@ -5,6 +5,7 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 
 from apps.accounts.models import User
+from apps.ai_core.models import AgentProfile, BusinessKnowledgeItem
 from apps.bots.models import Bot, BotChannel
 from apps.businesses.models import Business, BusinessMember
 from apps.integrations.bot_channel_credentials import (
@@ -31,6 +32,8 @@ class EncryptedConfigBoundaryTests(TestCase):
         self.business = Business.objects.create(owner=self.owner, name="Encrypted Config Clinic", slug="encrypted-config-clinic")
         BusinessMember.objects.create(business=self.business, user=self.owner, role=BusinessMember.Roles.OWNER)
         self.bot = Bot.objects.create(business=self.business, name="Main bot", status=Bot.Statuses.ACTIVE)
+        AgentProfile.objects.create(business=self.business, bot=self.bot, name="Main profile", is_active=True)
+        BusinessKnowledgeItem.objects.create(business=self.business, title="Main knowledge", content="Grounded", is_active=True)
         self.telegram = BotChannel.objects.create(
             bot=self.bot,
             channel=BotChannel.Channels.TELEGRAM,
@@ -99,6 +102,12 @@ class EncryptedConfigBoundaryTests(TestCase):
         self.assertTrue(self.whatsapp.config_json["webhook_secret_configured"])
         self.assertEqual(get_telegram_webhook_secret(self.telegram), telegram_secret)
         self.assertEqual(get_whatsapp_webhook_secret(self.whatsapp), whatsapp_secret)
+        self.assertIsNone(find_telegram_channel_by_webhook_secret(telegram_secret))
+        self.assertIsNone(find_whatsapp_channel_by_webhook_secret(whatsapp_secret))
+
+        BotChannel.objects.filter(id__in=[self.telegram.id, self.whatsapp.id]).update(status=BotChannel.Statuses.ACTIVE)
+        self.telegram.refresh_from_db()
+        self.whatsapp.refresh_from_db()
         self.assertEqual(find_telegram_channel_by_webhook_secret(telegram_secret), self.telegram)
         self.assertEqual(find_whatsapp_channel_by_webhook_secret(whatsapp_secret), self.whatsapp)
 

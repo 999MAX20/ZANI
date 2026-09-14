@@ -1,11 +1,14 @@
 from urllib.parse import urlparse
 
 from django.conf import settings
+from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
 
 from apps.businesses.models import Business
+from apps.bots.models import BotChannel
 from apps.integrations.connectors import available_connector_capabilities, create_or_update_credential, defaults_for_provider
+from apps.integrations.channel_boundary import assert_generic_credential_write_allowed, lock_channel_business, validate_connector_public_write
 from apps.integrations.models import (
     ApiToken,
     BusinessConnector,
@@ -157,10 +160,24 @@ class BusinessConnectorSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         provider = attrs.get("provider") or getattr(self.instance, "provider", None)
+        attrs = validate_connector_public_write(attrs, self.instance)
         defaults = defaults_for_provider(provider)
-        attrs.setdefault("capability", defaults["capability"])
-        attrs.setdefault("auth_type", defaults["auth_type"])
+        if self.instance is None:
+            attrs.setdefault("capability", defaults["capability"])
+            attrs.setdefault("auth_type", defaults["auth_type"])
         return attrs
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        lock_channel_business(instance.business_id)
+        instance = BusinessConnector.objects.select_for_update().get(pk=instance.pk)
+        validated_data = validate_connector_public_write(dict(validated_data), instance)
+        # Do not overwrite server-owned setup fields from a stale GET/PUT echo.
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
+        if validated_data:
+            instance.save(update_fields=[*validated_data, "updated_at"])
+        return instance
 
 
 class WhatsAppConnectionRequestSerializer(serializers.Serializer):
@@ -225,6 +242,7 @@ class WhatsAppConnectionRequestSerializer(serializers.Serializer):
 
 class WhatsAppEmbeddedSignupStartSerializer(serializers.Serializer):
     business = serializers.PrimaryKeyRelatedField(queryset=Business.objects.all())
+    bot_channel = serializers.PrimaryKeyRelatedField(queryset=BotChannel.objects.select_related("bot", "bot__business"), required=False, allow_null=True)
     redirect_uri = serializers.URLField(required=False, allow_blank=True)
 
     def validate_redirect_uri(self, value):
@@ -250,6 +268,7 @@ class WhatsAppEmbeddedSignupCompleteSerializer(serializers.Serializer):
 
 class InstagramOAuthStartSerializer(serializers.Serializer):
     business = serializers.PrimaryKeyRelatedField(queryset=Business.objects.all())
+    bot_channel = serializers.PrimaryKeyRelatedField(queryset=BotChannel.objects.select_related("bot", "bot__business"), required=False, allow_null=True)
     redirect_uri = serializers.URLField(required=False, allow_blank=True)
 
     def validate_redirect_uri(self, value):
@@ -369,21 +388,32 @@ class ConnectorCredentialSerializer(serializers.ModelSerializer):
         connector = attrs.get("connector") or getattr(self.instance, "connector", None)
         if connector is None:
             raise serializers.ValidationError({"connector": "Connector is required."})
+        assert_generic_credential_write_allowed(connector)
+        if self.instance is not None:
+            assert_generic_credential_write_allowed(self.instance.connector)
         attrs["business"] = connector.business
         return attrs
 
+    @transaction.atomic
     def create(self, validated_data):
         value = validated_data.pop("value")
-        connector = validated_data["connector"]
+        lock_channel_business(validated_data["connector"].business_id)
+        connector = BusinessConnector.objects.select_for_update().get(pk=validated_data["connector"].pk)
+        assert_generic_credential_write_allowed(connector)
         key = validated_data["key"]
         expires_at = validated_data.get("expires_at")
         return create_or_update_credential(connector, key, value, expires_at=expires_at)
 
+    @transaction.atomic
     def update(self, instance, validated_data):
+        lock_channel_business(instance.business_id)
+        connector = BusinessConnector.objects.select_for_update().get(pk=instance.connector_id)
+        assert_generic_credential_write_allowed(connector)
+        instance.refresh_from_db()
         value = validated_data.pop("value", None)
         expires_at = validated_data.get("expires_at", instance.expires_at)
         if value:
-            return create_or_update_credential(instance.connector, instance.key, value, expires_at=expires_at)
+            return create_or_update_credential(connector, instance.key, value, expires_at=expires_at)
         instance.expires_at = expires_at
         instance.save(update_fields=["expires_at", "updated_at"])
         return instance

@@ -13,9 +13,11 @@ from apps.bots.channel_actions import (
     whatsapp_status_action,
 )
 from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
+from apps.bots.lifecycle import activate_bot, create_bot, ensure_bot_channel, pause_bot, update_bot, update_bot_channel
 from apps.bots.serializers import (
     BotChannelSerializer,
     BotConversationSerializer,
+    EnsureBotChannelSerializer,
     BotMessageSerializer,
     BotSerializer,
     PublicWebsiteChatChannelSerializer,
@@ -26,6 +28,9 @@ from apps.automations.engine import run_automations_for_event
 from apps.automations.models import AutomationRule
 from apps.billing.entitlements import EntitlementMetrics, assert_entitlement_allows
 from apps.businesses.access import Actions, Resources, assert_can
+from apps.activities.services import create_activity_event, write_activity_event
+from apps.core.audit import write_audit_log
+from apps.core.models import AuditLog
 from apps.core.viewsets import TenantModelViewSet
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
@@ -34,22 +39,142 @@ from rest_framework.views import APIView
 from rest_framework.exceptions import MethodNotAllowed, PermissionDenied
 from django.shortcuts import get_object_or_404
 from rest_framework.throttling import ScopedRateThrottle
+from rest_framework import status
 
 
 class BotViewSet(TenantModelViewSet):
-    queryset = Bot.objects.select_related("business")
+    queryset = Bot.objects.select_related("business").prefetch_related(
+        "channels",
+        "agent_profiles",
+        "business__knowledge_items",
+    )
     serializer_class = BotSerializer
+    access_resource = Resources.AI_AUTOMATION
+    action_permission_map = {
+        **TenantModelViewSet.action_permission_map,
+        "activate": Actions.MANAGE,
+        "pause": Actions.MANAGE,
+        "ensure_channel": Actions.MANAGE,
+    }
 
     def perform_create(self, serializer):
         business = serializer.validated_data["business"]
         assert_entitlement_allows(business, EntitlementMetrics.BOTS)
-        super().perform_create(serializer)
+        self._enforce_business_access(serializer)
+        instance = create_bot(validated_data=dict(serializer.validated_data))
+        serializer.instance = instance
+        write_audit_log(self.request, AuditLog.Actions.CREATE, instance)
+        write_activity_event(self.request, "bot.created", instance)
+
+    def perform_update(self, serializer):
+        self._enforce_business_access(serializer)
+        instance = update_bot(bot=serializer.instance, validated_data=dict(serializer.validated_data))
+        serializer.instance = instance
+        write_audit_log(self.request, AuditLog.Actions.UPDATE, instance)
+        write_activity_event(self.request, "bot.updated", instance)
+
+    def _change_status(self, *, target_status):
+        bot = self.get_object()
+        assert_can(self.request.user, bot.business, Resources.AI_AUTOMATION, Actions.MANAGE, obj=bot)
+        previous_status = bot.status
+        if target_status == Bot.Statuses.ACTIVE:
+            bot, changed = activate_bot(bot=bot)
+        else:
+            bot, changed = pause_bot(bot=bot)
+        if changed:
+            metadata = {
+                "kind": "lifecycle",
+                "from_status": previous_status,
+                "to_status": bot.status,
+            }
+            write_audit_log(self.request, AuditLog.Actions.UPDATE, bot, metadata=metadata)
+            write_activity_event(self.request, "bot.updated", bot, metadata=metadata)
+        return Response(self.get_serializer(bot).data)
+
+    @action(detail=True, methods=["post"])
+    def activate(self, request, pk=None):
+        return self._change_status(target_status=Bot.Statuses.ACTIVE)
+
+    @action(detail=True, methods=["post"])
+    def pause(self, request, pk=None):
+        return self._change_status(target_status=Bot.Statuses.PAUSED)
+
+    @action(detail=True, methods=["post"], url_path="channels/ensure")
+    def ensure_channel(self, request, pk=None):
+        bot = self.get_object()
+        assert_can(request.user, bot.business, Resources.INTEGRATIONS, Actions.MANAGE, obj=bot)
+        input_serializer = EnsureBotChannelSerializer(data=request.data)
+        input_serializer.is_valid(raise_exception=True)
+        channel, created = ensure_bot_channel(
+            bot=bot,
+            channel_type=input_serializer.validated_data["channel"],
+        )
+        if created:
+            write_audit_log(
+                request,
+                AuditLog.Actions.CREATE,
+                channel,
+                business=bot.business,
+                metadata={"kind": "bot_channel_ensured", "bot_id": bot.id},
+            )
+            create_activity_event(
+                business=bot.business,
+                event_type="botchannel.created",
+                instance=channel,
+                actor=request.user,
+                source="api",
+            )
+        return Response(
+            BotChannelSerializer(channel, context=self.get_serializer_context()).data,
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
 
 
 class BotChannelViewSet(TenantModelViewSet):
     queryset = BotChannel.objects.select_related("bot", "bot__business")
     serializer_class = BotChannelSerializer
     business_lookup = "bot__business"
+
+    manage_actions = {
+        "telegram_config",
+        "set_telegram_webhook",
+        "telegram_test_connection",
+        "sync_telegram_updates",
+        "whatsapp_config",
+        "whatsapp_test_connection",
+        "instagram_config",
+        "instagram_test_connection",
+    }
+
+    def get_object(self):
+        channel = super().get_object()
+        if self.action in self.manage_actions:
+            assert_can(
+                self.request.user,
+                channel.bot.business,
+                Resources.INTEGRATIONS,
+                Actions.MANAGE,
+                obj=channel,
+            )
+        return channel
+
+    def perform_update(self, serializer):
+        self._enforce_business_access(serializer)
+        channel = update_bot_channel(channel=serializer.instance, validated_data=dict(serializer.validated_data))
+        serializer.instance = channel
+        write_audit_log(
+            self.request,
+            AuditLog.Actions.UPDATE,
+            channel,
+            business=channel.bot.business,
+        )
+        create_activity_event(
+            business=channel.bot.business,
+            event_type="botchannel.updated",
+            instance=channel,
+            actor=self.request.user,
+            source="api",
+        )
 
     @action(detail=True, methods=["post"], url_path="telegram-config")
     def telegram_config(self, request, pk=None):
@@ -115,7 +240,7 @@ class BotConversationViewSet(TenantModelViewSet):
     def suggest_reply(self, request, pk=None):
         conversation = self.get_object()
         assert_can(request.user, conversation.business, Resources.AI_ASSISTANT, Actions.SUGGEST, obj=conversation)
-        result, log, message_context = suggest_bot_reply(conversation=conversation, user=request.user)
+        result, log, message_context, sources = suggest_bot_reply(conversation=conversation, user=request.user)
         return Response(
             {
                 "suggested_reply": result.output_text,
@@ -124,6 +249,9 @@ class BotConversationViewSet(TenantModelViewSet):
                 "tokens_used": result.tokens_used,
                 "log_id": log.id,
                 "messages_used": len(message_context),
+                "provider": result.provider,
+                "provider_state": "mock" if result.is_mock else "live",
+                "sources": sources,
             }
         )
 
@@ -156,7 +284,7 @@ def get_public_website_channel(public_token):
         public_token=public_token,
         channel=BotChannel.Channels.WEBSITE,
     )
-    if channel.status not in [BotChannel.Statuses.DRAFT, BotChannel.Statuses.ACTIVE] or channel.bot.status == Bot.Statuses.PAUSED:
+    if channel.status != BotChannel.Statuses.ACTIVE:
         raise PermissionDenied("This website chat channel is not available.")
     return channel
 

@@ -10,6 +10,7 @@ from django.db import IntegrityError
 from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
+from apps.ai_core.models import AgentProfile, BusinessKnowledgeItem
 from apps.bots import services as bot_services
 from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
 from apps.businesses.models import Business, BusinessMember
@@ -162,6 +163,8 @@ class TelegramIntegrationSkeletonTests(TestCase):
         self.business = Business.objects.create(owner=self.owner, name="Telegram Clinic", slug="telegram-clinic")
         BusinessMember.objects.create(business=self.business, user=self.owner, role=BusinessMember.Roles.OWNER)
         self.bot = Bot.objects.create(business=self.business, name="Telegram bot", status=Bot.Statuses.ACTIVE)
+        AgentProfile.objects.create(business=self.business, bot=self.bot, name="Telegram profile", is_active=True)
+        BusinessKnowledgeItem.objects.create(business=self.business, title="Telegram knowledge", content="Grounded", is_active=True)
         self.channel = BotChannel.objects.create(
             bot=self.bot,
             channel=BotChannel.Channels.TELEGRAM,
@@ -457,7 +460,7 @@ class TelegramIntegrationSkeletonTests(TestCase):
         self.assertTrue(result["ok"])
         self.assertTrue(result["token_configured"])
         self.channel.refresh_from_db()
-        self.assertEqual(self.channel.status, BotChannel.Statuses.ACTIVE)
+        self.assertEqual(self.channel.status, BotChannel.Statuses.DRAFT)
         connector = BusinessConnector.objects.get(
             business=self.business,
             provider=BusinessConnector.Providers.TELEGRAM,
@@ -674,6 +677,8 @@ class WhatsAppIntegrationFoundationTests(TestCase):
         BusinessMember.objects.create(business=self.business, user=self.owner, role=BusinessMember.Roles.OWNER)
         BusinessMember.objects.create(business=self.other_business, user=self.other_owner, role=BusinessMember.Roles.OWNER)
         self.bot = Bot.objects.create(business=self.business, name="WhatsApp bot", status=Bot.Statuses.ACTIVE)
+        AgentProfile.objects.create(business=self.business, bot=self.bot, name="WhatsApp profile", is_active=True)
+        BusinessKnowledgeItem.objects.create(business=self.business, title="WhatsApp knowledge", content="Grounded", is_active=True)
         self.channel = BotChannel.objects.create(
             bot=self.bot,
             channel=BotChannel.Channels.WHATSAPP,
@@ -1103,6 +1108,7 @@ class WhatsAppIntegrationFoundationTests(TestCase):
             business=self.business,
             provider=BusinessConnector.Providers.WHATSAPP,
             name="WhatsApp",
+            config_json={"bot_channel_id": self.channel.id},
             capability=BusinessConnector.Capabilities.COMMUNICATIONS,
             auth_type=BusinessConnector.AuthTypes.OAUTH,
         )
@@ -1125,6 +1131,7 @@ class WhatsAppIntegrationFoundationTests(TestCase):
             business=self.business,
             provider=BusinessConnector.Providers.WHATSAPP,
             name="WhatsApp",
+            config_json={"bot_channel_id": self.channel.id},
             capability=BusinessConnector.Capabilities.COMMUNICATIONS,
             auth_type=BusinessConnector.AuthTypes.OAUTH,
         )
@@ -1234,13 +1241,20 @@ class WhatsAppIntegrationFoundationTests(TestCase):
         self.api.force_authenticate(self.owner)
         start_response = self.api.post(
             "/api/business-connectors/whatsapp-embedded-signup/start/",
-            {"business": self.business.id, "redirect_uri": "https://app.zani.kz/app/integrations"},
+            {
+                "business": self.business.id,
+                "bot_channel": self.channel.id,
+                "redirect_uri": "https://app.zani.kz/app/integrations",
+            },
             format="json",
         )
 
         with patch(
             "apps.integrations.whatsapp.embedded_signup.exchange_code_for_access_token",
             return_value={"access_token": "embedded-access-token"},
+        ), patch(
+            "apps.integrations.whatsapp.embedded_signup.validate_signup_phone_number",
+            return_value=None,
         ):
             complete_response = self.api.post(
                 "/api/business-connectors/whatsapp-embedded-signup/complete/",
@@ -1257,6 +1271,7 @@ class WhatsAppIntegrationFoundationTests(TestCase):
             )
 
         self.assertEqual(complete_response.status_code, 200)
+        self.assertEqual(complete_response.data["channel_id"], self.channel.id)
         channel = BotChannel.objects.get(channel=BotChannel.Channels.WHATSAPP, external_id="phone-embedded")
         self.assertEqual(channel.config_json["provider_mode"], "meta_cloud")
         self.assertNotIn("access_token", channel.config_json)
@@ -1335,6 +1350,8 @@ class InstagramIntegrationFoundationTests(TestCase):
         self.business = Business.objects.create(owner=self.owner, name="Instagram Clinic", slug="instagram-clinic")
         BusinessMember.objects.create(business=self.business, user=self.owner, role=BusinessMember.Roles.OWNER)
         self.bot = Bot.objects.create(business=self.business, name="Instagram bot", status=Bot.Statuses.ACTIVE)
+        AgentProfile.objects.create(business=self.business, bot=self.bot, name="Instagram profile", is_active=True)
+        BusinessKnowledgeItem.objects.create(business=self.business, title="Instagram knowledge", content="Grounded", is_active=True)
         self.channel = BotChannel.objects.create(
             bot=self.bot,
             channel=BotChannel.Channels.INSTAGRAM,
@@ -1719,7 +1736,11 @@ class InstagramIntegrationFoundationTests(TestCase):
         self.api.force_authenticate(self.owner)
         start = self.api.post(
             "/api/business-connectors/instagram-oauth/start/",
-            {"business": self.business.id, "redirect_uri": "http://localhost:5174/app/integrations?zani_provider=instagram"},
+            {
+                "business": self.business.id,
+                "bot_channel": self.channel.id,
+                "redirect_uri": "http://localhost:5174/app/integrations?zani_provider=instagram",
+            },
             format="json",
         )
 
@@ -1735,6 +1756,7 @@ class InstagramIntegrationFoundationTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["channel_id"], self.channel.id)
         channel = BotChannel.objects.get(id=response.data["channel_id"])
         self.assertEqual(channel.external_id, "ig-oauth-1")
         self.assertNotIn("access_token", channel.config_json)

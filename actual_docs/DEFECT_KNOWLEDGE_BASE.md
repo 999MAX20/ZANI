@@ -84,6 +84,7 @@ the accepted project branch.
 | ZD-008 | TENANT_CONTEXT / CONSISTENCY | Team settings with access to multiple businesses | Team roles, departments, invitations and role mutation options | VERIFIED_BRANCH | `codex/be-gap-003-functional-certification` |
 | ZD-009 | FUNCTIONAL / AI_APPROVAL | AI assistant suggested actions | Source-grounded suggestion, confirmation, approval, execution and audit chain | VERIFIED_BRANCH | `codex/be-gap-003-functional-certification` |
 | ZD-010 | INTERACTION / RESPONSIVE | Working-hours editor close/discard | Focus return across duplicate desktop/mobile resource representations | VERIFIED_BRANCH | `codex/be-gap-003-functional-certification` |
+| ZD-013 | ACCESS / INTEGRATION | AI-agent channel configuration | Generic connector/channel identity, credentials and webhook tenant resolution | VERIFIED_BRANCH | `codex/ai-channel-ownership-hardening` (local, uncommitted) |
 
 ## Detailed Precedents
 
@@ -421,6 +422,111 @@ the accepted project branch.
 - Derived audit rule: focus identities shared by responsive duplicate nodes
   must resolve to a visible target after the closing surface unmounts.
 
+### ZD-011 — Async channel setup loses dialog focus return
+
+- Recorded: 2026-09-13.
+- Type: `INTERACTION / ACCESSIBILITY`.
+- Status: `VERIFIED_BRANCH`.
+- Owner-observed surface: `/app/ai-agents/:id/channels` direct provider setup.
+- Role and prerequisites: integration manager, selected agent without an existing provider channel.
+- Reproduction steps: activate a channel CTA that first creates a draft channel, then close the opened setup dialog with Escape.
+- Expected behavior: focus enters the dialog and returns to the exact channel CTA after close.
+- Actual behavior: the pending CTA became disabled before the dialog mounted, so the shared overlay captured `body` as its opener and returned focus to `body`.
+- User impact: keyboard users lost their position in a dense channel grid after every first-time setup attempt.
+- Root cause class: asynchronous opener replacement without an explicit focus-return identity.
+- Actual cross-product scope: any overlay opened after the invoking control becomes disabled or unmounted during an asynchronous prerequisite.
+- Correction: `Dialog` and `Modal` accept an explicit `focusReturnId`; AI channel CTAs expose a stable matching identity and the shared visible-target restoration remains the fallback.
+- Commit / branch: `codex/be-gap-003-functional-certification`.
+- Verification commands and results: frontend production build passed; authenticated Chrome check confirmed initial close-button focus, Escape close and return to the exact Telegram `Configure` button.
+- Skipped checks and reason: none for the bounded AI channel flow; repository-wide overlay certification remains governed by ZR-006.
+- Remaining risk or test debt: consumers with asynchronous openers must opt into the explicit identifier when the original opener cannot remain focusable.
+- Derived audit rule: asynchronous dialogs must carry a stable focus-return identity independent of `document.activeElement`.
+
+### ZD-012 — Active AI agent can become structurally unready
+
+- Recorded: 2026-09-13.
+- Type: `DOMAIN / AI SAFETY / INTEGRATION`.
+- Status: `VERIFIED_BRANCH`.
+- Owner-observed surface: `/app/ai-agents/:id/*`, website widget and messenger webhook resolution.
+- Role and prerequisites: legacy active bot or an active bot that later loses its active profile, active channel or active business knowledge.
+- Reproduction steps: inspect an active bot without all three launch requirements, or call a public/provider entry point for that bot.
+- Expected behavior: the UI states that AI launch is blocked and autonomous AI does not run until readiness is restored. An active authenticated channel remains available to Inbox; channel disablement is separate from agent pause.
+- Actual behavior: status-only checks could still present and resolve the bot as active.
+- User impact: an AI agent could answer without its intended profile or grounded business knowledge.
+- Root cause class: persisted lifecycle status was treated as sufficient runtime readiness.
+- Actual cross-product scope: website public chat plus Telegram, WhatsApp and Instagram inbound channel resolution.
+- Correction: expose structural readiness, require dedicated active profile/channel/knowledge for activation and label legacy active-but-unready records. The original entry-point check also blocked transport; the bounded 2026-09-14 follow-up moves readiness enforcement to autonomous execution and bot outbox delivery without relaxing channel authentication or ownership.
+- Commit / branch: `codex/be-gap-003-functional-certification`.
+- Verification commands and results: Django system check passed; `apps/bots/tests_readiness.py` passed 11 tests, onboarding passed 11 tests and the Telegram/WhatsApp/Instagram plus encrypted-credential selection passed 68 tests.
+- Skipped checks and reason: none for the bounded readiness/provider-resolution contract; the full repository verification script was not run because Bash is unavailable in the Windows shell.
+- Remaining risk or test debt: existing active-but-unready rows are not mutated automatically; they remain visible for an owner to repair or pause while autonomous AI stays blocked. The 2026-09-14 follow-up is local/uncommitted on `codex/ai-pause-inbound`; its current evidence and limitations are recorded in `docs/integrations/integrations.md`. Deployment-engine concurrency and live-provider certification remain separate gates.
+- Derived audit rule: AI runtime eligibility must be recomputed from current dependencies, never inferred from a persisted active flag alone.
+
+Follow-up verification 2026-09-14 (`codex/ai-pause-inbound`, local/uncommitted):
+12 new regressions cover independent inbound transport, disabled channels,
+authenticated/replayed provider messages, tenant boundaries, manager replies,
+readiness loss, pauses during qualification/reply generation and queued bot replies.
+Final focused rerun: 26/26 passed with normal logging, Django check and migration
+drift clean. The broader 325-test probe passed 324 tests and had one logging-test
+failure caused by the ad-hoc runner; that exact test is green in the final rerun.
+No runtime code changed between those runs. This is scoped evidence, not a
+zero-exit full-candidate gate; see the integration document for exact commands,
+failed setup probes, snapshot digest and skipped deployment/live checks.
+
+### ZD-013 — Generic messenger configuration bypasses ownership and verification
+
+- Recorded: 2026-09-13.
+- Type: `ACCESS / INTEGRATION`.
+- Status: `VERIFIED_BRANCH`; focused gate passed locally, not committed or integrated.
+- Owner-observed surface: `/app/ai-agents/:id/channels` and its connector/API dependencies.
+- Role and prerequisites: permitted integration manager with an own connector;
+  a second business/channel is used only as an isolated regression fixture.
+- Reproduction steps: replace an own connector's JSON channel ID with a foreign
+  channel ID, resolve its valid webhook secret; separately PATCH Telegram
+  verified flags and then request activation.
+- Expected behavior: identifiers cannot cross Business/provider boundaries;
+  generic client writes cannot impersonate provider verification.
+- Actual behavior: the credential resolver returned the foreign channel;
+  editable flags and channel-type conversion bypassed setup checks.
+- User impact: incoming events could be attributed to another business and
+  unverified channels could appear active.
+- Root cause class: server-owned state exposed through generic JSON/identity
+  writes, combined with an incomplete tenant check at credential resolution.
+- Actual cross-product scope: generic connector/channel/credential APIs,
+  Telegram/WhatsApp secret resolution, Meta channel verification and legacy OAuth.
+- Correction: protected generic write boundary, exact credential/channel binding,
+  provider-owned verification and shared OAuth channel ownership enforcement;
+  save-time revalidation and revision checks prevent delayed writes/provider
+  results from overwriting newer setup. OAuth reconnect preserves a renamed
+  bound connector; WhatsApp verifies the returned phone identity before commit.
+- Commit / branch: local uncommitted changes on `codex/ai-channel-ownership-hardening`.
+- Verification commands and results: isolated Django `test apps.integrations
+  apps.bots.tests_readiness apps.onboarding apps.core.tests_tenant_isolation`
+  passed **232 tests**, including **32 new** ownership/setup-consistency
+  regressions. `check`, `makemigrations --check --dry-run`, Python `compileall -q`
+  for the 13 affected Python files and `git -c core.safecrlf=false diff --check`
+  passed. The exact safe in-memory, network-blocked runner and broader probe
+  results are recorded in the Phase 7 security follow-up of
+  `docs/frontend/ui-ux-implementation-standard.md`.
+- Baseline failure: the broader 279-test probe also exposed 13 existing
+  website-chat/readiness failures; two representative 403-versus-201 cases
+  reproduce independently. The previous readiness requirement and website
+  runtime behavior were not changed here; full backend is not certified.
+- Skipped checks and reason: full repository/Django and dependency gates,
+  frontend build/browser checks and live-provider certification were not run
+  for this scoped backend phase; no frontend/dependencies changed, dev server
+  is off, broader baseline failures are recorded, real provider traffic is
+  forbidden. Deterministic SQLite interleavings do not certify concurrent
+  PostgreSQL transactions.
+- Remaining risk or test debt: deployment-engine concurrency, website fixture
+  readiness and AI pause/inbound coupling (ZD-012 follow-up), first-run
+  onboarding and full live-provider readiness remain separate work. Legacy
+  Meta verification and unbound credentials require explicit setup rather
+  than a speculative data migration.
+- Derived audit rule: readable operational metadata is not client-writable
+  authority; authenticate a credential and resolve its tenant-bound entity as
+  one invariant, and test both rejected input and allowed dedicated setup.
+
 ## Regression Rule Catalogue
 
 These rules are inputs to future functional certification and browser audits.
@@ -435,6 +541,7 @@ These rules are inputs to future functional certification and browser audits.
 | ZR-006 Overlay continuity | Exercise Escape, backdrop, focus return, native dialogs and viewport changes | Drawers, dialogs, popovers, command palette and mobile navigation |
 | ZR-007 Success-path preservation | After a defect fix, prove the original normal action still completes | Every remediated interaction |
 | ZR-008 Canonical route and information budget | Assert one canonical URL, safe aliases and one unique decision per dashboard surface | Dashboard, overview and landing workspaces |
+| ZR-009 Server-owned connector authority | Reject foreign bindings and forged verification; delayed writes/results must not overwrite newer setup; verify allowed dedicated setup | Channel/connector APIs, credential rotation, OAuth and provider webhook resolution |
 
 ## Audit Expansion Matrix
 

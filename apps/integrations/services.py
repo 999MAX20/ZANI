@@ -227,8 +227,13 @@ def save_whatsapp_connection_request(*, business, user, config, request=None):
     return connector, created
 
 
-def start_whatsapp_embedded_signup(*, business, user, redirect_uri):
-    authorization_url, state = build_embedded_signup_url(business=business, user=user, redirect_uri=redirect_uri)
+def start_whatsapp_embedded_signup(*, business, user, redirect_uri, bot_channel=None):
+    authorization_url, state = build_embedded_signup_url(
+        business=business,
+        user=user,
+        redirect_uri=redirect_uri,
+        bot_channel=bot_channel,
+    )
     return {
         "authorization_url": authorization_url,
         "state": state,
@@ -263,8 +268,13 @@ def complete_whatsapp_embedded_signup(*, business, user, code, state, redirect_u
     return channel, connector
 
 
-def start_instagram_oauth(*, business, user, redirect_uri):
-    authorization_url, state = build_instagram_oauth_url(business=business, user=user, redirect_uri=redirect_uri)
+def start_instagram_oauth(*, business, user, redirect_uri, bot_channel=None):
+    authorization_url, state = build_instagram_oauth_url(
+        business=business,
+        user=user,
+        redirect_uri=redirect_uri,
+        bot_channel=bot_channel,
+    )
     return {
         "authorization_url": authorization_url,
         "state": state,

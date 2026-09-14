@@ -475,6 +475,53 @@ Protected `ApprovalRequest` generic write fields:
 
 Frontend rule: AI can suggest actions, but critical mutating tools must be executed only through `tools/{log_id}/execute/` with a matching approved `ApprovalRequest` when the tool requires approval. Do not directly mutate CRM state from AI UI.
 
+### AI agent lifecycle and channels
+
+Resources:
+
+- `/api/bots/`
+- `/api/bot-channels/`
+- `/api/bot-conversations/`
+- `/api/bot-messages/`
+
+Lifecycle actions:
+
+- `POST /api/bots/{id}/activate/`
+- `POST /api/bots/{id}/pause/`
+- `POST /api/bots/{id}/channels/ensure/`
+  - Required body: `channel` with `website`, `telegram`, `whatsapp` or `instagram`.
+  - Returns the existing selected-agent channel with `200` or creates a draft channel with `201`.
+
+`Bot.readiness` is read-only and reports active profile, active channel and active business knowledge requirements. Generic create cannot create an active bot and generic update cannot mutate `status`; use lifecycle actions. Activation returns `409 invalid_transition` until every readiness requirement is satisfied.
+
+AI-agent profile and lifecycle management uses `ai_automation` permissions. Channel ensuring and provider setup use `integrations` management permissions. Provider mutations must not be granted merely because a user can view integrations.
+
+Transport and autonomous AI have separate eligibility (ZD-012 follow-up):
+
+| Channel | AI agent | Incoming messages / Inbox | Autonomous AI |
+| --- | --- | --- | --- |
+| Active | Active and structurally ready | Accepted | Subject to conversation state, configuration and existing confirmation policy |
+| Active | Paused, draft or structurally unready | Accepted; manager replies remain permission-gated | Blocked |
+| Draft, paused or error | Any | Rejected | Blocked for this channel |
+
+Public website lookup requires an active website channel and its public token.
+Telegram/WhatsApp/Instagram retain their authenticated, tenant-bound routing;
+AI readiness is not webhook authentication. Pausing an agent does not pause its
+channels. Disable a channel separately to stop accepting incoming messages.
+
+Autonomous work rechecks persisted agent, exact channel and conversation state
+before qualification, after qualification, before an automatic reply and after
+reply generation. Bot outbox delivery checks eligibility again; a blocked reply
+becomes a non-automatically-retryable failure, while manager replies retain their
+existing delivery contract. Activation still requires profile/channel/knowledge.
+This does not cancel a provider request already dispatched before pause.
+
+Explicit contact capture in website chat, unread notifications, BusinessEvents,
+configured non-AI automations and explicit client appointment confirmations are
+not AI actions and retain their existing behavior. Manually requested AI drafts
+and approved tools retain their existing role/approval contracts; the agent's
+pause controls autonomous operation, not the business-wide AI capability.
+
 ## Billing
 
 Resource: `/api/billing/current-subscription/`
@@ -646,6 +693,8 @@ Important action endpoints:
 
 Bot channel provider actions:
 
+- `POST /api/bots/{id}/channels/ensure/`
+
 - `POST /api/bot-channels/{id}/telegram-config/`
 - `POST /api/bot-channels/{id}/set-telegram-webhook/`
 - `GET /api/bot-channels/{id}/telegram-status/`
@@ -666,6 +715,8 @@ API token and webhook actions:
 - `POST /api/webhook-deliveries/{id}/retry/`
 
 Frontend rule: never display or store raw credential values after submission. Use masked values and connector/bot-channel status endpoints. Provider credentials belong in connector credential/provider service layers; UI should show safe status, setup state and recovery actions, not raw tokens, webhook secrets or provider payloads.
+
+Canonical AI-agent UI sends the exact `bot_channel` when starting WhatsApp Embedded Signup or Instagram OAuth. The signed OAuth state binds completion to that channel; clients must not select the first channel in a business. Omission is compatibility-only and must not be used by new UI flows.
 
 ## Analytics
 

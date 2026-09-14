@@ -9,6 +9,7 @@ from apps.activities.services import create_activity_event
 from apps.ai_core.models import AgentProfile
 from apps.bots.ai import suggest_bot_reply
 from apps.bots.inbox_service import send_outbound_message
+from apps.bots.lifecycle import conversation_ai_block_reason
 from apps.bots.models import BotChannel, BotConversation, BotMessage
 from apps.businesses.access import Resources
 from apps.businesses.capabilities import resource_is_enabled
@@ -71,6 +72,13 @@ def maybe_run_auto_pipeline(*, conversation: BotConversation, message: BotMessag
         return state_decision
 
     qualification, ai_log = qualify_conversation(conversation=conversation, allow_mock=True)
+    # A provider call may outlive an owner pause, handoff or readiness change.
+    state_decision = _guard_conversation_state(conversation)
+    if state_decision is not None:
+        state_decision.confirmation_policy = _confirmation_policy(config)
+        _save_auto_pipeline_decision(conversation, message, config, state_decision)
+        _write_decision_event(conversation, state_decision)
+        return state_decision
     decision = _guard_auto_pipeline(config=config, conversation=conversation, message=message, qualification=qualification, ai_log_id=ai_log.id if ai_log else None)
     decision.confirmation_policy = _confirmation_policy(config)
     if decision.status in {"qualified_only", "needs_review", "blocked_low_confidence", "blocked_risky_intent", "blocked_fallback"}:
@@ -180,12 +188,16 @@ def _guard_auto_pipeline(
 
 
 def _guard_conversation_state(conversation: BotConversation) -> AutoPipelineDecision | None:
-    if conversation.handoff_required:
-        return AutoPipelineDecision(status="skipped_handoff", reason="Conversation is handed off to a manager.")
-    if not conversation.bot_enabled:
-        return AutoPipelineDecision(status="skipped_bot_paused", reason="Bot is paused for this conversation.")
-    if conversation.status != BotConversation.Statuses.OPEN:
-        return AutoPipelineDecision(status="skipped_inactive", reason=f"Conversation status is {conversation.status}.")
+    reason = conversation_ai_block_reason(conversation)
+    descriptions = {
+        "handoff": "Conversation is handed off to a manager.",
+        "bot_paused": "Bot is paused for this conversation.",
+        "inactive": "Conversation is not active.",
+        "agent_unready": "AI agent is paused, draft or not ready.",
+        "channel_inactive": "Conversation channel is not active.",
+    }
+    if reason:
+        return AutoPipelineDecision(status=f"skipped_{reason}", reason=descriptions[reason])
     return None
 
 
@@ -232,7 +244,7 @@ def _write_decision_event(conversation: BotConversation, decision: AutoPipelineD
 def _can_auto_reply(*, config: AutoPipelineConfig, conversation: BotConversation, decision: AutoPipelineDecision) -> bool:
     if not config.auto_send_reply:
         return False
-    if not conversation.bot_enabled or conversation.handoff_required or conversation.status != BotConversation.Statuses.OPEN:
+    if conversation_ai_block_reason(conversation):
         return False
     if decision.status not in {"created_lead_task", "created_draft_deal", "qualified_only"}:
         return False
@@ -283,7 +295,10 @@ def _confirmation_policy(config: AutoPipelineConfig) -> dict[str, Any]:
 
 def _send_auto_reply(*, conversation: BotConversation, config: AutoPipelineConfig, decision: AutoPipelineDecision) -> None:
     try:
-        result, log, _message_context = suggest_bot_reply(conversation=conversation, user=None, auto_mode=True, qualification=decision.qualification)
+        result, log, _message_context, _sources = suggest_bot_reply(conversation=conversation, user=None, auto_mode=True, qualification=decision.qualification)
+        if conversation_ai_block_reason(conversation):
+            decision.reply_error = "Automatic reply stopped because AI is no longer eligible."
+            return
         text = (result.output_text or "").strip()
         if not text:
             decision.reply_error = "AI returned an empty auto reply."

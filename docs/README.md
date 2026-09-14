@@ -2,6 +2,14 @@
 
 This folder is the single entry point for ZANI technical documentation.
 
+## Current backend boundary and documentation status
+
+- [Backend development audit, 2026-09-14](pilot/backend-development-audit.md) — implemented vs WIP vs missing evidence; not a second task queue.
+- [Backend open logic register](pilot/backend-open-logic-register.md) — canonical backend gap IDs.
+- [Technical documentation audit](operations/technical-documentation-audit.md) — 105 source documents and archive decisions.
+- [Archive manifest](../archive_docs/2026-09-14/README.md) — 26 historical/superseded records; not implementation authorization.
+- [Active execution authority](../actual_docs/README.md) — pre-pilot, fallback and certification owners.
+
 Use this index first when you need to understand where a document belongs. Keep new technical documentation inside the closest matching section instead of adding more root-level Markdown files.
 
 ## Core project rules
@@ -14,11 +22,11 @@ Use this index first when you need to understand where a document belongs. Keep 
 
 ### CRM
 
-Use `crm/` for CRM domain plans, CRM production tasks, lifecycle rules and CRM audit backlog.
+Use `crm/` for current CRM domain plans and lifecycle rules. Completed checklists are historical evidence, not a second backlog.
 
 - `crm/CRM_PRODUCTION_LAYER_PLAN.md`
-- `crm/CRM_IMPLEMENTATION_TASKS.md`
-- `crm/CRM_AUDIT_REQUIRED_CHANGES.md`
+- `crm/CRM_IMPLEMENTATION_TASKS.md` — archive redirect; completed checklist.
+- `crm/CRM_AUDIT_REQUIRED_CHANGES.md` — archive redirect; closed audit.
 - `crm/client-payments.md` — manual client payment journal, permissions and verification.
 
 ### Integrations
@@ -40,7 +48,7 @@ Use `frontend/` for UI architecture, design system, authenticated app UX and pro
 - `frontend/design-system.md`
 - `frontend/product-ui-reform.md`
 - `frontend/ui-ux-implementation-standard.md`
-- `frontend/ui-ux-polish-phase-10.md`
+- `frontend/ui-ux-polish-phase-10.md` — archive redirect; historical delivery.
 
 ### Production
 
@@ -67,7 +75,7 @@ Use `testing/` for test strategy, Codex task format, regression reports and scal
 - `testing/testing.md`
 - `testing/ui-testing-toolkit.md` — local component QA and guarded visual-service setup.
 - `testing/CODEX_TASK_TEMPLATE.md`
-- `testing/regression-report.md`
+- `testing/regression-report.md` — archive redirect; historical regression evidence.
 - `testing/e2e-scale-baseline.md`
 
 ### Other focused sections
@@ -80,7 +88,7 @@ Use `testing/` for test strategy, Codex task format, regression reports and scal
 - `automation/` — automation runtime.
 - `billing/` — entitlements and billing limits.
 - `operations/` — platform/support operations.
-- `pilot/` — pilot blocks, smoke reports and pilot runbooks.
+- `pilot/` — current pilot contracts/runbooks and historical report redirects.
 - `pilot/backend-open-logic-register.md` — active backend register for
   unimplemented, partial, environment-gated and roadmap behavior.
 - `product/` — product positioning, landing and competitive notes.

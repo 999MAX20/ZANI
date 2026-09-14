@@ -2,6 +2,14 @@
 
 Last updated: 2026-09-08
 
+Documentation reconciliation 2026-09-14: completed `CRM_IMPLEMENTATION_TASKS.md`
+and `CRM_AUDIT_REQUIRED_CHANGES.md` now redirect to preserved archive records.
+They must not reopen CRM foundation work. This production contract remains
+active; remaining backend IDs are owned by
+[backend-open-logic-register](../pilot/backend-open-logic-register.md).
+Historical phase notes do not override later canonical CRM decisions.
+No new CRM behavior or production readiness is claimed by this docs audit.
+
 Цель: довести CRM до production-уровня слоями по всему продукту, а не полировать одну страницу изолированно. Этот документ является текущим source-of-truth для CRM hardening.
 
 ## 1. Принцип Работы

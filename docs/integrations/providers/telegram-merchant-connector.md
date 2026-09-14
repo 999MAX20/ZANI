@@ -1,5 +1,10 @@
 # Telegram Merchant Connector
 
+Credential contract reconciled 2026-09-14 against committed implementation.
+Current AI/channel WIP still requires acceptance; this runbook does not certify
+live traffic. See [provider rollout](../provider-rollout.md) and
+[backend audit](../../pilot/backend-development-audit.md).
+
 ## Purpose
 
 Telegram is a per-merchant communication connector. Each merchant connects their own BotFather bot, and ZANI uses that bot to receive client messages, create inbox conversations, run the AI/CRM pipeline, and send manager replies back to Telegram.
@@ -36,8 +41,12 @@ The API must be available through public HTTPS. Telegram delivers merchant messa
 
 ## Runtime Model
 
-- Raw `bot_token` is stored only in `BotChannel.config_json.bot_token`.
-- A per-channel `webhook_secret` is generated when missing.
+- Raw `bot_token` and per-channel `webhook_secret` are write-only setup inputs,
+  encrypted in the bound connector's `ConnectorCredential` records. They are
+  removed from `BotChannel.config_json`; that JSON contains safe metadata and
+  configured/verified flags only.
+- A per-channel `webhook_secret` is generated when missing; channel lookup uses
+  a keyed digest and validates the decrypted candidate with constant-time comparison.
 - `setWebhook` sends the per-channel secret to Telegram as `secret_token`.
 - Incoming webhooks are accepted only when the Telegram secret header matches a configured Telegram channel secret or the optional platform fallback secret.
 - ZANI resolves the merchant channel by secret and routes messages into `BotConversation` / `BotMessage`.

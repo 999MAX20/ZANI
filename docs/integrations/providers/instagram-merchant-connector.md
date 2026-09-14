@@ -1,5 +1,10 @@
 # Instagram Merchant Connector
 
+Credential contract reconciled 2026-09-14 against committed implementation.
+Current channel-ownership/OAuth WIP is not fully certified. Live acceptance is
+separate: [provider rollout](../provider-rollout.md),
+[backend audit](../../pilot/backend-development-audit.md).
+
 ## Purpose
 
 Instagram is a per-merchant communication connector. A merchant connects an Instagram Professional account through Meta Graph API, and ZANI receives Direct messages, creates Inbox conversations, runs the AI/CRM pipeline, and sends manager replies back to Instagram.
@@ -17,15 +22,16 @@ Primary merchant path:
 
 Manual Meta Graph credentials remain a support fallback.
 
-Channel config is stored in `BotChannel.config_json`:
+Safe channel metadata is stored in `BotChannel.config_json`:
 
 - `provider_mode=meta_graph`
 - `instagram_user_id`
-- `access_token`
 - `page_id`
 - `username`
 
-Sensitive values are masked in API responses.
+The Page `access_token` is a write-only setup/OAuth input, encrypted in the bound
+connector's `ConnectorCredential` storage, not channel JSON. Responses expose
+only masked/derived credential status. Use the shared credential helpers/keyring.
 
 ## Environment
 
@@ -48,7 +54,7 @@ META_APP_SECRET=replace-with-meta-app-secret
 1. Merchant opens `/dashboard/integrations`.
 2. Merchant opens Instagram settings.
 3. Merchant clicks `Подключить через Meta`.
-4. ZANI stores credentials privately in the channel config.
+4. ZANI encrypts credentials through connector credential helpers and stores only safe channel metadata/configured flags in JSON.
 5. Merchant clicks `Проверить`.
 7. Meta App Dashboard is configured with:
    - Callback URL: `https://YOUR_API_DOMAIN/api/integrations/instagram/webhook/`

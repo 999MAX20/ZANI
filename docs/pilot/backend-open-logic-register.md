@@ -1,9 +1,10 @@
 # Backend Open And Partial Logic Register
 
 - Status: active pre-pilot technical source of truth
-- Audit date: 2026-09-08
-- Candidate branch: `codex/be-gap-003-functional-certification`
-- Source baseline for the current candidate: `81167518fb60887c023069a1fd7fa83f90fba6aa`
+- Reconciled: 2026-09-14 (documentation and read-only code audit)
+- Historical certification branch: `codex/be-gap-003-functional-certification`
+- Historical certification base: `81167518fb60887c023069a1fd7fa83f90fba6aa`
+- Latest inspected committed HEAD: `4ba3cbf9fddcc6e1baa172b494c781550c090693`
 - Scope: backend behavior, tenant and permission boundaries, recovery, providers,
   production gates and certification dependencies
 
@@ -11,6 +12,21 @@ This register lists backend logic that is not implemented, is only partially
 implemented, is enabled only for a controlled environment, or still lacks the
 evidence required for pilot acceptance. It does not reopen CRM phases that are
 already implemented and verified at their documented scope.
+
+## Current WIP Boundary — 2026-09-14
+
+Historical closures apply to their named commits, not all future changes.
+The canonical checkout contains uncommitted AI-agent readiness and channel
+ownership work (ZD-012/013 in its WIP defect record). A new clean candidate and
+integrated acceptance are required. Fresh focused tests: 54 PASS; two website
+chat paths FAIL with 403 instead of 201. AI pause also blocks inbound channel
+resolution. Resolve pause/transport and website readiness contracts before
+choosing a code fix; do not weaken guards or assertions just to pass tests.
+
+BE-GAP-002 is a closed historical checkpoint, not approval of current WIP.
+FC-004/006 do not need another implementation, but changed flows still need
+regression coverage. See [backend audit](backend-development-audit.md) for
+scope, checks, remaining decisions and current file ownership.
 
 ## Status Model
 
@@ -39,11 +55,11 @@ document to be green.
 | ID | Area | Status | Controlled pilot | Paid/live pilot |
 | --- | --- | --- | --- | --- |
 | BE-GAP-001 | Tenant ownership immutability on generic updates | `CLOSED` | Cleared at repository level | Cleared at repository level; environment gates remain separate |
-| BE-GAP-002 | Exact clean release candidate and final integrated gate | `CLOSED` | Cleared for the repository candidate | Production env gates remain separate |
+| BE-GAP-002 | Exact clean release candidate and final integrated gate | `CLOSED` historical checkpoint | Cleared for named commit only; current WIP requires a new gate | Production env gates remain separate |
 | BE-GAP-003 | Functional certification FC-003/008 | `PARTIAL` - FC-004/006 closed | Blocks formal acceptance | Blocks |
 | BE-GAP-004 | Platform manager support-mutation policy | `POLICY_CONFLICT` | Resolve before support access | Blocks support operations |
 | BE-GAP-005 | Real provider failure and recovery evidence | `ENV_GATED` | May remain disabled | Blocks each enabled provider |
-| BE-GAP-006 | Queue-backed production runtime | `ENV_GATED` | May use eager/in-memory mode | Blocks |
+| BE-GAP-006 | Queue-backed production runtime | `PARTIAL` / `ENV_GATED` | Local eager allowed; do not promise async connector sync | Blocks applicable live async workloads |
 | BE-GAP-007 | Production database, storage, email, monitoring and backup | `ENV_GATED` | Out of local/demo scope | Blocks |
 | BE-GAP-008 | Public abuse controls beyond fixed DRF throttles | `PARTIAL` | Accept only with bounded traffic | Required before broad exposure |
 | BE-GAP-009 | Marketplace write-back and reconciliation | `ROADMAP` | Must stay disabled | Not generally available |
@@ -178,6 +194,10 @@ environment-gated and are not closed by repository certification.
 `IsPlatformUser`, allowing both roles after recent MFA step-up. Other readiness
 notes explicitly describe cross-tenant support actions for platform managers.
 
+The inspected endpoint creates a support-note AuditLog; it does not perform
+arbitrary CRM writes. This is a policy conflict, not evidence of unrestricted
+tenant-data mutation.
+
 This must be resolved as a product and security policy decision before the
 support workflow is treated as certified. The chosen rule must be identical in
 the permission matrix, endpoint permissions, UI capability checks and tests.
@@ -217,11 +237,21 @@ Provider status must remain honest:
 
 ## BE-GAP-006 - Queue-Backed Production Runtime
 
-Automations, integration syncs, notifications, AI work and exports have queue
-contracts and safe eager/local behavior. Production acceptance still requires
-TLS Redis, non-eager Celery workers, beat where scheduled jobs are enabled,
-worker health, lag/retry/failure metrics and restart/recovery proof. HTTP request
-paths must not become the hidden production executor when the queue is absent.
+Automations, notifications, AI jobs, exports and outbound-message delivery have
+job runtimes. General connector sync is not fully queue-backed: the inspected
+`view_actions.py -> services.sync_connector -> sync_service.execute_connector_sync`
+path directly calls the provider handler. `retry_connector_sync_run` is also
+synchronous. `next_sync_at` is persisted, but no general connector-sync beat
+consumer was found. Kaspi pricing cycle is a separate workload.
+
+This leaves an implementation boundary as well as an environment gate. Before
+promising asynchronous live connector sync, define and verify dispatch,
+idempotency, retry, scheduling and restart behavior using existing layers.
+Disabled/non-selected providers do not force new scope into a local pilot.
+
+Production acceptance separately requires TLS Redis, non-eager Celery workers,
+beat for scheduled jobs, worker health, lag/retry/failure metrics and restart
+proof. Enabling Redis alone does not move synchronous HTTP work into a queue.
 
 ## BE-GAP-007 - Production Infrastructure Gates
 

@@ -1,5 +1,11 @@
 # Zani Production Readiness Audit For 10,000 Merchants
 
+Documentation reconciliation 2026-09-14: this is an active environment-audit
+runbook with historical implementation evidence, not current paid-beta approval.
+The latest local WIP is not fully certified. Use
+[backend register](../pilot/backend-open-logic-register.md) for code/policy gaps
+and [paid-beta gate](paid-beta-gate.md) for target-environment acceptance.
+
 Update 2026-07-23: repository runtime health now fails closed with a structured
 `database_unavailable` blocker when the database cannot be queried or the
 schema is not migrated. Operations health includes bounded outbox
@@ -56,7 +62,9 @@ docs/security/rate-limits.md
 
 ## 2. Текущая Оценка
 
-Кодовая база уже подходит для controlled pilot и paid beta с ручной поддержкой, потому что реализованы:
+Исторический снимок перечислял foundations для подготовки controlled pilot.
+Их наличие само по себе не подтверждает текущий candidate или paid-beta
+готовность; требуются отдельные certification и target-environment gates:
 
 - tenant-aware API;
 - RBAC/ABAC foundation;

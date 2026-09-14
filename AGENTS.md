@@ -6,6 +6,9 @@ This file defines how Codex/AI agents must work in the Zani repository.
 
 Before non-trivial work, read only the documents that are relevant to the task. Do not follow references to missing historical plan files.
 
+This file owns execution rules, not live task statuses, readiness percentages or
+test counts. Keep those with the relevant task and its evidence.
+
 Required for all work:
 
 1. `AGENTS.md`
@@ -13,6 +16,26 @@ Required for all work:
 3. `docs/README.md` when choosing documentation paths
 4. `actual_docs/DEFECT_KNOWLEDGE_BASE.md` for defect remediation, UI/UX audits and functional certification
 5. Relevant app/frontend files for the task
+
+When choosing or resuming work, use the relevant authority, not every document:
+
+| Question | Authority |
+| --- | --- |
+| Active document routing / project identity | `actual_docs/README.md`, `actual_docs/PROJECT_HANDOFF.md` |
+| Pre-pilot dependency order | `actual_docs/PRE_PILOT_CODE_READINESS_MASTER.md` |
+| Remaining backend gap IDs | `docs/pilot/backend-open-logic-register.md` |
+| Functional acceptance | `actual_docs/APP_FUNCTIONAL_CERTIFICATION.md` |
+| Fallback/recovery acceptance | `actual_docs/UNIFIED_FALLBACK_EXPERIENCE_PLAN.md` |
+| CRM requirements and invariants | `docs/crm/CRM_PRODUCTION_LAYER_PLAN.md` |
+
+Indexes route to the detailed owner; they do not override its evidence. Archived
+plans, redirect stubs and historical checkpoints never authorize new work.
+Code shows actual behavior; the approved contract defines required behavior.
+A newer timestamp alone does not resolve a disagreement. Correct stale indexes
+when evidence is unambiguous and docs changes are in scope. For unresolved
+permission, lifecycle, data-loss or external-effect policy, request an owner
+decision before changing the dependent behavior; continue only independent,
+already-authorized work. Do not silently make code or docs match either side.
 
 For CRM business logic work:
 
@@ -54,6 +77,48 @@ For testing and task format:
 docs/testing/testing.md
 docs/testing/CODEX_TASK_TEMPLATE.md
 ```
+
+## Task Contract And Change Ownership
+
+Before implementation, record one compact contract using
+`docs/testing/CODEX_TASK_TEMPLATE.md`: existing ID/source, work mode, observable
+result, gap type (code/evidence/environment/policy/roadmap), reused layers,
+scope/non-goals, owner/worktree/base, acceptance criteria and required checks.
+Search existing task IDs, services, tests and closure evidence first. If no ID
+exists, use a bounded task title; do not create a second backlog. Clear user
+authorization is sufficient: do not require approval of routine implementation
+steps. A roadmap mention alone does not add scope or authorize implementation.
+
+Before the first write, verify cwd, worktree, branch, HEAD, staged/unstaged diff
+and untracked files. Keep a starting snapshot for the affected paths.
+Parallel implementations use separate worktrees. Overlapping files, migrations
+or contracts require one agreed writer/integration owner, even across worktrees.
+Task names such as Backend or UI/UX are not ownership boundaries.
+Do not switch a shared dirty checkout to another branch or edit unrelated user
+changes. Unexpected branch/HEAD drift or another writer's changes in affected
+paths pause writes until reconciled. Worktrees do not isolate databases,
+ports, queues or providers: isolate those resources separately when used.
+
+## Anti-Rework And Resume Rules
+
+- Reopen a closed task only for a reproducible regression, a proven missing
+  acceptance criterion, or an explicitly approved requirement change. Record
+  the prior closure, new evidence, minimal delta and regression check.
+  An old checklist or preferred architecture is not sufficient. Rechecking
+  affected behavior does not require reimplementing a closed foundation.
+- On resume or context recovery, read the task checkpoint, compare the current
+  state with its snapshot, and continue the unfinished item. Do not restart a
+  repository-wide audit without a request or new evidence justifying its scope.
+- Keep checkpoints in the existing task record or handoff, not a new master
+  plan: scope, Git state, implemented/verified work, failures, remaining item,
+  one next step and closed work that must not be reopened. Never store secrets.
+- After two equivalent failed attempts with unchanged inputs, do not repeat
+  blindly. State what was learned, a revised hypothesis and the smallest next
+  diagnostic. Repeating a test to investigate order/flakiness is valid when
+  that hypothesis and changed conditions are explicit.
+- Refactor only as needed for acceptance or a demonstrated risk in the changed
+  path. File size prompts design review, not an unrelated rewrite. Record
+  optional cleanup separately and do not prolong a completed phase for it.
 
 ## Product Direction
 
@@ -137,37 +202,32 @@ For any CRM business action, preserve these invariants:
 
 ## Required Checks
 
-Run after meaningful backend/frontend changes:
+`docs/testing/testing.md` owns the verification matrix and safe commands.
+Use the existing cross-platform `scripts/codex_verify.py`; Unix shell wrappers
+are optional, not a requirement to install Bash. Select focused checks while
+iterating, dependency-area checks at phase close, and the full required gate
+for release-candidate integration. Do not substitute a scoped PASS for a full
+gate or weaken assertions to obtain green results.
 
-```bash
-scripts/codex_verify.sh
-```
+The runner requires an explicit ancestor base different from HEAD. While the
+task has no committed range, use the documented isolated focused path and report
+that boundary; never invent a base just to bypass validation. Docs-only changes
+use the docs gate, not an unnecessary application build/install.
 
-For narrow backend CRM changes, scoped checks are acceptable:
+Migration generation, test-DB migration and applying to a working database are
+separate actions. Generate only intentional schema changes and verify them in
+an isolated database. Applying migrations, seed/reset or destructive smoke to
+an existing working/staging/production database requires explicit target/scope
+authorization. Do not repopulate ordinary `db.sqlite3` during verification.
 
-```bash
-DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py check
-.venv/bin/python -m pytest apps.clients.tests apps.leads.tests_forms apps.crm.tests apps.scheduling.tests apps.tasks.tests apps.core.tests_tenant_isolation -q
-```
-
-For frontend changes:
-
-```bash
-cd frontend && npm run build
-```
-
-If migrations are intentionally added:
-
-```bash
-DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py makemigrations
-DATABASE_URL=sqlite:///db.sqlite3 .venv/bin/python manage.py migrate
-```
-
-Final responses and PR summaries must list exactly what was run and what was skipped.
+Final responses and PR summaries must list exact commands, results, skipped
+checks/reasons, candidate or dirty-snapshot identity, environment and coverage.
 
 ## Task Completion Gate
 
-For checklist-driven work such as `docs/crm/CRM_IMPLEMENTATION_TASKS.md`, Codex must not mark a task as complete until the relevant implementation and verification are both done.
+For the active task contract, Codex must not mark a task as complete until its
+required implementation and verification are both done. Closed or archived
+checklists are evidence, not the current work queue.
 
 Rules:
 
@@ -180,13 +240,27 @@ Rules:
   - AI impact;
   - migration/env impact.
 - If tests fail because of a pre-existing or unrelated baseline issue, do not hide it. Record it as a baseline failure and do not mark the current task complete unless the task's own acceptance criteria are still provably satisfied.
+- Classify a failure as baseline only with evidence. Fix in-scope regressions;
+  do not silently expand the task to unrelated repairs. An unresolved required
+  gate blocks the corresponding acceptance claim even if focused tests pass.
 - If `.git` is missing, the branch/PR rule is temporarily not executable locally. State that explicitly in summaries instead of pretending a branch or PR exists.
 - If a task is user-facing, it is not complete without a reachable UI/API flow, not only backend foundation code.
 - If a task changes CRM lifecycle behavior, the verification must include happy path, permission denial and tenant isolation coverage where applicable.
 
+Distinguish implemented, locally verified, committed, integrated and accepted
+for the target environment. A local PASS is not a commit/merge/deploy claim.
+Evidence belongs to a commit or an identified dirty snapshot, commands and
+environment, not to a branch name alone. Later relevant changes invalidate the
+affected acceptance evidence until rechecked, not all historical closures.
+Recheck dependent contracts; use the full gate for release acceptance.
+
 ## Phase Execution Stop Gate
 
 For phase-based checklist work, one completed phase is the default stopping point.
+
+Define the phase by an observable result and acceptance criteria, not a file
+count. Do not invent extra phases or mandatory human checkpoints within an
+already-authorized scope. A blocker does not authorize scope expansion.
 
 Rules:
 
@@ -203,6 +277,8 @@ Rules:
   - known risks or baseline failures;
   - the next unchecked phase or next unfinished item.
 - If work on one phase runs longer than 60 minutes, Codex must provide a checkpoint summary and continue the same phase unless the user asks to stop.
+- Save the compact checkpoint before handing off, pausing or ending unfinished
+  work. On resume, verify only the relevant delta before continuing.
 - If the conversation resumes after context compaction, treat the current user message as the active authorization boundary. Do not infer permission to continue multiple old phases from earlier "continue" messages.
 
 ## Documentation Rule
@@ -213,6 +289,13 @@ After a completed phase or meaningful behavior change:
 - update relevant docs in `docs/`;
 - update `README.md` only when setup, behavior, or public project status changes;
 - do not add new historical roadmap files when one current plan can be updated.
+- keep status/evidence with its owner and link from indexes instead of copying
+  changing test counts into multiple summaries;
+- preserve closed evidence and archive bodies; unresolved approved scope or an
+  active security/domain contract must not be archived as if complete;
+- report the exact delivery worktree and whether changes are local, committed
+  or integrated. Work in a separate worktree is not active in the main checkout
+  until integrated; never overwrite that checkout to hide this distinction.
 
 ## Work Style
 
@@ -220,7 +303,9 @@ After a completed phase or meaningful behavior change:
 - Inspect before editing.
 - Preserve unrelated user changes.
 - Never revert work you did not make unless explicitly requested.
-- If checks fail, fix the current task before starting another one.
+- If checks fail, diagnose and fix in-scope failures before closing the task.
+  For an external or unrelated blocker, preserve evidence and request direction
+  only when necessary; do not start unrequested repairs or a new phase.
 - Prefer small services/selectors/components over large God files.
 - Do not mix unrelated UI, backend, integration and docs changes in the same PR unless the task explicitly requires the full workflow.
 
@@ -269,11 +354,14 @@ Do not invent static Russian text for pages. Visible text must come from:
 
 Inside the authenticated app, dashboard pages must not explain what Zani is. They must show business state, actions, metrics, tasks, leads, deals, alerts, integrations and AI recommendations.
 
-Before finishing any UI task, check:
+Before finishing any UI task, every new block must pass all three checks:
 
-- Did I add static headline or paragraph text that was not requested?
-- Does every new block have a real business function?
-- Is this block connected to data, action, navigation, empty state, or setting?
-- Would this look like fake demo/landing content inside a real SaaS cabinet?
+- it serves one of the product purposes listed above;
+- its visible copy has an allowed source;
+- it is backed by real data, an action, navigation, a form, a meaningful empty
+  state, a setting or an actual system status, not fabricated demo content.
 
-If the answer is no, remove the block.
+Remove or correct new blocks that fail these checks within the task scope.
+Do not remove an existing functional block merely because a negatively worded
+review question was answered "no". Explicitly requested explanatory content
+remains subject to truthful data and the approved content scope.

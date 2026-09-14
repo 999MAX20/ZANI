@@ -1,0 +1,51 @@
+<!-- ZANI_ARCHIVE_HEADER_BEGIN -->
+> ARCHIVED 2026-09-14 · HISTORICAL_DELIVERY
+>
+> Original path: `docs/pilot/block9-data-import-pilot.md`. Source: `4ba3cbf9fddcc6e1baa172b494c781550c090693`.
+> Исторический отчёт delivery-блока. Его проверки относятся только к исходному снимку; оставшиеся live/policy gates не закрываются архивацией.
+> Historical evidence only; not an implementation queue or current release approval.
+> Original relative references below are preserved as historical text; resolve them against the original path.
+<!-- ZANI_ARCHIVE_HEADER_END -->
+
+# Block 9 — Data Import / Sales & Services Seed
+
+Цель блока: владелец не должен попадать в пустой ZANI. Даже если новый лендинг ещё не привёл заявок, бизнес может загрузить продажи, услуги/товары и клиентов через CSV/XLSX, после чего dashboard и AI получают реальные business events.
+
+## Что проверяется
+
+- CSV/XLSX import для sales, catalog, clients.
+- Preview before confirm.
+- Человеческие ошибки валидации.
+- Confirm import создаёт BusinessEvent для продаж и каталога.
+- Dashboard начинает показывать revenue на основе `sale.recorded`.
+- Sample CSV-файлы лежат в `docs/integrations/imports/samples/`.
+- Команда `write_import_samples` может выгрузить актуальные шаблоны из backend templates.
+
+## Команды ручной проверки
+
+```bash
+python manage.py write_import_samples --output-dir /tmp/zani_import_samples
+python manage.py test apps.core.tests_import_export apps.core.tests_import_samples -v 2
+```
+
+## Sample files
+
+- `docs/integrations/imports/samples/sales_template.csv`
+- `docs/integrations/imports/samples/catalog_template.csv`
+- `docs/integrations/imports/samples/clients_template.csv`
+
+## Product meaning
+
+Landing is only the entry. Data import is the moment ZANI starts becoming useful:
+
+```text
+лендинг активирован
+↓
+загрузка продаж / услуг / клиентов
+↓
+BusinessEvent
+↓
+Dashboard оживает
+↓
+AI не выдумывает, а объясняет реальные данные
+```

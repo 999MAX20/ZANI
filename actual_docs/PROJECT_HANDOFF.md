@@ -1,5 +1,29 @@
 # ZANI Project Handoff
 
+## Приоритетный checkpoint — 2026-09-14
+
+Последний проверенный committed HEAD: `4ba3cbf9fddcc6e1baa172b494c781550c090693`.
+BE-GAP-001 закрыт (`21f5eb0`); FC-004/006 PASS (`d4f7c8f`, full gate 962 tests);
+FC-003/008 и BE-REM-007 остаются partial. Старые ownership/FC-004/006 open notes
+ниже — история соответствующего снимка, не текущая очередь задач.
+
+Канонический checkout снова содержит незакоммиченный AI/channel пакет, включая
+новые lifecycle/channel-boundary файлы. Во время аудита его ветка сменилась с
+`codex/ai-channel-ownership-hardening` на `codex/ui-testing-toolkit` при том же
+HEAD. Имя ветки не доказывает состав candidate. Новые focused checks: 54 PASS;
+два website-chat сценария воспроизводят 403 вместо 201. Старый full gate не
+сертифицирует cumulative WIP.
+
+Текущие границы: [backend register](../docs/pilot/backend-open-logic-register.md),
+[backend audit](../docs/pilot/backend-development-audit.md),
+[documentation audit](../docs/operations/technical-documentation-audit.md).
+Документационная нормализация выполнена в отдельном worktree
+`C:\Users\user\Desktop\Zani-backend-docs-audit`, не в dirty canonical checkout.
+При интеграции сохранить чужие изменения; не копировать каталог целиком.
+
+Дальнейшие dated snapshots — historical evidence. Identity, guardrails
+и инженерные правила ниже продолжают действовать.
+
 Дата снимка: 2 сентября 2026 года
 
 Этот документ — стартовый handoff для нового Codex-проекта `Zani`. Он не заменяет `AGENTS.md` и не разрешает реализацию задач сам по себе.

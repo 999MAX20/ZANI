@@ -14,6 +14,16 @@ plan/clean_code_rules/zani_required_clean_code_rules.md
 
 ## Текущий статус
 
+Локальный каталог UI-компонентов и проверки: [UI testing toolkit](docs/testing/ui-testing-toolkit.md).
+В папке `frontend`: `npm run storybook` (loopback, без CRM/API),
+`npm run build-storybook`, затем `npm run test:ui-toolkit`.
+Облачная публикация настраивается отдельно и по умолчанию не выполняется.
+
+Ручной учёт оплат клиентов: кнопка «Оплаты» в header «Клиентов» и карточке клиента
+открывает единый журнал оплат/возвратов. Это регистрация уже полученных денег,
+не банковская операция и не подтверждение через 1С. Контракт и проверки:
+[Client payments](docs/crm/client-payments.md).
+
 ### Реализовано до этапного плана
 
 - Django + DRF backend-core.

@@ -102,10 +102,12 @@ export function AppLayout() {
   const [pageHeader, setPageHeader] = useState<PageHeaderConfig | null>(null);
   const location = useLocation();
   const pageHeaderActions = useMemo(() => ({ setPageHeader }), []);
-  const usesWideCrmWorkspace = /^\/app\/(leads|clients|deals)\/?$/.test(
+  const usesWideCrmWorkspace = /^\/app\/(leads|clients|deals|ai-agents)(?:\/|$)/.test(
     location.pathname,
   );
   const usesEdgeToEdgeDeals = /^\/app\/deals\/?$/.test(location.pathname);
+  const aiAgentWorkspaceKey = location.pathname.match(/^\/app\/ai-agents(?:\/[^/]+)?/)?.[0];
+  const workspaceAnimationKey = aiAgentWorkspaceKey || location.pathname;
 
   return (
     <div className="min-h-screen bg-surface text-ink">
@@ -115,7 +117,7 @@ export function AppLayout() {
           <div className="flex min-w-0 flex-1 flex-col pb-28 lg:pb-0">
             <WorkspaceNavigation pageHeader={pageHeader} />
             <main
-              key={location.pathname}
+              key={workspaceAnimationKey}
               className={`animate-fade-in mx-auto w-full flex-1 ${usesEdgeToEdgeDeals ? "px-2 pb-2" : "px-4 pb-4 sm:px-6 sm:pb-6 lg:px-6"} ${usesWideCrmWorkspace ? "max-w-none" : "max-w-[1440px]"} ${pageHeader?.activeFilters ? "pt-24" : "pt-16"}`}
             >
               <MeasuredWorkspaceOutlet />

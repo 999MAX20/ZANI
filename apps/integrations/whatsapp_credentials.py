@@ -1,28 +1,22 @@
 from django.utils import timezone
+from django.db import transaction
 
 from apps.bots.models import BotChannel
-from apps.integrations.bot_channel_credentials import credential_lookup_digest, find_bot_channel_by_credential
+from apps.integrations.bot_channel_credentials import credential_lookup_digest, find_bot_channel_by_credential, get_bot_channel_connector
 from apps.integrations.connectors import create_or_update_credential, read_connector_credential
+from apps.integrations.channel_boundary import lock_channel_business
 from apps.integrations.models import BusinessConnector, ConnectorCredential
 
 
 def get_whatsapp_connector(channel):
-    connector, _ = BusinessConnector.objects.get_or_create(
-        business=channel.bot.business,
-        provider=BusinessConnector.Providers.WHATSAPP,
-        name="WhatsApp",
-        defaults={
-            "capability": BusinessConnector.Capabilities.COMMUNICATIONS,
-            "auth_type": BusinessConnector.AuthTypes.OAUTH,
-            "status": BusinessConnector.Statuses.NEEDS_ATTENTION,
-        },
-    )
-    return connector
+    return get_bot_channel_connector(channel, BusinessConnector.Providers.WHATSAPP)
 
 
+@transaction.atomic
 def store_whatsapp_access_token(channel, access_token, expires_at=None):
     if not access_token:
         return None
+    lock_channel_business(channel.bot.business_id)
     connector = get_whatsapp_connector(channel)
     credential = create_or_update_credential(connector, "access_token", access_token, expires_at=expires_at)
     config = dict(connector.config_json or {})
@@ -49,6 +43,7 @@ def get_whatsapp_access_token(channel):
     connector = BusinessConnector.objects.filter(
         business=channel.bot.business,
         provider=BusinessConnector.Providers.WHATSAPP,
+        config_json__bot_channel_id=channel.id,
     ).first()
     credential = connector.credentials.filter(key="access_token").first() if connector else None
     if credential:
@@ -73,15 +68,18 @@ def has_whatsapp_access_token(channel):
     connector = BusinessConnector.objects.filter(
         business=channel.bot.business,
         provider=BusinessConnector.Providers.WHATSAPP,
+        config_json__bot_channel_id=channel.id,
     ).first()
     if connector and ConnectorCredential.objects.filter(connector=connector, key="access_token").exists():
         return True
     return bool((channel.config_json or {}).get("access_token"))
 
 
+@transaction.atomic
 def store_whatsapp_webhook_secret(channel, webhook_secret):
     if not webhook_secret:
         return None
+    lock_channel_business(channel.bot.business_id)
     connector = get_whatsapp_connector(channel)
     credential = create_or_update_credential(connector, "webhook_secret", webhook_secret)
     config = dict(connector.config_json or {})
@@ -107,6 +105,7 @@ def get_whatsapp_webhook_secret(channel):
     connector = BusinessConnector.objects.filter(
         business=channel.bot.business,
         provider=BusinessConnector.Providers.WHATSAPP,
+        config_json__bot_channel_id=channel.id,
     ).first()
     credential = connector.credentials.filter(key="webhook_secret").first() if connector else None
     if credential:
@@ -131,6 +130,7 @@ def has_whatsapp_webhook_secret(channel):
     connector = BusinessConnector.objects.filter(
         business=channel.bot.business,
         provider=BusinessConnector.Providers.WHATSAPP,
+        config_json__bot_channel_id=channel.id,
     ).first()
     if connector and ConnectorCredential.objects.filter(connector=connector, key="webhook_secret").exists():
         return True

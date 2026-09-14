@@ -6,6 +6,7 @@ from apps.automations.models import AutomationRule
 from apps.billing.models import UsageCounter
 from apps.billing.usage import increment_usage
 from apps.bots.inbox_service import register_bot_message
+from apps.bots.lifecycle import is_bot_runtime_ready
 from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
 from apps.conversations.auto_pipeline import maybe_run_auto_pipeline
 from apps.integrations.crm_mapping import record_message_received_event
@@ -22,12 +23,15 @@ def verify_instagram_secret(request):
 def resolve_instagram_channel(instagram_user_id=""):
     candidates = (
         BotChannel.objects.select_related("bot", "bot__business")
-        .filter(channel=BotChannel.Channels.INSTAGRAM, status__in=[BotChannel.Statuses.DRAFT, BotChannel.Statuses.ACTIVE])
-        .exclude(bot__status=Bot.Statuses.PAUSED)
+        .filter(
+            channel=BotChannel.Channels.INSTAGRAM,
+            status=BotChannel.Statuses.ACTIVE,
+            bot__status=Bot.Statuses.ACTIVE,
+        )
     )
     if instagram_user_id:
         channel = candidates.filter(config_json__instagram_user_id=instagram_user_id).first() or candidates.filter(external_id=instagram_user_id).first()
-        if channel:
+        if channel and is_bot_runtime_ready(channel.bot):
             return channel
 
     raise ValidationError("Instagram channel was not resolved.")

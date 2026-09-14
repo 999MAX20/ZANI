@@ -328,10 +328,11 @@ export const businessConnectorsApi = {
     const { data } = await apiClient.post<BusinessConnector>("/api/business-connectors/whatsapp-request/", payload);
     return data;
   },
-  startWhatsAppEmbeddedSignup: async ({ business, redirectUri }: { business: Id; redirectUri?: string }) => {
+  startWhatsAppEmbeddedSignup: async ({ business, redirectUri, botChannel }: { business: Id; redirectUri?: string; botChannel?: Id }) => {
     const { data } = await apiClient.post<WhatsAppEmbeddedSignupStartResponse>("/api/business-connectors/whatsapp-embedded-signup/start/", {
       business,
       redirect_uri: redirectUri,
+      bot_channel: botChannel,
     });
     return data;
   },
@@ -339,10 +340,11 @@ export const businessConnectorsApi = {
     const { data } = await apiClient.post<{ ok: boolean; channel_id: Id; connector: BusinessConnector }>("/api/business-connectors/whatsapp-embedded-signup/complete/", payload);
     return data;
   },
-  startInstagramOAuth: async ({ business, redirectUri }: { business: Id; redirectUri?: string }) => {
+  startInstagramOAuth: async ({ business, redirectUri, botChannel }: { business: Id; redirectUri?: string; botChannel?: Id }) => {
     const { data } = await apiClient.post<InstagramOAuthStartResponse>("/api/business-connectors/instagram-oauth/start/", {
       business,
       redirect_uri: redirectUri,
+      bot_channel: botChannel,
     });
     return data;
   },

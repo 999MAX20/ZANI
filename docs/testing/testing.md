@@ -1,5 +1,9 @@
 # Zani Testing Guide
 
+For isolated shared-component development, RU/KK/EN accessibility/interaction
+checks and guarded visual publishing, see [UI testing toolkit](ui-testing-toolkit.md).
+This local catalogue does not replace authenticated CRM E2E certification.
+
 ## Deterministic Local Quality Gate
 
 The cross-platform gate is the single local entrypoint for acceptance checks:

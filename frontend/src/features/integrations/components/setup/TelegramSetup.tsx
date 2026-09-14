@@ -1,26 +1,22 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, RefreshCw, Send, ShieldCheck } from "lucide-react";
+import { CheckCircle2, RefreshCw, ShieldCheck } from "lucide-react";
 
-import { botChannelsApi, botsApi, telegramChannelApi } from "../../../../api/bots";
+import { botChannelsApi, telegramChannelApi } from "../../../../api/bots";
 import { getApiErrorMessage } from "../../../../api/client";
 import { Button } from "../../../../components/ui/Button";
 import { ErrorState } from "../../../../components/ui/StateViews";
 import { Input } from "../../../../components/ui/Input";
 import { useNotification } from "../../../../components/notifications/NotificationProvider";
 import { useI18n } from "../../../../lib/i18n";
-import type { Bot, BotChannel, Id } from "../../../../types";
+import type { BotChannel } from "../../../../types";
 import { merchantSafeIntegrationError } from "../../utils";
 import { MessengerSetupShell } from "./IntegrationSetupUi";
 
 export function TelegramInlineSetup({
-  businessId,
-  bots,
   canManage,
   channel,
 }: {
-  businessId: Id;
-  bots: Bot[];
   canManage: boolean;
   channel?: BotChannel;
 }) {
@@ -38,30 +34,6 @@ export function TelegramInlineSetup({
     queryKey: ["telegram-status", channel?.id],
     queryFn: () => telegramChannelApi.status(Number(channel?.id)),
     enabled: Boolean(channel?.id),
-  });
-
-  const ensureChannel = useMutation({
-    mutationFn: async () => {
-      const bot = bots[0] || await botsApi.create({
-        business: businessId,
-        name: "Telegram bot",
-        status: "active",
-        default_language: "ru",
-        settings_json: {},
-      });
-      return botChannelsApi.create({
-        bot: bot.id,
-        channel: "telegram",
-        status: "draft",
-        external_id: "",
-        config_json: {},
-      });
-    },
-    onSuccess: () => {
-      setNotice(t("integrations.telegram.channelCreated"));
-      queryClient.invalidateQueries({ queryKey: ["bots"] });
-      queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
-    },
   });
 
   const saveToken = useMutation({
@@ -109,7 +81,7 @@ export function TelegramInlineSetup({
     },
   });
 
-  const error = ensureChannel.error || saveToken.error || testConnection.error || setWebhook.error || toggleChannel.error || status.error;
+  const error = saveToken.error || testConnection.error || setWebhook.error || toggleChannel.error || status.error;
   const tokenConfigured = Boolean(status.data?.token_configured);
   const tokenVerified = Boolean(status.data?.token_verified);
   const webhookConfigured = Boolean(status.data?.webhook_configured);
@@ -123,14 +95,7 @@ export function TelegramInlineSetup({
   const connectionTone = inboundReady ? "success" : tokenVerified || tokenConfigured ? "progress" : "neutral";
 
   if (!channel) {
-    return (
-      <div className="w-full space-y-3">
-        {error ? <ErrorState message={merchantSafeIntegrationError(getApiErrorMessage(error), t)} /> : null}
-        <Button type="button" disabled={!canManage} isLoading={ensureChannel.isPending} onClick={() => ensureChannel.mutate()}>
-          <Send size={16} /> {t("integrations.telegram.createChannel")}
-        </Button>
-      </div>
-    );
+    return <ErrorState message={t("aiAgents.channelSetupUnavailable")} />;
   }
 
   return (

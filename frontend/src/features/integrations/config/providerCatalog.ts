@@ -111,6 +111,8 @@ export const providerCatalog: Array<{
   },
 ];
 
+export const integrationProviderCatalog = providerCatalog.filter((item) => item.group !== "messages");
+
 export const groupLabels: Record<ProviderGroup, { titleKey: string; textKey: string }> = {
   messages: {
     titleKey: "integrations.group.messages",

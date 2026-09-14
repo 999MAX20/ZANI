@@ -46,13 +46,18 @@ Merchant endpoints:
 - `GET /api/connector-sync-runs/`
 - `POST /api/connector-sync-runs/{id}/retry/`
 
-Frontend route:
+Frontend routes:
 
-- `/dashboard/integrations`
+- `/app/integrations` — business-level external data, marketplace and system connections.
+- `/app/ai-agents/:id/channels` — Website, Telegram, WhatsApp and Instagram endpoint setup for one exact AI agent.
+
+`BusinessConnector` remains the internal business-level credential and provider-health record for messenger channels. It does not authorize a second messenger setup UI on `/app/integrations`.
 
 ## Merchant UI Boundary
 
 The integrations page is the merchant-facing status center, not a connector developer console.
+
+Messenger setup is intentionally excluded from this page. A merchant configures a messenger endpoint in the selected AI agent's Channels section, where the product can preserve agent ownership, readiness and direct navigation to conversations. Until a dedicated multi-account relation is introduced, a business may assign one Telegram, one WhatsApp and one Instagram endpoint across all agents; attempting to assign the same provider to another agent fails with an ownership conflict. Website channels remain per-agent.
 
 Provider cards must use `docs/integrations/provider-rollout.md` as the readiness source of truth. The UI may show a provider as `connected`, `available`, `beta read-only`, `pilot/setup required`, `request access`, `mock/dev` or `roadmap`, but it must not imply general live readiness when the provider matrix still requires env, support approval or readiness checks.
 
@@ -177,6 +182,52 @@ for a merchant endpoint; use a publicly reachable HTTPS receiver with a valid
 certificate.
 
 ## Permissions
+
+### Messenger channel configuration boundary (2026-09-13)
+
+Generic connector/channel POST, PUT and PATCH do not stand in for provider setup:
+
+- Messenger `config_json` is server-owned. Exact echoes are discarded before
+  persistence; changed or cleared configurations are rejected. Draft channel
+  creation accepts empty configuration and the legacy explicit `mock` default.
+  Unbound pending connection requests retain only allowlisted textual form
+  metadata; they cannot contain provider IDs, credentials or verification flags.
+- A channel's bot and provider type cannot be reassigned through generic updates.
+  Messenger `external_id` is written only by dedicated setup/OAuth actions.
+- A connector cannot be converted to or from a messenger provider. Generic
+  updates preserve its authentication type and server-owned channel binding.
+- A bound messenger credential must be rotated through the corresponding channel
+  setup action, not the generic credential write/delete API. Unbound connector bootstrap
+  and non-messenger credential workflows retain their existing contract.
+- Channel credential reads require the exact channel binding. Webhook-secret
+  resolution additionally requires a positive integer channel ID, matching
+  provider and the connector's Business. Invalid authenticated bindings cannot
+  fall through to another legacy channel. Legacy plaintext migration remains
+  available only through the existing trusted compatibility path.
+  Unbound encrypted credentials are not guessed from the first business
+  connector: owners must explicitly configure their channel; stored data is not deleted.
+- WhatsApp/Instagram reactivation requires setup-owned `connection_verified`,
+  not just a generic connector `connected` health status. Configuration changes
+  reset verification. Existing channels without this marker must run the
+  dedicated connection test before reactivation; no data migration guesses
+  whether an old connection was verified. Mock success remains mock, not live
+  provider certification.
+- Telegram token/secret replacement invalidates webhook setup; replacing the
+  bot token also invalidates token verification. Automatic missing-secret
+  regeneration invalidates webhook setup as well.
+- Generic creation and trusted setup share a Business row lock. Writes recheck
+  current bindings after acquiring the lock. Setup gets a new `setup_revision`;
+  delayed provider/OAuth results are rejected if the channel changed during the
+  external request. Provider network calls are outside the commit lock.
+- WhatsApp OAuth checks access to the exact returned phone-number identity
+  before saving credentials or marking the selected channel verified. OAuth
+  reconnect uses the existing bound connector even after its display name changes.
+- Legacy OAuth without an explicit channel uses the same business-wide channel
+  ownership guard as current agent setup; it cannot create a duplicate endpoint
+  on a different agent.
+
+The separate defect where pausing AI also blocks inbound transport is not fixed
+by this boundary change. Do not claim full AI-agent or live-provider readiness.
 
 Connectors use the existing `integrations` resource.
 

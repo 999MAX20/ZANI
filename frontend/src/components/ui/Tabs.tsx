@@ -8,6 +8,7 @@ export function Tabs<T extends string>({
   onChange,
   ariaLabel,
   className,
+  idPrefix,
   tone = "brand",
 }: {
   value: T;
@@ -15,6 +16,7 @@ export function Tabs<T extends string>({
   onChange: (value: T) => void;
   ariaLabel: string;
   className?: string;
+  idPrefix?: string;
   tone?: "brand" | "ai";
 }) {
   const selectFromKeyboard = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
@@ -48,6 +50,8 @@ export function Tabs<T extends string>({
                 : "text-zani-subtle hover:bg-surface-warm hover:text-zani-text",
             )}
             role="tab"
+            id={idPrefix ? `${idPrefix}-tab-${option.value}` : undefined}
+            aria-controls={idPrefix ? `${idPrefix}-panel-${option.value}` : undefined}
             aria-selected={active}
             tabIndex={active ? 0 : -1}
             onClick={() => onChange(option.value)}

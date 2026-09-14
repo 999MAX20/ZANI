@@ -3,16 +3,19 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { BookOpen, Plus, Save, Settings } from "lucide-react";
 
 import { businessKnowledgeApi } from "../../../api/ai";
+import { getApiErrorMessage } from "../../../api/client";
 import { Button } from "../../../components/ui/Button";
 import { Card, CardBody } from "../../../components/ui/Card";
 import { Input } from "../../../components/ui/Input";
 import { Modal } from "../../../components/ui/Modal";
 import { Select } from "../../../components/ui/Select";
 import { Textarea } from "../../../components/ui/Textarea";
+import { ErrorState } from "../../../components/ui/StateViews";
+import { StatusNotice } from "../../../components/ui/StatusNotice";
 import { cn } from "../../../lib/cn";
 import { useI18n } from "../../../lib/i18n";
 import type { BusinessKnowledgeItem, Id } from "../../../types";
-import { FieldHint, HelpCard } from "./AIAgentsShared";
+import { FieldHint } from "./AIAgentsShared";
 export function KnowledgeSection({ businessId, items, canManage }: { businessId: Id; items: BusinessKnowledgeItem[]; canManage: boolean }) {
   const { t } = useI18n();
   const queryClient = useQueryClient();
@@ -26,6 +29,7 @@ export function KnowledgeSection({ businessId, items, canManage }: { businessId:
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ai-knowledge-items"] });
+      queryClient.invalidateQueries({ queryKey: ["bots"] });
       setOpen(false);
       setEditing(null);
       setDraft({ title: "", category: "business", content: "", is_active: true });
@@ -59,10 +63,11 @@ export function KnowledgeSection({ businessId, items, canManage }: { businessId:
   return (
     <>
       <div className="space-y-4">
-        <HelpCard
-          title={t("aiAgents.onboarding.knowledge.helpTitle")}
-          text={t("aiAgents.onboarding.knowledge.helpText")}
-          recommendation={t("aiAgents.onboarding.knowledge.recommendation")}
+        <StatusNotice
+          compact
+          tone="info"
+          title={t("aiAgents.knowledgeSharedScopeTitle")}
+          description={t("aiAgents.knowledgeCompanyText")}
         />
         <div className="rounded-card border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -82,7 +87,7 @@ export function KnowledgeSection({ businessId, items, canManage }: { businessId:
               <CardBody>
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">{item.category || t("aiAgents.knowledge.category")}</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-700">{t(`aiAgents.knowledge.category.${item.category || "business"}`)}</p>
                     <h3 className="mt-2 text-lg font-black text-midnight">{item.title}</h3>
                   </div>
                   <span className={cn("rounded-full px-2.5 py-1 text-xs font-black", item.is_active ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500")}>
@@ -111,7 +116,7 @@ export function KnowledgeSection({ businessId, items, canManage }: { businessId:
                       onClick={() => openTemplate(template)}
                     >
                       <span className="text-sm font-black text-midnight">{template.title}</span>
-                      <span className="mt-1 block text-xs font-semibold leading-5 text-slate-500">{template.category}</span>
+                      <span className="mt-1 block text-xs font-semibold leading-5 text-slate-500">{t(`aiAgents.knowledge.category.${template.category}`)}</span>
                     </button>
                   ))}
                 </div>
@@ -129,6 +134,7 @@ export function KnowledgeSection({ businessId, items, canManage }: { businessId:
             saveKnowledge.mutate();
           }}
         >
+          {saveKnowledge.error ? <ErrorState message={getApiErrorMessage(saveKnowledge.error)} /> : null}
           <Input label={t("aiAgents.knowledge.title")} value={draft.title} onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))} />
           <FieldHint>{t("aiAgents.hint.knowledgeTitle")}</FieldHint>
           <Input label={t("aiAgents.knowledge.category")} value={draft.category} onChange={(event) => setDraft((current) => ({ ...current, category: event.target.value }))} />

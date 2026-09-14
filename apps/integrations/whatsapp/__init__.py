@@ -8,6 +8,7 @@ from apps.automations.models import AutomationRule
 from apps.billing.models import UsageCounter
 from apps.billing.usage import increment_usage
 from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
+from apps.bots.lifecycle import is_bot_runtime_ready
 from apps.conversations.auto_pipeline import maybe_run_auto_pipeline
 from apps.integrations.crm_mapping import record_message_received_event
 from apps.integrations.message_idempotency import create_inbound_message_once, find_existing_inbound_message
@@ -33,12 +34,15 @@ def verify_whatsapp_secret(request):
 def resolve_whatsapp_channel(provided_secret="", phone_number_id=""):
     candidates = (
         BotChannel.objects.select_related("bot", "bot__business")
-        .filter(channel=BotChannel.Channels.WHATSAPP, status__in=[BotChannel.Statuses.DRAFT, BotChannel.Statuses.ACTIVE])
-        .exclude(bot__status=Bot.Statuses.PAUSED)
+        .filter(
+            channel=BotChannel.Channels.WHATSAPP,
+            status=BotChannel.Statuses.ACTIVE,
+            bot__status=Bot.Statuses.ACTIVE,
+        )
     )
     if phone_number_id:
         channel = candidates.filter(config_json__phone_number_id=phone_number_id).first() or candidates.filter(external_id=phone_number_id).first()
-        if channel:
+        if channel and is_bot_runtime_ready(channel.bot):
             return channel
 
     channel = find_whatsapp_channel_by_webhook_secret(provided_secret)

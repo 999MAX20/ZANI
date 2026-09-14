@@ -8,6 +8,7 @@ import { EntityAttachmentsPanel, EntityCustomFieldsPanel } from "./panels";
 import { drawerSurfaceClass, EmptyBlock, getChannelLabel, SummaryItem } from "./shared";
 import type { CrmDrawerEntity } from "./types";
 import type { ClientDrawerActions } from "../CrmEntityDrawer";
+import { PaymentsButton } from "../../../features/payments/PaymentsButton";
 
 function textValue(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : "";
@@ -53,6 +54,7 @@ export function ClientDrawerContent({ data, entity, actions }: { data: CrmCardPa
           <p className="mt-1 break-words text-sm font-semibold text-zani-muted">{[client.phone, client.email].filter(Boolean).join(" · ") || t("crmCard.noContacts")}</p>
         </div>
         <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(132px,1fr))] gap-2 border-t border-zani-border pt-4">
+          <PaymentsButton client={client} />
           {actions?.onEdit ? (
             <Button variant="secondary" className="min-w-0 px-3" onClick={() => actions.onEdit?.(client)}>
               <Pencil className="shrink-0" size={16} />

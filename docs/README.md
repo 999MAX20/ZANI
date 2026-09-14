@@ -19,6 +19,7 @@ Use `crm/` for CRM domain plans, CRM production tasks, lifecycle rules and CRM a
 - `crm/CRM_PRODUCTION_LAYER_PLAN.md`
 - `crm/CRM_IMPLEMENTATION_TASKS.md`
 - `crm/CRM_AUDIT_REQUIRED_CHANGES.md`
+- `crm/client-payments.md` — manual client payment journal, permissions and verification.
 
 ### Integrations
 
@@ -64,6 +65,7 @@ Use `security/` for permissions, rate limits and access-control documentation.
 Use `testing/` for test strategy, Codex task format, regression reports and scale/e2e baselines.
 
 - `testing/testing.md`
+- `testing/ui-testing-toolkit.md` — local component QA and guarded visual-service setup.
 - `testing/CODEX_TASK_TEMPLATE.md`
 - `testing/regression-report.md`
 - `testing/e2e-scale-baseline.md`

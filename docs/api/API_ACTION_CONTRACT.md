@@ -475,6 +475,29 @@ Protected `ApprovalRequest` generic write fields:
 
 Frontend rule: AI can suggest actions, but critical mutating tools must be executed only through `tools/{log_id}/execute/` with a matching approved `ApprovalRequest` when the tool requires approval. Do not directly mutate CRM state from AI UI.
 
+### AI agent lifecycle and channels
+
+Resources:
+
+- `/api/bots/`
+- `/api/bot-channels/`
+- `/api/bot-conversations/`
+- `/api/bot-messages/`
+
+Lifecycle actions:
+
+- `POST /api/bots/{id}/activate/`
+- `POST /api/bots/{id}/pause/`
+- `POST /api/bots/{id}/channels/ensure/`
+  - Required body: `channel` with `website`, `telegram`, `whatsapp` or `instagram`.
+  - Returns the existing selected-agent channel with `200` or creates a draft channel with `201`.
+
+`Bot.readiness` is read-only and reports active profile, active channel and active business knowledge requirements. Generic create cannot create an active bot and generic update cannot mutate `status`; use lifecycle actions. Activation returns `409 invalid_transition` until every readiness requirement is satisfied.
+
+AI-agent profile and lifecycle management uses `ai_automation` permissions. Channel ensuring and provider setup use `integrations` management permissions. Provider mutations must not be granted merely because a user can view integrations.
+
+Public website and Telegram/WhatsApp/Instagram webhook resolution requires both active database status and current readiness. This fail-closed runtime check also covers legacy active records that later lose a required profile, channel or knowledge item.
+
 ## Billing
 
 Resource: `/api/billing/current-subscription/`
@@ -646,6 +669,8 @@ Important action endpoints:
 
 Bot channel provider actions:
 
+- `POST /api/bots/{id}/channels/ensure/`
+
 - `POST /api/bot-channels/{id}/telegram-config/`
 - `POST /api/bot-channels/{id}/set-telegram-webhook/`
 - `GET /api/bot-channels/{id}/telegram-status/`
@@ -666,6 +691,8 @@ API token and webhook actions:
 - `POST /api/webhook-deliveries/{id}/retry/`
 
 Frontend rule: never display or store raw credential values after submission. Use masked values and connector/bot-channel status endpoints. Provider credentials belong in connector credential/provider service layers; UI should show safe status, setup state and recovery actions, not raw tokens, webhook secrets or provider payloads.
+
+Canonical AI-agent UI sends the exact `bot_channel` when starting WhatsApp Embedded Signup or Instagram OAuth. The signed OAuth state binds completion to that channel; clients must not select the first channel in a business. Omission is compatibility-only and must not be used by new UI flows.
 
 ## Analytics
 

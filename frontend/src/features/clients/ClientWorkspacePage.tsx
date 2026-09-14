@@ -30,6 +30,7 @@ import { Modal } from "../../components/ui/Modal";
 import { ErrorState } from "../../components/ui/StateViews";
 import { useI18n } from "../../lib/i18n";
 import { useClientWorkspaceActions } from "./hooks/useClientWorkspaceActions";
+import { PaymentsButton } from "../payments/PaymentsButton";
 import {
   ActionPanel,
   AppointmentsList,
@@ -183,6 +184,7 @@ export function ClientWorkspacePage() {
           subtitle={client.phone || client.email || t("clients.noContacts")}
           actions={
             <>
+              <PaymentsButton client={client} />
               <Button
                 data-testid="client-edit-action"
                 type="button"

@@ -1,12 +1,13 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router";
-import { Bot, CheckCircle2, Sparkles } from "lucide-react";
+import { Bot, CheckCircle2, Plus, Sparkles } from "lucide-react";
 
 import { Card, CardBody } from "../../../components/ui/Card";
+import { Button } from "../../../components/ui/Button";
 import { useI18n } from "../../../lib/i18n";
 import { cn } from "../../../lib/cn";
 import type { OnboardingStep } from "../aiAgentsTypes";
-export function EmptyAgentsState() {
+export function EmptyAgentsState({ canManage, onCreate }: { canManage: boolean; onCreate: () => void }) {
   const { t } = useI18n();
   return (
     <Card variant="outlined">
@@ -18,6 +19,12 @@ export function EmptyAgentsState() {
         <p className="mt-2 max-w-xl text-sm font-semibold leading-6 text-slate-500">
           {t("aiAgents.emptyAgentsText")}
         </p>
+        {canManage ? (
+          <Button className="mt-5" type="button" onClick={onCreate}>
+            <Plus aria-hidden="true" size={16} />
+            {t("aiAgents.createAgent")}
+          </Button>
+        ) : null}
       </CardBody>
     </Card>
   );

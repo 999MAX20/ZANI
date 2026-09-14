@@ -14,6 +14,8 @@ from apps.crm.models import Deal
 from apps.core.models import CustomFieldValue, FileAttachment
 from apps.leads.models import Lead
 from apps.notifications.models import Notification
+from apps.payments.models import Payment
+from apps.businesses.models import Business
 from apps.scheduling.models import Appointment
 from apps.tasks.models import Task
 
@@ -95,8 +97,12 @@ def merge_clients(*, target_client, duplicate_client, actor=None):
         raise ValueError("Cannot merge client into itself.")
 
     business = target_client.business
+    # Same lock order as payment recording: a merge cannot race a ledger write.
+    Business.objects.select_for_update().get(pk=business.pk)
+    list(Client.objects.select_for_update().filter(pk__in=[target_client.pk, duplicate_client.pk]).order_by("pk"))
     duplicate_snapshot = client_snapshot(duplicate_client)
     transferred = {
+        "payments": Payment.objects.filter(business=business, client=duplicate_client).update(client=target_client),
         "leads": Lead.objects.filter(business=business, client=duplicate_client).update(client=target_client),
         "appointments": Appointment.objects.filter(business=business, client=duplicate_client).update(client=target_client),
         "conversations": Conversation.objects.filter(business=business, client=duplicate_client).update(client=target_client),
@@ -166,6 +172,7 @@ def merge_clients_dry_run(*, target_client, duplicate_client):
         "target_client_id": target_client.id,
         "duplicate": client_snapshot(duplicate_client),
         "transferred": {
+            "payments": Payment.objects.filter(business=business, client=duplicate_client).count(),
             "leads": Lead.objects.filter(business=business, client=duplicate_client).count(),
             "appointments": Appointment.objects.filter(business=business, client=duplicate_client).count(),
             "conversations": Conversation.objects.filter(business=business, client=duplicate_client).count(),

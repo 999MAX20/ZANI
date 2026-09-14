@@ -285,6 +285,7 @@ export function Header({
                     title={action.title}
                     aria-label={action.label}
                     data-testid={`page-secondary-action-${index}`}
+                    data-focus-return-id={action.focusReturnId}
                   >
                     {Icon ? <Icon size={17} /> : null}
                     {showsLabel ? <span className="hidden xl:inline">{action.label}</span> : null}
@@ -307,6 +308,7 @@ export function Header({
                 title={action.title}
                 aria-label={action.label}
                 data-testid={`page-secondary-action-mobile-${index}`}
+                data-focus-return-id={action.focusReturnId}
               >
                 {Icon ? <Icon size={17} /> : null}
               </Button>

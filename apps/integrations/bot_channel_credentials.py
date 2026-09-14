@@ -2,9 +2,12 @@ import hashlib
 import hmac
 
 from django.conf import settings
+from django.db import transaction
 
+from apps.bots.lifecycle import is_bot_runtime_ready
 from apps.bots.models import BotChannel
 from apps.integrations.connectors import create_or_update_credential, read_connector_credential
+from apps.integrations.channel_boundary import lock_channel_business, valid_channel_binding_id
 from apps.integrations.models import BusinessConnector, ConnectorCredential
 
 
@@ -37,7 +40,16 @@ def credential_lookup_digest(provider, key, raw_value):
 
 
 def get_bot_channel_connector(channel, provider):
+    if channel.channel != provider:
+        raise ValueError("The credential provider must match the channel type.")
     meta = PROVIDER_META[provider]
+    bound = BusinessConnector.objects.filter(
+        business=channel.bot.business,
+        provider=provider,
+        config_json__bot_channel_id=channel.id,
+    ).first()
+    if bound is not None:
+        return bound
     connector, _ = BusinessConnector.objects.get_or_create(
         business=channel.bot.business,
         provider=provider,
@@ -51,10 +63,12 @@ def get_bot_channel_connector(channel, provider):
     return connector
 
 
+@transaction.atomic
 def store_bot_channel_credential(channel, provider, key, raw_value, *, expires_at=None, config_updates=None):
     if not raw_value:
         return None
 
+    lock_channel_business(channel.bot.business_id)
     connector = get_bot_channel_connector(channel, provider)
     credential = create_or_update_credential(connector, key, raw_value, expires_at=expires_at)
     meta = PROVIDER_META[provider]
@@ -82,6 +96,7 @@ def get_bot_channel_credential(channel, provider, key):
     connector = BusinessConnector.objects.filter(
         business=channel.bot.business,
         provider=provider,
+        config_json__bot_channel_id=channel.id,
     ).first()
     credential = connector.credentials.filter(key=key).first() if connector else None
     meta = PROVIDER_META[provider]
@@ -104,6 +119,7 @@ def has_bot_channel_credential(channel, provider, key):
     connector = BusinessConnector.objects.filter(
         business=channel.bot.business,
         provider=provider,
+        config_json__bot_channel_id=channel.id,
     ).first()
     if connector and ConnectorCredential.objects.filter(connector=connector, key=key).exists():
         return True
@@ -111,7 +127,7 @@ def has_bot_channel_credential(channel, provider, key):
 
 
 def find_bot_channel_by_credential(provider, key, raw_value, channel_type):
-    if not raw_value:
+    if not raw_value or provider != channel_type:
         return None
 
     from apps.bots.models import Bot
@@ -127,24 +143,30 @@ def find_bot_channel_by_credential(provider, key, raw_value, channel_type):
         if not expected or not hmac.compare_digest(str(raw_value), str(expected)):
             continue
         channel_id = (connector.config_json or {}).get("bot_channel_id")
+        if not valid_channel_binding_id(channel_id):
+            return None
         channel = BotChannel.objects.select_related("bot", "bot__business").filter(
             id=channel_id,
+            bot__business_id=connector.business_id,
             channel=channel_type,
-            status__in=[BotChannel.Statuses.DRAFT, BotChannel.Statuses.ACTIVE],
-            bot__status__in=[Bot.Statuses.DRAFT, Bot.Statuses.ACTIVE],
+            status=BotChannel.Statuses.ACTIVE,
+            bot__status=Bot.Statuses.ACTIVE,
         ).first()
-        if channel:
+        if channel and is_bot_runtime_ready(channel.bot):
             return channel
+        # Do not reinterpret a broken authenticated binding as a legacy one.
+        return None
 
     legacy_channel = BotChannel.objects.select_related("bot", "bot__business").filter(
         channel=channel_type,
-        status__in=[BotChannel.Statuses.DRAFT, BotChannel.Statuses.ACTIVE],
-        bot__status__in=[Bot.Statuses.DRAFT, Bot.Statuses.ACTIVE],
+        status=BotChannel.Statuses.ACTIVE,
+        bot__status=Bot.Statuses.ACTIVE,
         **{f"config_json__{key}": raw_value},
     ).first()
-    if legacy_channel:
+    if legacy_channel and is_bot_runtime_ready(legacy_channel.bot):
         get_bot_channel_credential(legacy_channel, provider, key)
-    return legacy_channel
+        return legacy_channel
+    return None
 
 
 def store_telegram_bot_token(channel, bot_token, expires_at=None):

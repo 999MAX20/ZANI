@@ -18,20 +18,23 @@ import { HelpCard, FieldHint } from "./AIAgentsShared";
 export function ChannelManagerSection(props: {
   businessId: Id;
   bot: BotType;
-  bots: BotType[];
   canManage: boolean;
   channelByName: (name: BotChannel["channel"]) => BotChannel | undefined;
-  addChannel: ReturnType<typeof useMutation<BotChannel, Error, BotChannel["channel"]>>;
+  addChannel: ReturnType<typeof useMutation<BotChannel, Error, { botId: number; channel: BotChannel["channel"] }>>;
   toggleChannel: ReturnType<typeof useMutation<BotChannel, Error, { channel: BotChannel; status: BotChannel["status"] }>>;
 }) {
   const { t } = useI18n();
+  const hasAnyChannel = (["website", "telegram", "whatsapp", "instagram"] as const)
+    .some((channel) => props.channelByName(channel));
   return (
     <div className="space-y-5">
-      <HelpCard
-        title={t("aiAgents.onboarding.channels.helpTitle")}
-        text={t("aiAgents.onboarding.channels.helpText")}
-        recommendation={t("aiAgents.onboarding.channels.recommendation")}
-      />
+      {!hasAnyChannel ? (
+        <HelpCard
+          title={t("aiAgents.onboarding.channels.helpTitle")}
+          text={t("aiAgents.onboarding.channels.helpText")}
+          recommendation={t("aiAgents.onboarding.channels.recommendation")}
+        />
+      ) : null}
       <ChannelsSection {...props} />
     </div>
   );
@@ -40,7 +43,6 @@ export function ChannelManagerSection(props: {
 function ChannelsSection({
   businessId,
   bot,
-  bots,
   canManage,
   channelByName,
   addChannel,
@@ -48,21 +50,24 @@ function ChannelsSection({
 }: {
   businessId: Id;
   bot: BotType;
-  bots: BotType[];
   canManage: boolean;
   channelByName: (name: BotChannel["channel"]) => BotChannel | undefined;
-  addChannel: ReturnType<typeof useMutation<BotChannel, Error, BotChannel["channel"]>>;
+  addChannel: ReturnType<typeof useMutation<BotChannel, Error, { botId: number; channel: BotChannel["channel"] }>>;
   toggleChannel: ReturnType<typeof useMutation<BotChannel, Error, { channel: BotChannel; status: BotChannel["status"] }>>;
 }) {
   const { t } = useI18n();
   const [setupChannel, setSetupChannel] = useState<BotChannel["channel"] | null>(null);
+  const [createdChannel, setCreatedChannel] = useState<BotChannel | null>(null);
+  const [connectingChannel, setConnectingChannel] = useState<BotChannel["channel"] | null>(null);
   const channelCards: Array<{ key: BotChannel["channel"]; title: string; description: string; logo?: string }> = [
     { key: "website", title: t("aiAgents.channel.website"), description: t("aiAgents.channel.websiteText") },
     { key: "telegram", title: "Telegram", description: t("aiAgents.channel.telegramText"), logo: "/integrations_logos/telegram.png" },
     { key: "whatsapp", title: "WhatsApp", description: t("aiAgents.channel.whatsappText"), logo: "/integrations_logos/whatsapp.png" },
     { key: "instagram", title: "Instagram", description: t("aiAgents.channel.instagramText"), logo: "/integrations_logos/instagram.png" },
   ];
-  const activeChannel = setupChannel ? channelByName(setupChannel) : undefined;
+  const activeChannel = setupChannel
+    ? channelByName(setupChannel) || (createdChannel?.channel === setupChannel ? createdChannel : undefined)
+    : undefined;
 
   return (
     <>
@@ -78,19 +83,28 @@ function ChannelsSection({
                   <Button
                     type="button"
                     className="h-9 min-w-[118px] rounded-xl px-4 text-sm"
+                    data-focus-return-id={`ai-agent-channel-${bot.id}-${item.key}`}
                     disabled={!canManage || addChannel.isPending}
-                    isLoading={addChannel.isPending && !channel}
+                    isLoading={addChannel.isPending && connectingChannel === item.key}
                     onClick={() => {
-                      if (!channel && item.key === "website") {
-                        addChannel.mutate("website");
+                      if (!channel) {
+                        setConnectingChannel(item.key);
+                        addChannel.mutate({ botId: Number(bot.id), channel: item.key }, {
+                          onSuccess: (created) => {
+                            setCreatedChannel(created);
+                            setSetupChannel(item.key);
+                          },
+                          onSettled: () => setConnectingChannel(null),
+                        });
                         return;
                       }
+                      setCreatedChannel(null);
                       setSetupChannel(item.key);
                     }}
                   >
                     {channel ? t("aiAgents.configure") : t("aiAgents.connect")}
                   </Button>
-                  {channel ? (
+                  {channel && ["active", "paused"].includes(channel.status) ? (
                     <ToggleSwitch
                       checked={connected}
                       disabled={!canManage}
@@ -117,13 +131,18 @@ function ChannelsSection({
         })}
       </div>
 
-      <Modal title={setupChannel ? t("aiAgents.connectionTitle", { title: channelCards.find((item) => item.key === setupChannel)?.title || "" }) : t("aiAgents.connection")} open={Boolean(setupChannel)} onClose={() => setSetupChannel(null)}>
+      <Modal
+        title={setupChannel ? t("aiAgents.connectionTitle", { title: channelCards.find((item) => item.key === setupChannel)?.title || "" }) : t("aiAgents.connection")}
+        open={Boolean(setupChannel)}
+        onClose={() => { setSetupChannel(null); setCreatedChannel(null); }}
+        focusReturnId={setupChannel ? `ai-agent-channel-${bot.id}-${setupChannel}` : undefined}
+      >
         {setupChannel === "telegram" ? (
-          <TelegramInlineSetup businessId={businessId} bots={bots} canManage={canManage} channel={activeChannel} />
+          <TelegramInlineSetup canManage={canManage} channel={activeChannel} />
         ) : setupChannel === "whatsapp" ? (
-          <WhatsAppInlineSetup businessId={businessId} bots={bots} canManage={canManage} channel={activeChannel} />
+          <WhatsAppInlineSetup businessId={businessId} canManage={canManage} channel={activeChannel} />
         ) : setupChannel === "instagram" ? (
-          <InstagramInlineSetup businessId={businessId} bots={bots} canManage={canManage} channel={activeChannel} />
+          <InstagramInlineSetup businessId={businessId} canManage={canManage} channel={activeChannel} />
         ) : setupChannel === "website" ? (
           <WebsiteSetup bot={bot} channel={activeChannel} />
         ) : null}

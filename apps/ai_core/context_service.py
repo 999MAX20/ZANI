@@ -8,6 +8,7 @@ def get_business_knowledge_context(business, limit=8):
     )
     return [
         {
+            "id": item.id,
             "title": item.title,
             "category": item.category,
             "content": item.content,

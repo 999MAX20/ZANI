@@ -8,11 +8,12 @@ import { Tabs } from "../../../components/ui/Tabs";
 import { useI18n } from "../../../lib/i18n";
 import type { AgentProfile, Bot as BotType } from "../../../types";
 import type { AgentSection } from "../aiAgentsTypes";
-import { sections } from "../aiAgentsUtils";
+import { agentStatusLabel, sections } from "../aiAgentsUtils";
 
 type SaveState = "idle" | "saved";
 
-function statusVariant(status: BotType["status"]) {
+function statusVariant(status: BotType["status"], runtimeBlocked: boolean) {
+  if (runtimeBlocked) return "warning" as const;
   if (status === "active") return "success" as const;
   if (status === "paused") return "warning" as const;
   return "neutral" as const;
@@ -23,6 +24,7 @@ export function AIAgentEditorShell({
   profile,
   activeSection,
   canManage,
+  activationBlocked,
   dirty,
   saveDisabled,
   isSaving,
@@ -32,12 +34,14 @@ export function AIAgentEditorShell({
   onOpenMessages,
   onReset,
   onSave,
+  showFooter,
   children,
 }: {
   bot: BotType;
   profile: AgentProfile | null;
   activeSection: AgentSection;
   canManage: boolean;
+  activationBlocked: boolean;
   dirty: boolean;
   saveDisabled?: boolean;
   isSaving: boolean;
@@ -47,10 +51,12 @@ export function AIAgentEditorShell({
   onOpenMessages: () => void;
   onReset: () => void;
   onSave: () => void;
+  showFooter: boolean;
   children: ReactNode;
 }) {
   const { t } = useI18n();
-  const statusLabel = t(`aiAgents.status.${bot.status}`);
+  const runtimeBlocked = bot.status === "active" && Boolean(bot.readiness && !bot.readiness.is_ready);
+  const statusLabel = agentStatusLabel(bot, t);
 
   return (
     <section
@@ -67,7 +73,7 @@ export function AIAgentEditorShell({
             <div className="min-w-0">
               <div className="flex min-w-0 flex-wrap items-center gap-2">
                 <h2 className="min-w-0 truncate text-xl font-semibold text-zani-ink">{bot.name}</h2>
-                <Badge size="sm" variant={statusVariant(bot.status)}>{statusLabel}</Badge>
+                <Badge size="sm" variant={statusVariant(bot.status, runtimeBlocked)}>{statusLabel}</Badge>
               </div>
               <p className="mt-1 line-clamp-2 max-w-3xl text-sm font-medium leading-5 text-zani-subtle">
                 {profile?.role_description || t("aiAgents.purposeMissing")}
@@ -84,12 +90,13 @@ export function AIAgentEditorShell({
               <span className="text-xs font-semibold text-zani-subtle">{statusLabel}</span>
               <Switch
                 checked={bot.status === "active"}
-                disabled={!canManage}
+                disabled={!canManage || activationBlocked}
                 isLoading={isSaving}
                 label={t("aiAgents.statusSwitch", { name: bot.name })}
                 onChange={onToggleStatus}
                 size="dense"
                 tone="ai"
+                title={activationBlocked ? t("aiAgents.activationBlocked") : undefined}
               />
             </div>
           </div>
@@ -97,6 +104,7 @@ export function AIAgentEditorShell({
 
         <Tabs
           ariaLabel={t("aiAgents.editorTabsAria")}
+          idPrefix="ai-agent-editor"
           className="mt-4 bg-transparent p-0"
           tone="ai"
           value={activeSection}
@@ -108,11 +116,16 @@ export function AIAgentEditorShell({
         />
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto bg-surface-warm p-3 sm:p-4">
-        <div className="mx-auto w-full max-w-[1080px]">{children}</div>
+      <div
+        id={`ai-agent-editor-panel-${activeSection}`}
+        role="tabpanel"
+        aria-labelledby={`ai-agent-editor-tab-${activeSection}`}
+        className="min-h-0 flex-1 overflow-visible bg-surface-warm p-3 sm:p-4 xl:overflow-y-auto"
+      >
+        <div className="mx-auto w-full max-w-[1280px]">{children}</div>
       </div>
 
-      {canManage ? (
+      {canManage && showFooter ? (
         <footer className="flex shrink-0 flex-col gap-3 border-t border-zani-border bg-surface-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
           <p className="min-h-5 text-xs font-medium text-zani-subtle" aria-live="polite">
             {dirty

@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link2, RefreshCw, Send, ShieldCheck } from "lucide-react";
-import { Link } from "react-router";
+import { RefreshCw, Send, ShieldCheck } from "lucide-react";
 
-import { botChannelsApi } from "../../../api/bots";
 import { businessConnectorsApi, connectorSyncRunsApi, type BusinessConnectorPayload } from "../../../api/connectors";
 import { getApiErrorMessage } from "../../../api/client";
 import { Badge, type BadgeVariant } from "../../../components/ui/Badge";
@@ -12,18 +10,14 @@ import { ErrorState } from "../../../components/ui/StateViews";
 import { StatusNotice } from "../../../components/ui/StatusNotice";
 import { Input } from "../../../components/ui/Input";
 import { Modal } from "../../../components/ui/Modal";
-import { ToggleSwitch } from "../../../components/ui/Switch";
 import { useNotification } from "../../../components/notifications/NotificationProvider";
 import { cn } from "../../../lib/cn";
 import { useI18n } from "../../../lib/i18n";
-import type { Bot, BotChannel, BusinessConnector, ConnectorCapability, Id } from "../../../types";
-import { providerCatalog, type ProviderKey } from "../config/providerCatalog";
+import type { BusinessConnector, ConnectorCapability, Id } from "../../../types";
+import { integrationProviderCatalog, type ProviderKey } from "../config/providerCatalog";
 import { merchantSafeIntegrationError } from "../utils";
 import { ImportPanel } from "./ImportPanel";
 import { LogoMark } from "./setup/IntegrationSetupUi";
-import { TelegramInlineSetup } from "./setup/TelegramSetup";
-import { WhatsAppInlineSetup } from "./setup/WhatsAppSetup";
-import { InstagramInlineSetup } from "./setup/InstagramSetup";
 import { KaspiInlineSetup } from "./setup/KaspiSetup";
 import { KaspiPricingInlineSetup } from "./setup/KaspiPricingSetup";
 import { MoySkladInlineSetup } from "./setup/MoySkladSetup";
@@ -73,22 +67,18 @@ function statusVariant(status?: string): BadgeVariant {
 }
 
 function providerTitle(provider: ProviderKey, t: Translate, capability?: ConnectorCapability) {
-  const catalogItem = providerCatalog.find((item) => item.provider === provider);
+  const catalogItem = integrationProviderCatalog.find((item) => item.provider === provider);
   return capability?.label || (catalogItem ? t(catalogItem.fallbackLabelKey) : provider);
 }
 
 function deriveProviderStatus({
   capability,
-  channel,
   connector,
 }: {
   capability?: ConnectorCapability;
-  channel?: BotChannel;
   connector?: BusinessConnector;
 }) {
   if (connector?.status) return connector.status;
-  if (channel?.status === "active") return "active";
-  if (channel?.status) return channel.status;
   if (capability?.availability === "roadmap" || capability?.launch_status === "roadmap") return "roadmap";
   if (capability?.availability === "request" || capability?.launch_status === "request") return "request";
   if (capability?.launch_status === "soon") return "soon";
@@ -102,20 +92,16 @@ function readableConnectorError(message: string, t: Translate) {
 
 export function ProviderCard({
   businessId,
-  bots,
   canManage,
   capability,
-  channel,
   connector,
   provider,
 }: {
   businessId: Id;
-  bots: Bot[];
   canManage: boolean;
   capability?: ConnectorCapability;
-  channel?: BotChannel;
   connector?: BusinessConnector;
-  provider: (typeof providerCatalog)[number];
+  provider: (typeof integrationProviderCatalog)[number];
 }) {
   const { t } = useI18n();
   const showNotification = useNotification();
@@ -126,7 +112,7 @@ export function ProviderCard({
   const [webhookSecret, setWebhookSecret] = useState("");
   const [manualSetupOpen, setManualSetupOpen] = useState(false);
   const isPricingProvider = provider.provider === "kaspi_pricing";
-  const status = isPricingProvider ? "setup_required" : deriveProviderStatus({ capability, channel, connector });
+  const status = isPricingProvider ? "setup_required" : deriveProviderStatus({ capability, connector });
   const title = providerTitle(provider.provider, t, capability);
   const primaryUse = t(provider.primaryUseKey);
   const isRequestProvider = ["whatsapp", "1c", "google_sheets", "email"].includes(String(provider.provider));
@@ -210,33 +196,14 @@ export function ProviderCard({
 
   const isConnected = ["connected", "active"].includes(status);
   const isUnavailable = ["roadmap", "soon"].includes(status);
-  const isChannelProvider = ["website", "telegram", "whatsapp", "instagram"].includes(String(provider.provider));
-  const showChannelToggle = Boolean(
-    isChannelProvider &&
-      isConnected &&
-      channel &&
-      (provider.provider !== "telegram" || channel.config_json?.webhook_configured),
-  );
-
   const syncRunsQuery = useQuery({
     queryKey: ["connector-sync-runs", connector?.id],
     queryFn: () => connectorSyncRunsApi.list({ connector: connector!.id }),
-    enabled: Boolean(connector?.id && !isChannelProvider),
+    enabled: Boolean(connector?.id),
     staleTime: 30_000,
   });
 
   const latestRun = syncRunsQuery.data?.[0];
-
-  const toggleChannel = useMutation({
-    mutationFn: (nextStatus: BotChannel["status"]) => {
-      if (!channel) throw new Error("Channel is required.");
-      return botChannelsApi.update({ id: channel.id, payload: { status: nextStatus } });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
-      queryClient.invalidateQueries({ queryKey: ["business-connectors"] });
-    },
-  });
 
   const retrySyncRun = useMutation({
     mutationFn: (runId: Id) => connectorSyncRunsApi.retry(runId),
@@ -246,7 +213,7 @@ export function ProviderCard({
     },
   });
 
-  const error = requestConnector.error || healthCheck.error || saveGenericConfig.error || toggleChannel.error || retrySyncRun.error;
+  const error = requestConnector.error || healthCheck.error || saveGenericConfig.error || retrySyncRun.error;
 
   const handlePrimaryAction = () => {
     setConnectOpen(true);
@@ -285,19 +252,10 @@ export function ProviderCard({
         </div>
         <div className="flex max-w-[62%] shrink-0 items-center justify-end gap-2">
           {renderPrimaryButton()}
-          {showChannelToggle && channel ? (
-            <ToggleSwitch
-              checked={channel.status === "active"}
-              disabled={!canManage}
-              isLoading={toggleChannel.isPending}
-              label={t(channel.status === "active" ? "integrations.card.disableChannel" : "integrations.card.enableChannel", { title })}
-              onChange={(checked) => toggleChannel.mutate(checked ? "active" : "paused")}
-            />
-          ) : null}
         </div>
       </div>
 
-      {connector?.last_error && !isChannelProvider ? (
+      {connector?.last_error ? (
         <StatusNotice
           className="mt-2"
           compact
@@ -306,7 +264,7 @@ export function ProviderCard({
         />
       ) : null}
 
-      {connector && !isChannelProvider ? (
+      {connector ? (
         latestRun ? (
           <div className="mt-2 rounded-control border border-zani-border bg-surface-muted px-2.5 py-2">
             <div className="flex flex-wrap items-center gap-2">
@@ -364,14 +322,8 @@ export function ProviderCard({
 
       <Modal title={t("integrations.card.connectionTitle", { title })} open={connectOpen} onClose={() => setConnectOpen(false)}>
         <div className="space-y-4">
-          {provider.provider === "telegram" ? (
-            <TelegramInlineSetup businessId={businessId} bots={bots} canManage={canManage} channel={channel} />
-          ) : provider.provider === "excel_csv" ? (
+          {provider.provider === "excel_csv" ? (
             <ImportPanel businessId={businessId} />
-          ) : provider.provider === "whatsapp" ? (
-            <WhatsAppInlineSetup businessId={businessId} bots={bots} canManage={canManage} channel={channel} />
-          ) : provider.provider === "instagram" ? (
-            <InstagramInlineSetup businessId={businessId} bots={bots} canManage={canManage} channel={channel} />
           ) : provider.provider === "kaspi" ? (
             <KaspiInlineSetup businessId={businessId} canManage={canManage} connector={connector} />
           ) : provider.provider === "kaspi_pricing" ? (
@@ -427,13 +379,6 @@ export function ProviderCard({
                   <Button type="button" variant="secondary" disabled={!canManage} isLoading={requestConnector.isPending} onClick={() => requestConnector.mutate()}>
                     <Send size={16} /> {t("integrations.card.requestConnection")}
                   </Button>
-                ) : null}
-                {["telegram", "whatsapp", "instagram", "website"].includes(String(provider.provider)) ? (
-                  <Link to={`/app/conversations?channel=${provider.provider}`}>
-                    <Button type="button" variant="ghost">
-                      <Link2 size={16} /> {t("nav.conversations")}
-                    </Button>
-                  </Link>
                 ) : null}
               </div>
             </div>

@@ -1,12 +1,17 @@
 import ipaddress
 import secrets
+from uuid import uuid4
 from urllib.parse import urlparse
 
 from django.conf import settings
+from django.db import transaction
 from django.utils import timezone
 
 from apps.bots.models import BotChannel
+from apps.integrations.channel_boundary import current_channel_setup, lock_channel_business, lock_channel_for_setup
 from apps.integrations.bot_channel_credentials import (
+    get_bot_channel_connector,
+    get_instagram_access_token,
     has_instagram_access_token,
     has_telegram_bot_token,
     has_telegram_webhook_secret,
@@ -44,22 +49,15 @@ def is_public_https_url(url):
     return not (ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved)
 
 
+@transaction.atomic
 def sync_telegram_connector(channel, status=None, last_error="", operation="config"):
+    lock_channel_business(channel.bot.business_id)
     config = channel.config_json or {}
     token_configured = has_telegram_bot_token(channel)
     connector_status = status or (
         BusinessConnector.Statuses.NEEDS_ATTENTION if token_configured else BusinessConnector.Statuses.DRAFT
     )
-    connector, _ = BusinessConnector.objects.get_or_create(
-        business=channel.bot.business,
-        provider=BusinessConnector.Providers.TELEGRAM,
-        name="Telegram",
-        defaults={
-            "capability": BusinessConnector.Capabilities.COMMUNICATIONS,
-            "auth_type": BusinessConnector.AuthTypes.TOKEN,
-            "status": connector_status,
-        },
-    )
+    connector = get_bot_channel_connector(channel, BusinessConnector.Providers.TELEGRAM)
     safe_config = dict(connector.config_json or {})
     safe_config.update(
         {
@@ -91,23 +89,16 @@ def sync_telegram_connector(channel, status=None, last_error="", operation="conf
     return connector
 
 
+@transaction.atomic
 def sync_whatsapp_connector(channel, status=None, last_error="", operation="config"):
+    lock_channel_business(channel.bot.business_id)
     config = channel.config_json or {}
     token_configured = has_whatsapp_access_token(channel)
     credentials_configured = bool((config.get("phone_number_id") or channel.external_id) and token_configured)
     connector_status = status or (
         BusinessConnector.Statuses.CONNECTED if credentials_configured else BusinessConnector.Statuses.NEEDS_ATTENTION
     )
-    connector, _ = BusinessConnector.objects.get_or_create(
-        business=channel.bot.business,
-        provider=BusinessConnector.Providers.WHATSAPP,
-        name="WhatsApp",
-        defaults={
-            "capability": BusinessConnector.Capabilities.COMMUNICATIONS,
-            "auth_type": BusinessConnector.AuthTypes.TOKEN,
-            "status": connector_status,
-        },
-    )
+    connector = get_bot_channel_connector(channel, BusinessConnector.Providers.WHATSAPP)
     safe_config = dict(connector.config_json or {})
     safe_config.update(
         {
@@ -131,23 +122,16 @@ def sync_whatsapp_connector(channel, status=None, last_error="", operation="conf
     return connector
 
 
+@transaction.atomic
 def sync_instagram_connector(channel, status=None, last_error="", operation="config"):
+    lock_channel_business(channel.bot.business_id)
     config = channel.config_json or {}
     token_configured = has_instagram_access_token(channel)
     credentials_configured = bool((config.get("instagram_user_id") or channel.external_id) and token_configured)
     connector_status = status or (
         BusinessConnector.Statuses.CONNECTED if credentials_configured else BusinessConnector.Statuses.NEEDS_ATTENTION
     )
-    connector, _ = BusinessConnector.objects.get_or_create(
-        business=channel.bot.business,
-        provider=BusinessConnector.Providers.INSTAGRAM,
-        name="Instagram",
-        defaults={
-            "capability": BusinessConnector.Capabilities.COMMUNICATIONS,
-            "auth_type": BusinessConnector.AuthTypes.OAUTH,
-            "status": connector_status,
-        },
-    )
+    connector = get_bot_channel_connector(channel, BusinessConnector.Providers.INSTAGRAM)
     safe_config = dict(connector.config_json or {})
     safe_config.update(
         {
@@ -170,29 +154,35 @@ def sync_instagram_connector(channel, status=None, last_error="", operation="con
     return connector
 
 
+@transaction.atomic
 def configure_telegram_channel(channel, validated_data):
+    channel = lock_channel_for_setup(channel)
     get_telegram_bot_token(channel)
     get_telegram_webhook_secret(channel)
     channel.refresh_from_db(fields=["config_json"])
     config = dict(channel.config_json or {})
+    config["setup_revision"] = uuid4().hex
     if "bot_token" in validated_data:
         bot_token = validated_data["bot_token"]
         if bot_token:
             store_telegram_bot_token(channel, bot_token)
             config["token_configured"] = True
             config["token_verified"] = False
+            config["webhook_configured"] = False
             config.pop("bot_username", None)
         config.pop("bot_token", None)
     if validated_data.get("webhook_secret"):
         store_telegram_webhook_secret(channel, validated_data["webhook_secret"])
         config["webhook_secret_configured"] = True
+        config["webhook_configured"] = False
     config.pop("webhook_secret", None)
     token_configured = has_telegram_bot_token(channel) or bool(config.get("token_configured"))
     if token_configured and not has_telegram_webhook_secret(channel):
         store_telegram_webhook_secret(channel, secrets.token_urlsafe(32))
         config["webhook_secret_configured"] = True
+        config["webhook_configured"] = False
     channel.config_json = config
-    channel.status = BotChannel.Statuses.ACTIVE if token_configured else channel.status
+    channel.status = BotChannel.Statuses.DRAFT if token_configured else channel.status
     channel.save(update_fields=["config_json", "status", "updated_at"])
     sync_telegram_connector(channel, operation="config")
     return {
@@ -204,20 +194,25 @@ def configure_telegram_channel(channel, validated_data):
 
 
 def set_telegram_channel_webhook(channel, webhook_url):
+    get_telegram_bot_token(channel)
+    get_telegram_webhook_secret(channel)
+    channel.refresh_from_db()
     result = set_telegram_webhook(channel, webhook_url)
-    connector_status = BusinessConnector.Statuses.CONNECTED if result.get("ok") else BusinessConnector.Statuses.FAILED
-    if result.get("ok"):
-        config = dict(channel.config_json or {})
-        config["webhook_configured"] = True
-        channel.config_json = config
-        channel.save(update_fields=["config_json", "updated_at"])
-    sync_telegram_connector(
-        channel,
-        status=connector_status,
-        last_error="" if result.get("ok") else result.get("reason", "Telegram webhook setup failed."),
-        operation="set_webhook",
-    )
-    return result
+    with current_channel_setup(channel) as channel:
+        connector_status = BusinessConnector.Statuses.CONNECTED if result.get("ok") else BusinessConnector.Statuses.FAILED
+        if result.get("ok"):
+            config = dict(channel.config_json or {})
+            config["webhook_configured"] = True
+            channel.config_json = config
+            channel.status = BotChannel.Statuses.ACTIVE
+            channel.save(update_fields=["config_json", "status", "updated_at"])
+        sync_telegram_connector(
+            channel,
+            status=connector_status,
+            last_error="" if result.get("ok") else result.get("reason", "Telegram webhook setup failed."),
+            operation="set_webhook",
+        )
+        return result
 
 
 def telegram_channel_status(channel, webhook_url):
@@ -262,28 +257,44 @@ def telegram_channel_status(channel, webhook_url):
 
 
 def test_telegram_channel_connection(channel):
+    get_telegram_bot_token(channel)
+    get_telegram_webhook_secret(channel)
+    channel.refresh_from_db()
     result = validate_telegram_token(channel)
-    channel.status = BotChannel.Statuses.ACTIVE if result.get("ok") else BotChannel.Statuses.ERROR
-    config = dict(channel.config_json or {})
-    config["token_verified"] = bool(result.get("ok"))
-    if result.get("ok") and result.get("bot", {}).get("username"):
-        config["bot_username"] = result["bot"]["username"]
-    channel.config_json = config
-    channel.save(update_fields=["config_json", "status", "updated_at"])
-    connector_status = BusinessConnector.Statuses.CONNECTED if result.get("ok") else BusinessConnector.Statuses.FAILED
-    sync_telegram_connector(
-        channel,
-        status=connector_status,
-        last_error="" if result.get("ok") else result.get("reason", "Telegram token validation failed."),
-        operation="test_connection",
-    )
-    return {
-        "ok": result.get("ok", False),
-        "reason": result.get("reason", ""),
-        "status": channel.status,
-        "token_configured": result.get("token_configured", False),
-        "bot": result.get("bot", {}),
-    }
+    with current_channel_setup(channel) as channel:
+        config = dict(channel.config_json or {})
+        config["token_verified"] = bool(result.get("ok"))
+        if result.get("ok") and result.get("bot", {}).get("username"):
+            config["bot_username"] = result["bot"]["username"]
+        channel.status = (
+            BotChannel.Statuses.ACTIVE
+            if result.get("ok") and config.get("webhook_configured")
+            else BotChannel.Statuses.DRAFT
+            if result.get("ok")
+            else BotChannel.Statuses.ERROR
+        )
+        channel.config_json = config
+        channel.save(update_fields=["config_json", "status", "updated_at"])
+        connector_status = (
+            BusinessConnector.Statuses.CONNECTED
+            if result.get("ok") and config.get("webhook_configured")
+            else BusinessConnector.Statuses.PROVIDER_CONFIGURING
+            if result.get("ok")
+            else BusinessConnector.Statuses.FAILED
+        )
+        sync_telegram_connector(
+            channel,
+            status=connector_status,
+            last_error="" if result.get("ok") else result.get("reason", "Telegram token validation failed."),
+            operation="test_connection",
+        )
+        return {
+            "ok": result.get("ok", False),
+            "reason": result.get("reason", ""),
+            "status": channel.status,
+            "token_configured": result.get("token_configured", False),
+            "bot": result.get("bot", {}),
+        }
 
 
 def sync_telegram_channel_updates(channel, limit=20):
@@ -297,11 +308,15 @@ def sync_telegram_channel_updates(channel, limit=20):
     return result
 
 
+@transaction.atomic
 def configure_whatsapp_channel(channel, validated_data):
+    channel = lock_channel_for_setup(channel)
     get_whatsapp_access_token(channel)
     get_whatsapp_webhook_secret(channel)
     channel.refresh_from_db(fields=["config_json"])
     config = dict(channel.config_json or {})
+    config["setup_revision"] = uuid4().hex
+    config["connection_verified"] = False
     for key, value in validated_data.items():
         if key in {"access_token", "webhook_secret"}:
             continue
@@ -320,9 +335,9 @@ def configure_whatsapp_channel(channel, validated_data):
         config["provider_mode"] = "meta_cloud" if has_whatsapp_access_token(channel) and config.get("phone_number_id") else "mock"
     channel.config_json = config
     channel.external_id = config.get("phone_number_id", channel.external_id)
-    channel.status = BotChannel.Statuses.PAUSED if config.get("provider_mode") == "disabled" else BotChannel.Statuses.ACTIVE
+    channel.status = BotChannel.Statuses.PAUSED if config.get("provider_mode") == "disabled" else BotChannel.Statuses.DRAFT
     channel.save(update_fields=["config_json", "external_id", "status", "updated_at"])
-    sync_whatsapp_connector(channel, operation="config")
+    sync_whatsapp_connector(channel, status=BusinessConnector.Statuses.PROVIDER_CONFIGURING, operation="config")
     return {
         "ok": True,
         "provider_mode": config["provider_mode"],
@@ -334,27 +349,32 @@ def configure_whatsapp_channel(channel, validated_data):
 
 
 def test_whatsapp_channel_connection(channel):
+    get_whatsapp_access_token(channel)
+    get_whatsapp_webhook_secret(channel)
+    channel.refresh_from_db()
     result = get_provider(BotChannel.Channels.WHATSAPP).validate_credentials(channel)
-    channel.status = BotChannel.Statuses.ACTIVE if result.get("ok") else BotChannel.Statuses.ERROR
-    channel.save(update_fields=["status", "updated_at"])
-    connector_status = BusinessConnector.Statuses.CONNECTED if result.get("ok") else BusinessConnector.Statuses.FAILED
-    sync_whatsapp_connector(
-        channel,
-        status=connector_status,
-        last_error="" if result.get("ok") else result.get("reason", "WhatsApp credentials validation failed."),
-        operation="test_connection",
-    )
-    config = channel.config_json or {}
-    return {
-        "ok": result.get("ok", False),
-        "mock": result.get("mock", False),
-        "reason": result.get("reason", ""),
-        "status": channel.status,
-        "provider_mode": config.get("provider_mode") or "mock",
-        "phone_number_id_configured": bool(config.get("phone_number_id") or channel.external_id),
-        "access_token_configured": has_whatsapp_access_token(channel),
-        "phone_number": result.get("phone_number", {}),
-    }
+    with current_channel_setup(channel) as channel:
+        channel.config_json = {**(channel.config_json or {}), "connection_verified": bool(result.get("ok"))}
+        channel.status = BotChannel.Statuses.ACTIVE if result.get("ok") else BotChannel.Statuses.ERROR
+        channel.save(update_fields=["config_json", "status", "updated_at"])
+        connector_status = BusinessConnector.Statuses.CONNECTED if result.get("ok") else BusinessConnector.Statuses.FAILED
+        sync_whatsapp_connector(
+            channel,
+            status=connector_status,
+            last_error="" if result.get("ok") else result.get("reason", "WhatsApp credentials validation failed."),
+            operation="test_connection",
+        )
+        config = channel.config_json or {}
+        return {
+            "ok": result.get("ok", False),
+            "mock": result.get("mock", False),
+            "reason": result.get("reason", ""),
+            "status": channel.status,
+            "provider_mode": config.get("provider_mode") or "mock",
+            "phone_number_id_configured": bool(config.get("phone_number_id") or channel.external_id),
+            "access_token_configured": has_whatsapp_access_token(channel),
+            "phone_number": result.get("phone_number", {}),
+        }
 
 
 def whatsapp_channel_status(channel, webhook_url):
@@ -386,8 +406,12 @@ def whatsapp_channel_status(channel, webhook_url):
     }
 
 
+@transaction.atomic
 def configure_instagram_channel(channel, validated_data):
+    channel = lock_channel_for_setup(channel)
     config = dict(channel.config_json or {})
+    config["setup_revision"] = uuid4().hex
+    config["connection_verified"] = False
     for key, value in validated_data.items():
         if key == "access_token":
             continue
@@ -401,9 +425,9 @@ def configure_instagram_channel(channel, validated_data):
         config["provider_mode"] = "meta_graph" if has_instagram_access_token(channel) and config.get("instagram_user_id") else "mock"
     channel.config_json = config
     channel.external_id = config.get("instagram_user_id", channel.external_id)
-    channel.status = BotChannel.Statuses.PAUSED if config.get("provider_mode") == "disabled" else BotChannel.Statuses.ACTIVE
+    channel.status = BotChannel.Statuses.PAUSED if config.get("provider_mode") == "disabled" else BotChannel.Statuses.DRAFT
     channel.save(update_fields=["config_json", "external_id", "status", "updated_at"])
-    sync_instagram_connector(channel, operation="config")
+    sync_instagram_connector(channel, status=BusinessConnector.Statuses.PROVIDER_CONFIGURING, operation="config")
     return {
         "ok": True,
         "provider_mode": config["provider_mode"],
@@ -415,27 +439,31 @@ def configure_instagram_channel(channel, validated_data):
 
 
 def test_instagram_channel_connection(channel):
+    get_instagram_access_token(channel)
+    channel.refresh_from_db()
     result = get_provider(BotChannel.Channels.INSTAGRAM).validate_credentials(channel)
-    channel.status = BotChannel.Statuses.ACTIVE if result.get("ok") else BotChannel.Statuses.ERROR
-    channel.save(update_fields=["status", "updated_at"])
-    connector_status = BusinessConnector.Statuses.CONNECTED if result.get("ok") else BusinessConnector.Statuses.FAILED
-    sync_instagram_connector(
-        channel,
-        status=connector_status,
-        last_error="" if result.get("ok") else result.get("reason", "Instagram credentials validation failed."),
-        operation="test_connection",
-    )
-    config = channel.config_json or {}
-    return {
-        "ok": result.get("ok", False),
-        "mock": result.get("mock", False),
-        "reason": result.get("reason", ""),
-        "status": channel.status,
-        "provider_mode": config.get("provider_mode") or "mock",
-        "instagram_user_id_configured": bool(config.get("instagram_user_id") or channel.external_id),
-        "access_token_configured": has_instagram_access_token(channel),
-        "instagram_account": result.get("instagram_account", {}),
-    }
+    with current_channel_setup(channel) as channel:
+        channel.config_json = {**(channel.config_json or {}), "connection_verified": bool(result.get("ok"))}
+        channel.status = BotChannel.Statuses.ACTIVE if result.get("ok") else BotChannel.Statuses.ERROR
+        channel.save(update_fields=["config_json", "status", "updated_at"])
+        connector_status = BusinessConnector.Statuses.CONNECTED if result.get("ok") else BusinessConnector.Statuses.FAILED
+        sync_instagram_connector(
+            channel,
+            status=connector_status,
+            last_error="" if result.get("ok") else result.get("reason", "Instagram credentials validation failed."),
+            operation="test_connection",
+        )
+        config = channel.config_json or {}
+        return {
+            "ok": result.get("ok", False),
+            "mock": result.get("mock", False),
+            "reason": result.get("reason", ""),
+            "status": channel.status,
+            "provider_mode": config.get("provider_mode") or "mock",
+            "instagram_user_id_configured": bool(config.get("instagram_user_id") or channel.external_id),
+            "access_token_configured": has_instagram_access_token(channel),
+            "instagram_account": result.get("instagram_account", {}),
+        }
 
 
 def instagram_channel_status(channel, webhook_url):

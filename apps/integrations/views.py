@@ -10,11 +10,13 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework.views import APIView
 from django.conf import settings
 from django.db.models import Count
+from django.db import transaction
 from django.http import HttpResponse
 from django.utils import timezone
 from apps.core.security_config import has_strong_shared_secret
 
 from apps.businesses.access import Actions, Resources, assert_can, can
+from apps.bots.models import BotChannel
 from apps.clients.models import Client
 from apps.clients.serializers import ClientSerializer
 from apps.core.audit import write_audit_log
@@ -23,6 +25,7 @@ from apps.core.models import AuditLog
 from apps.core.permissions import accessible_businesses, platform_admin_has_global_access
 from apps.core.viewsets import TenantModelViewSet
 from apps.integrations.connectors import update_connector_health
+from apps.integrations.channel_boundary import assert_generic_credential_write_allowed, lock_channel_business
 from apps.integrations.models import (
     ApiToken,
     BusinessConnector,
@@ -172,8 +175,11 @@ class BusinessConnectorViewSet(TenantModelViewSet):
         serializer.is_valid(raise_exception=True)
         business = serializer.validated_data["business"]
         assert_can(request.user, business, Resources.INTEGRATIONS, Actions.MANAGE)
+        bot_channel = serializer.validated_data.get("bot_channel")
+        if bot_channel and (bot_channel.bot.business_id != business.id or bot_channel.channel != BotChannel.Channels.WHATSAPP):
+            raise ValidationError({"bot_channel": "Select a WhatsApp channel from the current business."})
         redirect_uri = serializer.validated_data.get("redirect_uri") or request.build_absolute_uri("/app/integrations")
-        return Response(start_whatsapp_embedded_signup(business=business, user=request.user, redirect_uri=redirect_uri))
+        return Response(start_whatsapp_embedded_signup(business=business, user=request.user, redirect_uri=redirect_uri, bot_channel=bot_channel))
 
     @action(detail=False, methods=["post"], url_path="whatsapp-embedded-signup/complete")
     def whatsapp_embedded_signup_complete(self, request):
@@ -210,8 +216,11 @@ class BusinessConnectorViewSet(TenantModelViewSet):
         serializer.is_valid(raise_exception=True)
         business = serializer.validated_data["business"]
         assert_can(request.user, business, Resources.INTEGRATIONS, Actions.MANAGE)
+        bot_channel = serializer.validated_data.get("bot_channel")
+        if bot_channel and (bot_channel.bot.business_id != business.id or bot_channel.channel != BotChannel.Channels.INSTAGRAM):
+            raise ValidationError({"bot_channel": "Select an Instagram channel from the current business."})
         redirect_uri = serializer.validated_data.get("redirect_uri") or request.build_absolute_uri("/app/integrations")
-        return Response(start_instagram_oauth(business=business, user=request.user, redirect_uri=redirect_uri))
+        return Response(start_instagram_oauth(business=business, user=request.user, redirect_uri=redirect_uri, bot_channel=bot_channel))
 
     @action(detail=False, methods=["post"], url_path="instagram-oauth/complete")
     def instagram_oauth_complete(self, request):
@@ -325,6 +334,14 @@ class ConnectorCredentialViewSet(TenantModelViewSet):
     queryset = ConnectorCredential.objects.select_related("business", "connector")
     serializer_class = ConnectorCredentialSerializer
     access_resource = Resources.INTEGRATIONS
+
+    @transaction.atomic
+    def destroy(self, request, *args, **kwargs):
+        credential = self.get_object()
+        lock_channel_business(credential.business_id)
+        connector = BusinessConnector.objects.select_for_update().get(pk=credential.connector_id)
+        assert_generic_credential_write_allowed(connector)
+        return super().destroy(request, *args, **kwargs)
 
     def perform_create(self, serializer):
         self._enforce_business_access(serializer)

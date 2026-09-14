@@ -26,14 +26,14 @@ export function BotsPage() {
   const { business } = useActiveBusiness();
   const { bots, botChannels, botConversations } = useEntityData({ bots: true, botChannels: true, botConversations: true });
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", status: "draft", default_language: "ru" });
+  const [form, setForm] = useState({ name: "", default_language: "ru" });
 
   const mutation = useMutation({
     mutationFn: (payload: Partial<Bot>) => botsApi.create(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["bots"] });
       setOpen(false);
-      setForm({ name: "", status: "draft", default_language: "ru" });
+      setForm({ name: "", default_language: "ru" });
     },
   });
   const actionErrorMessage = mutation.error ? getApiErrorMessage(mutation.error) : "";
@@ -43,11 +43,6 @@ export function BotsPage() {
     showNotification({ message: actionErrorMessage, tone: "danger" });
   }, [actionErrorMessage, showNotification]);
 
-  const statusOptions = [
-    { value: "draft", label: t("status.draft") },
-    { value: "active", label: t("status.active") },
-    { value: "paused", label: t("status.paused") },
-  ];
   const languageOptions = [
     { value: "ru", label: t("language.ru") },
     { value: "kk", label: t("language.kk") },
@@ -132,14 +127,13 @@ export function BotsPage() {
             mutation.mutate({
               business: business.id,
               name: form.name,
-              status: form.status as Bot["status"],
+              status: "draft",
               default_language: form.default_language,
               settings_json: {},
             });
           }}
         >
           <Input label={t("bots.name")} placeholder={t("bots.websiteAssistantPlaceholder")} value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required />
-          <Select label={t("bots.status")} value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })} options={statusOptions} />
           <Select label={t("bots.defaultLanguage")} value={form.default_language} onChange={(event) => setForm({ ...form, default_language: event.target.value })} options={languageOptions} />
           <Button type="submit" isLoading={mutation.isPending}>{t("common.save")}</Button>
         </form>

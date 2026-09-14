@@ -283,7 +283,7 @@ def _confirmation_policy(config: AutoPipelineConfig) -> dict[str, Any]:
 
 def _send_auto_reply(*, conversation: BotConversation, config: AutoPipelineConfig, decision: AutoPipelineDecision) -> None:
     try:
-        result, log, _message_context = suggest_bot_reply(conversation=conversation, user=None, auto_mode=True, qualification=decision.qualification)
+        result, log, _message_context, _sources = suggest_bot_reply(conversation=conversation, user=None, auto_mode=True, qualification=decision.qualification)
         text = (result.output_text or "").strip()
         if not text:
             decision.reply_error = "AI returned an empty auto reply."

@@ -4,11 +4,14 @@ import { useEffect, useRef } from "react";
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
 import { Modal } from "../../../components/ui/Modal";
+import { ErrorState } from "../../../components/ui/StateViews";
+import { getApiErrorMessage } from "../../../api/client";
 import { useI18n } from "../../../lib/i18n";
 
 export function CreateAgentModal({
   canManage,
   isCreating,
+  error,
   name,
   onClose,
   onNameChange,
@@ -17,6 +20,7 @@ export function CreateAgentModal({
 }: {
   canManage: boolean;
   isCreating: boolean;
+  error: unknown;
   name: string;
   onClose: () => void;
   onNameChange: (name: string) => void;
@@ -33,7 +37,7 @@ export function CreateAgentModal({
   }, [open]);
 
   return (
-    <Modal title={t("aiAgents.newAgentTitle")} open={open} onClose={onClose}>
+    <Modal title={t("aiAgents.newAgentTitle")} open={open} onClose={() => { if (!isCreating) onClose(); }}>
       <form
         className="space-y-4"
         onSubmit={(event) => {
@@ -41,6 +45,7 @@ export function CreateAgentModal({
           onSubmit();
         }}
       >
+        {error ? <ErrorState message={getApiErrorMessage(error)} /> : null}
         <Input
           ref={nameInputRef}
           autoFocus
@@ -59,12 +64,16 @@ export function CreateAgentModal({
 }
 
 export function UnsavedAgentChangesModal({
+  isSaving,
   onClose,
   onDiscard,
+  onSave,
   open,
 }: {
+  isSaving: boolean;
   onClose: () => void;
   onDiscard: () => void;
+  onSave: () => void;
   open: boolean;
 }) {
   const { t } = useI18n();
@@ -78,6 +87,9 @@ export function UnsavedAgentChangesModal({
         </Button>
         <Button type="button" variant="warning" onClick={onDiscard}>
           {t("actions.discardChanges")}
+        </Button>
+        <Button type="button" isLoading={isSaving} onClick={onSave}>
+          {t("aiAgents.saveAndContinue")}
         </Button>
       </div>
     </Modal>

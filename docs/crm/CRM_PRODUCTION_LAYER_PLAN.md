@@ -233,6 +233,14 @@ Historical remaining notes, superseded or narrowed by later phases:
 
 ### Clients
 
+Update 2026-09-14: added the bounded manual client payment journal, available
+from the Clients header and both client card surfaces. Receipts and partial/full
+refunds use one business-scoped ledger with durable submission identity,
+dedicated permissions, atomic audit/activity and merge preservation. Deal and
+appointment lifecycle is unchanged. Manual records are not bank/1C confirmation;
+1C reconciliation and analytics integration remain separate work. Contract and
+verification: [Client payments](client-payments.md).
+
 Update 2026-07-09: Phase 4 pass 2 closed consent/source attribution at the current CRM scope. Clients now store `source_detail` and `source_context_json`; public lead forms copy campaign/domain/form attribution into client records; merge snapshots preserve source attribution; CRM card payloads include `OutreachConsent` status summaries for outreach channels; the client drawer shows source attribution and consent status. Migration `clients.0005_client_source_attribution` was applied to the local dev database.
 
 Update 2026-07-09: Phase 4 pass 1 validated and closed the client identity, dedup, merge, archive/restore and CRM card baseline. Client create/update normalizes phone/email identity, duplicate detection is business-scoped, frontend create/edit flows warn on possible duplicates, merge has dry-run and confirmation UX, merge writes `ClientMergeLog`, transfers related leads, deals, appointments, tasks, conversations, notes and activity, and archives the duplicate with audit/activity output. Client CRM cards have coverage for related leads, deals, appointments, tasks, conversations and timeline activity.

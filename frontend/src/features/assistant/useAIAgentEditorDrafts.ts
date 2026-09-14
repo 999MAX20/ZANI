@@ -49,7 +49,7 @@ export function useAIAgentEditorDrafts({
 
   const editorDirty = Boolean(
     selectedBot
-    && (!sameDraft(profileForm, savedProfileForm) || !sameDraft(botDraft, savedBotDraft)),
+    && (!selectedProfile || !selectedProfile.is_active || !sameDraft(profileForm, savedProfileForm) || !sameDraft(botDraft, savedBotDraft)),
   );
 
   useEffect(() => {

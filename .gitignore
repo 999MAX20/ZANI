@@ -20,6 +20,7 @@ htmlcov/
 !.env.production.example
 !frontend/.env.staging.example
 !frontend/.env.production.example
+!frontend/.env.chromatic.example
 db.sqlite3
 media/
 staticfiles/
@@ -40,6 +41,10 @@ coverage/
 playwright-report/
 test-results/
 .playwright-cli/
+frontend/storybook-static/
+frontend/.storybook/cache/
+frontend/chromatic-diagnostics.json
+frontend/chromatic-build-*.xml
 
 # Root npm lock is an accidental empty artifact; the real frontend lock lives
 # next to frontend/package.json and remains tracked.

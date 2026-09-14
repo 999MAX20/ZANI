@@ -12,6 +12,7 @@ export function canonicalBusinessRole(role: string | null | undefined) {
 }
 
 const resourceModules: Record<string, string> = {
+  payments: "clients",
   conversations: "inbox",
   leads: "leads",
   clients: "clients",
@@ -29,6 +30,7 @@ const resourceModules: Record<string, string> = {
 };
 
 export const resourceLabels: Record<string, string> = {
+  payments: "Client payments",
   clients: "Clients",
   leads: "Leads",
   deals: "Deals",

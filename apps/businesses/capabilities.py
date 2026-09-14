@@ -16,6 +16,7 @@ MODULE_REGISTRY = (
 )
 
 RESOURCE_MODULES = {
+    "payments": "clients",
     "conversations": "inbox",
     "leads": "leads",
     "clients": "clients",

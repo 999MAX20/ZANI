@@ -10,6 +10,7 @@ export function Modal({
   bodyClassName,
   closeOnBackdrop,
   testId,
+  focusReturnId,
 }: {
   title: string;
   open: boolean;
@@ -20,6 +21,7 @@ export function Modal({
   bodyClassName?: string;
   closeOnBackdrop?: boolean;
   testId?: string;
+  focusReturnId?: string;
 }) {
   return (
     <Dialog
@@ -31,6 +33,7 @@ export function Modal({
       bodyClassName={bodyClassName}
       closeOnBackdrop={closeOnBackdrop}
       testId={testId}
+      focusReturnId={focusReturnId}
     >
       {children}
     </Dialog>

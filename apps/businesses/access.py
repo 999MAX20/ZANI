@@ -9,6 +9,7 @@ from apps.core.permissions import platform_admin_has_global_access, is_platform_
 
 class Resources:
     CLIENTS = "clients"
+    PAYMENTS = "payments"
     LEADS = "leads"
     DEALS = "deals"
     APPOINTMENTS = "appointments"
@@ -55,6 +56,7 @@ OWNERSHIP_FIELDS = (
 
 
 PERMISSION_CATALOG = {
+    Resources.PAYMENTS: [Actions.VIEW, Actions.CREATE, Actions.MANAGE],
     Resources.CLIENTS: [Actions.VIEW, Actions.CREATE, Actions.UPDATE, Actions.DELETE],
     Resources.LEADS: [Actions.VIEW, Actions.CREATE, Actions.UPDATE, Actions.DELETE],
     Resources.DEALS: [Actions.VIEW, Actions.CREATE, Actions.UPDATE, Actions.DELETE],
@@ -127,6 +129,7 @@ ROLE_PRESETS = {
         "*": {Actions.MANAGE: RolePermission.Scopes.BUSINESS},
     },
     BusinessMember.Roles.MANAGER: {
+        Resources.PAYMENTS: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.CREATE: RolePermission.Scopes.BUSINESS},
         Resources.CLIENTS: {Actions.VIEW: RolePermission.Scopes.BUSINESS, Actions.CREATE: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.BUSINESS},
         Resources.LEADS: {Actions.VIEW: RolePermission.Scopes.TEAM, Actions.CREATE: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.TEAM},
         Resources.DEALS: {Actions.VIEW: RolePermission.Scopes.TEAM, Actions.CREATE: RolePermission.Scopes.BUSINESS, Actions.UPDATE: RolePermission.Scopes.TEAM},

@@ -405,7 +405,7 @@ function TaskTableRow({
     >
       <td className="px-3 py-2 align-middle">
         <div className="flex min-w-0 items-center gap-3">
-          <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-control ${task.status === "in_progress" ? "bg-brand-600 text-white" : "bg-brand-50 text-brand-700"}`}>
+          <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-control ${task.status === "in_progress" ? "bg-[var(--zani-warning-soft)] text-zani-warning" : "bg-brand-50 text-brand-700"}`}>
             <StatusIcon size={15} fill="currentColor" />
           </div>
           <div className="min-w-0">

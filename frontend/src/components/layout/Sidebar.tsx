@@ -209,7 +209,7 @@ export function Sidebar({
       <div className={cn("flex h-full min-h-0 flex-col", forceVisible && "min-h-dvh overflow-y-auto pb-8")}>
         <div className={cn("py-3", isExpanded ? "px-3" : "px-2")}>
           <div className={cn("flex items-center", isExpanded ? "justify-start gap-2" : "justify-center")}>
-            <div className="relative grid h-9 w-9 shrink-0 place-items-center rounded-control bg-brand-500 text-white shadow-sm">
+            <div className="relative grid h-9 w-9 shrink-0 place-items-center rounded-control bg-brand-500 text-zani-ink shadow-sm">
               <Sparkles size={20} />
             </div>
             <div className={cn("min-w-0 transition-opacity duration-150", isExpanded ? "opacity-100" : "pointer-events-none hidden opacity-0")}>
@@ -244,17 +244,15 @@ export function Sidebar({
                           onClick={() => setOpenGroups((value) => ({ ...value, [item.label]: !childrenOpen }))}
                           title={t(item.label)}
                           className={cn(
-                            "zani-focus-ring group relative flex min-h-10 w-full items-center gap-2 rounded-control border-l-2 border-transparent px-3 py-2 text-xs font-semibold text-zani-subtle transition-colors duration-150",
+                            "zani-focus-ring group relative flex min-h-10 w-full items-center gap-2 rounded-control border-l-2 border-transparent px-3 py-2 text-xs font-semibold transition-colors duration-150",
                             !isExpanded && "justify-center px-0",
-                            "hover:bg-brand-50 hover:text-zani-text",
-                            active && "border-brand-600 bg-brand-50 text-zani-text",
+                            active ? "border-brand-500 bg-brand-500 text-zani-ink" : "text-zani-subtle hover:bg-brand-50 hover:text-zani-text",
                           )}
                         >
                           <span
                             className={cn(
-                              "grid h-5 w-5 shrink-0 place-items-center text-zani-faint transition-colors",
-                              active && "text-brand-600",
-                              !active && "group-hover:text-zani-text",
+                              "grid h-5 w-5 shrink-0 place-items-center transition-colors",
+                              active ? "text-zani-ink" : "text-zani-faint group-hover:text-zani-text",
                             )}
                           >
                             <Icon size={18} strokeWidth={2.1} />
@@ -277,12 +275,11 @@ export function Sidebar({
                                   onFocus={() => prefetchRouteData(child.to!, queryClient, business?.id)}
                                   title={t(child.label)}
                                   className={cn(
-                                    "zani-focus-ring group relative flex min-h-9 items-center gap-2 rounded-control px-2.5 py-1.5 text-xs font-semibold text-zani-subtle transition-colors duration-150",
-                                    "hover:bg-brand-50 hover:text-zani-text",
-                                    childIsActive && "bg-brand-50 text-zani-text",
+                                    "zani-focus-ring group relative flex min-h-9 items-center gap-2 rounded-control px-2.5 py-1.5 text-xs font-semibold transition-colors duration-150",
+                                    childIsActive ? "bg-brand-500 text-zani-ink" : "text-zani-subtle hover:bg-brand-50 hover:text-zani-text",
                                   )}
                                 >
-                                  <ChildIcon size={16} strokeWidth={2.1} className={cn("shrink-0 text-zani-faint", childIsActive && "text-brand-600")} />
+                                  <ChildIcon size={16} strokeWidth={2.1} className={cn("shrink-0", childIsActive ? "text-zani-ink" : "text-zani-faint")} />
                                   <span className="min-w-0 truncate">{t(child.label)}</span>
                                 </NavLink>
                               ) : null;
@@ -303,17 +300,15 @@ export function Sidebar({
                       onFocus={() => prefetchRouteData(item.to!, queryClient, business?.id)}
                       title={t(item.label)}
                       className={cn(
-                        "zani-focus-ring group relative flex min-h-10 items-center gap-2 rounded-control border-l-2 border-transparent px-3 py-2 text-xs font-semibold text-zani-subtle transition-colors duration-150",
+                        "zani-focus-ring group relative flex min-h-10 items-center gap-2 rounded-control border-l-2 border-transparent px-3 py-2 text-xs font-semibold transition-colors duration-150",
                         !isExpanded && "justify-center px-0",
-                        "hover:bg-brand-50 hover:text-zani-text",
-                        active && "border-brand-600 bg-brand-50 text-zani-text",
+                        active ? "border-brand-500 bg-brand-500 text-zani-ink" : "text-zani-subtle hover:bg-brand-50 hover:text-zani-text",
                       )}
                     >
                       <span
                         className={cn(
-                          "grid h-5 w-5 shrink-0 place-items-center text-zani-faint transition-colors",
-                          active && "text-brand-600",
-                          !active && "group-hover:text-zani-text",
+                          "grid h-5 w-5 shrink-0 place-items-center transition-colors",
+                          active ? "text-zani-ink" : "text-zani-faint group-hover:text-zani-text",
                         )}
                       >
                         <Icon size={18} strokeWidth={2.1} />

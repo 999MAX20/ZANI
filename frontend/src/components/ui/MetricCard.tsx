@@ -3,7 +3,7 @@ import { Link } from "react-router";
 
 import { cn } from "../../lib/cn";
 
-type MetricCardTone = "brand" | "slate" | "emerald" | "amber" | "red";
+type MetricCardTone = "brand" | "ai" | "slate" | "emerald" | "amber" | "red";
 
 type MetricCardProps = {
   label: string;
@@ -18,6 +18,7 @@ type MetricCardProps = {
 
 const toneClasses: Record<MetricCardTone, string> = {
   brand: "bg-brand-50 text-brand-600",
+  ai: "bg-ai-50 text-ai-700",
   slate: "bg-surface-muted text-zani-subtle",
   emerald: "bg-[var(--zani-success-soft)] text-zani-success",
   amber: "bg-[var(--zani-warning-soft)] text-zani-warning",

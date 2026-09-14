@@ -455,7 +455,7 @@ export function LeadDetailPanel({
           <Button className="justify-center rounded-lg" variant="secondary" onClick={() => setDrawerEntity({ type: "lead", id: selected.id })}>
             {t("leads.fullCard")}
           </Button>
-          <Button className="justify-center rounded-lg bg-brand-600" onClick={() => priorityLead && openLead(priorityLead)} disabled={!priorityLead}>
+          <Button className="justify-center rounded-lg" onClick={() => priorityLead && openLead(priorityLead)} disabled={!priorityLead}>
             {t("leads.callNow")}
           </Button>
         </div>

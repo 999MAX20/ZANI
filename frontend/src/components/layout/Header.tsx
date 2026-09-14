@@ -374,7 +374,7 @@ export function Header({
                 <Link
                   to="/app/tasks"
                   onClick={() => setShowNotifications(false)}
-                  className="zani-focus-ring mt-4 block rounded-control bg-brand-500 px-4 py-3 text-center text-sm font-semibold text-white ring-1 ring-brand-600/10 transition hover:bg-brand-600"
+                  className="zani-focus-ring mt-4 block rounded-control bg-brand-500 px-4 py-3 text-center text-sm font-semibold text-zani-ink ring-1 ring-brand-600/10 transition hover:bg-brand-600"
                 >
                   {t("header.openTasks")}
                 </Link>
@@ -394,7 +394,7 @@ export function Header({
                   </p>
                   <button
                     type="button"
-                    className="zani-focus-ring mt-3 rounded-control bg-brand-500 px-3 py-2 text-xs font-semibold text-white ring-1 ring-brand-600/10 transition hover:bg-brand-600"
+                    className="zani-focus-ring mt-3 rounded-control bg-brand-500 px-3 py-2 text-xs font-semibold text-zani-ink ring-1 ring-brand-600/10 transition hover:bg-brand-600"
                     onClick={() => {
                       setChatToastOpen(false);
                       navigate("/app/conversations?unread=true");

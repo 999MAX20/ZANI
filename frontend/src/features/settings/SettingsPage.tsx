@@ -1462,7 +1462,7 @@ export function SettingsPage() {
                                   href={inviteShareUrl(invitation)}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="inline-flex min-h-11 items-center justify-center rounded-full bg-zani-text px-4 py-2 text-sm font-bold text-white transition hover:bg-brand-700"
+                                  className="inline-flex min-h-11 items-center justify-center rounded-full bg-brand-500 px-4 py-2 text-sm font-bold text-zani-ink transition hover:bg-brand-600"
                                 >
                                   {t("settings.send")}
                                 </a>

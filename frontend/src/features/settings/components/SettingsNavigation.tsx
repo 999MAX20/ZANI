@@ -96,7 +96,7 @@ export function SettingsNavigation({
                             href={`#${section.id}`}
                             className={`block rounded-lg px-2.5 py-2 text-sm font-bold transition ${
                               active
-                                ? "bg-brand-600 text-white shadow-sm"
+                                ? "bg-brand-500 text-zani-ink shadow-sm"
                                 : "text-zani-subtle hover:bg-surface-warm hover:text-zani-text"
                             }`}
                             onClick={() => setActiveSettingsSection(section.id)}

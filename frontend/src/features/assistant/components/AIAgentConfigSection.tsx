@@ -55,7 +55,7 @@ export function ProfileManagerSection({
               <h3 className="text-lg font-black text-midnight">{t("aiAgents.qualityAdvanced")}</h3>
               <p className="mt-1 text-sm font-semibold text-slate-500">{t("aiAgents.qualityAdvancedText")}</p>
             </div>
-            <ChevronRight size={18} className={cn("shrink-0 text-slate-400 transition", showQuality && "rotate-90 text-brand-700")} />
+            <ChevronRight size={18} className={cn("shrink-0 text-slate-400 transition", showQuality && "rotate-90 text-ai-700")} />
           </button>
         </CardBody>
       </Card>
@@ -91,7 +91,7 @@ function SettingsSection({
       <Card>
         <CardBody>
           <div className="mb-5 flex items-center gap-3">
-            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-brand-600 text-white">
+            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-ai-600 text-white">
               <Bot size={22} />
             </div>
             <div>
@@ -256,7 +256,7 @@ function ModelsSection({ bot, updateBot, canManage }: { bot: BotType; updateBot:
           <FieldHint>{t("aiAgents.hint.responseMode")}</FieldHint>
           <label className="block">
             <span className="mb-2 block text-sm font-bold text-slate-700">{t("aiAgents.responseFreedom", { value: temperature.toFixed(1) })}</span>
-            <input className="w-full accent-brand-600" type="range" min="0" max="1" step="0.1" value={temperature} onChange={(event) => setTemperature(Number(event.target.value))} />
+            <input className="w-full accent-ai-600" type="range" min="0" max="1" step="0.1" value={temperature} onChange={(event) => setTemperature(Number(event.target.value))} />
             <FieldHint>{t("aiAgents.hint.temperature")}</FieldHint>
           </label>
           <Button

@@ -73,7 +73,7 @@ export function MobileNav({ open, onOpen, onClose }: { open: boolean; onOpen: ()
                 cn(
                   "zani-focus-ring flex min-h-14 flex-col items-center justify-center gap-1 rounded-control px-0.5 py-2 text-center text-[10px] font-semibold leading-none transition active:scale-[0.98]",
                   isActive
-                    ? "bg-brand-800 text-white shadow-sm"
+                    ? "bg-brand-500 text-zani-ink shadow-sm"
                     : "text-zani-faint",
                 )
               }
@@ -100,7 +100,7 @@ export function MobileNav({ open, onOpen, onClose }: { open: boolean; onOpen: ()
           className={cn(
             "zani-focus-ring flex min-h-14 flex-col items-center justify-center gap-1 rounded-control px-0.5 py-2 text-center text-[10px] font-semibold leading-none transition hover:bg-surface-muted hover:text-zani-text active:scale-[0.98]",
             open
-              ? "bg-brand-800 text-white shadow-sm"
+              ? "bg-brand-500 text-zani-ink shadow-sm"
               : "text-zani-faint",
           )}
         >

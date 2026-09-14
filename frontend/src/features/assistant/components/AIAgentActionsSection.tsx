@@ -156,7 +156,7 @@ function ControlSection({ bot, updateBot, canManage }: { bot: BotType; updateBot
               <h4 className="font-black text-midnight">{t("aiAgents.control.advancedTitle")}</h4>
               <p className="mt-1 text-sm font-semibold leading-5 text-slate-500">{t("aiAgents.control.advancedText")}</p>
             </div>
-            <ChevronRight size={18} className={cn("shrink-0 text-slate-400 transition", showAdvanced && "rotate-90 text-brand-700")} />
+            <ChevronRight size={18} className={cn("shrink-0 text-slate-400 transition", showAdvanced && "rotate-90 text-ai-700")} />
           </button>
 
           {showAdvanced ? (
@@ -174,12 +174,12 @@ function ControlSection({ bot, updateBot, canManage }: { bot: BotType; updateBot
               </div>
               <label className="block">
                 <span className="mb-2 block text-sm font-bold text-slate-700">{t("aiAgents.control.leadConfidence", { value: config.min_lead_confidence.toFixed(1) })}</span>
-                <input className="w-full accent-brand-600" type="range" min="0.1" max="1" step="0.1" value={config.min_lead_confidence} onChange={(event) => setConfig((current) => ({ ...current, min_lead_confidence: Number(event.target.value) }))} />
+                <input className="w-full accent-ai-600" type="range" min="0.1" max="1" step="0.1" value={config.min_lead_confidence} onChange={(event) => setConfig((current) => ({ ...current, min_lead_confidence: Number(event.target.value) }))} />
                 <FieldHint>{t("aiAgents.hint.leadConfidence")}</FieldHint>
               </label>
               <label className="block md:col-span-2">
                 <span className="mb-2 block text-sm font-bold text-slate-700">{t("aiAgents.control.dealConfidence", { value: config.min_deal_confidence.toFixed(1) })}</span>
-                <input className="w-full accent-brand-600" type="range" min="0.1" max="1" step="0.1" value={config.min_deal_confidence} onChange={(event) => setConfig((current) => ({ ...current, min_deal_confidence: Number(event.target.value) }))} />
+                <input className="w-full accent-ai-600" type="range" min="0.1" max="1" step="0.1" value={config.min_deal_confidence} onChange={(event) => setConfig((current) => ({ ...current, min_deal_confidence: Number(event.target.value) }))} />
                 <FieldHint>{t("aiAgents.hint.dealConfidence")}</FieldHint>
               </label>
             </div>
@@ -229,7 +229,7 @@ function FunctionsSection({
           return (
         <Card key={key}>
           <CardBody className="flex min-h-[170px] flex-col">
-            <div className="grid h-11 w-11 place-items-center rounded-2xl bg-brand-50 text-brand-700">
+            <div className="grid h-11 w-11 place-items-center rounded-2xl bg-ai-50 text-ai-700">
               <FunctionSquare size={20} />
             </div>
             <h3 className="mt-4 text-lg font-black text-midnight">{title}</h3>

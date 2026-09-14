@@ -94,7 +94,7 @@ function OverviewSection({
     <div className="space-y-5">
       <div className="grid gap-3 md:grid-cols-3">
         <MetricCard label={t("aiAgents.statusLabel")} value={statusLabel} icon={Bot} tone={bot.status === "active" ? "emerald" : "slate"} compact />
-        <MetricCard label={t("aiAgents.connectedChannels")} value={`${activeChannelsCount}/${channelsCount}`} icon={Radio} tone="brand" compact />
+        <MetricCard label={t("aiAgents.connectedChannels")} value={`${activeChannelsCount}/${channelsCount}`} icon={Radio} tone="ai" compact />
         <MetricCard label={t("aiAgents.messagesMetric")} value={messagesCount} icon={MessageSquareText} tone="slate" compact />
       </div>
 
@@ -102,7 +102,7 @@ function OverviewSection({
         <CardBody>
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">{t("aiAgents.nextSetup")}</p>
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-ai-700">{t("aiAgents.nextSetup")}</p>
               <h3 className="mt-2 text-2xl font-black text-midnight">{bot.name}</h3>
               <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-slate-500">{t("aiAgents.overviewText")}</p>
             </div>

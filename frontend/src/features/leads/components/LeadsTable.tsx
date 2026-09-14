@@ -207,7 +207,7 @@ function LeadTableRow({
           className={cn(
             "grid h-5 w-5 place-items-center rounded border",
             bulkSelected
-              ? "border-brand-600 bg-brand-600 text-white"
+              ? "border-brand-500 bg-brand-500 text-zani-ink"
               : "border-zani-border bg-surface-card",
           )}
         >

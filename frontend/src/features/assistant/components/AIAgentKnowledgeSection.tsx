@@ -82,7 +82,7 @@ export function KnowledgeSection({ businessId, items, canManage }: { businessId:
               <CardBody>
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">{item.category || t("aiAgents.knowledge.category")}</p>
+                    <p className="text-xs font-black uppercase tracking-[0.16em] text-ai-700">{item.category || t("aiAgents.knowledge.category")}</p>
                     <h3 className="mt-2 text-lg font-black text-midnight">{item.title}</h3>
                   </div>
                   <span className={cn("rounded-full px-2.5 py-1 text-xs font-black", item.is_active ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500")}>
@@ -98,7 +98,7 @@ export function KnowledgeSection({ businessId, items, canManage }: { businessId:
           )) : (
             <Card className="md:col-span-2">
               <CardBody>
-                <BookOpen className="text-brand-600" size={26} />
+                <BookOpen className="text-ai-700" size={26} />
                 <h3 className="mt-4 text-lg font-black text-midnight">{t("aiAgents.knowledge.emptyTitle")}</h3>
                 <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">{t("aiAgents.knowledge.emptyText")}</p>
                 <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -107,7 +107,7 @@ export function KnowledgeSection({ businessId, items, canManage }: { businessId:
                       key={template.title}
                       type="button"
                       disabled={!canManage}
-                      className="rounded-2xl border border-slate-200 bg-white p-3 text-left transition hover:border-brand-200 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="rounded-2xl border border-slate-200 bg-white p-3 text-left transition hover:border-ai-100 hover:bg-ai-50 disabled:cursor-not-allowed disabled:opacity-60"
                       onClick={() => openTemplate(template)}
                     >
                       <span className="text-sm font-black text-midnight">{template.title}</span>

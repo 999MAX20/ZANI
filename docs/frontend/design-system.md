@@ -50,9 +50,9 @@ Text Muted:         #8A7B70
 ```txt
 Brand Primary:      #FF7A1A
 Primary Hover:      #F06400
-Primary Pressed:    #C84D00
+Primary Pressed:    #D96718
 Primary Soft:       #FFF1E6
-Focus Ring:         rgba(255, 122, 26, 0.24)
+Focus Ring:         #B54708
 ```
 
 Use orange for:
@@ -408,9 +408,9 @@ Long button labels:
 Button states:
 
 ```txt
-primary default:     Brand Primary background, white text
-primary hover:       Primary Hover background, slightly stronger shadow
-primary active:      Primary Pressed background, optional scale 0.99
+primary default:     Brand Primary background, Zani Ink text
+primary hover:       Primary Hover background, Zani Ink text, slightly stronger shadow
+primary active:      Primary Hover background, Zani Ink text, optional scale 0.99
 primary focus:       4px Focus Ring, 2px offset when outside dense surfaces
 primary disabled:    muted surface, muted text, no hover, cursor not-allowed
 

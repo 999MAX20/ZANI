@@ -1,9 +1,9 @@
 # ZANI Pre-Pilot Execution Master
 
 Status: completed; paused for owner review
-Owner: Chat Manager  
-Execution tracks: UI/UX and Features/Backend  
-Integration branch: `codex/project-integration-2026-07`  
+Owner: Chat Manager
+Execution tracks: UI/UX and Features/Backend
+Integration branch: `codex/project-integration-2026-07`
 Target: a coherent, polished and fully verified local product before controlled pilot setup
 
 ## 1. Purpose
@@ -225,7 +225,7 @@ integrated and the manager gate passes.
 #### F-101 — Critical Action Feedback and Recovery UX
 
 Status: `DONE`
-Owner: UI/UX  
+Owner: UI/UX
 Depends on: integrated baseline
 
 Assignment: 2026-07-24, `codex/frontend-pilot-readiness` at `b312390`.
@@ -282,7 +282,7 @@ Completion evidence (2026-07-24):
 #### B-101 — Capability Enforcement for CRM Custom Actions
 
 Status: `DONE`
-Owner: Features/Backend  
+Owner: Features/Backend
 Depends on: integrated baseline
 
 Assignment: 2026-07-24, `codex/backend-pilot-readiness` at `b312390`.
@@ -341,7 +341,7 @@ Completion evidence (2026-07-24):
 #### X-101 — P1 Integration Gate
 
 Status: `DONE`
-Owner: Manager  
+Owner: Manager
 Depends on: F-101 and B-101 integrated
 
 - inspect both diffs for contract conflicts;
@@ -368,7 +368,7 @@ Completion evidence (2026-07-24):
 #### F-201 — Role-Aware Daily Workspaces
 
 Status: `DONE`
-Owner: UI/UX  
+Owner: UI/UX
 Depends on: X-101
 
 Assignment: 2026-07-24, `codex/f201-role-aware-daily-workspaces` from integrated
@@ -401,7 +401,7 @@ Completion evidence (2026-07-24):
 #### B-201 — Action Side-Effect Consistency
 
 Status: `DONE`
-Owner: Features/Backend  
+Owner: Features/Backend
 Depends on: X-101
 
 Assignment: 2026-07-24, `codex/b201-action-side-effects` from integrated P1
@@ -436,7 +436,7 @@ Completion evidence (2026-07-24):
 #### X-201 — P2 Workflow Gate
 
 Status: `DONE`
-Owner: Manager  
+Owner: Manager
 Depends on: F-201 and B-201 integrated
 
 - role-by-role daily workflow smoke;
@@ -466,7 +466,7 @@ Completion evidence (2026-07-24):
 #### F-301 — Accessibility and Responsive Interaction
 
 Status: `DONE`
-Owner: UI/UX  
+Owner: UI/UX
 Depends on: X-201
 
 Verify keyboard navigation, visible focus, dialog/drawer focus behavior, labels,
@@ -502,7 +502,7 @@ Completion evidence (2026-07-24):
 #### B-301 — Measured API and Query Performance
 
 Status: `DONE`
-Owner: Features/Backend  
+Owner: Features/Backend
 Depends on: X-201
 
 Profile owner dashboard, Inbox list/summary, task queues, CRM card/timeline,
@@ -540,7 +540,7 @@ Completion evidence (2026-07-24):
 #### F-302 — Frontend Runtime and Maintainability
 
 Status: `DONE`
-Owner: UI/UX  
+Owner: UI/UX
 Depends on: F-301 integrated
 
 Measure route chunks, request waterfalls and render churn. Split or refactor only
@@ -575,7 +575,7 @@ Completion evidence (2026-07-30):
 #### B-302 — Deterministic Local Quality Gate
 
 Status: `DONE`
-Owner: Features/Backend  
+Owner: Features/Backend
 Depends on: B-301 integrated
 
 Audit Python dependency pinning and frontend lockfile; consolidate deterministic
@@ -614,7 +614,7 @@ Completion evidence (2026-07-30):
 #### X-301 — P3 Quality Gate
 
 Status: `DONE`
-Owner: Manager  
+Owner: Manager
 Depends on: F-301, B-301, F-302 and B-302 integrated
 
 - independent accessibility, responsive, query-budget and clean-gate review;
@@ -657,7 +657,7 @@ Completion evidence (2026-07-30):
 #### F-401 — Frontend Role and Workflow Certification
 
 Status: `DONE`
-Owner: UI/UX  
+Owner: UI/UX
 Depends on: X-301
 
 Certify owner, manager, operator and doctor navigation and visibility across
@@ -698,7 +698,7 @@ Completion evidence (2026-07-31):
 #### B-401 — Backend Business-Flow Certification
 
 Status: `DONE`
-Owner: Features/Backend  
+Owner: Features/Backend
 Depends on: X-301
 
 Certify clean migrations, full suite, cross-entity E2E, permission/tenant/
@@ -737,7 +737,7 @@ Completion evidence (2026-07-31):
 #### X-401 — Final Integrated Pre-Pilot Gate
 
 Status: `DONE`
-Owner: Manager  
+Owner: Manager
 Depends on: F-401 and B-401 integrated
 
 Assignment: 2026-07-31, manager certification on

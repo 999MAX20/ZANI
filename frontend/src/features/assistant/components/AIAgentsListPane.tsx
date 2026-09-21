@@ -9,12 +9,14 @@ import { cn } from "../../../lib/cn";
 import { useI18n } from "../../../lib/i18n";
 import type { AgentProfile, Bot as BotType, Id } from "../../../types";
 import type { AgentSection } from "../aiAgentsTypes";
+import { agentStatusLabel } from "../aiAgentsUtils";
 
 type AgentStatusFilter = "all" | BotType["status"];
 
-function statusVariant(status: BotType["status"]) {
-  if (status === "active") return "success" as const;
-  if (status === "paused") return "warning" as const;
+function statusVariant(bot: BotType) {
+  if (bot.status === "active" && bot.readiness && !bot.readiness.is_ready) return "warning" as const;
+  if (bot.status === "active") return "success" as const;
+  if (bot.status === "paused") return "warning" as const;
   return "neutral" as const;
 }
 
@@ -23,11 +25,13 @@ export function AIAgentsListPane({
   profiles,
   selectedBotId,
   activeSection,
+  className,
 }: {
   bots: BotType[];
   profiles: AgentProfile[];
   selectedBotId?: Id | null;
   activeSection: AgentSection;
+  className?: string;
 }) {
   const { t } = useI18n();
   const [query, setQuery] = useState("");
@@ -51,7 +55,7 @@ export function AIAgentsListPane({
   );
 
   return (
-    <aside className="flex min-h-[240px] max-h-[340px] flex-col overflow-hidden rounded-card border border-zani-border bg-surface-card shadow-card lg:min-h-0 lg:max-h-none">
+    <aside className={cn("flex min-h-[240px] max-h-[340px] flex-col overflow-hidden rounded-card border border-zani-border bg-surface-card shadow-card lg:min-h-0 lg:max-h-none", className)}>
       <div className="grid shrink-0 gap-2 border-b border-zani-border p-3 sm:grid-cols-[minmax(0,1fr)_180px] lg:grid-cols-1">
         <Input
           aria-label={t("aiAgents.searchPlaceholder")}
@@ -102,8 +106,8 @@ export function AIAgentsListPane({
                 <span className="min-w-0 flex-1">
                   <span className="flex min-w-0 items-center justify-between gap-2">
                     <span className="min-w-0 truncate text-sm font-semibold text-zani-ink">{bot.name}</span>
-                    <Badge size="sm" variant={statusVariant(bot.status)} className="shrink-0">
-                      {t(`aiAgents.status.${bot.status}`)}
+                    <Badge size="sm" variant={statusVariant(bot)} className="shrink-0">
+                      {agentStatusLabel(bot, t)}
                     </Badge>
                   </span>
                   <span className="mt-1 line-clamp-2 block text-xs font-medium leading-4 text-zani-subtle">

@@ -9,6 +9,8 @@ class ActivityEvents:
     CLIENT_MERGED = "client_merged"
     CLIENT_ARCHIVED = "client_archived"
     CLIENT_RESTORED = "client_restored"
+    CLIENT_PAYMENT_RECORDED = "client_payment_recorded"
+    CLIENT_PAYMENT_REFUNDED = "client_payment_refunded"
 
     FORM_SUBMITTED = "form_submitted"
     LEAD_CREATED = "lead_created"
@@ -87,6 +89,8 @@ EVENT_LABELS = {
     ActivityEvents.CLIENT_MERGED: "Клиенты объединены",
     ActivityEvents.CLIENT_ARCHIVED: "Клиент архивирован",
     ActivityEvents.CLIENT_RESTORED: "Клиент восстановлен",
+    ActivityEvents.CLIENT_PAYMENT_RECORDED: "Зарегистрирована оплата клиента",
+    ActivityEvents.CLIENT_PAYMENT_REFUNDED: "Зарегистрирован возврат клиенту",
     ActivityEvents.FORM_SUBMITTED: "Отправлена форма",
     ActivityEvents.LEAD_CREATED: "Создана заявка",
     ActivityEvents.LEAD_ASSIGNED: "Назначен ответственный по заявке",
@@ -180,6 +184,18 @@ def _define(
 EVENT_DEFINITIONS = {
     ActivityEvents.CLIENT_CREATED: _define(ActivityEvents.CLIENT_CREATED, category=ActivityEvent.Categories.CRM, domain="clients"),
     ActivityEvents.CLIENT_UPDATED: _define(ActivityEvents.CLIENT_UPDATED, category=ActivityEvent.Categories.CRM, domain="clients"),
+    ActivityEvents.CLIENT_PAYMENT_RECORDED: _define(
+        ActivityEvents.CLIENT_PAYMENT_RECORDED,
+        category=ActivityEvent.Categories.CRM,
+        domain="payments",
+        audit_required=True,
+    ),
+    ActivityEvents.CLIENT_PAYMENT_REFUNDED: _define(
+        ActivityEvents.CLIENT_PAYMENT_REFUNDED,
+        category=ActivityEvent.Categories.CRM,
+        domain="payments",
+        audit_required=True,
+    ),
     ActivityEvents.CLIENT_MERGED: _define(
         ActivityEvents.CLIENT_MERGED,
         category=ActivityEvent.Categories.CRM,

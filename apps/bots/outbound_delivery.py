@@ -170,6 +170,14 @@ def deliver_outbound_message(message_id):
         return BotMessage.objects.filter(id=message_id).first()
 
     conversation = message.conversation
+    if message.sender_type == BotMessage.SenderTypes.BOT:
+        from apps.bots.lifecycle import conversation_ai_block_reason
+
+        if conversation_ai_block_reason(conversation):
+            return _finish_delivery(
+                message,
+                result={"ok": False, "reason": "Automatic reply stopped because AI is no longer eligible.", "retryable": False},
+            )
     channel = BotChannel.objects.filter(
         bot=conversation.bot,
         channel=conversation.channel,

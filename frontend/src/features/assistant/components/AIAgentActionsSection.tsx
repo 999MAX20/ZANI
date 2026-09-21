@@ -11,8 +11,8 @@ import { useI18n } from "../../../lib/i18n";
 import { cn } from "../../../lib/cn";
 import type { Bot as BotType } from "../../../types";
 import type { AgentFormState, AutoPipelineMode } from "../aiAgentsTypes";
-import { autoPipelineFromSettings, defaultAllowedTools } from "../aiAgentsUtils";
-import { HelpCard, FieldHint } from "./AIAgentsShared";
+import { autoPipelineFromSettings } from "../aiAgentsUtils";
+import { FieldHint } from "./AIAgentsShared";
 export function AgentActionsSection({
   bot,
   form,
@@ -32,11 +32,6 @@ export function AgentActionsSection({
   const leadTaskAutonomy = runtime.mode === "lead_task" || runtime.mode === "draft_deal";
   return (
     <div className="space-y-5">
-      <HelpCard
-        title={t("aiAgents.onboarding.actions.helpTitle")}
-        text={t("aiAgents.onboarding.actions.helpText")}
-        recommendation={t("aiAgents.onboarding.actions.recommendation")}
-      />
       <Card variant="outlined">
         <CardBody>
           <h3 className="text-xl font-black text-midnight">{t("aiAgents.authority.title")}</h3>
@@ -150,6 +145,8 @@ function ControlSection({ bot, updateBot, canManage }: { bot: BotType; updateBot
             type="button"
             className="flex w-full items-center justify-between gap-3 text-left"
             onClick={() => setShowAdvanced((value) => !value)}
+            aria-expanded={showAdvanced}
+            aria-controls="ai-agent-pipeline-advanced"
           >
             <div>
               <h4 className="font-black text-midnight">{t("aiAgents.control.advancedTitle")}</h4>
@@ -159,7 +156,7 @@ function ControlSection({ bot, updateBot, canManage }: { bot: BotType; updateBot
           </button>
 
           {showAdvanced ? (
-            <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <div id="ai-agent-pipeline-advanced" className="mt-5 grid gap-4 md:grid-cols-2">
               <div>
                 <Input
                   label={t("aiAgents.control.maxReplyChars")}
@@ -220,28 +217,32 @@ function FunctionsSection({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="grid gap-4 md:grid-cols-2">
+    <Card variant="outlined">
+      <CardBody>
+        <div className="divide-y divide-zani-border">
         {tools.map(([key, title, text]) => {
           const enabled = form.allowed_tools.includes(key);
           return (
-        <Card key={key} variant="outlined">
-          <CardBody className="flex min-h-[170px] flex-col">
-            <div className="grid h-11 w-11 place-items-center rounded-2xl bg-ai-50 text-ai-700 ring-1 ring-ai-100">
-              <FunctionSquare size={20} />
+            <div key={key} className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-start gap-3">
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-control bg-ai-50 text-ai-700 ring-1 ring-ai-100">
+                  <FunctionSquare size={18} />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-sm font-semibold text-zani-ink">{title}</h3>
+                  <p className="mt-1 text-sm leading-5 text-zani-subtle">{text}</p>
+                  <FieldHint>{t(`aiAgents.hint.tool.${key}`)}</FieldHint>
+                </div>
+              </div>
+              <div className="flex shrink-0 items-center justify-between gap-3 sm:justify-end">
+                <span className="text-xs font-semibold text-zani-subtle">{enabled ? t("aiAgents.functions.enabled") : t("aiAgents.functions.disabled")}</span>
+                <ToggleSwitch checked={enabled} disabled={!canManage} label={title} tone="ai" onChange={(next) => toggleTool(key, next)} />
+              </div>
             </div>
-            <h3 className="mt-4 text-lg font-black text-midnight">{title}</h3>
-            <p className="mt-2 flex-1 text-sm font-semibold leading-6 text-slate-500">{text}</p>
-            <FieldHint>{t(`aiAgents.hint.tool.${key}`)}</FieldHint>
-            <div className="mt-4 flex items-center justify-between gap-3">
-              <span className="text-sm font-black text-slate-600">{enabled ? t("aiAgents.functions.enabled") : t("aiAgents.functions.disabled")}</span>
-              <ToggleSwitch checked={enabled} disabled={!canManage} label={title} tone="ai" onChange={(next) => toggleTool(key, next)} />
-            </div>
-          </CardBody>
-        </Card>
           );
         })}
-      </div>
-    </div>
+        </div>
+      </CardBody>
+    </Card>
   );
 }

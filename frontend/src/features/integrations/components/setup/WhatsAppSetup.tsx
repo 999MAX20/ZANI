@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ExternalLink, RefreshCw, Send, ShieldCheck } from "lucide-react";
+import { ExternalLink, RefreshCw, ShieldCheck } from "lucide-react";
 
-import { botChannelsApi, botsApi, whatsappChannelApi } from "../../../../api/bots";
+import { botChannelsApi, whatsappChannelApi } from "../../../../api/bots";
 import { businessConnectorsApi } from "../../../../api/connectors";
 import { getApiErrorMessage } from "../../../../api/client";
 import { Button } from "../../../../components/ui/Button";
@@ -10,19 +10,17 @@ import { ErrorState } from "../../../../components/ui/StateViews";
 import { Input } from "../../../../components/ui/Input";
 import { useNotification } from "../../../../components/notifications/NotificationProvider";
 import { useI18n } from "../../../../lib/i18n";
-import type { Bot, BotChannel, Id } from "../../../../types";
+import type { BotChannel, Id } from "../../../../types";
 import { merchantSafeIntegrationError } from "../../utils";
 import { MessengerSetupShell } from "./IntegrationSetupUi";
 import { loadFacebookSdk, parseWhatsAppEmbeddedSignupMessage, type WhatsAppEmbeddedSignupCallback } from "./metaCallbacks";
 
 export function WhatsAppInlineSetup({
   businessId,
-  bots,
   canManage,
   channel,
 }: {
   businessId: Id;
-  bots: Bot[];
   canManage: boolean;
   channel?: BotChannel;
 }) {
@@ -72,30 +70,6 @@ export function WhatsAppInlineSetup({
     enabled: Boolean(channel?.id),
   });
 
-  const ensureChannel = useMutation({
-    mutationFn: async () => {
-      const bot = bots[0] || await botsApi.create({
-        business: businessId,
-        name: "WhatsApp bot",
-        status: "active",
-        default_language: "ru",
-        settings_json: {},
-      });
-      return botChannelsApi.create({
-        bot: bot.id,
-        channel: "whatsapp",
-        status: "draft",
-        external_id: "",
-        config_json: { provider_mode: "meta_cloud" },
-      });
-    },
-    onSuccess: () => {
-      setNotice(t("integrations.whatsapp.channelCreated"));
-      queryClient.invalidateQueries({ queryKey: ["bots"] });
-      queryClient.invalidateQueries({ queryKey: ["bot-channels"] });
-    },
-  });
-
   const saveCredentials = useMutation({
     mutationFn: () => whatsappChannelApi.configure({
       channelId: Number(channel?.id),
@@ -131,6 +105,7 @@ export function WhatsAppInlineSetup({
 	    mutationFn: () => businessConnectorsApi.startWhatsAppEmbeddedSignup({
 	      business: businessId,
 	      redirectUri: metaRedirectUri,
+	      botChannel: channel?.id,
 	    }),
     onSuccess: async (data) => {
       setSignupState(data.state);
@@ -202,7 +177,7 @@ export function WhatsAppInlineSetup({
     },
   });
 
-  const error = ensureChannel.error || saveCredentials.error || testConnection.error || startEmbeddedSignup.error || completeEmbeddedSignup.error || toggleChannel.error || status.error;
+  const error = saveCredentials.error || testConnection.error || startEmbeddedSignup.error || completeEmbeddedSignup.error || toggleChannel.error || status.error;
   const credentialsConfigured = Boolean(status.data?.phone_number_id_configured && status.data?.access_token_configured);
   const hasSignupResult = Boolean(signupCode || signupPhoneNumberId);
   const connectionStatus = credentialsConfigured
@@ -213,14 +188,7 @@ export function WhatsAppInlineSetup({
   const connectionTone = credentialsConfigured ? "success" : hasSignupResult ? "progress" : "neutral";
 
   if (!channel) {
-    return (
-      <div className="w-full space-y-3">
-        {error ? <ErrorState message={merchantSafeIntegrationError(getApiErrorMessage(error), t)} /> : null}
-        <Button type="button" disabled={!canManage} isLoading={ensureChannel.isPending} onClick={() => ensureChannel.mutate()}>
-          <Send size={16} /> {t("integrations.whatsapp.createChannel")}
-        </Button>
-      </div>
-    );
+    return <ErrorState message={t("aiAgents.channelSetupUnavailable")} />;
   }
 
   return (
@@ -233,7 +201,7 @@ export function WhatsAppInlineSetup({
       error={error ? <ErrorState message={merchantSafeIntegrationError(getApiErrorMessage(error), t)} /> : null}
       canManage={canManage}
       inboxChannel="whatsapp"
-      channelToggleVisible={credentialsConfigured}
+      channelToggleVisible={["active", "paused"].includes(channel.status)}
       channelEnabled={channel.status === "active"}
       channelToggleLoading={toggleChannel.isPending}
       onToggleChannel={(checked) => toggleChannel.mutate(checked ? "active" : "paused")}

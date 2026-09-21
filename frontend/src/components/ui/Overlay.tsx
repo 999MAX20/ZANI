@@ -124,6 +124,7 @@ function useDialogFocus(
   open: boolean,
   onClose: () => void,
   dialogRef: React.RefObject<HTMLElement | null>,
+  preferredFocusReturnId?: string,
 ) {
   useLayoutEffect(() => {
     if (!open) return undefined;
@@ -132,7 +133,7 @@ function useDialogFocus(
       document.activeElement instanceof HTMLElement
         ? document.activeElement
         : null;
-    const focusReturnId = opener?.dataset.focusReturnId || null;
+    const focusReturnId = preferredFocusReturnId || opener?.dataset.focusReturnId || null;
     const focusInsideDialog = () => {
       const dialog = dialogRef.current;
       if (!dialog || !isTopmostDialog(dialog)) return;
@@ -154,7 +155,7 @@ function useDialogFocus(
       window.cancelAnimationFrame(frameId);
       restoreDialogFocus(opener, focusReturnId);
     };
-  }, [dialogRef, open]);
+  }, [dialogRef, open, preferredFocusReturnId]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -214,6 +215,7 @@ export function Dialog({
   bodyClassName,
   closeOnBackdrop = true,
   testId,
+  focusReturnId,
 }: {
   title: string;
   open: boolean;
@@ -224,11 +226,12 @@ export function Dialog({
   bodyClassName?: string;
   closeOnBackdrop?: boolean;
   testId?: string;
+  focusReturnId?: string;
 }) {
   const titleId = useId();
   const dialogRef = useRef<HTMLElement>(null);
   useBodyScrollLock(open);
-  useDialogFocus(open, onClose, dialogRef);
+  useDialogFocus(open, onClose, dialogRef, focusReturnId);
 
   if (!open) return null;
 

@@ -10,6 +10,7 @@ export type PageHeaderAction = {
   variant?: "primary" | "ai";
   presentation?: "icon" | "label";
   showOnMobile?: boolean;
+  focusReturnId?: string;
 };
 
 export type PageHeaderConfig = {

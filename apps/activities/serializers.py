@@ -29,6 +29,23 @@ class ActivityEventSerializer(serializers.ModelSerializer):
         return data
 
 
+class ActivityTimelineSerializer(ActivityEventSerializer):
+    """Labels for already-authorized event reads; no account emails or raw metadata UI."""
+    actor_name = serializers.SerializerMethodField()
+    client_name = serializers.SerializerMethodField()
+
+    class Meta(ActivityEventSerializer.Meta):
+        fields = [*ActivityEventSerializer.Meta.fields, "actor_name", "client_name"]
+
+    def get_actor_name(self, event):
+        if not event.actor or not (event.actor_id == event.business.owner_id or getattr(event, "actor_is_member", False)):
+            return ""
+        return event.actor.full_name or event.actor.get_full_name()
+
+    def get_client_name(self, event):
+        return event.client.full_name if event.client and event.client.business_id == event.business_id else ""
+
+
 class NoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Note

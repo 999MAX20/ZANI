@@ -4,7 +4,7 @@ import { Plus } from "lucide-react";
 import { useNavigate } from "react-router";
 
 import { agentProfilesApi, businessKnowledgeApi } from "../../api/ai";
-import { botAiApi, botChannelsApi, botsApi, type BotSuggestedReplyResponse } from "../../api/bots";
+import { botAiApi, botChannelsApi, botConversationsApi, botLifecycleApi, botMessagesApi, botsApi, ensureBotChannel, type BotSuggestedReplyResponse } from "../../api/bots";
 import { usePageHeader } from "../../components/layout/PageHeaderContext";
 import { ErrorState, LoadingState } from "../../components/ui/StateViews";
 import { useAuth } from "../auth/AuthProvider";
@@ -26,12 +26,13 @@ export function AIAgentsPage() {
   const { user } = useAuth();
   const { business, isLoading: isBusinessLoading } = useActiveBusiness();
   const canManage = hasPermission(user, business?.id, "ai_automation", "manage");
+  const canViewChannels = hasPermission(user, business?.id, "integrations", "view");
+  const canManageChannels = hasPermission(user, business?.id, "integrations", "manage");
+  const canViewConversations = hasPermission(user, business?.id, "conversations", "view");
+  const canSuggest = hasPermission(user, business?.id, "ai_assistant", "suggest");
   const queryClient = useQueryClient();
-  const { bots, botChannels, botConversations, botMessages } = useEntityData({
+  const { bots } = useEntityData({
     bots: true,
-    botChannels: true,
-    botConversations: true,
-    botMessages: true,
   });
   const profiles = useQuery<AgentProfile[]>({ queryKey: ["ai-agent-profiles"], queryFn: () => agentProfilesApi.list() });
   const knowledge = useQuery<BusinessKnowledgeItem[]>({
@@ -47,11 +48,7 @@ export function AIAgentsPage() {
   const botList = bots.data || [];
   const isPageLoading = isBusinessLoading
     || bots.isLoading
-    || botChannels.isLoading
-    || botConversations.isLoading
-    || botMessages.isLoading
-    || profiles.isLoading
-    || knowledge.isLoading;
+    || profiles.isLoading;
   const { activeSection, canonicalRoute, selectedBot } = useCanonicalAIAgentRoute({
     bots: botList,
     hasBusiness: Boolean(business),
@@ -63,6 +60,27 @@ export function AIAgentsPage() {
     [profiles.data, selectedBot?.id],
   );
   const [isSavingEditor, setIsSavingEditor] = useState(false);
+  const loadChannels = Boolean(business && canViewChannels && ["channels", "test"].includes(activeSection));
+  const loadRuntime = Boolean(business && canViewConversations && activeSection === "test");
+  const botChannels = useQuery<BotChannel[]>({
+    queryKey: ["bot-channels"],
+    queryFn: () => botChannelsApi.list(),
+    enabled: loadChannels,
+  });
+  const botConversations = useQuery({
+    queryKey: ["bot-conversations"],
+    queryFn: () => botConversationsApi.list(),
+    enabled: loadRuntime,
+  });
+  const botMessages = useQuery({
+    queryKey: ["bot-messages"],
+    queryFn: () => botMessagesApi.list(),
+    enabled: loadRuntime,
+  });
+  useEffect(() => {
+    if (!botChannels.dataUpdatedAt) return;
+    void queryClient.invalidateQueries({ queryKey: ["bots"] });
+  }, [botChannels.dataUpdatedAt, queryClient]);
   const {
     botDraft,
     editorDirty,
@@ -116,8 +134,8 @@ export function AIAgentsPage() {
         name: profileForm.name,
         role_description: profileForm.role_description,
         tone: profileForm.tone,
-        language: profileForm.language,
-        is_active: profileForm.is_active,
+        language: botDraft.default_language.trim() || "ru",
+        is_active: true,
         system_prompt: profileForm.system_prompt,
         rules_json: jsonFromLines(profileForm.rules_text),
         allowed_tools_json: { tools: profileForm.allowed_tools },
@@ -127,33 +145,42 @@ export function AIAgentsPage() {
     },
     onSuccess: async (profile) => {
       markProfileSaved(profile);
-      await queryClient.invalidateQueries({ queryKey: ["ai-agent-profiles"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["ai-agent-profiles"] }),
+        queryClient.invalidateQueries({ queryKey: ["bots"] }),
+      ]);
     },
   });
 
   const addChannel = useMutation({
-    mutationFn: (channel: BotChannel["channel"]) => {
-      if (!selectedBot) throw new Error("Agent is not selected.");
-      return botChannelsApi.create({
-        bot: selectedBot.id,
-        channel,
-        status: "draft",
-        external_id: "",
-        config_json: channel === "whatsapp" ? { provider_mode: "meta_cloud" } : channel === "instagram" ? { provider_mode: "meta_graph" } : {},
-      });
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["bot-channels"] }),
+    mutationFn: ({ botId, channel }: { botId: number; channel: BotChannel["channel"] }) =>
+      ensureBotChannel({ botId, channel }),
+    onSuccess: () => Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["bot-channels"] }),
+      queryClient.invalidateQueries({ queryKey: ["bots"] }),
+    ]),
   });
 
   const toggleChannel = useMutation({
     mutationFn: ({ channel, status }: { channel: BotChannel; status: BotChannel["status"] }) =>
       botChannelsApi.update({ id: channel.id, payload: { status } }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["bot-channels"] }),
+    onSuccess: () => Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["bot-channels"] }),
+      queryClient.invalidateQueries({ queryKey: ["bots"] }),
+    ]),
   });
 
   const suggestReply = useMutation({
     mutationFn: (conversationId: number) => botAiApi.suggestReply(conversationId),
     onSuccess: (data) => setSuggestedReply(data),
+  });
+
+  const toggleBotStatus = useMutation({
+    mutationFn: (active: boolean) => {
+      if (!selectedBot) throw new Error("Agent is not selected.");
+      return active ? botLifecycleApi.activate(selectedBot.id) : botLifecycleApi.pause(selectedBot.id);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["bots"] }),
   });
 
   const saveEditorDrafts = useCallback(async () => {
@@ -202,8 +229,22 @@ export function AIAgentsPage() {
     return <LoadingState label={t("aiAgents.loading")} />;
   }
 
-  const pageError = bots.error || botChannels.error || botConversations.error || botMessages.error || profiles.error || knowledge.error;
-  const mutationError = createBot.error || updateBot.error || saveProfile.error || addChannel.error || toggleChannel.error || suggestReply.error;
+  const pageError = bots.error || profiles.error;
+  const sectionError = activeSection === "channels"
+    ? botChannels.error
+    : activeSection === "knowledge"
+      ? knowledge.error
+      : activeSection === "test"
+        ? botChannels.error || botConversations.error || botMessages.error || knowledge.error
+        : null;
+  const sectionLoading = activeSection === "channels"
+    ? botChannels.isLoading
+    : activeSection === "knowledge"
+      ? knowledge.isLoading
+      : activeSection === "test"
+        ? botChannels.isLoading || botConversations.isLoading || botMessages.isLoading || knowledge.isLoading
+        : false;
+  const mutationError = createBot.error || updateBot.error || saveProfile.error || addChannel.error || toggleChannel.error || toggleBotStatus.error || suggestReply.error;
 
   const closeNavigationGuard = () => {
     if (navigationBlocker.state === "blocked") navigationBlocker.reset();
@@ -212,6 +253,12 @@ export function AIAgentsPage() {
   const discardAndContinue = () => {
     if (navigationBlocker.state !== "blocked") return;
     resetEditorDrafts();
+    navigationBlocker.proceed();
+  };
+
+  const saveAndContinue = async () => {
+    if (navigationBlocker.state !== "blocked") return;
+    await saveEditorDrafts();
     navigationBlocker.proceed();
   };
 
@@ -226,10 +273,15 @@ export function AIAgentsPage() {
       bots={botList}
       businessId={business.id}
       canManage={canManage}
+      canManageChannels={canManageChannels}
+      canSuggest={canSuggest}
+      canViewChannels={canViewChannels}
+      canViewConversations={canViewConversations}
       createAgentPending={createBot.isPending}
+      createError={createBot.error}
       createOpen={createOpen}
       dirty={editorDirty}
-      isSaving={isSavingEditor || updateBot.isPending}
+      isSaving={isSavingEditor || updateBot.isPending || toggleBotStatus.isPending}
       knowledgeItems={knowledge.data || []}
       mutationError={mutationError}
       navigationBlocked={navigationBlocker.state === "blocked"}
@@ -238,25 +290,33 @@ export function AIAgentsPage() {
       onCloseNavigationGuard={closeNavigationGuard}
       onCreateAgent={() => createBot.mutate()}
       onDiscardAndContinue={discardAndContinue}
+      onSaveAndContinue={() => {
+        void saveAndContinue().catch(() => undefined);
+      }}
       onNavigateSection={(section) => navigate(`/app/ai-agents/${selectedBot?.id}/${section}`)}
+      onSelectAgent={(id) => navigate(`/app/ai-agents/${id}/${activeSection}`)}
       onOpenMessages={() => navigate("/app/conversations")}
+      onOpenCreate={() => setCreateOpen(true)}
       onReset={resetEditorDrafts}
       onRetry={() => void Promise.all([
         bots.refetch(),
-        botChannels.refetch(),
-        botConversations.refetch(),
-        botMessages.refetch(),
         profiles.refetch(),
-        knowledge.refetch(),
+      ])}
+      onRetrySection={() => void Promise.all([
+        ...(loadChannels ? [botChannels.refetch()] : []),
+        ...(loadRuntime ? [botConversations.refetch(), botMessages.refetch()] : []),
+        ...(["knowledge", "test"].includes(activeSection) ? [knowledge.refetch()] : []),
       ])}
       onSave={() => void saveEditorDrafts()}
       onSetNewAgentName={setNewAgentName}
       onSuggest={(conversationId) => suggestReply.mutate(conversationId)}
-      onToggleStatus={(active) => updateBot.mutate({ status: active ? "active" : "paused" })}
+      onToggleStatus={(active) => toggleBotStatus.mutate(active)}
       pageError={pageError}
       profileForm={profileForm}
       profiles={profiles.data || []}
       saveState={saveState}
+      sectionError={sectionError}
+      sectionLoading={sectionLoading}
       selectedBot={selectedBot}
       selectedProfile={selectedProfile}
       setBotDraft={setBotDraft}

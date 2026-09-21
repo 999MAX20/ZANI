@@ -1,5 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import { PaymentsJournal } from "../payments/PaymentsJournal";
+import { hasPermission } from "../../lib/permissions";
 
 import { clientsApi, type ClientMergeDryRun } from "../../api/clients";
 import { getApiErrorMessage } from "../../api/client";
@@ -34,6 +36,8 @@ export function ClientsPage() {
   const queryClient = useQueryClient();
   const { business } = useActiveBusiness();
   const { user } = useAuth();
+  const [paymentsOpen, setPaymentsOpen] = useState(false);
+  const openPayments = useCallback(() => setPaymentsOpen(true), []);
   const [mergePreview, setMergePreview] = useState<ClientMergeDryRun | null>(
     null,
   );
@@ -101,6 +105,7 @@ export function ClientsPage() {
     t,
     onCreateClient: openCreateClient,
     onCloseClientCard: closeClientCard,
+    onPayments: hasPermission(user, business?.id, "payments") ? openPayments : undefined,
   });
 
   const saveClientMutation = useMutation({
@@ -287,6 +292,7 @@ export function ClientsPage() {
 
   return (
     <>
+      {paymentsOpen && <PaymentsJournal key={business.id} onClose={() => setPaymentsOpen(false)} />}
       <CrmWorkspacePage
         maxWidthClassName="max-w-none"
         testId={pageError ? undefined : "clients-workspace-ready"}

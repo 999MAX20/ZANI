@@ -6,10 +6,12 @@ import { Badge } from "../../../components/ui/Badge";
 import { Button } from "../../../components/ui/Button";
 import { Card, CardBody } from "../../../components/ui/Card";
 import { MetricCard } from "../../../components/ui/MetricCard";
+import { StatusNotice } from "../../../components/ui/StatusNotice";
 import { useI18n } from "../../../lib/i18n";
 import type { Bot as BotType, Id } from "../../../types";
 import type { OnboardingStep } from "../aiAgentsTypes";
-import { HelpCard, FieldHint, OnboardingProgress } from "./AIAgentsShared";
+import { agentStatusLabel } from "../aiAgentsUtils";
+import { FieldHint, OnboardingProgress } from "./AIAgentsShared";
 export function TestAndLaunchSection({
   bot,
   channelsCount,
@@ -20,6 +22,7 @@ export function TestAndLaunchSection({
   latestMessages,
   suggestedReply,
   isSuggesting,
+  canSuggest,
   onSuggest,
 }: {
   bot: BotType;
@@ -31,16 +34,20 @@ export function TestAndLaunchSection({
   latestMessages: Array<{ id: Id; direction: string; text: string }>;
   suggestedReply: BotSuggestedReplyResponse | null;
   isSuggesting: boolean;
+  canSuggest: boolean;
   onSuggest: () => void;
 }) {
   const { t } = useI18n();
   return (
     <div className="space-y-5">
-      <HelpCard
-        title={t("aiAgents.onboarding.test.helpTitle")}
-        text={t("aiAgents.onboarding.test.helpText")}
-        recommendation={t("aiAgents.onboarding.test.recommendation")}
-      />
+      {!launchReady ? (
+        <StatusNotice
+          compact
+          tone="warning"
+          title={t("aiAgents.activationBlocked")}
+          description={t("aiAgents.hint.launchNotReady")}
+        />
+      ) : null}
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_280px]">
         <OnboardingProgress steps={onboardingSteps} />
@@ -59,7 +66,7 @@ export function TestAndLaunchSection({
       </div>
 
       <OverviewSection bot={bot} channelsCount={channelsCount} activeChannelsCount={activeChannelsCount} messagesCount={latestMessages.length} latestConversation={latestConversation} />
-      <MessagesSection latestConversation={latestConversation} latestMessages={latestMessages} suggestedReply={suggestedReply} isSuggesting={isSuggesting} onSuggest={onSuggest} />
+      <MessagesSection latestConversation={latestConversation} latestMessages={latestMessages} suggestedReply={suggestedReply} isSuggesting={isSuggesting} canSuggest={canSuggest} onSuggest={onSuggest} />
     </div>
   );
 }
@@ -78,7 +85,7 @@ function OverviewSection({
   latestConversation?: { id: Id } | null;
 }) {
   const { t } = useI18n();
-  const statusLabel = bot.status === "active" ? t("aiAgents.status.active") : bot.status === "paused" ? t("aiAgents.status.paused") : t("aiAgents.status.draft");
+  const statusLabel = agentStatusLabel(bot, t);
 
   return (
     <div className="space-y-5">
@@ -116,12 +123,14 @@ function MessagesSection({
   latestMessages,
   suggestedReply,
   isSuggesting,
+  canSuggest,
   onSuggest,
 }: {
   latestConversation?: { id: Id } | null;
   latestMessages: Array<{ id: Id; direction: string; text: string }>;
   suggestedReply: BotSuggestedReplyResponse | null;
   isSuggesting: boolean;
+  canSuggest: boolean;
   onSuggest: () => void;
 }) {
   const { t } = useI18n();
@@ -134,7 +143,7 @@ function MessagesSection({
               <h3 className="text-xl font-black text-midnight">{t("aiAgents.latestDialog")}</h3>
               <p className="text-sm font-semibold text-slate-500">{t("aiAgents.latestDialogText")}</p>
             </div>
-            <Button type="button" variant="secondary" disabled={!latestConversation} isLoading={isSuggesting} onClick={onSuggest}>
+            <Button type="button" variant="ai" disabled={!latestConversation || !canSuggest} isLoading={isSuggesting} onClick={onSuggest}>
               <Sparkles size={16} /> {t("aiAgents.prepareReply")}
             </Button>
           </div>
@@ -159,6 +168,25 @@ function MessagesSection({
           <div className="mt-4 min-h-40 rounded-card bg-ai-50 p-4 text-sm font-semibold leading-7 text-ai-900">
             {suggestedReply?.suggested_reply || t("aiAgents.draftReplyEmpty")}
           </div>
+          {suggestedReply ? (
+            <div className="mt-3 space-y-3">
+              <StatusNotice
+                compact
+                tone={suggestedReply.provider_state === "live" ? "success" : "warning"}
+                title={suggestedReply.provider_state === "live" ? t("aiAgents.aiProviderLive") : t("aiAgents.aiProviderMock")}
+                description={t("aiAgents.aiProviderDetails", { provider: suggestedReply.provider, model: suggestedReply.model })}
+              />
+              {suggestedReply.sources.length ? (
+                <div aria-label={t("aiAgents.aiSources")} className="flex flex-wrap gap-2">
+                  {suggestedReply.sources.map((source) => (
+                    <Badge key={`${source.type}-${source.id}`} size="sm" variant="neutral">
+                      {source.label}
+                    </Badge>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </CardBody>
       </Card>
     </div>

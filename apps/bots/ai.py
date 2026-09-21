@@ -9,6 +9,7 @@ def build_bot_conversation_context(conversation, limit=12):
     messages = conversation.messages.order_by("-created_at")[:limit]
     return [
         {
+            "id": message.id,
             "direction": message.direction,
             "text": message.text,
             "status": message.status,
@@ -118,7 +119,33 @@ def suggest_bot_reply(*, conversation, user=None, auto_mode=False, qualification
         model_tier=model_tier,
         temperature=temperature,
     )
-    return result, log, message_context
+    sources = [
+        {
+            "type": "message",
+            "id": message["id"],
+            "label": f"Message #{message['id']}",
+        }
+        for message in message_context
+        if message["direction"] == BotMessage.Directions.INBOUND
+    ]
+    if agent_payload:
+        sources.append(
+            {
+                "type": "agent_profile",
+                "id": agent_payload["id"],
+                "label": agent_payload["name"],
+            }
+        )
+    sources.extend(
+        {
+            "type": "knowledge",
+            "id": item["id"],
+            "label": item["title"],
+        }
+        for item in log.input_json.get("context", [])
+        if item.get("id") is not None
+    )
+    return result, log, message_context, sources
 
 
 def _float_or_none(value):

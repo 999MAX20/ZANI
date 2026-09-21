@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from apps.core.security_config import has_strong_shared_secret
 from apps.bots.models import Bot, BotChannel, BotConversation, BotMessage
+from apps.bots.lifecycle import create_bot_channel, get_bot_readiness
 from apps.bots.inbox_service import register_bot_message
 from apps.billing.models import UsageCounter
 from apps.billing.entitlements import EntitlementMetrics, assert_entitlement_allows
@@ -12,11 +13,14 @@ from apps.outreach.consent import payload_has_explicit_consent
 from apps.outreach.models import OutreachCampaign
 from apps.outreach.services import record_explicit_consent
 from apps.integrations.sanitization import sanitize_config, sensitive_config_paths
+from apps.integrations.channel_boundary import validate_channel_public_write
 from apps.integrations.crm_mapping import record_lead_captured_event, record_message_received_event
 from apps.leads.models import Lead
 
 
 class BotSerializer(serializers.ModelSerializer):
+    readiness = serializers.SerializerMethodField()
+
     class Meta:
         model = Bot
         fields = [
@@ -26,13 +30,24 @@ class BotSerializer(serializers.ModelSerializer):
             "status",
             "default_language",
             "settings_json",
+            "readiness",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["created_at", "updated_at"]
+        read_only_fields = ["readiness", "created_at", "updated_at"]
+
+    def get_readiness(self, instance):
+        return get_bot_readiness(instance)
+
+
+class EnsureBotChannelSerializer(serializers.Serializer):
+    channel = serializers.ChoiceField(choices=BotChannel.Channels.choices)
 
 
 class BotChannelSerializer(serializers.ModelSerializer):
+    def create(self, validated_data):
+        return create_bot_channel(validated_data=validated_data)
+
     class Meta:
         model = BotChannel
         fields = [
@@ -63,6 +78,27 @@ class BotChannelSerializer(serializers.ModelSerializer):
                 "Credentials are not allowed in channel config. Use the dedicated channel configuration action."
             )
         return value
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        attrs = validate_channel_public_write(attrs, self.instance)
+        bot = attrs.get("bot") or getattr(self.instance, "bot", None)
+        channel = attrs.get("channel") or getattr(self.instance, "channel", None)
+        if self.instance is None and attrs.get("status") == BotChannel.Statuses.ACTIVE:
+            raise serializers.ValidationError({"status": "Create the channel as a draft and validate the provider before enabling it."})
+        if bot and channel in {
+            BotChannel.Channels.TELEGRAM,
+            BotChannel.Channels.WHATSAPP,
+            BotChannel.Channels.INSTAGRAM,
+        }:
+            duplicate = BotChannel.objects.filter(bot__business=bot.business, channel=channel)
+            if self.instance is not None:
+                duplicate = duplicate.exclude(pk=self.instance.pk)
+            if duplicate.exists():
+                raise serializers.ValidationError(
+                    {"channel": "This messenger account is already assigned to another AI agent in the business."}
+                )
+        return attrs
 
 
 class TelegramChannelConfigSerializer(serializers.Serializer):

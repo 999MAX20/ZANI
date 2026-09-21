@@ -264,7 +264,7 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
         conversation = self.get_object()
         assert_can(request.user, conversation.business, Resources.CONVERSATIONS, Actions.UPDATE, obj=conversation)
         assert_can(request.user, conversation.business, Resources.AI_ASSISTANT, Actions.SUGGEST, obj=conversation)
-        result, log, message_context = suggest_bot_reply(conversation=conversation, user=request.user)
+        result, log, message_context, _sources = suggest_bot_reply(conversation=conversation, user=request.user)
         return Response(
             {
                 "suggested_reply": result.output_text,

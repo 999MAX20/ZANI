@@ -3,7 +3,21 @@ import { apiClient, unwrapList } from "./client";
 import type { Bot, BotChannel, BotConversation, BotMessage, IntegrationEventLog } from "../types";
 
 export const botsApi = createCrudApi<Bot>("/api/bots/");
+export const botLifecycleApi = {
+  activate: async (id: number | string) => {
+    const { data } = await apiClient.post<Bot>(`/api/bots/${id}/activate/`);
+    return data;
+  },
+  pause: async (id: number | string) => {
+    const { data } = await apiClient.post<Bot>(`/api/bots/${id}/pause/`);
+    return data;
+  },
+};
 export const botChannelsApi = createCrudApi<BotChannel>("/api/bot-channels/");
+export const ensureBotChannel = async ({ botId, channel }: { botId: number | string; channel: BotChannel["channel"] }) => {
+  const { data } = await apiClient.post<BotChannel>(`/api/bots/${botId}/channels/ensure/`, { channel });
+  return data;
+};
 export const botConversationsApi = createCrudApi<BotConversation>("/api/bot-conversations/");
 export const botMessagesApi = createCrudApi<BotMessage>("/api/bot-messages/");
 
@@ -21,6 +35,13 @@ export type BotSuggestedReplyResponse = {
   tokens_used: number;
   log_id: number;
   messages_used: number;
+  provider: string;
+  provider_state: "live" | "mock";
+  sources: Array<{
+    type: "message" | "agent_profile" | "knowledge";
+    id: number;
+    label: string;
+  }>;
 };
 
 export const botAiApi = {

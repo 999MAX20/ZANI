@@ -339,6 +339,13 @@ export type Bot = {
   status: "draft" | "active" | "paused";
   default_language: string;
   settings_json: Record<string, unknown>;
+  readiness?: {
+    is_ready: boolean;
+    profile_ready: boolean;
+    channel_ready: boolean;
+    knowledge_ready: boolean;
+    missing: Array<"profile" | "channel" | "knowledge">;
+  };
   created_at: string;
   updated_at: string;
 };

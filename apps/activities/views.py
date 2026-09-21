@@ -1,5 +1,3 @@
-from django.db.models import Q
-
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -7,6 +5,7 @@ from apps.activities.models import ActivityEvent, Note, Segment, SegmentFilter, 
 from apps.activities.segments import evaluate_segment_queryset, refresh_segment_count
 from apps.activities.serializers import (
     ActivityEventSerializer,
+    ActivityTimelineSerializer,
     NoteSerializer,
     SegmentFilterSerializer,
     SegmentSerializer,
@@ -14,43 +13,40 @@ from apps.activities.serializers import (
     TaggedObjectSerializer,
 )
 from apps.clients.serializers import ClientSerializer
+from apps.core.crm_read_scope import scope_entity_history
 from apps.core.viewsets import TenantModelViewSet
+from apps.activities.timeline_queries import (
+    ActivityPagination, actor_choice, filter_timeline, read_timeline_query, timeline_actor_rows,
+)
 
 
 class ActivityEventViewSet(TenantModelViewSet):
     queryset = ActivityEvent.objects.select_related("business", "client", "actor")
     serializer_class = ActivityEventSerializer
+    pagination_class = ActivityPagination
+
+    def get_serializer_class(self):
+        return ActivityTimelineSerializer if self.action in {"list", "retrieve"} else super().get_serializer_class()
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        business_id = self.request.query_params.get("business")
-        client_id = self.request.query_params.get("client") or self.request.query_params.get("client_id")
-        entity_type = self.request.query_params.get("entity_type")
-        entity_id = self.request.query_params.get("entity_id")
-        category = self.request.query_params.get("category")
-        event_type = self.request.query_params.get("event_type")
-        date_from = self.request.query_params.get("date_from") or self.request.query_params.get("created_after")
-        date_to = self.request.query_params.get("date_to") or self.request.query_params.get("created_before")
-        search = self.request.query_params.get("q")
-        if business_id:
-            queryset = queryset.filter(business_id=business_id)
-        if client_id:
-            queryset = queryset.filter(client_id=client_id)
-        if entity_type:
-            queryset = queryset.filter(entity_type=entity_type)
-        if entity_id:
-            queryset = queryset.filter(entity_id=str(entity_id))
-        if category:
-            queryset = queryset.filter(category=category)
-        if event_type:
-            queryset = queryset.filter(event_type=event_type)
-        if date_from:
-            queryset = queryset.filter(created_at__gte=date_from)
-        if date_to:
-            queryset = queryset.filter(created_at__lte=date_to)
-        if search:
-            queryset = queryset.filter(Q(text__icontains=search) | Q(event_type__icontains=search))
-        return queryset
+        values, business = read_timeline_query(self.request)
+        if self.action in {"list", "retrieve", "actors"}:
+            queryset = scope_entity_history(queryset, actor=self.request.user, business=business)
+        if self.action == "actors":
+            values = {"business": values.get("business")}
+        return filter_timeline(queryset, values, business)
+
+    @action(detail=False, methods=["get"])
+    def actors(self, request):
+        values, _business = read_timeline_query(request)
+        queryset = self.get_queryset()
+        rows = timeline_actor_rows(queryset, values.get("q", ""))
+        page = self.paginate_queryset(rows)
+        response = self.get_paginated_response([actor_choice(row) for row in page])
+        selected = values.get("selected_actor")
+        response.data["selected_actor"] = actor_choice(timeline_actor_rows(queryset).filter(actor_id=selected).first()) if selected else None
+        return response
 
 
 class NoteViewSet(TenantModelViewSet):

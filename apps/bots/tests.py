@@ -28,6 +28,15 @@ from apps.tasks.models import Task
 
 
 class BotsFoundationTests(TestCase):
+    def _prepare_agent_readiness(self, bot):
+        AgentProfile.objects.get_or_create(
+            business=bot.business, bot=bot, defaults={"name": "Website test profile"},
+        )
+        BusinessKnowledgeItem.objects.get_or_create(
+            business=bot.business, title="Website test knowledge",
+            defaults={"content": "Use the configured services and available slots."},
+        )
+
     def setUp(self):
         self.api = APIClient()
         self.owner = User.objects.create_user(
@@ -215,6 +224,7 @@ class BotsFoundationTests(TestCase):
             },
         )
 
+        self._prepare_agent_readiness(bot)
         response = self.api.post(
             f"/api/public/website-chat/{channel.public_token}/conversations/",
             {
@@ -264,6 +274,7 @@ class BotsFoundationTests(TestCase):
             },
         )
 
+        self._prepare_agent_readiness(bot)
         response = self.api.post(
             f"/api/public/website-chat/{channel.public_token}/conversations/",
             {
@@ -309,6 +320,7 @@ class BotsFoundationTests(TestCase):
             },
         )
 
+        self._prepare_agent_readiness(bot)
         response = self.api.post(
             f"/api/public/website-chat/{channel.public_token}/conversations/",
             {
@@ -367,6 +379,7 @@ class BotsFoundationTests(TestCase):
             },
         )
 
+        self._prepare_agent_readiness(bot)
         response = self.api.post(
             f"/api/public/website-chat/{channel.public_token}/conversations/",
             {
@@ -414,6 +427,7 @@ class BotsFoundationTests(TestCase):
             },
         )
 
+        self._prepare_agent_readiness(bot)
         response = self.api.post(
             f"/api/public/website-chat/{channel.public_token}/conversations/",
             {
@@ -464,6 +478,7 @@ class BotsFoundationTests(TestCase):
         )
         ai_count_before = AIRequestLog.objects.filter(business=self.business, prompt_type="conversation_qualification").count()
 
+        self._prepare_agent_readiness(bot)
         response = self.api.post(
             f"/api/public/website-chat/{channel.public_token}/conversations/{conversation.public_id}/messages/",
             {"message": "РќСѓР¶РЅР° Р·Р°РїРёСЃСЊ Рё С†РµРЅР°"},
@@ -529,6 +544,7 @@ class BotsFoundationTests(TestCase):
             },
         )
 
+        self._prepare_agent_readiness(bot)
         response = self.api.post(
             f"/api/public/website-chat/{channel.public_token}/conversations/",
             {
@@ -582,6 +598,7 @@ class BotsFoundationTests(TestCase):
             },
         )
 
+        self._prepare_agent_readiness(bot)
         first_response = self.api.post(
             f"/api/public/website-chat/{channel.public_token}/conversations/",
             {
@@ -688,6 +705,7 @@ class BotsFoundationTests(TestCase):
             },
         )
 
+        self._prepare_agent_readiness(bot)
         first_response = self.api.post(
             f"/api/public/website-chat/{channel.public_token}/conversations/",
             {

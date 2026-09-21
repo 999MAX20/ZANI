@@ -335,8 +335,13 @@ async function createAuthenticatedPage(browser, viewport = { width: 1920, height
   return { context, page };
 }
 
-function actionLocator(page, action) {
-  if (action.kind === "button") return page.getByRole("button", { name: action.text }).first();
+function actionLocator(page, action, { enabledOnly = false } = {}) {
+  if (action.kind === "button") {
+    const buttons = page.getByRole("button", { name: action.text });
+    return (enabledOnly
+      ? buttons.and(page.locator('button:not(:disabled):not([aria-disabled="true"])'))
+      : buttons).first();
+  }
   if (action.kind === "link") return page.locator(`main a[href="${action.href}"], nav a[href="${action.href}"]`).first();
   return page.locator(action.selector).first();
 }
@@ -392,9 +397,15 @@ async function runAction(page, routeName, action) {
     await page.waitForTimeout(400);
   }
 
-  const locator = actionLocator(page, action);
+  const locator = actionLocator(page, action, { enabledOnly: action.kind === "button" });
   const visible = await locator.isVisible({ timeout: 1500 }).catch(() => false);
   if (!visible) {
+    if (action.kind === "button") {
+      const disabledLocator = actionLocator(page, action);
+      const disabledVisible = await disabledLocator.isVisible({ timeout: 250 }).catch(() => false);
+      const disabled = disabledVisible && !await disabledLocator.isEnabled().catch(() => true);
+      if (disabled) return { action: action.name, status: "disabled" };
+    }
     return { action: action.name, status: "missing" };
   }
 
@@ -507,6 +518,7 @@ async function run() {
         apiIssues: record.apiIssues.length,
         actionsClicked: record.actions.filter((action) => action.status === "clicked").length,
         actionsMissing: record.actions.filter((action) => action.status === "missing").length,
+        actionsDisabled: record.actions.filter((action) => action.status === "disabled").length,
         blocking: hasBlockingIssue(record),
         screenshot: record.screenshot,
         json: record.json,

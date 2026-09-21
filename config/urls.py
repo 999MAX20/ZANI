@@ -55,6 +55,7 @@ from apps.businesses.views import (
     team_permissions_catalog,
 )
 from apps.clients.views import ClientViewSet
+from apps.payments.views import PaymentViewSet
 from apps.conversations.inbox_views import InboxConversationViewSet
 from apps.conversations.views import ConversationViewSet, MessageViewSet, QuickReplyTemplateViewSet
 from apps.core.file_views import private_media_file
@@ -117,6 +118,7 @@ router.register("team/role-permissions", RolePermissionViewSet, basename="team-r
 router.register("team/departments", TeamViewSet, basename="team-department")
 router.register("team/department-members", TeamMembershipViewSet, basename="team-department-member")
 router.register("clients", ClientViewSet, basename="client")
+router.register("client-payments", PaymentViewSet, basename="client-payment")
 router.register("pipelines", PipelineViewSet, basename="pipeline")
 router.register("pipeline-stages", PipelineStageViewSet, basename="pipeline-stage")
 router.register("stage-transitions", StageTransitionViewSet, basename="stage-transition")

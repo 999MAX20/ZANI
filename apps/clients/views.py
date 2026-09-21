@@ -3,11 +3,11 @@ from rest_framework.response import Response
 
 from apps.activities.taxonomy import ActivityEvents
 from apps.businesses.access import Actions, assert_can
+from apps.clients.lifecycle import archive_client
 from apps.clients.models import Client
 from apps.clients.selectors import build_client_facets, build_client_summary, client_queryset_for_request
 from apps.clients.serializers import ClientMergeDryRunSerializer, ClientMergeSerializer, ClientSerializer, DuplicateCheckSerializer
 from apps.core.audit import write_audit_log
-from apps.core.archive import archive_instance
 from apps.core.crm_cards import client_crm_card
 from apps.core.models import AuditLog
 from apps.core.viewsets import TenantModelViewSet
@@ -41,6 +41,9 @@ class ClientViewSet(TenantModelViewSet):
 
     def get_queryset(self, apply_quick_filter=True):
         queryset = super().get_queryset()
+        if self.action == "crm_card":
+            # The card builds its own scoped annotations after resolving the parent.
+            return queryset
         client_ids = self.parse_query_id_list("client_ids")
         return client_queryset_for_request(queryset, self.request, client_ids=client_ids, apply_quick_filter=apply_quick_filter)
 
@@ -52,9 +55,14 @@ class ClientViewSet(TenantModelViewSet):
     @action(detail=True, methods=["post"])
     def archive(self, request, pk=None):
         client = self.get_object()
-        assert_can(request.user, client.business, self.get_access_resource(), Actions.DELETE, obj=client)
-        client = archive_instance(request, client, reason=request.data.get("reason", ""))
+        client = archive_client(request=request, client=client, reason=request.data.get("reason", ""))
         return Response(self.get_serializer(client).data)
+
+    def destroy(self, request, *args, **kwargs):
+        if request.query_params.get("hard_delete") == "true":
+            return super().destroy(request, *args, **kwargs)
+        archive_client(request=request, client=self.get_object(), reason=request.data.get("reason", ""))
+        return Response(status=204)
 
     @action(detail=False, methods=["post"], url_path="check-duplicates")
     def check_duplicates(self, request):

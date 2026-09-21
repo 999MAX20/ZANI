@@ -4,7 +4,21 @@ from django.core.validators import URLValidator, validate_email
 from django.utils.dateparse import parse_date, parse_datetime
 from rest_framework.exceptions import ValidationError
 
+from apps.businesses.models import BusinessMember
 from apps.core.models import CustomFieldDefinition, CustomFieldValue
+
+
+def custom_field_role_allowed(definition, user, action):
+    roles = (definition.permissions_json or {}).get(f"{action}_roles") or []
+    if not roles:
+        return True
+    business = definition.business
+    if not user or not user.is_authenticated:
+        return False
+    if business.owner_id == user.id:
+        return True
+    role = BusinessMember.objects.filter(business=business, user=user, is_active=True).values_list("role", flat=True).first()
+    return role in set(str(item) for item in roles)
 
 
 def required_custom_fields_missing(*, business, entity_type, entity_id, required):

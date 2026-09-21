@@ -5,8 +5,11 @@ from django.db.models.functions import Cast, Coalesce
 from apps.activities.models import Segment, TaggedObject
 from apps.activities.segments import evaluate_segment_queryset
 from apps.bots.models import BotConversation
+from apps.businesses.access import Resources
 from apps.clients.identity import normalize_email, normalize_phone
 from apps.crm.models import Deal
+from apps.core.crm_read_scope import readable_across_businesses
+from apps.core.permissions import accessible_businesses
 from apps.leads.models import Lead
 from apps.scheduling.models import Appointment
 from apps.tasks.models import Task
@@ -14,7 +17,18 @@ from apps.tasks.models import Task
 
 def client_queryset_for_request(queryset, request, *, client_ids=None, apply_quick_filter=True):
     queryset = filter_client_queryset(queryset, request, client_ids=client_ids)
-    queryset = annotate_client_list_queryset(queryset)
+    businesses = list(accessible_businesses(request.user))
+    related = {
+        # A multi-business actor must not inherit a historical foreign back-reference.
+        key: readable_across_businesses(model.objects.all(), actor=request.user, resource=resource, businesses=businesses)
+        .filter(business_id=OuterRef("business_id"))
+        for key, model, resource in (
+            ("leads", Lead, Resources.LEADS), ("deals", Deal, Resources.DEALS),
+            ("tasks", Task, Resources.TASKS), ("appointments", Appointment, Resources.APPOINTMENTS),
+            ("conversations", BotConversation, Resources.CONVERSATIONS),
+        )
+    }
+    queryset = annotate_client_list_queryset(queryset, related_querysets=related)
     if apply_quick_filter:
         queryset = apply_client_quick_filter(queryset, request)
     return queryset.distinct()
@@ -60,66 +74,71 @@ def filter_client_queryset(queryset, request, *, client_ids=None):
     return queryset
 
 
-def annotate_client_list_queryset(queryset):
-    latest_lead = Lead.objects.filter(
+def annotate_client_list_queryset(queryset, *, related_querysets=None):
+    related = related_querysets or {
+        "leads": Lead.objects.all(), "deals": Deal.objects.all(),
+        "tasks": Task.objects.all(), "conversations": BotConversation.objects.all(),
+        "appointments": Appointment.objects.all(),
+    }
+    latest_lead = related["leads"].filter(
         client_id=OuterRef("id"),
         is_archived=False,
     ).order_by("-updated_at")
-    latest_deal = Deal.objects.filter(
+    latest_deal = related["deals"].filter(
         client_id=OuterRef("id"),
         is_archived=False,
     ).order_by("-updated_at")
-    latest_task = Task.objects.filter(
+    latest_task = related["tasks"].filter(
         client_id=OuterRef("id"),
         is_archived=False,
     ).exclude(status__in=[Task.Statuses.DONE, Task.Statuses.CANCELLED]).order_by("-updated_at")
-    latest_conversation = BotConversation.objects.filter(
+    latest_conversation = related["conversations"].filter(
         client_id=OuterRef("id"),
         is_archived=False,
     ).order_by("-updated_at")
-    has_open_deal = Deal.objects.filter(
+    has_open_deal = related["deals"].filter(
         client_id=OuterRef("id"),
         is_archived=False,
         status=Deal.Statuses.OPEN,
     )
-    has_open_task = Task.objects.filter(
+    has_open_task = related["tasks"].filter(
         client_id=OuterRef("id"),
         is_archived=False,
     ).exclude(status__in=[Task.Statuses.DONE, Task.Statuses.CANCELLED])
-    has_appointment = Appointment.objects.filter(
+    has_appointment = related["appointments"].filter(
         client_id=OuterRef("id"),
         is_archived=False,
     )
-    has_recent_interaction = BotConversation.objects.filter(
+    has_recent_interaction = related["conversations"].filter(
         client_id=OuterRef("id"),
         is_archived=False,
     )
-    has_no_reply_conversation = BotConversation.objects.filter(
+    has_no_reply_conversation = related["conversations"].filter(
         client_id=OuterRef("id"),
         is_archived=False,
     ).filter(Q(unread_count__gt=0) | Q(handoff_required=True))
-    has_new_lead = Lead.objects.filter(
+    has_new_lead = related["leads"].filter(
         client_id=OuterRef("id"),
         is_archived=False,
         status=Lead.Statuses.NEW,
     )
     multiple_deals = (
-        Deal.objects.filter(client_id=OuterRef("id"), is_archived=False)
+        related["deals"].filter(client_id=OuterRef("id"), is_archived=False)
         .values("client_id")
         .annotate(total=Count("id"))
         .filter(total__gt=1)
     )
     multiple_appointments = (
-        Appointment.objects.filter(client_id=OuterRef("id"), is_archived=False)
+        related["appointments"].filter(client_id=OuterRef("id"), is_archived=False)
         .values("client_id")
         .annotate(total=Count("id"))
         .filter(total__gt=1)
     )
-    leads_count = _client_related_count(Lead.objects.filter(is_archived=False))
-    deals_count = _client_related_count(Deal.objects.filter(is_archived=False))
-    appointments_count = _client_related_count(Appointment.objects.filter(is_archived=False))
-    tasks_count = _client_related_count(Task.objects.filter(is_archived=False))
-    conversations_count = _client_related_count(BotConversation.objects.filter(is_archived=False))
+    leads_count = _client_related_count(related["leads"].filter(is_archived=False))
+    deals_count = _client_related_count(related["deals"].filter(is_archived=False))
+    appointments_count = _client_related_count(related["appointments"].filter(is_archived=False))
+    tasks_count = _client_related_count(related["tasks"].filter(is_archived=False))
+    conversations_count = _client_related_count(related["conversations"].filter(is_archived=False))
 
     return queryset.annotate(
         latest_lead_manager_id=Subquery(latest_lead.values("responsible_user_id")[:1]),

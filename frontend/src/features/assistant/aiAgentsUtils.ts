@@ -107,6 +107,13 @@ export function channelStatusClass(channel?: BotChannel) {
   return "bg-amber-50 text-amber-700 ring-amber-100";
 }
 
+export function agentStatusLabel(bot: BotType, t: (key: string) => string) {
+  if (bot.status === "active" && bot.readiness && !bot.readiness.is_ready) {
+    return t("aiAgents.status.activeBlocked");
+  }
+  return t(`aiAgents.status.${bot.status}`);
+}
+
 export function getOnboardingSteps({
   botId,
   profileReady,

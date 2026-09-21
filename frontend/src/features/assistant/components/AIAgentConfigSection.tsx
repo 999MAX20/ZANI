@@ -5,9 +5,7 @@ import { Bot, ChevronRight, FileText, Save } from "lucide-react";
 import { Button } from "../../../components/ui/Button";
 import { Card, CardBody } from "../../../components/ui/Card";
 import { Input } from "../../../components/ui/Input";
-import { MetricCard } from "../../../components/ui/MetricCard";
 import { Select } from "../../../components/ui/Select";
-import { ToggleSwitch } from "../../../components/ui/Switch";
 import { Textarea } from "../../../components/ui/Textarea";
 import { useI18n } from "../../../lib/i18n";
 import { cn } from "../../../lib/cn";
@@ -16,8 +14,6 @@ import type { AgentFormState, BotDraftState } from "../aiAgentsTypes";
 import { HelpCard, FieldHint } from "./AIAgentsShared";
 export function ProfileManagerSection({
   bot,
-  channelsCount,
-  messagesCount,
   botDraft,
   setBotDraft,
   form,
@@ -26,8 +22,6 @@ export function ProfileManagerSection({
   canManage,
 }: {
   bot: BotType;
-  channelsCount: number;
-  messagesCount: number;
   botDraft: BotDraftState;
   setBotDraft: React.Dispatch<React.SetStateAction<BotDraftState>>;
   form: AgentFormState;
@@ -40,12 +34,14 @@ export function ProfileManagerSection({
 
   return (
     <div className="space-y-5">
-      <HelpCard
-        title={t("aiAgents.onboarding.profile.helpTitle")}
-        text={t("aiAgents.onboarding.profile.helpText")}
-        recommendation={t("aiAgents.onboarding.profile.recommendation")}
-      />
-      <SettingsSection bot={bot} channelsCount={channelsCount} messagesCount={messagesCount} botDraft={botDraft} setBotDraft={setBotDraft} canManage={canManage} />
+      {!bot.readiness?.profile_ready ? (
+        <HelpCard
+          title={t("aiAgents.onboarding.profile.helpTitle")}
+          text={t("aiAgents.onboarding.profile.helpText")}
+          recommendation={t("aiAgents.onboarding.profile.recommendation")}
+        />
+      ) : null}
+      <SettingsSection botDraft={botDraft} setBotDraft={setBotDraft} setForm={setForm} canManage={canManage} />
       <PromptingSection form={form} setForm={setForm} canManage={canManage} />
       <Card variant="outlined">
         <CardBody>
@@ -53,6 +49,8 @@ export function ProfileManagerSection({
             type="button"
             className="flex w-full items-center justify-between gap-3 text-left"
             onClick={() => setShowQuality((value) => !value)}
+            aria-expanded={showQuality}
+            aria-controls="ai-agent-quality-settings"
           >
             <div>
               <h3 className="text-lg font-black text-midnight">{t("aiAgents.qualityAdvanced")}</h3>
@@ -62,24 +60,20 @@ export function ProfileManagerSection({
           </button>
         </CardBody>
       </Card>
-      {showQuality ? <ModelsSection bot={bot} updateBot={updateBot} canManage={canManage} /> : null}
+      {showQuality ? <div id="ai-agent-quality-settings"><ModelsSection bot={bot} updateBot={updateBot} canManage={canManage} /></div> : null}
     </div>
   );
 }
 
 function SettingsSection({
-  bot,
-  channelsCount,
-  messagesCount,
   botDraft,
   setBotDraft,
+  setForm,
   canManage,
 }: {
-  bot: BotType;
-  channelsCount: number;
-  messagesCount: number;
   botDraft: BotDraftState;
   setBotDraft: React.Dispatch<React.SetStateAction<BotDraftState>>;
+  setForm: React.Dispatch<React.SetStateAction<AgentFormState>>;
   canManage: boolean;
 }) {
   const { t } = useI18n();
@@ -104,18 +98,24 @@ function SettingsSection({
               <FieldHint>{t("aiAgents.hint.agentName")}</FieldHint>
             </div>
             <div>
-              <Input label={t("aiAgents.language")} value={botDraft.default_language} disabled={!canManage} onChange={(event) => setBotDraft((current) => ({ ...current, default_language: event.target.value }))} />
+              <Select
+                label={t("aiAgents.language")}
+                value={botDraft.default_language}
+                disabled={!canManage}
+                onChange={(event) => {
+                  const language = event.target.value;
+                  setBotDraft((current) => ({ ...current, default_language: language }));
+                  setForm((current) => ({ ...current, language }));
+                }}
+                options={[
+                  { value: "ru", label: t("language.ru") },
+                  { value: "kk", label: t("language.kk") },
+                  { value: "en", label: t("language.en") },
+                ]}
+              />
               <FieldHint>{t("aiAgents.hint.agentLanguage")}</FieldHint>
             </div>
           </div>
-
-          <div className="mt-4 grid gap-3 md:grid-cols-3">
-            <MetricCard label={t("aiAgents.statusLabel")} value={bot.status === "active" ? t("aiAgents.status.active") : bot.status === "paused" ? t("aiAgents.status.paused") : t("aiAgents.status.draft")} compact />
-            <MetricCard label={t("aiAgents.channelsMetric")} value={String(channelsCount)} compact />
-            <MetricCard label={t("aiAgents.messagesMetric")} value={String(messagesCount)} compact />
-          </div>
-          <FieldHint>{t("aiAgents.hint.agentStatus")}</FieldHint>
-
         </CardBody>
       </Card>
     </div>
@@ -187,16 +187,6 @@ function PromptingSection({
           </div>
         </div>
 
-        <div className="mt-5 flex items-center justify-between gap-4 rounded-control border border-zani-border bg-surface-muted p-3">
-          <span className="text-sm font-semibold text-zani-subtle">{t("aiAgents.profileActive")}</span>
-          <ToggleSwitch
-            checked={form.is_active}
-            disabled={!canManage}
-            label={t("aiAgents.profileActive")}
-            tone="ai"
-            onChange={(checked) => setForm((current) => ({ ...current, is_active: checked }))}
-          />
-        </div>
       </CardBody>
     </Card>
   );

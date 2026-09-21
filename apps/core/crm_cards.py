@@ -1,5 +1,6 @@
 from django.db.models import CharField, OuterRef, Prefetch, Q, Subquery
 from django.db.models.functions import Cast
+from rest_framework.exceptions import PermissionDenied
 
 from apps.activities.models import ActivityEvent, Note, TaggedObject
 from apps.activities.serializers import ActivityEventSerializer, NoteSerializer, TaggedObjectSerializer
@@ -8,9 +9,12 @@ from apps.businesses.access import Actions, Resources, can
 from apps.businesses.models import RolePermission
 from apps.clients.models import Client
 from apps.clients.serializers import ClientSerializer
+from apps.clients.selectors import annotate_client_list_queryset
 from apps.conversations.inbox_serializers import InboxConversationSerializer
 from apps.core.models import CustomFieldDefinition, CustomFieldValue
 from apps.core.models import FileAttachment
+from apps.core.crm_read_scope import readable_link, readable_queryset, scope_entity_records
+from apps.core.custom_fields import custom_field_role_allowed
 from apps.core.serializers import CustomFieldDefinitionSerializer, CustomFieldValueSerializer, FileAttachmentSerializer
 from apps.crm.models import Deal
 from apps.crm.serializers import DealListSerializer
@@ -128,11 +132,16 @@ def _custom_field_entity(client=None, lead=None, deal=None, appointment=None):
     return "", ""
 
 
-def _custom_field_payload(business, *, client=None, lead=None, deal=None, appointment=None):
+def _custom_field_payload(business, *, actor, client=None, lead=None, deal=None, appointment=None):
     entity_type, entity_id = _custom_field_entity(client=client, lead=lead, deal=deal, appointment=appointment)
-    if not entity_type or not entity_id:
+    if not entity_type or not entity_id or not can(actor, business, Resources.SETTINGS, Actions.VIEW).allowed:
         return []
-    definitions = CustomFieldDefinition.objects.filter(business=business, entity_type=entity_type, is_active=True)
+    definitions = [
+        definition for definition in CustomFieldDefinition.objects.filter(
+            business=business, entity_type=entity_type, is_active=True,
+        ).select_related("business")
+        if custom_field_role_allowed(definition, actor, "view")
+    ]
     values = {
         value.definition_id: value
         for value in CustomFieldValue.objects.filter(
@@ -319,6 +328,12 @@ def _consent_summary_payload(business, client):
 
 
 def build_crm_card_payload(*, business, actor=None, client=None, lead=None, deal=None, appointment=None):
+    if actor is None:
+        raise PermissionDenied("An authenticated actor is required for CRM cards.")
+    primary_type, primary_object = _primary_entity_context(client=client, lead=lead, deal=deal, appointment=appointment)
+    resources = {"client": Resources.CLIENTS, "lead": Resources.LEADS, "deal": Resources.DEALS, "appointment": Resources.APPOINTMENTS}
+    if primary_object is None or readable_link(primary_object, actor=actor, business=business, resource=resources[primary_type]) is None:
+        raise PermissionDenied("CRM entity is outside your permitted scope.")
     if client is None and lead is not None:
         client = lead.client
     if client is None and deal is not None:
@@ -329,6 +344,20 @@ def build_crm_card_payload(*, business, actor=None, client=None, lead=None, deal
         lead = deal.lead
     if lead is None and appointment is not None:
         lead = appointment.lead
+
+    client = readable_link(client, actor=actor, business=business, resource=Resources.CLIENTS)
+    lead = readable_link(lead, actor=actor, business=business, resource=Resources.LEADS)
+    # Re-fetch the client projection below; incoming list annotations may contain
+    # unrestricted next-task text and counters even when the client is visible.
+    visible = {
+        model: readable_queryset(model.objects.all(), actor=actor, business=business, resource=resource)
+        for model, resource in (
+            (Lead, Resources.LEADS), (Deal, Resources.DEALS),
+            (Appointment, Resources.APPOINTMENTS), (Task, Resources.TASKS),
+            (BotConversation, Resources.CONVERSATIONS),
+        )
+    }
+    visible_tasks = visible[Task]
 
     entity_refs = []
     if client is not None:
@@ -389,7 +418,7 @@ def build_crm_card_payload(*, business, actor=None, client=None, lead=None, deal
             Prefetch(
                 "tasks",
                 queryset=(
-                    Task.objects.filter(business=business, is_archived=False)
+                    visible_tasks.filter(is_archived=False)
                     .exclude(status__in=[Task.Statuses.DONE, Task.Statuses.CANCELLED])
                     .order_by("due_at", "-created_at")
                 ),
@@ -441,6 +470,12 @@ def build_crm_card_payload(*, business, actor=None, client=None, lead=None, deal
         .order_by("-updated_at")
     )
 
+    leads = readable_queryset(leads, actor=actor, business=business, resource=Resources.LEADS)
+    deals = readable_queryset(deals, actor=actor, business=business, resource=Resources.DEALS)
+    appointments = readable_queryset(appointments, actor=actor, business=business, resource=Resources.APPOINTMENTS)
+    tasks = tasks.filter(pk__in=visible_tasks.values("pk"))
+    conversations = readable_queryset(conversations, actor=actor, business=business, resource=Resources.CONVERSATIONS)
+
     related_entity_query = _related_entity_query(
         entity_refs,
         [
@@ -461,8 +496,17 @@ def build_crm_card_payload(*, business, actor=None, client=None, lead=None, deal
     timeline = ActivityEvent.objects.filter(business=business).filter(_or_queries(timeline_filters)).distinct().order_by("-created_at")
     notes = Note.objects.filter(business=business).select_related("business", "client", "author").filter(_or_queries(notes_filters)).distinct().order_by("-created_at")
 
+    timeline = scope_entity_records(timeline, actor=actor, business=business, visible=visible)
+    notes = scope_entity_records(notes, actor=actor, business=business, visible=visible)
+    if client is not None:
+        client = annotate_client_list_queryset(
+            Client.objects.filter(business=business, pk=client.pk),
+            related_querysets={"leads": visible[Lead], "deals": visible[Deal], "appointments": visible[Appointment], "tasks": visible_tasks, "conversations": visible[BotConversation]},
+        ).first()
+
     primary_lead = lead or leads.first()
-    primary_deal = deal or deals.first()
+    # The prefetched task preview of the primary deal must be scoped too.
+    primary_deal = deals.filter(pk=deal.pk).first() if deal is not None else deals.first()
     primary_appointment = appointment or appointments.first()
     related_counts = {
         "leads": leads.count(),
@@ -520,6 +564,7 @@ def build_crm_card_payload(*, business, actor=None, client=None, lead=None, deal
         "consents": _consent_summary_payload(business, client),
         "custom_fields": _custom_field_payload(
             business,
+            actor=actor,
             client=client,
             lead=lead,
             deal=deal,

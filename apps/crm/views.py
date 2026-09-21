@@ -9,6 +9,7 @@ from apps.businesses.access import Actions, Resources, assert_can
 from apps.businesses.capabilities import assert_resource_enabled
 from apps.businesses.models import Business
 from apps.core.crm_cards import deal_crm_card
+from apps.core.crm_read_scope import readable_across_businesses, readable_queryset
 from apps.core.permissions import user_can_access_business
 from apps.core.viewsets import TenantModelViewSet
 from apps.core.work_queues import no_next_action_deals_queryset, sla_overdue_deals_queryset
@@ -29,13 +30,14 @@ class PipelineViewSet(TenantModelViewSet):
         pipeline = self.get_object()
         stages = pipeline.stages.filter(is_active=True).order_by("order", "name")
         deals = Deal.objects.filter(business=pipeline.business, pipeline=pipeline).select_related("business", "client", "lead", "pipeline", "stage", "owner")
+        deals = list(readable_queryset(deals, actor=request.user, business=pipeline.business, resource=Resources.DEALS))
         return Response(
             {
                 "pipeline": PipelineSerializer(pipeline).data,
                 "stages": [
                     {
                         **PipelineStageSerializer(stage).data,
-                        "deals": DealSerializer([deal for deal in deals if deal.stage_id == stage.id], many=True).data,
+                        "deals": DealSerializer([deal for deal in deals if deal.stage_id == stage.id], many=True, context=self.get_serializer_context()).data,
                     }
                     for stage in stages
                 ],
@@ -121,7 +123,9 @@ class DealViewSet(TenantModelViewSet):
         queryset = super().get_queryset().prefetch_related(
             Prefetch(
                 "tasks",
-                queryset=Task.objects.filter(is_archived=False).exclude(status__in=[Task.Statuses.DONE, Task.Statuses.CANCELLED]).order_by("due_at", "-created_at"),
+                queryset=readable_across_businesses(
+                    Task.objects.filter(is_archived=False), actor=self.request.user, resource=Resources.TASKS,
+                ).exclude(status__in=[Task.Statuses.DONE, Task.Statuses.CANCELLED]).order_by("due_at", "-created_at"),
                 to_attr="open_tasks_for_list",
             )
         )

@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { PlugZap, Search } from "lucide-react";
 
-import { botsApi } from "../../api/bots";
 import { businessConnectorsApi } from "../../api/connectors";
 import { getApiErrorMessage } from "../../api/client";
 import {
@@ -21,17 +20,16 @@ import { hasPermission } from "../../lib/permissions";
 import type { BusinessConnector, ConnectorCapability } from "../../types";
 import { useAuth } from "../auth/AuthProvider";
 import { ProviderCard } from "./components/ProviderCard";
-import { groupLabels, providerCatalog, type ProviderGroup, type ProviderKey } from "./config/providerCatalog";
+import { groupLabels, integrationProviderCatalog, type ProviderGroup, type ProviderKey } from "./config/providerCatalog";
 
 type Translate = ReturnType<typeof useI18n>["t"];
 type IntegrationStatusFilter = "all" | "connected" | "setup" | "request" | "planned" | "error";
 
-const agentChannelProviders = new Set<ProviderKey>(["website", "telegram", "whatsapp", "instagram"]);
-const providerGroups: ProviderGroup[] = ["data", "marketplace", "system"];
+const providerGroups: ProviderGroup[] = ["data", "system"];
 const statusFilters: IntegrationStatusFilter[] = ["all", "connected", "setup", "request", "planned", "error"];
 
 function providerTitle(provider: ProviderKey, t: Translate, capability?: ConnectorCapability) {
-  const catalogItem = providerCatalog.find((item) => item.provider === provider);
+  const catalogItem = integrationProviderCatalog.find((item) => item.provider === provider);
   return capability?.label || (catalogItem ? t(catalogItem.fallbackLabelKey) : provider);
 }
 
@@ -84,17 +82,10 @@ export function IntegrationsPage() {
     queryFn: businessConnectorsApi.list,
     enabled: Boolean(business?.id),
   });
-  const bots = useQuery({
-    queryKey: ["bots", business?.id],
-    queryFn: botsApi.list,
-    enabled: Boolean(business?.id),
-  });
-
   const data = useMemo(() => {
     const capabilityList = capabilities.data || [];
     const connectorList = connectors.data || [];
-    return providerCatalog
-      .filter((item) => !agentChannelProviders.has(item.provider))
+    return integrationProviderCatalog
       .map((item) => {
         const capability = providerCapability(item.provider, capabilityList);
         const connector = providerConnector(item.provider, connectorList);
@@ -123,7 +114,7 @@ export function IntegrationsPage() {
   const requestCount = data.filter((item) => statusFilterFor(item.status) === "request").length;
   const errorCount = data.filter((item) => statusFilterFor(item.status) === "error").length;
 
-  if (isBusinessLoading || capabilities.isLoading || connectors.isLoading || bots.isLoading) {
+  if (isBusinessLoading || capabilities.isLoading || connectors.isLoading) {
     return <LoadingState label={t("integrations.page.loading")} />;
   }
 
@@ -131,7 +122,7 @@ export function IntegrationsPage() {
     return <EmptyState title={t("integrations.page.noBusinessTitle")} description={t("integrations.page.noBusinessDescription")} />;
   }
 
-  const pageError = capabilities.error || connectors.error || bots.error;
+  const pageError = capabilities.error || connectors.error;
 
   return (
     <WorkbenchLayout
@@ -231,7 +222,6 @@ export function IntegrationsPage() {
                     <ProviderCard
                       key={item.provider}
                       businessId={business.id}
-                      bots={bots.data || []}
                       canManage={canManage}
                       capability={item.capability}
                       connector={item.connector}

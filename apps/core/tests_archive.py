@@ -3,7 +3,7 @@ from rest_framework.test import APIClient
 
 from apps.accounts.models import User
 from apps.businesses.access import ensure_default_roles
-from apps.businesses.models import Business, BusinessMember, BusinessRole
+from apps.businesses.models import Business, BusinessMember, BusinessRole, RolePermission
 from apps.clients.models import Client
 from apps.core.models import AuditLog
 from apps.leads.models import Lead
@@ -30,7 +30,11 @@ class ArchiveGuardrailTests(TestCase):
         )
         self.client = Client.objects.create(business=self.business, full_name="Client", phone="+77015550101")
 
-    def test_manager_delete_archives_client_instead_of_hard_delete(self):
+    def test_manager_with_explicit_delete_permission_archives_instead_of_hard_delete(self):
+        role = BusinessRole.objects.get(business=self.business, preset_key=BusinessMember.Roles.MANAGER)
+        RolePermission.objects.update_or_create(
+            business_role=role, resource="clients", action="delete", defaults={"is_allowed": True},
+        )
         self.api.force_authenticate(self.manager)
 
         response = self.api.delete(f"/api/clients/{self.client.id}/", {"reason": "Duplicate"}, format="json")

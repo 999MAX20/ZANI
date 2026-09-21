@@ -504,7 +504,7 @@ export function AIAssistantPage() {
             <CardBody className="p-5 sm:p-6">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-700">{t("aiNavigator.summaryEyebrow")}</p>
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-ai-700">{t("aiNavigator.summaryEyebrow")}</p>
                   <h2 className="mt-2 text-2xl font-bold text-zani-text">{t("aiNavigator.summaryTitle")}</h2>
                 </div>
                 <Badge variant="neutral">
@@ -520,8 +520,8 @@ export function AIAssistantPage() {
                 ))}
               </div>
               {aiBrief ? (
-                <div className="mt-5 rounded-card border border-brand-100 bg-brand-50 p-4">
-                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-700">{t("aiNavigator.aiInterpretation")}</p>
+                <div className="mt-5 rounded-card border border-ai-100 bg-ai-50 p-4">
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-ai-700">{t("aiNavigator.aiInterpretation")}</p>
                   <p className="mt-2 whitespace-pre-wrap text-sm font-semibold leading-7 text-zani-text">{aiBrief}</p>
                 </div>
               ) : null}
@@ -817,8 +817,8 @@ export function AIAssistantPage() {
 
           <Card>
             <CardBody>
-              <div className="mb-4 flex items-start gap-3 rounded-card border border-brand-100 bg-brand-50 p-4">
-                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-control bg-surface-card text-brand-700 shadow-sm">
+              <div className="mb-4 flex items-start gap-3 rounded-card border border-ai-100 bg-ai-50 p-4">
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-control bg-surface-card text-ai-700 shadow-sm">
                   <BookOpenText size={19} />
                 </div>
                 <div>

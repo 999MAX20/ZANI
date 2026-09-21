@@ -13,6 +13,7 @@ import {
   MessageSquareText,
   PlugZap,
   Settings,
+  Sparkles,
   Users,
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -70,6 +71,7 @@ const desktopSections = [
         icon: BarChart3,
         children: [
           { to: "/app/analytics", label: "nav.analytics", icon: BarChart3, resource: "analytics" },
+          { to: "/app/ai-assistant", label: "nav.aiAssistant", icon: Sparkles, resource: "ai_assistant" },
           { to: "/app/timeline", label: "nav.timeline", icon: Clock3, resource: "analytics" },
         ],
       },
@@ -105,6 +107,7 @@ const mobileDrawerSections = [
         icon: BarChart3,
         children: [
           { to: "/app/analytics", label: "nav.analytics", icon: BarChart3, resource: "analytics" },
+          { to: "/app/ai-assistant", label: "nav.aiAssistant", icon: Sparkles, resource: "ai_assistant" },
           { to: "/app/timeline", label: "nav.timeline", icon: Clock3, resource: "analytics" },
         ],
       },

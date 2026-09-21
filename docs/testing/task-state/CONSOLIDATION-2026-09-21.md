@@ -1,7 +1,10 @@
 # CONSOLIDATION-2026-09-21 — one canonical CRM checkout
 
 Owner: Оркестратор / 01a02859-08f3-7082-920d-49400f0fbb09.
-State: donor retirement complete; publication to main blocked by unrelated histories.
+State: donor retirement complete. The original unrelated-history publication
+blocker was subsequently resolved by the owner-approved Git package; current
+candidate, verification and publication receipt: [PRIMARY-SESSION](PRIMARY-SESSION.md).
+The record below preserves the original consolidation evidence and Git state.
 Authorized: integrate audited existing work, no new product scope.
 Canonical root: `C:\Users\user\Desktop\Zani`.
 Starting branch: `codex/ui-testing-toolkit`; HEAD `4ba3cbf9fddcc6e1baa172b494c781550c090693`.

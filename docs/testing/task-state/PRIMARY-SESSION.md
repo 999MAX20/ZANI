@@ -2,97 +2,84 @@
 
 Дата: 2026-09-21. Это карточка исполнения, не продуктовый backlog.
 
-## Активное поручение — безопасная публикация канонической CRM (2026-09-21)
+## Git-пакет — проверенный кандидат и публикационная квитанция (2026-09-21)
 
-- Owner/writer: primary `01a0c36e-33aa-7c72-be9b-72624dd2c739`; Оркестратор не пишет.
-  Mode: integration/verification; gap: Git history/candidate evidence. Только
-  `C:\Users\user\Desktop\Zani`; один checkout, без новых source copies/worktrees.
-- Owner authorization: текущая объединённая CRM — выбранное содержимое origin/main.
-  Legacy native mobile/offline/push, theme toggle, прежние public pages сейчас
-  не переносить; сохранить в истории/резерве. Старые auth/settings/migrations не
-  переносить. Это снимает product-choice blocker, не разрешает force/deploy/потерю WIP.
-- Start: branch `codex/ui-testing-toolkit`, HEAD/base
-  `4ba3cbf9fddcc6e1baa172b494c781550c090693`, 192 status entries, staged 0,
-  один worktree. Fetch origin/main подтвердил `73482a3bea7f168113c58d8cb928214c97f032d5`.
-  Предыдущий source snapshot `85b192208c1fd1e0c788508f1d0f0e79472864e672fc617ea63727b09a4e4b27`
-  перепроверен без drift; W05/W06/marketplace и прежний WIP сохраняются.
-- Observable result: reviewed versioned candidate с каноническим деревом,
-  обе истории сохранены, прежний origin/main — предок; обычный fast-forward push,
-  remote SHA совпадает, реальный CI status отдельно. Разрешён только необходимый
-  чистый Git switch/rename после сохранения; автоматический deploy не разрешён.
-- Scope: review всего публикуемого исходного состава/исходящих commits на
-  секреты/private/generated/unrelated files, свежий восстановимый архив включая
-  untracked и обе истории, осмысленные commits, history-preserving reconciliation.
-  Не использовать blind add -A/reset/delete/hard checkout. Market не трогать.
-- Gates: актуальный CI/CD и push-effects до публикации; `scripts/codex_verify.py
-  --mode full --base-ref <actual base>` на committed candidate в disposable runtime;
-  own workflow/frontend helper checks при необходимости. Существующие PASS только
-  для неизменных входов. Working DB/provider/payment actions не запускаются.
-- Runtime impact: сохранить имеющиеся permissions/tenant/activity/notifications/
-  BusinessEvent/AI contracts и намеренные WIP migrations; новых features/env/schema
-  изменений не планируется. Working-DB migrations не разрешены.
-- Reuse: CRM_MAIN_RECONCILIATION_2026-09-21.md/crm_main_comparison.json в папке
-  Оркестратора; retirement backups; CONSOLIDATION; W05/W06 226-test gate и frontend
-  build/render из предыдущего пакета. Полный прежний аудит не повторять.
-- CI/CD прочитано: local и legacy `.github/workflows/ci.yml` выполняют tests/build,
-  явного deployment job нет. Render hosting упоминается в исторических docs;
-  фактические auto-deploy settings ещё не проверены. Git hooks только samples.
-- Git Workflow Master прочитан: `C:\Users\user\Desktop\Agentic Skills\agency-agents-main\engineering\engineering-git-workflow-master.md`.
-  Это standalone .md, не SKILL.md. Проектные запреты worktree/rebase/force важнее
-  общих примеров. Verification skill также прочитан.
-- Backup: `C:\Users\user\Documents\Codex\project-backups\crm-publication-20260921T123341Z`,
-  source ZIP 1373 файлов: CRC и каждый SHA-256 PASS; all-refs bundle verify PASS,
-  SHA-256 `77e242a2c2ac59230a4057ee631f5c75ea97dfcc7abe16d54b5e99dda3f01a99`.
-  Manifest/evidence: `output/git-publication-20260921/starting-snapshot.json`.
-- GitHub Pages настроен на gh-pages (main не публикует Pages), latest legacy
-  main CI success. Render: доступный через GitHub workspace пуст. Владелец прямо
-  подтвердил через Оркестратор: «Нет, действующих подключений с автодеплоем нет».
-  Это owner confirmation, не техническое доказательство всех внешних аккаунтов;
-  push-effects blocker снят, если не появится противоречащее свидетельство.
-  Ни hosting settings, ни deploy не менялись.
-- Legacy public исключения уточнены: старый marketing landing, CRM/Боты/Тарифы/
-  Контакты и Dubai real-estate demo не переносить; login/registration и рабочие
-  CRM-разделы сохраняются. История/резервы не удаляются.
-- Next: сверить резерв/manifest, CI/CD external effects и reviewed candidate;
-  при неожиданном deploy или обязательном gate blocker остановить публикацию.
-- Publication review: 1373 source files, 246 intended changed/untracked paths;
-  138 outgoing local-history commits / 2830 blobs проверены на high-signal
-  credential/private-key patterns. 41 совпадение — documented placeholders и
-  проверенный URL-redaction fixture; unresolved 0. Генерируемые файлы/рабочие
-  .env/DB/media/output не входят; env examples reviewed. Это не новая security
-  certification. Используется ранее сверенное происхождение консолидации,
-  текущие code/contracts/tests и полный предстоящий gate.
-- Explicit commit manifests: `output/git-publication-20260921/{product,toolkit,docs}-paths.txt`
-  (118 / 28 / 100 paths). Разделение: canonical product consolidation, isolated
-  UI toolkit, docs/workflow/evidence. Shared feature paths сохраняются вместе.
-  Product completeness по inventory не объявляется от факта versioning.
-- Additional checks: continuity-hook 16/16 PASS; sidebar/timeline/toolkit/chromatic
-  helper tests 25/25 PASS. Real hook trust и Chromatic upload не запускались.
-- Next Git action: explicit reviewed staging/commits; затем merge с strategy ours
-  для ancestry, без подмены canonical tree; старый main должен стать предком,
-  обе истории оставаться достижимыми. Full gate — на реальном remote base
-  `73482a3bea7f168113c58d8cb928214c97f032d5` после reconciliation.
-- Выполнено: product `7fc450e`, toolkit `02fefc7`, docs `0d901be`; reconciliation
-  `1e5a85d` имеет обоих предков. Tree до/после merge одинаковый
-  `bd9aae25f0c6de216d1b7b63d649f7ea46258e54`; legacy code не перенесён.
-  До docs commit исправлена только лишняя пустая EOF-строка archived Telegram doc.
-- Preflight реального remote range выявил CRLF/trailing whitespace в четырёх
-  существующих migrations и archived PROJECT_EXECUTION_MASTER. Исправляется
-  только whitespace; Python AST и весь non-whitespace текст совпадают, schema
-  не меняется. Manifest `output/git-publication-20260921/whitespace-normalization.json`.
-- Найден проверяемый gap test isolation: runner не задавал MEDIA_ROOT/private,
-  Django использовал бы working media. Добавлен regression (2 KeyError до fix),
-  media paths помещены рядом с disposable DB. Runner unit suite 15/15 PASS,
-  включая сохранение чужого media sentinel и удаление test upload paths.
-  Это безопасный запуск обязательного gate, не изменение продуктового storage.
-- Next: commit узких gate-fixes и full integrated gate на актуальном HEAD/base.
-- Следующий продуктовый пакет утверждён, но здесь не реализуется: специалист
-  бизнеса без CRM-account/login/access, с расписанием/занятостью; можно завести
-  ещё неизвестного справочнику врача без автоматического пользователя/приглашения.
-  Повторно использовать пригодный Resource, не дублировать известного специалиста;
-  имя не уникальный ID. Это не свободная пометка без guards. Место формы не задано,
-  UI/seats/AI booking в Git-пакете не менять. Решение внесено в V1 rules.
-  После публикационного пакета остановиться.
+- Единственный owner/writer: primary `01a0c36e-33aa-7c72-be9b-72624dd2c739`;
+  Оркестратор не пишет. Canonical root `C:\Users\user\Desktop\Zani`, branch
+  `codex/ui-testing-toolkit`; один checkout, без новых задач/worktrees/source copies.
+- Scope: опубликовать выбранное владельцем каноническое содержимое в
+  `origin` (`https://github.com/999MAX20/ZANI.git`), `main`, сохранив обе истории.
+  Legacy native mobile/offline/push, theme toggle, старые marketing/public/demo
+  страницы сохраняются в истории/резерве, сейчас не переносятся. Рабочие login,
+  registration и CRM сохраняются. Force/reset/rebase/deploy не разрешены.
+- Start: local `4ba3cbf9fddcc6e1baa172b494c781550c090693`, 192 status entries,
+  staged 0; legacy main/base `73482a3bea7f168113c58d8cb928214c97f032d5`.
+  246 изменённых/untracked paths явно reviewed и разделены на manifests
+  product/toolkit/docs (118/28/100), blind add -A не использовался.
+- Commits: product `7fc450e`, toolkit `02fefc7`, docs `0d901be`, разрешённый
+  history merge `1e5a85d`; обе исходные истории — предки. Tree до/после merge
+  одинаковый `bd9aae25f0c6de216d1b7b63d649f7ea46258e54`: legacy code не внесён.
+  `1a9ce8b` нормализует только whitespace четырёх migrations и archived plan;
+  AST/non-whitespace совпадают. `25efa55` изолирует test public/private media
+  в runner; regression воспроизведён до fix, 15 runner tests PASS после fix.
+- Полный integration gate PASS на code candidate
+  `25efa559a85f08454cac45199dde52b656d6955a` и указанном реальном legacy base.
+  1089 Django tests / 867.841s; check и migration drift PASS; npm ci, Vite env
+  isolation, i18n/types, app/widget build, bundle budgets PASS; mobile owner/manager
+  smoke 2/2 PASS; hashed prod/dev Python lock dry-run PASS; pip-audit и npm moderate
+  audit: 0 известных vulnerabilities; final diff hygiene PASS. Полный log:
+  `output/git-publication-20260921/full-gate.log`.
+- Среда: Windows, Python 3.12.14, Node 24.18.0, npm 12.0.1; disposable SQLite,
+  media и loopback ports, locmem/eager, synthetic identities; live providers
+  выключены. CI Python 3.11 / Node 22.22 проверяется отдельно после push.
+- Дополнительные gates: runner unit 15/15, continuity hook 16/16, frontend
+  sidebar/timeline/toolkit/chromatic helpers 25/25 PASS. Реальный hook trust,
+  Chromatic upload, live provider/payment/deployed acceptance и working-DB
+  migrations не запускались: вне разрешённого Git-пакета. Полный gate не закрывает
+  отдельные FC-003/FC-008/manual/live критерии и не означает приёмку клиникой.
+- Backup: `C:\Users\user\Documents\Codex\project-backups\crm-publication-20260921T123341Z`:
+  source ZIP 1373 files, CRC + каждый SHA-256 PASS; all-refs bundle verify PASS,
+  bundle SHA-256 `77e242a2c2ac59230a4057ee631f5c75ea97dfcc7abe16d54b5e99dda3f01a99`.
+  На code candidate 1360 файлов идентичны резерву; 13 намеренных изменений
+  перечислены в `output/git-publication-20260921/candidate-proof.json`.
+- Review: 138 outgoing local-history commits / 2830 blobs проверены на
+  high-signal credentials/private keys; 41 совпадение — placeholders и проверенный
+  URL-redaction fixture, unresolved 0. Working .env/DB/media/generated outputs
+  не публикуются. Это проверка состава публикации, не новая security certification.
+- Push effects: repo workflows выполняют CI, Pages source — gh-pages; доступный
+  Render workspace пуст. Владелец прямо подтвердил отсутствие действующих
+  autodeploy подключений. Hosting settings/deploy не менялись. Git Workflow Master
+  прочитан из `C:\Users\user\Desktop\Agentic Skills\agency-agents-main\engineering\engineering-git-workflow-master.md`;
+  проектные ограничения важнее общих примеров. Verification skill применён.
+- После code gate допускается только данный docs closeout. Проверить точный
+  docs-only delta, ссылки/команды и diff hygiene; runtime evidence переиспользуется
+  только при неизменных code/config/lock/test inputs. Новую реализацию не начинать.
+- Единственный завершающий шаг: normal `git push origin HEAD:main`, readback SHA,
+  фактический CI conclusion для этого SHA. Операционная квитанция обновляется
+  отдельно от публикуемого дерева в
+  `output/git-publication-20260921/publication-result.json` (candidate/base,
+  remote SHA, clean status, команды, CI URL/status). При возобновлении читать её
+  вместе с этим checkpoint и свежим Git: queued/pending не равно PASS.
+  После подтверждённого success — остановиться; повторный push без нового diff
+  и новый продуктовый пакет не нужны. При drift/failed required gate — стоп публикации.
+- Следующий продуктовый пакет утверждён как направление, здесь не реализуется:
+  специалист бизнеса с расписанием без обязательного CRM-account/login/access,
+  новый врач без автоматического пользователя/приглашения; переиспользовать
+  пригодный Resource, не дублировать известного специалиста, имя не уникальный ID.
+  Это не свободная пометка без guards. Место формы не задано; scheduling/UI/seats/
+  AI booking не менялись. Market вне scope. Нужен отдельный запуск следующей фазы.
+
+Точные команды из canonical root (frontend helper — из `frontend`):
+
+```powershell
+.\.venv\Scripts\python.exe scripts/codex_verify.py --mode full --base-ref 73482a3bea7f168113c58d8cb928214c97f032d5
+.\.venv\Scripts\python.exe -m unittest scripts.tests.test_codex_verify -v
+node --test .codex/continuity-hook.test.cjs
+node --test scripts/tests/sidebar-navigation-policy.test.mjs scripts/tests/timeline-presentation.test.mjs scripts/tests/ui-toolkit-policy.test.mjs scripts/tests/chromatic-runtime.test.mjs
+```
+
+Ниже сохранено evidence предыдущего локального пакета. Его исторические
+Git-blocker/pending-решения не переоткрывают уже разрешённые выше вопросы.
 
 ## Завершённый локальный пакет — W05/W06 и конечный остаток до пилота
 
